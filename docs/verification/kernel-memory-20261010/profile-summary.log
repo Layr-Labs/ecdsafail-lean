@@ -1,0 +1,26 @@
+Tail baseline (dual-tail-profile.log)
+  [Kernel] [55.188306] ✅️ typechecking declarations [ECDSAAdd.Arithmetic.MappedCompressed.baseTail_eq_replay]
+       64.60 real        55.31 user         4.41 sys
+         23300947968  maximum resident set size
+
+Tail symbolic indices (dual-tail-symbolic.log)
+        4.81 real         1.60 user         2.59 sys
+          3238903808  maximum resident set size
+
+Forward baseline (dual-forward-profile.log)
+  [Kernel] [57.568284] ✅️ typechecking declarations [ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.firstGroup_forward_step]
+  [Kernel] [156.172033] ✅️ typechecking declarations [ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.fieldTrimSegment_forward_spec]
+      219.64 real       167.90 user        47.23 sys
+         38764576768  maximum resident set size
+
+Forward generic helpers (dual-forward-generic-final.log)
+        5.52 real         2.67 user         3.13 sys
+          3263578112  maximum resident set size
+
+Inverse generic transport (dual-inverse-generic.log)
+        5.44 real         1.63 user         3.29 sys
+          3239854080  maximum resident set size
+
+Penultimate inverse generic prefix (dual-penultimate-generic.log)
+        5.86 real         1.87 user         2.72 sys
+          3251535872  maximum resident set size

@@ -1,0 +1,12 @@
+{
+  "reference_commit": "799153aac444491dcac273ad552ea8473d2a63dd",
+  "resource_scope": "Pinned historical QxT reference requested by user; not current leaderboard claim",
+  "inputs": 9024,
+  "static_toffoli": 975720,
+  "average_executed_toffoli": 944124.3229166666,
+  "peak_live_qubits": 1174,
+  "profile_source": "profile.json",
+  "instrumentation_identity": "gate-stream-identity.json",
+  "stage_q_definition": "Peak live allocator count per attributed constructor stage; includes inherited live sites",
+  "lean_q_definition": "Certified static support/allocation ceiling; exact runtime peak remains unmeasured"
+}

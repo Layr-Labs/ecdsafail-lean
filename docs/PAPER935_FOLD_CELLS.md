@@ -1,0 +1,11 @@
+# Author scale schedule and literal fold cells
+
+`authorRiderActivities_count` proves that the reverse armed window (indices 498 through 532) has exactly the retained stopping offset's number of active slots. Together with the seam's fixed 498 halvings this gives the actual stopping time's exponent. These are mathematical activity and halving statements, not yet a physical rider circuit.
+
+`windowSubtract_exact` and `foldedHalf_correct` prove the arithmetic used by the author's fold stage: on the explicit low-window no-borrow event, subtract the even literal c-1 when the input is odd, then cyclically rotate right. For p=2^n-c this equals modular halving, and `foldedHalf_bound` preserves the canonical interval. No probability is assigned to failure of the no-borrow condition.
+
+The physical gate definitions `foldCarryForward` and `foldCarryBackward` follow `_cf_fwd` and `_cf_bwd` in the pinned author source `circuits/_shared/luo_core.py`, including the literal-zero/no-incoming-carry omission, immediate restoration of the shared control, dressed data bit, optional retained top carry, and measured AND erasure with its phase correction. `foldCarryCell_run` proves their complete-State composition for an initially clean target and distinct views, on arbitrary tapes. Separate forward and backward contracts allow later cells to modify other data bits between the sweeps. The backward contract explicitly requires the correct dressed-data/carry relation; it does not assume the whole sweep's correctness.
+
+The forward cell uses at most one Toffoli and no measurements; the backward cell uses no Toffolis and either zero or one measurement according to the literal/incoming-carry/keeper flags. Support and physical gate legality are proved from the explicit views. The local proof is split into finite Boolean cases without raising verification limits.
+
+Not included: full multi-bit or multi-block fold composition, keeper erasure between blocks, pool allocation, the complete physical halving rider, output copy/scaling endpoint, whole-machine 935 bound, or numerical failure probability. In particular, no wide-workspace exact halving circuit is substituted for the author block construction.

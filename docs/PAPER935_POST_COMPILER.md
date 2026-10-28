@@ -1,0 +1,9 @@
+# Checked physical row and freeze-post layouts
+
+`compileRoutedBank` constructs the arithmetic layout directly from the four allocated signed rows, checks the routing/addition alias conditions, and proves that its input view is exactly the supplied bank. Empty payloads fail explicitly.
+
+`compileProbe` partitions the actual input list into public chunks. Each block receives a flag while blocks share zero-test scratch. Its checks include complete input coverage, scratch capacity and gate legality. `compileBorrowedProbe` actually borrows the flags and scratch; its run theorem derives cleanliness from the arena and gives the exact zero predicate for every measurement tape. Support and clean release refer to this actual program.
+
+`compileBorrowedPost` builds the entire freeze post-stage with one pool shared between the zero probe and freeze-offset comparison. The requested pool size is the maximum of their workspace requirements, not their sum. Both program directions have complete support inside the borrowed live arena and ordinary-gate legality. Actual forward execution returns the pool clean and restores the original allocation. Readiness follows from arena cleanliness plus explicit values of the retained control and offset bits. A kernel-checked example constructs the armed stage for a 26-bit input and six-bit offset using eleven pool wires.
+
+These are checked partial compilers: success remains explicit, and the sample is not a complete public schedule placement certificate. A full slot/prefix compiler must compose row resize, counter work, this post-stage and history transport. In particular, the unarmed public post-stage should skip probe allocation; this generic checked post compiler does not yet perform that optimization. No full 533-step placement, inverse endpoint, global 935-wire bound or numerical failure bound is claimed.

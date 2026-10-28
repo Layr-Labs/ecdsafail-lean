@@ -1,0 +1,16 @@
+{
+  "exit_code": 0,
+  "start_utc": 1791043278,
+  "end_utc": 1791043553,
+  "status": "completed",
+  "total_seconds": 275,
+  "build_start_utc": 1791043278,
+  "build_end_utc": 1791043426,
+  "build_seconds": 148,
+  "build_status": "completed",
+  "axiom_start_utc": 1791043426,
+  "axiom_end_utc": 1791043553,
+  "axiom_status": "completed",
+  "axiom_seconds": 127,
+  "queue_seconds": 0
+}

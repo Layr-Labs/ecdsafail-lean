@@ -1,0 +1,22 @@
+{
+  "exit_code": 0,
+  "start_utc": 1791106087,
+  "end_utc": 1791106387,
+  "status": "completed",
+  "total_seconds": 300,
+  "build_start_utc": 1791106087,
+  "build_end_utc": 1791106252,
+  "build_seconds": 165,
+  "build_status": "completed",
+  "axiom_start_utc": 1791106252,
+  "axiom_end_utc": 1791106387,
+  "axiom_status": "completed",
+  "axiom_seconds": 135,
+  "queue_seconds": 0,
+  "commit": "9ea2e58e077e02b0525cb3947492d3246b2b18fd",
+  "source_files_matched": 487,
+  "source_mismatches_after": [],
+  "setup_seconds": 0,
+  "protected_spec_byte_identical": true,
+  "public_axiom_checks": 971
+}

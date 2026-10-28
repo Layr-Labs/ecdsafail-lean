@@ -1,0 +1,258 @@
+{
+  "status": "empirical estimate, NOT theorem",
+  "source_commit": "64b5a13aa249f1360846657392e6c66817b26d0f",
+  "constants_sha256": "53151704af9d417ce421272c9c0e8c5a6ed174161139055a07bb3b6058b4c376",
+  "script_sha256": "f0f0aadef87f240d310e894385c72c7ec208dc72721349a6898483f60328780a",
+  "group_order": "115792089237316195423570985008687907852837564279074904382605163141518161494337",
+  "seed": 20261023,
+  "prng": "Python random.Random MT19937; randrange rejection sampling",
+  "fixed_scalar": 1,
+  "C": [
+    "0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "0x483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8"
+  ],
+  "law": "k uniform in [1,n-1], P=kG, control=true, conditional on P not in {O,C,-C}",
+  "fourth_corner_disabled_in_sample": 0,
+  "accepted": 10000,
+  "attempted": 10000,
+  "excluded": {
+    "infinity": 0,
+    "equal_C": 0,
+    "negative_C": 0
+  },
+  "sample_scalar_sha256": "c3ea7660bf1dd6675b8e39cd098b3874faf1241b5788186b651bba9a712636c5",
+  "models": {
+    "hmr_candidate_w6_j5": {
+      "exclusive": {
+        "counter": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "history": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "deadline": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "window": {
+          "count": 1,
+          "samples": 10000,
+          "estimate": 0.0001,
+          "zero_count_note": null
+        },
+        "scaling": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "row": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "lift": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "horner": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "sign": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        }
+      },
+      "raw_diagnostics_not_additive": {
+        "counter": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "history": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "deadline": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "window": {
+          "count": 1,
+          "samples": 10000,
+          "estimate": 0.0001,
+          "zero_count_note": null
+        },
+        "scaling": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "row": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "lift": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "horner": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "sign": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        }
+      },
+      "observed_union_rate": 0.0001,
+      "descriptive_2sqrt_rate": 0.02
+    },
+    "current_lean_w7_j7": {
+      "exclusive": {
+        "counter": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "history": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "deadline": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "window": {
+          "count": 1,
+          "samples": 10000,
+          "estimate": 0.0001,
+          "zero_count_note": null
+        },
+        "scaling": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "row": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "lift": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "horner": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "sign": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        }
+      },
+      "raw_diagnostics_not_additive": {
+        "counter": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "history": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "deadline": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "window": {
+          "count": 1,
+          "samples": 10000,
+          "estimate": 0.0001,
+          "zero_count_note": null
+        },
+        "scaling": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "row": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "lift": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "horner": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        },
+        "sign": {
+          "count": 0,
+          "samples": 10000,
+          "estimate": 0.0,
+          "zero_count_note": "\u2264 0.0003 (approximate per-cell 95% rule of three; not theorem)"
+        }
+      },
+      "observed_union_rate": 0.0001,
+      "descriptive_2sqrt_rate": 0.02
+    }
+  }
+}

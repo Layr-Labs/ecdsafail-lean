@@ -1,0 +1,165 @@
+import ECDSAAdd.Arithmetic.Paper935.RetiredSlot
+import ECDSAAdd.Arithmetic.Paper935.StorePush
+
+namespace ECDSAAdd.Arithmetic.Paper935
+open ECDSAAdd.Arithmetic.Divsteps
+
+theorem retiredBody_parity (frozen q parity u k active glow gsign vlow vsign zsign : Wire)
+    (f gmid vmid gv zero z carry zlo : List Wire)
+    (hn1 : (q::parity::u::k::(f++(glow::(gmid++[gsign])))).Nodup)
+    (hn2 : (q::parity::u::k::((vlow::(vmid++[vsign]))++gv)).Nodup)
+    (hgn : (glow::(gmid++[gsign])).Nodup)
+    (hvn : (active::vlow::(vmid++[vsign])).Nodup)
+    (hsep : List.Disjoint (glow::(gmid++[gsign])) ((vlow::(vmid++[vsign]))++gv))
+    (hvs : List.Disjoint (vlow::(vmid++[vsign])) ((glow::(gmid++[gsign]))++gv))
+    (hac : active∉(glow::(gmid++[gsign]))++gv)
+    (hl1 : f.length=gmid.length+2) (hl2 : gv.length=vmid.length+2)
+    (hr : (q::((f++(vlow::(vmid++[vsign])))++((glow::(gmid++[gsign]))++gv))).Nodup)
+    (hcontrols : List.Disjoint [q,parity,u,k,active]
+      (f++(vlow::(vmid++[vsign]))++(glow::(gmid++[gsign]))++gv))
+    (hfs : List.Disjoint f ((glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv))
+    (hcn : (active::q::(zero++z++carry)).Nodup)
+    (hzero : zero.length=z.length) (hcarry : carry.length+1=z.length)
+    (hwidth : 2≤z.length)
+    (hcounter : List.Disjoint (active::q::(zero++z++carry))
+      (f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv))
+    (hzview : z=zlo++[zsign])
+    (htn : [zsign,glow,parity,q].Nodup)
+    (htsep : List.Disjoint [q,parity]
+      (u::k::active::(zero++carry++z++f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv)))
+    (hakeep : active∉q::parity::u::k::(zero++carry++z++f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv))
+    (hfreeze : frozen∉active::q::parity::(f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv++z))
+    (st : ECDSAAdd.Divsteps.ZState) (hf : st.f%2=1) (s : State) (m : List Bool)
+    (hz0 : regValue zero s.basis=0) (hcarry0 : regValue carry s.basis=0)
+    (hzval : signedRegValue z s.basis=st.z)
+    (hzlo : s.basis frozen=false → -((2^(z.length-1):Nat):Int)≤(ECDSAAdd.Divsteps.zStep st).z)
+    (hzhi : s.basis frozen=false → (ECDSAAdd.Divsteps.zStep st).z<((2^(z.length-1):Nat):Int))
+    (hu : s.basis u=false) (hk : s.basis k=false) (hacle : s.basis active=false)
+    (hq0 : s.basis q=false) (hp0 : s.basis parity=false)
+    (ha : signedRegValue f s.basis=st.f)
+    (hb : signedRegValue (glow::(gmid++[gsign])) s.basis=st.g)
+    (hx : signedRegValue (vlow::(vmid++[vsign])) s.basis=st.fv)
+    (hy : signedRegValue gv s.basis=st.gv)
+    (hlo1 : s.basis frozen=false → -((2^(gmid.length+1):Nat):Int)≤2*(ECDSAAdd.Divsteps.zStep st).g)
+    (hhi1 : s.basis frozen=false → 2*(ECDSAAdd.Divsteps.zStep st).g<((2^(gmid.length+1):Nat):Int))
+    (hlo2 : s.basis frozen=false → -((2^(gv.length-1):Nat):Int)≤(ECDSAAdd.Divsteps.zStep st).gv)
+    (hhi2 : s.basis frozen=false → (ECDSAAdd.Divsteps.zStep st).gv<((2^(gv.length-1):Nat):Int))
+    (hlo3 : s.basis frozen=false → -((2^(vmid.length+1):Nat):Int)≤(ECDSAAdd.Divsteps.zStep st).fv)
+    (hhi3 : s.basis frozen=false → (ECDSAAdd.Divsteps.zStep st).fv<((2^(vmid.length+1):Nat):Int))
+    (hfgzero : s.basis frozen=true → st.g=0)
+    (p : Int) (hinv : ECDSAAdd.Divsteps.Inv p st) (hodd : p%2=1) :
+    (run (retiredBody frozen q parity u k active glow gsign vlow vsign zsign f gmid vmid gv zero z carry) m s).basis parity = decide (ECDSAAdd.Divsteps.bbit st=1) := by
+  have he := retiredBody_run frozen q parity u k active glow gsign vlow vsign zsign f gmid vmid gv zero z carry zlo hn1 hn2 hgn hvn hsep hvs hac hl1 hl2 hr hcontrols hfs hcn hzero hcarry hwidth hcounter hzview htn htsep hakeep hfreeze st hf s m hz0 hcarry0 hzval hzlo hzhi hu hk hacle hq0 hp0 ha hb hx hy hlo1 hhi1 hlo2 hhi2 hlo3 hhi3 hfgzero p hinv hodd
+  have hc := slotBody_controls frozen q parity u k active glow gsign vlow vsign zsign f gmid vmid gv zero z carry zlo hn1 hn2 hgn hvn hsep hvs hac hl1 hl2 hr hcontrols hfs hcn hzero hcarry hwidth hcounter hzview htn htsep hakeep hfreeze st hf s m hz0 hcarry0 hzval hzlo hzhi hu hk hacle hq0 hp0 ha hb hx hy hlo1 hhi1 hlo2 hhi2 hlo3 hhi3 hfgzero
+  have hpq : parity≠q := fun hh => (List.nodup_cons.mp (List.nodup_cons.mp (List.nodup_cons.mp htn).2).2).1 (by simp [hh])
+  rw [he]
+  simpa only [writeBit,Function.update_of_ne hpq] using hc.1.2
+
+theorem retiredSlot_parity (tmin index : Nat) (one zf fire witness frozen q parity u k active glow gsign vlow vsign zsign : Wire)
+    (f gmid vmid gv zero z carry zlo : List Wire) (bs rb : List ZeroBit)
+    (hn1 : (q::parity::u::k::(f++(glow::(gmid++[gsign])))).Nodup)
+    (hn2 : (q::parity::u::k::((vlow::(vmid++[vsign]))++gv)).Nodup)
+    (hgn : (glow::(gmid++[gsign])).Nodup)
+    (hvn : (active::vlow::(vmid++[vsign])).Nodup)
+    (hsep : List.Disjoint (glow::(gmid++[gsign])) ((vlow::(vmid++[vsign]))++gv))
+    (hvs : List.Disjoint (vlow::(vmid++[vsign])) ((glow::(gmid++[gsign]))++gv))
+    (hac : active∉(glow::(gmid++[gsign]))++gv)
+    (hl1 : f.length=gmid.length+2) (hl2 : gv.length=vmid.length+2)
+    (hr : (q::((f++(vlow::(vmid++[vsign])))++((glow::(gmid++[gsign]))++gv))).Nodup)
+    (hcontrols : List.Disjoint [q,parity,u,k,active]
+      (f++(vlow::(vmid++[vsign]))++(glow::(gmid++[gsign]))++gv))
+    (hfs : List.Disjoint f ((glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv))
+    (hcn : (active::q::(zero++z++carry)).Nodup)
+    (hzero : zero.length=z.length) (hcarry : carry.length+1=z.length)
+    (hwidth : 2≤z.length)
+    (hcounter : List.Disjoint (active::q::(zero++z++carry))
+      (f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv))
+    (hzview : z=zlo++[zsign])
+    (htn : [zsign,glow,parity,q].Nodup)
+    (htsep : List.Disjoint [q,parity]
+      (u::k::active::(zero++carry++z++f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv)))
+    (hakeep : active∉q::parity::u::k::(zero++carry++z++f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv))
+    (hfreeze : frozen∉active::q::parity::(f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv++z))
+    (st : ECDSAAdd.Divsteps.ZState) (hf : st.f%2=1) (s : State) (m : List Bool)
+    (hz0 : regValue zero s.basis=0) (hcarry0 : regValue carry s.basis=0)
+    (hzval : signedRegValue z s.basis=st.z)
+    (hzlo : s.basis frozen=false → -((2^(z.length-1):Nat):Int)≤(ECDSAAdd.Divsteps.zStep st).z)
+    (hzhi : s.basis frozen=false → (ECDSAAdd.Divsteps.zStep st).z<((2^(z.length-1):Nat):Int))
+    (hu : s.basis u=false) (hk : s.basis k=false) (hacle : s.basis active=false)
+    (hq0 : s.basis q=false) (hp0 : s.basis parity=false)
+    (ha : signedRegValue f s.basis=st.f)
+    (hb : signedRegValue (glow::(gmid++[gsign])) s.basis=st.g)
+    (hx : signedRegValue (vlow::(vmid++[vsign])) s.basis=st.fv)
+    (hy : signedRegValue gv s.basis=st.gv)
+    (hlo1 : s.basis frozen=false → -((2^(gmid.length+1):Nat):Int)≤2*(ECDSAAdd.Divsteps.zStep st).g)
+    (hhi1 : s.basis frozen=false → 2*(ECDSAAdd.Divsteps.zStep st).g<((2^(gmid.length+1):Nat):Int))
+    (hlo2 : s.basis frozen=false → -((2^(gv.length-1):Nat):Int)≤(ECDSAAdd.Divsteps.zStep st).gv)
+    (hhi2 : s.basis frozen=false → (ECDSAAdd.Divsteps.zStep st).gv<((2^(gv.length-1):Nat):Int))
+    (hlo3 : s.basis frozen=false → -((2^(vmid.length+1):Nat):Int)≤(ECDSAAdd.Divsteps.zStep st).fv)
+    (hhi3 : s.basis frozen=false → (ECDSAAdd.Divsteps.zStep st).fv<((2^(vmid.length+1):Nat):Int))
+    (hfgzero : s.basis frozen=true → st.g=0)
+    (p : Int) (hinv : ECDSAAdd.Divsteps.Inv p st) (hodd : p%2=1)
+    (hprobe : (one::zf::bs.flatMap ZeroBit.wires).Nodup)
+    (hrn : (rb.map ZeroBit.input).Nodup) (hzf : zf≠frozen) (hfirefrozen : fire≠frozen)
+    (hfirer : fire∉rb.map ZeroBit.input) (hfrozenr : frozen∉rb.map ZeroBit.input)
+    (hoffset : index≥tmin → index+1-tmin<2^(rb.map ZeroBit.input).length)
+    (hafire : active≠fire) (har : active∉rb.map ZeroBit.input) (hazf : active≠zf)
+    (hzfire : zf≠fire) (hzrecord : zf∉rb.map ZeroBit.input)
+    (hstable : ∀ w∈one::bs.flatMap ZeroBit.wires,
+      w≠active ∧ w≠fire ∧ w≠frozen ∧ w∉rb.map ZeroBit.input)
+    (hone : s.basis one=true) (hzc : s.basis zf=false) (hfire0 : s.basis fire=false)
+    (hwork : ∀ b∈bs,s.basis b.work=false)
+    (hlt : index≥tmin → regValue (rb.map ZeroBit.input) s.basis < index+1-tmin)
+    (hrecord : s.basis frozen=false → regValue (rb.map ZeroBit.input) s.basis=0)
+    (hcnd : (one::witness::rb.flatMap ZeroBit.wires).Nodup)
+    (hwf : witness≠fire) (hfw : frozen≠witness) (hfirework : fire∉rb.map ZeroBit.work)
+    (hcleanframe : ∀ w∈witness::rb.map ZeroBit.work,
+      w≠active ∧ w≠fire ∧ w≠frozen ∧ w∉rb.map ZeroBit.input)
+    (hw : s.basis witness=false) (hcw : ∀ b∈rb,s.basis b.work=false)
+    (hreads : ∀ w∈one::zf::fire::witness::(rb.map ZeroBit.input++bs.map ZeroBit.work++rb.map ZeroBit.work),
+      w∉active::q::parity::(f++(glow::(gmid++[gsign]))++(vlow::(vmid++[vsign]))++gv++z))
+    (hparrecord : parity∉rb.map ZeroBit.input) :
+    (run (retiredSlot tmin index one zf fire witness frozen q parity u k active glow gsign vlow vsign zsign
+      f gmid vmid gv zero z carry bs rb) m s).basis parity=decide (ECDSAAdd.Divsteps.bbit st=1) := by
+  let body := retiredBody frozen q parity u k active glow gsign vlow vsign zsign f gmid vmid gv zero z carry
+  let v := run body m s
+  let ms := m.drop (measurementCount body)
+  have h := retiredBody_spec frozen q parity u k active glow gsign vlow vsign zsign f gmid vmid gv zero z carry zlo
+    hn1 hn2 hgn hvn hsep hvs hac hl1 hl2 hr hcontrols hfs hcn hzero hcarry hwidth hcounter hzview htn htsep
+    hakeep hfreeze st hf s m hz0 hcarry0 hzval hzlo hzhi hu hk hacle hq0 hp0 ha hb hx hy
+    hlo1 hhi1 hlo2 hhi2 hlo3 hhi3 hfgzero p hinv hodd
+  have frame := h.2.2.2.1
+  have keep (w : Wire)
+      (hw : w∈one::zf::fire::witness::(rb.map ZeroBit.input++bs.map ZeroBit.work++rb.map ZeroBit.work)) :
+      v.basis w=s.basis w := frame w (hreads w hw)
+  have recordeq : regValue (rb.map ZeroBit.input) v.basis=regValue (rb.map ZeroBit.input) s.basis := by
+    apply regValue_congr
+    intro w hw
+    exact keep w (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_cons_of_mem _ (List.mem_append_left _ (List.mem_append_left _ hw))))))
+  have vwork : ∀ b∈bs,v.basis b.work=false := by
+    intro b hb
+    refine (keep b.work ?_).trans (hwork b hb)
+    exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_cons_of_mem _ (List.mem_append_left _ (List.mem_append_right _ (List.mem_map.mpr ⟨b,hb,rfl⟩))))))
+  have vcw : ∀ b∈rb,v.basis b.work=false := by
+    intro b hb
+    refine (keep b.work ?_).trans (hcw b hb)
+    exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_cons_of_mem _ (List.mem_append_right _ (List.mem_map.mpr ⟨b,hb,rfl⟩)))))
+  have haz : active≠frozen := Ne.symm (fun hh => hfreeze (by simp [hh]))
+  have hp := publicPost_spec (decide (tmin ≤ index)) one zf frozen fire active witness bs rb (index+1-tmin)
+    hprobe hrn hzf hfirefrozen hfirer hfrozenr (fun hh => hoffset (of_decide_eq_true hh))
+    hafire haz har hazf hzfire hzrecord hstable v ms
+    ((keep one (by simp)).trans hone) ((keep zf (by simp)).trans hzc) vwork
+    ((keep fire (by simp)).trans hfire0) (by rw [h.2.1,h.2.2.1])
+    (fun hh => by rw [recordeq]; exact hlt (of_decide_eq_true hh))
+    (fun hh => by rw [recordeq]; exact hrecord (h.2.2.1 ▸ hh))
+    hcnd hwf hfw hfirework hcleanframe ((keep witness (by simp)).trans hw) vcw
+  have hpa : parity≠active := Ne.symm (fun hh => hakeep (by simp [hh]))
+  have hpf : parity≠frozen := Ne.symm (fun hh => hfreeze (by simp [hh]))
+  have hbranch := retiredBody_parity frozen q parity u k active glow gsign vlow vsign zsign f gmid vmid gv zero z carry zlo hn1 hn2 hgn hvn hsep hvs hac hl1 hl2 hr hcontrols hfs hcn hzero hcarry hwidth hcounter hzview htn htsep hakeep hfreeze st hf s m hz0 hcarry0 hzval hzlo hzhi hu hk hacle hq0 hp0 ha hb hx hy hlo1 hhi1 hlo2 hhi2 hlo3 hhi3 hfgzero p hinv hodd
+  rw [retiredSlot,run_append,run_take]
+  exact (hp.2.2.2.2.2.2 parity hpa hpf hparrecord).trans hbranch
+
+end ECDSAAdd.Arithmetic.Paper935

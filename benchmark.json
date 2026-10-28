@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 2,
+  "name": "ecdsa-add-lean",
+  "tracks": [
+    {
+      "name": "lean",
+      "description": "Optimize the qubit-toffoli product for a formally verified Lean 4 quantum circuit that performs in-place controlled point addition on secp256k1.",
+      "category": "lean",
+      "direction": "-",
+      "editablePaths": [
+        "ECDSAAdd/Submission/Entrant"
+      ],
+      "setupCommand": [
+        "bash",
+        "-lc",
+        "./setup.sh"
+      ],
+      "benchmarkCommand": [
+        "bash",
+        "-lc",
+        "./benchmark.sh"
+      ],
+      "scorePath": "scripts/score.json",
+      "runner": {
+        "provider": "github-actions",
+        "workflow": "benchmark.yml",
+        "maxConcurrentWorkflows": 4
+      }
+    }
+  ]
+}

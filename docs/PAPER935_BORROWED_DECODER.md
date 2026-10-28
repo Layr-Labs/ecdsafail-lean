@@ -1,0 +1,9 @@
+# A checked decoder compiler with a live shared work pool
+
+`compileDepth` builds physical views from the signed counter, f and fv lists and one eleven-wire pool. It checks all alias and view obligations, including that no counter or row bits were silently truncated. Invalid layouts return `none`. Predicate work and table lookup work share addresses because the two stages execute sequentially and restore scratch.
+
+`compileBorrowedDepths` actually borrows eleven addresses from the arena once and compiles depths 2 through 6 against that same pool. Its contract preserves the exact depth order. The support theorem covers all wires of the emitted five-stage program, and proves that the live count grows by exactly eleven, rather than five times eleven. A kernel-checked example exercises all five layouts with a seven-bit signed counter, seven-bit f view and thirteen-bit fv view.
+
+The run theorem derives decoder readiness from the pre-borrow arena invariant, the constant-one bit and actual signed row/counter values. It does not receive a decoder readiness oracle. All five stages preserve phase and change only the output bit. The release theorem uses this actual execution to show that the pool can be returned clean and the original arena, including its free-zero invariant, is restored.
+
+These results resolve the decoder pool accounting obligation identified in `PAPER935_DECODER_READY.md`. They do not prove that compilation succeeds for every public step: the checked result remains a premise, and the example is not a full 533-step placement certificate. The pool covers decoder stages only, not control reconstruction, padding or history storage. A complete slot compiler, finite walk, inverse endpoint, global point-addition peak and numerical failure bounds remain separate obligations.

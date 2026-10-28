@@ -1,0 +1,8 @@
+import ECDSAAdd.Arithmetic.MixedTranscriptFieldCell
+
+#print axioms ECDSAAdd.Arithmetic.transcriptSelectWindow_pairFrame
+#print axioms ECDSAAdd.Arithmetic.mixedTranscriptFieldWindow_frame
+#print axioms ECDSAAdd.Arithmetic.mixedTranscriptFieldCell_frame
+#print axioms ECDSAAdd.Arithmetic.mixedTranscriptInverseFieldCell_frame
+#print axioms ECDSAAdd.Arithmetic.mixedTranscriptFieldCell_counts
+#print axioms ECDSAAdd.Arithmetic.mixedTranscriptInverseFieldCell_counts

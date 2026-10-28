@@ -1,0 +1,9 @@
+# Physical padding and on-demand history capacity
+
+`planHistoryGrow` borrows only the missing high bits of the current public history width. It preserves the unsigned history value because newly borrowed sites are zero by `Arena.Ready`; it emits no reset. Its capacity condition is the actual number of live arena sites plus the missing width. `historyGrowth_release` restores the original allocation after the high bits have been restored to zero.
+
+`planDecoderRow` reserves and sign-copies missing physical bits. Every physical signed row fits its own payload width, so widening needs no new numeric-success hypothesis. The decoder views require at least six payload bits for f and depth+6 for fv, giving twelve for the maximum depth six. Both signed tails remain nonempty. These are actual physical views, not implicit reads outside an allocated window.
+
+`paddedCleanBranch` executes proper padding, the concrete five-depth lookup decoder with control preparation/cleanup, and the reverse of the proper padding. Its semantic theorem preserves the recovered branch bit while restoring all padding sites. `paddedCleanBranch_cancel` then cancels the old X-measurement phase using its original global tape ordinal. `storePushForget_padded_recover_pop` combines the actual forward history push and branch measurement with padded recovery and the actual history pop, restoring the complete original state.
+
+The depth layouts' `Available` conditions remain explicit at the padded input. These theorems do not yet allocate all decoder scratch or derive every layout condition from the full windowed-slot output. Public history widths and capacity, initial ownership, padding support separation, history overflow avoidance, and arithmetic invariants also remain explicit. The complete walk, inversion endpoint, numerical probability and global 935-wire bound remain outstanding.

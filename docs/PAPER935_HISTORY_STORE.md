@@ -1,0 +1,11 @@
+# Actual history selection, push and branch measurement
+
+`storeFlag` reads the actual frozen flag, signed counter and coefficient prefix. Its predicate is “not frozen, counter ≤ 0, coefficient prefix zero”. Including coefficient bit one excludes the swap class without retaining q. The theorem `storeFlag_predicate_value` connects the physical sign/zero tests to the signed integer counter. The allocator must still identify the prefix with the intended coefficient bit positions and threshold.
+
+`storePush` computes this predicate, runs the controlled finite Fredkin brigade, and recomputes the unchanged predicate to clear its control. `storePush_spec` proves the full outside-history frame and cleanup of all detection workspace. On selected inputs the physical branch port becomes zero and the history register changes from R to 2R+b. The explicit capacity obligation is 2R+b < 2^n. On unselected inputs the branch and history are unchanged.
+
+`storePushForget` then measures the physical branch port and records its outcome at the actual absolute cursor: initial cursor plus all preceding detector measurements. Its exact phase increment is outcome AND (not selected) AND old branch. Thus a stored branch has no phase debt; an unstored branch retains an explicit debt for the mirrored reverse decoder. `pushForget_pop_stored` proves that the concrete pop network restores the entire original state on the stored path. No externally supplied store-result correctness assumption is used by the composed selector/push theorem.
+
+The present detector recomputes per-bit comparisons. For z counter-test bits, l coefficient-prefix bits, and n history bits, the complete select/push/clear/measure segment has 8z+2l+8+n Toffolis and 8z+2l+5 measurements. Its wire support is proved from the actual circuits. These are not the paper’s optimized blocked-detector costs, and no peak-live bound is claimed.
+
+Remaining integration includes the concrete coefficient prefix/layout, attachment to the arithmetic slot, depth-selected reverse parity decoding and phase cancellation, changing row widths, finite walk/inverse endpoint, capacity-event probability and whole-machine 935 allocation. This component alone does not complete those obligations.

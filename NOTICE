@@ -1,0 +1,17 @@
+ECDSAAdd
+Copyright 2026 Runzhou Tao, Anirudh and ECDSAAdd contributors
+
+The mathematical declarations in ECDSAAdd/Math are adapted from VerifiedQC/ShorECDLP,
+commit 15d2a336743304e069f8a8a468c6ab1da334577b.
+Original project: https://github.com/VerifiedQC/ShorECDLP
+See docs/PROVENANCE.md for the extraction scope and changes.
+
+Apache License 2.0 was selected for this repository, including this requested
+extraction, by Runzhou Tao on 2026-09-08 in the project channel.
+VerifiedQC/ShorECDLP has since added an Apache 2.0 LICENSE (main 334359d, 2026-10-26).
+
+The Framework and arithmetic circuit proofs were written for ECDSAAdd. Mathlib and other
+external dependencies retain their own licenses and are not redistributed here.
+
+The controlled point-addition challenge format is co-developed with Eigen Labs
+(co-publication terms to be finalized).

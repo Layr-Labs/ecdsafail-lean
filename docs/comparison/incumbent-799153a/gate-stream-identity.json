@@ -1,0 +1,13 @@
+{
+  "commit": "799153aac444491dcac273ad552ea8473d2a63dd",
+  "pristine_sha256": "fe2ee6134830e57c123045dc7734d389ec1802a5ed92d942f9229282b78d5c05",
+  "profiled_sha256": "fe2ee6134830e57c123045dc7734d389ec1802a5ed92d942f9229282b78d5c05",
+  "byte_identical": true,
+  "original_evaluation_total_toffoli": 8519777890,
+  "original_evaluation_shots": 9024,
+  "original_evaluation_qubits": 1174,
+  "profiled_total_toffoli": 8519777890,
+  "profiled_evaluation_shots": 9024,
+  "profiled_avg_toffoli": 944124.3229166666,
+  "profiled_output_exactly_reproduces_original": true
+}

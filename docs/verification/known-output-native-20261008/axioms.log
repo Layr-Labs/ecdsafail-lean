@@ -1,0 +1,2030 @@
+'ECDSAAdd.Arithmetic.KnownOutputCarry.incoming_from_sum' does not depend on any axioms
+'ECDSAAdd.Arithmetic.KnownOutputCarry.completed_sum_carry' does not depend on any axioms
+'ECDSAAdd.Arithmetic.KnownOutputCarry.erasePost_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.KnownOutputCarry.erasePost_correct' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.KnownOutputAdder.sumBits_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.KnownOutputAdder.ready_of_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.KnownOutputAdder.program_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.KnownOutputAdder.prepare_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.KnownOutputAdder.program_eq_mappedAdd' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.KnownOutputAdder.program_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.KnownOutputAdder.program_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.hReceiver_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.inverse_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.hReceiver_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.inverse_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.front_known_sum' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.hReceiver_after_forward' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.inverse_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.inverse_eq_old_on_forward' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstKnown.inverse_restore_after_outside' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ZeroSeededConstantCompare.equiv' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.ZeroSeededConstantCompare.equiv_records' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.ZeroSeededConstantCompare.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.ZeroSeededConstantCompare.support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.measured_offset_chain_natural' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.measured_zero_head_natural' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.measured_zero_offset_core_natural' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.measured_zero_offset_program_natural' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityMeasure.correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityMeasure.counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.TerminalParityMeasure.leaf_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityMeasure.leaf_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.TerminalParityMeasure.chain_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityMeasure.chain_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityMeasure.chain_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityMeasure.chain_support_slim' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityZeroHead.run_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityZeroHead.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityZeroHead.eq_old_of_clears' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityOffset.core_eq_old_of_clears' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityOffset.correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityOffset.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityOffset.support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.TerminalParityOffset.support_old' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.hAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kTail_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kAdd_run' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kAdd_phase' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.caller_first_stage' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.forward_terminal_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.forward_terminal_states' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.caller_ready' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.tail_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.caller_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kernel_states' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kernel_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.prefix_slots' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.caller_kernel_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.caller_controlled_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.caller_total_site_bound' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.lowCopy_prepares' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.forward_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.inverse_restore_after_outside' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.hAdd_cancel' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kAdd_cancel' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.inverse_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.inverse_forward_ready' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.prefix_post_unique' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.inverse_forward_transport' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.index_ne' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.block_not_mem' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.block_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.block_disjoint' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.block_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.h_inputs_nd' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.k_inputs_nd' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.hBits_wire' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kBits_wire' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.h_sources_fresh' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.k_sources_fresh' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.copy_inputs_nd' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.source_parity' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.h_nat_value' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.k_decode_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.forward_native_output' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.hAdd_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kAdd_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.lowCopy_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.forward_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.inverse_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.forward_reference_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.seed_first_input' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.prefix_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.prefix_qubitBound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.prefix_pool_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.tail_restore_pool' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.signed_word_unique' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.native_output_state_unique' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.hScalar_value' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kScalar_value' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.hBits_value' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kBits_value' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.hConstant_low_zero' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kConstant_low_one' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.hAdd_word' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.kAdd_word' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.front_spec' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstDirect.clear_spec' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NativeFirstPrefixMath.direct_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstPrefixMath.direct_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstPrefixMath.direct_signs' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstPrefixMath.direct_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstPrefixMath.recover_x' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstPrefixMath.secp_first_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstPrefixMath.secp_word_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NativeFirstPrefixMath.secp_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.integer_tail_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.kernel_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.controlled_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.integer_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.controlled_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.total_site_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.andComputeErase_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.andComputeErase_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.andComputeErase_toffoliCount' depends on axioms: [propext]
+'ECDSAAdd.andComputeErase_measurementCount' depends on axioms: [propext]
+'ECDSAAdd.andComputeErase_qubitCount' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Triple.seq' depends on axioms: [propext]
+'ECDSAAdd.Triple.conseq' does not depend on any axioms
+'ECDSAAdd.Triple.frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fullAdder_spec' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseCarry_spec' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.notRegister_spec' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.add_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.sub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.add_erase_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.sub_erase_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.add_twice_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.add_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.sub_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modSub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modAdd_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modSub_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldAdd_zero_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldSub_zero_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldSub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldAdd_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldSub_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldMul_zero_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldMul_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldMul_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.cswap_spec' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.cswap_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.shiftRight_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.shiftLeft_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.shiftRight_left_cancel' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.shift_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.counterIncXor_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.counterDecXor_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.counterXor_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.counterInc_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.counterDec_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.counter_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.addInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.subInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.addInPlace_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedAddConst_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedSubConst_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedAddInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedSubInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.zeroControlled_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.zeroControlled_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.zeroControlled_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedInPlace_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedInPlace_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.poolInverse_used_perm' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.poolInverseUsedWork_length' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.compareLt_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedCompareLt_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compareLtConst_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedCompareLtConst_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compareLt_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modAddInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modAddInPlace_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modAddInPlace_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modSubInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modSubInPlace_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modSubInPlace_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledModAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledModAdd_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledModAdd_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledModSub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledModSub_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledModSub_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredControlledModAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredControlledModAdd_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredControlledModAdd_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredControlledModAdd_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredControlledModSub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredControlledModSub_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredControlledModSub_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredControlledModSub_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.rotateRight_spec' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.rotateLeft_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.rotate_frame' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.rotate_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.rotate_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.halfInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dblInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modUnary_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modUnary_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.modUnary_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.candidatePool_union' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.candidatePool_length' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.halveMod_eq' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.halve_parity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.double_flag' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_unstep_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_round_active' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.recordRound_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.recordRound_preserves' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.recordRound_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.recordRound_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.recordRound_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.kaliskiRound_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.kaliskiUnround_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.kaliskiRound_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.kaliskiRound_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.kaliskiRound_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.kaliskiRound_257_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldInverse_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldInverse_xor_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldInverse_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldInverse_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fieldInverse_contract' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.inverseLoop_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.inverseLoop_xor_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.inverseLoop_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.inverseLoop_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.inverseLoop_257_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.kaliskiLoop_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.kaliskiLoop_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.halveStep_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.doubleStep_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.halveInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.restoreInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.halveStep_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.halveInPlace_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.halveStep_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.halveInPlace_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.inversePrepare_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.inverseRestore_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.negativeInit_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_invariant' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.equalConstant_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.equalConstant_counts' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.equalConstant_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointBranchFlags_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.pointBranchFlags_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.safeDivisor_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.safeDivisor_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PointAddLayout.allocated_length' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.poolSub_work' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.poolMul_work' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.poolInverse_work_perm' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PointAddLayout.candidate_interfaces_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.pointCandidate_zero_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointCandidate_cleanup_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointCandidate_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.candidateResult_coordinates' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointCandidateValues_generic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedConstant_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.point_classification' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointFlagsCompute_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointFlagsClear_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointFlags_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointCandidate_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointOutput_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointAddOut_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointAddOut_xor_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointAddOut_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointAddOut_finite_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointAddOut_zero_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointSelectors_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledPointOutput_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledPointAddOut_finite_ready' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledPointAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledPointAddOut_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledPointAddOut_finite_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledPointAdd_finite_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledPointAdd_zero_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_terminates' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_register_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.halve_mod_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.halveFixed_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_inverse_p' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.montgomeryStep_exact' depends on axioms: [propext]
+'ECDSAAdd.montgomeryStep_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.montgomeryStep_restore' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.montgomery_normalize' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.montgomeryValue_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.montgomeryValue_invariant' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.montgomeryValue_finish' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.montgomery_standard_conversion' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.lookup_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.lookup_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.lookup_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.lookup_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.p_prime' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.G_ne_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.affineAdd_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.sameX_iff_eq_or_neg' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.ordinary_point_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.doubling_enabled_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.translated_point_flags' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.generic_inplace_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.second_denominator_zero_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.exceptional_slope_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.slope_from_output' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.divideLoad_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.divideProduct_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.divideAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.divideSub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.divide_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.divide_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.divide_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.divide_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointCode_injective' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceNegate_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceSquare_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceClearSlope_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceGeneric_point' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceCorners_effect' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceFinite_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceFinite_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceFinite_full_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceFinite_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceFinite_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceFinite_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.montgomery_two_stages' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.rotateRightBits_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.rotateLeftBits_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montNormalize_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montDenormalize_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montPrepare_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montRestore_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.constPrepare_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.constRestore_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montP_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montQ_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montP_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montQ_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montPQ_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montPQ_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montPQ_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulXor_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulSub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulControlledAdd_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulControlledSub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulXor_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulAdd_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulSub_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulControlledAdd_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montMulControlledSub_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montAdapter_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montControlledAdapter_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montAdapter_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montControlledAdapter_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montAdapter_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.montControlledAdapter_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseMask_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredMaskedAddInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredMaskedSubInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredMaskedAddInPlace_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredMaskedSubInPlace_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredMaskedInPlace_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredMaskedInPlace_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredMaskedInPlace_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.lookup10_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.lookup10_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.lookup10_core_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.lookup10_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.inverseScaleFactor_bound' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.inverseScaleFactor_relation' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.montgomery_inverseScaleFactor' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.inverseScaleFactor_halving' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_scale_count' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_montgomery_scale' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseScaleLayout.prepare_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseScaleLayout.restore_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseScaleLayout.prepare_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseScaleLayout.restore_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseScaleLayout.wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseScaleLayout.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.scaling_widths' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.scaling_work' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.scaling_live' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.scaling_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.scaleLive_subset' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.compactScale_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseScaledMiddle.congr' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactConstants_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactNeg_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactReady_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseScaleLayout.work_covered' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_terminal_even' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.kaliski_terminal_values' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.negative_even_value' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.negative_even_restore' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.negativeEven_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.negativeEven_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.negativeEven_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.negativeEven_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.kaliski_swap_from_r' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.recoverSwap_state' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRound_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitUnround_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRound_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRound_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRound_preserves' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRound_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitLoop_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRecordLoop_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRecordLoop_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRecordLoop_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.oneBitRecordLoop_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OneBitRecordsValues.zero_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactBorrow_length' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.idleBorrow_length' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compact_parts_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compact_inputs_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactCore_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactCore_length' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.idleBorrow_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactScaling_widths' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactScaling_work' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactScaling_live' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactScaling_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactNeg_widths' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactNeg_partition' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.InverseLoopLayout.compactNeg_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.terminalConstants_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.terminalConstants_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.terminalConstants_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.square_sum128_bound' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.square_sum128_square_bound' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquare_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquare_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquareClear_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquare_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquareClear_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquare_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquare_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.SquareReduction.reduced_square_word' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareFold_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareFold_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareFold_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.karatsubaSquare_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.karatsubaSquareClear_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.karatsubaSquare_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.karatsubaSquareClear_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.karatsubaSquare_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.karatsubaSquare_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareReduce_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareReduce_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareReduce_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareReduce_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareSub_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareSub_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareSub_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareSub_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.SquareSubLayout.work_length' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.SquareSubLayout.fromPool_work' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.SquareSubLayout.fromPool_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.squareSub_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointInPlaceSquare_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseSwap_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseSwap_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseSwap_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.eraseSwap_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseSwap_state' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledHalf_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledDouble_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledHalf_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledDouble_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledUnary_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledUnary_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.controlledUnary_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueStep_projection' does not depend on any axioms
+'ECDSAAdd.valueIter_projection' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.valueIter_terminal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.value_unstep_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplayStep_add' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplayStep_smul' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplayUnstep_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplayStep_unstep' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplay_add' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplay_smul' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplayInverse_replay' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplay_replayInverse' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplay_trace' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueReplay_terminal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.dialog_quotient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.dialog_product' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueRound_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueUnround_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueRound_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueRound_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueRound_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueRound_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueRound_257_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayCell_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayUncell_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayCell_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayUncell_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayCell_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayCell_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayCell_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayRound_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayUnround_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayLoop_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayUnloop_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replay_padding' does not depend on any axioms
+'ECDSAAdd.Arithmetic.replayLoop_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replay512_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayLoop_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayLoop_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replay512_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayNatStep_field' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayNatUnstep_field' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayNatLoop_field' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayNatUnloop_field' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueStep_count' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.valueIter_k_mono' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.value_active_final' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueLoop_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueUnloop_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueLoop_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueLoop_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.valueLoop_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayControls_trace' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialogReplay_division' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialogReplay_multiplication' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DialogLayout.replay_valid' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialogLoad_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialogDivide_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialogMultiply_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialog_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialog_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialog_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialog_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.dialog_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialog_generic_iff' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialog_denominators_ne_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialog_exception_add' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialog_translated_exception' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialog_input_disjoint' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialog_translated_flags' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialog_output_disjoint' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialogOrdinary_true' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialogFlags_output' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialogCorners_nat' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Secp256k1.dialogCorners_bool' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DialogLayout.fromPool_wires_perm' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.dialogPort_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogConstantAdd_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogNegate_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialog_arithmetic_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogSquare_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogGeneric_true' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogGeneric_false' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogFinite_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogFinite_full_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogFinite_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogGeneric_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogFinite_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogFinite_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogFinite_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayNatUnstep_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayNatStep_unstep' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayNatUnloop_loop' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayNatLoop_unloop' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayCell_roundTrip_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayUncell_roundTrip_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayLoop_roundTrip_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.replayUnloop_roundTrip_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredShortAddInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredShortSubInPlace_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredShortInPlace_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredShortAddInPlace_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredShortSubInPlace_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredShortInPlace_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquareCount_twice' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.triangularSquareCount_closed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkArithmetic_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkArithmetic_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkArithmetic_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkArithmetic_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointSkywalkArithmetic_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointSkywalkArithmetic_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointSkywalkArithmetic_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkNat.coprime_sum_le_product_succ' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.SkywalkNat.iter_sum_product_width' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkNat.iter_sum_initial_width' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.SkywalkRails.encode_abs_sum_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkRails.route_half_width' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSignedRecordLayout.views' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NarrowSignedRecordLayout.short_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSignedRecordLayout.high_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSignedRecordLayout.q_high' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSignedRecordLayout.high_away_short' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSignedRecordLayout.rest_away_short' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSignedRecordLayout.other_away_high' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.narrow_fanout_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrow_fanout_twice' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrow_signed_append' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrow_signed_prefix' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrow_signed_extend' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSignedRecord_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSignedUnrecord_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSignedRecord_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSignedRecord_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSignedRecord_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSignedRecord_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSignedRecord_full_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSignedUnrecord_full_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRecord_views' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRecord_widths' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRecord_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRecord_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkTick_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkTick_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkTick_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkTick_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkTick_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkWidth_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalk_iter_fit' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkStage_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkLoop_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkLoop_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkLoop_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkLoop_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkSignDelta_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkSignDeltaErase_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkSignDelta_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NarrowSkywalkSwapLayout.lengths' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.NarrowSkywalkSwapLayout.full_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSkywalkSwapLayout.low_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSkywalkSwapLayout.bank_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSkywalkSwapLayout.delta_bank' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSkywalkSwapLayout.distinct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NarrowSkywalkSwapLayout.outside_low' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkSwap_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkSwap_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkSwap_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkSwap_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_views' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_delta_mem' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_valid' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_copies' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRouteWidth_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_iter_fit' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedTick_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkSwap_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoute_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedTick_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedTick_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedTick_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedStage_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkScheduledTick_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedLoop_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedLoop_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkScheduledTick_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedLoop_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkScheduledTick_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedLoop_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRoutedUnloop_restore_pool' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRouted512_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRouted512_tape' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.narrowSkywalkRouted512_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedHalfParityClear_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedHalfParityClear_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionFlagsSeed_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionFlagsErase_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionFlags_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedCorrectionWordValue_selector' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionWordLoad_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionWordLoad_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedCorrectionApply_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionApply_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRawReduction' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRawNormalize_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRawNormalize_shared_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRawNormalize_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionWordValue_integer' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionMachine' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdFlagsSeed_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdFlagsErase_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdFlags_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedThresholdWordValue_integer' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdWordLoad_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdWordLoad_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedThresholdRecover_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdRecover_shared_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdRecover_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdMachine' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedEvenHalf_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedEvenHalf_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedFlagsMove_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedFlagsMove_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedWordLowBit' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedWordTopBit' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfCandidate_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRawParity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRawSign' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdRecover_clears' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdRecover_shared_clears' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedHalfParityClear_from_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCanonicalGuards' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSourceHalfValue' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdPrepare_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdUnprepare_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedThresholdPreparation_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfFront_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfFront_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfBack_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfBack_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.widths' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.front_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.move_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.back_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.program_eq_stages' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedIds_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedIds_bound' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedSites_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedSites_subset' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedSites_record_outside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedPorts_widths' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedSharedPorts_targetLow' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedSharedPorts_source' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedSharedPorts_wires' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedSharedPorts_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedPorts_early' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedSharedSignedHalf_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedPorts_views' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedSharedPorts_input' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedKernel_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedFieldSignedHalf_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedField_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedFieldSignedHalf_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retainedAdd_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retainedAdd_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retainedAdd_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retainedAdd_finish_image' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retainedAddStart_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retainedAdd_start_image' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retainedAdd_image_congr' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRetainedThresholdCore_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRetainedThresholdRecover_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRetainedThresholdCore_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRetainedThresholdRecover_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRetainedThresholdRecover_eq_reference' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.replace_zero_measurement_prefix' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfRetainedBack_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfRetainedBack_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.retained_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.retained_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedKernel_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedKernel_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedSignedHalf_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedSignedHalf_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedCell_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedCell_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedCell_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedShared_work_clean' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetained_leaf_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkShared_fused_tape_layout' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedReplay_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkFieldDivisionRetained_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkFieldDivisionRetained_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.retained_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedKernel_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedSignedHalf_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedCell_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedRetainedReplay_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkFieldDivisionRetained_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.FusedSignedHalf.inverseValue_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.FusedSignedHalf.inverseValue_field' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.FusedSignedHalf.result_inverseValue' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.FusedSignedHalf.inverseValue_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedHalfParityToggle_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedHalfParitySeed_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRetainedFlagToggle_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedRetainedFlagToggle_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedInverseFlagSeed_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedInverseFlagSeed_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionUndo_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionUndo_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedInverseCorrection_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedCorrectionUndoMachine' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedWordInverse' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedInverseCorrectionFlagsSeed_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedInverseCorrectionFlagsSeed_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedInverseRawFlagClear_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfUnfront_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSignedHalfUnfront_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedInverseFlagsMove_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.fusedInverseFlagsMove_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.inverse_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseKernel_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.inverse_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseKernel_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedFieldInverse_result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedFieldInverse_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseSigned_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseSigned_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverse_leaf_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseCell_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseReplay_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkFieldMultiplicationRetained_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkFieldMultiplicationRetained_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.inverse_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseKernel_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseSigned_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseCell_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.fusedSharedInverseReplay_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkFieldMultiplicationRetained_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.listed_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.early_mem' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.constant_mem' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.sourceHalf_mem' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.correctionWordLoad_constant_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.correctionFlagsErase_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.move_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.retainedBack_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retained_field_subset_shared' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retained_tape_subset_shared' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.retained_copy_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactSignedHalfFront_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactSignedHalfFront_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactSignedHalfUnfront_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_widths' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_forward_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_inverse_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactShared_forward_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactShared_inverse_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compactSource_sublist' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compactTarget_sublist' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compactConstant_sublist' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compactCarry_sublist' does not depend on any axioms
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_front_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_source_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_target_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_constant_clean' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_carry_clean' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_target_lift' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compactForward_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compactInverse_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_forward_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FusedHalfPorts.compact_inverse_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.exactFold_reduction_flag' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.exactFold_low_and_top' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.exactFold_recover_flag' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.exactFold_reflection' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.exactFold_mask_square' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.exactFold_square_mod8' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.exactFold_leaf128_canonical' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.exactFold_rotate128_canonical' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.canonical_flag_bool' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.canonical_corrected_extended' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.canonical_corrected_bound' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowMajority_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseBorrow_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowMajority_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.eraseBorrow_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.eraseLtChain_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrow_threshold' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseLtChain_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedMajority_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedEraseCarry_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSum_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedValue_congr' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedBit_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mappedBit_value_congr' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mappedAdd_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedAdd_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedBit_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedAdd_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedConstantBit_value' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mappedConstant_length' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mappedConstant_value' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedConstant_wires' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedRead_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedRead_complement' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedRead_wires' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mappedValue_append' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mappedDiagonal_length' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedRead_length' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mappedDiagonal_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedConstAdd_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedConstAdd_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.carryBit_swap' does not depend on any axioms
+'ECDSAAdd.Arithmetic.constantBorrow_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.constantBorrowErase_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.constantBorrow_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.compareConstantLt_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compareConstantGe_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compareConstantLt_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compareConstantGe_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.program_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.secp_program_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.protected_away' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.flags_away' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.Frame.source' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.Frame.clean' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.extended_value' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.extended_decode' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.Frame.afterExtended' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.sum_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.ge_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.cx_flag_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.cx_high_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.correction_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.erase_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.program_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.program_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.mappedValue_lt' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSub_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSub_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedDiagonal_wires' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mappedDiagonal_exact' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedDiagSub_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedDiagAdd_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedDiag_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedDiag_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSignedSquare_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSignedSquare_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSignedSquare_counts_128' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSignedSquare_counts_129' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSignedSquare_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSignedSquareClear_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.maskedSquareAction_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.copyNone_free' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_bank_widths' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredCore_widths' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_small_operation_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFold_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFolds_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_item_prices' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.withMeasuredSquare_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredProgram_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSub_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedConstAdd_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.constantBorrow_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compareConstantLt_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compareConstantGe_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowPair_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.eraseLtChain_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mappedSignedSquare_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.copyRegister_wires_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredCanonicalModLayout.program_wires_subset' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_small_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFold_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFolds_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.withMeasuredSquare_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_items_support' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredProgram_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointMeasuredSquareCandidate_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointMeasuredSquareCandidate_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointMeasuredSquareCandidate_stage_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointMeasuredSquareCandidate_stage_sites' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointMeasuredSquareCandidate_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.canonical_and_restore' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.protected_away' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.flag_away' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.Frame.clean' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.ge_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.add_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.normalize_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.restore_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.not_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.literal_add_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MeasuredSourceNormalizeLayout.reflect_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.measuredFoldKernel_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.copySlice_zero_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.measuredCopiedFold_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFold_eq_copied' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFold_interfaces' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFold_carry_clean' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFold_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.reflectOutput_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFoldsValue_lt' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.squareFrame_clean' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFold_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredReflection_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFolds_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredReflection_zmod' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredFoldsValue_cast' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.maskedSquareCallback_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_leaf_bank_count' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_leaf_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_leaf_banks_clean' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.withMeasuredSquare_eq_callback' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.withMeasuredSquare_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_short_canonical' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_short_view' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_naf_views' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_rotated_count' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_rotated_square_view' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_leaf128_view' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_shifted_product_views' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredA_views' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredB_views' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredC_views' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredSignedSum_append' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_naf_sum' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_positive_rotate_sum' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_shifted_sum' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredA_sum' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredB_sum' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredC_sum' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_concrete_orientations' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_controlled_square_identity' depends on axioms: [propext,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_results_lt' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredAResult_cast' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredBResult_cast' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredCMiddleResult_cast' depends on axioms: [propext,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredOrientationCast_injective' depends on axioms: [propext,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_product_frame_clean' depends on axioms: [propext,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.withMeasuredSquare_contribution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_partial_product_value' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredBranchA_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredBranchB_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredBranchC_middle_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_sum_count' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_sum_aux_away' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_sum_disjoint' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredBranchC_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredCompleteResult_lt' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredCompleteResult_exact' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measured_input_out_disjoint' depends on axioms: [propext,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout.measuredProgram_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.compactNegateValue_exact' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.compactNegateValue_zero' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.xorConstant_ones' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.known_away' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.zero_away' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.Frame.clean' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.checkZero_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.complement_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.add_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.program_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.program_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.program_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.program_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.reflection_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.reflection_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.reflection_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompactRecoveryNegateLayout.reflection_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.compactRecoveryConstant_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactRecoveryConstant_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactRecoveryConstant_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.recoveryConstant_widths' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.recoveryConstant_pool' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.recoveryConstant_nodup' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.recoveryNegate_pool' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.recoveryNegate_nodup' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.recoveryStageSites_certified' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryConstantAdd_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryNegate_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryReflection_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryConstantAdd_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryNegate_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryConstantAdd_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryNegate_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryReflection_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryReflection_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryReflection_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryStage_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryStage_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryStage_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointRecoveryStage_resource_targets' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.correct_phaseShift' does not depend on any axioms
+'ECDSAAdd.Arithmetic.measure_phaseShift' does not depend on any axioms
+'ECDSAAdd.Arithmetic.run_phaseShift' does not depend on any axioms
+'ECDSAAdd.Arithmetic.run_basis_records' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.run_local_increment' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.run_disjoint_commute' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistoryId_region' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistoryId_bound' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistoryMap_injective' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistoryMap_above' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.skywalkRecordedSymbol_legal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistoryStage_legal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistoryEncode_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistory_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedPackAfter_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedSkywalkLoop_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedSkywalk512_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistory_gate_mem' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistory_disjoint_later' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistory_commute_later' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedPackDue_true' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.compressedPrefix_disjoint_tick' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistory_windows_disjoint' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedPrefix_disjoint_next' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedHistory_site_mem' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedPrefix_raw_next' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedIntegerStage_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedIntegerStage_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedSkywalkLoop_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedDecodePrefix_measurements' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedDecodePrefix_inverse' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedDecodeRange_measurements' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedDecodeBefore_disjoint_unloop' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedSkywalkUnloop_normalize' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedDecodeRange_last' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedDecodeRange_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.run_no_measurement_phase' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedIntegerStage_decoded' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compressedSkywalkUnloop_restore_pool' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.transcriptSelect_value' does not depend on any axioms
+'ECDSAAdd.Arithmetic.transcriptSelectCompute_correct' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.transcriptSelectErase_correct' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.transcriptSelect_counts' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.transcriptSelect_finish_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.transcriptSelectWindow_counts' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroDivisorEnter_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroDivisorLeave_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directDivisor_ne_zero' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.directDivisor_lt' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroDivisorLeave_restores_word' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroDivisor_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroDivisor_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroDivisor_counts_256' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroDivisor_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroDivisor_qubitCount' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroControlled_states' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directZeroControlled_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.transcriptSelectWindow_pairFrame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MixedTranscriptFieldLayout.selection_g' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MixedTranscriptFieldLayout.selection_s' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MixedTranscriptFieldLayout.cell' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MixedTranscriptFieldLayout.outside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MixedTranscriptFieldLayout.pair_outside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MixedTranscriptFieldLayout.eff_ne' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mixedTranscriptFieldWindow_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptFieldCell_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptInverseFieldCell_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptFieldCell_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptInverseFieldCell_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptTape_layout' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mixedTranscriptReplay_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptInverseReplay_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptInverseReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptUnitTrace_length' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.mixedTranscriptTape_length' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptControls_zip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptTape_controls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptTape_quotient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptTape_product' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptFieldDivision_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptFieldDivision_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptFieldMultiplication_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.mixedTranscriptFieldMultiplication_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.skywalkDirectDeclaredSites_length' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.skywalkDirectDeclaredSites_nodup' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.skywalkDirectMap_nodup' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.skywalkDirectMap_coordinates' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.skywalkDirectScalar_nodup' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.skywalkDirectMixed_layout' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_coprime' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_modulus_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_mem' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_block_away' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_input_bit' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_input_zero' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_seed_outside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_seed_input' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_seed_stage0' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_trace_map' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_tape' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_terminal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_signed_read_nat' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_terminal_words' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_clear_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_clear_gates' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_clear_words' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_field_frame' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_pool_away_z' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_loop_outside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_record_outside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_unrecord_outside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_clear_outside' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_stage_congr' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_clear_transport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_z_input' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_preparation_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_clean_preparation' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_tape_clear' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_seed_components' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_seed_away' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_block_subset_shared' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSkywalk.arith_seed_subset_shared' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directSkywalkArithmetic_states' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directSkywalkArithmetic_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directSkywalkArithmetic_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDirectSkywalkArithmetic_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDirectSkywalkArithmetic_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.externalKernel' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.externalSigned' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.externalCells' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.selectWindow' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.mixedCells' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.mixedReplay' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.tapeSupport' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.unary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.copy' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.endpoints' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.DirectSupport.kernel' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDirectSkywalkArithmetic_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDirectSkywalkArithmetic_declared_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointDirectSkywalkArithmetic_resource_certificate' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.work' does not depend on any axioms
+'ECDSAAdd.Arithmetic.BalancedCircuit.scalarND' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.seedND' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.rawTargetND' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.allND' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.foldND' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.flagAway' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.signed_extension' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.word_encoding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.word_sign' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.raw_parity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.word_parity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.seedViews_run' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.prepareFold_run' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.releaseSelectors_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.fold_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.rotate_folded' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.modulusWord' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedFold.virtualSource' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedFold.selectedSource' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedFold.virtualSource_value' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedFold.foldBits_value' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedFold.encode_shift' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.minusController' does not depend on any axioms
+'ECDSAAdd.Arithmetic.BalancedFold.plusController' does not depend on any axioms
+'ECDSAAdd.Arithmetic.BalancedFold.controllers_exclusive' does not depend on any axioms
+'ECDSAAdd.Arithmetic.BalancedFold.toggledWord' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedFold.foldedSum' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedFold.raw_sign' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.toggled_parity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.cleared_low_word' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.foldedSum_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.foldedSum_low' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.foldedSum_cout' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.foldedSum_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.foldBits_sources' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.toggle_top_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.toggledWord_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.parity_clear_value' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedFold.prepared_upper_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.recoverParity' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedInverse.recoverSelectors' does not depend on any axioms
+'ECDSAAdd.Arithmetic.BalancedInverse.undoFold' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedInverse.undoPreparation' does not depend on any axioms
+'ECDSAAdd.Arithmetic.BalancedInverse.rawSubtract' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedInverse.program' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedInverse.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupXor.xor_states' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupXor.xor_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.recoverParity_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.seed_data_frame' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.seed_signed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.seed_parity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.seed_raw_signed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.qubitBound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.foldSources' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.complement_sandwich' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.mappedSub_any_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.subInPlace_any_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.result' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.result_bounds' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.result_half' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.core_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCircuit.program_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.recoverSelectors_run' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.undoPreparation_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.result_parity' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.result_sign' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.rotate_unfold' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.undoFold_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.rawSubtract_modular' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.rawSubtract_signed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedConvert.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedConvert.predicate_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedConvert.center_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedConvert.canonical_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.prepared_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.undoPreparation_word' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.unseed_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.unseed_correlations' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.program_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptHalf_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptBody_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptCell_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptReplay_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptCanonicalReplay_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptCanonicalReplay_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptTapeReplay_quotient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptTapeReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedPorts_clean' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedPair_narrow' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedPair_widen' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.balancedSharedCanonicalReplay_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedCanonicalTapeReplay_quotient' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedCanonicalTapeReplay_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedBoundary_clean' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedTranscriptReplayLayout' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedReplayProgram_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedReplayProgram_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedDivision_double_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedDivision_replay_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedFieldDivision_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedFieldDivision_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedSharedFieldDivision' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.balancedTranscriptDouble_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseTranscriptBody_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseTranscriptCell_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseTranscriptReplay_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseTranscriptReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseTranscriptCanonicalReplay_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseTranscriptCanonicalReplay_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedCanonicalReplay_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedCanonicalTapeReplay_product' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedCanonicalTapeReplay_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedReplayProgram_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedReplayProgram_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedMultiplication_replay_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedFieldMultiplication_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedFieldMultiplication_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseSharedFieldMultiplication' depends on axioms: [propext]
+'ECDSAAdd.Arithmetic.BalancedConvert.support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedTranscriptReplay_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedInverse.qubitBound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseTranscriptReplay_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.balancedInverseTranscriptCanonicalReplay_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.unary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.copy' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.kernelSites' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.converters' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.replay' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.replayPrograms' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.endpoints' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.declaredEndpoints' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeed_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeed_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeed_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkUnseed_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeed_encode' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeed_roundtrip' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkUnseed_preserves_outsideA' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkPoolSeed_valid' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkPoolSeed_boundary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkPoolSeed_qubitBound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeedSharedBridge_oldSeed_outsideA' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeedSharedBridge_oldUnseed_outsideA' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeedSharedBridge_seed_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeedSharedBridge_unseed_eq' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeedSharedBridge_seed_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.literalSkywalkSeedSharedBridge_unseed_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.directSkywalkLiteralSeed_seed_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.directSkywalkLiteralSeed_unseed_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_jointND' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_workAway' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_work_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_clean_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_double_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_half_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_no_old_bank' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.borrowedSkywalkUnary_resources' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.kernelSites' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.converters' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.replay' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.tapeSupport' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.replayPrograms' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.copy' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.copyLow' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.unary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.integerSegments' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.endpoints' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BorrowedSkywalkCompactSupport.kernel' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.compactPointSites_nodup' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.ControlledPointLayout.compactSharedMap_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointDirectSkywalkArithmetic_compact_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointDirectSkywalkArithmetic_compact_resources' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogGeneric_compact_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointDialogFinite_compact_wires' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedSharedFieldSupport.compactSubsetShared' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedField.program_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedInverse.program_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedCanonical.canonicalTapeReplay_quotient' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedCanonical.canonicalTapeReplay_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedInverseCanonical.canonicalTapeReplay_product' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedInverseCanonical.canonicalTapeReplay_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.offsetBorrowedSharedFieldDivision_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.offsetBorrowedSharedFieldDivision_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.offsetBorrowedInverseSharedFieldMultiplication_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.offsetBorrowedInverseSharedFieldMultiplication_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.offsetBorrowedDirectArithmetic_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.offsetBorrowedDirectArithmetic_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointOffsetBorrowedArithmetic_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointOffsetBorrowedArithmetic_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedSupport.kernel' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.pointOffsetBorrowedArithmetic_compact_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.pointOffsetBorrowedArithmetic_compact_resources' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.compactSkywalkCaller_forward_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactSkywalkCaller_reverse_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactOffsetCallerArithmetic_states' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactOffsetCallerArithmetic_run' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactOffsetCallerArithmetic_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.compactOffsetCallerArithmetic_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NearestLift.correction' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.NearestLift.secp_threshold_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.pointTransfer_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.pointPlacement' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.pointCompressedArithmetic_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.pointCompressedArithmetic_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.pointCompressedArithmetic_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointDialog.generic_true' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointDialog.boundary_generic' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointSquare.state_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointSquare.correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointSquare.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointSquare.shared_support_sites' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointDialog.finite_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointDialog.full_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointDialog.add_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointDialog.finite_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointDialog.finite_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedPointDialog.finite_qubits' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetSlim.chain_compare' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetSlim.xor_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetSlim.correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetSlim.chain_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetSlim.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetSlim.support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.slim_offset_chain_natural' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.slim_offset_program_natural' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZeroHead.run_correct' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZeroHead.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZeroHead.chain_equiv' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZero.core_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZero.program_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZero.xor_correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZero.correct' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZero.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.BalancedCleanupOffsetZero.support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.zero_head_natural' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.zero_offset_core_natural' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.FieldRename.zero_offset_program_natural' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedFieldSupport.zero_offset_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.logicalCell_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.mappedGroup_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.mappedGroups_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.mappedReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.converterPair_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.fieldSegment_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.regValue_equal_bits' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.PairFrame.unique' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.PairFrame.program_eq' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.fieldTrimSegment_pool_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.fieldTrimSegment_reverse_pool' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.canonicalTrimReplay_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.fieldTrimSegment_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.CompressedFieldSupport.trim_grouped_encoded_replays' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.indexedLetters_append' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimLetters_last' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.lastLetter_controls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimLetters_quotient' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimLetters_product' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.baseTrimReplay_reference' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimLetters_indexed' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimCell_step' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimReplay_reference' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.fieldTrimSegment_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.fieldTrimSegment_saving' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.fieldTrimSegment_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimReplay_join' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimReplay_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimReplay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimReplay_count_saving' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimReplay_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimReplay_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.trimReplay_old_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.terminalMixedLetter_controls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkTrace.trace_getD_code' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.SkywalkTrace.code_terminal' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkTrace.code_after_budget' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkTrace.code511' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkTrace.trace512_last' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkTrace.unit_trace512_last' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkTrace.record_index511_controls' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkTrace.mixed_controls_index511' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkTrace.mixed_letter_index511' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkNat.iter_fixed_of_u_zero' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.SkywalkNat.step_exponent_budget' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkNat.iter_u_zero_budget' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkNat.terminates_2n_sub_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkNat.terminates_canonical_sub_one' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkNat.terminates_511' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.SkywalkNat.terminal_padding' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EntryFieldSeedCancellation.entry_frames' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EntryFieldSeedCancellation.entry_state_eq' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryFieldSeedCancellation.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.fieldSegment_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.fieldSegment_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.firstGroup_eq_rename' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.encoded_field_unique' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.raw_entry_suffix_eq' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryBodySupport.renamed_three_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EntryBodySupport.renamed_logical_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryBodySupport.first_body_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EntrySelectedSwapFrame.selectedSwap_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntrySelectedSwapFrame.encoded_window_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.firstBody_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.firstGroup_forward_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.forward_prefix_state_eq' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.fieldTrimSegment_forward_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.terminalFieldSegment_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.terminalFieldSegment_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.terminalFieldTrimSegment_forward_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.selectedFieldSegment_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.selectedFieldSegment_counts' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.selectedFieldSegment_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.selectedFieldSegment_pool_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.MappedCompressed.selectedFieldSegment_reverse_pool' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.mapped_sum' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.carry_overflow' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.sparse_debt' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.debt_forward' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.forward_ready' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.flip_state' depends on axioms: [propext, Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.correct_pair' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.pair_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.RecordedRailApply.pair_site_bound' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EndpointSwapTrim.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EndpointSwapTrim.partial_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EndpointSwapTrim.swap_window_state' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EndpointSwapTrim.forward_dup_of_payload_equal' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EndpointSwapTrim.forward_support_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EndpointSwapTrim.inverse_support_subset' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EndpointSwapTrim.forward_oldcell_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EndpointSwapTrim.inverse_oldcell_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedSerialized.counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedSerialized.forward_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedSerialized.inverse_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedSerialized.support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedSerialized.omitted_effS_away' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedSerialized.half_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.OffsetBorrowedSerialized.cell_frame' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EntryInversePayload.inverse_groups_payload' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryInversePayload.inverse_boundary' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EntryInversePayload.remove_final_double' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.inverseBody_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.firstGroup_inverse_step' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.terminalReplay_inverse_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.terminalFieldTrimSegment_inverse_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.inverse_entry_resources' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.inverse_entry_support' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrim.inverse_entry_saving' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateSwapIdentity.cell_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateSwapIdentity.cell_saving' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateSwapIdentity.penultimate_half_dup' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.replay_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.fieldSegment_counts' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.saving' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMappedCellProof.cell_natural' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMappedCellProof.logical_support_subset' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMappedCellProof.support_subset' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMappedCellProof.cell_eq' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMappedCellProof.forward_cell_eq' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMappedCellProof.inverse_cell_eq' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.forward_groups_payload' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.fieldSegment_forward_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.replay_inverse_spec' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.fieldSegment_inverse_spec' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.replay_support_sub' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.fieldSegment_support_sub' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'ECDSAAdd.Arithmetic.PenultimateMapped.fieldSegment_support' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.sealedProgram_eq' does not depend on any axioms
+'ECDSAAdd.sealedProgram_run' does not depend on any axioms
+'ECDSAAdd.sealedProgram_cost' depends on axioms: [propext, Classical.choice, Quot.sound]
+'ECDSAAdd.append_context_eq' depends on axioms: [propext]
+'ECDSAAdd.suffix_context_eq' depends on axioms: [propext]
+'ECDSAAdd.program_shape_context_eq' does not depend on any axioms
+'ECDSAAdd.run_replicate_false' does not depend on any axioms
+'ECDSAAdd.run_pad_false' does not depend on any axioms
+All 1616 public entry-point axiom audits passed the exact whitelist.

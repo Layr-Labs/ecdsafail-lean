@@ -1,0 +1,607 @@
+import ECDSAAdd.Arithmetic.Divsteps.StepLayout
+import ECDSAAdd.Arithmetic.Divsteps.CounterUpdateInverse
+import ECDSAAdd.Math.AffineFormula
+import ECDSAAdd.Circuit.And
+import ECDSAAdd.Arithmetic.InverseContract
+import ECDSAAdd.Arithmetic.FieldAddSub
+import ECDSAAdd.Arithmetic.FieldMultiply
+import ECDSAAdd.Math.KaliskiInverse
+import ECDSAAdd.Arithmetic.Shift
+import ECDSAAdd.Arithmetic.Counter
+import ECDSAAdd.Arithmetic.Compare
+import ECDSAAdd.Arithmetic.RoundSpec
+import ECDSAAdd.Arithmetic.InverseLoopResources
+import ECDSAAdd.Arithmetic.InverseResources
+import ECDSAAdd.Arithmetic.PointCandidateSpec
+import ECDSAAdd.Arithmetic.PointCandidateResources
+import ECDSAAdd.Arithmetic.PointAddSpec
+import ECDSAAdd.Arithmetic.PointAddResources
+import ECDSAAdd.Arithmetic.ControlledPointResources
+import ECDSAAdd.Arithmetic.ModInPlaceSubtract
+
+import ECDSAAdd.Arithmetic.ModUnaryResources
+
+import ECDSAAdd.Math.PointInPlace
+import ECDSAAdd.Arithmetic.DivideSpec
+import ECDSAAdd.Arithmetic.PointInPlaceResources
+import ECDSAAdd.Math.Montgomery
+import ECDSAAdd.Arithmetic.Lookup
+import ECDSAAdd.Arithmetic.MontResources
+
+import ECDSAAdd.Arithmetic.MeasuredMaskedAdder
+
+import ECDSAAdd.Math.InverseScaleFactor
+
+import ECDSAAdd.Arithmetic.InverseScaleBorrow
+
+import ECDSAAdd.Arithmetic.NegativeEven
+
+import ECDSAAdd.Arithmetic.OneBitRoundResources
+import ECDSAAdd.Arithmetic.InverseTerminalConstants
+
+import ECDSAAdd.Arithmetic.KaliskiLoopProof
+
+import ECDSAAdd.Arithmetic.TriangularSquareSpec
+
+import ECDSAAdd.Arithmetic.KaratsubaSquareState
+import ECDSAAdd.Arithmetic.SquareReduceSpec
+
+import ECDSAAdd.Arithmetic.ControlledUnaryResources
+import ECDSAAdd.Math.ValueReplay
+import ECDSAAdd.Arithmetic.ValueSpec
+
+import ECDSAAdd.Arithmetic.ReplayLoopResources
+import ECDSAAdd.Arithmetic.ReplayField
+import ECDSAAdd.Arithmetic.ReplayRoundTrip
+
+import ECDSAAdd.Arithmetic.DialogResources
+
+import ECDSAAdd.Math.DialogPointFlags
+
+import ECDSAAdd.Arithmetic.PointDialogResources
+
+import ECDSAAdd.Arithmetic.SkywalkControlledPort
+
+import ECDSAAdd.Arithmetic.BalancedIntegratedAudit
+
+import ECDSAAdd.Arithmetic.CompactIntegratedAudit
+
+import ECDSAAdd.Submissions
+import ECDSAAdd.Arithmetic.ShortTriangularSquareProof
+import ECDSAAdd.Arithmetic.ShortTriangularSquareResources
+
+import ECDSAAdd.Math.Divsteps
+import ECDSAAdd.Arithmetic.Divsteps.Decoder
+
+import ECDSAAdd.Arithmetic.ParametricPointDialogResources
+
+import ECDSAAdd.Arithmetic.RecordedPointDialogResources
+import ECDSAAdd.Arithmetic.Divsteps.ShallowDecoder
+import ECDSAAdd.Arithmetic.Divsteps.DepthSelector
+import ECDSAAdd.Arithmetic.Divsteps.DeferredDecoder
+import ECDSAAdd.Arithmetic.Divsteps.SwapDecoder
+import ECDSAAdd.Arithmetic.Divsteps.ScaleRemoval
+
+import ECDSAAdd.Arithmetic.Divsteps.Routing
+import ECDSAAdd.Arithmetic.Divsteps.StepRows
+
+import ECDSAAdd.Arithmetic.Divsteps.CounterUpdate
+import ECDSAAdd.Arithmetic.Divsteps.Activity
+import ECDSAAdd.Arithmetic.Divsteps.ControlBits
+
+import ECDSAAdd.Arithmetic.Divsteps.ForwardStep
+
+import ECDSAAdd.Arithmetic.Divsteps.InverseForwardStep
+
+import ECDSAAdd.Arithmetic.Divsteps.PhysicalWalk
+
+import ECDSAAdd.Arithmetic.Divsteps.DeferredSwapWalk
+
+import ECDSAAdd.Arithmetic.Divsteps.SharedSwapWalk
+
+import ECDSAAdd.Arithmetic.Divsteps.LinearLayout
+
+import ECDSAAdd.Arithmetic.Divsteps.PhysicalScale
+
+import ECDSAAdd.Arithmetic.Divsteps.ScaleUnwalk
+
+import ECDSAAdd.Arithmetic.Divsteps.SharedScaleWalk
+
+import ECDSAAdd.Arithmetic.Divsteps.EndpointConstant
+
+import ECDSAAdd.Arithmetic.Divsteps.SignedEndpoint
+
+import ECDSAAdd.Arithmetic.Paper935.Arena
+import ECDSAAdd.Arithmetic.Paper935.RowInverse
+import ECDSAAdd.Arithmetic.Paper935.RowResize
+import ECDSAAdd.Arithmetic.Paper935.Repack
+import ECDSAAdd.Arithmetic.Paper935.AllocationJournal
+import ECDSAAdd.Arithmetic.Paper935.PackedHost
+import ECDSAAdd.Arithmetic.Paper935.PackedResize
+import ECDSAAdd.Arithmetic.Paper935.Seed
+import ECDSAAdd.Arithmetic.Paper935.SeedEntryConditions
+import ECDSAAdd.Arithmetic.Paper935.AuthorSchedule
+import ECDSAAdd.Arithmetic.Paper935.FreezePin
+import ECDSAAdd.Arithmetic.Paper935.FreezeLatch
+import ECDSAAdd.Arithmetic.Paper935.FireCleanup
+import ECDSAAdd.Arithmetic.Paper935.Unfreeze
+
+import ECDSAAdd.Framework.CoherentFailure
+
+import ECDSAAdd.Framework.FiniteUnitary
+import ECDSAAdd.Arithmetic.Paper935.BranchRow
+
+import ECDSAAdd.Framework.RecordedMeasurement
+import ECDSAAdd.Arithmetic.Paper935.RowStage
+
+import ECDSAAdd.Arithmetic.Paper935.RoutedStage
+import ECDSAAdd.Arithmetic.Paper935.ActiveStep
+import ECDSAAdd.Arithmetic.Paper935.TaggedStep
+import ECDSAAdd.Framework.RecordedQuantum
+import ECDSAAdd.Arithmetic.Paper935.IdleRows
+
+import ECDSAAdd.Framework.RecordedPaths
+
+import ECDSAAdd.Arithmetic.Paper935.FailureAssembly
+import ECDSAAdd.Arithmetic.Paper935.Activity
+import ECDSAAdd.Arithmetic.Paper935.ZeroLatch
+import ECDSAAdd.Arithmetic.Paper935.ZeroFreeze
+import ECDSAAdd.Arithmetic.Paper935.PublicPost
+
+import ECDSAAdd.Arithmetic.Paper935.SlotBody
+import ECDSAAdd.Arithmetic.Paper935.Slot
+
+import ECDSAAdd.Arithmetic.ConditionalPointAgreement
+import ECDSAAdd.Arithmetic.Paper935.RetiredBody
+import ECDSAAdd.Arithmetic.Paper935.RetiredSlot
+
+import ECDSAAdd.Arithmetic.PointInputEncoding
+import ECDSAAdd.Arithmetic.Paper935.History
+import ECDSAAdd.Arithmetic.Paper935.PositiveFlag
+import ECDSAAdd.Arithmetic.Paper935.CounterPositive
+import ECDSAAdd.Arithmetic.Paper935.StoreFlag
+import ECDSAAdd.Arithmetic.Paper935.StorePush
+
+import ECDSAAdd.Arithmetic.InversePointRealization
+import ECDSAAdd.Arithmetic.InverseBothFailure
+import ECDSAAdd.Arithmetic.InverseBothPhysical
+import ECDSAAdd.Arithmetic.InverseQuotientPhysical
+import ECDSAAdd.Arithmetic.InversePointBackend
+import ECDSAAdd.Arithmetic.InversePointFailure
+import ECDSAAdd.Arithmetic.InverseQuotientRecorded
+import ECDSAAdd.Arithmetic.Paper935.HistorySlot
+import ECDSAAdd.Arithmetic.Paper935.StorePop
+import ECDSAAdd.Arithmetic.Paper935.HistoryPredicate
+import ECDSAAdd.Arithmetic.Paper935.LookupBranch
+import ECDSAAdd.Arithmetic.Paper935.ResidueBranch
+import ECDSAAdd.Arithmetic.Paper935.ResidueWires
+import ECDSAAdd.Arithmetic.Paper935.RecoveryLookup
+import ECDSAAdd.Arithmetic.Paper935.DepthResidue
+import ECDSAAdd.Arithmetic.Paper935.HistoryClassFlag
+import ECDSAAdd.Arithmetic.Paper935.ClassLookup
+import ECDSAAdd.Arithmetic.Paper935.DepthLookup
+import ECDSAAdd.Arithmetic.Paper935.FiniteDepth
+import ECDSAAdd.Arithmetic.BlockedZeroChunks
+import ECDSAAdd.Arithmetic.Paper935.BranchInverse
+import ECDSAAdd.Arithmetic.Paper935.RowStageInverse
+import ECDSAAdd.Arithmetic.Paper935.RoutedInverse
+import ECDSAAdd.Arithmetic.Paper935.ActiveInverse
+import ECDSAAdd.Arithmetic.Paper935.TaggedInverse
+import ECDSAAdd.Arithmetic.Paper935.SlotInverse
+import ECDSAAdd.Arithmetic.Paper935.RetiredInverse
+import ECDSAAdd.Arithmetic.Paper935.PostInverse
+import ECDSAAdd.Arithmetic.Paper935.RetiredSlotInverse
+import ECDSAAdd.Arithmetic.Paper935.BranchAssembly
+import ECDSAAdd.Arithmetic.Paper935.FrozenDepth
+import ECDSAAdd.Arithmetic.Paper935.BranchRecoveryMath
+import ECDSAAdd.Arithmetic.Paper935.BranchRecovery
+import ECDSAAdd.Arithmetic.Paper935.HistoryRecovery
+import ECDSAAdd.Arithmetic.Paper935.HistoryControls
+import ECDSAAdd.Arithmetic.Paper935.HistoryControlValues
+import ECDSAAdd.Arithmetic.Paper935.CleanBranch
+import ECDSAAdd.Arithmetic.Paper935.CleanHistory
+import ECDSAAdd.Arithmetic.Paper935.BlockedPostShared
+import ECDSAAdd.Arithmetic.Paper935.RowWindowResize
+import ECDSAAdd.Arithmetic.Paper935.RowAllocation
+import ECDSAAdd.Arithmetic.Paper935.WindowAllocator
+import ECDSAAdd.Arithmetic.Paper935.WindowRows
+import ECDSAAdd.Arithmetic.Paper935.WindowBank
+import ECDSAAdd.Arithmetic.Paper935.CounterBorrow
+import ECDSAAdd.Arithmetic.Paper935.WindowCounter
+import ECDSAAdd.Arithmetic.Paper935.WindowRouted
+import ECDSAAdd.Arithmetic.Paper935.WindowStep
+import ECDSAAdd.Arithmetic.Paper935.WindowHeadroom
+import ECDSAAdd.Arithmetic.Paper935.WindowControls
+import ECDSAAdd.Arithmetic.Paper935.WindowResizePhase
+import ECDSAAdd.Arithmetic.Paper935.WindowStepFrame
+import ECDSAAdd.Arithmetic.Paper935.WindowTagged
+import ECDSAAdd.Arithmetic.Paper935.WindowSwap
+import ECDSAAdd.Arithmetic.Paper935.WindowRetired
+import ECDSAAdd.Arithmetic.Paper935.WindowPostLayout
+import ECDSAAdd.Arithmetic.Paper935.WindowPostReady
+import ECDSAAdd.Arithmetic.Paper935.WindowSlot
+import ECDSAAdd.Arithmetic.Paper935.WindowSlotMath
+import ECDSAAdd.Arithmetic.Paper935.WindowSlotSpec
+import ECDSAAdd.Arithmetic.Paper935.WindowRoutedPhysical
+import ECDSAAdd.Arithmetic.Paper935.WindowStepPhysical
+import ECDSAAdd.Arithmetic.Paper935.WindowSlotPhysical
+import ECDSAAdd.Arithmetic.Paper935.DecoderWindow
+import ECDSAAdd.Arithmetic.Paper935.DecoderViews
+import ECDSAAdd.Arithmetic.Paper935.HistoryAllocation
+import ECDSAAdd.Arithmetic.Paper935.DecoderUnpad
+import ECDSAAdd.Arithmetic.Paper935.PaddedBranch
+import ECDSAAdd.Arithmetic.Paper935.PaddedHistory
+import ECDSAAdd.Arithmetic.Paper935.DepthArenaReady
+import ECDSAAdd.Arithmetic.Paper935.WindowPaddingSupport
+import ECDSAAdd.Arithmetic.Paper935.DecoderBankReady
+import ECDSAAdd.Arithmetic.Paper935.DepthControlReady
+import ECDSAAdd.Arithmetic.Paper935.HistoryArenaReady
+import ECDSAAdd.Arithmetic.Paper935.HistoryDecoderReady
+import ECDSAAdd.Arithmetic.Paper935.ReadyHistory
+import ECDSAAdd.Arithmetic.Paper935.TrajectoryFailures
+import ECDSAAdd.Arithmetic.Paper935.TrajectoryMass
+import ECDSAAdd.Arithmetic.Paper935.BlockedZeroFailure
+import ECDSAAdd.Arithmetic.Paper935.DepthCompiler
+import ECDSAAdd.Arithmetic.Paper935.DepthSupport
+import ECDSAAdd.Arithmetic.Paper935.BorrowedDepth
+import ECDSAAdd.Arithmetic.Paper935.BorrowedDepthReady
+import ECDSAAdd.Arithmetic.Paper935.DepthListCompiler
+import ECDSAAdd.Arithmetic.Paper935.BorrowedDepthsRun
+import ECDSAAdd.Arithmetic.Paper935.RoutedCompiler
+import ECDSAAdd.Arithmetic.Paper935.ProbeCompiler
+import ECDSAAdd.Arithmetic.Paper935.ProbeCompilerReady
+import ECDSAAdd.Arithmetic.Paper935.ProbeCompilerSupport
+import ECDSAAdd.Arithmetic.Paper935.PostCompiler
+import ECDSAAdd.Arithmetic.Paper935.PostCompilerReady
+import ECDSAAdd.Arithmetic.Paper935.BorrowedPostRun
+import ECDSAAdd.Arithmetic.Paper935.PostCompilerSupport
+import ECDSAAdd.Arithmetic.Paper935.BankCompiler
+import ECDSAAdd.Arithmetic.Paper935.CheckedPublicSlot
+import ECDSAAdd.Arithmetic.Paper935.CompiledPostMath
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotCompiler
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotInverse
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotMath
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotPostInverse
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotPostMath
+import ECDSAAdd.Arithmetic.Paper935.RoutedCompilerTotal
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontChecks
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontCompiler
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontInverse
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontMath
+import ECDSAAdd.Arithmetic.Paper935.SlotInputValues
+import ECDSAAdd.Arithmetic.Paper935.SlotOutputValues
+import ECDSAAdd.Arithmetic.Paper935.UnarmedPostMath
+import ECDSAAdd.Arithmetic.Paper935.CheckedHistoricalSlot
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotCompiler
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotRun
+import ECDSAAdd.Arithmetic.Paper935.HistoryCompiler
+import ECDSAAdd.Arithmetic.Paper935.HistoryCompilerReady
+import ECDSAAdd.Arithmetic.Paper935.HistoryCompilerRelease
+import ECDSAAdd.Arithmetic.Paper935.HistoryCompilerRun
+import ECDSAAdd.Arithmetic.Paper935.AuthorHistoryCapacity
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkCompiler
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkStages
+import ECDSAAdd.Arithmetic.Paper935.BankFrame
+import ECDSAAdd.Arithmetic.Paper935.HistoricalWalkCompiler
+import ECDSAAdd.Arithmetic.Paper935.HistoricalWalkResources
+import ECDSAAdd.Arithmetic.Paper935.HistoryCompilerLengths
+import ECDSAAdd.Arithmetic.Paper935.HistoryWindowBounds
+import ECDSAAdd.Arithmetic.Paper935.WalkSeed
+
+import ECDSAAdd.Arithmetic.Paper935.HistoryBudget
+
+import ECDSAAdd.Arithmetic.Paper935.AuthorHistoryBudget
+import ECDSAAdd.Arithmetic.Paper935.HistoryPhysical
+import ECDSAAdd.Arithmetic.Paper935.ZeroViews
+import ECDSAAdd.Arithmetic.Paper935.HistoryCompilerTotal
+import ECDSAAdd.Arithmetic.Paper935.BorrowGeometry
+import ECDSAAdd.Arithmetic.Paper935.BorrowedHistoryTotal
+import ECDSAAdd.Arithmetic.Paper935.HistoryCompilerSupport
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotTotal
+import ECDSAAdd.Arithmetic.Paper935.ProbeGeometry
+import ECDSAAdd.Arithmetic.Paper935.ProbeChunks
+import ECDSAAdd.Arithmetic.Paper935.ProbeCompilerTotal
+import ECDSAAdd.Arithmetic.Paper935.ProbeCompilerPorts
+import ECDSAAdd.Arithmetic.Paper935.PostCompilerTotal
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotTotal
+
+import ECDSAAdd.Arithmetic.Paper935.CounterBoundaries
+import ECDSAAdd.Arithmetic.Paper935.RowResizeTotal
+import ECDSAAdd.Arithmetic.Paper935.WindowRowsTotal
+import ECDSAAdd.Arithmetic.Paper935.BankCompilerTotal
+import ECDSAAdd.Arithmetic.Paper935.RowResizeCard
+import ECDSAAdd.Arithmetic.Paper935.RoutedGeometry
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontTotal
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontGeometry
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontCheckedTotal
+
+import ECDSAAdd.Arithmetic.Paper935.WalkRecovery
+import ECDSAAdd.Arithmetic.Paper935.WalkRecoveryReady
+import ECDSAAdd.Arithmetic.Paper935.WalkRecoveryRecords
+import ECDSAAdd.Arithmetic.Paper935.ProbeChunkCount
+import ECDSAAdd.Arithmetic.Paper935.SlotViewsGeometry
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotStaticTotal
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotStaticTotal
+import ECDSAAdd.Arithmetic.Paper935.HistoryGrowthGeometry
+import ECDSAAdd.Arithmetic.Paper935.WalkStaticBudget
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkBudgets
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkStaticTotal
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkRealized
+import ECDSAAdd.Arithmetic.Paper935.SlotMathGeometry
+import ECDSAAdd.Arithmetic.Paper935.SlotStaticMathChecks
+import ECDSAAdd.Arithmetic.Paper935.PostMathGeometry
+import ECDSAAdd.Arithmetic.Paper935.WalkMathGeometry
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkMathGeometry
+import ECDSAAdd.Arithmetic.Paper935.SlotIntermediateBounds
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotStaticRun
+import ECDSAAdd.Arithmetic.Paper935.WindowRowsLocality
+import ECDSAAdd.Arithmetic.Paper935.RoutedLayoutSupport
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontLocality
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotLocality
+import ECDSAAdd.Arithmetic.Paper935.PinInvariants
+import ECDSAAdd.Arithmetic.Paper935.HistoryValueGeometry
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotValueStep
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotStaticRun
+import ECDSAAdd.Arithmetic.Paper935.WalkNumericalInputs
+import ECDSAAdd.Arithmetic.Paper935.HistoricalWalkRun
+import ECDSAAdd.Arithmetic.Paper935.WalkNumericalBounds
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkNumericalInputs
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkRun
+import ECDSAAdd.Arithmetic.Paper935.SeededAuthorWalkRun
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotStaticInverse
+import ECDSAAdd.Arithmetic.Paper935.WalkArithmeticUndo
+import ECDSAAdd.Arithmetic.Paper935.WalkUndoAssembly
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkArithmeticUndo
+import ECDSAAdd.Arithmetic.Paper935.PinStoppingTime
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkEndpoint
+import ECDSAAdd.Arithmetic.Paper935.WalkSeedInverse
+import ECDSAAdd.Arithmetic.Paper935.SeededAuthorWalkUndo
+import ECDSAAdd.Arithmetic.Paper935.WalkForwardInputs
+import ECDSAAdd.Arithmetic.Paper935.AuthorWalkInputs
+import ECDSAAdd.Arithmetic.Paper935.WalkPrefixInputs
+import ECDSAAdd.Arithmetic.Paper935.AuthorRiderSchedule
+import ECDSAAdd.Arithmetic.Paper935.FoldHalfMath
+import ECDSAAdd.Arithmetic.Paper935.FoldCarryCell
+import ECDSAAdd.Arithmetic.Paper935.FoldCarryForward
+import ECDSAAdd.Arithmetic.Paper935.FoldCarryResources
+import ECDSAAdd.Arithmetic.Paper935.FoldCarryBackward
+import ECDSAAdd.Arithmetic.Paper935.AuthorDecoderUndo
+import ECDSAAdd.Arithmetic.Paper935.DecoderCleanup
+import ECDSAAdd.Arithmetic.Paper935.DecoderControlGeometry
+import ECDSAAdd.Arithmetic.Paper935.DecoderFive
+import ECDSAAdd.Arithmetic.Paper935.DecoderGeometry
+import ECDSAAdd.Arithmetic.Paper935.DecoderPinValues
+import ECDSAAdd.Arithmetic.Paper935.DecoderPoolReuse
+import ECDSAAdd.Arithmetic.Paper935.DecoderProgramSupport
+import ECDSAAdd.Arithmetic.Paper935.DepthCompilerTotal
+import ECDSAAdd.Arithmetic.Paper935.DepthListTotal
+import ECDSAAdd.Arithmetic.Paper935.HistoryDecoderRetained
+import ECDSAAdd.Arithmetic.Paper935.HistoryUndoFromBranch
+import ECDSAAdd.Arithmetic.Paper935.RetainedHistory
+import ECDSAAdd.Arithmetic.Paper935.SeededDecoderUndo
+import ECDSAAdd.Arithmetic.Paper935.SlotDecoderCompiler
+import ECDSAAdd.Arithmetic.Paper935.SlotDecoderCoreRun
+import ECDSAAdd.Arithmetic.Paper935.SlotDecoderReady
+import ECDSAAdd.Arithmetic.Paper935.SlotDecoderResources
+import ECDSAAdd.Arithmetic.Paper935.SlotDecoderRun
+import ECDSAAdd.Arithmetic.Paper935.SlotDecoderTotal
+import ECDSAAdd.Arithmetic.Paper935.SlotHistoryUndo
+import ECDSAAdd.Arithmetic.Paper935.SlotStaticHistoryUndo
+import ECDSAAdd.Arithmetic.Paper935.WalkDecoderResources
+import ECDSAAdd.Arithmetic.Paper935.WalkDecoderTotal
+import ECDSAAdd.Arithmetic.Paper935.WalkDecoderUndo
+import ECDSAAdd.Arithmetic.Paper935.FoldBlock
+import ECDSAAdd.Arithmetic.Paper935.FoldBlockModel
+import ECDSAAdd.Arithmetic.Paper935.FoldBlockRun
+import ECDSAAdd.Arithmetic.Paper935.FoldKeeperMath
+import ECDSAAdd.Arithmetic.Paper935.FoldBlockOverflow
+import ECDSAAdd.Arithmetic.Paper935.FoldCompareCell
+import ECDSAAdd.Arithmetic.Paper935.FoldCompareBlock
+import ECDSAAdd.Arithmetic.Paper935.FoldKeeperErase
+import ECDSAAdd.Arithmetic.Paper935.FoldPoolPlan
+import ECDSAAdd.Arithmetic.Paper935.FoldBlockSave
+import ECDSAAdd.Arithmetic.Paper935.Fold16Program
+import ECDSAAdd.Arithmetic.Paper935.Fold16Ready
+import ECDSAAdd.Arithmetic.Paper935.Fold16Invariant
+import ECDSAAdd.Arithmetic.Paper935.Fold16Cleanup
+import ECDSAAdd.Arithmetic.Paper935.Fold16Value
+import ECDSAAdd.Arithmetic.Paper935.Fold16Word
+import ECDSAAdd.Arithmetic.Paper935.Fold256
+import ECDSAAdd.Arithmetic.Paper935.FoldRotate
+import ECDSAAdd.Arithmetic.Paper935.FoldParity
+import ECDSAAdd.Arithmetic.Paper935.FoldHalve
+import ECDSAAdd.Arithmetic.Paper935.FoldSeam
+import ECDSAAdd.Arithmetic.Paper935.FoldHalvePhysical
+import ECDSAAdd.Arithmetic.Paper935.FoldRiderParity
+import ECDSAAdd.Arithmetic.Paper935.FoldRider
+import ECDSAAdd.Arithmetic.Paper935.FoldRiderPhysical
+import ECDSAAdd.Arithmetic.Paper935.FoldRiderState
+import ECDSAAdd.Arithmetic.Paper935.ScalingNoBorrow
+import ECDSAAdd.Arithmetic.Paper935.ScalingSeed
+import ECDSAAdd.Arithmetic.Paper935.ScalingCallSites
+import ECDSAAdd.Arithmetic.Paper935.SeedNormalize
+import ECDSAAdd.Arithmetic.Paper935.ExitCapacity
+import ECDSAAdd.Arithmetic.Paper935.ExitWidths
+import ECDSAAdd.Arithmetic.Paper935.CloserEndpoint
+import ECDSAAdd.Arithmetic.Paper935.CloserFan
+import ECDSAAdd.Arithmetic.Paper935.CloserEncoding
+import ECDSAAdd.Arithmetic.Paper935.CloserPair
+import ECDSAAdd.Arithmetic.Paper935.CloserBank
+import ECDSAAdd.Arithmetic.Paper935.CloserRelease
+import ECDSAAdd.Arithmetic.Paper935.ExitOwned
+import ECDSAAdd.Arithmetic.Paper935.CloserCapacity
+import ECDSAAdd.Arithmetic.Paper935.CloserWalk
+import ECDSAAdd.Arithmetic.Paper935.CloserResources
+import ECDSAAdd.Arithmetic.Paper935.Fold32Program
+import ECDSAAdd.Arithmetic.Paper935.Fold32Ready
+import ECDSAAdd.Arithmetic.Paper935.Fold32Invariant
+import ECDSAAdd.Arithmetic.Paper935.Fold32Cleanup
+import ECDSAAdd.Arithmetic.Paper935.Fold32Value
+import ECDSAAdd.Arithmetic.Paper935.Fold32Word
+import ECDSAAdd.Arithmetic.Paper935.WideCoefficientFold
+import ECDSAAdd.Arithmetic.Paper935.WideCoefficientInput
+import ECDSAAdd.Arithmetic.Paper935.WideCoefficientInclusive
+import ECDSAAdd.Arithmetic.Paper935.Fold32Placement
+import ECDSAAdd.Arithmetic.Paper935.Fold32PlacementResources
+import ECDSAAdd.Arithmetic.Paper935.Fold32Unreduce
+import ECDSAAdd.Arithmetic.Paper935.Fold32Roundtrip
+import ECDSAAdd.Arithmetic.Paper935.Fold32Constants
+import ECDSAAdd.Arithmetic.Paper935.Fold32Control
+import ECDSAAdd.Arithmetic.Paper935.Fold32Reduce
+import ECDSAAdd.Arithmetic.Paper935.Fold32ReducePhysical
+import ECDSAAdd.Arithmetic.Paper935.UncloserContract
+import ECDSAAdd.Arithmetic.Paper935.WalkReverseArena
+import ECDSAAdd.Arithmetic.Paper935.SeededWalkResources
+import ECDSAAdd.Arithmetic.Paper935.EndpointSlot
+import ECDSAAdd.Arithmetic.Paper935.EndpointSlotResources
+import ECDSAAdd.Arithmetic.Paper935.EndpointSlotAssembly
+import ECDSAAdd.Arithmetic.Paper935.OutputCapacity
+import ECDSAAdd.Framework.OutputFrame
+import ECDSAAdd.Arithmetic.Paper935.OutputUncloser
+import ECDSAAdd.Arithmetic.Paper935.OutputSlot
+import ECDSAAdd.Arithmetic.Paper935.OutputSlotOwnership
+import ECDSAAdd.Arithmetic.Paper935.OutputSlotAssembly
+
+import ECDSAAdd.Arithmetic.Paper935.CounterFullArena
+import ECDSAAdd.Arithmetic.Paper935.AllocationSupport
+import ECDSAAdd.Arithmetic.Paper935.ReverseCoverage
+import ECDSAAdd.Arithmetic.Paper935.SlotFrontExternalSupport
+import ECDSAAdd.Arithmetic.Paper935.PublicSlotExternalSupport
+import ECDSAAdd.Arithmetic.Paper935.HistoryExternalSupport
+import ECDSAAdd.Arithmetic.Paper935.DecoderExternalSupport
+import ECDSAAdd.Arithmetic.Paper935.WalkExternalSupport
+import ECDSAAdd.Arithmetic.Paper935.OwnedHostSupport
+import ECDSAAdd.Arithmetic.Paper935.OwnedOutputSlot
+import ECDSAAdd.Arithmetic.Paper935.OwnedOutputOwnership
+import ECDSAAdd.Arithmetic.Paper935.OwnedOutputAssembly
+import ECDSAAdd.Framework.FiniteWirePermutation
+import ECDSAAdd.Framework.RecordedPermutation
+import ECDSAAdd.Arithmetic.Paper935.ArenaPermutation
+import ECDSAAdd.Arithmetic.Paper935.EndpointRenaming
+import ECDSAAdd.Arithmetic.Paper935.RenamedFullCertificate
+import ECDSAAdd.Arithmetic.Paper935.RenamedOwnedCertificate
+import ECDSAAdd.Arithmetic.Paper935.RenamedFreshCertificate
+import ECDSAAdd.Arithmetic.Paper935.HostSwap
+
+import ECDSAAdd.Arithmetic.Paper935.FusedEndpointModel
+import ECDSAAdd.Arithmetic.Paper935.FusedFailureEvents
+import ECDSAAdd.Arithmetic.Paper935.FusedCallSites
+
+import ECDSAAdd.Arithmetic.Paper935.HornerCopy
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryCell
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryBlock
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryForward
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryErase
+import ECDSAAdd.Arithmetic.Paper935.Lift24Resources
+import ECDSAAdd.Arithmetic.Paper935.FusedRowFold
+import ECDSAAdd.Arithmetic.Paper935.FusedRowFoldSource
+import ECDSAAdd.Arithmetic.Paper935.FusedMagnitudeProgram
+import ECDSAAdd.Arithmetic.Paper935.FusedMagnitudeValue
+import ECDSAAdd.Arithmetic.Paper935.FusedRowFoldValue
+import ECDSAAdd.Arithmetic.Paper935.FusedMagnitudePhysical
+import ECDSAAdd.Arithmetic.Paper935.FusedBoundaryZero
+import ECDSAAdd.Arithmetic.Paper935.FusedRepackAllocation
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryGeometry
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryBackward
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryFinishSweep
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryFinishFrame
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryValid
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryMath
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryValue
+import ECDSAAdd.Arithmetic.Paper935.HornerCarryHigh
+
+import ECDSAAdd.Arithmetic.Paper935.CheckedHistoricalSlotWidth
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotWidth
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotWidthStaticTotal
+import ECDSAAdd.Arithmetic.Paper935.HistoricalSlotWidthTotal
+import ECDSAAdd.Arithmetic.Paper935.HistoricalWalkWidth
+import ECDSAAdd.Arithmetic.Paper935.HistoryWidthGrowth
+import ECDSAAdd.Arithmetic.Paper935.HistoryWidthLengths
+import ECDSAAdd.Arithmetic.Paper935.HmrWalkCompiler
+import ECDSAAdd.Arithmetic.Paper935.HmrWalkStaticTotal
+import ECDSAAdd.Arithmetic.Paper935.SlotViewsWidthGeometry
+import ECDSAAdd.Arithmetic.Paper935.WalkWidthStaticBudget
+import ECDSAAdd.Arithmetic.Paper935.ExitCapacityWidth
+import ECDSAAdd.Arithmetic.Paper935.HmrExitCapacity
+import ECDSAAdd.Arithmetic.Paper935.HmrExitOwned
+import ECDSAAdd.Arithmetic.Paper935.HmrExitWidths
+import ECDSAAdd.Arithmetic.Paper935.HmrCloserCapacity
+import ECDSAAdd.Arithmetic.Paper935.HmrFlagCell
+import ECDSAAdd.Arithmetic.Paper935.HmrFlagChain
+import ECDSAAdd.Arithmetic.Paper935.HmrFlags
+import ECDSAAdd.Arithmetic.Paper935.FusedSourceRepack
+
+import ECDSAAdd.Arithmetic.Paper935.ArenaCensus
+
+import ECDSAAdd.Arithmetic.Paper935.ArenaLog
+
+import ECDSAAdd.Arithmetic.Paper935.ArenaLogIntervals
+import ECDSAAdd.Arithmetic.Paper935.FusedSymbolicBudget
+
+import ECDSAAdd.Arithmetic.Paper935.FusedEmpiricalBudget
+import ECDSAAdd.Arithmetic.Paper935.FusedPlacedExecution
+
+import ECDSAAdd.Arithmetic.Paper935.FusedPlacedInverse
+import ECDSAAdd.Arithmetic.Paper935.FusedPlacementViews
+
+import ECDSAAdd.Arithmetic.Paper935.FusedPlacedBorrow
+
+import ECDSAAdd.Arithmetic.Paper935.FusedSignedPlacement
+
+import ECDSAAdd.Arithmetic.Paper935.FusedRepackedInput
+
+import ECDSAAdd.Arithmetic.Paper935.HmrRowMulSpec
+import ECDSAAdd.Arithmetic.Paper935.HmrRowMulConsumer
+import ECDSAAdd.Arithmetic.Paper935.HmrArenaSchedule
+
+import ECDSAAdd.Arithmetic.Paper935.HmrLifecyclePhase
+
+import ECDSAAdd.Arithmetic.Paper935.HmrLifecycleInput
+
+import ECDSAAdd.Arithmetic.Paper935.HmrLifecycleFrame
+
+import ECDSAAdd.Arithmetic.Paper935.HmrGoodInput
+
+import ECDSAAdd.Arithmetic.Paper935.HmrRowMulSourcePrograms
+import ECDSAAdd.Arithmetic.Paper935.HmrSourceNormalization
+import ECDSAAdd.Arithmetic.Paper935.HmrSourceCallPorts
+
+import ECDSAAdd.Arithmetic.Paper935.HmrRowMulPrefixEquivalence
+
+import ECDSAAdd.Arithmetic.Paper935.HmrRowMulPrefixLayout
+
+import ECDSAAdd.Arithmetic.Paper935.HmrSignLifecycle
+import ECDSAAdd.Arithmetic.Paper935.HmrSignValue
+import ECDSAAdd.Arithmetic.Paper935.HmrSourceThreeCall
+
+import ECDSAAdd.Arithmetic.Paper935.HmrSourceAgreement
+
+import ECDSAAdd.Arithmetic.Paper935.HmrSourceDataFacts
+import ECDSAAdd.Arithmetic.Paper935.HmrUnparkData
+
+import ECDSAAdd.Challenge.Contract
+
+import ECDSAAdd.Baselines.Qubits
+
+import ECDSAAdd.Baselines.NormalizedEntries
+
+import ECDSAAdd.Arithmetic.DialogPhysical
+import ECDSAAdd.Baselines.MemoizedPrograms
+
+import ECDSAAdd.Baselines.ValueWalkPhysical
+
+import ECDSAAdd.Arithmetic.DirectZeroPhysical
+import ECDSAAdd.Arithmetic.NativeKnownPhysical
+
+import ECDSAAdd.Arithmetic.PhysicalGateCheck
+import ECDSAAdd.Arithmetic.CompactWalkPhysical
+import ECDSAAdd.Arithmetic.LiteralConstPhysical
+import ECDSAAdd.Arithmetic.BalancedConvertPhysical
+import ECDSAAdd.Arithmetic.FixedFieldPhysical
+import ECDSAAdd.Arithmetic.SelectedCellPhysical
+import ECDSAAdd.Arithmetic.MappedFieldPhysical
+import ECDSAAdd.Baselines.ValueWalkCertificate
+
+import ECDSAAdd.Baselines.SkywalkPhysical
+
+import ECDSAAdd.Baselines.SkywalkCertificate
