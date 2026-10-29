@@ -19,7 +19,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2208692, 1549235, 1895, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2208439, 1548980, 1895, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -35,22 +35,22 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgramEG_support layout layout_widths _ cy _ hG).trans
         (sitesE_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2208692 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2208439 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
     have h := (finiteProgramEG_counts layout layout_widths (.some hc) cy
-      (fastGeneric2 layout cx cy) hc rfl).1
+      (fastGeneric2 layout cx cy)).1
     have g := (fastGeneric2_counts layout layout_widths cx cy).1
     change toffoliCount (finiteProgramEG layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1549235 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1548980 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
     have h := (finiteProgramEG_counts layout layout_widths (.some hc) cy
-      (fastGeneric2 layout cx cy) hc rfl).2
+      (fastGeneric2 layout cx cy)).2
     have g := (fastGeneric2_counts layout layout_widths cx cy).2
     change measurementCount (finiteProgramEG layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
     omega
@@ -99,7 +99,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1549235
+    change measurementCount (normalizeProgram (program C)) ≤ 1548980
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
