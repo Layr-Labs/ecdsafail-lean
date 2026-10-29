@@ -1,9 +1,10 @@
 import ECDSAAdd.Submission.Entrant.LaneSegment
+import ECDSAAdd.Submission.Entrant.HalfLane
 import ECDSAAdd.Arithmetic.NativeFirstDirectCallerStates
 
 /-! Lane A kernel: the unchanged native-first Skywalk kernel with the
-Lane A field segment.  The seven-stage proof is the original one, with the
-field contract supplied by `laneSegment_spec`. -/
+halving-endpoint field segment.  The seven-stage proof is the original one, with the
+field contract supplied by `HalfField.segment_spec`. -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 1800000
 set_option linter.unusedSimpArgs false
@@ -14,7 +15,7 @@ open Secp256k1
 
 def laneKernel (divide : Bool) : Program :=
   NativeFirstDirect.forward base++compressedCompactForward base 1 511++
-  skywalkArithmeticClear base++laneSegment divide++skywalkArithmeticClear base++
+  skywalkArithmeticClear base++ECDSAAdd.Entrant.HalfField.segment divide++skywalkArithmeticClear base++
   compressedCompactReverse base 1 511++NativeFirstKnown.inverse base
 
 end ECDSAAdd.Arithmetic.MappedCompressed.LaneA
@@ -22,7 +23,7 @@ end ECDSAAdd.Arithmetic.MappedCompressed.LaneA
 namespace ECDSAAdd.Arithmetic.NativeFirstDirect.LaneA
 open Secp256k1 DirectSkywalk OffsetBorrowedCanonical CompressedFieldSupport MappedCompressed MappedCompressed.LaneA
 attribute [local irreducible] run measurementCount forward inverse NativeFirstKnown.inverse reference laneKernel
-  literalSkywalkSeed compressedCompactForward compressedCompactReverse laneSegment
+  literalSkywalkSeed compressedCompactForward compressedCompactReverse ECDSAAdd.Entrant.HalfField.segment
   skywalkArithmeticClear allGroupEncode SkywalkTrace.next Nat.iterate
 
 /-- Pure intermediate helper: the first-stage witness is discharged by the
@@ -39,7 +40,7 @@ theorem kernel_states_from_first (divide : Bool)
     (hs1 : run (forward base) m1 s = s1)
     (hs2 : run (compressedCompactForward base 1 511) m2 s1 = s2)
     (hs3 : run (skywalkArithmeticClear base) m3 s2 = s3)
-    (hs4 : run (laneSegment divide) m4 s3 = s4)
+    (hs4 : run (ECDSAAdd.Entrant.HalfField.segment divide) m4 s3 = s4)
     (hs5 : run (skywalkArithmeticClear base) m5 s4 = s5)
     (hs6 : run (compressedCompactReverse base 1 511) m6 s5 = s6)
     (hs7 : run (NativeFirstKnown.inverse base) m7 s6 = s7)
@@ -76,7 +77,7 @@ theorem kernel_states_from_first (divide : Bool)
     exact ho q hq (arith_block_subset_shared base 0 1798 (by omega) bad)
   have hg : origin.basis (base 2409)=false := (facts.controls _ (by simp)).trans hg0
   have hs : origin.basis (base 2410)=false := (facts.controls _ (by simp)).trans hs0
-  have h4 := laneSegment_spec divide hn hlo ho selectorPool hf origin.basis hg hs
+  have h4 := ECDSAAdd.Entrant.HalfField.segment_spec divide hn hlo ho selectorPool hf origin.basis hg hs
     facts.env facts.legal facts.workZero facts.unusedZero facts.targetHigh facts.sourceHigh
     x hx0 hx facts.trace Y s3 m4 entry
   rw [hs4] at h4
@@ -87,7 +88,7 @@ theorem kernel_states_from_first (divide : Bool)
   have value4 : regValue F.z s4.basis=Z := by
     rw [result] at actual4
     exact actual4.1
-  have keeps := laneSegment_pool_frame divide hn hlo ho selectorPool hf origin.basis hg hs
+  have keeps := ECDSAAdd.Entrant.HalfField.segment_pool_frame divide hn hlo ho selectorPool hf origin.basis hg hs
     facts.env facts.legal facts.workZero facts.unusedZero facts.targetHigh facts.sourceHigh
     facts.sourceZero x hx0 hx facts.trace Y s3 m4 entry
   rw [hs4] at keeps
@@ -170,7 +171,7 @@ theorem lane_kernel_states (divide : Bool)
     (hs1 : run (forward base) m1 s=s1)
     (hs2 : run (compressedCompactForward base 1 511) m2 s1=s2)
     (hs3 : run (skywalkArithmeticClear base) m3 s2=s3)
-    (hs4 : run (laneSegment divide) m4 s3=s4)
+    (hs4 : run (ECDSAAdd.Entrant.HalfField.segment divide) m4 s3=s4)
     (hs5 : run (skywalkArithmeticClear base) m5 s4=s5)
     (hs6 : run (compressedCompactReverse base 1 511) m6 s5=s6)
     (hs7 : run (NativeFirstKnown.inverse base) m7 s6=s7) :
@@ -194,7 +195,7 @@ theorem laneKernel_spec (divide : Bool)
     initial.basis (base 2409)=false → initial.basis (base 2410)=false →
     DirectSkywalkArithmeticStrong divide base (base 2400) x Y initial out
   have all := skywalkRunSeven (forward base) (compressedCompactForward base 1 511)
-    (skywalkArithmeticClear base) (laneSegment divide) (skywalkArithmeticClear base)
+    (skywalkArithmeticClear base) (ECDSAAdd.Entrant.HalfField.segment divide) (skywalkArithmeticClear base)
     (compressedCompactReverse base 1 511) (NativeFirstKnown.inverse base) P
     (by
       intro initial s1 s2 s3 s4 s5 s6 s7 m1 m2 m3 m4 m5 m6 m7 h1 h2 h3 h4 h5 h6 h7 input hg hs

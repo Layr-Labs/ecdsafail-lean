@@ -25,8 +25,8 @@ theorem accProgram_split (L : CuccaroStreamedSquareWideLayout) (control : Wire) 
 
 theorem accProgramNR_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (control : Wire) :
-    toffoliCount (accProgramNR L control)=76359 ∧
-    measurementCount (accProgramNR L control)=75841 := by
+    toffoliCount (accProgramNR L control)=77381 ∧
+    measurementCount (accProgramNR L control)=76861 := by
   have full := accProgram_counts L hw control
   have r := (L.measured_small_operation_counts hw).2.2
   rw [accProgram_split,toffoliCount_append,measurementCount_append,r.1,r.2] at full
@@ -150,7 +150,7 @@ def fastCandidateNR (L : ControlledPointLayout) : Program :=
   accProgramNR L.dialogStreamedSquareWide L.core.generic
 
 theorem fastCandidateNR_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastCandidateNR L)=76359 ∧ measurementCount (fastCandidateNR L)=75841 :=
+    toffoliCount (fastCandidateNR L)=77381 ∧ measurementCount (fastCandidateNR L)=76861 :=
   accProgramNR_counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) L.core.generic
 
 theorem fastCandidateNR_support (L : ControlledPointLayout) (hw : L.Widths)
@@ -301,7 +301,7 @@ theorem fastSquareNR_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L
   exact fastCandidateNR_correct L hw hn X Y B hX s m hb hx hy hc
 
 theorem fastSquareNR_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastSquareNR L)=76359 ∧ measurementCount (fastSquareNR L)=75841 := by
+    toffoliCount (fastSquareNR L)=77381 ∧ measurementCount (fastSquareNR L)=76861 := by
   have renamed := renameProgram_counts (labelFn L.core.poolWire) (fastCandidateNR L)
   have old := fastCandidateNR_counts L hw
   rw [fastSquareNR]

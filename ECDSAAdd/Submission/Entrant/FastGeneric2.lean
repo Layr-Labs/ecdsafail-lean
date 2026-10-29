@@ -120,7 +120,7 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem fastGeneric2_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric2 L cx cy)=2184123 ∧
+    toffoliCount (fastGeneric2 L cx cy)=2184121 ∧
     measurementCount (fastGeneric2 L cx cy)=1524668 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k

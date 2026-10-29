@@ -287,8 +287,8 @@ theorem fastConstRefl_counts (k : Fp) :
 
 omit hn in
 theorem fastGeneric_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric L cx cy)=2188454 ∧
-    measurementCount (fastGeneric L cx cy)=1529003 := by
+    toffoliCount (fastGeneric L cx cy)=2189476 ∧
+    measurementCount (fastGeneric L cx cy)=1530023 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
