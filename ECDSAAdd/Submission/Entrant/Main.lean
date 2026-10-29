@@ -15,11 +15,11 @@ def program (C : Point) : Program :=
   match C with
   | .zero => []
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
-      finiteProgramEG layout C cy (fastGeneric layout cx cy)
+      finiteProgramEG layout C cy (fastGeneric2 layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2208694, 1549235, 1896, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2208694, 1549235, 1895, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -40,9 +40,9 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2208694 := by
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
     have h := (finiteProgramEG_counts layout layout_widths (.some hc) cy
-      (fastGeneric layout cx cy)).1
-    have g := (fastGeneric_counts layout layout_widths cx cy).1
-    change toffoliCount (finiteProgramEG layout (.some hc) cy (fastGeneric layout cx cy)) ≤ _
+      (fastGeneric2 layout cx cy)).1
+    have g := (fastGeneric2_counts layout layout_widths cx cy).1
+    change toffoliCount (finiteProgramEG layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1549235 := by
@@ -50,9 +50,9 @@ theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1549
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
     have h := (finiteProgramEG_counts layout layout_widths (.some hc) cy
-      (fastGeneric layout cx cy)).2
-    have g := (fastGeneric_counts layout layout_widths cx cy).2
-    change measurementCount (finiteProgramEG layout (.some hc) cy (fastGeneric layout cx cy)) ≤ _
+      (fastGeneric2 layout cx cy)).2
+    have g := (fastGeneric2_counts layout layout_widths cx cy).2
+    change measurementCount (finiteProgramEG layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
     omega
 
 theorem io_subset_sitesE : ioWires ⊆ (sitesE layout).toFinset := by
@@ -65,10 +65,10 @@ theorem io_subset_sitesE : ioWires ⊆ (sitesE layout).toFinset := by
 
 /-- Static support: point, control, five classification flags, and the
 certified pool inventory without its idle site. -/
-theorem program_qubits (C : Point) : qubits (program C) ≤ 1896 := by
+theorem program_qubits (C : Point) : qubits (program C) ≤ 1895 := by
   cases C with
   | zero =>
-    change qubits [] ≤ 1896
+    change qubits [] ≤ 1895
     rw [qubits_empty]
     decide
   | @some cx cy hc =>
@@ -82,16 +82,16 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
   | zero => simp [program, GatePhysical]
   | @some cx cy hc =>
     exact finiteProgramEG_physical layout layout_widths layout_nodup _ cy _
-      (fastGeneric_physical layout layout_widths layout_nodup cx cy)
+      (fastGeneric2_physical layout layout_widths layout_nodup cx cy)
 
 theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 47000000 := by
   cases C with
   | zero => simp [program, gateSlots]
   | @some cx cy hc =>
     have h := finiteProgramEG_gateSlots layout layout_widths (.some hc) cy
-      (fastGeneric layout cx cy)
-    have g := fastGeneric_gateSlots_le layout layout_widths cx cy
-    change gateSlots (finiteProgramEG layout (.some hc) cy (fastGeneric layout cx cy)) ≤ _
+      (fastGeneric2 layout cx cy)
+    have g := fastGeneric2_gateSlots_le layout layout_widths cx cy
+    change gateSlots (finiteProgramEG layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -103,7 +103,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
-    change qubits (normalizeProgram (program C)) ≤ 1896
+    change qubits (normalizeProgram (program C)) ≤ 1895
     rw [normalize_qubits]
     exact program_qubits C
   gateSlots_le C := by

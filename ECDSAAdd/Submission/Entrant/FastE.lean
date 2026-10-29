@@ -1,5 +1,5 @@
 import ECDSAAdd.Submission.Entrant.EKMain
-import ECDSAAdd.Submission.Entrant.FastGeneric
+import ECDSAAdd.Submission.Entrant.FastGeneric2
 
 /-! The compare-first generic block lives in `sitesE` and satisfies the
 generic-block contract. -/
@@ -42,7 +42,7 @@ theorem fastConstE (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) :
 
 include hn
 
-theorem fastGenericE (cx cy : Fp) : wires (fastGeneric L cx cy) ⊆ (sitesE L).toFinset := by
+theorem fastGenericE (cx cy : Fp) : wires (fastGeneric2 L cx cy) ⊆ (sitesE L).toFinset := by
   have ca (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) (k : Fp) :
       wires (fastConstAdd L r k) ⊆ (sitesE L).toFinset :=
     (FastConst.fastAdd_support _ _ ⟨256,L.recoveryConstant_widths hw r
@@ -51,13 +51,13 @@ theorem fastGenericE (cx cy : Fp) : wires (fastGeneric L cx cy) ⊆ (sitesE L).t
   have cn : wires (fastConstNeg L cx) ⊆ (sitesE L).toFinset :=
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConstE L hw L.point.x (Or.inl rfl))
-  simp only [fastGeneric, wires_append, Finset.union_subset_iff]
+  simp only [fastGeneric2, wires_append, Finset.union_subset_iff]
   exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, arithE L hw hn false⟩, fastSquareE L hw hn⟩,
     ca _ (Or.inl rfl) _⟩, arithE L hw hn true⟩, cn⟩, ca _ (Or.inr rfl) _⟩
 
 theorem fastGeneric_ok {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    GenericOK L hc (fastGeneric L cx cy) :=
-  fun R b f hg => fast_boundary_generic L hw hn R b f hc hg
+    GenericOK L hc (fastGeneric2 L cx cy) :=
+  fun R b f hg => fast2_boundary_generic L hw hn R b f hc hg
 
 end
 
