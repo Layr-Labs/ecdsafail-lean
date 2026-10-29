@@ -24,6 +24,7 @@ include hw hn
 attribute [local irreducible] run arith2 CompressedPointSquare.computableProgram fastSquare fastCandidate
   pointMeasuredSquareCandidate fastConstAdd fastConstNeg fastConstRefl fastSquareNR
 
+
 theorem fast2_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd : cx-genericX X Y cx cy≠0) :
     Triple (PointDialogValues L X Y true base) (fastGeneric2 L cx cy)
       (PointDialogValues L (genericX X Y cx cy) (genericY X Y cx cy) true base) := by
@@ -148,6 +149,7 @@ theorem fastGeneric2_physical (cx cy : Fp) : GatePhysical (fastGeneric2 L cx cy)
   have sq := fastSquareNR_physical L hw hn
   simp only [fastGeneric2,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
   exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,rf⟩,mu⟩,ng⟩,ay _⟩
+
 
 theorem fastGeneric2_gateSlots_le (cx cy : Fp) :
     Challenge.gateSlots (fastGeneric2 L cx cy) ≤ 46300000 := by

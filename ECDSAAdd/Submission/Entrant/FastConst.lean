@@ -72,7 +72,6 @@ def fastNeg (p k : Nat) : Program :=
   notRegister K.src++maskedConstant g K.src (2^K.out.length-1-k)
 
 
-/-- `x ↦ g ? (k - x mod p) : (p - 1 - x)` using `3n-2` Toffolis. -/
 def fastRefl (p k : Nat) : Program :=
   maskedConstant g K.src (2^K.out.length-1-k)++notRegister K.src++
   compareLt none K.src K.out K.carry K.cin K.flag++
