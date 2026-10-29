@@ -14,7 +14,7 @@ def fastGeneric2 (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx) ++ fastConstAdd L L.point.y (-cy) ++
   arith2 L false ++
   fastSquare L ++
-  fastConstRefl L (3*cx-1) ++
+  fastConstAdd L L.point.x (3*cx) ++
   arith2 L true ++
   fastConstNeg L cx ++ fastConstAdd L L.point.y (-cy)
 
@@ -22,7 +22,7 @@ section Generic
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
 attribute [local irreducible] run arith2 CompressedPointSquare.computableProgram fastSquare fastCandidate
-  pointMeasuredSquareCandidate fastConstAdd fastConstNeg fastConstRefl
+  pointMeasuredSquareCandidate fastConstAdd fastConstNeg
 
 theorem fast2_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd : cx-genericX X Y cx cy≠0) :
     Triple (PointDialogValues L X Y true base) (fastGeneric2 L cx cy)
@@ -39,13 +39,9 @@ theorem fast2_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (h
   simp only [if_true,Bool.false_eq_true,if_false,ha] at h3
   have h4 := fast_step_square L hw hn (X-cx) a true base
   simp only [if_true] at h4
-  have h5 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true base (3*cx-1)
+  have h5 := fastStep_addX L hw hn ((X-cx)-a*a) a true base (3*cx)
   simp only [if_true] at h5
-  have hd5 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
-    have e := hv.2.1
-    change (X-cx)-a*a+3*cx=d at e
-    rw [← e]; ring
-  rw [hd5] at h5
+  rw [show (X-cx)-a*a+3*cx=d from hv.2.1] at h5
   have h6 := ParametricPointDialog.step_arithmetic backend2 L hw hn d a true base true (fun _=>hd)
   simp only [if_true] at h6
   have h7 := fastStep_negX L hw hn d (a*d) true base cx
@@ -64,12 +60,11 @@ theorem fast2_generic_false (X Y cx cy : Fp) (base : BasisState) :
   have h2 := fastStep_addY L hw hn X Y false base (-cy)
   have h3 := ParametricPointDialog.step_arithmetic backend2 L hw hn X Y false base false (by simp)
   have h4 := fast_step_square L hw hn X Y false base
-  have h5 := fastStep_refl L hw hn (-1-X) Y false base (3*cx-1)
+  have h5 := fastStep_addX L hw hn X Y false base (3*cx)
   have h6 := ParametricPointDialog.step_arithmetic backend2 L hw hn X Y false base true (by simp)
   have h7 := fastStep_negX L hw hn X Y false base cx
   have h8 := fastStep_addY L hw hn X Y false base (-cy)
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
-  rw [show -1-(-1-X)=X by ring] at h5
   have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
   simpa only [fastGeneric2,backend2,List.append_assoc] using h
 
@@ -120,16 +115,15 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem fastGeneric2_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric2 L cx cy)=2185145 ∧
-    measurementCount (fastGeneric2 L cx cy)=1525688 := by
+    toffoliCount (fastGeneric2 L cx cy)=2185400 ∧
+    measurementCount (fastGeneric2 L cx cy)=1525943 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
-  have r := fastConstRefl_counts L hw (3*cx-1)
   have arith := arith2_counts L
   have square := fastSquare_counts L hw
   simp only [fastGeneric2,toffoliCount_append,measurementCount_append,
-    (a _).1,(a _).2,(b _).1,(b _).2,c.1,c.2,r.1,r.2,arith.1,arith.2.1,arith.2.2.1,arith.2.2.2,
+    (a _).1,(a _).2,(b _).1,(b _).2,c.1,c.2,arith.1,arith.2.1,arith.2.2.1,arith.2.2.2,
     square.1,square.2]
   norm_num
 
@@ -143,11 +137,9 @@ theorem fastGeneric2_physical (cx cy : Fp) : GatePhysical (fastGeneric2 L cx cy)
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p cx.val
   have di := arith2_physical L hw hn false
   have mu := arith2_physical L hw hn true
-  have rf := FastConst.fastRefl_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p (3*cx-1).val
   have sq := fastSquare_physical L hw hn
-  simp only [fastGeneric2,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
-  exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,rf⟩,mu⟩,ng⟩,ay _⟩
+  simp only [fastGeneric2,fastConstAdd,fastConstNeg,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,ax _⟩,mu⟩,ng⟩,ay _⟩
 
 theorem fastGeneric2_gateSlots_le (cx cy : Fp) :
     Challenge.gateSlots (fastGeneric2 L cx cy) ≤ 46300000 := by
@@ -158,8 +150,7 @@ theorem fastGeneric2_gateSlots_le (cx cy : Fp) :
     (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a1 := ax L.point.x hw.inputX (-cx)
   have a2 := ax L.point.y hw.inputY (-cy)
-  have a3 := FastConst.fastRefl_gateSlots_le (g:=L.core.generic) 256 p (3*cx-1).val
-    (L.recoveryConstant_widths hw L.point.x hw.inputX)
+  have a3 := ax L.point.x hw.inputX (3*cx)
   have d := MappedCompressed.LaneA.laneArith_gateSlots_le L false
   have e := MappedCompressed.LaneA.laneArith_gateSlots_le L true
   have d' : Challenge.gateSlots (arith2 L false) = Challenge.gateSlots (MappedCompressed.LaneA.laneArith L false) := by
@@ -167,7 +158,7 @@ theorem fastGeneric2_gateSlots_le (cx cy : Fp) :
   have e' : Challenge.gateSlots (arith2 L true) = Challenge.gateSlots (MappedCompressed.LaneA.laneArith L true) := by
     simp only [arith2, MappedCompressed.LaneA.laneArith, Baselines.rename_gateSlots]
   have f := fastSquare_gateSlots_le L hw
-  simp only [fastGeneric2,fastConstAdd,fastConstNeg,fastConstRefl,Challenge.gateSlots_append]
+  simp only [fastGeneric2,fastConstAdd,fastConstNeg,Challenge.gateSlots_append]
   omega
 
 end Resources

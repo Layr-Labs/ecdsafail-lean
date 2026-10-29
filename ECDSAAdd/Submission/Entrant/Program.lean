@@ -229,8 +229,8 @@ theorem zeroFlag_counts (f c t : Wire) :
 
 theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (C : Point) (cx cy : Fp) :
-    toffoliCount (finiteProgram L C cx cy)≤2190253 ∧
-    measurementCount (finiteProgram L C cx cy)=1530794 := by
+    toffoliCount (finiteProgram L C cx cy)≤2190508 ∧
+    measurementCount (finiteProgram L C cx cy)=1531049 := by
   have h := CompressedPointDialog.finite_counts L hw hn C cx cy
   have g0 := CompressedPointDialog.generic_counts L hw hn cx cy
   have g1 := fastGeneric_counts L hw cx cy
@@ -252,8 +252,9 @@ theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
   have e8 := equalConstant_counts L.core.equalX L.core.equalNegY L.dialogPointZero (pointCode (-C))
   have s5 := shortEqual_counts L hw L.core.equalX L.core.equalNegY (dialogExceptionPoint C)
   have s7 := shortEqual_counts L hw L.core.double L.doubleSelect (C+C)
-  have p1 := pairEqual_counts L hw L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C)
   have p2 := pairEqual_counts L hw L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C)
+  have t1 := tailCost_le (decide (cy≠-cy)) (yBit C) true (yBit (-C))
+  have t2 := tailCost_le true (yBit C) (exceptionBit C) (yBit (-C))
   have z1 := zeroFlag_counts L.point.finite L.control L.infinitySelect
   have z2 := zeroFlag_counts L.point.finite L.control L.genericSelect
   rw [hzl] at e1 e2 e3 e4 e5 e6 e7 e8
