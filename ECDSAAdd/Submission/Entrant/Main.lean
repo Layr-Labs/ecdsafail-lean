@@ -20,7 +20,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2175906, 1516459, 1892, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2174886, 1516459, 1892, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -36,7 +36,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgramN_support layout layout_widths layout_nodup _ cy _ hG).trans
         (sitesN_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2175906 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2174886 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
