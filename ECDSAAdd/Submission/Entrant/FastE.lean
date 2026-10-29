@@ -51,9 +51,7 @@ theorem fastGenericE (cx cy : Fp) : wires (fastGeneric2 L cx cy) ⊆ (sitesE L).
   have cn : wires (fastConstNeg L cx) ⊆ (sitesE L).toFinset :=
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConstE L hw L.point.x (Or.inl rfl))
-  have cr : wires (fastConstRefl L (3*cx-1)) ⊆ (sitesE L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (fastConstE L hw L.point.x (Or.inl rfl))
+  have cr := ca L.point.x (Or.inl rfl) (3*cx)
   simp only [fastGeneric2, wires_append, Finset.union_subset_iff]
   exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, arithE L hw hn false⟩, fastSquareE L hw hn⟩,
     cr⟩, arithE L hw hn true⟩, cn⟩, ca _ (Or.inr rfl) _⟩

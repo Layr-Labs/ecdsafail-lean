@@ -14,7 +14,7 @@ def fastGeneric3 (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx) ++ fastConstAdd L L.point.y (-cy) ++
   farith L false ++
   fastSquare L ++
-  fastConstRefl L (3*cx-1) ++
+  fastConstAdd L L.point.x (3*cx) ++
   farith L true ++
   fastConstNeg L cx ++ fastConstAdd L L.point.y (-cy)
 
@@ -42,12 +42,12 @@ theorem fast3_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (h
   simp only [if_true,Bool.false_eq_true,if_false,ha] at h3
   have h4 := fast_step_square L hw hn (X-cx) a true base
   simp only [if_true] at h4
-  have h5 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true base (3*cx-1)
+  have h5 := fastStep_addX L hw hn ((X-cx)-a*a) a true base (3*cx)
   simp only [if_true] at h5
-  have hd5 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
+  have hd5 : (X-cx)-a*a+3*cx=d := by
     have e := hv.2.1
     change (X-cx)-a*a+3*cx=d at e
-    rw [← e]; ring
+    exact e
   rw [hd5] at h5
   have h6 := farith_step L hw hn d a true base true (fun _=>hd) (nz _ hd)
   simp only [if_true] at h6
@@ -68,12 +68,11 @@ theorem fast3_generic_false (X Y cx cy : Fp) (base : BasisState)
   have h2 := fastStep_addY L hw hn X Y false base (-cy)
   have h3 := farith_step L hw hn X Y false base false (by simp) hfin
   have h4 := fast_step_square L hw hn X Y false base
-  have h5 := fastStep_refl L hw hn (-1-X) Y false base (3*cx-1)
+  have h5 := fastStep_addX L hw hn X Y false base (3*cx)
   have h6 := farith_step L hw hn X Y false base true (by simp) hfin
   have h7 := fastStep_negX L hw hn X Y false base cx
   have h8 := fastStep_addY L hw hn X Y false base (-cy)
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
-  rw [show -1-(-1-X)=X by ring] at h5
   have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
   simpa only [fastGeneric3,List.append_assoc] using h
 
@@ -127,12 +126,12 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem fastGeneric3_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric3 L cx cy)=2174873 ∧
-    measurementCount (fastGeneric3 L cx cy)=1515432 := by
+    toffoliCount (fastGeneric3 L cx cy)=2174618 ∧
+    measurementCount (fastGeneric3 L cx cy)=1515177 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
-  have r := fastConstRefl_counts L hw (3*cx-1)
+  have r := fastConstAdd_counts L hw L.point.x (Or.inl rfl) (3*cx)
   have arith := arith3_counts L
   have pf : toffoliCount (pfix L) = 0 ∧ measurementCount (pfix L) = 0 := ⟨rfl, rfl⟩
   have square := fastSquare_counts L hw
@@ -160,8 +159,7 @@ theorem fastGeneric3_physical (cx cy : Fp) : GatePhysical (fastGeneric3 L cx cy)
     simp only [farith, gatePhysical_append]; exact ⟨pf, arith3_physical L hw hn false, pf⟩
   have mu : GatePhysical (farith L true) := by
     simp only [farith, gatePhysical_append]; exact ⟨pf, arith3_physical L hw hn true, pf⟩
-  have rf := FastConst.fastRefl_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p (3*cx-1).val
+  have rf := ax (3*cx)
   have sq := fastSquare_physical L hw hn
   simp only [fastGeneric3,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
   exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,rf⟩,mu⟩,ng⟩,ay _⟩
@@ -175,8 +173,7 @@ theorem fastGeneric3_gateSlots_le (cx cy : Fp) :
     (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a1 := ax L.point.x hw.inputX (-cx)
   have a2 := ax L.point.y hw.inputY (-cy)
-  have a3 := FastConst.fastRefl_gateSlots_le (g:=L.core.generic) 256 p (3*cx-1).val
-    (L.recoveryConstant_widths hw L.point.x hw.inputX)
+  have a3 := ax L.point.x hw.inputX (3*cx)
   have d := arith3_gateSlots_le L false
   have e := arith3_gateSlots_le L true
   have pf : Challenge.gateSlots (pfix L) = 3 := rfl

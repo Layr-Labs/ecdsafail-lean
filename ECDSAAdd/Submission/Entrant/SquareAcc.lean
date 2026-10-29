@@ -75,6 +75,25 @@ def accProgram (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program 
 def accPrefix (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   accBranchA L control++accBranchB L control++accBranchC L control
 
+/-- Branch C run in the reflected orientation left by branch A: both of its
+items are negative, so it needs no orientation switch. -/
+def accMiddleCR (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
+  L.withMeasuredSquare control L.core.sum L.core.product (mixFolds L true (accCMix L))
+def accBranchCR (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
+  L.core.prepareSum++accMiddleCR L control++L.core.clearSum
+
+/-- Branches in the order A, C, B: one orientation switch fewer, and the
+square ends in the plain orientation, so no final reflection is needed. -/
+def accProgramR (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
+  accBranchA L control++accBranchCR L control++accBranchB L control
+
+theorem accCR_orientation (L : CuccaroStreamedSquareWideLayout) : mixFinal true (accCMix L)=true := by
+  simp [mixFinal,mixNeg,accCMix,negRot]
+
+/-- Branch C's result when it starts in the reflected orientation. -/
+def resCt (P O : Nat) : Nat :=
+  ofCast true (measuredOrientationCast true O+(-(P : ZMod SquareReduction.p)*2^128))
+
 theorem accProgram_split (L : CuccaroStreamedSquareWideLayout) (control : Wire) :
     accProgram L control=accPrefix L control++L.reflectOutput := by
   simp only [accProgram,accPrefix,List.append_assoc]
@@ -940,5 +959,382 @@ theorem accPrefix_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wid
   have full := accProgram_gateSlots_le L hw control
   rw [accProgram_split,Challenge.gateSlots_append] at full
   omega
+
+theorem accMiddleCR_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (S O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (hs : regValue L.core.sum s.basis=S)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis) :
+    (run (accMiddleCR L control) records s).phase=s.phase ∧
+    regValue L.core.out (run (accMiddleCR L control) records s).basis=
+      resCt ((if s.basis control then S else 0)^2) O ∧
+    ∀q,q∉L.core.out → (run (accMiddleCR L control) records s).basis q=s.basis q := by
+  let M := if s.basis control then S else 0
+  have srcCount (q : Wire) : L.core.sum.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have result := withMixed_contribution L hw control hn L.core.sum L.core.product srcCount
+    (fun _ => le_rfl) (by simp [L.core.sum_length hw.core]) (by simp [L.core.sum_length hw.core])
+    (by simp [hw.core.product,L.core.sum_length hw.core]) true (accCMix L) s records hc hp0
+    O (M^2) (resCt (M^2) O) hO ho (by rw [hs])
+    (fun _ hp _ => hp) (fun t hp => accC_views L hw t M hp)
+    (-((M^2 : Nat) : ZMod SquareReduction.p)*2^128)
+    (fun t hp => (accC_mixSum L hw t).trans (L.measuredC_sum hw t (M^2) hp))
+    (ofCast_lt _ _) (by
+      rw [accCR_orientation L]
+      exact cast_ofCast _ _)
+  exact result
+
+theorem accBranchCR_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (A B O : Nat)
+    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
+    (ha : regValue L.core.low s.basis=A) (hb : regValue L.core.sum s.basis=B)
+    (bound : A+B<2^129) (ho : regValue L.core.out s.basis=O)
+    (hp0 : regValue L.core.product s.basis=0) (hc : L.PairClean s.basis) :
+    (run (accBranchCR L control) records s).phase=s.phase ∧
+    regValue L.core.out (run (accBranchCR L control) records s).basis=
+      resCt ((if s.basis control then A+B else 0)^2) O ∧
+    ∀q,q∉L.core.out → (run (accBranchCR L control) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have dis := L.measured_sum_disjoint nd
+  have ctrlAway : control∉L.core.sum := by
+    intro bad
+    have h := List.nodup_iff_count.mp hn control
+    have pos := List.count_pos_iff.mpr bad
+    have sumBound := L.measured_sum_count control
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,List.count_cons,
+      List.count_nil,beq_self_eq_true,if_true] at h sumBound
+    omega
+  let middle := accMiddleCR L control
+  let u := run L.core.prepareSum [] s
+  let v := run middle (records.take (measurementCount middle)) u
+  let out := run L.core.clearSum (records.drop (measurementCount middle)) v
+  have prep := L.prepareSum_frame hw nd s.basis A B ha hb bound (PairClean.corePad L s.basis hc) hc.cin
+    s [] (show SquareFrame L.core.sum s.basis B s.basis from ⟨hb,fun _ _ => rfl⟩)
+  have productU : regValue L.core.product u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.1 bad hq))).trans hp0
+  have outU : regValue L.core.out u.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq))).trans ho
+  have ctrlU : u.basis control=s.basis control := prep.2.2 control ctrlAway
+  have cleanU : L.PairClean u.basis := by
+    have keep (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
+        L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : u.basis q=s.basis q :=
+      prep.2.2 q (L.measured_sum_aux_away nd q hq)
+    constructor
+    · exact (regValue_congr _ _ _ (fun q hq => keep q (by simp [hq]))).trans hc.pad
+    · exact (regValue_congr _ _ _ (fun q hq => keep q (by simp [hq]))).trans hc.work
+    · exact (keep _ (by simp)).trans hc.productHigh
+    · exact (keep _ (by simp)).trans hc.outHigh
+    · exact (keep _ (by simp)).trans hc.workHigh
+    · exact (keep _ (by simp)).trans hc.cin
+    · exact (keep _ (by simp)).trans hc.normFlag
+    · exact (keep _ (by simp)).trans hc.modFlag
+  have used := accMiddleCR_correct L hw control hn (A+B) O hO u
+    (records.take (measurementCount middle)) prep.2.1 outU productU cleanU
+  rw [ctrlU] at used
+  let restoreBase : BasisState := fun q => if q∈L.core.out then v.basis q else s.basis q
+  have lowOutAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out := by
+    intro bad
+    have h := List.nodup_iff_count.mp nd q
+    have a := List.count_pos_iff.mpr (List.mem_of_mem_take hq)
+    have b := List.count_pos_iff.mpr bad
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,List.count_cons,List.count_nil] at h
+    omega
+  have lowRestore : regValue L.core.low restoreBase=A := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) ha
+    intro q hq
+    simp [restoreBase,lowOutAway q hq]
+  have sumRestore : regValue L.core.sum restoreBase=B := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) hb
+    intro q hq
+    simp [restoreBase,List.disjoint_left.mp dis.2 hq]
+  have padRestore : regValue L.core.pad restoreBase=0 := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) (PairClean.corePad L s.basis hc)
+    intro q hq
+    have away := (L.pairAuxAway nd q (by simp [CuccaroStreamedSquareWideLayout.foldPad,hq])).2
+    simp [restoreBase,away]
+  have cinRestore : restoreBase L.core.cin=false := by
+    have away := (L.pairAuxAway nd L.core.cin (by simp)).2
+    simp [restoreBase,away,hc.cin]
+  have clearPre : SquareFrame L.core.sum restoreBase (A+B) v.basis := by
+    refine ⟨?_,?_⟩
+    · exact (regValue_congr _ _ _ (fun q hq => used.2.2 q (List.disjoint_left.mp dis.2 hq))).trans prep.2.1
+    · intro q hq
+      by_cases outSite : q∈L.core.out
+      · simp [restoreBase,outSite]
+      · simp only [restoreBase,if_neg outSite]
+        exact (used.2.2 q outSite).trans (prep.2.2 q hq)
+  have cleared := L.clearSum_frame hw nd restoreBase A B lowRestore sumRestore bound padRestore cinRestore
+    v (records.drop (measurementCount middle)) clearPre
+  have finalValue : regValue L.core.out out.basis=
+      resCt ((if s.basis control then A+B else 0)^2) O := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) used.2.1
+    intro q hq
+    have same := cleared.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq)
+    simpa [restoreBase,hq] using same
+  have final : out.phase=s.phase ∧ regValue L.core.out out.basis=
+      resCt ((if s.basis control then A+B else 0)^2) O ∧
+      ∀q,q∉L.core.out → out.basis q=s.basis q := by
+    refine ⟨cleared.1.trans (used.1.trans prep.1),finalValue,?_⟩
+    intro q hq
+    by_cases sumSite : q∈L.core.sum
+    · exact (regValue_eq_iff L.core.sum out.basis s.basis).mp (cleared.2.1.trans hb.symm) q sumSite
+    · have same := cleared.2.2 q sumSite
+      simpa [restoreBase,hq] using same
+  have prepM := (L.core.sum_counts hw.core).1.2
+  simpa [accBranchCR,middle,u,v,out,run_append,prepM] using final
+
+theorem accR_exact (enabled : Bool) (A B O : Nat) :
+    resB ((if enabled then B else 0)^2) (resCt ((if enabled then A+B else 0)^2)
+      (resA ((if enabled then A else 0)^2) O))=
+      subModValue (if enabled then (A+2^128*B)^2 else 0) O := by
+  let PA := (if enabled then A else 0)^2
+  let PB := (if enabled then B else 0)^2
+  let PC := (if enabled then A+B else 0)^2
+  let OA := resA PA O
+  let OC := resCt PC OA
+  let OB := resB PB OC
+  have ea : measuredOrientationCast true OA=measuredOrientationCast false O+((PA : ZMod SquareReduction.p)*2^128-PA) :=
+    cast_ofCast _ _
+  have ec : measuredOrientationCast true OC=measuredOrientationCast true OA+(-(PC : ZMod SquareReduction.p)*2^128) :=
+    cast_ofCast _ _
+  have eb : measuredOrientationCast false OB=measuredOrientationCast true OC+
+      ((PB : ZMod SquareReduction.p)*2^128-SquareReduction.c*PB) := cast_ofCast _ _
+  simp only [measuredOrientationCast,Bool.false_eq_true,if_false,if_true] at ea eb ec
+  have identity := measured_controlled_square_identity enabled A B
+  change (PA : ZMod SquareReduction.p)*2^128-PA+
+    ((PB : ZMod SquareReduction.p)*2^128-SquareReduction.c*PB)-(PC : ZMod SquareReduction.p)*2^128=
+      -((if enabled then (A+2^128*B)^2 else 0 : Nat) : ZMod SquareReduction.p) at identity
+  have obBound : OB<SquareReduction.p := ofCast_lt _ _
+  have cast : ((OB : Nat) : ZMod SquareReduction.p)=
+      (subModValue (if enabled then (A+2^128*B)^2 else 0) O : ZMod SquareReduction.p) := by
+    rw [subModValue_cast]
+    linear_combination eb+ec+ea+identity
+  have targetBound : subModValue (if enabled then (A+2^128*B)^2 else 0) O<SquareReduction.p :=
+    Nat.mod_lt _ (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have value := congrArg ZMod.val cast
+  simpa only [ZMod.val_natCast_of_lt obBound,ZMod.val_natCast_of_lt targetBound] using value
+
+theorem accProgramR_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
+    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
+    (hy : regValue L.core.y s.basis=Y) (ho : regValue L.core.out s.basis=O)
+    (hp0 : regValue L.core.product s.basis=0) (hs0 : s.basis L.core.sumCarry=false)
+    (hc : L.PairClean s.basis) :
+    (run (accProgramR L control) records s).phase=s.phase ∧
+    regValue L.core.out (run (accProgramR L control) records s).basis=
+      (O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
+    ∀q,q∉L.core.out → (run (accProgramR L control) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have disInput := L.measured_input_out_disjoint nd
+  have disProduct := L.product_out_disjoint nd
+  have ctrlAway : control∉L.core.out := by
+    intro bad
+    exact (List.nodup_cons.mp hn).1 (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,bad])
+  let A := regValue L.core.low s.basis
+  let B := regValue L.core.high s.basis
+  let enabled := s.basis control
+  let PA := (if enabled then A else 0)^2
+  let PB := (if enabled then B else 0)^2
+  let PC := (if enabled then A+B else 0)^2
+  let OA := resA PA O
+  let OC := resCt PC OA
+  let OB := resB PB OC
+  let restA := records.drop (measurementCount (accBranchA L control))
+  let restC := restA.drop (measurementCount (accBranchCR L control))
+  let u := run (accBranchA L control) (records.take (measurementCount (accBranchA L control))) s
+  let v := run (accBranchCR L control) (restA.take (measurementCount (accBranchCR L control))) u
+  let w := run (accBranchB L control) restC v
+  have lowAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out :=
+    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_take hq))
+  have highAway (q : Wire) (hq : q∈L.core.high) : q∉L.core.out :=
+    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_drop (List.mem_of_mem_take hq)))
+  have sumAway (q : Wire) (hq : q∈L.core.sum) : q∉L.core.out :=
+    List.disjoint_left.mp (L.measured_sum_disjoint nd).2 hq
+  have sumB : regValue L.core.sum s.basis=B := by
+    simp [CuccaroStreamedSquareLayout.sum,regValue_append,regValue,hs0,B]
+  have ab : A<2^128 := by simpa [A,L.core.low_length hw.core] using regValue_lt L.core.low s.basis
+  have bb : B<2^128 := by simpa [B,L.core.high_length hw.core] using regValue_lt L.core.high s.basis
+  have sumBound : A+B<2^129 := by norm_num at ab bb ⊢;omega
+  have ea := accBranchA_correct L hw control hn A O hO s
+    (records.take (measurementCount (accBranchA L control))) rfl ho hp0 hc
+  have cleanU : L.PairClean u.basis :=
+    L.squareFrame_clean nd s.basis u.basis OA ⟨ea.2.1,ea.2.2⟩ hc
+  have productU : regValue L.core.product u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => ea.2.2 q (List.disjoint_left.mp disProduct hq))).trans hp0
+  have lowU : regValue L.core.low u.basis=A := regValue_congr _ _ _ (fun q hq => ea.2.2 q (lowAway q hq))
+  have sumU : regValue L.core.sum u.basis=B :=
+    (regValue_congr _ _ _ (fun q hq => ea.2.2 q (sumAway q hq))).trans sumB
+  have ctrlU : u.basis control=enabled := ea.2.2 control ctrlAway
+  have ec := accBranchCR_correct L hw control hn A B OA (ofCast_lt _ _) u
+    (restA.take (measurementCount (accBranchCR L control))) lowU sumU sumBound ea.2.1 productU cleanU
+  rw [ctrlU] at ec
+  have sameV (q : Wire) (hq : q∉L.core.out) : v.basis q=s.basis q :=
+    (ec.2.2 q hq).trans (ea.2.2 q hq)
+  have cleanV : L.PairClean v.basis :=
+    L.squareFrame_clean nd s.basis v.basis OC ⟨ec.2.1,sameV⟩ hc
+  have productV : regValue L.core.product v.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => sameV q (List.disjoint_left.mp disProduct hq))).trans hp0
+  have highV : regValue L.core.high v.basis=B :=
+    regValue_congr _ _ _ (fun q hq => sameV q (highAway q hq))
+  have ctrlV : v.basis control=enabled := sameV control ctrlAway
+  have eb := accBranchB_correct L hw control hn B OC (ofCast_lt _ _) v restC highV ec.2.1 productV cleanV
+  rw [ctrlV] at eb
+  have split : A+2^128*B=Y := by
+    have highEq : L.core.high=L.core.y.drop 128 := by simp [CuccaroStreamedSquareLayout.high,hw.core.y]
+    have value := regValue_append (L.core.y.take 128) (L.core.y.drop 128) s.basis
+    rw [List.take_append_drop,hy,List.length_take,hw.core.y] at value
+    simpa only [A,B,CuccaroStreamedSquareLayout.low,highEq,show min 128 256=128 by decide] using value.symm
+  have fullValue : regValue L.core.out w.basis=
+      (O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p := by
+    have exactResult := accR_exact enabled A B O
+    rw [split] at exactResult
+    exact eb.2.1.trans exactResult
+  have final : w.phase=s.phase ∧ regValue L.core.out w.basis=
+      (O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
+      ∀q,q∉L.core.out → w.basis q=s.basis q := by
+    refine ⟨eb.1.trans (ec.1.trans ea.1),fullValue,?_⟩
+    intro q hq
+    exact (eb.2.2 q hq).trans (sameV q hq)
+  simpa [accProgramR,u,v,w,restA,restC,enabled,run_append,Nat.add_assoc] using final
+
+theorem accCR_price (L : CuccaroStreamedSquareWideLayout) :
+    mixFoldsT true (accCMix L)=2990 ∧ mixFoldsM true (accCMix L)=2990 := by
+  norm_num [mixFoldsT,mixFoldsM,mixNeg,accCMix,negRot,posTop,accCRaw,sortedItems,nafMinusOneItems,
+    List.filter_cons,Acc.buildT,Acc.sbuildT,accPrice]
+
+theorem accProgramR_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
+    toffoliCount (accProgramR L control)=68898 ∧ measurementCount (accProgramR L control)=68386 := by
+  have st := acc_static L hw
+  have lo := L.core.low_length hw.core
+  have hi := L.core.high_length hw.core
+  have su := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have a := L.withMeasuredSquare_counts hw control L.core.low (L.core.product.take 256)
+    (mixFolds L false (accAMix L)) (by omega) (by omega) (by omega)
+  have b := L.withMeasuredSquare_counts hw control L.core.high (L.core.product.take 256)
+    (mixFolds L true (accBMix L)) (by omega) (by omega) (by omega)
+  have c := L.withMeasuredSquare_counts hw control L.core.sum L.core.product
+    (mixFolds L true (accCMix L)) (by omega) (by omega) (by rw [hw.core.product,su])
+  have fa := mixFolds_counts L hw false (accAMix L) st.1
+  have fb := mixFolds_counts L hw true (accBMix L) st.2.1
+  have fc := mixFolds_counts L hw true (accCMix L) st.2.2
+  have prices := acc_item_prices L
+  rw [prices.1.1,prices.1.2] at fa
+  rw [prices.2.1.1,prices.2.1.2] at fb
+  rw [(accCR_price L).1,(accCR_price L).2] at fc
+  have reflection := (L.measured_small_operation_counts hw).2.2
+  have sum := L.core.sum_counts hw.core
+  simp only [accProgramR,accBranchA,accBranchB,accBranchCR,accMiddleCR,toffoliCount_append,
+    measurementCount_append,a.1,a.2,b.1,b.2,c.1,c.2,fa.1,fa.2,fb.1,fb.2,fc.1,fc.2,
+    sum.1.1,sum.1.2,sum.2.1,sum.2.2,lo,hi,su,p256,hw.core.product]
+  norm_num [signedSquareRowsCount]
+
+theorem accProgramR_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (control : Wire) :
+    ECDSAAdd.wires (accProgramR L control)⊆(control::L.wires).toFinset := by
+  have st := acc_static L hw
+  have a := mixFolds_support L hw hn control false (accAMix L) st.1
+  have b := mixFolds_support L hw hn control true (accBMix L) st.2.1
+  have c := mixFolds_support L hw hn control true (accCMix L) st.2.2
+  have low := L.core.low_length hw.core
+  have high := L.core.high_length hw.core
+  have sum := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have sa : ECDSAAdd.wires (accBranchA L control)⊆(control::L.wires).toFinset :=
+    L.withMeasuredSquare_support hw control L.core.low (L.core.product.take 256)
+    (mixFolds L false (accAMix L)) (by omega) (by omega) (by omega)
+    (by intro q hq; simp [CuccaroStreamedSquareLayout.low] at hq; exact List.mem_append_left _ (List.mem_of_mem_take hq))
+    (fun _ hq => List.mem_of_mem_take hq) a
+  have sb : ECDSAAdd.wires (accBranchB L control)⊆(control::L.wires).toFinset :=
+    L.withMeasuredSquare_support hw control L.core.high (L.core.product.take 256)
+    (mixFolds L true (accBMix L)) (by omega) (by omega) (by omega)
+    (by intro q hq; exact List.mem_append_left _ (List.mem_of_mem_drop (List.mem_of_mem_take hq)))
+    (fun _ hq => List.mem_of_mem_take hq) b
+  have sc : ECDSAAdd.wires (accMiddleCR L control)⊆(control::L.wires).toFinset :=
+    L.withMeasuredSquare_support hw control L.core.sum L.core.product
+    (mixFolds L true (accCMix L)) (by omega) (by omega) (by rw [hw.core.product,sum])
+    (by
+      intro q hq
+      simp only [CuccaroStreamedSquareLayout.sum,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
+      rcases hq with hq|rfl
+      · exact List.mem_append_left _ (List.mem_of_mem_drop (List.mem_of_mem_take hq))
+      · simp)
+    (fun _ hq => hq) c
+  have sumCert := L.sum_certified hw hn
+  have embed : L.wires.toFinset⊆(control::L.wires).toFinset := by
+    intro q hq; simp only [List.mem_toFinset,List.mem_cons] at hq ⊢; exact Or.inr hq
+  have prep := sumCert.1.2.trans embed
+  have unprep := sumCert.2.2.trans embed
+  simpa only [accProgramR,accBranchCR,
+    wires_append,Finset.union_subset_iff] using And.intro (And.intro sa
+      (And.intro (And.intro prep sc) unprep)) sb
+
+theorem accProgramR_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control :: L.wires).Nodup) :
+    GatePhysical (accProgramR L control) := by
+  have nd := (List.nodup_cons.mp hn).2
+  have st := acc_static L hw
+  have hl (q : Wire) : L.core.low.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢; omega
+  have hh (q : Wire) : L.core.high.count q ≤ L.core.y.count q :=
+    ((List.take_sublist 128 (L.core.y.drop 128)).count_le q).trans
+      ((List.drop_sublist 128 L.core.y).count_le q)
+  have hb (q : Wire) : L.core.high.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [List.count_append]; omega
+  have hs (q : Wire) : L.core.sum.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [CuccaroStreamedSquareLayout.sum,List.count_append]; omega
+  have hp (q : Wire) : (L.core.product.take 256).count q ≤ L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have a := L.withMeasuredSquare_physical control hn _ _ hl hp _
+    (mixFolds_physical L hw nd false (accAMix L) st.1)
+  have b := L.withMeasuredSquare_physical control hn _ _ hb hp _
+    (mixFolds_physical L hw nd true (accBMix L) st.2.1)
+  have c := L.withMeasuredSquare_physical control hn _ _ hs (fun _ => le_rfl) _
+    (mixFolds_physical L hw nd true (accCMix L) st.2.2)
+  have prep := (RecordedQuantum.physical_embed _).mp (RecordedQuantum.physical_of_proper _ (L.sum_certified hw nd).1.1)
+  have clear := (RecordedQuantum.physical_embed _).mp (RecordedQuantum.physical_of_proper _ (L.sum_certified hw nd).2.1)
+  simp only [accProgramR,accBranchA,accBranchB,accBranchCR,accMiddleCR,gatePhysical_append]
+  exact ⟨⟨a,⟨prep,c⟩,clear⟩,b⟩
+
+theorem accProgramR_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) : Challenge.gateSlots (accProgramR L control) ≤ 5000000 := by
+  have st := acc_static L hw
+  have bd (items : List MixItem) (h : items=accAMix L ∨ items=accBMix L ∨ items=accCMix L) :
+      ∀i∈items,∀a,i=.inr a → a.terms.length≤20 ∧ a.pre.length≤4 := by
+    intro i hi a e
+    subst e
+    rcases h with rfl|rfl|rfl <;>
+      simp [accAMix,accBMix,accCMix] at hi <;> rw [hi] <;>
+      simp [sortedItems,accARaw,accBRaw,accCRaw,termsB,preW,nafMinusOneItems,List.filter_cons,posTop]
+  have ha := mixFolds_gateSlots L hw false (accAMix L) st.1 20 (bd _ (Or.inl rfl))
+  have hb := mixFolds_gateSlots L hw true (accBMix L) st.2.1 20 (bd _ (Or.inr (Or.inl rfl)))
+  have hc := mixFolds_gateSlots L hw true (accCMix L) st.2.2 20 (bd _ (Or.inr (Or.inr rfl)))
+  have la : (accAMix L).length = 3 := rfl
+  have lb : (accBMix L).length = 7 := rfl
+  have lc : (accCMix L).length = 2 := rfl
+  rw [la] at ha
+  rw [lb] at hb
+  rw [lc] at hc
+  have hd : (L.core.product.take 256).length ≤ 258 := by
+    simp only [List.length_take]; omega
+  have a := Baselines.withMeasuredSquare_gateSlots_le L hw control L.core.low _
+    (mixFolds L false (accAMix L)) hd
+  have b := Baselines.withMeasuredSquare_gateSlots_le L hw control L.core.high _
+    (mixFolds L true (accBMix L)) hd
+  have c := Baselines.withMeasuredSquare_gateSlots_le L hw control L.core.sum L.core.product
+    (mixFolds L true (accCMix L)) (by rw [hw.core.product])
+  have hp := Baselines.cuccaroAdd_gateSlots_le (L.core.low++[L.core.pad.getD 0 0]) L.core.sum L.core.cin
+  have hl := L.core.low_length hw.core
+  simp only [List.length_append, List.length_cons, List.length_nil, hl] at hp
+  change Challenge.gateSlots L.core.prepareSum ≤ _ at hp
+  have hr := (Baselines.streamedFrames_gateSlots_le L hw).2.2
+  simp only [accProgramR,accBranchA,accBranchB,accBranchCR,accMiddleCR,
+    CuccaroStreamedSquareLayout.clearSum, Challenge.gateSlots_append, Baselines.reverse_gateSlots]
+  omega
+
 
 end ECDSAAdd.Entrant
