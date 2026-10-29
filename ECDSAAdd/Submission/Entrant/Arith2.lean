@@ -181,8 +181,8 @@ theorem arith2_correct (multiply : Bool) (X Y : Nat) (B : Bool)
 end
 
 theorem arith2_counts (L : ControlledPointLayout) :
-    toffoliCount (arith2 L false)=1051712 ∧ measurementCount (arith2 L false)=722496 ∧
-    toffoliCount (arith2 L true)=1052222 ∧ measurementCount (arith2 L true)=722496 := by
+    toffoliCount (arith2 L false)=1051199 ∧ measurementCount (arith2 L false)=721985 ∧
+    toffoliCount (arith2 L true)=1051709 ∧ measurementCount (arith2 L true)=721985 := by
   have h1 := laneControlled_counts true
   have h2 := laneControlled_counts false
   have r1 := renameProgram_counts (wireFn2 L) (laneControlled true)

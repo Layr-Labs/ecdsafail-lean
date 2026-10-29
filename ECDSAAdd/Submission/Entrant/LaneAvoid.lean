@@ -49,9 +49,12 @@ theorem laneKernel_avoid (divide : Bool) : Avoid (laneKernel divide) := by
   exact ⟨⟨⟨⟨⟨⟨k.1.1.1.1.1.1,k.1.1.1.1.1.2⟩,k.1.1.1.1.2⟩,laneSegment_avoid divide⟩,k.1.1.2⟩,k.1.2⟩,k.2⟩
 
 theorem laneControlled_avoid (divide : Bool) : Avoid (laneControlled divide) := by
-  have c := controlled_avoid divide
-  simp only [controlled,directZeroControlled,avoid_append] at c
-  simp only [laneControlled,directZeroControlled,avoid_append]
-  exact ⟨c.1,laneKernel_avoid divide,c.2.2⟩
+  intro q hq
+  have used := controlRepair_support (laneKernel divide) hq
+  rcases Finset.mem_union.mp used with ports|core
+  · simp only [Finset.mem_insert,Finset.mem_singleton] at ports
+    rcases ports with rfl|rfl|rfl|rfl|rfl
+    all_goals (apply base_good; unfold badIdx; omega)
+  · exact laneKernel_avoid divide q core
 
 end ECDSAAdd.Entrant

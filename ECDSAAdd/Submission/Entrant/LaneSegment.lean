@@ -518,16 +518,16 @@ theorem canonSource_counts : toffoliCount canonSource = 765 ∧ measurementCount
   exact ⟨c.2.2.1,c.2.2.2⟩
 
 theorem laneSegment_counts (divide : Bool) :
-    toffoliCount (laneSegment divide)=(if divide then 655012 else 655522) ∧
-    measurementCount (laneSegment divide)=523940 := by
+    toffoliCount (laneSegment divide)=(if divide then 655006 else 655516) ∧
+    measurementCount (laneSegment divide)=523934 := by
   have old := selectedFieldSegment_counts divide
   have src := canonSource_counts
   have csrc := centSource_counts
   have oc := BalancedConvert.counts (balancedSharedTargetConvert base) (balancedSharedTargetConvert_widths base)
   have fc := BalancedConvert.LaneA.fast_counts (balancedSharedTargetConvert base)
     (balancedSharedTargetConvert_widths base)
-  have h1 : toffoliCount centTarget = 511 ∧ measurementCount centTarget = 510 := ⟨fc.1,fc.2.1⟩
-  have h2 : toffoliCount canonTarget = 511 ∧ measurementCount canonTarget = 510 := ⟨fc.2.2.1,fc.2.2.2⟩
+  have h1 : toffoliCount centTarget = 508 ∧ measurementCount centTarget = 507 := ⟨fc.1,fc.2.1⟩
+  have h2 : toffoliCount canonTarget = 508 ∧ measurementCount canonTarget = 507 := ⟨fc.2.2.1,fc.2.2.2⟩
   have h3 : toffoliCount origCentTarget = 765 ∧ measurementCount origCentTarget = 765 := ⟨oc.1,oc.2.1⟩
   have h4 : toffoliCount origCanonTarget = 765 ∧ measurementCount origCanonTarget = 765 :=
     ⟨oc.2.2.1,oc.2.2.2⟩

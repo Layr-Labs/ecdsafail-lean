@@ -160,6 +160,14 @@ theorem genericFlagE : wires (genericFlag2 L) ⊆ (sitesE L).toFinset := by
   all_goals simp [sitesE, flagsE, PointAddLayout.pointWires]
 
 omit hw hn in
+theorem genericFlag3E : wires (genericFlag3 L) ⊆ (sitesE L).toFinset := by
+  intro q hq
+  simp [genericFlag3, wires, Instr.wires] at hq
+  apply List.mem_toFinset.mpr
+  rcases hq with rfl | rfl | rfl | rfl | rfl
+  all_goals simp [sitesE, flagsE]
+
+omit hw hn in
 theorem cornersE (C : Point) : wires (corners2 L C) ⊆ (sitesE L).toFinset := by
   have m (c : Wire) (hc : c ∈ flagsE L) (P : Point) :
       wires (maskedPointConstant c L.point P) ⊆ (sitesE L).toFinset := by
@@ -196,8 +204,8 @@ theorem finiteProgramFG_support (C : Point) (cy : Fp) (Gen : Program)
     wires (finiteProgramFG L C cy Gen) ⊆ (sitesE L).toFinset := by
   have fS : flagsE L = [L.doubleSelect, L.genericSelect, L.core.generic, L.core.equalNegY] := rfl
   simp only [finiteProgramFG, wires_append, Finset.union_subset_iff]
-  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _, gatedE L hw _ _ (by simp [fS]) _⟩,
-    genericFlagE L⟩, hG⟩, genericFlagE L⟩, zeroFlagE L _ (by simp [fS])⟩, cornersE L _⟩,
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _, gatedE L hw _ _ (by simp [fS]) _⟩,
+    genericFlagE L⟩, hG⟩, genericFlag3E L⟩, cornersE L _⟩,
     pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩, gatedE L hw _ _ (by simp [fS]) _⟩,
     chainEraseE L _ (by simp [fS])⟩
 

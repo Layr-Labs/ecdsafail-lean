@@ -1,6 +1,7 @@
 import ECDSAAdd.Arithmetic.BalancedFieldConvertProof
 import ECDSAAdd.Arithmetic.BalancedConvertPhysical
 import ECDSAAdd.Arithmetic.ConstantBorrow
+import ECDSAAdd.Arithmetic.TrailingZeroCompare
 import ECDSAAdd.Arithmetic.MeasuredGateSupport
 import ECDSAAdd.Arithmetic.MappedArithmeticPhysical
 import ECDSAAdd.Arithmetic.BalancedTranscriptSupport
@@ -9,8 +10,8 @@ import ECDSAAdd.Baselines.SlotBalanced
 /-! Lane A balanced converter.  The exact threshold predicate
 `flag ^= [q < x]` of `BalancedConvert` is computed by two literal 256-bit
 additions (510 Toffoli).  Here it is computed by one literal comparison
-`compareConstantGe` against `q+1` on the same word, carry ladder and carry-in
-(256 Toffoli, measurement-erased borrows).  The predicate has the identical
+`compareConstantGe` against `(q+1)/8` on the high 253 bits
+(253 Toffoli, measurement-erased borrows).  The predicate has the identical
 State-level effect, so both conversions keep the original contracts. -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 1000000
@@ -43,7 +44,7 @@ theorem threshold_cutoff (x : Fp) : threshold x = !decide (x.val < cutoff) := by
     rw [decide_eq_true this, decide_eq_false h]; rfl
 
 def fastPredicate (L : Layout) : Program :=
-  compareConstantGe L.word L.carry L.cin L.flag cutoff
+  compareConstantGe (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8)
 
 def fastCenter (L : Layout) : Program :=
   fastPredicate L++mappedAdd (correction L) L.word L.carry L.cin++[.CX L.msb L.flag]
@@ -63,12 +64,28 @@ theorem fastPredicate_run (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (hi : s.basis L.cin=false) (hc : ∀q∈L.carry,s.basis q=false) :
     run (fastPredicate L) m s=⟨s.phase,writeBit s.basis L.flag (s.basis L.flag ^^ threshold x)⟩ := by
   have len := word_length L hw
-  have cy : L.carry.length+1=L.word.length := by rw [hw.2,len]
-  have hk : cutoff < 2^L.word.length := by rw [len]; exact cutoff_spec.2
-  have r := compareConstantLt_correct L.word L.carry L.cin L.flag cutoff (layout_compare L hn) cy hk s
-    (m.take (measurementCount (compareConstantLt L.word L.carry L.cin L.flag cutoff))) hc
-  generalize et : run (compareConstantLt L.word L.carry L.cin L.flag cutoff)
-    (m.take (measurementCount (compareConstantLt L.word L.carry L.cin L.flag cutoff))) s=t at r
+  have cy : (L.carry.drop 3).length+1=(L.word.drop 3).length := by
+    simp [hw.2,len]
+  have nd : (L.flag::L.cin::(L.word.drop 3++L.carry.drop 3)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp (layout_compare L hn) q
+    have a := (List.drop_sublist 3 L.word).count_le q
+    have b := (List.drop_sublist 3 L.carry).count_le q
+    simp only [List.count_cons,List.count_append] at h ⊢
+    omega
+  have hk : cutoff/8 < 2^(L.word.drop 3).length := by
+    rw [List.length_drop,len]
+    decide
+  have pred : decide (regValue (L.word.drop 3) s.basis<cutoff/8)=decide (x.val<cutoff) := by
+    rw [regValue_drop_three L.word (by omega) s.basis,hx]
+    exact decide_eq_decide.mpr (multipleEight_comparison x.val cutoff (by decide)).symm
+  have r := compareConstantLt_correct (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8)
+    nd cy hk s
+    (m.take (measurementCount (compareConstantLt (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8))))
+    (fun q hq => hc q (List.mem_of_mem_drop hq))
+  generalize et : run (compareConstantLt (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8))
+    (m.take (measurementCount (compareConstantLt (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8)))) s=t at r
   have actual : run (fastPredicate L) m s=⟨t.phase,writeBit t.basis L.flag (!t.basis L.flag)⟩ := by
     simp only [fastPredicate,compareConstantGe,run_append,et]
     simp only [run]
@@ -78,8 +95,8 @@ theorem fastPredicate_run (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   · funext q
     by_cases hf : q=L.flag
     · subst q
-      simp only [writeBit,Function.update_self,r.2.2,hx,hi,Bool.toNat_false,Nat.add_zero,
-        threshold_cutoff]
+      simp only [writeBit,Function.update_self,r.2.2,hi,Bool.toNat_false,Nat.add_zero,
+        pred,threshold_cutoff]
       cases s.basis L.flag <;> cases decide (x.val < cutoff) <;> rfl
     · simp only [writeBit,Function.update_of_ne hf]
       exact r.2.1 q hf
@@ -226,16 +243,15 @@ theorem fastCanonical_state_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (canonical_correct L hw hn x s n hx hc)
 
 theorem fastPredicate_counts (L : Layout) (hw : L.Widths) :
-    toffoliCount (fastPredicate L)=256 ∧ measurementCount (fastPredicate L)=255 := by
+    toffoliCount (fastPredicate L)=253 ∧ measurementCount (fastPredicate L)=252 := by
   have len := word_length L hw
-  have cy : L.carry.length+1=L.word.length := by rw [hw.2,len]
-  have h := compareConstantGe_counts L.word L.carry L.cin L.flag cutoff cy
-  rw [len] at h
-  exact h
+  have cy : (L.carry.drop 3).length+1=(L.word.drop 3).length := by simp [hw.2,len]
+  have h := compareConstantGe_counts (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8) cy
+  simpa [fastPredicate,List.length_drop,len] using h
 
 theorem fast_counts (L : Layout) (hw : L.Widths) :
-    toffoliCount (fastCenter L)=511 ∧ measurementCount (fastCenter L)=510 ∧
-    toffoliCount (fastCanonical L)=511 ∧ measurementCount (fastCanonical L)=510 := by
+    toffoliCount (fastCenter L)=508 ∧ measurementCount (fastCenter L)=507 ∧
+    toffoliCount (fastCanonical L)=508 ∧ measurementCount (fastCanonical L)=507 := by
   have w : L.word.length=256 := by simp [Layout.word,hw.1]
   have cy : L.carry.length=255 := hw.2
   have len : (correction L).length=L.word.length := by simp [correction,w]
@@ -246,14 +262,16 @@ theorem fast_counts (L : Layout) (hw : L.Widths) :
   simp [fastCenter,fastCanonical,a.1,a.2,b.1,b.2,p.1,p.2,w,toffoliCount,measurementCount]
 
 theorem fastPredicate_wires (L : Layout) : wires (fastPredicate L) ⊆ L.wires.toFinset := by
-  have h := compareConstantLt_wires_subset L.word L.carry L.cin L.flag cutoff
+  have h := compareConstantLt_wires_subset (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8)
   intro q hq
   simp only [fastPredicate,compareConstantGe,wires_append,Finset.mem_union] at hq
   apply List.mem_toFinset.mpr
   rcases hq with hq|hq
   · have m := List.mem_toFinset.mp (h hq)
+    have a : q∈L.word.drop 3 → q∈L.word := List.mem_of_mem_drop
+    have b : q∈L.carry.drop 3 → q∈L.carry := List.mem_of_mem_drop
     simp only [Layout.wires,Layout.word,List.mem_append,List.mem_cons,List.not_mem_nil,
-      or_false] at m ⊢
+      or_false] at a b m ⊢
     tauto
   · simp [wires,Instr.wires] at hq
     simp [Layout.wires,hq]
@@ -270,13 +288,15 @@ theorem fast_physical (L : Layout) (hn : L.wires.Nodup) :
     GatePhysical (fastCenter L) ∧ GatePhysical (fastCanonical L) := by
   have old := balancedConverters_physical L hn
   simp only [center,canonical,gatePhysical_append] at old
-  have nd : ([L.cin,L.flag]++L.word++L.carry).Nodup := by
+  have nd : ([L.cin,L.flag]++L.word.drop 3++L.carry.drop 3).Nodup := by
     apply List.nodup_iff_count.mpr
     intro q
-    have h := List.nodup_iff_count.mp hn q
-    simp only [Layout.wires,Layout.word,List.count_cons,List.count_append,List.count_nil] at h ⊢
+    have h := List.nodup_iff_count.mp (layout_compare L hn) q
+    have a := (List.drop_sublist 3 L.word).count_le q
+    have b := (List.drop_sublist 3 L.carry).count_le q
+    simp only [List.count_cons,List.count_append,List.count_nil] at h ⊢
     omega
-  have cmp := compareConstantLt_physical L.word L.carry L.cin L.flag cutoff nd
+  have cmp := compareConstantLt_physical (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8) nd
   have x : GatePhysical [Instr.X L.flag] := by simp [GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate]
   have fp : GatePhysical (fastPredicate L) := by
     simp only [fastPredicate,compareConstantGe,gatePhysical_append]
@@ -289,10 +309,10 @@ theorem fast_gateSlots_le (L : Layout) (hw : L.Widths) :
     gateSlots (fastCenter L) ≤ 12000 ∧ gateSlots (fastCanonical L) ≤ 12000 := by
   have hl : L.word.length = 256 := by simp [Layout.word,hw.1]
   have hc : (correction L).length = 256 := by simp [correction]
-  have a := compareConstant_gateSlots_le L.word L.carry L.cin L.flag cutoff
+  have a := compareConstant_gateSlots_le (L.word.drop 3) (L.carry.drop 3) L.cin L.flag (cutoff/8)
   have c := mappedAdd_gateSlots_le (correction L) L.word L.carry L.cin
   have d := mappedSub_gateSlots_le (correction L) L.word L.carry L.cin
-  rw [hl] at a
+  simp only [List.length_drop,hl] at a
   rw [hc] at c
   rw [hc,hl] at d
   simp only [fastCenter,fastCanonical,fastPredicate,compareConstantGe,

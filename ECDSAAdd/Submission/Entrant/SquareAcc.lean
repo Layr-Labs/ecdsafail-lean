@@ -24,9 +24,6 @@ def topSlice (L : CuccaroStreamedSquareWideLayout) (j : Nat) : List Wire :=
   (L.core.product.take 256).drop (256-j)
 def rotF (L : CuccaroStreamedSquareWideLayout) (neg : Bool) (j : Nat) : MeasuredSquareFold :=
   {negative:=neg,canonical:=false,src:=rotateFull (L.core.product.take 256) j}
-/-- Same rotated source, folded without source normalization (proved canonical). -/
-def rotC (L : CuccaroStreamedSquareWideLayout) (neg : Bool) (j : Nat) : MeasuredSquareFold :=
-  {negative:=neg,canonical:=true,src:=rotateFull (L.core.product.take 256) j}
 def posTop (L : CuccaroStreamedSquareWideLayout) : MeasuredSquareFold :=
   {negative:=false,canonical:=true,src:=L.core.product.drop 256,shift:=128}
 
@@ -42,7 +39,7 @@ def accCRaw (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
 def accAMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
   [.inl (rot128F L),.inr ⟨false,sortedItems false (accARaw L)⟩,.inl (negP L)]
 def accBMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
-  [.inl (negP L),.inl (rotF L true 4),.inl (rotF L true 10),.inl (rotC L true 32),
+  [.inl (negP L),.inl (rotF L true 4),.inl (rotF L true 10),.inl (rotF L true 32),
     .inl (rotF L false 6),.inl (rot128F L),.inr ⟨false,sortedItems false (accBRaw L)⟩]
 def accCMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
   [.inl (negRot L),.inr ⟨true,sortedItems false (accCRaw L)⟩]
@@ -70,7 +67,7 @@ theorem accProgram_split (L : CuccaroStreamedSquareWideLayout) (control : Wire) 
 theorem acc_orientations (L : CuccaroStreamedSquareWideLayout) :
     mixFinal false (accAMix L)=true ∧ mixFinal true (accBMix L)=false ∧
     mixFinal false (accCMix L)=true := by
-  simp [mixFinal,mixNeg,accAMix,accBMix,accCMix,rot128F,negP,negRot,rotF,rotC]
+  simp [mixFinal,mixNeg,accAMix,accBMix,accCMix,rot128F,negP,negRot,rotF]
 
 theorem naf_facts (neg : Bool) (src : List Wire) (f : MeasuredSquareFold)
     (hf : f∈nafMinusOneItems neg src) :
@@ -193,7 +190,7 @@ theorem accB_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : B
   rw [signedSum_perm t (sorted_perm _ _)] at cast
   simp only [accBMix,mixSignedSum,mixSignedPayload,mixNeg,mixPayload,cast]
   simp [measuredBItems,accBRaw,measuredSignedSum,measuredSignedPayload,measuredFoldPayload,measuredSignedSum_append,
-    rot128F,negP,rotF,rotC,topSlice,nafMinusOneItems,shiftedProductItems]
+    rot128F,negP,rotF,topSlice,nafMinusOneItems,shiftedProductItems]
   ring
 
 theorem accC_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) :
@@ -216,32 +213,6 @@ theorem accA_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     exact ⟨st.1,st.2,validA L hw t⟩
   · exact L.measuredA_views hw t M hM hp _ (by simp [measuredAItems,negP])
 
-theorem square_mod8 (M : Nat) : M^2%8≠5 ∧ M^2%8≠6 ∧ M^2%8≠7 := by
-  have h : M^2%8=(M%8)^2%8 := Nat.pow_mod M 2 8
-  have lt := Nat.mod_lt M (show 8>0 by norm_num)
-  rw [h]
-  interval_cases (M%8) <;> decide
-
-/-- A square below 2^256 rotated by 32 is already below p: the low 224 bits
-cannot be among the three largest residues, which are 5, 6, 7 mod 8. -/
-theorem rot32_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
-    regValue (rotateFull (L.core.product.take 256) 32) t*2^0<SquareReduction.p := by
-  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  rw [L.rotateFull_value hw t (M^2) hp 32 (by omega),Nat.mod_eq_of_lt hb]
-  have m8 := square_mod8 M
-  have e : M^2%2^(256-32)%8=M^2%8 := Nat.mod_mod_of_dvd _ (by norm_num)
-  have hH : M^2/2^(256-32)<2^32 := by
-    rw [Nat.div_lt_iff_lt_mul (by positivity)]
-    calc M^2<2^256 := hb
-      _ = 2^32*2^(256-32) := by norm_num
-  have hL := Nat.mod_lt (M^2) (show 2^(256-32)>0 by positivity)
-  generalize M^2/2^(256-32)=H at hH ⊢
-  generalize hX : M^2%2^(256-32)=X at hL e ⊢
-  rw [←e] at m8
-  norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at hH hL ⊢
-  omega
-
 theorem accB_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
     ∀i∈accBMix L,MixView L t i := by
@@ -252,9 +223,7 @@ theorem accB_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,negP])
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,rotF])
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,rotF])
-  · have v := L.measuredB_views hw t M hM hp (rotF L true 32)
-      (by simp [measuredBItems,shiftedProductItems,rotF])
-    exact ⟨v.count,v.span,fun _ => rot32_canonical L hw t M hM hp⟩
+  · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,rotF])
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,rotF])
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,rot128F])
   · have st := sorted_static L hw (accBRaw L) (fun f hf => raw_static L hw f (Or.inr (Or.inl hf)))
@@ -658,13 +627,13 @@ theorem accPrefix_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
 
 theorem acc_item_prices (L : CuccaroStreamedSquareWideLayout) :
     (mixFoldsT false (accAMix L)=4516 ∧ mixFoldsM false (accAMix L)=4516) ∧
-    (mixFoldsT true (accBMix L)=16442 ∧ mixFoldsM true (accBMix L)=16436) ∧
+    (mixFoldsT true (accBMix L)=17464 ∧ mixFoldsM true (accBMix L)=17456) ∧
     (mixFoldsT false (accCMix L)=3561 ∧ mixFoldsM false (accCMix L)=3561) := by
-  norm_num [mixFoldsT,mixFoldsM,mixNeg,accAMix,accBMix,accCMix,rot128F,negP,negRot,rotF,rotC,posTop,
+  norm_num [mixFoldsT,mixFoldsM,mixNeg,accAMix,accBMix,accCMix,rot128F,negP,negRot,rotF,posTop,
     accARaw,accBRaw,accCRaw,sortedItems,nafMinusOneItems,List.filter_cons,Acc.buildT]
 
 theorem accProgram_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
-    toffoliCount (accProgram L control)=76614 ∧ measurementCount (accProgram L control)=76096 := by
+    toffoliCount (accProgram L control)=77636 ∧ measurementCount (accProgram L control)=77116 := by
   have st := acc_static L hw
   have lo := L.core.low_length hw.core
   have hi := L.core.high_length hw.core
@@ -797,7 +766,7 @@ theorem accProgram_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wi
   omega
 
 theorem accPrefix_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
-    toffoliCount (accPrefix L control)=76359 ∧ measurementCount (accPrefix L control)=75841 := by
+    toffoliCount (accPrefix L control)=77381 ∧ measurementCount (accPrefix L control)=76861 := by
   have full := accProgram_counts L hw control
   have r := (L.measured_small_operation_counts hw).2.2
   rw [accProgram_split,toffoliCount_append,measurementCount_append] at full
