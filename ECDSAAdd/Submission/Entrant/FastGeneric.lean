@@ -1,15 +1,10 @@
 import ECDSAAdd.Submission.Entrant.FastConst
-import ECDSAAdd.Submission.Entrant.FastSquareNR
 import ECDSAAdd.Submission.Entrant.FastSquare
 import ECDSAAdd.Arithmetic.CompressedPointDialogSteps
 import ECDSAAdd.Arithmetic.CompressedPointDialogResources
 import ECDSAAdd.Arithmetic.SkywalkPointPhysical
 import ECDSAAdd.Baselines.SkywalkSlots
 
-/-! The Skywalk generic stage with every classical coordinate correction done
-by the compare-first constant adder of `FastConst`.  The final reflection and
-abscissa correction are fused into one `x ↦ cx - x` step.  The division,
-square and multiplication blocks are the unchanged Skywalk blocks. -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -175,7 +170,7 @@ end SquareStep
 section Generic
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
-attribute [local irreducible] run pointCompressedArithmetic CompressedPointSquare.computableProgram fastSquare fastCandidate
+attribute [local irreducible] run pointCompressedArithmetic CompressedPointSquare.computableProgram
   pointMeasuredSquareCandidate fastConstAdd fastConstNeg fastConstRefl fastSquareNR
 
 theorem fast_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd : cx-genericX X Y cx cy≠0) :
@@ -284,6 +279,7 @@ theorem fastConstNeg_counts (k : Fp) :
   FastConst.fastNeg_counts 256 _ _ (L.recoveryConstant_widths hw L.point.x hw.inputX) (by decide)
 
 omit hn in
+omit hn in
 theorem fastConstRefl_counts (k : Fp) :
     toffoliCount (fastConstRefl L k)=766 ∧ measurementCount (fastConstRefl L k)=767 :=
   FastConst.fastRefl_counts 256 _ _ (L.recoveryConstant_widths hw L.point.x hw.inputX) (by decide)
@@ -338,7 +334,7 @@ theorem fastGeneric_support (cx cy : Fp) :
     (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConst_sites L hw L.point.x (Or.inl rfl))
   have arith (b : Bool) := pointCompressedArithmetic_support L hw b
-  have square := (fastSquareNR_wires L).trans (fastSquare_support L hw hn)
+  have square := fastSquareNR_support L hw hn
   simpa only [fastGeneric,wires_append,Finset.union_subset_iff,sites] using
     And.intro (And.intro (And.intro (And.intro (And.intro (And.intro (And.intro
       (ca L.point.x (Or.inl rfl) (-cx)) (ca L.point.y (Or.inr rfl) (-cy)))

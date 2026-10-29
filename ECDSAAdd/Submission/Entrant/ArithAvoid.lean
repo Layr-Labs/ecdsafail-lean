@@ -1,7 +1,7 @@
 import ECDSAAdd.Baselines.SkywalkCertificate
 
-/-! The mapped Skywalk arithmetic never touches the logical labels `769`,
-`2313` or `2401`–`2408`.
+/-! The mapped Skywalk arithmetic never touches the logical labels `2313` or
+`2401`–`2408`.
 
 The published support certificate for the arithmetic (`controlled_support`)
 places it inside the full 1,899-label inventory.  The arithmetic's actual
@@ -25,10 +25,10 @@ attribute [local irreducible] literalSkywalkSeed literalSkywalkUnseed
   NativeFirstDirect.forward NativeFirstDirect.inverse NativeFirstKnown.inverse
 
 /-- Logical labels avoided by the arithmetic. -/
-def badIdx (q : Nat) : Prop := q = 769 ∨ q = 2313 ∨ (2401 ≤ q ∧ q ≤ 2408)
+def badIdx (q : Nat) : Prop := q = 2313 ∨ (2401 ≤ q ∧ q ≤ 2408)
 
 /-- A physical wire that is not the image (under `base`) of a bad label. -/
-def goodW (q : Wire) : Prop := ¬ (q = 769 + 16 ∨ q = 2313 + 16 ∨ (2401 + 16 ≤ q ∧ q ≤ 2408 + 16))
+def goodW (q : Wire) : Prop := ¬ (q = 2313 + 16 ∨ (2401 + 16 ≤ q ∧ q ≤ 2408 + 16))
 
 def Avoid (P : Program) : Prop := ∀ q ∈ wires P, goodW q
 
@@ -46,7 +46,7 @@ theorem avoid_sub {P Q : Program} (h : wires P ⊆ wires Q) (hq : Avoid Q) : Avo
 theorem avoid_nil : Avoid [] := by intro q hq; simp [wires] at hq
 
 theorem base_good (q : Nat) (h : ¬ badIdx q) : goodW (base q) := by
-  show ¬ (q + 16 = 769 + 16 ∨ q + 16 = 2313 + 16 ∨ (2401 + 16 ≤ q + 16 ∧ q + 16 ≤ 2408 + 16))
+  show ¬ (q + 16 = 2313 + 16 ∨ (2401 + 16 ≤ q + 16 ∧ q + 16 ≤ 2408 + 16))
   unfold badIdx at h; omega
 
 theorem bad_not_zero (q : Nat) (h : badIdx q) : ¬ zeroRegion q := by
@@ -70,12 +70,15 @@ theorem allPlaced_good (q : Nat) (h : ¬ badIdx q) : goodW (allPlaced q) :=
 theorem placed_good (j q : Nat) (hj : j < 170) (h : ¬ badIdx q) : goodW (placed j q) :=
   base_good _ (pi_good j q hj h)
 
-theorem shared_not_bad (q : Nat) (h : q∈CompressedFieldSupport.sharedSites id 2409) : ¬ badIdx q := by
+theorem field_not_bad (q : Nat) (h : fieldSite q) : ¬ badIdx q := by
+  unfold fieldSite at h; unfold badIdx; omega
+
+theorem shared_site' (q : Nat) (h : q∈CompressedFieldSupport.sharedSites id 2409) : fieldSite q := by
   simp only [CompressedFieldSupport.sharedSites,balancedSharedPorts,BalancedCircuit.Layout.wires,
     BalancedCleanup.Layout.wires,OffsetCleanupBorrowedCaller.carry,wireBlock,List.map_id,
     List.mem_append,List.mem_cons,List.not_mem_nil,List.mem_range'_1,or_false] at h
   dsimp only [id] at h
-  unfold badIdx
+  unfold fieldSite
   omega
 
 theorem packet_not_bad (j q : Nat) (hj : j < 170) (h : q∈packetSites j) : ¬ badIdx q := by
@@ -86,7 +89,7 @@ theorem packet_not_bad (j q : Nat) (hj : j < 170) (h : q∈packetSites j) : ¬ b
 theorem inventory_not_bad (j q : Nat) (hj : j < 170) (h : q∈groupInventory j) : ¬ badIdx q := by
   simp only [groupInventory,List.mem_append] at h
   rcases h with (h|h)|h
-  · exact shared_not_bad q h
+  · exact field_not_bad q (shared_site' q h)
   · simp only [List.mem_cons,List.not_mem_nil,or_false] at h
     unfold badIdx; omega
   · exact packet_not_bad j q hj h
@@ -171,7 +174,7 @@ theorem tail_avoid (divide : Bool) (i : Nat) (hi : i=510 ∨ i=511) :
     or_false,or_assoc] at belongs
   apply allPlaced_good
   rcases belongs with h|rfl|rfl|rfl|rfl
-  · exact shared_not_bad old h
+  · exact field_not_bad old (shared_site' old h)
   all_goals unfold badIdx; omega
 
 theorem mappedReplay_avoid (divide : Bool) : Avoid (mappedReplay divide) := by
@@ -182,13 +185,13 @@ theorem mappedReplay_avoid (divide : Bool) : Avoid (mappedReplay divide) := by
   · exact ⟨⟨b,a⟩,groups⟩
   · exact ⟨⟨groups,a⟩,b⟩
 
-theorem convert_not_bad (target : Bool) (q : Nat)
+theorem convert_site' (target : Bool) (q : Nat)
     (h : q∈(if target then balancedSharedTargetConvert id else balancedSharedSourceConvert id).wires) :
-    ¬ badIdx q := by
+    fieldSite q := by
   cases target <;> simp only [Bool.false_eq_true,if_false,if_true,
     balancedSharedTargetConvert,balancedSharedSourceConvert,BalancedConvert.Layout.wires,
     wireBlock,List.map_id,List.mem_append,List.mem_cons,List.not_mem_nil,List.mem_range'_1,or_false] at h
-  all_goals dsimp only [id] at h; unfold badIdx; omega
+  all_goals dsimp only [id] at h; unfold fieldSite; omega
 
 theorem converters_avoid (canonical : Bool) :
     Avoid (renameProgram allPlaced (converterPair canonical)) := by
@@ -197,16 +200,48 @@ theorem converters_avoid (canonical : Bool) :
   intro q hq
   rw [renameProgram_support] at hq
   obtain ⟨old,hraw,rfl⟩ := Finset.mem_image.mp hq
-  have nb : ¬ badIdx old := by
+  have site : fieldSite old := by
     cases canonical <;> simp only [converterPair,Bool.false_eq_true,if_false,if_true,
       wires_append,Finset.mem_union] at hraw
     · rcases hraw with h|h
-      · exact convert_not_bad true old (List.mem_toFinset.mp (target.1 h))
-      · exact convert_not_bad false old (List.mem_toFinset.mp (source.1 h))
+      · exact convert_site' true old (List.mem_toFinset.mp (target.1 h))
+      · exact convert_site' false old (List.mem_toFinset.mp (source.1 h))
     · rcases hraw with h|h
-      · exact convert_not_bad true old (List.mem_toFinset.mp (target.2 h))
-      · exact convert_not_bad false old (List.mem_toFinset.mp (source.2 h))
-  exact allPlaced_good old nb
+      · exact convert_site' true old (List.mem_toFinset.mp (target.2 h))
+      · exact convert_site' false old (List.mem_toFinset.mp (source.2 h))
+  exact allPlaced_good old (field_not_bad old site)
+
+theorem unary_avoid (divide : Bool) :
+    Avoid (renameProgram allPlaced (if divide then dblInPlace (borrowedSkywalkUnary id) p
+      else halfInPlace (borrowedSkywalkUnary id) p)) := by
+  have u := modUnary_wires (borrowedSkywalkUnary id) 256 p (borrowedSkywalkUnary_widths id) (by omega)
+  intro q hq
+  rw [renameProgram_support] at hq
+  obtain ⟨old,hraw,rfl⟩ := Finset.mem_image.mp hq
+  have member : old∈((borrowedSkywalkUnary id).z++(borrowedSkywalkUnary id).core.work++
+      [(borrowedSkywalkUnary id).flag]).toFinset := by
+    cases divide
+    · simp only [Bool.false_eq_true,if_false] at hraw
+      rw [u.2] at hraw
+      exact hraw
+    · simp only [if_true] at hraw
+      rw [u.1] at hraw
+      exact List.mem_toFinset.mpr (List.mem_append_left _ (List.mem_toFinset.mp hraw))
+  have site : fieldSite old := by
+    change old∈((wireBlock id 2056 256++[id 2312])++
+      (wireBlock id 512 257++wireBlock id 1540 256++[id 1797])++[id 769]).toFinset at member
+    simp only [List.mem_toFinset,wireBlock,List.map_id,List.mem_append,List.mem_cons,List.not_mem_nil,
+      List.mem_range'_1,or_false] at member
+    dsimp only [id] at member
+    simp only [or_assoc] at member
+    rcases member with h|rfl|h|h|rfl|rfl
+    · exact Or.inr (Or.inr (Or.inr (Or.inl (by omega))))
+    · norm_num [fieldSite]
+    · exact Or.inl (by omega)
+    · exact Or.inr (Or.inr (Or.inl (by omega)))
+    · norm_num [fieldSite]
+    · norm_num [fieldSite]
+  exact allPlaced_good old (field_not_bad old site)
 
 theorem copy_avoid : Avoid (renameProgram allPlaced
     (copyRegister none (skywalkSharedField id).z (skywalkSharedField id).a)) := by
@@ -218,9 +253,12 @@ theorem copy_avoid : Avoid (renameProgram allPlaced
   obtain ⟨old,hraw,rfl⟩ := Finset.mem_image.mp hq
   have member := cp hraw
   rw [zword,aword] at member
-  simp only [List.mem_toFinset,Option.toList_none,List.nil_append,wireBlock,List.map_id,
-    List.mem_append,List.mem_range'_1] at member
-  exact allPlaced_good old (by unfold badIdx; omega)
+  have site : fieldSite old := by
+    simp only [List.mem_toFinset,Option.toList_none,List.nil_append,wireBlock,List.map_id,
+      List.mem_append,List.mem_range'_1] at member
+    unfold fieldSite
+    omega
+  exact allPlaced_good old (field_not_bad old site)
 
 theorem terminalFieldSegment_avoid (divide : Bool) :
     Avoid (EntryMappedFieldSegmentTrim.terminalFieldSegment divide) := by
@@ -239,7 +277,7 @@ theorem selectedFieldSegment_avoid (divide : Bool) : Avoid (selectedFieldSegment
 
 /-! Integer side. -/
 
-theorem integer_good (q : Nat) (h : q < 1798) (h' : q ≠ 769) : goodW (base q) := by
+theorem integer_good (q : Nat) (h : q < 1798) : goodW (base q) := by
   apply base_good; unfold badIdx; omega
 
 theorem tick_layout_avoid (i : Nat) (hi : i < 512) :
@@ -259,10 +297,11 @@ theorem tick_layout_avoid (i : Nat) (hi : i < 512) :
   intro q hq
   rw [List.mem_toFinset,view] at hq
   obtain ⟨old,h,rfl⟩ := List.mem_map.mp hq
+  apply integer_good
   simp only [List.mem_append,List.mem_cons,List.not_mem_nil,List.mem_range'_1,or_false] at h
   by_cases hz : i=0
-  · simp only [skywalkPoolPreviousId,if_pos hz] at h; exact integer_good _ (by omega) (by omega)
-  · simp only [skywalkPoolPreviousId,if_neg hz] at h; exact integer_good _ (by omega) (by omega)
+  · simp only [skywalkPoolPreviousId,if_pos hz] at h; omega
+  · simp only [skywalkPoolPreviousId,if_neg hz] at h; omega
 
 theorem ticks_avoid (i : Nat) (hi : i < 512) :
     Avoid (compactSkywalkTick base i) ∧ Avoid (compactSkywalkReverseTick base i) :=
@@ -276,7 +315,8 @@ theorem base_codec_avoid (start : Nat) (hs : start+3 ≤ 512) :
     intro q hq
     obtain ⟨u,rfl⟩ := compressedHistory_gate_mem base base_pool_nodup base_above start hs P he q hq
     have region := compressedHistoryId_region start hs u
-    exact integer_good _ (by omega) (by omega)
+    apply integer_good
+    omega
   exact ⟨lift _ (Or.inl rfl),lift _ (Or.inr rfl)⟩
 
 theorem delayed_codec_avoid (i : Nat) (hi : i < 512) :
@@ -306,15 +346,15 @@ theorem prefixSites_avoid : ∀ q ∈ (NativeFirstDirect.prefixSites base).toFin
   rcases hq with ((h|h)|h)|(rfl|rfl)
   all_goals first
     | obtain ⟨i,hi,rfl⟩ := h
-      exact integer_good _ (by omega) (by omega)
-    | exact integer_good _ (by omega) (by omega)
+      exact integer_good _ (by omega)
+    | exact integer_good _ (by omega)
 
 theorem clear_avoid : Avoid (skywalkArithmeticClear base) := by
   intro q hq
   rw [skywalkArithmeticClear,skywalkTerminalClear_wires] at hq
   simp only [List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
   rcases hq with rfl|rfl|rfl
-  all_goals exact integer_good _ (by omega) (by omega)
+  all_goals exact integer_good _ (by omega)
 
 theorem kernel_avoid (divide : Bool) : Avoid (kernel divide) := by
   have native := NativeFirstDirect.prefix_support base
