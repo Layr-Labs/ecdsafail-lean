@@ -1,22 +1,16 @@
-import ECDSAAdd.Submission.Entrant.FastE
+import ECDSAAdd.Submission.Entrant.Arith2
+import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 
-/-! Divisor repair from the finite flag.
-
-No secp256k1 point has `x = 0`: `0³ + 7 = 7` is not a square modulo `p`
-(quadratic reciprocity, `p ≡ 3 (mod 4)`, `p ≡ 1 (mod 7)`).  In the generic
-block the divisor register holds either `x_R` (inactive branch) or a nonzero
-difference (active branch), so it is zero exactly when the input point is
-infinite, i.e. exactly when the finite flag is clear.
-
-`farith` therefore runs the bare lane kernel (`arith3`, no compare-based zero
-repair) between two copies of `x₀ ^= ¬finite`. -/
+/-! Finite-flag divisor repair from submission
+`27237f1a-4cb0-4b4a-a64e-c11db75fbfd3`.
+The point has zero abscissa exactly when it is infinite. A Clifford prefix
+therefore makes the divisor positive before the bare lane kernel. -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant
 open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPointDialog DirectSkywalk
-open MappedCompressed.LaneA (laneKernel laneKernel_support laneKernel_counts laneKernel_physical
-  laneKernel_gateSlots_le)
+open MappedCompressed.LaneA
 
 section Curve
 
@@ -57,168 +51,10 @@ theorem pointFinite_eq_x (R : Point) : pointFinite R = decide (pointX R ≠ 0) :
 
 end Curve
 
-section Transfer
-attribute [local irreducible] run laneKernel
-
-private theorem reg_map_agree3 (f : Wire → Wire) (r : List Wire)
-    (logical physical : BasisState) (h : ∀q∈r,logical q=physical (f q)) :
-    regValue r logical=regValue (r.map f) physical := by
-  induction r generalizing logical physical with
-  | nil => rfl
-  | cons a rs ih =>
-    change (if logical a then 1 else 0)+2*regValue rs logical=
-      (if physical (f a) then 1 else 0)+2*regValue (rs.map f) physical
-    rw [h a (by simp),ih logical physical (fun q hq => h q (List.mem_cons_of_mem a hq))]
-
-private theorem divisor_sites3 : (wireBlock base 770 256).toFinset⊆slots.toFinset := by
-  intro q hq
-  apply resident_support
-  simp only [resident,List.mem_toFinset,List.mem_append]
-  exact Or.inl (Or.inl (List.mem_toFinset.mp hq))
-private theorem numerator_sites3 : (wireBlock base 2056 256).toFinset⊆slots.toFinset := by
-  intro q hq
-  apply resident_support
-  simp only [resident,List.mem_toFinset,List.mem_append]
-  exact Or.inl (Or.inr (List.mem_toFinset.mp hq))
-private theorem control_site3 : base 2400∈slots.toFinset := by
-  apply slot_mem
-  · unfold live; omega
-  · unfold CompressedAllocation.omitted; omega
-
-/-- Transfer of the strong contract of a kernel that needs no zero repair. -/
-theorem kernelTransfer_core (L : ControlledPointLayout) (f : Wire → Wire)
-    (domain : Finset Wire) (divide : Bool)
-    (injective : ∀a∈domain,∀b∈domain,f a=f b → a=b)
-    (divisorMap : (wireBlock base 770 256).map f=L.point.x)
-    (numeratorMap : (wireBlock base 2056 256).map f=L.point.y)
-    (controlMap : f (base 2400)=L.core.generic)
-    (sharedWork : ∀q∈skywalkSharedWires base,q∈domain → q∉wireBlock base 770 256 → q∉wireBlock base 2056 256 → f q∈L.dialogPool)
-    (selectorG : f (base 2409)∈L.dialogPool)
-    (selectorS : f (base 2410)∈L.dialogPool)
-    (dxSites : (wireBlock base 770 256).toFinset⊆domain)
-    (dySites : (wireBlock base 2056 256).toFinset⊆domain)
-    (bSite : base 2400∈domain)
-    (X : Nat) (Y : Fp) (B : Bool)
-    (s : State) (m : List Bool) (hb : s.basis L.core.generic=B)
-    (hX : regValue L.point.x s.basis=X) (hY : regValue L.point.y s.basis=Y.val)
-    (clean : regValue L.dialogPool s.basis=0)
-    (P : Program) (programSites : wires P⊆domain)
-    (P_spec : ∀(t : State)(records : List Bool),
-      SkywalkArithmeticInput base X Y.val t.basis →
-      t.basis (base 2409)=false → t.basis (base 2410)=false →
-      DirectSkywalkArithmeticStrong divide base (base 2400) X Y t (run P records t)) :
-    let out := run (renameProgram f P) m s
-    out.phase=s.phase ∧ regValue L.point.y out.basis=(directSkywalkResult divide B X Y).val ∧
-      ∀q,q∉L.point.y → out.basis q=s.basis q := by
-  let t := MappedCompressed.LaneA.laneLogicalInput domain f s
-  have inputBits (q : Wire) (hq : q∈domain) : t.basis q=s.basis (f q) := by
-    simp only [t,MappedCompressed.LaneA.laneLogicalInput,if_pos hq]
-  have zero (q : Wire) (hq : f q∈L.dialogPool) : t.basis q=false := by
-    change (if q∈domain then s.basis (f q) else false)=false
-    split
-    · exact (regValue_zero _ _).mp clean _ hq
-    · rfl
-  have input : SkywalkArithmeticInput base X Y.val t.basis := by
-    refine ⟨?_,?_,?_⟩
-    · change regValue (wireBlock base 770 256) t.basis=X
-      rw [reg_map_agree3 f _ t.basis s.basis (fun q hq => inputBits q (dxSites (List.mem_toFinset.mpr hq))),divisorMap]
-      exact hX
-    · change regValue (wireBlock base 2056 256) t.basis=Y.val
-      rw [reg_map_agree3 f _ t.basis s.basis (fun q hq => inputBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
-      exact hY
-    · intro q hq hdx hdy
-      by_cases used : q∈domain
-      · exact zero q (sharedWork q hq used hdx hdy)
-      · simp only [t,MappedCompressed.LaneA.laneLogicalInput,if_neg used]
-  have control : t.basis (base 2400)=B := by
-    rw [inputBits _ bSite,controlMap,hb]
-  have strong := P_spec t m input (zero _ selectorG) (zero _ selectorS)
-  have transfer := run_rename_pool f domain injective
-    P programSites m t s rfl inputBits
-  unfold DirectSkywalkArithmeticStrong at strong
-  rw [control] at strong
-  refine ⟨transfer.1.trans strong.1,?_,?_⟩
-  · rw [←numeratorMap]
-    exact (reg_map_agree3 f _ (run P m t).basis
-      (run (renameProgram f P) m s).basis
-      (fun q hq => (transfer.2 q (dySites (List.mem_toFinset.mpr hq))).symm)).symm.trans strong.2.1
-  · intro q outside
-    by_cases image : q∈domain.image f
-    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp image
-      have away : a∉skywalkArithmeticNumerator base := by
-        intro mem
-        apply outside
-        rw [←numeratorMap]
-        exact List.mem_map.mpr ⟨a,mem,rfl⟩
-      exact (transfer.2 a ha).trans ((strong.2.2 a away).trans (inputBits a ha))
-    · exact run_rename_pool_outside f domain P
-        programSites m s q image
-
-private theorem logical_shared_nodup3 : (skywalkSharedWires base).Nodup := by
-  apply List.Nodup.map_on
-  · intro a _ b _ eq; exact base_injective eq
-  · exact List.nodup_range'
-
-private theorem logical_scalar_outside3 (i : Nat) (hi : 2314 ≤ i) :
-    base i ∉ skywalkSharedWires base := by
-  intro member
-  obtain ⟨j,hj,eq⟩ := List.mem_map.mp member
-  simp only [List.mem_range'_1] at hj
-  have same := base_injective eq
-  omega
-
-private theorem logical_selectors_outside3 :
-    ∀ q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base := by
-  intro q hq
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
-  rcases hq with rfl|rfl|rfl
-  all_goals exact logical_scalar_outside3 _ (by omega)
-
-private theorem logical_mixed_layout3 :
-    MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base) := by
-  have scalar : [base 2400,base 2409,base 2410].Nodup := by simp [base]
-  have disjoint : [base 2400,base 2409,base 2410].Disjoint (skywalkSharedWires base) :=
-    List.disjoint_left.mpr (fun q hq => logical_selectors_outside3 q hq)
-  have hall := List.nodup_append'.mpr ⟨scalar,logical_shared_nodup3,disjoint⟩
-  have unused : skywalkSharedUnused base⊆skywalkSharedWires base := by
-    intro q hq
-    simp only [skywalkSharedUnused,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with rfl|rfl|rfl|rfl
-    all_goals exact arith_mem base 0 2314 _ (by omega) (by omega)
-  apply mixedTranscriptTape_layout
-  intro r hr
-  have pair := (List.nodup_cons.mp (skywalkShared_tape_layout base logical_shared_nodup3
-    (base 2400) (logical_selectors_outside3 _ (by simp)) r hr)).2
-  have sub : (r.2::r.1::(skywalkSharedField base).wires)⊆skywalkSharedWires base := by
-    intro q hq
-    rcases List.mem_cons.mp hq with eq|hq
-    · subst q; exact (retained_tape_subset_shared base r hr).2
-    rcases List.mem_cons.mp hq with eq|hq
-    · subst q; exact (retained_tape_subset_shared base r hr).1
-    · exact retained_field_subset_shared base hq
-  constructor
-  · exact logical_shared_nodup3
-  · apply List.nodup_iff_count.mpr
-    intro q
-    have hh := List.nodup_iff_count.mp hall q
-    have hp := List.nodup_iff_count.mp pair q
-    have hle : (r.2::r.1::(skywalkSharedField base).wires).count q≤
-        (skywalkSharedWires base).count q := by
-      by_cases hm : q∈r.2::r.1::(skywalkSharedField base).wires
-      · have positive := List.count_pos_iff.mpr (sub hm); omega
-      · rw [List.count_eq_zero.mpr hm]; omega
-    simp only [List.count_append,List.count_cons,List.count_nil] at hh hp hle ⊢
-    omega
-  · exact fun h => logical_selectors_outside3 _ (by simp) (fusedSharedSites_subset base h)
-  · exact fun h => logical_selectors_outside3 _ (by simp) (unused h)
-  · exact fun h => logical_selectors_outside3 _ (by simp) (unused h)
-
-end Transfer
-
-section Arith3
+section Bare
 attribute [local irreducible] run laneKernel toffoliCount measurementCount
 
-/-- The relabelled lane kernel without the compare-based zero repair. -/
+/-- The placed lane kernel without an arithmetic repair wrapper. -/
 def arith3 (L : ControlledPointLayout) (multiply : Bool) : Program :=
   renameProgram (wireFn2 L) (laneKernel (!multiply))
 
@@ -230,29 +66,19 @@ theorem arith3_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires
     let V := if B then (if multiply then ((Y:Fp)*(X:Fp)).val else ((Y:Fp)/(X:Fp)).val) else Y
     (run (arith3 L multiply) m s).phase=s.phase ∧
     regValue L.point.y (run (arith3 L multiply) m s).basis=V ∧
-    ∀ q,q∉L.point.y → (run (arith3 L multiply) m s).basis q=s.basis q := by
-  have yValue : (Y:Fp).val=Y := ZMod.val_natCast_of_lt hY
-  rcases placement2 L hw hn with ⟨injective,divisorMap,numeratorMap,controlMap,sharedWork,selectorG,selectorS,_⟩
-  have result := kernelTransfer_core L (wireFn2 L) slots.toFinset (!multiply) injective divisorMap
-    numeratorMap controlMap sharedWork selectorG selectorS divisor_sites3 numerator_sites3 control_site3
-    X (Y:Fp) B s m hb hx (hy.trans yValue.symm) hc
-    (laneKernel (!multiply)) (laneKernel_support (!multiply))
-    (fun t records input hg hs => NativeFirstDirect.LaneA.laneKernel_spec (!multiply)
-      logical_shared_nodup3 base_above logical_selectors_outside3 logical_mixed_layout3
-      X (Y:Fp) hX0 hX t records input hg hs)
-  cases B <;> cases multiply <;>
-    simpa only [arith3,directSkywalkResult,skywalkArithmeticResult,
-      Bool.not_false,Bool.not_true,Bool.false_eq_true,if_false,if_true,yValue] using result
+    ∀q,q∉L.point.y → (run (arith3 L multiply) m s).basis q=s.basis q :=
+  laneKernelPlaced_correct L (wireFn2 L) (placement2 L hw hn) multiply X Y B
+    hX hX0 hY s m hb hx hy hc
 
 theorem arith3_counts (L : ControlledPointLayout) :
-    toffoliCount (arith3 L false)=1050690 ∧ measurementCount (arith3 L false)=721478 ∧
-    toffoliCount (arith3 L true)=1051200 ∧ measurementCount (arith3 L true)=721478 := by
+    toffoliCount (arith3 L false)=1051196 ∧ measurementCount (arith3 L false)=721982 ∧
+    toffoliCount (arith3 L true)=1051706 ∧ measurementCount (arith3 L true)=721982 := by
   have h1 := laneKernel_counts true
   have h2 := laneKernel_counts false
   have r1 := renameProgram_counts (wireFn2 L) (laneKernel true)
   have r2 := renameProgram_counts (wireFn2 L) (laneKernel false)
-  simp only [if_true, Bool.false_eq_true, if_false] at h1 h2
-  simp only [arith3, Bool.not_false, Bool.not_true]
+  simp only [if_true,Bool.false_eq_true,if_false] at h1 h2
+  simp only [arith3,Bool.not_false,Bool.not_true]
   omega
 
 theorem arith3_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -263,18 +89,20 @@ theorem arith3_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
       (laneKernel_support (!multiply) hb) eq
   · exact laneKernel_physical _
 
-theorem arith3_wire (L : ControlledPointLayout) (multiply : Bool) (q : Wire)
-    (hq : q ∈ wires (arith3 L multiply)) :
-    ∃ old ∈ slots.toFinset, goodW old ∧ q = pointWireFn L (swap2 old) := by
-  rw [arith3, renameProgram_support] at hq
-  obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
-  exact ⟨old, laneKernel_support (!multiply) used, laneKernel_avoid (!multiply) old used, rfl⟩
+/-- Bare arithmetic uses only wires already used by the wrapped arithmetic. -/
+theorem arith3_support (L : ControlledPointLayout) (multiply : Bool) :
+    wires (arith3 L multiply)⊆wires (arith2 L multiply) := by
+  rw [arith3,arith2,renameProgram_support,renameProgram_support]
+  apply Finset.image_subset_image
+  intro q hq
+  simp only [laneControlled,controlRepair,wires_append,Finset.mem_union]
+  exact Or.inr (Or.inl hq)
 
 theorem arith3_gateSlots_le (L : ControlledPointLayout) (multiply : Bool) :
-    Challenge.gateSlots (arith3 L multiply) ≤ 20500000 := by
-  simpa only [arith3, Baselines.rename_gateSlots] using laneKernel_gateSlots_le (!multiply)
+    Challenge.gateSlots (arith3 L multiply)≤20500000 := by
+  simpa only [arith3,Baselines.rename_gateSlots] using laneKernel_gateSlots_le (!multiply)
 
-end Arith3
+end Bare
 
 section Fix
 

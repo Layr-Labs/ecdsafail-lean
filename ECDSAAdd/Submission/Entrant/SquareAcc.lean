@@ -1,5 +1,5 @@
 import ECDSAAdd.Submission.Entrant.AccFold
-import ECDSAAdd.Submission.Entrant.RotCert
+import ECDSAAdd.Submission.Entrant.RotationCanonical
 
 /-! Streamed square with accumulated (c−1)-corrections. All small
 (c−1)·slice corrections of a branch are summed exactly in a 163-bit
@@ -322,59 +322,26 @@ theorem accA_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     exact plain_view L t false _ st.1 st.2 (validA L hw t)
   · exact L.measuredA_views hw t M hM hp _ (by simp [measuredAItems,negP])
 
-theorem square_mod8 (M : Nat) : M^2%8≠5 ∧ M^2%8≠6 ∧ M^2%8≠7 := by
-  have h : M^2%8=(M%8)^2%8 := Nat.pow_mod M 2 8
-  have lt := Nat.mod_lt M (show 8>0 by norm_num)
-  rw [h]
-  interval_cases (M%8) <;> decide
-
-/-- A square below 2^256 rotated by 32 is already below p: the low 224 bits
-cannot be among the three largest residues, which are 5, 6, 7 mod 8. -/
-theorem rot32_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
-    regValue (rotateFull (L.core.product.take 256) 32) t*2^0<SquareReduction.p := by
-  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  rw [L.rotateFull_value hw t (M^2) hp 32 (by omega),Nat.mod_eq_of_lt hb]
-  have m8 := square_mod8 M
-  have e : M^2%2^(256-32)%8=M^2%8 := Nat.mod_mod_of_dvd _ (by norm_num)
-  have hH : M^2/2^(256-32)<2^32 := by
-    rw [Nat.div_lt_iff_lt_mul (by positivity)]
-    calc M^2<2^256 := hb
-      _ = 2^32*2^(256-32) := by norm_num
-  have hL := Nat.mod_lt (M^2) (show 2^(256-32)>0 by positivity)
-  generalize M^2/2^(256-32)=H at hH ⊢
-  generalize hX : M^2%2^(256-32)=X at hL e ⊢
-  rw [←e] at m8
-  norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at hH hL ⊢
-  omega
-
 theorem accB_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
     ∀i∈accBMix L,MixView L t i := by
   have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  have hbm : M*M<2^256 := by simpa [sq] using hb
-  have rc (neg : Bool) (j : Nat) (hj : j≤256)
-      (hcan : (M*M)/2^(256-j)+2^j*((M*M)%2^(256-j))<SquareReduction.p)
-      (hmem : rotF L neg j∈L.measuredBItems) : MixView L t (.inl (rotC L neg j)) := by
-    have base := L.measuredB_views hw t M hM hp (rotF L neg j) hmem
-    refine ⟨base.count,base.span,fun _ => ?_⟩
-    have hv := L.rotateFull_value hw t (M^2) hp j hj
-    change regValue (rotateFull (L.core.product.take 256) j) t*2^0<SquareReduction.p
-    rw [hv, pow_zero, Nat.mul_one, Nat.mod_eq_of_lt hb, sq]
-    exact hcan
   intro i hi
   simp only [accBMix,List.mem_cons,List.not_mem_nil,or_false] at hi
   rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,negP])
-  · exact rc true 4 (by omega) (rot4_canonical M hbm)
+  · have v := L.measuredB_views hw t M hM hp (rotF L true 4)
       (by simp [measuredBItems,shiftedProductItems,rotF])
-  · exact rc true 10 (by omega) (rot10_canonical M hbm)
+    exact ⟨v.count,v.span,fun _ => rot4_canonical L hw t M hM hp⟩
+  · have v := L.measuredB_views hw t M hM hp (rotF L true 10)
       (by simp [measuredBItems,shiftedProductItems,rotF])
+    exact ⟨v.count,v.span,fun _ => rot10_canonical L hw t M hM hp⟩
   · have v := L.measuredB_views hw t M hM hp (rotF L true 32)
       (by simp [measuredBItems,shiftedProductItems,rotF])
     exact ⟨v.count,v.span,fun _ => rot32_canonical L hw t M hM hp⟩
-  · exact rc false 6 (by omega) (rot6_canonical M hbm)
+  · have v := L.measuredB_views hw t M hM hp (rotF L false 6)
       (by simp [measuredBItems,shiftedProductItems,rotF])
+    exact ⟨v.count,v.span,fun _ => rot6_canonical L hw t M hM hp⟩
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,rot128F])
   · exact accB_view L hw t (M^2) hp hb
 

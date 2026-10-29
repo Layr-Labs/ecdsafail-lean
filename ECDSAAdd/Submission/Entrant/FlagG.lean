@@ -4,11 +4,10 @@ import ECDSAAdd.Submission.Entrant.EKFree
 
 The generic flag is `b ∧ finite ⊕ D ⊕ I ⊕ H` (the four corner cases are
 mutually exclusive and finite points are exactly the non-infinity points).
-The generic-branch block keeps the finite flag of the point, so the same
-formula clears the generic flag right after the block.  The infinity flag is
-only needed by the corners and the output tests; it is computed into the then
-idle generic wire just before the corners.  The separate infinity-select wire
-is no longer used. -/
+The generic-branch block keeps the finite flag of the point.  After the block,
+the complementary tests `b ∧ finite` and `b ∧ ¬finite` combine into `b`.
+Four CX gates change the generic flag to the infinity flag for the corners and
+the output tests.  The separate infinity-select wire is no longer used. -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -18,6 +17,11 @@ open Arithmetic MappedCompressed Secp256k1 ControlledPointLayout CompressedPoint
 /-- `generic ^= (b ∧ finite) ⊕ D ⊕ I ⊕ H`. -/
 def genericFlag2 (L : ControlledPointLayout) : Program :=
   [.CCX L.control L.point.finite L.core.generic, .CX L.doubleSelect L.core.generic,
+   .CX L.genericSelect L.core.generic, .CX L.core.equalNegY L.core.generic]
+
+/-- `generic ^= b ⊕ D ⊕ I ⊕ H`. -/
+def genericFlag3 (L : ControlledPointLayout) : Program :=
+  [.CX L.control L.core.generic, .CX L.doubleSelect L.core.generic,
    .CX L.genericSelect L.core.generic, .CX L.core.equalNegY L.core.generic]
 
 /-- The Skywalk corner writes with the infinity corner controlled by the generic wire. -/
@@ -32,8 +36,7 @@ def corners2 (L : ControlledPointLayout) (C : Point) : Program :=
 def finiteProgramFG (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) : Program :=
   pairEqual L L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C) ++
   gatedShort L (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C) ++
-  genericFlag2 L ++ Gen ++ genericFlag2 L ++
-  zeroFlag L.point.finite L.control L.core.generic ++
+  genericFlag2 L ++ Gen ++ genericFlag3 L ++
   corners2 L C ++
   pairEqual L L.core.generic L.core.equalNegY true (exceptionBit C) C (-C) ++
   gatedShort L (decide (cy≠-cy)) L.doubleSelect (C+C) ++
@@ -107,6 +110,25 @@ theorem genericFlag2_run (hn : L.wires.Nodup) (s : State) (m : List Bool) :
   funext q
   by_cases hq : q = L.core.generic
   · subst hq; simp [writeBit, h1, h2, h3, h4, h5]
+  · simp [writeBit, hq]
+
+/-- The two complementary controlled finite tests combine into one CX. -/
+theorem genericFlag3_run_eq (hn : L.wires.Nodup) (s : State) (m : List Bool) :
+    run (genericFlag3 L) m s =
+      run (genericFlag2 L ++ zeroFlag L.point.finite L.control L.core.generic) m s := by
+  obtain ⟨h1, h2, h3, h4, h5, h6⟩ := flags_distinct L hn
+  rw [run_append, run_take]
+  simp only [show measurementCount (genericFlag2 L) = 0 from rfl, List.drop_zero]
+  rw [genericFlag2_run L hn s m, zeroFlag_run _ _ _ h6 h2]
+  simp only [genericFlag3, run]
+  apply congrArg (State.mk s.phase)
+  funext q
+  by_cases hq : q = L.core.generic
+  · subst q
+    simp only [writeBit, Function.update_apply, h1, h2, h3, h4, h5, if_false, if_true]
+    cases s.basis L.core.generic <;> cases s.basis L.control <;>
+      cases s.basis L.point.finite <;> cases s.basis L.doubleSelect <;>
+      cases s.basis L.genericSelect <;> cases s.basis L.core.equalNegY <;> rfl
   · simp [writeBit, hq]
 
 variable (hw : L.Widths) (hn : L.wires.Nodup)
@@ -264,7 +286,7 @@ namespace ECDSAAdd.Entrant
 open Arithmetic MappedCompressed Secp256k1 ControlledPointLayout CompressedPointDialog
 
 section SpecFG
-attribute [local irreducible] run wires shortEqual pairEqual gatedShort genericFlag2 corners2
+attribute [local irreducible] run wires shortEqual pairEqual gatedShort genericFlag2 genericFlag3 corners2
 
 private theorem equal_simpG [DecidableEq Point] (R C : Point) : pointEqual R C=decide (R=C) := by
   simp only [pointEqual,pointCode_injective.eq_iff]
@@ -367,6 +389,12 @@ theorem finiteProgramFG_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L
   rw [hclr] at h9
   have h10a := zeroFlag_flagG L hn R1 b false D I false false H false
   rw [hR1O, Bool.false_xor] at h10a
+  have h9a : Triple (PointDialogBoundary L R1 b (dialogFlagState L false D I G false H false))
+      (genericFlag3 L)
+      (PointDialogBoundary L R1 b (dialogFlagState L false D I O false H false)) := by
+    intro s m hs
+    rw [genericFlag3_run_eq L hn s m]
+    exact (h9.seq h10a) s m hs
   have readO := dialogFlagState_read L hn false D I O false H false
   have h8 := corners2_boundary L hw hn R C hC b (dialogFlagState L false D I O false H false)
     readO.2.2.2.1 readO.2.1 readO.2.2.1 readO.2.2.2.2.2.1
@@ -388,7 +416,7 @@ theorem finiteProgramFG_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L
     exact pointEqual_zero S
   have h12 := chainErase_equalI L hn S b false false (dialogInversePoint b R C)
     false false false false (by rw [← hf.2.2.1, hzero])
-  have h := ((((((((h3.seq h5).seq h6).seq h7).seq h9).seq h10a).seq h8).seq h10).seq h11).seq h12
+  have h := (((((((h3.seq h5).seq h6).seq h7).seq h9a).seq h8).seq h10).seq h11).seq h12
   simpa only [finiteProgramFG,List.append_assoc,dialogFlagState_zero] using h
 
 end SpecFG

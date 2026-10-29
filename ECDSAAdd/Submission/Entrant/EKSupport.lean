@@ -4,8 +4,8 @@ import ECDSAAdd.Submission.Entrant.Arith2
 
 /-! Support, frame, resources and validity of `finiteProgramE`.
 
-The program lives in `sitesE`: the point, the control, the five classification
-flags still in use, and the certified pool inventory without site 1801. -/
+The program lives in `sitesE`: the point, the control, the four classification
+flags still in use, and the certified pool inventory without sites 1541, 1800 and 1801. -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -15,15 +15,15 @@ open Arithmetic MappedCompressed Secp256k1 ControlledPointLayout CompressedPoint
 def flagsE (L : ControlledPointLayout) : List Wire :=
   [L.doubleSelect, L.genericSelect, L.core.generic, L.core.equalNegY]
 
-/-- The certified pool inventory without sites 1541 and 1801. -/
+/-- The certified pool inventory without sites 1541, 1800 and 1801. -/
 def sharedPoolF (L : ControlledPointLayout) : List Wire :=
   wireBlock L.core.poolWire 0 515 ++ wireBlock L.core.poolWire 684 857 ++
-    [L.core.poolWire 1800] ++ wireBlock L.core.poolWire 1802 3
+    wireBlock L.core.poolWire 1802 3
 
 def sitesE (L : ControlledPointLayout) : List Wire :=
   PointAddLayout.pointWires L.point ++ [L.control] ++ flagsE L ++ sharedPoolF L
 
-theorem sitesE_length (L : ControlledPointLayout) (hw : L.Widths) : (sitesE L).length = 1894 := by
+theorem sitesE_length (L : ControlledPointLayout) (hw : L.Widths) : (sitesE L).length = 1893 := by
   simp [sitesE, flagsE, sharedPoolF, PointAddLayout.pointWires, wireBlock_length,
     show L.point.x.length = 256 from hw.inputX, show L.point.y.length = 256 from hw.inputY]
 
@@ -50,20 +50,21 @@ theorem poolQ_E (q : Wire) (hq : q ∈ sharedPoolF L) : q ∈ sitesE L := by
   simp only [sitesE, List.mem_append]; exact Or.inr hq
 
 theorem sharedPool_F (q : Wire) (hq : q ∈ CompressedPointSquare.sharedPool L)
-    (hne : q ≠ L.core.poolWire 1801) (hne' : q ≠ L.core.poolWire 1541) : q ∈ sharedPoolF L := by
+    (h0 : q ≠ L.core.poolWire 1800) (hne : q ≠ L.core.poolWire 1801)
+    (hne' : q ≠ L.core.poolWire 1541) : q ∈ sharedPoolF L := by
   simp only [CompressedPointSquare.sharedPool, sharedPoolF, List.mem_append] at hq ⊢
   rcases hq with (h1 | h1) | h1
-  · exact Or.inl (Or.inl (Or.inl h1))
+  · exact Or.inl (Or.inl h1)
   · simp only [wireBlock, List.mem_map, List.mem_range'_1] at h1 ⊢
     obtain ⟨i, hi, rfl⟩ := h1
     have : i ≠ 1541 := fun e => hne' (by rw [e])
-    exact Or.inl (Or.inl (Or.inr ⟨i, by omega, rfl⟩))
+    exact Or.inl (Or.inr ⟨i, by omega, rfl⟩)
   · have h' : q ∈ [L.core.poolWire 1800, L.core.poolWire 1801, L.core.poolWire 1802,
         L.core.poolWire 1803, L.core.poolWire 1804] := by
       simpa [wireBlock, List.range'_succ] using h1
     simp only [List.mem_cons, List.not_mem_nil, or_false] at h'
     rcases h' with h' | h' | h' | h' | h'
-    · exact Or.inl (Or.inr (by simp [h']))
+    · exact absurd h' h0
     · exact absurd h' hne
     · exact Or.inr (by simp [wireBlock, List.range'_succ, h'])
     · exact Or.inr (by simp [wireBlock, List.range'_succ, h'])
@@ -77,13 +78,13 @@ theorem pool_lowE (k : Nat) (hk : k ≤ 515) (q : Wire) (hq : q ∈ L.dialogPool
   simp only [List.mem_range'_1] at hi
   apply poolQ_E
   simp only [sharedPoolF, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1]
-  exact Or.inl (Or.inl (Or.inl ⟨i, by omega, rfl⟩))
+  exact Or.inl (Or.inl ⟨i, by omega, rfl⟩)
 
 include hn
 
 omit hw hn in
 theorem E_of_sites (q : Wire) (hq : q ∈ CompressedPointSquare.residents L ++ CompressedPointSquare.sharedPool L)
-    (h1 : q ≠ L.core.poolWire 1801) (h1' : q ≠ L.core.poolWire 1541)
+    (h0 : q ≠ L.core.poolWire 1800) (h1 : q ≠ L.core.poolWire 1801) (h1' : q ≠ L.core.poolWire 1541)
     (h2 : q ≠ L.core.equalX) (h3 : q ≠ L.core.double) (h4 : q ≠ L.infinitySelect) :
     q ∈ sitesE L := by
   rcases List.mem_append.mp hq with hr | hp
@@ -100,7 +101,7 @@ theorem E_of_sites (q : Wire) (hq : q ∈ CompressedPointSquare.residents L ++ C
       · exact absurd rfl h2
       · exact flag_E L _ (by simp [flagsE])
       · exact absurd rfl h3
-  · exact poolQ_E L q (sharedPool_F L q hp h1 h1')
+  · exact poolQ_E L q (sharedPool_F L q hp h0 h1 h1')
 
 omit hn in
 theorem pairE (t₁ t₂ : Wire) (h1 : t₁ ∈ flagsE L) (h2 : t₂ ∈ flagsE L) (e₁ e₂ : Bool) (C D : Point) :
@@ -160,6 +161,14 @@ theorem genericFlagE : wires (genericFlag2 L) ⊆ (sitesE L).toFinset := by
   all_goals simp [sitesE, flagsE, PointAddLayout.pointWires]
 
 omit hw hn in
+theorem genericFlag3E : wires (genericFlag3 L) ⊆ (sitesE L).toFinset := by
+  intro q hq
+  simp [genericFlag3, wires, Instr.wires] at hq
+  apply List.mem_toFinset.mpr
+  rcases hq with rfl | rfl | rfl | rfl | rfl
+  all_goals simp [sitesE, flagsE]
+
+omit hw hn in
 theorem cornersE (C : Point) : wires (corners2 L C) ⊆ (sitesE L).toFinset := by
   have m (c : Wire) (hc : c ∈ flagsE L) (P : Point) :
       wires (maskedPointConstant c L.point P) ⊆ (sitesE L).toFinset := by
@@ -196,8 +205,8 @@ theorem finiteProgramFG_support (C : Point) (cy : Fp) (Gen : Program)
     wires (finiteProgramFG L C cy Gen) ⊆ (sitesE L).toFinset := by
   have fS : flagsE L = [L.doubleSelect, L.genericSelect, L.core.generic, L.core.equalNegY] := rfl
   simp only [finiteProgramFG, wires_append, Finset.union_subset_iff]
-  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _, gatedE L hw _ _ (by simp [fS]) _⟩,
-    genericFlagE L⟩, hG⟩, genericFlagE L⟩, zeroFlagE L _ (by simp [fS])⟩, cornersE L _⟩,
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _, gatedE L hw _ _ (by simp [fS]) _⟩,
+    genericFlagE L⟩, hG⟩, genericFlag3E L⟩, cornersE L _⟩,
     pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩, gatedE L hw _ _ (by simp [fS]) _⟩,
     chainEraseE L _ (by simp [fS])⟩
 
@@ -219,6 +228,7 @@ theorem arithE (multiply : Bool) :
     simp only [indices, List.mem_append, List.mem_range'_1]; omega
   apply List.mem_toFinset.mpr
   apply E_of_sites L _ (List.mem_toFinset.mp inv)
+  · exact fun e => arith2_pool1800_unused L hw hn multiply (e ▸ hq)
   · intro e
     have himg : pointWireFn L (base 2313) = L.core.poolWire 1801 := by
       simp only [pointWireFn_base, pointIndexWire, show (2313:Nat) < 2314 by omega, if_true]
@@ -283,8 +293,8 @@ theorem squareE : wires (CompressedPointSquare.computableProgram L) ⊆ (sitesE 
     have ha := CompressedPointSquare.prefix_allowed i bound
     simp only [sharedPoolF, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1]
     rcases ha with ha | ha
-    · exact Or.inl (Or.inl (Or.inl ⟨_, by omega, rfl⟩))
-    · exact Or.inl (Or.inl (Or.inr ⟨_, by omega, rfl⟩))
+    · exact Or.inl (Or.inl ⟨_, by omega, rfl⟩)
+    · exact Or.inl (Or.inr ⟨_, by omega, rfl⟩)
 
 attribute [local irreducible] fastCandidate in
 theorem fastSquareE : wires (fastSquare L) ⊆ (sitesE L).toFinset := by
@@ -318,8 +328,8 @@ theorem fastSquareE : wires (fastSquare L) ⊆ (sitesE L).toFinset := by
     have ha := CompressedPointSquare.prefix_allowed i bound
     simp only [sharedPoolF, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1]
     rcases ha with ha | ha
-    · exact Or.inl (Or.inl (Or.inl ⟨_, by omega, rfl⟩))
-    · exact Or.inl (Or.inl (Or.inr ⟨_, by omega, rfl⟩))
+    · exact Or.inl (Or.inl ⟨_, by omega, rfl⟩)
+    · exact Or.inl (Or.inr ⟨_, by omega, rfl⟩)
 
 omit hn in
 theorem constAddE (r : List Wire) (hr : r = L.point.x ∨ r = L.point.y) (k : Fp) :
@@ -356,10 +366,9 @@ theorem sharedPool_Q_sub (q : Wire) (hq : q ∈ sharedPoolF L) : q ∈ L.dialogP
     simp only [sharedPoolF, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1,
       List.mem_cons, List.not_mem_nil, or_false] at hq
     simp only [wireBlock, List.mem_map, List.mem_range'_1]
-    rcases hq with ((⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩) | rfl) | ⟨i, hi, rfl⟩
+    rcases hq with (⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩) | ⟨i, hi, rfl⟩
     · exact ⟨i, by omega, rfl⟩
     · exact ⟨i, by omega, rfl⟩
-    · exact ⟨1800, by omega, rfl⟩
     · exact ⟨i, by omega, rfl⟩
   exact List.mem_of_mem_take big
 

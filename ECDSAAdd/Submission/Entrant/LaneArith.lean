@@ -1,4 +1,5 @@
 import ECDSAAdd.Submission.Entrant.LaneKernel
+import ECDSAAdd.Submission.Entrant.ControlRepair
 import ECDSAAdd.Arithmetic.MappedCompressedPointArithmetic
 import ECDSAAdd.Arithmetic.MappedKernelPhysical
 import ECDSAAdd.Arithmetic.SkywalkPointPhysical
@@ -6,10 +7,8 @@ import ECDSAAdd.Arithmetic.CompressedPointDialogSteps
 import ECDSAAdd.Arithmetic.CompressedPointDialogResources
 import ECDSAAdd.Baselines.SkywalkSlots
 
-/-! Lane A point arithmetic: zero-divisor wrapper, physical placement and
-point-dialog backend around `laneKernel`.  Proofs are the original Skywalk
-proofs re-pointed at the Lane A kernel; resources are derived from the
-unchanged Skywalk program by support inclusion and exact count differences. -/
+/-! Lane A point arithmetic with control-aware divisor repair, physical
+placement, and a point-dialog backend around `laneKernel`. -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 1800000
 set_option linter.unusedSimpArgs false
@@ -18,25 +17,25 @@ namespace ECDSAAdd.Arithmetic.MappedCompressed.LaneA
 open Secp256k1 DirectSkywalk ControlledPointLayout
 
 section Kernel
-attribute [local irreducible] ECDSAAdd.Entrant.HalfField.segment selectedFieldSegment NativeFirstDirect.forward
+attribute [local irreducible] laneSegment selectedFieldSegment NativeFirstDirect.forward
   compressedCompactForward compressedCompactReverse NativeFirstKnown.inverse
 
 theorem laneKernel_support (divide : Bool) : wires (laneKernel divide) ⊆ slots.toFinset := by
   have k := kernel_support divide
-  have seg := ECDSAAdd.Entrant.HalfField.segment_support divide
+  have seg := laneSegment_support divide
   simp only [kernel,wires_append,Finset.union_subset_iff] at k
   simp only [laneKernel,wires_append,Finset.union_subset_iff]
   exact ⟨⟨⟨⟨⟨⟨k.1.1.1.1.1.1,k.1.1.1.1.1.2⟩,k.1.1.1.1.2⟩,seg⟩,k.1.1.2⟩,k.1.2⟩,k.2⟩
 
 attribute [local irreducible] toffoliCount measurementCount in
 theorem laneKernel_counts (divide : Bool) :
-    toffoliCount (laneKernel divide)=(if divide then 1050690 else 1051200) ∧
-    measurementCount (laneKernel divide)=721478 := by
+    toffoliCount (laneKernel divide)=(if divide then 1051196 else 1051706) ∧
+    measurementCount (laneKernel divide)=721982 := by
   have f := NativeFirstDirect.forward_counts base
   have r := NativeFirstKnown.inverse_counts base
   have integer := integer_tail_counts
   have clear := skywalkTerminalClear_counts (base 511) (base 512) (base 770)
-  have field := ECDSAAdd.Entrant.HalfField.segment_counts divide
+  have field := laneSegment_counts divide
   simp only [laneKernel,skywalkArithmeticClear,toffoliCount_append,measurementCount_append,
     f.1,f.2,r.1,r.2,integer.1,integer.2.1,integer.2.2.1,integer.2.2.2,
     clear.1,clear.2,field.1,field.2]
@@ -46,7 +45,7 @@ theorem laneKernel_physical (divide : Bool) : GatePhysical (laneKernel divide) :
   have first := (NativeFirstDirect.programs_physical base base_pool_nodup).1
   have loops := compressedLoops_physical base 1 511 (by decide) base_pool_nodup
   have last := NativeFirstKnown.inverse_physical base base_pool_nodup
-  have field := ECDSAAdd.Entrant.HalfField.segment_physical divide
+  have field := laneSegment_physical divide
   simp only [laneKernel,gatePhysical_append]
   exact ⟨⟨⟨⟨⟨⟨first,loops.1⟩,mappedClear_physical⟩,field⟩,mappedClear_physical⟩,loops.2⟩,last⟩
 
@@ -55,7 +54,7 @@ theorem laneKernel_gateSlots_le (divide : Bool) :
     gateSlots (laneKernel divide) ≤ 20500000 := by
   have hn := ECDSAAdd.Baselines.nativeFirst_gateSlots_le base
   have hi := ECDSAAdd.Baselines.compactLoops_gateSlots_le base 1 511 (by omega)
-  have hf := ECDSAAdd.Entrant.HalfLane.segment_gateSlots_le divide
+  have hf := laneSegment_gateSlots_le divide
   have hc : gateSlots (skywalkArithmeticClear base) = 3 := rfl
   rw [laneKernel]
   simp only [gateSlots_append, hc]
@@ -64,81 +63,43 @@ theorem laneKernel_gateSlots_le (divide : Bool) :
 end Kernel
 
 def laneControlled (divide : Bool) : Program :=
-  directZeroControlled (wireBlock base 770 256) (wireBlock base 0 255)
-    (base 2313) (base 2411) (laneKernel divide)
+  controlRepair (laneKernel divide)
 
 section Controlled
-attribute [local irreducible] laneKernel kernel directZeroDivisorEnter directZeroDivisorLeave
+attribute [local irreducible] laneKernel kernel
 
 theorem laneControlled_support (divide : Bool) : wires (laneControlled divide) ⊆ slots.toFinset := by
-  have c := controlled_support divide
-  simp only [controlled,directZeroControlled,wires_append,Finset.union_subset_iff] at c
-  simp only [laneControlled,directZeroControlled,wires_append,Finset.union_subset_iff]
-  exact ⟨c.1,laneKernel_support divide,c.2.2⟩
+  apply (controlRepair_support (laneKernel divide)).trans
+  apply Finset.union_subset
+  · intro q hq
+    simp only [Finset.mem_insert,Finset.mem_singleton] at hq
+    rcases hq with rfl|rfl|rfl|rfl|rfl
+    all_goals apply slot_mem <;> simp [live,CompressedAllocation.omitted]
+  · exact laneKernel_support divide
 
 theorem laneControlled_counts (divide : Bool) :
-    toffoliCount (laneControlled divide)=(if divide then 1051200 else 1051710) ∧
-    measurementCount (laneControlled divide)=721986 := by
-  have width : (wireBlock base 0 255).length+1=(wireBlock base 770 256).length := by
-    simp [wireBlock]
-  have wrapped := directZeroControlled_counts (wireBlock base 770 256) (wireBlock base 0 255)
-    (base 2313) (base 2411) (laneKernel divide) width
+    toffoliCount (laneControlled divide)=(if divide then 1051199 else 1051709) ∧
+    measurementCount (laneControlled divide)=721985 := by
+  have wrapped := controlRepair_counts (laneKernel divide)
   have core := laneKernel_counts divide
   simp only [laneControlled] at ⊢
-  rw [wrapped.1,wrapped.2,core.1,core.2,wireBlock_length]
+  rw [wrapped.1,wrapped.2,core.1,core.2]
   cases divide <;> norm_num
 
-theorem laneControlled_physical (divide : Bool) : GatePhysical (laneControlled divide) := by
-  apply directZero_physical _ _ _ _ _ _ (laneKernel_physical divide)
-  decide +kernel
+theorem laneControlled_physical (divide : Bool) : GatePhysical (laneControlled divide) :=
+  controlRepair_physical (laneKernel divide) (laneKernel_physical divide)
 
 open Challenge in
 theorem laneControlled_gateSlots_le (divide : Bool) :
     gateSlots (laneControlled divide) ≤ 20600000 := by
   have hk := laneKernel_gateSlots_le divide
-  have hz := ECDSAAdd.Baselines.zeroCompare_gateSlots_le (wireBlock base 770 256)
-    (wireBlock base 0 255) (base 2313) (base 2411)
-  have hm := ECDSAAdd.Baselines.maskedConstant_gateSlots_le (base 2411) (wireBlock base 770 256) 1
-  simp only [wireBlock_length] at hz hm
-  simp only [laneControlled,directZeroControlled,directZeroDivisorEnter,directZeroDivisorLeave,
-    gateSlots_append]; omega
+  rw [laneControlled,controlRepair_gateSlots]
+  omega
 
 end Controlled
 
 section ControlledSpec
 attribute [local irreducible] run measurementCount laneKernel
-  directZeroDivisorEnter directZeroDivisorLeave
-
-private theorem controlled_port_nodup :
-    (base 2411::base 2313::(wireBlock base 770 256++wireBlock base 0 255++
-      wireBlock base 2056 256)).Nodup := by
-  have first : (List.range' 770 256++List.range' 0 255).Nodup := by
-    apply List.nodup_append'.mpr
-    refine ⟨List.nodup_range',List.nodup_range',List.disjoint_left.mpr ?_⟩
-    intro q hx hc
-    simp only [List.mem_range'_1] at hx hc
-    omega
-  have words : (List.range' 770 256++List.range' 0 255++List.range' 2056 256).Nodup := by
-    apply List.nodup_append'.mpr
-    refine ⟨first,List.nodup_range',List.disjoint_left.mpr ?_⟩
-    intro q hxy hz
-    simp only [List.mem_append,List.mem_range'_1] at hxy hz
-    omega
-  have ids : (2411::2313::(List.range' 770 256++List.range' 0 255++List.range' 2056 256)).Nodup := by
-    apply List.nodup_cons.mpr
-    constructor
-    · simp only [List.mem_cons,List.mem_append,List.mem_range'_1]
-      omega
-    · apply List.nodup_cons.mpr
-      constructor
-      · simp only [List.mem_append,List.mem_range'_1]
-        omega
-      · exact words
-  change ((2411::2313::(List.range' 770 256++List.range' 0 255++
-    List.range' 2056 256)).map base).Nodup
-  apply List.Nodup.map_on
-  · intro a _ b _ eq; exact base_injective eq
-  · exact ids
 
 private theorem zero_flag_outside : base 2411 ∉ skywalkSharedWires base := by
   intro member
@@ -147,9 +108,17 @@ private theorem zero_flag_outside : base 2411 ∉ skywalkSharedWires base := by
   have same := base_injective eq
   omega
 
-/-- The actual zero-divisor wrapper satisfies the original strong port
-contract. A zero divisor is allowed on the inactive arithmetic branch;
-comparison work and repaired kernel cleanliness come from the caller input. -/
+private theorem repair_ports_away :
+    ∀q∈[base 2400,base 770,base 771,base 0,base 2411],q∉wireBlock base 2056 256 := by
+  intro q hq bad
+  obtain ⟨i,hi,eq⟩ := List.mem_map.mp bad
+  simp only [List.mem_range'_1] at hi
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
+  rcases hq with rfl|rfl|rfl|rfl|rfl
+  all_goals have same := base_injective eq; omega
+
+/-- The repair preserves active inputs and makes every inactive divisor positive.
+All work bits and the divisor are restored after the numerator-only kernel. -/
 theorem laneControlled_spec (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (hlo : CompressedHistoryAbove base)
     (ho : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkSharedWires base)
@@ -160,67 +129,50 @@ theorem laneControlled_spec (divide : Bool)
     (hflag : s.basis (base 2411) = false)
     (hg0 : s.basis (base 2409) = false) (hs0 : s.basis (base 2410) = false) :
     DirectSkywalkArithmeticStrong divide base (base 2400) x Y s (run (laneControlled divide) m s) := by
-  let D := directDivisor x
+  let D := controlRepairDivisor (s.basis (base 2400)) x
   let R := (directSkywalkResult divide (s.basis (base 2400)) x Y).val
-  have positive : 0 < D := Nat.pos_of_ne_zero (directDivisor_ne_zero x)
-  have bound : D < p := by
-    by_cases zero : x = 0
-    · simp only [D,directDivisor,zero,if_true]
-      norm_num [p]
-    · simpa only [D,directDivisor,zero,if_false] using hx
-  have sameResult : directSkywalkResult divide (s.basis (base 2400)) D Y =
+  let t := controlRepairState s
+  have positive : 0<D := controlRepairDivisor_pos _ x zeroBranch
+  have bound : D<p := controlRepairDivisor_lt _ x hx
+  have sameResult : directSkywalkResult divide (s.basis (base 2400)) D Y=
       directSkywalkResult divide (s.basis (base 2400)) x Y := by
-    by_cases zero : x = 0
-    · simp only [directSkywalkResult,zeroBranch zero,Bool.false_eq_true,if_false]
-    · simp only [D,directDivisor,zero,if_false]
-  have cin : s.basis (base 2313) = false :=
-    arith_input_bit base hn x Y.val s.basis hin 2313 (by omega) (by omega) (by omega)
-  have carry : ∀ q ∈ wireBlock base 0 255,s.basis q = false := by
-    intro q hq
-    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
-    simp only [List.mem_range'_1] at hi
-    exact arith_input_bit base hn x Y.val s.basis hin i (by omega) (by omega) (by omega)
-  have callback : ∀ (t : State) (ms : List Bool),
-      regValue (wireBlock base 770 256) t.basis = directDivisor (regValue (wireBlock base 770 256) s.basis) →
-      regValue (wireBlock base 2056 256) t.basis = regValue (wireBlock base 2056 256) s.basis →
-      t.basis (base 2411) = decide (regValue (wireBlock base 770 256) s.basis = 0) →
-      (∀ q,q ≠ base 2411 → q ∉ wireBlock base 770 256 → t.basis q = s.basis q) →
-      (run (laneKernel divide) ms t).phase = t.phase ∧
-      regValue (wireBlock base 2056 256) (run (laneKernel divide) ms t).basis = R ∧
-      ∀ q,q ∉ wireBlock base 2056 256 → (run (laneKernel divide) ms t).basis q = t.basis q := by
-    intro t ms divisor numerator _ frame
-    have input : SkywalkArithmeticInput base D Y.val t.basis := by
-      refine ⟨divisor.trans (congrArg directDivisor hin.1),numerator.trans hin.2.1,?_⟩
-      intro q hq hdx hdy
-      have ne : q ≠ base 2411 := fun eq => zero_flag_outside (eq ▸ hq)
-      exact (frame q ne hdx).trans (hin.2.2 q hq hdx hdy)
-    have controls (q : Wire) (hq : q ∈ [base 2400,base 2409,base 2410]) :
-        t.basis q = s.basis q := by
-      have ne : q ≠ base 2411 := by
-        simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
-        rcases hq with rfl|rfl|rfl
-        all_goals intro eq; have same := base_injective eq; omega
-      have away : q ∉ wireBlock base 770 256 :=
-        fun bad => ho q hq (arith_block_subset_shared base 770 256 (by omega) bad)
-      exact frame q ne away
-    have strong := NativeFirstDirect.LaneA.laneKernel_spec divide hn hlo ho hf D Y positive bound t ms input
-      ((controls _ (by simp)).trans hg0) ((controls _ (by simp)).trans hs0)
-    unfold DirectSkywalkArithmeticStrong at strong
-    rw [controls (base 2400) (by simp),sameResult] at strong
-    exact strong
-  have width : (wireBlock base 0 255).length+1 = (wireBlock base 770 256).length := by
-    simp only [wireBlock_length]
-  have records := directZeroControlled_states (wireBlock base 770 256) (wireBlock base 2056 256)
-    (wireBlock base 0 255) (base 2313) (base 2411) controlled_port_nodup width (laneKernel divide) s
-    (m.take (measurementCount (directZeroDivisorEnter (wireBlock base 770 256) (wireBlock base 0 255)
-      (base 2313) (base 2411))))
-    ((m.drop (measurementCount (directZeroDivisorEnter (wireBlock base 770 256) (wireBlock base 0 255)
-      (base 2313) (base 2411)))).take (measurementCount (laneKernel divide)))
-    ((m.drop (measurementCount (directZeroDivisorEnter (wireBlock base 770 256) (wireBlock base 0 255)
-      (base 2313) (base 2411)))).drop (measurementCount (laneKernel divide)))
-    R cin hflag carry callback
-  simpa only [DirectSkywalkArithmeticStrong,laneControlled,directZeroControlled,run_append,
-    skywalkArithmeticNumerator,R] using records
+    cases hb : s.basis (base 2400) <;> simp [D,controlRepairDivisor,hb,directSkywalkResult]
+  have temp : s.basis (base 0)=false :=
+    arith_input_bit base hn x Y.val s.basis hin 0 (by omega) (by omega) (by omega)
+  have input : SkywalkArithmeticInput base D Y.val t.basis := by
+    refine ⟨?_,?_,?_⟩
+    · exact (controlRepairState_divisor s).trans
+        (congrArg (controlRepairDivisor (s.basis (base 2400))) hin.1)
+    · exact (regValue_congr (wireBlock base 2056 256) t.basis s.basis (by
+        intro q hq
+        apply controlRepairState_outside
+        · intro eq; exact repair_ports_away _ (by simp) (eq ▸ hq)
+        · intro eq; exact repair_ports_away _ (by simp) (eq ▸ hq))).trans hin.2.1
+    · intro q hq hdx hdy
+      have ne : q≠base 2411 := fun eq => zero_flag_outside (eq ▸ hq)
+      have low : q≠base 770 := by
+        intro eq
+        apply hdx
+        rw [eq]
+        apply List.mem_map.mpr
+        exact ⟨770,by simp,rfl⟩
+      exact (controlRepairState_outside s q ne low).trans (hin.2.2 q hq hdx hdy)
+  have controls (q : Wire) (hq : q∈[base 2400,base 2409,base 2410]) :
+      t.basis q=s.basis q := by
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
+    rcases hq with rfl|rfl|rfl
+    all_goals apply controlRepairState_outside <;> decide
+  let kernelRecord := (m.drop (measurementCount controlRepairEnter)).take (measurementCount (laneKernel divide))
+  have core := NativeFirstDirect.LaneA.laneKernel_spec divide hn hlo ho hf D Y positive bound t
+    kernelRecord input ((controls _ (by simp)).trans hg0) ((controls _ (by simp)).trans hs0)
+  unfold DirectSkywalkArithmeticStrong at core
+  rw [controls (base 2400) (by simp),sameResult] at core
+  have records := controlRepair_states (laneKernel divide) (wireBlock base 2056 256)
+    repair_ports_away s (m.take (measurementCount controlRepairEnter)) kernelRecord
+    ((m.drop (measurementCount controlRepairEnter)).drop (measurementCount (laneKernel divide)))
+    R temp hflag core
+  simpa only [DirectSkywalkArithmeticStrong,laneControlled,controlRepair,run_append,
+    skywalkArithmeticNumerator,R,kernelRecord] using records
 
 
 end ControlledSpec
@@ -429,6 +381,30 @@ private theorem lane_logical_mixed_layout :
   · exact fun h => lane_logical_selectors_outside _ (by simp) (unused h)
   · exact fun h => lane_logical_selectors_outside _ (by simp) (unused h)
 
+/-- A positive divisor needs no repair before the placed lane kernel. -/
+theorem laneKernelPlaced_correct (L : ControlledPointLayout) (f : Wire → Wire)
+    (placement : PointArithmeticPlacement L f) (multiply : Bool)
+    (X Y : Nat) (B : Bool) (hX : X<p) (hX0 : 0<X) (hY : Y<p)
+    (s : State) (m : List Bool) (hb : s.basis L.core.generic=B)
+    (hx : regValue L.point.x s.basis=X) (hy : regValue L.point.y s.basis=Y)
+    (hc : regValue L.dialogPool s.basis=0) :
+    let V := if B then (if multiply then ((Y:Fp)*(X:Fp)).val else ((Y:Fp)/(X:Fp)).val) else Y
+    let out := run (renameProgram f (laneKernel (!multiply))) m s
+    out.phase=s.phase ∧ regValue L.point.y out.basis=V ∧
+      ∀q,q∉L.point.y → out.basis q=s.basis q := by
+  have yValue : (Y:Fp).val=Y := ZMod.val_natCast_of_lt hY
+  rcases placement with ⟨injective,divisorMap,numeratorMap,controlMap,sharedWork,selectorG,selectorS,zeroFlag⟩
+  have result := pointTransfer_core L f slots.toFinset (!multiply) injective divisorMap numeratorMap
+    controlMap sharedWork selectorG selectorS zeroFlag divisor_sites numerator_sites control_site
+    X (Y:Fp) B (fun _ => Nat.ne_of_gt hX0) s m hb hx (hy.trans yValue.symm) hc
+    (laneKernel (!multiply)) (laneKernel_support (!multiply))
+    (fun t records input _ _ hg hs => NativeFirstDirect.LaneA.laneKernel_spec (!multiply)
+      lane_logical_shared_nodup base_above lane_logical_selectors_outside lane_logical_mixed_layout
+      X (Y:Fp) hX0 hX t records input hg hs)
+  cases B <;> cases multiply <;>
+    simpa only [directSkywalkResult,skywalkArithmeticResult,
+      Bool.not_false,Bool.not_true,Bool.false_eq_true,if_false,if_true,yValue] using result
+
 theorem laneArith_correct (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (multiply : Bool) (X Y : Nat) (B : Bool)
     (hX : X<p) (hX0 : B=true → X≠0) (hY : Y<p) (s : State) (m : List Bool)
@@ -457,10 +433,10 @@ theorem laneArith_support (L : ControlledPointLayout) (hw : L.Widths) (multiply 
     ⟨old,laneControlled_support (!multiply) used,rfl⟩)
 
 theorem laneArith_counts (L : ControlledPointLayout) :
-    toffoliCount (laneArith L false)=1051200 ∧
-    measurementCount (laneArith L false)=721986 ∧
-    toffoliCount (laneArith L true)=1051710 ∧
-    measurementCount (laneArith L true)=721986 := by
+    toffoliCount (laneArith L false)=1051199 ∧
+    measurementCount (laneArith L false)=721985 ∧
+    toffoliCount (laneArith L true)=1051709 ∧
+    measurementCount (laneArith L true)=721985 := by
   have div := laneControlled_counts true
   have mul := laneControlled_counts false
   have rd := renameProgram_counts (pointWireFn L) (laneControlled true)
@@ -509,8 +485,8 @@ theorem laneGeneric_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
   exact ⟨⟨⟨⟨⟨⟨g.1.1.1.1.1.1,g.1.1.1.1.1.2⟩,a⟩,g.1.1.1.2⟩,g.1.1.2⟩,b⟩,g.2⟩
 
 theorem laneGeneric_counts (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) (cx cy : Fp) :
-    toffoliCount (laneGeneric L cx cy)=2208182 ∧
-    measurementCount (laneGeneric L cx cy)=1548724 := by
+    toffoliCount (laneGeneric L cx cy)=2208180 ∧
+    measurementCount (laneGeneric L cx cy)=1548722 := by
   have a k := pointDialogConstantAdd_counts L hw hn L.point.x (Or.inl rfl) k
   have b k := pointDialogConstantAdd_counts L hw hn L.point.y (Or.inr rfl) k
   have arith := laneArith_counts L

@@ -181,8 +181,8 @@ theorem arith2_correct (multiply : Bool) (X Y : Nat) (B : Bool)
 end
 
 theorem arith2_counts (L : ControlledPointLayout) :
-    toffoliCount (arith2 L false)=1051200 ∧ measurementCount (arith2 L false)=721986 ∧
-    toffoliCount (arith2 L true)=1051710 ∧ measurementCount (arith2 L true)=721986 := by
+    toffoliCount (arith2 L false)=1051199 ∧ measurementCount (arith2 L false)=721985 ∧
+    toffoliCount (arith2 L true)=1051709 ∧ measurementCount (arith2 L true)=721985 := by
   have h1 := laneControlled_counts true
   have h2 := laneControlled_counts false
   have r1 := renameProgram_counts (wireFn2 L) (laneControlled true)
@@ -207,6 +207,24 @@ theorem arith2_wire (L : ControlledPointLayout) (multiply : Bool) (q : Wire)
   rw [arith2, renameProgram_support] at hq
   obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
   exact ⟨old, laneControlled_support (!multiply) used, laneControlled_avoid (!multiply) old used, rfl⟩
+
+/-- The omitted zero high-bit copy leaves physical pool site 1800 unused. -/
+theorem arith2_pool1800_unused (L : ControlledPointLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (multiply : Bool) : L.core.poolWire 1800∉wires (arith2 L multiply) := by
+  intro hq
+  rw [arith2,renameProgram_support] at hq
+  obtain ⟨old,used,e⟩ := Finset.mem_image.mp hq
+  have hs := laneControlled_support (!multiply) used
+  have slot : base 2312∈slots.toFinset := by
+    apply slot_mem <;> simp [live,CompressedAllocation.omitted]
+  have image : pointWireFn L (base 2312)=L.core.poolWire 1800 := by
+    rw [pointWireFn_base]
+    simp [pointIndexWire,skywalkDirectMap,skywalkPointWire]
+  have same := pointWireFn_injective_slots L hw hn _ (swap2_slots old hs) _ slot (e.trans image.symm)
+  have fix : swap2 (base 2312)=base 2312 := swap2_fix _ (by decide) (by decide)
+  have original : old=base 2312 := by
+    rw [←swap2_involutive old,same,fix]
+  exact laneControlled_nohigh (!multiply) old used original
 
 def backend2 : PointArithmeticBackend where
   program := arith2

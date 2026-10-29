@@ -277,9 +277,66 @@ theorem centSource_noop (hn : (skywalkSharedWires base).Nodup)
   have actual := transport centSource encoder_center_disjoint.2.1 u raw n encoded v.1
   rw [actual.2,same,←encoded]
 
+/-- Copy only the 256 payload bits; the source high bit is zero. -/
+def copyPair256 : Program :=
+  copyRegister none (wireBlock base 2056 256) (wireBlock base 770 256)
+
+private theorem copy_append (xs ys us vs : List Wire) (h : xs.length=ys.length) :
+    copyRegister none (xs++us) (ys++vs)=
+      copyRegister none xs ys++copyRegister none us vs := by
+  induction xs generalizing ys with
+  | nil => have e : ys=[] := List.eq_nil_of_length_eq_zero h.symm; subst e; rfl
+  | cons x xs ih =>
+    cases ys with
+    | nil => simp at h
+    | cons y ys =>
+      simp only [List.cons_append,copyRegister,List.append_assoc]
+      rw [ih ys (by simpa using h)]
+
+theorem copyPair256_split : copyPairAt base=copyPair256++[.CX (base 2312) (base 1026)] := by
+  rw [copyPairAt,skywalkShared_field_z]
+  change copyRegister none (wireBlock base 2056 257) (wireBlock base 770 257)=_
+  rw [show wireBlock base 2056 257=wireBlock base 2056 256++[base 2312] by
+    exact (wireBlock_append base 2056 256 1).symm,
+    show wireBlock base 770 257=wireBlock base 770 256++[base 1026] by
+    exact (wireBlock_append base 770 256 1).symm,
+    copy_append _ _ _ _ (by simp [wireBlock_length])]
+  rfl
+
+theorem copyPair256_support : wires copyPair256 ⊆ wires (renameProgram allPlaced (copyPairAt id)) := by
+  rw [copyPair_placement,copyPair256_split,wires_append]
+  exact Finset.subset_union_left
+
+theorem copyPair256_counts : toffoliCount copyPair256=0 ∧ measurementCount copyPair256=0 :=
+  copyRegister_counts none _ _ (by simp [wireBlock_length])
+
+theorem copyPair256_run_eq (s : State) (m : List Bool) (hz : s.basis (base 2312)=false) :
+    run copyPair256 m s=run (copyPairAt base) m s := by
+  have away : base 2312∉wires copyPair256 := by
+    intro h
+    have hs := copyRegister_wires_subset none (wireBlock base 2056 256) (wireBlock base 770 256) h
+    simp only [List.mem_toFinset,Option.toList_none,List.nil_append,List.mem_append,wireBlock,
+      List.mem_map,List.mem_range'_1] at hs
+    rcases hs with ⟨i,hi,e⟩|⟨i,hi,e⟩
+    all_goals have same := base_injective e; omega
+  have keep := (run_preserves_outside copyPair256 m s (base 2312) away).trans hz
+  rw [copyPair256_split,run_append,run_take,copyPair256_counts.2,List.drop_zero]
+  generalize ht : run copyPair256 m s=t at keep ⊢
+  cases t with
+  | mk phase basis =>
+    change basis (base 2312)=false at keep
+    simp only [run,keep,Bool.xor_false]
+    congr 1
+    funext q
+    simp [writeBit]
+
+private theorem copyPair256_disjoint :
+    Disjoint (wires (allGroupEncode base 170)) (wires copyPair256) :=
+  encoder_copy_disjoint.mono_right (by rw [←copyPair_placement]; exact copyPair256_support)
+
 /-- Division segment: the source entry conversion is dropped. -/
 def divSeg : Program :=
-  centTarget ++ (PenultimateMapped.replay true ++ renameProgram allPlaced (copyPairAt id) ++
+  centTarget ++ (PenultimateMapped.replay true ++ copyPair256 ++
     canonTarget)
 
 theorem old_div_split : PenultimateMapped.fieldSegment true =
@@ -294,8 +351,8 @@ theorem encoded_copy_centered (hn : (skywalkSharedWires base).Nodup)
     (origin : BasisState) (hr : origin (base 2312)=false) (hy : origin (base 1026)=false)
     (X : Fp) (u : State) (n : List Bool)
     (input : EncodedFieldFrame base (base 2409) origin X 0 u) :
-    (run (copyPairAt base) n u).phase=u.phase ∧
-    EncodedFieldFrame base (base 2409) origin X X (run (copyPairAt base) n u) := by
+    (run copyPair256 n u).phase=u.phase ∧
+    EncodedFieldFrame base (base 2409) origin X X (run copyPair256 n u) := by
   obtain ⟨raw,phase,frame,encoded⟩ := input
   rw [centerWord_zero] at frame
   have outside := balancedSharedDivision_high_outside base hn
@@ -305,21 +362,23 @@ theorem encoded_copy_centered (hn : (skywalkSharedWires base).Nodup)
   have split := port_split (base 2409)
   rw [←split.1,←split.2] at wide
   have result := copyPair_frame hn origin (centerWord X) 0 raw n wide
+  rw [←copyPair256_run_eq raw n ((frame.2.2 _ (by simpa only [balancedSharedPorts_r] using outside.1.1)
+    (by simpa only [balancedSharedPorts_y] using outside.1.2)).trans hr)] at result
   rw [Nat.zero_xor,split.1,split.2] at result
   have bound := (centerWord_valid X).1
   have narrow := balancedPair_narrow _ _ (base 2312) (base 1026) origin _
     (centerWord X) (centerWord X) (by simpa only [balancedSharedPorts_r,wireBlock_length] using bound)
     (by simpa only [balancedSharedPorts_y,wireBlock_length] using bound) result.2 hr hy
-  have actual := transport (copyPairAt base) encoder_copy_disjoint u raw n encoded result.1
-  exact ⟨actual.1,run (copyPairAt base) n raw,result.1.trans (phase.trans actual.1.symm),narrow,actual.2⟩
+  have actual := transport copyPair256 copyPair256_disjoint u raw n encoded result.1
+  exact ⟨actual.1,run copyPair256 n raw,result.1.trans (phase.trans actual.1.symm),narrow,actual.2⟩
 
 /-- XOR of the equal centered target word clears the source word. -/
 theorem encoded_copy_clear_centered (hn : (skywalkSharedWires base).Nodup)
     (origin : BasisState) (hr : origin (base 2312)=false) (hy : origin (base 1026)=false)
     (X : Fp) (u : State) (n : List Bool)
     (input : EncodedFieldFrame base (base 2409) origin X X u) :
-    (run (copyPairAt base) n u).phase=u.phase ∧
-    EncodedFieldFrame base (base 2409) origin X 0 (run (copyPairAt base) n u) := by
+    (run copyPair256 n u).phase=u.phase ∧
+    EncodedFieldFrame base (base 2409) origin X 0 (run copyPair256 n u) := by
   obtain ⟨raw,phase,frame,encoded⟩ := input
   have outside := balancedSharedDivision_high_outside base hn
   have wide := balancedPair_widen _ _ (base 2312) (base 1026) origin raw.basis (centerWord X) (centerWord X) frame
@@ -328,13 +387,15 @@ theorem encoded_copy_clear_centered (hn : (skywalkSharedWires base).Nodup)
   have split := port_split (base 2409)
   rw [←split.1,←split.2] at wide
   have result := copyPair_frame hn origin (centerWord X) (centerWord X) raw n wide
+  rw [←copyPair256_run_eq raw n ((frame.2.2 _ (by simpa only [balancedSharedPorts_r] using outside.1.1)
+    (by simpa only [balancedSharedPorts_y] using outside.1.2)).trans hr)] at result
   rw [Nat.xor_self,split.1,split.2] at result
   have bound := (centerWord_valid X).1
   have narrow := balancedPair_narrow _ _ (base 2312) (base 1026) origin _
     (centerWord X) 0 (by simpa only [balancedSharedPorts_r,wireBlock_length] using bound)
     (by simp only [balancedSharedPorts_y,wireBlock_length]; positivity) result.2 hr hy
-  have actual := transport (copyPairAt base) encoder_copy_disjoint u raw n encoded result.1
-  refine ⟨actual.1,run (copyPairAt base) n raw,result.1.trans (phase.trans actual.1.symm),?_,actual.2⟩
+  have actual := transport copyPair256 copyPair256_disjoint u raw n encoded result.1
+  refine ⟨actual.1,run copyPair256 n raw,result.1.trans (phase.trans actual.1.symm),?_,actual.2⟩
   rw [centerWord_zero]
   exact narrow
 
@@ -358,7 +419,7 @@ theorem divSeg_spec
   let P : State → State → Prop := fun initial out => EncodedCanonicalFrame origin Y 0 initial →
     out.phase=initial.phase ∧ EncodedCanonicalFrame origin Z 0 out
   have all := run_three_states (centTarget ++ PenultimateMapped.replay true)
-    (renameProgram allPlaced (copyPairAt id)) canonTarget P (by
+    copyPair256 canonTarget P (by
       intro initial s1 s2 s3 m1 m2 m3 h1 h2 h3 hin
       rw [run_append] at h1
       have a := encoded_center_target hn origin hw hu hr hy Y initial
@@ -366,27 +427,26 @@ theorem divSeg_spec
       have b := PenultimateMapped.LaneA.replay_forward_spec hn hlo ho hp hf origin hg0 hs0 env legal
         x hx0 hx trace Y _ (m1.drop (measurementCount centTarget)) a.2
       rw [h1] at b
-      rw [copyPair_placement] at h2
       have c := encoded_copy_clear_centered hn origin hr hy Z s1 m2 b.2
       rw [h2] at c
       have d := encoded_canonical_target hn origin hw hu hr hy Z s2 m3 c.2
       rw [h3] at d
       exact ⟨d.1.trans (c.1.trans (b.1.trans a.1)),d.2⟩) s m input
   have join : divSeg = (centTarget ++ PenultimateMapped.replay true) ++
-      (renameProgram allPlaced (copyPairAt id) ++ canonTarget) := by
+      (copyPair256 ++ canonTarget) := by
     simp only [divSeg,List.append_assoc]
   rw [join]
   exact all
 
 /-- Multiplication segment: center the target, copy, replay, convert the target. -/
 def mulSeg : Program :=
-  centTarget ++ renameProgram allPlaced (copyPairAt id) ++
+  centTarget ++ copyPair256 ++
     PenultimateMapped.replay false ++ canonTarget
 
 def laneSegment (divide : Bool) : Program :=
   if divide then divSeg else mulSeg
 
-private def inversePrefix : Program := centTarget ++ renameProgram allPlaced (copyPairAt id)
+private def inversePrefix : Program := centTarget ++ copyPair256
 
 private theorem inversePrefix_spec
     (hn : (skywalkSharedWires base).Nodup) (origin : BasisState)
@@ -502,12 +562,12 @@ theorem laneSegment_support (divide : Bool) : wires (laneSegment divide) ⊆ slo
     rw [old_split] at old
     simp only [wires_append,Finset.union_subset_iff] at old
     simp only [laneSegment,Bool.false_eq_true,if_false,mulSeg,wires_append,Finset.union_subset_iff]
-    exact ⟨⟨⟨fc,old.1⟩,old.2.2.2.1⟩,fk⟩
+    exact ⟨⟨⟨fc,copyPair256_support.trans old.1⟩,old.2.2.2.1⟩,fk⟩
   · simp only [selectedFieldSegment] at old
     rw [old_div_split] at old
     simp only [wires_append,Finset.union_subset_iff] at old
     simp only [laneSegment,if_true,divSeg,wires_append,Finset.union_subset_iff]
-    exact ⟨fc,⟨old.2.1.1,old.2.2⟩,fk⟩
+    exact ⟨fc,⟨old.2.1.1,copyPair256_support.trans old.2.2⟩,fk⟩
 
 theorem centSource_counts : toffoliCount centSource = 765 ∧ measurementCount centSource = 765 := by
   have c := BalancedConvert.counts (balancedSharedSourceConvert base) (balancedSharedSourceConvert_widths base)
@@ -518,29 +578,35 @@ theorem canonSource_counts : toffoliCount canonSource = 765 ∧ measurementCount
   exact ⟨c.2.2.1,c.2.2.2⟩
 
 theorem laneSegment_counts (divide : Bool) :
-    toffoliCount (laneSegment divide)=(if divide then 655012 else 655522) ∧
-    measurementCount (laneSegment divide)=523940 := by
+    toffoliCount (laneSegment divide)=(if divide then 655006 else 655516) ∧
+    measurementCount (laneSegment divide)=523934 := by
   have old := selectedFieldSegment_counts divide
+  have cp := copyRegister_counts none (skywalkSharedField id).z (skywalkSharedField id).a
+    (by simp [skywalkSharedField,ModInPlaceLayout.z,ModAddCoreLayout.z,wireBlock_length])
+  have cz : toffoliCount (renameProgram allPlaced (copyPairAt id))=0 ∧
+      measurementCount (renameProgram allPlaced (copyPairAt id))=0 := by
+    simpa only [copyPairAt,(renameProgram_counts allPlaced _).1,(renameProgram_counts allPlaced _).2,
+      Option.isSome_none,Bool.false_eq_true,if_false] using cp
   have src := canonSource_counts
   have csrc := centSource_counts
   have oc := BalancedConvert.counts (balancedSharedTargetConvert base) (balancedSharedTargetConvert_widths base)
   have fc := BalancedConvert.LaneA.fast_counts (balancedSharedTargetConvert base)
     (balancedSharedTargetConvert_widths base)
-  have h1 : toffoliCount centTarget = 511 ∧ measurementCount centTarget = 510 := ⟨fc.1,fc.2.1⟩
-  have h2 : toffoliCount canonTarget = 511 ∧ measurementCount canonTarget = 510 := ⟨fc.2.2.1,fc.2.2.2⟩
+  have h1 : toffoliCount centTarget = 508 ∧ measurementCount centTarget = 507 := ⟨fc.1,fc.2.1⟩
+  have h2 : toffoliCount canonTarget = 508 ∧ measurementCount canonTarget = 507 := ⟨fc.2.2.1,fc.2.2.2⟩
   have h3 : toffoliCount origCentTarget = 765 ∧ measurementCount origCentTarget = 765 := ⟨oc.1,oc.2.1⟩
   have h4 : toffoliCount origCanonTarget = 765 ∧ measurementCount origCanonTarget = 765 :=
     ⟨oc.2.2.1,oc.2.2.2⟩
   cases divide
   · simp only [selectedFieldSegment,old_split,toffoliCount_append,measurementCount_append,
-      Bool.false_eq_true,if_false] at old
+      Bool.false_eq_true,if_false,cz.1,cz.2] at old
     simp only [laneSegment,Bool.false_eq_true,if_false,mulSeg,toffoliCount_append,
-      measurementCount_append]
+      measurementCount_append,copyPair256_counts.1,copyPair256_counts.2]
     omega
   · have ct := cp_true_split
     simp only [selectedFieldSegment,old_div_split,ct,toffoliCount_append,measurementCount_append,
-      if_true] at old
-    simp only [laneSegment,if_true,divSeg,toffoliCount_append,measurementCount_append]
+      if_true,cz.1,cz.2] at old
+    simp only [laneSegment,if_true,divSeg,toffoliCount_append,measurementCount_append,copyPair256_counts.1,copyPair256_counts.2]
     omega
 
 theorem laneSegment_physical (divide : Bool) : GatePhysical (laneSegment divide) := by
@@ -549,15 +615,25 @@ theorem laneSegment_physical (divide : Bool) : GatePhysical (laneSegment divide)
   have fp := BalancedConvert.LaneA.fast_physical (balancedSharedTargetConvert base) nd
   have fc : GatePhysical centTarget := fp.1
   have fk : GatePhysical canonTarget := fp.2
+  have cp : GatePhysical copyPair256 := by
+    have oldcp : GatePhysical (copyPairAt base) := by
+      rw [←copyPair_placement]
+      have oldmul := selectedFieldSegment_physical false
+      rw [old_split] at oldmul
+      simp only [gatePhysical_append] at oldmul
+      exact oldmul.1
+    rw [copyPair256_split] at oldcp
+    simp only [gatePhysical_append] at oldcp
+    exact oldcp.1
   cases divide
   · rw [old_split] at old
     simp only [gatePhysical_append] at old
     simp only [laneSegment,Bool.false_eq_true,if_false,mulSeg,gatePhysical_append]
-    exact ⟨⟨⟨fc,old.1⟩,old.2.2.2.1⟩,fk⟩
+    exact ⟨⟨⟨fc,cp⟩,old.2.2.2.1⟩,fk⟩
   · rw [old_div_split] at old
     simp only [gatePhysical_append] at old
     simp only [laneSegment,if_true,divSeg,gatePhysical_append]
-    exact ⟨fc,⟨old.2.1.1,old.2.2⟩,fk⟩
+    exact ⟨fc,⟨old.2.1.1,cp⟩,fk⟩
 
 open Challenge Baselines in
 theorem laneSegment_gateSlots_le (divide : Bool) :
@@ -570,6 +646,8 @@ theorem laneSegment_gateSlots_le (divide : Bool) :
     rw [copyRegister_gateSlots]
     have hl : (skywalkSharedField id).z.length = 257 := by simp only [ModInPlaceLayout.z,ModAddCoreLayout.z,skywalkSharedField,List.length_append,List.length_singleton,wireBlock_length]
     rw [hl]; omega
+  have short : gateSlots copyPair256 ≤ 257 := by
+    rw [copyPair256,copyRegister_gateSlots,wireBlock_length]; omega
   have replayEq (A B C : Program) (d : Bool) :
       gateSlots (if d then A++B++C else C++B++A) = gateSlots A+gateSlots B+gateSlots C := by
     cases d <;> simp only [Bool.false_eq_true,↓reduceIte,gateSlots_append]

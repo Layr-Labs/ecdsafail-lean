@@ -42,6 +42,19 @@ theorem fastConstE (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) :
 
 include hn
 
+/-- The finite repair uses only point wires and the existing arithmetic support. -/
+theorem farithE (multiply : Bool) : wires (farith L multiply) ⊆ (sitesE L).toFinset := by
+  have pf : wires (pfix L) ⊆ (sitesE L).toFinset := by
+    intro q hq
+    simp only [pfix,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
+      Finset.notMem_empty,or_false] at hq
+    apply List.mem_toFinset.mpr
+    have hf : L.point.finite∈sitesE L := point_E L _ (by simp [PointAddLayout.pointWires])
+    have hx : x0 L∈sitesE L := x_E L _ (x0_mem L hw)
+    rcases hq with rfl|(rfl|rfl)|rfl <;> assumption
+  simp only [farith,wires_append,Finset.union_subset_iff]
+  exact ⟨pf,(arith3_support L multiply).trans (arithE L hw hn multiply),pf⟩
+
 theorem fastGenericE (cx cy : Fp) : wires (fastGeneric2 L cx cy) ⊆ (sitesE L).toFinset := by
   have ca (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) (k : Fp) :
       wires (fastConstAdd L r k) ⊆ (sitesE L).toFinset :=
@@ -55,8 +68,8 @@ theorem fastGenericE (cx cy : Fp) : wires (fastGeneric2 L cx cy) ⊆ (sitesE L).
     (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConstE L hw L.point.x (Or.inl rfl))
   simp only [fastGeneric2, wires_append, Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, arithE L hw hn false⟩, fastSquareE L hw hn⟩,
-    cr⟩, arithE L hw hn true⟩, cn⟩, ca _ (Or.inr rfl) _⟩
+  exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, farithE L hw hn false⟩, fastSquareE L hw hn⟩,
+    cr⟩, farithE L hw hn true⟩, cn⟩, ca _ (Or.inr rfl) _⟩
 
 theorem fastGeneric_ok {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     GenericOK L hc (fastGeneric2 L cx cy) :=
