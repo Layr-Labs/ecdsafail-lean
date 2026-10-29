@@ -254,6 +254,8 @@ theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
   have s7 := shortEqual_counts L hw L.core.double L.doubleSelect (C+C)
   have p1 := pairEqual_counts L hw L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C)
   have p2 := pairEqual_counts L hw L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C)
+  have t1 := tailCost_le (decide (cy≠-cy)) (yBit C) true (yBit (-C))
+  have t2 := tailCost_le true (yBit C) (exceptionBit C) (yBit (-C))
   have z1 := zeroFlag_counts L.point.finite L.control L.infinitySelect
   have z2 := zeroFlag_counts L.point.finite L.control L.genericSelect
   rw [hzl] at e1 e2 e3 e4 e5 e6 e7 e8
