@@ -19,7 +19,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2186434, 1526969, 1894, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2186179, 1526714, 1894, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -35,7 +35,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgramFG_support layout layout_widths _ cy _ hG).trans
         (sitesE_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2186434 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2186179 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -45,7 +45,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2186434 := by
     change toffoliCount (finiteProgramFG layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1526969 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1526714 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -99,7 +99,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1526969
+    change measurementCount (normalizeProgram (program C)) ≤ 1526714
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
