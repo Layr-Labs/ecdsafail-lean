@@ -31,6 +31,16 @@ def finiteProgramEG (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Pro
   gatedShort L (decide (cy≠-cy)) L.doubleSelect (C+C) ++
   zeroFlag L.point.finite L.control L.genericSelect
 
+def finiteProgramFG (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) : Program :=
+  pairEqual L L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C) ++
+  gatedShort L (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C) ++
+  genericFlag2 L ++ Gen ++ genericFlag2 L ++
+  zeroFlag L.point.finite L.control L.core.generic ++
+  corners2 L C ++
+  pairEqual L L.core.generic L.core.equalNegY true (exceptionBit C) C (-C) ++
+  gatedShort L (decide (cy≠-cy)) L.doubleSelect (C+C) ++
+  zeroFlag L.point.finite L.control L.genericSelect
+
 /-- Contract of a generic-branch block, as proved for the Skywalk block by
 `CompressedPointDialog.boundary_generic`. -/
 def GenericOK (L : ControlledPointLayout) {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
