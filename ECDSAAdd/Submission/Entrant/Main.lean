@@ -2396,6 +2396,243 @@ end ECDSAAdd.Entrant
 end
 
 
+-- ===== MSum =====
+section
+/-! Measured sum preparation for the streamed square's third branch.
+
+The branch squares `A + B`, the sum of the two 128-bit input halves, held in
+the 129-bit register `sum = high ++ [sumCarry]`.  The sum used to be prepared
+with a 129-bit Cuccaro adder and cleared by its exact reverse (256 Toffolis
+each way, no measurements).  Here it is prepared by one measured `mappedAdd`
+of `low ++ [0]` into `sum` (128 Toffolis, 128 measurements) and cleared by one
+fresh-record `mappedSub` (complement, add, complement; 128 Toffolis, 128
+measurements).  The carry bank is the first 128 wires of the square's clean
+`work` register; no new wires are used. -/
+
+set_option maxHeartbeats 1000000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+def msumBits (L : CuccaroStreamedSquareWideLayout) : List MappedBit :=
+  mappedRead L.core.low false++[({wire:=none,flip:=false} : MappedBit)]
+def msumBank (L : CuccaroStreamedSquareWideLayout) : List Wire := L.core.work.take 128
+def msumPrepare (L : CuccaroStreamedSquareWideLayout) : Program :=
+  mappedAdd (msumBits L) L.core.sum (msumBank L) L.core.cin
+def msumClear (L : CuccaroStreamedSquareWideLayout) : Program :=
+  mappedSub (msumBits L) L.core.sum (msumBank L) L.core.cin
+
+theorem mappedValue_append' (a b : List MappedBit) (s : BasisState) :
+    mappedValue (a++b) s=mappedValue a s+2^a.length*mappedValue b s := by
+  induction a with
+  | nil => simp [mappedValue]
+  | cons x xs ih =>
+    simp only [List.cons_append,mappedValue,ih,List.length_cons,pow_succ]
+    ring
+
+theorem msumBits_value (L : CuccaroStreamedSquareWideLayout) (s : BasisState) :
+    mappedValue (msumBits L) s=regValue L.core.low s := by
+  rw [msumBits,mappedValue_append',mappedRead_value]
+  simp [mappedValue,MappedBit.value]
+
+theorem msumBits_wires (L : CuccaroStreamedSquareWideLayout) (q : Wire)
+    (hq : q∈mappedWires (msumBits L)) : q∈L.core.low := by
+  simp only [msumBits,mappedWires,mappedRead,List.flatMap_append,List.mem_append,List.flatMap_map,
+    List.mem_flatMap,Option.toList_some,List.mem_singleton,List.flatMap_cons,List.flatMap_nil,
+    Option.toList_none,List.append_nil,List.not_mem_nil,or_false] at hq
+  obtain ⟨w,hw',rfl⟩ := hq
+  exact hw'
+
+theorem msum_lengths (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    (msumBits L).length=L.core.sum.length ∧ (msumBank L).length+1=L.core.sum.length := by
+  have lo := L.core.low_length hw.core
+  have su := L.core.sum_length hw.core
+  constructor
+  · simp [msumBits,mappedRead_length,lo,su]
+  · simp [msumBank,hw.core.work,su]
+
+theorem msum_nodup (L : CuccaroStreamedSquareWideLayout) (hnd : L.wires.Nodup) :
+    (L.core.cin::(L.core.sum++msumBank L)).Nodup ∧
+      ∀q∈L.core.low,q∉L.core.cin::(L.core.sum++msumBank L) := by
+  have cnt (q : Wire) := List.nodup_iff_count.mp hnd q
+  constructor
+  · apply List.nodup_iff_count.mpr
+    intro q
+    have h := cnt q
+    have hlo := (List.take_sublist 128 L.core.y).count_le q
+    have hhi1 := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have hhi2 := (List.drop_sublist 128 L.core.y).count_le q
+    have hsplit := congrArg (List.count q) (List.take_append_drop 128 L.core.y)
+    have hbank := (List.take_sublist 128 L.core.work).count_le q
+    simp only [List.count_append] at hsplit
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,msumBank,
+      CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.count_append,
+      List.count_cons,List.count_nil] at h ⊢
+    omega
+  · intro q hq hm
+    have h := cnt q
+    have pos := List.count_pos_iff.mpr hq
+    have pos2 := List.count_pos_iff.mpr hm
+    have hlo := (List.take_sublist 128 L.core.y).count_le q
+    have hhi1 := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have hhi2 := (List.drop_sublist 128 L.core.y).count_le q
+    have hsplit := congrArg (List.count q) (List.take_append_drop 128 L.core.y)
+    have hbank := (List.take_sublist 128 L.core.work).count_le q
+    simp only [List.count_append] at hsplit
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,msumBank,
+      CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,CuccaroStreamedSquareLayout.low,
+      List.count_append,List.count_cons,List.count_nil] at h pos pos2 ⊢
+    omega
+
+theorem msum_sep (L : CuccaroStreamedSquareWideLayout) (hnd : L.wires.Nodup) :
+    ∀q∈mappedWires (msumBits L),q∉L.core.cin::(L.core.sum++msumBank L) :=
+  fun q hq => (msum_nodup L hnd).2 q (msumBits_wires L q hq)
+
+theorem msum_bank_away (L : CuccaroStreamedSquareWideLayout) (hnd : L.wires.Nodup)
+    (q : Wire) (hq : q∈msumBank L) : q∉L.core.sum ∧ q≠L.core.cin := by
+  have nd := (msum_nodup L hnd).1
+  have h := List.nodup_iff_count.mp nd q
+  have pos := List.count_pos_iff.mpr hq
+  constructor
+  · intro bad
+    have p2 := List.count_pos_iff.mpr bad
+    simp only [List.count_cons,List.count_append] at h
+    omega
+  · intro bad
+    subst bad
+    simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+    omega
+
+theorem msum_cin_away (L : CuccaroStreamedSquareWideLayout) (hnd : L.wires.Nodup) :
+    L.core.cin∉L.core.sum :=
+  fun h => (List.nodup_cons.mp (msum_nodup L hnd).1).1 (List.mem_append_left _ h)
+
+theorem msumPrepare_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hnd : L.wires.Nodup) (base : BasisState) (A B : Nat)
+    (hA : regValue L.core.low base=A)
+    (hbound : A+B<2^129) (hwork : regValue L.core.work base=0)
+    (hcin : base L.core.cin=false) :
+    Triple (SquareFrame L.core.sum base B) (msumPrepare L)
+      (SquareFrame L.core.sum base (A+B)) := by
+  obtain ⟨nd,sep⟩ := msum_nodup L hnd
+  have lens := msum_lengths L hw
+  intro s m ⟨hv,hfr⟩
+  have clean : ∀q∈msumBank L,s.basis q=false := fun q hq =>
+    (hfr q (msum_bank_away L hnd q hq).1).trans
+      ((regValue_zero _ _).mp hwork q (List.mem_of_mem_take hq))
+  have cinS : s.basis L.core.cin=false := (hfr _ (msum_cin_away L hnd)).trans hcin
+  have lowS : regValue L.core.low s.basis=A :=
+    (regValue_congr _ _ _ (fun q hq => hfr q (fun h => sep q hq
+      (List.mem_cons_of_mem _ (List.mem_append_left _ h))))).trans hA
+  have r := mappedAdd_correct (msumBits L) L.core.sum (msumBank L) L.core.cin nd
+    (msum_sep L hnd) lens.1 lens.2 s m clean
+  unfold msumPrepare
+  refine ⟨r.1,?_,?_⟩
+  · rw [r.2.2,msumBits_value,lowS,hv,cinS,L.core.sum_length hw.core]
+    simp only [Bool.toNat_false,Nat.add_zero]
+    exact Nat.mod_eq_of_lt hbound
+  · intro w hw'
+    rw [r.2.1 w hw']
+    exact hfr w hw'
+
+theorem msumClear_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hnd : L.wires.Nodup) (base : BasisState) (A B : Nat)
+    (hA : regValue L.core.low base=A) (hB : regValue L.core.sum base=B)
+    (hbound : A+B<2^129) (hwork : regValue L.core.work base=0)
+    (hcin : base L.core.cin=false) :
+    Triple (SquareFrame L.core.sum base (A+B)) (msumClear L)
+      (SquareFrame L.core.sum base B) := by
+  obtain ⟨nd,sep⟩ := msum_nodup L hnd
+  have lens := msum_lengths L hw
+  intro s m ⟨hv,hfr⟩
+  have clean : ∀q∈msumBank L,s.basis q=false := fun q hq =>
+    (hfr q (msum_bank_away L hnd q hq).1).trans
+      ((regValue_zero _ _).mp hwork q (List.mem_of_mem_take hq))
+  have cinS : s.basis L.core.cin=false := (hfr _ (msum_cin_away L hnd)).trans hcin
+  have lowS : regValue L.core.low s.basis=A :=
+    (regValue_congr _ _ _ (fun q hq => hfr q (fun h => sep q hq
+      (List.mem_cons_of_mem _ (List.mem_append_left _ h))))).trans hA
+  have r := mappedSub_correct (msumBits L) L.core.sum (msumBank L) L.core.cin nd
+    (msum_sep L hnd) lens.1 lens.2 s m clean cinS
+  unfold msumClear
+  refine ⟨r.1,?_,?_⟩
+  · rw [r.2.2,msumBits_value,lowS,hv,L.core.sum_length hw.core]
+    rw [show A+B+2^129-A=B+2^129 by omega,Nat.add_mod_right]
+    exact Nat.mod_eq_of_lt (by omega)
+  · intro w hw'
+    rw [r.2.1 w hw']
+    exact hfr w hw'
+
+theorem msum_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    (toffoliCount (msumPrepare L)=128 ∧ measurementCount (msumPrepare L)=128) ∧
+    (toffoliCount (msumClear L)=128 ∧ measurementCount (msumClear L)=128) := by
+  have lens := msum_lengths L hw
+  have su := L.core.sum_length hw.core
+  have a := mappedAdd_counts (msumBits L) L.core.sum (msumBank L) L.core.cin lens.1 lens.2
+  have b := mappedSub_counts (msumBits L) L.core.sum (msumBank L) L.core.cin lens.1 lens.2
+  rw [su] at a b
+  exact ⟨a,b⟩
+
+theorem msum_sites (L : CuccaroStreamedSquareWideLayout) (q : Wire)
+    (hq : q∈mappedWires (msumBits L)++L.core.sum++msumBank L++[L.core.cin]) :
+    q∈L.wires := by
+  simp only [List.mem_append,List.mem_singleton] at hq
+  simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.mem_append,
+    List.mem_cons,List.not_mem_nil,or_false]
+  rcases hq with ((h|h)|h)|h
+  · have := msumBits_wires L q h
+    exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (List.mem_of_mem_take this))))))
+  · simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.mem_append,
+      List.mem_singleton] at h
+    rcases h with h|rfl
+    · exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl
+        (List.mem_of_mem_drop (List.mem_of_mem_take h)))))))
+    · simp
+  · exact Or.inl (Or.inl (Or.inr (List.mem_of_mem_take h)))
+  · subst h; simp
+
+theorem msum_support (L : CuccaroStreamedSquareWideLayout) (control : Wire) :
+    ECDSAAdd.wires (msumPrepare L)⊆(control::L.wires).toFinset ∧
+    ECDSAAdd.wires (msumClear L)⊆(control::L.wires).toFinset := by
+  have lift (P : Program)
+      (h : ECDSAAdd.wires P⊆(mappedWires (msumBits L)++L.core.sum++msumBank L++[L.core.cin]).toFinset) :
+      ECDSAAdd.wires P⊆(control::L.wires).toFinset := by
+    intro q hq
+    have m := List.mem_toFinset.mp (h hq)
+    exact List.mem_toFinset.mpr (List.mem_cons_of_mem _ (msum_sites L q m))
+  exact ⟨lift _ (mappedAdd_wires_subset _ _ _ _),lift _ (mappedSub_wires_subset _ _ _ _)⟩
+
+theorem msum_physical (L : CuccaroStreamedSquareWideLayout) (hnd : L.wires.Nodup) :
+    GatePhysical (msumPrepare L) ∧ GatePhysical (msumClear L) := by
+  have nd := (msum_nodup L hnd).1
+  have ha : ∀b∈msumBits L,∀q∈b.wire,q∉L.core.cin::L.core.sum++msumBank L := by
+    intro b hb q hq
+    apply msum_sep L hnd q
+    simp only [mappedWires,List.mem_flatMap]
+    exact ⟨b,hb,by simpa using hq⟩
+  have add := mappedAdd_physical (msumBits L) L.core.sum (msumBank L) L.core.cin nd ha
+  have nots : GatePhysical (notRegister L.core.sum) := by
+    intro i hi
+    obtain ⟨w,_,rfl⟩ := List.mem_map.mp hi
+    trivial
+  refine ⟨add,?_⟩
+  simp only [msumClear,mappedSub,gatePhysical_append]
+  exact ⟨⟨nots,add⟩,nots⟩
+
+theorem msum_gateSlots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    Challenge.gateSlots (msumPrepare L)≤2193 ∧ Challenge.gateSlots (msumClear L)≤2451 := by
+  have lens := msum_lengths L hw
+  have su := L.core.sum_length hw.core
+  have a := Baselines.mappedAdd_gateSlots_le (msumBits L) L.core.sum (msumBank L) L.core.cin
+  have b := Baselines.mappedSub_gateSlots_le (msumBits L) L.core.sum (msumBank L) L.core.cin
+  rw [lens.1,su] at a b
+  simp only [msumPrepare,msumClear]
+  exact ⟨by omega,by omega⟩
+
+end ECDSAAdd.Entrant
+end
+
 -- ===== SquareAcc =====
 section
 
@@ -2464,7 +2701,7 @@ def accBranchB (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program 
 def accMiddleC (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   L.withMeasuredSquare control L.core.sum L.core.product (mixFolds L false (accCMix L))
 def accBranchC (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
-  L.core.prepareSum++accMiddleC L control++L.core.clearSum
+  msumPrepare L++accMiddleC L control++msumClear L
 
 def accProgram (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   accBranchA L control++accBranchB L control++accBranchC L control++L.reflectOutput
@@ -2916,11 +3153,13 @@ theorem accBranchC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
       List.count_nil,beq_self_eq_true,if_true] at h sumBound
     omega
   let middle := accMiddleC L control
-  let u := run L.core.prepareSum [] s
-  let v := run middle (records.take (measurementCount middle)) u
-  let out := run L.core.clearSum (records.drop (measurementCount middle)) v
-  have prep := L.prepareSum_frame hw nd s.basis A B ha hb bound (PairClean.corePad L s.basis hc) hc.cin
-    s [] (show SquareFrame L.core.sum s.basis B s.basis from ⟨hb,fun _ _ => rfl⟩)
+  let r' := records.take (measurementCount (msumPrepare L++middle))
+  let u := run (msumPrepare L) (r'.take (measurementCount (msumPrepare L))) s
+  let v := run middle (r'.drop (measurementCount (msumPrepare L))) u
+  let out := run (msumClear L) (records.drop (measurementCount (msumPrepare L++middle))) v
+  have prep := msumPrepare_frame L hw nd s.basis A B ha bound hc.work hc.cin
+    s (r'.take (measurementCount (msumPrepare L)))
+    (show SquareFrame L.core.sum s.basis B s.basis from ⟨hb,fun _ _ => rfl⟩)
   have productU : regValue L.core.product u.basis=0 :=
     (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.1 bad hq))).trans hp0
   have outU : regValue L.core.out u.basis=O :=
@@ -2940,7 +3179,7 @@ theorem accBranchC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     · exact (keep _ (by simp)).trans hc.normFlag
     · exact (keep _ (by simp)).trans hc.modFlag
   have used := accMiddleC_correct L hw control hn (A+B) O hO u
-    (records.take (measurementCount middle)) prep.2.1 outU productU cleanU
+    (r'.drop (measurementCount (msumPrepare L))) prep.2.1 outU productU cleanU
   rw [ctrlU] at used
   let restoreBase : BasisState := fun q => if q∈L.core.out then v.basis q else s.basis q
   have lowOutAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out := by
@@ -2974,14 +3213,19 @@ theorem accBranchC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
       · simp [restoreBase,outSite]
       · simp only [restoreBase,if_neg outSite]
         exact (used.2.2 q outSite).trans (prep.2.2 q hq)
-  have cleared := L.clearSum_frame hw nd restoreBase A B lowRestore sumRestore bound padRestore cinRestore
-    v (records.drop (measurementCount middle)) clearPre
+  have workRestore : regValue L.core.work restoreBase=0 := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) hc.work
+    intro q hq
+    have away := (L.pairAuxAway nd q (by simp [hq])).2
+    simp [restoreBase,away]
+  have cleared := msumClear_frame L hw nd restoreBase A B lowRestore sumRestore bound workRestore cinRestore
+    v (records.drop (measurementCount (msumPrepare L++middle))) clearPre
   have finalValue : regValue L.core.out out.basis=
       resC ((if s.basis control then A+B else 0)^2) O := by
     apply Eq.trans (regValue_congr _ _ _ ?_) used.2.1
     intro q hq
     have same := cleared.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq)
-    simpa [restoreBase,hq] using same
+    simpa [restoreBase,hq,out,v] using same
   have final : out.phase=s.phase ∧ regValue L.core.out out.basis=
       resC ((if s.basis control then A+B else 0)^2) O ∧
       ∀q,q∉L.core.out → out.basis q=s.basis q := by
@@ -2990,9 +3234,9 @@ theorem accBranchC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     by_cases sumSite : q∈L.core.sum
     · exact (regValue_eq_iff L.core.sum out.basis s.basis).mp (cleared.2.1.trans hb.symm) q sumSite
     · have same := cleared.2.2 q sumSite
-      simpa [restoreBase,hq] using same
-  have prepM := (L.core.sum_counts hw.core).1.2
-  simpa [accBranchC,middle,u,v,out,run_append,prepM] using final
+      simpa [restoreBase,hq,out,v] using same
+  rw [show accBranchC L control=(msumPrepare L++middle)++msumClear L from rfl,run_append,run_append]
+  exact final
 
 theorem accProgram_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
@@ -3180,7 +3424,7 @@ theorem acc_item_prices (L : CuccaroStreamedSquareWideLayout) :
     accARaw,accBRaw,accCRaw,sortedItems,nafMinusOneItems,List.filter_cons,Acc.buildT,Acc.sbuildT,preW,termsB,accPrice]
 
 theorem accProgram_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
-    toffoliCount (accProgram L control)=69408 ∧ measurementCount (accProgram L control)=68896 := by
+    toffoliCount (accProgram L control)=69152 ∧ measurementCount (accProgram L control)=69152 := by
   have st := acc_static L hw
   have lo := L.core.low_length hw.core
   have hi := L.core.high_length hw.core
@@ -3200,7 +3444,7 @@ theorem accProgram_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) 
   rw [prices.2.1.1,prices.2.1.2] at fb
   rw [prices.2.2.1,prices.2.2.2] at fc
   have reflection := (L.measured_small_operation_counts hw).2.2
-  have sum := L.core.sum_counts hw.core
+  have sum := msum_counts L hw
   simp only [accProgram,accBranchA,accBranchB,accBranchC,accMiddleC,toffoliCount_append,
     measurementCount_append,a.1,a.2,b.1,b.2,c.1,c.2,fa.1,fa.2,fb.1,fb.2,fc.1,fc.2,
     reflection.1,reflection.2,sum.1.1,sum.1.2,sum.2.1,sum.2.2,lo,hi,su,p256,hw.core.product]
@@ -3240,8 +3484,8 @@ theorem accProgram_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have sumCert := L.sum_certified hw hn
   have embed : L.wires.toFinset⊆(control::L.wires).toFinset := by
     intro q hq; simp only [List.mem_toFinset,List.mem_cons] at hq ⊢; exact Or.inr hq
-  have prep := sumCert.1.2.trans embed
-  have unprep := sumCert.2.2.trans embed
+  have prep := (msum_support L control).1
+  have unprep := (msum_support L control).2
   have reflection : ECDSAAdd.wires L.reflectOutput⊆(control::L.wires).toFinset :=
     (L.measured_small_support control).2.2.1
   simpa only [accProgram,accBranchC,
@@ -3271,8 +3515,8 @@ theorem accProgram_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths
     (mixFolds_physical L hw nd true (accBMix L) st.2.1)
   have c := L.withMeasuredSquare_physical control hn _ _ hs (fun _ => le_rfl) _
     (mixFolds_physical L hw nd false (accCMix L) st.2.2)
-  have prep := (RecordedQuantum.physical_embed _).mp (RecordedQuantum.physical_of_proper _ (L.sum_certified hw nd).1.1)
-  have clear := (RecordedQuantum.physical_embed _).mp (RecordedQuantum.physical_of_proper _ (L.sum_certified hw nd).2.1)
+  have prep := (msum_physical L nd).1
+  have clear := (msum_physical L nd).2
   simp only [accProgram,accBranchA,accBranchB,accBranchC,accMiddleC,gatePhysical_append]
   exact ⟨⟨⟨a,b⟩,⟨prep,c⟩,clear⟩,L.reflectOutput_physical nd⟩
 
@@ -3303,17 +3547,13 @@ theorem accProgram_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wi
     (mixFolds L true (accBMix L)) hd
   have c := Baselines.withMeasuredSquare_gateSlots_le L hw control L.core.sum L.core.product
     (mixFolds L false (accCMix L)) (by rw [hw.core.product])
-  have hp := Baselines.cuccaroAdd_gateSlots_le (L.core.low++[L.core.pad.getD 0 0]) L.core.sum L.core.cin
-  have hl := L.core.low_length hw.core
-  simp only [List.length_append, List.length_cons, List.length_nil, hl] at hp
-  change Challenge.gateSlots L.core.prepareSum ≤ _ at hp
+  have hp := msum_gateSlots L hw
   have hr := (Baselines.streamedFrames_gateSlots_le L hw).2.2
-  simp only [accProgram,accBranchA,accBranchB,accBranchC,accMiddleC,
-    CuccaroStreamedSquareLayout.clearSum, Challenge.gateSlots_append, Baselines.reverse_gateSlots]
+  simp only [accProgram,accBranchA,accBranchB,accBranchC,accMiddleC,Challenge.gateSlots_append]
   omega
 
 theorem accPrefix_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
-    toffoliCount (accPrefix L control)=69153 ∧ measurementCount (accPrefix L control)=68641 := by
+    toffoliCount (accPrefix L control)=68897 ∧ measurementCount (accPrefix L control)=68897 := by
   have full := accProgram_counts L hw control
   have r := (L.measured_small_operation_counts hw).2.2
   rw [accProgram_split,toffoliCount_append,measurementCount_append] at full
@@ -3363,7 +3603,7 @@ def fastCandidate (L : ControlledPointLayout) : Program :=
   accPrefix L.dialogStreamedSquareWide L.core.generic
 
 theorem fastCandidate_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastCandidate L)=69153 ∧ measurementCount (fastCandidate L)=68641 :=
+    toffoliCount (fastCandidate L)=68897 ∧ measurementCount (fastCandidate L)=68897 :=
   accPrefix_counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) L.core.generic
 
 theorem fastCandidate_support (L : ControlledPointLayout) (hw : L.Widths)
@@ -3515,7 +3755,7 @@ theorem fastSquare_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
   exact fastCandidate_correct L hw hn X Y B hX s m hb hx hy hc
 
 theorem fastSquare_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastSquare L)=69153 ∧ measurementCount (fastSquare L)=68641 := by
+    toffoliCount (fastSquare L)=68897 ∧ measurementCount (fastSquare L)=68897 := by
   have renamed := renameProgram_counts (labelFn L.core.poolWire) (fastCandidate L)
   have old := fastCandidate_counts L hw
   rw [fastSquare]
@@ -6033,8 +6273,8 @@ theorem fastConstRefl_counts (k : Fp) :
 
 omit hn in
 theorem fastGeneric_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric L cx cy)=2180993 ∧
-    measurementCount (fastGeneric L cx cy)=1521548 := by
+    toffoliCount (fastGeneric L cx cy)=2180737 ∧
+    measurementCount (fastGeneric L cx cy)=1521804 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
@@ -6358,8 +6598,8 @@ theorem zeroFlag_counts (f c t : Wire) :
 
 theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (C : Point) (cx cy : Fp) :
-    toffoliCount (finiteProgram L C cx cy)≤2182025 ∧
-    measurementCount (finiteProgram L C cx cy)=1522574 := by
+    toffoliCount (finiteProgram L C cx cy)≤2181769 ∧
+    measurementCount (finiteProgram L C cx cy)=1522830 := by
   have h := CompressedPointDialog.finite_counts L hw hn C cx cy
   have g0 := CompressedPointDialog.generic_counts L hw hn cx cy
   have g1 := fastGeneric_counts L hw cx cy
@@ -11651,8 +11891,8 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem fastGeneric2_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric2 L cx cy)=2175893 ∧
-    measurementCount (fastGeneric2 L cx cy)=1516448 := by
+    toffoliCount (fastGeneric2 L cx cy)=2175637 ∧
+    measurementCount (fastGeneric2 L cx cy)=1516704 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
@@ -13900,8 +14140,8 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem fastGeneric3_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric3 L cx cy)=2174873 ∧
-    measurementCount (fastGeneric3 L cx cy)=1515432 := by
+    toffoliCount (fastGeneric3 L cx cy)=2174617 ∧
+    measurementCount (fastGeneric3 L cx cy)=1515688 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
@@ -15225,7 +15465,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2175906, 1516459, 1891, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2175650, 1516715, 1891, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -15241,7 +15481,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgramN_support layout layout_widths layout_nodup _ cy _ hG).trans
         (sitesN_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2175906 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2175650 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -15251,7 +15491,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2175906 := by
     change toffoliCount (finiteProgramN layout (.some hc) cy (fastGeneric3 layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1516459 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1516715 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -15314,7 +15554,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1516459
+    change measurementCount (normalizeProgram (program C)) ≤ 1516715
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
