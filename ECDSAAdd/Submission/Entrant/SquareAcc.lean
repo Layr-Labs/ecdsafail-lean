@@ -25,12 +25,22 @@ def topSlice (L : CuccaroStreamedSquareWideLayout) (j : Nat) : List Wire :=
   (L.core.product.take 256).drop (256-j)
 def rotF (L : CuccaroStreamedSquareWideLayout) (neg : Bool) (j : Nat) : MeasuredSquareFold :=
   {negative:=neg,canonical:=false,src:=rotateFull (L.core.product.take 256) j}
-/-- The rotation by 32 of a 128-bit square is already canonical (`rot32_canonical`),
-so its fold needs no normalize/restore pair. -/
+/-- Same rotated source, folded without source normalization (proved canonical). -/
 def rotC (L : CuccaroStreamedSquareWideLayout) (neg : Bool) (j : Nat) : MeasuredSquareFold :=
   {negative:=neg,canonical:=true,src:=rotateFull (L.core.product.take 256) j}
 def posTop (L : CuccaroStreamedSquareWideLayout) : MeasuredSquareFold :=
   {negative:=false,canonical:=true,src:=L.core.product.drop 256,shift:=128}
+
+/-- Branch B's small correction W = top32 + top10 + top4 - top6, built in the 33-bit temporary. -/
+def preW (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
+  [{negative:=false,canonical:=true,src:=topSlice L 32},
+   {negative:=false,canonical:=true,src:=topSlice L 10},
+   {negative:=false,canonical:=true,src:=topSlice L 4},
+   {negative:=true,canonical:=true,src:=topSlice L 6}]
+
+/-- Branch B's accumulator terms: d*H - d*W instead of five d-multiples. -/
+def termsB (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
+  sortedItems false (nafMinusOneItems false (L.core.product.drop 128)++nafMinusOneItems true (wTemp L))
 
 def accARaw (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
   nafMinusOneItems false (L.core.product.drop 128)
@@ -42,12 +52,12 @@ def accCRaw (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
   nafMinusOneItems false (L.core.product.drop 128)++[posTop L]
 
 def accAMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
-  [.inl (rot128F L),.inr ⟨false,sortedItems false (accARaw L)⟩,.inl (negP L)]
+  [.inl (rot128F L),.inr ⟨false,[],sortedItems false (accARaw L),sortedItems false (accARaw L)⟩,.inl (negP L)]
 def accBMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
   [.inl (negP L),.inl (rotC L true 4),.inl (rotC L true 10),.inl (rotC L true 32),
-    .inl (rotC L false 6),.inl (rot128F L),.inr ⟨false,sortedItems false (accBRaw L)⟩]
+    .inl (rotC L false 6),.inl (rot128F L),.inr ⟨false,preW L,termsB L,sortedItems false (accBRaw L)⟩]
 def accCMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
-  [.inl (negRot L),.inr ⟨true,sortedItems false (accCRaw L)⟩]
+  [.inl (negRot L),.inr ⟨true,[],sortedItems false (accCRaw L),sortedItems false (accCRaw L)⟩]
 
 def accBranchA (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   L.withMeasuredSquare control L.core.low (L.core.product.take 256) (mixFolds L false (accAMix L))
@@ -90,11 +100,11 @@ theorem topSlice_count (L : CuccaroStreamedSquareWideLayout) (j : Nat) (q : Wire
 
 /-- Every accumulated term is a short slice at a small shift. -/
 theorem raw_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (f : MeasuredSquareFold)
-    (hf : f∈accARaw L ∨ f∈accBRaw L ∨ f∈accCRaw L) :
+    (hf : f∈accARaw L ∨ f∈accCRaw L) :
     (∀q,f.src.count q≤L.core.product.count q) ∧ TermOK f := by
   have dl : (L.core.product.drop 128).length=130 := by simp [hw.core.product]
   have naf (neg : Bool) (src : List Wire) (hs : ∀q,src.count q≤L.core.product.count q)
-      (hl : src.length≤130) (hf : f∈nafMinusOneItems neg src) :
+      (hl : src.length=130) (hf : f∈nafMinusOneItems neg src) :
       (∀q,f.src.count q≤L.core.product.count q) ∧ TermOK f := by
     obtain ⟨e,sh⟩ := naf_facts neg src f hf
     rw [e]
@@ -102,17 +112,8 @@ theorem raw_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (f : Me
     simp only [TermOK,e]
     omega
   have dc := L.productDrop_count 128
-  have t (j : Nat) (hj : j≤32) (neg : Bool) (h : f∈nafMinusOneItems neg (topSlice L j)) :=
-    naf neg (topSlice L j) (topSlice_count L j) (by rw [topSlice_length L hw j (by omega)]; omega) h
-  rcases hf with hf|hf|hf
+  rcases hf with hf|hf
   · exact naf false _ dc (by omega) hf
-  · simp only [accBRaw,List.mem_append] at hf
-    rcases hf with (((hf|hf)|hf)|hf)|hf
-    · exact naf false _ dc (by omega) hf
-    · exact t 4 (by omega) true hf
-    · exact t 6 (by omega) false hf
-    · exact t 10 (by omega) true hf
-    · exact t 32 (by omega) true hf
   · simp only [accCRaw,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hf
     rcases hf with hf|rfl
     · exact naf false _ dc (by omega) hf
@@ -153,6 +154,26 @@ theorem top_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : Basis
   rw [e,pow_add,←Nat.div_div_eq_div_mul]
   exact Nat.div_mul_le_self _ _
 
+theorem top_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) (P : Nat)
+    (hP : regValue L.core.product t=P) (hb : P<2^256) (j : Nat) (hj : j≤128) :
+    regValue (topSlice L j) t=regValue (L.core.product.drop 128) t/2^(128-j) := by
+  rw [topSlice,L.productTakeDrop_value hw t P hP j (by omega),L.product_drop_value hw t P hP 128 (by omega),
+    Nat.mod_eq_of_lt hb]
+  have e : 256-j=128+(128-j) := by omega
+  rw [e,pow_add,←Nat.div_div_eq_div_mul]
+
+theorem plain_view (L : CuccaroStreamedSquareWideLayout) (t : BasisState) (neg : Bool)
+    (xs : List MeasuredSquareFold) (hc : ∀f∈xs,∀q,f.src.count q≤L.core.product.count q)
+    (ho : ∀f∈xs,TermOK f) (hv : Acc.Valid t 163 0 xs) : AccView L t ⟨neg,[],xs,xs⟩ := by
+  refine ⟨fun f hf q => ?_,ho,by simp,by simp,by simp [Acc.Valid],hv,?_⟩
+  · have h := hc f hf q; simp only [List.count_append]; omega
+  · intro t' ht' _
+    have vc := Acc.valid_congr t t' 163 xs (fun f hf => regValue_congr _ _ _ (fun q hq => by
+      have pos := List.count_pos_iff.mpr hq
+      have b := hc f hf q
+      exact (ht' q (List.count_pos_iff.mp (by omega))).symm)) 0
+    exact ⟨vc.1.mp hv,vc.2.symm⟩
+
 theorem validB (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) (P : Nat)
     (hP : regValue L.core.product t=P) (hb : P<2^256) :
     Acc.Valid t 163 0 (sortedItems false (accBRaw L)) := by
@@ -179,6 +200,89 @@ theorem validB (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisS
   generalize regValue (topSlice L 10) t=c at *
   generalize regValue (topSlice L 32) t=d at *
   omega
+
+theorem termsB_facts (L : CuccaroStreamedSquareWideLayout) (f : MeasuredSquareFold) (hf : f∈termsB L) :
+    (f.src=L.core.product.drop 128 ∨ f.src=wTemp L) ∧ 4≤f.shift ∧ f.shift≤32 := by
+  have h := (sorted_perm _ _).subset hf
+  simp only [List.mem_append] at h
+  rcases h with h|h
+  · obtain ⟨e,sh⟩ := naf_facts false _ f h; exact ⟨Or.inl e,by omega,by omega⟩
+  · obtain ⟨e,sh⟩ := naf_facts true _ f h; exact ⟨Or.inr e,by omega,by omega⟩
+
+theorem accB_value (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) (P : Nat)
+    (hP : regValue L.core.product t=P) (hb : P<2^256) (t' : BasisState)
+    (ht' : ∀q∈L.core.product,t' q=t q) (hwv : regValue (wTemp L) t'=Acc.accVal t 0 (preW L)) :
+    Acc.Valid t' 163 0 (termsB L) ∧ Acc.accVal t' 0 (termsB L)=Acc.accVal t 0 (sortedItems false (accBRaw L)) := by
+  have hH' : regValue (L.core.product.drop 128) t'=regValue (L.core.product.drop 128) t :=
+    regValue_congr _ _ _ (fun q hq => ht' q (List.mem_of_mem_drop hq))
+  have hT := regValue_lt (L.core.product.drop 128) t
+  rw [show (L.core.product.drop 128).length=130 by simp [hw.core.product]] at hT
+  have hH : regValue (L.core.product.drop 128) t<2^128 := by
+    rw [L.product_drop_value hw t P hP 128 (by omega)]
+    exact Nat.div_lt_of_lt_mul (by have e : (2:ℕ)^128*2^128=2^256 := by norm_num
+                                   rw [e]; exact hb)
+  have r4 := top_rel L hw t P hP hb 4 (by omega)
+  have r6 := top_rel L hw t P hP hb 6 (by omega)
+  have r10 := top_rel L hw t P hP hb 10 (by omega)
+  have r32 := top_rel L hw t P hP hb 32 (by omega)
+  have s4 : regValue (topSlice L 4) t*4≤regValue (L.core.product.drop 128) t :=
+    le_trans (Nat.mul_le_mul_left _ (by norm_num)) r4
+  have s10 : regValue (topSlice L 10) t*4≤regValue (L.core.product.drop 128) t :=
+    le_trans (Nat.mul_le_mul_left _ (by norm_num)) r10
+  have s32 : regValue (topSlice L 32) t*4≤regValue (L.core.product.drop 128) t :=
+    le_trans (Nat.mul_le_mul_left _ (by norm_num)) r32
+  have m610 : regValue (topSlice L 6) t≤regValue (topSlice L 10) t := by
+    rw [top_eq L hw t P hP hb 6 (by omega),top_eq L hw t P hP hb 10 (by omega)]
+    exact Nat.div_le_div_left (by norm_num) (by norm_num)
+  simp [Acc.Valid,Acc.accVal,Acc.step,termsB,sortedItems,accBRaw,preW,nafMinusOneItems,List.filter_cons] at hwv ⊢
+  rw [hH',hwv]
+  norm_num at r4 r6 r10 r32 hH ⊢
+  generalize regValue (L.core.product.drop 128) t=D at *
+  generalize regValue (topSlice L 4) t=a at *
+  generalize regValue (topSlice L 6) t=b at *
+  generalize regValue (topSlice L 10) t=c at *
+  generalize regValue (topSlice L 32) t=d at *
+  omega
+
+theorem accB_view (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) (P : Nat)
+    (hP : regValue L.core.product t=P) (hb : P<2^256) :
+    AccView L t ⟨false,preW L,termsB L,sortedItems false (accBRaw L)⟩ := by
+  have dl : (L.core.product.drop 128).length=130 := by simp [hw.core.product]
+  have wl := (acc_lengths L hw).2.2.2
+  have l (j : Nat) (hj : j≤32) := topSlice_length L hw j (by omega)
+  refine ⟨?_,?_,?_,?_,?_,validB L hw t P hP hb,fun t' ht' hwv => accB_value L hw t P hP hb t' ht' hwv⟩
+  · intro f hf q
+    have dc := L.productDrop_count 128 q
+    simp only [SrcOK,List.count_append]
+    rcases (termsB_facts L f hf).1 with e|e <;> rw [e] <;> omega
+  · intro f hf
+    obtain ⟨e,s1,s2⟩ := termsB_facts L f hf
+    simp only [TermOK]
+    rcases e with e|e <;> rw [e] <;> simp only [dl,wl] <;> omega
+  · intro f hf q
+    simp only [preW,List.mem_cons,List.not_mem_nil,or_false] at hf
+    rcases hf with rfl|rfl|rfl|rfl <;> exact topSlice_count L _ q
+  · intro f hf
+    simp only [preW,List.mem_cons,List.not_mem_nil,or_false] at hf
+    rcases hf with rfl|rfl|rfl|rfl <;> simp only [TermOK33,l 32 (by omega),l 10 (by omega),l 4 (by omega),
+      l 6 (by omega)] <;> omega
+  · have e6 := top_eq L hw t P hP hb 6 (by omega)
+    have e10 := top_eq L hw t P hP hb 10 (by omega)
+    have b4 := regValue_lt (topSlice L 4) t
+    have b10 := regValue_lt (topSlice L 10) t
+    have b32 := regValue_lt (topSlice L 32) t
+    rw [l 4 (by omega)] at b4
+    rw [l 10 (by omega)] at b10
+    rw [l 32 (by omega)] at b32
+    simp [Acc.Valid,Acc.step,preW]
+    norm_num at e6 e10 b4 b10 b32 ⊢
+    generalize regValue (L.core.product.drop 128) t=D at *
+    generalize regValue (topSlice L 4) t=a at *
+    generalize regValue (topSlice L 6) t=b at *
+    generalize regValue (topSlice L 10) t=c at *
+    generalize regValue (topSlice L 32) t=d at *
+    subst e6 e10
+    omega
 
 theorem accA_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) :
     mixSignedSum t (accAMix L)=measuredSignedSum t L.measuredAItems := by
@@ -215,31 +319,33 @@ theorem accA_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   rcases hi with rfl|rfl|rfl
   · exact L.measuredA_views hw t M hM hp _ (by simp [measuredAItems,rot128F])
   · have st := sorted_static L hw (accARaw L) (fun f hf => raw_static L hw f (Or.inl hf))
-    exact ⟨st.1,st.2,validA L hw t⟩
+    exact plain_view L t false _ st.1 st.2 (validA L hw t)
   · exact L.measuredA_views hw t M hM hp _ (by simp [measuredAItems,negP])
 
-/-- No integer square is 6 or 7 modulo 8. -/
-theorem square_mod8_ne67 (Y : Nat) : Y^2%8≠6 ∧ Y^2%8≠7 := by
-  have bound := Nat.mod_lt Y (by decide : 0<8)
-  rw [Nat.pow_mod]
-  interval_cases h : Y%8 <;> norm_num
+theorem square_mod8 (M : Nat) : M^2%8≠5 ∧ M^2%8≠6 ∧ M^2%8≠7 := by
+  have h : M^2%8=(M%8)^2%8 := Nat.pow_mod M 2 8
+  have lt := Nat.mod_lt M (show 8>0 by norm_num)
+  rw [h]
+  interval_cases (M%8) <;> decide
 
-/-- Rotating a 256-bit square left by 32 stays below p: reaching p would need
-the square's low 224 bits to be `2^224-1` or `2^224-2`, i.e. 7 or 6 mod 8. -/
-theorem rot32_canonical (Y : Nat) (hb : Y^2<2^256) :
-    (Y^2%2^256)/2^224+2^32*((Y^2%2^256)%2^224)<SquareReduction.p := by
-  rw [Nat.mod_eq_of_lt hb]
-  have hH : Y^2/2^224<2^32 := by
-    apply Nat.div_lt_of_lt_mul; norm_num at hb ⊢; omega
-  have hLo : Y^2%2^224<2^224 := Nat.mod_lt _ (by positivity)
-  have h8 : (Y^2%2^224)%8=Y^2%8 := Nat.mod_mod_of_dvd _ (by norm_num : 8 ∣ 2^224)
-  have n67 := square_mod8_ne67 Y
-  have hne1 : Y^2%2^224≠2^224-1 := by
-    intro e; rw [e] at h8; norm_num at h8; omega
-  have hne2 : Y^2%2^224≠2^224-2 := by
-    intro e; rw [e] at h8; norm_num at h8; omega
-  have hle : Y^2%2^224≤2^224-3 := by omega
-  norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at hH hle ⊢
+/-- A square below 2^256 rotated by 32 is already below p: the low 224 bits
+cannot be among the three largest residues, which are 5, 6, 7 mod 8. -/
+theorem rot32_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
+    regValue (rotateFull (L.core.product.take 256) 32) t*2^0<SquareReduction.p := by
+  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
+  rw [L.rotateFull_value hw t (M^2) hp 32 (by omega),Nat.mod_eq_of_lt hb]
+  have m8 := square_mod8 M
+  have e : M^2%2^(256-32)%8=M^2%8 := Nat.mod_mod_of_dvd _ (by norm_num)
+  have hH : M^2/2^(256-32)<2^32 := by
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc M^2<2^256 := hb
+      _ = 2^32*2^(256-32) := by norm_num
+  have hL := Nat.mod_lt (M^2) (show 2^(256-32)>0 by positivity)
+  generalize M^2/2^(256-32)=H at hH ⊢
+  generalize hX : M^2%2^(256-32)=X at hL e ⊢
+  rw [←e] at m8
+  norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at hH hL ⊢
   omega
 
 theorem accB_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
@@ -264,18 +370,13 @@ theorem accB_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
       (by simp [measuredBItems,shiftedProductItems,rotF])
   · exact rc true 10 (by omega) (rot10_canonical M hbm)
       (by simp [measuredBItems,shiftedProductItems,rotF])
-  · have base := L.measuredB_views hw t M hM hp (rotF L true 32)
+  · have v := L.measuredB_views hw t M hM hp (rotF L true 32)
       (by simp [measuredBItems,shiftedProductItems,rotF])
-    refine ⟨base.count,base.span,fun _ => ?_⟩
-    have hv := L.rotateFull_value hw t (M^2) hp 32 (by omega)
-    change regValue (rotateFull (L.core.product.take 256) 32) t*2^0<SquareReduction.p
-    rw [hv, pow_zero, Nat.mul_one]
-    simpa using rot32_canonical M hb
+    exact ⟨v.count,v.span,fun _ => rot32_canonical L hw t M hM hp⟩
   · exact rc false 6 (by omega) (rot6_canonical M hbm)
       (by simp [measuredBItems,shiftedProductItems,rotF])
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,rot128F])
-  · have st := sorted_static L hw (accBRaw L) (fun f hf => raw_static L hw f (Or.inr (Or.inl hf)))
-    exact ⟨st.1,st.2,validB L hw t (M^2) hp hb⟩
+  · exact accB_view L hw t (M^2) hp hb
 
 theorem accC_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (t : BasisState) (M : Nat) (hp : regValue L.core.product t=M^2) :
@@ -284,8 +385,8 @@ theorem accC_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   simp only [accCMix,List.mem_cons,List.not_mem_nil,or_false] at hi
   rcases hi with rfl|rfl
   · exact L.measuredC_views hw t M hp _ (by simp [measuredCItems,negRot])
-  · have st := sorted_static L hw (accCRaw L) (fun f hf => raw_static L hw f (Or.inr (Or.inr hf)))
-    exact ⟨st.1,st.2,validC L hw t⟩
+  · have st := sorted_static L hw (accCRaw L) (fun f hf => raw_static L hw f (Or.inr hf))
+    exact plain_view L t true _ st.1 st.2 (validC L hw t)
 
 theorem acc_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
     (∀i∈accAMix L,MixStatic L i) ∧ (∀i∈accBMix L,MixStatic L i) ∧ (∀i∈accCMix L,MixStatic L i) := by
@@ -295,7 +396,7 @@ theorem acc_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
   have conv (i : MixItem) (h : MixView L z i) : MixStatic L i := by
     cases i with
     | inl f => exact h.count
-    | inr a => exact ⟨h.count,h.ok⟩
+    | inr a => exact ⟨h.count,h.ok,h.preCount,h.preOk⟩
   exact ⟨fun i hi => conv i (accA_views L hw z 0 (by decide) hz i hi),
     fun i hi => conv i (accB_views L hw z 0 (by decide) hz i hi),
     fun i hi => conv i (accC_views L hw z 0 hz i hi)⟩
@@ -675,13 +776,13 @@ theorem accPrefix_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
 
 theorem acc_item_prices (L : CuccaroStreamedSquareWideLayout) :
     (mixFoldsT false (accAMix L)=4200 ∧ mixFoldsM false (accAMix L)=4200) ∧
-    (mixFoldsT true (accBMix L)=13060 ∧ mixFoldsM true (accBMix L)=13060) ∧
+    (mixFoldsT true (accBMix L)=9868 ∧ mixFoldsM true (accBMix L)=9868) ∧
     (mixFoldsT false (accCMix L)=3245 ∧ mixFoldsM false (accCMix L)=3245) := by
   norm_num [mixFoldsT,mixFoldsM,mixNeg,accAMix,accBMix,accCMix,rot128F,negP,negRot,rotF,rotC,posTop,
-    accARaw,accBRaw,accCRaw,sortedItems,nafMinusOneItems,List.filter_cons,Acc.buildT,Acc.sbuildT]
+    accARaw,accBRaw,accCRaw,sortedItems,nafMinusOneItems,List.filter_cons,Acc.buildT,Acc.sbuildT,preW,termsB,accPrice]
 
 theorem accProgram_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
-    toffoliCount (accProgram L control)=72600 ∧ measurementCount (accProgram L control)=72088 := by
+    toffoliCount (accProgram L control)=69408 ∧ measurementCount (accProgram L control)=68896 := by
   have st := acc_static L hw
   have lo := L.core.low_length hw.core
   have hi := L.core.high_length hw.core
@@ -781,12 +882,12 @@ theorem accProgram_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wi
     (control : Wire) : Challenge.gateSlots (accProgram L control) ≤ 5000000 := by
   have st := acc_static L hw
   have bd (items : List MixItem) (h : items=accAMix L ∨ items=accBMix L ∨ items=accCMix L) :
-      ∀i∈items,∀a,i=.inr a → a.terms.length≤20 := by
+      ∀i∈items,∀a,i=.inr a → a.terms.length≤20 ∧ a.pre.length≤4 := by
     intro i hi a e
     subst e
     rcases h with rfl|rfl|rfl <;>
       simp [accAMix,accBMix,accCMix] at hi <;> rw [hi] <;>
-      simp [sortedItems,accARaw,accBRaw,accCRaw,nafMinusOneItems,List.filter_cons,posTop]
+      simp [sortedItems,accARaw,accBRaw,accCRaw,termsB,preW,nafMinusOneItems,List.filter_cons,posTop]
   have ha := mixFolds_gateSlots L hw false (accAMix L) st.1 20 (bd _ (Or.inl rfl))
   have hb := mixFolds_gateSlots L hw true (accBMix L) st.2.1 20 (bd _ (Or.inr (Or.inl rfl)))
   have hc := mixFolds_gateSlots L hw false (accCMix L) st.2.2 20 (bd _ (Or.inr (Or.inr rfl)))
@@ -814,7 +915,7 @@ theorem accProgram_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wi
   omega
 
 theorem accPrefix_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
-    toffoliCount (accPrefix L control)=72345 ∧ measurementCount (accPrefix L control)=71833 := by
+    toffoliCount (accPrefix L control)=69153 ∧ measurementCount (accPrefix L control)=68641 := by
   have full := accProgram_counts L hw control
   have r := (L.measured_small_operation_counts hw).2.2
   rw [accProgram_split,toffoliCount_append,measurementCount_append] at full
