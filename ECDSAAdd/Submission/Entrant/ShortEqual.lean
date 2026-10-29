@@ -9,6 +9,9 @@ valid encoded point is determined by its finite flag, its full `x` register and
 the lowest bit of `y`.  `shortEqual` compares only those 257 wires against the
 matching prefix of the classical constant, using the unchanged `equalConstant`
 gadget on the first 257 zero ports of the shared pool. -/
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+
 namespace ECDSAAdd.Entrant
 open Arithmetic Secp256k1 ControlledPointLayout Challenge Baselines
 
@@ -57,6 +60,43 @@ theorem x_ne_zero {x y : Fp} (h : curve.toAffine.Nonsingular x y) : x ≠ 0 := b
     exact_mod_cast (by rw [this]; norm_num : (2 : Fp) = 0)
   rw [ZMod.natCast_eq_zero_iff] at h2
   norm_num [p] at h2
+
+theorem neg_seven_pow_third_ne : (-7 : Fp) ^ (p / 3) ≠ 1 := by
+  unfold Fp p
+  reduce_mod_char
+  try decide
+
+/-- `-7` is not a cube mod `p`, so no point of `y² = x³ + 7` has `y = 0`. -/
+theorem curve_y_ne_zero {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) : cy ≠ 0 := by
+  intro h0
+  have hx0 := x_ne_zero hc
+  have he := hc.1
+  rw [curve.toAffine.equation_iff] at he
+  subst h0
+  have h7 : cx ^ 3 = -7 := by
+    have h := he
+    simp [curve, curveA, curveB] at h
+    first
+      | exact h
+      | exact h.symm
+      | linear_combination h
+      | linear_combination -h
+  haveI : Fact (Nat.Prime p) := ⟨p_prime⟩
+  have hferm : cx ^ (p - 1) = 1 := ZMod.pow_card_sub_one_eq_one hx0
+  have hp : 3 * (p / 3) = p - 1 := by norm_num [p]
+  apply neg_seven_pow_third_ne
+  rw [← h7, ← pow_mul, hp, hferm]
+
+theorem cy_ne_neg {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) : decide (cy ≠ -cy) = true := by
+  apply decide_eq_true
+  intro h
+  have hy0 := curve_y_ne_zero hc
+  have hv : (-cy).val = p - cy.val := by rw [ZMod.neg_val, if_neg hy0]
+  have hlt := ZMod.val_lt cy
+  have hpos : cy.val ≠ 0 := fun e => hy0 ((ZMod.val_eq_zero cy).mp e)
+  have hp2 : p % 2 = 1 := by norm_num [p]
+  have hh := congrArg ZMod.val h
+  omega
 
 theorem shortCode_lt (R : Point) : shortCode R < 2 * 2^256 := by
   have hp : p < 2^256 := by norm_num [p]
