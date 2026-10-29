@@ -61,18 +61,17 @@ theorem p1801_short (c t : Wire) (hc : c = L.control ∨ c ∈ L.inPlaceFlags) (
 
 theorem p1801_pair (t₁ t₂ : Wire) (h1 : t₁ ∈ L.inPlaceFlags) (h2 : t₂ ∈ L.inPlaceFlags)
     (e₁ e₂ : Bool) (C D : Point) : L.core.poolWire 1801 ∉ wires (pairEqual L t₁ t₂ e₁ e₂ C D) := by
-  apply p1801_of_subset L hw hn _ 257 (by omega)
+  apply p1801_of_subset L hw hn _ 256 (by omega)
   intro q hq
   have h := pairEqual_wires L hw t₁ t₂ e₁ e₂ C D hq
   have hy := yLow_mem L hw
   simp only [List.mem_toFinset, List.mem_cons, List.mem_append, pairSrc] at h
   apply List.mem_toFinset.mpr
-  rcases h with rfl | rfl | rfl | rfl | (rfl | h) | h
+  rcases h with rfl | rfl | rfl | rfl | h | h
   · exact List.mem_append_left _ (control_resident L)
   · exact List.mem_append_left _ (point_resident L _ (by simp [PointAddLayout.pointWires, hy]))
   · exact List.mem_append_left _ (flag_resident L _ h1)
   · exact List.mem_append_left _ (flag_resident L _ h2)
-  · exact List.mem_append_left _ (point_resident L _ (by simp [PointAddLayout.pointWires]))
   · exact List.mem_append_left _ (point_resident L _ (by simp [PointAddLayout.pointWires, h]))
   · exact List.mem_append_right _ h
 

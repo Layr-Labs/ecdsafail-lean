@@ -227,8 +227,8 @@ theorem zeroFlag_counts (f c t : Wire) :
 
 theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (C : Point) (cx cy : Fp) :
-    toffoliCount (finiteProgram L C cx cy)≤2214318 ∧
-    measurementCount (finiteProgram L C cx cy)=1554854 := by
+    toffoliCount (finiteProgram L C cx cy)≤2214314 ∧
+    measurementCount (finiteProgram L C cx cy)=1554850 := by
   have h := CompressedPointDialog.finite_counts L hw hn C cx cy
   have hpl : (PointAddLayout.pointWires L.point).length=513 := by
     simp only [PointAddLayout.pointWires,List.length_cons,List.length_append,
