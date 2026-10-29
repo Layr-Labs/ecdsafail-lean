@@ -115,8 +115,8 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem fastGeneric2_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric2 L cx cy)=2185400 ∧
-    measurementCount (fastGeneric2 L cx cy)=1525943 := by
+    toffoliCount (fastGeneric2 L cx cy)=2189476 ∧
+    measurementCount (fastGeneric2 L cx cy)=1530023 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
@@ -151,12 +151,12 @@ theorem fastGeneric2_gateSlots_le (cx cy : Fp) :
   have a1 := ax L.point.x hw.inputX (-cx)
   have a2 := ax L.point.y hw.inputY (-cy)
   have a3 := ax L.point.x hw.inputX (3*cx)
-  have d := MappedCompressed.LaneA.laneArith_gateSlots_le L false
-  have e := MappedCompressed.LaneA.laneArith_gateSlots_le L true
-  have d' : Challenge.gateSlots (arith2 L false) = Challenge.gateSlots (MappedCompressed.LaneA.laneArith L false) := by
-    simp only [arith2, MappedCompressed.LaneA.laneArith, Baselines.rename_gateSlots]
-  have e' : Challenge.gateSlots (arith2 L true) = Challenge.gateSlots (MappedCompressed.LaneA.laneArith L true) := by
-    simp only [arith2, MappedCompressed.LaneA.laneArith, Baselines.rename_gateSlots]
+  have d := Baselines.pointCompressedArithmetic_gateSlots_le L false
+  have e := Baselines.pointCompressedArithmetic_gateSlots_le L true
+  have d' : Challenge.gateSlots (arith2 L false) = Challenge.gateSlots (pointCompressedArithmetic L false) := by
+    simp only [arith2, pointCompressedArithmetic, Baselines.rename_gateSlots]
+  have e' : Challenge.gateSlots (arith2 L true) = Challenge.gateSlots (pointCompressedArithmetic L true) := by
+    simp only [arith2, pointCompressedArithmetic, Baselines.rename_gateSlots]
   have f := fastSquare_gateSlots_le L hw
   simp only [fastGeneric2,fastConstAdd,fastConstNeg,Challenge.gateSlots_append]
   omega
