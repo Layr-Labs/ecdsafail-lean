@@ -256,8 +256,6 @@ theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
   have p2 := pairEqual_counts L hw L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C)
   have z1 := zeroFlag_counts L.point.finite L.control L.infinitySelect
   have z2 := zeroFlag_counts L.point.finite L.control L.genericSelect
-  have t1 := tailCost_le (decide (cy≠-cy)) (yBit C) true (yBit (-C))
-  have t2 := tailCost_le true (yBit C) (exceptionBit C) (yBit (-C))
   rw [hzl] at e1 e2 e3 e4 e5 e6 e7 e8
   simp only [pointCompressedDialogFinite, toffoliCount_append, measurementCount_append] at h
   simp only [finiteProgram, toffoliCount_append, measurementCount_append]

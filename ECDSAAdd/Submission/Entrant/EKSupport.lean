@@ -152,6 +152,23 @@ theorem zeroFlagE (t : Wire) (ht : t ∈ flagsE L) :
   · exact flag_E L _ ht
 
 omit hw hn in
+theorem chainEraseE (t : Wire) (ht : t ∈ flagsE L) :
+    wires (chainErase L.control L.point.finite t) ⊆ (sitesE L).toFinset := by
+  intro q hq
+  have hw' : wires (chainErase L.control L.point.finite t) = {L.control, L.point.finite, t} := by
+    ext q
+    simp only [chainErase, wires, Instr.wires, correctionWires, Finset.mem_union,
+      Finset.mem_insert, Finset.mem_singleton, Finset.notMem_empty, List.mem_cons,
+      List.not_mem_nil, or_false]
+    tauto
+  rw [hw'] at hq
+  simp only [Finset.mem_insert, Finset.mem_singleton] at hq
+  rcases hq with rfl | rfl | rfl
+  · exact List.mem_toFinset.mpr (control_E L)
+  · exact List.mem_toFinset.mpr (point_E L L.point.finite (by simp [PointAddLayout.pointWires]))
+  · exact List.mem_toFinset.mpr (flag_E L _ ht)
+
+omit hw hn in
 theorem genericFlagE : wires (pointDialogGenericFlag L) ⊆ (sitesE L).toFinset := by
   intro q hq
   simp [pointDialogGenericFlag, pointInPlaceGenericFlag, wires, Instr.wires] at hq
@@ -185,7 +202,7 @@ theorem finiteProgramEG_support (C : Point) (cy : Fp) (Gen : Program)
   refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨zeroFlagE L _ (by simp [fS]), pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩,
     gatedE L hw _ _ (by simp [fS]) _⟩, genericFlagE L⟩, hG⟩, cornersE L _⟩, genericFlagE L⟩,
     pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩, gatedE L hw _ _ (by simp [fS]) _⟩,
-    zeroFlagE L _ (by simp [fS])⟩
+    chainEraseE L L.genericSelect (by simp [fS])⟩
 
 /-! The Skywalk generic block. -/
 

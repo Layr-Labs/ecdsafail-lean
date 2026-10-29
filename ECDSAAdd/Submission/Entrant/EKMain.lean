@@ -80,23 +80,17 @@ theorem gatedShort_counts (L : ControlledPointLayout) (hw : L.Widths) (en : Bool
     simp only [gatedShort, if_true, h.1, h.2, le_refl, and_self]
 
 theorem finiteProgramEG_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cy : Fp)
-    (Gen : Program) {cx : Fp} (hc : curve.toAffine.Nonsingular cx cy) (hC : C = .some hc) :
-    toffoliCount (finiteProgramEG L C cy Gen) ≤ 1030 + toffoliCount Gen ∧
-    measurementCount (finiteProgramEG L C cy Gen) ≤ 1026 + measurementCount Gen := by
+    (Gen : Program) :
+    toffoliCount (finiteProgramEG L C cy Gen) ≤ 1031 + toffoliCount Gen ∧
+    measurementCount (finiteProgramEG L C cy Gen) ≤ 1027 + measurementCount Gen := by
   have p1 := pairEqual_counts L hw L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C)
   have p2 := pairEqual_counts L hw L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C)
   have g1 := gatedShort_counts L hw (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C)
   have g2 := gatedShort_counts L hw (decide (cy≠-cy)) L.doubleSelect (C+C)
   have z1 := zeroFlag_counts L.point.finite L.control L.infinitySelect
-  have z2 := zeroFlag_counts L.point.finite L.control L.genericSelect
-  have c1 : tailCost (decide (cy≠-cy)) (yBit C) true (yBit (-C)) = 1 := by
-    subst hC
-    rw [cy_ne_neg hc, yBit_neg hc]
-    cases yBit (.some hc) <;> decide
-  have c2 : tailCost true (yBit C) (exceptionBit C) (yBit (-C)) ≤ 1 := by
-    subst hC
-    rw [yBit_neg hc]
-    cases yBit (.some hc) <;> cases exceptionBit (.some hc) <;> decide
+  have z2 : toffoliCount (chainErase L.control L.point.finite L.genericSelect) = 0 ∧
+      measurementCount (chainErase L.control L.point.finite L.genericSelect) = 1 := by
+    simp [chainErase, toffoliCount, measurementCount]
   have f : toffoliCount (pointDialogGenericFlag L) = 0 ∧ measurementCount (pointDialogGenericFlag L) = 0 := by
     simp [pointDialogGenericFlag, pointInPlaceGenericFlag, toffoliCount, measurementCount]
   have c := (show toffoliCount (pointDialogCorners L C) = 0 ∧ measurementCount (pointDialogCorners L C) = 0 by
@@ -125,7 +119,11 @@ theorem finiteProgramEG_physical (L : ControlledPointLayout) (hw : L.Widths) (hn
     · simp [gatedShort, GatePhysical]
     · simpa only [gatedShort, if_true] using shortEqual_physical L hw hn L.control t hct (Or.inl rfl) ht P
   have z1 := hz L.infinitySelect (by simp [inPlaceFlags])
-  have z2 := hz L.genericSelect (by simp [inPlaceFlags])
+  have hce : GatePhysical (chainErase L.control L.point.finite L.genericSelect) := by
+    intro i hi
+    simp only [chainErase, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl
+    all_goals trivial
   simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
   have q3 := hg (exceptionBit C) L.core.equalNegY (by simp [inPlaceFlags]) (dialogExceptionPoint C)
   have q5 := hg (decide (cy≠-cy)) L.doubleSelect (by simp [inPlaceFlags]) (C+C)
@@ -147,6 +145,7 @@ theorem finiteProgramEG_gateSlots (L : ControlledPointLayout) (hw : L.Widths) (C
     rw [hx,hy] at h; exact h
   have hf : gateSlots (pointDialogGenericFlag L) = 5 := rfl
   have hzf (t : Wire) : gateSlots (zeroFlag L.point.finite L.control t) = 3 := rfl
+  have hze : gateSlots (chainErase L.control L.point.finite L.genericSelect) = 4 := rfl
   have hgs (en : Bool) (t : Wire) (P : Point) : gateSlots (gatedShort L en t P) ≤ 2314 := by
     cases en
     · simp [gatedShort]
@@ -161,7 +160,7 @@ theorem finiteProgramEG_gateSlots (L : ControlledPointLayout) (hw : L.Widths) (C
   have m4 := hm L.genericSelect (-C)
   have m5 := hm L.core.equalNegY (dialogExceptionPoint C)
   have m6 := hm L.core.equalNegY (-C)
-  simp only [finiteProgramEG, pointDialogCorners, pointInPlaceCorners, gateSlots_append, hf, hzf]
+  simp only [finiteProgramEG, pointDialogCorners, pointInPlaceCorners, gateSlots_append, hf, hzf, hze]
   omega
 
 end Resources
