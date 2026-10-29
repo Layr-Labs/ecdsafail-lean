@@ -1,18 +1,9 @@
 import ECDSAAdd.Submission.Entrant.ZeroFlag
 import Mathlib.Tactic.ReduceModChar
 
-/-! Short point comparison.
-
-On the curve, two finite points with the same abscissa have ordinates `y` and
-`±y`; since `p` is odd, `y` and `p - y` differ in parity unless `y = 0`.  So a
-valid encoded point is determined by its finite flag, its full `x` register and
-the lowest bit of `y`.  `shortEqual` compares only those 257 wires against the
-matching prefix of the classical constant, using the unchanged `equalConstant`
-gadget on the first 257 zero ports of the shared pool. -/
 namespace ECDSAAdd.Entrant
 open Arithmetic Secp256k1 ControlledPointLayout Challenge Baselines
 
-/-- `x` and the low bit of `y` (the finite flag is implied: no curve point has `x = 0`). -/
 def shortSrc (L : ControlledPointLayout) : List Wire :=
   L.point.x ++ L.point.y.take 1
 
@@ -20,7 +11,6 @@ def shortSrc (L : ControlledPointLayout) : List Wire :=
 def shortCode (R : Point) : Nat :=
   pointX R + 2^256 * (pointY R % 2)
 
-/-- `t ^= c ∧ (point = C)` on 257 compared wires. -/
 def shortEqual (L : ControlledPointLayout) (c t : Wire) (C : Point) : Program :=
   equalConstant c t (zeroPorts (shortSrc L) (L.dialogPool.take 257)) (shortCode C)
 
@@ -42,7 +32,7 @@ theorem x_ne_zero {x y : Fp} (h : curve.toAffine.Nonsingular x y) : x ≠ 0 := b
   have heq := h.1
   rw [WeierstrassCurve.Affine.equation_iff] at heq
   simp [curve, curveA, curveB] at heq
-  haveI : Fact (Nat.Prime p) := ⟨p_prime⟩
+  haveI : Fact (Nat.Prime p) := ⟨Secp256k1.p_prime⟩
   have hy : y ≠ 0 := by
     rintro rfl
     have h7 : ((7 : ℕ) : Fp) = 0 := by exact_mod_cast heq.symm.trans (by ring)

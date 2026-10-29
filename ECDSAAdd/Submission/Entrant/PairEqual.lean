@@ -5,14 +5,6 @@ set_option linter.unusedVariables false
 set_option linter.unusedTactic false
 set_option linter.unreachableTactic false
 
-/-! Paired point comparison against `C` and `-C`.
-
-`C` and `-C` share the abscissa, and (by `shortCode_eq_iff`)
-the low bit of `y` then decides which of the two a valid point equals.  The
-256-wire abscissa test is computed once by the zero-detection AND chain,
-both targets read the chain output together with the low `y` bit, and only then
-is the chain erased by measurement.  Each target costs one Toffoli instead of a
-separate 258-Toffoli comparison. -/
 namespace ECDSAAdd.Entrant
 open Arithmetic Secp256k1 ControlledPointLayout Challenge Baselines RecordedQuantum
 
@@ -202,7 +194,6 @@ theorem zeroWith_pair_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c :
 
 /-! ### Layout instance -/
 
-/-- The abscissa (the part shared by `C` and `-C`). -/
 def pairSrc (L : ControlledPointLayout) : List Wire := L.point.x
 
 def pairCode (R : Point) : Nat := pointX R
@@ -635,6 +626,7 @@ theorem pairEqual_sites (L : ControlledPointLayout) (hw : L.Widths) (t₁ t₂ :
   · simp [hy]
   · simp [ht1]
   · simp [ht2]
+  · simp
   · simp [h]
   · exact Or.inr (hpool h)
 
@@ -643,7 +635,6 @@ theorem pairEqual_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
     (e₁ e₂ : Bool) (C D : Point) : GatePhysical (pairEqual L t₁ t₂ e₁ e₂ C D) := by
   have hnd := pair_nodup L hw hn t₁ t₂ ht1 ht2 h12
   have hperm := zeroPorts_perm (pairSrc L) (L.dialogPool.take 256)
-    ((pairSrc_length L hw).trans (pairWork_length L hw).symm)
   have hchain : (L.control :: yLow L :: t₁ :: t₂ :: (pairPorts L).flatMap ZeroBit.wires).Nodup :=
     ((((hperm.cons _).cons _).cons _).cons _).nodup_iff.mpr hnd
   simp only [pairEqual, gatePhysical_append]
@@ -687,7 +678,7 @@ theorem zeroWith_pair_slots (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c
     omega
 
 theorem pairEqual_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) (t₁ t₂ : Wire)
-    (e₁ e₂ : Bool) (C D : Point) : gateSlots (pairEqual L t₁ t₂ e₁ e₂ C D) ≤ 2319 := by
+    (e₁ e₂ : Bool) (C D : Point) : gateSlots (pairEqual L t₁ t₂ e₁ e₂ C D) ≤ 2312 := by
   have hx := Baselines.xorConstant_gateSlots_le (pairSrc L) (pairCode C)
   have hz := zeroWith_pair_slots (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D) L.control (pairPorts L)
   rw [pairSrc_length L hw] at hx
