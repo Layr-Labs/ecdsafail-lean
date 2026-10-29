@@ -104,14 +104,13 @@ theorem pairE (t₁ t₂ : Wire) (h1 : t₁ ∈ flagsE L) (h2 : t₂ ∈ flagsE 
   have hy := yLow_mem L hw
   simp only [List.mem_toFinset, List.mem_cons, List.mem_append, pairSrc] at h
   apply List.mem_toFinset.mpr
-  rcases h with rfl | rfl | rfl | rfl | (rfl | h) | h
+  rcases h with rfl | rfl | rfl | rfl | h | h
   · exact control_E L
   · exact y_E L _ hy
   · exact flag_E L _ h1
   · exact flag_E L _ h2
-  · exact point_E L _ (by simp [PointAddLayout.pointWires])
   · exact x_E L _ h
-  · exact pool_lowE L hw 257 (by omega) q h
+  · exact pool_lowE L hw 256 (by omega) q h
 
 omit hn in
 theorem gatedE (en : Bool) (t : Wire) (ht : t ∈ flagsE L) (P : Point) :

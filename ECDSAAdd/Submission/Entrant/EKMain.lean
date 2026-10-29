@@ -73,7 +73,7 @@ section Resources
 open Challenge Baselines
 
 theorem gatedShort_counts (L : ControlledPointLayout) (hw : L.Widths) (en : Bool) (t : Wire) (P : Point) :
-    toffoliCount (gatedShort L en t P) ≤ 258 ∧ measurementCount (gatedShort L en t P) ≤ 258 := by
+    toffoliCount (gatedShort L en t P) ≤ 257 ∧ measurementCount (gatedShort L en t P) ≤ 257 := by
   cases en
   · simp [gatedShort, toffoliCount, measurementCount]
   · have h := shortEqual_counts L hw L.control t P
@@ -81,8 +81,8 @@ theorem gatedShort_counts (L : ControlledPointLayout) (hw : L.Widths) (en : Bool
 
 theorem finiteProgramEG_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cy : Fp)
     (Gen : Program) :
-    toffoliCount (finiteProgramEG L C cy Gen) ≤ 1036 + toffoliCount Gen ∧
-    measurementCount (finiteProgramEG L C cy Gen) ≤ 1030 + measurementCount Gen := by
+    toffoliCount (finiteProgramEG L C cy Gen) ≤ 1032 + toffoliCount Gen ∧
+    measurementCount (finiteProgramEG L C cy Gen) ≤ 1026 + measurementCount Gen := by
   have p1 := pairEqual_counts L hw L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C)
   have p2 := pairEqual_counts L hw L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C)
   have g1 := gatedShort_counts L hw (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C)
@@ -139,7 +139,7 @@ theorem finiteProgramEG_gateSlots (L : ControlledPointLayout) (hw : L.Widths) (C
     rw [hx,hy] at h; exact h
   have hf : gateSlots (pointDialogGenericFlag L) = 5 := rfl
   have hzf (t : Wire) : gateSlots (zeroFlag L.point.finite L.control t) = 3 := rfl
-  have hgs (en : Bool) (t : Wire) (P : Point) : gateSlots (gatedShort L en t P) ≤ 2323 := by
+  have hgs (en : Bool) (t : Wire) (P : Point) : gateSlots (gatedShort L en t P) ≤ 2314 := by
     cases en
     · simp [gatedShort]
     · simpa only [gatedShort, if_true] using shortEqual_gateSlots_le L hw L.control t P
