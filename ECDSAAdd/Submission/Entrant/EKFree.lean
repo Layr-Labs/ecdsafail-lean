@@ -29,7 +29,7 @@ def finiteProgramEG (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Pro
   pointDialogGenericFlag L ++
   pairEqual L L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C) ++
   gatedShort L (decide (cy≠-cy)) L.doubleSelect (C+C) ++
-  zeroFlag L.point.finite L.control L.genericSelect
+  chainErase L.control L.point.finite L.genericSelect
 
 /-- Contract of a generic-branch block, as proved for the Skywalk block by
 `CompressedPointDialog.boundary_generic`. -/
@@ -132,6 +132,44 @@ theorem gatedFlag_D (R P : Point) (en : Bool) (b O D I G E H K : Bool) :
 
 end Flags
 
+/-- Clearing a flag known to equal `control ∧ ¬finite` by measurement. -/
+theorem chainErase_equalI (L : ControlledPointLayout) (hn : L.wires.Nodup)
+    (R : Point) (b O D I G E H K : Bool)
+    (hI : I = (b && !pointFinite R)) :
+    Triple (PointDialogBoundary L R b (dialogFlagState L O D I G E H K))
+      (chainErase L.control L.point.finite L.genericSelect)
+      (PointDialogBoundary L R b (dialogFlagState L O D false G E H K)) := by
+  have sep0 := dialogFlag_separation (L:=L) hn
+  have hr := dialogFlagState_read L hn O D I G E H K
+  have ht : L.genericSelect ∈ L.inPlaceFlags := by simp [inPlaceFlags]
+  have hct : L.control ≠ L.genericSelect := fun h => (List.nodup_cons.mp sep0).1 (h ▸ ht)
+  have hnd := L.dialogPointZero_nodup hn L.control L.genericSelect hct (Or.inl rfl) ht
+  simp only [PointAddLayout.pointWires,List.cons_append,List.nodup_cons,List.mem_cons,
+    List.mem_append,not_or] at hnd
+  have hcf : L.control ≠ L.point.finite := hnd.1.2.1
+  have hft : L.point.finite ≠ L.genericSelect := fun h => hnd.2.1.1 h.symm
+  intro s m v
+  have hg : s.basis L.genericSelect = I := (v.flags _ ht).trans hr.2.2.1
+  have hb : s.basis L.control = b := v.control
+  have hfn : s.basis L.point.finite = pointFinite R := ((point_holds _ _ _).mp v.point).1
+  have hq : s.basis L.genericSelect = (s.basis L.control && !s.basis L.point.finite) := by
+    rw [hg,hb,hfn,hI]
+  have hh := chainErase_run L.control L.point.finite L.genericSelect hcf hft hct s m hq
+  refine ⟨by rw [hh], v.withFlags hn ?_ ?_⟩
+  · intro q hqflag
+    rw [hh]
+    by_cases hqt : q = L.genericSelect
+    · subst q
+      simp [writeBit, (dialogFlagState_read L hn O D false G E H K).2.2.1]
+    · simp only [writeBit,Function.update_apply,hqt,if_false]
+      rw [v.flags q hqflag]
+      have hu := (dialogFlagState_update L hn O D I G E H K false).2.2.1 q hqflag
+      simpa only [writeBit,Function.update_apply,hqt,if_false] using hu
+  · intro q hqflag
+    rw [hh]
+    have hqt : q ≠ L.genericSelect := fun h => hqflag (h ▸ ht)
+    simp [writeBit,hqt]
+
 section Spec
 attribute [local irreducible] run wires shortEqual pairEqual gatedShort pointCompressedDialogGeneric
   pointDialogGeneric MappedCompressed.pointCompressedArithmetic CompressedPointSquare.computableProgram
@@ -202,9 +240,11 @@ theorem finiteProgramEG_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L
     change (K && pointEqual S (C+C)) = D
     rw [hK]; simpa only [equal_simpE] using hf.2.1
   rw [hdo,Bool.xor_self] at h11
-  have h12 := zeroFlag_equalI L hn S b false false I false false false false
-  simp only [equal_simpE] at h12
-  rw [hf.2.2.1,Bool.xor_self] at h12
+  have hzero : decide (S=0) = !pointFinite S := by
+    rw [← equal_simpE]
+    exact pointEqual_zero S
+  have h12 := chainErase_equalI L hn S b false false (dialogInversePoint b R C)
+    false false false false (by rw [← hf.2.2.1, hzero])
   have h := ((((((((h2.seq h3).seq h5).seq h6).seq h7).seq h8).seq h9).seq h10).seq h11).seq h12
   simpa only [finiteProgramEG,List.append_assoc,dialogFlagState_zero] using h
 
