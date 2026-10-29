@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.ShortEqual
+import ECDSAAdd.Submission.Entrant.PairEqual
 
 /-! The Skywalk finite-addend circuit with both infinity comparisons replaced
 by `zeroFlag`.  Every other block is the unchanged Skywalk block. -/
@@ -8,22 +8,25 @@ set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant
 open Arithmetic Secp256k1 ControlledPointLayout CompressedPointDialog
 
+/-- Classical enable bit of the exception comparison (as in `pointDialogExceptionEnable`). -/
+def exceptionBit (C : Point) : Bool :=
+  !pointEqual (dialogExceptionPoint C) 0 && !pointEqual (dialogExceptionPoint C) C &&
+    !pointEqual (dialogExceptionPoint C) (-C)
+
 def finiteProgram (L : ControlledPointLayout) (C : Point) (cx cy : Fp) : Program :=
   pointInPlaceDoubleEnable L cy ++ pointDialogExceptionEnable L C ++
   zeroFlag L.point.finite L.control L.infinitySelect ++
-  shortEqual L L.core.double L.doubleSelect C ++
-  shortEqual L L.control L.genericSelect (-C) ++
+  pairEqual L L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C) ++
   shortEqual L L.core.equalX L.core.equalNegY (dialogExceptionPoint C) ++
   pointDialogGenericFlag L ++ pointCompressedDialogGeneric L cx cy ++ pointDialogCorners L C ++
   pointDialogGenericFlag L ++
-  shortEqual L L.control L.infinitySelect C ++
+  pairEqual L L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C) ++
   shortEqual L L.core.double L.doubleSelect (C+C) ++
   zeroFlag L.point.finite L.control L.genericSelect ++
-  shortEqual L L.core.equalX L.core.equalNegY (-C) ++
   pointDialogExceptionEnable L C ++ pointInPlaceDoubleEnable L cy
 
 section Spec
-attribute [local irreducible] run wires shortEqual pointCompressedDialogGeneric pointDialogGeneric
+attribute [local irreducible] run wires shortEqual pairEqual pointCompressedDialogGeneric pointDialogGeneric
   MappedCompressed.pointCompressedArithmetic CompressedPointSquare.computableProgram
 
 private theorem equal_simp [DecidableEq Point] (R C : Point) : pointEqual R C=decide (R=C) := by
@@ -62,10 +65,8 @@ theorem finiteProgram_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
   rw [hE,Bool.false_xor] at h1
   have h2 := zeroFlag_equalO L hn R b false false false false E false K
   rw [hO,Bool.false_xor] at h2
-  have h3 := shortFlag_equalD L hw hn R C b O false false false E false K
-  rw [hD,Bool.false_xor] at h3
-  have h4 := shortFlag_equalI L hw hn R (-C) b O D false false E false K
-  rw [hI,Bool.false_xor] at h4
+  have h3 := pairFlag_input L hw hn R C cy b O false false false E false K rfl
+  rw [hD,hI,Bool.false_xor,Bool.false_xor] at h3
   have h5 := shortFlag_equalH L hw hn R (dialogExceptionPoint C) b O D I false E false K
   rw [hH,Bool.false_xor] at h5
   have h6 := dialogFlag_generic L hw hn R b O D I false E H K
@@ -84,25 +85,25 @@ theorem finiteProgram_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
     cases b <;> cases o <;> cases d <;> cases i <;> cases h <;> rfl
   rw [hgclear] at h9
   have hf := dialogFlags_output b R C
-  have h10 := shortFlag_equalO L hw hn S C b O D I false E H K
+  have heout : (E && pointEqual S (-C))=H := by
+    simpa [E,H,S,dialogExceptionEnabled,equal_simp] using hf.2.2.2
+  have h10 := pairFlag_output L hw hn S C (exceptionBit C) b O D I false E H K (by
+    simp only [E, exceptionBit, hE])
+  rw [heout,Bool.xor_self] at h10
   simp only [equal_simp] at h10
   rw [hf.1,Bool.xor_self] at h10
-  have h11 := shortFlag_equalD L hw hn S (C+C) b false D I false E H K
+  have h11 := shortFlag_equalD L hw hn S (C+C) b false D I false E false K
   have hdo : (K && pointEqual S (C+C))=D := by
     rw [hK]; simpa only [equal_simp] using hf.2.1
   rw [hdo,Bool.xor_self] at h11
-  have h12 := zeroFlag_equalI L hn S b false false I false E H K
+  have h12 := zeroFlag_equalI L hn S b false false I false E false K
   simp only [equal_simp] at h12
   rw [hf.2.2.1,Bool.xor_self] at h12
-  have h13 := shortFlag_equalH L hw hn S (-C) b false false false false E H K
-  have heout : (E && pointEqual S (-C))=H := by
-    simpa [E,H,S,dialogExceptionEnabled,equal_simp] using hf.2.2.2
-  rw [heout,Bool.xor_self] at h13
   have h14 := dialogFlag_exceptionEnable L hn S b false false false false E false K C
   rw [hE,show (E ^^ (b && decide (dialogExceptionEnabled C)))=false from Bool.xor_self E] at h14
   have h15 := dialogFlag_doubleEnable L hn S b false false false false false false K cy
   rw [show (K ^^ (b && decide (cy≠-cy)))=false from Bool.xor_self K] at h15
-  have h := ((((((((((((((h0.seq h1).seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8).seq h9).seq h10).seq h11).seq h12).seq h13).seq h14).seq h15
+  have h := ((((((((((((h0.seq h1).seq h2).seq h3).seq h5).seq h6).seq h7).seq h8).seq h9).seq h10).seq h11).seq h12).seq h14).seq h15
   simpa only [finiteProgram,List.append_assoc,dialogFlagState_zero] using h
 
 end Spec
@@ -135,24 +136,20 @@ theorem finiteProgram_support (L : ControlledPointLayout) (hw : L.Widths) (hn : 
     · simp [ht]
   have z1 := hz L.infinitySelect (by simp [inPlaceFlags])
   have z2 := hz L.genericSelect (by simp [inPlaceFlags])
-  have q1 := shortEqual_wires_subset L hw L.core.double L.doubleSelect C (pointCode C)
-  have q2 := shortEqual_wires_subset L hw L.control L.genericSelect (-C) (pointCode (-C))
   have q3 := shortEqual_wires_subset L hw L.core.equalX L.core.equalNegY (dialogExceptionPoint C)
     (pointCode (dialogExceptionPoint C))
-  have q4 := shortEqual_wires_subset L hw L.control L.infinitySelect C (pointCode C)
   have q5 := shortEqual_wires_subset L hw L.core.double L.doubleSelect (C+C) (pointCode (C+C))
-  have q6 := shortEqual_wires_subset L hw L.core.equalX L.core.equalNegY (-C) (pointCode (-C))
+  have p1 := pairEqual_sites L hw L.doubleSelect L.genericSelect (by simp [inPlaceFlags])
+    (by simp [inPlaceFlags]) (decide (cy≠-cy)) true C (-C)
+  have p2 := pairEqual_sites L hw L.infinitySelect L.core.equalNegY (by simp [inPlaceFlags])
+    (by simp [inPlaceFlags]) true (exceptionBit C) C (-C)
   simp only [finiteProgram, wires_append, Finset.union_subset_iff]
   have r (A B : Program) (hAB : wires A ⊆ wires B) :
       wires B ⊆ (CompressedPointDialog.sites L).toFinset →
         wires A ⊆ (CompressedPointDialog.sites L).toFinset := fun h' => hAB.trans h'
-  have r1 := r _ _ q1
-  have r2 := r _ _ q2
   have r3 := r _ _ q3
-  have r4 := r _ _ q4
   have r5 := r _ _ q5
-  have r6 := r _ _ q6
-  clear r q1 q2 q3 q4 q5 q6
+  clear r q3 q5
   tauto
 
 theorem sites_used (L : ControlledPointLayout) (hw : L.Widths) :
@@ -230,8 +227,8 @@ theorem zeroFlag_counts (f c t : Wire) :
 
 theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (C : Point) (cx cy : Fp) :
-    toffoliCount (finiteProgram L C cx cy)=2214832 ∧
-    measurementCount (finiteProgram L C cx cy)=1555372 := by
+    toffoliCount (finiteProgram L C cx cy)≤2214318 ∧
+    measurementCount (finiteProgram L C cx cy)=1554854 := by
   have h := CompressedPointDialog.finite_counts L hw hn C cx cy
   have hpl : (PointAddLayout.pointWires L.point).length=513 := by
     simp only [PointAddLayout.pointWires,List.length_cons,List.length_append,
@@ -249,12 +246,10 @@ theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
   have e6 := equalConstant_counts L.control L.infinitySelect L.dialogPointZero (pointCode C)
   have e7 := equalConstant_counts L.core.double L.doubleSelect L.dialogPointZero (pointCode (C+C))
   have e8 := equalConstant_counts L.core.equalX L.core.equalNegY L.dialogPointZero (pointCode (-C))
-  have s3 := shortEqual_counts L hw L.core.double L.doubleSelect C
-  have s4 := shortEqual_counts L hw L.control L.genericSelect (-C)
   have s5 := shortEqual_counts L hw L.core.equalX L.core.equalNegY (dialogExceptionPoint C)
-  have s6 := shortEqual_counts L hw L.control L.infinitySelect C
   have s7 := shortEqual_counts L hw L.core.double L.doubleSelect (C+C)
-  have s8 := shortEqual_counts L hw L.core.equalX L.core.equalNegY (-C)
+  have p1 := pairEqual_counts L hw L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C)
+  have p2 := pairEqual_counts L hw L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C)
   have z1 := zeroFlag_counts L.point.finite L.control L.infinitySelect
   have z2 := zeroFlag_counts L.point.finite L.control L.genericSelect
   rw [hzl] at e1 e2 e3 e4 e5 e6 e7 e8
@@ -294,18 +289,14 @@ theorem finiteProgram_physical (L : ControlledPointLayout) (hw : L.Widths)
   have z2 := hz L.genericSelect (by simp [inPlaceFlags])
   have sep := dialogFlag_separation (L:=L) hn
   simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
-  have q1 := shortEqual_physical L hw hn L.core.double L.doubleSelect (by tauto)
-    (Or.inr (by simp [inPlaceFlags])) (by simp [inPlaceFlags]) C
-  have q2 := shortEqual_physical L hw hn L.control L.genericSelect (by tauto)
-    (Or.inl rfl) (by simp [inPlaceFlags]) (-C)
   have q3 := shortEqual_physical L hw hn L.core.equalX L.core.equalNegY (by tauto)
     (Or.inr (by simp [inPlaceFlags])) (by simp [inPlaceFlags]) (dialogExceptionPoint C)
-  have q4 := shortEqual_physical L hw hn L.control L.infinitySelect (by tauto)
-    (Or.inl rfl) (by simp [inPlaceFlags]) C
   have q5 := shortEqual_physical L hw hn L.core.double L.doubleSelect (by tauto)
     (Or.inr (by simp [inPlaceFlags])) (by simp [inPlaceFlags]) (C+C)
-  have q6 := shortEqual_physical L hw hn L.core.equalX L.core.equalNegY (by tauto)
-    (Or.inr (by simp [inPlaceFlags])) (by simp [inPlaceFlags]) (-C)
+  have p1 := pairEqual_physical L hw hn L.doubleSelect L.genericSelect (by simp [inPlaceFlags])
+    (by simp [inPlaceFlags]) (by tauto) (decide (cy≠-cy)) true C (-C)
+  have p2 := pairEqual_physical L hw hn L.infinitySelect L.core.equalNegY (by simp [inPlaceFlags])
+    (by simp [inPlaceFlags]) (by tauto) true (exceptionBit C) C (-C)
   simp only [finiteProgram, gatePhysical_append]
   tauto
 
@@ -337,12 +328,10 @@ theorem finiteProgram_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths)
     unfold pointDialogExceptionEnable; split <;> simp [gateSlots_cons, instructionSlots]
   have hf : gateSlots (pointDialogGenericFlag L) = 5 := rfl
   have hzf (t : Wire) : gateSlots (zeroFlag L.point.finite L.control t) = 3 := rfl
-  have z2 := shortEqual_gateSlots_le L hw L.core.double L.doubleSelect C
-  have z3 := shortEqual_gateSlots_le L hw L.control L.genericSelect (-C)
+  have z2 := pairEqual_gateSlots_le L hw L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C)
   have z4 := shortEqual_gateSlots_le L hw L.core.equalX L.core.equalNegY (dialogExceptionPoint C)
-  have z5 := shortEqual_gateSlots_le L hw L.control L.infinitySelect C
+  have z5 := pairEqual_gateSlots_le L hw L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C)
   have z6 := shortEqual_gateSlots_le L hw L.core.double L.doubleSelect (C+C)
-  have z8 := shortEqual_gateSlots_le L hw L.core.equalX L.core.equalNegY (-C)
   have m1 := hm L.infinitySelect C
   have m2 := hm L.doubleSelect C
   have m3 := hm L.doubleSelect (C+C)
