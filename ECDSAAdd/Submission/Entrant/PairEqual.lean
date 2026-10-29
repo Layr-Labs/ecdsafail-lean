@@ -70,23 +70,40 @@ theorem bitTest_run (w y t : Wire) (a : Bool) (hwy : w≠y) (hyt : y≠t) (hwt :
     · simp [writeBit, hq]
 
 /-- Both enabled targets read the chain output `w` and the low `y` bit. -/
-def pairTail (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) : Program :=
+def plainTail (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) : Program :=
   (if e₁ then bitTest w y t₁ a₁ else []) ++ (if e₂ then bitTest w y t₂ a₂ else [])
+
+/-- One Toffoli for both targets when the target bits are complementary:
+`t₂ ^= t₁`, `t₁ ^= w ∧ (y = a)`, `t₂ ^= t₁`, `t₂ ^= w` leaves `t₂ ^= w ∧ (y = !a)`. -/
+def fusedTail (y t₁ t₂ : Wire) (a : Bool) (w : Wire) : Program :=
+  .CX t₁ t₂ :: (bitTest w y t₁ a ++ [.CX t₁ t₂, .CX w t₂])
+
+def tailFused (e₁ a₁ e₂ a₂ : Bool) : Bool := e₁ && e₂ && (a₂ == !a₁)
+
+def tailCost (e₁ a₁ e₂ a₂ : Bool) : Nat :=
+  if tailFused e₁ a₁ e₂ a₂ then 1 else e₁.toNat + e₂.toNat
+
+theorem tailCost_le (e₁ a₁ e₂ a₂ : Bool) : tailCost e₁ a₁ e₂ a₂ ≤ 2 := by
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> decide
+
+def pairTail (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) : Program :=
+  if tailFused e₁ a₁ e₂ a₂ then fusedTail y t₁ t₂ a₁ w else plainTail y t₁ t₂ e₁ a₁ e₂ a₂ w
 
 def pairEffect (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (v : Bool) (s : BasisState) : BasisState :=
   writeBit (writeBit s t₁ (s t₁ ^^ (e₁ && v && (s y == a₁)))) t₂
     (s t₂ ^^ (e₂ && v && (s y == a₂)))
 
 theorem pairTail_counts (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) :
-    toffoliCount (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) = e₁.toNat + e₂.toNat ∧
+    toffoliCount (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) = tailCost e₁ a₁ e₂ a₂ ∧
     measurementCount (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) = 0 := by
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
-    simp [pairTail, bitTest, zeroFlag, toffoliCount, measurementCount]
+    simp [pairTail, plainTail, fusedTail, tailFused, tailCost, bitTest, zeroFlag,
+      toffoliCount, measurementCount]
 
-theorem pairTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire)
+theorem plainTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire)
     (hwy : w≠y) (hw1 : w≠t₁) (hw2 : w≠t₂) (hy1 : y≠t₁) (hy2 : y≠t₂) (h12 : t₁≠t₂)
     (s : State) (m : List Bool) :
-    run (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) m s =
+    run (plainTail y t₁ t₂ e₁ a₁ e₂ a₂ w) m s =
       ⟨s.phase, pairEffect y t₁ t₂ e₁ a₁ e₂ a₂ (s.basis w) s.basis⟩ := by
   have hfirst : run (if e₁ then bitTest w y t₁ a₁ else []) m s =
       ⟨s.phase, writeBit s.basis t₁ (s.basis t₁ ^^ (e₁ && s.basis w && (s.basis y == a₁)))⟩ := by
@@ -97,7 +114,7 @@ theorem pairTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire
       exact bitTest_run w y t₁ a₁ hwy hy1 hw1 s m
   have hm1 : measurementCount (if e₁ then bitTest w y t₁ a₁ else []) = 0 := by
     cases e₁ <;> cases a₁ <;> simp [bitTest, zeroFlag, measurementCount]
-  rw [pairTail, run_append, run_take, hfirst, hm1, List.drop_zero]
+  rw [plainTail, run_append, run_take, hfirst, hm1, List.drop_zero]
   cases e₂
   · simp only [Bool.false_eq_true, if_false, run]
     congr 1
@@ -116,6 +133,47 @@ theorem pairTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire
     · by_cases hq1 : q=t₁
       · subst q; simp [h12, hw1, hy1]
       · simp [hq1, hq2]
+
+theorem fusedTail_run (y t₁ t₂ : Wire) (a : Bool) (w : Wire)
+    (hwy : w≠y) (hw1 : w≠t₁) (hw2 : w≠t₂) (hy1 : y≠t₁) (hy2 : y≠t₂) (h12 : t₁≠t₂)
+    (s : State) (m : List Bool) :
+    run (fusedTail y t₁ t₂ a w) m s =
+      ⟨s.phase, pairEffect y t₁ t₂ true a true (!a) (s.basis w) s.basis⟩ := by
+  cases a <;>
+  · simp only [fusedTail, bitTest, zeroFlag, Bool.false_eq_true, if_false, if_true,
+      List.cons_append, List.nil_append, run]
+    apply congrArg (State.mk s.phase)
+    funext q
+    by_cases hq2 : q = t₂
+    · subst q
+      cases hsw : s.basis w <;> cases hsy : s.basis y <;> cases h1 : s.basis t₁ <;>
+        cases h2 : s.basis t₂ <;>
+        simp [pairEffect, writeBit, Function.update_apply, hsw, hsy, h1, h2, h12, Ne.symm h12,
+          hw1, hw2, hy1, hy2, hwy, Ne.symm hw1, Ne.symm hw2, Ne.symm hy1, Ne.symm hy2, Ne.symm hwy]
+    · by_cases hq1 : q = t₁
+      · subst q
+        cases hsw : s.basis w <;> cases hsy : s.basis y <;> cases h1 : s.basis t₁ <;>
+          cases h2 : s.basis t₂ <;>
+          simp [pairEffect, writeBit, Function.update_apply, hsw, hsy, h1, h2, h12, Ne.symm h12,
+            hw1, hw2, hy1, hy2, hwy, Ne.symm hw1, Ne.symm hw2, Ne.symm hy1, Ne.symm hy2, Ne.symm hwy]
+      · by_cases hqy : q = y
+        · subst q
+          cases hsy : s.basis y <;>
+            simp [pairEffect, writeBit, Function.update_apply, hsy, hy1, hy2, hwy, Ne.symm hwy]
+        · simp [pairEffect, writeBit, Function.update_apply, hq1, hq2, hqy]
+
+theorem pairTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire)
+    (hwy : w≠y) (hw1 : w≠t₁) (hw2 : w≠t₂) (hy1 : y≠t₁) (hy2 : y≠t₂) (h12 : t₁≠t₂)
+    (s : State) (m : List Bool) :
+    run (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) m s =
+      ⟨s.phase, pairEffect y t₁ t₂ e₁ a₁ e₂ a₂ (s.basis w) s.basis⟩ := by
+  by_cases hf : tailFused e₁ a₁ e₂ a₂ = true
+  · obtain ⟨rfl, rfl, rfl⟩ : e₁ = true ∧ e₂ = true ∧ a₂ = !a₁ := by
+      revert hf; cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> simp [tailFused]
+    rw [pairTail, if_pos hf]
+    exact fusedTail_run y t₁ t₂ a₁ w hwy hw1 hw2 hy1 hy2 h12 s m
+  · rw [pairTail, if_neg hf]
+    exact plainTail_run y t₁ t₂ e₁ a₁ e₂ a₂ w hwy hw1 hw2 hy1 hy2 h12 s m
 
 /-- Zero chain whose innermost step is `T` applied to the chain output. -/
 def zeroWith (T : Wire → Program) (c : Wire) : List ZeroBit → Program
@@ -173,7 +231,7 @@ theorem zeroWith_pair_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c :
       apply Bool.eq_iff_iff.mpr
       simp only [List.all_eq_true]
       constructor <;> intro h d hd <;> simpa [t, writeBit, (htail d hd).2] using h d hd
-    have hcnt := (zeroWith_counts (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) (e₁.toNat + e₂.toNat)
+    have hcnt := (zeroWith_counts (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) (tailCost e₁ a₁ e₂ a₂)
       (pairTail_counts y t₁ t₂ e₁ a₁ e₂ a₂) b.work bs).2
     change run (chainAnd c b.input b.work ++ zeroWith (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) b.work bs ++
       chainErase c b.input b.work) m s = _
@@ -214,6 +272,23 @@ def pairPorts (L : ControlledPointLayout) : List ZeroBit :=
 def yLow (L : ControlledPointLayout) : Wire := L.point.y.headD L.control
 
 def yBit (R : Point) : Bool := decide (pointY R % 2 = 1)
+
+/-- Negation flips the low bit of `y` (no point has `y = 0`, and `p` is odd). -/
+theorem yBit_neg {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    yBit (-(WeierstrassCurve.Affine.Point.some hc : Point)) = !yBit (.some hc) := by
+  rw [WeierstrassCurve.Affine.Point.neg_some hc]
+  have hy0 := curve_y_ne_zero hc
+  have hv : (-cy).val = p - cy.val := by rw [ZMod.neg_val, if_neg hy0]
+  have hlt := ZMod.val_lt cy
+  have hpos : cy.val ≠ 0 := fun e => hy0 ((ZMod.val_eq_zero cy).mp e)
+  have hp2 : p % 2 = 1 := by norm_num [p]
+  show decide ((curve.toAffine.negY cx cy).val % 2 = 1) = !decide (cy.val % 2 = 1)
+  rw [negY_eq_neg, hv]
+  by_cases h : cy.val % 2 = 1
+  · have h' : (p - cy.val) % 2 = 0 := by omega
+    simp [h, h']
+  · have h' : (p - cy.val) % 2 = 1 := by omega
+    simp [h, h']
 
 /-- `t₁ ^= e₁ ∧ control ∧ point = C` and `t₂ ^= e₂ ∧ control ∧ point = D`, where `D`
 must share the flag/abscissa code of `C` (used with `D = -C`). -/
@@ -411,7 +486,7 @@ theorem pairEqual_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wi
     simp
   have hcu : u.basis L.control = s.basis L.control := hue _ hcs
   rw [hall, hcu, hval] at hh
-  have hcnt := (zeroWith_counts (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) (e₁.toNat + e₂.toNat)
+  have hcnt := (zeroWith_counts (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) (tailCost e₁ (yBit C) e₂ (yBit D))
     (pairTail_counts (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) L.control (pairPorts L)).2
   rw [pairPorts_length L hw] at hcnt
   rw [pairEqual, run_append, run_take, run_append, run_take]
@@ -551,15 +626,13 @@ end
 
 theorem pairEqual_counts (L : ControlledPointLayout) (hw : L.Widths) (t₁ t₂ : Wire) (e₁ e₂ : Bool)
     (C D : Point) :
-    toffoliCount (pairEqual L t₁ t₂ e₁ e₂ C D) ≤ 258 ∧
+    toffoliCount (pairEqual L t₁ t₂ e₁ e₂ C D) = 256 + tailCost e₁ (yBit C) e₂ (yBit D) ∧
     measurementCount (pairEqual L t₁ t₂ e₁ e₂ C D) = 256 := by
-  have h := zeroWith_counts (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) (e₁.toNat + e₂.toNat)
+  have h := zeroWith_counts (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) (tailCost e₁ (yBit C) e₂ (yBit D))
     (pairTail_counts (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) L.control (pairPorts L)
   rw [pairPorts_length L hw] at h
   have x := xorConstant_counts (pairSrc L) (pairCode C)
   simp only [pairEqual, toffoliCount_append, measurementCount_append, x.1, x.2, h.1, h.2]
-  have h1 : e₁.toNat ≤ 1 := by cases e₁ <;> decide
-  have h2 : e₂.toNat ≤ 1 := by cases e₂ <;> decide
   refine ⟨?_, ?_⟩
   · omega
   · simp
@@ -568,7 +641,8 @@ theorem pairTail_wires (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wi
     wires (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) ⊆ ({w, y, t₁, t₂} : Finset Wire) := by
   intro q hq
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
-    simp [pairTail, bitTest, zeroFlag, wires, Instr.wires, wires_append] at hq ⊢ <;> tauto
+    simp [pairTail, plainTail, fusedTail, tailFused, bitTest, zeroFlag, wires, Instr.wires,
+      wires_append] at hq ⊢ <;> tauto
 
 theorem zeroWith_pair_wires (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c : Wire) (bs : List ZeroBit) :
     wires (zeroWith (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) c bs) ⊆
@@ -656,11 +730,11 @@ theorem pairEqual_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
   | nil =>
     simp only [List.flatMap_nil, List.nodup_cons, List.mem_cons, List.not_mem_nil, not_or,
       or_false] at hchain
-    obtain ⟨⟨hcy, hc1, hc2⟩, ⟨hy1, hy2⟩, -, -⟩ := hchain
+    obtain ⟨⟨hcy, hc1, hc2⟩, ⟨hy1, hy2⟩, h12', -⟩ := hchain
     simp only [zeroWith]
     cases e₁ <;> cases e₂ <;> cases (yBit C) <;> cases (yBit D) <;>
-      simp [pairTail, bitTest, zeroFlag, GatePhysical, PhysicalInstr, ProperGate, gatePhysical_append,
-        hc1, hc2, hy1, hy2]
+      simp [pairTail, plainTail, fusedTail, tailFused, bitTest, zeroFlag, GatePhysical, PhysicalInstr,
+        ProperGate, gatePhysical_append, hc1, hc2, hy1, hy2, h12]
   | cons b bs ih =>
     have hnames : (c::y::t₁::t₂::b.input::b.work::bs.flatMap ZeroBit.wires).Nodup := hchain
     have hni := hnames
@@ -679,7 +753,8 @@ theorem zeroWith_pair_slots (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c
   induction bs generalizing c with
   | nil =>
     cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
-      simp [zeroWith, pairTail, bitTest, zeroFlag, gateSlots_append, gateSlots_cons, instructionSlots]
+      simp [zeroWith, pairTail, plainTail, fusedTail, tailFused, bitTest, zeroFlag, gateSlots_append,
+        gateSlots_cons, instructionSlots]
   | cons b bs ih =>
     have h := ih b.work
     simp only [zeroWith, chainAnd, chainErase, gateSlots_append, List.length_cons]

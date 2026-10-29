@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.LaneAvoid
+import ECDSAAdd.Submission.Entrant.ArithAvoid
 
 /-! The Skywalk arithmetic with two logical labels exchanged.
 
@@ -12,9 +12,7 @@ set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant
 open Arithmetic MappedCompressed CompressedAllocation Secp256k1 ControlledPointLayout DirectSkywalk
-open MappedCompressed.LaneA (laneControlled laneControlled_support laneControlled_counts
-  laneControlled_physical laneTransfer_spec)
-attribute [local irreducible] run controlled laneControlled toffoliCount measurementCount
+attribute [local irreducible] run controlled toffoliCount measurementCount
   mixedTranscriptUnitTrace SkywalkTrace.next Nat.iterate
 
 /-- Exchange of the wires `base 769` and `base 1797`. -/
@@ -24,7 +22,7 @@ def swap2 (q : Wire) : Wire :=
 def wireFn2 (L : ControlledPointLayout) (q : Wire) : Wire := pointWireFn L (swap2 q)
 
 def arith2 (L : ControlledPointLayout) (multiply : Bool) : Program :=
-  renameProgram (wireFn2 L) (laneControlled (!multiply))
+  renameProgram (wireFn2 L) (controlled (!multiply))
 
 theorem swap2_involutive (q : Wire) : swap2 (swap2 q) = q := by
   have hb : base 769 ≠ base 1797 := by decide
@@ -171,7 +169,7 @@ theorem arith2_correct (multiply : Bool) (X Y : Nat) (B : Bool)
     regValue L.point.y (run (arith2 L multiply) m s).basis=V ∧
     ∀ q,q∉L.point.y → (run (arith2 L multiply) m s).basis q=s.basis q := by
   have yValue : (Y:Fp).val=Y := ZMod.val_natCast_of_lt hY
-  have result := laneTransfer_spec L (wireFn2 L) (placement2 L hw hn) (!multiply)
+  have result := pointTransfer_spec L (wireFn2 L) (placement2 L hw hn) (!multiply)
     logical_shared_nodup2 base_above logical_selectors_outside2 logical_mixed_layout2
     X (Y:Fp) B hX hX0 s m hb hx (hy.trans yValue.symm) hc
   cases B <;> cases multiply <;>
@@ -181,23 +179,24 @@ theorem arith2_correct (multiply : Bool) (X Y : Nat) (B : Bool)
 end
 
 theorem arith2_counts (L : ControlledPointLayout) :
-    toffoliCount (arith2 L false)=1051712 ∧ measurementCount (arith2 L false)=722496 ∧
-    toffoliCount (arith2 L true)=1052222 ∧ measurementCount (arith2 L true)=722496 := by
-  have h1 := laneControlled_counts true
-  have h2 := laneControlled_counts false
-  have r1 := renameProgram_counts (wireFn2 L) (laneControlled true)
-  have r2 := renameProgram_counts (wireFn2 L) (laneControlled false)
-  simp only [if_true, Bool.false_eq_true, if_false] at h1 h2
+    toffoliCount (arith2 L false)=1053750 ∧ measurementCount (arith2 L false)=724536 ∧
+    toffoliCount (arith2 L true)=1054260 ∧ measurementCount (arith2 L true)=724536 := by
+  have h := pointCompressedArithmetic_counts L
+  have r1 := renameProgram_counts (wireFn2 L) (controlled true)
+  have r2 := renameProgram_counts (wireFn2 L) (controlled false)
+  have q1 := renameProgram_counts (pointWireFn L) (controlled true)
+  have q2 := renameProgram_counts (pointWireFn L) (controlled false)
+  simp only [pointCompressedArithmetic, Bool.not_false, Bool.not_true] at h
   simp only [arith2, Bool.not_false, Bool.not_true]
   omega
 
 theorem arith2_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (multiply : Bool) : GatePhysical (arith2 L multiply) := by
-  apply gatePhysical_rename_support (wireFn2 L) (laneControlled (!multiply))
+  apply gatePhysical_rename_support (wireFn2 L) (controlled (!multiply))
   · intro a ha b hb eq
-    exact (placement2 L hw hn).injectiveOnSlots a (laneControlled_support (!multiply) ha) b
-      (laneControlled_support (!multiply) hb) eq
-  · exact laneControlled_physical _
+    exact (placement2 L hw hn).injectiveOnSlots a (controlled_support (!multiply) ha) b
+      (controlled_support (!multiply) hb) eq
+  · exact mappedControlled_physical _
 
 /-- Every arithmetic gate is the placement of a label in the inventory other
 than the avoided labels; label `1797` now lands on the site of label `769`. -/
@@ -206,7 +205,7 @@ theorem arith2_wire (L : ControlledPointLayout) (multiply : Bool) (q : Wire)
     ∃ old ∈ slots.toFinset, goodW old ∧ q = pointWireFn L (swap2 old) := by
   rw [arith2, renameProgram_support] at hq
   obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
-  exact ⟨old, laneControlled_support (!multiply) used, laneControlled_avoid (!multiply) old used, rfl⟩
+  exact ⟨old, controlled_support (!multiply) used, controlled_avoid (!multiply) old used, rfl⟩
 
 def backend2 : PointArithmeticBackend where
   program := arith2
