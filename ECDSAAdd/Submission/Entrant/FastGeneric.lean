@@ -1,6 +1,5 @@
 import ECDSAAdd.Submission.Entrant.FastConst
 import ECDSAAdd.Submission.Entrant.FastSquare
-import ECDSAAdd.Submission.Entrant.FastSquareNR
 import ECDSAAdd.Arithmetic.CompressedPointDialogSteps
 import ECDSAAdd.Arithmetic.CompressedPointDialogResources
 import ECDSAAdd.Arithmetic.SkywalkPointPhysical
@@ -21,9 +20,6 @@ def fastConstAdd (L : ControlledPointLayout) (r : List Wire) (k : Fp) : Program 
 
 def fastConstNeg (L : ControlledPointLayout) (k : Fp) : Program :=
   FastConst.fastNeg (L.recoveryConstant L.point.x) L.core.generic p k.val
-
-def fastConstRefl (L : ControlledPointLayout) (k : Fp) : Program :=
-  FastConst.fastRefl (L.recoveryConstant L.point.x) L.core.generic p k.val
 
 def fastGeneric (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx) ++ fastConstAdd L L.point.y (-cy) ++
@@ -81,18 +77,6 @@ theorem fastConstNeg_correct (k : Fp) (X : Nat) (B : Bool) (hX : X<p) (s : State
     (by norm_num [p]) k.isLt X hX s m cl.1 hx cl.2.1 cl.2.2.1 cl.2.2.2
   simpa only [fastConstNeg,hb] using result
 
-theorem fastConstRefl_correct (k : Fp) (X : Nat) (B : Bool) (hX : X<p) (s : State) (m : List Bool)
-    (hb : s.basis L.core.generic=B) (hx : regValue L.point.x s.basis=X)
-    (hc : regValue L.dialogPool s.basis=0) :
-    (run (fastConstRefl L k) m s).phase=s.phase ∧
-    regValue L.point.x (run (fastConstRefl L k) m s).basis=(if B then (k.val+p-X)%p else p-1-X) ∧
-    ∀q,q∉L.point.x → (run (fastConstRefl L k) m s).basis q=s.basis q := by
-  have cl := scratch_clean L hw L.point.x s hc
-  have result := FastConst.fastRefl_correct (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) 256
-    p k.val (L.recoveryConstant_widths hw L.point.x hw.inputX) (by decide)
-    (by norm_num [p]) k.isLt X hX s m cl.1 hx cl.2.1 cl.2.2.1 cl.2.2.2
-  simpa only [fastConstRefl,hb] using result
-
 variable (X Y : Fp) (G : Bool) (base : BasisState)
 
 theorem fastStep_addX (k : Fp) :
@@ -123,25 +107,6 @@ theorem fastStep_negX (k : Fp) :
   · simpa using hx
   · simp only [if_true]; rw [sub_val']; simpa using hx
 
-omit hw hn in
-private theorem refl_val (V : Fp) : (-1-V).val=p-1-V.val := by
-  have hl : V.val<p := ZMod.val_lt V
-  have hp : 1≤p := by norm_num [p]
-  have cast : ((p-1-V.val : Nat) : Fp)=-1-V := by
-    rw [Nat.cast_sub (by omega : V.val≤p-1),Nat.cast_sub hp]
-    simp only [ZMod.natCast_self,Nat.cast_one,zero_sub,ZMod.natCast_zmod_val]
-  rw [← cast,ZMod.val_natCast_of_lt (by omega)]
-
-theorem fastStep_refl (k : Fp) :
-    Triple (PointDialogValues L X Y G base) (fastConstRefl L k)
-      (PointDialogValues L (if G then k-X else -1-X) Y G base) := by
-  intro s m v
-  obtain ⟨hp,hx,hf⟩ := fastConstRefl_correct L hw hn k X.val G X.isLt s m v.generic v.x v.clean
-  refine ⟨hp,v.withX hn ?_ hf⟩
-  cases G
-  · simp only [Bool.false_eq_true,if_false] at hx ⊢; rw [refl_val]; exact hx
-  · simp only [if_true] at hx ⊢; rw [sub_val']; exact hx
-
 end Correct
 
 section SquareStep
@@ -158,19 +123,6 @@ theorem fast_step_square (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
     v.generic v.x v.y v.clean
   refine ⟨hp,v.withX hn ?_ hf⟩
   cases G <;> simpa [sub_val',ZMod.val_mul,Nat.mod_eq_of_lt (ZMod.val_lt X)] using hx
-
-theorem fast_step_squareNR (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (X Y : Fp) (G : Bool) (base : BasisState) :
-    Triple (PointDialogValues L X Y G base) (fastSquareNR L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G base) := by
-  intro s m v
-  obtain ⟨hp,hx,hf⟩ := fastSquareNR_correct L hw hn X.val Y.val G X.isLt s m
-    v.generic v.x v.y v.clean
-  refine ⟨hp,v.withX hn ?_ hf⟩
-  rw [refl_val,sub_val']
-  cases G
-  · simpa using hx
-  · simpa [ZMod.val_mul] using hx
 
 end SquareStep
 
@@ -279,11 +231,6 @@ omit hn in
 theorem fastConstNeg_counts (k : Fp) :
     toffoliCount (fastConstNeg L k)=766 ∧ measurementCount (fastConstNeg L k)=767 :=
   FastConst.fastNeg_counts 256 _ _ (L.recoveryConstant_widths hw L.point.x hw.inputX) (by decide)
-
-omit hn in
-theorem fastConstRefl_counts (k : Fp) :
-    toffoliCount (fastConstRefl L k)=766 ∧ measurementCount (fastConstRefl L k)=767 :=
-  FastConst.fastRefl_counts 256 _ _ (L.recoveryConstant_widths hw L.point.x hw.inputX) (by decide)
 
 omit hn in
 theorem fastGeneric_counts (cx cy : Fp) :
