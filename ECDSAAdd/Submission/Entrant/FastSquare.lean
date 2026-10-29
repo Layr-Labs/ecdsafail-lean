@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.SquareFolds
+import ECDSAAdd.Submission.Entrant.SquareAcc
 import ECDSAAdd.Arithmetic.CompressedPointSquareCorrect
 import ECDSAAdd.Arithmetic.PointSquarePhysical
 import ECDSAAdd.Baselines.SkywalkSlots
@@ -17,17 +17,17 @@ namespace ECDSAAdd.Entrant
 open Arithmetic ControlledPointLayout Secp256k1 CompressedPointSquare
 
 def fastCandidate (L : ControlledPointLayout) : Program :=
-  fastProgram L.dialogStreamedSquareWide L.core.generic
+  accProgram L.dialogStreamedSquareWide L.core.generic
 
 theorem fastCandidate_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastCandidate L)=95822 ∧ measurementCount (fastCandidate L)=95302 :=
-  fastProgram_counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) L.core.generic
+    toffoliCount (fastCandidate L)=77636 ∧ measurementCount (fastCandidate L)=77116 :=
+  accProgram_counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) L.core.generic
 
 theorem fastCandidate_support (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) :
     wires (fastCandidate L)⊆
       (L.core.generic::L.point.y++L.point.x++L.dialogPool.take 776).toFinset := by
-  have support := fastProgram_support L.dialogStreamedSquareWide
+  have support := accProgram_support L.dialogStreamedSquareWide
     (L.dialogStreamedSquareWide_widths hw) (L.dialogStreamedSquareWide_nodup hw hn) L.core.generic
   have embed : (L.core.generic::L.dialogStreamedSquareWide.wires).toFinset⊆
       (L.core.generic::L.point.y++L.point.x++L.dialogPool.take 776).toFinset := by
@@ -94,13 +94,13 @@ theorem fastCandidate_correct (L : ControlledPointLayout) (hw : L.Widths)
   have sum0 : s.basis K.core.sumCarry=false := auxZero _ (by simp)
   have hp : SquareReduction.p=p := by
     norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c,p]
-  have kernel := fastProgram_correct K hwK L.core.generic controlND Y X
+  have kernel := accProgram_correct K hwK L.core.generic controlND Y X
     (by simpa only [hp] using hX) s m hy hx prod0 sum0 clean
   simpa only [fastCandidate,hb,hp,pow_two] using kernel
 
 theorem fastCandidate_physical (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) : GatePhysical (fastCandidate L) := by
-  apply fastProgram_physical L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
+  apply accProgram_physical L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
   have nd := L.streamedSquare_control_nodup hw hn
   apply List.nodup_iff_count.mpr; intro q
   have h := List.nodup_iff_count.mp nd q
@@ -172,7 +172,7 @@ theorem fastSquare_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
   exact fastCandidate_correct L hw hn X Y B hX s m hb hx hy hc
 
 theorem fastSquare_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastSquare L)=95822 ∧ measurementCount (fastSquare L)=95302 := by
+    toffoliCount (fastSquare L)=77636 ∧ measurementCount (fastSquare L)=77116 := by
   have renamed := renameProgram_counts (labelFn L.core.poolWire) (fastCandidate L)
   have old := fastCandidate_counts L hw
   rw [fastSquare]
@@ -222,6 +222,6 @@ theorem fastSquare_physical (L : ControlledPointLayout)
 theorem fastSquare_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) :
     Challenge.gateSlots (fastSquare L) ≤ 5000000 := by
   simpa only [fastSquare,Baselines.rename_gateSlots,fastCandidate]
-    using fastProgram_gateSlots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) L.core.generic
+    using accProgram_gateSlots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) L.core.generic
 
 end ECDSAAdd.Entrant
