@@ -19,7 +19,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2177948, 1518495, 1893, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2177950, 1518495, 1892, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -35,7 +35,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgramN_support layout layout_widths layout_nodup _ cy _ hG).trans
         (sitesN_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2177948 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2177950 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -66,10 +66,10 @@ theorem io_subset_sitesN : ioWires ⊆ (sitesN layout).toFinset := by
 /-- Static support: point, control, five classification flags, and the
 certified pool inventory without its idle site; `core.generic` and
 `infinitySelect` are both unused (`FlagMerge.lean`). -/
-theorem program_qubits (C : Point) : qubits (program C) ≤ 1893 := by
+theorem program_qubits (C : Point) : qubits (program C) ≤ 1892 := by
   cases C with
   | zero =>
-    change qubits [] ≤ 1893
+    change qubits [] ≤ 1892
     rw [qubits_empty]
     decide
   | @some cx cy hc =>
@@ -104,7 +104,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
-    change qubits (normalizeProgram (program C)) ≤ 1893
+    change qubits (normalizeProgram (program C)) ≤ 1892
     rw [normalize_qubits]
     exact program_qubits C
   gateSlots_le C := by
