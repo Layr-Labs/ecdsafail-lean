@@ -245,8 +245,8 @@ theorem arith3_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires
       Bool.not_false,Bool.not_true,Bool.false_eq_true,if_false,if_true,yValue] using result
 
 theorem arith3_counts (L : ControlledPointLayout) :
-    toffoliCount (arith3 L false)=1050690 ∧ measurementCount (arith3 L false)=721478 ∧
-    toffoliCount (arith3 L true)=1051200 ∧ measurementCount (arith3 L true)=721478 := by
+    toffoliCount (arith3 L false)=1050180 ∧ measurementCount (arith3 L false)=721478 ∧
+    toffoliCount (arith3 L true)=1050690 ∧ measurementCount (arith3 L true)=721478 := by
   have h1 := laneKernel_counts true
   have h2 := laneKernel_counts false
   have r1 := renameProgram_counts (wireFn2 L) (laneKernel true)
