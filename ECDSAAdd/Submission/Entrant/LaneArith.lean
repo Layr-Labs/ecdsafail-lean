@@ -18,25 +18,25 @@ namespace ECDSAAdd.Arithmetic.MappedCompressed.LaneA
 open Secp256k1 DirectSkywalk ControlledPointLayout
 
 section Kernel
-attribute [local irreducible] laneSegment selectedFieldSegment NativeFirstDirect.forward
+attribute [local irreducible] ECDSAAdd.Entrant.HalfField.segment selectedFieldSegment NativeFirstDirect.forward
   compressedCompactForward compressedCompactReverse NativeFirstKnown.inverse
 
 theorem laneKernel_support (divide : Bool) : wires (laneKernel divide) ⊆ slots.toFinset := by
   have k := kernel_support divide
-  have seg := laneSegment_support divide
+  have seg := ECDSAAdd.Entrant.HalfField.segment_support divide
   simp only [kernel,wires_append,Finset.union_subset_iff] at k
   simp only [laneKernel,wires_append,Finset.union_subset_iff]
   exact ⟨⟨⟨⟨⟨⟨k.1.1.1.1.1.1,k.1.1.1.1.1.2⟩,k.1.1.1.1.2⟩,seg⟩,k.1.1.2⟩,k.1.2⟩,k.2⟩
 
 attribute [local irreducible] toffoliCount measurementCount in
 theorem laneKernel_counts (divide : Bool) :
-    toffoliCount (laneKernel divide)=(if divide then 1051202 else 1051712) ∧
-    measurementCount (laneKernel divide)=721988 := by
+    toffoliCount (laneKernel divide)=(if divide then 1050690 else 1051200) ∧
+    measurementCount (laneKernel divide)=721478 := by
   have f := NativeFirstDirect.forward_counts base
   have r := NativeFirstKnown.inverse_counts base
   have integer := integer_tail_counts
   have clear := skywalkTerminalClear_counts (base 511) (base 512) (base 770)
-  have field := laneSegment_counts divide
+  have field := ECDSAAdd.Entrant.HalfField.segment_counts divide
   simp only [laneKernel,skywalkArithmeticClear,toffoliCount_append,measurementCount_append,
     f.1,f.2,r.1,r.2,integer.1,integer.2.1,integer.2.2.1,integer.2.2.2,
     clear.1,clear.2,field.1,field.2]
@@ -46,7 +46,7 @@ theorem laneKernel_physical (divide : Bool) : GatePhysical (laneKernel divide) :
   have first := (NativeFirstDirect.programs_physical base base_pool_nodup).1
   have loops := compressedLoops_physical base 1 511 (by decide) base_pool_nodup
   have last := NativeFirstKnown.inverse_physical base base_pool_nodup
-  have field := laneSegment_physical divide
+  have field := ECDSAAdd.Entrant.HalfField.segment_physical divide
   simp only [laneKernel,gatePhysical_append]
   exact ⟨⟨⟨⟨⟨⟨first,loops.1⟩,mappedClear_physical⟩,field⟩,mappedClear_physical⟩,loops.2⟩,last⟩
 
@@ -55,7 +55,7 @@ theorem laneKernel_gateSlots_le (divide : Bool) :
     gateSlots (laneKernel divide) ≤ 20500000 := by
   have hn := ECDSAAdd.Baselines.nativeFirst_gateSlots_le base
   have hi := ECDSAAdd.Baselines.compactLoops_gateSlots_le base 1 511 (by omega)
-  have hf := laneSegment_gateSlots_le divide
+  have hf := ECDSAAdd.Entrant.HalfLane.segment_gateSlots_le divide
   have hc : gateSlots (skywalkArithmeticClear base) = 3 := rfl
   rw [laneKernel]
   simp only [gateSlots_append, hc]
@@ -77,8 +77,8 @@ theorem laneControlled_support (divide : Bool) : wires (laneControlled divide) �
   exact ⟨c.1,laneKernel_support divide,c.2.2⟩
 
 theorem laneControlled_counts (divide : Bool) :
-    toffoliCount (laneControlled divide)=(if divide then 1051712 else 1052222) ∧
-    measurementCount (laneControlled divide)=722496 := by
+    toffoliCount (laneControlled divide)=(if divide then 1051200 else 1051710) ∧
+    measurementCount (laneControlled divide)=721986 := by
   have width : (wireBlock base 0 255).length+1=(wireBlock base 770 256).length := by
     simp [wireBlock]
   have wrapped := directZeroControlled_counts (wireBlock base 770 256) (wireBlock base 0 255)
@@ -457,10 +457,10 @@ theorem laneArith_support (L : ControlledPointLayout) (hw : L.Widths) (multiply 
     ⟨old,laneControlled_support (!multiply) used,rfl⟩)
 
 theorem laneArith_counts (L : ControlledPointLayout) :
-    toffoliCount (laneArith L false)=1051712 ∧
-    measurementCount (laneArith L false)=722496 ∧
-    toffoliCount (laneArith L true)=1052222 ∧
-    measurementCount (laneArith L true)=722496 := by
+    toffoliCount (laneArith L false)=1051200 ∧
+    measurementCount (laneArith L false)=721986 ∧
+    toffoliCount (laneArith L true)=1051710 ∧
+    measurementCount (laneArith L true)=721986 := by
   have div := laneControlled_counts true
   have mul := laneControlled_counts false
   have rd := renameProgram_counts (pointWireFn L) (laneControlled true)
@@ -509,8 +509,8 @@ theorem laneGeneric_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
   exact ⟨⟨⟨⟨⟨⟨g.1.1.1.1.1.1,g.1.1.1.1.1.2⟩,a⟩,g.1.1.1.2⟩,g.1.1.2⟩,b⟩,g.2⟩
 
 theorem laneGeneric_counts (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) (cx cy : Fp) :
-    toffoliCount (laneGeneric L cx cy)=2209206 ∧
-    measurementCount (laneGeneric L cx cy)=1549744 := by
+    toffoliCount (laneGeneric L cx cy)=2208182 ∧
+    measurementCount (laneGeneric L cx cy)=1548724 := by
   have a k := pointDialogConstantAdd_counts L hw hn L.point.x (Or.inl rfl) k
   have b k := pointDialogConstantAdd_counts L hw hn L.point.y (Or.inr rfl) k
   have arith := laneArith_counts L

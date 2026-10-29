@@ -46,7 +46,7 @@ theorem laneKernel_avoid (divide : Bool) : Avoid (laneKernel divide) := by
   have k := kernel_avoid divide
   simp only [kernel,avoid_append] at k
   simp only [laneKernel,avoid_append]
-  exact ⟨⟨⟨⟨⟨⟨k.1.1.1.1.1.1,k.1.1.1.1.1.2⟩,k.1.1.1.1.2⟩,laneSegment_avoid divide⟩,k.1.1.2⟩,k.1.2⟩,k.2⟩
+  exact ⟨⟨⟨⟨⟨⟨k.1.1.1.1.1.1,k.1.1.1.1.1.2⟩,k.1.1.1.1.2⟩,ECDSAAdd.Entrant.HalfLane.segment_avoid divide⟩,k.1.1.2⟩,k.1.2⟩,k.2⟩
 
 theorem laneControlled_avoid (divide : Bool) : Avoid (laneControlled divide) := by
   have c := controlled_avoid divide
