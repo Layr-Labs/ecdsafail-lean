@@ -29,6 +29,27 @@ def corners2 (L : ControlledPointLayout) (C : Point) : Program :=
   maskedPointConstant L.core.equalNegY L.point (dialogExceptionPoint C) ++
   maskedPointConstant L.core.equalNegY L.point (-C)
 
+def genericFlagO (L : ControlledPointLayout) : Program :=
+  [.CX L.control L.core.generic] ++ [.CX L.doubleSelect L.core.generic] ++
+    [.CX L.genericSelect L.core.generic] ++ [.CX L.core.equalNegY L.core.generic]
+
+def cornersG (L : ControlledPointLayout) (C : Point) : Program :=
+  maskedPointConstant L.core.generic L.point C ++
+  (maskedPointConstant L.doubleSelect L.point C ++
+  (maskedPointConstant L.doubleSelect L.point (C+C) ++
+  (maskedPointConstant L.genericSelect L.point (-C) ++
+  (maskedPointConstant L.core.equalNegY L.point (dialogExceptionPoint C) ++
+  maskedPointConstant L.core.equalNegY L.point (-C)))))
+
+def finiteProgramFO (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) : Program :=
+  zeroFlag L.point.finite L.control L.core.generic ++
+  pairEqual L L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C) ++
+  gatedShort L (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C) ++
+  genericFlagO L ++ Gen ++ genericFlagO L ++ cornersG L C ++
+  pairEqual L L.core.generic L.core.equalNegY true (exceptionBit C) C (-C) ++
+  gatedShort L (decide (cy≠-cy)) L.doubleSelect (C+C) ++
+  zeroFlag L.point.finite L.control L.genericSelect
+
 def finiteProgramFG (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) : Program :=
   pairEqual L L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C) ++
   gatedShort L (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C) ++
@@ -102,6 +123,43 @@ theorem genericFlag2_flag (R : Point) (b O D I G E H K : Bool) :
     rw [hh]
     have hqt : q ≠ L.core.generic := fun he => hq (he ▸ by simp [inPlaceFlags])
     simp [writeBit, hqt]
+
+theorem zeroFlag_equalG (R : Point) (b O D I G E H K : Bool) :
+    Triple (PointDialogBoundary L R b (dialogFlagState L O D I G E H K))
+      (zeroFlag L.point.finite L.control L.core.generic)
+      (PointDialogBoundary L R b (dialogFlagState L O D I (G ^^ (b && pointEqual R 0)) E H K)) := by
+  have sep := dialogFlag_separation L hn
+  simp only [inPlaceFlags,List.nodup_cons,List.mem_cons,not_or] at sep
+  have hr := dialogFlagState_read L hn O D I G E H K
+  have hh := zeroFlag_boundary L hn R b (dialogFlagState L O D I G E H K) L.control L.core.generic
+    (Or.inl rfl) (by simp [inPlaceFlags]) (by tauto) b (by simp)
+  simp only [hr.2.2.2.1] at hh
+  exact hh.conseq (fun _ h=>h) (fun _ h=>h.congrFlags
+    (dialogFlagState_update L hn O D I G E H K _).2.2.2.1)
+
+theorem genericFlagO_flag (R : Point) (b O D I G E H K : Bool) :
+    Triple (PointDialogBoundary L R b (dialogFlagState L O D I G E H K))
+      (genericFlagO L)
+      (PointDialogBoundary L R b (dialogFlagState L O D I ((((G ^^ b) ^^ D) ^^ I) ^^ H) E H K)) := by
+  have sep := dialogFlag_separation L hn
+  simp only [inPlaceFlags,List.nodup_cons,List.mem_cons,not_or] at sep
+  have step (c : Wire) (hc : c = L.control ∨ c ∈ L.inPlaceFlags) (B X : Bool)
+      (hb : (if c = L.control then b else dialogFlagState L O D I X E H K c) = B) :
+      Triple (PointDialogBoundary L R b (dialogFlagState L O D I X E H K)) [.CX c L.core.generic]
+        (PointDialogBoundary L R b (dialogFlagState L O D I (X ^^ B) E H K)) := by
+    have h := dialogBoundary_cx L hn R b (dialogFlagState L O D I X E H K) c L.core.generic hc
+      (by simp [inPlaceFlags]) B hb
+    rw [(dialogFlagState_read L hn O D I X E H K).2.2.2.1] at h
+    exact h.conseq (fun _ h => h) (fun _ h => h.congrFlags
+      (dialogFlagState_update L hn O D I X E H K _).2.2.2.1)
+  have h1 := step L.control (Or.inl rfl) b G (by simp)
+  have h2 := step L.doubleSelect (Or.inr (by simp [inPlaceFlags])) D (G ^^ b)
+    (by rw [if_neg (by tauto)]; exact (dialogFlagState_read L hn O D I _ E H K).2.1)
+  have h3 := step L.genericSelect (Or.inr (by simp [inPlaceFlags])) I ((G ^^ b) ^^ D)
+    (by rw [if_neg (by tauto)]; exact (dialogFlagState_read L hn O D I _ E H K).2.2.1)
+  have h4 := step L.core.equalNegY (Or.inr (by simp [inPlaceFlags])) H (((G ^^ b) ^^ D) ^^ I)
+    (by rw [if_neg (by tauto)]; exact (dialogFlagState_read L hn O D I _ E H K).2.2.2.2.2.1)
+  exact ((h1.seq h2).seq h3).seq h4
 
 theorem zeroFlag_flagG (R : Point) (b O D I G E H K : Bool) :
     Triple (PointDialogBoundary L R b (dialogFlagState L O D I G E H K))
@@ -203,6 +261,87 @@ theorem corners2_boundary [DecidableEq Point] (R C : Point) (hc : C≠0) (b : Bo
       (corners2 L C) (PointDialogBoundary L (if b then R+C else R) b f) := by
   intro s m v
   have he := corners2_effect L hw hn C s m
+  have vo := (v.flags _ (by simp [inPlaceFlags])).trans ho
+  have vd := (v.flags _ (by simp [inPlaceFlags])).trans hd
+  have vi := (v.flags _ (by simp [inPlaceFlags])).trans hi
+  have vh := (v.flags _ (by simp [inPlaceFlags])).trans hh
+  have hp := (point_holds _ _ _).mp v.point
+  refine ⟨he.phase,v.withPoint hn ((point_holds _ _ _).mpr ⟨?_,?_,?_⟩) he.outside⟩
+  · rw [he.finite,hp.1,vo,vd,vi,vh]
+    have h := dialogCorners_bool b R C hc pointFinite (by rfl)
+    have bool_if (a b : Bool) : (if a then b else false)=(a && b) := by cases a <;> rfl
+    simpa only [bool_if,Bool.xor_assoc] using h
+  · rw [he.x,hp.2.1,vo,vd,vi,vh]
+    simpa only [Nat.xor_assoc] using dialogCorners_nat b R C hc pointX (by rfl)
+  · rw [he.y,hp.2.2,vo,vd,vi,vh]
+    simpa only [Nat.xor_assoc] using dialogCorners_nat b R C hc pointY (by rfl)
+
+theorem masked_run_append (c : Wire) (r : PointReg) (P : Point) (Q : Program) (m : List Bool)
+    (s : State) :
+    run (maskedPointConstant c r P ++ Q) m s = run Q m (run (maskedPointConstant c r P) m s) := by
+  rw [run_append, run_take, (maskedPointConstant_counts c r P).2, List.drop_zero]
+
+theorem cornersG_effect (C : Point) (s : State) (m : List Bool) :
+    PointEffect L.point
+      ((((((s.basis L.core.generic && pointFinite C) ^^ (s.basis L.doubleSelect && pointFinite C)) ^^
+        (s.basis L.doubleSelect && pointFinite (C+C))) ^^ (s.basis L.genericSelect && pointFinite (-C))) ^^
+        (s.basis L.core.equalNegY && pointFinite (dialogExceptionPoint C))) ^^
+        (s.basis L.core.equalNegY && pointFinite (-C)))
+      ((((((if s.basis L.core.generic then pointX C else 0) ^^^ (if s.basis L.doubleSelect then pointX C else 0)) ^^^
+        (if s.basis L.doubleSelect then pointX (C+C) else 0)) ^^^ (if s.basis L.genericSelect then pointX (-C) else 0)) ^^^
+        (if s.basis L.core.equalNegY then pointX (dialogExceptionPoint C) else 0)) ^^^
+        (if s.basis L.core.equalNegY then pointX (-C) else 0))
+      ((((((if s.basis L.core.generic then pointY C else 0) ^^^ (if s.basis L.doubleSelect then pointY C else 0)) ^^^
+        (if s.basis L.doubleSelect then pointY (C+C) else 0)) ^^^ (if s.basis L.genericSelect then pointY (-C) else 0)) ^^^
+        (if s.basis L.core.equalNegY then pointY (dialogExceptionPoint C) else 0)) ^^^
+        (if s.basis L.core.equalNegY then pointY (-C) else 0))
+      s (run (cornersG L C) m s) := by
+  have hr : (PointAddLayout.pointWires L.point).Nodup := by
+    apply List.nodup_iff_count.mpr; intro q
+    have hh := List.nodup_iff_count.mp (L.inPlace_interfaces_nodup hw hn) q
+    simp only [List.count_append] at hh
+    omega
+  have away (q : Wire) (hq : q∈L.inPlaceFlags) : q∉PointAddLayout.pointWires L.point := by
+    intro hp
+    have hh := List.nodup_iff_count.mp (L.inPlace_interfaces_nodup hw hn) q
+    have h1 := List.count_pos_iff.mpr hq
+    have h2 := List.count_pos_iff.mpr hp
+    simp only [List.count_append] at hh
+    omega
+  have ho := away L.core.generic (by simp [inPlaceFlags])
+  have hd := away L.doubleSelect (by simp [inPlaceFlags])
+  have hi := away L.genericSelect (by simp [inPlaceFlags])
+  have hh' := away L.core.equalNegY (by simp [inPlaceFlags])
+  simp only [cornersG, masked_run_append]
+  let u := run (maskedPointConstant L.core.generic L.point C) m s
+  have e0 := maskedPointConstant_correct _ _ C hr ho hw.inputX hw.inputY s m
+  have ud : u.basis L.doubleSelect=s.basis L.doubleSelect := e0.outside _ hd
+  let v := run (maskedPointConstant L.doubleSelect L.point C) m u
+  have e1 := maskedPointConstant_correct _ _ C hr hd hw.inputX hw.inputY u m
+  have vd : v.basis L.doubleSelect=s.basis L.doubleSelect := (e0.trans e1).outside _ hd
+  let w := run (maskedPointConstant L.doubleSelect L.point (C+C)) m v
+  have e2 := maskedPointConstant_correct _ _ (C+C) hr hd hw.inputX hw.inputY v m
+  have wi : w.basis L.genericSelect=s.basis L.genericSelect := ((e0.trans e1).trans e2).outside _ hi
+  let x := run (maskedPointConstant L.genericSelect L.point (-C)) m w
+  have e3 := maskedPointConstant_correct _ _ (-C) hr hi hw.inputX hw.inputY w m
+  have xh : x.basis L.core.equalNegY=s.basis L.core.equalNegY := (((e0.trans e1).trans e2).trans e3).outside _ hh'
+  let y := run (maskedPointConstant L.core.equalNegY L.point (dialogExceptionPoint C)) m x
+  have e4 := maskedPointConstant_correct _ _ (dialogExceptionPoint C) hr hh' hw.inputX hw.inputY x m
+  have yh : y.basis L.core.equalNegY=s.basis L.core.equalNegY :=
+    ((((e0.trans e1).trans e2).trans e3).trans e4).outside _ hh'
+  have e5 := maskedPointConstant_correct _ _ (-C) hr hh' hw.inputX hw.inputY y m
+  have he := ((((e0.trans e1).trans e2).trans e3).trans e4).trans e5
+  simpa only [ud,vd,wi,xh,yh] using he
+
+theorem cornersG_boundary [DecidableEq Point] (R C : Point) (hc : C≠0) (b : Bool) (f : BasisState)
+    (ho : f L.core.generic=dialogInfinity b R)
+    (hd : f L.doubleSelect=dialogDouble b R C)
+    (hi : f L.genericSelect=dialogInversePoint b R C)
+    (hh : f L.core.equalNegY=dialogException b R C) :
+    Triple (PointDialogBoundary L (if dialogOrdinary b R C then R+C else R) b f)
+      (cornersG L C) (PointDialogBoundary L (if b then R+C else R) b f) := by
+  intro s m v
+  have he := cornersG_effect L hw hn C s m
   have vo := (v.flags _ (by simp [inPlaceFlags])).trans ho
   have vd := (v.flags _ (by simp [inPlaceFlags])).trans hd
   have vi := (v.flags _ (by simp [inPlaceFlags])).trans hi
@@ -352,5 +491,91 @@ theorem finiteProgramFG_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L
   simpa only [finiteProgramFG,List.append_assoc,dialogFlagState_zero] using h
 
 end SpecFG
+
+section SpecFO
+attribute [local irreducible] run wires shortEqual pairEqual gatedShort genericFlagO cornersG
+  pointCompressedDialogGeneric pointDialogGeneric MappedCompressed.pointCompressedArithmetic
+  CompressedPointSquare.computableProgram
+
+private theorem equal_simpO [DecidableEq Point] (R C : Point) : pointEqual R C=decide (R=C) := by
+  simp only [pointEqual,pointCode_injective.eq_iff]
+
+theorem finiteProgramFO_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (R : Point) {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool)
+    (Gen : Program) (hGen : GenericOK L hc Gen) :
+    Triple (PointDialogBoundary L R b (fun _=>false)) (finiteProgramFO L (.some hc) cy Gen)
+      (PointDialogBoundary L (if b then R+.some hc else R) b (fun _=>false)) := by
+  classical
+  let C : Point := .some hc
+  let O := dialogInfinity b R
+  let D := dialogDouble b R C
+  let I := dialogInversePoint b R C
+  let H := dialogException b R C
+  let G := dialogOrdinary b R C
+  let E := b && decide (dialogExceptionEnabled C)
+  let K := b && decide (cy≠-cy)
+  let S := if b then R+C else R
+  have hC : C≠0 := WeierstrassCurve.Affine.Point.some_ne_zero hc
+  have hK : K=(b && decide (C≠-C)) := by
+    apply Bool.eq_iff_iff.mpr
+    simp only [K,Bool.and_eq_true,decide_eq_true_eq]
+    exact and_congr_right (fun _=>doubling_enabled_iff hc)
+  have hE : exceptionBit C = decide (dialogExceptionEnabled C) := by
+    simp [exceptionBit,equal_simpO,dialogExceptionEnabled,Bool.and_assoc]
+  have hO : (b && pointEqual R 0)=O := by simp only [O,dialogInfinity,equal_simpO]
+  have hD : ((b && decide (cy≠-cy)) && pointEqual R C)=D := by
+    change (K && pointEqual R C) = D
+    rw [hK]; simp only [D,dialogDouble,equal_simpO]
+  have hI : (b && pointEqual R (-C))=I := by simp only [I,dialogInversePoint,equal_simpO]
+  have hH : ((b && exceptionBit C) && pointEqual R (dialogExceptionPoint C))=H := by
+    rw [hE]; simp [H,dialogException,dialogExceptionEnabled,equal_simpO]
+  have h2 := zeroFlag_equalG L hn R b false false false false false false false
+  rw [hO,Bool.false_xor] at h2
+  have h3 := pairFlag_inputE L hw hn R C cy b false false false O false false false
+  rw [hD,hI,Bool.false_xor,Bool.false_xor] at h3
+  have h5 := gatedFlag_H L hw hn R (dialogExceptionPoint C) (exceptionBit C) b false D I O false false false
+  rw [hH,Bool.false_xor] at h5
+  have h6 := genericFlagO_flag L hn R b false D I O false H false
+  have hg1 : ((((O ^^ b) ^^ D) ^^ I) ^^ H)=G := by
+    dsimp only [G,dialogOrdinary,O,D,I,H]
+    generalize dialogInfinity b R=o,dialogDouble b R C=d,dialogInversePoint b R C=i,
+      dialogException b R C=h
+    cases b <;> cases o <;> cases d <;> cases i <;> cases h <;> rfl
+  rw [hg1] at h6
+  have read := dialogFlagState_read L hn false D I G false H false
+  have h7 := hGen R b (dialogFlagState L false D I G false H false)
+    (fun hg => ((dialogOrdinary_true b R C hC).mp (read.2.2.2.1.symm.trans hg)).2)
+  rw [read.2.2.2.1] at h7
+  have h8 := genericFlagO_flag L hn (if G then R+C else R) b false D I G false H false
+  have hg2 : ((((G ^^ b) ^^ D) ^^ I) ^^ H)=O := by
+    dsimp only [G,dialogOrdinary,O,D,I,H]
+    generalize dialogInfinity b R=o,dialogDouble b R C=d,dialogInversePoint b R C=i,
+      dialogException b R C=h
+    cases b <;> cases o <;> cases d <;> cases i <;> cases h <;> rfl
+  rw [hg2] at h8
+  have read2 := dialogFlagState_read L hn false D I O false H false
+  have h9 := cornersG_boundary L hw hn R C hC b (dialogFlagState L false D I O false H false)
+    read2.2.2.2.1 read2.2.1 read2.2.2.1 read2.2.2.2.2.2.1
+  have hf := dialogFlags_output b R C
+  have heout : ((b && exceptionBit C) && pointEqual S (-C))=H := by
+    rw [hE]
+    simpa [E,H,S,dialogExceptionEnabled,equal_simpO] using hf.2.2.2
+  have h10 := pairFlag_outputG L hw hn S C (exceptionBit C) b false D I O false H false
+  rw [heout,Bool.xor_self] at h10
+  simp only [equal_simpO] at h10
+  rw [hf.1,Bool.xor_self] at h10
+  have h11 := gatedFlag_D L hw hn S (C+C) (decide (cy≠-cy)) b false D I false false false false
+  have hdo : ((b && decide (cy≠-cy)) && pointEqual S (C+C))=D := by
+    change (K && pointEqual S (C+C)) = D
+    rw [hK]; simpa only [equal_simpO] using hf.2.1
+  rw [hdo,Bool.xor_self] at h11
+  have h12 := zeroFlag_equalI L hn S b false false I false false false false
+  simp only [equal_simpO] at h12
+  rw [hf.2.2.1,Bool.xor_self] at h12
+  have h := ((((((((h2.seq h3).seq h5).seq h6).seq h7).seq h8).seq h9).seq h10).seq h11).seq h12
+  simpa only [finiteProgramFO,List.append_assoc,dialogFlagState_zero] using h
+
+end SpecFO
+
 
 end ECDSAAdd.Entrant

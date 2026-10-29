@@ -174,15 +174,44 @@ theorem cornersE (C : Point) : wires (corners2 L C) ⊆ (sitesE L).toFinset := b
     m _ (by simp [flagsE]) _⟩, m _ (by simp [flagsE]) _⟩, m _ (by simp [flagsE]) _⟩
 
 omit hn in
+theorem genericFlagOP : wires (genericFlagO L) ⊆ (sitesE L).toFinset := by
+  intro q hq
+  simp [genericFlagO, wires, Instr.wires] at hq
+  apply List.mem_toFinset.mpr
+  rcases hq with rfl | rfl | rfl | rfl | rfl
+  all_goals first
+    | exact control_E L
+    | exact flag_E L _ (by simp [flagsE])
+
+theorem cornersGP (C : Point) : wires (cornersG L C) ⊆ (sitesE L).toFinset := by
+  have m (c : Wire) (hc : c ∈ flagsE L) (P : Point) :
+      wires (maskedPointConstant c L.point P) ⊆ (sitesE L).toFinset := by
+    intro q hq
+    have h := List.mem_toFinset.mp (maskedPointConstant_support c L.point P hq)
+    apply List.mem_toFinset.mpr
+    rcases List.mem_cons.mp h with rfl | h
+    · exact flag_E L _ hc
+    · exact point_E L _ h
+  simp only [cornersG, wires_append, Finset.union_subset_iff]
+  exact ⟨m _ (by simp [flagsE]) _, m _ (by simp [flagsE]) _, m _ (by simp [flagsE]) _,
+    m _ (by simp [flagsE]) _, m _ (by simp [flagsE]) _, m _ (by simp [flagsE]) _⟩
+
+theorem finiteProgramFO_support (C : Point) (cy : Fp) (Gen : Program)
+    (hG : wires Gen ⊆ (sitesE L).toFinset) :
+    wires (finiteProgramFO L C cy Gen) ⊆ (sitesE L).toFinset := by
+  have fS : flagsE L = [L.doubleSelect, L.genericSelect, L.core.generic, L.core.equalNegY] := rfl
+  simp only [finiteProgramFO, wires_append, Finset.union_subset_iff]
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨zeroFlagE L _ (by simp [fS]), pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩,
+    gatedE L hw _ _ (by simp [fS]) _⟩, genericFlagOP L⟩, hG⟩, genericFlagOP L⟩, cornersGP L _⟩,
+    pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩, gatedE L hw _ _ (by simp [fS]) _⟩,
+    zeroFlagE L _ (by simp [fS])⟩
+
+omit hn in
 theorem finiteProgramFG_support (C : Point) (cy : Fp) (Gen : Program)
     (hG : wires Gen ⊆ (sitesE L).toFinset) :
     wires (finiteProgramFG L C cy Gen) ⊆ (sitesE L).toFinset := by
-  have fS : flagsE L = [L.doubleSelect, L.genericSelect, L.core.generic, L.core.equalNegY] := rfl
-  simp only [finiteProgramFG, wires_append, Finset.union_subset_iff]
-  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _, gatedE L hw _ _ (by simp [fS]) _⟩,
-    genericFlagE L⟩, hG⟩, genericFlagE L⟩, zeroFlagE L _ (by simp [fS])⟩, cornersE L _⟩,
-    pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩, gatedE L hw _ _ (by simp [fS]) _⟩,
-    zeroFlagE L _ (by simp [fS])⟩
+  have fS : flagsE L = [L.doubleSelect, L.genericSelect, L.core.generic,
+    L.core.equalNegY] := rfl
 
 /-! The Skywalk generic block. -/
 
