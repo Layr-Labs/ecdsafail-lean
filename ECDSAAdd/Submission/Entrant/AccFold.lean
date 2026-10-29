@@ -25,9 +25,9 @@ def accZ (L : CuccaroStreamedSquareWideLayout) : List Wire := L.core.work.drop 1
 def accBank (L : CuccaroStreamedSquareWideLayout) : List Wire := L.foldPad.take 160
 
 def accFold (L : CuccaroStreamedSquareWideLayout) (a : AccItem) : Program :=
-  Acc.build (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms++
+  Acc.sbuild (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms++
     L.measuredCore.program SquareReduction.c SquareReduction.p++
-    Acc.unbuild (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms
+    Acc.sunbuild (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms
 
 def TermOK (f : MeasuredSquareFold) : Prop :=
   f.src.length+f.shift<163 ∧ 163-f.shift-f.src.length≤187 ∧ 163-f.shift-1≤160
@@ -121,12 +121,12 @@ theorem accFold_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have hA : A<2^163 := Acc.accVal_lt b0 163 a.terms 0 (by norm_num) valid0
   have accZero : regValue (accReg L) b0=0 :=
     (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
-  have hbuild := Acc.build_triple (accReg L) (accZ L) (accBank L) L.core.cin 163 lens.1 b0 hz hb
-    clean.cin a.terms fits 0 valid0
+  have hbuild := Acc.sbuild_triple (accReg L) (accZ L) (accBank L) L.core.cin 163 lens.1 b0 hz hb
+    clean.cin a.terms fits valid0
   rw [accFold,List.append_assoc,run_append,run_append]
-  let mb := measurementCount (Acc.build (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms)
+  let mb := measurementCount (Acc.sbuild (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms)
   let mk := measurementCount (L.measuredCore.program SquareReduction.c SquareReduction.p)
-  let u := run (Acc.build (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms) (m.take mb) s
+  let u := run (Acc.sbuild (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms) (m.take mb) s
   have eu := hbuild s (m.take mb) ⟨accZero,fun _ _ => rfl⟩
   change u.phase=s.phase ∧ SquareFrame (accReg L) b0 A u.basis at eu
   have keepU (q : Wire) (hq : q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
@@ -195,12 +195,12 @@ theorem accFold_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     intro f hf'
     exact (regValue_congr _ _ _ (fun q hq => (b2off q (srcAway f hf' q hq)))).symm
   have vc2 := Acc.valid_congr b0 base2 163 a.terms congr2 0
-  have hun := Acc.unbuild_triple (accReg L) (accZ L) (accBank L) L.core.cin 163 lens.1 base2 hz2 hb2 hi2
-    a.terms fits 0 (by norm_num) (vc2.1.mp valid0)
+  have hun := Acc.sunbuild_triple (accReg L) (accZ L) (accBank L) L.core.cin 163 lens.1 base2 hz2 hb2 hi2
+    a.terms fits (vc2.1.mp valid0)
   rw [←vc2.2] at hun
   have eo := hun v ((m.drop mb).drop mk) frame2
   refine ⟨eo.1.trans (ek.1.trans eu.1),?_,?_⟩
-  · have e : regValue L.core.out (run (Acc.unbuild (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms)
+  · have e : regValue L.core.out (run (Acc.sunbuild (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms)
         ((m.drop mb).drop mk) v).basis=regValue L.core.out v.basis := by
       apply regValue_congr; intro q hq
       have na : q∉accReg L := fun h => accOut q h hq
@@ -216,9 +216,9 @@ theorem accFold_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
 
 theorem accFold_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem)
     (ok : ∀f∈a.terms,TermOK f) :
-    toffoliCount (accFold L a)=2*Acc.buildT 163 a.terms+1023 ∧
-    measurementCount (accFold L a)=2*Acc.buildT 163 a.terms+1023 := by
-  have b := Acc.build_counts (accReg L) (accZ L) (accBank L) L.core.cin 163 (acc_lengths L hw).1 a.terms
+    toffoliCount (accFold L a)=2*Acc.sbuildT 163 a.terms+1023 ∧
+    measurementCount (accFold L a)=2*Acc.sbuildT 163 a.terms+1023 := by
+  have b := Acc.sbuild_counts (accReg L) (accZ L) (accBank L) L.core.cin 163 (acc_lengths L hw).1 a.terms
     (fun f hf => fitsLen_of L hw f (ok f hf))
   have k := L.measuredCore.secp_program_counts (L.measuredCore_widths hw) SquareReduction.c SquareReduction.p
   simp only [accFold,toffoliCount_append,measurementCount_append]
@@ -234,7 +234,7 @@ theorem accFold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (h
     simp only [List.mem_toFinset,List.mem_cons,CuccaroStreamedSquareWideLayout.wires,
       CuccaroStreamedSquareLayout.wires,foldPad,List.mem_append] at hq ⊢
     tauto
-  have b := Acc.build_support (accReg L) (accZ L) (accBank L) L.core.cin 163 (acc_lengths L hw).1 a.terms fits
+  have b := Acc.sbuild_support (accReg L) (accZ L) (accBank L) L.core.cin 163 (acc_lengths L hw).1 a.terms fits
     (control::L.wires).toFinset (by
       intro f hf q hq
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append,accReg,accZ,accBank] at hq
@@ -253,7 +253,7 @@ theorem accFold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (h
 theorem accFold_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (a : AccItem) (cnt : ∀f∈a.terms,∀q,f.src.count q≤L.core.product.count q) (ok : ∀f∈a.terms,TermOK f) :
     GatePhysical (accFold L a) := by
-  have b := Acc.build_physical (accReg L) (accZ L) (accBank L) L.core.cin 163 a.terms
+  have b := Acc.sbuild_physical (accReg L) (accZ L) (accBank L) L.core.cin 163 (acc_lengths L hw).1 a.terms
     (fun f hf => fits_of L hw hn f (cnt f hf) (ok f hf))
   have coreNd : L.measuredCore.wires.Nodup :=
     (List.nodup_cons.mp (by simpa using L.measuredFold_interfaces hn [] (by simp))).2
@@ -263,7 +263,7 @@ theorem accFold_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (
 theorem accFold_gateSlots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem)
     (ok : ∀f∈a.terms,TermOK f) :
     Challenge.gateSlots (accFold L a)≤2*(a.terms.length*(14*163))+(66*256+37) := by
-  have b := Acc.build_gateSlots (accReg L) (accZ L) (accBank L) L.core.cin 163 (acc_lengths L hw).1 a.terms
+  have b := Acc.sbuild_gateSlots (accReg L) (accZ L) (accBank L) L.core.cin 163 (acc_lengths L hw).1 a.terms
     (fun f hf => fitsLen_of L hw f (ok f hf))
   have k := Baselines.canonicalMod_gateSlots_le L.measuredCore 256 SquareReduction.c SquareReduction.p
     (L.measuredCore_widths hw)
@@ -425,14 +425,14 @@ def mixFoldsT : Bool → List MixItem → Nat
   | o,i::is => (if o=mixNeg i then 0 else 255)+
       (match i with
         | .inl f => 1023+(if f.canonical then 0 else 1022)
-        | .inr a => 2*Acc.buildT 163 a.terms+1023)+mixFoldsT (mixNeg i) is
+        | .inr a => 2*Acc.sbuildT 163 a.terms+1023)+mixFoldsT (mixNeg i) is
 
 def mixFoldsM : Bool → List MixItem → Nat
   | _,[] => 0
   | o,i::is => (if o=mixNeg i then 0 else 255)+
       (match i with
         | .inl f => 1023+(if f.canonical then 0 else 1020)
-        | .inr a => 2*Acc.buildT 163 a.terms+1023)+mixFoldsM (mixNeg i) is
+        | .inr a => 2*Acc.sbuildT 163 a.terms+1023)+mixFoldsM (mixNeg i) is
 
 def MixStatic (L : CuccaroStreamedSquareWideLayout) : MixItem → Prop
   | .inl f => ∀q,f.src.count q≤L.core.product.count q

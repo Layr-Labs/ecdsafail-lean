@@ -400,4 +400,253 @@ theorem build_gateSlots (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : 
     simp only [build,unbuild,Challenge.gateSlots_append,List.length_cons,Nat.add_mul,Nat.one_mul]
     constructor <;> omega
 
+/-! Seeded accumulation: when the first term is positive it is added into a
+zero accumulator, so the shifted window can be filled by a plain CX copy
+(no Toffoli); the matching last step of the clear is the same copy. -/
+
+def seedOp (acc Z : List Wire) (w : Nat) (f : MeasuredSquareFold) : Program :=
+  copyRegister none (tx Z w f) (ty acc f)
+
+def sbuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) : List MeasuredSquareFold → Program
+  | [] => []
+  | f::fs => (if f.negative then op acc Z bank cin w true f else seedOp acc Z w f)++
+      build acc Z bank cin w fs
+
+def sunbuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) : List MeasuredSquareFold → Program
+  | [] => []
+  | f::fs => unbuild acc Z bank cin w fs++
+      (if f.negative then op acc Z bank cin w false f else seedOp acc Z w f)
+
+def sbuildT (w : Nat) : List MeasuredSquareFold → Nat
+  | [] => 0
+  | f::fs => (if f.negative then w-f.shift-1 else 0)+buildT w fs
+
+theorem seed_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (f : MeasuredSquareFold)
+    (hacc : acc.length=w) (hf : Fits acc Z bank cin w f) (base : BasisState)
+    (hz : ∀q∈Z,base q=false) (V W : Nat)
+    (hVW : (V=0 ∧ W=regValue f.src base*2^f.shift) ∨ (V=regValue f.src base*2^f.shift ∧ W=0)) :
+    Triple (SquareFrame acc base V) (seedOp acc Z w f) (SquareFrame acc base W) := by
+  intro s m hs
+  have L := fits_lengths acc Z bank cin w f hacc hf.toFitsLen
+  have nd := fits_nodup acc Z bank cin w f hf
+  have xy : (tx Z w f++ty acc f).Nodup :=
+    (List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)
+  have hnd := List.nodup_iff_count_le_one.mp hf.nd
+  have away (q : Wire) (hq : q∈f.src++Z) : q∉acc := by
+    intro bad
+    have h := hnd q
+    have a := List.count_pos_iff.mpr bad
+    have b := List.count_pos_iff.mpr hq
+    simp only [List.count_cons,List.count_append] at h b
+    split at h <;> omega
+  have xv : regValue (tx Z w f) s.basis=regValue f.src base := by
+    have zero : regValue (Z.take (w-f.shift-f.src.length)) s.basis=0 := by
+      apply (regValue_zero _ _).mpr
+      intro q hq
+      have hq' := List.mem_of_mem_take hq
+      exact (hs.2 q (away q (by simp [hq']))).trans (hz q hq')
+    have src : regValue f.src s.basis=regValue f.src base :=
+      regValue_congr _ _ _ (fun q hq => hs.2 q (away q (by simp [hq])))
+    simp only [tx,regValue_append,zero,src,Nat.mul_zero,Nat.add_zero]
+  have accNd : acc.Nodup := by
+    apply List.nodup_iff_count_le_one.mpr; intro q
+    have h := hnd q
+    simp only [List.count_cons,List.count_append] at h
+    split at h <;> omega
+  have dis := List.disjoint_take_drop accNd (show f.shift≤f.shift by omega)
+  have shiftLe : f.shift≤acc.length := by have := hf.len; omega
+  have split (t : BasisState) : regValue acc t=regValue (acc.take f.shift) t+2^f.shift*regValue (ty acc f) t := by
+    have h := regValue_append (acc.take f.shift) (acc.drop f.shift) t
+    rw [List.take_append_drop,List.length_take,Nat.min_eq_left shiftLe] at h
+    exact h
+  have lowLt : regValue (acc.take f.shift) s.basis<2^f.shift := by
+    have h := regValue_lt (acc.take f.shift) s.basis
+    rwa [List.length_take,Nat.min_eq_left shiftLe] at h
+  have pos : 0<2^f.shift := Nat.two_pow_pos _
+  have vs := split s.basis
+  rw [hs.1] at vs
+  have vmod : V%2^f.shift=0 := by
+    rcases hVW with ⟨rfl,_⟩|⟨rfl,_⟩
+    · simp
+    · exact Nat.mul_mod_left _ _
+  have low0 : regValue (acc.take f.shift) s.basis=0 := by
+    have h := congrArg (· % 2^f.shift) vs
+    simp only [Nat.add_mul_mod_self_left,Nat.mod_eq_of_lt lowLt] at h
+    omega
+  have yv : regValue (ty acc f) s.basis*2^f.shift=V := by
+    rw [low0,Nat.zero_add] at vs; rw [vs, Nat.mul_comm]
+  have cp := copyRegister_correct none (tx Z w f) (ty acc f) L.1 xy (by simp) s m
+  simp only [copyValue] at cp
+  let r := run (seedOp acc Z w f) m s
+  have lowSame : regValue (acc.take f.shift) r.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => cp.2.1 q (fun hy => List.disjoint_left.mp dis hq hy))).trans low0
+  refine ⟨cp.1,?_,?_⟩
+  · change regValue acc r.basis=W
+    rw [split r.basis,lowSame,Nat.zero_add]
+    change 2^f.shift*regValue (ty acc f) (run (copyRegister none (tx Z w f) (ty acc f)) m s).basis=W
+    rw [cp.2.2,xv]
+    rcases hVW with ⟨rfl,rfl⟩|⟨rfl,rfl⟩
+    · have y0 : regValue (ty acc f) s.basis=0 := by
+        have := yv; rw [Nat.mul_eq_zero] at this
+        rcases this with h|h
+        · exact h
+        · omega
+      rw [y0,Nat.zero_xor,Nat.mul_comm]
+    · have yT : regValue (ty acc f) s.basis=regValue f.src base :=
+        Nat.eq_of_mul_eq_mul_right pos yv
+      rw [yT,Nat.xor_self,Nat.mul_zero]
+  · intro q hq
+    have hy : q∉ty acc f := fun h => hq (List.mem_of_mem_drop h)
+    exact (cp.2.1 q hy).trans (hs.2 q hq)
+
+theorem sbuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false) (hi : base cin=false)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (hv : Valid base w 0 fs) :
+    Triple (SquareFrame acc base 0) (sbuild acc Z bank cin w fs)
+      (SquareFrame acc base (accVal base 0 fs)) := by
+  cases fs with
+  | nil => intro s m h; exact ⟨rfl,h⟩
+  | cons f fs =>
+    have hf1 := hf f (by simp)
+    have rest := build_triple acc Z bank cin w hacc base hz hb hi fs
+      (fun g hg => hf g (by simp [hg])) _ hv.2
+    have first : Triple (SquareFrame acc base 0)
+        (if f.negative then op acc Z bank cin w true f else seedOp acc Z w f)
+        (SquareFrame acc base (step base f.negative 0 f)) := by
+      have h1 := hv.1
+      cases hn : f.negative
+      · simp only [Bool.false_eq_true,if_false]
+        apply seed_triple acc Z bank cin w f hacc hf1 base hz
+        left; simp [step]
+      · simp only [if_true]
+        simp only [hn,if_true] at h1
+        exact op_triple acc Z bank cin w f hacc hf1 base hz hb hi true 0 (by simpa using h1)
+    exact first.seq rest
+
+theorem sunbuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false) (hi : base cin=false)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (hv : Valid base w 0 fs) :
+    Triple (SquareFrame acc base (accVal base 0 fs)) (sunbuild acc Z bank cin w fs)
+      (SquareFrame acc base 0) := by
+  cases fs with
+  | nil => intro s m h; exact ⟨rfl,h⟩
+  | cons f fs =>
+    have hf1 := hf f (by simp)
+    have V1 := step_valid_lt base w 0 f (Nat.two_pow_pos w) hv.1
+    have rest := unbuild_triple acc Z bank cin w hacc base hz hb hi fs
+      (fun g hg => hf g (by simp [hg])) _ V1 hv.2
+    have last : Triple (SquareFrame acc base (step base f.negative 0 f))
+        (if f.negative then op acc Z bank cin w false f else seedOp acc Z w f)
+        (SquareFrame acc base 0) := by
+      have h1 := hv.1
+      have pw := Nat.two_pow_pos w
+      cases hn : f.negative
+      · simp only [Bool.false_eq_true,if_false]
+        apply seed_triple acc Z bank cin w f hacc hf1 base hz
+        right; simp [step]
+      · simp only [if_true]
+        simp only [hn,if_true] at h1
+        have h2 := op_triple acc Z bank cin w f hacc hf1 base hz hb hi false (step base true 0 f)
+          (by simp only [step,if_true,Bool.false_eq_true,if_false]; omega)
+        have back : step base false (step base true 0 f) f=0 := by
+          simp only [step,if_true,Bool.false_eq_true,if_false]; omega
+        rw [back] at h2; exact h2
+    exact rest.seq last
+
+theorem seed_counts (acc Z bank : List Wire) (cin : Wire) (w : Nat) (f : MeasuredSquareFold)
+    (hacc : acc.length=w) (hf : FitsLen Z bank w f) :
+    toffoliCount (seedOp acc Z w f)=0 ∧ measurementCount (seedOp acc Z w f)=0 := by
+  have L := fits_lengths acc Z bank cin w f hacc hf
+  have c := copyRegister_counts none (tx Z w f) (ty acc f) L.1
+  simpa [seedOp] using c
+
+theorem sbuild_counts (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,FitsLen Z bank w f) :
+    (toffoliCount (sbuild acc Z bank cin w fs)=sbuildT w fs ∧
+      measurementCount (sbuild acc Z bank cin w fs)=sbuildT w fs) ∧
+    (toffoliCount (sunbuild acc Z bank cin w fs)=sbuildT w fs ∧
+      measurementCount (sunbuild acc Z bank cin w fs)=sbuildT w fs) := by
+  cases fs with
+  | nil => simp [sbuild,sunbuild,sbuildT,toffoliCount,measurementCount]
+  | cons f fs =>
+    have t := build_counts acc Z bank cin w hacc fs (fun g hg => hf g (by simp [hg]))
+    have c := seed_counts acc Z bank cin w f hacc (hf f (by simp))
+    have a := op_counts acc Z bank cin w true f hacc (hf f (by simp))
+    have b := op_counts acc Z bank cin w false f hacc (hf f (by simp))
+    cases hn : f.negative <;>
+      simp only [sbuild,sunbuild,sbuildT,hn,if_true,Bool.false_eq_true,if_false,
+        toffoliCount_append,measurementCount_append] <;> omega
+
+theorem seed_support (acc Z bank : List Wire) (cin : Wire) (w : Nat) (f : MeasuredSquareFold)
+    (hacc : acc.length=w) (hf : Fits acc Z bank cin w f) :
+    wires (seedOp acc Z w f)⊆(cin::(f.src++acc++Z++bank)).toFinset := by
+  have L := fits_lengths acc Z bank cin w f hacc hf.toFitsLen
+  have h := op_support acc Z bank cin w false f hacc hf
+  rw [op_wires acc Z bank cin w false f hacc hf] at h
+  refine Finset.Subset.trans ?_ h
+  rw [seedOp,copyRegister_wires none _ _ L.1]
+  split
+  · exact Finset.empty_subset _
+  · intro q hq
+    simp only [List.mem_toFinset,List.mem_append,List.mem_cons,Option.toList_none,List.nil_append] at hq ⊢
+    tauto
+
+theorem sbuild_support (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (S : Finset Wire)
+    (hS : ∀f∈fs,(cin::(f.src++acc++Z++bank)).toFinset⊆S) :
+    wires (sbuild acc Z bank cin w fs)⊆S ∧ wires (sunbuild acc Z bank cin w fs)⊆S := by
+  cases fs with
+  | nil => simp [sbuild,sunbuild,wires]
+  | cons f fs =>
+    have t := build_support acc Z bank cin w hacc fs (fun g hg => hf g (by simp [hg])) S
+      (fun g hg => hS g (by simp [hg]))
+    have hf1 := hf f (by simp)
+    have hS1 := hS f (by simp)
+    have first (neg : Bool) : wires (if f.negative then op acc Z bank cin w neg f else seedOp acc Z w f)⊆S := by
+      split
+      · exact (op_support acc Z bank cin w neg f hacc hf1).trans hS1
+      · exact (seed_support acc Z bank cin w f hacc hf1).trans hS1
+    simp only [sbuild,sunbuild,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨first true,t.1⟩,⟨t.2,first false⟩⟩
+
+theorem sbuild_physical (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) :
+    GatePhysical (sbuild acc Z bank cin w fs) ∧ GatePhysical (sunbuild acc Z bank cin w fs) := by
+  cases fs with
+  | nil => simp [sbuild,sunbuild,GatePhysical]
+  | cons f fs =>
+    have t := build_physical acc Z bank cin w fs (fun g hg => hf g (by simp [hg]))
+    have hf1 := hf f (by simp)
+    have first (neg : Bool) : GatePhysical (if f.negative then op acc Z bank cin w neg f else seedOp acc Z w f) := by
+      split
+      · exact op_physical _ _ _ _ _ _ _ hf1
+      · have L := fits_lengths acc Z bank cin w f hacc hf1.toFitsLen
+        have nd := fits_nodup acc Z bank cin w f hf1
+        exact copyRegister_physical none _ _
+          ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
+    simp only [sbuild,sunbuild,gatePhysical_append]
+    exact ⟨⟨first true,t.1⟩,⟨t.2,first false⟩⟩
+
+theorem sbuild_gateSlots (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,FitsLen Z bank w f) :
+    Challenge.gateSlots (sbuild acc Z bank cin w fs)≤fs.length*(14*w) ∧
+      Challenge.gateSlots (sunbuild acc Z bank cin w fs)≤fs.length*(14*w) := by
+  cases fs with
+  | nil => simp [sbuild,sunbuild,Challenge.gateSlots]
+  | cons f fs =>
+    have t := build_gateSlots acc Z bank cin w hacc fs (fun g hg => hf g (by simp [hg]))
+    have L := fits_lengths acc Z bank cin w f hacc (hf f (by simp))
+    have first (neg : Bool) :
+        Challenge.gateSlots (if f.negative then op acc Z bank cin w neg f else seedOp acc Z w f)≤14*w := by
+      split
+      · have a := op_gateSlots acc Z bank cin w neg f
+        rw [L.1,L.2.2] at a; omega
+      · have c : Challenge.gateSlots (seedOp acc Z w f)≤(tx Z w f).length := by
+          simp [seedOp,Baselines.copyRegister_gateSlots]
+        rw [L.1,L.2.2] at c; omega
+    have f1 := first true
+    have f2 := first false
+    simp only [sbuild,sunbuild,Challenge.gateSlots_append,List.length_cons,Nat.add_mul,Nat.one_mul]
+    constructor <;> omega
+
 end ECDSAAdd.Entrant.Acc
