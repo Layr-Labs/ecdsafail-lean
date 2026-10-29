@@ -24,7 +24,8 @@ def topSlice (L : CuccaroStreamedSquareWideLayout) (j : Nat) : List Wire :=
   (L.core.product.take 256).drop (256-j)
 def rotF (L : CuccaroStreamedSquareWideLayout) (neg : Bool) (j : Nat) : MeasuredSquareFold :=
   {negative:=neg,canonical:=false,src:=rotateFull (L.core.product.take 256) j}
-/-- Same rotated source, folded without source normalization (proved canonical). -/
+/-- The rotation by 32 of a 128-bit square is already canonical (`rot32_canonical`),
+so its fold needs no normalize/restore pair. -/
 def rotC (L : CuccaroStreamedSquareWideLayout) (neg : Bool) (j : Nat) : MeasuredSquareFold :=
   {negative:=neg,canonical:=true,src:=rotateFull (L.core.product.take 256) j}
 def posTop (L : CuccaroStreamedSquareWideLayout) : MeasuredSquareFold :=
@@ -216,30 +217,28 @@ theorem accA_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     exact ⟨st.1,st.2,validA L hw t⟩
   · exact L.measuredA_views hw t M hM hp _ (by simp [measuredAItems,negP])
 
-theorem square_mod8 (M : Nat) : M^2%8≠5 ∧ M^2%8≠6 ∧ M^2%8≠7 := by
-  have h : M^2%8=(M%8)^2%8 := Nat.pow_mod M 2 8
-  have lt := Nat.mod_lt M (show 8>0 by norm_num)
-  rw [h]
-  interval_cases (M%8) <;> decide
+/-- No integer square is 6 or 7 modulo 8. -/
+theorem square_mod8_ne67 (Y : Nat) : Y^2%8≠6 ∧ Y^2%8≠7 := by
+  have bound := Nat.mod_lt Y (by decide : 0<8)
+  rw [Nat.pow_mod]
+  interval_cases h : Y%8 <;> norm_num
 
-/-- A square below 2^256 rotated by 32 is already below p: the low 224 bits
-cannot be among the three largest residues, which are 5, 6, 7 mod 8. -/
-theorem rot32_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
-    regValue (rotateFull (L.core.product.take 256) 32) t*2^0<SquareReduction.p := by
-  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  rw [L.rotateFull_value hw t (M^2) hp 32 (by omega),Nat.mod_eq_of_lt hb]
-  have m8 := square_mod8 M
-  have e : M^2%2^(256-32)%8=M^2%8 := Nat.mod_mod_of_dvd _ (by norm_num)
-  have hH : M^2/2^(256-32)<2^32 := by
-    rw [Nat.div_lt_iff_lt_mul (by positivity)]
-    calc M^2<2^256 := hb
-      _ = 2^32*2^(256-32) := by norm_num
-  have hL := Nat.mod_lt (M^2) (show 2^(256-32)>0 by positivity)
-  generalize M^2/2^(256-32)=H at hH ⊢
-  generalize hX : M^2%2^(256-32)=X at hL e ⊢
-  rw [←e] at m8
-  norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at hH hL ⊢
+/-- Rotating a 256-bit square left by 32 stays below p: reaching p would need
+the square's low 224 bits to be `2^224-1` or `2^224-2`, i.e. 7 or 6 mod 8. -/
+theorem rot32_canonical (Y : Nat) (hb : Y^2<2^256) :
+    (Y^2%2^256)/2^224+2^32*((Y^2%2^256)%2^224)<SquareReduction.p := by
+  rw [Nat.mod_eq_of_lt hb]
+  have hH : Y^2/2^224<2^32 := by
+    apply Nat.div_lt_of_lt_mul; norm_num at hb ⊢; omega
+  have hLo : Y^2%2^224<2^224 := Nat.mod_lt _ (by positivity)
+  have h8 : (Y^2%2^224)%8=Y^2%8 := Nat.mod_mod_of_dvd _ (by norm_num : 8 ∣ 2^224)
+  have n67 := square_mod8_ne67 Y
+  have hne1 : Y^2%2^224≠2^224-1 := by
+    intro e; rw [e] at h8; norm_num at h8; omega
+  have hne2 : Y^2%2^224≠2^224-2 := by
+    intro e; rw [e] at h8; norm_num at h8; omega
+  have hle : Y^2%2^224≤2^224-3 := by omega
+  norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at hH hle ⊢
   omega
 
 theorem accB_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
@@ -252,9 +251,13 @@ theorem accB_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,negP])
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,rotF])
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,rotF])
-  · have v := L.measuredB_views hw t M hM hp (rotF L true 32)
+  · have base := L.measuredB_views hw t M hM hp (rotF L true 32)
       (by simp [measuredBItems,shiftedProductItems,rotF])
-    exact ⟨v.count,v.span,fun _ => rot32_canonical L hw t M hM hp⟩
+    refine ⟨base.count,base.span,fun _ => ?_⟩
+    have hv := L.rotateFull_value hw t (M^2) hp 32 (by omega)
+    change regValue (rotateFull (L.core.product.take 256) 32) t*2^0<SquareReduction.p
+    rw [hv, pow_zero, Nat.mul_one]
+    simpa using rot32_canonical M hb
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,rotF])
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,rot128F])
   · have st := sorted_static L hw (accBRaw L) (fun f hf => raw_static L hw f (Or.inr (Or.inl hf)))
