@@ -67,6 +67,75 @@ theorem shortCode_eq_iff (R C : Point) : shortCode R = shortCode C ↔ R = C := 
         subst u; subst v; rfl
   · rintro rfl; rfl
 
+/-! No secp256k1 point has `x = 0`: `7` is a quadratic non-residue mod `p`. -/
+
+theorem seven_pow_half_ne : (7 : Fp) ^ (p / 2) ≠ 1 := by
+  unfold Fp p
+  reduce_mod_char
+  try decide
+
+theorem seven_ne_zero : (7 : Fp) ≠ 0 := by
+  unfold Fp p
+  reduce_mod_char
+  try decide
+
+theorem curve_x_ne_zero {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) : cx ≠ 0 := by
+  intro h0
+  have he := hc.1
+  rw [curve.toAffine.equation_iff] at he
+  subst h0
+  have h7 : cy ^ 2 = 7 := by simpa [curve, curveA, curveB] using he
+  haveI : Fact (Nat.Prime p) := ⟨p_prime⟩
+  have hcy : cy ≠ 0 := by
+    rintro rfl
+    exact seven_ne_zero (by rw [← h7]; ring)
+  have hferm : cy ^ (p - 1) = 1 := ZMod.pow_card_sub_one_eq_one hcy
+  have hp : 2 * (p / 2) = p - 1 := by norm_num [p]
+  apply seven_pow_half_ne
+  rw [← h7, ← pow_mul, hp, hferm]
+
+/-- The abscissa alone decides finiteness (infinity is encoded with `x = 0`). -/
+theorem finite_of_x_eq (R C : Point) (h : pointX R = pointX C) : pointFinite R = pointFinite C := by
+  have z0 : pointX (WeierstrassCurve.Affine.Point.zero : Point) = 0 := by
+    rfl
+  cases R with
+  | zero =>
+    cases C with
+    | zero => rfl
+    | @some u v hc =>
+      exfalso
+      have hu : pointX (.some hc) = u.val := rfl
+      rw [z0, hu] at h
+      exact curve_x_ne_zero hc ((ZMod.val_eq_zero u).mp h.symm)
+  | @some x y hr =>
+    cases C with
+    | zero =>
+      exfalso
+      have hx : pointX (.some hr) = x.val := rfl
+      rw [z0, hx] at h
+      exact curve_x_ne_zero hr ((ZMod.val_eq_zero x).mp h)
+    | @some u v hc => rfl
+
+/-- `x` and the low bit of `y` determine a point. -/
+def shortCodeX (R : Point) : Nat := pointX R + 2^256 * (pointY R % 2)
+
+theorem shortCodeX_eq_iff (R C : Point) : shortCodeX R = shortCodeX C ↔ shortCode R = shortCode C := by
+  have hp : p < 2^256 := by norm_num [p]
+  have hxr := (point_coordinates_lt R).1
+  have hxc := (point_coordinates_lt C).1
+  have hyR : pointY R % 2 < 2 := Nat.mod_lt _ (by decide)
+  have hyC : pointY C % 2 < 2 := Nat.mod_lt _ (by decide)
+  have hfR : (pointFinite R).toNat ≤ 1 := by cases pointFinite R <;> decide
+  have hfC : (pointFinite C).toNat ≤ 1 := by cases pointFinite C <;> decide
+  unfold shortCodeX shortCode
+  constructor
+  · intro h
+    have hx : pointX R = pointX C := by omega
+    have hy : pointY R % 2 = pointY C % 2 := by omega
+    rw [finite_of_x_eq R C hx, hx, hy]
+  · intro h
+    omega
+
 theorem regValue_take_one (y : List Wire) (s : BasisState) :
     regValue (y.take 1) s = regValue y s % 2 := by
   cases y with
