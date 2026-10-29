@@ -1,5 +1,5 @@
 import ECDSAAdd.Submission.Entrant.FastSquare
-import ECDSAAdd.Submission.Entrant.FlagG
+import ECDSAAdd.Submission.Entrant.EKFree
 import ECDSAAdd.Submission.Entrant.Arith2
 
 /-! Support, frame, resources and validity of `finiteProgramE`.
@@ -13,7 +13,7 @@ namespace ECDSAAdd.Entrant
 open Arithmetic MappedCompressed Secp256k1 ControlledPointLayout CompressedPointDialog
 
 def flagsE (L : ControlledPointLayout) : List Wire :=
-  [L.doubleSelect, L.genericSelect, L.core.generic, L.core.equalNegY]
+  [L.infinitySelect, L.doubleSelect, L.genericSelect, L.core.generic, L.core.equalNegY]
 
 /-- The certified pool inventory without sites 1541 and 1801. -/
 def sharedPoolF (L : ControlledPointLayout) : List Wire :=
@@ -23,7 +23,7 @@ def sharedPoolF (L : ControlledPointLayout) : List Wire :=
 def sitesE (L : ControlledPointLayout) : List Wire :=
   PointAddLayout.pointWires L.point ++ [L.control] ++ flagsE L ++ sharedPoolF L
 
-theorem sitesE_length (L : ControlledPointLayout) (hw : L.Widths) : (sitesE L).length = 1894 := by
+theorem sitesE_length (L : ControlledPointLayout) (hw : L.Widths) : (sitesE L).length = 1895 := by
   simp [sitesE, flagsE, sharedPoolF, PointAddLayout.pointWires, wireBlock_length,
     show L.point.x.length = 256 from hw.inputX, show L.point.y.length = 256 from hw.inputY]
 
@@ -84,7 +84,7 @@ include hn
 omit hw hn in
 theorem E_of_sites (q : Wire) (hq : q ∈ CompressedPointSquare.residents L ++ CompressedPointSquare.sharedPool L)
     (h1 : q ≠ L.core.poolWire 1801) (h1' : q ≠ L.core.poolWire 1541)
-    (h2 : q ≠ L.core.equalX) (h3 : q ≠ L.core.double) (h4 : q ≠ L.infinitySelect) :
+    (h2 : q ≠ L.core.equalX) (h3 : q ≠ L.core.double) :
     q ∈ sitesE L := by
   rcases List.mem_append.mp hq with hr | hp
   · simp only [CompressedPointSquare.residents, inPlaceFlags, List.mem_append, List.mem_cons,
@@ -93,7 +93,7 @@ theorem E_of_sites (q : Wire) (hq : q ∈ CompressedPointSquare.residents L ++ C
     · exact point_E L q hp
     · rw [hc]; exact control_E L
     · rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact absurd rfl h4
+      · exact flag_E L _ (by simp [flagsE])
       · exact flag_E L _ (by simp [flagsE])
       · exact flag_E L _ (by simp [flagsE])
       · exact flag_E L _ (by simp [flagsE])
@@ -152,15 +152,17 @@ theorem zeroFlagE (t : Wire) (ht : t ∈ flagsE L) :
   · exact flag_E L _ ht
 
 omit hw hn in
-theorem genericFlagE : wires (genericFlag2 L) ⊆ (sitesE L).toFinset := by
+theorem genericFlagE : wires (pointDialogGenericFlag L) ⊆ (sitesE L).toFinset := by
   intro q hq
-  simp [genericFlag2, wires, Instr.wires] at hq
+  simp [pointDialogGenericFlag, pointInPlaceGenericFlag, wires, Instr.wires] at hq
   apply List.mem_toFinset.mpr
   rcases hq with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals simp [sitesE, flagsE, PointAddLayout.pointWires]
+  all_goals first
+    | exact control_E L
+    | exact flag_E L _ (by simp [flagsE])
 
 omit hw hn in
-theorem cornersE (C : Point) : wires (corners2 L C) ⊆ (sitesE L).toFinset := by
+theorem cornersE (C : Point) : wires (pointDialogCorners L C) ⊆ (sitesE L).toFinset := by
   have m (c : Wire) (hc : c ∈ flagsE L) (P : Point) :
       wires (maskedPointConstant c L.point P) ⊆ (sitesE L).toFinset := by
     intro q hq
@@ -169,18 +171,19 @@ theorem cornersE (C : Point) : wires (corners2 L C) ⊆ (sitesE L).toFinset := b
     rcases List.mem_cons.mp h with rfl | h
     · exact flag_E L _ hc
     · exact point_E L _ h
-  simp only [corners2, wires_append, Finset.union_subset_iff]
+  simp only [pointDialogCorners, pointInPlaceCorners, wires_append, Finset.union_subset_iff]
   exact ⟨⟨⟨⟨⟨m _ (by simp [flagsE]) _, m _ (by simp [flagsE]) _⟩, m _ (by simp [flagsE]) _⟩,
     m _ (by simp [flagsE]) _⟩, m _ (by simp [flagsE]) _⟩, m _ (by simp [flagsE]) _⟩
 
 omit hn in
-theorem finiteProgramFG_support (C : Point) (cy : Fp) (Gen : Program)
+theorem finiteProgramEG_support (C : Point) (cy : Fp) (Gen : Program)
     (hG : wires Gen ⊆ (sitesE L).toFinset) :
-    wires (finiteProgramFG L C cy Gen) ⊆ (sitesE L).toFinset := by
-  have fS : flagsE L = [L.doubleSelect, L.genericSelect, L.core.generic, L.core.equalNegY] := rfl
-  simp only [finiteProgramFG, wires_append, Finset.union_subset_iff]
-  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _, gatedE L hw _ _ (by simp [fS]) _⟩,
-    genericFlagE L⟩, hG⟩, genericFlagE L⟩, zeroFlagE L _ (by simp [fS])⟩, cornersE L _⟩,
+    wires (finiteProgramEG L C cy Gen) ⊆ (sitesE L).toFinset := by
+  have fS : flagsE L = [L.infinitySelect, L.doubleSelect, L.genericSelect, L.core.generic,
+    L.core.equalNegY] := rfl
+  simp only [finiteProgramEG, wires_append, Finset.union_subset_iff]
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨zeroFlagE L _ (by simp [fS]), pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩,
+    gatedE L hw _ _ (by simp [fS]) _⟩, genericFlagE L⟩, hG⟩, cornersE L _⟩, genericFlagE L⟩,
     pairE L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _⟩, gatedE L hw _ _ (by simp [fS]) _⟩,
     zeroFlagE L _ (by simp [fS])⟩
 
@@ -198,7 +201,7 @@ theorem arithE (multiply : Bool) :
     rw [← this, swap2_involutive]
   have mem (k : Nat) (hk : k ∈ indices) : base k ∈ slots.toFinset :=
     List.mem_toFinset.mpr (List.mem_map.mpr ⟨k, hk, rfl⟩)
-  have hidx (k : Nat) (h : k = 2313 ∨ k = 2406 ∨ k = 2408 ∨ k = 769 ∨ k = 2403) : k ∈ indices := by
+  have hidx (k : Nat) (h : k = 2313 ∨ k = 2406 ∨ k = 2408 ∨ k = 769) : k ∈ indices := by
     simp only [indices, List.mem_append, List.mem_range'_1]; omega
   apply List.mem_toFinset.mpr
   apply E_of_sites L _ (List.mem_toFinset.mp inv)
@@ -226,12 +229,6 @@ theorem arithE (multiply : Bool) :
     have himg : pointWireFn L (base 2408) = L.core.double := by
       rw [pointWireFn_base]; exact (pointIndexWire_metadata L).2.2.2.2.2.2.2.2.1
     have := avoid 2408 (mem _ (hidx 2408 (by omega))) (himg.trans e.symm)
-    rw [swap2_fix _ (by decide) (by decide)] at this
-    subst this; exact hgood (by simp [base])
-  · intro e
-    have himg : pointWireFn L (base 2403) = L.infinitySelect := by
-      rw [pointWireFn_base]; exact (pointIndexWire_metadata L).2.2.2.1
-    have := avoid 2403 (mem _ (hidx 2403 (by omega))) (himg.trans e.symm)
     rw [swap2_fix _ (by decide) (by decide)] at this
     subst this; exact hgood (by simp [base])
 
