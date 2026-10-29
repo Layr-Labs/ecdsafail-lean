@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.QProgram
+import ECDSAAdd.Submission.Entrant.Program
 
 /-! Entrant: Skywalk with flag-only infinity tests (see `ZeroFlag.lean`).
 All semantics and metric definitions remain in the protected challenge. -/
@@ -13,7 +13,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2214318, 1554854, 1898, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2212778, 1553319, 1899, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -27,36 +27,30 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgram_support layout layout_widths layout_nodup _ cx cy).trans
         (sites_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2214318 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2212778 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc => exact (finiteProgram_counts layout layout_widths layout_nodup _ cx cy).1
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1554854 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1553319 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc => exact (finiteProgram_counts layout layout_widths layout_nodup _ cx cy).2.le
 
-theorem io_subset_sitesQ : ioWires ⊆ (sitesQ layout).toFinset := by
-  intro w hw
-  have h := io_partition w hw
-  simp only [sitesQ, CompressedPointSquare.residents, List.mem_toFinset, List.mem_append,
-    List.mem_cons, List.not_mem_nil, or_false]
-  rcases h with hp | hc
-  · exact Or.inl (Or.inl (Or.inl hp))
-  · exact Or.inl (Or.inl (Or.inr hc))
-
-/-- Static support excludes the pool site the arithmetic never touches (`QSupport.lean`). -/
-theorem program_qubits (C : Point) : qubits (program C) ≤ 1898 := by
+theorem program_qubits (C : Point) : qubits (program C) ≤ 1899 := by
   cases C with
   | zero =>
-    change qubits [] ≤ 1898
+    change qubits [] ≤ 1899
     rw [qubits_empty]
     decide
   | @some cx cy hc =>
-    have support := finiteProgram_supportQ layout layout_widths layout_nodup (.some hc) cx cy
-    have card := Finset.card_le_card (Finset.union_subset io_subset_sitesQ support)
-    exact card.trans ((List.toFinset_card_le _).trans_eq (sitesQ_length layout layout_widths))
+    have support := finiteProgram_support layout layout_widths layout_nodup (.some hc) cx cy
+    have card := Finset.card_le_card (Finset.union_subset io_subset_sites support)
+    have length : (CompressedPointDialog.sites layout).length = 1899 := by
+      rw [CompressedPointDialog.sites, List.length_append,
+        CompressedPointSquare.residents_length layout layout_widths,
+        CompressedPointSquare.sharedPool_length]
+    exact card.trans ((List.toFinset_card_le _).trans_eq length)
 
 theorem program_physical (C : Point) : GatePhysical (program C) := by
   cases C with
@@ -73,11 +67,11 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1554854
+    change measurementCount (normalizeProgram (program C)) ≤ 1553319
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
-    change qubits (normalizeProgram (program C)) ≤ 1898
+    change qubits (normalizeProgram (program C)) ≤ 1899
     rw [normalize_qubits]
     exact program_qubits C
   gateSlots_le C := by
