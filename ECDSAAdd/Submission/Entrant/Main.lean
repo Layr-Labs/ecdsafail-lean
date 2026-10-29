@@ -35,24 +35,32 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgramFG_support layout layout_widths _ cy _ hG).trans
         (sitesE_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2186176 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤
+    (if exceptionBit C then 2186176 else 2185919) := by
   cases C with
-  | zero => simp [program, toffoliCount]
+  | zero => simp [program, toffoliCount, exceptionBit]
   | @some cx cy hc =>
     have h := (finiteProgramFG_counts layout layout_widths (.some hc) cy
       (fastGeneric2 layout cx cy) hc rfl).1
     have g := (fastGeneric2_counts layout layout_widths cx cy).1
     change toffoliCount (finiteProgramFG layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
+    have hC : (exceptionBit (.some hc : Point)) = exceptionBit C := by
+      cases C with | zero => rfl | @some _ _ _ => rfl
+    simp only [← hC]
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1526715 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤
+    (if exceptionBit C then 1526715 else 1526458) := by
   cases C with
-  | zero => simp [program, measurementCount]
+  | zero => simp [program, measurementCount, exceptionBit]
   | @some cx cy hc =>
     have h := (finiteProgramFG_counts layout layout_widths (.some hc) cy
       (fastGeneric2 layout cx cy) hc rfl).2
     have g := (fastGeneric2_counts layout layout_widths cx cy).2
     change measurementCount (finiteProgramFG layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
+    have hC : (exceptionBit (.some hc : Point)) = exceptionBit C := by
+      cases C with | zero => rfl | @some _ _ _ => rfl
+    simp only [← hC]
     omega
 
 theorem io_subset_sitesE : ioWires ⊆ (sitesE layout).toFinset := by
@@ -97,11 +105,16 @@ theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 47000000 := by
 theorem certificate : Challenge.Certificate entry bounds where
   correct C b R := (normalize_triple _ _ _).mpr (program_correct C b R)
   physical C := normalize_physical _ (program_physical C)
-  toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
+  toffoli_le C := by
+    have h := (normalize_toffoli _).trans (program_toffoli C)
+    cases he : exceptionBit C
+    · simpa only [he, bounds] using h.trans (by decide : (2185919:Nat) ≤ 2186176)
+    · simpa only [he, bounds] using h
   measurements_le C := by
     change measurementCount (normalizeProgram (program C)) ≤ 1526715
     rw [normalize_measurements]
-    exact program_measurements C
+    have h := program_measurements C
+    cases he : exceptionBit C <;> simpa only [he] using h
   qubits_le C := by
     change qubits (normalizeProgram (program C)) ≤ 1894
     rw [normalize_qubits]

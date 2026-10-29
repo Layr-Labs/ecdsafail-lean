@@ -97,8 +97,14 @@ theorem finiteProgramFG_counts (L : ControlledPointLayout) (hw : L.Widths) (C : 
     subst hC
     rw [yBit_neg hc]
     cases yBit (.some hc) <;> cases exceptionBit (.some hc) <;> decide
-  have g1 := gatedShort_counts L hw (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C)
-  have g2 := gatedShort_counts L hw (decide (cy≠-cy)) L.doubleSelect (C+C)
+  have g1 : toffoliCount (gatedShort L (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C)) ≤
+      (if exceptionBit C then 257 else 0) ∧
+      measurementCount (gatedShort L (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C)) ≤
+      (if exceptionBit C then 257 else 0) := by
+    cases he : exceptionBit C
+    · simp [he, gatedShort, toffoliCount, measurementCount]
+    · have h := shortEqual_counts L hw L.control L.core.equalNegY (dialogExceptionPoint C)
+      simp only [gatedShort, he, if_true, h.1, h.2, le_refl, and_self]
   have z1 := zeroFlag_counts L.point.finite L.control L.core.generic
   have z2 : toffoliCount (chainErase L.control L.point.finite L.genericSelect) = 0 ∧
       measurementCount (chainErase L.control L.point.finite L.genericSelect) = 1 := by
