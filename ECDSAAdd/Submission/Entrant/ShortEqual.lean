@@ -1,22 +1,76 @@
 import ECDSAAdd.Submission.Entrant.ZeroFlag
-import Mathlib.Tactic.ReduceModChar
 
 /-! Short point comparison.
 
-On the curve, two finite points with the same abscissa have ordinates `y` and
+`7` is a quadratic non-residue mod `p`, so no point of `y² = x³ + 7` has `x = 0`,
+and the point at infinity (encoded with `x = 0`) is the only valid point with a
+zero abscissa.  Two finite points with the same abscissa have ordinates `y` and
 `±y`; since `p` is odd, `y` and `p - y` differ in parity unless `y = 0`.  So a
-valid encoded point is determined by its finite flag, its full `x` register and
-the lowest bit of `y`.  `shortEqual` compares only those 257 wires against the
-matching prefix of the classical constant, using the unchanged `equalConstant`
-gadget on the first 257 zero ports of the shared pool. -/
+valid encoded point is determined by its full `x` register and the lowest bit of
+`y`.  `shortEqual` compares only those 257 wires against the matching part of
+the classical constant, using the unchanged `equalConstant` gadget on the first
+257 zero ports of the shared pool. -/
 namespace ECDSAAdd.Entrant
 open Arithmetic Secp256k1 ControlledPointLayout Challenge Baselines
 
-/-- `x` and the low bit of `y` (the finite flag is implied: no curve point has `x = 0`). -/
+theorem half_p_eq : (p - 1) / 2 =
+    57896044618658097711785492504343953926634992332820282019728792003954417335831 := by
+  norm_num [p]
+
+theorem two_half_p : 2 * ((p - 1) / 2) = p - 1 := by
+  norm_num [p]
+
+theorem seven_qnr : (7 : ZMod p) ^ ((p - 1) / 2) ≠ 1 := by
+  rw [half_p_eq]
+  unfold p
+  reduce_mod_char
+  decide
+
+theorem seven_ne_zero : (7 : ZMod p) ≠ 0 := by
+  unfold p
+  decide
+
+/-- No secp256k1 point has abscissa `0`. -/
+theorem x_ne_zero {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) : cx ≠ 0 := by
+  intro h0
+  haveI : Fact p.Prime := ⟨p_prime⟩
+  have heq := hc.1
+  rw [curve.toAffine.equation_iff] at heq
+  have hy2 : cy ^ 2 = 7 := by
+    subst h0
+    simpa [curve, curveA, curveB] using heq
+  have hy0 : cy ≠ 0 := by
+    rintro rfl
+    exact seven_ne_zero (by rw [← hy2]; ring)
+  have hf := ZMod.pow_card_sub_one_eq_one hy0
+  apply seven_qnr
+  rw [← hy2, ← pow_mul, two_half_p]
+  exact hf
+
+theorem x_val_ne_zero {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) : cx.val ≠ 0 :=
+  fun h => x_ne_zero hc ((ZMod.val_eq_zero cx).mp h)
+
+theorem pointX_zero : pointX (WeierstrassCurve.Affine.Point.zero : Point) = 0 := by
+  simp [pointX, coordinates]
+
+/-- A valid point with the abscissa of a curve point is finite. -/
+theorem x_finite (R : Point) {cx : Fp} (hcx : cx ≠ 0) :
+    decide (pointX R = cx.val) = (pointFinite R && decide (pointX R = cx.val)) := by
+  cases R with
+  | zero =>
+    have h0 : pointX (WeierstrassCurve.Affine.Point.zero : Point) ≠ cx.val := by
+      intro h; apply hcx; apply (ZMod.val_eq_zero cx).mp; rw [← h]; exact pointX_zero
+    have hf : pointFinite (WeierstrassCurve.Affine.Point.zero : Point) = false := rfl
+    rw [hf, decide_eq_false h0]; rfl
+  | @some x y h =>
+    have hf : pointFinite (WeierstrassCurve.Affine.Point.some h : Point) = true := rfl
+    rw [hf, Bool.true_and]
+
+/-- `x`, and the low bit of `y`. -/
 def shortSrc (L : ControlledPointLayout) : List Wire :=
   L.point.x ++ L.point.y.take 1
 
-/-- The matching prefix of `pointCode`. -/
+/-- The matching part of `pointCode`. -/
 def shortCode (R : Point) : Nat :=
   pointX R + 2^256 * (pointY R % 2)
 
@@ -24,49 +78,12 @@ def shortCode (R : Point) : Nat :=
 def shortEqual (L : ControlledPointLayout) (c t : Wire) (C : Point) : Program :=
   equalConstant c t (zeroPorts (shortSrc L) (L.dialogPool.take 257)) (shortCode C)
 
-theorem seven_lit : (7 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663) ^ 57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
-  reduce_mod_char
-
-theorem seven_pow : (7 : Fp) ^ ((p - 1) / 2) = -1 := by
-  have hp : 115792089237316195423570985008687907853269984665640564039457584007908834671663 = p := by
-    norm_num [p]
-  have he : (p - 1) / 2 = 57896044618658097711785492504343953926634992332820282019728792003954417335831 := by
-    rw [← hp]
-  rw [he]
-  have h := hp ▸ seven_lit
-  exact h
-
-theorem x_ne_zero {x y : Fp} (h : curve.toAffine.Nonsingular x y) : x ≠ 0 := by
-  intro hx
-  subst hx
-  have heq := h.1
-  rw [WeierstrassCurve.Affine.equation_iff] at heq
-  simp [curve, curveA, curveB] at heq
-  haveI : Fact (Nat.Prime p) := ⟨p_prime⟩
-  have hy : y ≠ 0 := by
-    rintro rfl
-    have h7 : ((7 : ℕ) : Fp) = 0 := by exact_mod_cast heq.symm.trans (by ring)
-    rw [ZMod.natCast_eq_zero_iff] at h7
-    norm_num [p] at h7
-  have h1 : y ^ (p - 1) = 1 := ZMod.pow_card_sub_one_eq_one hy
-  have hodd : p - 1 = 2 * ((p - 1) / 2) := by norm_num [p]
-  rw [hodd, pow_mul, heq, seven_pow] at h1
-  have h2 : ((2 : ℕ) : Fp) = 0 := by
-    have : (-1 : Fp) + 1 = 1 + 1 := by rw [h1]
-    rw [neg_add_cancel] at this
-    exact_mod_cast (by rw [this]; norm_num : (2 : Fp) = 0)
-  rw [ZMod.natCast_eq_zero_iff] at h2
-  norm_num [p] at h2
-
-theorem shortCode_lt (R : Point) : shortCode R < 2 * 2^256 := by
+theorem shortCode_lt (R : Point) : shortCode R < 2^257 := by
   have hp : p < 2^256 := by norm_num [p]
   have hx := (point_coordinates_lt R).1
   have hy : pointY R % 2 < 2 := Nat.mod_lt _ (by decide)
   unfold shortCode
-  rcases Nat.lt_succ_iff.mp hy |>.lt_or_eq with h | h
-  · have : pointY R % 2 = 0 := by omega
-    rw [this]; omega
-  · rw [h]; omega
+  omega
 
 theorem shortCode_eq_iff (R C : Point) : shortCode R = shortCode C ↔ R = C := by
   constructor
@@ -74,8 +91,6 @@ theorem shortCode_eq_iff (R C : Point) : shortCode R = shortCode C ↔ R = C := 
     have hp : p < 2^256 := by norm_num [p]
     have hxr := (point_coordinates_lt R).1
     have hxc := (point_coordinates_lt C).1
-    have hyr : pointY R % 2 < 2 := Nat.mod_lt _ (by decide)
-    have hyc : pointY C % 2 < 2 := Nat.mod_lt _ (by decide)
     have hxy : pointX R = pointX C ∧ pointY R % 2 = pointY C % 2 := by
       unfold shortCode at h
       omega
@@ -85,14 +100,18 @@ theorem shortCode_eq_iff (R C : Point) : shortCode R = shortCode C ↔ R = C := 
       | zero => rfl
       | @some u v hc =>
         exfalso
-        have h0 : (0 : Fp).val = u.val := hxy.1
-        exact x_ne_zero hc (ZMod.val_injective p (by rw [← h0])).symm
+        apply x_val_ne_zero hc
+        have h1 := hxy.1
+        rw [pointX_zero] at h1
+        exact h1.symm
     | @some x y hr =>
       cases C with
       | zero =>
         exfalso
-        have h0 : x.val = (0 : Fp).val := hxy.1
-        exact x_ne_zero hr (ZMod.val_injective p h0)
+        apply x_val_ne_zero hr
+        have h1 := hxy.1
+        rw [pointX_zero] at h1
+        exact h1
       | @some u v hc =>
         have heX : x = u := ZMod.val_injective p hxy.1
         have hpar : y.val % 2 = v.val % 2 := hxy.2
@@ -122,7 +141,8 @@ theorem regValue_take_one (y : List Wire) (s : BasisState) :
 theorem shortSrc_value (L : ControlledPointLayout) (hw : L.Widths) (R : Point) (s : BasisState)
     (hp : Holds.holds s L.point R) : regValue (shortSrc L) s = shortCode R := by
   have hv := (point_holds L.point R s).mp hp
-  rw [shortSrc, regValue_append, show L.point.x.length = 256 from hw.inputX, regValue_take_one,
+  change regValue (L.point.x ++ L.point.y.take 1) s = _
+  rw [regValue_append, show L.point.x.length = 256 from hw.inputX, regValue_take_one,
     hv.2.1, hv.2.2]
   rfl
 
@@ -139,8 +159,8 @@ theorem short_sublist_inner (L : ControlledPointLayout) :
     (shortSrc L ++ L.dialogPool.take 257).Sublist
       (PointAddLayout.pointWires L.point ++ L.dialogPool.take 513) := by
   have h1 : (shortSrc L).Sublist (PointAddLayout.pointWires L.point) := by
-    simp only [shortSrc, PointAddLayout.pointWires, List.cons_append]
-    exact ((List.Sublist.refl _).append (List.take_sublist 1 _)).cons _
+    simp only [shortSrc, PointAddLayout.pointWires]
+    exact ((List.Sublist.refl L.point.x).cons L.point.finite).append (List.take_sublist 1 _)
   have h2 : (L.dialogPool.take 257).Sublist (L.dialogPool.take 513) := by
     have he : L.dialogPool.take 257 = (L.dialogPool.take 513).take 257 := by
       rw [List.take_take]; rfl
@@ -165,8 +185,7 @@ theorem shortEqual_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
       ⟨s.phase, writeBit s.basis t (s.basis t ^^ (s.basis c && pointEqual R C))⟩ := by
   have hh := equalPorts_correct c t (shortSrc L) (L.dialogPool.take 257) (shortCode C)
     ((shortSrc_length L hw).trans (shortWork_length L hw).symm) (short_nodup L hn c t hct hc ht)
-    (by rw [shortSrc_length L hw, show (257:ℕ) = 256 + 1 from rfl, Nat.pow_succ, mul_comm]
-        exact shortCode_lt C) s m hz
+    (by rw [shortSrc_length L hw]; exact shortCode_lt C) s m hz
   rw [shortSrc_value L hw R s.basis hp] at hh
   have he : decide (shortCode R = shortCode C) = pointEqual R C := by
     apply Bool.eq_iff_iff.mpr
@@ -210,7 +229,7 @@ theorem shortEqual_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
   exact hperm.nodup_iff.mpr (short_nodup L hn c t hct hc ht)
 
 theorem shortEqual_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) (c t : Wire)
-    (C : Point) : gateSlots (shortEqual L c t C) ≤ 2314 := by
+    (C : Point) : gateSlots (shortEqual L c t C) ≤ 2323 := by
   have hl : (zeroPorts (shortSrc L) (L.dialogPool.take 257)).length = 257 := by
     have he := (zeroPorts_maps (shortSrc L) (L.dialogPool.take 257)
       ((shortSrc_length L hw).trans (shortWork_length L hw).symm)).1
@@ -218,7 +237,7 @@ theorem shortEqual_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) (c t
   have h := Baselines.equalConstant_gateSlots_le c t
     (zeroPorts (shortSrc L) (L.dialogPool.take 257)) (shortCode C)
   rw [hl] at h
-  exact h
+  exact h.trans (by norm_num)
 
 section
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)

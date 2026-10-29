@@ -7,7 +7,7 @@ set_option linter.unreachableTactic false
 
 /-! Paired point comparison against `C` and `-C`.
 
-`C` and `-C` share the abscissa, and (by `shortCode_eq_iff`)
+`C` and `-C` share the finite flag and the abscissa, and (by `shortCode_eq_iff`)
 the low bit of `y` then decides which of the two a valid point equals.  The
 256-wire abscissa test is computed once by the zero-detection AND chain,
 both targets read the chain output together with the low `y` bit, and only then
@@ -202,7 +202,8 @@ theorem zeroWith_pair_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c :
 
 /-! ### Layout instance -/
 
-/-- The abscissa (the part shared by `C` and `-C`). -/
+/-- The abscissa (the part shared by `C` and `-C`).  No curve point has `x = 0`
+and infinity is encoded with `x = 0`, so the finite flag is implied. -/
 def pairSrc (L : ControlledPointLayout) : List Wire := L.point.x
 
 def pairCode (R : Point) : Nat := pointX R
@@ -224,7 +225,9 @@ def pairEqual (L : ControlledPointLayout) (t₁ t₂ : Wire) (e₁ e₂ : Bool) 
 
 theorem pairCode_lt (R : Point) : pairCode R < 2^256 := by
   have hp : p < 2^256 := by norm_num [p]
-  exact (point_coordinates_lt R).1.trans hp
+  have hx := (point_coordinates_lt R).1
+  unfold pairCode
+  omega
 
 theorem pairCode_neg (C : Point) : pairCode (-C) = pairCode C := by
   cases C with
@@ -234,7 +237,8 @@ theorem pairCode_neg (C : Point) : pairCode (-C) = pairCode C := by
     rfl
 
 theorem shortCode_pair (R : Point) : shortCode R = pairCode R + 2^256 * (pointY R % 2) := by
-  rfl
+  unfold shortCode pairCode
+  ring
 
 theorem pair_value_eq (R C : Point) :
     (decide (pairCode R = pairCode C) && (yBit R == yBit C)) = pointEqual R C := by
@@ -307,8 +311,8 @@ theorem pair_nodup (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nod
   have hsub : (pairSrc L ++ L.dialogPool.take 256).Sublist
       (PointAddLayout.pointWires L.point ++ L.dialogPool.take 513) := by
     have h1 : (pairSrc L).Sublist (PointAddLayout.pointWires L.point) := by
-      simp only [pairSrc, PointAddLayout.pointWires, List.cons_append]
-      exact (List.sublist_append_left _ _).cons _
+      simp only [pairSrc, PointAddLayout.pointWires]
+      exact (List.sublist_cons_self _ _).trans (List.sublist_append_left _ _)
     have h2 : (L.dialogPool.take 256).Sublist (L.dialogPool.take 513) := by
       have he : L.dialogPool.take 256 = (L.dialogPool.take 513).take 256 := by
         rw [List.take_take]; rfl
