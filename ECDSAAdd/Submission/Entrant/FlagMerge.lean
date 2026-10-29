@@ -31,6 +31,24 @@ def parkWire (L : ControlledPointLayout) : Wire := L.core.poolWire 514
 def sigP (L : ControlledPointLayout) (q : Wire) : Wire :=
   if q = L.core.generic then parkWire L else if q = parkWire L then L.core.generic else q
 
+/-- A pool site used only by the generic block; it is relabelled onto
+`equalNegY`, which is cleared while the block runs. -/
+def spareWire (L : ControlledPointLayout) : Wire := L.core.poolWire 684
+
+/-- Exchange of `equalNegY` and the spare site. -/
+def swapE (L : ControlledPointLayout) (q : Wire) : Wire :=
+  if q = L.core.equalNegY then spareWire L else if q = spareWire L then L.core.equalNegY else q
+
+/-- `control ^= H`, `double ^= H`, then `H ^= ¬control ∧ double` clears `H`
+(the exception class implies `b` and excludes the doubling class). -/
+def foldH (L : ControlledPointLayout) : Program :=
+  [.CX L.core.equalNegY L.control, .CX L.core.equalNegY L.doubleSelect, .X L.control,
+   .CCX L.control L.doubleSelect L.core.equalNegY, .X L.control]
+
+def unfoldH (L : ControlledPointLayout) : Program :=
+  [.X L.control, .CCX L.control L.doubleSelect L.core.equalNegY, .X L.control,
+   .CX L.core.equalNegY L.doubleSelect, .CX L.core.equalNegY L.control]
+
 /-- `genericSelect ^= (b ∧ finite) ⊕ D ⊕ H`. -/
 def genFlagN (L : ControlledPointLayout) : Program :=
   [.CCX L.control L.point.finite L.genericSelect, .CX L.doubleSelect L.genericSelect,
@@ -44,7 +62,8 @@ def outStage (L : ControlledPointLayout) (C : Point) : Program :=
 def finiteProgramN (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) : Program :=
   pairEqual L L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C) ++
   gatedShort L (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C) ++
-  genFlagN L ++ renameProgram (tauM L) Gen ++ genFlagN L ++
+  genFlagN L ++ foldH L ++ renameProgram (swapE L) (renameProgram (tauM L) Gen) ++ unfoldH L ++
+  genFlagN L ++
   renameProgram (sigP L) (outStage L C) ++
   gatedShort L (decide (cy≠-cy)) L.doubleSelect (C+C) ++
   chainErase L.control L.point.finite L.genericSelect
@@ -52,18 +71,27 @@ def finiteProgramN (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Prog
 def flagsN (L : ControlledPointLayout) : List Wire :=
   [L.doubleSelect, L.genericSelect, L.core.equalNegY]
 
+/-- The pool inventory without the spare site 684. -/
+def sharedPoolF2 (L : ControlledPointLayout) : List Wire :=
+  wireBlock L.core.poolWire 0 515 ++ wireBlock L.core.poolWire 685 856 ++
+    [L.core.poolWire 1800] ++ wireBlock L.core.poolWire 1802 3
+
 def sitesN (L : ControlledPointLayout) : List Wire :=
-  PointAddLayout.pointWires L.point ++ [L.control] ++ flagsN L ++ sharedPoolF L
+  PointAddLayout.pointWires L.point ++ [L.control] ++ flagsN L ++ sharedPoolF2 L
+
+/-- Sites of the relabelled generic block before the spare exchange. -/
+def sitesNx (L : ControlledPointLayout) : List Wire :=
+  PointAddLayout.pointWires L.point ++ [L.control] ++ [L.doubleSelect, L.genericSelect] ++ sharedPoolF L
 
 def flagsG (L : ControlledPointLayout) : List Wire :=
-  [L.doubleSelect, L.core.generic, L.core.equalNegY]
+  [L.doubleSelect, L.core.generic]
 
 /-- Sites of the generic block: it never touches `genericSelect`. -/
 def sitesG (L : ControlledPointLayout) : List Wire :=
   PointAddLayout.pointWires L.point ++ [L.control] ++ flagsG L ++ sharedPoolF L
 
-theorem sitesN_length (L : ControlledPointLayout) (hw : L.Widths) : (sitesN L).length = 1893 := by
-  simp [sitesN, flagsN, sharedPoolF, PointAddLayout.pointWires, wireBlock_length,
+theorem sitesN_length (L : ControlledPointLayout) (hw : L.Widths) : (sitesN L).length = 1892 := by
+  simp [sitesN, flagsN, sharedPoolF2, PointAddLayout.pointWires, wireBlock_length,
     show L.point.x.length = 256 from hw.inputX, show L.point.y.length = 256 from hw.inputY]
 
 section Tau
@@ -235,6 +263,122 @@ theorem park_triple (X : Program) (R R' : Point) (b : Bool) (f f' : BasisState)
 
 end Park
 
+section Spare
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+
+omit hn in
+theorem spare_pool : spareWire L ∈ L.dialogPool := by
+  apply sharedPool_Q_sub L hw
+  simp [spareWire, sharedPoolF, wireBlock, List.mem_map, List.mem_range'_1]
+  exact Or.inr (Or.inl ⟨684, by omega, rfl⟩)
+
+theorem spare_away : spareWire L ∉ PointAddLayout.pointWires L.point ∧ spareWire L ≠ L.control ∧
+    spareWire L ∉ L.inPlaceFlags := by
+  have used := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) (spareWire L)
+  have hp := List.count_pos_iff.mpr (spare_pool L hw)
+  simp only [dialogUsedWires, List.count_append] at used
+  refine ⟨fun h => ?_, fun h => ?_, fun h => ?_⟩
+  · have := List.count_pos_iff.mpr h; omega
+  · have : 0 < List.count (spareWire L) [L.control] := List.count_pos_iff.mpr (by simp [h])
+    omega
+  · have := List.count_pos_iff.mpr h; omega
+
+theorem spare_ne_exc : spareWire L ≠ L.core.equalNegY :=
+  fun h => (spare_away L hw hn).2.2 (by simp [h, inPlaceFlags])
+
+theorem swapE_invol (q : Wire) : swapE L (swapE L q) = q := by
+  have ne := spare_ne_exc L hw hn
+  unfold swapE
+  by_cases h1 : q = L.core.equalNegY
+  · subst h1; simp [ne, ne.symm]
+  · by_cases h2 : q = spareWire L
+    · subst h2; simp [ne, ne.symm]
+    · simp [h1, h2]
+
+theorem swapE_injective : Function.Injective (swapE L) := by
+  intro a b h
+  have := congrArg (swapE L) h
+  rwa [swapE_invol L hw hn, swapE_invol L hw hn] at this
+
+/-- Relabelling the park site keeps the boundary when the generic flag is clear. -/
+theorem boundary_swapE {R : Point} {b : Bool} {f s : BasisState} (v : PointDialogBoundary L R b f s)
+    (hf : f L.core.equalNegY = false) :
+    PointDialogBoundary L R b f (fun q => s (swapE L q)) := by
+  have aw := spare_away L hw hn
+  have ng := spare_ne_exc L hw hn
+  have fix (q : Wire) (h1 : q ≠ L.core.equalNegY) (h2 : q ≠ spareWire L) : swapE L q = q := by
+    simp [swapE, h1, h2]
+  have gpt : L.core.equalNegY ∉ PointAddLayout.pointWires L.point := by
+    intro h
+    have used := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) L.core.equalNegY
+    have a := List.count_pos_iff.mpr h
+    have c : 0 < List.count L.core.equalNegY L.inPlaceFlags := List.count_pos_iff.mpr (by simp [inPlaceFlags])
+    simp only [dialogUsedWires, List.count_append] at used
+    omega
+  have hpt (q : Wire) (hq : q ∈ PointAddLayout.pointWires L.point) : swapE L q = q :=
+    fix q (fun e => gpt (e ▸ hq)) (fun e => aw.1 (e ▸ hq))
+  have hp := (point_holds _ _ _).mp v.point
+  refine ⟨(point_holds _ _ _).mpr ⟨?_, ?_, ?_⟩, ?_, ?_, ?_⟩
+  · rw [hpt _ (by simp [PointAddLayout.pointWires])]; exact hp.1
+  · rw [regValue_congr L.point.x _ s (fun q hq => by
+      rw [hpt q (by simp [PointAddLayout.pointWires, hq])])]; exact hp.2.1
+  · rw [regValue_congr L.point.y _ s (fun q hq => by
+      rw [hpt q (by simp [PointAddLayout.pointWires, hq])])]; exact hp.2.2
+  · have sep := dialogFlag_separation L hn
+    have cg : L.control ≠ L.core.equalNegY := by
+      simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep; tauto
+    show s (swapE L L.control) = b
+    rw [fix _ cg (fun e => aw.2.1 e.symm)]; exact v.control
+  · intro q hq
+    show s (swapE L q) = f q
+    by_cases hg : q = L.core.equalNegY
+    · subst hg
+      simp only [swapE, if_true]
+      rw [hf]
+      exact (regValue_zero _ _).mp v.clean _ (spare_pool L hw)
+    · rw [fix q hg (fun e => aw.2.2 (e ▸ hq))]; exact v.flags q hq
+  · apply (regValue_zero _ _).mpr
+    intro q hq
+    show s (swapE L q) = false
+    by_cases hk : q = spareWire L
+    · subst hk
+      simp only [swapE, if_neg (spare_ne_exc L hw hn), if_true]
+      rw [v.flags _ (by simp [inPlaceFlags]), hf]
+    · have hg : q ≠ L.core.equalNegY := by
+        intro e; subst e
+        have used := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) L.core.equalNegY
+        have a := List.count_pos_iff.mpr hq
+        have c : 0 < List.count L.core.equalNegY L.inPlaceFlags := List.count_pos_iff.mpr (by simp [inPlaceFlags])
+        simp only [dialogUsedWires, List.count_append] at used
+        omega
+      rw [fix q hg hk]
+      exact (regValue_zero _ _).mp v.clean q hq
+
+theorem spare_triple (X : Program) (R R' : Point) (b : Bool) (f f' : BasisState)
+    (hf : f L.core.equalNegY = false) (hf' : f' L.core.equalNegY = false)
+    (hX : Triple (PointDialogBoundary L R b f) X (PointDialogBoundary L R' b f')) :
+    Triple (PointDialogBoundary L R b f) (renameProgram (swapE L) X) (PointDialogBoundary L R' b f') := by
+  intro s m v
+  have h := hX (pullState (swapE L) s) m (boundary_swapE L hw hn v hf)
+  rw [← run_rename (swapE L) (swapE_injective L hw hn)] at h
+  refine ⟨h.1, ?_⟩
+  have back := boundary_swapE L hw hn h.2 hf'
+  simp only [pullState, swapE_invol L hw hn] at back
+  exact back
+
+/-- The generic block, relabelled onto `genericSelect` and the cleared exception wire. -/
+theorem genericE_ok {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (Gen : Program)
+    (hGen : GenericOK L hc Gen) (R : Point) (b : Bool) (f : BasisState)
+    (hg : f L.genericSelect = true → R≠0 ∧ R≠(.some hc : Point) ∧ R≠-(.some hc : Point) ∧
+      R≠dialogExceptionPoint (.some hc))
+    (hx : f L.core.equalNegY = false) :
+    Triple (PointDialogBoundary L R b f) (renameProgram (swapE L) (renameProgram (tauM L) Gen))
+      (PointDialogBoundary L (if f L.genericSelect then R+.some hc else R) b f) :=
+  spare_triple L hw hn _ R _ b f f hx hx (genericM_ok L hn hc Gen hGen R b f hg)
+
+end Spare
+
 section Flags
 variable (L : ControlledPointLayout) (hn : L.wires.Nodup)
 include hn
@@ -295,6 +439,160 @@ theorem genFlagN_flag (R : Point) (b O D I G E H K : Bool) :
     simp [writeBit, hqt]
 
 end Flags
+
+section Fold
+variable (L : ControlledPointLayout) (hn : L.wires.Nodup)
+include hn
+
+theorem fold_distinct : L.core.equalNegY ≠ L.control ∧ L.core.equalNegY ≠ L.doubleSelect ∧
+    L.control ≠ L.doubleSelect := by
+  have sep := dialogFlag_separation L hn
+  simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
+  refine ⟨?_, ?_, ?_⟩ <;> intro e <;> simp_all
+
+theorem foldH_run (s : State) (m : List Bool) :
+    run (foldH L) m s = ⟨s.phase, fun q =>
+      if q = L.control then (s.basis L.control ^^ s.basis L.core.equalNegY)
+      else if q = L.doubleSelect then (s.basis L.doubleSelect ^^ s.basis L.core.equalNegY)
+      else if q = L.core.equalNegY then (s.basis L.core.equalNegY ^^
+        (!(s.basis L.control ^^ s.basis L.core.equalNegY) &&
+          (s.basis L.doubleSelect ^^ s.basis L.core.equalNegY)))
+      else s.basis q⟩ := by
+  obtain ⟨h1, h2, h3⟩ := fold_distinct L hn
+  simp only [foldH, run]
+  congr 1
+  funext q
+  by_cases hc : q = L.control <;> by_cases hd : q = L.doubleSelect <;>
+    by_cases he : q = L.core.equalNegY <;>
+    simp_all [writeBit, Function.update_apply, eq_comm]
+
+theorem unfoldH_run (s : State) (m : List Bool) :
+    run (unfoldH L) m s = ⟨s.phase, fun q =>
+      let e := (s.basis L.core.equalNegY ^^ (!s.basis L.control && s.basis L.doubleSelect))
+      if q = L.control then (s.basis L.control ^^ e)
+      else if q = L.doubleSelect then (s.basis L.doubleSelect ^^ e)
+      else if q = L.core.equalNegY then e
+      else s.basis q⟩ := by
+  obtain ⟨h1, h2, h3⟩ := fold_distinct L hn
+  simp only [unfoldH, run]
+  congr 1
+  funext q
+  by_cases hc : q = L.control <;> by_cases hd : q = L.doubleSelect <;>
+    by_cases he : q = L.core.equalNegY <;>
+    simp_all [writeBit, Function.update_apply, eq_comm]
+
+/-- A state that changes only control and flags keeps the point and the pool. -/
+theorem boundary_upd {R : Point} {b b' : Bool} {f f' s t : BasisState}
+    (v : PointDialogBoundary L R b f s)
+    (ht : ∀ q, q ≠ L.control → q ∉ L.inPlaceFlags → t q = s q) (hc : t L.control = b')
+    (hf : ∀ q ∈ L.inPlaceFlags, t q = f' q) : PointDialogBoundary L R b' f' t := by
+  have pt (q : Wire) (hq : q ∈ PointAddLayout.pointWires L.point) : q ≠ L.control ∧ q ∉ L.inPlaceFlags := by
+    have used := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) q
+    have a := List.count_pos_iff.mpr hq
+    simp only [dialogUsedWires, List.count_append] at used
+    refine ⟨fun e => ?_, fun e => ?_⟩
+    · have : 0 < List.count q [L.control] := List.count_pos_iff.mpr (by simp [e])
+      omega
+    · have := List.count_pos_iff.mpr e; omega
+  have pl (q : Wire) (hq : q ∈ L.dialogPool) : q ≠ L.control ∧ q ∉ L.inPlaceFlags := by
+    have used := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) q
+    have a := List.count_pos_iff.mpr hq
+    simp only [dialogUsedWires, List.count_append] at used
+    refine ⟨fun e => ?_, fun e => ?_⟩
+    · have : 0 < List.count q [L.control] := List.count_pos_iff.mpr (by simp [e])
+      omega
+    · have := List.count_pos_iff.mpr e; omega
+  have hpt (q : Wire) (hq : q ∈ PointAddLayout.pointWires L.point) : t q = s q :=
+    ht q (pt q hq).1 (pt q hq).2
+  have hp := (point_holds _ _ _).mp v.point
+  refine ⟨(point_holds _ _ _).mpr ⟨?_, ?_, ?_⟩, hc, hf, ?_⟩
+  · rw [hpt _ (by simp [PointAddLayout.pointWires])]; exact hp.1
+  · rw [regValue_congr L.point.x t s (fun q hq => hpt q (by simp [PointAddLayout.pointWires, hq]))]
+    exact hp.2.1
+  · rw [regValue_congr L.point.y t s (fun q hq => hpt q (by simp [PointAddLayout.pointWires, hq]))]
+    exact hp.2.2
+  · rw [regValue_congr L.dialogPool t s (fun q hq => ht q (pl q hq).1 (pl q hq).2)]
+    exact v.clean
+
+omit hn in
+theorem state_other (D D' G H H' : Bool) (q : Wire)
+    (hd : q ≠ L.doubleSelect) (he : q ≠ L.core.equalNegY) :
+    dialogFlagState L false D G false false H false q = dialogFlagState L false D' G false false H' false q := by
+  simp only [dialogFlagState, writeBit, Function.update_apply, hd, he, if_false]
+
+theorem foldH_flag (R : Point) (b D G H : Bool) (hH : H = true → b = true ∧ D = false)
+    (hD : D = true → b = true) :
+    Triple (PointDialogBoundary L R b (dialogFlagState L false D G false false H false)) (foldH L)
+      (PointDialogBoundary L R (b ^^ H) (dialogFlagState L false (D ^^ H) G false false false false)) := by
+  intro s m v
+  have hr := dialogFlagState_read L hn false D G false false H false
+  have hr' := dialogFlagState_read L hn false (D ^^ H) G false false false false
+  have vc := v.control
+  have vd := (v.flags _ (by simp [inPlaceFlags])).trans hr.2.1
+  have ve := (v.flags _ (by simp [inPlaceFlags])).trans hr.2.2.2.2.2.1
+  obtain ⟨h1, h2, h3⟩ := fold_distinct L hn
+  rw [foldH_run L hn]
+  refine ⟨rfl, boundary_upd L hn v ?_ ?_ ?_⟩
+  · intro q hc hf
+    have hd : q ≠ L.doubleSelect := fun e => hf (e ▸ by simp [inPlaceFlags])
+    have he : q ≠ L.core.equalNegY := fun e => hf (e ▸ by simp [inPlaceFlags])
+    simp [hc, hd, he]
+  · simp [vc, ve]
+  · intro q hq
+    by_cases hc : q = L.control
+    · exact absurd (hc ▸ hq) (by
+        have sep := dialogFlag_separation L hn
+        exact (List.nodup_cons.mp sep).1)
+    by_cases hd : q = L.doubleSelect
+    · subst hd; simp only [h3.symm, if_false, if_true, vd, ve]; rw [hr'.2.1]
+    by_cases he : q = L.core.equalNegY
+    · subst he
+      simp only [h1, h2, if_false, if_true, vc, vd, ve]
+      rw [hr'.2.2.2.2.2.1]
+      clear vc vd ve v hr hr'
+      cases H <;> cases b <;> cases D <;> simp at hH hD ⊢
+    · simp only [hc, hd, he, if_false]
+      rw [v.flags q hq]
+      exact state_other L D (D ^^ H) G H false q hd he
+
+theorem unfoldH_flag (R : Point) (b D G H : Bool) (hH : H = true → b = true ∧ D = false)
+    (hD : D = true → b = true) :
+    Triple (PointDialogBoundary L R (b ^^ H) (dialogFlagState L false (D ^^ H) G false false false false))
+      (unfoldH L)
+      (PointDialogBoundary L R b (dialogFlagState L false D G false false H false)) := by
+  intro s m v
+  have hr := dialogFlagState_read L hn false (D ^^ H) G false false false false
+  have hr' := dialogFlagState_read L hn false D G false false H false
+  have vc := v.control
+  have vd := (v.flags _ (by simp [inPlaceFlags])).trans hr.2.1
+  have ve := (v.flags _ (by simp [inPlaceFlags])).trans hr.2.2.2.2.2.1
+  have key : (false ^^ (!(b ^^ H) && (D ^^ H))) = H := by
+    cases H <;> cases b <;> cases D <;> simp at hH hD ⊢
+  obtain ⟨h1, h2, h3⟩ := fold_distinct L hn
+  rw [unfoldH_run L hn]
+  refine ⟨rfl, boundary_upd L hn v ?_ ?_ ?_⟩
+  · intro q hc hf
+    have hd : q ≠ L.doubleSelect := fun e => hf (e ▸ by simp [inPlaceFlags])
+    have he : q ≠ L.core.equalNegY := fun e => hf (e ▸ by simp [inPlaceFlags])
+    simp [hc, hd, he]
+  · simp only [if_true, vc, vd, ve, key]; cases b <;> cases H <;> rfl
+  · intro q hq
+    by_cases hc : q = L.control
+    · exact absurd (hc ▸ hq) (by
+        have sep := dialogFlag_separation L hn
+        exact (List.nodup_cons.mp sep).1)
+    by_cases hd : q = L.doubleSelect
+    · subst hd; simp only [h3.symm, if_false, if_true, vc, vd, ve, key]; rw [hr'.2.1]
+      cases D <;> cases H <;> rfl
+    by_cases he : q = L.core.equalNegY
+    · subst he
+      simp only [h1, h2, if_false, if_true, vc, vd, ve, key]
+      rw [hr'.2.2.2.2.2.1]
+    · simp only [hc, hd, he, if_false]
+      rw [v.flags q hq]
+      exact state_other L (D ^^ H) D G false H q hd he
+
+end Fold
 
 section SpecN
 attribute [local irreducible] run wires shortEqual pairEqual gatedShort genericFlag2 corners2 genFlagN
@@ -396,10 +694,25 @@ theorem finiteProgramN_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
   rw [hH,Bool.false_xor] at h5
   have h6 := genFlagN_flag L hn R b false D I false false H false
   rw [hG1] at h6
-  have read := dialogFlagState_read L hn false D G false false H false
-  have h7 := genericM_ok L hn hc Gen hGen R b (dialogFlagState L false D G false false H false)
-    (fun hg => ((dialogOrdinary_true b R C hC).mp (read.2.2.1.symm.trans hg)).2)
+  have hHx : H = true → b = true ∧ D = false := by
+    intro h
+    dsimp only [H, D, dialogException, dialogDouble] at h ⊢
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at h
+    obtain ⟨⟨hb, _, hne, _⟩, hR⟩ := h
+    refine ⟨hb, ?_⟩
+    simp [hR, hne]
+  have hDx : D = true → b = true := by
+    intro h
+    dsimp only [D, dialogDouble] at h
+    simp only [Bool.and_eq_true] at h
+    exact h.1.1
+  have hf1 := foldH_flag L hn R b D G H hHx hDx
+  have read := dialogFlagState_read L hn false (D ^^ H) G false false false false
+  have h7 := genericE_ok L hw hn hc Gen hGen R (b ^^ H)
+    (dialogFlagState L false (D ^^ H) G false false false false)
+    (fun hg => ((dialogOrdinary_true b R C hC).mp (read.2.2.1.symm.trans hg)).2) read.2.2.2.2.2.1
   rw [read.2.2.1] at h7
+  have hu := unfoldH_flag L hn R1 b D G H hHx hDx
   have h9 := genFlagN_flag L hn R1 b false D G false false H false
   rw [hI1] at h9
   have h10a := zeroFlag_flagG L hn R1 b false D I false false H false
@@ -430,7 +743,7 @@ theorem finiteProgramN_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
     exact pointEqual_zero S
   have h12 := chainErase_equalI L hn S b false false (dialogInversePoint b R C)
     false false false false (by rw [← hf.2.2.1, hzero])
-  have h := (((((((h3.seq h5).seq h6).seq h7).seq h9).seq hout).seq h11).seq h12)
+  have h := (((((((((h3.seq h5).seq h6).seq hf1).seq h7).seq hu).seq h9).seq hout).seq h11).seq h12)
   simpa only [finiteProgramN,List.append_assoc,dialogFlagState_zero] using h
 
 end SpecN
@@ -461,7 +774,7 @@ theorem x_N (q : Wire) (hq : q ∈ L.point.x) : q ∈ sitesN L :=
   point_N L q (by simp [PointAddLayout.pointWires, hq])
 theorem y_N (q : Wire) (hq : q ∈ L.point.y) : q ∈ sitesN L :=
   point_N L q (by simp [PointAddLayout.pointWires, hq])
-theorem poolQ_N (q : Wire) (hq : q ∈ sharedPoolF L) : q ∈ sitesN L := by
+theorem poolQ_N (q : Wire) (hq : q ∈ sharedPoolF2 L) : q ∈ sitesN L := by
   simp only [sitesN, List.mem_append]; exact Or.inr hq
 
 include hw
@@ -479,14 +792,14 @@ theorem pool_lowN (k : Nat) (hk : k ≤ 515) (q : Wire) (hq : q ∈ L.dialogPool
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq
   simp only [List.mem_range'_1] at hi
   apply poolQ_N
-  simp only [sharedPoolF, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1]
+  simp only [sharedPoolF2, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1]
   exact Or.inl (Or.inl (Or.inl ⟨i, by omega, rfl⟩))
 
 omit hw in
 theorem G_of_sites (q : Wire) (hq : q ∈ CompressedPointSquare.residents L ++ CompressedPointSquare.sharedPool L)
     (h1 : q ≠ L.core.poolWire 1801) (h1' : q ≠ L.core.poolWire 1541)
     (h2 : q ≠ L.core.equalX) (h3 : q ≠ L.core.double) (h4 : q ≠ L.infinitySelect)
-    (h5 : q ≠ L.genericSelect) :
+    (h5 : q ≠ L.genericSelect) (h6 : q ≠ L.core.equalNegY) :
     q ∈ sitesG L := by
   rcases List.mem_append.mp hq with hr | hp
   · simp only [CompressedPointSquare.residents, inPlaceFlags, List.mem_append, List.mem_cons,
@@ -500,7 +813,7 @@ theorem G_of_sites (q : Wire) (hq : q ∈ CompressedPointSquare.residents L ++ C
       · exact absurd rfl h5
       · exact flag_G L _ (by simp [flagsG])
       · exact absurd rfl h2
-      · exact flag_G L _ (by simp [flagsG])
+      · exact absurd rfl h6
       · exact absurd rfl h3
   · exact poolQ_G L q (sharedPool_F L q hp h1 h1')
 
@@ -543,7 +856,7 @@ theorem arithG (multiply : Bool) :
     rw [← this, swap2_involutive]
   have mem (k : Nat) (hk : k ∈ indices) : base k ∈ slots.toFinset :=
     List.mem_toFinset.mpr (List.mem_map.mpr ⟨k, hk, rfl⟩)
-  have hidx (k : Nat) (h : k = 2313 ∨ k = 2403 ∨ k = 2405 ∨ k = 2406 ∨ k = 2408 ∨ k = 769) : k ∈ indices := by
+  have hidx (k : Nat) (h : k = 2313 ∨ k = 2403 ∨ k = 2405 ∨ k = 2406 ∨ k = 2407 ∨ k = 2408 ∨ k = 769) : k ∈ indices := by
     simp only [indices, List.mem_append, List.mem_range'_1]; omega
   apply List.mem_toFinset.mpr
   apply G_of_sites L _ (List.mem_toFinset.mp inv)
@@ -583,6 +896,12 @@ theorem arithG (multiply : Bool) :
     have himg : pointWireFn L (base 2405) = L.genericSelect := by
       rw [pointWireFn_base]; exact (pointIndexWire_metadata L).2.2.2.2.2.1
     have := avoid 2405 (mem _ (hidx 2405 (by omega))) (himg.trans e.symm)
+    rw [swap2_fix _ (by decide) (by decide)] at this
+    subst this; exact hgood (by simp [base])
+  · intro e
+    have himg : pointWireFn L (base 2407) = L.core.equalNegY := by
+      rw [pointWireFn_base]; exact (pointIndexWire_metadata L).2.2.2.2.2.2.2.1
+    have := avoid 2407 (mem _ (hidx 2407 (by omega))) (himg.trans e.symm)
     rw [swap2_fix _ (by decide) (by decide)] at this
     subst this; exact hgood (by simp [base])
 
@@ -639,7 +958,7 @@ theorem fastGenericG (cx cy : Fp) : wires (fastGeneric2 L cx cy) ⊆ (sitesG L).
 
 /-- The relabelled block lives in `sitesN`. -/
 theorem renamedG (Gen : Program) (hG : wires Gen ⊆ (sitesG L).toFinset) :
-    wires (renameProgram (tauM L) Gen) ⊆ (sitesN L).toFinset := by
+    wires (renameProgram (tauM L) Gen) ⊆ (sitesNx L).toFinset := by
   rw [renameProgram_support]
   intro q hq
   obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
@@ -649,7 +968,7 @@ theorem renamedG (Gen : Program) (hG : wires Gen ⊆ (sitesG L).toFinset) :
   simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
   by_cases hg : old = L.core.generic
   · rw [hg, show tauM L L.core.generic = L.genericSelect by simp [tauM]]
-    exact flag_N L _ (by simp [flagsN])
+    simp [sitesNx]
   · have hs : old ≠ L.genericSelect := by
       intro e
       subst e
@@ -662,17 +981,68 @@ theorem renamedG (Gen : Program) (hG : wires Gen ⊆ (sitesG L).toFinset) :
         simp only [dialogUsedWires, List.count_append] at used
         omega
       · exact absurd hc.symm (by tauto)
-      · rcases hf with e | e | e
+      · rcases hf with e | e
         · exact absurd e.symm (by tauto)
         · exact hg e
-        · exact absurd e (by tauto)
       · have := List.count_pos_iff.mpr (sharedPool_Q_sub L hw _ hp)
         simp only [dialogUsedWires, List.count_append] at used
         omega
     rw [show tauM L old = old by simp [tauM, hg, hs]]
     simp only [sitesG, flagsG, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-    simp only [sitesN, flagsN, List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
+    simp only [sitesNx, List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
     tauto
+
+/-- The doubly relabelled block lives in `sitesN`. -/
+theorem renamedE (Gen : Program) (hG : wires Gen ⊆ (sitesG L).toFinset) :
+    wires (renameProgram (swapE L) (renameProgram (tauM L) Gen)) ⊆ (sitesN L).toFinset := by
+  have h0 := renamedG L hw hn Gen hG
+  rw [renameProgram_support]
+  intro q hq
+  obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
+  have h := List.mem_toFinset.mp (h0 used)
+  apply List.mem_toFinset.mpr
+  have aw := spare_away L hw hn
+  have sep := dialogFlag_separation L hn
+  simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
+  by_cases hk : old = spareWire L
+  · rw [hk, show swapE L (spareWire L) = L.core.equalNegY by
+      simp [swapE, (spare_ne_exc L hw hn)]]
+    exact flag_N L _ (by simp [flagsN])
+  · have he : old ≠ L.core.equalNegY := by
+      intro e
+      subst e
+      simp only [sitesNx, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+      have used := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) L.core.equalNegY
+      have cG : 0 < List.count L.core.equalNegY L.inPlaceFlags :=
+        List.count_pos_iff.mpr (by simp [inPlaceFlags])
+      rcases h with ((hp | hc) | hf) | hp
+      · have := List.count_pos_iff.mpr hp
+        simp only [dialogUsedWires, List.count_append] at used
+        omega
+      · exact absurd hc.symm (by tauto)
+      · rcases hf with e | e
+        · exact absurd e.symm (by tauto)
+        · exact absurd e.symm (by tauto)
+      · have := List.count_pos_iff.mpr (sharedPool_Q_sub L hw _ hp)
+        simp only [dialogUsedWires, List.count_append] at used
+        omega
+    rw [show swapE L old = old by simp [swapE, he, hk]]
+    simp only [sitesNx, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+    rcases h with ((hp | hc) | hf) | hp
+    · exact point_N L _ hp
+    · rw [hc]; exact control_N L
+    · rcases hf with rfl | rfl <;> exact flag_N L _ (by simp [flagsN])
+    · apply poolQ_N
+      simp only [sharedPoolF, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1,
+        List.mem_cons, List.not_mem_nil, or_false] at hp
+      simp only [sharedPoolF2, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1,
+        List.mem_cons, List.not_mem_nil, or_false]
+      rcases hp with ((⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩) | e) | ⟨i, hi, rfl⟩
+      · exact Or.inl (Or.inl (Or.inl ⟨i, hi, rfl⟩))
+      · have : i ≠ 684 := by rintro rfl; exact hk rfl
+        exact Or.inl (Or.inl (Or.inr ⟨i, by omega, rfl⟩))
+      · exact Or.inl (Or.inr e)
+      · exact Or.inr ⟨i, hi, rfl⟩
 
 omit hn in
 /-- Wires of the output stage, before relabelling. -/
@@ -727,7 +1097,7 @@ theorem outStageN (C : Point) :
     omega
   have parkN : parkWire L ∈ sitesN L := by
     apply poolQ_N
-    simp [parkWire, sharedPoolF, wireBlock, List.mem_map, List.mem_range'_1]
+    simp [parkWire, sharedPoolF2, wireBlock, List.mem_map, List.mem_range'_1]
     exact Or.inl ⟨514, by omega, rfl⟩
   rcases outStage_wires L hw C old used with h | h | h | h | h
   · have hg : old ≠ L.core.generic := by
@@ -845,6 +1215,20 @@ theorem chainEraseN (t : Wire) (ht : t ∈ flagsN L) :
   · exact List.mem_toFinset.mpr (flag_N L _ ht)
 
 omit hw hn in
+theorem foldH_support : wires (foldH L) ⊆ (sitesN L).toFinset := by
+  intro q hq
+  simp [foldH, wires, Instr.wires] at hq
+  apply List.mem_toFinset.mpr
+  rcases hq with rfl | rfl | rfl <;> simp [sitesN, flagsN]
+
+omit hw hn in
+theorem unfoldH_support : wires (unfoldH L) ⊆ (sitesN L).toFinset := by
+  intro q hq
+  simp [unfoldH, wires, Instr.wires] at hq
+  apply List.mem_toFinset.mpr
+  rcases hq with rfl | rfl | rfl <;> simp [sitesN, flagsN]
+
+omit hw hn in
 theorem genFlagN_support : wires (genFlagN L) ⊆ (sitesN L).toFinset := by
   intro q hq
   simp [genFlagN, wires, Instr.wires] at hq
@@ -857,15 +1241,23 @@ theorem finiteProgramN_support (C : Point) (cy : Fp) (Gen : Program)
     wires (finiteProgramN L C cy Gen) ⊆ (sitesN L).toFinset := by
   have fS : flagsN L = [L.doubleSelect, L.genericSelect, L.core.equalNegY] := rfl
   simp only [finiteProgramN, wires_append, Finset.union_subset_iff]
-  refine ⟨⟨⟨⟨⟨⟨⟨pairN L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _,
-    gatedN L hw _ _ (by simp [fS]) _⟩, genFlagN_support L⟩, renamedG L hw hn Gen hG⟩, genFlagN_support L⟩,
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨pairN L hw _ _ (by simp [fS]) (by simp [fS]) _ _ _ _,
+    gatedN L hw _ _ (by simp [fS]) _⟩, genFlagN_support L⟩, foldH_support L⟩, renamedE L hw hn Gen hG⟩,
+    unfoldH_support L⟩, genFlagN_support L⟩,
     outStageN L hw hn C⟩, gatedN L hw _ _ (by simp [fS]) _⟩, chainEraseN L _ (by simp [fS])⟩
 
 omit hw hn in
 theorem sitesN_sub (q : Wire) (hq : q ∈ sitesN L) : q ∈ sitesE L := by
-  simp only [sitesN, flagsN, sitesE, flagsE, List.mem_append, List.mem_cons, List.not_mem_nil,
-    or_false] at hq ⊢
-  tauto
+  simp only [sitesN, flagsN, sitesE, flagsE, sharedPoolF2, sharedPoolF, List.mem_append, List.mem_cons,
+    List.not_mem_nil, or_false, wireBlock, List.mem_map, List.mem_range'_1] at hq ⊢
+  rcases hq with ((hp | hc) | hf) | ((⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩) | e) | ⟨i, hi, rfl⟩
+  · exact Or.inl (Or.inl (Or.inl hp))
+  · exact Or.inl (Or.inl (Or.inr hc))
+  · exact Or.inl (Or.inr (by tauto))
+  · exact Or.inr (Or.inl (Or.inl (Or.inl ⟨i, hi, rfl⟩)))
+  · exact Or.inr (Or.inl (Or.inl (Or.inr ⟨i, by omega, rfl⟩)))
+  · exact Or.inr (Or.inl (Or.inr e))
+  · exact Or.inr (Or.inr ⟨i, hi, rfl⟩)
 
 omit hn in
 theorem sitesN_used : (sitesN L).toFinset ⊆ L.dialogUsedWires.toFinset := by
@@ -941,7 +1333,7 @@ open Challenge Baselines
 
 theorem finiteProgramN_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cy : Fp)
     (Gen : Program) {cx : Fp} (hc : curve.toAffine.Nonsingular cx cy) (hC : C = .some hc) :
-    toffoliCount (finiteProgramN L C cy Gen) ≤ 1031 + toffoliCount Gen ∧
+    toffoliCount (finiteProgramN L C cy Gen) ≤ 1033 + toffoliCount Gen ∧
     measurementCount (finiteProgramN L C cy Gen) ≤ 1027 + measurementCount Gen := by
   have p1 := pairEqual_counts L hw L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C)
   have p2 := pairEqual_counts L hw L.core.generic L.core.equalNegY true (exceptionBit C) C (-C)
@@ -962,6 +1354,11 @@ theorem finiteProgramN_counts (L : ControlledPointLayout) (hw : L.Widths) (C : P
   have f : toffoliCount (genFlagN L) = 1 ∧ measurementCount (genFlagN L) = 0 := by
     simp [genFlagN, toffoliCount, measurementCount]
   have r := renameProgram_counts (tauM L) Gen
+  have r' := renameProgram_counts (swapE L) (renameProgram (tauM L) Gen)
+  have fo : toffoliCount (foldH L) = 1 ∧ measurementCount (foldH L) = 0 := by
+    simp [foldH, toffoliCount, measurementCount]
+  have uf : toffoliCount (unfoldH L) = 1 ∧ measurementCount (unfoldH L) = 0 := by
+    simp [unfoldH, toffoliCount, measurementCount]
   have r2 := renameProgram_counts (sigP L) (outStage L C)
   have c := (show toffoliCount (corners2 L C) = 0 ∧ measurementCount (corners2 L C) = 0 by
     simp only [corners2, toffoliCount_append, measurementCount_append,
@@ -1008,7 +1405,27 @@ theorem finiteProgramN_physical (L : ControlledPointLayout) (hw : L.Widths) (hn 
     simp only [corners2, gatePhysical_append]
     repeat constructor
     all_goals apply all _ (by simp [inPlaceFlags])
-  have rn := gatePhysical_rename (tauM L) (tauM_injective L hn) Gen hG
+  have rn0 := gatePhysical_rename (tauM L) (tauM_injective L hn) Gen hG
+  have rn := gatePhysical_rename (swapE L) (swapE_injective L hw hn) _ rn0
+  obtain ⟨fd1, fd2, fd3⟩ := fold_distinct L hn
+  have fo : GatePhysical (foldH L) := by
+    intro i hi
+    simp only [foldH, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl
+    · exact fd1
+    · exact fd2
+    · trivial
+    · exact ⟨fd1.symm, fd2.symm⟩
+    · trivial
+  have uf : GatePhysical (unfoldH L) := by
+    intro i hi
+    simp only [unfoldH, List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl
+    · trivial
+    · exact ⟨fd1.symm, fd2.symm⟩
+    · trivial
+    · exact fd2
+    · exact fd1
   simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
   have hfin : L.point.finite ≠ L.genericSelect := by
     intro e
@@ -1058,8 +1475,11 @@ theorem finiteProgramN_gateSlots (L : ControlledPointLayout) (hw : L.Widths) (C 
   have m6 := hm L.core.equalNegY (-C)
   have hze : gateSlots (chainErase L.control L.point.finite L.genericSelect) = 4 := rfl
   have rs := rename_gateSlots (tauM L) Gen
+  have rs' := rename_gateSlots (swapE L) (renameProgram (tauM L) Gen)
+  have hfo : gateSlots (foldH L) = 5 := rfl
+  have huf : gateSlots (unfoldH L) = 5 := rfl
   have rs2 := rename_gateSlots (sigP L) (outStage L C)
-  simp only [finiteProgramN, gateSlots_append, hf, hzf, hze, rs, rs2]
+  simp only [finiteProgramN, gateSlots_append, hf, hzf, hze, hfo, huf, rs', rs, rs2]
   simp only [outStage, corners2, gateSlots_append, hzf]
   omega
 
