@@ -40,9 +40,51 @@ import ECDSAAdd.Arithmetic.MappedFieldPhysical
 import ECDSAAdd.Arithmetic.BalancedTranscriptSupport
 import ECDSAAdd.Arithmetic.BalancedInverseTranscriptSupport
 import ECDSAAdd.Arithmetic.ParametricPointDialogSteps
+import ECDSAAdd.Arithmetic.PenultimateMappedForward
+import ECDSAAdd.Arithmetic.BalancedFieldConvertProof
+import ECDSAAdd.Arithmetic.BalancedConvertPhysical
+import ECDSAAdd.Arithmetic.ConstantBorrow
+import ECDSAAdd.Baselines.SlotBalanced
+import ECDSAAdd.Arithmetic.EntryForwardSelectedPoolRestore
+import ECDSAAdd.Arithmetic.MappedCompressedPointArithmetic
+import ECDSAAdd.Arithmetic.MappedKernelPhysical
+import ECDSAAdd.Arithmetic.Rotate
+import ECDSAAdd.Arithmetic.PenultimateMappedInverse
+import ECDSAAdd.Arithmetic.PenultimateMappedResources
+import ECDSAAdd.Arithmetic.NativeFirstDirectCallerStates
+import ECDSAAdd.Arithmetic.BalancedCoreComposeProof
+import ECDSAAdd.Arithmetic.BalancedInverseComposeFold
+import ECDSAAdd.Arithmetic.OffsetBorrowedFieldProof
+import ECDSAAdd.Arithmetic.OffsetBorrowedInverseProof
+import ECDSAAdd.Arithmetic.OffsetBorrowedCanonicalEnvironment
+import ECDSAAdd.Arithmetic.OffsetBorrowedCanonicalReplay
+import ECDSAAdd.Arithmetic.OffsetBorrowedInverseCanonicalReplay
+import ECDSAAdd.Arithmetic.EndpointSwapTrimProgram
+import ECDSAAdd.Arithmetic.MappedSignedSquare
+import ECDSAAdd.Arithmetic.BalancedFieldInverseArithmetic
+import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
+import ECDSAAdd.Arithmetic.MeasuredStreamedMaskedProof
+import ECDSAAdd.Arithmetic.MeasuredStreamedResources
+import ECDSAAdd.Arithmetic.DisjointPrograms
+import ECDSAAdd.Arithmetic.MappedSquarePhysical
+import ECDSAAdd.Arithmetic.CompactSkywalkSignReleaseViews
+import ECDSAAdd.Arithmetic.CompressedSkywalkRestore
+import ECDSAAdd.Arithmetic.CompressedSkywalkReverse
+import ECDSAAdd.Arithmetic.CompressedSkywalkPrefix
+import ECDSAAdd.Arithmetic.CompressedForwardCallerEquality
+import ECDSAAdd.Arithmetic.MappedCompressedControlledSpec
+import ECDSAAdd.Arithmetic.MappedCompressedStageCounts
+import ECDSAAdd.Baselines.SlotCompressed
+import ECDSAAdd.Arithmetic.NativeFirstDirectReferenceEq
+import ECDSAAdd.Framework.RecordPadding
+import ECDSAAdd.Arithmetic.MappedCompressedPointTransfer
+import ECDSAAdd.Arithmetic.NarrowSkywalkRouteTick
+import ECDSAAdd.Math.SkywalkTerminationBudget
 
 section
+
 -- ===== AccBuild =====
+
 /-! Short integer accumulator for fold corrections.
 A list of signed shifted sources is summed exactly (no modular reduction)
 into a short accumulator by in-place adders/subtractors, then removed again
@@ -447,17 +489,17 @@ zero accumulator, so the shifted window can be filled by a plain CX copy
 def seedOp (acc Z : List Wire) (w : Nat) (f : MeasuredSquareFold) : Program :=
   copyRegister none (tx Z w f) (ty acc f)
 
-def sbuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) : List MeasuredSquareFold → Program
+def baseBuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) : List MeasuredSquareFold → Program
   | [] => []
   | f::fs => (if f.negative then op acc Z bank cin w true f else seedOp acc Z w f)++
       build acc Z bank cin w fs
 
-def sunbuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) : List MeasuredSquareFold → Program
+def baseUnbuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) : List MeasuredSquareFold → Program
   | [] => []
   | f::fs => unbuild acc Z bank cin w fs++
       (if f.negative then op acc Z bank cin w false f else seedOp acc Z w f)
 
-def sbuildT (w : Nat) : List MeasuredSquareFold → Nat
+def baseBuildT (w : Nat) : List MeasuredSquareFold → Nat
   | [] => 0
   | f::fs => (if f.negative then w-f.shift-1 else 0)+buildT w fs
 
@@ -539,10 +581,10 @@ theorem seed_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (f : Measure
     have hy : q∉ty acc f := fun h => hq (List.mem_of_mem_drop h)
     exact (cp.2.1 q hy).trans (hs.2 q hq)
 
-theorem sbuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+theorem baseBuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
     (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false) (hi : base cin=false)
     (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (hv : Valid base w 0 fs) :
-    Triple (SquareFrame acc base 0) (sbuild acc Z bank cin w fs)
+    Triple (SquareFrame acc base 0) (baseBuild acc Z bank cin w fs)
       (SquareFrame acc base (accVal base 0 fs)) := by
   cases fs with
   | nil => intro s m h; exact ⟨rfl,h⟩
@@ -563,10 +605,10 @@ theorem sbuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : ac
         exact op_triple acc Z bank cin w f hacc hf1 base hz hb hi true 0 (by simpa using h1)
     exact first.seq rest
 
-theorem sunbuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+theorem baseUnbuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
     (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false) (hi : base cin=false)
     (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (hv : Valid base w 0 fs) :
-    Triple (SquareFrame acc base (accVal base 0 fs)) (sunbuild acc Z bank cin w fs)
+    Triple (SquareFrame acc base (accVal base 0 fs)) (baseUnbuild acc Z bank cin w fs)
       (SquareFrame acc base 0) := by
   cases fs with
   | nil => intro s m h; exact ⟨rfl,h⟩
@@ -600,21 +642,21 @@ theorem seed_counts (acc Z bank : List Wire) (cin : Wire) (w : Nat) (f : Measure
   have c := copyRegister_counts none (tx Z w f) (ty acc f) L.1
   simpa [seedOp] using c
 
-theorem sbuild_counts (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+theorem baseBuild_counts (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
     (fs : List MeasuredSquareFold) (hf : ∀f∈fs,FitsLen Z bank w f) :
-    (toffoliCount (sbuild acc Z bank cin w fs)=sbuildT w fs ∧
-      measurementCount (sbuild acc Z bank cin w fs)=sbuildT w fs) ∧
-    (toffoliCount (sunbuild acc Z bank cin w fs)=sbuildT w fs ∧
-      measurementCount (sunbuild acc Z bank cin w fs)=sbuildT w fs) := by
+    (toffoliCount (baseBuild acc Z bank cin w fs)=baseBuildT w fs ∧
+      measurementCount (baseBuild acc Z bank cin w fs)=baseBuildT w fs) ∧
+    (toffoliCount (baseUnbuild acc Z bank cin w fs)=baseBuildT w fs ∧
+      measurementCount (baseUnbuild acc Z bank cin w fs)=baseBuildT w fs) := by
   cases fs with
-  | nil => simp [sbuild,sunbuild,sbuildT,toffoliCount,measurementCount]
+  | nil => simp [baseBuild,baseUnbuild,baseBuildT,toffoliCount,measurementCount]
   | cons f fs =>
     have t := build_counts acc Z bank cin w hacc fs (fun g hg => hf g (by simp [hg]))
     have c := seed_counts acc Z bank cin w f hacc (hf f (by simp))
     have a := op_counts acc Z bank cin w true f hacc (hf f (by simp))
     have b := op_counts acc Z bank cin w false f hacc (hf f (by simp))
     cases hn : f.negative <;>
-      simp only [sbuild,sunbuild,sbuildT,hn,if_true,Bool.false_eq_true,if_false,
+      simp only [baseBuild,baseUnbuild,baseBuildT,hn,if_true,Bool.false_eq_true,if_false,
         toffoliCount_append,measurementCount_append] <;> omega
 
 theorem seed_support (acc Z bank : List Wire) (cin : Wire) (w : Nat) (f : MeasuredSquareFold)
@@ -631,12 +673,12 @@ theorem seed_support (acc Z bank : List Wire) (cin : Wire) (w : Nat) (f : Measur
     simp only [List.mem_toFinset,List.mem_append,List.mem_cons,Option.toList_none,List.nil_append] at hq ⊢
     tauto
 
-theorem sbuild_support (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+theorem baseBuild_support (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
     (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (S : Finset Wire)
     (hS : ∀f∈fs,(cin::(f.src++acc++Z++bank)).toFinset⊆S) :
-    wires (sbuild acc Z bank cin w fs)⊆S ∧ wires (sunbuild acc Z bank cin w fs)⊆S := by
+    wires (baseBuild acc Z bank cin w fs)⊆S ∧ wires (baseUnbuild acc Z bank cin w fs)⊆S := by
   cases fs with
-  | nil => simp [sbuild,sunbuild,wires]
+  | nil => simp [baseBuild,baseUnbuild,wires]
   | cons f fs =>
     have t := build_support acc Z bank cin w hacc fs (fun g hg => hf g (by simp [hg])) S
       (fun g hg => hS g (by simp [hg]))
@@ -646,14 +688,14 @@ theorem sbuild_support (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : a
       split
       · exact (op_support acc Z bank cin w neg f hacc hf1).trans hS1
       · exact (seed_support acc Z bank cin w f hacc hf1).trans hS1
-    simp only [sbuild,sunbuild,wires_append,Finset.union_subset_iff]
+    simp only [baseBuild,baseUnbuild,wires_append,Finset.union_subset_iff]
     exact ⟨⟨first true,t.1⟩,⟨t.2,first false⟩⟩
 
-theorem sbuild_physical (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+theorem baseBuild_physical (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
     (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) :
-    GatePhysical (sbuild acc Z bank cin w fs) ∧ GatePhysical (sunbuild acc Z bank cin w fs) := by
+    GatePhysical (baseBuild acc Z bank cin w fs) ∧ GatePhysical (baseUnbuild acc Z bank cin w fs) := by
   cases fs with
-  | nil => simp [sbuild,sunbuild,GatePhysical]
+  | nil => simp [baseBuild,baseUnbuild,GatePhysical]
   | cons f fs =>
     have t := build_physical acc Z bank cin w fs (fun g hg => hf g (by simp [hg]))
     have hf1 := hf f (by simp)
@@ -664,15 +706,15 @@ theorem sbuild_physical (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : 
         have nd := fits_nodup acc Z bank cin w f hf1
         exact copyRegister_physical none _ _
           ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
-    simp only [sbuild,sunbuild,gatePhysical_append]
+    simp only [baseBuild,baseUnbuild,gatePhysical_append]
     exact ⟨⟨first true,t.1⟩,⟨t.2,first false⟩⟩
 
-theorem sbuild_gateSlots (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+theorem baseBuild_gateSlots (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
     (fs : List MeasuredSquareFold) (hf : ∀f∈fs,FitsLen Z bank w f) :
-    Challenge.gateSlots (sbuild acc Z bank cin w fs)≤fs.length*(14*w) ∧
-      Challenge.gateSlots (sunbuild acc Z bank cin w fs)≤fs.length*(14*w) := by
+    Challenge.gateSlots (baseBuild acc Z bank cin w fs)≤fs.length*(14*w) ∧
+      Challenge.gateSlots (baseUnbuild acc Z bank cin w fs)≤fs.length*(14*w) := by
   cases fs with
-  | nil => simp [sbuild,sunbuild,Challenge.gateSlots]
+  | nil => simp [baseBuild,baseUnbuild,Challenge.gateSlots]
   | cons f fs =>
     have t := build_gateSlots acc Z bank cin w hacc fs (fun g hg => hf g (by simp [hg]))
     have L := fits_lengths acc Z bank cin w f hacc (hf f (by simp))
@@ -686,15 +728,512 @@ theorem sbuild_gateSlots (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc :
         rw [L.1,L.2.2] at c; omega
     have f1 := first true
     have f2 := first false
-    simp only [sbuild,sunbuild,Challenge.gateSlots_append,List.length_cons,Nat.add_mul,Nat.one_mul]
+    simp only [baseBuild,baseUnbuild,Challenge.gateSlots_append,List.length_cons,Nat.add_mul,Nat.one_mul]
     constructor <;> omega
 
-end ECDSAAdd.Entrant.Acc
+theorem fits_prefix (acc Z bank : List Wire) (cin : Wire) (w n : Nat)
+    (f : MeasuredSquareFold) (hn : n≤w) (hf : Fits acc Z bank cin w f)
+    (hlen : f.src.length+f.shift<n) : Fits (acc.take n) Z bank cin n f := by
+  refine ⟨⟨hlen,?_,?_⟩,?_⟩
+  · have h := hf.zpad
+    omega
+  · have h := hf.bankLen
+    omega
+  · apply List.nodup_iff_count_le_one.mpr
+    intro q
+    have h := List.nodup_iff_count_le_one.mp hf.nd q
+    have take := (List.take_sublist n acc).count_le q
+    simp only [List.count_cons,List.count_append] at h ⊢
+    omega
 
+/-- Run a short operation inside a full accumulator frame. The high bits
+stay zero; the original frame base may have arbitrary accumulator bits. -/
+theorem op_prefix_triple (acc Z bank : List Wire) (cin : Wire) (w n : Nat)
+    (f : MeasuredSquareFold) (hacc : acc.length=w) (hn : n≤w)
+    (hf : Fits acc Z bank cin w f) (hlen : f.src.length+f.shift<n)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) (neg : Bool) (V : Nat) (hV : V<2^n)
+    (hok : if neg then regValue f.src base*2^f.shift≤V
+      else V+regValue f.src base*2^f.shift<2^n) :
+    Triple (SquareFrame acc base V) (op (acc.take n) Z bank cin n neg f)
+      (SquareFrame acc base (step base neg V f)) := by
+  intro s m hs
+  have hnd := List.nodup_iff_count_le_one.mp hf.nd
+  have away (q : Wire) (hq : q∈f.src++Z++bank ∨ q=cin) : q∉acc := by
+    intro bad
+    have h := hnd q
+    have a := List.count_pos_iff.mpr bad
+    rcases hq with hq|rfl
+    · have b := List.count_pos_iff.mpr hq
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (q : Wire) (hq : q∈f.src++Z++bank ∨ q=cin) : s.basis q=base q :=
+    hs.2 q (away q hq)
+  have source : regValue f.src s.basis=regValue f.src base :=
+    regValue_congr _ _ _ (fun q hq => same q (Or.inl (by simp [hq])))
+  have pref := regValue_take_drop_of_lt acc n V s.basis (by omega) hs.1 hV
+  have len : (acc.take n).length=n := by simp [List.length_take,hacc,Nat.min_eq_left hn]
+  have small := op_triple (acc.take n) Z bank cin n f len
+    (fits_prefix acc Z bank cin w n f hn hf hlen) s.basis
+    (fun q hq => (same q (Or.inl (by simp [hq]))).trans (hz q hq))
+    (fun q hq => (same q (Or.inl (by simp [hq]))).trans (hb q hq))
+    ((same cin (Or.inr rfl)).trans hi) neg V (by simpa only [source] using hok)
+    s m ⟨pref.1,fun _ _ => rfl⟩
+  have value : step s.basis neg V f=step base neg V f := by simp only [step,source]
+  rw [value] at small
+  have ndacc : acc.Nodup := by
+    apply List.nodup_iff_count_le_one.mpr
+    intro q
+    have h := hnd q
+    simp only [List.count_cons,List.count_append] at h
+    split at h <;> omega
+  have dis := List.disjoint_take_drop ndacc (show n≤n by omega)
+  have high : regValue (acc.drop n)
+      (run (op (acc.take n) Z bank cin n neg f) m s).basis=0 := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) pref.2
+    intro q hq
+    exact small.2.2 q (fun low => List.disjoint_left.mp dis low hq)
+  refine ⟨small.1,?_,?_⟩
+  · have split := regValue_append (acc.take n) (acc.drop n)
+      (run (op (acc.take n) Z bank cin n neg f) m s).basis
+    rw [List.take_append_drop,small.2.1,high,Nat.mul_zero,Nat.add_zero] at split
+    exact split
+  · intro q hq
+    exact (small.2.2 q (fun h => hq (List.mem_of_mem_take h))).trans (hs.2 q hq)
+
+theorem op_prefix_counts (acc Z bank : List Wire) (cin : Wire) (w n : Nat)
+    (f : MeasuredSquareFold) (hacc : acc.length=w) (hn : n≤w)
+    (hf : Fits acc Z bank cin w f) (hlen : f.src.length+f.shift<n) (neg : Bool) :
+    toffoliCount (op (acc.take n) Z bank cin n neg f)=n-f.shift-1 ∧
+    measurementCount (op (acc.take n) Z bank cin n neg f)=n-f.shift-1 := by
+  exact op_counts (acc.take n) Z bank cin n neg f
+    (by simp [List.length_take,hacc,Nat.min_eq_left hn])
+    (fits_prefix acc Z bank cin w n f hn hf hlen).toFitsLen
+
+theorem op_prefix_support (acc Z bank : List Wire) (cin : Wire) (w n : Nat)
+    (f : MeasuredSquareFold) (hacc : acc.length=w) (hn : n≤w)
+    (hf : Fits acc Z bank cin w f) (hlen : f.src.length+f.shift<n) (neg : Bool) :
+    wires (op (acc.take n) Z bank cin n neg f)⊆
+      (cin::(f.src++acc++Z++bank)).toFinset := by
+  have old := op_support (acc.take n) Z bank cin n neg f
+    (by simp [List.length_take,hacc,Nat.min_eq_left hn])
+    (fits_prefix acc Z bank cin w n f hn hf hlen)
+  intro q hq
+  have h := old hq
+  simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
+  have take : q∈acc.take n → q∈acc := List.mem_of_mem_take
+  tauto
+
+theorem op_prefix_physical (acc Z bank : List Wire) (cin : Wire) (w n : Nat)
+    (f : MeasuredSquareFold) (hn : n≤w) (hf : Fits acc Z bank cin w f)
+    (hlen : f.src.length+f.shift<n) (neg : Bool) :
+    GatePhysical (op (acc.take n) Z bank cin n neg f) :=
+  op_physical _ _ _ _ _ _ _ (fits_prefix acc Z bank cin w n f hn hf hlen)
+
+def earlyTerm (src : List Wire) (negative : Bool) (shift : Nat) : MeasuredSquareFold :=
+  ⟨negative,true,src,shift⟩
+
+@[simp] theorem earlyTerm_src (src : List Wire) (negative : Bool) (shift : Nat) :
+    (earlyTerm src negative shift).src=src := rfl
+@[simp] theorem earlyTerm_negative (src : List Wire) (negative : Bool) (shift : Nat) :
+    (earlyTerm src negative shift).negative=negative := rfl
+
+def earlyPrefix (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  seedOp acc Z 163 (earlyTerm src false 4)++
+    op (acc.take 141) Z bank cin 141 false (earlyTerm src false 10)++
+    op (acc.take 141) Z bank cin 141 true (earlyTerm src true 6)
+
+def earlyPrefixClear (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  op (acc.take 141) Z bank cin 141 false (earlyTerm src true 6)++
+    op (acc.take 141) Z bank cin 141 true (earlyTerm src false 10)++
+    seedOp acc Z 163 (earlyTerm src false 4)
+
+theorem earlyPrefix_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf4 : Fits acc Z bank cin 163 (earlyTerm src false 4))
+    (hf10 : Fits acc Z bank cin 163 (earlyTerm src false 10))
+    (hf6 : Fits acc Z bank cin 163 (earlyTerm src true 6))
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) :
+    Triple (SquareFrame acc base 0) (earlyPrefix acc Z bank cin src)
+      (SquareFrame acc base (976*regValue src base)) := by
+  let H := regValue src base
+  have hH : H<2^130 := by simpa only [hsrc] using regValue_lt src base
+  have seed := seed_triple acc Z bank cin 163 (earlyTerm src false 4) hacc hf4 base hz
+    0 (16*H) (Or.inl (by simp [earlyTerm,H,Nat.mul_comm]))
+  have add : Triple (SquareFrame acc base (16*H))
+      (op (acc.take 141) Z bank cin 141 false (earlyTerm src false 10))
+      (SquareFrame acc base (1040*H)) := by
+    have h := op_prefix_triple acc Z bank cin 163 141 (earlyTerm src false 10) hacc
+      (by decide) hf10 (by simp [earlyTerm,hsrc]) base hz hb hi false (16*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [earlyTerm] at hH ⊢;dsimp [H] at *;omega)
+    have value : step base false (16*H) (earlyTerm src false 10)=1040*H := by
+      norm_num [step,earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  have sub : Triple (SquareFrame acc base (1040*H))
+      (op (acc.take 141) Z bank cin 141 true (earlyTerm src true 6))
+      (SquareFrame acc base (976*H)) := by
+    have h := op_prefix_triple acc Z bank cin 163 141 (earlyTerm src true 6) hacc
+      (by decide) hf6 (by simp [earlyTerm,hsrc]) base hz hb hi true (1040*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [earlyTerm];dsimp [H];omega)
+    have value : step base true (1040*H) (earlyTerm src true 6)=976*H := by
+      norm_num [step,earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  exact (seed.seq add).seq sub
+
+theorem earlyPrefixClear_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf4 : Fits acc Z bank cin 163 (earlyTerm src false 4))
+    (hf10 : Fits acc Z bank cin 163 (earlyTerm src false 10))
+    (hf6 : Fits acc Z bank cin 163 (earlyTerm src true 6))
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) :
+    Triple (SquareFrame acc base (976*regValue src base)) (earlyPrefixClear acc Z bank cin src)
+      (SquareFrame acc base 0) := by
+  let H := regValue src base
+  have hH : H<2^130 := by simpa only [hsrc] using regValue_lt src base
+  have add : Triple (SquareFrame acc base (976*H))
+      (op (acc.take 141) Z bank cin 141 false (earlyTerm src true 6))
+      (SquareFrame acc base (1040*H)) := by
+    have h := op_prefix_triple acc Z bank cin 163 141 (earlyTerm src true 6) hacc
+      (by decide) hf6 (by simp [earlyTerm,hsrc]) base hz hb hi false (976*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [earlyTerm] at hH ⊢;dsimp [H] at *;omega)
+    have value : step base false (976*H) (earlyTerm src true 6)=1040*H := by
+      norm_num [step,earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  have sub : Triple (SquareFrame acc base (1040*H))
+      (op (acc.take 141) Z bank cin 141 true (earlyTerm src false 10))
+      (SquareFrame acc base (16*H)) := by
+    have h := op_prefix_triple acc Z bank cin 163 141 (earlyTerm src false 10) hacc
+      (by decide) hf10 (by simp [earlyTerm,hsrc]) base hz hb hi true (1040*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [earlyTerm];dsimp [H];omega)
+    have value : step base true (1040*H) (earlyTerm src false 10)=16*H := by
+      norm_num [step,earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  have seed := seed_triple acc Z bank cin 163 (earlyTerm src false 4) hacc hf4 base hz
+    (16*H) 0 (Or.inr (by simp [earlyTerm,H,Nat.mul_comm]))
+  exact (add.seq sub).seq seed
+
+theorem earlyPrefix_counts (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf4 : Fits acc Z bank cin 163 (earlyTerm src false 4))
+    (hf10 : Fits acc Z bank cin 163 (earlyTerm src false 10))
+    (hf6 : Fits acc Z bank cin 163 (earlyTerm src true 6)) :
+    (toffoliCount (earlyPrefix acc Z bank cin src)=264 ∧
+      measurementCount (earlyPrefix acc Z bank cin src)=264) ∧
+    (toffoliCount (earlyPrefixClear acc Z bank cin src)=264 ∧
+      measurementCount (earlyPrefixClear acc Z bank cin src)=264) := by
+  have seed := seed_counts acc Z bank cin 163 (earlyTerm src false 4) hacc hf4.toFitsLen
+  have add := op_prefix_counts acc Z bank cin 163 141 (earlyTerm src false 10) hacc
+    (by decide) hf10 (by simp [earlyTerm,hsrc]) false
+  have sub := op_prefix_counts acc Z bank cin 163 141 (earlyTerm src true 6) hacc
+    (by decide) hf6 (by simp [earlyTerm,hsrc]) true
+  have addClear := op_prefix_counts acc Z bank cin 163 141 (earlyTerm src true 6) hacc
+    (by decide) hf6 (by simp [earlyTerm,hsrc]) false
+  have subClear := op_prefix_counts acc Z bank cin 163 141 (earlyTerm src false 10) hacc
+    (by decide) hf10 (by simp [earlyTerm,hsrc]) true
+  simp only [earlyPrefix,earlyPrefixClear,toffoliCount_append,measurementCount_append,
+    seed.1,seed.2,add.1,add.2,sub.1,sub.2,addClear.1,addClear.2,subClear.1,subClear.2]
+  norm_num [earlyTerm]
+
+theorem earlyPrefix_support (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf4 : Fits acc Z bank cin 163 (earlyTerm src false 4))
+    (hf10 : Fits acc Z bank cin 163 (earlyTerm src false 10))
+    (hf6 : Fits acc Z bank cin 163 (earlyTerm src true 6)) :
+    wires (earlyPrefix acc Z bank cin src)⊆(cin::(src++acc++Z++bank)).toFinset ∧
+    wires (earlyPrefixClear acc Z bank cin src)⊆(cin::(src++acc++Z++bank)).toFinset := by
+  have seed := seed_support acc Z bank cin 163 (earlyTerm src false 4) hacc hf4
+  have add := op_prefix_support acc Z bank cin 163 141 (earlyTerm src false 10) hacc
+    (by decide) hf10 (by simp [earlyTerm,hsrc]) false
+  have sub := op_prefix_support acc Z bank cin 163 141 (earlyTerm src true 6) hacc
+    (by decide) hf6 (by simp [earlyTerm,hsrc]) true
+  have addClear := op_prefix_support acc Z bank cin 163 141 (earlyTerm src true 6) hacc
+    (by decide) hf6 (by simp [earlyTerm,hsrc]) false
+  have subClear := op_prefix_support acc Z bank cin 163 141 (earlyTerm src false 10) hacc
+    (by decide) hf10 (by simp [earlyTerm,hsrc]) true
+  simp only [earlyTerm] at seed add sub addClear subClear
+  simp only [earlyPrefix,earlyPrefixClear,wires_append,Finset.union_subset_iff]
+  exact ⟨⟨⟨seed,add⟩,sub⟩,⟨⟨addClear,subClear⟩,seed⟩⟩
+
+theorem earlyPrefix_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf4 : Fits acc Z bank cin 163 (earlyTerm src false 4))
+    (hf10 : Fits acc Z bank cin 163 (earlyTerm src false 10))
+    (hf6 : Fits acc Z bank cin 163 (earlyTerm src true 6)) :
+    GatePhysical (earlyPrefix acc Z bank cin src) ∧
+    GatePhysical (earlyPrefixClear acc Z bank cin src) := by
+  have seed : GatePhysical (seedOp acc Z 163 (earlyTerm src false 4)) := by
+    have len := fits_lengths acc Z bank cin 163 (earlyTerm src false 4) hacc hf4.toFitsLen
+    have nd := fits_nodup acc Z bank cin 163 (earlyTerm src false 4) hf4
+    exact copyRegister_physical none _ _
+      ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
+  have add := op_prefix_physical acc Z bank cin 163 141 (earlyTerm src false 10)
+    (by decide) hf10 (by simp [earlyTerm,hsrc]) false
+  have sub := op_prefix_physical acc Z bank cin 163 141 (earlyTerm src true 6)
+    (by decide) hf6 (by simp [earlyTerm,hsrc]) true
+  have addClear := op_prefix_physical acc Z bank cin 163 141 (earlyTerm src true 6)
+    (by decide) hf6 (by simp [earlyTerm,hsrc]) false
+  have subClear := op_prefix_physical acc Z bank cin 163 141 (earlyTerm src false 10)
+    (by decide) hf10 (by simp [earlyTerm,hsrc]) true
+  simp only [earlyPrefix,earlyPrefixClear,gatePhysical_append]
+  exact ⟨⟨⟨seed,add⟩,sub⟩,⟨⟨addClear,subClear⟩,seed⟩⟩
+
+
+
+/-- Select only the three common early H terms. Other accumulators keep
+exactly the seeded implementation above. -/
+def EarlyH (w : Nat) : List MeasuredSquareFold → Prop
+  | a::b::c::_ => w=163 ∧ a.src.length=130 ∧ b.src=a.src ∧ c.src=a.src ∧
+      a.shift=4 ∧ b.shift=10 ∧ c.shift=6 ∧
+      a.negative=false ∧ b.negative=false ∧ c.negative=true ∧
+      a.canonical=true ∧ b.canonical=true ∧ c.canonical=true
+  | _ => False
+
+instance (w : Nat) (fs : List MeasuredSquareFold) : Decidable (EarlyH w fs) := by
+  cases fs with
+  | nil => unfold EarlyH; infer_instance
+  | cons a fs =>
+    cases fs with
+    | nil => unfold EarlyH; infer_instance
+    | cons b fs =>
+      cases fs with
+      | nil => unfold EarlyH; infer_instance
+      | cons c fs => unfold EarlyH; infer_instance
+
+theorem earlyH_info (w : Nat) (fs : List MeasuredSquareFold) (h : EarlyH w fs) :
+    ∃ src tail,w=163 ∧ src.length=130 ∧
+      fs=earlyTerm src false 4::earlyTerm src false 10::earlyTerm src true 6::tail := by
+  cases fs with
+  | nil => exact False.elim h
+  | cons a fs =>
+    cases fs with
+    | nil => exact False.elim h
+    | cons b fs =>
+      cases fs with
+      | nil => exact False.elim h
+      | cons c tail =>
+        rcases a with ⟨an,ac,asrc,aj⟩
+        rcases b with ⟨bn,bc,bsrc,bj⟩
+        rcases c with ⟨cn,cc,csrc,cj⟩
+        simp only [EarlyH] at h
+        rcases h with ⟨hw,hlen,hb,hc,haj,hbj,hcj,han,hbn,hcn,hac,hbc,hcc⟩
+        subst_vars
+        exact ⟨_,tail,rfl,hlen,rfl⟩
+
+def earlyBuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) : List MeasuredSquareFold → Program
+  | a::_::_::tail => earlyPrefix acc Z bank cin a.src++build acc Z bank cin w tail
+  | _ => []
+def earlyUnbuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) : List MeasuredSquareFold → Program
+  | a::_::_::tail => unbuild acc Z bank cin w tail++earlyPrefixClear acc Z bank cin a.src
+  | _ => []
+def earlyBuildT (w : Nat) : List MeasuredSquareFold → Nat
+  | _::_::_::tail => 264+buildT w tail
+  | _ => 0
+
+def sbuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) (fs : List MeasuredSquareFold) : Program :=
+  if EarlyH w fs then earlyBuild acc Z bank cin w fs else baseBuild acc Z bank cin w fs
+def sunbuild (acc Z bank : List Wire) (cin : Wire) (w : Nat) (fs : List MeasuredSquareFold) : Program :=
+  if EarlyH w fs then earlyUnbuild acc Z bank cin w fs else baseUnbuild acc Z bank cin w fs
+def sbuildT (w : Nat) (fs : List MeasuredSquareFold) : Nat :=
+  if EarlyH w fs then earlyBuildT w fs else baseBuildT w fs
+
+theorem early_steps (base : BasisState) (src : List Wire) :
+    step base true (step base false (step base false 0 (earlyTerm src false 4))
+      (earlyTerm src false 10)) (earlyTerm src true 6)=976*regValue src base := by
+  norm_num [step,earlyTerm]
+  omega
+
+theorem sbuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false) (hi : base cin=false)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (hv : Valid base w 0 fs) :
+    Triple (SquareFrame acc base 0) (sbuild acc Z bank cin w fs)
+      (SquareFrame acc base (accVal base 0 fs)) := by
+  by_cases h : EarlyH w fs
+  · obtain ⟨src,tail,rfl,hlen,rfl⟩ := earlyH_info w fs h
+    have hf4 := hf (earlyTerm src false 4) (by simp)
+    have hf10 := hf (earlyTerm src false 10) (by simp)
+    have hf6 := hf (earlyTerm src true 6) (by simp)
+    have vt := hv.2.2.2
+    change Valid base 163
+      (step base true (step base false (step base false 0 (earlyTerm src false 4))
+        (earlyTerm src false 10)) (earlyTerm src true 6)) tail at vt
+    rw [early_steps] at vt
+    have head := earlyPrefix_triple acc Z bank cin src hacc hlen hf4 hf10 hf6 base hz hb hi
+    have rest := build_triple acc Z bank cin 163 hacc base hz hb hi tail
+      (fun f hf' => hf f (by simp [hf'])) (976*regValue src base) vt
+    rw [sbuild,if_pos h,earlyBuild]
+    simpa only [accVal,earlyTerm_src,earlyTerm_negative,early_steps] using head.seq rest
+  · simpa only [sbuild,if_neg h] using baseBuild_triple acc Z bank cin w hacc base hz hb hi fs hf hv
+
+theorem sunbuild_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false) (hi : base cin=false)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (hv : Valid base w 0 fs) :
+    Triple (SquareFrame acc base (accVal base 0 fs)) (sunbuild acc Z bank cin w fs)
+      (SquareFrame acc base 0) := by
+  by_cases h : EarlyH w fs
+  · obtain ⟨src,tail,rfl,hlen,rfl⟩ := earlyH_info w fs h
+    have hf4 := hf (earlyTerm src false 4) (by simp)
+    have hf10 := hf (earlyTerm src false 10) (by simp)
+    have hf6 := hf (earlyTerm src true 6) (by simp)
+    have vt := hv.2.2.2
+    change Valid base 163
+      (step base true (step base false (step base false 0 (earlyTerm src false 4))
+        (earlyTerm src false 10)) (earlyTerm src true 6)) tail at vt
+    rw [early_steps] at vt
+    have hH := regValue_lt src base
+    rw [hlen] at hH
+    have bound : 976*regValue src base<2^163 := by norm_num at hH ⊢;omega
+    have rest := unbuild_triple acc Z bank cin 163 hacc base hz hb hi tail
+      (fun f hf' => hf f (by simp [hf'])) (976*regValue src base) bound vt
+    have head := earlyPrefixClear_triple acc Z bank cin src hacc hlen hf4 hf10 hf6 base hz hb hi
+    rw [sunbuild,if_pos h,earlyUnbuild]
+    simpa only [accVal,earlyTerm_src,earlyTerm_negative,early_steps] using rest.seq head
+  · simpa only [sunbuild,if_neg h] using baseUnbuild_triple acc Z bank cin w hacc base hz hb hi fs hf hv
+
+
+theorem earlyPrefix_counts_len (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf4 : FitsLen Z bank 163 (earlyTerm src false 4))
+    (hf10 : FitsLen Z bank 163 (earlyTerm src false 10))
+    (hf6 : FitsLen Z bank 163 (earlyTerm src true 6)) :
+    (toffoliCount (earlyPrefix acc Z bank cin src)=264 ∧
+      measurementCount (earlyPrefix acc Z bank cin src)=264) ∧
+    (toffoliCount (earlyPrefixClear acc Z bank cin src)=264 ∧
+      measurementCount (earlyPrefixClear acc Z bank cin src)=264) := by
+  have narrow (f : MeasuredSquareFold) (hf : FitsLen Z bank 163 f)
+      (hl : f.src.length+f.shift<141) : FitsLen Z bank 141 f := by
+    refine ⟨hl,?_,?_⟩
+    · have h := hf.zpad; omega
+    · have h := hf.bankLen; omega
+  have len : (acc.take 141).length=141 := by simp [List.length_take,hacc]
+  have seed := seed_counts acc Z bank cin 163 (earlyTerm src false 4) hacc hf4
+  have a (neg : Bool) := op_counts (acc.take 141) Z bank cin 141 neg (earlyTerm src false 10) len
+    (narrow _ hf10 (by simp [earlyTerm,hsrc]))
+  have b (neg : Bool) := op_counts (acc.take 141) Z bank cin 141 neg (earlyTerm src true 6) len
+    (narrow _ hf6 (by simp [earlyTerm,hsrc]))
+  simp only [earlyPrefix,earlyPrefixClear,toffoliCount_append,measurementCount_append,
+    seed.1,seed.2,(a false).1,(a false).2,(b true).1,(b true).2,
+    (b false).1,(b false).2,(a true).1,(a true).2]
+  norm_num [earlyTerm]
+
+theorem sbuild_counts (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,FitsLen Z bank w f) :
+    (toffoliCount (sbuild acc Z bank cin w fs)=sbuildT w fs ∧
+      measurementCount (sbuild acc Z bank cin w fs)=sbuildT w fs) ∧
+    (toffoliCount (sunbuild acc Z bank cin w fs)=sbuildT w fs ∧
+      measurementCount (sunbuild acc Z bank cin w fs)=sbuildT w fs) := by
+  by_cases h : EarlyH w fs
+  · obtain ⟨src,tail,rfl,hlen,rfl⟩ := earlyH_info w fs h
+    have head := earlyPrefix_counts_len acc Z bank cin src hacc hlen
+      (hf _ (by simp)) (hf _ (by simp)) (hf _ (by simp))
+    have rest := build_counts acc Z bank cin 163 hacc tail (fun f hf' => hf f (by simp [hf']))
+    simp only [sbuild,sunbuild,sbuildT,if_pos h,earlyBuild,earlyUnbuild,earlyBuildT,earlyTerm_src,
+      toffoliCount_append,measurementCount_append]
+    rcases head with ⟨⟨ht,hm⟩,⟨hct,hcm⟩⟩
+    rcases rest with ⟨⟨rt,rm⟩,⟨rct,rcm⟩⟩
+    omega
+  · simpa only [sbuild,sunbuild,sbuildT,if_neg h] using baseBuild_counts acc Z bank cin w hacc fs hf
+
+theorem sbuild_support (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) (S : Finset Wire)
+    (hS : ∀f∈fs,(cin::(f.src++acc++Z++bank)).toFinset⊆S) :
+    wires (sbuild acc Z bank cin w fs)⊆S ∧ wires (sunbuild acc Z bank cin w fs)⊆S := by
+  by_cases h : EarlyH w fs
+  · obtain ⟨src,tail,rfl,hlen,rfl⟩ := earlyH_info w fs h
+    have head := earlyPrefix_support acc Z bank cin src hacc hlen
+      (hf _ (by simp)) (hf _ (by simp)) (hf _ (by simp))
+    have place : (cin::(src++acc++Z++bank)).toFinset⊆S :=
+      hS (earlyTerm src false 4) (by simp)
+    have rest := build_support acc Z bank cin 163 hacc tail
+      (fun f hf' => hf f (by simp [hf'])) S (fun f hf' => hS f (by simp [hf']))
+    simp only [sbuild,sunbuild,if_pos h,earlyBuild,earlyUnbuild,earlyTerm_src,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨head.1.trans place,rest.1⟩,⟨rest.2,head.2.trans place⟩⟩
+  · simpa only [sbuild,sunbuild,if_neg h] using baseBuild_support acc Z bank cin w hacc fs hf S hS
+
+theorem sbuild_physical (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,Fits acc Z bank cin w f) :
+    GatePhysical (sbuild acc Z bank cin w fs) ∧ GatePhysical (sunbuild acc Z bank cin w fs) := by
+  by_cases h : EarlyH w fs
+  · obtain ⟨src,tail,rfl,hlen,rfl⟩ := earlyH_info w fs h
+    have head := earlyPrefix_physical acc Z bank cin src hacc hlen
+      (hf _ (by simp)) (hf _ (by simp)) (hf _ (by simp))
+    have rest := build_physical acc Z bank cin 163 tail (fun f hf' => hf f (by simp [hf']))
+    simp only [sbuild,sunbuild,if_pos h,earlyBuild,earlyUnbuild,earlyTerm_src,gatePhysical_append]
+    exact ⟨⟨head.1,rest.1⟩,⟨rest.2,head.2⟩⟩
+  · simpa only [sbuild,sunbuild,if_neg h] using baseBuild_physical acc Z bank cin w hacc fs hf
+
+theorem earlyPrefix_gateSlots (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf4 : FitsLen Z bank 163 (earlyTerm src false 4))
+    (hf10 : FitsLen Z bank 163 (earlyTerm src false 10))
+    (hf6 : FitsLen Z bank 163 (earlyTerm src true 6)) :
+    Challenge.gateSlots (earlyPrefix acc Z bank cin src)≤3*(14*163) ∧
+    Challenge.gateSlots (earlyPrefixClear acc Z bank cin src)≤3*(14*163) := by
+  have narrow (f : MeasuredSquareFold) (hf : FitsLen Z bank 163 f)
+      (hl : f.src.length+f.shift<141) : FitsLen Z bank 141 f := by
+    refine ⟨hl,?_,?_⟩
+    · have h := hf.zpad; omega
+    · have h := hf.bankLen; omega
+  have len : (acc.take 141).length=141 := by simp [List.length_take,hacc]
+  have seed : Challenge.gateSlots (seedOp acc Z 163 (earlyTerm src false 4))≤163 := by
+    have l := fits_lengths acc Z bank cin 163 (earlyTerm src false 4) hacc hf4
+    have h : Challenge.gateSlots (seedOp acc Z 163 (earlyTerm src false 4))≤
+        (tx Z 163 (earlyTerm src false 4)).length := by simp [seedOp,Baselines.copyRegister_gateSlots]
+    rw [l.1,l.2.2] at h
+    exact h.trans (by omega)
+  have a (neg : Bool) : Challenge.gateSlots
+      (op (acc.take 141) Z bank cin 141 neg (earlyTerm src false 10))≤14*141 := by
+    have h := op_gateSlots (acc.take 141) Z bank cin 141 neg (earlyTerm src false 10)
+    have l := fits_lengths (acc.take 141) Z bank cin 141 (earlyTerm src false 10) len
+      (narrow _ hf10 (by simp [earlyTerm,hsrc]))
+    rw [l.1,l.2.2] at h
+    exact h.trans (by omega)
+  have b (neg : Bool) : Challenge.gateSlots
+      (op (acc.take 141) Z bank cin 141 neg (earlyTerm src true 6))≤14*141 := by
+    have h := op_gateSlots (acc.take 141) Z bank cin 141 neg (earlyTerm src true 6)
+    have l := fits_lengths (acc.take 141) Z bank cin 141 (earlyTerm src true 6) len
+      (narrow _ hf6 (by simp [earlyTerm,hsrc]))
+    rw [l.1,l.2.2] at h
+    exact h.trans (by omega)
+  have a0 := a false; have a1 := a true; have b0 := b false; have b1 := b true
+  simp only [earlyPrefix,earlyPrefixClear,Challenge.gateSlots_append]
+  omega
+
+theorem sbuild_gateSlots (acc Z bank : List Wire) (cin : Wire) (w : Nat) (hacc : acc.length=w)
+    (fs : List MeasuredSquareFold) (hf : ∀f∈fs,FitsLen Z bank w f) :
+    Challenge.gateSlots (sbuild acc Z bank cin w fs)≤fs.length*(14*w) ∧
+      Challenge.gateSlots (sunbuild acc Z bank cin w fs)≤fs.length*(14*w) := by
+  by_cases h : EarlyH w fs
+  · obtain ⟨src,tail,rfl,hlen,rfl⟩ := earlyH_info w fs h
+    have head := earlyPrefix_gateSlots acc Z bank cin src hacc hlen
+      (hf _ (by simp)) (hf _ (by simp)) (hf _ (by simp))
+    have rest := build_gateSlots acc Z bank cin 163 hacc tail (fun f hf' => hf f (by simp [hf']))
+    simp only [sbuild,sunbuild,if_pos h,earlyBuild,earlyUnbuild,earlyTerm_src,Challenge.gateSlots_append,
+      List.length_cons]
+    omega
+  · simpa only [sbuild,sunbuild,if_neg h] using baseBuild_gateSlots acc Z bank cin w hacc fs hf
+
+end ECDSAAdd.Entrant.Acc
 end
 
 section
 -- ===== SquareFolds =====
+
 /-! Sign-grouped fold schedule for the measured streamed square.
 Each fold list is reordered so that all folds of one sign are applied
 consecutively, and each branch starts in the orientation the previous branch
@@ -1248,6 +1787,7 @@ end
 
 section
 -- ===== AccFold =====
+
 /-! Accumulated correction fold in the streamed-square workspace, and a fold
 schedule mixing ordinary folds with accumulated ones. The accumulator is the
 low 163 bits of the fold work register; zero padding comes from the unused
@@ -2019,382 +2559,473 @@ end ECDSAAdd.Entrant
 end
 
 section
--- ===== RotCert =====
-set_option maxRecDepth 100000
+-- ===== SquareGap =====
 
-/-! Rotated 128-bit squares stay canonical.
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 16384
 
-For a square `P < 2^256` and `N2 = 2^(256-j)`, the left rotation by `j` of `P` is
-`P / N2 + 2^j * (P % N2)`.  It can reach `p` only when the top part `h = P / N2`
-and the low part force `P` into the interval `[rotLo h, rotHi h]`.  For each
-`h < 2^j` a certificate `r` with `r*r < rotLo h` and `rotHi h < (r+1)*(r+1)`
-shows that interval contains no square.  `certOK` checks the whole certificate
-list by kernel evaluation of natural-number arithmetic. -/
+/-! Square-gap certificates for left rotations by 4, 6, and 10 bits.
+Each table contains the exact integer roots of `k * 2^(256-j) - 1`.
+The checks verify both bounds in one pass through each table. -/
+
 namespace ECDSAAdd.Entrant
-open Arithmetic
 
-def rotLo (B N2 h : Nat) : Nat := h*N2 + (SquareReduction.p - h + B - 1)/B
-def rotHi (N2 h : Nat) : Nat := h*N2 + N2 - 1
-
-def certOK (B N2 : Nat) : Nat → List Nat → Bool
-  | h, [] => h == B
-  | h, r :: rs =>
-      (decide (r*r < rotLo B N2 h) && decide (rotHi N2 h < (r+1)*(r+1))) && certOK B N2 (h+1) rs
-
-theorem certOK_spec (B N2 : Nat) : ∀ (h0 : Nat) (rs : List Nat), certOK B N2 h0 rs = true →
-    ∀ h, h0 ≤ h → h < B → ∃ r, r*r < rotLo B N2 h ∧ rotHi N2 h < (r+1)*(r+1) := by
-  intro h0 rs
-  induction rs generalizing h0 with
-  | nil =>
-    intro hc h hh hb
-    simp only [certOK, beq_iff_eq] at hc
-    omega
-  | cons r rs ih =>
-    intro hc h hh hb
-    simp only [certOK, Bool.and_eq_true, decide_eq_true_eq] at hc
-    by_cases e : h = h0
-    · subst e; exact ⟨r, hc.1.1, hc.1.2⟩
-    · exact ih (h0+1) hc.2 h (by omega) hb
-
-/-- A square below `2^256` rotated with a valid certificate list stays below `p`. -/
-theorem rot_lt_p (B N2 : Nat) (hB : 0 < B) (hN : 0 < N2) (hBN : B*N2 = 2^256)
-    (cert : List Nat) (hc : certOK B N2 0 cert = true) (Y : Nat) (hb : Y*Y < 2^256) :
-    (Y*Y) / N2 + B * ((Y*Y) % N2) < SquareReduction.p := by
-  by_contra hge
-  push_neg at hge
-  have hdiv : N2 * ((Y*Y) / N2) + (Y*Y) % N2 = Y*Y := Nat.div_add_mod (Y*Y) N2
-  have hhB : (Y*Y) / N2 < B := by
-    rw [Nat.div_lt_iff_lt_mul hN]; rw [hBN]; exact hb
-  obtain ⟨r, hr1, hr2⟩ := certOK_spec B N2 0 cert hc ((Y*Y) / N2) (Nat.zero_le _) hhB
-  generalize hh : (Y*Y) / N2 = h at hdiv hhB hr1 hr2 hge
-  generalize hL : (Y*Y) % N2 = L at hdiv hge
-  have hLlt : L < N2 := by rw [← hL]; exact Nat.mod_lt _ hN
-  have hlo : rotLo B N2 h ≤ Y*Y := by
-    unfold rotLo
-    have hq : (SquareReduction.p - h + B - 1)/B ≤ L := by
-      apply Nat.lt_succ_iff.mp
-      rw [Nat.div_lt_iff_lt_mul hB, Nat.succ_mul]
-      have e : B * L = L * B := Nat.mul_comm B L
-      omega
-    have e2 : h * N2 = N2 * h := Nat.mul_comm h N2
-    omega
-  have hhi : Y*Y ≤ rotHi N2 h := by
-    unfold rotHi
-    have e2 : h * N2 = N2 * h := Nat.mul_comm h N2
-    omega
-  have a := Nat.mul_self_lt_mul_self_iff.mp (lt_of_lt_of_le hr1 hlo)
-  have b := Nat.mul_self_lt_mul_self_iff.mp (lt_of_le_of_lt hhi hr2)
+private theorem square_gap (M K D R : Nat)
+    (hP : M^2<K) (hgap : R^2+D<K) (hR : K≤(R+1)^2) : M^2+D<K := by
+  have hle : M≤R := by nlinarith
+  have hs : M^2≤R^2 := Nat.pow_le_pow_left hle 2
   omega
 
-/-- Certificates for the rotation by 4: `r_h = isqrt (rotHi h)` for `h < 2^4`. -/
-def rotCert4 : List Nat := [
-  85070591730234615865843651857942052863, 120307984584002255772516886238812528463, 147346587106715120692043727842883538658, 170141183460469231731687303715884105727,
-  190223625994936052448711836799948219418, 208379541855705147060497221923602346553, 225075629603308753018814965684675446837, 240615969168004511545033772477625056927,
-  255211775190703847597530955573826158591, 269016831765825801719526439316123156306, 282147233462699194961827797147224560430, 294693174213430241384087455685767077316,
-  306726380517423719006373237817322128119, 318305007944662521603433860153578694457, 329476985023209069078162071863942203380, 340282366920938463463374607431768211455]
+private def checkRoots (N D : Nat) : Nat → List Nat → Bool
+  | _, [] => true
+  | K, R::rs =>
+      (decide (R^2+D<K*N) && decide (K*N≤(R+1)^2)) && checkRoots N D (K+1) rs
 
-theorem rotCert4_ok : certOK (2^4) (2^252) 0 rotCert4 = true := by decide +kernel
+private theorem checkRoots_spec (N D : Nat) : ∀ K rs, checkRoots N D K rs=true →
+    ∀ i : Nat, K ≤ i → i < K+rs.length → ∃ R, R^2+D < i*N ∧ i*N ≤ (R+1)^2 := by
+  intro K rs
+  induction rs generalizing K with
+  | nil =>
+    intro hc i hi hb
+    simp only [List.length_nil,Nat.add_zero] at hb
+    omega
+  | cons R rs ih =>
+    intro hc i hi hb
+    simp only [checkRoots,Bool.and_eq_true,decide_eq_true_eq] at hc
+    by_cases e : i=K
+    · subst i; exact ⟨R,hc.1.1,hc.1.2⟩
+    · apply ih (K+1) hc.2 i (by omega)
+      simp only [List.length_cons] at hb
+      omega
 
-theorem rot4_canonical (Y : Nat) (hb : Y*Y < 2^256) :
-    (Y*Y) / 2^252 + 2^4 * ((Y*Y) % 2^252) < SquareReduction.p :=
-  rot_lt_p (2^4) (2^252) (by positivity) (by positivity) (by norm_num) rotCert4 rotCert4_ok Y hb
+private def roots4 : List Nat :=
+  [85070591730234615865843651857942052863,
+   120307984584002255772516886238812528463,
+   147346587106715120692043727842883538658,
+   170141183460469231731687303715884105727,
+   190223625994936052448711836799948219418,
+   208379541855705147060497221923602346553,
+   225075629603308753018814965684675446837,
+   240615969168004511545033772477625056927,
+   255211775190703847597530955573826158591,
+   269016831765825801719526439316123156306,
+   282147233462699194961827797147224560430,
+   294693174213430241384087455685767077316,
+   306726380517423719006373237817322128119,
+   318305007944662521603433860153578694457,
+   329476985023209069078162071863942203380,
+   340282366920938463463374607431768211455]
 
-/-- Certificates for the rotation by 6: `r_h = isqrt (rotHi h)` for `h < 2^6`. -/
-def rotCert6 : List Nat := [
-  42535295865117307932921825928971026431, 60153992292001127886258443119406264231, 73673293553357560346021863921441769329, 85070591730234615865843651857942052863,
-  95111812997468026224355918399974109709, 104189770927852573530248610961801173276, 112537814801654376509407482842337723418, 120307984584002255772516886238812528463,
-  127605887595351923798765477786913079295, 134508415882912900859763219658061578153, 141073616731349597480913898573612280215, 147346587106715120692043727842883538658,
-  153363190258711859503186618908661064059, 159152503972331260801716930076789347228, 164738492511604534539081035931971101690, 170141183460469231731687303715884105727,
-  175377517668776787853951800790642601648, 180461976876003383658775329358218792695, 185407056209649813630662448518363628108, 190223625994936052448711836799948219418,
-  194921213009242215272059206077382237867, 199508222074498579239763080511020768050, 203992112763362759702255349553060103316, 208379541855705147060497221923602346553,
-  212676479325586539664609129644855132159, 216888303632675647313601872656300690638, 221019880660072681038065591764325307987, 225075629603308753018814965684675446837,
-  229059578353883514371252488813878024045, 232975410354809691028999546292736078212, 236826504480231334090187096672132418653, 240615969168004511545033772477625056927,
-  244346671786196349790200515401475186231, 248021264022511240847206814133050500226, 251642203935781198228857763314028473402, 255211775190703847597530955573826158591,
-  258732103903484357453253474976449672980, 262205173451357536391972035370709648437, 265632837538941251634075828277143597658, 269016831765825801719526439316123156306,
-  272358783900309864218087857043330409306, 275660223031885311660837236230928240409, 278922587748503829917427540838876006752, 282147233462699194961827797147224560430,
-  285335438992404078673067755199922329127, 288488412487089358763283015427614820925, 291607296777110982179066369266086494232, 294693174213430241384087455685767077316,
-  297747071055821155530452781502797185023, 300769961460005639431292215597031321158, 303762771107629881702280654470904942690, 306726380517423719006373237817322128119,
-  309661628071113251284217280308471805592, 312569312783557720590745832885403519830, 315450196843049386996416775608544988928, 318305007944662521603433860153578694457,
-  321134441436892185223825193844146861358, 323939162299524695956483584526126981093, 326719806968679001232275300715203276489, 329476985023209069078162071863942203380,
-  332211280745126111021694046270932974510, 334923254565355709814280786110416129476, 337613444404963129528222448527013170255, 340282366920938463463374607431768211455]
+private theorem gap4_checked : checkRoots (2^252) 268435518 1 roots4=true := by
+  decide +kernel
 
-theorem rotCert6_ok : certOK (2^6) (2^250) 0 rotCert6 = true := by decide +kernel
+theorem square_gap4 (M K : Nat) (hK0 : 0<K) (hK : K≤16)
+    (hP : M^2<K*2^252) : M^2+268435518<K*2^252 := by
+  obtain ⟨R,hlo,hhi⟩ := checkRoots_spec (2^252) 268435518 1 roots4 gap4_checked K
+    (by omega) (by change K<1+16; omega)
+  exact square_gap M (K*2^252) 268435518 R hP hlo hhi
 
-theorem rot6_canonical (Y : Nat) (hb : Y*Y < 2^256) :
-    (Y*Y) / 2^250 + 2^6 * ((Y*Y) % 2^250) < SquareReduction.p :=
-  rot_lt_p (2^6) (2^250) (by positivity) (by positivity) (by norm_num) rotCert6 rotCert6_ok Y hb
+private def roots6 : List Nat :=
+  [42535295865117307932921825928971026431, 60153992292001127886258443119406264231, 73673293553357560346021863921441769329, 85070591730234615865843651857942052863,
+   95111812997468026224355918399974109709, 104189770927852573530248610961801173276, 112537814801654376509407482842337723418, 120307984584002255772516886238812528463,
+   127605887595351923798765477786913079295, 134508415882912900859763219658061578153, 141073616731349597480913898573612280215, 147346587106715120692043727842883538658,
+   153363190258711859503186618908661064059, 159152503972331260801716930076789347228, 164738492511604534539081035931971101690, 170141183460469231731687303715884105727,
+   175377517668776787853951800790642601648, 180461976876003383658775329358218792695, 185407056209649813630662448518363628108, 190223625994936052448711836799948219418,
+   194921213009242215272059206077382237867, 199508222074498579239763080511020768050, 203992112763362759702255349553060103316, 208379541855705147060497221923602346553,
+   212676479325586539664609129644855132159, 216888303632675647313601872656300690638, 221019880660072681038065591764325307987, 225075629603308753018814965684675446837,
+   229059578353883514371252488813878024045, 232975410354809691028999546292736078212, 236826504480231334090187096672132418653, 240615969168004511545033772477625056927,
+   244346671786196349790200515401475186231, 248021264022511240847206814133050500226, 251642203935781198228857763314028473402, 255211775190703847597530955573826158591,
+   258732103903484357453253474976449672980, 262205173451357536391972035370709648437, 265632837538941251634075828277143597658, 269016831765825801719526439316123156306,
+   272358783900309864218087857043330409306, 275660223031885311660837236230928240409, 278922587748503829917427540838876006752, 282147233462699194961827797147224560430,
+   285335438992404078673067755199922329127, 288488412487089358763283015427614820925, 291607296777110982179066369266086494232, 294693174213430241384087455685767077316,
+   297747071055821155530452781502797185023, 300769961460005639431292215597031321158, 303762771107629881702280654470904942690, 306726380517423719006373237817322128119,
+   309661628071113251284217280308471805592, 312569312783557720590745832885403519830, 315450196843049386996416775608544988928, 318305007944662521603433860153578694457,
+   321134441436892185223825193844146861358, 323939162299524695956483584526126981093, 326719806968679001232275300715203276489, 329476985023209069078162071863942203380,
+   332211280745126111021694046270932974510, 334923254565355709814280786110416129476, 337613444404963129528222448527013170255, 340282366920938463463374607431768211455]
 
-/-- Certificates for the rotation by 10: `r_h = isqrt (rotHi h)` for `h < 2^10`. -/
-def rotCert10 : List Nat := [
-  10633823966279326983230456482242756607, 15038498073000281971564610779851566057, 18418323388339390086505465980360442332, 21267647932558653966460912964485513215,
-  23777953249367006556088979599993527427, 26047442731963143382562152740450293319, 28134453700413594127351870710584430854, 30076996146000563943129221559703132115,
-  31901471898837980949691369446728269823, 33627103970728225214940804914515394538, 35268404182837399370228474643403070053, 36836646776678780173010931960720884664,
-  38340797564677964875796654727165266014, 39788125993082815200429232519197336807, 41184623127901133634770258982992775422, 42535295865117307932921825928971026431,
-  43844379417194196963487950197660650412, 45115494219000845914693832339554698173, 46351764052412453407665612129590907027, 47555906498734013112177959199987054854,
-  48730303252310553818014801519345559466, 49877055518624644809940770127755192012, 50998028190840689925563837388265025829, 52094885463926286765124305480900586638,
-  53169119831396634916152282411213783039, 54222075908168911828400468164075172659, 55254970165018170259516397941081326996, 56268907400827188254703741421168861709,
-  57264894588470878592813122203469506011, 58243852588702422757249886573184019553, 59206626120057833522546774168033104663, 60153992292001127886258443119406264231,
-  61086667946549087447550128850368796557, 62005316005627810211801703533262625056, 62910550983945299557214440828507118350, 63802943797675961899382738893456539647,
-  64683025975871089363313368744112418245, 65551293362839384097993008842677412109, 66408209384735312908518957069285899414, 67254207941456450429881609829030789076,
-  68089695975077466054521964260832602326, 68915055757971327915209309057732060102, 69730646937125957479356885209719001688, 70536808365674798740456949286806140107,
-  71333859748101019668266938799980582281, 72122103121772339690820753856903705231, 72901824194277745544766592316521623558, 73673293553357560346021863921441769329,
-  74436767763955288882613195375699296255, 75192490365001409857823053899257830289, 75940692776907470425570163617726235672, 76681595129355929751593309454330532029,
-  77415407017778312821054320077117951398, 78142328195889430147686458221350879957, 78862549210762346749104193902136247232, 79576251986165630400858465038394673614,
-  80283610359223046305956298461036715339, 80984790574881173989120896131531745273, 81679951742169750308068825178800819122, 82369246255802267269540517965985550845,
-  83052820186281527755423511567733243627, 83730813641338927453570196527604032369, 84403361101240782382055612131753292563, 85070591730234615865843651857942052863,
-  85732629666178319151235667203935475380, 86389594290191543925699642002929328613, 87041600477988179082073860895186456611, 87688758834388393926975900395321300824,
-  88331175912365987246451476950740602474, 88968954417859501989461455287242856883, 89602193401461877347437606131173517257, 90230988438001691829387664679109396347,
-  90855431794937894003754770589036446577, 91475612590408096074420234834267234969, 92091616941696950432527329901802211661, 92703528104824906815331224259181814054,
-  93311426605897940135831683800530642542, 93915390364804929416771759117077744496, 94515494811800626632459302190721262802, 95111812997468026224355918399974109709,
-  95704415696513942849074108340184809471, 96293371505815294937613268783965082473, 96878746937100593150684230783613621955, 97460606504621107636029603038691118933,
-  98039012808138836098454154115084970993, 98614026611533449491522177570809842251, 99185706917307616410304814283328547768, 99754111037249289619881540255510384025,
-  100319294659490489966858998267591051868, 100881311912184675644822414743546183615, 101440215424008787617956412390675090648, 101996056381681379851127674776530051658,
-  102548884584674754665468704570670082983, 103098748497286620199690180208776580996, 103645695298225370744670471111804453001, 104189770927852573530248610961801173276,
-  104731020133216547973592075349842287743, 105269486511001973800952275458960962405, 105805212548512198110685423930209210161, 106338239662793269832304564822427566079,
-  106868608238001660177802843644280841454, 107396357661111081572589580048653690706, 107921526356047751649856654500879263045, 108444151816337823656800936328150345319,
-  108964270636345484119997243339852359991, 109481918541175370160314093953336572724, 109997130415308452668289210942862264587, 110509940330036340519032795882162653993,
-  111020381569755060372888895709465855331, 111528486657175733777944718709129052661, 112034287377506187614015090569593809066, 112537814801654376509407482842337723418,
-  113039099308501549434559813334360681802, 113538170606290341393787483530978863730, 114035057753170400478106559148369887933, 114529789176941757185626244406939012022,
-  115022392694033894627389964181495798044, 115512895527756373773189013518293919470, 116001324325854896914473924118812815030, 116487705177404845514499773146368039106,
-  116972063629072596815535021304670322687, 117454424700773298902317934109332799149, 117934812900752258930658599587897845119, 118413252240115667045093548336066209326,
-  118889766246835032780444897999967637136, 119364377979248445601287697557592010421, 119837110039080581254528544016317791164, 120307984584002255772516886238812528463,
-  120777023339749274618277909377214560099, 121244247611819331303241716078434769919, 121709678296764773838104457293229142782, 122173335893098174895100257700737593115,
-  122635240511826809126994597088091329274, 123095411886631355511665657422101680279, 123553869383703400904310776948978326267, 124010632011255620423603407066525250113,
-  124465718428717848307384363577127638186, 124919146955631627059185454609077069589, 125370935580255230844680553925818150011, 125821101967890599114428881657014236701,
-  126269663468943086393808061284496995255, 126716637126724432290583619053040885394, 127162039685008880343249185307917680376, 127605887595351923798765477786913079295,
-  128048197024180729299719437429595255261, 128488983859664884407259330412768868952, 128928263718375730605538261862523096326, 129366051951742178726626737488224836490,
-  129802363652310557479594040856350627018, 130237213659815716912810763702251466596, 130670616567070296200043421448225912051, 131102586725678768195986017685354824218,
-  131533138251582590890463850592981951236, 131962285030442527391239976987954583436, 132390040722863940621719105743186974597, 132816418769470625817037914138571798829,
-  133241432395832512468680145077534976981, 133665094617252346973046846784762584290, 134087418243416257290404984359872233197, 134508415882912900859763219658061578153,
-  134928099947625706317969462287557034034, 135346482657002537744081497018664094521, 135763576042206936728123359168803558127, 136179391950154932109043928521665204653,
-  136593942047441249327693278923280732090, 137007237824158600608285946571145645724, 137419290597613593249696883352861744490, 137830111515942655830418618115464120204,
-  138239711561631250781995934269155835903, 138648101554939516257450976930543233054, 139055292157237360222996836388772721081, 139461293874251914958713770419438003376,
-  139866117059230150407471665245893249237, 140269771916019339816089704927116173812, 140672268502067970636759353552922154273, 141073616731349597480913898573612280215,
-  141473826377212041834617060485007628099, 141872907075154255057890521250674255714, 142270868325533076714392689771781663904, 142667719496202039336533877599961164563,
-  143063469825084293157776103670948134087, 143458128422681649980566008983331351047, 143851704274521674045367689242075150054, 144244206243544679381641507713807410462,
-  144635643072432427520717648595969320706, 145026023385880256505606587198529767136, 145415355692814311722655540610392645118, 145803648388555491089533184633043247116,
-  146190909756931661454044404558036678400, 146577147972339649584967373713505100983, 146962371101758459770873744661281035206, 147346587106715120692043727842883538658,
-  147729803845204516805055969314155218447, 148112029073564513894730603091853074022, 148493270448307644623287670146908451855, 148873535527910577765226390751398592511,
-  149252831774562554285617082827417880885, 149631166555873934429822310383265576037, 150008547146545962478048526964414245861, 150384980730002819715646107798515660579,
-  150760474399987001419781745130253503955, 151135035162119020207889895868414091270, 151508669935422405878739267750029449377, 151881385553814940851140327235452471345,
-  152253188767567040418798001367545769278, 152624086244728158245397527922330370843, 152994084572522069776691512164795077487, 153363190258711859503186618908661064059,
-  153731409732935412227022094338387510395, 154098749348012183630663472987059069213, 154465215381222001475745315995122939981, 154830814035556625642108640154235902796,
-  155195551440944772915710769210258249202, 155559433655451290917074915686132123294, 155922466666451144798175027604503451164, 156284656391778860295372916442701759915,
-  156646008680854047380800798496888326984, 157006529315783610077218121091526916869, 157366224012441229965855676778993695220, 157725098421524693498208387804272494464,
-  158083158129591616397339977260678597465, 158440408660074102179229652459741451948, 158796855474272856118208637948402379872, 159152503972331260801716930076789347228,
-  159507359494189904748456847233641349119, 159861427320522041381372243222448754666, 160214712673650441934387486750896987835, 160567220718446092611912596922073430679,
-  160918956563209173495906333934164636517, 161269925260532744290632082712656673156, 161620131808149549994653126145600496811, 161969581149762347978241792263063490546,
-  162318278175858146707975932838304305087, 162666227724506735485201404492225517978, 163013434582143874038140023266547641340, 163359903484339500616137650357601638244,
-  163705639116551307366801363642574286123, 164050646114864022220976331694954710308, 164394929066714727255532510186441302089, 164738492511604534539081035931971101690,
-  165081340941796931780755232359436415351, 165423478803003101687210718578367226637, 165764910495054510778549193823243980990, 166105640372563055510847023135466487255,
-  166445672745569045892622857199954691990, 166785011880177299356497202105288763286, 167123661999181610447394627848342152402, 167461627282677854907140393055208064738,
-  167798911868665979964729461872834748616, 168135519853641126074704024572576972691, 168471455293174118976045606701009670572, 168806722202481564764111224263506585127,
-  169141324556985774672012145136831997849, 169475266292864740439281352063224509948, 169808551307592375498764917165894767142, 170141183460469231731687303715884105727,
-  170473166573143896220277130060632893550, 170804504430125267261897446203023907131, 171135200779285903893197364907035423989, 171465259332356638302471334407870950760,
-  171794683765412635778439366610408518034, 172123477719351082249479404134277321767, 172451644800360675004550415995933420682, 172779188580383087851399284005858657226,
-  173106112597566577755056132167968603481, 173432420356711895906147996930703269668, 173758115329710662190396882846780948878, 174083200955976358164147721790372913222,
-  174407680642868089882356868641908474071, 174731557766107268271749659719552058659, 175054835670187351189533342962056088341, 175377517668776787853951800790642601648,
-  175699607045115302974024248587369552565, 176021107052403654639061444925175345579, 176342020914186996851142373217015350269, 176662351824731974492902953901481204949,
-  176982102949397675516072104900894219042, 177301277425000562210616653522122601413, 177619878360173500567640322504099313989, 177937908835719003978922910574485713766,
-  178255371904956804819864877068926108790, 178572270594065864838379165833633658937, 178888607902420932717781028185394352110, 179204386802923754694875212262347034515,
-  179519610242329041693205499849301990627, 179834281141565294073858879462976907436, 180148402396050582810415227411166149800, 180461976876003383658775329358218792695,
-  180775007426748558714917760198126862335, 181087496869018577632418953276365366954, 181399447999250068705167091403963766956, 181710863589875788007509541178072893154,
-  182021746389612092822547729710178859200, 182332099123742003677935069183152053234, 182641924494393937445893560097330630017, 182951225180816192148840469668534469938,
-  183260003839647262342650386551106389673, 183568263105182062224855784903013184980, 183876005589634131933738639342754331830, 184183233883393900865054659803604423322,
-  184489950555283080234867383993516756557, 184796158152805255558496318868441406989, 185101859202392748195782519429384141369, 185407056209649813630662448518363628108,
-  185711751659592242707366537550895861432, 186015948016883430635405110599787875170, 186319647726066977199885350562139132596, 186622853211795880271663367601061285084,
-  186925566879058383402449213246101815028, 187227791113400537012352350565439315521, 187529528281145531430610606590410107749, 187830780729609858833543518234155488993,
-  188131550787316359936293420512261256141, 188431840764204210135871601597528025399, 188731652951835898671643322485521355052, 189030989623601253264918604381442525604,
-  189329853034918561621041964653587477329, 189628245423432840124591936816009773028, 189926169009211299030329395380320858152, 190223625994936052448711836799948219418,
-  190520618566094120444477853450631571996, 190817148891164769609380044560698103806, 191113219121804237535001840071236674701, 191408831393027885698148216680369618943,
-  191703987823389824378983273635826330074, 191998690515160052360346936501454397142, 192292941554499153304982576244453063910, 192586743011630589875226537567930164947,
-  192880096941010635846543998503935458890, 193173005381495985671652351559434670314, 193465470356509080175376644752794525193, 193757493874201186301368461567227243911,
-  194049077927613268089940106232337254735, 194340224494834685341083072846699845463, 194630935539159755707828912811322673478, 194921213009242215272059206077382237867,
-  195211058839247611977278475398813455214, 195500474949003665630339940138070358753, 195789463244148627536280311081574976168, 196078025616277672196908308230169941987,
-  196366163943087352884244444614426889125, 196653880088518152293979026528032236328, 196941175902895158891463094974091015982, 197228053223066898983044355141619684503,
-  197514513872542353978487265211959055724, 197800559661626191755462435876167666086, 198086192387552240494352912252222954458, 198371413834615232820609628566657095536,
-  198656225774300847572309225209019709781, 198940629965414076002146162595986684035, 199224628154205938725556871207857698244, 199508222074498579239763080511020768050,
-  199791413447808759361978115084130249823, 200074203983469781468594372246347999629, 200356595378751861960619629910966598511, 200638589318980979933717996535182103736,
-  200920187477656224593708228043454800206, 201201391516565664530053936271358893493, 201482203085900761540528973032487822945, 201762623824369351289644829487092367230,
-  202042655359307212681378673162612375551, 202322299306788247433039518135803848506, 202601557271733290951560125783964865655, 202880430848017575235912824781350181296,
-  203158921618576864159532755009841625182, 203437031155512281124411147832973042986, 203714761020193848723717914999721759080, 203992112763362759702255349553060103316,
-  204269087925232398163565892782497806980, 204545688035588129638953742809756352816, 204821914613885878306873805195077862788, 205097769169349509330937409141340165966,
-  205373253201067033971031577777625658685, 205648368198085654814600528058781930700, 205923115639505668173851294914963877112, 206197496994573240399380360417553161992,
-  206471513722772074571338880821220324780, 206745167273913983745627927173196180307, 207018459088228386654612804277381788304, 207291390596450741489340942223608906003,
-  207563963219909933123118167607690695555, 207836178370614628874423523517729885661, 208108037451338617650406362142637271817, 208379541855705147060497221923602346553,
-  208650692968270272842864880474754220720, 208921492164605234704457543712744270625, 209191940811377872438070655629157005064, 209462040266433095947184150699684575487,
-  209731791878872422581107504595979192823, 210001196989132594959163506878062337269, 210270256929063292243135509534303736950, 210538973022003947601904550917921924811,
-  210807346582859684401021032347297911446, 211075378918176383442801553733640325664, 211343071326214893379328258545780467980, 211610425097024396221370847860418420323,
-  211877441512514939670667580682287086417, 212144121846529147811110343814615809770, 212410467364913121506101435979716613664, 212676479325586539664609129644855132159,
-  212942158978611972357170238263189138549, 213207507566263416585197492920295926731, 213472526323094065332375919152612068673, 213737216476003320355605687288561682908,
-  214001579244303059004800816399941746845, 214265615839783165195816971642881610432, 214529327466776334498792295309869468772, 214792715322222163145179160097307381412,
-  215055780595730530600659815536469083023, 215318524469644285197914443720676308350, 215580948119101242172786881826962047120, 215843052712095503299713309001758526090,
-  216104839409538107177285970697959825657, 216366309365317019072462261570711115694, 216627463726356469092145212972658530630, 216888303632675647313601872656300690638,
-  217148830217446764370399666359406347112, 217409044607052485858177211232486982236, 217668947921142748794575971654548432762, 217928541272690968239994486679704719982,
-  218187825768049642060440620806514383058, 218446802507005361690603422331275755881, 218705472582833236634299776949564870674, 218963837082350740320628187906673145449,
-  219221897085970984817439750988303252060, 219479653667755431789072735540647040229, 219737107895466046972651079863985664941, 219994260830616905336578421885724529174,
-  220251113528525253976128765555582357638, 220507667038362039694204150123599608696, 220763922403201908110361211005882787847, 221019880660072681038065591764325307987,
-  221275542840004318768779887996807578267, 221530909968077373801892063995158006525, 221785983063470942461612738357133905486, 222040763139510120745777791418931710663,
-  222295251203712970656954543052511550007, 222549448257837003173333135689062887166, 222803355297925183925558282916779478329, 223056973314351467555889437418258105323,
-  223310303291865866647839586127097888767, 223563346209639061027704836266938691852, 223816103041306553154129887177037185813, 224068574755012375228030181139187618132,
-  224320762313452353572782386636243987764, 224572666673916935753573873424380263623, 224824288788333585825142549459171463978, 225075629603308753018814965684675446837,
-  225326690060169419102737625059391808049, 225577471095004229573469161697773490869, 225827973638704213762635212563541860171, 226078198617003098869119626668721363605,
-  226328146950517222855251883248047550676, 226577819554785051074628446497907516705, 226827217340306301429552972095434252851, 227076341212580682787574967061957727461,
-  227325192072146251319227311424225635707, 227573770814617389352789043539206929208, 227822078330722411276710490853178707018, 228070115506340800956213118296739775866,
-  228317883222540085067496705897694394685, 228565382355612346690932398903117173701, 228812613777110383443572936877822383272, 229059578353883514371252488813878024045,
-  229306276948113039761459903209089679766, 229552710417347357980033098823453020272, 229798879614536743377521408059511783813, 230044785388067789254779928362991596089,
-  230290428581797519821978670583941461218, 230535810035087175030713187184913020688, 230780930582835672105276417735176923797, 231025791055512747546378027036587838941,
-  231270392279191783328662170608183570185, 231514735075582320962262349609183047260, 231758820262062267038328060647954535135, 232002648651709793828947848237625630060,
-  232246221053334938463162960231353854194, 232489538271510904152801202755316589403, 232732601106605066894648180155822897876, 232975410354809691028999546292736078212,
-  233217966808172356988890109053373632663, 233460271254626104529260801284625216669, 233702324478019294680990092027612559542, 233944127258145193631070042609340645375,
-  234185680370771281687236835102521780700, 234426984587668290443059374664052639873, 234668040676638971217835882407386938195, 234908849401546597804635868218665598298,
-  235149411522343206519442341248810497512, 235389727795097576504585634401607761768, 235629798972022953200505054786649334374, 235869625801504517861317199175795690238,
-  236109209028126605951699869489373382489, 236348549392699677225207964553033056424, 236587647632287040247312581706408741696, 236826504480231334090187096672132418653,
-  237065120666180769890544650203437668425, 237303496916115134926650885712198992228, 237541633952371561835984762279151499254, 237779532493670065560889795999935274272,
-  238017193255138850575939314582643301265, 238254616948339390917623568178547347519, 238491804281291285504345310422552145025, 238728755958496891202575395115184020843,
-  238965472680965736063362830785222387747, 239201955146238715122206556513020114370, 239438204048412071124571057744685750319, 239674220078161162509057088032635582328,
-  239910003922764020950414604062224348448, 240145556266124700735200101064641494228, 240380877788796422213927536687545598901, 240615969168004511545033772477625056927,
-  240850831077669138917868895383110146018, 241085464188427857414221989623407313082, 241319869167657944640597122202517574277, 241554046679498549236555818754429120198,
-  241787997384872644337934598434403232474, 242021721941508790047622785493064468255, 242255221003962706940840516990091610477, 242488495223638662606483432156869539838,
-  242721545248810673201092883546845490312, 242954371724643521967362688394595235819, 243186975293213596644799584121410578479, 243419356593529547676208914586458285564,
-  243651516261552769090074007596727797334, 243883454930217703915631665580191080896, 244115173229451975964511736497096565299, 244346671786196349790200515401475186231,
-  244577951224424520614300499091583401983, 244809012165162735986587621755167555333, 245039855226509250924206475536402457367, 245270481023653618253989194176182658548,
-  245500890168895815860829766706848029395, 245731083271665212524287755020238019072, 245961060938539374005129002671191350511, 246190823773262711023331314844203360559,
-  246420372376764970749185715298526243384, 246649707347179573409504279996519110050, 246878829279861795591599322503821490376, 247107738767406801808621553897956652535,
-  247336436399667525871032526380080848475, 247564922763772403590435035904359616327, 247793198444142958323690118639371946403, 248021264022511240847206814133050500226,
-  248249120077937125033497039923899925316, 248476767186825460784538852013889250601, 248704205922943085659183244488997746277, 248931436857435696614768727154255276372,
-  249158460558844583266270534703199730882, 249385277593123224049703850638775960062, 249611888523653746660119322271657690993, 249838293911263254118370909218154139179,
-  250064494314240017804897316522415192637, 250290490288349538783035543359940683230, 250516282386850478718875115553099293197, 250741871160510461689361107851636300022,
-  250967257157621748155259898734446027679, 251192440924016782360710589582812097107, 251417423003083614406394068220107664894, 251642203935781198228857763314028473402,
-  251866784260654566704234231860644343162, 252091164513849885080482908376542308605, 252315345229129383928363732628662223430, 252539326937886172787616122568993990511,
-  252763110169158935671264078269627784912, 252986695449646509577595345659574977653, 253210083303722347146166836395259877691, 253433274253448864581167238106081770789,
-  253656268818591675952618347771594583439, 253879067516633714973216553887987356175, 254101670862789245336102556900763081382, 254324079370017760686498370615835360753,
-  254546293549037775287963449646638655584, 254768313908340506431994039545570271667, 254990140954203449627819186941325129145, 255211775190703847597530955573826158591,
-  255433217119732054090122987666859236425, 255654467241004793516598383257476622985, 255875526052078317397042734451716309496, 256096394048361458599438874859190510523,
-  256317071723128584339024350000205857656, 256537559567532448896158680525999049838, 256757858070616946999973109185469923489, 256977967719329768814518660825537737905,
-  257197888998534957453707001611806426141, 257417622391025369941050790862963508850, 257637168377535042520054040062439575522, 257856527436751461211076523725046192652,
-  258075700045327738500597651600725085181, 258294686677894697039032567155506353673, 258513487807072861213604769024266816643, 258732103903484357453253474976449672980,
-  258950535435764724113148505305823780454, 259168782870574631777098926008787985839, 259386846672611514806972360844698226647, 259604727304621114959188081712701254037,
-  259822425227408937879407071735523610273, 260039940899851623277714604212135592898, 260257274778908229577873898126556519873, 260474427319631433825621527404502933192,
-  260691398975178647632474931662825545459, 260908190196823049923128080279083987301, 261124801433964537246221582685559369833, 261341233134140592400086842896451824103,
-  261557485743037072116978775599928801699, 261773559704498914541326707635330350778, 261989455460540767229646977639594347427, 262205173451357536391972035370709648437,
-  262420714115334858086958169580731366701, 262636077889059492075236019421518545676, 262851265207329639028063430186542954135, 263066276503165181780927701185963902472,
-  263281112207817851314422563332615245256, 263495772750781318137493058000418624129, 263710258559801209740997627786168362537, 263924570060885054782479953975909166873,
-  264138707678312154656072183610661003640, 264352671834643383094564998372653332900, 264566462950730914443877323555357286122, 264780081445727881243438211486373949194,
-  264993527737097961739354430852221807424, 265206802240624897950678439604651782563, 265419905370421944902611619660153613168, 265632837538941251634075828277143597658,
-  265845599156983174580761412056068915199, 266058190633705523928510789335701199090, 266270612376632743525722505595358691420, 266482864791665024937360290155069953963,
-  266694948283087356217124092166729047629, 266906863253578505968384365861728570649, 267118610104219943258596040345479940739, 267330189234504693946093693569525168580,
-  267541601042346133972423513470128845682, 267752845924086720167689745742695147512, 267963924274506659110782585296871553389, 268174836486832514580809968719744466394,
-  268385582952745754130576583090156862104, 268596164062391235307538750455003108013, 268806580204385632042312818393520551772, 269016831765825801719526439316123156306,
-  269226919132297093440575820981803530714, 269436842687881597982686857032176425375, 269646602815166339953573190136599845062, 269856199895251412635938924575114068068,
-  270065634307758056011087104460955311518, 270274906430836678445966434590790579282, 270484016641174822523117280751280746452, 270692965314005075488162994037328189043,
-  270901752823112924784733319190899535080, 271110379540844559142002340820375863297, 271318845838114615675373374935077103393, 271527152084413873456246718337607116255,
-  271735298647816894002262527182444674430, 271943285894989609134919620706242846216, 272151114191196856647031019023199395431, 272358783900309864218087857043330409306,
-  272566295384813682011264311767109339731, 272773649005814564381506688705731795737, 272980845123047301119909195603888845279, 273187884094882498655386557846561464180,
-  273394766278333811630508878825172580792, 273601492029065125264266407956665079603, 273808061701397688910480545608480596042, 274014475648317201216571893142291291449,
-  274220734221480847283435861414895734398, 274426837771224288223260704502801704907, 274632786646568603508251277524278290978, 274838581195227186499393766705723488980,
-  275044221763612593540611552747348163121, 275249708696843346999919699413097743991, 275455042338750692635484770162390451077, 275660223031885311660837236230928240409,
-  275865251117523987879865127023215223724, 276070126935676230258639272546694157880, 276274850825090851297581989705406634984, 276479423123262501563991868538311671807,
-  276683844166438160741476926931056122854, 276888114289623585549426335876827931943, 277092233826589714882266691760965608546, 277296203109879032514901953861086466108,
-  277500022470811887717426207368612421461, 277703692239492774118924894338906602795, 277907212744816567156942623066978977288, 278110584314474720445993672777545442162,
-  278313807274961421395324413741414527560, 278516881951579706403004627634381357650, 278719808668447535950326709816406952601, 278922587748503829917427540838876006752,
-  279125219513514463438017011341288414635, 279327704284078223608099360786057190822, 279530042379632727360608240078898067411, 279732234118460300814943330491786498474,
-  279934279817693820407495051401591927626, 280136179793322516106373977549771373468, 280337934360197737010722678518061843015, 280539543832038679632179409854232347625,
-  280741008521438079153285052894859843718, 280942328739867863954876550037052339471, 281143504797684773701791450243781847916, 281344537004135941273518707105844308546,
-  281545425667364438823770204873271465843, 281746171094414788250315277351233233490, 281946773591238436353816385994457897849, 282147233462699194961827797147224560430,
-  282347551012578646291570208963831335770, 282547726543581513822572495423177564900, 282747760357340998947776731784931922487, 282947652754424083669234120970015256198,
-  283147404034336799602077036148276805084, 283347014495529463548035817997986841082, 283546484435401879897377906572163788406, 283745814150308510115781042501348511429,
-  283945003935563609570311339484412244341, 284144054085446331946360712779266430091, 284342964893205801505106153763693721473, 284541736651066153428785379543563327808,
-  284740369650231542498839173825878111072, 284938864180891120349749989409571831711, 285137220532223981539208825962352514423, 285335438992404078673067755199922329127,
-  285533519848605106821383468732001275513, 285731463387005357459727604817179755100, 285929269892792542167832105715410437667, 286126939650168586315552207341896268174,
-  286324472942354392964065611017347530057, 286521870051594577208183680144953226511, 286719131259162171183628892803030200723, 286916256845363299961132017966662702095,
-  287113247089541828547222325020554428415, 287310102270083980209624343227646759124, 287506822664422926343235022827125798395, 287703408549043348090735378484150300109,
-  287899860199485969929990587970314894118, 288096177890352065438511846278812750931, 288292361895307935443391812880949427958, 288488412487089358763283015427614820925,
-  288684329937506015747164867672672734024, 288880114517445884812839806351895247421, 289075766496879612186312237582580729800, 289271286144864855041435297191938641412,
-  289466673729550598237459663079412401366, 289661929518181444850385605779844294686, 289857053777101880692303922961314832411, 290052046771760513011213174397059534273,
-  290246908766714283562119518284839297365, 290441640025632656238561252459574406280, 290636240811301779452052692350840865867, 290830711385628623445311081220785290236,
-  291025052009645092723515639440496221678, 291219262943512113786249432865920097766, 291413344446523698341192292648430579320, 291607296777110982179066369266086494232,
-  291801120192846239887784873678595989396, 291994814950446875582218972032579053771, 292188381305779389824477483234468619868, 292381819513863322908088809116073356801,
-  292575129828875174677984235150989266136, 292768312504152301056706208176089650321, 292961367792196787445804260868012734329, 293154295944679299169934747427010201966,
-  293347097212442909129748319678569379940, 293539771845506902828230948279310129756, 293732320093070560933760122556063018650, 293924742203516919541747489322562070413,
-  294117038424416508295362462345254912981, 294309209002531066524468098411880741218, 294501254183817237560550643516235203893, 294693174213430241384087455685767077316,
-  294884969335727525759474363449133542331, 295076639794272396011322776675390203528, 295268185831837623594638887100353268865, 295459607690409033610111938628310436894,
-  295650905611189071414465673528509651801, 295842079834600348474566532712429526755, 296033130600289167612733870840165523316, 296224058147129027789461206183706148044,
-  296414862713224108568533228731231731847, 296605544535912734408310807325972842270, 296796103851770818921755438666256768031, 296986540896615289246575340293816903711,
-  297176855905507490665697580360768082811, 297367049112756571617104134618389497755, 297557120751922849230914442849985643304, 297747071055821155530452781502797185023,
-  297936900256524164432905456657641113483, 298126608585365699684050333257697629919, 298316196272944023860429435678873846160, 298505663549125108571234165654835761770,
-  298695010643045885991081972054804028594, 298884237783117481853782960211032936121, 299073345197028430036124834921529646727, 299262333111747868859644620766531152075,
-  299451201753528719237305687149824352449, 299639951347910844790958615986747460388, 299828582119724194064434280974289124593, 300017094293091924956097053928828491723,
-  300205488091433511493675212049805616059, 300393763737467833073184287684901649135, 300581921453216246282767177975664090850, 300769961460005639431292215597031321158,
-  300957883978471469900576994802773155604, 301145689228560784439141451456568645291, 301333377429535222514438415127262763206, 301520948799974002839563490260507007911,
-  301708403557776893189508587638069017388, 301895741920167163621094623643319936318, 302082964103694523209798741207171758402, 302270070324238040415779791736828182540,
-  302457060797009047190502661923237053845, 302643935736554026934467244230638550845, 302830695356757486415661347283404761700, 303017339870844811757478535500058898755,
-  303203869491385108603971690415531081503, 303390284430294026569450914415821822312, 303576584898836568078580167308738393976, 303762771107629881702280654470904942690,
-  303948843266646040093910390409155885340, 304134801585214802629358462569323478416, 304320646272026362853869237172025271945, 304506377535134080837596002735091538556,
-  304691995581957200541075259652670927586, 304877500619283552291011958542215995727, 305062892853272240465972389734820310944, 305248172489456316490795055844660741687,
-  305433339732745437237750644251843982788, 305618394787428508931710082870302333089, 305803337857176316655814537896445445964, 305988169145044139553383024329590154974,
-  306172888853474351821041977732314013584, 306357497184299009587316608583921829654, 306541994338742423770186059104533431574, 306726380517423719006373237817322128119,
-  306910655920359378744415651383624552884, 307094820746965776592845519176619807181, 307278875196061694014095877206047123087, 307462819465870824454044188676775020790,
-  307646653754024263996406113712010248949, 307830378257562988630499486388522379928, 308013993172940318220212139735131308841, 308197498696024367261326945974118138426,
-  308380895022100482513683237985039941631, 308564182345873667593985587389270536132, 308747360861470994614408674131081478618, 308930430762444002951490631990245879962,
-  309113392241771085229156734799915856554, 309296245491859860599070540626329742989, 309478990704549535400870577816428739401, 309661628071113251284217280308471805592,
-  309844157782260420873947103244038846969, 310026580028139051059008517666313125283, 310208894998338053985237839514412264385, 310391102881889545831421538420516498404,
-  310573203867271133447485741790270916979, 310755198142408188933053045705470101962, 310937085894676112234011413335413359005, 311118867310902581834149831372264246588,
-  311300542577369793618330453690430923290, 311482111879816687983087137718907771390, 311663575403441165269965522224493275579, 311844933332902289596350055209006902329,
-  312026185852322481157958607854784808824, 312207333145289697076625455886341627246, 312388375394859600866438424868770828906, 312569312783557720590745832885403519830,
-  312750145493381595782003475305713606529, 312930873705802913195891235067382977740, 313111497601769631470592921666127519648, 313292017361708094761601596993776653969,
-  313472433165525135421885890911633197587, 313652745192610165796730599110684736739, 313832953621837259202047146001107286189, 314013058631567220154436242183053833738,
-  314193060399649643920776226049526863230, 314372959103424965454606109303232761517, 314552754919726497786072204142535591753, 314732448024882459931711353557987390441,
-  314912038594717994389852174007095734683, 315091526804557174286928310577891167661, 315270912829225000239514457933199481482, 315450196843049386996416775608544988928,
-  315629379019863139924674283812822012495, 315808459533005921402856826376882887216, 315987438555326207184578191959603703709, 316166316259183232794679954521357194931,
-  316345092816448930020082491292675638667, 316523768398509853556844423291821901462, 316702343176269097874520362573820237420, 316880817320148204358459304919482903897,
-  317059191000089058790242240085071327368, 317237464385555779226017527910472562484, 317415637645536594332056271790627630484, 317593710948545712236417275896804759745,
-  317771684462625179955182164112984021892, 317949558355346733451295832321931608619, 318127332793813638383625567196950110194, 318305007944662521603433860153578694457,
-  318482583974065193455045141074535543158, 318660061047730460937075319679662240348, 318837439330905931780185120159982264567, 319014718988379809496913694467282698239,
-  319191900184482679458747869326509445021, 319368983083089286055184589834960440950, 319545967847620300989149636981646089436, 319722854641044082762744486444897509332,
-  319899643625878427406905210815895041033, 320076334964192310508172576482941575693, 320252928817607620585390919648079502489, 320429425347300883868774973501793975671,
-  320605824714004980533408530932842524362, 320782127078010852438866635086918277610, 320958332599169202426283864702982677025, 321134441436892185223825193844146861358,
-  321310453750155090011152828093285550832, 321486369697498014693122323488948106593, 321662189437027531932584152712489696757, 321837913126418346991812667868329273034,
-  322013540922914947431733093475947847571, 322189072983333244717768740145961072118, 322364509464062207780785032252602899436, 322539850521065488581264165425313346312,
-  322715096309883039724504225818571445046, 322890246985632724174299387105963554473, 323065302703011917112223327471549576064, 323240263616299099989306252291200993622,
-  323415129879355446816566843720562091226, 323589901645626402740534061303022610799, 323764579068143254949569963502637789135, 323939162299524695956483584526126981093,
-  324113651491978379302607359945710471396, 324288046797302467728191624736538180672, 324462348366887173853659284907136349190, 324636556351716293415951865676608610175,
-  324810670902368731103889742123183760987, 324984692169020019036163439614293656790, 325158620301443827925269428579529583156, 325332455449013470970402808984451035957,
-  325506197760703400522020662111673333530, 325679847385090697560493619086248401105, 325853404470356554030969335346820951760, 326026869164287748076280046533095282680,
-  326200241614278112209437192821006551426, 326373521967329994466969214590975320217, 326546710370055712584074021674770231221, 326719806968679001232275300715203276489,
-  326892811909036452359991730019557079973, 327065725336578948676150298526445474880, 327238547396373090316699255173346953773, 327411278233102614733602727285148572247,
-  327583917991069809845627722037515668592, 327756466814196920489965044213387060546, 327928924846027548213458607190655991692, 328101292229728044441952663389909420616,
-  328273569108088897066003616478131629456, 328445755623526110480942281860009718173, 328617851918082579119013715970632252847, 328789858133429454511065020372882604179,
-  328961774410867505914996825601828621255, 329133600891328474547941454208244772488, 329305337715376421458880034832663844198, 329476985023209069078162071863942203380,
-  329648542954659136480144150949525454847, 329820011649195668394919562147206473044, 329991391245925358004867632828586793761, 330162681883593863561510464718872830702,
-  330333883700587118857925547008197082113, 330504996834932637591725353782632086059, 330676021424300811653379512747102254175, 330846957606006203374421437156734453274,
-  331017805517008831769849428005917034351, 331188565293915452808802162970688873560, 331359237072980833747360176640719543611, 331529820990109021557098387646487961981,
-  331700317180854605482789926971832579683, 331870725780423973762438452778797144656, 332041046923676564542594785346429497073, 332211280745126111021694046270932974510,
-  332381427378941880853931524069992596162, 332551486958949909845979199101953677689, 332721459618634229978630229716105484643, 332891345491138091785245714399909383981,
-  333061144709265181118666687128397565994, 333230857405480830338044561033945401398, 333400483711913223946835094921506024964, 333570023760354598712994404210577526573,
-  333739477682262438302210558879667558425, 333908845608760662454800892343048147188, 334078127670640810736703273455172981417, 334247323998363220894789255696684304805,
-  334416434722058201846528199856921670440, 334585459971527201333834156127387157984, 334754399876243968270731475520177100241, 334923254565355709814280786110416129476,
-  335092024167684243188014104080371819071, 335260708811727142286936440344725912389, 335429308625658879092961298211079824338, 335597823737331959929458923745669497233,
-  335766254274278056583409056057539964723, 335934600363709132323464217487517641510, 336102862132518562842045271708781427198, 336271039707282252149408049145153945383,
-  336439133214259743447438282135616280880, 336607142779395325010751895274738852330, 336775068528319131102498847804835214161, 336942910586348237952091213402019341145,
-  337110669078487754821899996868390173567, 337278344129431910189790315906636032807, 337445935863565133074191008207632413414, 337613444404963129528222448527013170255,
-  337780869877393954329235366367777255883, 337948212404319077889943731529859176829, 338115472108894448417166311442841789056, 338282649113971549344024290273663995699,
-  338449743542098452061276364805709047626, 338616755515520863973307985625853813150, 338783685156183171904127883936066202782, 338950532585729480878562704126449019897,
-  339117297925504648303679440003082045408, 339283981296555313575305438246810257146, 339450582819630923134356976371853708885, 339617102615184750997529834331789534285,
-  339783540803374914786748849252570169619, 339949897504065387281618161915820656447, 340116172836827003518959722018333391818, 340282366920938463463374607431768211455]
+private theorem gap6_checked : checkRoots (2^250) 67108880 1 roots6=true := by
+  decide +kernel
 
-theorem rotCert10_ok : certOK (2^10) (2^246) 0 rotCert10 = true := by decide +kernel
+theorem square_gap6 (M K : Nat) (hK0 : 0<K) (hK : K≤64)
+    (hP : M^2<K*2^250) : M^2+67108880<K*2^250 := by
+  obtain ⟨R,hlo,hhi⟩ := checkRoots_spec (2^250) 67108880 1 roots6 gap6_checked K
+    (by omega) (by change K<1+64; omega)
+  exact square_gap M (K*2^250) 67108880 R hP hlo hhi
 
-theorem rot10_canonical (Y : Nat) (hb : Y*Y < 2^256) :
-    (Y*Y) / 2^246 + 2^10 * ((Y*Y) % 2^246) < SquareReduction.p :=
-  rot_lt_p (2^10) (2^246) (by positivity) (by positivity) (by norm_num) rotCert10 rotCert10_ok Y hb
+private def roots10 : List Nat :=
+  [10633823966279326983230456482242756607, 15038498073000281971564610779851566057, 18418323388339390086505465980360442332, 21267647932558653966460912964485513215,
+   23777953249367006556088979599993527427, 26047442731963143382562152740450293319, 28134453700413594127351870710584430854, 30076996146000563943129221559703132115,
+   31901471898837980949691369446728269823, 33627103970728225214940804914515394538, 35268404182837399370228474643403070053, 36836646776678780173010931960720884664,
+   38340797564677964875796654727165266014, 39788125993082815200429232519197336807, 41184623127901133634770258982992775422, 42535295865117307932921825928971026431,
+   43844379417194196963487950197660650412, 45115494219000845914693832339554698173, 46351764052412453407665612129590907027, 47555906498734013112177959199987054854,
+   48730303252310553818014801519345559466, 49877055518624644809940770127755192012, 50998028190840689925563837388265025829, 52094885463926286765124305480900586638,
+   53169119831396634916152282411213783039, 54222075908168911828400468164075172659, 55254970165018170259516397941081326996, 56268907400827188254703741421168861709,
+   57264894588470878592813122203469506011, 58243852588702422757249886573184019553, 59206626120057833522546774168033104663, 60153992292001127886258443119406264231,
+   61086667946549087447550128850368796557, 62005316005627810211801703533262625056, 62910550983945299557214440828507118350, 63802943797675961899382738893456539647,
+   64683025975871089363313368744112418245, 65551293362839384097993008842677412109, 66408209384735312908518957069285899414, 67254207941456450429881609829030789076,
+   68089695975077466054521964260832602326, 68915055757971327915209309057732060102, 69730646937125957479356885209719001688, 70536808365674798740456949286806140107,
+   71333859748101019668266938799980582281, 72122103121772339690820753856903705231, 72901824194277745544766592316521623558, 73673293553357560346021863921441769329,
+   74436767763955288882613195375699296255, 75192490365001409857823053899257830289, 75940692776907470425570163617726235672, 76681595129355929751593309454330532029,
+   77415407017778312821054320077117951398, 78142328195889430147686458221350879957, 78862549210762346749104193902136247232, 79576251986165630400858465038394673614,
+   80283610359223046305956298461036715339, 80984790574881173989120896131531745273, 81679951742169750308068825178800819122, 82369246255802267269540517965985550845,
+   83052820186281527755423511567733243627, 83730813641338927453570196527604032369, 84403361101240782382055612131753292563, 85070591730234615865843651857942052863,
+   85732629666178319151235667203935475380, 86389594290191543925699642002929328613, 87041600477988179082073860895186456611, 87688758834388393926975900395321300824,
+   88331175912365987246451476950740602474, 88968954417859501989461455287242856883, 89602193401461877347437606131173517257, 90230988438001691829387664679109396347,
+   90855431794937894003754770589036446577, 91475612590408096074420234834267234969, 92091616941696950432527329901802211661, 92703528104824906815331224259181814054,
+   93311426605897940135831683800530642542, 93915390364804929416771759117077744496, 94515494811800626632459302190721262802, 95111812997468026224355918399974109709,
+   95704415696513942849074108340184809471, 96293371505815294937613268783965082473, 96878746937100593150684230783613621955, 97460606504621107636029603038691118933,
+   98039012808138836098454154115084970993, 98614026611533449491522177570809842251, 99185706917307616410304814283328547768, 99754111037249289619881540255510384025,
+   100319294659490489966858998267591051868, 100881311912184675644822414743546183615, 101440215424008787617956412390675090648, 101996056381681379851127674776530051658,
+   102548884584674754665468704570670082983, 103098748497286620199690180208776580996, 103645695298225370744670471111804453001, 104189770927852573530248610961801173276,
+   104731020133216547973592075349842287743, 105269486511001973800952275458960962405, 105805212548512198110685423930209210161, 106338239662793269832304564822427566079,
+   106868608238001660177802843644280841454, 107396357661111081572589580048653690706, 107921526356047751649856654500879263045, 108444151816337823656800936328150345319,
+   108964270636345484119997243339852359991, 109481918541175370160314093953336572724, 109997130415308452668289210942862264587, 110509940330036340519032795882162653993,
+   111020381569755060372888895709465855331, 111528486657175733777944718709129052661, 112034287377506187614015090569593809066, 112537814801654376509407482842337723418,
+   113039099308501549434559813334360681802, 113538170606290341393787483530978863730, 114035057753170400478106559148369887933, 114529789176941757185626244406939012022,
+   115022392694033894627389964181495798044, 115512895527756373773189013518293919470, 116001324325854896914473924118812815030, 116487705177404845514499773146368039106,
+   116972063629072596815535021304670322687, 117454424700773298902317934109332799149, 117934812900752258930658599587897845119, 118413252240115667045093548336066209326,
+   118889766246835032780444897999967637136, 119364377979248445601287697557592010421, 119837110039080581254528544016317791164, 120307984584002255772516886238812528463,
+   120777023339749274618277909377214560099, 121244247611819331303241716078434769919, 121709678296764773838104457293229142782, 122173335893098174895100257700737593115,
+   122635240511826809126994597088091329274, 123095411886631355511665657422101680279, 123553869383703400904310776948978326267, 124010632011255620423603407066525250113,
+   124465718428717848307384363577127638186, 124919146955631627059185454609077069589, 125370935580255230844680553925818150011, 125821101967890599114428881657014236701,
+   126269663468943086393808061284496995255, 126716637126724432290583619053040885394, 127162039685008880343249185307917680376, 127605887595351923798765477786913079295,
+   128048197024180729299719437429595255261, 128488983859664884407259330412768868952, 128928263718375730605538261862523096326, 129366051951742178726626737488224836490,
+   129802363652310557479594040856350627018, 130237213659815716912810763702251466596, 130670616567070296200043421448225912051, 131102586725678768195986017685354824218,
+   131533138251582590890463850592981951236, 131962285030442527391239976987954583436, 132390040722863940621719105743186974597, 132816418769470625817037914138571798829,
+   133241432395832512468680145077534976981, 133665094617252346973046846784762584290, 134087418243416257290404984359872233197, 134508415882912900859763219658061578153,
+   134928099947625706317969462287557034034, 135346482657002537744081497018664094521, 135763576042206936728123359168803558127, 136179391950154932109043928521665204653,
+   136593942047441249327693278923280732090, 137007237824158600608285946571145645724, 137419290597613593249696883352861744490, 137830111515942655830418618115464120204,
+   138239711561631250781995934269155835903, 138648101554939516257450976930543233054, 139055292157237360222996836388772721081, 139461293874251914958713770419438003376,
+   139866117059230150407471665245893249237, 140269771916019339816089704927116173812, 140672268502067970636759353552922154273, 141073616731349597480913898573612280215,
+   141473826377212041834617060485007628099, 141872907075154255057890521250674255714, 142270868325533076714392689771781663904, 142667719496202039336533877599961164563,
+   143063469825084293157776103670948134087, 143458128422681649980566008983331351047, 143851704274521674045367689242075150054, 144244206243544679381641507713807410462,
+   144635643072432427520717648595969320706, 145026023385880256505606587198529767136, 145415355692814311722655540610392645118, 145803648388555491089533184633043247116,
+   146190909756931661454044404558036678400, 146577147972339649584967373713505100983, 146962371101758459770873744661281035206, 147346587106715120692043727842883538658,
+   147729803845204516805055969314155218447, 148112029073564513894730603091853074022, 148493270448307644623287670146908451855, 148873535527910577765226390751398592511,
+   149252831774562554285617082827417880885, 149631166555873934429822310383265576037, 150008547146545962478048526964414245861, 150384980730002819715646107798515660579,
+   150760474399987001419781745130253503955, 151135035162119020207889895868414091270, 151508669935422405878739267750029449377, 151881385553814940851140327235452471345,
+   152253188767567040418798001367545769278, 152624086244728158245397527922330370843, 152994084572522069776691512164795077487, 153363190258711859503186618908661064059,
+   153731409732935412227022094338387510395, 154098749348012183630663472987059069213, 154465215381222001475745315995122939981, 154830814035556625642108640154235902796,
+   155195551440944772915710769210258249202, 155559433655451290917074915686132123294, 155922466666451144798175027604503451164, 156284656391778860295372916442701759915,
+   156646008680854047380800798496888326984, 157006529315783610077218121091526916869, 157366224012441229965855676778993695220, 157725098421524693498208387804272494464,
+   158083158129591616397339977260678597465, 158440408660074102179229652459741451948, 158796855474272856118208637948402379872, 159152503972331260801716930076789347228,
+   159507359494189904748456847233641349119, 159861427320522041381372243222448754666, 160214712673650441934387486750896987835, 160567220718446092611912596922073430679,
+   160918956563209173495906333934164636517, 161269925260532744290632082712656673156, 161620131808149549994653126145600496811, 161969581149762347978241792263063490546,
+   162318278175858146707975932838304305087, 162666227724506735485201404492225517978, 163013434582143874038140023266547641340, 163359903484339500616137650357601638244,
+   163705639116551307366801363642574286123, 164050646114864022220976331694954710308, 164394929066714727255532510186441302089, 164738492511604534539081035931971101690,
+   165081340941796931780755232359436415351, 165423478803003101687210718578367226637, 165764910495054510778549193823243980990, 166105640372563055510847023135466487255,
+   166445672745569045892622857199954691990, 166785011880177299356497202105288763286, 167123661999181610447394627848342152402, 167461627282677854907140393055208064738,
+   167798911868665979964729461872834748616, 168135519853641126074704024572576972691, 168471455293174118976045606701009670572, 168806722202481564764111224263506585127,
+   169141324556985774672012145136831997849, 169475266292864740439281352063224509948, 169808551307592375498764917165894767142, 170141183460469231731687303715884105727,
+   170473166573143896220277130060632893550, 170804504430125267261897446203023907131, 171135200779285903893197364907035423989, 171465259332356638302471334407870950760,
+   171794683765412635778439366610408518034, 172123477719351082249479404134277321767, 172451644800360675004550415995933420682, 172779188580383087851399284005858657226,
+   173106112597566577755056132167968603481, 173432420356711895906147996930703269668, 173758115329710662190396882846780948878, 174083200955976358164147721790372913222,
+   174407680642868089882356868641908474071, 174731557766107268271749659719552058659, 175054835670187351189533342962056088341, 175377517668776787853951800790642601648,
+   175699607045115302974024248587369552565, 176021107052403654639061444925175345579, 176342020914186996851142373217015350269, 176662351824731974492902953901481204949,
+   176982102949397675516072104900894219042, 177301277425000562210616653522122601413, 177619878360173500567640322504099313989, 177937908835719003978922910574485713766,
+   178255371904956804819864877068926108790, 178572270594065864838379165833633658937, 178888607902420932717781028185394352110, 179204386802923754694875212262347034515,
+   179519610242329041693205499849301990627, 179834281141565294073858879462976907436, 180148402396050582810415227411166149800, 180461976876003383658775329358218792695,
+   180775007426748558714917760198126862335, 181087496869018577632418953276365366954, 181399447999250068705167091403963766956, 181710863589875788007509541178072893154,
+   182021746389612092822547729710178859200, 182332099123742003677935069183152053234, 182641924494393937445893560097330630017, 182951225180816192148840469668534469938,
+   183260003839647262342650386551106389673, 183568263105182062224855784903013184980, 183876005589634131933738639342754331830, 184183233883393900865054659803604423322,
+   184489950555283080234867383993516756557, 184796158152805255558496318868441406989, 185101859202392748195782519429384141369, 185407056209649813630662448518363628108,
+   185711751659592242707366537550895861432, 186015948016883430635405110599787875170, 186319647726066977199885350562139132596, 186622853211795880271663367601061285084,
+   186925566879058383402449213246101815028, 187227791113400537012352350565439315521, 187529528281145531430610606590410107749, 187830780729609858833543518234155488993,
+   188131550787316359936293420512261256141, 188431840764204210135871601597528025399, 188731652951835898671643322485521355052, 189030989623601253264918604381442525604,
+   189329853034918561621041964653587477329, 189628245423432840124591936816009773028, 189926169009211299030329395380320858152, 190223625994936052448711836799948219418,
+   190520618566094120444477853450631571996, 190817148891164769609380044560698103806, 191113219121804237535001840071236674701, 191408831393027885698148216680369618943,
+   191703987823389824378983273635826330074, 191998690515160052360346936501454397142, 192292941554499153304982576244453063910, 192586743011630589875226537567930164947,
+   192880096941010635846543998503935458890, 193173005381495985671652351559434670314, 193465470356509080175376644752794525193, 193757493874201186301368461567227243911,
+   194049077927613268089940106232337254735, 194340224494834685341083072846699845463, 194630935539159755707828912811322673478, 194921213009242215272059206077382237867,
+   195211058839247611977278475398813455214, 195500474949003665630339940138070358753, 195789463244148627536280311081574976168, 196078025616277672196908308230169941987,
+   196366163943087352884244444614426889125, 196653880088518152293979026528032236328, 196941175902895158891463094974091015982, 197228053223066898983044355141619684503,
+   197514513872542353978487265211959055724, 197800559661626191755462435876167666086, 198086192387552240494352912252222954458, 198371413834615232820609628566657095536,
+   198656225774300847572309225209019709781, 198940629965414076002146162595986684035, 199224628154205938725556871207857698244, 199508222074498579239763080511020768050,
+   199791413447808759361978115084130249823, 200074203983469781468594372246347999629, 200356595378751861960619629910966598511, 200638589318980979933717996535182103736,
+   200920187477656224593708228043454800206, 201201391516565664530053936271358893493, 201482203085900761540528973032487822945, 201762623824369351289644829487092367230,
+   202042655359307212681378673162612375551, 202322299306788247433039518135803848506, 202601557271733290951560125783964865655, 202880430848017575235912824781350181296,
+   203158921618576864159532755009841625182, 203437031155512281124411147832973042986, 203714761020193848723717914999721759080, 203992112763362759702255349553060103316,
+   204269087925232398163565892782497806980, 204545688035588129638953742809756352816, 204821914613885878306873805195077862788, 205097769169349509330937409141340165966,
+   205373253201067033971031577777625658685, 205648368198085654814600528058781930700, 205923115639505668173851294914963877112, 206197496994573240399380360417553161992,
+   206471513722772074571338880821220324780, 206745167273913983745627927173196180307, 207018459088228386654612804277381788304, 207291390596450741489340942223608906003,
+   207563963219909933123118167607690695555, 207836178370614628874423523517729885661, 208108037451338617650406362142637271817, 208379541855705147060497221923602346553,
+   208650692968270272842864880474754220720, 208921492164605234704457543712744270625, 209191940811377872438070655629157005064, 209462040266433095947184150699684575487,
+   209731791878872422581107504595979192823, 210001196989132594959163506878062337269, 210270256929063292243135509534303736950, 210538973022003947601904550917921924811,
+   210807346582859684401021032347297911446, 211075378918176383442801553733640325664, 211343071326214893379328258545780467980, 211610425097024396221370847860418420323,
+   211877441512514939670667580682287086417, 212144121846529147811110343814615809770, 212410467364913121506101435979716613664, 212676479325586539664609129644855132159,
+   212942158978611972357170238263189138549, 213207507566263416585197492920295926731, 213472526323094065332375919152612068673, 213737216476003320355605687288561682908,
+   214001579244303059004800816399941746845, 214265615839783165195816971642881610432, 214529327466776334498792295309869468772, 214792715322222163145179160097307381412,
+   215055780595730530600659815536469083023, 215318524469644285197914443720676308350, 215580948119101242172786881826962047120, 215843052712095503299713309001758526090,
+   216104839409538107177285970697959825657, 216366309365317019072462261570711115694, 216627463726356469092145212972658530630, 216888303632675647313601872656300690638,
+   217148830217446764370399666359406347112, 217409044607052485858177211232486982236, 217668947921142748794575971654548432762, 217928541272690968239994486679704719982,
+   218187825768049642060440620806514383058, 218446802507005361690603422331275755881, 218705472582833236634299776949564870674, 218963837082350740320628187906673145449,
+   219221897085970984817439750988303252060, 219479653667755431789072735540647040229, 219737107895466046972651079863985664941, 219994260830616905336578421885724529174,
+   220251113528525253976128765555582357638, 220507667038362039694204150123599608696, 220763922403201908110361211005882787847, 221019880660072681038065591764325307987,
+   221275542840004318768779887996807578267, 221530909968077373801892063995158006525, 221785983063470942461612738357133905486, 222040763139510120745777791418931710663,
+   222295251203712970656954543052511550007, 222549448257837003173333135689062887166, 222803355297925183925558282916779478329, 223056973314351467555889437418258105323,
+   223310303291865866647839586127097888767, 223563346209639061027704836266938691852, 223816103041306553154129887177037185813, 224068574755012375228030181139187618132,
+   224320762313452353572782386636243987764, 224572666673916935753573873424380263623, 224824288788333585825142549459171463978, 225075629603308753018814965684675446837,
+   225326690060169419102737625059391808049, 225577471095004229573469161697773490869, 225827973638704213762635212563541860171, 226078198617003098869119626668721363605,
+   226328146950517222855251883248047550676, 226577819554785051074628446497907516705, 226827217340306301429552972095434252851, 227076341212580682787574967061957727461,
+   227325192072146251319227311424225635707, 227573770814617389352789043539206929208, 227822078330722411276710490853178707018, 228070115506340800956213118296739775866,
+   228317883222540085067496705897694394685, 228565382355612346690932398903117173701, 228812613777110383443572936877822383272, 229059578353883514371252488813878024045,
+   229306276948113039761459903209089679766, 229552710417347357980033098823453020272, 229798879614536743377521408059511783813, 230044785388067789254779928362991596089,
+   230290428581797519821978670583941461218, 230535810035087175030713187184913020688, 230780930582835672105276417735176923797, 231025791055512747546378027036587838941,
+   231270392279191783328662170608183570185, 231514735075582320962262349609183047260, 231758820262062267038328060647954535135, 232002648651709793828947848237625630060,
+   232246221053334938463162960231353854194, 232489538271510904152801202755316589403, 232732601106605066894648180155822897876, 232975410354809691028999546292736078212,
+   233217966808172356988890109053373632663, 233460271254626104529260801284625216669, 233702324478019294680990092027612559542, 233944127258145193631070042609340645375,
+   234185680370771281687236835102521780700, 234426984587668290443059374664052639873, 234668040676638971217835882407386938195, 234908849401546597804635868218665598298,
+   235149411522343206519442341248810497512, 235389727795097576504585634401607761768, 235629798972022953200505054786649334374, 235869625801504517861317199175795690238,
+   236109209028126605951699869489373382489, 236348549392699677225207964553033056424, 236587647632287040247312581706408741696, 236826504480231334090187096672132418653,
+   237065120666180769890544650203437668425, 237303496916115134926650885712198992228, 237541633952371561835984762279151499254, 237779532493670065560889795999935274272,
+   238017193255138850575939314582643301265, 238254616948339390917623568178547347519, 238491804281291285504345310422552145025, 238728755958496891202575395115184020843,
+   238965472680965736063362830785222387747, 239201955146238715122206556513020114370, 239438204048412071124571057744685750319, 239674220078161162509057088032635582328,
+   239910003922764020950414604062224348448, 240145556266124700735200101064641494228, 240380877788796422213927536687545598901, 240615969168004511545033772477625056927,
+   240850831077669138917868895383110146018, 241085464188427857414221989623407313082, 241319869167657944640597122202517574277, 241554046679498549236555818754429120198,
+   241787997384872644337934598434403232474, 242021721941508790047622785493064468255, 242255221003962706940840516990091610477, 242488495223638662606483432156869539838,
+   242721545248810673201092883546845490312, 242954371724643521967362688394595235819, 243186975293213596644799584121410578479, 243419356593529547676208914586458285564,
+   243651516261552769090074007596727797334, 243883454930217703915631665580191080896, 244115173229451975964511736497096565299, 244346671786196349790200515401475186231,
+   244577951224424520614300499091583401983, 244809012165162735986587621755167555333, 245039855226509250924206475536402457367, 245270481023653618253989194176182658548,
+   245500890168895815860829766706848029395, 245731083271665212524287755020238019072, 245961060938539374005129002671191350511, 246190823773262711023331314844203360559,
+   246420372376764970749185715298526243384, 246649707347179573409504279996519110050, 246878829279861795591599322503821490376, 247107738767406801808621553897956652535,
+   247336436399667525871032526380080848475, 247564922763772403590435035904359616327, 247793198444142958323690118639371946403, 248021264022511240847206814133050500226,
+   248249120077937125033497039923899925316, 248476767186825460784538852013889250601, 248704205922943085659183244488997746277, 248931436857435696614768727154255276372,
+   249158460558844583266270534703199730882, 249385277593123224049703850638775960062, 249611888523653746660119322271657690993, 249838293911263254118370909218154139179,
+   250064494314240017804897316522415192637, 250290490288349538783035543359940683230, 250516282386850478718875115553099293197, 250741871160510461689361107851636300022,
+   250967257157621748155259898734446027679, 251192440924016782360710589582812097107, 251417423003083614406394068220107664894, 251642203935781198228857763314028473402,
+   251866784260654566704234231860644343162, 252091164513849885080482908376542308605, 252315345229129383928363732628662223430, 252539326937886172787616122568993990511,
+   252763110169158935671264078269627784912, 252986695449646509577595345659574977653, 253210083303722347146166836395259877691, 253433274253448864581167238106081770789,
+   253656268818591675952618347771594583439, 253879067516633714973216553887987356175, 254101670862789245336102556900763081382, 254324079370017760686498370615835360753,
+   254546293549037775287963449646638655584, 254768313908340506431994039545570271667, 254990140954203449627819186941325129145, 255211775190703847597530955573826158591,
+   255433217119732054090122987666859236425, 255654467241004793516598383257476622985, 255875526052078317397042734451716309496, 256096394048361458599438874859190510523,
+   256317071723128584339024350000205857656, 256537559567532448896158680525999049838, 256757858070616946999973109185469923489, 256977967719329768814518660825537737905,
+   257197888998534957453707001611806426141, 257417622391025369941050790862963508850, 257637168377535042520054040062439575522, 257856527436751461211076523725046192652,
+   258075700045327738500597651600725085181, 258294686677894697039032567155506353673, 258513487807072861213604769024266816643, 258732103903484357453253474976449672980,
+   258950535435764724113148505305823780454, 259168782870574631777098926008787985839, 259386846672611514806972360844698226647, 259604727304621114959188081712701254037,
+   259822425227408937879407071735523610273, 260039940899851623277714604212135592898, 260257274778908229577873898126556519873, 260474427319631433825621527404502933192,
+   260691398975178647632474931662825545459, 260908190196823049923128080279083987301, 261124801433964537246221582685559369833, 261341233134140592400086842896451824103,
+   261557485743037072116978775599928801699, 261773559704498914541326707635330350778, 261989455460540767229646977639594347427, 262205173451357536391972035370709648437,
+   262420714115334858086958169580731366701, 262636077889059492075236019421518545676, 262851265207329639028063430186542954135, 263066276503165181780927701185963902472,
+   263281112207817851314422563332615245256, 263495772750781318137493058000418624129, 263710258559801209740997627786168362537, 263924570060885054782479953975909166873,
+   264138707678312154656072183610661003640, 264352671834643383094564998372653332900, 264566462950730914443877323555357286122, 264780081445727881243438211486373949194,
+   264993527737097961739354430852221807424, 265206802240624897950678439604651782563, 265419905370421944902611619660153613168, 265632837538941251634075828277143597658,
+   265845599156983174580761412056068915199, 266058190633705523928510789335701199090, 266270612376632743525722505595358691420, 266482864791665024937360290155069953963,
+   266694948283087356217124092166729047629, 266906863253578505968384365861728570649, 267118610104219943258596040345479940739, 267330189234504693946093693569525168580,
+   267541601042346133972423513470128845682, 267752845924086720167689745742695147512, 267963924274506659110782585296871553389, 268174836486832514580809968719744466394,
+   268385582952745754130576583090156862104, 268596164062391235307538750455003108013, 268806580204385632042312818393520551772, 269016831765825801719526439316123156306,
+   269226919132297093440575820981803530714, 269436842687881597982686857032176425375, 269646602815166339953573190136599845062, 269856199895251412635938924575114068068,
+   270065634307758056011087104460955311518, 270274906430836678445966434590790579282, 270484016641174822523117280751280746452, 270692965314005075488162994037328189043,
+   270901752823112924784733319190899535080, 271110379540844559142002340820375863297, 271318845838114615675373374935077103393, 271527152084413873456246718337607116255,
+   271735298647816894002262527182444674430, 271943285894989609134919620706242846216, 272151114191196856647031019023199395431, 272358783900309864218087857043330409306,
+   272566295384813682011264311767109339731, 272773649005814564381506688705731795737, 272980845123047301119909195603888845279, 273187884094882498655386557846561464180,
+   273394766278333811630508878825172580792, 273601492029065125264266407956665079603, 273808061701397688910480545608480596042, 274014475648317201216571893142291291449,
+   274220734221480847283435861414895734398, 274426837771224288223260704502801704907, 274632786646568603508251277524278290978, 274838581195227186499393766705723488980,
+   275044221763612593540611552747348163121, 275249708696843346999919699413097743991, 275455042338750692635484770162390451077, 275660223031885311660837236230928240409,
+   275865251117523987879865127023215223724, 276070126935676230258639272546694157880, 276274850825090851297581989705406634984, 276479423123262501563991868538311671807,
+   276683844166438160741476926931056122854, 276888114289623585549426335876827931943, 277092233826589714882266691760965608546, 277296203109879032514901953861086466108,
+   277500022470811887717426207368612421461, 277703692239492774118924894338906602795, 277907212744816567156942623066978977288, 278110584314474720445993672777545442162,
+   278313807274961421395324413741414527560, 278516881951579706403004627634381357650, 278719808668447535950326709816406952601, 278922587748503829917427540838876006752,
+   279125219513514463438017011341288414635, 279327704284078223608099360786057190822, 279530042379632727360608240078898067411, 279732234118460300814943330491786498474,
+   279934279817693820407495051401591927626, 280136179793322516106373977549771373468, 280337934360197737010722678518061843015, 280539543832038679632179409854232347625,
+   280741008521438079153285052894859843718, 280942328739867863954876550037052339471, 281143504797684773701791450243781847916, 281344537004135941273518707105844308546,
+   281545425667364438823770204873271465843, 281746171094414788250315277351233233490, 281946773591238436353816385994457897849, 282147233462699194961827797147224560430,
+   282347551012578646291570208963831335770, 282547726543581513822572495423177564900, 282747760357340998947776731784931922487, 282947652754424083669234120970015256198,
+   283147404034336799602077036148276805084, 283347014495529463548035817997986841082, 283546484435401879897377906572163788406, 283745814150308510115781042501348511429,
+   283945003935563609570311339484412244341, 284144054085446331946360712779266430091, 284342964893205801505106153763693721473, 284541736651066153428785379543563327808,
+   284740369650231542498839173825878111072, 284938864180891120349749989409571831711, 285137220532223981539208825962352514423, 285335438992404078673067755199922329127,
+   285533519848605106821383468732001275513, 285731463387005357459727604817179755100, 285929269892792542167832105715410437667, 286126939650168586315552207341896268174,
+   286324472942354392964065611017347530057, 286521870051594577208183680144953226511, 286719131259162171183628892803030200723, 286916256845363299961132017966662702095,
+   287113247089541828547222325020554428415, 287310102270083980209624343227646759124, 287506822664422926343235022827125798395, 287703408549043348090735378484150300109,
+   287899860199485969929990587970314894118, 288096177890352065438511846278812750931, 288292361895307935443391812880949427958, 288488412487089358763283015427614820925,
+   288684329937506015747164867672672734024, 288880114517445884812839806351895247421, 289075766496879612186312237582580729800, 289271286144864855041435297191938641412,
+   289466673729550598237459663079412401366, 289661929518181444850385605779844294686, 289857053777101880692303922961314832411, 290052046771760513011213174397059534273,
+   290246908766714283562119518284839297365, 290441640025632656238561252459574406280, 290636240811301779452052692350840865867, 290830711385628623445311081220785290236,
+   291025052009645092723515639440496221678, 291219262943512113786249432865920097766, 291413344446523698341192292648430579320, 291607296777110982179066369266086494232,
+   291801120192846239887784873678595989396, 291994814950446875582218972032579053771, 292188381305779389824477483234468619868, 292381819513863322908088809116073356801,
+   292575129828875174677984235150989266136, 292768312504152301056706208176089650321, 292961367792196787445804260868012734329, 293154295944679299169934747427010201966,
+   293347097212442909129748319678569379940, 293539771845506902828230948279310129756, 293732320093070560933760122556063018650, 293924742203516919541747489322562070413,
+   294117038424416508295362462345254912981, 294309209002531066524468098411880741218, 294501254183817237560550643516235203893, 294693174213430241384087455685767077316,
+   294884969335727525759474363449133542331, 295076639794272396011322776675390203528, 295268185831837623594638887100353268865, 295459607690409033610111938628310436894,
+   295650905611189071414465673528509651801, 295842079834600348474566532712429526755, 296033130600289167612733870840165523316, 296224058147129027789461206183706148044,
+   296414862713224108568533228731231731847, 296605544535912734408310807325972842270, 296796103851770818921755438666256768031, 296986540896615289246575340293816903711,
+   297176855905507490665697580360768082811, 297367049112756571617104134618389497755, 297557120751922849230914442849985643304, 297747071055821155530452781502797185023,
+   297936900256524164432905456657641113483, 298126608585365699684050333257697629919, 298316196272944023860429435678873846160, 298505663549125108571234165654835761770,
+   298695010643045885991081972054804028594, 298884237783117481853782960211032936121, 299073345197028430036124834921529646727, 299262333111747868859644620766531152075,
+   299451201753528719237305687149824352449, 299639951347910844790958615986747460388, 299828582119724194064434280974289124593, 300017094293091924956097053928828491723,
+   300205488091433511493675212049805616059, 300393763737467833073184287684901649135, 300581921453216246282767177975664090850, 300769961460005639431292215597031321158,
+   300957883978471469900576994802773155604, 301145689228560784439141451456568645291, 301333377429535222514438415127262763206, 301520948799974002839563490260507007911,
+   301708403557776893189508587638069017388, 301895741920167163621094623643319936318, 302082964103694523209798741207171758402, 302270070324238040415779791736828182540,
+   302457060797009047190502661923237053845, 302643935736554026934467244230638550845, 302830695356757486415661347283404761700, 303017339870844811757478535500058898755,
+   303203869491385108603971690415531081503, 303390284430294026569450914415821822312, 303576584898836568078580167308738393976, 303762771107629881702280654470904942690,
+   303948843266646040093910390409155885340, 304134801585214802629358462569323478416, 304320646272026362853869237172025271945, 304506377535134080837596002735091538556,
+   304691995581957200541075259652670927586, 304877500619283552291011958542215995727, 305062892853272240465972389734820310944, 305248172489456316490795055844660741687,
+   305433339732745437237750644251843982788, 305618394787428508931710082870302333089, 305803337857176316655814537896445445964, 305988169145044139553383024329590154974,
+   306172888853474351821041977732314013584, 306357497184299009587316608583921829654, 306541994338742423770186059104533431574, 306726380517423719006373237817322128119,
+   306910655920359378744415651383624552884, 307094820746965776592845519176619807181, 307278875196061694014095877206047123087, 307462819465870824454044188676775020790,
+   307646653754024263996406113712010248949, 307830378257562988630499486388522379928, 308013993172940318220212139735131308841, 308197498696024367261326945974118138426,
+   308380895022100482513683237985039941631, 308564182345873667593985587389270536132, 308747360861470994614408674131081478618, 308930430762444002951490631990245879962,
+   309113392241771085229156734799915856554, 309296245491859860599070540626329742989, 309478990704549535400870577816428739401, 309661628071113251284217280308471805592,
+   309844157782260420873947103244038846969, 310026580028139051059008517666313125283, 310208894998338053985237839514412264385, 310391102881889545831421538420516498404,
+   310573203867271133447485741790270916979, 310755198142408188933053045705470101962, 310937085894676112234011413335413359005, 311118867310902581834149831372264246588,
+   311300542577369793618330453690430923290, 311482111879816687983087137718907771390, 311663575403441165269965522224493275579, 311844933332902289596350055209006902329,
+   312026185852322481157958607854784808824, 312207333145289697076625455886341627246, 312388375394859600866438424868770828906, 312569312783557720590745832885403519830,
+   312750145493381595782003475305713606529, 312930873705802913195891235067382977740, 313111497601769631470592921666127519648, 313292017361708094761601596993776653969,
+   313472433165525135421885890911633197587, 313652745192610165796730599110684736739, 313832953621837259202047146001107286189, 314013058631567220154436242183053833738,
+   314193060399649643920776226049526863230, 314372959103424965454606109303232761517, 314552754919726497786072204142535591753, 314732448024882459931711353557987390441,
+   314912038594717994389852174007095734683, 315091526804557174286928310577891167661, 315270912829225000239514457933199481482, 315450196843049386996416775608544988928,
+   315629379019863139924674283812822012495, 315808459533005921402856826376882887216, 315987438555326207184578191959603703709, 316166316259183232794679954521357194931,
+   316345092816448930020082491292675638667, 316523768398509853556844423291821901462, 316702343176269097874520362573820237420, 316880817320148204358459304919482903897,
+   317059191000089058790242240085071327368, 317237464385555779226017527910472562484, 317415637645536594332056271790627630484, 317593710948545712236417275896804759745,
+   317771684462625179955182164112984021892, 317949558355346733451295832321931608619, 318127332793813638383625567196950110194, 318305007944662521603433860153578694457,
+   318482583974065193455045141074535543158, 318660061047730460937075319679662240348, 318837439330905931780185120159982264567, 319014718988379809496913694467282698239,
+   319191900184482679458747869326509445021, 319368983083089286055184589834960440950, 319545967847620300989149636981646089436, 319722854641044082762744486444897509332,
+   319899643625878427406905210815895041033, 320076334964192310508172576482941575693, 320252928817607620585390919648079502489, 320429425347300883868774973501793975671,
+   320605824714004980533408530932842524362, 320782127078010852438866635086918277610, 320958332599169202426283864702982677025, 321134441436892185223825193844146861358,
+   321310453750155090011152828093285550832, 321486369697498014693122323488948106593, 321662189437027531932584152712489696757, 321837913126418346991812667868329273034,
+   322013540922914947431733093475947847571, 322189072983333244717768740145961072118, 322364509464062207780785032252602899436, 322539850521065488581264165425313346312,
+   322715096309883039724504225818571445046, 322890246985632724174299387105963554473, 323065302703011917112223327471549576064, 323240263616299099989306252291200993622,
+   323415129879355446816566843720562091226, 323589901645626402740534061303022610799, 323764579068143254949569963502637789135, 323939162299524695956483584526126981093,
+   324113651491978379302607359945710471396, 324288046797302467728191624736538180672, 324462348366887173853659284907136349190, 324636556351716293415951865676608610175,
+   324810670902368731103889742123183760987, 324984692169020019036163439614293656790, 325158620301443827925269428579529583156, 325332455449013470970402808984451035957,
+   325506197760703400522020662111673333530, 325679847385090697560493619086248401105, 325853404470356554030969335346820951760, 326026869164287748076280046533095282680,
+   326200241614278112209437192821006551426, 326373521967329994466969214590975320217, 326546710370055712584074021674770231221, 326719806968679001232275300715203276489,
+   326892811909036452359991730019557079973, 327065725336578948676150298526445474880, 327238547396373090316699255173346953773, 327411278233102614733602727285148572247,
+   327583917991069809845627722037515668592, 327756466814196920489965044213387060546, 327928924846027548213458607190655991692, 328101292229728044441952663389909420616,
+   328273569108088897066003616478131629456, 328445755623526110480942281860009718173, 328617851918082579119013715970632252847, 328789858133429454511065020372882604179,
+   328961774410867505914996825601828621255, 329133600891328474547941454208244772488, 329305337715376421458880034832663844198, 329476985023209069078162071863942203380,
+   329648542954659136480144150949525454847, 329820011649195668394919562147206473044, 329991391245925358004867632828586793761, 330162681883593863561510464718872830702,
+   330333883700587118857925547008197082113, 330504996834932637591725353782632086059, 330676021424300811653379512747102254175, 330846957606006203374421437156734453274,
+   331017805517008831769849428005917034351, 331188565293915452808802162970688873560, 331359237072980833747360176640719543611, 331529820990109021557098387646487961981,
+   331700317180854605482789926971832579683, 331870725780423973762438452778797144656, 332041046923676564542594785346429497073, 332211280745126111021694046270932974510,
+   332381427378941880853931524069992596162, 332551486958949909845979199101953677689, 332721459618634229978630229716105484643, 332891345491138091785245714399909383981,
+   333061144709265181118666687128397565994, 333230857405480830338044561033945401398, 333400483711913223946835094921506024964, 333570023760354598712994404210577526573,
+   333739477682262438302210558879667558425, 333908845608760662454800892343048147188, 334078127670640810736703273455172981417, 334247323998363220894789255696684304805,
+   334416434722058201846528199856921670440, 334585459971527201333834156127387157984, 334754399876243968270731475520177100241, 334923254565355709814280786110416129476,
+   335092024167684243188014104080371819071, 335260708811727142286936440344725912389, 335429308625658879092961298211079824338, 335597823737331959929458923745669497233,
+   335766254274278056583409056057539964723, 335934600363709132323464217487517641510, 336102862132518562842045271708781427198, 336271039707282252149408049145153945383,
+   336439133214259743447438282135616280880, 336607142779395325010751895274738852330, 336775068528319131102498847804835214161, 336942910586348237952091213402019341145,
+   337110669078487754821899996868390173567, 337278344129431910189790315906636032807, 337445935863565133074191008207632413414, 337613444404963129528222448527013170255,
+   337780869877393954329235366367777255883, 337948212404319077889943731529859176829, 338115472108894448417166311442841789056, 338282649113971549344024290273663995699,
+   338449743542098452061276364805709047626, 338616755515520863973307985625853813150, 338783685156183171904127883936066202782, 338950532585729480878562704126449019897,
+   339117297925504648303679440003082045408, 339283981296555313575305438246810257146, 339450582819630923134356976371853708885, 339617102615184750997529834331789534285,
+   339783540803374914786748849252570169619, 339949897504065387281618161915820656447, 340116172836827003518959722018333391818, 340282366920938463463374607431768211455]
+
+private theorem gap10_checked : checkRoots (2^246) 4194305 1 roots10=true := by
+  decide +kernel
+
+theorem square_gap10 (M K : Nat) (hK0 : 0<K) (hK : K≤1024)
+    (hP : M^2<K*2^246) : M^2+4194305<K*2^246 := by
+  obtain ⟨R,hlo,hhi⟩ := checkRoots_spec (2^246) 4194305 1 roots10 gap10_checked K
+    (by omega) (by change K<1+1024; omega)
+  exact square_gap M (K*2^246) 4194305 R hP hlo hhi
 
 end ECDSAAdd.Entrant
+end
 
+section
+-- ===== RotationCanonical =====
+
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+theorem square_mod8 (M : Nat) : M^2%8≠5 ∧ M^2%8≠6 ∧ M^2%8≠7 := by
+  have h : M^2%8=(M%8)^2%8 := Nat.pow_mod M 2 8
+  have lt := Nat.mod_lt M (show 8>0 by norm_num)
+  rw [h]
+  interval_cases (M%8) <;> decide
+
+/-- The 32-bit rotation of a 128-bit square is below the field modulus. -/
+theorem rot32_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
+    regValue (rotateFull (L.core.product.take 256) 32) t*2^0<SquareReduction.p := by
+  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
+  rw [L.rotateFull_value hw t (M^2) hp 32 (by omega),Nat.mod_eq_of_lt hb]
+  have m8 := square_mod8 M
+  have e : M^2%2^(256-32)%8=M^2%8 := Nat.mod_mod_of_dvd _ (by norm_num)
+  have hH : M^2/2^(256-32)<2^32 := by
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc M^2<2^256 := hb
+      _ = 2^32*2^(256-32) := by norm_num
+  have hL := Nat.mod_lt (M^2) (show 2^(256-32)>0 by positivity)
+  generalize M^2/2^(256-32)=H at hH ⊢
+  generalize hX : M^2%2^(256-32)=X at hL e ⊢
+  rw [←e] at m8
+  norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at hH hL ⊢
+  omega
+
+/-- A finite bound on square gaps excludes the upper interval after rotation. -/
+theorem rotation_canonical_of_gap (j D : Nat) (hj : j≤256)
+    (threshold : SquareReduction.p/2^j+D=2^(256-j))
+    (gap : ∀ M K : Nat, 0<K → K≤2^j → M^2<K*2^(256-j) →
+      M^2+D<K*2^(256-j))
+    (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
+    regValue (rotateFull (L.core.product.take 256) j) t*2^0<SquareReduction.p := by
+  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
+  rw [L.rotateFull_value hw t (M^2) hp j hj,Nat.mod_eq_of_lt hb]
+  simp only [Nat.pow_zero,Nat.mul_one]
+  let A := 2^j
+  let B := 2^(256-j)
+  let H := M^2/B
+  let X := M^2%B
+  have ha : 0<A := Nat.two_pow_pos j
+  have hB : 0<B := Nat.two_pow_pos (256-j)
+  have prod : A*B=2^256 := by
+    dsimp [A,B]
+    rw [←pow_add,show j+(256-j)=256 by omega]
+    rfl
+  have high : H<A := by
+    dsimp [H]
+    rw [Nat.div_lt_iff_lt_mul hB,prod]
+    exact hb
+  have low : X<B := Nat.mod_lt _ hB
+  have decomp : X+B*H=M^2 := Nat.mod_add_div _ B
+  have upper : M^2<(H+1)*B := by
+    calc M^2=X+B*H := decomp.symm
+      _ < B+B*H := Nat.add_lt_add_right low _
+      _ = (H+1)*B := by ring
+  have next : H+1≤A := Nat.succ_le_iff.mpr high
+  have separated := gap M (H+1) (Nat.succ_pos H) next upper
+  change M^2+D<(H+1)*B at separated
+  by_contra bad
+  have rotated : SquareReduction.p≤H+A*X := Nat.le_of_not_gt bad
+  have div : (H+A*X)/A=X := by
+    rw [Nat.add_mul_div_left _ _ ha,Nat.div_eq_of_lt high,Nat.zero_add]
+  have lower : SquareReduction.p/A≤(H+A*X)/A := Nat.div_le_div_right rotated
+  rw [div] at lower
+  change SquareReduction.p/A+D=B at threshold
+  have near : B≤X+D := by omega
+  have overlap : (H+1)*B≤M^2+D := by
+    calc (H+1)*B=B*H+B := by ring
+      _ ≤ B*H+(X+D) := Nat.add_le_add_left near _
+      _ = M^2+D := by omega
+  exact (Nat.not_le_of_gt separated) overlap
+
+theorem rot4_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
+    regValue (rotateFull (L.core.product.take 256) 4) t*2^0<SquareReduction.p :=
+  rotation_canonical_of_gap 4 268435518 (by decide) (by decide) square_gap4 L hw t M hM hp
+
+theorem rot6_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
+    regValue (rotateFull (L.core.product.take 256) 6) t*2^0<SquareReduction.p :=
+  rotation_canonical_of_gap 6 67108880 (by decide) (by decide) square_gap6 L hw t M hM hp
+
+theorem rot10_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
+    regValue (rotateFull (L.core.product.take 256) 10) t*2^0<SquareReduction.p :=
+  rotation_canonical_of_gap 10 4194305 (by decide) (by decide) square_gap10 L hw t M hM hp
+
+end ECDSAAdd.Entrant
 end
 
 section
 -- ===== SquareAcc =====
+
 /-! Streamed square with accumulated (c−1)-corrections. All small
 (c−1)·slice corrections of a branch are summed exactly in a 163-bit
 accumulator and then folded with a single modular addition. -/
@@ -2432,9 +3063,20 @@ def preW (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
    {negative:=false,canonical:=true,src:=topSlice L 4},
    {negative:=true,canonical:=true,src:=topSlice L 6}]
 
+/-- The two small H updates precede the full-width shift. -/
+def earlyHTerms (src : List Wire) : List MeasuredSquareFold :=
+  [Acc.earlyTerm src false 4,Acc.earlyTerm src false 10,
+   Acc.earlyTerm src true 6,Acc.earlyTerm src false 32]
+
+theorem earlyH_mem (src : List Wire) (f : MeasuredSquareFold) :
+    f∈earlyHTerms src ↔ f∈nafMinusOneItems false src := by
+  simp only [earlyHTerms,Acc.earlyTerm,nafMinusOneItems,Bool.not_false,
+    List.mem_cons,List.not_mem_nil,or_false]
+  tauto
+
 /-- Branch B's accumulator terms: d*H - d*W instead of five d-multiples. -/
 def termsB (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
-  sortedItems false (nafMinusOneItems false (L.core.product.drop 128)++nafMinusOneItems true (wTemp L))
+  earlyHTerms (L.core.product.drop 128)++sortedItems false (nafMinusOneItems true (wTemp L))
 
 def accARaw (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
   nafMinusOneItems false (L.core.product.drop 128)
@@ -2446,28 +3088,33 @@ def accCRaw (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
   nafMinusOneItems false (L.core.product.drop 128)++[posTop L]
 
 def accAMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
-  [.inl (rot128F L),.inr ⟨false,[],sortedItems false (accARaw L),sortedItems false (accARaw L)⟩,.inl (negP L)]
+  [.inl (rot128F L),.inr ⟨false,[],earlyHTerms (L.core.product.drop 128),earlyHTerms (L.core.product.drop 128)⟩,.inl (negP L)]
 def accBMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
   [.inl (negP L),.inl (rotC L true 4),.inl (rotC L true 10),.inl (rotC L true 32),
     .inl (rotC L false 6),.inl (rot128F L),.inr ⟨false,preW L,termsB L,sortedItems false (accBRaw L)⟩]
 def accCMix (L : CuccaroStreamedSquareWideLayout) : List MixItem :=
-  [.inl (negRot L),.inr ⟨true,[],sortedItems false (accCRaw L),sortedItems false (accCRaw L)⟩]
+  [.inl (negRot L),.inr ⟨true,[],earlyHTerms (L.core.product.drop 128)++[posTop L],earlyHTerms (L.core.product.drop 128)++[posTop L]⟩]
 
 def accBranchA (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   L.withMeasuredSquare control L.core.low (L.core.product.take 256) (mixFolds L false (accAMix L))
 def accBranchB (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   L.withMeasuredSquare control L.core.high (L.core.product.take 256) (mixFolds L true (accBMix L))
 def accMiddleC (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
-  L.withMeasuredSquare control L.core.sum L.core.product (mixFolds L false (accCMix L))
+  L.withMeasuredSquare control L.core.sum L.core.product (mixFolds L true (accCMix L))
 def accBranchC (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   L.core.prepareSum++accMiddleC L control++L.core.clearSum
 
+/-- Branch C (all negative folds) runs between A and B, so it needs no
+orientation switch; the square then ends in the unreflected orientation. -/
+def resC2 (P O : Nat) : Nat :=
+  ofCast true (measuredOrientationCast true O+(-(P : ZMod SquareReduction.p)*2^128))
+
 def accProgram (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
-  accBranchA L control++accBranchB L control++accBranchC L control++L.reflectOutput
+  accBranchA L control++accBranchC L control++accBranchB L control++L.reflectOutput
 
 /-- The accumulated square without its final output reflection. -/
 def accPrefix (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
-  accBranchA L control++accBranchB L control++accBranchC L control
+  accBranchA L control++accBranchC L control++accBranchB L control
 
 theorem accProgram_split (L : CuccaroStreamedSquareWideLayout) (control : Wire) :
     accProgram L control=accPrefix L control++L.reflectOutput := by
@@ -2475,7 +3122,7 @@ theorem accProgram_split (L : CuccaroStreamedSquareWideLayout) (control : Wire) 
 
 theorem acc_orientations (L : CuccaroStreamedSquareWideLayout) :
     mixFinal false (accAMix L)=true ∧ mixFinal true (accBMix L)=false ∧
-    mixFinal false (accCMix L)=true := by
+    mixFinal true (accCMix L)=true := by
   simp [mixFinal,mixNeg,accAMix,accBMix,accCMix,rot128F,negP,negRot,rotF,rotC]
 
 theorem naf_facts (neg : Bool) (src : List Wire) (f : MeasuredSquareFold)
@@ -2521,20 +3168,20 @@ theorem sorted_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (raw
   ⟨fun f hf => (hr f ((sorted_perm _ _).subset hf)).1,fun f hf => (hr f ((sorted_perm _ _).subset hf)).2⟩
 
 theorem validA (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) :
-    Acc.Valid t 163 0 (sortedItems false (accARaw L)) := by
+    Acc.Valid t 163 0 (earlyHTerms (L.core.product.drop 128)) := by
   have hT := regValue_lt (L.core.product.drop 128) t
   rw [show (L.core.product.drop 128).length=130 by simp [hw.core.product]] at hT
-  simp [Acc.Valid,Acc.step,sortedItems,accARaw,nafMinusOneItems,List.filter_cons]
+  simp [Acc.Valid,Acc.step,earlyHTerms,Acc.earlyTerm]
   generalize regValue (L.core.product.drop 128) t=T at hT ⊢
   omega
 
 theorem validC (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) :
-    Acc.Valid t 163 0 (sortedItems false (accCRaw L)) := by
+    Acc.Valid t 163 0 (earlyHTerms (L.core.product.drop 128)++[posTop L]) := by
   have hT := regValue_lt (L.core.product.drop 128) t
   have hU := regValue_lt (L.core.product.drop 256) t
   rw [show (L.core.product.drop 128).length=130 by simp [hw.core.product]] at hT
   rw [show (L.core.product.drop 256).length=2 by simp [hw.core.product]] at hU
-  simp [Acc.Valid,Acc.step,sortedItems,accCRaw,posTop,nafMinusOneItems,List.filter_cons]
+  simp [Acc.Valid,Acc.step,earlyHTerms,Acc.earlyTerm,posTop]
   generalize regValue (L.core.product.drop 128) t=T at hT ⊢
   generalize regValue (L.core.product.drop 256) t=U at hU ⊢
   omega
@@ -2597,11 +3244,13 @@ theorem validB (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisS
 
 theorem termsB_facts (L : CuccaroStreamedSquareWideLayout) (f : MeasuredSquareFold) (hf : f∈termsB L) :
     (f.src=L.core.product.drop 128 ∨ f.src=wTemp L) ∧ 4≤f.shift ∧ f.shift≤32 := by
-  have h := (sorted_perm _ _).subset hf
-  simp only [List.mem_append] at h
-  rcases h with h|h
-  · obtain ⟨e,sh⟩ := naf_facts false _ f h; exact ⟨Or.inl e,by omega,by omega⟩
-  · obtain ⟨e,sh⟩ := naf_facts true _ f h; exact ⟨Or.inr e,by omega,by omega⟩
+  simp only [termsB,List.mem_append] at hf
+  rcases hf with h|h
+  · obtain ⟨e,sh⟩ := naf_facts false _ f ((earlyH_mem _ _).mp h)
+    exact ⟨Or.inl e,by omega,by omega⟩
+  · have h' := (sorted_perm _ _).subset h
+    obtain ⟨e,sh⟩ := naf_facts true _ f h'
+    exact ⟨Or.inr e,by omega,by omega⟩
 
 theorem accB_value (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) (P : Nat)
     (hP : regValue L.core.product t=P) (hb : P<2^256) (t' : BasisState)
@@ -2628,7 +3277,7 @@ theorem accB_value (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : Ba
   have m610 : regValue (topSlice L 6) t≤regValue (topSlice L 10) t := by
     rw [top_eq L hw t P hP hb 6 (by omega),top_eq L hw t P hP hb 10 (by omega)]
     exact Nat.div_le_div_left (by norm_num) (by norm_num)
-  simp [Acc.Valid,Acc.accVal,Acc.step,termsB,sortedItems,accBRaw,preW,nafMinusOneItems,List.filter_cons] at hwv ⊢
+  simp [Acc.Valid,Acc.accVal,Acc.step,termsB,earlyHTerms,Acc.earlyTerm,sortedItems,accBRaw,preW,nafMinusOneItems,List.filter_cons] at hwv ⊢
   rw [hH',hwv]
   norm_num at r4 r6 r10 r32 hH ⊢
   generalize regValue (L.core.product.drop 128) t=D at *
@@ -2680,10 +3329,9 @@ theorem accB_view (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : Bas
 
 theorem accA_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) :
     mixSignedSum t (accAMix L)=measuredSignedSum t L.measuredAItems := by
-  have cast := Acc.accVal_cast t 163 (sortedItems false (accARaw L)) 0 (validA L hw t)
-  rw [signedSum_perm t (sorted_perm _ _)] at cast
+  have cast := Acc.accVal_cast t 163 (earlyHTerms (L.core.product.drop 128)) 0 (validA L hw t)
   simp only [accAMix,mixSignedSum,mixSignedPayload,mixNeg,mixPayload,cast]
-  simp [measuredAItems,accARaw,measuredSignedSum,measuredSignedPayload,measuredFoldPayload,rot128F,negP,nafMinusOneItems]
+  simp [measuredAItems,accARaw,measuredSignedSum,measuredSignedPayload,measuredFoldPayload,rot128F,negP,nafMinusOneItems,earlyHTerms,Acc.earlyTerm]
   ring
 
 theorem accB_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) (P : Nat)
@@ -2698,11 +3346,10 @@ theorem accB_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : B
 
 theorem accC_mixSum (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) :
     mixSignedSum t (accCMix L)=measuredSignedSum t L.measuredCItems := by
-  have cast := Acc.accVal_cast t 163 (sortedItems false (accCRaw L)) 0 (validC L hw t)
-  rw [signedSum_perm t (sorted_perm _ _)] at cast
+  have cast := Acc.accVal_cast t 163 (earlyHTerms (L.core.product.drop 128)++[posTop L]) 0 (validC L hw t)
   simp only [accCMix,mixSignedSum,mixSignedPayload,mixNeg,mixPayload,cast]
   simp [measuredCItems,accCRaw,measuredSignedSum,measuredSignedPayload,measuredFoldPayload,measuredSignedSum_append,
-    negRot,posTop,nafMinusOneItems]
+    negRot,posTop,nafMinusOneItems,earlyHTerms,Acc.earlyTerm]
   ring
 
 theorem accA_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
@@ -2713,62 +3360,34 @@ theorem accA_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   rcases hi with rfl|rfl|rfl
   · exact L.measuredA_views hw t M hM hp _ (by simp [measuredAItems,rot128F])
   · have st := sorted_static L hw (accARaw L) (fun f hf => raw_static L hw f (Or.inl hf))
-    exact plain_view L t false _ st.1 st.2 (validA L hw t)
+    have member (f : MeasuredSquareFold) (hf : f∈earlyHTerms (L.core.product.drop 128)) :
+        f∈sortedItems false (accARaw L) := by
+      apply (sorted_perm _ _).symm.subset
+      exact (earlyH_mem _ _).mp hf
+    exact plain_view L t false _ (fun f hf => st.1 f (member f hf))
+      (fun f hf => st.2 f (member f hf)) (validA L hw t)
   · exact L.measuredA_views hw t M hM hp _ (by simp [measuredAItems,negP])
-
-theorem square_mod8 (M : Nat) : M^2%8≠5 ∧ M^2%8≠6 ∧ M^2%8≠7 := by
-  have h : M^2%8=(M%8)^2%8 := Nat.pow_mod M 2 8
-  have lt := Nat.mod_lt M (show 8>0 by norm_num)
-  rw [h]
-  interval_cases (M%8) <;> decide
-
-/-- A square below 2^256 rotated by 32 is already below p: the low 224 bits
-cannot be among the three largest residues, which are 5, 6, 7 mod 8. -/
-theorem rot32_canonical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
-    regValue (rotateFull (L.core.product.take 256) 32) t*2^0<SquareReduction.p := by
-  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  rw [L.rotateFull_value hw t (M^2) hp 32 (by omega),Nat.mod_eq_of_lt hb]
-  have m8 := square_mod8 M
-  have e : M^2%2^(256-32)%8=M^2%8 := Nat.mod_mod_of_dvd _ (by norm_num)
-  have hH : M^2/2^(256-32)<2^32 := by
-    rw [Nat.div_lt_iff_lt_mul (by positivity)]
-    calc M^2<2^256 := hb
-      _ = 2^32*2^(256-32) := by norm_num
-  have hL := Nat.mod_lt (M^2) (show 2^(256-32)>0 by positivity)
-  generalize M^2/2^(256-32)=H at hH ⊢
-  generalize hX : M^2%2^(256-32)=X at hL e ⊢
-  rw [←e] at m8
-  norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at hH hL ⊢
-  omega
 
 theorem accB_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (t : BasisState) (M : Nat) (hM : M<2^128) (hp : regValue L.core.product t=M^2) :
     ∀i∈accBMix L,MixView L t i := by
   have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  have hbm : M*M<2^256 := by simpa [sq] using hb
-  have rc (neg : Bool) (j : Nat) (hj : j≤256)
-      (hcan : (M*M)/2^(256-j)+2^j*((M*M)%2^(256-j))<SquareReduction.p)
-      (hmem : rotF L neg j∈L.measuredBItems) : MixView L t (.inl (rotC L neg j)) := by
-    have base := L.measuredB_views hw t M hM hp (rotF L neg j) hmem
-    refine ⟨base.count,base.span,fun _ => ?_⟩
-    have hv := L.rotateFull_value hw t (M^2) hp j hj
-    change regValue (rotateFull (L.core.product.take 256) j) t*2^0<SquareReduction.p
-    rw [hv, pow_zero, Nat.mul_one, Nat.mod_eq_of_lt hb, sq]
-    exact hcan
   intro i hi
   simp only [accBMix,List.mem_cons,List.not_mem_nil,or_false] at hi
   rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,shiftedProductItems,negP])
-  · exact rc true 4 (by omega) (rot4_canonical M hbm)
+  · have v := L.measuredB_views hw t M hM hp (rotF L true 4)
       (by simp [measuredBItems,shiftedProductItems,rotF])
-  · exact rc true 10 (by omega) (rot10_canonical M hbm)
+    exact ⟨v.count,v.span,fun _ => rot4_canonical L hw t M hM hp⟩
+  · have v := L.measuredB_views hw t M hM hp (rotF L true 10)
       (by simp [measuredBItems,shiftedProductItems,rotF])
+    exact ⟨v.count,v.span,fun _ => rot10_canonical L hw t M hM hp⟩
   · have v := L.measuredB_views hw t M hM hp (rotF L true 32)
       (by simp [measuredBItems,shiftedProductItems,rotF])
     exact ⟨v.count,v.span,fun _ => rot32_canonical L hw t M hM hp⟩
-  · exact rc false 6 (by omega) (rot6_canonical M hbm)
+  · have v := L.measuredB_views hw t M hM hp (rotF L false 6)
       (by simp [measuredBItems,shiftedProductItems,rotF])
+    exact ⟨v.count,v.span,fun _ => rot6_canonical L hw t M hM hp⟩
   · exact L.measuredB_views hw t M hM hp _ (by simp [measuredBItems,rot128F])
   · exact accB_view L hw t (M^2) hp hb
 
@@ -2780,7 +3399,16 @@ theorem accC_views (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   rcases hi with rfl|rfl
   · exact L.measuredC_views hw t M hp _ (by simp [measuredCItems,negRot])
   · have st := sorted_static L hw (accCRaw L) (fun f hf => raw_static L hw f (Or.inr hf))
-    exact plain_view L t true _ st.1 st.2 (validC L hw t)
+    have member (f : MeasuredSquareFold)
+        (hf : f∈earlyHTerms (L.core.product.drop 128)++[posTop L]) :
+        f∈sortedItems false (accCRaw L) := by
+      apply (sorted_perm _ _).symm.subset
+      simp only [List.mem_append,List.mem_singleton] at hf
+      rcases hf with hf|rfl
+      · exact List.mem_append_left _ ((earlyH_mem _ _).mp hf)
+      · simp [accCRaw]
+    exact plain_view L t true _ (fun f hf => st.1 f (member f hf))
+      (fun f hf => st.2 f (member f hf)) (validC L hw t)
 
 theorem acc_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
     (∀i∈accAMix L,MixStatic L i) ∧ (∀i∈accBMix L,MixStatic L i) ∧ (∀i∈accCMix L,MixStatic L i) := by
@@ -2871,7 +3499,7 @@ theorem accMiddleC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (hc : L.PairClean s.basis) :
     (run (accMiddleC L control) records s).phase=s.phase ∧
     regValue L.core.out (run (accMiddleC L control) records s).basis=
-      resC ((if s.basis control then S else 0)^2) O ∧
+      resC2 ((if s.basis control then S else 0)^2) O ∧
     ∀q,q∉L.core.out → (run (accMiddleC L control) records s).basis q=s.basis q := by
   let M := if s.basis control then S else 0
   have srcCount (q : Wire) : L.core.sum.count q≤(L.core.y++[L.core.sumCarry]).count q := by
@@ -2881,8 +3509,8 @@ theorem accMiddleC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     omega
   have result := withMixed_contribution L hw control hn L.core.sum L.core.product srcCount
     (fun _ => le_rfl) (by simp [L.core.sum_length hw.core]) (by simp [L.core.sum_length hw.core])
-    (by simp [hw.core.product,L.core.sum_length hw.core]) false (accCMix L) s records hc hp0
-    O (M^2) (resC (M^2) O) hO ho (by rw [hs])
+    (by simp [hw.core.product,L.core.sum_length hw.core]) true (accCMix L) s records hc hp0
+    O (M^2) (resC2 (M^2) O) hO ho (by rw [hs])
     (fun _ hp _ => hp) (fun t hp => accC_views L hw t M hp)
     (-((M^2 : Nat) : ZMod SquareReduction.p)*2^128)
     (fun t hp => (accC_mixSum L hw t).trans (L.measuredC_sum hw t (M^2) hp))
@@ -2899,7 +3527,7 @@ theorem accBranchC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (hp0 : regValue L.core.product s.basis=0) (hc : L.PairClean s.basis) :
     (run (accBranchC L control) records s).phase=s.phase ∧
     regValue L.core.out (run (accBranchC L control) records s).basis=
-      resC ((if s.basis control then A+B else 0)^2) O ∧
+      resC2 ((if s.basis control then A+B else 0)^2) O ∧
     ∀q,q∉L.core.out → (run (accBranchC L control) records s).basis q=s.basis q := by
   have nd := (List.nodup_cons.mp hn).2
   have dis := L.measured_sum_disjoint nd
@@ -2973,13 +3601,13 @@ theorem accBranchC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have cleared := L.clearSum_frame hw nd restoreBase A B lowRestore sumRestore bound padRestore cinRestore
     v (records.drop (measurementCount middle)) clearPre
   have finalValue : regValue L.core.out out.basis=
-      resC ((if s.basis control then A+B else 0)^2) O := by
+      resC2 ((if s.basis control then A+B else 0)^2) O := by
     apply Eq.trans (regValue_congr _ _ _ ?_) used.2.1
     intro q hq
     have same := cleared.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq)
     simpa [restoreBase,hq] using same
   have final : out.phase=s.phase ∧ regValue L.core.out out.basis=
-      resC ((if s.basis control then A+B else 0)^2) O ∧
+      resC2 ((if s.basis control then A+B else 0)^2) O ∧
       ∀q,q∉L.core.out → out.basis q=s.basis q := by
     refine ⟨cleared.1.trans (used.1.trans prep.1),finalValue,?_⟩
     intro q hq
@@ -2990,95 +3618,36 @@ theorem accBranchC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have prepM := (L.core.sum_counts hw.core).1.2
   simpa [accBranchC,middle,u,v,out,run_append,prepM] using final
 
-theorem accProgram_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
-    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
-    (hy : regValue L.core.y s.basis=Y) (ho : regValue L.core.out s.basis=O)
-    (hp0 : regValue L.core.product s.basis=0) (hs0 : s.basis L.core.sumCarry=false)
-    (hc : L.PairClean s.basis) :
-    (run (accProgram L control) records s).phase=s.phase ∧
-    regValue L.core.out (run (accProgram L control) records s).basis=
-      (O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
-    ∀q,q∉L.core.out → (run (accProgram L control) records s).basis q=s.basis q := by
-  have nd := (List.nodup_cons.mp hn).2
-  have disInput := L.measured_input_out_disjoint nd
-  have disProduct := L.product_out_disjoint nd
-  have ctrlAway : control∉L.core.out := by
-    intro bad
-    exact (List.nodup_cons.mp hn).1 (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,bad])
-  let A := regValue L.core.low s.basis
-  let B := regValue L.core.high s.basis
-  let enabled := s.basis control
+theorem acb_complete_exact (enabled : Bool) (A B O : Nat) :
+    resB ((if enabled then B else 0)^2)
+      (resC2 ((if enabled then A+B else 0)^2) (resA ((if enabled then A else 0)^2) O))=
+      subModValue (if enabled then (A+2^128*B)^2 else 0) O := by
   let PA := (if enabled then A else 0)^2
   let PB := (if enabled then B else 0)^2
   let PC := (if enabled then A+B else 0)^2
   let OA := resA PA O
-  let OB := resB PB OA
-  let OC := resC PC OB
-  let restA := records.drop (measurementCount (accBranchA L control))
-  let restB := restA.drop (measurementCount (accBranchB L control))
-  let restC := restB.drop (measurementCount (accBranchC L control))
-  let u := run (accBranchA L control) (records.take (measurementCount (accBranchA L control))) s
-  let v := run (accBranchB L control) (restA.take (measurementCount (accBranchB L control))) u
-  let w := run (accBranchC L control) (restB.take (measurementCount (accBranchC L control))) v
-  let out := run L.reflectOutput restC w
-  have lowAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out :=
-    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_take hq))
-  have highAway (q : Wire) (hq : q∈L.core.high) : q∉L.core.out :=
-    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_drop (List.mem_of_mem_take hq)))
-  have sumAway (q : Wire) (hq : q∈L.core.sum) : q∉L.core.out :=
-    List.disjoint_left.mp (L.measured_sum_disjoint nd).2 hq
-  have sumB : regValue L.core.sum s.basis=B := by
-    simp [CuccaroStreamedSquareLayout.sum,regValue_append,regValue,hs0,B]
-  have ab : A<2^128 := by simpa [A,L.core.low_length hw.core] using regValue_lt L.core.low s.basis
-  have bb : B<2^128 := by simpa [B,L.core.high_length hw.core] using regValue_lt L.core.high s.basis
-  have sumBound : A+B<2^129 := by norm_num at ab bb ⊢;omega
-  have ea := accBranchA_correct L hw control hn A O hO s
-    (records.take (measurementCount (accBranchA L control))) rfl ho hp0 hc
-  have cleanU : L.PairClean u.basis :=
-    L.squareFrame_clean nd s.basis u.basis OA ⟨ea.2.1,ea.2.2⟩ hc
-  have productU : regValue L.core.product u.basis=0 :=
-    (regValue_congr _ _ _ (fun q hq => ea.2.2 q (List.disjoint_left.mp disProduct hq))).trans hp0
-  have highU : regValue L.core.high u.basis=B :=
-    regValue_congr _ _ _ (fun q hq => ea.2.2 q (highAway q hq))
-  have ctrlU : u.basis control=enabled := ea.2.2 control ctrlAway
-  have eb := accBranchB_correct L hw control hn B OA (ofCast_lt _ _) u
-    (restA.take (measurementCount (accBranchB L control))) highU ea.2.1 productU cleanU
-  rw [ctrlU] at eb
-  have sameV (q : Wire) (hq : q∉L.core.out) : v.basis q=s.basis q :=
-    (eb.2.2 q hq).trans (ea.2.2 q hq)
-  have cleanV : L.PairClean v.basis :=
-    L.squareFrame_clean nd s.basis v.basis OB ⟨eb.2.1,sameV⟩ hc
-  have productV : regValue L.core.product v.basis=0 :=
-    (regValue_congr _ _ _ (fun q hq => sameV q (List.disjoint_left.mp disProduct hq))).trans hp0
-  have lowV : regValue L.core.low v.basis=A := regValue_congr _ _ _ (fun q hq => sameV q (lowAway q hq))
-  have sumV : regValue L.core.sum v.basis=B :=
-    (regValue_congr _ _ _ (fun q hq => sameV q (sumAway q hq))).trans sumB
-  have ctrlV : v.basis control=enabled := sameV control ctrlAway
-  have ec := accBranchC_correct L hw control hn A B OB (ofCast_lt _ _) v
-    (restB.take (measurementCount (accBranchC L control))) lowV sumV sumBound eb.2.1 productV cleanV
-  rw [ctrlV] at ec
-  have sameW (q : Wire) (hq : q∉L.core.out) : w.basis q=s.basis q := (ec.2.2 q hq).trans (sameV q hq)
-  have cleanW : L.PairClean w.basis :=
-    L.squareFrame_clean nd s.basis w.basis OC ⟨ec.2.1,sameW⟩ hc
-  have er := L.reflectOutput_correct hw nd OC (ofCast_lt _ _) w restC ec.2.1 cleanW
-  have split : A+2^128*B=Y := by
-    have highEq : L.core.high=L.core.y.drop 128 := by simp [CuccaroStreamedSquareLayout.high,hw.core.y]
-    have value := regValue_append (L.core.y.take 128) (L.core.y.drop 128) s.basis
-    rw [List.take_append_drop,hy,List.length_take,hw.core.y] at value
-    simpa only [A,B,CuccaroStreamedSquareLayout.low,highEq,show min 128 256=128 by decide] using value.symm
-  have fullValue : regValue L.core.out out.basis=
-      (O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p := by
-    have exactResult := fast_complete_exact enabled A B O
-    rw [split] at exactResult
-    exact er.2.1.trans exactResult
-  have final : out.phase=s.phase ∧ regValue L.core.out out.basis=
-      (O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
-      ∀q,q∉L.core.out → out.basis q=s.basis q := by
-    refine ⟨er.1.trans (ec.1.trans (eb.1.trans ea.1)),fullValue,?_⟩
-    intro q hq
-    exact (er.2.2 q hq).trans (sameW q hq)
-  simpa [accProgram,u,v,w,out,restA,restB,restC,enabled,run_append,Nat.add_assoc] using final
+  let OC := resC2 PC OA
+  let OB := resB PB OC
+  have ea : measuredOrientationCast true OA=measuredOrientationCast false O+((PA : ZMod SquareReduction.p)*2^128-PA) :=
+    cast_ofCast _ _
+  have ec : measuredOrientationCast true OC=measuredOrientationCast true OA+(-(PC : ZMod SquareReduction.p)*2^128) :=
+    cast_ofCast _ _
+  have eb : measuredOrientationCast false OB=measuredOrientationCast true OC+
+      ((PB : ZMod SquareReduction.p)*2^128-SquareReduction.c*PB) := cast_ofCast _ _
+  simp only [measuredOrientationCast,Bool.false_eq_true,if_false,if_true] at ea eb ec
+  have identity := measured_controlled_square_identity enabled A B
+  change (PA : ZMod SquareReduction.p)*2^128-PA+
+    ((PB : ZMod SquareReduction.p)*2^128-SquareReduction.c*PB)-(PC : ZMod SquareReduction.p)*2^128=
+      -((if enabled then (A+2^128*B)^2 else 0 : Nat) : ZMod SquareReduction.p) at identity
+  have obBound : OB<SquareReduction.p := ofCast_lt _ _
+  have cast : (OB : ZMod SquareReduction.p)=
+      (subModValue (if enabled then (A+2^128*B)^2 else 0) O : ZMod SquareReduction.p) := by
+    rw [subModValue_cast]
+    linear_combination eb+ec+ea+identity
+  have targetBound : subModValue (if enabled then (A+2^128*B)^2 else 0) O<SquareReduction.p :=
+    Nat.mod_lt _ (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have value := congrArg ZMod.val cast
+  simpa only [ZMod.val_natCast_of_lt obBound,ZMod.val_natCast_of_lt targetBound] using value
 
 theorem accPrefix_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
@@ -3088,7 +3657,7 @@ theorem accPrefix_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (hc : L.PairClean s.basis) :
     (run (accPrefix L control) records s).phase=s.phase ∧
     regValue L.core.out (run (accPrefix L control) records s).basis=
-      SquareReduction.p-1-(O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
+      (O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
     ∀q,q∉L.core.out → (run (accPrefix L control) records s).basis q=s.basis q := by
   have nd := (List.nodup_cons.mp hn).2
   have disInput := L.measured_input_out_disjoint nd
@@ -3103,13 +3672,13 @@ theorem accPrefix_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   let PB := (if enabled then B else 0)^2
   let PC := (if enabled then A+B else 0)^2
   let OA := resA PA O
-  let OB := resB PB OA
-  let OC := resC PC OB
+  let OC := resC2 PC OA
+  let OB := resB PB OC
   let restA := records.drop (measurementCount (accBranchA L control))
-  let restB := restA.drop (measurementCount (accBranchB L control))
+  let restC := restA.drop (measurementCount (accBranchC L control))
   let u := run (accBranchA L control) (records.take (measurementCount (accBranchA L control))) s
-  let v := run (accBranchB L control) (restA.take (measurementCount (accBranchB L control))) u
-  let w := run (accBranchC L control) restB v
+  let v := run (accBranchC L control) (restA.take (measurementCount (accBranchC L control))) u
+  let w := run (accBranchB L control) restC v
   have lowAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out :=
     List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_take hq))
   have highAway (q : Wire) (hq : q∈L.core.high) : q∉L.core.out :=
@@ -3127,56 +3696,52 @@ theorem accPrefix_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     L.squareFrame_clean nd s.basis u.basis OA ⟨ea.2.1,ea.2.2⟩ hc
   have productU : regValue L.core.product u.basis=0 :=
     (regValue_congr _ _ _ (fun q hq => ea.2.2 q (List.disjoint_left.mp disProduct hq))).trans hp0
-  have highU : regValue L.core.high u.basis=B :=
-    regValue_congr _ _ _ (fun q hq => ea.2.2 q (highAway q hq))
+  have lowU : regValue L.core.low u.basis=A := regValue_congr _ _ _ (fun q hq => ea.2.2 q (lowAway q hq))
+  have sumU : regValue L.core.sum u.basis=B :=
+    (regValue_congr _ _ _ (fun q hq => ea.2.2 q (sumAway q hq))).trans sumB
   have ctrlU : u.basis control=enabled := ea.2.2 control ctrlAway
-  have eb := accBranchB_correct L hw control hn B OA (ofCast_lt _ _) u
-    (restA.take (measurementCount (accBranchB L control))) highU ea.2.1 productU cleanU
-  rw [ctrlU] at eb
+  have ec := accBranchC_correct L hw control hn A B OA (ofCast_lt _ _) u
+    (restA.take (measurementCount (accBranchC L control))) lowU sumU sumBound ea.2.1 productU cleanU
+  rw [ctrlU] at ec
   have sameV (q : Wire) (hq : q∉L.core.out) : v.basis q=s.basis q :=
-    (eb.2.2 q hq).trans (ea.2.2 q hq)
+    (ec.2.2 q hq).trans (ea.2.2 q hq)
   have cleanV : L.PairClean v.basis :=
-    L.squareFrame_clean nd s.basis v.basis OB ⟨eb.2.1,sameV⟩ hc
+    L.squareFrame_clean nd s.basis v.basis OC ⟨ec.2.1,sameV⟩ hc
   have productV : regValue L.core.product v.basis=0 :=
     (regValue_congr _ _ _ (fun q hq => sameV q (List.disjoint_left.mp disProduct hq))).trans hp0
-  have lowV : regValue L.core.low v.basis=A := regValue_congr _ _ _ (fun q hq => sameV q (lowAway q hq))
-  have sumV : regValue L.core.sum v.basis=B :=
-    (regValue_congr _ _ _ (fun q hq => sameV q (sumAway q hq))).trans sumB
+  have highV : regValue L.core.high v.basis=B :=
+    regValue_congr _ _ _ (fun q hq => sameV q (highAway q hq))
   have ctrlV : v.basis control=enabled := sameV control ctrlAway
-  have ec := accBranchC_correct L hw control hn A B OB (ofCast_lt _ _) v
-    restB lowV sumV sumBound eb.2.1 productV cleanV
-  rw [ctrlV] at ec
-  have sameW (q : Wire) (hq : q∉L.core.out) : w.basis q=s.basis q := (ec.2.2 q hq).trans (sameV q hq)
+  have eb := accBranchB_correct L hw control hn B OC (ofCast_lt _ _) v restC highV ec.2.1 productV cleanV
+  rw [ctrlV] at eb
+  have sameW (q : Wire) (hq : q∉L.core.out) : w.basis q=s.basis q := (eb.2.2 q hq).trans (sameV q hq)
   have split : A+2^128*B=Y := by
     have highEq : L.core.high=L.core.y.drop 128 := by simp [CuccaroStreamedSquareLayout.high,hw.core.y]
     have value := regValue_append (L.core.y.take 128) (L.core.y.drop 128) s.basis
     rw [List.take_append_drop,hy,List.length_take,hw.core.y] at value
     simpa only [A,B,CuccaroStreamedSquareLayout.low,highEq,show min 128 256=128 by decide] using value.symm
-  have ocBound : OC<SquareReduction.p := ofCast_lt _ _
   have fullValue : regValue L.core.out w.basis=
-      SquareReduction.p-1-(O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p := by
-    have exactResult := fast_complete_exact enabled A B O
+      (O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p := by
+    have exactResult := acb_complete_exact enabled A B O
     rw [split] at exactResult
     unfold subModValue at exactResult
-    change SquareReduction.p-1-OC=_ at exactResult
-    rw [ec.2.1]
-    change OC=_
-    omega
+    rw [eb.2.1]
+    exact exactResult
   have final : w.phase=s.phase ∧ regValue L.core.out w.basis=
-      SquareReduction.p-1-(O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
+      (O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
       ∀q,q∉L.core.out → w.basis q=s.basis q :=
-    ⟨ec.1.trans (eb.1.trans ea.1),fullValue,sameW⟩
-  simpa [accPrefix,u,v,w,restA,restB,enabled,run_append,Nat.add_assoc] using final
+    ⟨eb.1.trans (ec.1.trans ea.1),fullValue,sameW⟩
+  simpa [accPrefix,u,v,w,restA,restC,enabled,run_append,Nat.add_assoc] using final
 
-theorem acc_item_prices (L : CuccaroStreamedSquareWideLayout) :
-    (mixFoldsT false (accAMix L)=4200 ∧ mixFoldsM false (accAMix L)=4200) ∧
-    (mixFoldsT true (accBMix L)=9868 ∧ mixFoldsM true (accBMix L)=9868) ∧
-    (mixFoldsT false (accCMix L)=3245 ∧ mixFoldsM false (accCMix L)=3245) := by
+theorem acc_item_prices (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    (mixFoldsT false (accAMix L)=4112 ∧ mixFoldsM false (accAMix L)=4112) ∧
+    (mixFoldsT true (accBMix L)=9780 ∧ mixFoldsM true (accBMix L)=9780) ∧
+    (mixFoldsT true (accCMix L)=2902 ∧ mixFoldsM true (accCMix L)=2902) := by
   norm_num [mixFoldsT,mixFoldsM,mixNeg,accAMix,accBMix,accCMix,rot128F,negP,negRot,rotF,rotC,posTop,
-    accARaw,accBRaw,accCRaw,sortedItems,nafMinusOneItems,List.filter_cons,Acc.buildT,Acc.sbuildT,preW,termsB,accPrice]
+    accARaw,accBRaw,accCRaw,sortedItems,nafMinusOneItems,List.filter_cons,Acc.buildT,Acc.sbuildT,preW,termsB,accPrice,earlyHTerms,Acc.earlyTerm,Acc.EarlyH,Acc.earlyBuildT,Acc.baseBuildT,hw.core.product]
 
 theorem accProgram_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
-    toffoliCount (accProgram L control)=69408 ∧ measurementCount (accProgram L control)=68896 := by
+    toffoliCount (accProgram L control)=68889 ∧ measurementCount (accProgram L control)=68377 := by
   have st := acc_static L hw
   have lo := L.core.low_length hw.core
   have hi := L.core.high_length hw.core
@@ -3187,11 +3752,11 @@ theorem accProgram_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) 
   have b := L.withMeasuredSquare_counts hw control L.core.high (L.core.product.take 256)
     (mixFolds L true (accBMix L)) (by omega) (by omega) (by omega)
   have c := L.withMeasuredSquare_counts hw control L.core.sum L.core.product
-    (mixFolds L false (accCMix L)) (by omega) (by omega) (by rw [hw.core.product,su])
+    (mixFolds L true (accCMix L)) (by omega) (by omega) (by rw [hw.core.product,su])
   have fa := mixFolds_counts L hw false (accAMix L) st.1
   have fb := mixFolds_counts L hw true (accBMix L) st.2.1
-  have fc := mixFolds_counts L hw false (accCMix L) st.2.2
-  have prices := acc_item_prices L
+  have fc := mixFolds_counts L hw true (accCMix L) st.2.2
+  have prices := acc_item_prices L hw
   rw [prices.1.1,prices.1.2] at fa
   rw [prices.2.1.1,prices.2.1.2] at fb
   rw [prices.2.2.1,prices.2.2.2] at fc
@@ -3208,7 +3773,7 @@ theorem accProgram_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have st := acc_static L hw
   have a := mixFolds_support L hw hn control false (accAMix L) st.1
   have b := mixFolds_support L hw hn control true (accBMix L) st.2.1
-  have c := mixFolds_support L hw hn control false (accCMix L) st.2.2
+  have c := mixFolds_support L hw hn control true (accCMix L) st.2.2
   have low := L.core.low_length hw.core
   have high := L.core.high_length hw.core
   have sum := L.core.sum_length hw.core
@@ -3225,7 +3790,7 @@ theorem accProgram_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (fun _ hq => List.mem_of_mem_take hq) b
   have sc : ECDSAAdd.wires (accMiddleC L control)⊆(control::L.wires).toFinset :=
     L.withMeasuredSquare_support hw control L.core.sum L.core.product
-    (mixFolds L false (accCMix L)) (by omega) (by omega) (by rw [hw.core.product,sum])
+    (mixFolds L true (accCMix L)) (by omega) (by omega) (by rw [hw.core.product,sum])
     (by
       intro q hq
       simp only [CuccaroStreamedSquareLayout.sum,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
@@ -3241,8 +3806,8 @@ theorem accProgram_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have reflection : ECDSAAdd.wires L.reflectOutput⊆(control::L.wires).toFinset :=
     (L.measured_small_support control).2.2.1
   simpa only [accProgram,accBranchC,
-    wires_append,Finset.union_subset_iff] using And.intro (And.intro (And.intro sa sb)
-      (And.intro (And.intro prep sc) unprep)) reflection
+    wires_append,Finset.union_subset_iff] using And.intro (And.intro (And.intro sa
+      (And.intro (And.intro prep sc) unprep)) sb) reflection
 
 theorem accProgram_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (control : Wire) (hn : (control :: L.wires).Nodup) :
@@ -3266,11 +3831,11 @@ theorem accProgram_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths
   have b := L.withMeasuredSquare_physical control hn _ _ hb hp _
     (mixFolds_physical L hw nd true (accBMix L) st.2.1)
   have c := L.withMeasuredSquare_physical control hn _ _ hs (fun _ => le_rfl) _
-    (mixFolds_physical L hw nd false (accCMix L) st.2.2)
+    (mixFolds_physical L hw nd true (accCMix L) st.2.2)
   have prep := (RecordedQuantum.physical_embed _).mp (RecordedQuantum.physical_of_proper _ (L.sum_certified hw nd).1.1)
   have clear := (RecordedQuantum.physical_embed _).mp (RecordedQuantum.physical_of_proper _ (L.sum_certified hw nd).2.1)
   simp only [accProgram,accBranchA,accBranchB,accBranchC,accMiddleC,gatePhysical_append]
-  exact ⟨⟨⟨a,b⟩,⟨prep,c⟩,clear⟩,L.reflectOutput_physical nd⟩
+  exact ⟨⟨⟨a,⟨prep,c⟩,clear⟩,b⟩,L.reflectOutput_physical nd⟩
 
 theorem accProgram_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (control : Wire) : Challenge.gateSlots (accProgram L control) ≤ 5000000 := by
@@ -3281,10 +3846,10 @@ theorem accProgram_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wi
     subst e
     rcases h with rfl|rfl|rfl <;>
       simp [accAMix,accBMix,accCMix] at hi <;> rw [hi] <;>
-      simp [sortedItems,accARaw,accBRaw,accCRaw,termsB,preW,nafMinusOneItems,List.filter_cons,posTop]
+      simp [sortedItems,accARaw,accBRaw,accCRaw,termsB,earlyHTerms,Acc.earlyTerm,preW,nafMinusOneItems,List.filter_cons,posTop]
   have ha := mixFolds_gateSlots L hw false (accAMix L) st.1 20 (bd _ (Or.inl rfl))
   have hb := mixFolds_gateSlots L hw true (accBMix L) st.2.1 20 (bd _ (Or.inr (Or.inl rfl)))
-  have hc := mixFolds_gateSlots L hw false (accCMix L) st.2.2 20 (bd _ (Or.inr (Or.inr rfl)))
+  have hc := mixFolds_gateSlots L hw true (accCMix L) st.2.2 20 (bd _ (Or.inr (Or.inr rfl)))
   have la : (accAMix L).length = 3 := rfl
   have lb : (accBMix L).length = 7 := rfl
   have lc : (accCMix L).length = 2 := rfl
@@ -3298,7 +3863,7 @@ theorem accProgram_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wi
   have b := Baselines.withMeasuredSquare_gateSlots_le L hw control L.core.high _
     (mixFolds L true (accBMix L)) hd
   have c := Baselines.withMeasuredSquare_gateSlots_le L hw control L.core.sum L.core.product
-    (mixFolds L false (accCMix L)) (by rw [hw.core.product])
+    (mixFolds L true (accCMix L)) (by rw [hw.core.product])
   have hp := Baselines.cuccaroAdd_gateSlots_le (L.core.low++[L.core.pad.getD 0 0]) L.core.sum L.core.cin
   have hl := L.core.low_length hw.core
   simp only [List.length_append, List.length_cons, List.length_nil, hl] at hp
@@ -3309,7 +3874,7 @@ theorem accProgram_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wi
   omega
 
 theorem accPrefix_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
-    toffoliCount (accPrefix L control)=69153 ∧ measurementCount (accPrefix L control)=68641 := by
+    toffoliCount (accPrefix L control)=68634 ∧ measurementCount (accPrefix L control)=68122 := by
   have full := accProgram_counts L hw control
   have r := (L.measured_small_operation_counts hw).2.2
   rw [accProgram_split,toffoliCount_append,measurementCount_append] at full
@@ -3336,11 +3901,2003 @@ theorem accPrefix_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Wid
   omega
 
 end ECDSAAdd.Entrant
+end
+
+section
+-- ===== KLeaf =====
+
+/-! One Karatsuba level inside a leaf square. For `x = a + 2^h b` the low and
+high squares go straight into the disjoint halves of `dst`, while
+`(a+b)^2 - a^2 - b^2 = 2ab` is formed in a kept temporary and added at `2^h`.
+The temporary and the sum register stay live until the independent cleanup. -/
+
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+
+namespace ECDSAAdd.Entrant
+open Arithmetic
+
+structure KRegs where
+  h : Nat
+  bank : List Wire
+  dst : List Wire
+  S : List Wire
+  T : List Wire
+  z : List Wire
+  pad : List Wire
+  carry : List Wire
+  cin : Wire
+
+namespace KRegs
+variable (R : KRegs)
+
+def lo : List Wire := R.bank.take R.h
+def hi : List Wire := R.bank.drop R.h
+def dlo : List Wire := R.dst.take (2*R.h)
+def dhi : List Wire := R.dst.drop (2*R.h)
+def dmid : List Wire := R.dst.drop R.h
+def zS : List Wire := R.z.take 1
+def zA : List Wire := R.z.take (R.T.length-2*R.h)
+def zB : List Wire := R.z.take 2
+def zM : List Wire := R.z.take (R.dmid.length-R.T.length)
+def all : List Wire := R.cin::R.bank++R.dst++R.S++R.T++R.z++R.pad++R.carry
+
+structure W : Prop where
+  h4 : 4 ≤ R.h
+  hh : R.h+R.h ≤ R.bank.length
+  h5 : 2*R.bank.length+4 ≤ 5*R.h
+  dst : R.dst.length=2*R.bank.length
+  S : R.S.length=R.bank.length-R.h+1
+  T : R.T.length=2*R.S.length
+  z : R.z.length=R.h-2
+  pad : 1 ≤ R.pad.length
+  carry : 2*R.bank.length-R.h-1 ≤ R.carry.length
+
+def m1 : Program := mappedSignedSquare R.lo R.dlo R.pad R.carry R.cin
+def m2 : Program := mappedSignedSquare R.hi R.dhi R.pad R.carry R.cin
+def m3 : Program := copyRegister none R.lo (R.S.take R.h)
+def m4 : Program := addInPlace (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+def m5 : Program := mappedSignedSquare R.S R.T R.pad R.carry R.cin
+def m6 : Program := subInPlace (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+def m7 : Program := subInPlace (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+def m8 : Program := addInPlace (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+def c8 : Program := subInPlace (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+def c7 : Program := addInPlace (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+def c6 : Program := addInPlace (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+def c5 : Program := mappedSignedSquareClear R.S R.T R.pad R.carry R.cin
+def c4 : Program := subInPlace (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+def c2 : Program := mappedSignedSquareClear R.hi R.dhi R.pad R.carry R.cin
+def c1 : Program := mappedSignedSquareClear R.lo R.dlo R.pad R.carry R.cin
+
+def make : Program := R.m1++R.m2++R.m3++R.m4++R.m5++R.m6++R.m7++R.m8
+def clear : Program := R.c8++R.c7++R.c6++R.c5++R.c4++R.m3++R.c2++R.c1
+
+end KRegs
+
+theorem kcnt_take (l : List Wire) (k : Nat) (q : Wire) : (l.take k).count q ≤ l.count q :=
+  (List.take_sublist k l).count_le q
+theorem kcnt_split (l : List Wire) (k : Nat) (q : Wire) :
+    (l.take k).count q+(l.drop k).count q=l.count q := by
+  rw [←List.count_append,List.take_append_drop]
+
+theorem knd {l L : List Wire} (hL : L.Nodup) (h : ∀q,l.count q≤L.count q) : l.Nodup :=
+  List.nodup_iff_count_le_one.mpr (fun q => (h q).trans (List.nodup_iff_count_le_one.mp hL q))
+
+theorem kdis {L r t : List Wire} (hL : L.Nodup) (h : ∀q,r.count q+t.count q≤L.count q)
+    (q : Wire) (hq : q∈r) : q∉t := by
+  intro ht
+  have a := List.count_pos_iff.mpr hq
+  have b := List.count_pos_iff.mpr ht
+  have c := List.nodup_iff_count_le_one.mp hL q
+  have d := h q
+  omega
+
+theorem kkeep {r tgt : List Wire} {s t : BasisState} (hf : ∀q,q∉tgt → t q=s q)
+    (hd : ∀q∈r,q∉tgt) : regValue r t=regValue r s :=
+  regValue_congr _ _ _ (fun q hq => hf q (hd q hq))
+
+theorem kseq (p q : Program) (m : List Bool) (s : State) :
+    ∃ m1 m2,run (p++q) m s=run q m2 (run p m1 s) := ⟨_,_,run_append p q m s⟩
+
+theorem ksubmod (x y N : Nat) (hy : y≤x) (hx : x<N) : (x+N-y)%N=x-y := by
+  rw [show x+N-y=(x-y)+N by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)]
+
+namespace KRegs
+variable (R : KRegs)
+
+/-- All per-wire count facts used by the disjointness side conditions. -/
+theorem counts (q : Wire) :
+    R.lo.count q+R.hi.count q=R.bank.count q ∧
+    R.dlo.count q+R.dhi.count q=R.dst.count q ∧
+    (R.dst.take R.h).count q+R.dmid.count q=R.dst.count q ∧
+    (R.S.take R.h).count q ≤ R.S.count q ∧
+    R.zS.count q ≤ R.z.count q ∧ R.zA.count q ≤ R.z.count q ∧
+    R.zB.count q ≤ R.z.count q ∧ R.zM.count q ≤ R.z.count q ∧
+    (R.carry.take (R.S.length-1)).count q ≤ R.carry.count q ∧
+    (R.carry.take (R.T.length-1)).count q ≤ R.carry.count q ∧
+    (R.carry.take (R.dmid.length-1)).count q ≤ R.carry.count q :=
+  ⟨kcnt_split _ _ _,kcnt_split _ _ _,kcnt_split _ _ _,kcnt_take _ _ _,kcnt_take _ _ _,
+    kcnt_take _ _ _,kcnt_take _ _ _,kcnt_take _ _ _,kcnt_take _ _ _,kcnt_take _ _ _,kcnt_take _ _ _⟩
+
+theorem lens (w : R.W) :
+    R.lo.length=R.h ∧ R.hi.length=R.bank.length-R.h ∧ R.dlo.length=2*R.h ∧
+    R.dhi.length=2*(R.bank.length-R.h) ∧ R.dmid.length=2*R.bank.length-R.h ∧
+    R.zS.length=1 ∧ R.zA.length=R.T.length-2*R.h ∧ R.zB.length=2 ∧
+    R.zM.length=R.h-2 ∧ (R.S.take R.h).length=R.h ∧ (R.dst.take R.h).length=R.h := by
+  have h4 := w.h4; have hh := w.hh; have h5 := w.h5; have hd := w.dst; have hS := w.S
+  have hT := w.T; have hz := w.z
+  simp only [lo,hi,dlo,dhi,dmid,zS,zA,zB,zM,List.length_take,List.length_drop]
+  refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,?_,?_,?_⟩ <;> first | trivial | omega
+
+
+theorem kfinal (a b h n : Nat) (ha : a<2^h) (hb : b<2^(n-h)) (hh : h≤n) :
+    (a^2+2^(2*h)*b^2)%2^h+2^h*((2*a*b+(a^2+2^(2*h)*b^2)/2^h)%2^(2*n-h))=(a+2^h*b)^2 := by
+  have hX : (a+2^h*b)^2=(a^2+2^(2*h)*b^2)+2^h*(2*a*b) := by ring
+  have hpos : 0<2^h := Nat.two_pow_pos h
+  have hsplit : 2^n=2^h*2^(n-h) := by rw [←pow_add]; congr 1; omega
+  have hm := Nat.mul_le_mul_left (2^h) (show b+1≤2^(n-h) by omega)
+  rw [Nat.mul_add,Nat.mul_one,←hsplit] at hm
+  have hlt : a+2^h*b<2^n := by omega
+  have sq := square_bound (a+2^h*b) n hlt
+  have hdiv : (a+2^h*b)^2/2^h=(a^2+2^(2*h)*b^2)/2^h+2*a*b := by
+    rw [hX,Nat.add_mul_div_left _ _ hpos]
+  have hmod : (a+2^h*b)^2%2^h=(a^2+2^(2*h)*b^2)%2^h := by
+    rw [hX,Nat.add_mul_mod_self_left]
+  have hq : (a+2^h*b)^2/2^h<2^(2*n-h) := by
+    rw [Nat.div_lt_iff_lt_mul hpos,←pow_add,show 2*n-h+h=2*n by omega]; exact sq
+  rw [show 2*a*b+(a^2+2^(2*h)*b^2)/2^h=(a+2^h*b)^2/2^h by rw [hdiv]; ring,
+    Nat.mod_eq_of_lt hq,←hmod,Nat.mod_add_div]
+
+theorem bank_value (w : R.W) (t : BasisState) :
+    regValue R.bank t=regValue R.lo t+2^R.h*regValue R.hi t := by
+  have e := regValue_append R.lo R.hi t
+  rw [(R.lens w).1] at e
+  rw [←e]; simp only [lo,hi,List.take_append_drop]
+
+theorem dst_value (w : R.W) (t : BasisState) :
+    regValue R.dst t=regValue R.dlo t+2^(2*R.h)*regValue R.dhi t := by
+  have e := regValue_append R.dlo R.dhi t
+  rw [(R.lens w).2.2.1] at e
+  rw [←e]; simp only [dlo,dhi,List.take_append_drop]
+
+theorem dst_value_mid (w : R.W) (t : BasisState) :
+    regValue R.dst t=regValue (R.dst.take R.h) t+2^R.h*regValue R.dmid t := by
+  have e := regValue_append (R.dst.take R.h) R.dmid t
+  rw [(R.lens w).2.2.2.2.2.2.2.2.2.2] at e
+  rw [←e]; simp only [dmid,List.take_append_drop]
+
+theorem outside (hn : R.all.Nodup) (q : Wire)
+    (hq : q∈R.bank ∨ q∈R.z ∨ q∈R.pad ∨ q∈R.carry ∨ q=R.cin) :
+    q∉R.dst ∧ q∉R.S ∧ q∉R.T := by
+  rcases hq with hq|hq|hq|hq|hq
+  · exact ⟨kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq,
+      kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq,
+      kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq⟩
+  · exact ⟨kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq,
+      kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq,
+      kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq⟩
+  · exact ⟨kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq,
+      kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq,
+      kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq⟩
+  · exact ⟨kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq,
+      kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq,
+      kdis hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega) q hq⟩
+  · subst hq
+    have nd : R.cin∉R.bank++R.dst++R.S++R.T++R.z++R.pad++R.carry := (List.nodup_cons.mp hn).1
+    exact ⟨fun h => nd (by simp [h]),fun h => nd (by simp [h]),fun h => nd (by simp [h])⟩
+
+
+theorem make_correct (w : R.W) (hn : R.all.Nodup) (s : State) (m : List Bool)
+    (hd0 : regValue R.dst s.basis=0) (hS0 : regValue R.S s.basis=0)
+    (hT0 : regValue R.T s.basis=0) (hz0 : regValue R.z s.basis=0)
+    (hp0 : regValue R.pad s.basis=0) (hc0 : regValue R.carry s.basis=0)
+    (hi0 : s.basis R.cin=false) :
+    (run R.make m s).phase=s.phase ∧
+    regValue R.dst (run R.make m s).basis=(regValue R.bank s.basis)^2 ∧
+    regValue R.S (run R.make m s).basis=regValue R.lo s.basis+regValue R.hi s.basis ∧
+    regValue R.T (run R.make m s).basis=2*regValue R.lo s.basis*regValue R.hi s.basis ∧
+    ∀q,q∉R.dst → q∉R.S → q∉R.T → (run R.make m s).basis q=s.basis q := by
+  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+  have h4 := w.h4; have hh := w.hh; have h5 := w.h5; have hdl := w.dst; have hSl := w.S
+  have hTl := w.T; have hzl := w.z; have hpl := w.pad; have hcl := w.carry
+  have bv := R.bank_value w s.basis
+  rw [bv]
+  generalize ha : regValue R.lo s.basis=a
+  generalize hb : regValue R.hi s.basis=b
+  have aLt : a<2^R.h := by rw [←ha,←L0]; exact regValue_lt _ _
+  have bLt : b<2^(R.bank.length-R.h) := by rw [←hb,←L1]; exact regValue_lt _ _
+  have outV (t : State) (G : ∀q,q∉R.dst → q∉R.S → q∉R.T → t.basis q=s.basis q) (r : List Wire)
+      (hr : ∀q∈r,q∈R.bank ∨ q∈R.z ∨ q∈R.pad ∨ q∈R.carry ∨ q=R.cin) :
+      regValue r t.basis=regValue r s.basis :=
+    regValue_congr _ _ _ (fun q hq => let o := R.outside hn q (hr q hq); G q o.1 o.2.1 o.2.2)
+  have zero (r : List Wire) (big : List Wire) (hz : regValue big s.basis=0) (sub : ∀q∈r,q∈big) :
+      regValue r s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hz q (sub q hq))
+  have nS : R.S.Nodup := knd hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega)
+  have nD : R.dst.Nodup := knd hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega)
+  have cinOut : R.cin∉R.dst ∧ R.cin∉R.S ∧ R.cin∉R.T := R.outside hn R.cin (by simp)
+  have mt {l : List Wire} {k : Nat} {q : Wire} (h : q∈l.take k) : q∈l := List.mem_of_mem_take h
+  have md {l : List Wire} {k : Nat} {q : Wire} (h : q∈l.drop k) : q∈l := List.mem_of_mem_drop h
+  obtain ⟨a7,r8,e8⟩ := kseq (R.m1++R.m2++R.m3++R.m4++R.m5++R.m6++R.m7) R.m8 m s
+  obtain ⟨a6,r7,e7⟩ := kseq (R.m1++R.m2++R.m3++R.m4++R.m5++R.m6) R.m7 a7 s
+  obtain ⟨a5,r6,e6⟩ := kseq (R.m1++R.m2++R.m3++R.m4++R.m5) R.m6 a6 s
+  obtain ⟨a4,r5,e5⟩ := kseq (R.m1++R.m2++R.m3++R.m4) R.m5 a5 s
+  obtain ⟨a3,r4,e4⟩ := kseq (R.m1++R.m2++R.m3) R.m4 a4 s
+  obtain ⟨a2,r3,e3⟩ := kseq (R.m1++R.m2) R.m3 a3 s
+  obtain ⟨r1,r2,e2⟩ := kseq R.m1 R.m2 a2 s
+  rw [show R.make=R.m1++R.m2++R.m3++R.m4++R.m5++R.m6++R.m7++R.m8 from rfl,e8,e7,e6,e5,e4,e3,e2]
+  -- step 1: a^2 into the low half
+  have st1 : (run R.m1 r1 s).phase=s.phase ∧ regValue R.dlo (run R.m1 r1 s).basis=a^2 ∧
+      ∀q,q∉R.dlo → (run R.m1 r1 s).basis q=s.basis q := by
+    have r := mappedSignedSquare_correct R.cin R.lo R.dlo R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by omega)
+      (by omega) hpl (by omega) s r1 (zero _ _ hd0 (fun q h => mt h)) hp0 hc0 hi0
+    rw [ha] at r; exact r
+  generalize run R.m1 r1 s=s1 at st1 ⊢
+  have G1 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s1.basis q=s.basis q :=
+    fun q h _ _ => st1.2.2 q (fun x => h (mt x))
+  -- step 2: b^2 into the high half
+  have st2 : (run R.m2 r2 s1).phase=s1.phase ∧ regValue R.dhi (run R.m2 r2 s1).basis=b^2 ∧
+      ∀q,q∉R.dhi → (run R.m2 r2 s1).basis q=s1.basis q := by
+    have dz : regValue R.dhi s1.basis=0 :=
+      (kkeep st1.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans (zero _ _ hd0 (fun q h => md h))
+    have r := mappedSignedSquare_correct R.cin R.hi R.dhi R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by omega)
+      (by omega) hpl (by omega) s1 r2 dz ((outV s1 G1 R.pad (by intro q h; simp [h])).trans hp0)
+      ((outV s1 G1 R.carry (by intro q h; simp [h])).trans hc0) ((G1 _ cinOut.1 cinOut.2.1 cinOut.2.2).trans hi0)
+    rw [outV s1 G1 R.hi (by intro q h; simp [md h]),hb] at r; exact r
+  generalize run R.m2 r2 s1=s2 at st2 ⊢
+  have G2 : ∀q,q∉R.dst → s2.basis q=s.basis q :=
+    fun q h => (st2.2.2 q (fun x => h (md x))).trans (st1.2.2 q (fun x => h (mt x)))
+  have dlo2 : regValue R.dlo s2.basis=a^2 := (kkeep st2.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans st1.2.1
+  -- step 3: copy a into the sum register
+  have st3 : (run R.m3 r3 s2).phase=s2.phase ∧ regValue (R.S.take R.h) (run R.m3 r3 s2).basis=a ∧
+      ∀q,q∉R.S.take R.h → (run R.m3 r3 s2).basis q=s2.basis q := by
+    unfold m3
+    obtain ⟨p,f,v⟩ := copyRegister_correct none R.lo (R.S.take R.h) (by omega) (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+      (by intro c hc; simp at hc) s2 r3
+    refine ⟨p,?_,f⟩
+    rw [v,show regValue (R.S.take R.h) s2.basis=0 from
+      (kkeep (fun q h => G2 q h) (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans (zero _ _ hS0 (fun q h => mt h)),Nat.zero_xor]
+    change regValue R.lo s2.basis=a
+    rw [kkeep (fun q h => G2 q h) (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq),ha]
+  generalize run R.m3 r3 s2=s3 at st3 ⊢
+  have G3 : ∀q,q∉R.dst → q∉R.S → s3.basis q=s.basis q :=
+    fun q h hS => (st3.2.2 q (fun x => hS (mt x))).trans (G2 q h)
+  have S3 : regValue R.S s3.basis=a := by
+    have e := regValue_append (R.S.take R.h) (R.S.drop R.h) s3.basis
+    rw [List.take_append_drop,L9] at e
+    rw [e,st3.2.1,(kkeep st3.2.2 (by
+      intro q hq hx
+      have c1 := List.count_pos_iff.mpr hq; have c2 := List.count_pos_iff.mpr hx
+      have c3 := kcnt_split R.S R.h q
+      have c4 := List.nodup_iff_count_le_one.mp nS q
+      omega)).trans ((kkeep (fun q h => G2 q h) (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans (zero _ _ hS0 (fun q h => md h)))]
+    ring
+  have dlo3 : regValue R.dlo s3.basis=a^2 := (kkeep st3.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo2
+  have dhi3 : regValue R.dhi s3.basis=b^2 := (kkeep st3.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans st2.2.1
+  -- step 4: S += b
+  have st4 : (run R.m4 r4 s3).phase=s3.phase ∧ regValue R.S (run R.m4 r4 s3).basis=a+b ∧
+      ∀q,q∉R.S → (run R.m4 r4 s3).basis q=s3.basis q := by
+    unfold m4
+    have G3' : ∀q,q∉R.dst → q∉R.S → q∉R.T → s3.basis q=s.basis q := fun q h hS _ => G3 q h hS
+    obtain ⟨p,f,v⟩ := addInPlace_correct (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+      (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega) s3 r4
+      (fun q hq => (regValue_zero _ _).mp ((outV s3 G3' _ (by intro q h; simp [mt h])).trans
+        (zero _ _ hc0 (fun q h => mt h))) q hq)
+    refine ⟨p,?_,f⟩
+    rw [v,regValue_append,outV s3 G3' R.hi (by intro q h; simp [md h]),
+      outV s3 G3' R.zS (by intro q h; simp [mt h]),zero R.zS R.z hz0 (fun q h => List.mem_of_mem_take (show q∈R.z.take 1 from h)),hb,S3,
+      G3 _ cinOut.1 cinOut.2.1,hi0]
+    have hp : 2^R.h≤2^(R.bank.length-R.h) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    have hq : 2^R.S.length=2*2^(R.bank.length-R.h) := by rw [hSl,pow_succ]; ring
+    rw [Nat.mod_eq_of_lt (by simp; omega)]; simp; ring
+  generalize run R.m4 r4 s3=s4 at st4 ⊢
+  have G4 : ∀q,q∉R.dst → q∉R.S → s4.basis q=s.basis q :=
+    fun q h hS => (st4.2.2 q hS).trans (G3 q h hS)
+  have G4' : ∀q,q∉R.dst → q∉R.S → q∉R.T → s4.basis q=s.basis q := fun q h hS _ => G4 q h hS
+  have dlo4 : regValue R.dlo s4.basis=a^2 := (kkeep st4.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo3
+  have dhi4 : regValue R.dhi s4.basis=b^2 := (kkeep st4.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi3
+  -- step 5: T = (a+b)^2
+  have st5 : (run R.m5 r5 s4).phase=s4.phase ∧ regValue R.T (run R.m5 r5 s4).basis=(a+b)^2 ∧
+      ∀q,q∉R.T → (run R.m5 r5 s4).basis q=s4.basis q := by
+    have r := mappedSignedSquare_correct R.cin R.S R.T R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by omega)
+      (by omega) hpl (by omega) s4 r5
+      ((regValue_congr _ _ _ (fun q hq => G4 q (kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq) (kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq))).trans hT0)
+      ((outV s4 G4' R.pad (by intro q h; simp [h])).trans hp0)
+      ((outV s4 G4' R.carry (by intro q h; simp [h])).trans hc0)
+      ((G4 _ cinOut.1 cinOut.2.1).trans hi0)
+    rw [st4.2.1] at r; exact r
+  generalize run R.m5 r5 s4=s5 at st5 ⊢
+  have G5 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s5.basis q=s.basis q :=
+    fun q h hS hT => (st5.2.2 q hT).trans (G4 q h hS)
+  have dlo5 : regValue R.dlo s5.basis=a^2 := (kkeep st5.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo4
+  have dhi5 : regValue R.dhi s5.basis=b^2 := (kkeep st5.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi4
+  have S5 : regValue R.S s5.basis=a+b := (kkeep st5.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans st4.2.1
+  have sumLt : a+b<2^R.S.length := by
+    have hp : 2^R.h≤2^(R.bank.length-R.h) := Nat.pow_le_pow_right (by norm_num) (by omega)
+    have hq : 2^R.S.length=2*2^(R.bank.length-R.h) := by rw [hSl,pow_succ]; ring
+    omega
+  have sqLt : (a+b)^2<2^R.T.length := by rw [hTl]; exact square_bound _ _ sumLt
+  have ex : (a+b)^2=a^2+2*a*b+b^2 := by ring
+  -- step 6: T -= a^2
+  have st6 : (run R.m6 r6 s5).phase=s5.phase ∧ regValue R.T (run R.m6 r6 s5).basis=2*a*b+b^2 ∧
+      ∀q,q∉R.T → (run R.m6 r6 s5).basis q=s5.basis q := by
+    unfold m6
+    obtain ⟨p,f,v⟩ := BalancedInverse.subInPlace_any_correct (R.dlo++R.zA) R.T
+      (R.carry.take (R.T.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by simp only [List.length_append]; omega)
+      (by simp only [List.length_take]; omega) s5 r6
+      (fun q hq => (regValue_zero _ _).mp ((outV s5 G5 _ (by intro q h; simp [mt h])).trans
+        (zero _ _ hc0 (fun q h => mt h))) q hq)
+    refine ⟨p,?_,f⟩
+    rw [v,regValue_append,dlo5,outV s5 G5 R.zA (by intro q h; simp [mt h]),zero R.zA R.z hz0 (fun q h => List.mem_of_mem_take (show q∈R.z.take (R.T.length-2*R.h) from h)),
+      st5.2.1,G5 _ cinOut.1 cinOut.2.1 cinOut.2.2,hi0]
+    simp only [Nat.mul_zero,Nat.add_zero,Bool.toNat_false,Nat.sub_zero]
+    rw [ksubmod _ _ _ (by rw [ex]; omega) sqLt,ex]; omega
+  generalize run R.m6 r6 s5=s6 at st6 ⊢
+  have G6 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s6.basis q=s.basis q :=
+    fun q h hS hT => (st6.2.2 q hT).trans (G5 q h hS hT)
+  have dlo6 : regValue R.dlo s6.basis=a^2 := (kkeep st6.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo5
+  have dhi6 : regValue R.dhi s6.basis=b^2 := (kkeep st6.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi5
+  have S6 : regValue R.S s6.basis=a+b := (kkeep st6.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans S5
+  -- step 7: T -= b^2
+  have st7 : (run R.m7 r7 s6).phase=s6.phase ∧ regValue R.T (run R.m7 r7 s6).basis=2*a*b ∧
+      ∀q,q∉R.T → (run R.m7 r7 s6).basis q=s6.basis q := by
+    unfold m7
+    obtain ⟨p,f,v⟩ := BalancedInverse.subInPlace_any_correct (R.dhi++R.zB) R.T
+      (R.carry.take (R.T.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by simp only [List.length_append]; omega)
+      (by simp only [List.length_take]; omega) s6 r7
+      (fun q hq => (regValue_zero _ _).mp ((outV s6 G6 _ (by intro q h; simp [mt h])).trans
+        (zero _ _ hc0 (fun q h => mt h))) q hq)
+    refine ⟨p,?_,f⟩
+    rw [v,regValue_append,dhi6,outV s6 G6 R.zB (by intro q h; simp [mt h]),zero R.zB R.z hz0 (fun q h => List.mem_of_mem_take (show q∈R.z.take 2 from h)),
+      st6.2.1,G6 _ cinOut.1 cinOut.2.1 cinOut.2.2,hi0]
+    simp only [Nat.mul_zero,Nat.add_zero,Bool.toNat_false,Nat.sub_zero]
+    rw [ksubmod _ _ _ (by omega) (by rw [ex] at sqLt; omega)]; omega
+  generalize run R.m7 r7 s6=s7 at st7 ⊢
+  have G7 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s7.basis q=s.basis q :=
+    fun q h hS hT => (st7.2.2 q hT).trans (G6 q h hS hT)
+  have dlo7 : regValue R.dlo s7.basis=a^2 := (kkeep st7.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo6
+  have dhi7 : regValue R.dhi s7.basis=b^2 := (kkeep st7.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi6
+  have S7 : regValue R.S s7.basis=a+b := (kkeep st7.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans S6
+  have D7 : regValue R.dst s7.basis=a^2+2^(2*R.h)*b^2 := by rw [R.dst_value w,dlo7,dhi7]
+  -- step 8: dst += 2^h * 2ab
+  have st8 : (run R.m8 r8 s7).phase=s7.phase ∧
+      regValue R.dmid (run R.m8 r8 s7).basis=(2*a*b+(a^2+2^(2*R.h)*b^2)/2^R.h)%2^(2*R.bank.length-R.h) ∧
+      ∀q,q∉R.dmid → (run R.m8 r8 s7).basis q=s7.basis q := by
+    unfold m8
+    obtain ⟨p,f,v⟩ := addInPlace_correct (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+      (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega) s7 r8
+      (fun q hq => (regValue_zero _ _).mp ((outV s7 G7 _ (by intro q h; simp [mt h])).trans
+        (zero _ _ hc0 (fun q h => mt h))) q hq)
+    refine ⟨p,?_,f⟩
+    rw [v,regValue_append,st7.2.1,outV s7 G7 R.zM (by intro q h; simp [mt h]),zero R.zM R.z hz0 (fun q h => List.mem_of_mem_take (show q∈R.z.take (R.dmid.length-R.T.length) from h)),
+      show regValue R.dmid s7.basis=regValue R.dst s7.basis/2^R.h from
+        CuccaroStreamedSquareWideLayout.regValue_drop_div R.dst R.h (by omega) s7.basis,D7,
+      G7 _ cinOut.1 cinOut.2.1 cinOut.2.2,hi0,L4]
+    simp
+  generalize run R.m8 r8 s7=s8 at st8 ⊢
+  refine ⟨st8.1.trans (st7.1.trans (st6.1.trans (st5.1.trans (st4.1.trans (st3.1.trans
+    (st2.1.trans st1.1)))))),?_,?_,?_,?_⟩
+  · rw [R.dst_value_mid w,st8.2.1,kkeep st8.2.2 (by
+      intro q hq hx
+      have c1 := List.count_pos_iff.mpr hq; have c2 := List.count_pos_iff.mpr hx
+      have c3 := (R.counts q).2.2.1
+      have c4 := List.nodup_iff_count_le_one.mp nD q
+      omega),CuccaroStreamedSquareWideLayout.regValue_take_mod R.dst R.h (by omega),D7]
+    exact kfinal a b R.h R.bank.length aLt bLt (by omega)
+  · exact (kkeep st8.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans S7
+  · exact (kkeep st8.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans st7.2.1
+  · intro q h hS hT
+    exact (st8.2.2 q (fun x => h (md x))).trans (G7 q h hS hT)
+
+
+theorem clear_correct (w : R.W) (hn : R.all.Nodup) (s : State) (m : List Bool)
+    (hd0 : regValue R.dst s.basis=(regValue R.bank s.basis)^2)
+    (hS0 : regValue R.S s.basis=regValue R.lo s.basis+regValue R.hi s.basis)
+    (hT0 : regValue R.T s.basis=2*regValue R.lo s.basis*regValue R.hi s.basis)
+    (hz0 : regValue R.z s.basis=0)
+    (hp0 : regValue R.pad s.basis=0) (hc0 : regValue R.carry s.basis=0)
+    (hi0 : s.basis R.cin=false) :
+    (run R.clear m s).phase=s.phase ∧
+    regValue R.dst (run R.clear m s).basis=0 ∧
+    regValue R.S (run R.clear m s).basis=0 ∧
+    regValue R.T (run R.clear m s).basis=0 ∧
+    ∀q,q∉R.dst → q∉R.S → q∉R.T → (run R.clear m s).basis q=s.basis q := by
+  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+  have h4 := w.h4; have hh := w.hh; have h5 := w.h5; have hdl := w.dst; have hSl := w.S
+  have hTl := w.T; have hzl := w.z; have hpl := w.pad; have hcl := w.carry
+  rw [R.bank_value w s.basis] at hd0
+  generalize ha : regValue R.lo s.basis=a at hd0 hS0 hT0
+  generalize hb : regValue R.hi s.basis=b at hd0 hS0 hT0
+  have aLt : a<2^R.h := by rw [←ha,←L0]; exact regValue_lt _ _
+  have bLt : b<2^(R.bank.length-R.h) := by rw [←hb,←L1]; exact regValue_lt _ _
+  have outV (t : State) (G : ∀q,q∉R.dst → q∉R.S → q∉R.T → t.basis q=s.basis q) (r : List Wire)
+      (hr : ∀q∈r,q∈R.bank ∨ q∈R.z ∨ q∈R.pad ∨ q∈R.carry ∨ q=R.cin) :
+      regValue r t.basis=regValue r s.basis :=
+    regValue_congr _ _ _ (fun q hq => let o := R.outside hn q (hr q hq); G q o.1 o.2.1 o.2.2)
+  have zero (r : List Wire) (big : List Wire) (hz : regValue big s.basis=0) (sub : ∀q∈r,q∈big) :
+      regValue r s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hz q (sub q hq))
+  have nS : R.S.Nodup := knd hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega)
+  have nD : R.dst.Nodup := knd hn (fun q => by simp only [all,List.count_cons,List.count_append]; omega)
+  have cinOut : R.cin∉R.dst ∧ R.cin∉R.S ∧ R.cin∉R.T := R.outside hn R.cin (by simp)
+  have mt {l : List Wire} {k : Nat} {q : Wire} (h : q∈l.take k) : q∈l := List.mem_of_mem_take h
+  have md {l : List Wire} {k : Nat} {q : Wire} (h : q∈l.drop k) : q∈l := List.mem_of_mem_drop h
+  have cz (t : State) (G : ∀q,q∉R.dst → q∉R.S → q∉R.T → t.basis q=s.basis q) (k : Nat) :
+      ∀q∈R.carry.take k,t.basis q=false := fun q hq =>
+    (regValue_zero _ _).mp ((outV t G _ (by intro q h; simp [mt h])).trans
+      (zero _ _ hc0 (fun q h => mt h))) q hq
+  have zv (t : State) (G : ∀q,q∉R.dst → q∉R.S → q∉R.T → t.basis q=s.basis q) (r : List Wire)
+      (hr : ∀q∈r,q∈R.z) : regValue r t.basis=0 :=
+    (outV t G _ (by intro q h; simp [hr q h])).trans (zero _ _ hz0 hr)
+  have hp2 : 2^R.h≤2^(R.bank.length-R.h) := Nat.pow_le_pow_right (by norm_num) (by omega)
+  have hq2 : 2^R.S.length=2*2^(R.bank.length-R.h) := by rw [hSl,pow_succ]; ring
+  have sumLt : a+b<2^R.S.length := by omega
+  have sqLt : (a+b)^2<2^R.T.length := by rw [hTl]; exact square_bound _ _ sumLt
+  have ex : (a+b)^2=a^2+2*a*b+b^2 := by ring
+  have hX : (a+2^R.h*b)^2=(a^2+2^(2*R.h)*b^2)+2^R.h*(2*a*b) := by ring
+  have hpos : 0<2^R.h := Nat.two_pow_pos _
+  have XLt : (a+2^R.h*b)^2<2^(2*R.bank.length) := by
+    have hsplit : 2^R.bank.length=2^R.h*2^(R.bank.length-R.h) := by rw [←pow_add]; congr 1; omega
+    have hm := Nat.mul_le_mul_left (2^R.h) (show b+1≤2^(R.bank.length-R.h) by omega)
+    rw [Nat.mul_add,Nat.mul_one,←hsplit] at hm
+    exact square_bound _ _ (by omega)
+  have aSq : a^2<2^(2*R.h) := square_bound _ _ aLt
+  obtain ⟨a7,r8,e8⟩ := kseq (R.c8++R.c7++R.c6++R.c5++R.c4++R.m3++R.c2) R.c1 m s
+  obtain ⟨a6,r7,e7⟩ := kseq (R.c8++R.c7++R.c6++R.c5++R.c4++R.m3) R.c2 a7 s
+  obtain ⟨a5,r6,e6⟩ := kseq (R.c8++R.c7++R.c6++R.c5++R.c4) R.m3 a6 s
+  obtain ⟨a4,r5,e5⟩ := kseq (R.c8++R.c7++R.c6++R.c5) R.c4 a5 s
+  obtain ⟨a3,r4,e4⟩ := kseq (R.c8++R.c7++R.c6) R.c5 a4 s
+  obtain ⟨a2,r3,e3⟩ := kseq (R.c8++R.c7) R.c6 a3 s
+  obtain ⟨r1,r2,e2⟩ := kseq R.c8 R.c7 a2 s
+  rw [show R.clear=R.c8++R.c7++R.c6++R.c5++R.c4++R.m3++R.c2++R.c1 from rfl,e8,e7,e6,e5,e4,e3,e2]
+  have G0 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s.basis q=s.basis q := fun _ _ _ _ => rfl
+  -- step 1: dst -= 2^h * 2ab
+  have st1 : (run R.c8 r1 s).phase=s.phase ∧
+      regValue R.dst (run R.c8 r1 s).basis=a^2+2^(2*R.h)*b^2 ∧
+      ∀q,q∉R.dmid → (run R.c8 r1 s).basis q=s.basis q := by
+    unfold c8
+    obtain ⟨p,f,v⟩ := BalancedInverse.subInPlace_any_correct (R.T++R.zM) R.dmid
+      (R.carry.take (R.dmid.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by simp only [List.length_append]; omega)
+      (by simp only [List.length_take]; omega) s r1 (cz s G0 _)
+    refine ⟨p,?_,f⟩
+    rw [R.dst_value_mid w,v,kkeep f (by
+      intro q hq hx
+      have c1 := List.count_pos_iff.mpr hq; have c2 := List.count_pos_iff.mpr hx
+      have c3 := (R.counts q).2.2.1
+      have c4 := List.nodup_iff_count_le_one.mp nD q
+      omega),regValue_append,hT0,zv s G0 R.zM (fun q h => List.mem_of_mem_take h),hi0,
+      CuccaroStreamedSquareWideLayout.regValue_take_mod R.dst R.h (by omega),
+      show regValue R.dmid s.basis=regValue R.dst s.basis/2^R.h from
+        CuccaroStreamedSquareWideLayout.regValue_drop_div R.dst R.h (by omega) s.basis,hd0,L4]
+    have hdiv : (a+2^R.h*b)^2/2^R.h=(a^2+2^(2*R.h)*b^2)/2^R.h+2*a*b := by
+      rw [hX,Nat.add_mul_div_left _ _ hpos]
+    have hmod : (a+2^R.h*b)^2%2^R.h=(a^2+2^(2*R.h)*b^2)%2^R.h := by
+      rw [hX,Nat.add_mul_mod_self_left]
+    have hq : (a+2^R.h*b)^2/2^R.h<2^(2*R.bank.length-R.h) := by
+      rw [Nat.div_lt_iff_lt_mul hpos,←pow_add,show 2*R.bank.length-R.h+R.h=2*R.bank.length by omega]
+      exact XLt
+    simp only [Nat.mul_zero,Nat.add_zero,Bool.toNat_false,Nat.sub_zero]
+    rw [ksubmod ((a+2^R.h*b)^2/2^R.h) (2*a*b) _ (by rw [hdiv]; exact Nat.le_add_left _ _) hq,hdiv,hmod,Nat.add_sub_cancel,Nat.mod_add_div]
+  generalize run R.c8 r1 s=s1 at st1 ⊢
+  have G1 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s1.basis q=s.basis q :=
+    fun q h _ _ => st1.2.2 q (fun x => h (md x))
+  have dlo1 : regValue R.dlo s1.basis=a^2 := by
+    rw [show regValue R.dlo s1.basis=regValue R.dst s1.basis%2^(2*R.h) from
+      CuccaroStreamedSquareWideLayout.regValue_take_mod R.dst (2*R.h) (by omega) s1.basis,st1.2.1,
+      Nat.add_mul_mod_self_left,Nat.mod_eq_of_lt aSq]
+  have dhi1 : regValue R.dhi s1.basis=b^2 := by
+    rw [show regValue R.dhi s1.basis=regValue R.dst s1.basis/2^(2*R.h) from
+      CuccaroStreamedSquareWideLayout.regValue_drop_div R.dst (2*R.h) (by omega) s1.basis,st1.2.1,
+      Nat.add_mul_div_left _ _ (Nat.two_pow_pos _),Nat.div_eq_of_lt aSq,Nat.zero_add]
+  have S1 : regValue R.S s1.basis=a+b := (kkeep st1.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans hS0
+  have T1 : regValue R.T s1.basis=2*a*b := (kkeep st1.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans hT0
+  -- step 2: T += b^2
+  have st2 : (run R.c7 r2 s1).phase=s1.phase ∧ regValue R.T (run R.c7 r2 s1).basis=2*a*b+b^2 ∧
+      ∀q,q∉R.T → (run R.c7 r2 s1).basis q=s1.basis q := by
+    unfold c7
+    obtain ⟨p,f,v⟩ := addInPlace_correct (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+      (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega) s1 r2
+      (cz s1 G1 _)
+    refine ⟨p,?_,f⟩
+    rw [v,regValue_append,dhi1,zv s1 G1 R.zB (fun q h => List.mem_of_mem_take h),T1,G1 _ cinOut.1 cinOut.2.1 cinOut.2.2,hi0]
+    simp only [Nat.mul_zero,Nat.add_zero,Bool.toNat_false]
+    rw [Nat.mod_eq_of_lt (by rw [ex] at sqLt; omega)]; ring
+  generalize run R.c7 r2 s1=s2 at st2 ⊢
+  have G2 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s2.basis q=s.basis q :=
+    fun q h hS hT => (st2.2.2 q hT).trans (G1 q h hS hT)
+  have dlo2 : regValue R.dlo s2.basis=a^2 := (kkeep st2.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo1
+  have dhi2 : regValue R.dhi s2.basis=b^2 := (kkeep st2.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi1
+  have S2 : regValue R.S s2.basis=a+b := (kkeep st2.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans S1
+  -- step 3: T += a^2
+  have st3 : (run R.c6 r3 s2).phase=s2.phase ∧ regValue R.T (run R.c6 r3 s2).basis=(a+b)^2 ∧
+      ∀q,q∉R.T → (run R.c6 r3 s2).basis q=s2.basis q := by
+    unfold c6
+    obtain ⟨p,f,v⟩ := addInPlace_correct (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+      (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega) s2 r3
+      (cz s2 G2 _)
+    refine ⟨p,?_,f⟩
+    rw [v,regValue_append,dlo2,zv s2 G2 R.zA (fun q h => List.mem_of_mem_take h),st2.2.1,G2 _ cinOut.1 cinOut.2.1 cinOut.2.2,hi0]
+    simp only [Nat.mul_zero,Nat.add_zero,Bool.toNat_false]
+    rw [Nat.mod_eq_of_lt (by rw [ex] at sqLt; omega),ex]; ring
+  generalize run R.c6 r3 s2=s3 at st3 ⊢
+  have G3 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s3.basis q=s.basis q :=
+    fun q h hS hT => (st3.2.2 q hT).trans (G2 q h hS hT)
+  have dlo3 : regValue R.dlo s3.basis=a^2 := (kkeep st3.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo2
+  have dhi3 : regValue R.dhi s3.basis=b^2 := (kkeep st3.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi2
+  have S3 : regValue R.S s3.basis=a+b := (kkeep st3.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans S2
+  -- step 4: clear T
+  have st4 : (run R.c5 r4 s3).phase=s3.phase ∧ regValue R.T (run R.c5 r4 s3).basis=0 ∧
+      ∀q,q∉R.T → (run R.c5 r4 s3).basis q=s3.basis q :=
+    mappedSignedSquareClear_correct R.cin R.S R.T R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by omega)
+      (by omega) hpl (by omega) s3 r4 (by rw [st3.2.1,S3])
+      ((outV s3 G3 R.pad (by intro q h; simp [h])).trans hp0)
+      ((outV s3 G3 R.carry (by intro q h; simp [h])).trans hc0)
+      ((G3 _ cinOut.1 cinOut.2.1 cinOut.2.2).trans hi0)
+  generalize run R.c5 r4 s3=s4 at st4 ⊢
+  have G4 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s4.basis q=s.basis q :=
+    fun q h hS hT => (st4.2.2 q hT).trans (G3 q h hS hT)
+  have dlo4 : regValue R.dlo s4.basis=a^2 := (kkeep st4.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo3
+  have dhi4 : regValue R.dhi s4.basis=b^2 := (kkeep st4.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi3
+  have S4 : regValue R.S s4.basis=a+b := (kkeep st4.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans S3
+  -- step 5: S -= b
+  have st5 : (run R.c4 r5 s4).phase=s4.phase ∧ regValue R.S (run R.c4 r5 s4).basis=a ∧
+      ∀q,q∉R.S → (run R.c4 r5 s4).basis q=s4.basis q := by
+    unfold c4
+    obtain ⟨p,f,v⟩ := BalancedInverse.subInPlace_any_correct (R.hi++R.zS) R.S
+      (R.carry.take (R.S.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by simp only [List.length_append]; omega)
+      (by simp only [List.length_take]; omega) s4 r5 (cz s4 G4 _)
+    refine ⟨p,?_,f⟩
+    rw [v,regValue_append,outV s4 G4 R.hi (by intro q h; simp [md h]),hb,zv s4 G4 R.zS (fun q h => List.mem_of_mem_take h),S4,
+      G4 _ cinOut.1 cinOut.2.1 cinOut.2.2,hi0]
+    simp only [Nat.mul_zero,Nat.add_zero,Bool.toNat_false,Nat.sub_zero]
+    rw [show a+b+2^R.S.length-b=a+2^R.S.length by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)]
+  generalize run R.c4 r5 s4=s5 at st5 ⊢
+  have G5 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s5.basis q=s.basis q :=
+    fun q h hS hT => (st5.2.2 q hS).trans (G4 q h hS hT)
+  have dlo5 : regValue R.dlo s5.basis=a^2 := (kkeep st5.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo4
+  have dhi5 : regValue R.dhi s5.basis=b^2 := (kkeep st5.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi4
+  have T5 : regValue R.T s5.basis=0 := (kkeep st5.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans st4.2.1
+  have split5 := regValue_take_drop_of_lt R.S R.h a s5.basis (by omega) st5.2.1 aLt
+  -- step 6: uncopy a
+  have st6 : (run R.m3 r6 s5).phase=s5.phase ∧ regValue (R.S.take R.h) (run R.m3 r6 s5).basis=0 ∧
+      ∀q,q∉R.S.take R.h → (run R.m3 r6 s5).basis q=s5.basis q := by
+    unfold m3
+    obtain ⟨p,f,v⟩ := copyRegister_correct none R.lo (R.S.take R.h) (by omega) (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+      (by intro c hc; simp at hc) s5 r6
+    refine ⟨p,?_,f⟩
+    rw [v,split5.1]
+    change a ^^^ regValue R.lo s5.basis=0
+    rw [outV s5 G5 R.lo (by intro q h; simp [mt h]),ha,Nat.xor_self]
+  generalize run R.m3 r6 s5=s6 at st6 ⊢
+  have G6 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s6.basis q=s.basis q :=
+    fun q h hS hT => (st6.2.2 q (fun x => hS (mt x))).trans (G5 q h hS hT)
+  have S6 : regValue R.S s6.basis=0 := by
+    have e := regValue_append (R.S.take R.h) (R.S.drop R.h) s6.basis
+    rw [List.take_append_drop,L9] at e
+    rw [e,st6.2.1,(kkeep st6.2.2 (by
+      intro q hq hx
+      have c1 := List.count_pos_iff.mpr hq; have c2 := List.count_pos_iff.mpr hx
+      have c3 := kcnt_split R.S R.h q
+      have c4 := List.nodup_iff_count_le_one.mp nS q
+      omega)).trans split5.2]
+    simp
+  have dlo6 : regValue R.dlo s6.basis=a^2 := (kkeep st6.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo5
+  have dhi6 : regValue R.dhi s6.basis=b^2 := (kkeep st6.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dhi5
+  have T6 : regValue R.T s6.basis=0 := (kkeep st6.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans T5
+  -- step 7: clear b^2
+  have st7 : (run R.c2 r7 s6).phase=s6.phase ∧ regValue R.dhi (run R.c2 r7 s6).basis=0 ∧
+      ∀q,q∉R.dhi → (run R.c2 r7 s6).basis q=s6.basis q :=
+    mappedSignedSquareClear_correct R.cin R.hi R.dhi R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by omega)
+      (by omega) hpl (by omega) s6 r7 (by rw [dhi6,outV s6 G6 R.hi (by intro q h; simp [md h]),hb])
+      ((outV s6 G6 R.pad (by intro q h; simp [h])).trans hp0)
+      ((outV s6 G6 R.carry (by intro q h; simp [h])).trans hc0)
+      ((G6 _ cinOut.1 cinOut.2.1 cinOut.2.2).trans hi0)
+  generalize run R.c2 r7 s6=s7 at st7 ⊢
+  have G7 : ∀q,q∉R.dst → q∉R.S → q∉R.T → s7.basis q=s.basis q :=
+    fun q h hS hT => (st7.2.2 q (fun x => h (md x))).trans (G6 q h hS hT)
+  have dlo7 : regValue R.dlo s7.basis=a^2 := (kkeep st7.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans dlo6
+  -- step 8: clear a^2
+  have st8 : (run R.c1 r8 s7).phase=s7.phase ∧ regValue R.dlo (run R.c1 r8 s7).basis=0 ∧
+      ∀q,q∉R.dlo → (run R.c1 r8 s7).basis q=s7.basis q :=
+    mappedSignedSquareClear_correct R.cin R.lo R.dlo R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by omega)
+      (by omega) hpl (by omega) s7 r8 (by rw [dlo7,outV s7 G7 R.lo (by intro q h; simp [mt h]),ha])
+      ((outV s7 G7 R.pad (by intro q h; simp [h])).trans hp0)
+      ((outV s7 G7 R.carry (by intro q h; simp [h])).trans hc0)
+      ((G7 _ cinOut.1 cinOut.2.1 cinOut.2.2).trans hi0)
+  generalize run R.c1 r8 s7=s8 at st8 ⊢
+  refine ⟨st8.1.trans (st7.1.trans (st6.1.trans (st5.1.trans (st4.1.trans (st3.1.trans
+    (st2.1.trans st1.1)))))),?_,?_,?_,?_⟩
+  · rw [R.dst_value w,st8.2.1,(kkeep st8.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans st7.2.1]; simp
+  · exact (kkeep st8.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans ((kkeep st7.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans S6)
+  · exact (kkeep st8.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans ((kkeep st7.2.2 (fun q hq => kdis hn (fun q => by have c := R.counts q; have c' := kcnt_split R.S R.h q; simp only [all,List.count_cons,List.count_append]; omega) q hq)).trans T6)
+  · intro q h hS hT
+    exact (st8.2.2 q (fun x => h (mt x))).trans (G7 q h hS hT)
+
+end KRegs
+end ECDSAAdd.Entrant
+
+end
+
+section
+-- ===== KLeafRes =====
+
+/-! Resources of the Karatsuba leaf: exact counts, support, physicality, slots. -/
+
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+
+namespace ECDSAAdd.Entrant
+open Arithmetic
+
+def ksq (k : Nat) : Nat := signedSquareRowsCount k+2*k-1
+
+def kcost (n h : Nat) : Nat :=
+  ksq h+ksq (n-h)+(n-h)+ksq (n-h+1)+2*(2*(n-h+1)-1)+(2*n-h-1)
+
+namespace KRegs
+variable (R : KRegs)
+
+theorem make_counts (w : R.W) :
+    toffoliCount R.make=kcost R.bank.length R.h ∧ measurementCount R.make=kcost R.bank.length R.h := by
+  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+  have h4 := w.h4; have hh := w.hh; have h5 := w.h5; have hdl := w.dst; have hSl := w.S
+  have hTl := w.T; have hzl := w.z; have hpl := w.pad; have hcl := w.carry
+  have q1 := mappedSignedSquare_counts R.lo R.dlo R.pad R.carry R.cin (by omega) (by omega) hpl (by omega)
+  have q2 := mappedSignedSquare_counts R.hi R.dhi R.pad R.carry R.cin (by omega) (by omega) hpl (by omega)
+  have q5 := mappedSignedSquare_counts R.S R.T R.pad R.carry R.cin (by omega) (by omega) hpl (by omega)
+  have q3 := copyRegister_counts none R.lo (R.S.take R.h) (by omega)
+  have q4 := addInPlace_counts (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have q6 := subInPlace_counts (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have q7 := subInPlace_counts (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have q8 := addInPlace_counts (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  simp only [make,m1,m2,m3,m4,m5,m6,m7,m8,toffoliCount_append,measurementCount_append,
+    q1.1.1,q1.1.2,q2.1.1,q2.1.2,q5.1.1,q5.1.2,q3.1,q3.2,q4.1,q4.2,q6.1,q6.2,q7.1,q7.2,q8.1,q8.2]
+  simp only [L0,L1,L2,L3,L4,hTl,hSl,kcost,ksq,Option.isSome_none,Bool.false_eq_true,if_false]
+  constructor <;> omega
+
+theorem clear_counts (w : R.W) :
+    toffoliCount R.clear=kcost R.bank.length R.h ∧ measurementCount R.clear=kcost R.bank.length R.h := by
+  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+  have h4 := w.h4; have hh := w.hh; have h5 := w.h5; have hdl := w.dst; have hSl := w.S
+  have hTl := w.T; have hzl := w.z; have hpl := w.pad; have hcl := w.carry
+  have q1 := mappedSignedSquare_counts R.lo R.dlo R.pad R.carry R.cin (by omega) (by omega) hpl (by omega)
+  have q2 := mappedSignedSquare_counts R.hi R.dhi R.pad R.carry R.cin (by omega) (by omega) hpl (by omega)
+  have q5 := mappedSignedSquare_counts R.S R.T R.pad R.carry R.cin (by omega) (by omega) hpl (by omega)
+  have q3 := copyRegister_counts none R.lo (R.S.take R.h) (by omega)
+  have q4 := subInPlace_counts (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have q6 := addInPlace_counts (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have q7 := addInPlace_counts (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have q8 := subInPlace_counts (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  simp only [clear,c1,c2,m3,c4,c5,c6,c7,c8,toffoliCount_append,measurementCount_append,
+    q1.2.1,q1.2.2,q2.2.1,q2.2.2,q5.2.1,q5.2.2,q3.1,q3.2,q4.1,q4.2,q6.1,q6.2,q7.1,q7.2,q8.1,q8.2]
+  simp only [L0,L1,L2,L3,L4,hTl,hSl,kcost,ksq,Option.isSome_none,Bool.false_eq_true,if_false]
+  constructor <;> omega
+
+theorem mem_all (q : Wire)
+    (h : q∈R.bank ∨ q∈R.dst ∨ q∈R.S ∨ q∈R.T ∨ q∈R.z ∨ q∈R.pad ∨ q∈R.carry ∨ q=R.cin) :
+    q∈R.all := by
+  simp only [all,List.mem_cons,List.mem_append]; tauto
+
+theorem sub_all (l : List Wire)
+    (h : ∀q∈l,q∈R.bank ∨ q∈R.dst ∨ q∈R.S ∨ q∈R.T ∨ q∈R.z ∨ q∈R.pad ∨ q∈R.carry ∨ q=R.cin) :
+    l.toFinset⊆R.all.toFinset := by
+  intro q hq
+  exact List.mem_toFinset.mpr (R.mem_all q (h q (List.mem_toFinset.mp hq)))
+
+theorem part_mem (q : Wire) :
+    (q∈R.lo → q∈R.bank) ∧ (q∈R.hi → q∈R.bank) ∧ (q∈R.dlo → q∈R.dst) ∧ (q∈R.dhi → q∈R.dst) ∧
+    (q∈R.dmid → q∈R.dst) ∧ (q∈R.zS → q∈R.z) ∧ (q∈R.zA → q∈R.z) ∧ (q∈R.zB → q∈R.z) ∧
+    (q∈R.zM → q∈R.z) ∧ (q∈R.S.take R.h → q∈R.S) ∧ (∀k,q∈R.carry.take k → q∈R.carry) :=
+  ⟨List.mem_of_mem_take,List.mem_of_mem_drop,List.mem_of_mem_take,List.mem_of_mem_drop,
+    List.mem_of_mem_drop,List.mem_of_mem_take,List.mem_of_mem_take,List.mem_of_mem_take,
+    List.mem_of_mem_take,List.mem_of_mem_take,fun _ h => List.mem_of_mem_take h⟩
+
+theorem steps_support (w : R.W) :
+    ECDSAAdd.wires R.make⊆R.all.toFinset ∧ ECDSAAdd.wires R.clear⊆R.all.toFinset := by
+  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+  have h4 := w.h4; have hh := w.hh; have h5 := w.h5; have hdl := w.dst; have hSl := w.S
+  have hTl := w.T; have hzl := w.z; have hpl := w.pad; have hcl := w.carry
+  have g1 := mappedSignedSquare_wires_subset R.lo R.dlo R.pad R.carry R.cin (by omega) hpl (by omega)
+  have g2 := mappedSignedSquare_wires_subset R.hi R.dhi R.pad R.carry R.cin (by omega) hpl (by omega)
+  have g5 := mappedSignedSquare_wires_subset R.S R.T R.pad R.carry R.cin (by omega) hpl (by omega)
+  have g3 := copyRegister_wires_subset none R.lo (R.S.take R.h)
+  have g4 := addInPlace_wires (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have g6 := addInPlace_wires (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have g7 := addInPlace_wires (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have g8 := addInPlace_wires (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have g4s := subInPlace_wires (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have g6s := subInPlace_wires (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have g7s := subInPlace_wires (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have g8s := subInPlace_wires (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+    (by simp only [List.length_append]; omega) (by simp only [List.length_take]; omega)
+  have sb : R.bank ⊆ R.all := fun q h => R.mem_all q (Or.inl h)
+  have sd : R.dst ⊆ R.all := fun q h => R.mem_all q (Or.inr (Or.inl h))
+  have sS : R.S ⊆ R.all := fun q h => R.mem_all q (Or.inr (Or.inr (Or.inl h)))
+  have sT : R.T ⊆ R.all := fun q h => R.mem_all q (Or.inr (Or.inr (Or.inr (Or.inl h))))
+  have sz : R.z ⊆ R.all := fun q h => R.mem_all q (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h)))))
+  have sp : R.pad ⊆ R.all := fun q h => R.mem_all q (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h))))))
+  have sc : R.carry ⊆ R.all := fun q h =>
+    R.mem_all q (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl h)))))))
+  have si : [R.cin] ⊆ R.all := by
+    intro q h; simp only [List.mem_singleton] at h
+    exact R.mem_all q (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr h)))))))
+  have tk {l : List Wire} {k : Nat} (h : l ⊆ R.all) : l.take k ⊆ R.all := fun q hq => h (List.mem_of_mem_take hq)
+  have dr {l : List Wire} {k : Nat} (h : l ⊆ R.all) : l.drop k ⊆ R.all := fun q hq => h (List.mem_of_mem_drop hq)
+  have fs {l : List Wire} (h : l ⊆ R.all) : l.toFinset ⊆ R.all.toFinset :=
+    fun q hq => List.mem_toFinset.mpr (h (List.mem_toFinset.mp hq))
+  have ap {l1 l2 : List Wire} (h1 : l1 ⊆ R.all) (h2 : l2 ⊆ R.all) : l1++l2 ⊆ R.all :=
+    List.append_subset.mpr ⟨h1,h2⟩
+  have co {l : List Wire} (h : l ⊆ R.all) : R.cin::l ⊆ R.all := by
+    intro q hq; rcases List.mem_cons.mp hq with e|e
+    · exact si (by simp [e])
+    · exact h e
+  have e1 : (R.lo++R.dlo++R.pad++R.carry++[R.cin]).toFinset⊆R.all.toFinset := fs (ap (ap (ap (ap (tk sb) (tk sd)) sp) sc) si)
+  have e2 : (R.hi++R.dhi++R.pad++R.carry++[R.cin]).toFinset⊆R.all.toFinset := fs (ap (ap (ap (ap (dr sb) (dr sd)) sp) sc) si)
+  have e5 : (R.S++R.T++R.pad++R.carry++[R.cin]).toFinset⊆R.all.toFinset := fs (ap (ap (ap (ap sS sT) sp) sc) si)
+  have e3 : ((none : Option Wire).toList++R.lo++R.S.take R.h).toFinset⊆R.all.toFinset := fs (ap (ap (show (none : Option Wire).toList ⊆ R.all by simp) (tk sb)) (tk sS))
+  have e4 : (R.cin::(R.hi++R.zS++R.S++R.carry.take (R.S.length-1))).toFinset⊆R.all.toFinset := fs (co (ap (ap (ap (dr sb) (tk sz)) sS) (tk sc)))
+  have e6 : (R.cin::(R.dlo++R.zA++R.T++R.carry.take (R.T.length-1))).toFinset⊆R.all.toFinset := fs (co (ap (ap (ap (tk sd) (tk sz)) sT) (tk sc)))
+  have e7 : (R.cin::(R.dhi++R.zB++R.T++R.carry.take (R.T.length-1))).toFinset⊆R.all.toFinset := fs (co (ap (ap (ap (dr sd) (tk sz)) sT) (tk sc)))
+  have e8 : (R.cin::(R.T++R.zM++R.dmid++R.carry.take (R.dmid.length-1))).toFinset⊆R.all.toFinset := fs (co (ap (ap (ap sT (tk sz)) (dr sd)) (tk sc)))
+  constructor
+  · simp only [make,m1,m2,m3,m4,m5,m6,m7,m8,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨⟨⟨⟨⟨⟨g1.1.trans e1,g2.1.trans e2⟩,g3.trans e3⟩,g4 ▸ e4⟩,g5.1.trans e5⟩,g6s ▸ e6⟩,
+      g7s ▸ e7⟩,g8 ▸ e8⟩
+  · simp only [clear,c1,c2,m3,c4,c5,c6,c7,c8,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨⟨⟨⟨⟨⟨g8s ▸ e8,g7 ▸ e7⟩,g6 ▸ e6⟩,g5.2.trans e5⟩,g4s ▸ e4⟩,g3.trans e3⟩,
+      g2.2.trans e2⟩,g1.2.trans e1⟩
+
+theorem steps_physical (hn : R.all.Nodup) :
+    GatePhysical R.make ∧ GatePhysical R.clear := by
+  have p1 := mappedSignedSquare_physical R.lo R.dlo R.pad R.carry R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have p2 := mappedSignedSquare_physical R.hi R.dhi R.pad R.carry R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have p5 := mappedSignedSquare_physical R.S R.T R.pad R.carry R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have p3 := copyRegister_physical none R.lo (R.S.take R.h) (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega)) (by intro c hc; simp at hc)
+  have a4 := addInPlace_physical (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have a6 := addInPlace_physical (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have a7 := addInPlace_physical (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have a8 := addInPlace_physical (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have s4 := subInPlace_physical (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have s6 := subInPlace_physical (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have s7 := subInPlace_physical (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  have s8 := subInPlace_physical (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin (knd hn (fun q => by have c := R.counts q; simp only [all,List.count_cons,List.count_append]; omega))
+  constructor
+  · simp only [make,m1,m2,m3,m4,m5,m6,m7,m8,gatePhysical_append]
+    exact ⟨⟨⟨⟨⟨⟨⟨p1.1,p2.1⟩,p3⟩,a4⟩,p5.1⟩,s6⟩,s7⟩,a8⟩
+  · simp only [clear,c1,c2,m3,c4,c5,c6,c7,c8,gatePhysical_append]
+    exact ⟨⟨⟨⟨⟨⟨⟨s8,a7⟩,a6⟩,p5.2⟩,s4⟩,p3⟩,p2.2⟩,p1.2⟩
+
+theorem steps_slots (w : R.W) (h64 : R.h=64) (hb : R.bank.length≤129) :
+    Challenge.gateSlots R.make≤400000 ∧ Challenge.gateSlots R.clear≤400000 := by
+  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+  have h4 := w.h4; have hh := w.hh; have h5 := w.h5; have hdl := w.dst; have hSl := w.S
+  have hTl := w.T; have hzl := w.z
+  have g1 := Baselines.mappedSigned_gateSlots_le R.lo R.dlo R.pad R.carry R.cin
+  have g2 := Baselines.mappedSigned_gateSlots_le R.hi R.dhi R.pad R.carry R.cin
+  have g5 := Baselines.mappedSigned_gateSlots_le R.S R.T R.pad R.carry R.cin
+  have a4 := Baselines.addInPlace_gateSlots_le (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+  have a6 := Baselines.addInPlace_gateSlots_le (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+  have a7 := Baselines.addInPlace_gateSlots_le (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+  have a8 := Baselines.addInPlace_gateSlots_le (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+  have s4 := Baselines.subInPlace_gateSlots_le (R.hi++R.zS) R.S (R.carry.take (R.S.length-1)) R.cin
+  have s6 := Baselines.subInPlace_gateSlots_le (R.dlo++R.zA) R.T (R.carry.take (R.T.length-1)) R.cin
+  have s7 := Baselines.subInPlace_gateSlots_le (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+  have s8 := Baselines.subInPlace_gateSlots_le (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin
+  have c3 := Baselines.copyRegister_gateSlots none R.lo (R.S.take R.h)
+  have x1 : R.lo.length*(12*(R.lo.length+1)+6*R.dlo.length) ≤ 64*(12*65+6*128) :=
+    Nat.mul_le_mul (by omega) (by omega)
+  have x2 : R.hi.length*(12*(R.hi.length+1)+6*R.dhi.length) ≤ 65*(12*66+6*130) :=
+    Nat.mul_le_mul (by omega) (by omega)
+  have x5 : R.S.length*(12*(R.S.length+1)+6*R.T.length) ≤ 66*(12*67+6*132) :=
+    Nat.mul_le_mul (by omega) (by omega)
+  have y4 : (R.hi++R.zS).length ≤ 66 := by simp only [List.length_append]; omega
+  have y6 : (R.dlo++R.zA).length ≤ 132 := by simp only [List.length_append]; omega
+  have y7 : (R.dhi++R.zB).length ≤ 132 := by simp only [List.length_append]; omega
+  have y8 : (R.T++R.zM).length ≤ 194 := by simp only [List.length_append]; omega
+  have y9 : R.dmid.length ≤ 194 := by omega
+  have yc : min R.lo.length (R.S.take R.h).length ≤ 64 := by omega
+  constructor
+  · simp only [make,m1,m2,m3,m4,m5,m6,m7,m8,Challenge.gateSlots_append]; omega
+  · simp only [clear,c1,c2,m3,c4,c5,c6,c7,c8,Challenge.gateSlots_append]; omega
+
+end KRegs
+end ECDSAAdd.Entrant
+
+end
+
+section
+-- ===== KWrap =====
+
+/-! The Karatsuba leaf bound to the streamed-square layout. The sum and
+cross-term registers live in `ext`, zero pool wires outside the layout; they
+stay live across the output-only callback, which never touches them. -/
+
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+
+namespace ECDSAAdd.Entrant
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+def kregs (L : CuccaroStreamedSquareWideLayout) (ext src dst : List Wire) : KRegs :=
+  {h:=64,bank:=L.inputBank.take src.length,dst:=dst,
+   S:=(ext.take 66).take (src.length-63),
+   T:=((ext.drop 66).take 132).take (2*(src.length-63)),
+   z:=((ext.drop 66).drop 132).take 62,
+   pad:=L.leafPad,carry:=L.leafCarry,cin:=L.core.cin}
+
+def withK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire)
+    (src dst : List Wire) (body : Program) : Program :=
+  copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).make++
+    eraseMask control src (L.inputBank.take src.length)++body++
+    copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).clear++
+    eraseMask control src (L.inputBank.take src.length)
+
+def kbig (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire)
+    (src dst : List Wire) : List Wire :=
+  (control::L.core.cin::src++L.inputBank.take src.length++dst++L.leafPad++L.leafCarry++L.core.out)++ext
+
+theorem kregs_W (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext src dst : List Wire)
+    (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
+    (he : 260≤ext.length) : (kregs L ext src dst).W := by
+  have sz := L.measured_bank_widths hw
+  constructor <;> simp only [kregs,List.length_take,List.length_drop,sz.1,sz.2.1,sz.2.2.1,hd] <;> omega
+
+theorem ext_counts (ext : List Wire) (k j : Nat) (q : Wire) :
+    ((ext.take 66).take k).count q+(((ext.drop 66).take 132).take j).count q+
+      (((ext.drop 66).drop 132).take 62).count q ≤ ext.count q := by
+  have a := kcnt_take (ext.take 66) k q
+  have b := kcnt_take ((ext.drop 66).take 132) j q
+  have c := kcnt_take ((ext.drop 66).drop 132) 62 q
+  have d := kcnt_split ext 66 q
+  have e := kcnt_split (ext.drop 66) 132 q
+  omega
+
+theorem lst_le (L : CuccaroStreamedSquareWideLayout) (control : Wire) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q) (q : Wire) :
+    (control::L.core.cin::src++L.inputBank.take src.length++dst++L.leafPad++L.leafCarry++L.core.out).count q ≤
+      (control::L.wires).count q := by
+  have a := hs q
+  have b := hd q
+  have banks := L.measured_leaf_bank_count src.length q
+  simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,foldPad,List.count_cons,
+    List.count_append,List.count_nil] at a banks ⊢
+  omega
+
+theorem kbig_nodup (L : CuccaroStreamedSquareWideLayout) (control : Wire)
+    (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q) (ext : List Wire) (hx : ext.Nodup)
+    (hdx : ∀q∈ext,q∉control::L.wires) : (kbig L ext control src dst).Nodup := by
+  have nl := L.measured_leaf_nodup control hn src dst hs hd
+  apply List.nodup_iff_count_le_one.mpr
+  intro q
+  have a := List.nodup_iff_count_le_one.mp nl q
+  have b := List.nodup_iff_count_le_one.mp hx q
+  have c := lst_le L control src dst hs hd q
+  have d := List.nodup_iff_count_le_one.mp hn q
+  simp only [kbig,List.count_append] at a c ⊢
+  by_cases hq : q∈ext
+  · have z : (control::L.wires).count q=0 := List.count_eq_zero.mpr (hdx q hq)
+    omega
+  · have z : ext.count q=0 := List.count_eq_zero.mpr hq
+    omega
+
+private theorem xor_false_eq {a b : Bool} (h : (a ^^ b)=false) : a=b := by
+  cases a <;> cases b <;> simp_all
+
+theorem withK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 260≤ext.length)
+    (body : Program) (hbody : ∀q∈ext,q∉ECDSAAdd.wires body)
+    (s : State) (records : List Bool) (hc : L.PairClean s.basis)
+    (hzero : regValue dst s.basis=0) (hz : regValue ext s.basis=0) (V : Nat)
+    (callback : ∀t : State,∀m : List Bool,
+      regValue dst t.basis=(if s.basis control then regValue src s.basis else 0)^2 →
+      (∀q,q∉dst → t.basis q=s.basis q) →
+      (run body m t).phase=t.phase ∧ regValue L.core.out (run body m t).basis=V ∧
+        ∀q,q∉L.core.out → (run body m t).basis q=t.basis q) :
+    (run (withK L ext control src dst body) records s).phase=s.phase ∧
+    regValue L.core.out (run (withK L ext control src dst body) records s).basis=V ∧
+    ∀q,q∉L.core.out → (run (withK L ext control src dst body) records s).basis q=s.basis q := by
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have w := kregs_W L hw ext src dst h128 hsmax hlen he
+  have sizes := L.measured_bank_widths hw
+  have inputLen : (L.inputBank.take src.length).length=src.length := by simp [sizes.1,hsmax]
+  have banks := L.measured_leaf_banks_clean s.basis hc src.length
+  have hall : (kregs L ext src dst).all.Nodup := knd hbig (fun q => by
+    have e := ext_counts ext (src.length-63) (2*(src.length-63)) q
+    simp only [KRegs.all,kregs,kbig,List.count_cons,List.count_append]; omega)
+  have dj {r t : List Wire} (h : ∀q,r.count q+t.count q≤(kbig L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig h
+  have xS : ∀q∈(kregs L ext src dst).S,q∈ext := fun q h => List.mem_of_mem_take (List.mem_of_mem_take h)
+  have xT : ∀q∈(kregs L ext src dst).T,q∈ext := fun q h =>
+    List.mem_of_mem_drop (List.mem_of_mem_take (List.mem_of_mem_take h))
+  have xz : ∀q∈(kregs L ext src dst).z,q∈ext := fun q h =>
+    List.mem_of_mem_drop (List.mem_of_mem_drop (List.mem_of_mem_take h))
+  have ext0 : ∀q∈ext,s.basis q=false := (regValue_zero _ _).mp hz
+  have extOut : ∀q∈ext,q∉L.core.out := dj (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have extB : ∀q∈ext,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have extD : ∀q∈ext,q∉dst := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have extSrc : ∀q∈ext,q∉src := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have ctlB : control∉(L.inputBank.take src.length) := dj (r:=[control]) (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) control (by simp)
+  have ctlD : control∉dst := dj (r:=[control]) (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) control (by simp)
+  have ctlE : control∉ext := fun h => hdx control h (by simp)
+  have srcB : ∀q∈src,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have srcD : ∀q∈src,q∉dst := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have srcOut : ∀q∈src,q∉L.core.out := dj (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have bOut : ∀q∈(L.inputBank.take src.length),q∉L.core.out := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have dOut : ∀q∈dst,q∉L.core.out := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have bD : ∀q∈(L.inputBank.take src.length),q∉dst := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have padB : ∀q∈L.leafPad,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have carB : ∀q∈L.leafCarry,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have cinB : L.core.cin∉(L.inputBank.take src.length) := dj (r:=[L.core.cin]) (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) _ (by simp)
+  have padOut : ∀q∈L.leafPad,q∉L.core.out := dj (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have carOut : ∀q∈L.leafCarry,q∉L.core.out := dj (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have cinOut : L.core.cin∉L.core.out := dj (r:=[L.core.cin]) (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) _ (by simp)
+  have outR : ∀q∈L.core.out,q∉(kregs L ext src dst).dst ∧ q∉(kregs L ext src dst).S ∧ q∉(kregs L ext src dst).T := fun q hq =>
+    ⟨fun h => dOut q h hq,fun h => extOut q (xS q h) hq,fun h => extOut q (xT q h) hq⟩
+  have srcR : ∀q∈src,q∉(kregs L ext src dst).dst ∧ q∉(kregs L ext src dst).S ∧ q∉(kregs L ext src dst).T := fun q hq =>
+    ⟨srcD q hq,fun h => extSrc q (xS q h) hq,fun h => extSrc q (xT q h) hq⟩
+  have bR : ∀q∈(L.inputBank.take src.length),q∉(kregs L ext src dst).dst ∧ q∉(kregs L ext src dst).S ∧ q∉(kregs L ext src dst).T := fun q hq =>
+    ⟨bD q hq,fun h => extB q (xS q h) hq,fun h => extB q (xT q h) hq⟩
+  have ctlR : control∉(kregs L ext src dst).dst ∧ control∉(kregs L ext src dst).S ∧ control∉(kregs L ext src dst).T :=
+    ⟨ctlD,fun h => ctlE (xS _ h),fun h => ctlE (xT _ h)⟩
+  have ndCopy : (src++(L.inputBank.take src.length)).Nodup := knd hbig (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have ndMask : (control::(src++(L.inputBank.take src.length))).Nodup := knd hbig (fun q => by
+    simp only [kbig,kregs,List.count_cons,List.count_append]; omega)
+  have hcB : ∀c∈some control,c∉(L.inputBank.take src.length) := by
+    intro c hc; have e : c=control := by simpa [eq_comm] using hc
+    subst e; exact ctlB
+  let P := if s.basis control then regValue src s.basis else 0
+  -- split the program
+  obtain ⟨a6,r7,e7⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).make++eraseMask control src (L.inputBank.take src.length)++body++
+    copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).clear) (eraseMask control src (L.inputBank.take src.length)) records s
+  obtain ⟨a5,r6,e6⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).make++eraseMask control src (L.inputBank.take src.length)++body++
+    copyRegister (some control) src (L.inputBank.take src.length)) (kregs L ext src dst).clear a6 s
+  obtain ⟨a4,r5,e5⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).make++eraseMask control src (L.inputBank.take src.length)++body)
+    (copyRegister (some control) src (L.inputBank.take src.length)) a5 s
+  obtain ⟨a3,r4,e4⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).make++eraseMask control src (L.inputBank.take src.length)) body a4 s
+  obtain ⟨a2,r3,e3⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).make) (eraseMask control src (L.inputBank.take src.length)) a3 s
+  obtain ⟨r1,r2,e2⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)) (kregs L ext src dst).make a2 s
+  rw [show withK L ext control src dst body=copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).make++
+    eraseMask control src (L.inputBank.take src.length)++body++copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).clear++
+    eraseMask control src (L.inputBank.take src.length) from rfl,e7,e6,e5,e4,e3,e2]
+  -- copy
+  obtain ⟨cp1,cf1,cv1⟩ := copyRegister_correct (some control) src (L.inputBank.take src.length) inputLen.symm ndCopy hcB s r1
+  generalize run (copyRegister (some control) src (L.inputBank.take src.length)) r1 s=u0 at cp1 cf1 cv1 ⊢
+  have bank0 : regValue (L.inputBank.take src.length) u0.basis=P := by rw [cv1,banks.1,Nat.zero_xor]; rfl
+  have u0s : ∀q,q∉(L.inputBank.take src.length) → u0.basis q=s.basis q := cf1
+  -- make
+  have mk := (kregs L ext src dst).make_correct w hall u0 r2
+    ((kkeep u0s (fun q h hb => bD q hb h)).trans hzero)
+    ((kkeep u0s (fun q h => extB q (xS q h))).trans ((regValue_zero _ _).mpr (fun q h => ext0 q (xS q h))))
+    ((kkeep u0s (fun q h => extB q (xT q h))).trans ((regValue_zero _ _).mpr (fun q h => ext0 q (xT q h))))
+    ((kkeep u0s (fun q h => extB q (xz q h))).trans ((regValue_zero _ _).mpr (fun q h => ext0 q (xz q h))))
+    ((kkeep u0s padB).trans banks.2.1) ((kkeep u0s carB).trans banks.2.2) ((u0s _ cinB).trans hc.cin)
+  generalize run (kregs L ext src dst).make r2 u0=u1 at mk ⊢
+  have u1s : ∀q,q∉(kregs L ext src dst).dst → q∉(kregs L ext src dst).S → q∉(kregs L ext src dst).T → u1.basis q=u0.basis q := mk.2.2.2.2
+  have bank1 : regValue (L.inputBank.take src.length) u1.basis=P :=
+    (regValue_congr _ _ _ (fun q hq => u1s q (bR q hq).1 (bR q hq).2.1 (bR q hq).2.2)).trans bank0
+  have src1 : regValue src u1.basis=regValue src s.basis :=
+    regValue_congr _ _ _ (fun q hq => (u1s q (srcR q hq).1 (srcR q hq).2.1 (srcR q hq).2.2).trans
+      (u0s q (srcB q hq)))
+  have ctl1 : u1.basis control=s.basis control :=
+    (u1s _ ctlR.1 ctlR.2.1 ctlR.2.2).trans (u0s _ ctlB)
+  have dst1 : regValue dst u1.basis=P^2 := by rw [←bank0]; exact mk.2.1
+  -- erase
+  obtain ⟨ep1,ef1,ev1⟩ := eraseMask_correct control src (L.inputBank.take src.length) inputLen.symm ndMask u1 r3 (by
+    rw [bank1,ctl1,src1])
+  generalize run (eraseMask control src (L.inputBank.take src.length)) r3 u1=u2 at ep1 ef1 ev1 ⊢
+  have u2s : ∀q,q∉dst → q∉ext → u2.basis q=s.basis q := by
+    intro q hq hx
+    by_cases hb : q∈(L.inputBank.take src.length)
+    · exact ((regValue_zero _ _).mp ev1 q hb).trans ((regValue_zero _ _).mp banks.1 q hb).symm
+    · exact (ef1 q hb).trans ((u1s q hq (fun h => hx (xS q h)) (fun h => hx (xT q h))).trans (u0s q hb))
+  have u2ext : ∀q∈ext,u2.basis q=u1.basis q := fun q h => ef1 q (extB q h)
+  -- body
+  let u2' : State := ⟨u2.phase,fun q => if q∈ext then s.basis q else u2.basis q⟩
+  have dst2' : regValue dst u2'.basis=P^2 := by
+    rw [←dst1]
+    apply regValue_congr
+    intro q hq
+    have hx : q∉ext := fun h => extD q h hq
+    simp only [u2',hx,if_false]
+    exact ef1 q (fun h => bD q h hq)
+  have cb := callback u2' r4 dst2' (by
+    intro q hq
+    by_cases hx : q∈ext
+    · simp only [u2',hx,if_true]
+    · simp only [u2',hx,if_false]; exact u2s q hq hx)
+  have loc := run_local_increment body u2 u2' r4 (by
+    intro q hq
+    have hx : q∉ext := fun h => hbody q h hq
+    simp only [u2',hx,if_false])
+  generalize hv' : run body r4 u2'=v' at cb loc
+  generalize hv : run body r4 u2=v at loc ⊢
+  have vIn : ∀q∈ext,v.basis q=u2.basis q := by
+    intro q hq; rw [←hv]; exact run_preserves_outside body r4 u2 q (hbody q hq)
+  have vOut : ∀q,q∉ext → v.basis q=v'.basis q := by
+    intro q hq
+    by_cases hb : q∈ECDSAAdd.wires body
+    · exact loc.2 q hb
+    · rw [←hv,←hv',run_preserves_outside body r4 u2 q hb,run_preserves_outside body r4 u2' q hb]
+      simp only [u2',hq,if_false]
+  have vPhase : v.phase=u2.phase := by
+    apply xor_false_eq
+    rw [loc.1,cb.1]
+    cases u2'.phase <;> rfl
+  have vFrame : ∀q,q∉L.core.out → v.basis q=u2.basis q := by
+    intro q hq
+    by_cases hx : q∈ext
+    · exact vIn q hx
+    · rw [vOut q hx,cb.2.2 q hq]; simp only [u2',hx,if_false]
+  have vVal : regValue L.core.out v.basis=V :=
+    (regValue_congr _ _ _ (fun q hq => vOut q (fun h => extOut q h hq))).trans cb.2.1
+  -- second copy
+  obtain ⟨cp2,cf2,cv2⟩ := copyRegister_correct (some control) src (L.inputBank.take src.length) inputLen.symm ndCopy hcB v r5
+  generalize run (copyRegister (some control) src (L.inputBank.take src.length)) r5 v=w0 at cp2 cf2 cv2 ⊢
+  have vB : ∀q∈(L.inputBank.take src.length),v.basis q=s.basis q := fun q hq =>
+    (vFrame q (bOut q hq)).trans (u2s q (bD q hq) (fun h => extB q h hq))
+  have vSrc : ∀q∈src,v.basis q=s.basis q := fun q hq =>
+    (vFrame q (srcOut q hq)).trans (u2s q (srcD q hq) (fun h => extSrc q h hq))
+  have bankW : regValue (L.inputBank.take src.length) w0.basis=P := by
+    rw [cv2,show regValue (L.inputBank.take src.length) v.basis=0 from (regValue_congr _ _ _ vB).trans banks.1,Nat.zero_xor]
+    change (if v.basis control then regValue src v.basis else 0)=P
+    rw [show v.basis control=s.basis control from
+      (vFrame _ (fun h => dj (r:=[control]) (fun q => by
+        simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) control (by simp) h)).trans
+        (u2s _ ctlD ctlE),regValue_congr _ _ _ vSrc]
+  -- state relation between w0 and u1 on the clear's inputs
+  have w0u1 : ∀q,q∉(L.inputBank.take src.length) → q∉L.core.out → w0.basis q=u1.basis q := by
+    intro q hb ho
+    rw [cf2 q hb,vFrame q ho]
+    by_cases hx : q∈ext
+    · exact u2ext q hx
+    · exact ef1 q hb
+  have bankLoHi : regValue (kregs L ext src dst).lo w0.basis=regValue (kregs L ext src dst).lo u0.basis ∧
+      regValue (kregs L ext src dst).hi w0.basis=regValue (kregs L ext src dst).hi u0.basis := by
+    have l1 := CuccaroStreamedSquareWideLayout.regValue_take_mod (L.inputBank.take src.length) 64 (by omega) w0.basis
+    have l2 := CuccaroStreamedSquareWideLayout.regValue_take_mod (L.inputBank.take src.length) 64 (by omega) u0.basis
+    have h1 := CuccaroStreamedSquareWideLayout.regValue_drop_div (L.inputBank.take src.length) 64 (by omega) w0.basis
+    have h2 := CuccaroStreamedSquareWideLayout.regValue_drop_div (L.inputBank.take src.length) 64 (by omega) u0.basis
+    rw [bankW] at l1 h1
+    rw [bank0] at l2 h2
+    exact ⟨l1.trans l2.symm,h1.trans h2.symm⟩
+  have cl := (kregs L ext src dst).clear_correct w hall w0 r6
+    (by
+      rw [show regValue (kregs L ext src dst).bank w0.basis=P from bankW,
+        show regValue (kregs L ext src dst).dst w0.basis=regValue (kregs L ext src dst).dst u1.basis from
+          regValue_congr _ _ _ (fun q hq => w0u1 q (fun h => bD q h hq) (fun h => dOut q hq h))]
+      exact dst1)
+    (by
+      rw [bankLoHi.1,bankLoHi.2,←mk.2.2.1]
+      exact regValue_congr _ _ _ (fun q hq => w0u1 q (fun h => extB q (xS q hq) h)
+        (fun h => extOut q (xS q hq) h)))
+    (by
+      rw [bankLoHi.1,bankLoHi.2,←mk.2.2.2.1]
+      exact regValue_congr _ _ _ (fun q hq => w0u1 q (fun h => extB q (xT q hq) h)
+        (fun h => extOut q (xT q hq) h)))
+    ((regValue_zero _ _).mpr (fun q hq => by
+      have hzq := xz q hq
+      rw [w0u1 q (fun h => extB q hzq h) (fun h => extOut q hzq h),
+        u1s q (fun h => extD q hzq h) (fun h => by
+          have c := ext_counts ext (src.length-63) (2*(src.length-63)) q
+          have a := List.count_pos_iff.mpr h; have b := List.count_pos_iff.mpr hq
+          have d := List.nodup_iff_count_le_one.mp hx q
+          simp only [kregs] at a b; omega) (fun h => by
+          have c := ext_counts ext (src.length-63) (2*(src.length-63)) q
+          have a := List.count_pos_iff.mpr h; have b := List.count_pos_iff.mpr hq
+          have d := List.nodup_iff_count_le_one.mp hx q
+          simp only [kregs] at a b; omega),u0s q (fun h => extB q hzq h)]
+      exact ext0 q hzq))
+    ((regValue_congr _ _ _ (fun q hq => (w0u1 q (padB q hq) (padOut q hq)).trans
+      ((mk.2.2.2.2 q (fun h => dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega) q hq h)
+        (fun h => dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega) q hq (xS q h))
+        (fun h => dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega) q hq (xT q h))).trans
+        (u0s q (padB q hq))))).trans banks.2.1)
+    ((regValue_congr _ _ _ (fun q hq => (w0u1 q (carB q hq) (carOut q hq)).trans
+      ((mk.2.2.2.2 q (fun h => dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega) q hq h)
+        (fun h => dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega) q hq (xS q h))
+        (fun h => dj (fun q => by simp only [kbig,kregs,List.count_cons,List.count_append]; omega) q hq (xT q h))).trans
+        (u0s q (carB q hq))))).trans banks.2.2)
+    ((w0u1 _ cinB cinOut).trans ((mk.2.2.2.2 _
+      (fun h => dj (r:=[L.core.cin]) (fun q => by
+        simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) _ (by simp) h)
+      (fun h => dj (r:=[L.core.cin]) (fun q => by
+        simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) _ (by simp) (xS _ h))
+      (fun h => dj (r:=[L.core.cin]) (fun q => by
+        simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) _ (by simp) (xT _ h))).trans
+      ((u0s _ cinB).trans hc.cin)))
+  generalize run (kregs L ext src dst).clear r6 w0=w1 at cl ⊢
+  have w1B : regValue (L.inputBank.take src.length) w1.basis=P :=
+    (regValue_congr _ _ _ (fun q hq => cl.2.2.2.2 q (bR q hq).1 (bR q hq).2.1 (bR q hq).2.2)).trans bankW
+  have w1src : regValue src w1.basis=regValue src s.basis :=
+    regValue_congr _ _ _ (fun q hq => (cl.2.2.2.2 q (srcR q hq).1 (srcR q hq).2.1 (srcR q hq).2.2).trans
+      ((cf2 q (srcB q hq)).trans (vSrc q hq)))
+  have w1ctl : w1.basis control=s.basis control :=
+    (cl.2.2.2.2 _ ctlR.1 ctlR.2.1 ctlR.2.2).trans ((cf2 _ ctlB).trans ((vFrame _ (fun h =>
+      dj (r:=[control]) (fun q => by
+        simp only [kbig,kregs,List.count_cons,List.count_append,List.count_nil]; omega) control (by simp) h)).trans
+      (u2s _ ctlD ctlE)))
+  obtain ⟨ep2,ef2,ev2⟩ := eraseMask_correct control src (L.inputBank.take src.length) inputLen.symm ndMask w1 r7 (by
+    rw [w1B,w1ctl,w1src])
+  generalize run (eraseMask control src (L.inputBank.take src.length)) r7 w1=w2 at ep2 ef2 ev2 ⊢
+  refine ⟨ep2.trans (cl.1.trans (cp2.trans (vPhase.trans (ep1.trans (mk.1.trans cp1))))),?_,?_⟩
+  · rw [←vVal]
+    apply regValue_congr
+    intro q hq
+    have o := outR q hq
+    rw [ef2 q (fun h => bOut q h hq),cl.2.2.2.2 q o.1 o.2.1 o.2.2,cf2 q (fun h => bOut q h hq)]
+  · intro q hq
+    by_cases hb : q∈(L.inputBank.take src.length)
+    · exact ((regValue_zero _ _).mp ev2 q hb).trans ((regValue_zero _ _).mp banks.1 q hb).symm
+    · rw [ef2 q hb]
+      by_cases hD : q∈(kregs L ext src dst).dst
+      · exact ((regValue_zero _ _).mp cl.2.1 q hD).trans ((regValue_zero _ _).mp hzero q hD).symm
+      by_cases hS : q∈(kregs L ext src dst).S
+      · exact ((regValue_zero _ _).mp cl.2.2.1 q hS).trans (ext0 q (xS q hS)).symm
+      by_cases hT : q∈(kregs L ext src dst).T
+      · exact ((regValue_zero _ _).mp cl.2.2.2.1 q hT).trans (ext0 q (xT q hT)).symm
+      rw [cl.2.2.2.2 q hD hS hT,cf2 q hb,vFrame q hq]
+      by_cases hx : q∈ext
+      · rw [u2ext q hx,u1s q hD hS hT,u0s q hb]
+      · exact u2s q hD hx
+
+
+theorem withK_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (body : Program)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hd : dst.length=2*src.length)
+    (he : 260≤ext.length) :
+    toffoliCount (withK L ext control src dst body)=
+      2*src.length+2*kcost src.length 64+toffoliCount body ∧
+    measurementCount (withK L ext control src dst body)=
+      2*src.length+2*kcost src.length 64+measurementCount body := by
+  have w := kregs_W L hw ext src dst h128 hsmax hd he
+  have sizes := L.measured_bank_widths hw
+  have inputLen : (L.inputBank.take src.length).length=src.length := by simp [sizes.1,hsmax]
+  have copy := copyRegister_counts (some control) src (L.inputBank.take src.length) inputLen.symm
+  have erase := eraseMask_counts control src (L.inputBank.take src.length) inputLen.symm
+  have mk := (kregs L ext src dst).make_counts w
+  have cl := (kregs L ext src dst).clear_counts w
+  have bl : (kregs L ext src dst).bank.length=src.length := inputLen
+  have hh : (kregs L ext src dst).h=64 := rfl
+  rw [bl,hh] at mk cl
+  simp only [withK,toffoliCount_append,measurementCount_append,copy.1,copy.2,erase.1,erase.2,
+    mk.1,mk.2,cl.1,cl.2,inputLen,Option.isSome_some,if_true]
+  constructor <;> omega
+
+theorem kregs_all_mem (L : CuccaroStreamedSquareWideLayout) (control : Wire) (src dst ext : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q) (q : Wire) (hq : q∈(kregs L ext src dst).all) :
+    q∈control::L.wires ∨ q∈ext := by
+  have a := List.count_pos_iff.mpr hq
+  have c := lst_le L control src dst hs hd q
+  have e := ext_counts ext (src.length-63) (2*(src.length-63)) q
+  simp only [KRegs.all,kregs,List.count_cons,List.count_append] at a c
+  by_cases hx : q∈ext
+  · exact Or.inr hx
+  · have z : ext.count q=0 := List.count_eq_zero.mpr hx
+    exact Or.inl (List.count_pos_iff.mp (by simp only [List.count_cons]; omega))
+
+theorem withK_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (body : Program)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (he : 260≤ext.length) (hb : ECDSAAdd.wires body⊆(control::L.wires).toFinset) :
+    ECDSAAdd.wires (withK L ext control src dst body)⊆(control::L.wires++ext).toFinset := by
+  have w := kregs_W L hw ext src dst h128 hsmax hlen he
+  have st := (kregs L ext src dst).steps_support w
+  have kin : (kregs L ext src dst).all.toFinset⊆(control::L.wires++ext).toFinset := by
+    intro q hq
+    have h := kregs_all_mem L control src dst ext hs hd q (List.mem_toFinset.mp hq)
+    simp only [List.mem_toFinset,List.mem_append] at h ⊢
+    exact h
+  have cin : ∀q∈control::src++L.inputBank.take src.length,q∈control::L.wires := by
+    intro q h
+    have a := List.count_pos_iff.mpr h
+    have c := lst_le L control src dst hs hd q
+    simp only [List.count_cons,List.count_append] at a c
+    exact List.count_pos_iff.mp (by simp only [List.count_cons] at *; omega)
+  have cp : ECDSAAdd.wires (copyRegister (some control) src (L.inputBank.take src.length))⊆
+      (control::L.wires++ext).toFinset := by
+    intro q hq
+    have h := copyRegister_wires_subset (some control) src (L.inputBank.take src.length) hq
+    simp only [List.mem_toFinset,Option.toList_some,List.singleton_append] at h
+    simp only [List.mem_toFinset,List.mem_append]
+    exact Or.inl (cin q (by simpa using h))
+  have er : ECDSAAdd.wires (eraseMask control src (L.inputBank.take src.length))⊆
+      (control::L.wires++ext).toFinset := by
+    intro q hq
+    have h := eraseMask_wires_subset control src (L.inputBank.take src.length) hq
+    simp only [List.mem_toFinset] at h
+    simp only [List.mem_toFinset,List.mem_append]
+    exact Or.inl (cin q (by simpa using h))
+  have bd : ECDSAAdd.wires body⊆(control::L.wires++ext).toFinset := by
+    intro q hq
+    have h := List.mem_toFinset.mp (hb hq)
+    simp only [List.mem_toFinset,List.mem_append]
+    exact Or.inl h
+  simp only [withK,wires_append,Finset.union_subset_iff]
+  exact ⟨⟨⟨⟨⟨⟨cp,st.1.trans kin⟩,er⟩,bd⟩,cp⟩,st.2.trans kin⟩,er⟩
+
+theorem withK_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+    (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 260≤ext.length)
+    (body : Program) (hb : GatePhysical body) :
+    GatePhysical (withK L ext control src dst body) := by
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have w := kregs_W L hw ext src dst h128 hsmax hlen he
+  have hall : (kregs L ext src dst).all.Nodup := knd hbig (fun q => by
+    have e := ext_counts ext (src.length-63) (2*(src.length-63)) q
+    simp only [KRegs.all,kregs,kbig,List.count_cons,List.count_append]; omega)
+  have st := (kregs L ext src dst).steps_physical hall
+  have ndCopy : (src++L.inputBank.take src.length).Nodup :=
+    knd hbig (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have hcB : ∀c∈some control,c∉L.inputBank.take src.length := by
+    intro c hc; have e : c=control := by simpa [eq_comm] using hc
+    subst e
+    exact kdis hbig (r:=[c]) (fun q => by
+      simp only [kbig,List.count_cons,List.count_append,List.count_nil]; omega) c (by simp)
+  have cp := copyRegister_physical (some control) src (L.inputBank.take src.length) ndCopy hcB
+  have er := eraseMask_physical control src (L.inputBank.take src.length)
+  simp only [withK,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨⟨cp,st.1⟩,er⟩,hb⟩,cp⟩,st.2⟩,er⟩
+
+theorem withK_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (body : Program)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (he : 260≤ext.length) :
+    Challenge.gateSlots (withK L ext control src dst body)≤820000+Challenge.gateSlots body := by
+  have w := kregs_W L hw ext src dst h128 hsmax hlen he
+  have sizes := L.measured_bank_widths hw
+  have st := (kregs L ext src dst).steps_slots w rfl (by simp [kregs,sizes.1])
+  have hcopy := Nat.min_le_right src.length (L.inputBank.take src.length).length
+  have hl : (L.inputBank.take src.length).length ≤ 129 := by simp [sizes.1]
+  simp only [withK,Challenge.gateSlots_append,Baselines.copyRegister_gateSlots,Baselines.eraseMask_gateSlots]
+  omega
+
+end ECDSAAdd.Entrant
+
+end
+
+section
+-- ===== SquareAccK =====
+
+/-! The accumulated streamed square with all three leaves computed by one
+Karatsuba level (`withK`), the sum and cross registers borrowed from `ext`. -/
+
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+
+namespace ECDSAAdd.Entrant
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+structure ExtOK (L : CuccaroStreamedSquareWideLayout) (control : Wire) (ext : List Wire) : Prop where
+  nodup : ext.Nodup
+  away : ∀q∈ext,q∉control::L.wires
+  len : 260≤ext.length
+
+theorem ext_out (L : CuccaroStreamedSquareWideLayout) (control : Wire) (ext : List Wire)
+    (he : ExtOK L control ext) (q : Wire) (hq : q∈ext) : q∉L.core.out := fun h =>
+  he.away q hq (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h])
+
+theorem sum_in (L : CuccaroStreamedSquareWideLayout) (control : Wire) (q : Wire) (h : q∈L.core.sum) :
+    q∈control::L.wires := by
+  simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.mem_append,
+    List.mem_cons,List.not_mem_nil,or_false] at h
+  rcases h with h|h
+  · simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,
+      List.mem_of_mem_drop (List.mem_of_mem_take h)]
+  · simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h]
+
+theorem withMixedK_contribution (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (hs2 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (orientation : Bool) (items : List MixItem)
+    (s : State) (records : List Bool) (hc : L.PairClean s.basis)
+    (hzero : regValue dst s.basis=0) (O P V : Nat) (hO : O<SquareReduction.p)
+    (ho : regValue L.core.out s.basis=O)
+    (hp : P=(if s.basis control then regValue src s.basis else 0)^2)
+    (whole : ∀t : BasisState,regValue dst t=P → (∀q,q∉dst → t q=s.basis q) → regValue L.core.product t=P)
+    (views : ∀t : BasisState,regValue L.core.product t=P → ∀i∈items,MixView L t i)
+    (delta : ZMod SquareReduction.p)
+    (payload : ∀t : BasisState,regValue L.core.product t=P → mixSignedSum t items=delta)
+    (hV : V<SquareReduction.p)
+    (target : measuredOrientationCast (mixFinal orientation items) V=
+      measuredOrientationCast orientation O+delta)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) (hst : ∀i∈items,MixStatic L i) :
+    (run (withK L ext control src dst (mixFolds L orientation items)) records s).phase=s.phase ∧
+    regValue L.core.out (run (withK L ext control src dst (mixFolds L orientation items)) records s).basis=V ∧
+    ∀q,q∉L.core.out → (run (withK L ext control src dst (mixFolds L orientation items)) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (mixFolds L orientation items) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (mixFolds_support L hw nd control orientation items hst hw'))
+  apply withK_correct L hw control hn src dst hs hd hs2 hsmax hlen ext he.nodup he.away he.len
+    (mixFolds L orientation items) hbody s records hc hzero hz V
+  intro t m dstValue same
+  have pv : regValue L.core.product t.basis=P := whole t.basis (by simpa [hp] using dstValue) same
+  have clean := L.measured_product_frame_clean nd dst hd s.basis t.basis hc same
+  have outAway (q : Wire) (hq : q∈L.core.out) : q∉dst := by
+    intro bad
+    have dis := L.product_out_disjoint nd
+    have pos := List.count_pos_iff.mpr bad
+    have bound := hd q
+    have product : q∈L.core.product := List.count_pos_iff.mp (by omega)
+    exact List.disjoint_left.mp dis product hq
+  have outO : regValue L.core.out t.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => same q (outAway q hq))).trans ho
+  have initial : SquareFrame L.core.out t.basis O t.basis := ⟨outO,fun _ _ => rfl⟩
+  have folded := mixFolds_frame L hw nd t.basis clean orientation O hO items (views t.basis pv) t m initial
+  have cast := mixValue_cast t.basis orientation O items hO
+  rw [payload t.basis pv] at cast
+  have result : mixValue t.basis orientation O items=V :=
+    measuredOrientationCast_injective _ _ _ (mixValue_lt _ _ _ _ hO) hV (cast.trans target.symm)
+  exact ⟨folded.1,folded.2.1.trans result,folded.2.2⟩
+
+
+/-- Branch C forms `high ← high + low` with the measured in-place adder (n-1
+Toffolis) instead of the Cuccaro ripple (2n); the clean work register holds
+its carries. The sum is removed by the measured in-place subtractor. -/
+def sumSrc (L : CuccaroStreamedSquareWideLayout) : List Wire := L.core.low++[L.core.pad.getD 0 0]
+def sumBank (L : CuccaroStreamedSquareWideLayout) : List Wire := L.core.work.take 128
+def gPrep (L : CuccaroStreamedSquareWideLayout) : Program :=
+  addInPlace (sumSrc L) L.core.sum (sumBank L) L.core.cin
+def gClear (L : CuccaroStreamedSquareWideLayout) : Program :=
+  subInPlace (sumSrc L) L.core.sum (sumBank L) L.core.cin
+
+
+theorem sum_lengths (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    (sumSrc L).length=129 ∧ L.core.sum.length=129 ∧ (sumBank L).length=128 := by
+  refine ⟨?_,L.core.sum_length hw.core,?_⟩
+  · simp [sumSrc,L.core.low_length hw.core]
+  · simp [sumBank,hw.core.work]
+
+theorem sumPad_mem (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    L.core.pad.getD 0 0∈L.core.pad := by
+  have h : 0<L.core.pad.length := by rw [hw.core.pad]; omega
+  rw [List.getD_eq_getElem _ _ h]
+  exact List.getElem_mem h
+
+theorem sum_nodup (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hnd : L.wires.Nodup) :
+    (L.core.cin::(sumSrc L++L.core.sum++sumBank L)).Nodup := by
+  apply List.nodup_iff_count.mpr
+  intro q
+  have h := List.nodup_iff_count.mp hnd q
+  have hlo := (List.take_sublist 128 L.core.y).count_le q
+  have hhi1 := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+  have hhi2 := (List.drop_sublist 128 L.core.y).count_le q
+  have hsplit := congrArg (List.count q) (List.take_append_drop 128 L.core.y)
+  have hbit := (List.singleton_sublist.mpr (sumPad_mem L hw)).count_le q
+  have hwk := (List.take_sublist 128 L.core.work).count_le q
+  simp only [List.count_cons,List.count_nil,Nat.add_zero] at hbit
+  simp only [List.count_append] at hsplit
+  simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,sumSrc,sumBank,
+    CuccaroStreamedSquareLayout.low,CuccaroStreamedSquareLayout.high,
+    CuccaroStreamedSquareLayout.sum,List.count_append,List.count_cons,
+    List.count_nil] at h ⊢
+  omega
+
+theorem sumSrc_value (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (base : BasisState) (A : Nat)
+    (hA : regValue L.core.low base=A) (hpad : regValue L.core.pad base=0) :
+    regValue (sumSrc L) base=A := by
+  have bit0 : base (L.core.pad.getD 0 0)=false :=
+    (regValue_zero _ _).mp hpad _ (sumPad_mem L hw)
+  rw [sumSrc,regValue_append,hA]
+  have hz : regValue [L.core.pad.getD 0 0] base=0 := by
+    change (if base (L.core.pad.getD 0 0) then 1 else 0)=0
+    rw [bit0]
+    rfl
+  rw [hz,Nat.mul_zero,Nat.add_zero]
+
+theorem sumBank_zero (L : CuccaroStreamedSquareWideLayout) (base : BasisState)
+    (hwork : regValue L.core.work base=0) : regValue (sumBank L) base=0 :=
+  (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hwork q (List.mem_of_mem_take hq))
+
+theorem gPrep_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hnd : L.wires.Nodup) (base : BasisState) (A B : Nat)
+    (hA : regValue L.core.low base=A) (hbound : A+B<2^129) (hpad : regValue L.core.pad base=0)
+    (hcin : base L.core.cin=false) (hwork : regValue L.core.work base=0) :
+    Triple (SquareFrame L.core.sum base B) (gPrep L)
+      (SquareFrame L.core.sum base (A+B)) := by
+  have lens := sum_lengths L hw
+  have add := addInPlace_cin_frame L.core.cin (sumSrc L) L.core.sum (sumBank L)
+    (sum_nodup L hw hnd) (lens.1.trans lens.2.1.symm) (by rw [lens.2.2,lens.2.1]) base false hcin
+    (sumBank_zero L base hwork) B
+  have val : (B+regValue (sumSrc L) base+false.toNat)%2^L.core.sum.length=A+B := by
+    rw [sumSrc_value L hw base A hA hpad,lens.2.1]
+    simp only [Bool.toNat_false,Nat.add_zero]
+    rw [Nat.mod_eq_of_lt (by omega),Nat.add_comm]
+  rw [val] at add
+  exact add
+
+theorem gClear_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hnd : L.wires.Nodup) (base : BasisState) (A B : Nat)
+    (hA : regValue L.core.low base=A) (hbound : A+B<2^129) (hpad : regValue L.core.pad base=0)
+    (hcin : base L.core.cin=false) (hwork : regValue L.core.work base=0) :
+    Triple (SquareFrame L.core.sum base (A+B)) (gClear L)
+      (SquareFrame L.core.sum base B) := by
+  have lens := sum_lengths L hw
+  have nd := sum_nodup L hw hnd
+  have dis (w : Wire) (hw' : w∈L.core.cin::(sumSrc L++sumBank L)) : w∉L.core.sum := by
+    intro hdw
+    have hn := List.nodup_iff_count.mp nd w
+    have h1 := List.count_pos_iff.mpr hw'
+    have h2 := List.count_pos_iff.mpr hdw
+    simp only [List.count_cons,List.count_append] at hn h1
+    omega
+  intro s m h
+  unfold gClear
+  have sv : regValue (sumSrc L) s.basis=A :=
+    (regValue_congr _ _ _ (fun w hw' => h.2 w (dis w (by simp [hw'])))).trans
+      (sumSrc_value L hw base A hA hpad)
+  have kv : regValue (sumBank L) s.basis=0 :=
+    (regValue_congr _ _ _ (fun w hw' => h.2 w (dis w (by simp [hw'])))).trans (sumBank_zero L base hwork)
+  have cv : s.basis L.core.cin=false := (h.2 _ (dis _ (by simp))).trans hcin
+  have hx : (sumSrc L).length=L.core.sum.length := lens.1.trans lens.2.1.symm
+  have hc : (sumBank L).length+1=L.core.sum.length := by rw [lens.2.2,lens.2.1]
+  have spec := subInPlace_spec (sumSrc L) L.core.sum (sumBank L) L.core.cin nd hx hc A (A+B) s m
+    ⟨⟨⟨sv,h.1⟩,cv⟩,kv⟩
+  have hv : regValue L.core.sum (run (subInPlace (sumSrc L) L.core.sum (sumBank L) L.core.cin) m s).basis=
+      (A+B+2^L.core.sum.length-A)%2^L.core.sum.length := spec.2.1.1.2
+  refine ⟨spec.1,?_,?_⟩
+  · rw [hv,lens.2.1,show A+B+2^129-A=B+2^129 by omega,Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega)]
+  · intro w hw'
+    exact (subInPlace_frame (sumSrc L) L.core.sum (sumBank L) L.core.cin nd hx hc s m cv kv w hw').trans
+      (h.2 w hw')
+
+theorem gSum_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    (toffoliCount (gPrep L)=128 ∧ measurementCount (gPrep L)=128) ∧
+    (toffoliCount (gClear L)=128 ∧ measurementCount (gClear L)=128) := by
+  have lens := sum_lengths L hw
+  have hx : (sumSrc L).length=L.core.sum.length := lens.1.trans lens.2.1.symm
+  have hc : (sumBank L).length+1=L.core.sum.length := by rw [lens.2.2,lens.2.1]
+  have a := addInPlace_counts (sumSrc L) L.core.sum (sumBank L) L.core.cin hx hc
+  have b := subInPlace_counts (sumSrc L) L.core.sum (sumBank L) L.core.cin hx hc
+  rw [lens.2.1] at a b
+  exact ⟨a,b⟩
+
+theorem gSum_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire) :
+    ECDSAAdd.wires (gPrep L)⊆(control::L.wires).toFinset ∧
+    ECDSAAdd.wires (gClear L)⊆(control::L.wires).toFinset := by
+  have lens := sum_lengths L hw
+  have hx : (sumSrc L).length=L.core.sum.length := lens.1.trans lens.2.1.symm
+  have hc : (sumBank L).length+1=L.core.sum.length := by rw [lens.2.2,lens.2.1]
+  have sub : (L.core.cin::(sumSrc L++L.core.sum++sumBank L)).toFinset⊆(control::L.wires).toFinset := by
+    intro q hq
+    have pad := sumPad_mem L hw
+    have inW : q∈L.wires → q∈(control::L.wires).toFinset := fun h => by simp [h]
+    apply inW
+    simp only [List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false,or_assoc,
+      sumSrc,sumBank,CuccaroStreamedSquareLayout.sum] at hq
+    rcases hq with h|h|h|h|h|h
+    · subst h; simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires]
+    · have hy : q∈L.core.y := List.mem_of_mem_take h
+      simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,hy]
+    · subst h
+      simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.mem_append,
+        pad,true_or,or_true]
+    · have hy : q∈L.core.y := List.mem_of_mem_drop (List.mem_of_mem_take h)
+      simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,hy]
+    · subst h; simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires]
+    · have hk : q∈L.core.work := List.mem_of_mem_take h
+      simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,hk]
+  exact ⟨(addInPlace_wires _ _ _ _ hx hc).trans_subset sub,(subInPlace_wires _ _ _ _ hx hc).trans_subset sub⟩
+
+theorem gSum_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hnd : L.wires.Nodup) :
+    GatePhysical (gPrep L) ∧ GatePhysical (gClear L) := by
+  have nd := sum_nodup L hw hnd
+  exact ⟨addInPlace_physical _ _ _ _ nd,subInPlace_physical _ _ _ _ nd⟩
+
+theorem gSum_gateSlots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    Challenge.gateSlots (gPrep L)≤12*129 ∧ Challenge.gateSlots (gClear L)≤12*129+2*129 := by
+  have lens := sum_lengths L hw
+  have a := Baselines.addInPlace_gateSlots_le (sumSrc L) L.core.sum (sumBank L) L.core.cin
+  have b := Baselines.subInPlace_gateSlots_le (sumSrc L) L.core.sum (sumBank L) L.core.cin
+  rw [lens.1] at a b
+  rw [lens.2.1] at b
+  exact ⟨a,b⟩
+
+
+def accBranchAK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  withK L ext control L.core.low (L.core.product.take 256) (mixFolds L false (accAMix L))
+def accBranchBK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  withK L ext control L.core.high (L.core.product.take 256) (mixFolds L true (accBMix L))
+def accMiddleCK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  withK L ext control L.core.sum L.core.product (mixFolds L true (accCMix L))
+def accBranchCK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  gPrep L++accMiddleCK L ext control++gClear L
+def accPrefixK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  accBranchAK L ext control++accBranchCK L ext control++accBranchBK L ext control
+
+theorem accBranchAK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (A O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (ha : regValue L.core.low s.basis=A)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (accBranchAK L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (accBranchAK L ext control) records s).basis=
+      resA ((if s.basis control then A else 0)^2) O ∧
+    ∀q,q∉L.core.out → (run (accBranchAK L ext control) records s).basis q=s.basis q := by
+  let M := if s.basis control then A else 0
+  have ab : A<2^128 := by simpa [L.core.low_length hw.core,ha] using regValue_lt L.core.low s.basis
+  have mb : M<2^128 := by cases h : s.basis control <;> simp [M,h]; omega
+  have pb : M^2<2^256 := by simpa using square_bound M 128 mb
+  have srcCount (q : Wire) : L.core.low.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢
+    omega
+  have dstCount (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
+  have result := withMixedK_contribution L hw ext control hn L.core.low (L.core.product.take 256)
+    srcCount dstCount (by simp [L.core.low_length hw.core]) (by simp [L.core.low_length hw.core])
+    (by simp [hw.core.product,L.core.low_length hw.core]) false (accAMix L) s records hc dstZero
+    O (M^2) (resA (M^2) O) hO ho (by rw [ha])
+    (fun t hp same => L.measured_partial_product_value (List.nodup_cons.mp hn).2 s.basis t hp0 (M^2) hp same)
+    (fun t hp => accA_views L hw t M mb hp)
+    (((M^2 : Nat) : ZMod SquareReduction.p)*2^128-((M^2 : Nat) : ZMod SquareReduction.p))
+    (fun t hp => (accA_mixSum L hw t).trans (L.measuredA_sum hw t (M^2) hp pb))
+    (ofCast_lt _ _) (by
+      rw [(acc_orientations L).1]
+      exact cast_ofCast _ _) he hz (acc_static L hw).1
+  exact result
+
+theorem accBranchBK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (B O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (hb : regValue L.core.high s.basis=B)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (accBranchBK L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (accBranchBK L ext control) records s).basis=
+      resB ((if s.basis control then B else 0)^2) O ∧
+    ∀q,q∉L.core.out → (run (accBranchBK L ext control) records s).basis q=s.basis q := by
+  let M := if s.basis control then B else 0
+  have bb : B<2^128 := by simpa [L.core.high_length hw.core,hb] using regValue_lt L.core.high s.basis
+  have mb : M<2^128 := by cases h : s.basis control <;> simp [M,h]; omega
+  have pb : M^2<2^256 := by simpa using square_bound M 128 mb
+  have srcCount (q : Wire) : L.core.high.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have dstCount (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
+  have result := withMixedK_contribution L hw ext control hn L.core.high (L.core.product.take 256)
+    srcCount dstCount (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
+    (by simp [hw.core.product,L.core.high_length hw.core]) true (accBMix L) s records hc dstZero
+    O (M^2) (resB (M^2) O) hO ho (by rw [hb])
+    (fun t hp same => L.measured_partial_product_value (List.nodup_cons.mp hn).2 s.basis t hp0 (M^2) hp same)
+    (fun t hp => accB_views L hw t M mb hp)
+    (((M^2 : Nat) : ZMod SquareReduction.p)*2^128-SquareReduction.c*((M^2 : Nat) : ZMod SquareReduction.p))
+    (fun t hp => (accB_mixSum L hw t (M^2) hp pb).trans (L.measuredB_sum hw t (M^2) hp pb))
+    (ofCast_lt _ _) (by
+      rw [(acc_orientations L).2.1]
+      exact cast_ofCast _ _) he hz (acc_static L hw).2.1
+  exact result
+
+theorem accMiddleCK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (S O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (hs : regValue L.core.sum s.basis=S)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (accMiddleCK L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (accMiddleCK L ext control) records s).basis=
+      resC2 ((if s.basis control then S else 0)^2) O ∧
+    ∀q,q∉L.core.out → (run (accMiddleCK L ext control) records s).basis q=s.basis q := by
+  let M := if s.basis control then S else 0
+  have srcCount (q : Wire) : L.core.sum.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have result := withMixedK_contribution L hw ext control hn L.core.sum L.core.product srcCount
+    (fun _ => le_rfl) (by simp [L.core.sum_length hw.core]) (by simp [L.core.sum_length hw.core])
+    (by simp [hw.core.product,L.core.sum_length hw.core]) true (accCMix L) s records hc hp0
+    O (M^2) (resC2 (M^2) O) hO ho (by rw [hs])
+    (fun _ hp _ => hp) (fun t hp => accC_views L hw t M hp)
+    (-((M^2 : Nat) : ZMod SquareReduction.p)*2^128)
+    (fun t hp => (accC_mixSum L hw t).trans (L.measuredC_sum hw t (M^2) hp))
+    (ofCast_lt _ _) (by
+      rw [(acc_orientations L).2.2]
+      exact cast_ofCast _ _) he hz (acc_static L hw).2.2
+  exact result
+
+theorem accBranchCK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (A B O : Nat)
+    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
+    (ha : regValue L.core.low s.basis=A) (hb : regValue L.core.sum s.basis=B)
+    (bound : A+B<2^129) (ho : regValue L.core.out s.basis=O)
+    (hp0 : regValue L.core.product s.basis=0) (hc : L.PairClean s.basis)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (accBranchCK L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (accBranchCK L ext control) records s).basis=
+      resC2 ((if s.basis control then A+B else 0)^2) O ∧
+    ∀q,q∉L.core.out → (run (accBranchCK L ext control) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have dis := L.measured_sum_disjoint nd
+  have ctrlAway : control∉L.core.sum := by
+    intro bad
+    have h := List.nodup_iff_count.mp hn control
+    have pos := List.count_pos_iff.mpr bad
+    have sumBound := L.measured_sum_count control
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,List.count_cons,
+      List.count_nil,beq_self_eq_true,if_true] at h sumBound
+    omega
+  let middle := accMiddleCK L ext control
+  let mp := measurementCount (gPrep L)
+  let rest := records.drop mp
+  let u := run (gPrep L) (records.take mp) s
+  let v := run middle (rest.take (measurementCount middle)) u
+  let out := run (gClear L) (rest.drop (measurementCount middle)) v
+  have prep := gPrep_frame L hw nd s.basis A B ha bound (PairClean.corePad L s.basis hc) hc.cin hc.work
+    s (records.take mp) (show SquareFrame L.core.sum s.basis B s.basis from ⟨hb,fun _ _ => rfl⟩)
+  have productU : regValue L.core.product u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.1 bad hq))).trans hp0
+  have outU : regValue L.core.out u.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq))).trans ho
+  have ctrlU : u.basis control=s.basis control := prep.2.2 control ctrlAway
+  have cleanU : L.PairClean u.basis := by
+    have keep (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
+        L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : u.basis q=s.basis q :=
+      prep.2.2 q (L.measured_sum_aux_away nd q hq)
+    constructor
+    · exact (regValue_congr _ _ _ (fun q hq => keep q (by simp [hq]))).trans hc.pad
+    · exact (regValue_congr _ _ _ (fun q hq => keep q (by simp [hq]))).trans hc.work
+    · exact (keep _ (by simp)).trans hc.productHigh
+    · exact (keep _ (by simp)).trans hc.outHigh
+    · exact (keep _ (by simp)).trans hc.workHigh
+    · exact (keep _ (by simp)).trans hc.cin
+    · exact (keep _ (by simp)).trans hc.normFlag
+    · exact (keep _ (by simp)).trans hc.modFlag
+  have hzU : regValue ext u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => he.away q hq (sum_in L control q bad)))).trans hz
+  have used := accMiddleCK_correct L hw ext control hn (A+B) O hO u
+    (rest.take (measurementCount middle)) prep.2.1 outU productU cleanU he hzU
+  rw [ctrlU] at used
+  let restoreBase : BasisState := fun q => if q∈L.core.out then v.basis q else s.basis q
+  have lowOutAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out := by
+    intro bad
+    have h := List.nodup_iff_count.mp nd q
+    have a := List.count_pos_iff.mpr (List.mem_of_mem_take hq)
+    have b := List.count_pos_iff.mpr bad
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,List.count_cons,List.count_nil] at h
+    omega
+  have lowRestore : regValue L.core.low restoreBase=A := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) ha
+    intro q hq
+    simp [restoreBase,lowOutAway q hq]
+  have sumRestore : regValue L.core.sum restoreBase=B := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) hb
+    intro q hq
+    simp [restoreBase,List.disjoint_left.mp dis.2 hq]
+  have padRestore : regValue L.core.pad restoreBase=0 := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) (PairClean.corePad L s.basis hc)
+    intro q hq
+    have away := (L.pairAuxAway nd q (by simp [CuccaroStreamedSquareWideLayout.foldPad,hq])).2
+    simp [restoreBase,away]
+  have cinRestore : restoreBase L.core.cin=false := by
+    have away := (L.pairAuxAway nd L.core.cin (by simp)).2
+    simp [restoreBase,away,hc.cin]
+  have clearPre : SquareFrame L.core.sum restoreBase (A+B) v.basis := by
+    refine ⟨?_,?_⟩
+    · exact (regValue_congr _ _ _ (fun q hq => used.2.2 q (List.disjoint_left.mp dis.2 hq))).trans prep.2.1
+    · intro q hq
+      by_cases outSite : q∈L.core.out
+      · simp [restoreBase,outSite]
+      · simp only [restoreBase,if_neg outSite]
+        exact (used.2.2 q outSite).trans (prep.2.2 q hq)
+  have workRestore : regValue L.core.work restoreBase=0 := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) hc.work
+    intro q hq
+    have away := (L.pairAuxAway nd q (by simp [hq])).2
+    simp [restoreBase,away]
+  have cleared := gClear_frame L hw nd restoreBase A B lowRestore bound padRestore cinRestore workRestore
+    v (rest.drop (measurementCount middle)) clearPre
+  have finalValue : regValue L.core.out out.basis=
+      resC2 ((if s.basis control then A+B else 0)^2) O := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) used.2.1
+    intro q hq
+    have same := cleared.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq)
+    simpa [restoreBase,hq] using same
+  have final : out.phase=s.phase ∧ regValue L.core.out out.basis=
+      resC2 ((if s.basis control then A+B else 0)^2) O ∧
+      ∀q,q∉L.core.out → out.basis q=s.basis q := by
+    refine ⟨cleared.1.trans (used.1.trans prep.1),finalValue,?_⟩
+    intro q hq
+    by_cases sumSite : q∈L.core.sum
+    · exact (regValue_eq_iff L.core.sum out.basis s.basis).mp (cleared.2.1.trans hb.symm) q sumSite
+    · have same := cleared.2.2 q sumSite
+      simpa [restoreBase,hq] using same
+  simpa [accBranchCK,middle,u,v,out,rest,mp,run_append] using final
+
+theorem accPrefixK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
+    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
+    (hy : regValue L.core.y s.basis=Y) (ho : regValue L.core.out s.basis=O)
+    (hp0 : regValue L.core.product s.basis=0) (hs0 : s.basis L.core.sumCarry=false)
+    (hc : L.PairClean s.basis)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (accPrefixK L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (accPrefixK L ext control) records s).basis=
+      (O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
+    ∀q,q∉L.core.out → (run (accPrefixK L ext control) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have disInput := L.measured_input_out_disjoint nd
+  have disProduct := L.product_out_disjoint nd
+  have ctrlAway : control∉L.core.out := by
+    intro bad
+    exact (List.nodup_cons.mp hn).1 (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,bad])
+  let A := regValue L.core.low s.basis
+  let B := regValue L.core.high s.basis
+  let enabled := s.basis control
+  let PA := (if enabled then A else 0)^2
+  let PB := (if enabled then B else 0)^2
+  let PC := (if enabled then A+B else 0)^2
+  let OA := resA PA O
+  let OC := resC2 PC OA
+  let OB := resB PB OC
+  let restA := records.drop (measurementCount (accBranchAK L ext control))
+  let restC := restA.drop (measurementCount (accBranchCK L ext control))
+  let u := run (accBranchAK L ext control) (records.take (measurementCount (accBranchAK L ext control))) s
+  let v := run (accBranchCK L ext control) (restA.take (measurementCount (accBranchCK L ext control))) u
+  let w := run (accBranchBK L ext control) restC v
+  have lowAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out :=
+    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_take hq))
+  have highAway (q : Wire) (hq : q∈L.core.high) : q∉L.core.out :=
+    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_drop (List.mem_of_mem_take hq)))
+  have sumAway (q : Wire) (hq : q∈L.core.sum) : q∉L.core.out :=
+    List.disjoint_left.mp (L.measured_sum_disjoint nd).2 hq
+  have sumB : regValue L.core.sum s.basis=B := by
+    simp [CuccaroStreamedSquareLayout.sum,regValue_append,regValue,hs0,B]
+  have ab : A<2^128 := by simpa [A,L.core.low_length hw.core] using regValue_lt L.core.low s.basis
+  have bb : B<2^128 := by simpa [B,L.core.high_length hw.core] using regValue_lt L.core.high s.basis
+  have sumBound : A+B<2^129 := by norm_num at ab bb ⊢;omega
+  have ea := accBranchAK_correct L hw ext control hn A O hO s
+    (records.take (measurementCount (accBranchAK L ext control))) rfl ho hp0 hc he hz
+  have cleanU : L.PairClean u.basis :=
+    L.squareFrame_clean nd s.basis u.basis OA ⟨ea.2.1,ea.2.2⟩ hc
+  have productU : regValue L.core.product u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => ea.2.2 q (List.disjoint_left.mp disProduct hq))).trans hp0
+  have lowU : regValue L.core.low u.basis=A := regValue_congr _ _ _ (fun q hq => ea.2.2 q (lowAway q hq))
+  have sumU : regValue L.core.sum u.basis=B :=
+    (regValue_congr _ _ _ (fun q hq => ea.2.2 q (sumAway q hq))).trans sumB
+  have ctrlU : u.basis control=enabled := ea.2.2 control ctrlAway
+  have ec := accBranchCK_correct L hw ext control hn A B OA (ofCast_lt _ _) u
+    (restA.take (measurementCount (accBranchCK L ext control))) lowU sumU sumBound ea.2.1 productU cleanU he
+    ((regValue_congr _ _ _ (fun q hq => ea.2.2 q (ext_out L control ext he q hq))).trans hz)
+  rw [ctrlU] at ec
+  have sameV (q : Wire) (hq : q∉L.core.out) : v.basis q=s.basis q :=
+    (ec.2.2 q hq).trans (ea.2.2 q hq)
+  have cleanV : L.PairClean v.basis :=
+    L.squareFrame_clean nd s.basis v.basis OC ⟨ec.2.1,sameV⟩ hc
+  have productV : regValue L.core.product v.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => sameV q (List.disjoint_left.mp disProduct hq))).trans hp0
+  have highV : regValue L.core.high v.basis=B :=
+    regValue_congr _ _ _ (fun q hq => sameV q (highAway q hq))
+  have ctrlV : v.basis control=enabled := sameV control ctrlAway
+  have eb := accBranchBK_correct L hw ext control hn B OC (ofCast_lt _ _) v restC highV ec.2.1 productV cleanV he
+    ((regValue_congr _ _ _ (fun q hq => sameV q (ext_out L control ext he q hq))).trans hz)
+  rw [ctrlV] at eb
+  have sameW (q : Wire) (hq : q∉L.core.out) : w.basis q=s.basis q := (eb.2.2 q hq).trans (sameV q hq)
+  have split : A+2^128*B=Y := by
+    have highEq : L.core.high=L.core.y.drop 128 := by simp [CuccaroStreamedSquareLayout.high,hw.core.y]
+    have value := regValue_append (L.core.y.take 128) (L.core.y.drop 128) s.basis
+    rw [List.take_append_drop,hy,List.length_take,hw.core.y] at value
+    simpa only [A,B,CuccaroStreamedSquareLayout.low,highEq,show min 128 256=128 by decide] using value.symm
+  have fullValue : regValue L.core.out w.basis=
+      (O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p := by
+    have exactResult := acb_complete_exact enabled A B O
+    rw [split] at exactResult
+    unfold subModValue at exactResult
+    rw [eb.2.1]
+    exact exactResult
+  have final : w.phase=s.phase ∧ regValue L.core.out w.basis=
+      (O+SquareReduction.p-(if enabled then Y^2 else 0)%SquareReduction.p)%SquareReduction.p ∧
+      ∀q,q∉L.core.out → w.basis q=s.basis q :=
+    ⟨eb.1.trans (ec.1.trans ea.1),fullValue,sameW⟩
+  simpa [accPrefixK,u,v,w,restA,restC,enabled,run_append,Nat.add_assoc] using final
+
+
+theorem accPrefixK_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (he : 260≤ext.length) :
+    toffoliCount (accPrefixK L ext control)=60148 ∧ measurementCount (accPrefixK L ext control)=60148 := by
+  have st := acc_static L hw
+  have lo := L.core.low_length hw.core
+  have hi := L.core.high_length hw.core
+  have su := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have a := withK_counts L hw ext control L.core.low (L.core.product.take 256)
+    (mixFolds L false (accAMix L)) (by omega) (by omega) (by omega) he
+  have b := withK_counts L hw ext control L.core.high (L.core.product.take 256)
+    (mixFolds L true (accBMix L)) (by omega) (by omega) (by omega) he
+  have c := withK_counts L hw ext control L.core.sum L.core.product
+    (mixFolds L true (accCMix L)) (by omega) (by omega) (by rw [hw.core.product,su]) he
+  have fa := mixFolds_counts L hw false (accAMix L) st.1
+  have fb := mixFolds_counts L hw true (accBMix L) st.2.1
+  have fc := mixFolds_counts L hw true (accCMix L) st.2.2
+  have prices := acc_item_prices L hw
+  rw [prices.1.1,prices.1.2] at fa
+  rw [prices.2.1.1,prices.2.1.2] at fb
+  rw [prices.2.2.1,prices.2.2.2] at fc
+  have sum := gSum_counts L hw
+  have k128 : kcost 128 64=7008 := by norm_num [kcost,ksq,signedSquareRowsCount]
+  have k129 : kcost 129 64=7148 := by norm_num [kcost,ksq,signedSquareRowsCount]
+  rw [lo] at a
+  rw [hi] at b
+  rw [su] at c
+  rw [k128] at a b
+  rw [k129] at c
+  simp only [accPrefixK,accBranchAK,accBranchBK,accBranchCK,accMiddleCK,toffoliCount_append,
+    measurementCount_append,a.1,a.2,b.1,b.2,c.1,c.2,fa.1,fa.2,fb.1,fb.2,fc.1,fc.2,
+    sum.1.1,sum.1.2,sum.2.1,sum.2.2]
+  exact ⟨trivial,trivial⟩
+
+theorem accPrefixK_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (ext : List Wire) (control : Wire) (he : 260≤ext.length) :
+    ECDSAAdd.wires (accPrefixK L ext control)⊆(control::L.wires++ext).toFinset := by
+  have st := acc_static L hw
+  have a := mixFolds_support L hw hn control false (accAMix L) st.1
+  have b := mixFolds_support L hw hn control true (accBMix L) st.2.1
+  have c := mixFolds_support L hw hn control true (accCMix L) st.2.2
+  have low := L.core.low_length hw.core
+  have high := L.core.high_length hw.core
+  have sum := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have hl (q : Wire) : L.core.low.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢; omega
+  have hh (q : Wire) : L.core.high.count q ≤ L.core.y.count q :=
+    ((List.take_sublist 128 (L.core.y.drop 128)).count_le q).trans
+      ((List.drop_sublist 128 L.core.y).count_le q)
+  have hb (q : Wire) : L.core.high.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [List.count_append]; omega
+  have hs (q : Wire) : L.core.sum.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [CuccaroStreamedSquareLayout.sum,List.count_append]; omega
+  have hp (q : Wire) : (L.core.product.take 256).count q ≤ L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have sa := withK_support L hw ext control L.core.low (L.core.product.take 256)
+    (mixFolds L false (accAMix L)) hl hp (by omega) (by omega) (by omega) he a
+  have sb := withK_support L hw ext control L.core.high (L.core.product.take 256)
+    (mixFolds L true (accBMix L)) hb hp (by omega) (by omega) (by omega) he b
+  have sc := withK_support L hw ext control L.core.sum L.core.product
+    (mixFolds L true (accCMix L)) hs (fun _ => le_rfl) (by omega) (by omega)
+    (by rw [hw.core.product,sum]) he c
+  have embed : (control::L.wires).toFinset⊆(control::L.wires++ext).toFinset := by
+    intro q hq; simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at hq ⊢; tauto
+  have prep := (gSum_support L hw control).1.trans embed
+  have unprep := (gSum_support L hw control).2.trans embed
+  simp only [accPrefixK,accBranchAK,accBranchBK,accBranchCK,accMiddleCK,wires_append,
+    Finset.union_subset_iff]
+  exact ⟨⟨sa,⟨prep,sc⟩,unprep⟩,sb⟩
+
+theorem accPrefixK_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control :: L.wires).Nodup) (he : ExtOK L control ext) :
+    GatePhysical (accPrefixK L ext control) := by
+  have nd := (List.nodup_cons.mp hn).2
+  have st := acc_static L hw
+  have hl (q : Wire) : L.core.low.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢; omega
+  have hh (q : Wire) : L.core.high.count q ≤ L.core.y.count q :=
+    ((List.take_sublist 128 (L.core.y.drop 128)).count_le q).trans
+      ((List.drop_sublist 128 L.core.y).count_le q)
+  have hb (q : Wire) : L.core.high.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [List.count_append]; omega
+  have hs (q : Wire) : L.core.sum.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [CuccaroStreamedSquareLayout.sum,List.count_append]; omega
+  have hp (q : Wire) : (L.core.product.take 256).count q ≤ L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have low := L.core.low_length hw.core
+  have high := L.core.high_length hw.core
+  have sum := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have a := withK_physical L hw control hn _ _ hl hp (by omega) (by omega) (by omega)
+    ext he.nodup he.away he.len _ (mixFolds_physical L hw nd false (accAMix L) st.1)
+  have b := withK_physical L hw control hn _ _ hb hp (by omega) (by omega) (by omega)
+    ext he.nodup he.away he.len _ (mixFolds_physical L hw nd true (accBMix L) st.2.1)
+  have c := withK_physical L hw control hn _ _ hs (fun _ => le_rfl) (by omega) (by omega)
+    (by rw [hw.core.product,sum]) ext he.nodup he.away he.len _
+    (mixFolds_physical L hw nd true (accCMix L) st.2.2)
+  have prep := (gSum_physical L hw nd).1
+  have clear := (gSum_physical L hw nd).2
+  simp only [accPrefixK,accBranchAK,accBranchBK,accBranchCK,accMiddleCK,gatePhysical_append]
+  exact ⟨⟨a,⟨prep,c⟩,clear⟩,b⟩
+
+theorem accPrefixK_gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (he : 260≤ext.length) :
+    Challenge.gateSlots (accPrefixK L ext control) ≤ 5000000 := by
+  have st := acc_static L hw
+  have bd (items : List MixItem) (h : items=accAMix L ∨ items=accBMix L ∨ items=accCMix L) :
+      ∀i∈items,∀a,i=.inr a → a.terms.length≤20 ∧ a.pre.length≤4 := by
+    intro i hi a e
+    subst e
+    rcases h with rfl|rfl|rfl <;>
+      simp [accAMix,accBMix,accCMix] at hi <;> rw [hi] <;>
+      simp [sortedItems,accARaw,accBRaw,accCRaw,termsB,preW,nafMinusOneItems,List.filter_cons,posTop,
+        earlyHTerms,Acc.earlyTerm]
+  have ha := mixFolds_gateSlots L hw false (accAMix L) st.1 20 (bd _ (Or.inl rfl))
+  have hb := mixFolds_gateSlots L hw true (accBMix L) st.2.1 20 (bd _ (Or.inr (Or.inl rfl)))
+  have hc := mixFolds_gateSlots L hw true (accCMix L) st.2.2 20 (bd _ (Or.inr (Or.inr rfl)))
+  have la : (accAMix L).length = 3 := rfl
+  have lb : (accBMix L).length = 7 := rfl
+  have lc : (accCMix L).length = 2 := rfl
+  rw [la] at ha
+  rw [lb] at hb
+  rw [lc] at hc
+  have low := L.core.low_length hw.core
+  have high := L.core.high_length hw.core
+  have sum := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have a := withK_gateSlots_le L hw ext control L.core.low (L.core.product.take 256)
+    (mixFolds L false (accAMix L)) (by omega) (by omega) (by omega) he
+  have b := withK_gateSlots_le L hw ext control L.core.high (L.core.product.take 256)
+    (mixFolds L true (accBMix L)) (by omega) (by omega) (by omega) he
+  have c := withK_gateSlots_le L hw ext control L.core.sum L.core.product
+    (mixFolds L true (accCMix L)) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  have gs := gSum_gateSlots L hw
+  simp only [accPrefixK,accBranchAK,accBranchBK,accBranchCK,accMiddleCK,Challenge.gateSlots_append]
+  omega
+
+end ECDSAAdd.Entrant
 
 end
 
 section
 -- ===== FastSquare =====
+
 /-! Point-layout binding of the sign-grouped streamed square, with the same
 pool relabeling as the Skywalk Step 4 square. -/
 
@@ -3354,21 +5911,122 @@ set_option linter.unreachableTactic false
 namespace ECDSAAdd.Entrant
 open Arithmetic ControlledPointLayout Secp256k1 CompressedPointSquare
 
+/-- Zero pool sites 945..1204: in the certified site inventory, outside the
+square's relabelled prefix, fixed by its pool permutation. -/
+/-- Zero pool sites 945..1028 and 1284..1459: inside this entrant's site inventory, outside the
+square's relabelled prefix, fixed by its pool permutation. -/
+def kext (L : ControlledPointLayout) : List Wire :=
+  wireBlock L.core.poolWire 945 84++wireBlock L.core.poolWire 1284 176
+
+theorem kext_index (L : ControlledPointLayout) (q : Wire) (hq : q∈kext L) :
+    ∃i,945 ≤ i ∧ i < 1460 ∧ (i < 1029 ∨ 1284 ≤ i) ∧ q=L.core.poolWire i := by
+  rcases List.mem_append.mp hq with h|h <;> obtain ⟨j,hj,rfl⟩ := List.mem_map.mp h <;>
+    simp only [List.mem_range'_1] at hj <;> exact ⟨j,by omega,by omega,by omega,rfl⟩
+
+theorem dialogPool_nodup' (L : ControlledPointLayout) (hn : L.wires.Nodup) : L.dialogPool.Nodup :=
+  (List.nodup_append.mp (L.dialogUsed_nodup hn)).2.1
+
+theorem kpool_block (L : ControlledPointLayout) (hw : L.Widths) :
+    L.dialogPool.take 2613=wireBlock L.core.poolWire 0 2613 := by
+  simp only [dialogPool,List.take_take,Nat.min_self]
+  exact (L.core.pool_prefix hw 2613 (by omega)).symm
+
+theorem kpool_inj (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i j : Nat) (hi : i < 2613) (hj : j < 2613)
+    (h : L.core.poolWire i = L.core.poolWire j) : i = j := by
+  have nd : (wireBlock L.core.poolWire 0 2613).Nodup := by
+    rw [← kpool_block L hw]
+    exact (List.take_sublist _ _).nodup (dialogPool_nodup' L hn)
+  exact List.inj_on_of_nodup_map nd (x := i) (y := j)
+    (by simp [List.mem_range'_1]; omega) (by simp [List.mem_range'_1]; omega) h
+
+theorem kext_mem (L : ControlledPointLayout) (hw : L.Widths) (q : Wire) (hq : q∈kext L) :
+    q∈L.dialogPool := by
+  obtain ⟨i,h1,h2,_,rfl⟩ := kext_index L q hq
+  have h : L.core.poolWire i∈L.dialogPool.take 2613 := by
+    rw [kpool_block L hw]
+    exact List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩
+  exact List.mem_of_mem_take h
+
+theorem kext_props (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    (kext L).Nodup ∧ ∀q∈kext L,q∉L.dialogPool.take 945 := by
+  refine ⟨?_,?_⟩
+  · have e : kext L=(List.range' 945 84++List.range' 1284 176).map L.core.poolWire := by
+      simp only [kext,wireBlock,List.map_append]
+    rw [e]
+    apply List.Nodup.map_on
+    · intro x hx y hy hxy
+      simp only [List.mem_append,List.mem_range'_1] at hx hy
+      exact kpool_inj L hw hn x y (by omega) (by omega) hxy
+    · apply List.nodup_append.mpr
+      refine ⟨List.nodup_range',List.nodup_range',?_⟩
+      intro x hx y hy hxy
+      simp only [List.mem_range'_1] at hx hy
+      omega
+  · intro q hq hm
+    obtain ⟨i,h1,h2,_,rfl⟩ := kext_index L q hq
+    have b : L.dialogPool.take 945=wireBlock L.core.poolWire 0 945 := by
+      simp only [dialogPool,List.take_take,Nat.min_eq_left (show 945 ≤ 2613 by omega)]
+      exact (L.core.pool_prefix hw 945 (by omega)).symm
+    rw [b] at hm
+    obtain ⟨j,hj,e⟩ := List.mem_map.mp hm
+    simp only [List.mem_range'_1] at hj
+    have := kpool_inj L hw hn j i (by omega) (by omega) e
+    omega
+
+theorem kext_not_resident (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (q : Wire) (hq : q∈kext L) (hr : q∈PointAddLayout.pointWires L.point++[L.control]++L.inPlaceFlags) :
+    False :=
+  (List.nodup_append.mp (L.dialogUsed_nodup hn)).2.2 q (by simpa [dialogUsedWires] using hr) q
+    (kext_mem L hw q hq) rfl
+
+theorem kext_fixed (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (q : Wire) (hq : q∈kext L) :
+    poolPermutation L.core.poolWire (layout_bounded_injective L hw hn) q=q := by
+  obtain ⟨j,hj1,hj2,_,rfl⟩ := kext_index L q hq
+  apply outside_fixed
+  · rintro ⟨i,h1,h2,e⟩
+    have := kpool_inj L hw hn j i (by omega) (by omega) e
+    omega
+  · rintro ⟨i,h1,h2,e⟩
+    have := kpool_inj L hw hn j i (by omega) (by omega) e
+    omega
+
+theorem kext_ok (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    ExtOK L.dialogStreamedSquareWide L.core.generic (kext L) := by
+  have kp := kext_props L hw hn
+  refine ⟨kp.1,?_,by simp [kext,wireBlock_length]⟩
+  intro q hq hm
+  rw [List.mem_cons,L.streamedSquare_wires_eq hw] at hm
+  simp only [List.mem_append] at hm
+  rcases hm with h|(h|h)|h
+  · subst h
+    exact kext_not_resident L hw hn _ hq (by simp [inPlaceFlags])
+  · exact kext_not_resident L hw hn q hq (by simp [PointAddLayout.pointWires,h])
+  · exact kext_not_resident L hw hn q hq (by simp [PointAddLayout.pointWires,h])
+  · apply kp.2 q hq
+    have e : (L.dialogPool.take 945).take 775=L.dialogPool.take 775 := by
+      rw [List.take_take,Nat.min_eq_left (by omega)]
+    rw [←e] at h
+    exact List.mem_of_mem_take h
+
 def fastCandidate (L : ControlledPointLayout) : Program :=
-  accPrefix L.dialogStreamedSquareWide L.core.generic
+  accPrefixK L.dialogStreamedSquareWide (kext L) L.core.generic
 
 theorem fastCandidate_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastCandidate L)=69153 ∧ measurementCount (fastCandidate L)=68641 :=
-  accPrefix_counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) L.core.generic
+    toffoliCount (fastCandidate L)=60148 ∧ measurementCount (fastCandidate L)=60148 :=
+  accPrefixK_counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
+    L.core.generic (by simp [kext,wireBlock_length])
 
 theorem fastCandidate_support (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) :
     wires (fastCandidate L)⊆
-      (L.core.generic::L.point.y++L.point.x++L.dialogPool.take 776).toFinset := by
-  have support := accPrefix_support L.dialogStreamedSquareWide
-    (L.dialogStreamedSquareWide_widths hw) (L.dialogStreamedSquareWide_nodup hw hn) L.core.generic
-  have embed : (L.core.generic::L.dialogStreamedSquareWide.wires).toFinset⊆
-      (L.core.generic::L.point.y++L.point.x++L.dialogPool.take 776).toFinset := by
+      (L.core.generic::L.point.y++L.point.x++L.dialogPool.take 776++kext L).toFinset := by
+  have support := accPrefixK_support L.dialogStreamedSquareWide
+    (L.dialogStreamedSquareWide_widths hw) (L.dialogStreamedSquareWide_nodup hw hn) (kext L)
+    L.core.generic (by simp [kext,wireBlock_length])
+  have embed : (L.core.generic::L.dialogStreamedSquareWide.wires++kext L).toFinset⊆
+      (L.core.generic::L.point.y++L.point.x++L.dialogPool.take 776++kext L).toFinset := by
     rw [L.streamedSquare_wires_eq hw]
     have small : L.dialogPool.take 775⊆L.dialogPool.take 776 := by
       intro q hq
@@ -3389,7 +6047,7 @@ theorem fastCandidate_correct (L : ControlledPointLayout) (hw : L.Widths)
     (hc : regValue L.dialogPool s.basis=0) :
     (run (fastCandidate L) m s).phase=s.phase ∧
     regValue L.point.x (run (fastCandidate L) m s).basis=
-      p-1-(X+p-(if B then Y*Y else 0)%p)%p ∧
+      (X+p-(if B then Y*Y else 0)%p)%p ∧
     ∀q,q∉L.point.x → (run (fastCandidate L) m s).basis q=s.basis q := by
   let K := L.dialogStreamedSquareWide
   have hwK := L.dialogStreamedSquareWide_widths hw
@@ -3432,17 +6090,20 @@ theorem fastCandidate_correct (L : ControlledPointLayout) (hw : L.Widths)
   have sum0 : s.basis K.core.sumCarry=false := auxZero _ (by simp)
   have hp : SquareReduction.p=p := by
     norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c,p]
-  have kernel := accPrefix_correct K hwK L.core.generic controlND Y X
-    (by simpa only [hp] using hX) s m hy hx prod0 sum0 clean
+  have hz : regValue (kext L) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc q (kext_mem L hw q hq))
+  have kernel := accPrefixK_correct K hwK (kext L) L.core.generic controlND Y X
+    (by simpa only [hp] using hX) s m hy hx prod0 sum0 clean (kext_ok L hw hn) hz
   simpa only [fastCandidate,hb,hp,pow_two] using kernel
 
 theorem fastCandidate_physical (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) : GatePhysical (fastCandidate L) := by
-  apply accPrefix_physical L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
-  have nd := L.streamedSquare_control_nodup hw hn
-  apply List.nodup_iff_count.mpr; intro q
-  have h := List.nodup_iff_count.mp nd q
-  simp only [List.count_cons] at h ⊢; omega
+  apply accPrefixK_physical L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
+  · have nd := L.streamedSquare_control_nodup hw hn
+    apply List.nodup_iff_count.mpr; intro q
+    have h := List.nodup_iff_count.mp nd q
+    simp only [List.count_cons] at h ⊢; omega
+  · exact kext_ok L hw hn
 
 /-- Computable relabeled square: the emitted Step 4 program. -/
 def fastSquare (L : ControlledPointLayout) : Program :=
@@ -3504,13 +6165,13 @@ theorem fastSquare_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
     (hy : regValue L.point.y s.basis=Y) (hc : regValue L.dialogPool s.basis=0) :
     (run (fastSquare L) m s).phase=s.phase ∧
     regValue L.point.x (run (fastSquare L) m s).basis=
-      p-1-(X+p-(if B then Y*Y else 0)%p)%p ∧
+      (X+p-(if B then Y*Y else 0)%p)%p ∧
     ∀q,q∉L.point.x → (run (fastSquare L) m s).basis q=s.basis q := by
   rw [fastSquare_state_eq L hw hn X Y B hX s m hb hx hy hc]
   exact fastCandidate_correct L hw hn X Y B hX s m hb hx hy hc
 
 theorem fastSquare_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastSquare L)=69153 ∧ measurementCount (fastSquare L)=68641 := by
+    toffoliCount (fastSquare L)=60148 ∧ measurementCount (fastSquare L)=60148 := by
   have renamed := renameProgram_counts (labelFn L.core.poolWire) (fastCandidate L)
   have old := fastCandidate_counts L hw
   rw [fastSquare]
@@ -3524,6 +6185,13 @@ theorem fastSquare_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
   obtain ⟨old,used,rfl⟩ := Finset.mem_image.mp hq
   have supp := fastCandidate_support L hw hn used
   simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at supp
+  by_cases kx : old∈kext L
+  · rw [kext_fixed L hw hn old kx]
+    obtain ⟨i,h1,h2,h3,rfl⟩ := kext_index L old kx
+    apply List.mem_toFinset.mpr
+    apply List.mem_append_right
+    simp only [sharedPool,List.mem_append,wireBlock,List.mem_map,List.mem_range'_1]
+    exact Or.inl (Or.inr ⟨i,by omega,rfl⟩)
   have res : old∈residents L ∨ old∈L.dialogPool.take 776 := by
     simp only [residents,PointAddLayout.pointWires,inPlaceFlags,List.mem_append,List.mem_cons,
       List.not_mem_nil,or_false]
@@ -3560,7 +6228,8 @@ theorem fastSquare_physical (L : ControlledPointLayout)
 theorem fastSquare_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) :
     Challenge.gateSlots (fastSquare L) ≤ 5000000 := by
   simpa only [fastSquare,Baselines.rename_gateSlots,fastCandidate]
-    using accPrefix_gateSlots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) L.core.generic
+    using accPrefixK_gateSlots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
+      L.core.generic (by simp [kext,wireBlock_length])
 
 end ECDSAAdd.Entrant
 
@@ -5746,6 +8415,7 @@ end
 
 section
 -- ===== FastGeneric =====
+
 /-! The Skywalk generic stage with every classical coordinate correction done
 by the compare-first constant adder of `FastConst`.  The final reflection and
 abscissa correction are fused into one `x ↦ cx - x` step, and the square's
@@ -5769,7 +8439,7 @@ def fastGeneric (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx) ++ fastConstAdd L L.point.y (-cy) ++
   pointCompressedArithmetic L false ++
   fastSquare L ++
-  fastConstRefl L (3*cx-1) ++
+  fastConstAdd L L.point.x (3*cx) ++
   pointCompressedArithmetic L true ++
   fastConstNeg L cx ++ fastConstAdd L L.point.y (-cy)
 
@@ -5892,12 +8562,12 @@ private instance : Fact (1<p) := ⟨by norm_num [p]⟩
 theorem fast_step_square (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (base : BasisState) :
     Triple (PointDialogValues L X Y G base) (fastSquare L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G base) := by
+      (PointDialogValues L (X-(if G then Y*Y else 0)) Y G base) := by
   intro s m v
   obtain ⟨hp,hx,hf⟩ := fastSquare_correct L hw hn X.val Y.val G X.isLt s m
     v.generic v.x v.y v.clean
   refine ⟨hp,v.withX hn ?_ hf⟩
-  rw [refl_val,sub_val']
+  rw [sub_val']
   cases G
   · simpa using hx
   · simpa [ZMod.val_mul] using hx
@@ -5925,12 +8595,9 @@ theorem fast_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd
   simp only [if_true,Bool.false_eq_true,if_false,ha] at h3
   have h4 := fast_step_square L hw hn (X-cx) a true base
   simp only [if_true] at h4
-  have h5 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true base (3*cx-1)
+  have h5 := fastStep_addX L hw hn ((X-cx)-a*a) a true base (3*cx)
   simp only [if_true] at h5
-  have hd5 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
-    have e := hv.2.1
-    change (X-cx)-a*a+3*cx=d at e
-    rw [← e]; ring
+  have hd5 : (X-cx)-a*a+3*cx=d := hv.2.1
   rw [hd5] at h5
   have h6 := step_arithmetic L hw hn d a true base true (fun _=>hd)
   simp only [if_true] at h6
@@ -5950,12 +8617,11 @@ theorem fast_generic_false (X Y cx cy : Fp) (base : BasisState) :
   have h2 := fastStep_addY L hw hn X Y false base (-cy)
   have h3 := step_arithmetic L hw hn X Y false base false (by simp)
   have h4 := fast_step_square L hw hn X Y false base
-  have h5 := fastStep_refl L hw hn (-1-X) Y false base (3*cx-1)
+  have h5 := fastStep_addX L hw hn X Y false base (3*cx)
   have h6 := step_arithmetic L hw hn X Y false base true (by simp)
   have h7 := fastStep_negX L hw hn X Y false base cx
   have h8 := fastStep_addY L hw hn X Y false base (-cy)
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
-  rw [show -1-(-1-X)=X by ring] at h5
   have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
   simpa only [fastGeneric,List.append_assoc] using h
 
@@ -6023,16 +8689,15 @@ theorem fastConstRefl_counts (k : Fp) :
 
 omit hn in
 theorem fastGeneric_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric L cx cy)=2180993 ∧
-    measurementCount (fastGeneric L cx cy)=1521548 := by
+    toffoliCount (fastGeneric L cx cy)=2171988 ∧
+    measurementCount (fastGeneric L cx cy)=1513055 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
-  have r := fastConstRefl_counts L hw (3*cx-1)
   have arith := pointCompressedArithmetic_counts L
   have square := fastSquare_counts L hw
   simp only [fastGeneric,toffoliCount_append,measurementCount_append,
-    (a _).1,(a _).2,(b _).1,(b _).2,c.1,c.2,r.1,r.2,arith.1,arith.2.1,arith.2.2.1,arith.2.2.2,
+    (a _).1,(a _).2,(b _).1,(b _).2,c.1,c.2,arith.1,arith.2.1,arith.2.2.1,arith.2.2.2,
     square.1,square.2]
   norm_num
 
@@ -6068,9 +8733,7 @@ theorem fastGeneric_support (cx cy : Fp) :
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConst_sites L hw L.point.x (Or.inl rfl))
   have arith (b : Bool) := pointCompressedArithmetic_support L hw b
-  have cr : wires (fastConstRefl L (3*cx-1))⊆(sites L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (fastConst_sites L hw L.point.x (Or.inl rfl))
+  have cr := ca L.point.x (Or.inl rfl) (3*cx)
   have square := fastSquare_support L hw hn
   simpa only [fastGeneric,wires_append,Finset.union_subset_iff,sites] using
     And.intro (And.intro (And.intro (And.intro (And.intro (And.intro (And.intro
@@ -6087,8 +8750,7 @@ theorem fastGeneric_physical (cx cy : Fp) : GatePhysical (fastGeneric L cx cy) :
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p cx.val
   have di := pointCompressedArithmetic_physical L hw hn false
   have mu := pointCompressedArithmetic_physical L hw hn true
-  have rf := FastConst.fastRefl_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p (3*cx-1).val
+  have rf := ax (3*cx)
   have sq := fastSquare_physical L hw hn
   simp only [fastGeneric,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
   exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,rf⟩,mu⟩,ng⟩,ay _⟩
@@ -6103,8 +8765,7 @@ theorem fastGeneric_gateSlots_le (cx cy : Fp) :
     (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a1 := ax L.point.x hw.inputX (-cx)
   have a2 := ax L.point.y hw.inputY (-cy)
-  have a3 := FastConst.fastRefl_gateSlots_le (g:=L.core.generic) 256 p (3*cx-1).val
-    (L.recoveryConstant_widths hw L.point.x hw.inputX)
+  have a3 := ax L.point.x hw.inputX (3*cx)
   have d := Baselines.pointCompressedArithmetic_gateSlots_le L false
   have e := Baselines.pointCompressedArithmetic_gateSlots_le L true
   have f := fastSquare_gateSlots_le L hw
@@ -6114,11 +8775,11 @@ theorem fastGeneric_gateSlots_le (cx cy : Fp) :
 end Resources
 
 end ECDSAAdd.Entrant
-
 end
 
 section
 -- ===== Program =====
+
 /-! The Skywalk finite-addend circuit with both infinity comparisons replaced
 by `zeroFlag`.  Every other block is the unchanged Skywalk block. -/
 set_option maxRecDepth 8192
@@ -6347,8 +9008,8 @@ theorem zeroFlag_counts (f c t : Wire) :
 
 theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (C : Point) (cx cy : Fp) :
-    toffoliCount (finiteProgram L C cx cy)≤2182025 ∧
-    measurementCount (finiteProgram L C cx cy)=1522574 := by
+    toffoliCount (finiteProgram L C cx cy)≤2173531 ∧
+    measurementCount (finiteProgram L C cx cy)=1514081 := by
   have h := CompressedPointDialog.finite_counts L hw hn C cx cy
   have g0 := CompressedPointDialog.generic_counts L hw hn cx cy
   have g1 := fastGeneric_counts L hw cx cy
@@ -6470,7 +9131,6 @@ theorem finiteProgram_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths)
 end Slots
 
 end ECDSAAdd.Entrant
-
 end
 
 section
@@ -11722,7 +14382,7 @@ theorem fastSquareE : wires (fastSquare L) ⊆ (sitesE L).toFinset := by
   have supp := fastCandidate_support L hw hn used
   simp only [List.mem_toFinset, List.mem_cons, List.mem_append, or_assoc] at supp
   apply List.mem_toFinset.mpr
-  rcases supp with h | h | h | h
+  rcases supp with h | h | h | h | h
   · rw [h, CompressedPointSquare.resident_fixed L hw hn _ (by simp [CompressedPointSquare.residents,
       inPlaceFlags])]
     exact generic_E L
@@ -11747,6 +14407,13 @@ theorem fastSquareE : wires (fastSquare L) ⊆ (sitesE L).toFinset := by
     rcases ha with ha | ha
     · exact Or.inl (Or.inl (Or.inl ⟨_, by omega, rfl⟩))
     · exact Or.inl (Or.inl (Or.inr (Or.inl ⟨_, by omega, rfl⟩)))
+  · rw [kext_fixed L hw hn _ h]
+    obtain ⟨i, h1, h2, h3, rfl⟩ := kext_index L _ h
+    apply poolQ_E
+    simp only [sharedPoolF, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1]
+    rcases h3 with h3 | h3
+    · exact Or.inl (Or.inl (Or.inr (Or.inl ⟨_, by omega, rfl⟩)))
+    · exact Or.inl (Or.inl (Or.inr (Or.inr ⟨_, by omega, rfl⟩)))
 
 omit hn in
 theorem constAddE (r : List Wire) (hr : r = L.point.x ∨ r = L.point.y) (k : Fp) :
@@ -12014,6 +14681,7 @@ end
 
 section
 -- ===== FastGeneric2 =====
+
 /-! The compare-first generic block with the one-bank arithmetic `obArith` (`OBArith.lean`).
 Every other block is the one of `fastGeneric`. -/
 set_option maxRecDepth 8192
@@ -12026,7 +14694,7 @@ def fastGeneric2 (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx) ++ fastConstAdd L L.point.y (-cy) ++
   obArith L false ++
   fastSquare L ++
-  fastConstRefl L (3*cx-1) ++
+  fastConstAdd L L.point.x (3*cx) ++
   obArith L true ++
   fastConstNeg L cx ++ fastConstAdd L L.point.y (-cy)
 
@@ -12051,12 +14719,9 @@ theorem fast2_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (h
   simp only [if_true,Bool.false_eq_true,if_false,ha] at h3
   have h4 := fast_step_square L hw hn (X-cx) a true base
   simp only [if_true] at h4
-  have h5 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true base (3*cx-1)
+  have h5 := fastStep_addX L hw hn ((X-cx)-a*a) a true base (3*cx)
   simp only [if_true] at h5
-  have hd5 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
-    have e := hv.2.1
-    change (X-cx)-a*a+3*cx=d at e
-    rw [← e]; ring
+  have hd5 : (X-cx)-a*a+3*cx=d := hv.2.1
   rw [hd5] at h5
   have h6 := ParametricPointDialog.step_arithmetic obBackend L hw hn d a true base true (fun _=>hd)
   simp only [if_true] at h6
@@ -12076,12 +14741,11 @@ theorem fast2_generic_false (X Y cx cy : Fp) (base : BasisState) :
   have h2 := fastStep_addY L hw hn X Y false base (-cy)
   have h3 := ParametricPointDialog.step_arithmetic obBackend L hw hn X Y false base false (by simp)
   have h4 := fast_step_square L hw hn X Y false base
-  have h5 := fastStep_refl L hw hn (-1-X) Y false base (3*cx-1)
+  have h5 := fastStep_addX L hw hn X Y false base (3*cx)
   have h6 := ParametricPointDialog.step_arithmetic obBackend L hw hn X Y false base true (by simp)
   have h7 := fastStep_negX L hw hn X Y false base cx
   have h8 := fastStep_addY L hw hn X Y false base (-cy)
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
-  rw [show -1-(-1-X)=X by ring] at h5
   have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
   simpa only [fastGeneric2,obBackend,List.append_assoc] using h
 
@@ -12132,16 +14796,15 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem fastGeneric2_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric2 L cx cy)=2440583 ∧
-    measurementCount (fastGeneric2 L cx cy)=1780628 := by
+    toffoliCount (fastGeneric2 L cx cy)=2431578 ∧
+    measurementCount (fastGeneric2 L cx cy)=1772135 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
-  have r := fastConstRefl_counts L hw (3*cx-1)
   have arith := obArith_counts L
   have square := fastSquare_counts L hw
   simp only [fastGeneric2,toffoliCount_append,measurementCount_append,
-    (a _).1,(a _).2,(b _).1,(b _).2,c.1,c.2,r.1,r.2,arith.1,arith.2.1,arith.2.2.1,arith.2.2.2,
+    (a _).1,(a _).2,(b _).1,(b _).2,c.1,c.2,arith.1,arith.2.1,arith.2.2.1,arith.2.2.2,
     square.1,square.2]
   norm_num
 
@@ -12155,8 +14818,7 @@ theorem fastGeneric2_physical (cx cy : Fp) : GatePhysical (fastGeneric2 L cx cy)
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p cx.val
   have di := obArith_physical L hw hn false
   have mu := obArith_physical L hw hn true
-  have rf := FastConst.fastRefl_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p (3*cx-1).val
+  have rf := ax (3*cx)
   have sq := fastSquare_physical L hw hn
   simp only [fastGeneric2,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
   exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,rf⟩,mu⟩,ng⟩,ay _⟩
@@ -12170,8 +14832,7 @@ theorem fastGeneric2_gateSlots_le (cx cy : Fp) :
     (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a1 := ax L.point.x hw.inputX (-cx)
   have a2 := ax L.point.y hw.inputY (-cy)
-  have a3 := FastConst.fastRefl_gateSlots_le (g:=L.core.generic) 256 p (3*cx-1).val
-    (L.recoveryConstant_widths hw L.point.x hw.inputX)
+  have a3 := ax L.point.x hw.inputX (3*cx)
   have d := obArith_gateSlots L false
   have e := obArith_gateSlots L true
   have f := fastSquare_gateSlots_le L hw
@@ -12181,11 +14842,11 @@ theorem fastGeneric2_gateSlots_le (cx cy : Fp) :
 end Resources
 
 end ECDSAAdd.Entrant
-
 end
 
 section
 -- ===== FastE =====
+
 /-! The compare-first generic block lives in `sitesE` and satisfies the
 generic-block contract. -/
 set_option maxRecDepth 8192
@@ -12236,9 +14897,7 @@ theorem fastGenericE (cx cy : Fp) : wires (fastGeneric2 L cx cy) ⊆ (sitesE L).
   have cn : wires (fastConstNeg L cx) ⊆ (sitesE L).toFinset :=
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConstE L hw L.point.x (Or.inl rfl))
-  have cr : wires (fastConstRefl L (3*cx-1)) ⊆ (sitesE L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (fastConstE L hw L.point.x (Or.inl rfl))
+  have cr := ca L.point.x (Or.inl rfl) (3*cx)
   simp only [fastGeneric2, wires_append, Finset.union_subset_iff]
   exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, arithE L hw hn false⟩, fastSquareE L hw hn⟩,
     cr⟩, arithE L hw hn true⟩, cn⟩, ca _ (Or.inr rfl) _⟩
@@ -12250,11 +14909,11 @@ theorem fastGeneric_ok {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
 end
 
 end ECDSAAdd.Entrant
-
 end
 
 section
 -- ===== FlagMerge =====
+
 /-! Flag merge on top of `FlagG`.
 
 * While the generic-branch block runs, its control bit is held in
@@ -13174,7 +15833,7 @@ theorem fastSquareG : wires (fastSquare L) ⊆ (sitesG L).toFinset := by
   have supp := fastCandidate_support L hw hn used
   simp only [List.mem_toFinset, List.mem_cons, List.mem_append, or_assoc] at supp
   apply List.mem_toFinset.mpr
-  rcases supp with h | h | h | h
+  rcases supp with h | h | h | h | h
   · rw [h, CompressedPointSquare.resident_fixed L hw hn _ (by simp [CompressedPointSquare.residents,
       inPlaceFlags])]
     exact generic_G L
@@ -13199,6 +15858,13 @@ theorem fastSquareG : wires (fastSquare L) ⊆ (sitesG L).toFinset := by
     rcases ha with ha | ha
     · exact Or.inl (Or.inl (Or.inl ⟨_, by omega, rfl⟩))
     · exact Or.inl (Or.inl (Or.inr (Or.inl ⟨_, by omega, rfl⟩)))
+  · rw [kext_fixed L hw hn _ h]
+    obtain ⟨i, h1, h2, h3, rfl⟩ := kext_index L _ h
+    apply poolQ_G
+    simp only [sharedPoolF, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1]
+    rcases h3 with h3 | h3
+    · exact Or.inl (Or.inl (Or.inr (Or.inl ⟨_, by omega, rfl⟩)))
+    · exact Or.inl (Or.inl (Or.inr (Or.inr ⟨_, by omega, rfl⟩)))
 
 theorem fastGenericG (cx cy : Fp) : wires (fastGeneric2 L cx cy) ⊆ (sitesG L).toFinset := by
   have ca (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) (k : Fp) :
@@ -13209,9 +15875,7 @@ theorem fastGenericG (cx cy : Fp) : wires (fastGeneric2 L cx cy) ⊆ (sitesG L).
   have cn : wires (fastConstNeg L cx) ⊆ (sitesG L).toFinset :=
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConstG L hw L.point.x (Or.inl rfl))
-  have cr : wires (fastConstRefl L (3*cx-1)) ⊆ (sitesG L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (fastConstG L hw L.point.x (Or.inl rfl))
+  have cr := ca L.point.x (Or.inl rfl) (3*cx)
   simp only [fastGeneric2, wires_append, Finset.union_subset_iff]
   exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, arithG L hw hn false⟩, fastSquareG L hw hn⟩,
     cr⟩, arithG L hw hn true⟩, cn⟩, ca _ (Or.inr rfl) _⟩
@@ -13748,11 +16412,11 @@ theorem finiteProgramN_gateSlots (L : ControlledPointLayout) (hw : L.Widths) (C 
 end Resources
 
 end ECDSAAdd.Entrant
-
 end
 
 section
 -- ===== Main =====
+
 /-! Entrant: Skywalk with flag-only infinity tests (`ZeroFlag.lean`), short and
 paired point comparisons (`ShortEqual.lean`, `PairEqual.lean`), compare-first
 constant additions (`FastConst.lean`, `FastGeneric.lean`), enable-free
@@ -13774,7 +16438,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2441616, 1781655, 1637, 45600000⟩
+def bounds : Challenge.Bounds := ⟨2432611, 1773162, 1637, 45600000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -13790,7 +16454,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgramN_support layout layout_widths layout_nodup _ cy _ hG).trans
         (sitesN_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2441616 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2432611 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -13800,7 +16464,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2441616 := by
     change toffoliCount (finiteProgramN layout (.some hc) cy (fastGeneric2 layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1781655 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1773162 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -13855,7 +16519,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1781655
+    change measurementCount (normalizeProgram (program C)) ≤ 1773162
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
@@ -13868,5 +16532,4 @@ theorem certificate : Challenge.Certificate entry bounds where
     exact program_gateSlots C
 
 end ECDSAAdd.Entrant
-
 end
