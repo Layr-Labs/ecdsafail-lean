@@ -84,11 +84,19 @@ theorem genericFlag2_counts (L : ControlledPointLayout) :
   simp [genericFlag2, toffoliCount, measurementCount]
 
 theorem finiteProgramFG_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cy : Fp)
-    (Gen : Program) :
-    toffoliCount (finiteProgramFG L C cy Gen) ≤ 1034 + toffoliCount Gen ∧
+    (Gen : Program) (hc : curve.toAffine.Nonsingular cx cy) (hC : C = .some hc) :
+    toffoliCount (finiteProgramFG L C cy Gen) ≤ 1032 + toffoliCount Gen ∧
     measurementCount (finiteProgramFG L C cy Gen) ≤ 1026 + measurementCount Gen := by
   have p1 := pairEqual_counts L hw L.doubleSelect L.genericSelect (decide (cy≠-cy)) true C (-C)
   have p2 := pairEqual_counts L hw L.core.generic L.core.equalNegY true (exceptionBit C) C (-C)
+  have c1 : tailCost (decide (cy≠-cy)) (yBit C) true (yBit (-C)) = 1 := by
+    subst hC
+    rw [cy_ne_neg hc, yBit_neg hc]
+    cases yBit (.some hc) <;> decide
+  have c2 : tailCost true (yBit C) (exceptionBit C) (yBit (-C)) ≤ 1 := by
+    subst hC
+    rw [yBit_neg hc]
+    cases yBit (.some hc) <;> cases exceptionBit (.some hc) <;> decide
   have g1 := gatedShort_counts L hw (exceptionBit C) L.core.equalNegY (dialogExceptionPoint C)
   have g2 := gatedShort_counts L hw (decide (cy≠-cy)) L.doubleSelect (C+C)
   have z1 := zeroFlag_counts L.point.finite L.control L.core.generic
@@ -98,6 +106,7 @@ theorem finiteProgramFG_counts (L : ControlledPointLayout) (hw : L.Widths) (C : 
     simp only [corners2, toffoliCount_append, measurementCount_append,
       (maskedPointConstant_counts _ _ _).1, (maskedPointConstant_counts _ _ _).2]; decide)
   simp only [finiteProgramFG, toffoliCount_append, measurementCount_append]
+  rw [c1] at p1
   omega
 
 theorem finiteProgramFG_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)

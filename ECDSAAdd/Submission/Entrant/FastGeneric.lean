@@ -1,5 +1,6 @@
 import ECDSAAdd.Submission.Entrant.FastConst
 import ECDSAAdd.Submission.Entrant.FastSquare
+import ECDSAAdd.Submission.Entrant.FastSquareNR
 import ECDSAAdd.Arithmetic.CompressedPointDialogSteps
 import ECDSAAdd.Arithmetic.CompressedPointDialogResources
 import ECDSAAdd.Arithmetic.SkywalkPointPhysical
@@ -7,8 +8,8 @@ import ECDSAAdd.Baselines.SkywalkSlots
 
 /-! The Skywalk generic stage with every classical coordinate correction done
 by the compare-first constant adder of `FastConst`.  The final reflection and
-abscissa correction are fused into one `x ↦ cx - x` step, and the square's
-final output reflection is absorbed into the `3cx` correction. -/
+abscissa correction are fused into one `x ↦ cx - x` step.  The division,
+square and multiplication blocks are the unchanged Skywalk blocks. -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -28,7 +29,7 @@ def fastGeneric (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx) ++ fastConstAdd L L.point.y (-cy) ++
   pointCompressedArithmetic L false ++
   fastSquare L ++
-  fastConstRefl L (3*cx-1) ++
+  fastConstAdd L L.point.x (3*cx) ++
   pointCompressedArithmetic L true ++
   fastConstNeg L cx ++ fastConstAdd L L.point.y (-cy)
 
@@ -151,9 +152,19 @@ private instance : Fact (1<p) := ⟨by norm_num [p]⟩
 theorem fast_step_square (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (base : BasisState) :
     Triple (PointDialogValues L X Y G base) (fastSquare L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G base) := by
+      (PointDialogValues L (X-(if G then Y*Y else 0)) Y G base) := by
   intro s m v
   obtain ⟨hp,hx,hf⟩ := fastSquare_correct L hw hn X.val Y.val G X.isLt s m
+    v.generic v.x v.y v.clean
+  refine ⟨hp,v.withX hn ?_ hf⟩
+  cases G <;> simpa [sub_val',ZMod.val_mul,Nat.mod_eq_of_lt (ZMod.val_lt X)] using hx
+
+theorem fast_step_squareNR (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (X Y : Fp) (G : Bool) (base : BasisState) :
+    Triple (PointDialogValues L X Y G base) (fastSquareNR L)
+      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G base) := by
+  intro s m v
+  obtain ⟨hp,hx,hf⟩ := fastSquareNR_correct L hw hn X.val Y.val G X.isLt s m
     v.generic v.x v.y v.clean
   refine ⟨hp,v.withX hn ?_ hf⟩
   rw [refl_val,sub_val']
@@ -163,12 +174,11 @@ theorem fast_step_square (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
 
 end SquareStep
 
-
 section Generic
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
 attribute [local irreducible] run pointCompressedArithmetic CompressedPointSquare.computableProgram fastSquare fastCandidate
-  pointMeasuredSquareCandidate fastConstAdd fastConstNeg fastConstRefl
+  pointMeasuredSquareCandidate fastConstAdd fastConstNeg
 
 theorem fast_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd : cx-genericX X Y cx cy≠0) :
     Triple (PointDialogValues L X Y true base) (fastGeneric L cx cy)
@@ -184,13 +194,9 @@ theorem fast_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd
   simp only [if_true,Bool.false_eq_true,if_false,ha] at h3
   have h4 := fast_step_square L hw hn (X-cx) a true base
   simp only [if_true] at h4
-  have h5 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true base (3*cx-1)
+  have h5 := fastStep_addX L hw hn ((X-cx)-a*a) a true base (3*cx)
   simp only [if_true] at h5
-  have hd5 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
-    have e := hv.2.1
-    change (X-cx)-a*a+3*cx=d at e
-    rw [← e]; ring
-  rw [hd5] at h5
+  rw [show (X-cx)-a*a+3*cx=d from hv.2.1] at h5
   have h6 := step_arithmetic L hw hn d a true base true (fun _=>hd)
   simp only [if_true] at h6
   have h7 := fastStep_negX L hw hn d (a*d) true base cx
@@ -209,12 +215,11 @@ theorem fast_generic_false (X Y cx cy : Fp) (base : BasisState) :
   have h2 := fastStep_addY L hw hn X Y false base (-cy)
   have h3 := step_arithmetic L hw hn X Y false base false (by simp)
   have h4 := fast_step_square L hw hn X Y false base
-  have h5 := fastStep_refl L hw hn (-1-X) Y false base (3*cx-1)
+  have h5 := fastStep_addX L hw hn X Y false base (3*cx)
   have h6 := step_arithmetic L hw hn X Y false base true (by simp)
   have h7 := fastStep_negX L hw hn X Y false base cx
   have h8 := fastStep_addY L hw hn X Y false base (-cy)
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
-  rw [show -1-(-1-X)=X by ring] at h5
   have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
   simpa only [fastGeneric,List.append_assoc] using h
 
@@ -282,16 +287,15 @@ theorem fastConstRefl_counts (k : Fp) :
 
 omit hn in
 theorem fastGeneric_counts (cx cy : Fp) :
-    toffoliCount (fastGeneric L cx cy)=2189221 ∧
-    measurementCount (fastGeneric L cx cy)=1529768 := by
+    toffoliCount (fastGeneric L cx cy)=2189476 ∧
+    measurementCount (fastGeneric L cx cy)=1530023 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
-  have r := fastConstRefl_counts L hw (3*cx-1)
   have arith := pointCompressedArithmetic_counts L
   have square := fastSquare_counts L hw
   simp only [fastGeneric,toffoliCount_append,measurementCount_append,
-    (a _).1,(a _).2,(b _).1,(b _).2,c.1,c.2,r.1,r.2,arith.1,arith.2.1,arith.2.2.1,arith.2.2.2,
+    (a _).1,(a _).2,(b _).1,(b _).2,c.1,c.2,arith.1,arith.2.1,arith.2.2.1,arith.2.2.2,
     square.1,square.2]
   norm_num
 
@@ -327,14 +331,11 @@ theorem fastGeneric_support (cx cy : Fp) :
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConst_sites L hw L.point.x (Or.inl rfl))
   have arith (b : Bool) := pointCompressedArithmetic_support L hw b
-  have cr : wires (fastConstRefl L (3*cx-1))⊆(sites L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (fastConst_sites L hw L.point.x (Or.inl rfl))
   have square := fastSquare_support L hw hn
   simpa only [fastGeneric,wires_append,Finset.union_subset_iff,sites] using
     And.intro (And.intro (And.intro (And.intro (And.intro (And.intro (And.intro
       (ca L.point.x (Or.inl rfl) (-cx)) (ca L.point.y (Or.inr rfl) (-cy)))
-      (arith false)) square) cr) (arith true)) cn)
+      (arith false)) square) (ca L.point.x (Or.inl rfl) (3*cx))) (arith true)) cn)
       (ca L.point.y (Or.inr rfl) (-cy))
 
 theorem fastGeneric_physical (cx cy : Fp) : GatePhysical (fastGeneric L cx cy) := by
@@ -346,11 +347,9 @@ theorem fastGeneric_physical (cx cy : Fp) : GatePhysical (fastGeneric L cx cy) :
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p cx.val
   have di := pointCompressedArithmetic_physical L hw hn false
   have mu := pointCompressedArithmetic_physical L hw hn true
-  have rf := FastConst.fastRefl_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p (3*cx-1).val
   have sq := fastSquare_physical L hw hn
-  simp only [fastGeneric,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
-  exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,rf⟩,mu⟩,ng⟩,ay _⟩
+  simp only [fastGeneric,fastConstAdd,fastConstNeg,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,ax _⟩,mu⟩,ng⟩,ay _⟩
 
 omit hn in
 theorem fastGeneric_gateSlots_le (cx cy : Fp) :
@@ -362,12 +361,11 @@ theorem fastGeneric_gateSlots_le (cx cy : Fp) :
     (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a1 := ax L.point.x hw.inputX (-cx)
   have a2 := ax L.point.y hw.inputY (-cy)
-  have a3 := FastConst.fastRefl_gateSlots_le (g:=L.core.generic) 256 p (3*cx-1).val
-    (L.recoveryConstant_widths hw L.point.x hw.inputX)
+  have a3 := ax L.point.x hw.inputX (3*cx)
   have d := Baselines.pointCompressedArithmetic_gateSlots_le L false
   have e := Baselines.pointCompressedArithmetic_gateSlots_le L true
   have f := fastSquare_gateSlots_le L hw
-  simp only [fastGeneric,fastConstAdd,fastConstNeg,fastConstRefl,Challenge.gateSlots_append]
+  simp only [fastGeneric,fastConstAdd,fastConstNeg,Challenge.gateSlots_append]
   omega
 
 end Resources
