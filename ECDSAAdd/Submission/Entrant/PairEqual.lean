@@ -9,7 +9,7 @@ set_option linter.unreachableTactic false
 
 `C` and `-C` share the finite flag and the abscissa, and (by `shortCode_eq_iff`)
 the low bit of `y` then decides which of the two a valid point equals.  The
-257-wire flag/abscissa test is computed once by the zero-detection AND chain,
+256-wire abscissa test is computed once by the zero-detection AND chain,
 both targets read the chain output together with the low `y` bit, and only then
 is the chain erased by measurement.  Each target costs one Toffoli instead of a
 separate 258-Toffoli comparison. -/
@@ -70,23 +70,40 @@ theorem bitTest_run (w y t : Wire) (a : Bool) (hwy : w≠y) (hyt : y≠t) (hwt :
     · simp [writeBit, hq]
 
 /-- Both enabled targets read the chain output `w` and the low `y` bit. -/
-def pairTail (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) : Program :=
+def plainTail (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) : Program :=
   (if e₁ then bitTest w y t₁ a₁ else []) ++ (if e₂ then bitTest w y t₂ a₂ else [])
+
+/-- One Toffoli for both targets when the target bits are complementary:
+`t₂ ^= t₁`, `t₁ ^= w ∧ (y = a)`, `t₂ ^= t₁`, `t₂ ^= w` leaves `t₂ ^= w ∧ (y = !a)`. -/
+def fusedTail (y t₁ t₂ : Wire) (a : Bool) (w : Wire) : Program :=
+  .CX t₁ t₂ :: (bitTest w y t₁ a ++ [.CX t₁ t₂, .CX w t₂])
+
+def tailFused (e₁ a₁ e₂ a₂ : Bool) : Bool := e₁ && e₂ && (a₂ == !a₁)
+
+def tailCost (e₁ a₁ e₂ a₂ : Bool) : Nat :=
+  if tailFused e₁ a₁ e₂ a₂ then 1 else e₁.toNat + e₂.toNat
+
+theorem tailCost_le (e₁ a₁ e₂ a₂ : Bool) : tailCost e₁ a₁ e₂ a₂ ≤ 2 := by
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> decide
+
+def pairTail (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) : Program :=
+  if tailFused e₁ a₁ e₂ a₂ then fusedTail y t₁ t₂ a₁ w else plainTail y t₁ t₂ e₁ a₁ e₂ a₂ w
 
 def pairEffect (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (v : Bool) (s : BasisState) : BasisState :=
   writeBit (writeBit s t₁ (s t₁ ^^ (e₁ && v && (s y == a₁)))) t₂
     (s t₂ ^^ (e₂ && v && (s y == a₂)))
 
 theorem pairTail_counts (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) :
-    toffoliCount (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) = e₁.toNat + e₂.toNat ∧
+    toffoliCount (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) = tailCost e₁ a₁ e₂ a₂ ∧
     measurementCount (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) = 0 := by
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
-    simp [pairTail, bitTest, zeroFlag, toffoliCount, measurementCount]
+    simp [pairTail, plainTail, fusedTail, tailFused, tailCost, bitTest, zeroFlag,
+      toffoliCount, measurementCount]
 
-theorem pairTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire)
+theorem plainTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire)
     (hwy : w≠y) (hw1 : w≠t₁) (hw2 : w≠t₂) (hy1 : y≠t₁) (hy2 : y≠t₂) (h12 : t₁≠t₂)
     (s : State) (m : List Bool) :
-    run (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) m s =
+    run (plainTail y t₁ t₂ e₁ a₁ e₂ a₂ w) m s =
       ⟨s.phase, pairEffect y t₁ t₂ e₁ a₁ e₂ a₂ (s.basis w) s.basis⟩ := by
   have hfirst : run (if e₁ then bitTest w y t₁ a₁ else []) m s =
       ⟨s.phase, writeBit s.basis t₁ (s.basis t₁ ^^ (e₁ && s.basis w && (s.basis y == a₁)))⟩ := by
@@ -97,7 +114,7 @@ theorem pairTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire
       exact bitTest_run w y t₁ a₁ hwy hy1 hw1 s m
   have hm1 : measurementCount (if e₁ then bitTest w y t₁ a₁ else []) = 0 := by
     cases e₁ <;> cases a₁ <;> simp [bitTest, zeroFlag, measurementCount]
-  rw [pairTail, run_append, run_take, hfirst, hm1, List.drop_zero]
+  rw [plainTail, run_append, run_take, hfirst, hm1, List.drop_zero]
   cases e₂
   · simp only [Bool.false_eq_true, if_false, run]
     congr 1
@@ -116,6 +133,47 @@ theorem pairTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire
     · by_cases hq1 : q=t₁
       · subst q; simp [h12, hw1, hy1]
       · simp [hq1, hq2]
+
+theorem fusedTail_run (y t₁ t₂ : Wire) (a : Bool) (w : Wire)
+    (hwy : w≠y) (hw1 : w≠t₁) (hw2 : w≠t₂) (hy1 : y≠t₁) (hy2 : y≠t₂) (h12 : t₁≠t₂)
+    (s : State) (m : List Bool) :
+    run (fusedTail y t₁ t₂ a w) m s =
+      ⟨s.phase, pairEffect y t₁ t₂ true a true (!a) (s.basis w) s.basis⟩ := by
+  cases a <;>
+  · simp only [fusedTail, bitTest, zeroFlag, Bool.false_eq_true, if_false, if_true,
+      List.cons_append, List.nil_append, run]
+    apply congrArg (State.mk s.phase)
+    funext q
+    by_cases hq2 : q = t₂
+    · subst q
+      cases hsw : s.basis w <;> cases hsy : s.basis y <;> cases h1 : s.basis t₁ <;>
+        cases h2 : s.basis t₂ <;>
+        simp [pairEffect, writeBit, Function.update_apply, hsw, hsy, h1, h2, h12, Ne.symm h12,
+          hw1, hw2, hy1, hy2, hwy, Ne.symm hw1, Ne.symm hw2, Ne.symm hy1, Ne.symm hy2, Ne.symm hwy]
+    · by_cases hq1 : q = t₁
+      · subst q
+        cases hsw : s.basis w <;> cases hsy : s.basis y <;> cases h1 : s.basis t₁ <;>
+          cases h2 : s.basis t₂ <;>
+          simp [pairEffect, writeBit, Function.update_apply, hsw, hsy, h1, h2, h12, Ne.symm h12,
+            hw1, hw2, hy1, hy2, hwy, Ne.symm hw1, Ne.symm hw2, Ne.symm hy1, Ne.symm hy2, Ne.symm hwy]
+      · by_cases hqy : q = y
+        · subst q
+          cases hsy : s.basis y <;>
+            simp [pairEffect, writeBit, Function.update_apply, hsy, hy1, hy2, hwy, Ne.symm hwy]
+        · simp [pairEffect, writeBit, Function.update_apply, hq1, hq2, hqy]
+
+theorem pairTail_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire)
+    (hwy : w≠y) (hw1 : w≠t₁) (hw2 : w≠t₂) (hy1 : y≠t₁) (hy2 : y≠t₂) (h12 : t₁≠t₂)
+    (s : State) (m : List Bool) :
+    run (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) m s =
+      ⟨s.phase, pairEffect y t₁ t₂ e₁ a₁ e₂ a₂ (s.basis w) s.basis⟩ := by
+  by_cases hf : tailFused e₁ a₁ e₂ a₂ = true
+  · obtain ⟨rfl, rfl, rfl⟩ : e₁ = true ∧ e₂ = true ∧ a₂ = !a₁ := by
+      revert hf; cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> simp [tailFused]
+    rw [pairTail, if_pos hf]
+    exact fusedTail_run y t₁ t₂ a₁ w hwy hw1 hw2 hy1 hy2 h12 s m
+  · rw [pairTail, if_neg hf]
+    exact plainTail_run y t₁ t₂ e₁ a₁ e₂ a₂ w hwy hw1 hw2 hy1 hy2 h12 s m
 
 /-- Zero chain whose innermost step is `T` applied to the chain output. -/
 def zeroWith (T : Wire → Program) (c : Wire) : List ZeroBit → Program
@@ -173,7 +231,7 @@ theorem zeroWith_pair_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c :
       apply Bool.eq_iff_iff.mpr
       simp only [List.all_eq_true]
       constructor <;> intro h d hd <;> simpa [t, writeBit, (htail d hd).2] using h d hd
-    have hcnt := (zeroWith_counts (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) (e₁.toNat + e₂.toNat)
+    have hcnt := (zeroWith_counts (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) (tailCost e₁ a₁ e₂ a₂)
       (pairTail_counts y t₁ t₂ e₁ a₁ e₂ a₂) b.work bs).2
     change run (chainAnd c b.input b.work ++ zeroWith (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) b.work bs ++
       chainErase c b.input b.work) m s = _
@@ -202,18 +260,35 @@ theorem zeroWith_pair_run (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c :
 
 /-! ### Layout instance -/
 
-/-- Finite flag and abscissa (the part shared by `C` and `-C`). -/
-def pairSrc (L : ControlledPointLayout) : List Wire := L.point.finite :: L.point.x
+/-- The abscissa (shared by `C` and `-C`); it also decides finiteness, see `finite_of_x_eq`. -/
+def pairSrc (L : ControlledPointLayout) : List Wire := L.point.x
 
-def pairCode (R : Point) : Nat := (pointFinite R).toNat + 2 * pointX R
+def pairCode (R : Point) : Nat := pointX R
 
 def pairPorts (L : ControlledPointLayout) : List ZeroBit :=
-  zeroPorts (pairSrc L) (L.dialogPool.take 257)
+  zeroPorts (pairSrc L) (L.dialogPool.take 256)
 
 /-- The low bit of the in-place `y` register. -/
 def yLow (L : ControlledPointLayout) : Wire := L.point.y.headD L.control
 
 def yBit (R : Point) : Bool := decide (pointY R % 2 = 1)
+
+/-- Negation flips the low bit of `y` (no point has `y = 0`, and `p` is odd). -/
+theorem yBit_neg {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    yBit (-(WeierstrassCurve.Affine.Point.some hc : Point)) = !yBit (.some hc) := by
+  rw [WeierstrassCurve.Affine.Point.neg_some hc]
+  have hy0 := curve_y_ne_zero hc
+  have hv : (-cy).val = p - cy.val := by rw [ZMod.neg_val, if_neg hy0]
+  have hlt := ZMod.val_lt cy
+  have hpos : cy.val ≠ 0 := fun e => hy0 ((ZMod.val_eq_zero cy).mp e)
+  have hp2 : p % 2 = 1 := by norm_num [p]
+  show decide ((curve.toAffine.negY cx cy).val % 2 = 1) = !decide (cy.val % 2 = 1)
+  rw [negY_eq_neg, hv]
+  by_cases h : cy.val % 2 = 1
+  · have h' : (p - cy.val) % 2 = 0 := by omega
+    simp [h, h']
+  · have h' : (p - cy.val) % 2 = 1 := by omega
+    simp [h, h']
 
 /-- `t₁ ^= e₁ ∧ control ∧ point = C` and `t₂ ^= e₂ ∧ control ∧ point = D`, where `D`
 must share the flag/abscissa code of `C` (used with `D = -C`). -/
@@ -222,10 +297,9 @@ def pairEqual (L : ControlledPointLayout) (t₁ t₂ : Wire) (e₁ e₂ : Bool) 
   zeroWith (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) L.control (pairPorts L) ++
   xorConstant (pairSrc L) (pairCode C)
 
-theorem pairCode_lt (R : Point) : pairCode R < 2 * 2^256 := by
+theorem pairCode_lt (R : Point) : pairCode R < 2^256 := by
   have hp : p < 2^256 := by norm_num [p]
   have hx := (point_coordinates_lt R).1
-  have hf : (pointFinite R).toNat ≤ 1 := by cases pointFinite R <;> decide
   unfold pairCode
   omega
 
@@ -236,14 +310,14 @@ theorem pairCode_neg (C : Point) : pairCode (-C) = pairCode C := by
     rw [WeierstrassCurve.Affine.Point.neg_some]
     rfl
 
-theorem shortCode_pair (R : Point) : shortCode R = pairCode R + 2 * 2^256 * (pointY R % 2) := by
-  unfold shortCode pairCode
+theorem shortCode_pair (R : Point) : shortCodeX R = pairCode R + 2^256 * (pointY R % 2) := by
+  unfold shortCodeX pairCode
   ring
 
 theorem pair_value_eq (R C : Point) :
     (decide (pairCode R = pairCode C) && (yBit R == yBit C)) = pointEqual R C := by
   apply Bool.eq_iff_iff.mpr
-  rw [pointEqual_true_iff, ← shortCode_eq_iff, shortCode_pair, shortCode_pair]
+  rw [pointEqual_true_iff, ← shortCode_eq_iff, ← shortCodeX_eq_iff, shortCode_pair, shortCode_pair]
   have h1 := pairCode_lt R
   have h2 := pairCode_lt C
   have hyR : pointY R % 2 < 2 := Nat.mod_lt _ (by decide)
@@ -261,20 +335,17 @@ theorem pair_value_eq (R C : Point) :
     have hb : pointY R % 2 = pointY C % 2 := by omega
     exact ⟨ha, by rw [hb]⟩
 
-theorem pairSrc_length (L : ControlledPointLayout) (hw : L.Widths) : (pairSrc L).length = 257 := by
+theorem pairSrc_length (L : ControlledPointLayout) (hw : L.Widths) : (pairSrc L).length = 256 := by
   simp [pairSrc, show L.point.x.length = 256 from hw.inputX]
 
 theorem pairWork_length (L : ControlledPointLayout) (hw : L.Widths) :
-    (L.dialogPool.take 257).length = 257 := by
+    (L.dialogPool.take 256).length = 256 := by
   simp [L.dialogPool_length hw]
 
 theorem pairSrc_value (L : ControlledPointLayout) (hw : L.Widths) (R : Point) (s : BasisState)
     (hp : Holds.holds s L.point R) : regValue (pairSrc L) s = pairCode R := by
   have hv := (point_holds L.point R s).mp hp
-  change (if s L.point.finite then 1 else 0) + 2 * regValue L.point.x s = _
-  rw [hv.1, hv.2.1]
-  unfold pairCode
-  cases pointFinite R <;> rfl
+  exact hv.2.1
 
 theorem yLow_mem (L : ControlledPointLayout) (hw : L.Widths) : yLow L ∈ L.point.y := by
   have hl : L.point.y.length = 256 := hw.inputY
@@ -300,7 +371,7 @@ theorem yLow_value (L : ControlledPointLayout) (hw : L.Widths) (R : Point) (s : 
 
 theorem pair_nodup (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (t₁ t₂ : Wire) (ht1 : t₁ ∈ L.inPlaceFlags) (ht2 : t₂ ∈ L.inPlaceFlags) (h12 : t₁ ≠ t₂) :
-    (L.control :: yLow L :: t₁ :: t₂ :: (pairSrc L ++ L.dialogPool.take 257)).Nodup := by
+    (L.control :: yLow L :: t₁ :: t₂ :: (pairSrc L ++ L.dialogPool.take 256)).Nodup := by
   have sep := dialogFlag_separation L hn
   have hc1 : L.control ≠ t₁ := fun h => (List.nodup_cons.mp sep).1 (h ▸ ht1)
   have hc2 : L.control ≠ t₂ := fun h => (List.nodup_cons.mp sep).1 (h ▸ ht2)
@@ -312,13 +383,13 @@ theorem pair_nodup (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nod
   have a2 := (List.nodup_cons.mp (List.nodup_cons.mp hA).2).1
   have b2 := (List.nodup_cons.mp (List.nodup_cons.mp hB).2).1
   have hPP := (List.nodup_cons.mp (List.nodup_cons.mp hA).2).2
-  have hsub : (pairSrc L ++ L.dialogPool.take 257).Sublist
+  have hsub : (pairSrc L ++ L.dialogPool.take 256).Sublist
       (PointAddLayout.pointWires L.point ++ L.dialogPool.take 513) := by
     have h1 : (pairSrc L).Sublist (PointAddLayout.pointWires L.point) := by
-      simp only [pairSrc, PointAddLayout.pointWires]
-      exact List.sublist_append_left _ _
-    have h2 : (L.dialogPool.take 257).Sublist (L.dialogPool.take 513) := by
-      have he : L.dialogPool.take 257 = (L.dialogPool.take 513).take 257 := by
+      simp only [pairSrc, PointAddLayout.pointWires, List.cons_append]
+      exact (List.sublist_append_left L.point.x L.point.y).trans (List.sublist_cons_self _ _)
+    have h2 : (L.dialogPool.take 256).Sublist (L.dialogPool.take 513) := by
+      have he : L.dialogPool.take 256 = (L.dialogPool.take 513).take 256 := by
         rw [List.take_take]; rfl
       rw [he]; exact List.take_sublist _ _
     exact h1.append h2
@@ -331,13 +402,15 @@ theorem pair_nodup (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nod
   have hy_notsrc : yLow L ∉ pairSrc L := by
     intro h
     have hnd : (pairSrc L ++ L.point.y).Nodup := by
-      simpa only [pairSrc, PointAddLayout.pointWires, List.cons_append] using hPWnd.1
+      have h0 := hPWnd.1
+      simp only [PointAddLayout.pointWires, List.cons_append] at h0
+      exact (List.nodup_cons.mp h0).2
     exact (List.nodup_append.mp hnd).2.2 _ h _ (yLow_mem L hw) rfl
-  have h2' : (L.dialogPool.take 257).Sublist (L.dialogPool.take 513) := by
-    have he : L.dialogPool.take 257 = (L.dialogPool.take 513).take 257 := by
+  have h2' : (L.dialogPool.take 256).Sublist (L.dialogPool.take 513) := by
+    have he : L.dialogPool.take 256 = (L.dialogPool.take 513).take 256 := by
       rw [List.take_take]; rfl
     rw [he]; exact List.take_sublist _ _
-  have hy_notwork : yLow L ∉ L.dialogPool.take 257 := fun h =>
+  have hy_notwork : yLow L ∉ L.dialogPool.take 256 := fun h =>
     hPWnd.2.2 _ hyPW _ (h2'.subset h) rfl
   refine List.nodup_cons.mpr ⟨?_, List.nodup_cons.mpr ⟨?_, List.nodup_cons.mpr ⟨?_,
     List.nodup_cons.mpr ⟨?_, hPP.sublist hsub⟩⟩⟩⟩
@@ -364,17 +437,17 @@ theorem pair_nodup (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nod
 
 theorem pairPorts_maps (L : ControlledPointLayout) (hw : L.Widths) :
     (pairPorts L).map ZeroBit.input = pairSrc L ∧
-    (pairPorts L).map ZeroBit.work = L.dialogPool.take 257 :=
+    (pairPorts L).map ZeroBit.work = L.dialogPool.take 256 :=
   zeroPorts_maps _ _ ((pairSrc_length L hw).trans (pairWork_length L hw).symm)
 
-theorem pairPorts_length (L : ControlledPointLayout) (hw : L.Widths) : (pairPorts L).length = 257 := by
+theorem pairPorts_length (L : ControlledPointLayout) (hw : L.Widths) : (pairPorts L).length = 256 := by
   have h := congrArg List.length (pairPorts_maps L hw).1
   simpa only [List.length_map, pairSrc_length L hw] using h
 
 theorem pairEqual_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (t₁ t₂ : Wire) (ht1 : t₁ ∈ L.inPlaceFlags) (ht2 : t₂ ∈ L.inPlaceFlags) (h12 : t₁ ≠ t₂)
     (e₁ e₂ : Bool) (C D R : Point) (s : State) (m : List Bool)
-    (hp : Holds.holds s.basis L.point R) (hz : regValue (L.dialogPool.take 257) s.basis = 0) :
+    (hp : Holds.holds s.basis L.point R) (hz : regValue (L.dialogPool.take 256) s.basis = 0) :
     run (pairEqual L t₁ t₂ e₁ e₂ C D) m s =
       ⟨s.phase, pairEffect (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)
         (s.basis L.control && decide (pairCode R = pairCode C)) s.basis⟩ := by
@@ -383,21 +456,21 @@ theorem pairEqual_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wi
   simp only [List.nodup_cons, List.mem_cons, List.mem_append, not_or] at hn4
   obtain ⟨⟨hcy, hc1, hc2, hcs, hcw⟩, ⟨hy1, hy2, hys, hyw⟩, ⟨h12', h1s, h1w⟩, ⟨h2s, h2w⟩, hsw⟩ := hn4
   have hsrc : (pairSrc L).Nodup := (List.nodup_append.mp hsw).1
-  have hdisj : ∀ q ∈ L.dialogPool.take 257, q ∉ pairSrc L := by
+  have hdisj : ∀ q ∈ L.dialogPool.take 256, q ∉ pairSrc L := by
     intro q hq hs
     exact (List.nodup_append.mp hsw).2.2 q hs q hq rfl
   have hmaps := pairPorts_maps L hw
-  have hperm := zeroPorts_perm (pairSrc L) (L.dialogPool.take 257)
+  have hperm := zeroPorts_perm (pairSrc L) (L.dialogPool.take 256)
     ((pairSrc_length L hw).trans (pairWork_length L hw).symm)
   have hchain : (L.control :: yLow L :: t₁ :: t₂ :: (pairPorts L).flatMap ZeroBit.wires).Nodup :=
     ((((hperm.cons _).cons _).cons _).cons _).nodup_iff.mpr hnd
   have hk : pairCode C < 2^(pairSrc L).length := by
-    rw [pairSrc_length L hw, show (257:ℕ) = 256 + 1 from rfl, Nat.pow_succ, mul_comm]
+    rw [pairSrc_length L hw]
     exact pairCode_lt C
   have hval : regValue (pairSrc L) s.basis = pairCode R := pairSrc_value L hw R s.basis hp
   obtain ⟨hup, hue, huv⟩ := xorConstant_correct (pairSrc L) hsrc (pairCode C) hk s m
   generalize hu : run (xorConstant (pairSrc L) (pairCode C)) m s = u at hup hue huv
-  have hwork (b : ZeroBit) (hb : b ∈ pairPorts L) : b.work ∈ L.dialogPool.take 257 := by
+  have hwork (b : ZeroBit) (hb : b ∈ pairPorts L) : b.work ∈ L.dialogPool.take 256 := by
     rw [← hmaps.2]; exact List.mem_map.mpr ⟨b, hb, rfl⟩
   have huz : ∀ b ∈ pairPorts L, u.basis b.work = false := by
     intro b hb
@@ -417,7 +490,7 @@ theorem pairEqual_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wi
     simp
   have hcu : u.basis L.control = s.basis L.control := hue _ hcs
   rw [hall, hcu, hval] at hh
-  have hcnt := (zeroWith_counts (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) (e₁.toNat + e₂.toNat)
+  have hcnt := (zeroWith_counts (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) (tailCost e₁ (yBit C) e₂ (yBit D))
     (pairTail_counts (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) L.control (pairPorts L)).2
   rw [pairPorts_length L hw] at hcnt
   rw [pairEqual, run_append, run_take, run_append, run_take]
@@ -428,7 +501,7 @@ theorem pairEqual_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wi
   have hvb : v.basis = pairEffect (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)
       (s.basis L.control && decide (pairCode R = pairCode C)) u.basis := by rw [← hvdef]
   have hvph : v.phase = u.phase := by rw [← hvdef]
-  obtain ⟨hvp, hve, hvv⟩ := xorConstant_correct (pairSrc L) hsrc (pairCode C) hk v (m.drop 257)
+  obtain ⟨hvp, hve, hvv⟩ := xorConstant_correct (pairSrc L) hsrc (pairCode C) hk v (m.drop 256)
   have hvs : regValue (pairSrc L) v.basis = regValue (pairSrc L) u.basis := by
     rw [hvb]
     apply regValue_congr
@@ -436,7 +509,7 @@ theorem pairEqual_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wi
     have hw1 : w ≠ t₁ := fun he => h1s (he ▸ hw')
     have hw2 : w ≠ t₂ := fun he => h2s (he ▸ hw')
     simp [pairEffect, writeBit, Function.update_apply, hw1, hw2]
-  have hrestore : regValue (pairSrc L) (run (xorConstant (pairSrc L) (pairCode C)) (m.drop 257) v).basis =
+  have hrestore : regValue (pairSrc L) (run (xorConstant (pairSrc L) (pairCode C)) (m.drop 256) v).basis =
       regValue (pairSrc L) s.basis := by
     rw [hvv, hvs, huv, Nat.xor_assoc, Nat.xor_self, Nat.xor_zero]
   apply (show ∀ a b : State, a.phase = b.phase → a.basis = b.basis → a = b from
@@ -467,7 +540,7 @@ theorem pairBoundary (R C : Point) (b : Bool) (f : BasisState) (t₁ t₂ : Wire
       (PointDialogBoundary L R b (writeBit (writeBit f t₁ (f t₁ ^^ (B₁ && pointEqual R C))) t₂
         (f t₂ ^^ (B₂ && pointEqual R (-C))))) := by
   intro s m v
-  have hclean : regValue (L.dialogPool.take 257) s.basis = 0 :=
+  have hclean : regValue (L.dialogPool.take 256) s.basis = 0 :=
     (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp v.clean q (List.take_subset _ _ hq))
   have hh := pairEqual_correct L hw hn t₁ t₂ ht1 ht2 h12 e₁ e₂ C (-C) R s m v.point hclean
   have hy := yLow_value L hw R s.basis v.point
@@ -557,15 +630,13 @@ end
 
 theorem pairEqual_counts (L : ControlledPointLayout) (hw : L.Widths) (t₁ t₂ : Wire) (e₁ e₂ : Bool)
     (C D : Point) :
-    toffoliCount (pairEqual L t₁ t₂ e₁ e₂ C D) ≤ 259 ∧
-    measurementCount (pairEqual L t₁ t₂ e₁ e₂ C D) = 257 := by
-  have h := zeroWith_counts (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) (e₁.toNat + e₂.toNat)
+    toffoliCount (pairEqual L t₁ t₂ e₁ e₂ C D) = 256 + tailCost e₁ (yBit C) e₂ (yBit D) ∧
+    measurementCount (pairEqual L t₁ t₂ e₁ e₂ C D) = 256 := by
+  have h := zeroWith_counts (pairTail (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) (tailCost e₁ (yBit C) e₂ (yBit D))
     (pairTail_counts (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D)) L.control (pairPorts L)
   rw [pairPorts_length L hw] at h
   have x := xorConstant_counts (pairSrc L) (pairCode C)
   simp only [pairEqual, toffoliCount_append, measurementCount_append, x.1, x.2, h.1, h.2]
-  have h1 : e₁.toNat ≤ 1 := by cases e₁ <;> decide
-  have h2 : e₂.toNat ≤ 1 := by cases e₂ <;> decide
   refine ⟨?_, ?_⟩
   · omega
   · simp
@@ -574,7 +645,8 @@ theorem pairTail_wires (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wi
     wires (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) ⊆ ({w, y, t₁, t₂} : Finset Wire) := by
   intro q hq
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
-    simp [pairTail, bitTest, zeroFlag, wires, Instr.wires, wires_append] at hq ⊢ <;> tauto
+    simp [pairTail, plainTail, fusedTail, tailFused, bitTest, zeroFlag, wires, Instr.wires,
+      wires_append] at hq ⊢ <;> tauto
 
 theorem zeroWith_pair_wires (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c : Wire) (bs : List ZeroBit) :
     wires (zeroWith (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) c bs) ⊆
@@ -606,8 +678,8 @@ theorem zeroWith_pair_wires (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c
 theorem pairEqual_wires (L : ControlledPointLayout) (hw : L.Widths) (t₁ t₂ : Wire) (e₁ e₂ : Bool)
     (C D : Point) :
     wires (pairEqual L t₁ t₂ e₁ e₂ C D) ⊆
-      (L.control :: yLow L :: t₁ :: t₂ :: (pairSrc L ++ L.dialogPool.take 257)).toFinset := by
-  have hperm := zeroPorts_perm (pairSrc L) (L.dialogPool.take 257)
+      (L.control :: yLow L :: t₁ :: t₂ :: (pairSrc L ++ L.dialogPool.take 256)).toFinset := by
+  have hperm := zeroPorts_perm (pairSrc L) (L.dialogPool.take 256)
     ((pairSrc_length L hw).trans (pairWork_length L hw).symm)
   have hx := xorConstant_wires_subset (pairSrc L) (pairCode C)
   have hz := zeroWith_pair_wires (yLow L) t₁ t₂ e₁ (yBit C) e₂ (yBit D) L.control (pairPorts L)
@@ -632,16 +704,15 @@ theorem pairEqual_sites (L : ControlledPointLayout) (hw : L.Widths) (t₁ t₂ :
   intro q hq
   have h := pairEqual_wires L hw t₁ t₂ e₁ e₂ C D hq
   have hy := yLow_mem L hw
-  have hpool := CompressedPointDialog.prefix_small L hw 257 (by decide)
+  have hpool := CompressedPointDialog.prefix_small L hw 256 (by decide)
   simp only [List.mem_toFinset, List.mem_cons, List.mem_append, pairSrc] at h
   simp only [CompressedPointDialog.sites, CompressedPointSquare.residents,
     PointAddLayout.pointWires, List.mem_toFinset, List.mem_append, List.mem_cons]
-  rcases h with rfl | rfl | rfl | rfl | (rfl | h) | h
+  rcases h with rfl | rfl | rfl | rfl | h | h
   · simp
   · simp [hy]
   · simp [ht1]
   · simp [ht2]
-  · simp
   · simp [h]
   · exact Or.inr (hpool h)
 
@@ -649,7 +720,7 @@ theorem pairEqual_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
     (t₁ t₂ : Wire) (ht1 : t₁ ∈ L.inPlaceFlags) (ht2 : t₂ ∈ L.inPlaceFlags) (h12 : t₁ ≠ t₂)
     (e₁ e₂ : Bool) (C D : Point) : GatePhysical (pairEqual L t₁ t₂ e₁ e₂ C D) := by
   have hnd := pair_nodup L hw hn t₁ t₂ ht1 ht2 h12
-  have hperm := zeroPorts_perm (pairSrc L) (L.dialogPool.take 257)
+  have hperm := zeroPorts_perm (pairSrc L) (L.dialogPool.take 256)
     ((pairSrc_length L hw).trans (pairWork_length L hw).symm)
   have hchain : (L.control :: yLow L :: t₁ :: t₂ :: (pairPorts L).flatMap ZeroBit.wires).Nodup :=
     ((((hperm.cons _).cons _).cons _).cons _).nodup_iff.mpr hnd
@@ -663,11 +734,11 @@ theorem pairEqual_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
   | nil =>
     simp only [List.flatMap_nil, List.nodup_cons, List.mem_cons, List.not_mem_nil, not_or,
       or_false] at hchain
-    obtain ⟨⟨hcy, hc1, hc2⟩, ⟨hy1, hy2⟩, -, -⟩ := hchain
+    obtain ⟨⟨hcy, hc1, hc2⟩, ⟨hy1, hy2⟩, h12', -⟩ := hchain
     simp only [zeroWith]
     cases e₁ <;> cases e₂ <;> cases (yBit C) <;> cases (yBit D) <;>
-      simp [pairTail, bitTest, zeroFlag, GatePhysical, PhysicalInstr, ProperGate, gatePhysical_append,
-        hc1, hc2, hy1, hy2]
+      simp [pairTail, plainTail, fusedTail, tailFused, bitTest, zeroFlag, GatePhysical, PhysicalInstr,
+        ProperGate, gatePhysical_append, hc1, hc2, hy1, hy2, h12]
   | cons b bs ih =>
     have hnames : (c::y::t₁::t₂::b.input::b.work::bs.flatMap ZeroBit.wires).Nodup := hchain
     have hni := hnames
@@ -686,7 +757,8 @@ theorem zeroWith_pair_slots (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c
   induction bs generalizing c with
   | nil =>
     cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
-      simp [zeroWith, pairTail, bitTest, zeroFlag, gateSlots_append, gateSlots_cons, instructionSlots]
+      simp [zeroWith, pairTail, plainTail, fusedTail, tailFused, bitTest, zeroFlag, gateSlots_append,
+        gateSlots_cons, instructionSlots]
   | cons b bs ih =>
     have h := ih b.work
     simp only [zeroWith, chainAnd, chainErase, gateSlots_append, List.length_cons]

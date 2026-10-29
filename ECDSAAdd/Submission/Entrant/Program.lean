@@ -228,9 +228,10 @@ theorem zeroFlag_counts (f c t : Wire) :
   simp [zeroFlag, toffoliCount, measurementCount]
 
 theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
-    (hn : L.wires.Nodup) (C : Point) (cx cy : Fp) :
-    toffoliCount (finiteProgram L C cx cy)≤2212778 ∧
-    measurementCount (finiteProgram L C cx cy)=1553319 := by
+    (hn : L.wires.Nodup) (C : Point) (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy)
+    (hC : C = .some hc) :
+    toffoliCount (finiteProgram L C cx cy)≤2212772 ∧
+    measurementCount (finiteProgram L C cx cy)=1553315 := by
   have h := CompressedPointDialog.finite_counts L hw hn C cx cy
   have g0 := CompressedPointDialog.generic_counts L hw hn cx cy
   have g1 := fastGeneric_counts L hw cx cy
@@ -256,6 +257,14 @@ theorem finiteProgram_counts (L : ControlledPointLayout) (hw : L.Widths)
   have p2 := pairEqual_counts L hw L.infinitySelect L.core.equalNegY true (exceptionBit C) C (-C)
   have z1 := zeroFlag_counts L.point.finite L.control L.infinitySelect
   have z2 := zeroFlag_counts L.point.finite L.control L.genericSelect
+  have c1 : tailCost (decide (cy≠-cy)) (yBit C) true (yBit (-C)) = 1 := by
+    subst hC
+    rw [cy_ne_neg hc, yBit_neg hc]
+    cases yBit (.some hc) <;> decide
+  have c2 : tailCost true (yBit C) (exceptionBit C) (yBit (-C)) ≤ 1 := by
+    subst hC
+    rw [yBit_neg hc]
+    cases yBit (.some hc) <;> cases exceptionBit (.some hc) <;> decide
   rw [hzl] at e1 e2 e3 e4 e5 e6 e7 e8
   simp only [pointCompressedDialogFinite, toffoliCount_append, measurementCount_append] at h
   simp only [finiteProgram, toffoliCount_append, measurementCount_append]
