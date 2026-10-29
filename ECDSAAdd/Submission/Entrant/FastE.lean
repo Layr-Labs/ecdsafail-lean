@@ -51,9 +51,13 @@ theorem fastGenericE (cx cy : Fp) : wires (fastGeneric L cx cy) ⊆ (sitesE L).t
   have cn : wires (fastConstNeg L cx) ⊆ (sitesE L).toFinset :=
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (fastConstE L hw L.point.x (Or.inl rfl))
+  have cr : wires (fastConstRefl L (3*cx-1)) ⊆ (sitesE L).toFinset :=
+    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
+      (fastConstE L hw L.point.x (Or.inl rfl))
+  have sq : wires (squareNR L) ⊆ (sitesE L).toFinset := (squareNR_wires L).trans (squareE L hw hn)
   simp only [fastGeneric, wires_append, Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, arithE L hw hn false⟩, squareE L hw hn⟩,
-    ca _ (Or.inl rfl) _⟩, arithE L hw hn true⟩, cn⟩, ca _ (Or.inr rfl) _⟩
+  exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _, ca _ (Or.inr rfl) _⟩, arithE L hw hn false⟩, sq⟩,
+    cr⟩, arithE L hw hn true⟩, cn⟩, ca _ (Or.inr rfl) _⟩
 
 theorem fastGeneric_ok {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     GenericOK L hc (fastGeneric L cx cy) :=
