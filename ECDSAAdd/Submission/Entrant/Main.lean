@@ -1,5 +1,5 @@
 import ECDSAAdd.Submission.Entrant.FlagMerge
-import ECDSAAdd.Submission.Entrant.QZ
+import ECDSAAdd.Submission.Entrant.FastE3
 
 /-! Entrant: Skywalk with flag-only infinity tests (`ZeroFlag.lean`), short and
 paired point comparisons (`ShortEqual.lean`, `PairEqual.lean`), compare-first
@@ -20,7 +20,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2176928, 1517479, 1892, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2175906, 1516459, 1892, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -36,7 +36,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgramN_support layout layout_widths layout_nodup _ cy _ hG).trans
         (sitesN_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2176928 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2175906 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -46,7 +46,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2176928 := by
     change toffoliCount (finiteProgramN layout (.some hc) cy (fastGeneric3 layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1517479 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1516459 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -64,14 +64,6 @@ theorem io_subset_sitesN : ioWires ⊆ (sitesN layout).toFinset := by
   · exact point_N layout w hp
   · rw [hc]; exact control_N layout
 
-theorem io_subset_sitesNZ : ioWires ⊆ (Z.sitesN layout).toFinset := by
-  intro w hw
-  have h := io_partition w hw
-  apply List.mem_toFinset.mpr
-  rcases h with hp | hc
-  · exact Z.point_N layout w hp
-  · rw [hc]; exact Z.control_N layout
-
 /-- Static support: point, control, five classification flags, and the
 certified pool inventory without its idle site; `core.generic` and
 `infinitySelect` are both unused (`FlagMerge.lean`). -/
@@ -82,10 +74,10 @@ theorem program_qubits (C : Point) : qubits (program C) ≤ 1892 := by
     rw [qubits_empty]
     decide
   | @some cx cy hc =>
-    have support := Z.finiteProgramN_support layout layout_widths layout_nodup (.some hc) cy _
-      (Z.fastGeneric3G layout layout_widths layout_nodup cx cy)
-    have card := Finset.card_le_card (Finset.union_subset io_subset_sitesNZ support)
-    exact card.trans ((List.toFinset_card_le _).trans_eq (Z.sitesN_length layout layout_widths))
+    have support := finiteProgramN_support layout layout_widths layout_nodup (.some hc) cy _
+      (fastGeneric3G layout layout_widths layout_nodup cx cy)
+    have card := Finset.card_le_card (Finset.union_subset io_subset_sitesN support)
+    exact card.trans ((List.toFinset_card_le _).trans_eq (sitesN_length layout layout_widths))
 
 theorem program_physical (C : Point) : GatePhysical (program C) := by
   cases C with
@@ -109,7 +101,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1517479
+    change measurementCount (normalizeProgram (program C)) ≤ 1516459
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by

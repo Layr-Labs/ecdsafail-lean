@@ -104,7 +104,7 @@ theorem arith3G (multiply : Bool) :
     rw [← this, swap2_involutive]
   have mem (k : Nat) (hk : k ∈ indices) : base k ∈ slots.toFinset :=
     List.mem_toFinset.mpr (List.mem_map.mpr ⟨k, hk, rfl⟩)
-  have hidx (k : Nat) (h : k = 2313 ∨ k = 2403 ∨ k = 2405 ∨ k = 2406 ∨ k = 2408 ∨ k = 769) : k ∈ indices := by
+  have hidx (k : Nat) (h : k = 2313 ∨ k = 2403 ∨ k = 2405 ∨ k = 2406 ∨ k = 2407 ∨ k = 2408 ∨ k = 769) : k ∈ indices := by
     simp only [indices, List.mem_append, List.mem_range'_1]; omega
   apply List.mem_toFinset.mpr
   apply G_of_sites L _ (List.mem_toFinset.mp inv)
@@ -144,6 +144,12 @@ theorem arith3G (multiply : Bool) :
     have himg : pointWireFn L (base 2405) = L.genericSelect := by
       rw [pointWireFn_base]; exact (pointIndexWire_metadata L).2.2.2.2.2.1
     have := avoid 2405 (mem _ (hidx 2405 (by omega))) (himg.trans e.symm)
+    rw [swap2_fix _ (by decide) (by decide)] at this
+    subst this; exact hgood (by simp [base])
+  · intro e
+    have himg : pointWireFn L (base 2407) = L.core.equalNegY := by
+      rw [pointWireFn_base]; exact (pointIndexWire_metadata L).2.2.2.2.2.2.2.1
+    have := avoid 2407 (mem _ (hidx 2407 (by omega))) (himg.trans e.symm)
     rw [swap2_fix _ (by decide) (by decide)] at this
     subst this; exact hgood (by simp [base])
 
