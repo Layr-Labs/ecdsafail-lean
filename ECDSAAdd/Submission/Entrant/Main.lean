@@ -1,6 +1,8 @@
 import ECDSAAdd.Submission.Entrant.Program
 
-/-! Entrant: Skywalk with flag-only infinity tests (see `ZeroFlag.lean`).
+/-! Entrant: Skywalk with flag-only infinity tests (see `ZeroFlag.lean`),
+shared-chain tests against `C` and `-C` (see `SharedPoint.lean`), and
+258-bit point tests (see `PointTest.lean`).
 All semantics and metric definitions remain in the protected challenge. -/
 namespace ECDSAAdd.Entrant
 open Arithmetic Secp256k1 Challenge Baselines
@@ -13,7 +15,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2214832, 1555372, 1899, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2214319, 1554856, 1899, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -27,12 +29,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((finiteProgram_support layout layout_widths layout_nodup _ cx cy).trans
         (sites_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2214832 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2214319 := by
   cases C with
   | zero => simp [program, toffoliCount]
-  | @some cx cy hc => exact (finiteProgram_counts layout layout_widths layout_nodup _ cx cy).1.le
+  | @some cx cy hc => exact (finiteProgram_counts layout layout_widths layout_nodup _ cx cy).1
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1555372 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1554856 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc => exact (finiteProgram_counts layout layout_widths layout_nodup _ cx cy).2.le
@@ -67,7 +69,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1555372
+    change measurementCount (normalizeProgram (program C)) ≤ 1554856
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
