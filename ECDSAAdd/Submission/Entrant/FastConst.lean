@@ -71,6 +71,24 @@ def fastNeg (p k : Nat) : Program :=
   eraseLtChain K.src K.out (K.carry.take (K.out.length-1)) K.cin K.flag++
   notRegister K.src++maskedConstant g K.src (2^K.out.length-1-k)
 
+
+/-- `x ↦ g ? (k - x mod p) : (p - 1 - x)` using `3n-2` Toffolis. -/
+def fastRefl (p k : Nat) : Program :=
+  maskedConstant g K.src (2^K.out.length-1-k)++notRegister K.src++
+  compareLt none K.src K.out K.carry K.cin K.flag++
+  notRegister K.src++maskedConstant g K.src (2^K.out.length-1-k)++
+  notRegister K.out++
+  xorConstant K.src p++maskedConstant g K.src p++
+  maskedConstant g K.src (k+1)++maskedConstant K.flag K.src (k+1)++
+  maskedConstant K.flag K.src ((k+1+p)%2^K.out.length)++
+  mappedAdd (mappedRead K.src false) K.out (K.carry.take (K.out.length-1)) K.cin++
+  maskedConstant K.flag K.src ((k+1+p)%2^K.out.length)++maskedConstant K.flag K.src (k+1)++
+  maskedConstant g K.src (k+1)++
+  maskedConstant g K.src p++xorConstant K.src p++
+  maskedConstant g K.src (2^K.out.length-1-k)++notRegister K.src++
+  eraseLtChain K.src K.out (K.carry.take (K.out.length-1)) K.cin K.flag++
+  notRegister K.src++maskedConstant g K.src (2^K.out.length-1-k)
+
 section Facts
 variable {K g}
 
@@ -230,6 +248,36 @@ theorem step_not_out (base : BasisState) (S O : Nat) (F : Bool) :
       change (if q∈K.out then !s.basis q else s.basis q)=_
       have : q∉K.out := fun hs => hq (by simp [mutable,hs])
       simp [this,h.2.2.2 q hq]
+
+theorem step_xor_src (base : BasisState) (S O : Nat) (F : Bool) (v : Nat) (hv : v<2^n) :
+    Triple (Frame K base S O F) (xorConstant K.src v) (Frame K base (S^^^v) O F) := by
+  intro s m h
+  obtain ⟨hp,he,hval⟩ := xorConstant_correct K.src (src_nodup hn) v (by rw [hw.src]; exact hv) s m
+  refine ⟨hp,?_,?_,?_,?_⟩
+  · rw [hval,h.1]
+  · rw [regValue_congr _ _ _ (fun q hq => he q (out_not_src hn q hq))]; exact h.2.1
+  · rw [he _ (flag_not_src hn)]; exact h.2.2.1
+  · intro q hq; rw [he q (fun hs => hq (by simp [mutable,hs]))]; exact h.2.2.2 q hq
+
+theorem step_not_out_all (base : BasisState) (S O : Nat) (F : Bool) :
+    Triple (Frame K base S O F) (notRegister K.out) (Frame K base S (2^n-1-O) F) := by
+  intro s m h
+  rw [notRegister_correct K.out (out_nodup hn)]
+  refine ⟨rfl,?_,?_,?_,?_⟩
+  · change regValue K.src (fun w => if w∈K.out then !s.basis w else s.basis w)=_
+    rw [regValue_congr K.src _ s.basis (by
+      intro w hw; have : w∉K.out := fun h => out_not_src hn w h hw
+      simp [this])]
+    exact h.1
+  · change regValue K.out (fun w => if w∈K.out then !s.basis w else s.basis w)=_
+    rw [regValue_congr K.out _ (fun w => !s.basis w) (by intro w hw; simp [hw]),
+      regValue_complement,h.2.1,hw.out]
+  · change (if K.flag∈K.out then !s.basis K.flag else s.basis K.flag)=_
+    simp [flag_not_out hn,h.2.2.1]
+  · intro q hq
+    change (if q∈K.out then !s.basis q else s.basis q)=_
+    have : q∉K.out := fun hs => hq (by simp [mutable,hs])
+    simp [this,h.2.2.2 q hq]
 
 variable (base : BasisState) (hcarry : ∀q∈K.carry,base q=false) (hcin : base K.cin=false)
 include hcarry hcin
@@ -456,6 +504,84 @@ theorem fastNeg_triple (p k : Nat) (hp : p<2^n) (hk : k<p) (X : Nat) (hX : X<p) 
             rw [Nat.mod_eq_sub_mod (by omega),Nat.mod_eq_of_lt (by omega)]; omega
           simp [hP,e1,e2,w,v]
 
+theorem fastRefl_triple (p k : Nat) (hp : p<2^n) (hk : k<p) (X : Nat) (hX : X<p) :
+    Triple (Frame K base 0 X false) (fastRefl K g p k)
+      (Frame K base 0 (if base g then (k+p-X)%p else p-1-X) false) := by
+  have hN : K.out.length=n := hw.out
+  have hA : 2^K.out.length-1-k<2^n := by rw [hN]; omega
+  have hk1 : k+1<2^n := by omega
+  have he : (k+1+p)%2^K.out.length<2^n := by rw [hN]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
+  unfold fastRefl
+  refine Triple.conseq (fun _ h => h) ((((((((((((((((((((((
+    step_mask_g hn n hw base 0 X false _ hA).seq
+    (step_not_src hn n hw base _ _ _)).seq
+    (step_compare hn n hw base hcarry hcin _ _ _)).seq
+    (step_not_src hn n hw base _ _ _)).seq
+    (step_mask_g hn n hw base _ _ _ _ hA)).seq
+    (step_not_out_all hn n hw base _ _ _)).seq
+    (step_xor_src hn n hw base _ _ _ _ hp)).seq
+    (step_mask_g hn n hw base _ _ _ _ hp)).seq
+    (step_mask_g hn n hw base _ _ _ _ hk1)).seq
+    (step_mask_flag hn n hw base _ _ _ _ hk1)).seq
+    (step_mask_flag hn n hw base _ _ _ _ he)).seq
+    (step_add hn n hw base hcarry hcin npos _ _ _)).seq
+    (step_mask_flag hn n hw base _ _ _ _ he)).seq
+    (step_mask_flag hn n hw base _ _ _ _ hk1)).seq
+    (step_mask_g hn n hw base _ _ _ _ hk1)).seq
+    (step_mask_g hn n hw base _ _ _ _ hp)).seq
+    (step_xor_src hn n hw base _ _ _ _ hp)).seq
+    (step_mask_g hn n hw base _ _ _ _ hA)).seq
+    (step_not_src hn n hw base _ _ _)).seq
+    (step_erase_so hn n hw base hcarry hcin npos _ _ _ ?hF)).seq
+    (step_not_src hn n hw base _ _ _)).seq
+    (step_mask_g hn n hw base _ _ _ _ hA)) ?post
+  case hF =>
+    rw [hN]
+    cases hG : base g
+    · have w : (p+(2^n-1-X))%2^n=p-1-X := by
+        rw [show p+(2^n-1-X)=(p-1-X)+2^n by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)]
+      have hP : ¬2^n-1<X := by omega
+      simp [hP,w]; omega
+    · have e1 : 2^n-1-(2^n-1-k)=k := by omega
+      have e2 : 2^n-1-(2^n-1-(2^n-1-k))=2^n-1-k := by omega
+      by_cases hP : k<X
+      · have w : ((k+1+p)%2^n+(2^n-1-X))%2^n=k+p-X := by
+          rw [Nat.mod_add_mod,show k+1+p+(2^n-1-X)=(k+p-X)+2^n by omega,Nat.add_mod_right,
+            Nat.mod_eq_of_lt (by omega)]
+        simp [hP,e1,e2,w]; omega
+      · have w : (k+1+(2^n-1-X))%2^n=k-X := by
+          rw [show k+1+(2^n-1-X)=(k-X)+2^n by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)]
+        simp [hP,e1,e2,w]
+  case post =>
+    intro s h
+    refine ⟨h.1.trans ?_,h.2.1.trans ?_,h.2.2.1,h.2.2.2⟩
+    · rw [hN]
+      cases hG : base g
+      · have hP : ¬2^n-1<X := by omega
+        simp [hP]
+      · have e1 : 2^n-1-(2^n-1-k)=k := by omega
+        have e2 : 2^n-1-(2^n-1-(2^n-1-k))=2^n-1-k := by omega
+        by_cases hP : k<X <;> simp [hP,e1,e2]
+    · rw [hN]
+      cases hG : base g
+      · have w : (p+(2^n-1-X))%2^n=p-1-X := by
+          rw [show p+(2^n-1-X)=(p-1-X)+2^n by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)]
+        have hP : ¬2^n-1<X := by omega
+        simp [hP,w]
+      · have e1 : 2^n-1-(2^n-1-k)=k := by omega
+        have e2 : 2^n-1-(2^n-1-(2^n-1-k))=2^n-1-k := by omega
+        by_cases hP : k<X
+        · have w : ((k+1+p)%2^n+(2^n-1-X))%2^n=k+p-X := by
+            rw [Nat.mod_add_mod,show k+1+p+(2^n-1-X)=(k+p-X)+2^n by omega,Nat.add_mod_right,
+              Nat.mod_eq_of_lt (by omega)]
+          have v : (k+p-X)%p=k+p-X := Nat.mod_eq_of_lt (by omega)
+          simp [hP,e1,e2,w,v]
+        · have w : (k+1+(2^n-1-X))%2^n=k-X := by
+            rw [show k+1+(2^n-1-X)=(k-X)+2^n by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)]
+          have v : (k+p-X)%p=k-X := by
+            rw [Nat.mod_eq_sub_mod (by omega),Nat.mod_eq_of_lt (by omega)]; omega
+          simp [hP,e1,e2,w,v]
+
 end Main
 
 section Wrappers
@@ -530,6 +656,36 @@ theorem fastNeg_counts (n p k : Nat) (hw : K.Widths n) (npos : 0<n) :
     (by rw [hw.src,hw.out]) (by simp [hw.carry,hw.out]; omega)
   simp only [fastNeg,maskedNot,toffoliCount_append,measurementCount_append,m1.1,m1.2,m2.1,m2.2,
     m3.1,m3.2,m4.1,m4.2,m5.1,m5.2,nr.1,nr.2,cmp.1,cmp.2.1,ad.1,ad.2,er.1,er.2]
+  simp only [hw.src,hw.out,Option.isSome_none,Bool.false_eq_true,if_false]
+  omega
+
+theorem fastRefl_correct (hn : (g::K.wires).Nodup) (n p k : Nat) (hw : K.Widths n) (npos : 0<n)
+    (hp : p<2^n) (hk : k<p) (X : Nat) (hX : X<p) (s : State) (m : List Bool)
+    (hs : regValue K.src s.basis=0) (hx : regValue K.out s.basis=X) (hf : s.basis K.flag=false)
+    (hc : ∀q∈K.carry,s.basis q=false) (hi : s.basis K.cin=false) :
+    (run (fastRefl K g p k) m s).phase=s.phase ∧
+    regValue K.out (run (fastRefl K g p k) m s).basis=(if s.basis g then (k+p-X)%p else p-1-X) ∧
+    ∀q,q∉K.out → (run (fastRefl K g p k) m s).basis q=s.basis q :=
+  run_of_triple _ X _ s (fastRefl_triple hn n hw npos s.basis hc hi p k hp hk X hX) hs hx hf m
+
+theorem fastRefl_counts (n p k : Nat) (hw : K.Widths n) (npos : 0<n) :
+    toffoliCount (fastRefl K g p k)=3*n-2 ∧ measurementCount (fastRefl K g p k)=3*n-1 := by
+  have m1 := maskedConstant_counts g K.src (2^K.out.length-1-k)
+  have m2 := maskedConstant_counts g K.src (k+1)
+  have m3 := maskedConstant_counts K.flag K.src (k+1)
+  have m4 := maskedConstant_counts K.flag K.src ((k+1+p)%2^K.out.length)
+  have m6 := maskedConstant_counts g K.src p
+  have x1 := xorConstant_counts K.src p
+  have nr := notRegister_counts K.src
+  have no := notRegister_counts K.out
+  have cmp := (compareLt_counts none K.src K.out K.carry K.cin K.flag (by rw [hw.src,hw.out])
+    (by rw [hw.carry,hw.out]))
+  have ad := mappedAdd_counts (mappedRead K.src false) K.out (K.carry.take (K.out.length-1)) K.cin
+    (by rw [mappedRead_length,hw.src,hw.out]) (by simp [hw.carry,hw.out]; omega)
+  have er := eraseLtChain_counts K.src K.out (K.carry.take (K.out.length-1)) K.cin K.flag
+    (by rw [hw.src,hw.out]) (by simp [hw.carry,hw.out]; omega)
+  simp only [fastRefl,toffoliCount_append,measurementCount_append,m1.1,m1.2,m2.1,m2.2,
+    m3.1,m3.2,m4.1,m4.2,m6.1,m6.2,x1.1,x1.2,nr.1,nr.2,no.1,no.2,cmp.1,cmp.2.1,ad.1,ad.2,er.1,er.2]
   simp only [hw.src,hw.out,Option.isSome_none,Bool.false_eq_true,if_false]
   omega
 
@@ -616,6 +772,23 @@ theorem fastNeg_support (p k : Nat) (hw : ∃ n, K.Widths n) :
   simp only [fastNeg,maskedNot,wires_append]
   repeat' (first | exact hm _ hg _ | exact hm _ hf _ | exact ho _ | exact hnr | exact hc | exact ha | exact he | apply Finset.union_subset)
 
+theorem fastRefl_support (p k : Nat) (hw : ∃ n, K.Widths n) :
+    wires (fastRefl K g p k)⊆(g::K.wires).toFinset := by
+  obtain ⟨hm,_,hnr,hc,ha,_,he⟩ := parts_support (K:=K) (g:=g) hw
+  have hg : g∈g::K.wires := List.mem_cons_self ..
+  have hf : K.flag∈g::K.wires := by simp [MeasuredCanonicalModLayout.wires]
+  have hx (v : Nat) : wires (xorConstant K.src v)⊆(g::K.wires).toFinset := by
+    intro q hq
+    have h' := List.mem_toFinset.mp (xorConstant_wires_subset K.src v hq)
+    simp [MeasuredCanonicalModLayout.wires,h']
+  have ho : wires (notRegister K.out)⊆(g::K.wires).toFinset := by
+    intro q hq
+    rw [notRegister_wires] at hq
+    have h' := List.mem_toFinset.mp hq
+    simp [MeasuredCanonicalModLayout.wires,h']
+  simp only [fastRefl,wires_append]
+  repeat' (first | exact hm _ hg _ | exact hm _ hf _ | exact hx _ | exact ho | exact hnr | exact hc | exact ha | exact he | apply Finset.union_subset)
+
 theorem fastAdd_physical (hn : (g::K.wires).Nodup) (c k : Nat) : GatePhysical (fastAdd K g c k) := by
   have m1 := maskedConstant_physical g K.src (c+k) (g_not_src hn)
   have m2 := maskedConstant_physical g K.src k (g_not_src hn)
@@ -666,6 +839,54 @@ theorem fastNeg_physical (hn : (g::K.wires).Nodup) (p k : Nat) : GatePhysical (f
     omega)
   simp only [fastNeg,maskedNot,gatePhysical_append]
   tauto
+
+theorem fastRefl_physical (hn : (g::K.wires).Nodup) (p k : Nat) : GatePhysical (fastRefl K g p k) := by
+  have m1 := maskedConstant_physical g K.src (2^K.out.length-1-k) (g_not_src hn)
+  have m2 := maskedConstant_physical g K.src (k+1) (g_not_src hn)
+  have m3 := maskedConstant_physical K.flag K.src (k+1) (flag_not_src hn)
+  have m4 := maskedConstant_physical K.flag K.src ((k+1+p)%2^K.out.length) (flag_not_src hn)
+  have m6 := maskedConstant_physical g K.src p (g_not_src hn)
+  have x1 := xorConstant_physical K.src p
+  have nr := notRegister_physical K.src
+  have no := notRegister_physical K.out
+  have cp := compareLt_physical none K.src K.out K.carry K.cin K.flag (by
+    apply List.nodup_iff_count.mpr; intro q; have h := List.nodup_iff_count_le_one.mp hn q
+    simp only [MeasuredCanonicalModLayout.wires,List.count_cons,List.count_append,List.count_nil] at h ⊢
+    omega) (by simp)
+  have nd := add_nodup hn (K.out.length-1)
+  have ap := mappedAdd_physical (mappedRead K.src false) K.out (K.carry.take (K.out.length-1)) K.cin
+    (by simpa using nd.1) (by
+      intro b hb q hq
+      apply nd.2 q
+      simp only [mappedWires,List.mem_flatMap]
+      exact ⟨b,hb,by simpa using hq⟩)
+  have ep := eraseLtChain_physical K.src K.out (K.carry.take (K.out.length-1)) K.cin K.flag (by
+    apply List.nodup_iff_count.mpr; intro q; have h := List.nodup_iff_count_le_one.mp hn q
+    have t := (List.take_sublist (K.out.length-1) K.carry).count_le q
+    simp only [MeasuredCanonicalModLayout.wires,List.count_cons,List.count_append,List.count_nil] at h t ⊢
+    omega)
+  simp only [fastRefl,gatePhysical_append]
+  tauto
+
+theorem fastRefl_gateSlots_le (n p k : Nat) (hw : K.Widths n) :
+    Challenge.gateSlots (fastRefl K g p k) ≤ 80*n+8 := by
+  have m1 := Baselines.maskedConstant_gateSlots_le g K.src (2^K.out.length-1-k)
+  have m2 := Baselines.maskedConstant_gateSlots_le g K.src (k+1)
+  have m3 := Baselines.maskedConstant_gateSlots_le K.flag K.src (k+1)
+  have m4 := Baselines.maskedConstant_gateSlots_le K.flag K.src ((k+1+p)%2^K.out.length)
+  have m6 := Baselines.maskedConstant_gateSlots_le g K.src p
+  have x1 := Baselines.xorConstant_gateSlots_le K.src p
+  have cp := Baselines.compareLt_gateSlots_le none K.src K.out K.carry K.cin K.flag
+  have ap := Baselines.mappedAdd_gateSlots_le (mappedRead K.src false) K.out
+    (K.carry.take (K.out.length-1)) K.cin
+  have ep := Baselines.eraseLt_gateSlots_le K.src K.out (K.carry.take (K.out.length-1)) K.cin K.flag
+  rw [mappedRead_length] at ap
+  simp only [fastRefl,Challenge.gateSlots_append,Baselines.notRegister_gateSlots]
+  have no : K.out.length=n := hw.out
+  have cp2 := cp.trans (le_of_eq (show 10*K.src.length+2*K.out.length+4=12*n+4 by
+    rw [hw.src,hw.out]; ring))
+  rw [hw.src] at m1 m2 m3 m4 m6 x1 ap ep ⊢
+  omega
 
 theorem fastAdd_gateSlots_le (n c k : Nat) (hw : K.Widths n) :
     Challenge.gateSlots (fastAdd K g c k) ≤ 60*n+8 := by
