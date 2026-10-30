@@ -9,7 +9,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       Edges.wrapper layout C cy (OwnOneFlagActual.gen layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2154643,1500616,1592,50000004⟩
+def bounds : Challenge.Bounds := ⟨2154641,1500618,1592,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -28,7 +28,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154643 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154641 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
@@ -40,10 +40,10 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154643 := by
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).1
     have gn:=(OwnOneFlagActual.counts_eq layout layout_widths cx cy).1
     have ga:=(OwnDiagEndpointActual.genE_counts_diff layout layout_widths cx cy).1
-    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnOneFlagActual.gen layout cx cy))≤2154643
+    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnOneFlagActual.gen layout cx cy))≤2154641
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1500616 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1500618 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc =>
@@ -55,7 +55,7 @@ theorem program_measurements (C : Point) : measurementCount (program C)≤150061
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).2
     have gn:=(OwnOneFlagActual.counts_eq layout layout_widths cx cy).2
     have ga:=(OwnDiagEndpointActual.genE_counts_diff layout layout_widths cx cy).2
-    change measurementCount (Edges.wrapper layout (.some hc) cy (OwnOneFlagActual.gen layout cx cy))≤1500616
+    change measurementCount (Edges.wrapper layout (.some hc) cy (OwnOneFlagActual.gen layout cx cy))≤1500618
     omega
 
 theorem program_qubits (C : Point) : qubits (program C)≤1592 := by
@@ -84,7 +84,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1500616
+    change measurementCount (normalizeProgram (program C))≤1500618
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1592
