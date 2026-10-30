@@ -37600,6 +37600,1333 @@ end ECDSAAdd.Entrant.WrapperOB5
 end
 
 
+section
+
+section
+-- ===== SelCore =====
+
+/-! Selector-free transcript windows.
+
+Inside the lane kernel every field-cell window is
+`transcriptSelectWindow b source flag c body`, whose head stores
+`flag ^= b ∧ (source ⊕ c)` with one Toffoli.  When the enable bit `b` is one,
+the window is exactly `selW source flag body =
+[CX source flag] ++ body ++ [measureX flag [] [Z source]]`: both heads give
+`flag ⊕ source`, and both tails change the phase by `m ∧ (flag ⊕ source)` and
+clear the flag.  `Sel b k P' P` packages this replacement: the two programs
+agree on every State with `b` set, `P'` never touches `b`, and `P'` has `k`
+fewer Toffolis, the same measurements and no new kinds of instructions. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.SW
+open ECDSAAdd.Arithmetic
+
+def selW (source flag : Wire) (body : Program) : Program :=
+  [.CX source flag] ++ body ++ [.measureX flag [] [.Z source]]
+
+theorem mem_wires_iff (P : Program) (q : Wire) : q∈wires P ↔ ∃ i∈P, q∈i.wires := by
+  induction P with
+  | nil => simp [wires]
+  | cons i p ih =>
+    simp only [wires,Finset.mem_union,ih,List.mem_cons]
+    constructor
+    · rintro (h|⟨j,hj,hq⟩)
+      · exact ⟨i,Or.inl rfl,h⟩
+      · exact ⟨j,Or.inr hj,hq⟩
+    · rintro ⟨j,(rfl|hj),hq⟩
+      · exact Or.inl hq
+      · exact Or.inr ⟨j,hj,hq⟩
+
+theorem window_split (b source flag : Wire) (c : Bool) (P : Program) :
+    transcriptSelectWindow b source flag c P=
+      (transcriptSelectCompute b source flag c++transcriptSelectExpose flag c)++
+        (P++(transcriptSelectExpose flag c++transcriptSelectErase b source flag c)) := by
+  simp only [transcriptSelectWindow,List.append_assoc]
+
+theorem distinct3 (b source flag : Wire) (hn : [b,source,flag].Nodup) :
+    b≠source ∧ b≠flag ∧ source≠flag := by
+  simpa [List.nodup_cons,List.mem_cons,and_assoc] using hn
+
+theorem sel_head (b source flag : Wire) (c : Bool) (hn : [b,source,flag].Nodup)
+    (s : State) (m : List Bool) (hb : s.basis b=true) :
+    run (transcriptSelectCompute b source flag c ++ transcriptSelectExpose flag c) m s=
+      run [.CX source flag] m s := by
+  have h := distinct3 b source flag hn
+  rw [run_append,transcriptSelectCompute_correct b source flag c hn]
+  apply State.extensionality
+  · cases c <;> rfl
+  · funext q
+    by_cases hq : q=flag
+    · subst q
+      cases c <;> cases hs : s.basis source <;> cases hf : s.basis flag <;>
+        simp [transcriptSelectExpose,run,writeBit,Function.update,hb,hs,hf]
+    · cases c <;> simp [transcriptSelectExpose,run,writeBit,Function.update,hq]
+
+theorem sel_tail (b source flag : Wire) (c : Bool) (hn : [b,source,flag].Nodup)
+    (u : State) (r : List Bool) (hb : u.basis b=true) :
+    run (transcriptSelectExpose flag c ++ transcriptSelectErase b source flag c) r u=
+      run [.measureX flag [] [.Z source]] r u := by
+  have h := distinct3 b source flag hn
+  have hbf : flag≠b := Ne.symm h.2.1
+  have hsf : source≠flag := h.2.2
+  have hfs : flag≠source := Ne.symm h.2.2
+  have hbf' : b≠flag := h.2.1
+  apply State.extensionality
+  · rcases r with _|⟨x,r⟩
+    · cases c <;> simp [transcriptSelectExpose,transcriptSelectErase,run,measureAndCorrect,correct]
+    · cases c <;> cases x <;> cases hf : u.basis flag <;> cases hs : u.basis source <;>
+        simp [transcriptSelectExpose,transcriptSelectErase,run,measureAndCorrect,correct,
+          writeBit,Function.update,hf,hs,hb,hbf,hsf,hfs,hbf',h.1,Ne.symm h.1]
+  · funext q
+    by_cases hq : q=flag
+    · subst q
+      cases c <;> simp [transcriptSelectExpose,transcriptSelectErase,run,measureAndCorrect,
+          writeBit,Function.update]
+    · cases c <;> simp [transcriptSelectExpose,transcriptSelectErase,run,measureAndCorrect,
+          writeBit,Function.update,hq]
+
+theorem sel_tail_keep (source flag b : Wire) (hbf : b≠flag) (u : State) (r : List Bool) :
+    (run [.measureX flag [] [.Z source]] r u).basis b=u.basis b := by
+  cases hm : r.headD false <;>
+    simp [run,measureAndCorrect,correct,writeBit,Function.update,hm,hbf]
+
+theorem sel_head_keep (source flag b : Wire) (hbf : b≠flag) (s : State) (m : List Bool) :
+    (run [.CX source flag] m s).basis b=s.basis b := by
+  simp [run,writeBit,Function.update,hbf]
+
+/-! ### Instruction-level inclusion with the new window instructions -/
+
+/-- Every instruction of `P'` occurs in `P`, or is a proper `CX` or a
+`Z`-corrected measurement on wires of `P`; `P'` has no more slots than `P`. -/
+def InstrSub2 (P' P : Program) : Prop :=
+  (∀ i∈P', i∈P ∨ (∃ c t, i=.CX c t ∧ c≠t ∧ c∈wires P ∧ t∈wires P) ∨
+    (∃ t c, i=.measureX t [] [.Z c] ∧ t∈wires P ∧ c∈wires P)) ∧
+  Challenge.gateSlots P'≤Challenge.gateSlots P
+
+theorem InstrSub2.wires_sub {P' P : Program} (h : InstrSub2 P' P) : wires P'⊆wires P := by
+  intro q hq
+  obtain ⟨i,hi,hq⟩ := (mem_wires_iff P' q).mp hq
+  rcases h.1 i hi with hi|⟨c,t,rfl,_,hc,ht⟩|⟨t,c,rfl,ht,hc⟩
+  · exact (mem_wires_iff P q).mpr ⟨i,hi,hq⟩
+  · simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+    rcases hq with rfl|rfl
+    · exact hc
+    · exact ht
+  · simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,
+      Finset.notMem_empty,or_false,Finset.union_empty,Finset.empty_union] at hq
+    rcases hq with rfl|rfl
+    · exact ht
+    · exact hc
+
+theorem InstrSub2.physical {P' P : Program} (h : InstrSub2 P' P) (hp : GatePhysical P) :
+    GatePhysical P' := by
+  intro i hi
+  rcases h.1 i hi with hi|⟨c,t,rfl,ne,_,_⟩|⟨t,c,rfl,_,_⟩
+  · exact hp i hi
+  · simpa [RecordedQuantum.PhysicalInstr,ProperGate] using ne
+  · trivial
+
+theorem InstrSub2.slots {P' P : Program} (h : InstrSub2 P' P) :
+    Challenge.gateSlots P'≤Challenge.gateSlots P := h.2
+
+theorem InstrSub2.refl (P : Program) : InstrSub2 P P := ⟨fun i hi => Or.inl hi,le_refl _⟩
+
+theorem InstrSub2.append {P₁' P₁ P₂' P₂ : Program} (h₁ : InstrSub2 P₁' P₁)
+    (h₂ : InstrSub2 P₂' P₂) : InstrSub2 (P₁'++P₂') (P₁++P₂) := by
+  refine ⟨?_,?_⟩
+  · intro i hi
+    rcases List.mem_append.mp hi with hi|hi
+    · rcases h₁.1 i hi with h|⟨c,t,e,ne,hc,ht⟩|⟨t,c,e,ht,hc⟩
+      · exact Or.inl (List.mem_append_left _ h)
+      · exact Or.inr (Or.inl ⟨c,t,e,ne,by rw [wires_append]; exact Finset.mem_union_left _ hc,
+          by rw [wires_append]; exact Finset.mem_union_left _ ht⟩)
+      · exact Or.inr (Or.inr ⟨t,c,e,by rw [wires_append]; exact Finset.mem_union_left _ ht,
+          by rw [wires_append]; exact Finset.mem_union_left _ hc⟩)
+    · rcases h₂.1 i hi with h|⟨c,t,e,ne,hc,ht⟩|⟨t,c,e,ht,hc⟩
+      · exact Or.inl (List.mem_append_right _ h)
+      · exact Or.inr (Or.inl ⟨c,t,e,ne,by rw [wires_append]; exact Finset.mem_union_right _ hc,
+          by rw [wires_append]; exact Finset.mem_union_right _ ht⟩)
+      · exact Or.inr (Or.inr ⟨t,c,e,by rw [wires_append]; exact Finset.mem_union_right _ ht,
+          by rw [wires_append]; exact Finset.mem_union_right _ hc⟩)
+  · simp only [Challenge.gateSlots_append]
+    exact Nat.add_le_add h₁.2 h₂.2
+
+theorem InstrSub2.rename (f : Wire → Wire) (hf : Function.Injective f) {P' P : Program}
+    (h : InstrSub2 P' P) : InstrSub2 (renameProgram f P') (renameProgram f P) := by
+  refine ⟨?_,?_⟩
+  · intro i hi
+    obtain ⟨j,hj,rfl⟩ := List.mem_map.mp hi
+    rcases h.1 j hj with h|⟨c,t,rfl,ne,hc,ht⟩|⟨t,c,rfl,ht,hc⟩
+    · exact Or.inl (List.mem_map.mpr ⟨j,h,rfl⟩)
+    · refine Or.inr (Or.inl ⟨f c,f t,rfl,fun e => ne (hf e),?_,?_⟩)
+      · rw [renameProgram_support]; exact Finset.mem_image_of_mem f hc
+      · rw [renameProgram_support]; exact Finset.mem_image_of_mem f ht
+    · refine Or.inr (Or.inr ⟨f t,f c,by simp [renameInstr,renameCorrection],?_,?_⟩)
+      · rw [renameProgram_support]; exact Finset.mem_image_of_mem f ht
+      · rw [renameProgram_support]; exact Finset.mem_image_of_mem f hc
+  · simp only [Baselines.rename_gateSlots]
+    exact h.2
+
+theorem InstrSub2.rename_on (f : Wire → Wire) {P' P : Program}
+    (hf : ∀ a∈wires P,∀ b∈wires P,f a=f b → a=b)
+    (h : InstrSub2 P' P) : InstrSub2 (renameProgram f P') (renameProgram f P) := by
+  refine ⟨?_,?_⟩
+  · intro i hi
+    obtain ⟨j,hj,rfl⟩ := List.mem_map.mp hi
+    rcases h.1 j hj with h|⟨c,t,rfl,ne,hc,ht⟩|⟨t,c,rfl,ht,hc⟩
+    · exact Or.inl (List.mem_map.mpr ⟨j,h,rfl⟩)
+    · refine Or.inr (Or.inl ⟨f c,f t,rfl,fun e => ne (hf c hc t ht e),?_,?_⟩)
+      · rw [renameProgram_support]; exact Finset.mem_image_of_mem f hc
+      · rw [renameProgram_support]; exact Finset.mem_image_of_mem f ht
+    · refine Or.inr (Or.inr ⟨f t,f c,by simp [renameInstr,renameCorrection],?_,?_⟩)
+      · rw [renameProgram_support]; exact Finset.mem_image_of_mem f ht
+      · rw [renameProgram_support]; exact Finset.mem_image_of_mem f hc
+  · simp only [Baselines.rename_gateSlots]
+    exact h.2
+
+theorem window_slots (b source flag : Wire) (c : Bool) (Q : Program) :
+    Challenge.gateSlots (transcriptSelectWindow b source flag c Q)=
+      Challenge.gateSlots Q+(if c then 8 else 3) := by
+  cases c <;> simp [transcriptSelectWindow,transcriptSelectCompute,transcriptSelectExpose,
+    transcriptSelectErase,Challenge.gateSlots_append,Challenge.gateSlots,
+    Challenge.instructionSlots] <;> omega
+
+theorem selW_slots (source flag : Wire) (Q : Program) :
+    Challenge.gateSlots (selW source flag Q)=Challenge.gateSlots Q+3 := by
+  simp [selW,Challenge.gateSlots_append,Challenge.gateSlots,Challenge.instructionSlots]
+  omega
+
+theorem window_wires (b source flag : Wire) (c : Bool) (Q : Program) :
+    source∈wires (transcriptSelectWindow b source flag c Q) ∧
+    flag∈wires (transcriptSelectWindow b source flag c Q) ∧
+    wires Q⊆wires (transcriptSelectWindow b source flag c Q) := by
+  refine ⟨?_,?_,?_⟩
+  · cases c <;> simp [transcriptSelectWindow,transcriptSelectCompute,wires_append,wires,
+      Instr.wires]
+  · cases c <;> simp [transcriptSelectWindow,transcriptSelectCompute,wires_append,wires,
+      Instr.wires]
+  · intro q hq
+    simp only [transcriptSelectWindow,wires_append,Finset.mem_union]
+    exact Or.inl (Or.inl (Or.inr hq))
+
+theorem InstrSub2.window (b source flag : Wire) (c : Bool) (hsf : source≠flag)
+    {Q' Q : Program} (h : InstrSub2 Q' Q) :
+    InstrSub2 (selW source flag Q') (transcriptSelectWindow b source flag c Q) := by
+  obtain ⟨hs,hf,hQ⟩ := window_wires b source flag c Q
+  refine ⟨?_,?_⟩
+  · intro i hi
+    simp only [selW,List.mem_append,List.mem_singleton] at hi
+    rcases hi with (rfl|hi)|rfl
+    · exact Or.inr (Or.inl ⟨source,flag,rfl,hsf,hs,hf⟩)
+    · rcases h.1 i hi with h'|⟨c',t,e,ne,hc,ht⟩|⟨t,c',e,ht,hc⟩
+      · left
+        simp only [transcriptSelectWindow,List.mem_append]
+        exact Or.inl (Or.inl (Or.inr h'))
+      · exact Or.inr (Or.inl ⟨c',t,e,ne,hQ hc,hQ ht⟩)
+      · exact Or.inr (Or.inr ⟨t,c',e,hQ ht,hQ hc⟩)
+    · exact Or.inr (Or.inr ⟨flag,source,rfl,hf,hs⟩)
+  · rw [selW_slots,window_slots]
+    have := h.2
+    cases c <;> simp only [Bool.false_eq_true,if_false,if_true] <;> omega
+
+/-! ### The replacement relation -/
+
+structure Sel (b : Wire) (k : Nat) (P' P : Program) : Prop where
+  sub : InstrSub2 P' P
+  mc : measurementCount P'=measurementCount P
+  tc : toffoliCount P'+k=toffoliCount P
+  away : b∉wires P'
+  eq : ∀ (m : List Bool) (s : State), s.basis b=true →
+    run P' m s=run P m s ∧ (run P m s).basis b=true
+
+theorem Sel.refl (b : Wire) (P : Program) (hb : b∉wires P) : Sel b 0 P P :=
+  ⟨InstrSub2.refl P,rfl,by simp,hb,
+    fun m s h => ⟨rfl,(run_preserves_outside P m s b hb).trans h⟩⟩
+
+theorem Sel.cast {b : Wire} {k k' : Nat} {P' P Q' Q : Program} (h : Sel b k P' P)
+    (hk : k=k') (h1 : P'=Q') (h2 : P=Q) : Sel b k' Q' Q := by
+  subst hk h1 h2; exact h
+
+theorem Sel.append {b : Wire} {k₁ k₂ : Nat} {P₁' P₁ P₂' P₂ : Program}
+    (h₁ : Sel b k₁ P₁' P₁) (h₂ : Sel b k₂ P₂' P₂) : Sel b (k₁+k₂) (P₁'++P₂') (P₁++P₂) := by
+  refine ⟨h₁.sub.append h₂.sub,?_,?_,?_,?_⟩
+  · simp only [measurementCount_append,h₁.mc,h₂.mc]
+  · have a := h₁.tc
+    have c := h₂.tc
+    simp only [toffoliCount_append]
+    omega
+  · rw [wires_append]
+    intro hm
+    rcases Finset.mem_union.mp hm with h|h
+    · exact h₁.away h
+    · exact h₂.away h
+  · intro m s hs
+    obtain ⟨e1,b1⟩ := h₁.eq (m.take (measurementCount P₁)) s hs
+    obtain ⟨e2,b2⟩ := h₂.eq (m.drop (measurementCount P₁)) _ b1
+    refine ⟨?_,?_⟩
+    · rw [run_append,run_append,h₁.mc,e1,e2]
+    · rw [run_append]; exact b2
+
+theorem Sel.window {b : Wire} {k : Nat} {Q' Q : Program} (source flag : Wire) (c : Bool)
+    (hn : [b,source,flag].Nodup) (h : Sel b k Q' Q) :
+    Sel b (k+1) (selW source flag Q') (transcriptSelectWindow b source flag c Q) := by
+  have d := distinct3 b source flag hn
+  have wc := transcriptSelectWindow_counts b source flag c Q
+  refine ⟨InstrSub2.window b source flag c d.2.2 h.sub,?_,?_,?_,?_⟩
+  · rw [wc.2,selW]
+    simp only [measurementCount_append,h.mc]
+    simp [measurementCount]
+  · rw [wc.1,selW]
+    have := h.tc
+    simp only [toffoliCount_append]
+    simp only [toffoliCount]
+    omega
+  · simp only [selW,wires_append,Finset.mem_union]
+    rintro ((hm|hm)|hm)
+    · simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
+        Finset.notMem_empty,or_false] at hm
+      rcases hm with e|e
+      · exact d.1 e
+      · exact d.2.1 e
+    · exact h.away hm
+    · simp only [wires,Instr.wires,correctionWires,Finset.mem_union,Finset.mem_insert,
+        Finset.mem_singleton,Finset.notMem_empty,or_false,Finset.union_empty] at hm
+      rcases hm with e|e
+      · exact d.2.1 e
+      · exact d.1 e
+  · intro m s hs
+    have hbf : b≠flag := d.2.1
+    have m0 : measurementCount (transcriptSelectCompute b source flag c++
+        transcriptSelectExpose flag c)=0 := by
+      have hc := transcriptSelect_counts b source flag c
+      rw [measurementCount_append,hc.2.1,hc.2.2.2.1]
+    have m1 : measurementCount [Instr.CX source flag]=0 := rfl
+    have head := sel_head b source flag c hn s [] hs
+    have tailEq := fun (u : State) (r : List Bool) (hu : u.basis b=true) =>
+      sel_tail b source flag c hn u r hu
+    rw [window_split b source flag c Q,
+      show selW source flag Q'=[.CX source flag]++(Q'++[.measureX flag [] [.Z source]]) by
+        simp only [selW,List.append_assoc]]
+    generalize hA : transcriptSelectCompute b source flag c++transcriptSelectExpose flag c=A at m0 head ⊢
+    generalize hB : transcriptSelectExpose flag c++transcriptSelectErase b source flag c=B at tailEq ⊢
+    simp only [run_append,m0,m1,List.take_zero,List.drop_zero,h.mc]
+    rw [head]
+    have u1 : (run [.CX source flag] [] s).basis b=true :=
+      (sel_head_keep source flag b hbf s _).trans hs
+    obtain ⟨eQ,bQ⟩ := h.eq (m.take (measurementCount Q)) _ u1
+    rw [eQ,tailEq _ _ bQ]
+    exact ⟨rfl,(sel_tail_keep source flag b hbf _ _).trans bQ⟩
+
+theorem Sel.rename {b : Wire} {k : Nat} {P' P : Program} (e : Equiv.Perm Nat) (hfix : e b=b)
+    (h : Sel b k P' P) : Sel b k (renameProgram e P') (renameProgram e P) := by
+  have c1 := renameProgram_counts e P'
+  have c2 := renameProgram_counts e P
+  refine ⟨h.sub.rename e e.injective,?_,?_,?_,?_⟩
+  · rw [c1.2,c2.2,h.mc]
+  · rw [c1.1,c2.1]; exact h.tc
+  · rw [renameProgram_support]
+    intro hm
+    obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp hm
+    have : q=b := e.injective (eq.trans hfix.symm)
+    subst this
+    exact h.away hq
+  · intro m s hs
+    have hp : (pullState e s).basis b=true := by
+      change s.basis (e b)=true
+      rw [hfix]; exact hs
+    obtain ⟨eq,bb⟩ := h.eq m (pullState e s) hp
+    have r1 := run_rename e e.injective P' m s
+    have r2 := run_rename e e.injective P m s
+    refine ⟨?_,?_⟩
+    · apply MappedCompressed.pullState_perm_injective e
+      rw [r1,r2,eq]
+    · have : (pullState e (run (renameProgram e P) m s)).basis b=true := by rw [r2]; exact bb
+      change (run (renameProgram e P) m s).basis (e b)=true at this
+      rwa [hfix] at this
+
+/-- Relabelling by an injective map (not necessarily onto). -/
+theorem Sel.rename_inj {b : Wire} {k : Nat} {P' P : Program} (f : Wire → Wire)
+    (hf : Function.Injective f) (h : Sel b k P' P) :
+    Sel (f b) k (renameProgram f P') (renameProgram f P) := by
+  have c1 := renameProgram_counts f P'
+  have c2 := renameProgram_counts f P
+  refine ⟨h.sub.rename f hf,?_,?_,?_,?_⟩
+  · rw [c1.2,c2.2,h.mc]
+  · rw [c1.1,c2.1]; exact h.tc
+  · rw [renameProgram_support]
+    intro hm
+    obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp hm
+    have : q=b := hf eq
+    subst this
+    exact h.away hq
+  · intro m s hs
+    have hp : (pullState f s).basis b=true := hs
+    obtain ⟨eq,bb⟩ := h.eq m (pullState f s) hp
+    have r1 := run_rename f hf P' m s
+    have r2 := run_rename f hf P m s
+    have pe : pullState f (run (renameProgram f P') m s)=pullState f (run (renameProgram f P) m s) := by
+      rw [r1,r2,eq]
+    refine ⟨?_,?_⟩
+    · apply State.extensionality
+      · have := congrArg State.phase pe
+        exact this
+      · funext q
+        by_cases hq : ∃ a, f a=q
+        · obtain ⟨a,rfl⟩ := hq
+          have := congrFun (congrArg State.basis pe) a
+          exact this
+        · have o1 : q∉wires (renameProgram f P') := by
+            rw [renameProgram_support]
+            intro hm
+            obtain ⟨a,_,ea⟩ := Finset.mem_image.mp hm
+            exact hq ⟨a,ea⟩
+          have o2 : q∉wires (renameProgram f P) := by
+            rw [renameProgram_support]
+            intro hm
+            obtain ⟨a,_,ea⟩ := Finset.mem_image.mp hm
+            exact hq ⟨a,ea⟩
+          rw [run_preserves_outside _ m s q o1,run_preserves_outside _ m s q o2]
+    · have : (pullState f (run (renameProgram f P) m s)).basis b=true := by rw [r2]; exact bb
+      exact this
+
+end ECDSAAdd.Entrant.SW
+
+end
+end
+
+
+section
+
+section
+-- ===== SelKernel =====
+
+/-! The five-trit one-bank kernel with every field-cell window replaced by `selW`.
+
+`kernelS` is `KernelOB5.program` (with its selector-hosting wrapper `segH`) with
+the two transcript-select windows of
+each replayed cell (101 packets of five cells and the four cells after the
+cell-zero swap), the single window of the cell-zero swap and the single window
+of the endpoint cell replaced by the Toffoli-free `selW`.  We prove
+`Sel (base 2400) 1020 (kernelS d) (KernelOB5.program d)`: equal States whenever
+the logical enable bit is set, 1020 fewer Toffolis, the same measurements, and
+the new kernel never touches label 2400. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.SW
+open ECDSAAdd.Arithmetic MappedCompressed CompressedFieldSupport Secp256k1 DirectSkywalk
+attribute [local irreducible] wires
+
+/-! ### Definitions -/
+
+def cellS (divide : Bool) (g sw : Wire) : Program :=
+  selW g (base 2409) (selW sw (base 2410) (OneBankCell5.body divide base (base 2409) (base 2410)))
+
+def rawReplayS (divide : Bool) : List MixedTranscriptLetter → Program
+  | [] => []
+  | l::ls => if divide then cellS true l.1.1 l.1.2++rawReplayS true ls
+    else rawReplayS false ls++cellS false l.1.1 l.1.2
+
+def basePacketS (divide : Bool) (j : Nat) : Program :=
+  History5.decode base (5*j)++rawReplayS divide (Replay5.letters j)++History5.encode base (5*j)
+
+def packetS (divide : Bool) (j : Nat) : Program :=
+  renameProgram (shifted (Placement5.pi j)) (basePacketS divide j)
+
+def groupsS (divide : Bool) (j n : Nat) : Program :=
+  PacketSequence.program divide (packetS divide) j n
+
+def swapBody : Program :=
+  swapRegisters (base 2410) (balancedSharedPorts base (base 2409)).r
+    (balancedSharedPorts base (base 2409)).y
+
+def firstSwapS : Program := selW (base 1028) (base 2410) swapBody
+
+def firstBodyS (divide : Bool) : Program :=
+  if divide then firstSwapS++rawReplayS true Replay5.restLetters
+  else rawReplayS false Replay5.restLetters++firstSwapS
+
+def baseFirstPacketS (divide : Bool) : Program :=
+  History5.decode base 0++firstBodyS divide++History5.encode base 0
+
+def firstPacketS (divide : Bool) : Program :=
+  renameProgram (shifted (Placement5.pi 0)) (baseFirstPacketS divide)
+
+def rawEndS (divide : Bool) : Program :=
+  selW (base 510) (base 2409) (OneBankCell5.half divide base (base 2409))
+
+def endPacketS (divide : Bool) : Program := renameProgram (shifted Placement5.pi0) (rawEndS divide)
+
+def logicalReplayS (divide : Bool) : Program :=
+  if divide then firstPacketS true++groupsS true 1 101++endPacketS true
+  else endPacketS false++groupsS false 1 101++firstPacketS false
+
+def replayS (divide : Bool) : Program := renameProgram (OB5.sig 511) (logicalReplayS divide)
+
+def segmentS (divide : Bool) : Program :=
+  if divide then HalfFieldOB5.centerT++(replayS true++(HalfFieldOB5.copyN++HalfFieldOB5.canonT))
+  else HalfFieldOB5.centerT++(HalfFieldOB5.copyN++(replayS false++HalfFieldOB5.canonT))
+
+/-- The selector-hosted segment (`KernelOB5.segH`) around the selector-free segment. -/
+def segHS (divide : Bool) : Program :=
+  [.X (base 511)] ++ (renameProgram HostOB5.hostSwap (segmentS divide) ++ [.X (base 511)])
+
+def kernelS (divide : Bool) : Program :=
+  NativeFirstDirect.forward base++OB5.forward 1 511++skywalkArithmeticClear base++
+    segHS divide++skywalkArithmeticClear base++OB5.reverse 1 511++
+      NativeFirstKnown.inverse base
+
+/-! ### Frames -/
+
+theorem Sel.castb {b b' : Wire} {k : Nat} {P' P : Program} (h : Sel b k P' P) (e : b=b') :
+    Sel b' k P' P := e ▸ h
+
+theorem selNotZero5 : ¬Placement5.zeroRegion 2400 := by
+  unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion; omega
+
+theorem selShift_fix (j : Nat) (hj : j < 102) : shifted (Placement5.pi j) (base 2400)=base 2400 := by
+  rw [shifted_base,Placement5.pi_outside j 2400 hj selNotZero5]
+
+theorem selShift0_fix : shifted Placement5.pi0 (base 2400)=base 2400 := by
+  rw [shifted_base,Placement5.pi0_outside 2400 selNotZero5]
+
+theorem selSig_2400 : OB5.sig 511 (base 2400)=base 2400 := by
+  rw [OB5.sig_base 511 2400 (le_refl _),if_neg (by omega)]
+
+theorem selEndpoint_fix : HalfFieldOB5.endpointMap (base 2400)=base 2400 := by
+  have hb : HalfFieldOB5.bank 2400=2400 := by decide
+  have hp : Placement5.pi 51 2400=2400 := Placement5.pi_outside 51 2400 (by omega) selNotZero5
+  have h1 : base 2400≠base 1796 := by decide
+  have h2 : base 2400≠base 1285 := by decide
+  show OB5.sig 511 ((Equiv.swap (base 1796) (base 1285))
+    ((shifted (Placement5.pi 51)) ((shifted HalfFieldOB5.bank) (base 2400))))=base 2400
+  rw [shifted_base,hb,shifted_base,hp,Equiv.swap_apply_of_ne_of_ne h1 h2,selSig_2400]
+
+theorem selHost_fix : HostOB5.hostSwap (base 2400)=base 2400 := by
+  have a1 : base 2400≠base 2409 := by decide
+  have a2 : base 2400≠base 511 := by decide
+  have a3 : base 2400≠base 2410 := by decide
+  have a4 : base 2400≠base 1542 := by decide
+  unfold HostOB5.hostSwap
+  rw [if_neg a1,if_neg a2,if_neg a3,if_neg a4]
+
+/-! ### Label 2400 is never used outside the windows -/
+
+theorem selX511_away : base 2400∉wires [Instr.X (base 511)] := by
+  intro h
+  have e : base 2400=base 511 := by simpa [wires,Instr.wires] using h
+  have := base_injective e
+  omega
+
+def selW0 : Finset Wire := (base 2409::OneBankCell5.ids.map base).toFinset ∪ {base 2410}
+
+theorem selW0_away : base 2400∉selW0 := by
+  intro h
+  simp only [selW0,Finset.mem_union,List.mem_toFinset,List.mem_cons,List.mem_map,
+    Finset.mem_singleton] at h
+  rcases h with (e|⟨j,hj,e⟩)|e
+  · have := base_injective e; omega
+  · have := base_injective e; have := OneBankCell5.ids_bound j hj; omega
+  · have := base_injective e; omega
+
+theorem selBody_away (divide : Bool) :
+    base 2400∉wires (OneBankCell5.body divide base (base 2409) (base 2410)) := fun h =>
+  selW0_away (OneBankCell5.body_support divide base (base 2409) (base 2410) selW0
+    Finset.subset_union_left (Finset.mem_union_right _ (Finset.mem_singleton_self _)) h)
+
+theorem selHalf_away (divide : Bool) : base 2400∉wires (OneBankCell5.half divide base (base 2409)) :=
+  fun h => selW0_away (OneBankCell5.half_support divide base (base 2409) selW0
+    Finset.subset_union_left h)
+
+theorem selSwap_away : base 2400∉wires swapBody := by
+  have sub : wires swapBody⊆wires (OneBankCell5.body true base (base 2409) (base 2410)) := by
+    simp only [swapBody,OneBankCell5.body,if_true,wires_append,OneBankCell5.ports_r,
+      OneBankCell5.ports_y]
+    exact Finset.subset_union_right
+  exact fun h => selBody_away true (sub h)
+
+theorem selHist_away (start : Nat) (hs : start+5 ≤ 512) :
+    base 2400∉wires (History5.encode base start) ∧ base 2400∉wires (History5.decode base start) := by
+  have lift (P : Program) (he : P=History5.encode base start ∨ P=History5.decode base start) :
+      base 2400∉wires P := by
+    intro hq
+    obtain ⟨u,hu⟩ := History5.history_gate_mem base start P he _ hq
+    have bound := History5.historyId_bound start hs u
+    have hu' : base 2400=base (History5.historyId start u) := hu
+    have := base_injective hu'
+    omega
+  exact ⟨lift _ (Or.inl rfl),lift _ (Or.inr rfl)⟩
+
+theorem selCenter_away : base 2400∉wires HalfFieldOB5.centerT ∧
+    base 2400∉wires HalfFieldOB5.canonT ∧ base 2400∉wires HalfFieldOB5.copyN := by
+  have ids (q : Wire) (hq : q∈(HalfField.ids.map base).toFinset) : q≠base 2400 := by
+    intro e
+    subst e
+    obtain ⟨i,hi,e⟩ := List.mem_map.mp (List.mem_toFinset.mp hq)
+    have := base_injective e
+    simp only [HalfField.ids,List.mem_append,List.mem_cons,List.not_mem_nil,List.mem_range'_1,
+      or_false] at hi
+    omega
+  have ren (P : Program) (hP : wires P⊆(HalfField.ids.map base).toFinset) :
+      base 2400∉wires (renameProgram HalfFieldOB5.endpointMap P) := by
+    rw [renameProgram_support]
+    intro h
+    obtain ⟨q,hq,e⟩ := Finset.mem_image.mp h
+    rw [← selEndpoint_fix] at e
+    exact ids q (hP hq) (HalfFieldOB5.endpointMap.injective e)
+  exact ⟨ren _ HalfField.centerT_sites,ren _ HalfField.canonT_sites,
+    fun h => ids _ (HalfField.copyN_sites h) rfl⟩
+
+theorem selInt_away : base 2400∉wires (OB5.forward 1 511) ∧ base 2400∉wires (OB5.reverse 1 511) := by
+  have bad : base 2400∉OB5.integerSites := by
+    intro h
+    obtain ⟨l,e,hl⟩ := (OB5.integerSites_mem _).mp h
+    have := base_injective e
+    omega
+  exact ⟨fun h => bad (OB5.forward_support h),fun h => bad (OB5.reverse_support h)⟩
+
+theorem selPrefix_away : base 2400∉(NativeFirstDirect.prefixSites base).toFinset := by
+  intro h
+  simp only [NativeFirstDirect.prefixSites,wireBlock,List.mem_toFinset,List.mem_append,
+    List.mem_cons,List.mem_map,List.mem_range'_1,List.not_mem_nil,or_false,
+    base_injective.eq_iff] at h
+  omega
+
+theorem selClear_away : base 2400∉wires (skywalkArithmeticClear base) := by
+  rw [skywalkArithmeticClear,skywalkTerminalClear_wires]
+  simp [base]
+
+/-! ### Letters -/
+
+theorem selLetter_nodup (i : Nat) (hi : i < 510) :
+    [base 2400,(tapeLetter i).1.1,base 2409].Nodup ∧ [base 2400,(tapeLetter i).1.2,base 2410].Nodup := by
+  simp only [tapeLetter]
+  rw [mixedTape_base_getD i (by omega)]
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,or_false,List.nodup_nil,and_true,
+    not_or,not_false_eq_true,base_injective.eq_iff]
+  omega
+
+theorem selLetters_nodup (j : Nat) (hj : j < 102) (l : MixedTranscriptLetter)
+    (hl : l∈Replay5.letters j) :
+    [base 2400,l.1.1,base 2409].Nodup ∧ [base 2400,l.1.2,base 2410].Nodup := by
+  obtain ⟨k,hk,rfl⟩ := List.mem_map.mp hl
+  have := List.mem_range.mp hk
+  exact selLetter_nodup (5*j+k) (by omega)
+
+theorem selRest_nodup (l : MixedTranscriptLetter) (hl : l∈Replay5.restLetters) :
+    [base 2400,l.1.1,base 2409].Nodup ∧ [base 2400,l.1.2,base 2410].Nodup := by
+  obtain ⟨k,hk,rfl⟩ := List.mem_map.mp hl
+  have := List.mem_range'_1.mp hk
+  exact selLetter_nodup k (by omega)
+
+/-! ### Cells and packets -/
+
+theorem selCell_sel (divide : Bool) (g sw : Wire) (ig is : Bool)
+    (hg : [base 2400,g,base 2409].Nodup) (hs : [base 2400,sw,base 2410].Nodup) :
+    Sel (base 2400) 2 (cellS divide g sw)
+      (OneBankCell5.cell divide base (base 2400) g sw (base 2409) (base 2410) ig is) :=
+  (((Sel.refl _ _ (selBody_away divide)).window sw (base 2410) is hs).window g (base 2409) ig
+    hg).cast (by norm_num) rfl rfl
+
+theorem selRaw_sel (divide : Bool) (ls : List MixedTranscriptLetter)
+    (hl : ∀ l∈ls, [base 2400,l.1.1,base 2409].Nodup ∧ [base 2400,l.1.2,base 2410].Nodup) :
+    Sel (base 2400) (2*ls.length) (rawReplayS divide ls) (OneBankReplay5.rawReplay divide ls) := by
+  induction ls with
+  | nil => exact (Sel.refl _ [] (by simp [wires])).cast (by simp) rfl rfl
+  | cons l ls ih =>
+    have hh := hl l (List.mem_cons_self ..)
+    have rest := ih (fun q hq => hl q (List.mem_cons_of_mem _ hq))
+    cases divide
+    · exact (rest.append (selCell_sel false l.1.1 l.1.2 l.2.1 l.2.2 hh.1 hh.2)).cast
+        (by simp only [List.length_cons]; omega) rfl rfl
+    · exact ((selCell_sel true l.1.1 l.1.2 l.2.1 l.2.2 hh.1 hh.2).append rest).cast
+        (by simp only [List.length_cons]; omega) rfl rfl
+
+theorem selPacket_sel (divide : Bool) (j : Nat) (hj : j < 102) :
+    Sel (base 2400) 10 (packetS divide j) (OneBankReplay5.packet divide j) := by
+  have codec := selHist_away (5*j) (by omega)
+  have r := selRaw_sel divide (Replay5.letters j) (selLetters_nodup j hj)
+  have len : (Replay5.letters j).length=5 := by simp [Replay5.letters]
+  rw [len] at r
+  have b : Sel (base 2400) 10 (basePacketS divide j) (OneBankReplay5.basePacket divide j) :=
+    (((Sel.refl _ _ codec.2).append r).append (Sel.refl _ _ codec.1)).cast (by norm_num) rfl rfl
+  exact b.rename (shifted (Placement5.pi j)) (selShift_fix j hj)
+
+theorem selGroups_sel (divide : Bool) (j n : Nat) (bound : j+n ≤ 102) :
+    Sel (base 2400) (10*n) (groupsS divide j n) (OneBankReplay5.groups divide j n) := by
+  unfold groupsS OneBankReplay5.groups
+  induction n generalizing j with
+  | zero => exact (Sel.refl _ [] (by simp [wires])).cast (by simp) rfl rfl
+  | succ n ih =>
+    have head := selPacket_sel divide j (by omega)
+    have rest := ih (j+1) (by omega)
+    cases divide
+    · simp only [PacketSequence.program,Bool.false_eq_true,if_false]
+      exact (rest.append head).cast (by ring) rfl rfl
+    · simp only [PacketSequence.program,if_true]
+      exact (head.append rest).cast (by ring) rfl rfl
+
+theorem selFirstSwap_sel : Sel (base 2400) 1 firstSwapS Replay5.firstSwap := by
+  have n : [base 2400,base 1028,base 2410].Nodup := by decide
+  exact ((Sel.refl _ _ selSwap_away).window (base 1028) (base 2410)
+    (mixedTranscriptUnitTrace.getD 0 (false,false)).2 n).cast (by norm_num) rfl rfl
+
+theorem selFirstPacket_sel (divide : Bool) :
+    Sel (base 2400) 9 (firstPacketS divide) (OneBankReplay5.firstPacket divide) := by
+  have codec := selHist_away 0 (by omega)
+  have r := selRaw_sel divide Replay5.restLetters selRest_nodup
+  have len : Replay5.restLetters.length=4 := by simp [Replay5.restLetters]
+  rw [len] at r
+  have body : Sel (base 2400) 9 (firstBodyS divide) (OneBankReplay5.firstBody divide) := by
+    cases divide
+    · exact (r.append selFirstSwap_sel).cast (by norm_num) rfl rfl
+    · exact (selFirstSwap_sel.append r).cast (by norm_num) rfl rfl
+  have b : Sel (base 2400) 9 (baseFirstPacketS divide) (OneBankReplay5.baseFirstPacket divide) :=
+    (((Sel.refl _ _ codec.2).append body).append (Sel.refl _ _ codec.1)).cast (by norm_num) rfl rfl
+  exact b.rename (shifted (Placement5.pi 0)) (selShift_fix 0 (by omega))
+
+theorem selEnd_sel (divide : Bool) :
+    Sel (base 2400) 1 (endPacketS divide) (OneBankReplay5.endPacket divide) := by
+  have n : [base 2400,base 510,base 2409].Nodup := by decide
+  have b : Sel (base 2400) 1 (rawEndS divide) (OneBankReplay5.rawEnd divide) :=
+    ((Sel.refl _ _ (selHalf_away divide)).window (base 510) (base 2409)
+      (mixedTranscriptUnitTrace.getD 510 (false,false)).1 n).cast (by norm_num) rfl rfl
+  exact b.rename (shifted Placement5.pi0) selShift0_fix
+
+/-! ### Replay, segment, kernel -/
+
+theorem selLogical_sel (divide : Bool) :
+    Sel (base 2400) 1020 (logicalReplayS divide) (OneBankReplay5.logicalReplay divide) := by
+  have g := selGroups_sel divide 1 101 (by omega)
+  have e := selEnd_sel divide
+  have f := selFirstPacket_sel divide
+  cases divide
+  · exact ((e.append g).append f).cast (by norm_num) rfl rfl
+  · exact ((f.append g).append e).cast (by norm_num) rfl rfl
+
+theorem selReplay_sel (divide : Bool) :
+    Sel (base 2400) 1020 (replayS divide) (OneBankReplay5.replay divide) :=
+  ((selLogical_sel divide).rename_inj (OB5.sig 511) (OB5.sig_injective 511 (by decide))).castb
+    selSig_2400
+
+theorem selSegment_sel (divide : Bool) :
+    Sel (base 2400) 1020 (segmentS divide) (SegmentOB5.program divide) := by
+  have a := selCenter_away
+  have r := selReplay_sel divide
+  cases divide
+  · exact ((Sel.refl _ _ a.1).append ((Sel.refl _ _ a.2.2).append
+      (r.append (Sel.refl _ _ a.2.1)))).cast (by norm_num) rfl rfl
+  · exact ((Sel.refl _ _ a.1).append (r.append ((Sel.refl _ _ a.2.2).append
+      (Sel.refl _ _ a.2.1)))).cast (by norm_num) rfl rfl
+
+theorem selSegH_sel (divide : Bool) :
+    Sel (base 2400) 1020 (segHS divide) (KernelOB5.segH divide) := by
+  have r := ((selSegment_sel divide).rename_inj HostOB5.hostSwap HostOB5.hostSwap_injective).castb
+    selHost_fix
+  exact ((Sel.refl _ _ selX511_away).append (r.append (Sel.refl _ _ selX511_away))).cast
+    (by norm_num) rfl rfl
+
+theorem selKernel_sel (divide : Bool) :
+    Sel (base 2400) 1020 (kernelS divide) (KernelOB5.program divide) := by
+  have native := NativeFirstDirect.prefix_support base
+  have known := NativeFirstKnown.inverse_support base
+  have fw : base 2400∉wires (NativeFirstDirect.forward base) := fun h => selPrefix_away (native.1 h)
+  have iv : base 2400∉wires (NativeFirstKnown.inverse base) := fun h => selPrefix_away (known h)
+  have ints := selInt_away
+  exact ((((((Sel.refl _ _ fw).append (Sel.refl _ _ ints.1)).append
+    (Sel.refl _ _ selClear_away)).append (selSegH_sel divide)).append
+    (Sel.refl _ _ selClear_away)).append (Sel.refl _ _ ints.2)).append (Sel.refl _ _ iv) |>.cast
+    (by norm_num) rfl rfl
+
+end ECDSAAdd.Entrant.SW
+
+end
+end
+
+
+section
+
+section
+-- ===== SelArith =====
+
+/-! The selector-free five-trit one-bank arithmetic.
+
+`kernelS` never touches label 2400, so on every positive input it computes
+the enabled result `Y/x` or `Y·x` (`kernelS_spec`).  The placed arithmetic
+`arithS` therefore maps `Y` to `Y/X` or `Y·X` whatever the generic flag
+(`arithS_correct`).  Resources follow from `Sel` (1020 fewer Toffolis per call,
+the same measurements, an instruction-level inclusion). -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.SW
+open ECDSAAdd.Arithmetic MappedCompressed Secp256k1 DirectSkywalk
+
+section KernelSpec
+attribute [local irreducible] wires kernelS KernelOB5.program run measurementCount
+
+/-- The selector-free kernel computes the enabled result on every input. -/
+theorem kernelS_spec (divide : Bool)
+    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
+    (ho : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkSharedWires base)
+    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
+    (x : Nat) (Y : Fp) (hx0 : 0 < x) (hx : x < p) (s : State) (m : List Bool)
+    (hin : SkywalkArithmeticInput base x Y.val s.basis)
+    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false) :
+    (run (kernelS divide) m s).phase=s.phase ∧
+    regValue (skywalkArithmeticNumerator base) (run (kernelS divide) m s).basis=
+      (skywalkArithmeticResult divide x Y).val ∧
+    ∀ q,q∉skywalkArithmeticNumerator base → (run (kernelS divide) m s).basis q=s.basis q := by
+  have sel := selKernel_sel divide
+  let t : State := ⟨s.phase,writeBit s.basis (base 2400) true⟩
+  have tq (q : Wire) (hq : q≠base 2400) : t.basis q=s.basis q := by
+    simp only [t,writeBit,Function.update_of_ne hq]
+  have tb : t.basis (base 2400)=true := by simp only [t,writeBit,Function.update_self]
+  have bShared : base 2400∉skywalkSharedWires base := ho _ (by simp)
+  have bDiv : base 2400∉skywalkArithmeticDivisor base := fun h =>
+    bShared (arith_block_subset_shared base 770 256 (by omega) h)
+  have bNum : base 2400∉skywalkArithmeticNumerator base := fun h =>
+    bShared (arith_block_subset_shared base 2056 256 (by omega) h)
+  have tin : SkywalkArithmeticInput base x Y.val t.basis := by
+    refine ⟨?_,?_,?_⟩
+    · rw [←hin.1]
+      exact regValue_congr _ _ _ (fun q hq => tq q (fun e => bDiv (e ▸ hq)))
+    · rw [←hin.2.1]
+      exact regValue_congr _ _ _ (fun q hq => tq q (fun e => bNum (e ▸ hq)))
+    · intro q hq hdx hdy
+      rw [tq q (fun e => bShared (e ▸ hq))]
+      exact hin.2.2 q hq hdx hdy
+  have tg : t.basis (base 2409)=false := (tq _ (by simp [base])).trans hg0
+  have ts : t.basis (base 2410)=false := (tq _ (by simp [base])).trans hs0
+  have spec := KernelOB5.program_spec divide hn hlo ho hf x Y hx0 hx t m tin tg ts
+  obtain ⟨eq,_⟩ := sel.eq m t tb
+  unfold DirectSkywalkArithmeticStrong at spec
+  rw [tb,←eq] at spec
+  have agree := pool_run_agrees (kernelS divide) (wires (kernelS divide))
+    (Finset.Subset.refl _) m s t rfl (fun w hw => (tq w (fun e => sel.away (e ▸ hw))).symm)
+  have same (q : Wire) (hq : q≠base 2400) :
+      (run (kernelS divide) m s).basis q=(run (kernelS divide) m t).basis q := by
+    by_cases hw : q∈wires (kernelS divide)
+    · exact agree.2 q hw
+    · rw [run_preserves_outside _ m s q hw,run_preserves_outside _ m t q hw,tq q hq]
+  refine ⟨agree.1.trans spec.1,?_,?_⟩
+  · have r := spec.2.1
+    simp only [directSkywalkResult,if_true] at r
+    rw [←r]
+    exact regValue_congr _ _ _ (fun q hq => same q (fun e => bNum (e ▸ hq)))
+  · intro q hq
+    by_cases hb : q=base 2400
+    · subst hb
+      exact run_preserves_outside _ m s _ sel.away
+    · rw [same q hb,spec.2.2 q hq,tq q hb]
+
+end KernelSpec
+
+end ECDSAAdd.Entrant.SW
+
+namespace ECDSAAdd.Entrant
+open Arithmetic MappedCompressed CompressedAllocation Secp256k1 ControlledPointLayout DirectSkywalk
+
+/-- The placed selector-free arithmetic. -/
+def arithS (L : ControlledPointLayout) (multiply : Bool) : Program :=
+  renameProgram (wireFn2 L) (SW.kernelS (!multiply))
+
+section TransferS
+attribute [local irreducible] run SW.kernelS KernelOB5.program toffoliCount measurementCount
+  mixedTranscriptUnitTrace SkywalkTrace.next Nat.iterate
+
+def selInput (domain : Finset Wire) (f : Wire → Wire) (s : State) : State :=
+  ⟨s.phase,fun q => if q∈domain then s.basis (f q) else false⟩
+
+theorem selRegMap (f : Wire → Wire) (r : List Wire)
+    (logical physical : BasisState) (h : ∀q∈r,logical q=physical (f q)) :
+    regValue r logical=regValue (r.map f) physical := by
+  induction r generalizing logical physical with
+  | nil => rfl
+  | cons a rs ih =>
+    change (if logical a then 1 else 0)+2*regValue rs logical=
+      (if physical (f a) then 1 else 0)+2*regValue (rs.map f) physical
+    rw [h a (by simp),ih logical physical (fun q hq => h q (List.mem_cons_of_mem a hq))]
+
+/-- Point transfer for a kernel whose result does not depend on any control bit. -/
+theorem selTransfer (L : ControlledPointLayout) (f : Wire → Wire)
+    (domain : Finset Wire)
+    (injective : ∀a∈domain,∀b∈domain,f a=f b → a=b)
+    (divisorMap : (wireBlock base 770 256).map f=L.point.x)
+    (numeratorMap : (wireBlock base 2056 256).map f=L.point.y)
+    (sharedWork : ∀q∈skywalkSharedWires base,q∈domain → q∉wireBlock base 770 256 →
+      q∉wireBlock base 2056 256 → f q∈L.dialogPool)
+    (selectorG : f (base 2409)∈L.dialogPool)
+    (selectorS : f (base 2410)∈L.dialogPool)
+    (dxSites : (wireBlock base 770 256).toFinset⊆domain)
+    (dySites : (wireBlock base 2056 256).toFinset⊆domain)
+    (X : Nat) (Y R : Fp)
+    (s : State) (m : List Bool)
+    (hX : regValue L.point.x s.basis=X) (hY : regValue L.point.y s.basis=Y.val)
+    (clean : regValue L.dialogPool s.basis=0)
+    (P : Program) (programSites : wires P⊆domain)
+    (P_spec : ∀(t : State)(records : List Bool),
+      SkywalkArithmeticInput base X Y.val t.basis →
+      t.basis (base 2409)=false → t.basis (base 2410)=false →
+      (run P records t).phase=t.phase ∧
+      regValue (skywalkArithmeticNumerator base) (run P records t).basis=R.val ∧
+      ∀ q,q∉skywalkArithmeticNumerator base → (run P records t).basis q=t.basis q) :
+    (run (renameProgram f P) m s).phase=s.phase ∧
+    regValue L.point.y (run (renameProgram f P) m s).basis=R.val ∧
+      ∀q,q∉L.point.y → (run (renameProgram f P) m s).basis q=s.basis q := by
+  let t := selInput domain f s
+  have inputBits (q : Wire) (hq : q∈domain) : t.basis q=s.basis (f q) := by
+    simp only [t,selInput,if_pos hq]
+  have zero (q : Wire) (hq : f q∈L.dialogPool) : t.basis q=false := by
+    change (if q∈domain then s.basis (f q) else false)=false
+    split
+    · exact (regValue_zero _ _).mp clean _ hq
+    · rfl
+  have input : SkywalkArithmeticInput base X Y.val t.basis := by
+    refine ⟨?_,?_,?_⟩
+    · change regValue (wireBlock base 770 256) t.basis=X
+      rw [selRegMap f _ t.basis s.basis
+        (fun q hq => inputBits q (dxSites (List.mem_toFinset.mpr hq))),divisorMap]
+      exact hX
+    · change regValue (wireBlock base 2056 256) t.basis=Y.val
+      rw [selRegMap f _ t.basis s.basis
+        (fun q hq => inputBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
+      exact hY
+    · intro q hq hdx hdy
+      by_cases used : q∈domain
+      · exact zero q (sharedWork q hq used hdx hdy)
+      · simp only [t,selInput,if_neg used]
+  have strong := P_spec t m input (zero _ selectorG) (zero _ selectorS)
+  have transfer := run_rename_pool f domain injective P programSites m t s rfl inputBits
+  refine ⟨transfer.1.trans strong.1,?_,?_⟩
+  · rw [←numeratorMap]
+    exact (selRegMap f _ (run P m t).basis
+      (run (renameProgram f P) m s).basis
+      (fun q hq => (transfer.2 q (dySites (List.mem_toFinset.mpr hq))).symm)).symm.trans strong.2.1
+  · intro q outside
+    by_cases image : q∈domain.image f
+    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp image
+      have away : a∉skywalkArithmeticNumerator base := by
+        intro mem
+        apply outside
+        rw [←numeratorMap]
+        exact List.mem_map.mpr ⟨a,mem,rfl⟩
+      exact (transfer.2 a ha).trans ((strong.2.2 a away).trans (inputBits a ha))
+    · exact run_rename_pool_outside f domain P programSites m s q image
+
+theorem arithS_sites (multiply : Bool) :
+    wires (SW.kernelS (!multiply)) ⊆ OB5Support.logicalSites :=
+  (SW.selKernel_sel (!multiply)).sub.wires_sub.trans (KernelOB5.program_support_logical (!multiply))
+
+theorem arithS_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (multiply : Bool) (X Y : Nat) (hX : X < p) (hX0 : 0 < X) (hY : Y < p)
+    (s : State) (m : List Bool)
+    (hx : regValue L.point.x s.basis=X) (hy : regValue L.point.y s.basis=Y)
+    (hc : regValue L.dialogPool s.basis=0) :
+    (run (arithS L multiply) m s).phase=s.phase ∧
+    regValue L.point.y (run (arithS L multiply) m s).basis=
+      (if multiply then ((Y:Fp)*(X:Fp)).val else ((Y:Fp)/(X:Fp)).val) ∧
+    ∀q,q∉L.point.y → (run (arithS L multiply) m s).basis q=s.basis q := by
+  have yValue : (Y:Fp).val=Y := ZMod.val_natCast_of_lt hY
+  rcases placement2 L hw hn with ⟨injective,divisorMap,numeratorMap,controlMap,sharedWork,
+    selectorG,selectorS,zeroFlag⟩
+  have dx : (wireBlock base 770 256).toFinset⊆OB5Support.logicalSites := by
+    intro q hq
+    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp (List.mem_toFinset.mp hq)
+    apply List.mem_toFinset.mpr
+    apply List.mem_map.mpr
+    refine ⟨i,?_,rfl⟩
+    simp only [wireBlock,List.mem_range'_1] at hi
+    simp only [OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
+      List.mem_cons,List.not_mem_nil,or_false]
+    omega
+  have dy : (wireBlock base 2056 256).toFinset⊆OB5Support.logicalSites := by
+    intro q hq
+    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp (List.mem_toFinset.mp hq)
+    apply List.mem_toFinset.mpr
+    apply List.mem_map.mpr
+    refine ⟨i,?_,rfl⟩
+    simp only [wireBlock,List.mem_range'_1] at hi
+    simp only [OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
+      List.mem_cons,List.not_mem_nil,or_false]
+    omega
+  have config := MappedCompressed.LaneA.laneLogical_config
+  have above : History5.HistoryAbove base := by intro j hj; simp [base]
+  have result := selTransfer L (wireFn2 L) OB5Support.logicalSites
+    (fun a ha b hb eq => injective a (ArithmeticOB5.logical_sub_old ha) b
+      (ArithmeticOB5.logical_sub_old hb) eq)
+    divisorMap numeratorMap
+    (fun q hq used hx hy => sharedWork q hq (ArithmeticOB5.logical_sub_old used) hx hy)
+    selectorG selectorS dx dy X (Y:Fp) (skywalkArithmeticResult (!multiply) X (Y:Fp))
+    s m hx (hy.trans yValue.symm) hc
+    (SW.kernelS (!multiply)) (arithS_sites multiply)
+    (fun t records input hg hs => SW.kernelS_spec (!multiply)
+      config.1 above config.2.1 config.2.2 X (Y:Fp) hX0 hX t records input hg hs)
+  cases multiply <;>
+    simpa only [arithS,skywalkArithmeticResult,
+      Bool.not_false,Bool.not_true,Bool.false_eq_true,if_false,if_true] using result
+
+end TransferS
+
+section ResourcesA
+attribute [local irreducible] run SW.kernelS KernelOB5.program wires toffoliCount measurementCount
+
+theorem arithS_counts (L : ControlledPointLayout) :
+    toffoliCount (arithS L false)=1054022 ∧ measurementCount (arithS L false)=720118 ∧
+    toffoliCount (arithS L true)=1054022 ∧ measurementCount (arithS L true)=720118 := by
+  have o := ArithmeticOB5.arith_counts L
+  have s1 := SW.selKernel_sel true
+  have s2 := SW.selKernel_sel false
+  have r1 := renameProgram_counts (wireFn2 L) (SW.kernelS true)
+  have r2 := renameProgram_counts (wireFn2 L) (SW.kernelS false)
+  have q1 := renameProgram_counts (wireFn2 L) (KernelOB5.program true)
+  have q2 := renameProgram_counts (wireFn2 L) (KernelOB5.program false)
+  have t1 := s1.tc
+  have t2 := s2.tc
+  have m1 := s1.mc
+  have m2 := s2.mc
+  simp only [ArithmeticOB5.arith,Bool.not_false,Bool.not_true] at o
+  simp only [arithS,Bool.not_false,Bool.not_true]
+  omega
+
+theorem arithS_sub (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (multiply : Bool) : SW.InstrSub2 (arithS L multiply) (ArithmeticOB5.arith L multiply) := by
+  have sel := SW.selKernel_sel (!multiply)
+  simp only [arithS,ArithmeticOB5.arith]
+  exact sel.sub.rename_on (wireFn2 L) (fun a ha b hb e =>
+    (placement2 L hw hn).injectiveOnSlots a
+      (ArithmeticOB5.logical_sub_old (KernelOB5.program_support_logical (!multiply) ha)) b
+      (ArithmeticOB5.logical_sub_old (KernelOB5.program_support_logical (!multiply) hb)) e)
+
+end ResourcesA
+
+end ECDSAAdd.Entrant
+
+end
+end
+
+
+section
+
+section
+-- ===== SelGeneric =====
+
+/-! The one-bank generic block with the selector-free arithmetic.
+
+`arithS` computes the enabled result on every positive input, so between the
+two `pfix` repairs it always divides by `D = directDivisor X` in the first
+arithmetic stage and multiplies by the same `D` in the second.  With the
+generic flag set this is the old computation (`X ≠ 0` there, so `D = X`); with
+it clear every other stage is the identity, `X` is unchanged in between, and
+`(Y/D)·D = Y` (`D ≠ 0`), so the block is still the identity.  Resources follow
+from the instruction-level inclusion into `GenericOB5.program` and the exact
+Toffoli difference (2 × 1020). -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+namespace ECDSAAdd.Entrant.SelGeneric5
+open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPointDialog
+
+def farithS (L : ControlledPointLayout) (multiply : Bool) : Program :=
+  pfix L++(arithS L multiply++pfix L)
+
+def program (L : ControlledPointLayout) (cx cy : Fp) : Program :=
+  fastConstAdd L L.point.x (-cx)++fastConstAdd L L.point.y (-cy)++
+    farithS L false++SquareOB5.program L++
+      fastConstAdd L L.point.x (3*cx)++farithS L true++
+        fastConstNeg L cx++fastConstAdd L L.point.y (-cy)
+
+theorem dd_eq (Z : Fp) (hz : Z≠0) : ((directDivisor Z.val : Nat) : Fp)=Z := by
+  have hv : Z.val≠0 := fun h => hz ((ZMod.val_eq_zero Z).mp h)
+  simp only [directDivisor,hv,if_false,ZMod.natCast_zmod_val]
+
+theorem dd_lt (X : Fp) : directDivisor X.val < p := by
+  by_cases zero : X.val=0
+  · simp only [directDivisor,zero,if_true]; norm_num [p]
+  · simpa only [directDivisor,zero,if_false] using X.isLt
+
+theorem dd_ne (X : Fp) : ((directDivisor X.val : Nat) : Fp)≠0 := by
+  intro h
+  have hv := congrArg ZMod.val h
+  rw [ZMod.val_natCast_of_lt (dd_lt X),ZMod.val_zero] at hv
+  exact directDivisor_ne_zero X.val hv
+
+section StepS
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+attribute [local irreducible] arithS
+
+/-- Dialog-level arithmetic step: the selector-free arithmetic always applies
+the divisor `directDivisor X`, whatever the generic flag. -/
+theorem farithS_step (X Y : Fp) (G : Bool) (base : BasisState) (multiply : Bool)
+    (hfin : base L.point.finite = decide (X.val ≠ 0)) :
+    Triple (PointDialogValues L X Y G base) (farithS L multiply)
+      (PointDialogValues L X (if multiply then Y*((directDivisor X.val : Nat) : Fp)
+        else Y/((directDivisor X.val : Nat) : Fp)) G base) := by
+  intro s m v
+  have hfx := finite_not_x L hn
+  have hfs : s.basis L.point.finite = decide (X.val ≠ 0) := (v.rest _ hfx).trans hfin
+  have x0x := x0_mem L hw
+  have x0y : x0 L ∉ L.point.y := by
+    intro h
+    have hh := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) (x0 L)
+    have a := List.count_pos_iff.mpr x0x
+    have b := List.count_pos_iff.mpr h
+    simp only [dialogUsedWires,PointAddLayout.pointWires,List.count_append,List.count_cons] at hh
+    omega
+  have x0pool : x0 L ∉ L.dialogPool := by
+    intro h
+    have dis := (List.nodup_append'.mp (L.dialogUsed_nodup hn)).2.2
+    exact List.disjoint_left.mp dis (by simp [PointAddLayout.pointWires, x0x]) h
+  let D := directDivisor X.val
+  have Dpos : 0 < D := Nat.pos_of_ne_zero (directDivisor_ne_zero X.val)
+  have Dlt : D < p := dd_lt X
+  -- first fix
+  obtain ⟨s1, hs1⟩ : ∃ t : State, t = run (pfix L) [] s := ⟨_, rfl⟩
+  have s1phase : s1.phase = s.phase := by rw [hs1]; exact pfix_phase L hw hn s _
+  have s1q (q : Wire) (hq : q ≠ x0 L) : s1.basis q = s.basis q := by
+    rw [hs1, pfix_basis L hw hn, if_neg hq]
+  have s1x : regValue L.point.x s1.basis = D := by
+    rw [hs1]; exact pfix_value L hw hn s _ X.val v.x hfs
+  have s1y : regValue L.point.y s1.basis = Y.val :=
+    (regValue_congr _ _ _ (fun q hq => s1q q (fun e => x0y (e ▸ hq)))).trans v.y
+  have s1c : regValue L.dialogPool s1.basis = 0 :=
+    (regValue_congr _ _ _ (fun q hq => s1q q (fun e => x0pool (e ▸ hq)))).trans v.clean
+  -- kernel
+  obtain ⟨s2, hs2⟩ : ∃ t : State,
+      t = run (arithS L multiply) (m.take (measurementCount (arithS L multiply))) s1 := ⟨_, rfl⟩
+  obtain ⟨kp, ky, kf⟩ := arithS_correct L hw hn multiply D Y.val Dlt Dpos Y.isLt s1
+    (m.take (measurementCount (arithS L multiply))) s1x s1y s1c
+  rw [← hs2] at kp ky kf
+  have hrun : run (farithS L multiply) m s =
+      run (pfix L) (m.drop (measurementCount (arithS L multiply))) s2 := by
+    have h0 : measurementCount (pfix L) = 0 := rfl
+    simp only [farithS, run_append, h0, List.take_zero, List.drop_zero]
+    rw [← hs1, ← hs2]
+  rw [hrun]
+  have s2fin : s2.basis L.point.finite = s.basis L.point.finite :=
+    (kf _ (fun h => hfx (List.mem_append_right _ h))).trans (s1q _ (finite_ne_x0 L hw hn))
+  have s2x0 : s2.basis (x0 L) = s1.basis (x0 L) := kf _ x0y
+  have s1x0 : s1.basis (x0 L) = (s.basis (x0 L) ^^ !s.basis L.point.finite) := by
+    rw [hs1, pfix_basis L hw hn, if_pos rfl]
+  have hfinal (q : Wire) (hq : q ∉ L.point.y) :
+      (run (pfix L) (m.drop (measurementCount (arithS L multiply))) s2).basis q = s.basis q := by
+    rw [pfix_basis L hw hn]
+    by_cases h0 : q = x0 L
+    · subst q
+      rw [if_pos rfl, s2x0, s2fin, s1x0]
+      cases s.basis (x0 L) <;> cases s.basis L.point.finite <;> rfl
+    · rw [if_neg h0]
+      exact (kf q hq).trans (s1q q h0)
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [pfix_phase L hw hn, kp, s1phase]
+  · rw [← v.x]
+    apply regValue_congr
+    intro q hq
+    exact hfinal q (fun hy => by
+      have hh := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) q
+      have a := List.count_pos_iff.mpr hq
+      have b := List.count_pos_iff.mpr hy
+      simp only [dialogUsedWires,PointAddLayout.pointWires,List.count_append,List.count_cons] at hh
+      omega)
+  · have hy' : regValue L.point.y (run (pfix L) (m.drop (measurementCount (arithS L multiply))) s2).basis =
+        regValue L.point.y s2.basis := by
+      apply regValue_congr
+      intro q hq
+      have ne : q ≠ x0 L := fun e => x0y (by rw [← e]; exact hq)
+      rw [pfix_basis L hw hn, if_neg ne]
+    rw [hy', ky]
+    cases multiply <;> simp [ZMod.natCast_zmod_val, D]
+  · exact (hfinal _ (fun h => by
+      have hh := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) L.core.generic
+      have b := List.count_pos_iff.mpr h
+      simp only [dialogUsedWires,PointAddLayout.pointWires,inPlaceFlags,List.count_append,List.count_cons,
+        beq_self_eq_true,if_true] at hh
+      omega)).trans v.generic
+  · rw [← v.clean]
+    apply regValue_congr
+    intro q hq
+    exact hfinal q (fun hy => by
+      have dis := (List.nodup_append'.mp (L.dialogUsed_nodup hn)).2.2
+      exact List.disjoint_left.mp dis (by simp [PointAddLayout.pointWires, hy]) hq)
+  · intro q hq
+    have hy : q ∉ L.point.y := fun h => hq (List.mem_append_right _ h)
+    exact (hfinal q hy).trans (v.rest q hq)
+
+end StepS
+
+section Generic
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+attribute [local irreducible] run farithS SquareOB5.program fastSquare fastCandidate
+  pointMeasuredSquareCandidate fastConstAdd fastConstNeg
+
+theorem generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd : cx-genericX X Y cx cy≠0)
+    (hfb : base L.point.finite = true) :
+    Triple (PointDialogValues L X Y true base) (program L cx cy)
+      (PointDialogValues L (genericX X Y cx cy) (genericY X Y cx cy) true base) := by
+  let a := genericSlope X Y cx cy
+  let d := cx-genericX X Y cx cy
+  have hv := generic_inplace_values X Y cx cy hX
+  have h1 := fastStep_addX L hw hn X Y true base (-cx)
+  have h2 := fastStep_addY L hw hn (X-cx) Y true base (-cy)
+  simp only [if_true,←sub_eq_add_neg] at h1 h2
+  have nz (Z : Fp) (hz : Z ≠ 0) : base L.point.finite = decide (Z.val ≠ 0) := by
+    rw [hfb]; symm; apply decide_eq_true; intro hv; exact hz ((ZMod.val_eq_zero Z).mp hv)
+  have h3 := farithS_step L hw hn (X-cx) (Y-cy) true base false (nz _ (sub_ne_zero.mpr hX))
+  rw [dd_eq _ (sub_ne_zero.mpr hX)] at h3
+  have ha : (Y-cy)/(X-cx)=a := rfl
+  simp only [Bool.false_eq_true,if_false,ha] at h3
+  have h4 := GenericOB5.square_step L hw hn (X-cx) a true base
+  simp only [if_true] at h4
+  have h5 := fastStep_addX L hw hn ((X-cx)-a*a) a true base (3*cx)
+  simp only [if_true] at h5
+  have hd5 : (X-cx)-a*a+3*cx=d := hv.2.1
+  rw [hd5] at h5
+  have h6 := farithS_step L hw hn d a true base true (nz _ hd)
+  rw [dd_eq _ hd] at h6
+  simp only [if_true] at h6
+  have h7 := fastStep_negX L hw hn d (a*d) true base cx
+  simp only [if_true] at h7
+  have h8 := fastStep_addY L hw hn (cx-d) (a*d) true base (-cy)
+  simp only [if_true,←sub_eq_add_neg] at h8
+  rw [show cx-d=genericX X Y cx cy by dsimp [d];ring] at h7 h8
+  rw [show a*d-cy=genericY X Y cx cy from hv.2.2] at h8
+  have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
+  simpa only [program,List.append_assoc] using h
+
+theorem generic_false (X Y cx cy : Fp) (base : BasisState)
+    (hfin : base L.point.finite = decide (X.val ≠ 0)) :
+    Triple (PointDialogValues L X Y false base) (program L cx cy)
+      (PointDialogValues L X Y false base) := by
+  let D : Fp := ((directDivisor X.val : Nat) : Fp)
+  have h1 := fastStep_addX L hw hn X Y false base (-cx)
+  have h2 := fastStep_addY L hw hn X Y false base (-cy)
+  have h3 := farithS_step L hw hn X Y false base false hfin
+  have h4 := GenericOB5.square_step L hw hn X (Y/D) false base
+  have h5 := fastStep_addX L hw hn X (Y/D) false base (3*cx)
+  have h6 := farithS_step L hw hn X (Y/D) false base true hfin
+  have h7 := fastStep_negX L hw hn X Y false base cx
+  have h8 := fastStep_addY L hw hn X Y false base (-cy)
+  have back : Y/D*D=Y := div_mul_cancel₀ Y (dd_ne X)
+  simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
+  rw [back] at h6
+  have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
+  simpa only [program,List.append_assoc] using h
+
+theorem boundary_generic (R : Point) (b : Bool) (f : BasisState) {cx cy : Fp}
+    (hc : curve.toAffine.Nonsingular cx cy)
+    (hg : f L.core.generic=true → R≠0 ∧ R≠(.some hc : Point) ∧ R≠-(.some hc : Point) ∧
+      R≠dialogExceptionPoint (.some hc)) :
+    Triple (PointDialogBoundary L R b f) (program L cx cy)
+      (PointDialogBoundary L (if f L.core.generic then R+.some hc else R) b f) := by
+  intro s m v
+  have hp := (point_holds _ _ _).mp v.point
+  have values : PointDialogValues L ((coordinates R).getD (0,0)).1
+      ((coordinates R).getD (0,0)).2 (f L.core.generic) s.basis s.basis :=
+    ⟨hp.2.1,hp.2.2,v.flags _ (by simp [inPlaceFlags]),v.clean,fun _ _=>rfl⟩
+  have hfinite : L.point.finite∉L.point.x++L.point.y := by
+    intro hh
+    have h := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) L.point.finite
+    have ht := List.count_pos_iff.mpr hh
+    simp only [dialogUsedWires,PointAddLayout.pointWires,List.count_append,List.count_cons,
+      beq_self_eq_true,if_true] at h ht
+    omega
+  have outside (q : Wire) (hq : q∉PointAddLayout.pointWires L.point) : q∉L.point.x++L.point.y := by
+    simp only [PointAddLayout.pointWires,List.mem_append,List.mem_cons,not_or] at hq ⊢
+    exact ⟨hq.1.2,hq.2⟩
+  cases hG : f L.core.generic with
+  | false =>
+    rw [hG] at values
+    have hfin : s.basis L.point.finite = decide (((coordinates R).getD (0,0)).1.val ≠ 0) := by
+      rw [hp.1, pointFinite_eq_x]; rfl
+    obtain ⟨phase,hv⟩ := generic_false L hw hn _ _ cx cy s.basis hfin s m values
+    refine ⟨phase,v.withPoint hn ?_ (fun q hq=>hv.rest q (outside q hq))⟩
+    simp only [Bool.false_eq_true,if_false]
+    exact (point_holds _ _ _).mpr ⟨(hv.rest _ hfinite).trans hp.1,hv.x,hv.y⟩
+  | true =>
+    have he := hg hG
+    cases R with
+    | zero => exact False.elim (he.1 rfl)
+    | @some x y hr =>
+      have den := dialog_denominators_ne_zero hr hc he.2.1 he.2.2.1 he.2.2.2
+      rw [hG] at values
+      have hfb : s.basis L.point.finite = true := hp.1
+      obtain ⟨phase,hv⟩ := generic_true L hw hn x y cx cy s.basis den.1 den.2 hfb s m values
+      refine ⟨phase,v.withPoint hn ?_ (fun q hq=>hv.rest q (outside q hq))⟩
+      simp only [if_true,←genericAdd_correct hr hc den.1,genericAdd]
+      exact (point_holds _ _ _).mpr ⟨(hv.rest _ hfinite).trans hp.1,hv.x,hv.y⟩
+
+end Generic
+
+theorem generic_ok (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    GenericOK L hc (program L cx cy) :=
+  fun R b f hg => boundary_generic L hw hn R b f hc hg
+
+section Resources
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+attribute [local irreducible] arithS ArithmeticOB5.arith wires toffoliCount measurementCount
+  fastConstAdd fastConstNeg SquareOB5.program
+
+theorem program_counts_rel (cx cy : Fp) :
+    toffoliCount (program L cx cy)+2040=toffoliCount (GenericOB5.program L cx cy) ∧
+    measurementCount (program L cx cy)=measurementCount (GenericOB5.program L cx cy) := by
+  have a := arithS_counts L
+  have b := ArithmeticOB5.arith_counts L
+  simp only [program,GenericOB5.program,farithS,ArithmeticOB5.farithOB,toffoliCount_append,
+    measurementCount_append]
+  constructor <;> omega
+
+include hw in
+theorem program_counts (cx cy : Fp) :
+    toffoliCount (program L cx cy)=2169464 ∧
+    measurementCount (program L cx cy)=1501669 := by
+  have r := program_counts_rel L cx cy
+  have o := GenericOB5.program_counts L hw cx cy
+  constructor <;> omega
+
+include hw hn in
+theorem program_sub (cx cy : Fp) :
+    SW.InstrSub2 (program L cx cy) (GenericOB5.program L cx cy) := by
+  have f (multiply : Bool) : SW.InstrSub2 (farithS L multiply) (ArithmeticOB5.farithOB L multiply) :=
+    (SW.InstrSub2.refl _).append ((arithS_sub L hw hn multiply).append (SW.InstrSub2.refl _))
+  simp only [program,GenericOB5.program]
+  exact ((((((((SW.InstrSub2.refl _).append (SW.InstrSub2.refl _)).append (f false)).append
+    (SW.InstrSub2.refl _)).append (SW.InstrSub2.refl _)).append (f true)).append
+    (SW.InstrSub2.refl _)).append (SW.InstrSub2.refl _))
+
+include hw hn in
+theorem program_physical (cx cy : Fp) : GatePhysical (program L cx cy) :=
+  (program_sub L hw hn cx cy).physical (GenericOB5.program_physical L hw hn cx cy)
+
+include hw hn in
+theorem program_gateSlots_le (cx cy : Fp) :
+    Challenge.gateSlots (program L cx cy) ≤ 46300004 :=
+  (program_sub L hw hn cx cy).slots.trans (GenericOB5.program_gateSlots_le L hw cx cy)
+
+include hw hn in
+theorem program_support (cx cy : Fp) :
+    wires (program L cx cy)⊆(OB5Support.genericSites L).toFinset :=
+  (program_sub L hw hn cx cy).wires_sub.trans (GenericOB5.program_support L hw hn cx cy)
+
+end Resources
+
+end ECDSAAdd.Entrant.SelGeneric5
+
+end
+end
+
+
+
 -- ===== ECDSAAdd.Submission.Entrant.Main =====
 section
 
@@ -37612,11 +38939,11 @@ def program (C : Point) : Program :=
   match C with
   | .zero => []
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
-      WrapperOB5.program layout C cy (GenericOB5.program layout cx cy)
+      WrapperOB5.program layout C cy (SelGeneric5.program layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2172536, 1502696, 1601, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2170496, 1502696, 1601, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -37626,21 +38953,21 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
     simpa only [program, run, ← WeierstrassCurve.Affine.Point.zero_def, add_zero, ite_self]
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc =>
-    have hG := GenericOB5.program_support layout layout_widths layout_nodup cx cy
+    have hG := SelGeneric5.program_support layout layout_widths layout_nodup cx cy
     exact fixed_correct _ b R _
       (WrapperOB5.full_spec layout layout_widths layout_nodup R hc b _
-        (GenericOB5.generic_ok layout layout_widths layout_nodup hc) hG)
+        (SelGeneric5.generic_ok layout layout_widths layout_nodup hc) hG)
       ((WrapperOB5.program_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2172536 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2170496 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
     have h := (WrapperOB5.counts layout layout_widths (.some hc) cy
-      (GenericOB5.program layout cx cy) hc rfl).1
-    have g := (GenericOB5.program_counts layout layout_widths cx cy).1
-    change toffoliCount (WrapperOB5.program layout (.some hc) cy (GenericOB5.program layout cx cy)) ≤ _
+      (SelGeneric5.program layout cx cy) hc rfl).1
+    have g := (SelGeneric5.program_counts layout layout_widths cx cy).1
+    change toffoliCount (WrapperOB5.program layout (.some hc) cy (SelGeneric5.program layout cx cy)) ≤ _
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1502696 := by
@@ -37648,9 +38975,9 @@ theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1502
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
     have h := (WrapperOB5.counts layout layout_widths (.some hc) cy
-      (GenericOB5.program layout cx cy) hc rfl).2
-    have g := (GenericOB5.program_counts layout layout_widths cx cy).2
-    change measurementCount (WrapperOB5.program layout (.some hc) cy (GenericOB5.program layout cx cy)) ≤ _
+      (SelGeneric5.program layout cx cy) hc rfl).2
+    have g := (SelGeneric5.program_counts layout layout_widths cx cy).2
+    change measurementCount (WrapperOB5.program layout (.some hc) cy (SelGeneric5.program layout cx cy)) ≤ _
     omega
 
 theorem io_subset_supportOB5 : ioWires ⊆ WrapperOB5.support layout := by
@@ -37667,7 +38994,7 @@ theorem program_qubits (C : Point) : qubits (program C) ≤ 1601 := by
     decide
   | @some cx cy hc =>
     have support := WrapperOB5.program_support layout layout_widths layout_nodup (.some hc) cy _
-      (GenericOB5.program_support layout layout_widths layout_nodup cx cy)
+      (SelGeneric5.program_support layout layout_widths layout_nodup cx cy)
     have card := Finset.card_le_card (Finset.union_subset io_subset_supportOB5 support)
     exact card.trans (WrapperOB5.support_card layout layout_widths)
 
@@ -37676,16 +39003,16 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
   | zero => simp [program, GatePhysical]
   | @some cx cy hc =>
     exact WrapperOB5.physical layout layout_widths layout_nodup _ cy _
-      (GenericOB5.program_physical layout layout_widths layout_nodup cx cy)
+      (SelGeneric5.program_physical layout layout_widths layout_nodup cx cy)
 
 theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 47000000 := by
   cases C with
   | zero => simp [program, gateSlots]
   | @some cx cy hc =>
     have h := WrapperOB5.gateSlots layout layout_widths (.some hc) cy
-      (GenericOB5.program layout cx cy)
-    have g := GenericOB5.program_gateSlots_le layout layout_widths cx cy
-    change gateSlots (WrapperOB5.program layout (.some hc) cy (GenericOB5.program layout cx cy)) ≤ _
+      (SelGeneric5.program layout cx cy)
+    have g := SelGeneric5.program_gateSlots_le layout layout_widths layout_nodup cx cy
+    change gateSlots (WrapperOB5.program layout (.some hc) cy (SelGeneric5.program layout cx cy)) ≤ _
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
