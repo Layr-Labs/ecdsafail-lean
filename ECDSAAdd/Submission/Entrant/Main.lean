@@ -1148,7 +1148,7 @@ end
 -- ===== ECDSAAdd.Submission.Entrant.Codec5 =====
 section
 
-/-! Five legal two-bit trits, packed into eight bits by a gate-only permutation (13 Toffolis;
+/-! Five legal two-bit trits, packed into eight bits by a gate-only permutation (12 Toffolis;
 `decode` is its reverse). -/
 set_option maxRecDepth 8192
 set_option maxHeartbeats 1600000
@@ -1156,29 +1156,29 @@ set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.Codec5
 open Arithmetic Challenge RecordedQuantum Baselines
 
-/-- Pairs 0, 2 and 1 enter a three-trit pack whose hole is wire 5. One
-generalized Toffoli then leaves an affine plane of spare codes on the packed
-word. Two Toffolis store `sign 3 = 0, sign 4 = 1` on the illegal `11` of pair 3,
-and for `sign 3 = sign 4 = 1` three conditional swaps move three packed bits
-into pair 3 and the orientation of pair 4, so the packed word lands on the
-spare plane; three Toffolis with wire 5 as clean ancilla then clear wire 9. -/
+/-- Pairs 0, 1 and 2 enter a four-Toffoli three-trit pack (found by a SAT search) whose image
+lies in a hyperplane, re-encoded so that wire 5 is that hole and four of its spare codes form the
+coordinate plane `A₂ = A₃ = A₄ = 0` of the packed word on wires 0..4. Two Toffolis store
+`sign 3 = 0, sign 4 = 1` on the illegal `11` of pair 3, and for `sign 3 = sign 4 = 1` three
+conditional swaps move `A₂, A₃, A₄` into pair 3 and the orientation of pair 4, so the packed word
+lands on that spare plane; three Toffolis with wire 5 as clean ancilla then clear wire 9. -/
 def encode : Program := [
-  .CX 3 2,.CX 2 3,.CX 2 5,.CX 5 2,.CX 2 4,.CX 4 2,.CX 2 4,.CX 2 1,.CX 1 2,.CX 2 1,.CX 5 0,
-  .CX 0 5,.CX 5 0,.X 0,.X 1,.CCX 0 1 4,.X 1,.X 0,.CX 5 0,.CX 0 5,.CX 5 0,.CX 2 1,.CX 1 2,
-  .CX 2 1,.CX 2 4,.CX 4 2,.CX 2 4,.CX 5 2,.CX 2 5,.CX 2 3,.CX 3 2,.CX 2 3,.CX 2 4,.CX 2 0,
-  .CX 5 3,.CX 5 2,.CX 5 4,.CX 5 0,.CX 2 4,.CX 4 2,.CX 2 4,.CX 5 1,.CX 1 5,.CX 5 1,.CX 0 3,
-  .CX 0 2,.CX 0 4,.CX 1 0,.CX 0 1,.CX 1 0,.CCX 0 1 4,.CX 1 0,.CX 0 1,.CX 1 0,.CX 0 4,.CX 0 2,
-  .CX 0 3,.CX 5 1,.CX 1 5,.CX 5 1,.CX 2 4,.CX 4 2,.CX 2 4,.CX 5 0,.CX 5 2,.CX 5 3,.CX 2 0,
-  .CX 2 3,.CX 5 2,.CX 5 0,.CX 4 1,.CX 1 2,.CX 1 4,.CX 0 5,.CX 0 1,.X 0,.X 1,.CCX 0 1 4,.X 1,
-  .X 0,.CX 0 1,.CX 0 5,.CX 1 4,.CX 1 2,.CX 4 1,.CX 5 0,.CX 5 4,.CX 5 2,.CX 2 4,.CX 5 1,.CX 4 5,
-  .CX 5 4,.CX 1 5,.CX 1 4,.CX 1 0,.CX 0 1,.CX 1 0,.CCX 0 1 4,.CX 1 0,.CX 0 1,.CX 1 0,.CX 1 4,
-  .CX 1 5,.CX 5 4,.CX 4 5,.CX 5 1,.CX 4 2,.CX 4 1,.CX 1 2,.CX 1 4,.CX 4 1,.CCX 0 1 4,.CX 4 1,
-  .CX 1 4,.CX 1 2,.CX 4 1,.CX 4 2,.CX 2 1,.CX 2 0,.CX 4 0,.CX 1 2,.CX 2 1,.CX 0 4,.CX 4 0,.X 4,
-  .X 2,.X 3,.CX 9 7,.CX 8 6,.CX 7 9,.CX 9 7,.CX 6 8,.CCX 6 7 8,.CX 6 8,.CX 9 7,.CX 7 9,.CX 8 6,
-  .CX 9 8,.CX 9 6,.CX 8 9,.CX 9 8,.CX 7 8,.CX 7 6,.CX 6 8,.CX 6 7,.CCX 6 7 8,.CX 6 7,.CX 6 8,
-  .CX 7 6,.CX 7 8,.CX 9 8,.CX 8 9,.CX 9 8,.CX 6 9,.CX 9 6,.CX 6 4,.CCX 9 4 6,.CX 6 4,.CX 7 2,
-  .CCX 9 2 7,.CX 7 2,.CX 8 3,.CCX 9 3 8,.CX 8 3,.X 4,.X 2,.X 3,.CCX 4 2 5,.CCX 5 3 9,.CCX 4 2 5,
-  .X 4,.X 2,.X 3]
+  .CX 3 2,.CX 2 3,.CX 2 0,.CX 0 2,.CX 0 1,.CX 1 0,.X 1,.CCX 0 1 2,.X 1,.CX 1 0,.CX 0 1,.CX 0 2,
+  .CX 2 0,.CX 2 3,.CX 3 2,.CX 4 3,.CX 4 2,.CX 3 1,.CX 2 1,.CX 2 0,.CX 1 3,.CX 0 4,.CX 0 3,
+  .CX 0 2,.CX 2 0,.CCX 0 1 2,.CX 2 0,.CX 0 2,.CX 0 3,.CX 0 4,.CX 1 3,.CX 2 0,.CX 2 1,.CX 3 1,
+  .CX 4 2,.CX 4 3,.CX 5 4,.CX 5 3,.CX 5 2,.CX 4 5,.CX 5 4,.CX 3 5,.CX 3 1,.CX 3 0,.CX 2 5,
+  .CX 2 4,.CX 2 3,.CX 2 1,.CX 3 2,.CX 1 5,.CX 1 3,.CX 0 2,.CX 2 0,.X 1,.CCX 0 1 3,.X 1,.CX 2 0,
+  .CX 0 2,.CX 1 3,.CX 1 5,.CX 3 2,.CX 2 1,.CX 2 3,.CX 2 4,.CX 2 5,.CX 3 0,.CX 3 1,.CX 3 5,
+  .CX 5 4,.CX 4 5,.CX 5 3,.CX 4 5,.CX 5 4,.CX 3 1,.CX 2 5,.CX 2 3,.CX 2 1,.CX 2 0,.CX 1 5,
+  .CX 1 4,.CX 1 3,.CX 1 2,.CX 1 0,.CX 2 1,.CX 0 5,.CX 0 4,.CX 0 2,.CX 2 0,.X 0,.CCX 0 1 2,.X 0,
+  .CX 2 0,.CX 0 2,.CX 0 4,.CX 0 5,.CX 2 1,.CX 1 0,.CX 1 2,.CX 1 3,.CX 1 4,.CX 1 5,.CX 2 0,
+  .CX 2 1,.CX 2 3,.CX 2 5,.CX 3 1,.CX 5 4,.CX 4 5,.CX 5 3,.CX 5 1,.CX 4 5,.CX 4 3,.CX 4 2,
+  .CX 4 0,.CX 5 4,.CX 3 5,.CX 3 4,.CX 3 2,.CX 3 1,.CX 4 3,.CX 2 5,.CX 2 4,.CX 2 1,.CX 1 4,
+  .CX 1 3,.CX 1 0,.CX 3 1,.CX 0 4,.CX 4 0,.X 2,.X 3,.X 4,.CX 9 7,.CX 8 6,.CX 7 9,.CX 9 7,
+  .CX 6 8,.CCX 6 7 8,.CX 6 8,.CX 9 7,.CX 7 9,.CX 8 6,.CX 9 8,.CX 9 6,.CX 8 9,.CX 9 8,.CX 7 8,
+  .CX 7 6,.CX 6 8,.CX 6 7,.CCX 6 7 8,.CX 6 7,.CX 6 8,.CX 7 6,.CX 7 8,.CX 9 8,.CX 8 9,.CX 9 8,
+  .CX 6 9,.CX 9 6,.CX 6 2,.CCX 9 2 6,.CX 6 2,.CX 7 3,.CCX 9 3 7,.CX 7 3,.CX 8 4,.CCX 9 4 8,
+  .CX 8 4,.X 2,.X 3,.X 4,.CCX 2 3 5,.CCX 5 4 9,.CCX 2 3 5,.X 2,.X 3,.X 4]
 
 def decode : Program := encode.reverse
 
@@ -1219,10 +1219,10 @@ private theorem physical_of_all (p : Program) (h : p.all physicalBool=true) : Ga
 theorem physical : GatePhysical encode ∧ GatePhysical decode :=
   ⟨physical_of_all encode (by decide),physical_of_all decode (by decide)⟩
 
-theorem counts : toffoliCount encode=13 ∧ measurementCount encode=0 ∧
-    toffoliCount decode=13 ∧ measurementCount decode=0 := by decide
+theorem counts : toffoliCount encode=12 ∧ measurementCount encode=0 ∧
+    toffoliCount decode=12 ∧ measurementCount decode=0 := by decide
 
-theorem slots : gateSlots encode=173 ∧ gateSlots decode=173 := by decide
+theorem slots : gateSlots encode=178 ∧ gateSlots decode=178 := by decide
 
 theorem encode_phase (s : State) (m : List Bool) : (run encode m s).phase=s.phase :=
   proper_phase _ proper_encode s m
@@ -1410,13 +1410,13 @@ theorem site_mem (f : Fin 10→Wire) (i : Fin 10) : f i∈wires (encodeAt f) := 
   rw [(supportAt_exact f).1]
   exact Finset.mem_image_of_mem f (Finset.mem_univ i)
 
-theorem countsAt (f : Fin 10→Wire) : toffoliCount (encodeAt f)=13 ∧ measurementCount (encodeAt f)=0 ∧
-    toffoliCount (decodeAt f)=13 ∧ measurementCount (decodeAt f)=0 := by
+theorem countsAt (f : Fin 10→Wire) : toffoliCount (encodeAt f)=12 ∧ measurementCount (encodeAt f)=0 ∧
+    toffoliCount (decodeAt f)=12 ∧ measurementCount (decodeAt f)=0 := by
   simpa only [encodeAt,decodeAt,(renameProgram_counts (label f) encode).1,
     (renameProgram_counts (label f) encode).2,(renameProgram_counts (label f) decode).1,
     (renameProgram_counts (label f) decode).2] using counts
 
-theorem slotsAt (f : Fin 10→Wire) : gateSlots (encodeAt f)=173 ∧ gateSlots (decodeAt f)=173 := by
+theorem slotsAt (f : Fin 10→Wire) : gateSlots (encodeAt f)=178 ∧ gateSlots (decodeAt f)=178 := by
   simpa only [encodeAt,decodeAt,rename_gateSlots] using slots
 
 theorem physicalAt (f : Fin 10→Wire) (hf : Function.Injective f) :
@@ -1565,12 +1565,12 @@ theorem packDue_true (i : Nat) (h : packDue i=true) : 5 ≤ i ∧ i % 5 = 0 := b
   simpa only [packDue,decide_eq_true_eq] using h
 
 theorem encode_counts (w : Nat → Wire) (start : Nat) :
-    toffoliCount (encode w start)=13 ∧ measurementCount (encode w start)=0 := by
+    toffoliCount (encode w start)=12 ∧ measurementCount (encode w start)=0 := by
   have h := Codec5.countsAt (historyMap w start)
   exact ⟨h.1,h.2.1⟩
 
 theorem decode_counts (w : Nat → Wire) (start : Nat) :
-    toffoliCount (decode w start)=13 ∧ measurementCount (decode w start)=0 := by
+    toffoliCount (decode w start)=12 ∧ measurementCount (decode w start)=0 := by
   have h := Codec5.countsAt (historyMap w start)
   exact h.2.2
 
@@ -1593,7 +1593,7 @@ theorem decode_physical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
   (Codec5.physicalAt _ (historyMap_injective w hn start hs)).2
 
 theorem codec_slots (w : Nat → Wire) (start : Nat) :
-    Challenge.gateSlots (encode w start)=173 ∧ Challenge.gateSlots (decode w start)=173 :=
+    Challenge.gateSlots (encode w start)=178 ∧ Challenge.gateSlots (decode w start)=178 :=
   Codec5.slotsAt _
 
 theorem encode_correct (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
@@ -1605,9 +1605,9 @@ theorem encode_correct (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
   Codec5.encodeAt_correct _ (historyMap_injective w hn start hs) s m legal
 
 theorem packAfter_counts (w : Nat → Wire) (i : Nat) :
-    toffoliCount (packAfter w i)=13*(if packDue i then 1 else 0) ∧
+    toffoliCount (packAfter w i)=12*(if packDue i then 1 else 0) ∧
     measurementCount (packAfter w i)=0 ∧
-    toffoliCount (decodeBefore w i)=13*(if packDue i then 1 else 0) ∧
+    toffoliCount (decodeBefore w i)=12*(if packDue i then 1 else 0) ∧
     measurementCount (decodeBefore w i)=0 := by
   have e := encode_counts w (i-5)
   have d := decode_counts w (i-5)
@@ -5325,7 +5325,7 @@ theorem packet_counts (divide : Bool) (j : Nat)
     (hn : (skywalkSharedWires base).Nodup)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (letters j))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (packet divide j)=(if divide then 6421 else 6426) ∧
+    toffoliCount (packet divide j)=(if divide then 6419 else 6424) ∧
       measurementCount (packet divide j)=5125 := by
   have raw := body_counts divide j hn hf ho
   have e := History5.encode_counts base (5*j)
@@ -5342,7 +5342,7 @@ theorem groups_counts (divide : Bool) (j n : Nat) (bound : j+n≤102)
     (hn : (skywalkSharedWires base).Nodup)
     (hf : ∀k,k<102 → MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (letters k))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (groups divide j n)=n*(if divide then 6421 else 6426) ∧
+    toffoliCount (groups divide j n)=n*(if divide then 6419 else 6424) ∧
       measurementCount (groups divide j n)=n*5125 := by
   induction n generalizing j with
   | zero => simp [groups,PacketSequence.program,toffoliCount,measurementCount]
@@ -5372,7 +5372,7 @@ theorem firstPacket_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (firstPacket divide)=(if divide then 5399 else 5403) ∧
+    toffoliCount (firstPacket divide)=(if divide then 5397 else 5401) ∧
       measurementCount (firstPacket divide)=4101 := by
   have len : restLetters.length=4 := by simp only [restLetters,List.length_map,List.length_range']
   have f := OffsetBorrowedCanonical.replay_counts base _ _ _ hn restLetters (rest_layout hf) ho
@@ -5407,7 +5407,7 @@ theorem replay_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (replay divide)=(if divide then 654942 else 655452) ∧
+    toffoliCount (replay divide)=(if divide then 654738 else 655248) ∧
       measurementCount (replay divide)=522750 := by
   have first := firstPacket_counts divide hn hf ho
   have rest := groups_counts divide 1 101 (by decide) hn (letters_layouts hf) ho
@@ -25453,7 +25453,7 @@ theorem compactForward5_spec (w : Nat → Wire)
 
 theorem compactForward5_counts (w : Nat → Wire)
     (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+13*packCount i n ∧
+    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+12*packCount i n ∧
     measurementCount (compactForward5 w i n)=compactSkywalkForwardM i n := by
   induction n generalizing i with
   | zero => simp [compactForward5,compactSkywalkForwardT,compactSkywalkForwardM,packCount,
@@ -25570,7 +25570,7 @@ theorem decodeRange_zero (w : Nat → Wire) (n : Nat) :
   | succ n ih => rw [decodeRange_last,decodePrefix,ih,Nat.zero_add]
 
 theorem compactReverse5_counts_relative (w : Nat → Wire) (i n : Nat) :
-    toffoliCount (compactReverse5 w i n)=toffoliCount (compactSkywalkReverse w i n)+13*packCount i n ∧
+    toffoliCount (compactReverse5 w i n)=toffoliCount (compactSkywalkReverse w i n)+12*packCount i n ∧
     measurementCount (compactReverse5 w i n)=measurementCount (compactSkywalkReverse w i n) := by
   induction n generalizing i with
   | zero => simp [compactReverse5,compactSkywalkReverse,packCount,toffoliCount,measurementCount]
@@ -25625,7 +25625,7 @@ theorem compactReverse5_normalize (w : Nat → Wire)
 
 theorem compactReverse5_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+13*packCount i n ∧
+    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+12*packCount i n ∧
     measurementCount (compactReverse5 w i n)=compactSkywalkForwardM i n := by
   have relative := compactReverse5_counts_relative w i n
   have compact := compactSkywalkReverse_counts w hn i n hi
@@ -26609,7 +26609,7 @@ theorem segment5_pool_frame (divide : Bool)
 theorem segment5_counts (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (segment5 divide)=(if divide then 655452 else 655962) ∧
+    toffoliCount (segment5 divide)=(if divide then 655248 else 655758) ∧
     measurementCount (segment5 divide)=523260 := by
   have c := HalfConvert.counts tgt (balancedSharedTargetConvert_widths base)
   have r := Replay5.replay_counts divide hn hf ho
@@ -26955,7 +26955,7 @@ theorem kernel5_states_from_first (divide : Bool)
 
 
 theorem actualKernel5_counts (divide : Bool) :
-    toffoliCount (actualKernel5 divide)=(if divide then 1053104 else 1053614) ∧
+    toffoliCount (actualKernel5 divide)=(if divide then 1052696 else 1053206) ∧
     measurementCount (actualKernel5 divide)=721138 := by
   have config := MappedCompressed.LaneA.laneLogical_config
   have freshF := compactForward5_counts base base_pool_nodup 1 511 (by omega)
@@ -30633,7 +30633,7 @@ theorem compactForward5_spec (w : Nat → Wire)
 
 theorem compactForward5_counts (w : Nat → Wire)
     (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+13*History5.packCount i n ∧
+    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+12*History5.packCount i n ∧
     measurementCount (compactForward5 w i n)=compactSkywalkForwardM i n := by
   induction n generalizing i with
   | zero => simp [compactForward5,compactSkywalkForwardT,compactSkywalkForwardM,
@@ -30723,7 +30723,7 @@ attribute [local irreducible] run compactReverse5 compactSkywalkReverseTick comp
 
 theorem compactReverse5_counts_relative (w : Nat → Wire) (i n : Nat) :
     toffoliCount (compactReverse5 w i n)=
-      toffoliCount (compactSkywalkReverse w i n)+13*History5.packCount i n ∧
+      toffoliCount (compactSkywalkReverse w i n)+12*History5.packCount i n ∧
     measurementCount (compactReverse5 w i n)=measurementCount (compactSkywalkReverse w i n) := by
   induction n generalizing i with
   | zero => simp [compactReverse5,compactSkywalkReverse,History5.packCount,toffoliCount,
@@ -30780,7 +30780,7 @@ theorem compactReverse5_normalize (w : Nat → Wire)
 
 theorem compactReverse5_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+13*History5.packCount i n ∧
+    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+12*History5.packCount i n ∧
     measurementCount (compactReverse5 w i n)=compactSkywalkForwardM i n := by
   have relative := compactReverse5_counts_relative w i n
   have compact := compactSkywalkReverse_counts w hn i n hi
@@ -38567,7 +38567,7 @@ theorem raw_counts (divide : Bool) (ls : List MixedTranscriptLetter)
 
 theorem packet_counts (divide : Bool) (j : Nat)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (packet divide j)=6426 ∧ measurementCount (packet divide j)=5120 := by
+    toffoliCount (packet divide j)=6424 ∧ measurementCount (packet divide j)=5120 := by
   have raw := raw_counts divide (Replay5.letters j) (swap_nodup hn ho)
   have len : (Replay5.letters j).length=5 := by simp [Replay5.letters]
   rw [len] at raw
@@ -38582,7 +38582,7 @@ theorem packet_counts (divide : Bool) (j : Nat)
 
 theorem groups_counts (divide : Bool) (j n : Nat)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (groups divide j n)=n*6426 ∧ measurementCount (groups divide j n)=n*5120 := by
+    toffoliCount (groups divide j n)=n*6424 ∧ measurementCount (groups divide j n)=n*5120 := by
   induction n generalizing j with
   | zero => simp [groups,PacketSequence.program,toffoliCount,measurementCount]
   | succ n ih =>
@@ -38595,7 +38595,7 @@ theorem groups_counts (divide : Bool) (j n : Nat)
 
 theorem firstPacket_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (firstPacket divide)=5403 ∧ measurementCount (firstPacket divide)=4097 := by
+    toffoliCount (firstPacket divide)=5401 ∧ measurementCount (firstPacket divide)=4097 := by
   have raw := raw_counts divide Replay5.restLetters (swap_nodup hn ho)
   have len : Replay5.restLetters.length=4 := by simp [Replay5.restLetters]
   rw [len] at raw
@@ -38619,7 +38619,7 @@ theorem endPacket_counts (divide : Bool) :
 
 theorem logicalReplay_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (logicalReplay divide)=655452 ∧ measurementCount (logicalReplay divide)=522240 := by
+    toffoliCount (logicalReplay divide)=655248 ∧ measurementCount (logicalReplay divide)=522240 := by
   have first := firstPacket_counts divide hn ho
   have rest := groups_counts divide 1 101 hn ho
   have last := endPacket_counts divide
@@ -38629,7 +38629,7 @@ theorem logicalReplay_counts (divide : Bool)
 
 theorem replay_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (replay divide)=655452 ∧ measurementCount (replay divide)=522240 := by
+    toffoliCount (replay divide)=655248 ∧ measurementCount (replay divide)=522240 := by
   simpa only [replay,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2] using
     logicalReplay_counts divide hn ho
 
@@ -38733,7 +38733,7 @@ theorem raw_gateSlots_le (divide : Bool) (ls : List MixedTranscriptLetter) :
     have c := OneBankCell5.cell_gateSlots_le divide base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410) l.2.1 l.2.2
     cases divide <;> simp only [rawReplay,Bool.false_eq_true,if_false,if_true,gateSlots_append,List.length_cons] at c ih ⊢ <;> omega
 
-theorem packet_gateSlots_le (divide : Bool) (j : Nat) : gateSlots (packet divide j)≤130346 := by
+theorem packet_gateSlots_le (divide : Bool) (j : Nat) : gateSlots (packet divide j)≤130356 := by
   have raw : gateSlots (body divide j)≤5*26000 := by
     simpa only [Replay5.letters,List.length_map,List.length_range] using
       raw_gateSlots_le divide (Replay5.letters j)
@@ -38741,7 +38741,7 @@ theorem packet_gateSlots_le (divide : Bool) (j : Nat) : gateSlots (packet divide
   simp only [packet,rename_gateSlots,basePacket,gateSlots_append]
   omega
 
-theorem groups_gateSlots_le (divide : Bool) (j n : Nat) : gateSlots (groups divide j n)≤n*130346 := by
+theorem groups_gateSlots_le (divide : Bool) (j n : Nat) : gateSlots (groups divide j n)≤n*130356 := by
   induction n generalizing j with
   | zero => simp [groups,PacketSequence.program]
   | succ n ih =>
@@ -38750,7 +38750,7 @@ theorem groups_gateSlots_le (divide : Bool) (j n : Nat) : gateSlots (groups divi
     simp only [groups] at rest
     cases divide <;> simp only [groups,PacketSequence.program,Bool.false_eq_true,if_false,if_true,gateSlots_append] <;> omega
 
-theorem firstPacket_gateSlots_le (divide : Bool) : gateSlots (firstPacket divide)≤105146 := by
+theorem firstPacket_gateSlots_le (divide : Bool) : gateSlots (firstPacket divide)≤105156 := by
   have raw := raw_gateSlots_le divide Replay5.restLetters
   have len : Replay5.restLetters.length=4 := by simp [Replay5.restLetters]
   rw [len] at raw
@@ -38883,7 +38883,7 @@ attribute [local irreducible] toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
     (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (program divide)=655962 ∧ measurementCount (program divide)=522750 := by
+    toffoliCount (program divide)=655758 ∧ measurementCount (program divide)=522750 := by
   have ce := HalfFieldOB5.endpoint_counts
   have r := OneBankReplay5.replay_counts divide hn ho
   have len : (balancedSharedPorts base (base 2409)).r.length=
@@ -41239,7 +41239,7 @@ theorem segH_gateSlots (divide : Bool) :
 attribute [local irreducible] Kernel5.actualKernel5 toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) :
-    toffoliCount (program divide)=1051699 ∧ measurementCount (program divide)=720309 := by
+    toffoliCount (program divide)=1051291 ∧ measurementCount (program divide)=720309 := by
   have cfg := MappedCompressed.LaneA.laneLogical_config
   have narrow := W.compactPasses5_old_counts base base_pool_nodup
   have repair := Stack5.counts_511 base base_pool_nodup
@@ -42207,8 +42207,8 @@ theorem farithOB_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
 attribute [local irreducible] KernelOB5.program toffoliCount measurementCount
 
 theorem arith_counts (L : ControlledPointLayout) :
-    toffoliCount (arith L false)=1051699 ∧ measurementCount (arith L false)=720309 ∧
-    toffoliCount (arith L true)=1051699 ∧ measurementCount (arith L true)=720309 := by
+    toffoliCount (arith L false)=1051291 ∧ measurementCount (arith L false)=720309 ∧
+    toffoliCount (arith L true)=1051291 ∧ measurementCount (arith L true)=720309 := by
   have a := KernelOB5.program_counts true
   have b := KernelOB5.program_counts false
   have c := renameProgram_counts (wireFn2 L) (KernelOB5.program true)
@@ -42494,8 +42494,8 @@ section ResourcesA
 attribute [local irreducible] run SW.kernelS KernelOB5.program wires toffoliCount measurementCount
 
 theorem arithS_counts (L : ControlledPointLayout) :
-    toffoliCount (arithS L false)=1050679 ∧ measurementCount (arithS L false)=720309 ∧
-    toffoliCount (arithS L true)=1050679 ∧ measurementCount (arithS L true)=720309 := by
+    toffoliCount (arithS L false)=1050271 ∧ measurementCount (arithS L false)=720309 ∧
+    toffoliCount (arithS L true)=1050271 ∧ measurementCount (arithS L true)=720309 := by
   have o := ArithmeticOB5.arith_counts L
   have s1 := SW.selKernel_sel true
   have s2 := SW.selKernel_sel false
@@ -42987,7 +42987,7 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2163768 ∧
+    toffoliCount (program L cx cy)=2162952 ∧
     measurementCount (program L cx cy)=1501001 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
@@ -43321,7 +43321,7 @@ theorem program_counts_rel (cx cy : Fp) :
 
 include hw in
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2161728 ∧
+    toffoliCount (program L cx cy)=2160912 ∧
     measurementCount (program L cx cy)=1501001 := by
   have r := program_counts_rel L cx cy
   have o := GenericOB5.program_counts L hw cx cy
@@ -44434,7 +44434,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2162504, 1501771, 1601, 50000004⟩
+def bounds : Challenge.Bounds := ⟨2161688, 1501771, 1601, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -44451,7 +44451,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((WrapperOB5.program_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2162504 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2161688 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
