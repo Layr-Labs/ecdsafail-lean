@@ -1570,6 +1570,283 @@ end
 end
 
 
+-- ===== P_Part3 =====
+section
+
+-- ===== Own verified Codec34 Lite =====
+section
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 16384
+namespace ECDSAAdd.Entrant.OwnCodec34
+open Arithmetic Challenge RecordedQuantum Baselines
+abbrev old := Codec5.encode
+def encode : Program := old.take 30 ++ (old.drop 31).take 71 ++ old.drop 103
+def decode : Program := encode.reverse
+
+theorem counts : toffoliCount encode=34 ∧ measurementCount encode=0 ∧
+    toffoliCount decode=34 ∧ measurementCount decode=0 := by decide
+
+theorem slots : gateSlots encode=106 ∧ gateSlots decode=106 := by decide
+
+def raw (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 : Bool) : BasisState
+  | 0 => b0 | 1 => b1 | 2 => b2 | 3 => b3 | 4 => b4
+  | 5 => b5 | 6 => b6 | 7 => b7 | 8 => b8 | 9 => b9 | _ => false
+
+def legal (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 : Bool) : Prop :=
+  (b0&&b1)=false ∧ (b2&&b3)=false ∧ (b4&&b5)=false ∧ (b6&&b7)=false ∧ (b8&&b9)=false
+
+
+end ECDSAAdd.Entrant.OwnCodec34
+
+end
+end
+
+
+-- ===== P_Part4 =====
+section
+
+-- ===== Own verified Codec34 Full =====
+section
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 16384
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnCodec34
+open Arithmetic Challenge RecordedQuantum Baselines
+
+theorem finite_eq : ∀b0 b1 b2 b3 b4 b5 b6 b7 b8 b9:Bool,
+    legal b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 → ∀q:Fin 10,
+    (run encode [] ⟨false,raw b0 b1 b2 b3 b4 b5 b6 b7 b8 b9⟩).basis q.val =
+      (run old [] ⟨false,raw b0 b1 b2 b3 b4 b5 b6 b7 b8 b9⟩).basis q.val := by
+  unfold legal
+  decide
+
+theorem proper : ProperProgram encode := by
+  simp [ProperProgram,encode,old,Codec5.encode,Codec5.sweep,Codec5.mulStep,Codec5.divStep,ProperGate]
+
+theorem encodeSupport : wires encode⊆Finset.range 10 := by decide
+
+theorem legal_flags (s : State) (h : Codec5.legal s.basis) :
+    legal (s.basis 0) (s.basis 1) (s.basis 2) (s.basis 3) (s.basis 4)
+      (s.basis 5) (s.basis 6) (s.basis 7) (s.basis 8) (s.basis 9) := by
+  have key (a b : Bool) (h : a.toNat+2*b.toNat<3) : (a&&b)=false := by
+    cases a <;> cases b <;> simp_all
+  exact ⟨key _ _ (h 0 (by decide)),key _ _ (h 1 (by decide)),key _ _ (h 2 (by decide)),
+    key _ _ (h 3 (by decide)),key _ _ (h 4 (by decide))⟩
+
+theorem run_eq (s : State) (m : List Bool) (h : Codec5.legal s.basis) :
+    run encode m s=run old m s := by
+  let rawBits:=raw (s.basis 0) (s.basis 1) (s.basis 2) (s.basis 3) (s.basis 4)
+      (s.basis 5) (s.basis 6) (s.basis 7) (s.basis 8) (s.basis 9)
+  let t : State:=⟨s.phase,rawBits⟩
+  let u : State:=⟨false,rawBits⟩
+  have hb : ∀q∈Finset.range 10,s.basis q=t.basis q := by
+    intro q hq
+    have hi:=Finset.mem_range.mp hq
+    interval_cases q <;> rfl
+  have pp:=pool_run_agrees encode (Finset.range 10) encodeSupport m s t rfl hb
+  have qq:=pool_run_agrees old (Finset.range 10) Codec5.support.1 m s t rfl hb
+  have et : (run encode m t).basis=(run encode [] u).basis := run_basis_records _ t u m [] rfl
+  have ot : (run old m t).basis=(run old [] u).basis := run_basis_records _ t u m [] rfl
+  have finite:=finite_eq (s.basis 0) (s.basis 1) (s.basis 2) (s.basis 3) (s.basis 4)
+      (s.basis 5) (s.basis 6) (s.basis 7) (s.basis 8) (s.basis 9) (legal_flags s h)
+  apply State.extensionality
+  · exact (Codec5.proper_phase _ proper s m).trans (Codec5.encode_phase s m).symm
+  · funext q
+    by_cases hq:q<10
+    · have a:=pp.2 q (Finset.mem_range.mpr hq)
+      have b:=qq.2 q (Finset.mem_range.mpr hq)
+      rw [et] at a
+      rw [ot] at b
+      exact a.trans ((finite ⟨q,hq⟩).trans b.symm)
+    · exact (run_preserves_outside encode m s q (fun mem=>hq (Finset.mem_range.mp (encodeSupport mem)))).trans
+        (run_preserves_outside old m s q (fun mem=>hq (Finset.mem_range.mp (Codec5.support.1 mem)))).symm
+end ECDSAAdd.Entrant.OwnCodec34
+end
+end
+
+
+-- ===== P_Part5 =====
+section
+
+-- ===== Own verified Codec34 Transport =====
+section
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 16384
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnCodec34
+open Arithmetic Challenge RecordedQuantum Baselines
+abbrev pair := Codec5.pair
+
+theorem proper_encode : ProperProgram encode := proper
+
+theorem support_exact : wires encode=Finset.range 10 ∧ wires decode=Finset.range 10 := by decide
+
+theorem support : wires encode⊆Finset.range 10 ∧ wires decode⊆Finset.range 10 := by decide
+
+theorem encode_correct (s : State) (m : List Bool) (h : Codec5.legal s.basis) :
+    (run encode m s).phase=s.phase ∧ (run encode m s).basis 5=false ∧ (run encode m s).basis 9=false := by
+  rw [run_eq s m h]
+  exact Codec5.encode_correct s m h
+
+abbrev proper_phase := Codec5.proper_phase
+private def physicalBool : Instr→Bool
+  | .X _ => true
+  | .CX a b => decide (a≠b)
+  | .CCX a b c => decide (a≠b ∧ a≠c ∧ b≠c)
+  | .measureX _ _ _ => false
+
+private theorem physicalBool_spec (i : Instr) (h : physicalBool i=true) : PhysicalInstr (.gate i) := by
+  cases i <;> simp_all [physicalBool,PhysicalInstr,ProperGate]
+
+private theorem physical_of_all (p : Program) (h : p.all physicalBool=true) : GatePhysical p := by
+  intro i hi
+  exact physicalBool_spec i ((List.all_eq_true.mp h) i hi)
+
+theorem physical : GatePhysical encode ∧ GatePhysical decode :=
+  ⟨physical_of_all encode (by decide),physical_of_all decode (by decide)⟩
+
+def label (f : Fin 10→Wire) (q : Wire) : Wire := if h:q<10 then f ⟨q,h⟩ else q
+
+def encodeAt (f : Fin 10→Wire) : Program := renameProgram (label f) encode
+def decodeAt (f : Fin 10→Wire) : Program := renameProgram (label f) decode
+def legalAt (f : Fin 10→Wire) (s : BasisState) : Prop := Codec5.legal (fun q => s (label f q))
+
+private theorem label_inj (f : Fin 10→Wire) (hf : Function.Injective f) :
+    ∀a∈Finset.range 10,∀b∈Finset.range 10,label f a=label f b → a=b := by
+  intro a ha b hb e
+  have ha' := Finset.mem_range.mp ha
+  have hb' := Finset.mem_range.mp hb
+  have eq : f ⟨a,ha'⟩=f ⟨b,hb'⟩ := by simpa only [label,dif_pos ha',dif_pos hb'] using e
+  exact congrArg Fin.val (hf eq)
+
+private theorem instrSupport (p : Program) (i : Instr) (hi : i∈p) : i.wires⊆wires p := by
+  induction p with
+  | nil => simp at hi
+  | cons j p ih =>
+    rcases List.mem_cons.mp hi with rfl|h
+    · exact Finset.subset_union_left
+    · exact (ih h).trans Finset.subset_union_right
+
+private theorem properRename (f : Wire→Wire) (p : Program) (hp : ProperProgram p)
+    (hf : ∀a∈wires p,∀b∈wires p,f a=f b → a=b) : ProperProgram (renameProgram f p) := by
+  intro j hj
+  obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hj
+  have h := hp i hi
+  have hs := instrSupport p i hi
+  cases i with
+  | X a => trivial
+  | CX a b =>
+    change f a≠f b
+    exact fun e => h (hf a (hs (by simp [Instr.wires])) b (hs (by simp [Instr.wires])) e)
+  | CCX a b c =>
+    change f a≠f c ∧ f b≠f c
+    exact ⟨fun e => h.1 (hf a (hs (by simp [Instr.wires])) c (hs (by simp [Instr.wires])) e),
+      fun e => h.2 (hf b (hs (by simp [Instr.wires])) c (hs (by simp [Instr.wires])) e)⟩
+  | measureX _ _ _ => contradiction
+
+private theorem label_image (f : Fin 10→Wire) :
+    (Finset.range 10).image (label f)=Finset.univ.image f := by
+  ext q
+  simp only [Finset.mem_image,Finset.mem_range,Finset.mem_univ,true_and]
+  constructor
+  · rintro ⟨i,hi,e⟩
+    exact ⟨⟨i,hi⟩,by simpa only [label,dif_pos hi] using e⟩
+  · rintro ⟨i,e⟩
+    exact ⟨i.val,i.isLt,by simpa only [label,dif_pos i.isLt] using e⟩
+
+theorem supportAt_exact (f : Fin 10→Wire) :
+    wires (encodeAt f)=Finset.univ.image f ∧ wires (decodeAt f)=Finset.univ.image f := by
+  simp only [encodeAt,decodeAt,renameProgram_support,support_exact.1,support_exact.2,label_image]
+  exact ⟨trivial,trivial⟩
+
+theorem supportAt (f : Fin 10→Wire) :
+    wires (encodeAt f)⊆Finset.univ.image f ∧ wires (decodeAt f)⊆Finset.univ.image f := by
+  rw [(supportAt_exact f).1,(supportAt_exact f).2]
+  exact ⟨Finset.Subset.refl _,Finset.Subset.refl _⟩
+
+theorem site_mem (f : Fin 10→Wire) (i : Fin 10) : f i∈wires (encodeAt f) := by
+  rw [(supportAt_exact f).1]
+  exact Finset.mem_image_of_mem f (Finset.mem_univ i)
+
+theorem countsAt (f : Fin 10→Wire) : toffoliCount (encodeAt f)=34 ∧ measurementCount (encodeAt f)=0 ∧
+    toffoliCount (decodeAt f)=34 ∧ measurementCount (decodeAt f)=0 := by
+  simpa only [encodeAt,decodeAt,(renameProgram_counts (label f) encode).1,
+    (renameProgram_counts (label f) encode).2,(renameProgram_counts (label f) decode).1,
+    (renameProgram_counts (label f) decode).2] using counts
+
+theorem slotsAt (f : Fin 10→Wire) : gateSlots (encodeAt f)=106 ∧ gateSlots (decodeAt f)=106 := by
+  simpa only [encodeAt,decodeAt,rename_gateSlots] using slots
+
+theorem physicalAt (f : Fin 10→Wire) (hf : Function.Injective f) :
+    GatePhysical (encodeAt f) ∧ GatePhysical (decodeAt f) := by
+  exact ⟨gatePhysical_rename_support _ _
+    (fun a ha b hb e => label_inj f hf a (support.1 ha) b (support.1 hb) e) physical.1,
+    gatePhysical_rename_support _ _
+    (fun a ha b hb e => label_inj f hf a (support.2 ha) b (support.2 hb) e) physical.2⟩
+
+theorem roundtripAt (f : Fin 10→Wire) (hf : Function.Injective f)
+    (s : State) (mE mD : List Bool) : run (decodeAt f) mD (run (encodeAt f) mE s)=s := by
+  have h := run_reverse_proper (encodeAt f)
+    (properRename _ _ proper_encode (fun a ha b hb e => label_inj f hf a (support.1 ha) b (support.1 hb) e)) s mE mD
+  simpa only [encodeAt,decodeAt,decode,renameProgram,List.map_reverse] using h
+
+theorem encodeAt_phase (f : Fin 10→Wire) (hf : Function.Injective f)
+    (s : State) (m : List Bool) : (run (encodeAt f) m s).phase=s.phase :=
+  proper_phase _ (properRename _ _ proper_encode
+    (fun a ha b hb e => label_inj f hf a (support.1 ha) b (support.1 hb) e)) s m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+theorem encodeAt_correct (f : Fin 10→Wire) (hf : Function.Injective f)
+    (s : State) (m : List Bool) (h : legalAt f s.basis) :
+    (run (encodeAt f) m s).phase=s.phase ∧
+    (run (encodeAt f) m s).basis (f 5)=false ∧ (run (encodeAt f) m s).basis (f 9)=false := by
+  let t : State := ⟨s.phase,fun q => s.basis (label f q)⟩
+  have localResult := encode_correct t m h
+  have placed := run_rename_pool (label f) (Finset.range 10) (label_inj f hf) encode
+    support.1 m t s rfl (fun _ _ => rfl)
+  refine ⟨placed.1.trans localResult.1,?_,?_⟩
+  · have e := (placed.2 5 (by decide)).trans localResult.2.1
+    simpa only [label,dif_pos (show 5<10 by decide)] using e
+  · have e := (placed.2 9 (by decide)).trans localResult.2.2
+    simpa only [label,dif_pos (show 9<10 by decide)] using e
+
+theorem legalAt_iff (f : Fin 10→Wire) (s : BasisState) : legalAt f s ↔
+    ∀i : Fin 5,(s (f ⟨2*i.val,by omega⟩) && s (f ⟨2*i.val+1,by omega⟩))=false := by
+  have key (a b : Bool) : a.toNat+2*b.toNat<3 ↔ (a&&b)=false := by cases a <;> cases b <;> decide
+  constructor
+  · intro h i
+    apply (key _ _).mp
+    simpa only [pair,Codec5.pair,label,dif_pos (show 2*i.val<10 by omega),
+      dif_pos (show 2*i.val+1<10 by omega)] using h i.val i.isLt
+  · intro h
+    change ∀i<5,pair (2*i) (2*i+1) (fun q => s (label f q))<3
+    intro i hi
+    have hb0 : 2*i<10 := Nat.mul_lt_mul_of_pos_left hi (by decide : 0<2)
+    have hle : 2*i+2≤10 := by
+      simpa only [Nat.mul_add,Nat.mul_one] using Nat.mul_le_mul_left 2 (Nat.succ_le_of_lt hi)
+    have hb1 : 2*i+1<10 := Nat.lt_of_lt_of_le (Nat.lt_succ_self (2*i+1)) hle
+    have k := (key _ _).mpr (h ⟨i,hi⟩)
+    simpa only [pair,Codec5.pair,label,dif_pos hb0,dif_pos hb1] using k
+
+end ECDSAAdd.Entrant.OwnCodec34
+end
+end
+
+
 -- ===== P_History5 =====
 section
 
@@ -1617,8 +1894,8 @@ theorem historyMap_injective (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup
 
 
 
-def encode (w : Nat → Wire) (start : Nat) : Program := Codec5.encodeAt (historyMap w start)
-def decode (w : Nat → Wire) (start : Nat) : Program := Codec5.decodeAt (historyMap w start)
+def encode (w : Nat → Wire) (start : Nat) : Program := OwnCodec34.encodeAt (historyMap w start)
+def decode (w : Nat → Wire) (start : Nat) : Program := OwnCodec34.decodeAt (historyMap w start)
 
 def packDue (i : Nat) : Bool := decide (5 ≤ i ∧ i % 5 = 0)
 def packAfter (w : Nat → Wire) (i : Nat) : Program := if packDue i then encode w (i-5) else []
@@ -1643,25 +1920,25 @@ def decodeRange (w : Nat → Wire) (i : Nat) : Nat → Program
   | n+1 => decodeRange w (i+1) n++decodeBefore w i
 
 def RawLegal (w : Nat → Wire) (n : Nat) (s : BasisState) : Prop :=
-  ∀j,j<n → Codec5.legalAt (historyMap w (5*j)) s
+  ∀j,j<n → OwnCodec34.legalAt (historyMap w (5*j)) s
 
 theorem packDue_true (i : Nat) (h : packDue i=true) : 5 ≤ i ∧ i % 5 = 0 := by
   simpa only [packDue,decide_eq_true_eq] using h
 
 theorem encode_counts (w : Nat → Wire) (start : Nat) :
-    toffoliCount (encode w start)=36 ∧ measurementCount (encode w start)=0 := by
-  have h := Codec5.countsAt (historyMap w start)
+    toffoliCount (encode w start)=34 ∧ measurementCount (encode w start)=0 := by
+  have h := OwnCodec34.countsAt (historyMap w start)
   exact ⟨h.1,h.2.1⟩
 
 theorem decode_counts (w : Nat → Wire) (start : Nat) :
-    toffoliCount (decode w start)=36 ∧ measurementCount (decode w start)=0 := by
-  have h := Codec5.countsAt (historyMap w start)
+    toffoliCount (decode w start)=34 ∧ measurementCount (decode w start)=0 := by
+  have h := OwnCodec34.countsAt (historyMap w start)
   exact h.2.2
 
 theorem encode_phase (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (start : Nat) (hs : start+5≤512) (s : State) (m : List Bool) :
     (run (encode w start) m s).phase=s.phase :=
-  Codec5.encodeAt_phase _ (historyMap_injective w hn start hs) s m
+  OwnCodec34.encodeAt_phase _ (historyMap_injective w hn start hs) s m
 
 
 
@@ -1670,28 +1947,28 @@ theorem encode_phase (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
 
 theorem encode_physical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (start : Nat) (hs : start+5≤512) : GatePhysical (encode w start) :=
-  (Codec5.physicalAt _ (historyMap_injective w hn start hs)).1
+  (OwnCodec34.physicalAt _ (historyMap_injective w hn start hs)).1
 
 theorem decode_physical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (start : Nat) (hs : start+5≤512) : GatePhysical (decode w start) :=
-  (Codec5.physicalAt _ (historyMap_injective w hn start hs)).2
+  (OwnCodec34.physicalAt _ (historyMap_injective w hn start hs)).2
 
 theorem codec_slots (w : Nat → Wire) (start : Nat) :
-    Challenge.gateSlots (encode w start)=108 ∧ Challenge.gateSlots (decode w start)=108 :=
-  Codec5.slotsAt _
+    Challenge.gateSlots (encode w start)=106 ∧ Challenge.gateSlots (decode w start)=106 :=
+  OwnCodec34.slotsAt _
 
 theorem encode_correct (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (start : Nat) (hs : start+5≤512) (s : State) (m : List Bool)
-    (legal : Codec5.legalAt (historyMap w start) s.basis) :
+    (legal : OwnCodec34.legalAt (historyMap w start) s.basis) :
     (run (encode w start) m s).phase=s.phase ∧
       (run (encode w start) m s).basis (historyMap w start 5)=false ∧
       (run (encode w start) m s).basis (historyMap w start 9)=false :=
-  Codec5.encodeAt_correct _ (historyMap_injective w hn start hs) s m legal
+  OwnCodec34.encodeAt_correct _ (historyMap_injective w hn start hs) s m legal
 
 theorem packAfter_counts (w : Nat → Wire) (i : Nat) :
-    toffoliCount (packAfter w i)=36*(if packDue i then 1 else 0) ∧
+    toffoliCount (packAfter w i)=34*(if packDue i then 1 else 0) ∧
     measurementCount (packAfter w i)=0 ∧
-    toffoliCount (decodeBefore w i)=36*(if packDue i then 1 else 0) ∧
+    toffoliCount (decodeBefore w i)=34*(if packDue i then 1 else 0) ∧
     measurementCount (decodeBefore w i)=0 := by
   have e := encode_counts w (i-5)
   have d := decode_counts w (i-5)
@@ -1705,7 +1982,7 @@ theorem packAfter_counts (w : Nat → Wire) (i : Nat) :
 theorem history_gate_mem (w : Nat → Wire) (start : Nat) (p : Program)
     (hp : p=encode w start ∨ p=decode w start) (q : Wire) (hq : q∈wires p) :
     ∃i:Fin 10,q=historyMap w start i := by
-  have sub := Codec5.supportAt (historyMap w start)
+  have sub := OwnCodec34.supportAt (historyMap w start)
   have member : q∈Finset.univ.image (historyMap w start) := by
     rcases hp with rfl|rfl
     · exact sub.1 hq
@@ -1714,7 +1991,7 @@ theorem history_gate_mem (w : Nat → Wire) (start : Nat) (p : Program)
   exact ⟨i,eq.symm⟩
 
 theorem history_site_mem (w : Nat → Wire) (start : Nat) (q : Fin 10) :
-    historyMap w start q∈wires (encode w start) := Codec5.site_mem _ q
+    historyMap w start q∈wires (encode w start) := OwnCodec34.site_mem _ q
 
 theorem windows_disjoint (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (a b : Nat) (ha : a+5≤512) (hb : b+5≤512) (hab : a+5≤b) :
@@ -1780,7 +2057,7 @@ theorem prefix_roundtrip (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     · simp only [packAfter,decodeBefore,due,Bool.false_eq_true,if_false,run]
       exact old s _ _
     · have bound := packDue_true n due
-      have inv := Codec5.roundtripAt (historyMap w (n-5))
+      have inv := OwnCodec34.roundtripAt (historyMap w (n-5))
         (historyMap_injective w hn (n-5) (by omega))
       simp only [packAfter,decodeBefore,due,if_true,encode,decode]
       rw [inv]
@@ -2253,10 +2530,10 @@ theorem frame_history_legal (w : Nat → Wire) (sign : Wire)
   have same (q : Fin 10) : current (historyMap w (5*j) q)=origin (historyMap w (5*j) q) :=
     frame.2.2 _ (history_words_away w sign hn ho (5*j) (by omega) q).1
       (history_words_away w sign hn ho (5*j) (by omega) q).2
-  apply (Codec5.legalAt_iff _ _).mpr
+  apply (OwnCodec34.legalAt_iff _ _).mpr
   intro i
   rw [same,same]
-  exact (Codec5.legalAt_iff _ _).mp (legal j hj) i
+  exact (OwnCodec34.legalAt_iff _ _).mp (legal j hj) i
 
 theorem otherEncode_outside (w : Nat → Wire) (n j : Nat) (h : n≤j) :
     otherEncode w j n=allEncode w n := by
@@ -2360,7 +2637,7 @@ theorem window_transport_other (w : Nat → Wire) (start : Nat)
       run other mO (run (encode w start) m3 (run body m2 s)) := by
   rw [run_disjoint_commute other (encode w start) he mO m0 s]
   rw [show run (decode w start) m1 (run (encode w start) m0 (run other mO s))=run other mO s from
-    Codec5.roundtripAt _ (historyMap_injective w hn start hs) _ m0 m1]
+    OwnCodec34.roundtripAt _ (historyMap_injective w hn start hs) _ m0 m1]
   rw [←run_disjoint_commute other body hb mO m2 s]
   exact (run_disjoint_commute other (encode w start) he mO m3 (run body m2 s)).symm
 
@@ -2438,11 +2715,11 @@ theorem allEncode_hole (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
         apply run_preserves_outside
         intro used
         exact Finset.disjoint_left.mp dis used (history_site_mem w (5*n) q)
-      have domain : Codec5.legalAt (historyMap w (5*n)) before.basis := by
-        apply (Codec5.legalAt_iff _ _).mpr
+      have domain : OwnCodec34.legalAt (historyMap w (5*n)) before.basis := by
+        apply (OwnCodec34.legalAt_iff _ _).mpr
         intro i
         rw [same,same]
-        exact (Codec5.legalAt_iff _ _).mp (legal n (by omega)) i
+        exact (OwnCodec34.legalAt_iff _ _).mp (legal n (by omega)) i
       have result := encode_correct w hn (5*n) (by omega) before
         (m.drop (measurementCount (allEncode w n))) domain
       rw [allEncode,run_append]
@@ -5441,7 +5718,7 @@ theorem packet_counts (divide : Bool) (j : Nat)
     (hn : (skywalkSharedWires base).Nodup)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (letters j))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (packet divide j)=(if divide then 6467 else 6472) ∧
+    toffoliCount (packet divide j)=(if divide then 6463 else 6468) ∧
       measurementCount (packet divide j)=5125 := by
   have raw := body_counts divide j hn hf ho
   have e := History5.encode_counts base (5*j)
@@ -5458,7 +5735,7 @@ theorem groups_counts (divide : Bool) (j n : Nat) (bound : j+n≤102)
     (hn : (skywalkSharedWires base).Nodup)
     (hf : ∀k,k<102 → MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (letters k))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (groups divide j n)=n*(if divide then 6467 else 6472) ∧
+    toffoliCount (groups divide j n)=n*(if divide then 6463 else 6468) ∧
       measurementCount (groups divide j n)=n*5125 := by
   induction n generalizing j with
   | zero => simp [groups,PacketSequence.program,toffoliCount,measurementCount]
@@ -5488,7 +5765,7 @@ theorem firstPacket_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (firstPacket divide)=(if divide then 5445 else 5449) ∧
+    toffoliCount (firstPacket divide)=(if divide then 5441 else 5445) ∧
       measurementCount (firstPacket divide)=4101 := by
   have len : restLetters.length=4 := by simp only [restLetters,List.length_map,List.length_range']
   have f := OffsetBorrowedCanonical.replay_counts base _ _ _ hn restLetters (rest_layout hf) ho
@@ -5523,7 +5800,7 @@ theorem replay_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (replay divide)=(if divide then 659634 else 660144) ∧
+    toffoliCount (replay divide)=(if divide then 659226 else 659736) ∧
       measurementCount (replay divide)=522750 := by
   have first := firstPacket_counts divide hn hf ho
   have rest := groups_counts divide 1 101 (by decide) hn (letters_layouts hf) ho
@@ -23348,8 +23625,8 @@ theorem stage_group_legal (w : Nat → Wire)
     (hn : (skywalkPoolWires w).Nodup) (x p i start : Nat)
     (hp0 : 0 < p) (hpo : p%2=1) (hs : start+5 ≤ i) (hi : i ≤ 512) (s : BasisState)
     (h : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s) :
-    Codec5.legalAt (historyMap w start) s := by
-  apply (Codec5.legalAt_iff _ _).mpr
+    OwnCodec34.legalAt (historyMap w start) s := by
+  apply (OwnCodec34.legalAt_iff _ _).mpr
   intro j
   have letter := compactStage_ternary w hn x p i hp0 hpo hi s h (start+j.val) (by omega)
   have even : historyId start ⟨2*j.val,by omega⟩=start+j.val := by
@@ -23480,7 +23757,7 @@ theorem compactForward5_spec (w : Nat → Wire)
 
 theorem compactForward5_counts (w : Nat → Wire)
     (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+36*packCount i n ∧
+    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+34*packCount i n ∧
     measurementCount (compactForward5 w i n)=compactSkywalkForwardM i n := by
   induction n generalizing i with
   | zero => simp [compactForward5,compactSkywalkForwardT,compactSkywalkForwardM,packCount,
@@ -23601,7 +23878,7 @@ theorem decodeRange_zero (w : Nat → Wire) (n : Nat) :
   | succ n ih => rw [decodeRange_last,decodePrefix,ih,Nat.zero_add]
 
 theorem compactReverse5_counts_relative (w : Nat → Wire) (i n : Nat) :
-    toffoliCount (compactReverse5 w i n)=toffoliCount (compactSkywalkReverse w i n)+36*packCount i n ∧
+    toffoliCount (compactReverse5 w i n)=toffoliCount (compactSkywalkReverse w i n)+34*packCount i n ∧
     measurementCount (compactReverse5 w i n)=measurementCount (compactSkywalkReverse w i n) := by
   induction n generalizing i with
   | zero => simp [compactReverse5,compactSkywalkReverse,packCount,toffoliCount,measurementCount]
@@ -23656,7 +23933,7 @@ theorem compactReverse5_normalize (w : Nat → Wire)
 
 theorem compactReverse5_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+36*packCount i n ∧
+    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+34*packCount i n ∧
     measurementCount (compactReverse5 w i n)=compactSkywalkForwardM i n := by
   have relative := compactReverse5_counts_relative w i n
   have compact := compactSkywalkReverse_counts w hn i n hi
@@ -23757,7 +24034,7 @@ theorem pack_physical5 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
   cases due : packDue i
   · simp [packAfter,decodeBefore,due,GatePhysical]
   · have bounds := packDue_true i due
-    have physical := Codec5.physicalAt (historyMap w (i-5))
+    have physical := OwnCodec34.physicalAt (historyMap w (i-5))
       (historyMap_injective w hn (i-5) (by omega))
     simpa only [packAfter,decodeBefore,due,if_true,encode,decode] using physical
 
@@ -23775,7 +24052,7 @@ theorem pack_physical5 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
 
 theorem pack_gateSlots5 (w : Nat → Wire) (i : Nat) :
     Challenge.gateSlots (packAfter w i) ≤ 200 ∧ Challenge.gateSlots (decodeBefore w i) ≤ 200 := by
-  have slots := Codec5.slotsAt (historyMap w (i-5))
+  have slots := OwnCodec34.slotsAt (historyMap w (i-5))
   cases due : packDue i <;>
     simp only [packAfter,decodeBefore,due,Bool.false_eq_true,if_false,if_true,encode,decode,
       slots.1,slots.2,Baselines.gateSlots_nil] <;> omega
@@ -24652,7 +24929,7 @@ theorem segment5_pool_frame (divide : Bool)
 theorem segment5_counts (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base) :
-    toffoliCount (segment5 divide)=(if divide then 660144 else 660654) ∧
+    toffoliCount (segment5 divide)=(if divide then 659736 else 660246) ∧
     measurementCount (segment5 divide)=523260 := by
   have c := HalfConvert.counts tgt (balancedSharedTargetConvert_widths base)
   have r := Replay5.replay_counts divide hn hf ho
@@ -24768,10 +25045,10 @@ theorem clear_raw_legal5 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     rw [←clear]
     exact run_preserves_outside _ m before _ (history_clear_away w hn j hj u)
   intro j hj
-  apply (Codec5.legalAt_iff _ _).mpr
+  apply (OwnCodec34.legalAt_iff _ _).mpr
   intro u
   rw [keep j hj ⟨2*u.val,by omega⟩,keep j hj ⟨2*u.val+1,by omega⟩]
-  exact (Codec5.legalAt_iff _ _).mp (legal j hj) u
+  exact (OwnCodec34.legalAt_iff _ _).mp (legal j hj) u
 
 /-- Raw preparation facts are reused after the direct five-trit integer prefix. -/
 theorem preparation_facts5 (hn : (skywalkSharedWires base).Nodup)
@@ -25002,7 +25279,7 @@ theorem kernel5_states_from_first (divide : Bool)
 
 
 theorem actualKernel5_counts (divide : Bool) :
-    toffoliCount (actualKernel5 divide)=(if divide then 1062488 else 1062998) ∧
+    toffoliCount (actualKernel5 divide)=(if divide then 1061672 else 1062182) ∧
     measurementCount (actualKernel5 divide)=721138 := by
   have config := MappedCompressed.LaneA.laneLogical_config
   have freshF := compactForward5_counts base base_pool_nodup 1 511 (by omega)
@@ -28874,7 +29151,7 @@ theorem compactForward5_spec (w : Nat → Wire)
 
 theorem compactForward5_counts (w : Nat → Wire)
     (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+36*History5.packCount i n ∧
+    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+34*History5.packCount i n ∧
     measurementCount (compactForward5 w i n)=compactSkywalkForwardM i n := by
   induction n generalizing i with
   | zero => simp [compactForward5,compactSkywalkForwardT,compactSkywalkForwardM,
@@ -28969,7 +29246,7 @@ attribute [local irreducible] run compactReverse5 compactSkywalkReverseTick comp
 
 theorem compactReverse5_counts_relative (w : Nat → Wire) (i n : Nat) :
     toffoliCount (compactReverse5 w i n)=
-      toffoliCount (compactSkywalkReverse w i n)+36*History5.packCount i n ∧
+      toffoliCount (compactSkywalkReverse w i n)+34*History5.packCount i n ∧
     measurementCount (compactReverse5 w i n)=measurementCount (compactSkywalkReverse w i n) := by
   induction n generalizing i with
   | zero => simp [compactReverse5,compactSkywalkReverse,History5.packCount,toffoliCount,
@@ -29026,7 +29303,7 @@ theorem compactReverse5_normalize (w : Nat → Wire)
 
 theorem compactReverse5_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+36*History5.packCount i n ∧
+    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+34*History5.packCount i n ∧
     measurementCount (compactReverse5 w i n)=compactSkywalkForwardM i n := by
   have relative := compactReverse5_counts_relative w i n
   have compact := compactSkywalkReverse_counts w hn i n hi
@@ -34787,7 +35064,7 @@ theorem raw_counts (divide : Bool) (ls : List MixedTranscriptLetter)
 
 theorem packet_counts (divide : Bool) (j : Nat)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (packet divide j)=6472 ∧ measurementCount (packet divide j)=5120 := by
+    toffoliCount (packet divide j)=6468 ∧ measurementCount (packet divide j)=5120 := by
   have raw := raw_counts divide (Replay5.letters j) (swap_nodup hn ho)
   have len : (Replay5.letters j).length=5 := by simp [Replay5.letters]
   rw [len] at raw
@@ -34802,7 +35079,7 @@ theorem packet_counts (divide : Bool) (j : Nat)
 
 theorem groups_counts (divide : Bool) (j n : Nat)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (groups divide j n)=n*6472 ∧ measurementCount (groups divide j n)=n*5120 := by
+    toffoliCount (groups divide j n)=n*6468 ∧ measurementCount (groups divide j n)=n*5120 := by
   induction n generalizing j with
   | zero => simp [groups,PacketSequence.program,toffoliCount,measurementCount]
   | succ n ih =>
@@ -34815,7 +35092,7 @@ theorem groups_counts (divide : Bool) (j n : Nat)
 
 theorem firstPacket_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (firstPacket divide)=5449 ∧ measurementCount (firstPacket divide)=4097 := by
+    toffoliCount (firstPacket divide)=5445 ∧ measurementCount (firstPacket divide)=4097 := by
   have raw := raw_counts divide Replay5.restLetters (swap_nodup hn ho)
   have len : Replay5.restLetters.length=4 := by simp [Replay5.restLetters]
   rw [len] at raw
@@ -34839,7 +35116,7 @@ theorem endPacket_counts (divide : Bool) :
 
 theorem logicalReplay_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (logicalReplay divide)=660144 ∧ measurementCount (logicalReplay divide)=522240 := by
+    toffoliCount (logicalReplay divide)=659736 ∧ measurementCount (logicalReplay divide)=522240 := by
   have first := firstPacket_counts divide hn ho
   have rest := groups_counts divide 1 101 hn ho
   have last := endPacket_counts divide
@@ -34849,7 +35126,7 @@ theorem logicalReplay_counts (divide : Bool)
 
 theorem replay_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (replay divide)=660144 ∧ measurementCount (replay divide)=522240 := by
+    toffoliCount (replay divide)=659736 ∧ measurementCount (replay divide)=522240 := by
   simpa only [replay,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2] using
     logicalReplay_counts divide hn ho
 
@@ -35107,7 +35384,7 @@ attribute [local irreducible] toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
     (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (program divide)=660654 ∧ measurementCount (program divide)=522750 := by
+    toffoliCount (program divide)=660246 ∧ measurementCount (program divide)=522750 := by
   have ce := HalfFieldOB5.endpoint_counts
   have r := OneBankReplay5.replay_counts divide hn ho
   have len : (balancedSharedPorts base (base 2409)).r.length=
@@ -35376,7 +35653,7 @@ theorem oneStep_roundtrip (x : Nat) (hx0 : 0 < x) (hx : x < p) (i : Nat) (hi : i
     · simp only [packAfter,decodeBefore,due,Bool.false_eq_true,if_false,run]
     · have hd := packDue_true i due
       simpa only [packAfter,decodeBefore,due,if_true,History5.encode,History5.decode] using
-        Codec5.roundtripAt (historyMap base (i-5))
+        OwnCodec34.roundtripAt (historyMap base (i-5))
         (historyMap_injective base base_pool_nodup (i-5) (by omega)) actual
           (m1.drop (measurementCount (W.compactSkywalkTick base i))) []
   have loc := W.compactSkywalkStage_local_input base base_pool_nodup x p i hp0 hx0 hpo hp hx cop hi
@@ -36510,7 +36787,7 @@ theorem segH_gateSlots (divide : Bool) :
 attribute [local irreducible] Kernel5.actualKernel5 toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) :
-    toffoliCount (program divide)=1061978 ∧ measurementCount (program divide)=720118 := by
+    toffoliCount (program divide)=1061162 ∧ measurementCount (program divide)=720118 := by
   have cfg := MappedCompressed.LaneA.laneLogical_config
   have narrow := W.compactPasses5_old_counts base base_pool_nodup
   have old := Kernel5.actualKernel5_counts divide
@@ -37476,8 +37753,8 @@ theorem farithOB_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
 attribute [local irreducible] KernelOB5.program toffoliCount measurementCount
 
 theorem arith_counts (L : ControlledPointLayout) :
-    toffoliCount (arith L false)=1061978 ∧ measurementCount (arith L false)=720118 ∧
-    toffoliCount (arith L true)=1061978 ∧ measurementCount (arith L true)=720118 := by
+    toffoliCount (arith L false)=1061162 ∧ measurementCount (arith L false)=720118 ∧
+    toffoliCount (arith L true)=1061162 ∧ measurementCount (arith L true)=720118 := by
   have a := KernelOB5.program_counts true
   have b := KernelOB5.program_counts false
   have c := renameProgram_counts (wireFn2 L) (KernelOB5.program true)
@@ -37764,8 +38041,8 @@ section ResourcesA
 attribute [local irreducible] run SW.kernelS KernelOB5.program wires toffoliCount measurementCount
 
 theorem arithS_counts (L : ControlledPointLayout) :
-    toffoliCount (arithS L false)=1060958 ∧ measurementCount (arithS L false)=720118 ∧
-    toffoliCount (arithS L true)=1060958 ∧ measurementCount (arithS L true)=720118 := by
+    toffoliCount (arithS L false)=1060142 ∧ measurementCount (arithS L false)=720118 ∧
+    toffoliCount (arithS L true)=1060142 ∧ measurementCount (arithS L true)=720118 := by
   have o := ArithmeticOB5.arith_counts L
   have s1 := SW.selKernel_sel true
   have s2 := SW.selKernel_sel false
@@ -38267,7 +38544,7 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2185376 ∧
+    toffoliCount (program L cx cy)=2183744 ∧
     measurementCount (program L cx cy)=1501669 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
@@ -38602,7 +38879,7 @@ theorem program_counts_rel (cx cy : Fp) :
 
 include hw in
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2183336 ∧
+    toffoliCount (program L cx cy)=2181704 ∧
     measurementCount (program L cx cy)=1501669 := by
   have r := program_counts_rel L cx cy
   have o := GenericOB5.program_counts L hw cx cy
@@ -39714,7 +39991,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2184368, 1502696, 1601, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2182736, 1502696, 1601, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -39731,7 +40008,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((WrapperOB5.program_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2184368 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2182736 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
