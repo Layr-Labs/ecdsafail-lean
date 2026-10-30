@@ -27099,16 +27099,16 @@ def gadget (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) : Program :=
   ((if enD then
      flipIf (!cx) xk ++ [.CCX a2 xk a3] ++ flipIf (!cx) xk ++
      flipIf (!cy) y0 ++ [.CCX a3 y0 d] ++ flipIf (!cy) y0 ++
-     flipIf (!cx) xk ++ [.CCX a2 xk a3] ++ flipIf (!cx) xk
+     flipIf (!cx) xk ++ [.measureX a3 [] [.CZ a2 xk]] ++ flipIf (!cx) xk
    else []) ++
   ((if enH then flipIf cx xk ++ [.CCX a2 xk h] ++ flipIf cx xk else []) ++
-  [.X g, .CCX a1 g a2, .X g, .CCX c f a1]))
+  [.X g, .measureX a2 [] [.CZ a1 g], .X g, .measureX a1 [] [.CZ c f]]))
 
 set_option linter.unusedTactic false in
 set_option linter.unreachableTactic false in
 set_option linter.unnecessarySeqFocus false in
 set_option linter.unusedSimpArgs false in
-set_option maxHeartbeats 4000000 in
+set_option maxHeartbeats 20000000 in
 theorem gadget_run (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
     (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
     (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false) :
@@ -27170,31 +27170,33 @@ theorem gadget_run (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   cases enD <;> cases enH <;> cases cx <;> cases cy <;>
   · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
       Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
-    congr 1
-    funext q
-    by_cases e1 : q = d
-    · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
-        cases bs xk <;> cases bs y0 <;> simp_all
-    by_cases e2 : q = h
-    · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
-        cases bs xk <;> simp_all
-    simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
-      cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+    simp only [measureAndCorrect]
+    split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+    all_goals
+      by_cases e1 : q = d
+      · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+          cases bs xk <;> cases bs y0 <;> simp_all
+      by_cases e2 : q = h
+      · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+          cases bs xk <;> simp_all
+      simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+        cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
 
 theorem gadget_wires (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) (q : Wire)
     (hq : q ∈ wires (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy)) :
     q = c ∨ q = f ∨ q = g ∨ q = d ∨ q = h ∨ q = xk ∨ q = y0 ∨ q = a1 ∨ q = a2 ∨ q = a3 := by
   cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadget, flipIf, wires, Instr.wires] at hq <;> tauto
+    simp [gadget, flipIf, wires, Instr.wires, correctionWires] at hq <;> tauto
 
 theorem gadget_counts (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) :
-    toffoliCount (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 8 ∧
-    measurementCount (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) = 0 := by
+    toffoliCount (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 5 ∧
+    measurementCount (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 3 := by
   cases enD <;> cases enH <;> cases cx <;> cases cy <;>
     simp [gadget, flipIf, toffoliCount, measurementCount]
 
 theorem gadget_gateSlots (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) :
-    Challenge.gateSlots (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 30 := by
+    Challenge.gateSlots (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 33 := by
   cases enD <;> cases enH <;> cases cx <;> cases cy <;>
     simp [gadget, flipIf, Challenge.gateSlots, Challenge.instructionSlots]
 
@@ -28754,8 +28756,8 @@ open Challenge Baselines
 
 theorem finiteProgramN_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cy : Fp)
     (Gen : Program) {cx : Fp} (hc : curve.toAffine.Nonsingular cx cy) (hC : C = .some hc) :
-    toffoliCount (finiteProgramN L C cy Gen) ≤ 790 + toffoliCount Gen ∧
-    measurementCount (finiteProgramN L C cy Gen) ≤ 771 + measurementCount Gen := by
+    toffoliCount (finiteProgramN L C cy Gen) ≤ 784 + toffoliCount Gen ∧
+    measurementCount (finiteProgramN L C cy Gen) ≤ 777 + measurementCount Gen := by
   have p1 : toffoliCount (inputClass L C cy) ≤ 258 ∧ measurementCount (inputClass L C cy) ≤ 256 := by
     rw [hC]; exact inputClass_counts L hw hc
   have p2 := pairEqual_counts L hw L.core.generic L.core.equalNegY true (exceptionBit C) C (-C)
@@ -28774,7 +28776,7 @@ theorem finiteProgramN_counts (L : ControlledPointLayout) (hw : L.Widths) (C : P
   have r := renameProgram_counts (tauM L) Gen
   have r' := renameProgram_counts (swapE L) (renameProgram (tauM L) Gen)
   have r'' := renameProgram_counts (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) Gen))
-  have fo : toffoliCount (clrDH L C cy) ≤ 8 ∧ measurementCount (clrDH L C cy) = 0 :=
+  have fo : toffoliCount (clrDH L C cy) ≤ 5 ∧ measurementCount (clrDH L C cy) ≤ 3 :=
     DHGadget.gadget_counts _ _ _ _ _ _ _ _ _ _ _ _ _ _
   have r2 := renameProgram_counts (sigP L) (outTail L C)
   have c := (show toffoliCount (corners2 L C) = 0 ∧ measurementCount (corners2 L C) = 0 by
@@ -28881,7 +28883,7 @@ theorem finiteProgramN_gateSlots (L : ControlledPointLayout) (hw : L.Widths) (C 
   have hze : gateSlots (chainErase L.control L.point.finite L.genericSelect) = 4 := rfl
   have rs := rename_gateSlots (tauM L) Gen
   have rs' := rename_gateSlots (swapE L) (renameProgram (tauM L) Gen)
-  have hfo : gateSlots (clrDH L C cy) ≤ 30 := DHGadget.gadget_gateSlots _ _ _ _ _ _ _ _ _ _ _ _ _ _
+  have hfo : gateSlots (clrDH L C cy) ≤ 33 := DHGadget.gadget_gateSlots _ _ _ _ _ _ _ _ _ _ _ _ _ _
   have rsD := rename_gateSlots (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) Gen))
   have rs2 := rename_gateSlots (sigP L) (outTail L C)
   simp only [finiteProgramN, gateSlots_append, hf, hmf, hze, rsD, rs', rs, rs2]
@@ -55291,8 +55293,8 @@ theorem finiteProgram5_spec (R : Point) {cx cy : Fp} (hc : curve.toAffine.Nonsin
 omit hn in
 theorem finiteProgram5_counts (C : Point) (cy : Fp) (Gen : Program) {cx : Fp}
     (hc : curve.toAffine.Nonsingular cx cy) (hC : C = .some hc) :
-    toffoliCount (finiteProgram5 L C cy Gen) ≤ 790 + toffoliCount Gen ∧
-    measurementCount (finiteProgram5 L C cy Gen) ≤ 771 + measurementCount Gen := by
+    toffoliCount (finiteProgram5 L C cy Gen) ≤ 784 + toffoliCount Gen ∧
+    measurementCount (finiteProgram5 L C cy Gen) ≤ 777 + measurementCount Gen := by
   simpa only [finiteProgram5, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2] using
     finiteProgramN_counts L hw C cy (renameProgram (U L) Gen) hc hC
 
@@ -56152,8 +56154,8 @@ theorem spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cy : Fp)
     (Gen : Program) {cx : Fp} (hc : curve.toAffine.Nonsingular cx cy) (hC : C=.some hc) :
-    toffoliCount (program L C cy Gen) ≤ 790+toffoliCount Gen ∧
-    measurementCount (program L C cy Gen) ≤ 771+measurementCount Gen :=
+    toffoliCount (program L C cy Gen) ≤ 784+toffoliCount Gen ∧
+    measurementCount (program L C cy Gen) ≤ 777+measurementCount Gen :=
   Wrapper5.finiteProgram5_counts L hw C cy Gen hc hC
 
 theorem physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -59997,14 +59999,14 @@ theorem shared_wires (L : ControlledPointLayout) (hw : L.Widths) (C : Point) :
 
 theorem finite_counts (L : ControlledPointLayout) (hw : L.Widths) (Gen : Program) {cx cy : Fp}
     (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (finiteProgram L (.some hc) cy Gen) ≤ 534+toffoliCount Gen ∧
-    measurementCount (finiteProgram L (.some hc) cy Gen) ≤ 513+measurementCount Gen := by
+    toffoliCount (finiteProgram L (.some hc) cy Gen) ≤ 528+toffoliCount Gen ∧
+    measurementCount (finiteProgram L (.some hc) cy Gen) ≤ 519+measurementCount Gen := by
   have inp := inputClass_counts L hw hc
   have out := shared_counts L hw hc
   have zero : toffoliCount (corners2 L (.some hc))=0 ∧ measurementCount (corners2 L (.some hc))=0 := by
     simp only [corners2,toffoliCount_append,measurementCount_append,
       (maskedPointConstant_counts _ _ _).1,(maskedPointConstant_counts _ _ _).2]; decide
-  have fo : toffoliCount (clrDH L (.some hc) cy) ≤ 8 ∧ measurementCount (clrDH L (.some hc) cy) = 0 :=
+  have fo : toffoliCount (clrDH L (.some hc) cy) ≤ 5 ∧ measurementCount (clrDH L (.some hc) cy) ≤ 3 :=
     DHGadget.gadget_counts _ _ _ _ _ _ _ _ _ _ _ _ _ _
   have z2 : toffoliCount (chainErase L.control L.point.finite L.genericSelect) = 0 ∧
       measurementCount (chainErase L.control L.point.finite L.genericSelect) = 1 := by
@@ -60035,8 +60037,8 @@ theorem wrapper_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
 
 theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (Gen : Program) {cx cy : Fp}
     (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (wrapper L (.some hc) cy Gen) ≤ 534+toffoliCount Gen ∧
-    measurementCount (wrapper L (.some hc) cy Gen) ≤ 513+measurementCount Gen := by
+    toffoliCount (wrapper L (.some hc) cy Gen) ≤ 528+toffoliCount Gen ∧
+    measurementCount (wrapper L (.some hc) cy Gen) ≤ 519+measurementCount Gen := by
   simpa only [wrapper,renameProgram_counts] using
     finite_counts L hw (renameProgram (Wrapper5.U L) Gen) hc
 
@@ -60390,7 +60392,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2156568, 1501738, 1595, 50000004⟩
+def bounds : Challenge.Bounds := ⟨2156562, 1501744, 1595, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -60407,7 +60409,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2156568 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2156562 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -60418,7 +60420,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2156568 := by
     change toffoliCount (Edges.wrapper layout (.some hc) cy (genF layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1501738 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1501744 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -60470,7 +60472,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1501738
+    change measurementCount (normalizeProgram (program C)) ≤ 1501744
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
