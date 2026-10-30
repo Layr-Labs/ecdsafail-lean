@@ -24799,6 +24799,4026 @@ end ECDSAAdd.Entrant.Kernel5
 end
 
 
+section
+-- ===== WWidths =====
+
+/-! Tighter integer-pass width schedule.
+
+The Skywalk integer passes size tick `i` by `min 258 (514-i)` (route) and
+`min 258 (513-i)` (adder), derived from the product cap `u+v ≤ 2^(512-i)`.
+Iterating the exponent budget of `SkywalkTerminationBudget` gives the strict
+witnesses `u < 2^a`, `v < 2^b` with `a+b = 512-i`, hence `u+v ≤ 2^(511-i)`:
+one bit tighter.  The route and the adder of every tick from 256 to 510 are
+one bit narrower; the widths at stages 0, 1 and 512 are unchanged. -/
+set_option maxRecDepth 4096
+set_option maxHeartbeats 400000
+set_option exponentiation.threshold 512
+
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Stage/route width: `min 258 (514-i)` lowered by one on ticks 256–510. -/
+@[irreducible] def narrowSkywalkRouteWidth (i : Nat) : Nat :=
+  min 258 (514-i) - (min 1 (511-i) - min 1 (256-i))
+
+/-- Adder width of tick `i`, equal to the next stage width. -/
+@[irreducible] def narrowSkywalkWidth (i : Nat) : Nat :=
+  min 258 (513-i) - (min 1 (510-i) - min 1 (255-i))
+
+theorem narrowSkywalkRouteWidth_bounds (i : Nat) (hi : i<512) :
+    3≤narrowSkywalkRouteWidth i ∧ narrowSkywalkRouteWidth i≤258 ∧
+    narrowSkywalkRouteWidth i≤min 258 (514-i) := by
+  unfold narrowSkywalkRouteWidth
+  omega
+
+theorem narrowSkywalkWidth_bounds (i : Nat) (hi : i<512) :
+    2≤narrowSkywalkWidth i ∧ narrowSkywalkWidth i≤258 ∧
+    narrowSkywalkWidth i≤min 258 (513-i) := by
+  unfold narrowSkywalkWidth
+  omega
+
+theorem narrowSkywalkRouteWidth_zero : narrowSkywalkRouteWidth 0=258 := by
+  unfold narrowSkywalkRouteWidth; rfl
+
+theorem narrowSkywalkRouteWidth_one : narrowSkywalkRouteWidth 1=258 := by
+  unfold narrowSkywalkRouteWidth; rfl
+
+theorem narrowSkywalkRouteWidth_512 : narrowSkywalkRouteWidth 512=2 := by
+  unfold narrowSkywalkRouteWidth; rfl
+
+theorem narrowSkywalkWidth_zero : narrowSkywalkWidth 0=258 := by
+  unfold narrowSkywalkWidth; rfl
+
+/-- The schedule agrees with the original one at the shared endpoints. -/
+theorem narrowSkywalkRouteWidth_endpoints :
+    narrowSkywalkRouteWidth 0=Arithmetic.narrowSkywalkRouteWidth 0 ∧
+    narrowSkywalkRouteWidth 1=Arithmetic.narrowSkywalkRouteWidth 1 ∧
+    narrowSkywalkRouteWidth 512=Arithmetic.narrowSkywalkRouteWidth 512 ∧
+    narrowSkywalkWidth 0=Arithmetic.narrowSkywalkWidth 0 := by
+  rw [narrowSkywalkRouteWidth_zero,narrowSkywalkRouteWidth_one,narrowSkywalkRouteWidth_512,
+    narrowSkywalkWidth_zero]
+  exact ⟨rfl,rfl,rfl,rfl⟩
+
+private theorem pow_pair (a b : Nat) (ha : 1 ≤ a) (hb : 1 ≤ b) :
+    2^a+2^b ≤ 2^(a+b-1)+2 := by
+  obtain ⟨c,rfl⟩ : ∃ c, a=c+1 := ⟨a-1,by omega⟩
+  obtain ⟨d,rfl⟩ : ∃ d, b=d+1 := ⟨b-1,by omega⟩
+  have e : c+1+(d+1)-1=(c+d)+1 := by omega
+  rw [e,pow_succ,pow_succ,pow_succ,pow_add]
+  have hc : 1 ≤ 2^c := Nat.one_le_two_pow
+  have hd : 1 ≤ 2^d := Nat.one_le_two_pow
+  nlinarith
+
+/-- Exponent-budget sum cap: after `i` rounds from strict widths `a,b` the
+sum is at most `2^(a+b-1-i)`. -/
+theorem iter_sum_budget : ∀ (i a b : Nat) (z : SkywalkNat.State),
+    0<z.v → z.v%2=1 → z.u.Coprime z.v → z.u<2^a → z.v<2^b → i+1 ≤ a+b →
+      (SkywalkNat.step^[i] z).u+(SkywalkNat.step^[i] z).v ≤ 2^(a+b-1-i) := by
+  intro i
+  induction i with
+  | zero =>
+    intro a b z hv0 _ hc hu hv _
+    simp only [Function.iterate_zero,id_eq,Nat.sub_zero]
+    by_cases hz : z.u=0
+    · have h1 : z.v=1 := by
+        have g : z.u.gcd z.v=1 := hc
+        rwa [hz,Nat.gcd_zero_left] at g
+      rw [hz,h1]
+      exact Nat.one_le_two_pow
+    · have ha : 1 ≤ a := by
+        by_contra h
+        have : a=0 := by omega
+        rw [this,pow_zero] at hu
+        omega
+      have hb : 1 ≤ b := by
+        by_contra h
+        have : b=0 := by omega
+        rw [this,pow_zero] at hv
+        omega
+      have := pow_pair a b ha hb
+      omega
+  | succ i ih =>
+    intro a b z hv0 hvo hc hu hv hab
+    by_cases hz : z.u=0
+    · rw [SkywalkNat.iter_fixed_of_u_zero z (i+1) hz]
+      have h1 : z.v=1 := by
+        have g : z.u.gcd z.v=1 := hc
+        rwa [hz,Nat.gcd_zero_left] at g
+      rw [hz,h1]
+      exact Nat.one_le_two_pow
+    · obtain ⟨a',b',he,hu',hv'⟩ :=
+        SkywalkNat.step_exponent_budget z a b (Nat.pos_of_ne_zero hz) hv0 hu hv
+      have valid := SkywalkNat.step_v_odd_pos z hv0 hvo
+      have cop := SkywalkNat.step_coprime z hvo hc
+      have rest := ih a' b' (SkywalkNat.step z) valid.1 valid.2 cop hu' hv' (by omega)
+      rw [Function.iterate_succ_apply]
+      have e : a'+b'-1-i=a+b-1-(i+1) := by omega
+      rw [e] at rest
+      exact rest
+
+/-- Complete-trajectory form for 256-bit inputs. -/
+theorem iter_sum_width (x p i : Nat) (hp0 : 0<p) (hx0 : 0<x)
+    (hpo : p%2=1) (hp : p<2^256) (hx : x<p) (hc : x.Coprime p) (hi : i ≤ 511) :
+    let z := SkywalkNat.step^[i] (SkywalkNat.init x p)
+    z.u+z.v ≤ 2^(511-i) := by
+  have _ := hx0
+  have h := iter_sum_budget i 256 256 (SkywalkNat.init x p) hp0 hpo hc (hx.trans hp) hp (by omega)
+  have e : 256+256-1-i=511-i := by omega
+  rw [e] at h
+  exact h
+
+/-- Universal input fit for the route at the tighter stage width. -/
+theorem narrowSkywalkRoute_iter_fit (x p i : Nat) (hp0 : 0<p) (hx0 : 0<x)
+    (hpo : p%2=1) (hp : p<2^256) (hx : x<p) (hc : x.Coprime p) (hi : i<512) :
+    let r := SkywalkTrace.next^[i] (SkywalkRails.encode false false (x:Int) (p:Int))
+    let n := narrowSkywalkRouteWidth i;
+    -((2^(n-1):Nat):Int)≤r.a ∧ r.a<((2^(n-1):Nat):Int) ∧
+    -((2^(n-1):Nat):Int)≤r.b ∧ r.b<((2^(n-1):Nat):Int) := by
+  dsimp only
+  let z := SkywalkNat.step^[i] (SkywalkNat.init x p)
+  obtain ⟨G,S,he⟩ := SkywalkTrace.iter_encoded i false false (SkywalkNat.init x p) hp0 hpo
+  simp only [SkywalkNat.init] at he
+  rw [he]
+  have hb := SkywalkRails.encode_abs_sum_bound G S z.u z.v (z.u+z.v) (Nat.le_refl _)
+  have hsum : z.u+z.v<2^(narrowSkywalkRouteWidth i-1) := by
+    by_cases hi0 : i≤255
+    · have hn : narrowSkywalkRouteWidth i=258 := by unfold narrowSkywalkRouteWidth; omega
+      rw [hn]
+      exact SkywalkNat.iter_sum_initial_width p x 256 i hp hx
+    · have hw := iter_sum_width x p i hp0 hx0 hpo hp hx hc (by omega)
+      change z.u+z.v≤2^(511-i) at hw
+      have hn : narrowSkywalkRouteWidth i-1=(511-i)+1 ∨ (i=511 ∧ narrowSkywalkRouteWidth i-1=2) := by
+        unfold narrowSkywalkRouteWidth; omega
+      rcases hn with hn|⟨h511,hn⟩
+      · rw [hn,pow_succ]
+        have hpos : 0<2^(511-i) := by positivity
+        omega
+      · rw [hn]
+        subst h511
+        norm_num at hw
+        omega
+  have hsum' : ((z.u+z.v:Nat):Int)<((2^(narrowSkywalkRouteWidth i-1):Nat):Int) := by
+    exact_mod_cast hsum
+  have ha := abs_le.mp hb.1
+  have hb' := abs_le.mp hb.2
+  change -((2^(narrowSkywalkRouteWidth i-1):Nat):Int)≤(SkywalkRails.encode G S (z.u:Int) (z.v:Int)).a ∧
+    (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).a<((2^(narrowSkywalkRouteWidth i-1):Nat):Int) ∧
+    -((2^(narrowSkywalkRouteWidth i-1):Nat):Int)≤(SkywalkRails.encode G S (z.u:Int) (z.v:Int)).b ∧
+    (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).b<((2^(narrowSkywalkRouteWidth i-1):Nat):Int)
+  exact ⟨by omega,by omega,by omega,by omega⟩
+
+/-- Universal input fit for the narrowed adder of tick `i`. -/
+theorem narrowSkywalk_iter_fit (x p i : Nat) (hp0 : 0<p) (hx0 : 0<x)
+    (hpo : p%2=1) (hp : p<2^256) (hx : x<p) (hc : x.Coprime p) (hi : i<512) :
+    let r := SkywalkTrace.next^[i] (SkywalkRails.encode false false (x:Int) (p:Int))
+    let n := narrowSkywalkWidth i
+    (r.a+r.b)%2=1 ∧
+    -((2^(n-1):Nat):Int) ≤ (SkywalkRails.route r.a r.b).1/2 ∧
+    (SkywalkRails.route r.a r.b).1/2 < ((2^(n-1):Nat):Int) ∧
+    -((2^(n-1):Nat):Int) ≤ (SkywalkRails.route r.a r.b).2 ∧
+    (SkywalkRails.route r.a r.b).2 < ((2^(n-1):Nat):Int) := by
+  dsimp only
+  let z := SkywalkNat.step^[i] (SkywalkNat.init x p)
+  let k := narrowSkywalkWidth i-1
+  have hk : 0<k := by dsimp only [k]; unfold narrowSkywalkWidth; omega
+  have hn : narrowSkywalkWidth i-1=k := rfl
+  have hsum : z.u+z.v≤2^k := by
+    by_cases he : i≤254
+    · have hk' : k=257 := by dsimp only [k]; unfold narrowSkywalkWidth; omega
+      rw [hk']
+      exact Nat.le_of_lt (SkywalkNat.iter_sum_initial_width p x 256 i hp hx)
+    · have hw := iter_sum_width x p i hp0 hx0 hpo hp hx hc (by omega)
+      change z.u+z.v≤2^(511-i) at hw
+      have hle : 511-i≤k := by dsimp only [k]; unfold narrowSkywalkWidth; omega
+      exact hw.trans (Nat.pow_le_pow_right (by norm_num) hle)
+  obtain ⟨G,S,he⟩ := SkywalkTrace.iter_encoded i false false (SkywalkNat.init x p) hp0 hpo
+  simp only [SkywalkNat.init] at he
+  rw [he]
+  have hvalid := SkywalkNat.iter_valid i (SkywalkNat.init x p) hp0 hpo
+  have hpar := SkywalkRails.encode_odd_sum G S (z.u:Int) (z.v:Int) (by
+    have hodd := hvalid.2.1
+    exact_mod_cast hodd)
+  have hb := SkywalkRails.encode_abs_sum_bound G S z.u z.v (2^k) hsum
+  have hr := SkywalkRails.route_half_width _ _ k hk hpar hb.1 hb.2
+  have hpw : (2^k:Nat)=2^(k-1)*2 := by
+    calc
+      2^k=2^((k-1)+1) := by congr 1; omega
+      _=2^(k-1)*2 := pow_succ 2 (k-1)
+  have hpw' : ((2^k:Nat):Int)=((2^(k-1):Nat):Int)*2 := by
+    exact_mod_cast hpw
+  have hpositive : 0<((2^(k-1):Nat):Int) := by positivity
+  have hH := abs_le.mp hr.2
+  have hO := abs_lt.mp hr.1
+  rw [hn]
+  change ((SkywalkRails.encode G S (z.u:Int) (z.v:Int)).a+
+    (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).b)%2=1 ∧
+    -((2^k:Nat):Int)≤(SkywalkRails.route (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).a
+      (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).b).1/2 ∧
+    (SkywalkRails.route (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).a
+      (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).b).1/2<((2^k:Nat):Int) ∧
+    -((2^k:Nat):Int)≤(SkywalkRails.route (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).a
+      (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).b).2 ∧
+    (SkywalkRails.route (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).a
+      (SkywalkRails.encode G S (z.u:Int) (z.v:Int)).b).2<((2^k:Nat):Int)
+  exact ⟨hpar,by omega,by omega,by omega,hO.2⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkTickLayout =====
+
+/-! Copy of `Arithmetic/CompactSkywalkTickLayout` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+def compactSkywalkTickPreWidth (i : Nat) : Nat := narrowSkywalkRouteWidth i
+def compactSkywalkTickPostWidth (i : Nat) : Nat := narrowSkywalkWidth i
+
+/-- All arithmetic ports are the current physical prefix, with a fresh clean
+extension. No omitted 258-bit sign copies are reconstructed for this tick. -/
+def compactSkywalkTickLayout (w : Nat → Wire) (i : Nat) : SkywalkIntegerLayout :=
+  let n := compactSkywalkTickPreWidth i
+  { a0:=w i,b0:=w 770,ext:=w (i+n),history:=w (1028+i),
+    previous:=w (skywalkPoolPreviousId i),aSign:=w (i+n-1),bSign:=w (770+n-1),
+    aMid:=wireBlock w (i+1) (n-2),bMid:=wireBlock w 771 (n-2),
+    carry:=wireBlock w 1540 (n-1) }
+
+theorem compactSkywalkTick_width_bounds (i : Nat) (hi : i < 512) :
+    3 ≤ compactSkywalkTickPreWidth i ∧ 2 ≤ compactSkywalkTickPostWidth i ∧
+    compactSkywalkTickPostWidth i ≤ compactSkywalkTickPreWidth i ∧
+    compactSkywalkTickPreWidth i ≤ 258 ∧
+    compactSkywalkTickPreWidth i ≤ 514-i ∧
+    compactSkywalkTickPostWidth i = compactSkywalkTickPreWidth (i+1) := by
+  have a := narrowSkywalkRouteWidth_bounds i hi
+  have b := narrowSkywalkWidth_bounds i hi
+  unfold compactSkywalkTickPreWidth compactSkywalkTickPostWidth
+    narrowSkywalkRouteWidth narrowSkywalkWidth at *
+  omega
+
+private theorem blockLast (w : Nat → Wire) (start count : Nat) (hc : 0 < count) :
+    wireBlock w start (count-1)++[w (start+count-1)] = wireBlock w start count := by
+  have h := wireBlock_append w start (count-1) 1
+  have one : wireBlock w (start+(count-1)) 1 = [w (start+(count-1))] := by
+    simp [wireBlock,List.range']
+  rw [one] at h
+  simpa only [show start+(count-1) = start+count-1 by omega,
+    show count-1+1 = count by omega] using h
+
+theorem compactSkywalkTick_ah (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkTickLayout w i).ah = wireBlock w (i+1) (compactSkywalkTickPreWidth i-1) := by
+  have hb := compactSkywalkTick_width_bounds i hi
+  have h := blockLast w (i+1) (compactSkywalkTickPreWidth i-1) (by omega)
+  change wireBlock w (i+1) (compactSkywalkTickPreWidth i-2)++
+    [w (i+compactSkywalkTickPreWidth i-1)] = _
+  simpa only [show (compactSkywalkTickPreWidth i-1)-1 = compactSkywalkTickPreWidth i-2 by omega,
+    show (i+1)+(compactSkywalkTickPreWidth i-1)-1 = i+compactSkywalkTickPreWidth i-1 by omega] using h
+
+theorem compactSkywalkTick_bh (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkTickLayout w i).bh = wireBlock w 771 (compactSkywalkTickPreWidth i-1) := by
+  have hb := compactSkywalkTick_width_bounds i hi
+  have h := blockLast w 771 (compactSkywalkTickPreWidth i-1) (by omega)
+  change wireBlock w 771 (compactSkywalkTickPreWidth i-2)++
+    [w (770+compactSkywalkTickPreWidth i-1)] = _
+  simpa only [show (compactSkywalkTickPreWidth i-1)-1 = compactSkywalkTickPreWidth i-2 by omega,
+    show 771+(compactSkywalkTickPreWidth i-1)-1 = 770+compactSkywalkTickPreWidth i-1 by omega] using h
+
+private theorem blockFirst (w : Nat → Wire) (start count : Nat) (hc : 0 < count) :
+    w start::wireBlock w (start+1) (count-1) = wireBlock w start count := by
+  have h := wireBlock_append w start 1 (count-1)
+  have one : wireBlock w start 1 = [w start] := by simp [wireBlock,List.range']
+  rw [one] at h
+  simpa only [show 1+(count-1) = count by omega,List.singleton_append] using h
+
+theorem compactSkywalkTick_a (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkTickLayout w i).a = wireBlock w i (compactSkywalkTickPreWidth i) := by
+  have hb := compactSkywalkTick_width_bounds i hi
+  rw [SkywalkIntegerLayout.a,compactSkywalkTick_ah w i hi]
+  exact blockFirst w i _ (by omega)
+
+theorem compactSkywalkTick_b (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkTickLayout w i).b = wireBlock w 770 (compactSkywalkTickPreWidth i) := by
+  have hb := compactSkywalkTick_width_bounds i hi
+  rw [SkywalkIntegerLayout.b,compactSkywalkTick_bh w i hi]
+  exact blockFirst w 770 _ (by omega)
+
+theorem compactSkywalkTick_half (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkTickLayout w i).half = wireBlock w (i+1) (compactSkywalkTickPreWidth i) := by
+  have hb := compactSkywalkTick_width_bounds i hi
+  rw [SkywalkIntegerLayout.half,compactSkywalkTick_ah w i hi]
+  change wireBlock w (i+1) (compactSkywalkTickPreWidth i-1)++
+    [w (i+compactSkywalkTickPreWidth i)] = _
+  have h := blockLast w (i+1) (compactSkywalkTickPreWidth i) (by omega)
+  simpa only [show (i+1)+compactSkywalkTickPreWidth i-1 = i+compactSkywalkTickPreWidth i by omega] using h
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkTickValidation =====
+
+/-! Copy of `Arithmetic/CompactSkywalkTickValidation` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+private def compactTickControls (i : Nat) : List Nat :=
+  [skywalkPoolPreviousId i,1028+i,i+compactSkywalkTickPreWidth i,i,770]
+private def compactTickBlocks (i : Nat) : List Nat :=
+  List.range' (i+1) (compactSkywalkTickPreWidth i-1)++
+    List.range' 771 (compactSkywalkTickPreWidth i-1)++
+    List.range' 1540 (compactSkywalkTickPreWidth i-1)
+private def compactTickIds (i : Nat) : List Nat := compactTickControls i++compactTickBlocks i
+
+private theorem compactTickIdsND (i : Nat) (hi : i < 512) : (compactTickIds i).Nodup := by
+  have hn := compactSkywalkTick_width_bounds i hi
+  have a : (List.range' (i+1) (compactSkywalkTickPreWidth i-1)++
+      List.range' 771 (compactSkywalkTickPreWidth i-1)).Nodup := by
+    apply List.nodup_append'.mpr
+    refine ⟨List.nodup_range',List.nodup_range',?_⟩
+    apply List.disjoint_left.mpr
+    intro j hj hk
+    simp only [List.mem_range'_1] at hj hk
+    omega
+  have b : (compactTickBlocks i).Nodup := by
+    apply List.nodup_append'.mpr
+    refine ⟨a,List.nodup_range',?_⟩
+    apply List.disjoint_left.mpr
+    intro j hj hk
+    simp only [List.mem_append,List.mem_range'_1] at hj hk
+    omega
+  have c : (compactTickControls i).Nodup := by
+    by_cases hz : i = 0
+    · subst i
+      norm_num [compactTickControls,skywalkPoolPreviousId,compactSkywalkTickPreWidth,
+        narrowSkywalkRouteWidth]
+    · simp [compactTickControls,skywalkPoolPreviousId,hz]
+      omega
+  apply List.nodup_append'.mpr
+  refine ⟨c,b,?_⟩
+  apply List.disjoint_left.mpr
+  intro j hj hk
+  simp only [compactTickControls,List.mem_cons,List.not_mem_nil,or_false] at hj
+  simp only [compactTickBlocks,List.mem_append,List.mem_range'_1] at hk
+  by_cases hz : i = 0
+  · simp only [skywalkPoolPreviousId,if_pos hz] at hj
+    omega
+  · simp only [skywalkPoolPreviousId,if_neg hz] at hj
+    omega
+
+private theorem compactTickIdsBound (i j : Nat) (hi : i < 512)
+    (hj : j ∈ compactTickIds i) : j < 1798 := by
+  have hn := compactSkywalkTick_width_bounds i hi
+  simp only [compactTickIds,compactTickControls,compactTickBlocks,List.mem_append,
+    List.mem_cons,List.not_mem_nil,List.mem_range'_1,or_false] at hj
+  by_cases hz : i = 0
+  · simp only [skywalkPoolPreviousId,if_pos hz] at hj
+    omega
+  · simp only [skywalkPoolPreviousId,if_neg hz] at hj
+    omega
+
+private theorem compactTickWires (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkTickLayout w i).wires = (compactTickIds i).map w := by
+  change w (skywalkPoolPreviousId i)::w (1028+i)::w (i+compactSkywalkTickPreWidth i)::
+    w i::w 770::((compactSkywalkTickLayout w i).ah++(compactSkywalkTickLayout w i).bh++
+      wireBlock w 1540 (compactSkywalkTickPreWidth i-1)) = _
+  rw [compactSkywalkTick_ah w i hi,compactSkywalkTick_bh w i hi]
+  simp [compactTickIds,compactTickControls,compactTickBlocks,wireBlock,List.map_append]
+
+/-- The actual variable-width local tick has no aliases under pool injectivity. -/
+theorem compactSkywalkTick_valid (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) : (compactSkywalkTickLayout w i).Valid := by
+  constructor
+  · simp [compactSkywalkTickLayout,wireBlock]
+  · rw [compactSkywalkTick_ah w i hi]
+    simp [compactSkywalkTickLayout,wireBlock]
+  · rw [compactTickWires w i hi]
+    apply List.Nodup.map_on
+    · intro a ha b hb he
+      exact skywalkPool_index_inj w hn a b (compactTickIdsBound i a hi ha)
+        (compactTickIdsBound i b hi hb) he
+    · exact compactTickIdsND i hi
+
+theorem compactSkywalkTick_local_support (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkTickLayout w i).wires ⊆ skywalkPoolWires w := by
+  rw [compactTickWires w i hi]
+  intro q hq
+  obtain ⟨j,hj,rfl⟩ := List.mem_map.mp hq
+  simp only [skywalkPoolWires,wireBlock,List.mem_map,List.mem_range'_1]
+  exact ⟨j,by have h := compactTickIdsBound i j hi hj; omega,rfl⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkTickProgram =====
+
+/-! Copy of `Arithmetic/CompactSkywalkTickProgram` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+def compactSkywalkTickARelease (w : Nat → Wire) (i : Nat) : CompactSkywalkSignReleaseLayout :=
+  compactSkywalkSignWord (compactSkywalkTickLayout w i).half (compactSkywalkTickPostWidth i)
+def compactSkywalkTickBRelease (w : Nat → Wire) (i : Nat) : CompactSkywalkSignReleaseLayout :=
+  compactSkywalkSignWord (compactSkywalkTickLayout w i).b (compactSkywalkTickPostWidth i)
+def compactSkywalkTickCleanup (w : Nat → Wire) (i : Nat) : Program :=
+  compactSkywalkSignRelease (compactSkywalkTickARelease w i)++
+    compactSkywalkSignRelease (compactSkywalkTickBRelease w i)
+
+/-- Actual compact route/record on local prefixes, followed only by CX release
+of the post-boundary sign tails. No full258 reconstruction is emitted. -/
+def compactSkywalkTick (w : Nat → Wire) (i : Nat) : Program :=
+  narrowSkywalkTick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)++
+    compactSkywalkTickCleanup w i
+
+attribute [local irreducible] narrowSkywalkTick compactSkywalkSignRelease
+
+private theorem recordWordsND (L : SkywalkIntegerLayout) (hv : L.Valid) :
+    L.half.Nodup ∧ L.b.Nodup ∧ L.half.Disjoint L.b := by
+  have h := (List.nodup_cons.mp (L.record_nodup hv)).2
+  exact List.nodup_append'.mp (List.nodup_append'.mp h).1
+
+theorem compactSkywalkTick_release_valid (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    (compactSkywalkTickARelease w i).Valid ∧ (compactSkywalkTickBRelease w i).Valid := by
+  have h := compactSkywalkTick_width_bounds i hi
+  have nd := recordWordsND _ (compactSkywalkTick_valid w i hi hn)
+  refine ⟨compactSkywalkSignWord_valid _ _ (by omega) ?_ nd.1,
+    compactSkywalkSignWord_valid _ _ (by omega) ?_ nd.2.1⟩
+  · rw [compactSkywalkTick_half w i hi,wireBlock_length]
+    exact h.2.2.1
+  · rw [compactSkywalkTick_b w i hi,wireBlock_length]
+    exact h.2.2.1
+
+theorem compactSkywalkTick_words_disjoint (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    (compactSkywalkTickLayout w i).half.Disjoint (compactSkywalkTickLayout w i).b :=
+  (recordWordsND _ (compactSkywalkTick_valid w i hi hn)).2.2
+
+theorem compactSkywalkTick_cleanup_counts (w : Nat → Wire) (i : Nat) :
+    toffoliCount (compactSkywalkTickCleanup w i) = 0 ∧
+    measurementCount (compactSkywalkTickCleanup w i) = 0 := by
+  have a := compactSkywalkSignRelease_counts (compactSkywalkTickARelease w i)
+  have b := compactSkywalkSignRelease_counts (compactSkywalkTickBRelease w i)
+  rw [compactSkywalkTickCleanup,toffoliCount_append,measurementCount_append,a.1,a.2.1,b.1,b.2.1]
+  exact ⟨rfl,rfl⟩
+
+theorem compactSkywalkTick_counts (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    toffoliCount (compactSkywalkTick w i) =
+      (compactSkywalkTickPreWidth i-1)+(compactSkywalkTickPostWidth i-1) ∧
+    measurementCount (compactSkywalkTick w i) = compactSkywalkTickPostWidth i-1 := by
+  have h := compactSkywalkTick_width_bounds i hi
+  have len : (compactSkywalkTickLayout w i).half.length = compactSkywalkTickPreWidth i := by
+    rw [compactSkywalkTick_half w i hi,wireBlock_length]
+  have c := narrowSkywalkTick_counts _ (compactSkywalkTick_valid w i hi hn)
+    (compactSkywalkTickPostWidth i) (by omega) (by rw [len]; exact h.2.2.1)
+  have z := compactSkywalkTick_cleanup_counts w i
+  rw [compactSkywalkTick,toffoliCount_append,measurementCount_append,c.1,c.2.1,z.1,z.2]
+  rw [compactSkywalkTick_ah w i hi,wireBlock_length]
+  exact ⟨by omega,by omega⟩
+
+theorem compactSkywalkTick_cleanup_support (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    wires (compactSkywalkTickCleanup w i) ⊆ (compactSkywalkTickLayout w i).wires.toFinset := by
+  have h := compactSkywalkTick_width_bounds i hi
+  have a := (compactSkywalkSignWord_support (compactSkywalkTickLayout w i).half
+    (compactSkywalkTickPostWidth i) (by omega) (by
+      rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact h.2.2.1)).1
+  have b := (compactSkywalkSignWord_support (compactSkywalkTickLayout w i).b
+    (compactSkywalkTickPostWidth i) (by omega) (by
+      rw [compactSkywalkTick_b w i hi,wireBlock_length]; exact h.2.2.1)).1
+  intro q hq
+  simp only [compactSkywalkTickCleanup,wires_append,Finset.mem_union] at hq
+  rcases hq with hq|hq
+  · have ha := List.mem_toFinset.mp (a hq)
+    simp only [SkywalkIntegerLayout.half,SkywalkIntegerLayout.wires,List.mem_toFinset,
+      List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at ha ⊢
+    tauto
+  · have hb := List.mem_toFinset.mp (b hq)
+    simp only [SkywalkIntegerLayout.b,SkywalkIntegerLayout.wires,List.mem_toFinset,
+      List.mem_append,List.mem_cons] at hb ⊢
+    tauto
+
+theorem compactSkywalkTick_support (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    wires (compactSkywalkTick w i) ⊆ (compactSkywalkTickLayout w i).wires.toFinset := by
+  have h := compactSkywalkTick_width_bounds i hi
+  have n := (narrowSkywalkTick_wires_subset _ (compactSkywalkTick_valid w i hi hn)
+    (compactSkywalkTickPostWidth i) (by omega) (by
+      rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact h.2.2.1)).1
+  have c := compactSkywalkTick_cleanup_support w i hi
+  rw [compactSkywalkTick,wires_append,Finset.union_subset_iff]
+  exact ⟨n,c⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkTickProof =====
+
+/-! Copy of `Arithmetic/CompactSkywalkTickProof` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+private theorem record_fit (H A B : Int) (ha0 : -H ≤ A) (ha1 : A < H)
+    (hb0 : -H ≤ B) (hb1 : B < H) :
+    -H ≤ signedRecordValue A B ∧ signedRecordValue A B < H := by
+  by_cases ha : A < 0 <;> by_cases hb : B < 0 <;>
+    simp [signedRecordValue,signedRecordControl,signedIntegerValue,SkywalkRails.neg,ha,hb] <;> omega
+
+/-- Cancellation keeps both post-tick rails inside the strict record interval. -/
+theorem compactSkywalkTick_step_fit (A B : Int) (G : Bool) (H : Int)
+    (hp : (A+B)%2 = 1)
+    (ha0 : -H ≤ (SkywalkRails.route A B).1/2) (ha1 : (SkywalkRails.route A B).1/2 < H)
+    (hb0 : -H ≤ (SkywalkRails.route A B).2) (hb1 : (SkywalkRails.route A B).2 < H) :
+    -H ≤ (SkywalkRails.step ⟨A,B,G⟩).h ∧ (SkywalkRails.step ⟨A,B,G⟩).h < H ∧
+    -H ≤ (SkywalkRails.step ⟨A,B,G⟩).k ∧ (SkywalkRails.step ⟨A,B,G⟩).k < H := by
+  have he := SkywalkRails.route_even A B hp
+  have hs : SkywalkRails.sameSign ((SkywalkRails.route A B).1/2) (SkywalkRails.route A B).2 =
+      SkywalkRails.sameSign (SkywalkRails.route A B).1 (SkywalkRails.route A B).2 := by
+    unfold SkywalkRails.sameSign
+    rw [SkywalkRails.neg_half _ he]
+  have hk := record_fit H ((SkywalkRails.route A B).1/2) (SkywalkRails.route A B).2 ha0 ha1 hb0 hb1
+  rw [signedRecordValue_rails,hs] at hk
+  exact ⟨ha0,ha1,hk.1,hk.2⟩
+
+/-- The native tick already uses only the actual local prefixes. Every input
+fit obligation is the same universally proved post-route envelope. -/
+theorem compactSkywalkTick_native_spec (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (A B : Int) (G : Bool) (hp : (A+B)%2 = 1)
+    (ha0 : -((2^(compactSkywalkTickPostWidth i-1):Nat):Int) ≤ (SkywalkRails.route A B).1/2)
+    (ha1 : (SkywalkRails.route A B).1/2 < ((2^(compactSkywalkTickPostWidth i-1):Nat):Int))
+    (hb0 : -((2^(compactSkywalkTickPostWidth i-1):Nat):Int) ≤ (SkywalkRails.route A B).2)
+    (hb1 : (SkywalkRails.route A B).2 < ((2^(compactSkywalkTickPostWidth i-1):Nat):Int)) :
+    Triple (SkywalkIntegerInput (compactSkywalkTickLayout w i) A B G)
+      (narrowSkywalkTick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i))
+      (SkywalkIntegerOutput (compactSkywalkTickLayout w i) A B G) := by
+  have h := compactSkywalkTick_width_bounds i hi
+  exact narrowSkywalkTick_spec _ (compactSkywalkTick_valid w i hi hn) _ (by omega)
+    (by rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact h.2.2.1)
+    A B G hp ha0 ha1 hb0 hb1
+
+/-- The actual locally emitted native result supplies both sign-release
+premises; no post-tick sign-copy oracle is assumed. -/
+theorem compactSkywalkTick_native_copies (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (A B : Int) (G : Bool) (hp : (A+B)%2 = 1)
+    (ha0 : -((2^(compactSkywalkTickPostWidth i-1):Nat):Int) ≤ (SkywalkRails.route A B).1/2)
+    (ha1 : (SkywalkRails.route A B).1/2 < ((2^(compactSkywalkTickPostWidth i-1):Nat):Int))
+    (hb0 : -((2^(compactSkywalkTickPostWidth i-1):Nat):Int) ≤ (SkywalkRails.route A B).2)
+    (hb1 : (SkywalkRails.route A B).2 < ((2^(compactSkywalkTickPostWidth i-1):Nat):Int))
+    (s : State) (m : List Bool)
+    (hin : SkywalkIntegerInput (compactSkywalkTickLayout w i) A B G s.basis) :
+    let t := run (narrowSkywalkTick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)) m s
+    (compactSkywalkTickARelease w i).Copies t.basis ∧
+    (compactSkywalkTickBRelease w i).Copies t.basis := by
+  dsimp only
+  have h := compactSkywalkTick_width_bounds i hi
+  have fit := compactSkywalkTick_step_fit A B G _ hp ha0 ha1 hb0 hb1
+  have out := (compactSkywalkTick_native_spec w i hi hn A B G hp ha0 ha1 hb0 hb1 s m hin).2
+  exact ⟨compactSkywalkSignWord_copies _ _ (by omega)
+    (by rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact h.2.2.1) _ _
+      out.1 fit.1 fit.2.1,
+    compactSkywalkSignWord_copies _ _ (by omega)
+    (by rw [compactSkywalkTick_b w i hi,wireBlock_length]; exact h.2.2.1) _ _
+      out.2.1 fit.2.2.1 fit.2.2.2⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkSignReleasePool =====
+
+/-! Copy of `Arithmetic/CompactSkywalkSignReleasePool` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+def compactSkywalkSignPoolA (w : Nat → Wire) (i : Nat) : CompactSkywalkSignReleaseLayout :=
+  compactSkywalkSignWord (skywalkPoolA w i) (narrowSkywalkRouteWidth i)
+def compactSkywalkSignPoolB (w : Nat → Wire) (i : Nat) : CompactSkywalkSignReleaseLayout :=
+  compactSkywalkSignWord (skywalkPoolB w) (narrowSkywalkRouteWidth i)
+
+def compactSkywalkSignPoolRelease (w : Nat → Wire) (i : Nat) : Program :=
+  compactSkywalkSignRelease (compactSkywalkSignPoolA w i)++
+    compactSkywalkSignRelease (compactSkywalkSignPoolB w i)
+def compactSkywalkSignPoolExpand (w : Nat → Wire) (i : Nat) : Program :=
+  compactSkywalkSignExpand (compactSkywalkSignPoolB w i)++
+    compactSkywalkSignExpand (compactSkywalkSignPoolA w i)
+
+private theorem blockND_w5 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (start count : Nat) (hb : start+count ≤ 1798) : (wireBlock w start count).Nodup := by
+  apply List.Nodup.map_on
+  · intro i hi j hj he
+    simp only [List.mem_range'_1] at hi hj
+    exact skywalkPool_index_inj w hn i j (by omega) (by omega) he
+  · exact List.nodup_range'
+
+theorem compactSkywalkSignPool_wordsND (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    (skywalkPoolA w i).Nodup ∧ (skywalkPoolB w).Nodup :=
+  ⟨blockND_w5 w hn i 258 (by omega),blockND_w5 w hn 770 258 (by decide)⟩
+
+theorem compactSkywalkSignPool_valid (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    (compactSkywalkSignPoolA w i).Valid ∧ (compactSkywalkSignPoolB w i).Valid := by
+  have hw := narrowSkywalkRouteWidth_bounds i hi
+  have nd := compactSkywalkSignPool_wordsND w i hi hn
+  exact ⟨compactSkywalkSignWord_valid _ _ (by omega)
+    (by simpa [skywalkPoolA,wireBlock] using hw.2.1) nd.1,
+    compactSkywalkSignWord_valid _ _ (by omega)
+    (by simpa [skywalkPoolB,wireBlock] using hw.2.1) nd.2⟩
+
+theorem compactSkywalkSignPool_wordsDisjoint (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) : (skywalkPoolA w i).Disjoint (skywalkPoolB w) := by
+  apply List.disjoint_left.mpr
+  intro q ha hb
+  simp only [skywalkPoolA,skywalkPoolB,wireBlock,List.mem_map,List.mem_range'_1] at ha hb
+  obtain ⟨a,ha,hea⟩ := ha
+  obtain ⟨b,hb,heb⟩ := hb
+  have he := skywalkPool_index_inj w hn a b (by omega) (by omega) (hea.trans heb.symm)
+  omega
+
+/-- The exact universal route bound supplies both physical sign-copy banks
+for every complete valid nonzero coprime input and every one of the512 stages. -/
+theorem compactSkywalkSignPool_stage_copies (w : Nat → Wire) (x p i : Nat)
+    (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1) (hp : p < 2^256)
+    (hx : x < p) (hc : x.Coprime p) (hi : i < 512) (s : BasisState)
+    (hin : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s) :
+    (compactSkywalkSignPoolA w i).Copies s ∧ (compactSkywalkSignPoolB w i).Copies s := by
+  have fit := narrowSkywalkRoute_iter_fit x p i hp0 hx0 hpo hp hx hc hi
+  have hw := narrowSkywalkRouteWidth_bounds i hi
+  exact ⟨compactSkywalkSignWord_copies _ _ (by omega)
+    (by simpa [skywalkPoolA,wireBlock] using hw.2.1) s _ hin.1 fit.1 fit.2.1,
+    compactSkywalkSignWord_copies _ _ (by omega)
+    (by simpa [skywalkPoolB,wireBlock] using hw.2.1) s _ hin.2.1 fit.2.2.1 fit.2.2.2⟩
+
+theorem compactSkywalkSignPool_released_lengths (w : Nat → Wire) (i : Nat) :
+    (compactSkywalkSignPoolA w i).released.length = 258-narrowSkywalkRouteWidth i ∧
+    (compactSkywalkSignPoolB w i).released.length = 258-narrowSkywalkRouteWidth i := by
+  simp [compactSkywalkSignPoolA,compactSkywalkSignPoolB,compactSkywalkSignWord,
+    skywalkPoolA,skywalkPoolB,wireBlock]
+
+theorem compactSkywalkSignPool_counts (w : Nat → Wire) (i : Nat) :
+    toffoliCount (compactSkywalkSignPoolRelease w i) = 0 ∧
+    measurementCount (compactSkywalkSignPoolRelease w i) = 0 ∧
+    toffoliCount (compactSkywalkSignPoolExpand w i) = 0 ∧
+    measurementCount (compactSkywalkSignPoolExpand w i) = 0 := by
+  have a := compactSkywalkSignRelease_counts (compactSkywalkSignPoolA w i)
+  have b := compactSkywalkSignRelease_counts (compactSkywalkSignPoolB w i)
+  simp only [compactSkywalkSignPoolRelease,compactSkywalkSignPoolExpand,toffoliCount_append,
+    measurementCount_append,a.1,a.2.1,a.2.2.1,a.2.2.2,b.1,b.2.1,b.2.2.1,b.2.2.2,Nat.zero_add]
+  trivial
+
+/-- All measurement streams are immaterial to these Clifford prefixes. -/
+
+theorem compactSkywalkSign_no_measure_append (p q : Program) (hp : measurementCount p = 0)
+    (s : State) (m : List Bool) : run (p++q) m s = run q m (run p m s) := by
+  have h := run_take p m s
+  rw [hp,List.take_zero] at h
+  rw [run_append,hp,List.take_zero,List.drop_zero,h]
+
+/-- Both physical two-bank compositions are exact State inverses. -/
+theorem compactSkywalkSignPool_roundtrip (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : State) (m1 m2 : List Bool) :
+    run (compactSkywalkSignPoolExpand w i) m2 (run (compactSkywalkSignPoolRelease w i) m1 s) = s ∧
+    run (compactSkywalkSignPoolRelease w i) m2 (run (compactSkywalkSignPoolExpand w i) m1 s) = s := by
+  let A := compactSkywalkSignPoolA w i
+  let B := compactSkywalkSignPoolB w i
+  have hv := compactSkywalkSignPool_valid w i hi hn
+  have ca := compactSkywalkSignRelease_counts A
+  have cb := compactSkywalkSignRelease_counts B
+  constructor
+  · change run (compactSkywalkSignExpand B++compactSkywalkSignExpand A) m2
+      (run (compactSkywalkSignRelease A++compactSkywalkSignRelease B) m1 s) = s
+    rw [compactSkywalkSign_no_measure_append _ _ ca.2.1,
+      compactSkywalkSign_no_measure_append _ _ cb.2.2.2]
+    rw [(compactSkywalkSignRelease_roundtrip B hv.2
+      (run (compactSkywalkSignRelease A) m1 s) m1 m2).1]
+    exact (compactSkywalkSignRelease_roundtrip A hv.1 s m1 m2).1
+  · change run (compactSkywalkSignRelease A++compactSkywalkSignRelease B) m2
+      (run (compactSkywalkSignExpand B++compactSkywalkSignExpand A) m1 s) = s
+    rw [compactSkywalkSign_no_measure_append _ _ cb.2.2.2,
+      compactSkywalkSign_no_measure_append _ _ ca.2.1]
+    rw [(compactSkywalkSignRelease_roundtrip A hv.1
+      (run (compactSkywalkSignExpand B) m1 s) m1 m2).2]
+    exact (compactSkywalkSignRelease_roundtrip B hv.2 s m1 m2).2
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkSignReleasePair =====
+
+/-! Copy of `Arithmetic/CompactSkywalkSignReleasePair` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+private theorem word_subviews (r : List Wire) (n : Nat) (hn : 0 < n) (hle : n ≤ r.length) :
+    (compactSkywalkSignWord r n).retained⊆r ∧
+    (compactSkywalkSignWord r n).released⊆r ∧ (compactSkywalkSignWord r n).sign ∈ r := by
+  have he := compactSkywalkSignWord_expanded r n hn hle
+  refine ⟨?_,?_,?_⟩
+  · intro q hq
+    rw [←he]
+    exact List.mem_append_left _ hq
+  · intro q hq
+    rw [←he]
+    exact List.mem_append_right _ hq
+  · have hs : (compactSkywalkSignWord r n).sign ∈ (compactSkywalkSignWord r n).retained := by
+      simp [CompactSkywalkSignReleaseLayout.retained]
+    have hx : (compactSkywalkSignWord r n).sign ∈ (compactSkywalkSignWord r n).expanded :=
+      List.mem_append_left _ hs
+    simpa only [he] using hx
+
+private theorem same_signed_w6 (r : List Wire) (s t : BasisState)
+    (he : ∀q ∈ r,t q = s q) : signedRegValue r t = signedRegValue r s := by
+  unfold signedRegValue
+  rw [regValue_congr r t s he]
+
+/-- The emitted two-bank release really frees both physical tails, preserves
+both exact signed prefix values and every outsider, and changes no phase. -/
+theorem compactSkywalkSignPool_release_correct (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
+    (hcA : (compactSkywalkSignPoolA w i).Copies s.basis)
+    (hcB : (compactSkywalkSignPoolB w i).Copies s.basis) :
+    (run (compactSkywalkSignPoolRelease w i) m s).phase = s.phase ∧
+    (compactSkywalkSignPoolA w i).Clean (run (compactSkywalkSignPoolRelease w i) m s).basis ∧
+    (compactSkywalkSignPoolB w i).Clean (run (compactSkywalkSignPoolRelease w i) m s).basis ∧
+    signedRegValue (compactSkywalkSignPoolA w i).retained
+      (run (compactSkywalkSignPoolRelease w i) m s).basis = signedRegValue (skywalkPoolA w i) s.basis ∧
+    signedRegValue (compactSkywalkSignPoolB w i).retained
+      (run (compactSkywalkSignPoolRelease w i) m s).basis = signedRegValue (skywalkPoolB w) s.basis ∧
+    (∀q,q ∉ skywalkPoolA w i → q ∉ skywalkPoolB w →
+      (run (compactSkywalkSignPoolRelease w i) m s).basis q = s.basis q) := by
+  let A := compactSkywalkSignPoolA w i
+  let B := compactSkywalkSignPoolB w i
+  let u := run (compactSkywalkSignRelease A) m s
+  let v := run (compactSkywalkSignRelease B) m u
+  have hv := compactSkywalkSignPool_valid w i hi hn
+  have hw := narrowSkywalkRouteWidth_bounds i hi
+  have la : narrowSkywalkRouteWidth i ≤ (skywalkPoolA w i).length := by
+    simpa [skywalkPoolA,wireBlock] using hw.2.1
+  have lb : narrowSkywalkRouteWidth i ≤ (skywalkPoolB w).length := by
+    simpa [skywalkPoolB,wireBlock] using hw.2.1
+  have av := word_subviews (skywalkPoolA w i) (narrowSkywalkRouteWidth i) (by omega) la
+  have bv := word_subviews (skywalkPoolB w) (narrowSkywalkRouteWidth i) (by omega) lb
+  have sa := (compactSkywalkSignWord_support (skywalkPoolA w i)
+    (narrowSkywalkRouteWidth i) (by omega) la).1
+  have sb := (compactSkywalkSignWord_support (skywalkPoolB w)
+    (narrowSkywalkRouteWidth i) (by omega) lb).1
+  have hd := compactSkywalkSignPool_wordsDisjoint w i hi hn
+  have ub : ∀q ∈ skywalkPoolB w,u.basis q = s.basis q := by
+    intro q hq
+    exact run_preserves_outside _ m s q (fun hs =>
+      List.disjoint_left.mp hd (List.mem_toFinset.mp (sa hs)) hq)
+  have va : ∀q ∈ skywalkPoolA w i,v.basis q = u.basis q := by
+    intro q hq
+    exact run_preserves_outside _ m u q (fun hs =>
+      List.disjoint_left.mp hd hq (List.mem_toFinset.mp (sb hs)))
+  have uCopiesB : B.Copies u.basis := by
+    intro q hq
+    rw [ub q (bv.2.1 hq),ub B.sign bv.2.2]
+    exact hcB q hq
+  have uCleanA := compactSkywalkSignRelease_clean A hv.1 s m hcA
+  have vCleanA : A.Clean v.basis := by
+    intro q hq
+    exact (va q (av.2.1 hq)).trans (uCleanA q hq)
+  have vCleanB := compactSkywalkSignRelease_clean B hv.2 u m uCopiesB
+  have aValue := (same_signed_w6 A.retained u.basis v.basis
+    (fun q hq => va q (av.1 hq))).trans
+      (compactSkywalkSignRelease_signed A hv.1 s m hcA)
+  have bValue := (compactSkywalkSignRelease_signed B hv.2 u m uCopiesB).trans
+    (same_signed_w6 B.expanded s.basis u.basis (by
+      intro q hq
+      have he := compactSkywalkSignWord_expanded (skywalkPoolB w)
+        (narrowSkywalkRouteWidth i) (by omega) lb
+      change q ∈ (compactSkywalkSignWord (skywalkPoolB w) (narrowSkywalkRouteWidth i)).expanded at hq
+      rw [he] at hq
+      exact ub q hq))
+  have ar : A.expanded = skywalkPoolA w i := compactSkywalkSignWord_expanded _ _ (by omega) la
+  have br : B.expanded = skywalkPoolB w := compactSkywalkSignWord_expanded _ _ (by omega) lb
+  rw [ar] at aValue
+  rw [br] at bValue
+  have ca := compactSkywalkSignRelease_counts A
+  have actual : run (compactSkywalkSignPoolRelease w i) m s = v :=
+    compactSkywalkSign_no_measure_append _ _ ca.2.1 s m
+  rw [actual]
+  have pa := (compactSkywalkSignRelease_phase_frame A hv.1 s m).1
+  have pb := (compactSkywalkSignRelease_phase_frame B hv.2 u m).1
+  refine ⟨pb.trans pa,vCleanA,vCleanB,aValue,bValue,?_⟩
+  intro q hqa hqb
+  have ua := run_preserves_outside (compactSkywalkSignRelease A) m s q
+    (fun h => hqa (List.mem_toFinset.mp (sa h)))
+  exact (run_preserves_outside (compactSkywalkSignRelease B) m u q
+    (fun h => hqb (List.mem_toFinset.mp (sb h)))).trans ua
+
+/-- Every valid complete logical trajectory therefore has an actual clean
+physical release boundary at the universally proved width N_i. -/
+theorem compactSkywalkSignPool_stage_release (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (x p i : Nat)
+    (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1) (hp : p < 2^256)
+    (hx : x < p) (hc : x.Coprime p) (hi : i < 512) (s : State) (m : List Bool)
+    (hin : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s.basis) :
+    (compactSkywalkSignPoolA w i).Clean (run (compactSkywalkSignPoolRelease w i) m s).basis ∧
+    (compactSkywalkSignPoolB w i).Clean (run (compactSkywalkSignPoolRelease w i) m s).basis ∧
+    signedRegValue (compactSkywalkSignPoolA w i).retained
+      (run (compactSkywalkSignPoolRelease w i) m s).basis = 
+        (SkywalkTrace.next^[i] (SkywalkRails.encode false false (x:Int) (p:Int))).a ∧
+    signedRegValue (compactSkywalkSignPoolB w i).retained
+      (run (compactSkywalkSignPoolRelease w i) m s).basis = 
+        (SkywalkTrace.next^[i] (SkywalkRails.encode false false (x:Int) (p:Int))).b := by
+  have copies := compactSkywalkSignPool_stage_copies w x p i hp0 hx0 hpo hp hx hc hi s.basis hin
+  have h := compactSkywalkSignPool_release_correct w i hi hn s m copies.1 copies.2
+  exact ⟨h.2.1,h.2.2.1,h.2.2.2.1.trans hin.1,h.2.2.2.2.1.trans hin.2.1⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkTickEntry =====
+
+/-! Copy of `Arithmetic/CompactSkywalkTickEntry` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+private theorem block_prefix (w : Nat → Wire) (start len n : Nat) (hn : n ≤ len) :
+    (wireBlock w start len).take n=wireBlock w start n := by
+  have h := wireBlock_append w start n (len-n)
+  have e : n+(len-n)=len := by omega
+  rw [e] at h
+  rw [←h]
+  have take : (wireBlock w start n ++ wireBlock w (start+n) (len-n)).take
+      (wireBlock w start n).length = wireBlock w start n := List.take_left
+  simpa only [wireBlock_length] using take
+
+private theorem entry_views (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkSignPoolA w i).retained=(compactSkywalkTickLayout w i).a ∧
+    (compactSkywalkSignPoolB w i).retained=(compactSkywalkTickLayout w i).b := by
+  have hw := compactSkywalkTick_width_bounds i hi
+  have na : narrowSkywalkRouteWidth i ≤ (skywalkPoolA w i).length := by
+    simpa only [skywalkPoolA,wireBlock_length] using hw.2.2.2.1
+  have nb : narrowSkywalkRouteWidth i ≤ (skywalkPoolB w).length := by
+    simpa only [skywalkPoolB,wireBlock_length] using hw.2.2.2.1
+  have hpos : 0 < narrowSkywalkRouteWidth i := by
+    change 0 < compactSkywalkTickPreWidth i
+    omega
+  have va := compactSkywalkSignWord_retained (skywalkPoolA w i) (narrowSkywalkRouteWidth i)
+    hpos na
+  have vb := compactSkywalkSignWord_retained (skywalkPoolB w) (narrowSkywalkRouteWidth i)
+    hpos nb
+  constructor
+  · change (compactSkywalkSignWord (skywalkPoolA w i) (narrowSkywalkRouteWidth i)).retained=_
+    rw [va,skywalkPoolA,compactSkywalkTick_a w i hi]
+    exact block_prefix w i 258 _ hw.2.2.2.1
+  · change (compactSkywalkSignWord (skywalkPoolB w) (narrowSkywalkRouteWidth i)).retained=_
+    rw [vb,skywalkPoolB,compactSkywalkTick_b w i hi]
+    exact block_prefix w 770 258 _ hw.2.2.2.1
+
+private theorem index_away (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i j : Nat) (hi : i < 512) (hj : j < 1798)
+    (ha : j < i ∨ i+258 ≤ j) (hb : j < 770 ∨ 1028 ≤ j) :
+    w j∉skywalkPoolA w i ∧ w j∉skywalkPoolB w := by
+  constructor <;> intro hq
+  · obtain ⟨k,hk,he⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hk
+    have e := skywalkPool_index_inj w hn k j (by omega) hj he
+    omega
+  · obtain ⟨k,hk,he⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hk
+    have e := skywalkPool_index_inj w hn k j (by omega) hj he
+    omega
+
+private theorem extension_in_release (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hsmall : compactSkywalkTickPreWidth i < 258) :
+    w (i+compactSkywalkTickPreWidth i)∈(compactSkywalkSignPoolA w i).released := by
+  have hw := compactSkywalkTick_width_bounds i hi
+  change w (i+compactSkywalkTickPreWidth i)∈
+    (wireBlock w i 258).drop (compactSkywalkTickPreWidth i)
+  have h := wireBlock_append w i (compactSkywalkTickPreWidth i)
+    (258-compactSkywalkTickPreWidth i)
+  rw [show compactSkywalkTickPreWidth i+(258-compactSkywalkTickPreWidth i)=258 by omega] at h
+  rw [←h]
+  have drop : (wireBlock w i (compactSkywalkTickPreWidth i) ++
+      wireBlock w (i+compactSkywalkTickPreWidth i) (258-compactSkywalkTickPreWidth i)).drop
+      (wireBlock w i (compactSkywalkTickPreWidth i)).length =
+      wireBlock w (i+compactSkywalkTickPreWidth i) (258-compactSkywalkTickPreWidth i) := List.drop_left
+  simp only [wireBlock_length] at drop
+  rw [drop]
+  apply List.mem_map.mpr
+  exact ⟨i+compactSkywalkTickPreWidth i,by simp only [List.mem_range'_1]; omega,rfl⟩
+
+/-- Every zero required by the local tick comes from actual release or
+the old fresh-extension/work frame. There is no new clean-work oracle. -/
+theorem compactSkywalkTickEntry_from_stage (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (x p i : Nat)
+    (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2=1) (hp : p < 2^256)
+    (hx : x < p) (hc : x.Coprime p) (hi : i < 512) (s : State) (m : List Bool)
+    (hin : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s.basis) :
+    let r := SkywalkTrace.next^[i] (SkywalkRails.encode false false (x:Int) (p:Int))
+    let t := run (compactSkywalkSignPoolRelease w i) m s
+    t.phase=s.phase ∧ SkywalkIntegerInput (compactSkywalkTickLayout w i) r.a r.b r.g t.basis := by
+  dsimp only
+  generalize ht : run (compactSkywalkSignPoolRelease w i) m s=t
+  have copies := compactSkywalkSignPool_stage_copies w x p i hp0 hx0 hpo hp hx hc hi s.basis hin
+  have release := compactSkywalkSignPool_release_correct w i hi hn s m copies.1 copies.2
+  rw [ht] at release
+  obtain ⟨phase,cleanA,cleanB,valA,valB,frame⟩ := release
+  have views := entry_views w i hi
+  rw [views.1] at valA
+  rw [views.2] at valB
+  have keep (j : Nat) (hj : j < 1798) (ha : j < i ∨ i+258 ≤ j)
+      (hb : j < 770 ∨ 1028 ≤ j) : t.basis (w j)=s.basis (w j) := by
+    have away := index_away w hn i j hi hj ha hb
+    exact frame _ away.1 away.2
+  have prev := keep (skywalkPoolPreviousId i) (by
+    unfold skywalkPoolPreviousId; split_ifs <;> omega) (by
+    unfold skywalkPoolPreviousId; split_ifs <;> omega) (by
+    unfold skywalkPoolPreviousId; split_ifs <;> omega)
+  have fresh := hin.2.2.2.2.1 i (Nat.le_refl i) hi
+  refine ⟨phase,valA.trans hin.1,valB.trans hin.2.1,?_,?_,?_,?_⟩
+  · change t.basis (w (skywalkPoolPreviousId i))=_
+    exact prev.trans hin.2.2.1
+  · change t.basis (w (i+compactSkywalkTickPreWidth i))=false
+    have width := (compactSkywalkTick_width_bounds i hi).2.2.2.1
+    by_cases hfull : compactSkywalkTickPreWidth i=258
+    · rw [hfull,keep (i+258) (by omega) (by omega) (by omega)]
+      exact fresh.1
+    · exact cleanA _ (extension_in_release w i hi (by omega))
+  · change t.basis (w (1028+i))=false
+    exact (keep (1028+i) (by omega) (by omega) (by omega)).trans fresh.2
+  · apply (regValue_zero _ _).mpr
+    intro q hq
+    change q∈wireBlock w 1540 (compactSkywalkTickPreWidth i-1) at hq
+    obtain ⟨j,hj,rfl⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hj
+    have width := (compactSkywalkTick_width_bounds i hi).2.2.2.1
+    have before := (regValue_zero _ _).mp hin.2.2.2.2.2.1 (w j) (by
+      apply List.mem_map.mpr
+      exact ⟨j,by simp only [List.mem_range'_1]; omega,rfl⟩)
+    exact (keep j (by omega) (by omega) (by omega)).trans before
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkTickOutputCleanup =====
+
+/-! Copy of `Arithmetic/CompactSkywalkTickOutputCleanup` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+private theorem subviews (r : List Wire) (n : Nat) (hn : 0 < n) (hle : n ≤ r.length) :
+    (compactSkywalkSignWord r n).retained ⊆ r ∧
+    (compactSkywalkSignWord r n).released ⊆ r ∧ (compactSkywalkSignWord r n).sign ∈ r := by
+  have he := compactSkywalkSignWord_expanded r n hn hle
+  refine ⟨?_,?_,?_⟩
+  · intro q hq
+    rw [←he]
+    exact List.mem_append_left _ hq
+  · intro q hq
+    rw [←he]
+    exact List.mem_append_right _ hq
+  · have hs : (compactSkywalkSignWord r n).sign ∈ (compactSkywalkSignWord r n).retained := by
+      simp [CompactSkywalkSignReleaseLayout.retained]
+    have hx : (compactSkywalkSignWord r n).sign ∈ (compactSkywalkSignWord r n).expanded :=
+      List.mem_append_left _ hs
+    simpa only [he] using hx
+
+private theorem same_signed_w8 (r : List Wire) (s t : BasisState)
+    (he : ∀q ∈ r,t q = s q) : signedRegValue r t = signedRegValue r s := by
+  unfold signedRegValue
+  rw [regValue_congr r t s he]
+
+/-- These are actual two-bank CX instructions, with both clean tails and
+retained signed values proved from the native result's sign-copy predicates. -/
+theorem compactSkywalkTickOutput_cleanup_correct (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
+    (hcA : (compactSkywalkTickARelease w i).Copies s.basis)
+    (hcB : (compactSkywalkTickBRelease w i).Copies s.basis) :
+    (run (compactSkywalkTickCleanup w i) m s).phase = s.phase ∧
+    (compactSkywalkTickARelease w i).Clean (run (compactSkywalkTickCleanup w i) m s).basis ∧
+    (compactSkywalkTickBRelease w i).Clean (run (compactSkywalkTickCleanup w i) m s).basis ∧
+    signedRegValue (compactSkywalkTickARelease w i).retained
+      (run (compactSkywalkTickCleanup w i) m s).basis =
+        signedRegValue (compactSkywalkTickLayout w i).half s.basis ∧
+    signedRegValue (compactSkywalkTickBRelease w i).retained
+      (run (compactSkywalkTickCleanup w i) m s).basis =
+        signedRegValue (compactSkywalkTickLayout w i).b s.basis ∧
+    (∀q,q ∉ (compactSkywalkTickLayout w i).half → q ∉ (compactSkywalkTickLayout w i).b →
+      (run (compactSkywalkTickCleanup w i) m s).basis q = s.basis q) := by
+  let L := compactSkywalkTickLayout w i
+  let A := compactSkywalkTickARelease w i
+  let B := compactSkywalkTickBRelease w i
+  let u := run (compactSkywalkSignRelease A) m s
+  let v := run (compactSkywalkSignRelease B) m u
+  have hv := compactSkywalkTick_release_valid w i hi hn
+  have hw := compactSkywalkTick_width_bounds i hi
+  have la : compactSkywalkTickPostWidth i ≤ L.half.length := by
+    rw [compactSkywalkTick_half w i hi,wireBlock_length]
+    exact hw.2.2.1
+  have lb : compactSkywalkTickPostWidth i ≤ L.b.length := by
+    rw [compactSkywalkTick_b w i hi,wireBlock_length]
+    exact hw.2.2.1
+  have av := subviews L.half (compactSkywalkTickPostWidth i) (by omega) la
+  have bv := subviews L.b (compactSkywalkTickPostWidth i) (by omega) lb
+  have sa := (compactSkywalkSignWord_support L.half (compactSkywalkTickPostWidth i) (by omega) la).1
+  have sb := (compactSkywalkSignWord_support L.b (compactSkywalkTickPostWidth i) (by omega) lb).1
+  have hd := compactSkywalkTick_words_disjoint w i hi hn
+  have ub : ∀q ∈ L.b,u.basis q = s.basis q := by
+    intro q hq
+    exact run_preserves_outside _ m s q (fun h =>
+      List.disjoint_left.mp hd (List.mem_toFinset.mp (sa h)) hq)
+  have va : ∀q ∈ L.half,v.basis q = u.basis q := by
+    intro q hq
+    exact run_preserves_outside _ m u q (fun h =>
+      List.disjoint_left.mp hd hq (List.mem_toFinset.mp (sb h)))
+  have uCopiesB : B.Copies u.basis := by
+    intro q hq
+    have keepQ : u.basis q = s.basis q := ub q (bv.2.1 hq)
+    have keepS : u.basis B.sign = s.basis B.sign := ub B.sign bv.2.2
+    rw [keepQ,keepS]
+    exact hcB q hq
+  have uCleanA := compactSkywalkSignRelease_clean A hv.1 s m hcA
+  have vCleanA : A.Clean v.basis := by
+    intro q hq
+    exact (va q (av.2.1 hq)).trans (uCleanA q hq)
+  have vCleanB := compactSkywalkSignRelease_clean B hv.2 u m uCopiesB
+  have aValue := (same_signed_w8 A.retained u.basis v.basis
+    (fun q hq => va q (av.1 hq))).trans (compactSkywalkSignRelease_signed A hv.1 s m hcA)
+  have bValue := (compactSkywalkSignRelease_signed B hv.2 u m uCopiesB).trans
+    (same_signed_w8 B.expanded s.basis u.basis (by
+      intro q hq
+      have he : B.expanded = L.b := compactSkywalkSignWord_expanded _ _ (by omega) lb
+      rw [he] at hq
+      exact ub q hq))
+  have ar : A.expanded = L.half := compactSkywalkSignWord_expanded _ _ (by omega) la
+  have br : B.expanded = L.b := compactSkywalkSignWord_expanded _ _ (by omega) lb
+  rw [ar] at aValue
+  rw [br] at bValue
+  have ca := compactSkywalkSignRelease_counts A
+  have actual : run (compactSkywalkTickCleanup w i) m s = v :=
+    compactSkywalkSign_no_measure_append _ _ ca.2.1 s m
+  rw [actual]
+  have pa := (compactSkywalkSignRelease_phase_frame A hv.1 s m).1
+  have pb := (compactSkywalkSignRelease_phase_frame B hv.2 u m).1
+  refine ⟨pb.trans pa,vCleanA,vCleanB,aValue,bValue,?_⟩
+  intro q hqa hqb
+  have ua := run_preserves_outside (compactSkywalkSignRelease A) m s q
+    (fun h => hqa (List.mem_toFinset.mp (sa h)))
+  exact (run_preserves_outside (compactSkywalkSignRelease B) m u q
+    (fun h => hqb (List.mem_toFinset.mp (sb h)))).trans ua
+
+/-- Orientation, sign-history, previous control and every local carry are
+outside the two mutable words, by the physical local-layout distinctness. -/
+theorem compactSkywalkTickOutput_metadataAway (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (q : Wire)
+    (hq : q ∈ [(compactSkywalkTickLayout w i).a0,(compactSkywalkTickLayout w i).history,
+      (compactSkywalkTickLayout w i).previous]++(compactSkywalkTickLayout w i).carry) :
+    q ∉ (compactSkywalkTickLayout w i).half ∧ q ∉ (compactSkywalkTickLayout w i).b := by
+  have h := List.nodup_iff_count.mp (compactSkywalkTick_valid w i hi hn).nodup q
+  have hp := List.count_pos_iff.mpr hq
+  constructor <;> intro hd <;> have hv := List.count_pos_iff.mpr hd
+  all_goals
+    simp only [SkywalkIntegerLayout.wires,SkywalkIntegerLayout.half,SkywalkIntegerLayout.b,
+      List.count_append,List.count_cons,List.count_nil] at h hp hv
+    omega
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkTickOutputSpec =====
+
+/-! Copy of `Arithmetic/CompactSkywalkTickOutputSpec` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- The post-boundary integer words are physically retained prefixes.
+History is still the actual emitted orientation/sign history, not recomputed data. -/
+def CompactSkywalkTickOutput (w : Nat → Wire) (i : Nat) (A B : Int) (G : Bool)
+    (s : BasisState) : Prop :=
+  let L := compactSkywalkTickLayout w i
+  let t := SkywalkRails.step ⟨A,B,G⟩
+  signedRegValue (compactSkywalkTickARelease w i).retained s = t.h ∧
+  signedRegValue (compactSkywalkTickBRelease w i).retained s = t.k ∧
+  s L.a0 = t.g ∧ s L.history = t.s ∧ s L.previous = G ∧ regValue L.carry s = 0 ∧
+  (compactSkywalkTickARelease w i).Clean s ∧ (compactSkywalkTickBRelease w i).Clean s
+
+/-- The cleanup suffix has zero measurements, so its stream can be chosen
+independently of the native tick's consumed prefix. -/
+theorem compactSkywalkTickOutput_run (w : Nat → Wire) (i : Nat) (s : State) (m : List Bool) :
+    run (compactSkywalkTick w i) m s =
+      run (compactSkywalkTickCleanup w i) m
+        (run (narrowSkywalkTick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)) m s) := by
+  rw [compactSkywalkTick,run_append,run_take]
+  have hz := (compactSkywalkTick_cleanup_counts w i).2
+  have h1 := run_take (compactSkywalkTickCleanup w i)
+    (m.drop (measurementCount
+      (narrowSkywalkTick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i))))
+    (run (narrowSkywalkTick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)) m s)
+  have h2 := run_take (compactSkywalkTickCleanup w i) m
+    (run (narrowSkywalkTick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)) m s)
+  rw [hz,List.take_zero] at h1 h2
+  exact h1.symm.trans h2
+
+/-- Full actual compact-tick semantics. Copies for both cleanup banks are
+proved from the native result; no sign-copy premise is added to the input. -/
+theorem compactSkywalkTickOutput_spec (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (A B : Int) (G : Bool) (hp : (A+B)%2 = 1)
+    (ha0 : -((2^(compactSkywalkTickPostWidth i-1):Nat):Int) ≤ (SkywalkRails.route A B).1/2)
+    (ha1 : (SkywalkRails.route A B).1/2 < ((2^(compactSkywalkTickPostWidth i-1):Nat):Int))
+    (hb0 : -((2^(compactSkywalkTickPostWidth i-1):Nat):Int) ≤ (SkywalkRails.route A B).2)
+    (hb1 : (SkywalkRails.route A B).2 < ((2^(compactSkywalkTickPostWidth i-1):Nat):Int)) :
+    Triple (SkywalkIntegerInput (compactSkywalkTickLayout w i) A B G)
+      (compactSkywalkTick w i) (CompactSkywalkTickOutput w i A B G) := by
+  intro s m hin
+  let L := compactSkywalkTickLayout w i
+  let t := run (narrowSkywalkTick L (compactSkywalkTickPostWidth i)) m s
+  let u := run (compactSkywalkTickCleanup w i) m t
+  have native := compactSkywalkTick_native_spec w i hi hn A B G hp ha0 ha1 hb0 hb1 s m hin
+  have copies := compactSkywalkTick_native_copies w i hi hn A B G hp ha0 ha1 hb0 hb1 s m hin
+  have cleanup := compactSkywalkTickOutput_cleanup_correct w i hi hn t m copies.1 copies.2
+  have keep : ∀q,q ∈ [L.a0,L.history,L.previous]++L.carry → u.basis q = t.basis q := by
+    intro q hq
+    have away := compactSkywalkTickOutput_metadataAway w i hi hn q hq
+    exact cleanup.2.2.2.2.2 q away.1 away.2
+  have carry : regValue L.carry u.basis = 0 := by
+    apply Eq.trans (regValue_congr L.carry u.basis t.basis ?_) native.2.2.2.2.2.2
+    intro q hq
+    exact keep q (by simp [hq])
+  have actual : run (compactSkywalkTick w i) m s = u := compactSkywalkTickOutput_run w i s m
+  rw [actual]
+  refine ⟨cleanup.1.trans native.1,cleanup.2.2.2.1.trans native.2.1,
+    cleanup.2.2.2.2.1.trans native.2.2.1,
+    (keep L.a0 (by simp)).trans native.2.2.2.1,
+    (keep L.history (by simp)).trans native.2.2.2.2.1,
+    (keep L.previous (by simp)).trans native.2.2.2.2.2.1,
+    carry,cleanup.2.1,cleanup.2.2.1⟩
+
+/-- Complete outsider frame for the actual compact program, independent of
+input values and measurement outcomes. -/
+theorem compactSkywalkTickOutput_frame (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool) (q : Wire)
+    (hq : q ∉ (compactSkywalkTickLayout w i).wires) :
+    (run (compactSkywalkTick w i) m s).basis q = s.basis q :=
+  run_preserves_outside _ m s q (fun h =>
+    hq (List.mem_toFinset.mp (compactSkywalkTick_support w i hi hn h)))
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageViews =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageViews` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Mathematical full-word interpretation. This is a basis function, not an
+emitted sign-expansion program or an allocated high-copy register. -/
+def compactSkywalkStageVirtual (w : Nat → Wire) (i : Nat) (s : BasisState) : BasisState :=
+  let A := compactSkywalkSignPoolA w i
+  let B := compactSkywalkSignPoolB w i
+  fun q => if q ∈ A.released then s A.sign else if q ∈ B.released then s B.sign else s q
+
+def CompactSkywalkStage (w : Nat → Wire) (r : SkywalkRails.State) (i : Nat)
+    (s : BasisState) : Prop :=
+  SkywalkIntegerStage w r i (compactSkywalkStageVirtual w i s) ∧
+  (compactSkywalkSignPoolA w i).Clean s ∧ (compactSkywalkSignPoolB w i).Clean s
+
+theorem compactSkywalkStage_width (i : Nat) (hi : i ≤ 512) :
+    2 ≤ narrowSkywalkRouteWidth i ∧ narrowSkywalkRouteWidth i ≤ 258 := by
+  unfold narrowSkywalkRouteWidth
+  omega
+
+private theorem blockND_w10 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (start count : Nat) (hb : start+count ≤ 1798) : (wireBlock w start count).Nodup := by
+  apply List.Nodup.map_on
+  · intro i hi j hj he
+    simp only [List.mem_range'_1] at hi hj
+    exact skywalkPool_index_inj w hn i j (by omega) (by omega) he
+  · exact List.nodup_range'
+
+theorem compactSkywalkStage_valid (w : Nat → Wire) (i : Nat) (hi : i ≤ 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    (compactSkywalkSignPoolA w i).Valid ∧ (compactSkywalkSignPoolB w i).Valid := by
+  have h := compactSkywalkStage_width i hi
+  exact ⟨compactSkywalkSignWord_valid _ _ (by omega)
+    (by simpa only [skywalkPoolA,wireBlock_length] using h.2)
+    (blockND_w10 w hn i 258 (by omega)),
+    compactSkywalkSignWord_valid _ _ (by omega)
+    (by simpa only [skywalkPoolB,wireBlock_length] using h.2)
+    (blockND_w10 w hn 770 258 (by decide))⟩
+
+theorem compactSkywalkStage_expanded (w : Nat → Wire) (i : Nat) (hi : i ≤ 512) :
+    (compactSkywalkSignPoolA w i).expanded = skywalkPoolA w i ∧
+    (compactSkywalkSignPoolB w i).expanded = skywalkPoolB w := by
+  have h := compactSkywalkStage_width i hi
+  exact ⟨compactSkywalkSignWord_expanded _ _ (by omega)
+    (by simpa only [skywalkPoolA,wireBlock_length] using h.2),
+    compactSkywalkSignWord_expanded _ _ (by omega)
+    (by simpa only [skywalkPoolB,wireBlock_length] using h.2)⟩
+
+theorem compactSkywalkStage_words_disjoint (w : Nat → Wire) (i : Nat) (hi : i ≤ 512)
+    (hn : (skywalkPoolWires w).Nodup) : (skywalkPoolA w i).Disjoint (skywalkPoolB w) := by
+  apply List.disjoint_left.mpr
+  intro q ha hb
+  simp only [skywalkPoolA,skywalkPoolB,wireBlock,List.mem_map,List.mem_range'_1] at ha hb
+  obtain ⟨a,ha,hea⟩ := ha
+  obtain ⟨b,hb,heb⟩ := hb
+  have he := skywalkPool_index_inj w hn a b (by omega) (by omega) (hea.trans heb.symm)
+  omega
+
+/-- Outside the two physically released banks the virtual basis is unchanged. -/
+theorem compactSkywalkStage_virtual_outside (w : Nat → Wire) (i : Nat) (s : BasisState)
+    (q : Wire) (ha : q ∉ (compactSkywalkSignPoolA w i).released)
+    (hb : q ∉ (compactSkywalkSignPoolB w i).released) :
+    compactSkywalkStageVirtual w i s q = s q := by
+  simp [compactSkywalkStageVirtual,ha,hb]
+
+theorem compactSkywalkStage_zero_tails (w : Nat → Wire) :
+    (compactSkywalkSignPoolA w 0).released = [] ∧
+    (compactSkywalkSignPoolB w 0).released = [] := by
+  constructor
+  · change (wireBlock w 0 258).drop (narrowSkywalkRouteWidth 0) = []
+    rw [narrowSkywalkRouteWidth_zero]
+    have h : (wireBlock w 0 258).drop (wireBlock w 0 258).length = [] := List.drop_length
+    simpa only [wireBlock_length] using h
+  · change (wireBlock w 770 258).drop (narrowSkywalkRouteWidth 0) = []
+    rw [narrowSkywalkRouteWidth_zero]
+    have h : (wireBlock w 770 258).drop (wireBlock w 770 258).length = [] := List.drop_length
+    simpa only [wireBlock_length] using h
+
+theorem compactSkywalkStage_zero_virtual (w : Nat → Wire) (s : BasisState) :
+    compactSkywalkStageVirtual w 0 s = s := by
+  funext q
+  simp [compactSkywalkStageVirtual,(compactSkywalkStage_zero_tails w).1,
+    (compactSkywalkStage_zero_tails w).2]
+
+/-- The existing seed-stage predicate is exactly the initial compact stage. -/
+theorem compactSkywalkStage_zero_iff (w : Nat → Wire) (r : SkywalkRails.State) (s : BasisState) :
+    CompactSkywalkStage w r 0 s ↔ SkywalkIntegerStage w r 0 s := by
+  simp [CompactSkywalkStage,compactSkywalkStage_zero_virtual,
+    CompactSkywalkSignReleaseLayout.Clean,(compactSkywalkStage_zero_tails w).1,
+    (compactSkywalkStage_zero_tails w).2]
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageVirtual =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageVirtual` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+private theorem signed_congr (r : List Wire) (s t : BasisState)
+    (he : ∀q∈r,s q=t q) : signedRegValue r s=signedRegValue r t := by
+  unfold signedRegValue
+  rw [regValue_congr r s t he]
+
+private theorem parts (w : Nat → Wire) (i : Nat) (hi : i ≤ 512) :
+    (compactSkywalkSignPoolA w i).released ⊆ skywalkPoolA w i ∧
+    (compactSkywalkSignPoolB w i).released ⊆ skywalkPoolB w ∧
+    (compactSkywalkSignPoolA w i).sign ∈ skywalkPoolA w i ∧
+    (compactSkywalkSignPoolB w i).sign ∈ skywalkPoolB w := by
+  have he := compactSkywalkStage_expanded w i hi
+  refine ⟨?_,?_,?_,?_⟩
+  · intro q hq; rw [←he.1]; exact List.mem_append_right _ hq
+  · intro q hq; rw [←he.2]; exact List.mem_append_right _ hq
+  · have hs : (compactSkywalkSignPoolA w i).sign ∈ (compactSkywalkSignPoolA w i).expanded :=
+      List.mem_append_left _ (by simp [CompactSkywalkSignReleaseLayout.retained])
+    simpa only [he.1] using hs
+  · have hs : (compactSkywalkSignPoolB w i).sign ∈ (compactSkywalkSignPoolB w i).expanded :=
+      List.mem_append_left _ (by simp [CompactSkywalkSignReleaseLayout.retained])
+    simpa only [he.2] using hs
+
+theorem compactSkywalkStage_virtual_signs (w : Nat → Wire) (i : Nat) (hi : i ≤ 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : BasisState) :
+    compactSkywalkStageVirtual w i s (compactSkywalkSignPoolA w i).sign =
+      s (compactSkywalkSignPoolA w i).sign ∧
+    compactSkywalkStageVirtual w i s (compactSkywalkSignPoolB w i).sign =
+      s (compactSkywalkSignPoolB w i).sign := by
+  have hv := compactSkywalkStage_valid w i hi hn
+  have hd := compactSkywalkStage_words_disjoint w i hi hn
+  have hp := parts w i hi
+  constructor
+  · apply compactSkywalkStage_virtual_outside
+    · exact (compactSkywalkSignPoolA w i).signAway hv.1
+    · intro hq
+      exact List.disjoint_left.mp hd hp.2.2.1 (hp.2.1 hq)
+  · apply compactSkywalkStage_virtual_outside
+    · intro hq
+      exact List.disjoint_left.mp hd (hp.1 hq) hp.2.2.2
+    · exact (compactSkywalkSignPoolB w i).signAway hv.2
+
+theorem compactSkywalkStage_virtual_copies (w : Nat → Wire) (i : Nat) (hi : i ≤ 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : BasisState) :
+    (compactSkywalkSignPoolA w i).Copies (compactSkywalkStageVirtual w i s) ∧
+    (compactSkywalkSignPoolB w i).Copies (compactSkywalkStageVirtual w i s) := by
+  have hs := compactSkywalkStage_virtual_signs w i hi hn s
+  have hd := compactSkywalkStage_words_disjoint w i hi hn
+  have hp := parts w i hi
+  constructor
+  · intro q hq
+    rw [hs.1]
+    simp [compactSkywalkStageVirtual,hq]
+  · intro q hq
+    have ha : q ∉ (compactSkywalkSignPoolA w i).released := by
+      intro hm
+      exact List.disjoint_left.mp hd (hp.1 hm) (hp.2.1 hq)
+    rw [hs.2]
+    simp [compactSkywalkStageVirtual,ha,hq]
+
+/-- Virtual full reads are exactly the current physical retained signed reads. -/
+theorem compactSkywalkStage_virtual_values (w : Nat → Wire) (i : Nat) (hi : i ≤ 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : BasisState) :
+    signedRegValue (skywalkPoolA w i) (compactSkywalkStageVirtual w i s) =
+      signedRegValue (compactSkywalkSignPoolA w i).retained s ∧
+    signedRegValue (skywalkPoolB w) (compactSkywalkStageVirtual w i s) =
+      signedRegValue (compactSkywalkSignPoolB w i).retained s := by
+  have hv := compactSkywalkStage_valid w i hi hn
+  have he := compactSkywalkStage_expanded w i hi
+  have hd := compactSkywalkStage_words_disjoint w i hi hn
+  have hp := parts w i hi
+  constructor
+  · rw [←he.1]
+    apply Eq.trans (signed_congr _ _ _ ?_)
+      (compactSkywalkSignRelease_virtual_signed _ hv.1 s)
+    intro q hq
+    have hb : q ∉ (compactSkywalkSignPoolB w i).released := by
+      intro hm
+      rw [he.1] at hq
+      exact List.disjoint_left.mp hd hq (hp.2.1 hm)
+    simp [compactSkywalkStageVirtual,CompactSkywalkSignReleaseLayout.reconstructed,hb]
+  · rw [←he.2]
+    apply Eq.trans (signed_congr _ _ _ ?_)
+      (compactSkywalkSignRelease_virtual_signed _ hv.2 s)
+    intro q hq
+    have ha : q ∉ (compactSkywalkSignPoolA w i).released := by
+      intro hm
+      rw [he.2] at hq
+      exact List.disjoint_left.mp hd (hp.1 hm) hq
+    simp [compactSkywalkStageVirtual,CompactSkywalkSignReleaseLayout.reconstructed,ha]
+
+/-- Mathematical reconstruction followed by ghost release is exactly the
+physical state. This equivalence emits no expansion in the compact circuit. -/
+theorem compactSkywalkStage_release_virtual (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
+    (hcA : (compactSkywalkSignPoolA w i).Clean s.basis)
+    (hcB : (compactSkywalkSignPoolB w i).Clean s.basis) :
+    run (compactSkywalkSignPoolRelease w i) m
+      ⟨s.phase,compactSkywalkStageVirtual w i s.basis⟩ = s := by
+  let v : State := ⟨s.phase,compactSkywalkStageVirtual w i s.basis⟩
+  let A := compactSkywalkSignPoolA w i
+  let B := compactSkywalkSignPoolB w i
+  let u := run (compactSkywalkSignRelease A) m v
+  let t := run (compactSkywalkSignRelease B) m u
+  have hv := compactSkywalkSignPool_valid w i hi hn
+  have copies := compactSkywalkStage_virtual_copies w i (by omega) hn s.basis
+  have h := compactSkywalkSignPool_release_correct w i hi hn v m copies.1 copies.2
+  have ca := compactSkywalkSignRelease_counts A
+  have actual : run (compactSkywalkSignPoolRelease w i) m v = t :=
+    compactSkywalkSign_no_measure_append _ _ ca.2.1 v m
+  rw [actual] at h
+  change run (compactSkywalkSignPoolRelease w i) m v = s
+  rw [actual]
+  apply congrArg₂ State.mk
+  · exact h.1
+  · funext q
+    by_cases ha : q ∈ A.released
+    · exact (h.2.1 q ha).trans (hcA q ha).symm
+    by_cases hb : q ∈ B.released
+    · exact (h.2.2.1 q hb).trans (hcB q hb).symm
+    have a := (compactSkywalkSignRelease_phase_frame A hv.1 v m).2.1 q ha
+    have b := (compactSkywalkSignRelease_phase_frame B hv.2 u m).2.1 q hb
+    exact (b.trans a).trans (compactSkywalkStage_virtual_outside w i s.basis q ha hb)
+
+/-- Every local tick input is obtained from the compact-stage predicate by
+verified ghost release. No extra clean extension or work oracle is introduced. -/
+theorem compactSkywalkStage_local_input (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (x p i : Nat)
+    (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1) (hp : p < 2^256)
+    (hx : x < p) (hc : x.Coprime p) (hi : i < 512) (s : State)
+    (hin : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s.basis) :
+    let r := SkywalkTrace.next^[i] (SkywalkRails.encode false false (x:Int) (p:Int))
+    SkywalkIntegerInput (compactSkywalkTickLayout w i) r.a r.b r.g s.basis := by
+  have entry := compactSkywalkTickEntry_from_stage w hn x p i hp0 hx0 hpo hp hx hc hi
+    ⟨s.phase,compactSkywalkStageVirtual w i s.basis⟩ [] hin.1
+  have eq := compactSkywalkStage_release_virtual w i hi hn s [] hin.2.1 hin.2.2
+  rw [eq] at entry
+  exact entry.2
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageFrame =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageFrame` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+private theorem block_away (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (start len j : Nat) (hb : start+len ≤ 1798) (hj : j < 1798)
+    (ha : j < start ∨ start+len ≤ j) : w j ∉ wireBlock w start len := by
+  intro hm
+  obtain ⟨k,hk,he⟩ := List.mem_map.mp hm
+  simp only [List.mem_range'_1] at hk
+  have e := skywalkPool_index_inj w hn k j (by omega) hj he
+  omega
+
+/-- Raw tape, future extension sites and the complete carry bank are not
+changed by mathematical sign reconstruction. -/
+theorem compactSkywalkStage_virtual_index (w : Nat → Wire) (i : Nat) (hi : i ≤ 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : BasisState) (j : Nat) (hj : j < 1798)
+    (ha : j < i ∨ i+258 ≤ j) (hb : j < 770 ∨ 1028 ≤ j) :
+    compactSkywalkStageVirtual w i s (w j) = s (w j) := by
+  have ea := compactSkywalkStage_expanded w i hi
+  apply compactSkywalkStage_virtual_outside
+  · intro hm
+    have hw : w j ∈ skywalkPoolA w i := by rw [←ea.1]; exact List.mem_append_right _ hm
+    exact block_away w hn i 258 j (by omega) hj ha hw
+  · intro hm
+    have hw : w j ∈ skywalkPoolB w := by rw [←ea.2]; exact List.mem_append_right _ hm
+    exact block_away w hn 770 258 j (by decide) hj hb hw
+
+/-- An index interval exclusion checks the actual local native/cleanup support. -/
+theorem compactSkywalkStage_tick_away (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (j : Nat) (hj : j < 1798)
+    (hp : j ≠ skywalkPoolPreviousId i) (hh : j ≠ 1028+i)
+    (he : j ≠ i+compactSkywalkTickPreWidth i) (hi0 : j ≠ i) (hb0 : j ≠ 770)
+    (ha : j < i+1 ∨ i+compactSkywalkTickPreWidth i ≤ j)
+    (hb : j < 771 ∨ 770+compactSkywalkTickPreWidth i ≤ j)
+    (hc : j < 1540 ∨ 1540+(compactSkywalkTickPreWidth i-1) ≤ j) :
+    w j ∉ (compactSkywalkTickLayout w i).wires := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have distinct (k : Nat) (hk : k < 1798) (hne : j ≠ k) : w j ≠ w k := by
+    intro e
+    exact hne (skywalkPool_index_inj w hn j k hj hk e)
+  have pa := distinct _ (by unfold skywalkPoolPreviousId; split_ifs <;> omega) hp
+  have ph := distinct _ (by omega) hh
+  have pe := distinct _ (by omega) he
+  have pi := distinct _ (by omega) hi0
+  have pb := distinct _ (by decide) hb0
+  have aa := block_away w hn (i+1) (compactSkywalkTickPreWidth i-1) j (by omega) hj (by omega)
+  have ab := block_away w hn 771 (compactSkywalkTickPreWidth i-1) j (by omega) hj (by omega)
+  have ac := block_away w hn 1540 (compactSkywalkTickPreWidth i-1) j (by omega) hj hc
+  simp only [SkywalkIntegerLayout.wires,compactSkywalkTick_ah w i hi,
+    compactSkywalkTick_bh w i hi,List.mem_cons,List.mem_append]
+  simp only [compactSkywalkTickLayout]
+  tauto
+
+theorem compactSkywalkStage_tick_keep (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (j : Nat) (hj : j < 1798)
+    (hp : j ≠ skywalkPoolPreviousId i) (hh : j ≠ 1028+i)
+    (he : j ≠ i+compactSkywalkTickPreWidth i) (hi0 : j ≠ i) (hb0 : j ≠ 770)
+    (ha : j < i+1 ∨ i+compactSkywalkTickPreWidth i ≤ j)
+    (hb : j < 771 ∨ 770+compactSkywalkTickPreWidth i ≤ j)
+    (hc : j < 1540 ∨ 1540+(compactSkywalkTickPreWidth i-1) ≤ j)
+    (s : State) (m : List Bool) :
+    (run (compactSkywalkTick w i) m s).basis (w j) = s.basis (w j) :=
+  compactSkywalkTickOutput_frame w i hi hn s m _
+    (compactSkywalkStage_tick_away w i hi hn j hj hp hh he hi0 hb0 ha hb hc)
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageFields =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageFields` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Physical form of the compact invariant. Only the current signed reads
+are shortened; all stored controls and fresh/work bits remain explicit. -/
+def CompactSkywalkStageFields (w : Nat → Wire) (r : SkywalkRails.State) (i : Nat)
+    (s : BasisState) : Prop :=
+  let ri := SkywalkTrace.next^[i] r
+  signedRegValue (compactSkywalkSignPoolA w i).retained s=ri.a ∧
+  signedRegValue (compactSkywalkSignPoolB w i).retained s=ri.b ∧
+  s (w (skywalkPoolPreviousId i))=ri.g ∧
+  (∀j,j < i → s (w j)=(SkywalkTrace.code (SkywalkTrace.next^[j] r)).1 ∧
+    s (w (1028+j))=(SkywalkTrace.code (SkywalkTrace.next^[j] r)).2) ∧
+  (∀j,i ≤ j → j < 512 → s (w (j+258))=false ∧ s (w (1028+j))=false) ∧
+  regValue (wireBlock w 1540 257) s=0 ∧ s (w 1797)=false ∧
+  (compactSkywalkSignPoolA w i).Clean s ∧ (compactSkywalkSignPoolB w i).Clean s
+
+private theorem metadata_reads (w : Nat → Wire) (r : SkywalkRails.State) (i : Nat)
+    (hi : i ≤ 512) (hn : (skywalkPoolWires w).Nodup) (s : BasisState) :
+    SkywalkIntegerStage w r i (compactSkywalkStageVirtual w i s) ↔
+      signedRegValue (compactSkywalkSignPoolA w i).retained s=(SkywalkTrace.next^[i] r).a ∧
+      signedRegValue (compactSkywalkSignPoolB w i).retained s=(SkywalkTrace.next^[i] r).b ∧
+      s (w (skywalkPoolPreviousId i))=(SkywalkTrace.next^[i] r).g ∧
+      (∀j,j < i → s (w j)=(SkywalkTrace.code (SkywalkTrace.next^[j] r)).1 ∧
+        s (w (1028+j))=(SkywalkTrace.code (SkywalkTrace.next^[j] r)).2) ∧
+      (∀j,i ≤ j → j < 512 → s (w (j+258))=false ∧ s (w (1028+j))=false) ∧
+      regValue (wireBlock w 1540 257) s=0 ∧ s (w 1797)=false := by
+  have values := compactSkywalkStage_virtual_values w i hi hn s
+  have keep (j : Nat) (hj : j < 1798) (ha : j < i ∨ i+258 ≤ j)
+      (hb : j < 770 ∨ 1028 ≤ j) := compactSkywalkStage_virtual_index w i hi hn s j hj ha hb
+  have prev := keep (skywalkPoolPreviousId i) (by
+    unfold skywalkPoolPreviousId; split_ifs <;> omega) (by
+    unfold skywalkPoolPreviousId; split_ifs <;> omega) (by
+    unfold skywalkPoolPreviousId; split_ifs <;> omega)
+  have initial := keep 1797 (by omega) (by omega) (by omega)
+  have carry : regValue (wireBlock w 1540 257) (compactSkywalkStageVirtual w i s)=
+      regValue (wireBlock w 1540 257) s := by
+    apply regValue_congr
+    intro q hq
+    obtain ⟨j,hj,rfl⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hj
+    exact keep j (by omega) (by omega) (by omega)
+  have oldG (j : Nat) (hj : j < i) := keep j (by omega) (by omega) (by omega)
+  have oldS (j : Nat) (hj : j < i) := keep (1028+j) (by omega) (by omega) (by omega)
+  have freshE (j : Nat) (hj : i ≤ j) (h512 : j < 512) :=
+    keep (j+258) (by omega) (by omega) (by omega)
+  have freshS (j : Nat) (hj : i ≤ j) (h512 : j < 512) :=
+    keep (1028+j) (by omega) (by omega) (by omega)
+  unfold SkywalkIntegerStage
+  rw [values.1,values.2,prev,carry,initial]
+  constructor
+  · intro h
+    refine ⟨h.1,h.2.1,h.2.2.1,?_,?_,h.2.2.2.2.2⟩
+    · intro j hj
+      have t := h.2.2.2.1 j hj
+      simpa only [oldG j hj,oldS j hj] using t
+    · intro j hj hk
+      have t := h.2.2.2.2.1 j hj hk
+      simpa only [freshE j hj hk,freshS j hj hk] using t
+  · intro h
+    refine ⟨h.1,h.2.1,h.2.2.1,?_,?_,h.2.2.2.2.2⟩
+    · intro j hj
+      rw [oldG j hj,oldS j hj]
+      exact h.2.2.2.1 j hj
+    · intro j hj hk
+      rw [freshE j hj hk,freshS j hj hk]
+      exact h.2.2.2.2.1 j hj hk
+
+/-- Equivalence introduces no predicate about unseen high qubits. The
+mathematical virtual view is exactly the physical prefix/clean-tail assertion. -/
+theorem compactSkywalkStage_fields_iff (w : Nat → Wire) (r : SkywalkRails.State)
+    (i : Nat) (hi : i ≤ 512) (hn : (skywalkPoolWires w).Nodup) (s : BasisState) :
+    CompactSkywalkStage w r i s ↔ CompactSkywalkStageFields w r i s := by
+  unfold CompactSkywalkStage CompactSkywalkStageFields
+  rw [metadata_reads w r i hi hn s]
+  constructor
+  · rintro ⟨⟨ha,hb,hg,hpast,hfuture,hcarry,horient⟩,hcleanA,hcleanB⟩
+    exact ⟨ha,hb,hg,hpast,hfuture,hcarry,horient,hcleanA,hcleanB⟩
+  · rintro ⟨ha,hb,hg,hpast,hfuture,hcarry,horient,hcleanA,hcleanB⟩
+    exact ⟨⟨ha,hb,hg,hpast,hfuture,hcarry,horient⟩,hcleanA,hcleanB⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageMetadata =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageMetadata` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Past G records strictly before the predecessor site lie outside the
+actual native and cleanup instruction support. -/
+theorem compactSkywalkStageMetadata_pastG (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (j : Nat) (hj : j+1 < i)
+    (s : State) (m : List Bool) :
+    (run (compactSkywalkTick w i) m s).basis (w j) = s.basis (w j) := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have hp : j ≠ skywalkPoolPreviousId i := by
+    unfold skywalkPoolPreviousId
+    split_ifs <;> omega
+  exact compactSkywalkStage_tick_keep w i hi hn j (by omega) hp
+    (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) s m
+
+theorem compactSkywalkStageMetadata_pastS (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (j : Nat) (hj : j < i)
+    (s : State) (m : List Bool) :
+    (run (compactSkywalkTick w i) m s).basis (w (1028+j)) = s.basis (w (1028+j)) := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have hp : 1028+j ≠ skywalkPoolPreviousId i := by
+    unfold skywalkPoolPreviousId
+    split_ifs <;> omega
+  exact compactSkywalkStage_tick_keep w i hi hn (1028+j) (by omega) hp
+    (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) s m
+
+/-- Future extensions of the original full-width words remain untouched;
+the compact physical A prefix ends no later than site 514. -/
+theorem compactSkywalkStageMetadata_futureExtension (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (j : Nat) (hj0 : i+1 ≤ j) (hj : j < 512)
+    (s : State) (m : List Bool) :
+    (run (compactSkywalkTick w i) m s).basis (w (j+258)) = s.basis (w (j+258)) := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have hp : j+258 ≠ skywalkPoolPreviousId i := by
+    unfold skywalkPoolPreviousId
+    split_ifs <;> omega
+  exact compactSkywalkStage_tick_keep w i hi hn (j+258) (by omega) hp
+    (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) s m
+
+theorem compactSkywalkStageMetadata_futureS (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (j : Nat) (hj0 : i+1 ≤ j) (hj : j < 512)
+    (s : State) (m : List Bool) :
+    (run (compactSkywalkTick w i) m s).basis (w (1028+j)) = s.basis (w (1028+j)) := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have hp : 1028+j ≠ skywalkPoolPreviousId i := by
+    unfold skywalkPoolPreviousId
+    split_ifs <;> omega
+  exact compactSkywalkStage_tick_keep w i hi hn (1028+j) (by omega) hp
+    (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) s m
+
+/-- The unused suffix of the original carry bank is a frame, with no
+cleanliness premise on those untouched bits. -/
+theorem compactSkywalkStageMetadata_carryTail (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (j : Nat)
+    (hj0 : 1540+(compactSkywalkTickPreWidth i-1) ≤ j) (hj : j < 1797)
+    (s : State) (m : List Bool) :
+    (run (compactSkywalkTick w i) m s).basis (w j) = s.basis (w j) := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have hp : j ≠ skywalkPoolPreviousId i := by
+    unfold skywalkPoolPreviousId
+    split_ifs <;> omega
+  exact compactSkywalkStage_tick_keep w i hi hn j (by omega) hp
+    (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) s m
+
+theorem compactSkywalkStageMetadata_orientation (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (hi0 : 0 < i) (s : State) (m : List Bool) :
+    (run (compactSkywalkTick w i) m s).basis (w 1797) = s.basis (w 1797) := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have hp : 1797 ≠ skywalkPoolPreviousId i := by
+    unfold skywalkPoolPreviousId
+    split_ifs <;> omega
+  exact compactSkywalkStage_tick_keep w i hi hn 1797 (by decide) hp
+    (by omega) (by omega) (by omega) (by omega)
+    (by omega) (by omega) (by omega) s m
+
+/-- The record at the current index is the proved physical output history. -/
+theorem compactSkywalkStageMetadata_history (w : Nat → Wire) (i : Nat)
+    (A B : Int) (G : Bool) (out : BasisState)
+    (h : CompactSkywalkTickOutput w i A B G out) :
+    out (w (1028+i)) = (SkywalkRails.step ⟨A,B,G⟩).s := h.2.2.2.1
+
+/-- The predecessor is preserved by the native output contract, including
+the special initial orientation site. -/
+theorem compactSkywalkStageMetadata_previous (w : Nat → Wire) (i : Nat)
+    (A B : Int) (G : Bool) (before out : BasisState)
+    (hin : SkywalkIntegerInput (compactSkywalkTickLayout w i) A B G before)
+    (hout : CompactSkywalkTickOutput w i A B G out) :
+    out (w (skywalkPoolPreviousId i)) = before (w (skywalkPoolPreviousId i)) :=
+  hout.2.2.2.2.1.trans hin.2.2.1.symm
+
+theorem compactSkywalkStageMetadata_previousG (w : Nat → Wire) (i : Nat) (hi0 : 0 < i)
+    (A B : Int) (G : Bool) (before out : BasisState)
+    (hin : SkywalkIntegerInput (compactSkywalkTickLayout w i) A B G before)
+    (hout : CompactSkywalkTickOutput w i A B G out) :
+    out (w (i-1)) = before (w (i-1)) := by
+  have h := compactSkywalkStageMetadata_previous w i A B G before out hin hout
+  simpa only [skywalkPoolPreviousId,if_neg (by omega : i ≠ 0)] using h
+
+theorem compactSkywalkStageMetadata_orientation_zero (w : Nat → Wire)
+    (A B : Int) (G : Bool) (before out : BasisState)
+    (hin : SkywalkIntegerInput (compactSkywalkTickLayout w 0) A B G before)
+    (hout : CompactSkywalkTickOutput w 0 A B G out) :
+    out (w 1797) = before (w 1797) := by
+  simpa only [skywalkPoolPreviousId,if_pos rfl] using
+    (compactSkywalkStageMetadata_previous w 0 A B G before out hin hout)
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageStepGeometry =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageStepGeometry` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+private theorem blockPrefix (w : Nat → Wire) (start len n : Nat) (hn : n ≤ len) :
+    (wireBlock w start len).take n = wireBlock w start n := by
+  have h := wireBlock_append w start n (len-n)
+  rw [show n+(len-n) = len by omega] at h
+  rw [←h]
+  have ht : (wireBlock w start n++wireBlock w (start+n) (len-n)).take
+    (wireBlock w start n).length = wireBlock w start n := List.take_left
+  simpa only [wireBlock_length] using ht
+
+private theorem blockDrop (w : Nat → Wire) (start len n : Nat) (hn : n ≤ len) :
+    (wireBlock w start len).drop n = wireBlock w (start+n) (len-n) := by
+  have h := wireBlock_append w start n (len-n)
+  rw [show n+(len-n) = len by omega] at h
+  rw [←h]
+  have ht : (wireBlock w start n++wireBlock w (start+n) (len-n)).drop
+    (wireBlock w start n).length = wireBlock w (start+n) (len-n) := List.drop_left
+  simpa only [wireBlock_length] using ht
+
+/-- Next retained words are precisely the physically computed output prefixes. -/
+theorem compactSkywalkStageStep_retained (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkSignPoolA w (i+1)).retained = (compactSkywalkTickARelease w i).retained ∧
+    (compactSkywalkSignPoolB w (i+1)).retained = (compactSkywalkTickBRelease w i).retained := by
+  have h := compactSkywalkTick_width_bounds i hi
+  have a := compactSkywalkStage_width (i+1) (by omega)
+  have e : narrowSkywalkRouteWidth (i+1) = compactSkywalkTickPostWidth i := h.2.2.2.2.2.symm
+  have pos : 0 < compactSkywalkTickPostWidth i := by omega
+  have nextA := compactSkywalkSignWord_retained (skywalkPoolA w (i+1))
+    (narrowSkywalkRouteWidth (i+1)) (by omega) (by simpa only [skywalkPoolA,wireBlock_length] using a.2)
+  have nextB := compactSkywalkSignWord_retained (skywalkPoolB w)
+    (narrowSkywalkRouteWidth (i+1)) (by omega) (by simpa only [skywalkPoolB,wireBlock_length] using a.2)
+  have curA := compactSkywalkSignWord_retained (compactSkywalkTickLayout w i).half
+    (compactSkywalkTickPostWidth i) pos (by
+      rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact h.2.2.1)
+  have curB := compactSkywalkSignWord_retained (compactSkywalkTickLayout w i).b
+    (compactSkywalkTickPostWidth i) pos (by
+      rw [compactSkywalkTick_b w i hi,wireBlock_length]; exact h.2.2.1)
+  constructor
+  · change (compactSkywalkSignWord _ _).retained = (compactSkywalkSignWord _ _).retained
+    rw [nextA,curA,e,compactSkywalkTick_half w i hi,skywalkPoolA]
+    rw [blockPrefix w (i+1) 258 _ (by omega),blockPrefix w (i+1) _ _ h.2.2.1]
+  · change (compactSkywalkSignWord _ _).retained = (compactSkywalkSignWord _ _).retained
+    rw [nextB,curB,e,compactSkywalkTick_b w i hi,skywalkPoolB]
+    rw [blockPrefix w 770 258 _ (by omega),blockPrefix w 770 _ _ h.2.2.1]
+
+/-- Current cleanup tails and next full-word tails are concrete intervals. -/
+theorem compactSkywalkStageStep_tail_views (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    (compactSkywalkTickARelease w i).released =
+      wireBlock w (i+1+compactSkywalkTickPostWidth i)
+        (compactSkywalkTickPreWidth i-compactSkywalkTickPostWidth i) ∧
+    (compactSkywalkTickBRelease w i).released =
+      wireBlock w (770+compactSkywalkTickPostWidth i)
+        (compactSkywalkTickPreWidth i-compactSkywalkTickPostWidth i) ∧
+    (compactSkywalkSignPoolA w (i+1)).released =
+      wireBlock w (i+1+compactSkywalkTickPostWidth i) (258-compactSkywalkTickPostWidth i) ∧
+    (compactSkywalkSignPoolB w (i+1)).released =
+      wireBlock w (770+compactSkywalkTickPostWidth i) (258-compactSkywalkTickPostWidth i) ∧
+    (compactSkywalkSignPoolA w i).released =
+      wireBlock w (i+compactSkywalkTickPreWidth i) (258-compactSkywalkTickPreWidth i) ∧
+    (compactSkywalkSignPoolB w i).released =
+      wireBlock w (770+compactSkywalkTickPreWidth i) (258-compactSkywalkTickPreWidth i) := by
+  have h := compactSkywalkTick_width_bounds i hi
+  have e : narrowSkywalkRouteWidth (i+1) = compactSkywalkTickPostWidth i := h.2.2.2.2.2.symm
+  simp only [compactSkywalkTickARelease,compactSkywalkTickBRelease,compactSkywalkSignPoolA,
+    compactSkywalkSignPoolB,compactSkywalkSignWord,compactSkywalkTick_half w i hi,
+    compactSkywalkTick_b w i hi,skywalkPoolA,skywalkPoolB,e]
+  change (wireBlock w (i+1) (compactSkywalkTickPreWidth i)).drop (compactSkywalkTickPostWidth i) = _ ∧
+    (wireBlock w 770 (compactSkywalkTickPreWidth i)).drop (compactSkywalkTickPostWidth i) = _ ∧
+    (wireBlock w (i+1) 258).drop (compactSkywalkTickPostWidth i) = _ ∧
+    (wireBlock w 770 258).drop (compactSkywalkTickPostWidth i) = _ ∧
+    (wireBlock w i 258).drop (compactSkywalkTickPreWidth i) = _ ∧
+    (wireBlock w 770 258).drop (compactSkywalkTickPreWidth i) = _
+  exact ⟨blockDrop _ _ _ _ h.2.2.1,blockDrop _ _ _ _ h.2.2.1,
+    blockDrop _ _ _ _ (by omega),blockDrop _ _ _ _ (by omega),
+    blockDrop _ _ _ _ h.2.2.2.1,blockDrop _ _ _ _ h.2.2.2.1⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageStepTails =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageStepTails` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Both next full-word tails are clean: the native local tail is cleared by
+actual CX, the previously omitted suffix is a frame, and A's new last site is fresh. -/
+theorem compactSkywalkStageStep_clean_tails (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (r : SkywalkRails.State) (s : State) (m : List Bool)
+    (hin : CompactSkywalkStageFields w r i s.basis) (A B : Int) (G : Bool)
+    (hout : CompactSkywalkTickOutput w i A B G (run (compactSkywalkTick w i) m s).basis) :
+    (compactSkywalkSignPoolA w (i+1)).Clean (run (compactSkywalkTick w i) m s).basis ∧
+    (compactSkywalkSignPoolB w (i+1)).Clean (run (compactSkywalkTick w i) m s).basis := by
+  rcases hin with ⟨ha,hb,hprev,hpast,hfuture,hcarry,horient,oldA,oldB⟩
+  have width := compactSkywalkTick_width_bounds i hi
+  have tv := compactSkywalkStageStep_tail_views w i hi
+  have nowA := hout.2.2.2.2.2.2.1
+  have nowB := hout.2.2.2.2.2.2.2
+  have keepA (j : Nat) (hj0 : i+compactSkywalkTickPreWidth i+1 ≤ j) (hj1 : j ≤ i+258) :
+      (run (compactSkywalkTick w i) m s).basis (w j) = s.basis (w j) := by
+    have hp : j ≠ skywalkPoolPreviousId i := by
+      unfold skywalkPoolPreviousId; split_ifs <;> omega
+    exact compactSkywalkStage_tick_keep w i hi hn j (by omega) hp
+      (by omega) (by omega) (by omega) (by omega)
+      (by omega) (by omega) (by omega) s m
+  have keepB (j : Nat) (hj0 : 770+compactSkywalkTickPreWidth i ≤ j) (hj1 : j < 1028) :
+      (run (compactSkywalkTick w i) m s).basis (w j) = s.basis (w j) := by
+    have hp : j ≠ skywalkPoolPreviousId i := by
+      unfold skywalkPoolPreviousId; split_ifs <;> omega
+    exact compactSkywalkStage_tick_keep w i hi hn j (by omega) hp
+      (by omega) (by omega) (by omega) (by omega)
+      (by omega) (by omega) (by omega) s m
+  constructor
+  · intro q hq
+    rw [tv.2.2.1] at hq
+    obtain ⟨j,hj,rfl⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hj
+    by_cases current : j < i+1+compactSkywalkTickPreWidth i
+    · apply nowA
+      rw [tv.1]
+      apply List.mem_map.mpr
+      exact ⟨j,by simp only [List.mem_range'_1]; omega,rfl⟩
+    · rw [keepA j (by omega) (by omega)]
+      by_cases last : j = i+258
+      · subst j
+        exact (hfuture i (Nat.le_refl i) hi).1
+      · apply oldA
+        rw [tv.2.2.2.2.1]
+        apply List.mem_map.mpr
+        exact ⟨j,by simp only [List.mem_range'_1]; omega,rfl⟩
+  · intro q hq
+    rw [tv.2.2.2.1] at hq
+    obtain ⟨j,hj,rfl⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hj
+    by_cases current : j < 770+compactSkywalkTickPreWidth i
+    · apply nowB
+      rw [tv.2.1]
+      apply List.mem_map.mpr
+      exact ⟨j,by simp only [List.mem_range'_1]; omega,rfl⟩
+    · rw [keepB j (by omega) (by omega)]
+      apply oldB
+      rw [tv.2.2.2.2.2]
+      apply List.mem_map.mpr
+      exact ⟨j,by simp only [List.mem_range'_1]; omega,rfl⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageStepProof =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageStepProof` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Actual compact physical stage advancement. Every old tape/work/fresh
+field is transported, while both next full-word tails are proved clean. -/
+theorem compactSkywalkStageStep (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x p i : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) (hi : i < 512) :
+    Triple (CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i)
+      (compactSkywalkTick w i)
+      (CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) (i+1)) := by
+  intro s m hin
+  let r := SkywalkRails.encode false false (x:Int) (p:Int)
+  let ri := SkywalkTrace.next^[i] r
+  let t := SkywalkRails.step ri
+  let out := run (compactSkywalkTick w i) m s
+  have fields := (compactSkywalkStage_fields_iff w r i (by omega) hn s.basis).mp hin
+  rcases fields with ⟨readA,readB,prev,past,future,carry,orient,cleanA,cleanB⟩
+  have input := compactSkywalkStage_local_input w hn x p i hp0 hx0 hpo hp hx hc hi s hin
+  have fit := narrowSkywalk_iter_fit x p i hp0 hx0 hpo hp hx hc hi
+  have result := compactSkywalkTickOutput_spec w i hi hn ri.a ri.b ri.g
+    fit.1 fit.2.1 fit.2.2.1 fit.2.2.2.1 fit.2.2.2.2 s m input
+  have ho : CompactSkywalkTickOutput w i ri.a ri.b ri.g out.basis := result.2
+  have tails := compactSkywalkStageStep_clean_tails w i hi hn r s m
+    ⟨readA,readB,prev,past,future,carry,orient,cleanA,cleanB⟩ ri.a ri.b ri.g ho
+  have views := compactSkywalkStageStep_retained w i hi
+  have hnext : SkywalkTrace.next^[i+1] r = SkywalkRails.railsOf t := by
+    rw [Function.iterate_succ_apply']
+    rfl
+  refine ⟨result.1,(compactSkywalkStage_fields_iff w r (i+1) (by omega) hn out.basis).mpr ?_⟩
+  change CompactSkywalkStageFields w r (i+1) out.basis
+  unfold CompactSkywalkStageFields
+  rw [hnext]
+  refine ⟨?_,?_,?_,?_,?_,?_,?_,tails.1,tails.2⟩
+  · rw [views.1]
+    exact ho.1
+  · rw [views.2]
+    exact ho.2.1
+  · change out.basis (w (skywalkPoolPreviousId (i+1))) = t.g
+    rw [skywalkPoolPreviousId,if_neg (by omega : i+1 ≠ 0)]
+    simpa only [Nat.add_sub_cancel] using ho.2.2.1
+  · intro j hj
+    by_cases now : j = i
+    · subst j
+      exact ⟨ho.2.2.1,ho.2.2.2.1⟩
+    · have old : j < i := by omega
+      have history := past j old
+      have keepG : out.basis (w j) = s.basis (w j) := by
+        by_cases last : j+1 = i
+        · have hkeep := compactSkywalkStageMetadata_previousG w i (by omega)
+            ri.a ri.b ri.g s.basis out.basis input ho
+          have he : i-1 = j := by omega
+          simpa only [he] using hkeep
+        · exact compactSkywalkStageMetadata_pastG w i hi hn j (by omega) s m
+      have keepS := compactSkywalkStageMetadata_pastS w i hi hn j old s m
+      exact ⟨keepG.trans history.1,keepS.trans history.2⟩
+  · intro j hj hj512
+    have before := future j (by omega) hj512
+    exact ⟨(compactSkywalkStageMetadata_futureExtension w i hi hn j hj hj512 s m).trans before.1,
+      (compactSkywalkStageMetadata_futureS w i hi hn j hj hj512 s m).trans before.2⟩
+  · apply (regValue_zero _ _).mpr
+    intro q hq
+    obtain ⟨j,hj,rfl⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hj
+    by_cases used : j < 1540+(compactSkywalkTickPreWidth i-1)
+    · have carryClean := (regValue_zero _ _).mp ho.2.2.2.2.2.1
+      apply carryClean
+      change w j ∈ wireBlock w 1540 (compactSkywalkTickPreWidth i-1)
+      exact List.mem_map.mpr ⟨j,by simp only [List.mem_range'_1]; omega,rfl⟩
+    · have keep := compactSkywalkStageMetadata_carryTail w i hi hn j (by omega) (by omega) s m
+      apply keep.trans
+      exact (regValue_zero _ _).mp carry (w j)
+        (List.mem_map.mpr ⟨j,by simp only [List.mem_range'_1]; omega,rfl⟩)
+  · by_cases zero : i = 0
+    · subst i
+      exact (compactSkywalkStageMetadata_orientation_zero w ri.a ri.b ri.g
+        s.basis out.basis input ho).trans orient
+    · exact (compactSkywalkStageMetadata_orientation w i hi hn (by omega) s m).trans orient
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkForward =====
+
+/-! Copy of `Arithmetic/CompactSkywalkForward` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Actual forward compact ticks only; no high-word reconstruction or reverse
+measurement instruction is inserted between physical compact boundaries. -/
+def compactSkywalkForward (w : Nat → Wire) (i : Nat) : Nat → Program
+  | 0 => []
+  | n+1 => compactSkywalkTick w i++compactSkywalkForward w (i+1) n
+
+attribute [local irreducible] compactSkywalkTick
+
+/-- Exact stage induction includes phase, raw history, future zero sites,
+full clean carry, initial orientation, and both omitted physical tails. -/
+theorem compactSkywalkForward_spec (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x p i n : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) (hsteps : i+n ≤ 512) :
+    Triple (CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i)
+      (compactSkywalkForward w i n)
+      (CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) (i+n)) := by
+  induction n generalizing i with
+  | zero =>
+    intro s m hin
+    exact ⟨rfl,hin⟩
+  | succ n ih =>
+    have first := compactSkywalkStageStep w hn x p i hp0 hx0 hpo hp hx hc (by omega)
+    have rest := ih (i+1) (by omega)
+    simpa only [compactSkywalkForward,Nat.add_assoc,Nat.add_comm,Nat.add_left_comm] using first.seq rest
+
+/-- The existing seed-stage input starts the full512 compact campaign directly. -/
+theorem compactSkywalkForward_512 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) :
+    Triple (SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0)
+      (compactSkywalkForward w 0 512)
+      (CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 512) := by
+  intro s m hin
+  exact compactSkywalkForward_spec w hn x p 0 512 hp0 hx0 hpo hp hx hc (by decide) s m
+    ((compactSkywalkStage_zero_iff w _ s.basis).mpr hin)
+
+/-- Pure arithmetic charge recurrences mirror actual per-tick resources. -/
+def compactSkywalkForwardT (i : Nat) : Nat → Nat
+  | 0 => 0
+  | n+1 => (compactSkywalkTickPreWidth i-1)+(compactSkywalkTickPostWidth i-1)+
+      compactSkywalkForwardT (i+1) n
+
+def compactSkywalkForwardM (i : Nat) : Nat → Nat
+  | 0 => 0
+  | n+1 => (compactSkywalkTickPostWidth i-1)+compactSkywalkForwardM (i+1) n
+
+theorem compactSkywalkForward_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i n : Nat) (hsteps : i+n ≤ 512) :
+    toffoliCount (compactSkywalkForward w i n) = compactSkywalkForwardT i n ∧
+    measurementCount (compactSkywalkForward w i n) = compactSkywalkForwardM i n := by
+  induction n generalizing i with
+  | zero => exact ⟨rfl,rfl⟩
+  | succ n ih =>
+    have first := compactSkywalkTick_counts w i (by omega) hn
+    have rest := ih (i+1) (by omega)
+    rw [compactSkywalkForward,toffoliCount_append,measurementCount_append,
+      first.1,first.2,rest.1,rest.2]
+    exact ⟨rfl,rfl⟩
+
+private theorem fullCharges : compactSkywalkForwardT 0 512 = 197122 ∧
+    compactSkywalkForwardM 0 512 = 98433 := by decide +kernel
+
+/-- Full forward integer-leg cost, excluding seed, field replay and point glue. -/
+theorem compactSkywalkForward_512_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
+    toffoliCount (compactSkywalkForward w 0 512) = 197122 ∧
+    measurementCount (compactSkywalkForward w 0 512) = 98433 := by
+  have h := compactSkywalkForward_counts w hn 0 512 (by decide)
+  rw [fullCharges.1,fullCharges.2] at h
+  exact h
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkForwardFrame =====
+
+/-! Copy of `Arithmetic/CompactSkywalkForwardFrame` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+attribute [local irreducible] compactSkywalkTick
+
+/-- Every actual forward tick remains inside the original integer pool.
+This support ceiling is not a compact whole-point allocation certificate. -/
+theorem compactSkywalkForward_support (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i n : Nat) (hsteps : i+n ≤ 512) :
+    wires (compactSkywalkForward w i n) ⊆ (skywalkPoolWires w).toFinset := by
+  induction n generalizing i with
+  | zero => simp [compactSkywalkForward,wires]
+  | succ n ih =>
+    have hi : i < 512 := by omega
+    have ht := compactSkywalkTick_support w i hi hn
+    have hl := compactSkywalkTick_local_support w i hi
+    have first : wires (compactSkywalkTick w i) ⊆ (skywalkPoolWires w).toFinset := by
+      intro q hq
+      exact List.mem_toFinset.mpr (hl (List.mem_toFinset.mp (ht hq)))
+    rw [compactSkywalkForward,wires_append,Finset.union_subset_iff]
+    exact ⟨first,ih (i+1) (by omega)⟩
+
+/-- All caller wires outside the integer pool are preserved for arbitrary
+input basis/phase and arbitrary complete measurement streams. -/
+theorem compactSkywalkForward_frame (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i n : Nat) (hsteps : i+n ≤ 512) (s : State) (m : List Bool) (q : Wire)
+    (hq : q ∉ skywalkPoolWires w) :
+    (run (compactSkywalkForward w i n) m s).basis q = s.basis q :=
+  run_preserves_outside _ m s q (fun h => hq
+    (List.mem_toFinset.mp (compactSkywalkForward_support w hn i n hsteps h)))
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompressedCompactSupport =====
+
+/-! Copy of `Arithmetic/CompressedCompactSupport` over the tighter width schedule of `WWidths`. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+attribute [local irreducible] compactSkywalkTick compressedHistoryEncode compressedEncodePrefix
+
+/-- Exact local support of the actual compact native tick and sign-tail
+cleanup excludes any group whose final orientation was already consumed. -/
+theorem compressedHistory_disjoint_compactTick (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (start i : Nat) (hs : start+3 ≤ 512) (hlate : start+4 ≤ i) (hi : i < 512) :
+    Disjoint (wires (compressedHistoryEncode w start)) (wires (compactSkywalkTick w i)) := by
+  apply Finset.disjoint_left.mpr
+  intro q hq ht
+  obtain ⟨j,rfl⟩ := compressedHistory_gate_mem w hn hlo start hs _ (Or.inl rfl) q hq
+  have mem := List.mem_toFinset.mp (compactSkywalkTick_support w i hi hn ht)
+  have width := compactSkywalkTick_width_bounds i hi
+  have hpos : i ≠ 0 := by omega
+  have away : w (compressedHistoryId start j) ∉ (compactSkywalkTickLayout w i).wires := by
+    apply compactSkywalkStage_tick_away w i hi hn (compressedHistoryId start j)
+      (compressedHistoryId_bound start hs j)
+    all_goals
+      have hj := j.isLt
+      unfold compressedHistoryId
+      split_ifs <;> (try simp only [skywalkPoolPreviousId,if_neg hpos]) <;> omega
+  exact away mem
+
+/-- Prefix packing remains disjoint from every later compact tick. The
+existing delayed pack schedule is retained verbatim. -/
+theorem compressedPrefix_disjoint_compactTick (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (n i : Nat) (hni : n ≤ i) (hi : i < 512) :
+    Disjoint (wires (compressedEncodePrefix w n)) (wires (compactSkywalkTick w i)) := by
+  induction n with
+  | zero => simp [compressedEncodePrefix,wires]
+  | succ n ih =>
+    have old := ih (by omega)
+    have now : Disjoint (wires (compressedPackAfter w n)) (wires (compactSkywalkTick w i)) := by
+      cases due : compressedPackDue n
+      · simp [compressedPackAfter,due,wires]
+      · have h3 := compressedPackDue_true n due
+        have h := compressedHistory_disjoint_compactTick w hn hlo (n-3) i (by omega) (by omega) hi
+        simpa only [compressedPackAfter,due,if_true] using h
+    simp only [compressedEncodePrefix,wires_append,Finset.disjoint_union_left]
+    exact ⟨old,now⟩
+
+/-- The compact physical stage supplies the exact legal ternary tape to
+all codec groups. No expanded-tail circuit is needed for this argument. -/
+theorem compressedCompactHistory_legal (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (x p i start : Nat)
+    (hp0 : 0 < p) (hpo : p%2 = 1) (hs : start+3 ≤ i) (hi : i ≤ 512)
+    (s : BasisState)
+    (h : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s) :
+    (s (compressedHistoryMap w start 0) && s (compressedHistoryMap w start 1)) = false ∧
+    (s (compressedHistoryMap w start 2) && s (compressedHistoryMap w start 3)) = false ∧
+    (s (compressedHistoryMap w start 4) && s (compressedHistoryMap w start 5)) = false := by
+  have fields := (compactSkywalkStage_fields_iff w _ i hi hn s).mp h
+  have tape := fields.2.2.2.1
+  have ternary (j : Nat) (hj : j < i) : (s (w j) && s (w (1028+j))) = false := by
+    rw [(tape j hj).1,(tape j hj).2]
+    exact skywalkRecordedSymbol_legal x p j hp0 hpo
+  have a := ternary start (by omega)
+  have b := ternary (start+1) (by omega)
+  have c := ternary (start+2) (by omega)
+  simpa [compressedHistoryMap,compressedHistoryId,Nat.add_assoc] using And.intro a (And.intro b c)
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompressedCompactStage =====
+
+/-! Copy of `Arithmetic/CompressedCompactStage` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 4096
+set_option maxHeartbeats 400000
+
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- A ghost raw compact state supplies the exact integer invariant. Encoding is
+an actual circuit program; the assertion equates the complete caller basis.
+Incoming phase is unrestricted and is preserved separately by the Triple. -/
+def CompressedCompactStage (w : Nat → Wire) (x p i : Nat) (bits : BasisState) : Prop :=
+  ∃ raw : State,
+    CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i raw.basis ∧
+    bits = (run (compressedEncodePrefix w i) [] raw).basis
+
+/-- Actual compact native ticks followed by the unchanged delayed codec packs. -/
+def compressedCompactForward (w : Nat → Wire) (i : Nat) : Nat → Program
+  | 0 => []
+  | n+1 => compactSkywalkTick w i++compressedPackAfter w i++
+      compressedCompactForward w (i+1) n
+
+attribute [local irreducible] run compressedEncodePrefix compressedCompactForward
+attribute [local irreducible] compactSkywalkTick compressedHistoryEncode
+
+private theorem xor_neutral (a b : Bool) (h : (a ^^ b) = false) : a = b := by
+  cases a <;> cases b <;> simp_all
+
+theorem compressedCompactStage_zero (w : Nat → Wire) (x p : Nat) (s : State)
+    (h : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0 s.basis) :
+    CompressedCompactStage w x p 0 s.basis := by
+  refine ⟨s,h,?_⟩
+  simp only [compressedEncodePrefix,run]
+
+theorem compressedCompactStage_step (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p i : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) (hi : i < 512) :
+    Triple (CompressedCompactStage w x p i)
+      (compactSkywalkTick w i ++ compressedPackAfter w i)
+      (CompressedCompactStage w x p (i+1)) := by
+  intro s m hs
+  obtain ⟨raw,hraw,hbits⟩ := hs
+  let tick := compactSkywalkTick w i
+  let mt := m.take (measurementCount tick)
+  let me := m.drop (measurementCount tick)
+  let actual := run tick mt s
+  let next := run tick [] raw
+  have step := compactSkywalkStageStep w hn x p i hp0 hx0 hpo hp hx hc hi
+  have hnxt := step raw [] hraw
+  have hmt := step raw mt hraw
+  have hd := compressedPrefix_disjoint_compactTick w hn hlo i i (Nat.le_refl i) hi
+  have read : ∀ q ∈ wires tick,s.basis q = raw.basis q := by
+    intro q hq
+    rw [hbits]
+    apply run_preserves_outside
+    exact fun he => Finset.disjoint_left.mp hd he hq
+  have hl := run_local_increment tick s raw mt read
+  have hphase : actual.phase = s.phase := by
+    apply xor_neutral
+    have hh := hl.1
+    rw [hmt.1] at hh
+    simpa only [Bool.xor_self] using hh
+  have hcomm := run_disjoint_commute (compressedEncodePrefix w i) tick hd [] [] raw
+  have hb0 := run_basis_records tick s (run (compressedEncodePrefix w i) [] raw) mt [] hbits
+  have hb : actual.basis = (run (compressedEncodePrefix w i) [] next).basis :=
+    hb0.trans (congrArg State.basis hcomm.symm)
+  have hpackphase : (run (compressedPackAfter w i) me actual).phase = actual.phase := by
+    cases he : compressedPackDue i
+    · simp only [compressedPackAfter,he,Bool.false_eq_true,if_false,run]
+    · have h3 := compressedPackDue_true i he
+      have same (j : Fin 6) : actual.basis (compressedHistoryMap w (i-3) j) = next.basis (compressedHistoryMap w (i-3) j) := by
+        rw [hb]
+        exact compressedPrefix_raw_next w hn hlo i hi he next [] j
+      have legal := compressedCompactHistory_legal w hn x p (i+1) (i-3) hp0 hpo (by omega) (by omega) next.basis hnxt.2
+      have actualLegal :
+          (actual.basis (compressedHistoryMap w (i-3) 0) && actual.basis (compressedHistoryMap w (i-3) 1)) = false ∧
+          (actual.basis (compressedHistoryMap w (i-3) 2) && actual.basis (compressedHistoryMap w (i-3) 3)) = false ∧
+          (actual.basis (compressedHistoryMap w (i-3) 4) && actual.basis (compressedHistoryMap w (i-3) 5)) = false := by
+        rw [same 0,same 1,same 2,same 3,same 4,same 5]
+        exact legal
+      have cp := TranscriptCodec3.placement_correct (compressedHistoryMap w (i-3))
+        (compressedHistoryMap_injective w hn (i-3) (by omega))
+        (compressedHistoryMap_above w (i-3) (by omega) hlo) actual me actualLegal
+      simpa only [compressedPackAfter,he,if_true,compressedHistoryEncode] using cp.1
+  have hpackbits := run_basis_records (compressedPackAfter w i) actual
+    (run (compressedEncodePrefix w i) [] next) me [] hb
+  have hbnext : (run (compressedPackAfter w i) me actual).basis = (run (compressedEncodePrefix w (i+1)) [] next).basis := by
+    rw [compressedEncodePrefix,run_append]
+    simp only [List.take_nil,List.drop_nil]
+    exact hpackbits
+  rw [run_append]
+  exact ⟨hpackphase.trans hphase,⟨next,hnxt.2,hbnext⟩⟩
+
+/-- Complete forward composition for arbitrary records, including phase.
+This theorem retains the exact original divisor and all512 compact integer steps. -/
+theorem CompressedCompactStage_spec (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p i n : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) (hi : i+n ≤ 512) :
+    Triple (CompressedCompactStage w x p i) (compressedCompactForward w i n)
+      (CompressedCompactStage w x p (i+n)) := by
+  induction n generalizing i with
+  | zero =>
+    rw [compressedCompactForward,Nat.add_zero]
+    intro s m h
+    simpa only [run] using And.intro (rfl : s.phase = s.phase) h
+  | succ n ih =>
+    have hstep := compressedCompactStage_step w hn hlo x p i hp0 hx0 hpo hp hx hc (by omega)
+    have htail := ih (i+1) (by omega)
+    have hall := hstep.seq htail
+    have hindex : i+(n+1) = (i+1)+n := by omega
+    rw [compressedCompactForward,hindex]
+    simpa only [List.append_assoc] using hall
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompressedCompactFrame =====
+
+/-! Copy of `Arithmetic/CompressedCompactFrame` over the tighter width schedule of `WWidths`. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+attribute [local irreducible] run compactSkywalkTick compressedHistoryEncode compressedCompactForward
+
+/-- The existing seed assertion starts the exact512 compact-plus-codec
+campaign, with no changed divisor or shortened integer transcript. -/
+theorem compressedCompactForward_512_spec (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) :
+    Triple (SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0)
+      (compressedCompactForward w 0 512) (CompressedCompactStage w x p 512) := by
+  intro s m h
+  have compact := (compactSkywalkStage_zero_iff w _ s.basis).mpr h
+  exact CompressedCompactStage_spec w hn hlo x p 0 512 hp0 hx0 hpo hp hx hc (by decide)
+    s m (compressedCompactStage_zero w x p s compact)
+
+private theorem pack_support (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (hlo : CompressedHistoryAbove w) (i : Nat) (hi : i < 512) :
+    wires (compressedPackAfter w i) ⊆ (skywalkPoolWires w).toFinset := by
+  intro q hq
+  cases due : compressedPackDue i
+  · simp [compressedPackAfter,due,wires] at hq
+  · have h3 := compressedPackDue_true i due
+    have hq' : q ∈ wires (compressedHistoryEncode w (i-3)) := by
+      simpa only [compressedPackAfter,due,if_true] using hq
+    obtain ⟨j,rfl⟩ := compressedHistory_gate_mem w hn hlo (i-3) (by omega) _ (Or.inl rfl) q hq'
+    have bound := compressedHistoryId_bound (i-3) (by omega) j
+    apply List.mem_toFinset.mpr
+    simp only [skywalkPoolWires,wireBlock,List.mem_map,List.mem_range'_1]
+    exact ⟨compressedHistoryId (i-3) j,by omega,rfl⟩
+
+/-- Actual instruction support includes compact sign release and all
+measurement corrections of the history encoder. -/
+theorem compressedCompactForward_support (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (i n : Nat) (hi : i+n ≤ 512) :
+    wires (compressedCompactForward w i n) ⊆ (skywalkPoolWires w).toFinset := by
+  induction n generalizing i with
+  | zero => simp [compressedCompactForward,wires]
+  | succ n ih =>
+    have first : wires (compactSkywalkTick w i) ⊆ (skywalkPoolWires w).toFinset := by
+      intro q hq
+      exact List.mem_toFinset.mpr (compactSkywalkTick_local_support w i (by omega)
+        (List.mem_toFinset.mp (compactSkywalkTick_support w i (by omega) hn hq)))
+    have pack := pack_support w hn hlo i (by omega)
+    simp only [compressedCompactForward,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨first,pack⟩,ih (i+1) (by omega)⟩
+
+/-- Every caller bit outside the original integer pool restores, for all
+input states and independent measurement records. -/
+theorem compressedCompactForward_frame (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (i n : Nat) (hi : i+n ≤ 512) (s : State) (m : List Bool) (q : Wire)
+    (hq : q ∉ skywalkPoolWires w) :
+    (run (compressedCompactForward w i n) m s).basis q = s.basis q := by
+  apply run_preserves_outside
+  intro h
+  exact hq (List.mem_toFinset.mp (compressedCompactForward_support w hn hlo i n hi h))
+
+/-- Component resource recurrence for this actual emission. It is not a
+whole-point qubit or stage resource claim. -/
+theorem compressedCompactForward_counts (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512) :
+    toffoliCount (compressedCompactForward w i n) = compactSkywalkForwardT i n+3*compressedPackCount i n ∧
+    measurementCount (compressedCompactForward w i n) = compactSkywalkForwardM i n+compressedPackCount i n := by
+  induction n generalizing i with
+  | zero => simp [compressedCompactForward,compactSkywalkForwardT,compactSkywalkForwardM,
+      compressedPackCount,toffoliCount,measurementCount]
+  | succ n ih =>
+    have tick := compactSkywalkTick_counts w i (by omega) hn
+    have pack := compressedPackAfter_counts w i
+    have tail := ih (i+1) (by omega)
+    simp only [compressedCompactForward,toffoliCount_append,measurementCount_append,
+      tick.1,tick.2,pack.1,pack.2.1,tail.1,tail.2,compactSkywalkForwardT,
+      compactSkywalkForwardM,compressedPackCount]
+    constructor <;> omega
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkReverseProgram =====
+
+/-! Copy of `Arithmetic/CompactSkywalkReverseProgram` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Expand only the tails removed at the previous local tick. Their lengths
+are preN-postN (zero or one), not258-postN. -/
+def compactSkywalkReverseExpand (w : Nat → Wire) (i : Nat) : Program :=
+  compactSkywalkSignExpand (compactSkywalkTickBRelease w i)++
+    compactSkywalkSignExpand (compactSkywalkTickARelease w i)
+
+/-- Fresh independently measured signed unrecord, then local half/route
+reversal. No forward measurement instruction is reversed. -/
+def compactSkywalkReverseTick (w : Nat → Wire) (i : Nat) : Program :=
+  compactSkywalkReverseExpand w i++
+    narrowSkywalkUntick (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
+
+attribute [local irreducible] narrowSkywalkTick narrowSkywalkUntick
+attribute [local irreducible] compactSkywalkSignRelease compactSkywalkSignExpand
+
+theorem compactSkywalkReverseExpand_counts (w : Nat → Wire) (i : Nat) :
+    toffoliCount (compactSkywalkReverseExpand w i) = 0 ∧
+    measurementCount (compactSkywalkReverseExpand w i) = 0 := by
+  have a := compactSkywalkSignRelease_counts (compactSkywalkTickARelease w i)
+  have b := compactSkywalkSignRelease_counts (compactSkywalkTickBRelease w i)
+  rw [compactSkywalkReverseExpand,toffoliCount_append,measurementCount_append,
+    b.2.2.1,b.2.2.2,a.2.2.1,a.2.2.2]
+  exact ⟨rfl,rfl⟩
+
+/-- Local-tail expansion exactly cancels actual compact cleanup, with
+independent record lists and arbitrary initial data in both local tails. -/
+theorem compactSkywalkReverseExpand_cleanup (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : State) (m1 m2 : List Bool) :
+    run (compactSkywalkReverseExpand w i) m2
+      (run (compactSkywalkTickCleanup w i) m1 s) = s := by
+  let A := compactSkywalkTickARelease w i
+  let B := compactSkywalkTickBRelease w i
+  have hv := compactSkywalkTick_release_valid w i hi hn
+  have ca := compactSkywalkSignRelease_counts A
+  have cb := compactSkywalkSignRelease_counts B
+  change run (compactSkywalkSignExpand B++compactSkywalkSignExpand A) m2
+    (run (compactSkywalkSignRelease A++compactSkywalkSignRelease B) m1 s) = s
+  rw [compactSkywalkSign_no_measure_append _ _ ca.2.1,
+    compactSkywalkSign_no_measure_append _ _ cb.2.2.2]
+  rw [(compactSkywalkSignRelease_roundtrip B hv.2
+    (run (compactSkywalkSignRelease A) m1 s) m1 m2).1]
+  exact (compactSkywalkSignRelease_roundtrip A hv.1 s m1 m2).1
+
+/-- Exact complete State inverse of the actual compact tick. Only its fresh
+history and clean local carry are needed; measurement lists are independent. -/
+theorem compactSkywalkReverseTick_roundtrip (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) (s : State) (m1 m2 : List Bool)
+    (hh : s.basis (compactSkywalkTickLayout w i).history = false)
+    (hc : regValue (compactSkywalkTickLayout w i).carry s.basis = 0) :
+    run (compactSkywalkReverseTick w i) m2 (run (compactSkywalkTick w i) m1 s) = s := by
+  have hz := (compactSkywalkReverseExpand_counts w i).2
+  have hr := compactSkywalkTickOutput_run w i s m1
+  rw [hr,compactSkywalkReverseTick,compactSkywalkSign_no_measure_append _ _ hz]
+  rw [compactSkywalkReverseExpand_cleanup w i hi hn _ m1 m2]
+  have width := compactSkywalkTick_width_bounds i hi
+  exact narrowSkywalkTick_roundtrip _ (compactSkywalkTick_valid w i hi hn)
+    (compactSkywalkTickPostWidth i) (by omega) (by
+      rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact width.2.2.1) s m1 m2 hh hc
+
+theorem compactSkywalkReverseTick_counts (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    toffoliCount (compactSkywalkReverseTick w i) =
+      (compactSkywalkTickPreWidth i-1)+(compactSkywalkTickPostWidth i-1) ∧
+    measurementCount (compactSkywalkReverseTick w i) = compactSkywalkTickPostWidth i-1 := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have c := narrowSkywalkTick_counts _ (compactSkywalkTick_valid w i hi hn)
+    (compactSkywalkTickPostWidth i) (by omega) (by
+      rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact width.2.2.1)
+  have z := compactSkywalkReverseExpand_counts w i
+  rw [compactSkywalkReverseTick,toffoliCount_append,measurementCount_append,
+    z.1,z.2,c.2.2.1,c.2.2.2,compactSkywalkTick_ah w i hi,wireBlock_length]
+  exact ⟨by omega,by omega⟩
+
+theorem compactSkywalkReverseExpand_support (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    wires (compactSkywalkReverseExpand w i) ⊆ (compactSkywalkTickLayout w i).wires.toFinset := by
+  have h := compactSkywalkTick_width_bounds i hi
+  have a := (compactSkywalkSignWord_support (compactSkywalkTickLayout w i).half
+    (compactSkywalkTickPostWidth i) (by omega) (by
+      rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact h.2.2.1)).2
+  have b := (compactSkywalkSignWord_support (compactSkywalkTickLayout w i).b
+    (compactSkywalkTickPostWidth i) (by omega) (by
+      rw [compactSkywalkTick_b w i hi,wireBlock_length]; exact h.2.2.1)).2
+  intro q hq
+  simp only [compactSkywalkReverseExpand,wires_append,Finset.mem_union] at hq
+  rcases hq with hq|hq
+  · have hb := List.mem_toFinset.mp (b hq)
+    simp only [SkywalkIntegerLayout.b,SkywalkIntegerLayout.wires,List.mem_toFinset,
+      List.mem_append,List.mem_cons] at hb ⊢
+    tauto
+  · have ha := List.mem_toFinset.mp (a hq)
+    simp only [SkywalkIntegerLayout.half,SkywalkIntegerLayout.wires,List.mem_toFinset,
+      List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at ha ⊢
+    tauto
+
+theorem compactSkywalkReverseTick_support (w : Nat → Wire) (i : Nat) (hi : i < 512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    wires (compactSkywalkReverseTick w i) ⊆ (compactSkywalkTickLayout w i).wires.toFinset := by
+  have h := compactSkywalkTick_width_bounds i hi
+  have n := (narrowSkywalkTick_wires_subset _ (compactSkywalkTick_valid w i hi hn)
+    (compactSkywalkTickPostWidth i) (by omega) (by
+      rw [compactSkywalkTick_half w i hi,wireBlock_length]; exact h.2.2.1)).2
+  rw [compactSkywalkReverseTick,wires_append,Finset.union_subset_iff]
+  exact ⟨compactSkywalkReverseExpand_support w i hi,n⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkReverseLoop =====
+
+/-! Copy of `Arithmetic/CompactSkywalkReverseLoop` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Walk back the actual compact ticks, with independent inverse measurements
+and local sign expansion only at the immediately preceding width. -/
+def compactSkywalkReverse (w : Nat → Wire) (i : Nat) : Nat → Program
+  | 0 => []
+  | n+1 => compactSkywalkReverse w (i+1) n++compactSkywalkReverseTick w i
+
+attribute [local irreducible] compactSkywalkTick compactSkywalkReverseTick
+
+/-- Complete physical State restoration on every valid compact forward path.
+No arbitrary-poststate reachability premise or reused measurement stream is assumed. -/
+theorem compactSkywalkReverse_roundtrip (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x p i n : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) (hsteps : i+n ≤ 512)
+    (s : State) (m1 m2 : List Bool)
+    (hin : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s.basis) :
+    run (compactSkywalkReverse w i n) m2 (run (compactSkywalkForward w i n) m1 s) = s := by
+  induction n generalizing i s m1 m2 with
+  | zero => rfl
+  | succ n ih =>
+    have hi : i < 512 := by omega
+    let tick := compactSkywalkTick w i
+    simp only [compactSkywalkForward,compactSkywalkReverse]
+    rw [run_append,run_append]
+    generalize htick : run tick (m1.take (measurementCount tick)) s = t
+    have hs := compactSkywalkStageStep w hn x p i hp0 hx0 hpo hp hx hc hi
+      s (m1.take (measurementCount tick)) hin
+    rw [htick] at hs
+    have htail := ih (i+1) (by omega) t (m1.drop (measurementCount tick))
+      (m2.take (measurementCount (compactSkywalkReverse w (i+1) n))) hs.2
+    have localInput := compactSkywalkStage_local_input w hn x p i hp0 hx0 hpo hp hx hc hi s hin
+    have restore := compactSkywalkReverseTick_roundtrip w i hi hn s
+      (m1.take (measurementCount tick))
+      (m2.drop (measurementCount (compactSkywalkReverse w (i+1) n)))
+      localInput.2.2.2.2.1 localInput.2.2.2.2.2
+    rw [htick] at restore
+    rw [htail]
+    exact restore
+
+/-- The old canonical seed-stage input gives a full512-tick measured roundtrip. -/
+theorem compactSkywalkReverse_512_roundtrip (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p)
+    (s : State) (m1 m2 : List Bool)
+    (hin : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0 s.basis) :
+    run (compactSkywalkReverse w 0 512) m2 (run (compactSkywalkForward w 0 512) m1 s) = s :=
+  compactSkywalkReverse_roundtrip w hn x p 0 512 hp0 hx0 hpo hp hx hc (by decide) s m1 m2
+    ((compactSkywalkStage_zero_iff w _ s.basis).mpr hin)
+
+theorem compactSkywalkReverse_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i n : Nat) (hsteps : i+n ≤ 512) :
+    toffoliCount (compactSkywalkReverse w i n) = compactSkywalkForwardT i n ∧
+    measurementCount (compactSkywalkReverse w i n) = compactSkywalkForwardM i n := by
+  induction n generalizing i with
+  | zero => exact ⟨rfl,rfl⟩
+  | succ n ih =>
+    have first := compactSkywalkReverseTick_counts w i (by omega) hn
+    have rest := ih (i+1) (by omega)
+    rw [compactSkywalkReverse,toffoliCount_append,measurementCount_append,
+      first.1,first.2,rest.1,rest.2]
+    change compactSkywalkForwardT (i+1) n+
+      ((compactSkywalkTickPreWidth i-1)+(compactSkywalkTickPostWidth i-1)) =
+        (compactSkywalkTickPreWidth i-1)+(compactSkywalkTickPostWidth i-1)+
+          compactSkywalkForwardT (i+1) n ∧
+      compactSkywalkForwardM (i+1) n+(compactSkywalkTickPostWidth i-1) =
+        (compactSkywalkTickPostWidth i-1)+compactSkywalkForwardM (i+1) n
+    exact ⟨Nat.add_comm _ _,Nat.add_comm _ _⟩
+
+theorem compactSkywalkReverse_512_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
+    toffoliCount (compactSkywalkReverse w 0 512) = 197122 ∧
+    measurementCount (compactSkywalkReverse w 0 512) = 98433 := by
+  have r := compactSkywalkReverse_counts w hn 0 512 (by decide)
+  have f := compactSkywalkForward_counts w hn 0 512 (by decide)
+  have exactCounts := compactSkywalkForward_512_counts w hn
+  exact ⟨r.1.trans (f.1.symm.trans exactCounts.1),r.2.trans (f.2.symm.trans exactCounts.2)⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkReverseFrame =====
+
+/-! Copy of `Arithmetic/CompactSkywalkReverseFrame` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+attribute [local irreducible] compactSkywalkReverseTick
+
+/-- Independently emitted reverse instructions touch only the integer pool. -/
+theorem compactSkywalkReverse_support (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i n : Nat) (hsteps : i+n ≤ 512) :
+    wires (compactSkywalkReverse w i n) ⊆ (skywalkPoolWires w).toFinset := by
+  induction n generalizing i with
+  | zero => simp [compactSkywalkReverse,wires]
+  | succ n ih =>
+    have hi : i < 512 := by omega
+    have hs := compactSkywalkReverseTick_support w i hi hn
+    have hl := compactSkywalkTick_local_support w i hi
+    have tick : wires (compactSkywalkReverseTick w i) ⊆ (skywalkPoolWires w).toFinset := by
+      intro q hq
+      exact List.mem_toFinset.mpr (hl (List.mem_toFinset.mp (hs hq)))
+    rw [compactSkywalkReverse,wires_append,Finset.union_subset_iff]
+    exact ⟨ih (i+1) (by omega),tick⟩
+
+theorem compactSkywalkReverse_frame (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i n : Nat) (hsteps : i+n ≤ 512) (s : State) (m : List Bool) (q : Wire)
+    (hq : q ∉ skywalkPoolWires w) :
+    (run (compactSkywalkReverse w i n) m s).basis q = s.basis q :=
+  run_preserves_outside _ m s q (fun h => hq
+    (List.mem_toFinset.mp (compactSkywalkReverse_support w hn i n hsteps h)))
+
+/-- A coexisting field operation may change every outsider while retaining
+integer-pool bits and phase. Actual reverse then restores the original pool,
+preserves the field's outsider values, and restores incoming phase. -/
+theorem compactSkywalkReverse_restore_after_outside (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (x p i n : Nat)
+    (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1) (hp : p < 2^256)
+    (hx : x < p) (hc : x.Coprime p) (hsteps : i+n ≤ 512)
+    (s field : State) (mForward mReverse : List Bool)
+    (hin : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s.basis)
+    (hphase : field.phase = (run (compactSkywalkForward w i n) mForward s).phase)
+    (hpool : ∀q ∈ skywalkPoolWires w,
+      field.basis q = (run (compactSkywalkForward w i n) mForward s).basis q) :
+    (run (compactSkywalkReverse w i n) mReverse field).phase = s.phase ∧
+    (∀q ∈ skywalkPoolWires w,
+      (run (compactSkywalkReverse w i n) mReverse field).basis q = s.basis q) ∧
+    (∀q,q ∉ skywalkPoolWires w →
+      (run (compactSkywalkReverse w i n) mReverse field).basis q = field.basis q) := by
+  have inverse := compactSkywalkReverse_roundtrip w hn x p i n hp0 hx0 hpo hp hx hc
+    hsteps s mForward mReverse hin
+  have agrees := pool_run_agrees (compactSkywalkReverse w i n) (skywalkPoolWires w).toFinset
+    (compactSkywalkReverse_support w hn i n hsteps) mReverse field
+    (run (compactSkywalkForward w i n) mForward s) hphase
+    (fun q hq => hpool q (List.mem_toFinset.mp hq))
+  rw [inverse] at agrees
+  refine ⟨agrees.1,?_,?_⟩
+  · intro q hq
+    exact agrees.2 q (List.mem_toFinset.mpr hq)
+  · intro q hq
+    exact compactSkywalkReverse_frame w hn i n hsteps field mReverse q hq
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompressedCompactReverseProgram =====
+
+/-! Copy of `Arithmetic/CompressedCompactReverseProgram` over the tighter width schedule of `WWidths`. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Actual compact reverse ticks; only each tick's local pre/post tails
+are expanded, and the unchanged delayed codec schedule is decoded. -/
+def compressedCompactReverse (w : Nat → Wire) (i : Nat) : Nat → Program
+  | 0 => []
+  | n+1 => compressedCompactReverse w (i+1) n++compressedDecodeBefore w i++
+      compactSkywalkReverseTick w i
+
+attribute [local irreducible] run compactSkywalkReverseTick compactSkywalkReverse
+attribute [local irreducible] compressedCompactReverse compressedHistoryDecode
+attribute [local irreducible] compressedDecodeRange compressedDecodePrefix
+
+theorem compressedHistory_disjoint_compactReverseTick (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (start i : Nat) (hs : start+3 ≤ 512) (hlate : start+4 ≤ i) (hi : i < 512) :
+    Disjoint (wires (compressedHistoryDecode w start)) (wires (compactSkywalkReverseTick w i)) := by
+  apply Finset.disjoint_left.mpr
+  intro q hq ht
+  obtain ⟨j,rfl⟩ := compressedHistory_gate_mem w hn hlo start hs _ (Or.inr rfl) q hq
+  have mem := List.mem_toFinset.mp (compactSkywalkReverseTick_support w i hi hn ht)
+  have width := compactSkywalkTick_width_bounds i hi
+  have hpos : i ≠ 0 := by omega
+  have away : w (compressedHistoryId start j) ∉ (compactSkywalkTickLayout w i).wires := by
+    apply compactSkywalkStage_tick_away w i hi hn (compressedHistoryId start j)
+      (compressedHistoryId_bound start hs j)
+    all_goals
+      have hj := j.isLt
+      unfold compressedHistoryId
+      split_ifs <;> (try simp only [skywalkPoolPreviousId,if_neg hpos]) <;> omega
+  exact away mem
+
+/-- Component charge equality also supplies exact record alignment when
+zero-measurement decoders are moved before disjoint compact inverse ticks. -/
+theorem compressedCompactReverse_counts_relative (w : Nat → Wire) (i n : Nat) :
+    toffoliCount (compressedCompactReverse w i n) =
+      toffoliCount (compactSkywalkReverse w i n)+4*compressedPackCount i n ∧
+    measurementCount (compressedCompactReverse w i n) = measurementCount (compactSkywalkReverse w i n) := by
+  induction n generalizing i with
+  | zero => simp [compressedCompactReverse,compactSkywalkReverse,compressedPackCount,toffoliCount,measurementCount]
+  | succ n ih =>
+    have pack := compressedPackAfter_counts w i
+    have tail := ih (i+1)
+    simp only [compressedCompactReverse,compactSkywalkReverse,compressedPackCount,
+      toffoliCount_append,measurementCount_append,pack.2.2.1,pack.2.2.2,tail.1,tail.2]
+    constructor <;> omega
+
+theorem compressedDecodeBefore_disjoint_compactReverse (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (i j n : Nat) (hgap : i < j) (hbound : j+n ≤ 512) :
+    Disjoint (wires (compressedDecodeBefore w i)) (wires (compactSkywalkReverse w j n)) := by
+  induction n generalizing j with
+  | zero => simp [compactSkywalkReverse,wires]
+  | succ n ih =>
+    have ht := ih (j+1) (by omega) (by omega)
+    have hh : Disjoint (wires (compressedDecodeBefore w i)) (wires (compactSkywalkReverseTick w j)) := by
+      cases he : compressedPackDue i
+      · simp [compressedDecodeBefore,he,wires]
+      · have hi3 := compressedPackDue_true i he
+        have hs := compressedHistory_disjoint_compactReverseTick w hn hlo (i-3) j (by omega) (by omega) (by omega)
+        simpa only [compressedDecodeBefore,he,if_true] using hs
+    simp only [compactSkywalkReverse,wires_append,Finset.disjoint_union_right]
+    exact ⟨ht,hh⟩
+
+/-- Exact normalization of the emitted reverse program. Decoders consume no
+measurements, so moving them ahead of disjoint later ticks preserves the same
+record list, not merely a suitably relabeled list. This holds for all states. -/
+theorem compressedCompactReverse_normalize (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (i n : Nat) (hbound : i+n ≤ 512) (s : State) (m : List Bool) :
+    run (compressedCompactReverse w i n) m s=
+      run (compressedDecodeRange w i n ++ compactSkywalkReverse w i n) m s := by
+  induction n generalizing i s m with
+  | zero => simp [compressedCompactReverse,compressedDecodeRange,compactSkywalkReverse,run]
+  | succ n ih =>
+    have hm := (compressedCompactReverse_counts_relative w (i+1) n).2
+    have hd := compressedDecodeBefore_disjoint_compactReverse w hn hlo i (i+1) n (by omega) (by omega)
+    have hc := run_disjoint_commute (compressedDecodeBefore w i)
+      (compactSkywalkReverse w (i+1) n) hd []
+      (m.take (measurementCount (compactSkywalkReverse w (i+1) n)))
+      (run (compressedDecodeRange w (i+1) n) [] s)
+    rw [compressedCompactReverse,compressedDecodeRange,compactSkywalkReverse]
+    simp only [run_append,measurementCount_append,hm,
+      (compressedPackAfter_counts w i).2.2.2,compressedDecodeRange_measurements,
+      Nat.add_zero,List.take_zero,List.drop_zero]
+    rw [ih (i+1) (by omega)]
+    have hzero : min 0 (measurementCount (compactSkywalkReverse w (i+1) n))=0 :=
+      Nat.min_eq_left (Nat.zero_le _)
+    simp only [run_append,compressedDecodeRange_measurements,List.take_zero,List.drop_zero,
+      List.take_take,Nat.min_self,List.drop_take_self,hzero]
+    rw [hc]
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompressedCompactDecode =====
+
+/-! Copy of `Arithmetic/CompressedCompactDecode` over the tighter width schedule of `WWidths`. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+attribute [local irreducible] run compressedDecodePrefix compressedEncodePrefix
+attribute [local irreducible] compressedHistoryEncode compressedHistoryDecode
+
+/-- Every compressed priorEncoded has a separately emitted coherent inverse.
+The input domain comes from the actual exact integer-history assertion. -/
+theorem compressedCompactDecodePrefix_inverse (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p n i : Nat) (hp0 : 0 < p) (hpo : p%2 = 1) (hni : n ≤ i) (hi : i ≤ 512)
+    (s : State) (mE mD : List Bool)
+    (h : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s.basis) :
+    run (compressedDecodePrefix w n) mD (run (compressedEncodePrefix w n) mE s)=s := by
+  induction n generalizing mE mD with
+  | zero => simp [compressedEncodePrefix,compressedDecodePrefix,run]
+  | succ n ih =>
+    have hbound : n < 512 := by omega
+    let priorEncoded := run (compressedEncodePrefix w n)
+      (mE.take (measurementCount (compressedEncodePrefix w n))) s
+    have clean : run (compressedDecodeBefore w n) []
+        (run (compressedPackAfter w n) (mE.drop (measurementCount (compressedEncodePrefix w n))) priorEncoded)=priorEncoded := by
+      cases he : compressedPackDue n
+      · simp only [compressedDecodeBefore,compressedPackAfter,he,Bool.false_eq_true,if_false,run]
+      · have hn3 := compressedPackDue_true n he
+        have same (j : Fin 6) : priorEncoded.basis (compressedHistoryMap w (n-3) j)=
+            s.basis (compressedHistoryMap w (n-3) j) := by
+          exact compressedPrefix_raw_next w hn hlo n hbound he s _ j
+        have rawLegal := compressedCompactHistory_legal w hn x p i (n-3) hp0 hpo (by omega) hi s.basis h
+        have legal :
+            (priorEncoded.basis (compressedHistoryMap w (n-3) 0) && priorEncoded.basis (compressedHistoryMap w (n-3) 1))=false ∧
+            (priorEncoded.basis (compressedHistoryMap w (n-3) 2) && priorEncoded.basis (compressedHistoryMap w (n-3) 3))=false ∧
+            (priorEncoded.basis (compressedHistoryMap w (n-3) 4) && priorEncoded.basis (compressedHistoryMap w (n-3) 5))=false := by
+          rw [same 0,same 1,same 2,same 3,same 4,same 5]
+          exact rawLegal
+        have hc := TranscriptCodec3.decode_encode (compressedHistoryMap w (n-3))
+          (compressedHistoryMap_injective w hn (n-3) (by omega))
+          (compressedHistoryMap_above w (n-3) (by omega) hlo) priorEncoded
+          (mE.drop (measurementCount (compressedEncodePrefix w n))) [] legal
+        simpa only [compressedDecodeBefore,compressedPackAfter,he,if_true,
+          compressedHistoryEncode,compressedHistoryDecode] using hc
+    rw [compressedEncodePrefix,compressedDecodePrefix,run_append,run_append]
+    have hd0 := (compressedPackAfter_counts w n).2.2.2
+    rw [hd0]
+    simp only [List.take_zero,List.drop_zero]
+    rw [clean]
+    exact ih (by omega) _ _
+
+/-- The actual coherent decoder recovers the compact raw state, including
+caller outsiders, and preserves the current input phase independently of records. -/
+theorem compressedCompactStage_decoded (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p n : Nat) (hp0 : 0 < p) (hpo : p%2 = 1) (hn512 : n ≤ 512)
+    (s : State) (h : CompressedCompactStage w x p n s.basis) :
+    (run (compressedDecodePrefix w n) [] s).phase = s.phase ∧
+    CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) n
+      (run (compressedDecodePrefix w n) [] s).basis := by
+  obtain ⟨raw,hraw,hbasis⟩ := h
+  have inverse := compressedCompactDecodePrefix_inverse w hn hlo x p n n hp0 hpo
+    (Nat.le_refl n) hn512 raw [] [] hraw
+  have records := run_basis_records (compressedDecodePrefix w n) s
+    (run (compressedEncodePrefix w n) [] raw) [] [] hbasis
+  have bits : (run (compressedDecodePrefix w n) [] s).basis = raw.basis :=
+    records.trans (congrArg State.basis inverse)
+  refine ⟨run_no_measurement_phase _ (compressedDecodePrefix_measurements w n) s [],?_⟩
+  rw [bits]
+  exact hraw
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompactSkywalkStageTerminal =====
+
+/-! Copy of `Arithmetic/CompactSkywalkStageTerminal` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+
+/-- Clean physical tails and nonnegative retained rails make reconstruction
+literally the original physical basis, for either terminal orientation. -/
+theorem compactSkywalkStage_nonnegative_identity (w : Nat → Wire) (i : Nat) (hi : i ≤ 512)
+    (hn : (skywalkPoolWires w).Nodup) (r : SkywalkRails.State) (s : BasisState)
+    (hin : CompactSkywalkStage w r i s)
+    (ha : 0 ≤ (SkywalkTrace.next^[i] r).a) (hb : 0 ≤ (SkywalkTrace.next^[i] r).b) :
+    compactSkywalkStageVirtual w i s = s := by
+  have values := compactSkywalkStage_virtual_values w i hi hn s
+  have va := values.1.symm.trans hin.1.1
+  have vb := values.2.symm.trans hin.1.2.1
+  have sa := signedRegValue_sign (compactSkywalkSignPoolA w i).low
+    (compactSkywalkSignPoolA w i).sign s
+  have sb := signedRegValue_sign (compactSkywalkSignPoolB w i).low
+    (compactSkywalkSignPoolB w i).sign s
+  change s (compactSkywalkSignPoolA w i).sign =
+    SkywalkRails.neg (signedRegValue (compactSkywalkSignPoolA w i).retained s) at sa
+  change s (compactSkywalkSignPoolB w i).sign =
+    SkywalkRails.neg (signedRegValue (compactSkywalkSignPoolB w i).retained s) at sb
+  rw [va] at sa
+  rw [vb] at sb
+  have za : s (compactSkywalkSignPoolA w i).sign = false := by
+    simpa only [SkywalkRails.neg,not_lt.mpr ha,decide_false] using sa
+  have zb : s (compactSkywalkSignPoolB w i).sign = false := by
+    simpa only [SkywalkRails.neg,not_lt.mpr hb,decide_false] using sb
+  funext q
+  by_cases qa : q ∈ (compactSkywalkSignPoolA w i).released
+  · simp only [compactSkywalkStageVirtual,if_pos qa,za,hin.2.1 q qa]
+  by_cases qb : q ∈ (compactSkywalkSignPoolB w i).released
+  · simp only [compactSkywalkStageVirtual,if_neg qa,if_pos qb,zb,hin.2.2 q qb]
+  · exact compactSkywalkStage_virtual_outside w i s q qa qb
+
+/-- Exact termination has unsigned magnitudes (0,1); its orientation G is
+arbitrary, hence the signed rails may be (1,0) or (0,1). Both are nonnegative. -/
+theorem compactSkywalkStage_terminal_nonnegative (x p : Nat)
+    (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1) (hp : p < 2^256)
+    (hx : x < p) (hc : x.Coprime p) :
+    0 ≤ (SkywalkTrace.next^[512] (SkywalkRails.encode false false (x:Int) (p:Int))).a ∧
+    0 ≤ (SkywalkTrace.next^[512] (SkywalkRails.encode false false (x:Int) (p:Int))).b := by
+  have ht := SkywalkNat.terminates_2n p x 256 hp0 hx0 hpo hp (hx.trans hp) hc
+  obtain ⟨G,S,he⟩ := SkywalkTrace.iter_encoded 512 false false (SkywalkNat.init x p) hp0 hpo
+  norm_num only at ht
+  simp only [SkywalkNat.init] at he ht
+  rw [ht.1,ht.2] at he
+  rw [he]
+  cases G <;> cases S <;> norm_num [SkywalkRails.encode,SkywalkRails.signed]
+
+/-- The unchanged old terminal caller may consume the physical compact state
+at512 directly. No actual high-word expansion is needed. -/
+theorem compactSkywalkStage_terminal (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (x p : Nat)
+    (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1) (hp : p < 2^256)
+    (hx : x < p) (hc : x.Coprime p) (s : BasisState)
+    (hin : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 512 s) :
+    compactSkywalkStageVirtual w 512 s = s ∧
+    SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 512 s := by
+  have pos := compactSkywalkStage_terminal_nonnegative x p hp0 hx0 hpo hp hx hc
+  have he := compactSkywalkStage_nonnegative_identity w 512 (by decide) hn _ s hin pos.1 pos.2
+  exact ⟨he,by simpa only [he] using hin.1⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WCompressedCompactRestore =====
+
+/-! Copy of `Arithmetic/CompressedCompactRestore` over the tighter width schedule of `WWidths`. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic
+attribute [local irreducible] run compactSkywalkForward compactSkywalkReverse compressedCompactReverse
+
+private theorem decode_support (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (hlo : CompressedHistoryAbove w) (i : Nat) (hi : i < 512) :
+    wires (compressedDecodeBefore w i) ⊆ (skywalkPoolWires w).toFinset := by
+  intro q hq
+  cases due : compressedPackDue i
+  · simp [compressedDecodeBefore,due,wires] at hq
+  · have h3 := compressedPackDue_true i due
+    have hq' : q ∈ wires (compressedHistoryDecode w (i-3)) := by
+      simpa only [compressedDecodeBefore,due,if_true] using hq
+    obtain ⟨j,rfl⟩ := compressedHistory_gate_mem w hn hlo (i-3) (by omega) _ (Or.inr rfl) q hq'
+    have bound := compressedHistoryId_bound (i-3) (by omega) j
+    apply List.mem_toFinset.mpr
+    simp only [skywalkPoolWires,wireBlock,List.mem_map,List.mem_range'_1]
+    exact ⟨compressedHistoryId (i-3) j,by omega,rfl⟩
+
+theorem compressedCompactReverse_support (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (i n : Nat) (hsteps : i+n ≤ 512) :
+    wires (compressedCompactReverse w i n) ⊆ (skywalkPoolWires w).toFinset := by
+  induction n generalizing i with
+  | zero => simp [compressedCompactReverse,wires]
+  | succ n ih =>
+    have tick : wires (compactSkywalkReverseTick w i) ⊆ (skywalkPoolWires w).toFinset := by
+      intro q hq
+      exact List.mem_toFinset.mpr (compactSkywalkTick_local_support w i (by omega)
+        (List.mem_toFinset.mp (compactSkywalkReverseTick_support w i (by omega) hn hq)))
+    simp only [compressedCompactReverse,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨ih (i+1) (by omega),decode_support w hn hlo i (by omega)⟩,tick⟩
+
+theorem compressedCompactReverse_frame (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (i n : Nat) (hsteps : i+n ≤ 512) (s : State) (m : List Bool) (q : Wire)
+    (hq : q ∉ skywalkPoolWires w) :
+    (run (compressedCompactReverse w i n) m s).basis q = s.basis q := by
+  apply run_preserves_outside
+  intro h
+  exact hq (List.mem_toFinset.mp (compressedCompactReverse_support w hn hlo i n hsteps h))
+
+/-- The terminal compact predicate determines the physical integer pool.
+The reference emitter and its inverse here are both genuinely compact. -/
+private theorem terminal_restore (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p)
+    (initial s : State) (m : List Bool)
+    (hinit : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0 initial.basis)
+    (hfinal : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 512 s.basis) :
+    (run (compactSkywalkReverse w 0 512) m s).phase = s.phase ∧
+    ∀ q ∈ skywalkPoolWires w,(run (compactSkywalkReverse w 0 512) m s).basis q = initial.basis q := by
+  let start : State := ⟨s.phase,initial.basis⟩
+  have forward := compactSkywalkForward_512 w hn x p hp0 hx0 hpo hp hx hc start [] hinit
+  have own := (compactSkywalkStage_terminal w hn x p hp0 hx0 hpo hp hx hc s.basis hfinal).2
+  have reference := (compactSkywalkStage_terminal w hn x p hp0 hx0 hpo hp hx hc _ forward.2).2
+  have inverse := compactSkywalkReverse_512_roundtrip w hn x p hp0 hx0 hpo hp hx hc start [] m hinit
+  have bits : ∀ q ∈ (skywalkPoolWires w).toFinset,
+      s.basis q = (run (compactSkywalkForward w 0 512) [] start).basis q := by
+    intro q hq
+    exact skywalkIntegerStage_agrees w _ 512 (by decide) _ _ own reference q (List.mem_toFinset.mp hq)
+  have agrees := pool_run_agrees (compactSkywalkReverse w 0 512) (skywalkPoolWires w).toFinset
+    (compactSkywalkReverse_support w hn 0 512 (by decide)) m s
+    (run (compactSkywalkForward w 0 512) [] start) forward.1.symm bits
+  rw [inverse] at agrees
+  refine ⟨agrees.1,?_⟩
+  intro q hq
+  exact agrees.2 q (List.mem_toFinset.mpr hq)
+
+/-- Complete512 compact-plus-codec restoration from the encoded terminal
+pool. Outsiders may already contain arbitrary coexisting field updates. -/
+theorem compressedCompactReverse_restore_pool (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p)
+    (initial s : State) (m : List Bool)
+    (hinit : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0 initial.basis)
+    (hfinal : CompressedCompactStage w x p 512 s.basis) :
+    (run (compressedCompactReverse w 0 512) m s).phase = s.phase ∧
+    ∀ q ∈ skywalkPoolWires w,(run (compressedCompactReverse w 0 512) m s).basis q = initial.basis q := by
+  have decoded := compressedCompactStage_decoded w hn hlo x p 512 hp0 hpo (by decide) s hfinal
+  have restored := terminal_restore w hn x p hp0 hx0 hpo hp hx hc
+    initial (run (compressedDecodePrefix w 512) [] s) m hinit decoded.2
+  rw [compressedCompactReverse_normalize w hn hlo 0 512 (by decide),compressedDecodeRange_zero,
+    run_append,compressedDecodePrefix_measurements]
+  simp only [List.take_zero,List.drop_zero]
+  exact ⟨restored.1.trans decoded.1,restored.2⟩
+
+/-- Forward and inverse records are independent, and the full physical
+caller State returns, including arbitrary incoming phase and every outsider. -/
+theorem compressedCompactReverse_512_roundtrip (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p)
+    (s : State) (mForward mReverse : List Bool)
+    (hin : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0 s.basis) :
+    run (compressedCompactReverse w 0 512) mReverse
+      (run (compressedCompactForward w 0 512) mForward s) = s := by
+  have forward := compressedCompactForward_512_spec w hn hlo x p hp0 hx0 hpo hp hx hc s mForward hin
+  have reverse := compressedCompactReverse_restore_pool w hn hlo x p hp0 hx0 hpo hp hx hc
+    s (run (compressedCompactForward w 0 512) mForward s) mReverse hin forward.2
+  apply State.extensionality
+  · exact reverse.1.trans forward.1
+  · funext q
+    by_cases hq : q ∈ skywalkPoolWires w
+    · exact reverse.2 q hq
+    · exact (compressedCompactReverse_frame w hn hlo 0 512 (by decide) _ mReverse q hq).trans
+        (compressedCompactForward_frame w hn hlo 0 512 (by decide) s mForward q hq)
+
+/-- A field operation need only retain the actual encoded integer pool and
+phase. The emitted compact reverse restores it and keeps all field outsiders. -/
+theorem compressedCompactReverse_restore_after_outside (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2 = 1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p)
+    (s field : State) (mForward mReverse : List Bool)
+    (hin : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0 s.basis)
+    (hphase : field.phase = (run (compressedCompactForward w 0 512) mForward s).phase)
+    (hpool : ∀ q ∈ skywalkPoolWires w,
+      field.basis q = (run (compressedCompactForward w 0 512) mForward s).basis q) :
+    (run (compressedCompactReverse w 0 512) mReverse field).phase = s.phase ∧
+    (∀ q ∈ skywalkPoolWires w,(run (compressedCompactReverse w 0 512) mReverse field).basis q = s.basis q) ∧
+    (∀ q,q ∉ skywalkPoolWires w → (run (compressedCompactReverse w 0 512) mReverse field).basis q = field.basis q) := by
+  have inverse := compressedCompactReverse_512_roundtrip w hn hlo x p hp0 hx0 hpo hp hx hc s mForward mReverse hin
+  have agrees := pool_run_agrees (compressedCompactReverse w 0 512) (skywalkPoolWires w).toFinset
+    (compressedCompactReverse_support w hn hlo 0 512 (by decide)) mReverse field
+    (run (compressedCompactForward w 0 512) mForward s) hphase
+    (fun q hq => hpool q (List.mem_toFinset.mp hq))
+  rw [inverse] at agrees
+  refine ⟨agrees.1,?_,?_⟩
+  · intro q hq; exact agrees.2 q (List.mem_toFinset.mpr hq)
+  · intro q hq; exact compressedCompactReverse_frame w hn hlo 0 512 (by decide) field mReverse q hq
+
+/-- Actual reverse component prices; no whole-point allocation claim. -/
+theorem compressedCompactReverse_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i n : Nat) (hsteps : i+n ≤ 512) :
+    toffoliCount (compressedCompactReverse w i n) = compactSkywalkForwardT i n+4*compressedPackCount i n ∧
+    measurementCount (compressedCompactReverse w i n) = compactSkywalkForwardM i n := by
+  have relative := compressedCompactReverse_counts_relative w i n
+  have compact := compactSkywalkReverse_counts w hn i n hsteps
+  rw [compact.1,compact.2] at relative
+  exact relative
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WEndpoints =====
+
+/-! The tighter schedule agrees with the original one at stages 0, 1 and 512.
+Hence the first tick, the stage-1 and stage-512 invariants, and the complete
+terminal State of the compressed forward pass are literally the original
+ones; every block outside the integer passes is reused unchanged. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic CompressedFieldSupport
+attribute [local irreducible] run wires Arithmetic.compactSkywalkForward compressedCompactForward
+  Arithmetic.compressedCompactForward allGroupEncode SkywalkTrace.next Nat.iterate SkywalkIntegerStage
+
+theorem compactSkywalkTick_zero_eq (w : Nat → Wire) :
+    compactSkywalkTick w 0=Arithmetic.compactSkywalkTick w 0 := by
+  have h1 : compactSkywalkTickPreWidth 0=Arithmetic.compactSkywalkTickPreWidth 0 :=
+    narrowSkywalkRouteWidth_endpoints.1
+  have h2 : compactSkywalkTickPostWidth 0=Arithmetic.compactSkywalkTickPostWidth 0 :=
+    narrowSkywalkRouteWidth_endpoints.2.2.2
+  unfold compactSkywalkTick Arithmetic.compactSkywalkTick compactSkywalkTickCleanup
+    Arithmetic.compactSkywalkTickCleanup compactSkywalkTickARelease
+    Arithmetic.compactSkywalkTickARelease compactSkywalkTickBRelease
+    Arithmetic.compactSkywalkTickBRelease compactSkywalkTickLayout Arithmetic.compactSkywalkTickLayout
+  rw [h1,h2]
+
+theorem signPool_eq (w : Nat → Wire) (i : Nat)
+    (h : narrowSkywalkRouteWidth i=Arithmetic.narrowSkywalkRouteWidth i) :
+    compactSkywalkSignPoolA w i=Arithmetic.compactSkywalkSignPoolA w i ∧
+    compactSkywalkSignPoolB w i=Arithmetic.compactSkywalkSignPoolB w i := by
+  unfold compactSkywalkSignPoolA Arithmetic.compactSkywalkSignPoolA compactSkywalkSignPoolB
+    Arithmetic.compactSkywalkSignPoolB
+  rw [h]
+  exact ⟨rfl,rfl⟩
+
+theorem compactSkywalkStage_eq (w : Nat → Wire) (r : SkywalkRails.State) (i : Nat)
+    (h : narrowSkywalkRouteWidth i=Arithmetic.narrowSkywalkRouteWidth i) (s : BasisState) :
+    CompactSkywalkStage w r i s ↔ Arithmetic.CompactSkywalkStage w r i s := by
+  have e := signPool_eq w i h
+  unfold CompactSkywalkStage Arithmetic.CompactSkywalkStage compactSkywalkStageVirtual
+    Arithmetic.compactSkywalkStageVirtual
+  rw [e.1,e.2]
+
+theorem compressedCompactStage_eq (w : Nat → Wire) (x p i : Nat)
+    (h : narrowSkywalkRouteWidth i=Arithmetic.narrowSkywalkRouteWidth i) (bits : BasisState) :
+    CompressedCompactStage w x p i bits ↔ Arithmetic.CompressedCompactStage w x p i bits := by
+  unfold CompressedCompactStage Arithmetic.CompressedCompactStage
+  simp only [compactSkywalkStage_eq w _ i h]
+
+theorem compactSkywalkStage_one (w : Nat → Wire) (r : SkywalkRails.State) (s : BasisState) :
+    CompactSkywalkStage w r 1 s ↔ Arithmetic.CompactSkywalkStage w r 1 s :=
+  compactSkywalkStage_eq w r 1 narrowSkywalkRouteWidth_endpoints.2.1 s
+
+theorem compressedCompactStage_512 (w : Nat → Wire) (x p : Nat) (bits : BasisState) :
+    CompressedCompactStage w x p 512 bits ↔ Arithmetic.CompressedCompactStage w x p 512 bits :=
+  compressedCompactStage_eq w x p 512 narrowSkywalkRouteWidth_endpoints.2.2.1 bits
+
+/-- The narrowed compressed forward pass ends in exactly the original terminal
+State, for the original seed domain and arbitrary independent record lists. -/
+theorem compressedCompactForward_old_eq (w : Nat → Wire)
+    (hn : (skywalkSharedWires w).Nodup) (hlo : CompressedHistoryAbove w)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2=1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p)
+    (s : State) (mNew mOld : List Bool)
+    (hin : SkywalkIntegerStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 0 s.basis) :
+    run (compressedCompactForward w 0 512) mNew s=
+      run (Arithmetic.compressedCompactForward w 0 512) mOld s := by
+  have pool := skywalkShared_integer_nodup w hn
+  have old := Arithmetic.compressedCompactForward_caller_eq w hn hlo x p hp0 hx0 hpo hp hx hc
+    s mOld [] hin
+  rw [old]
+  have compressed := compressedCompactForward_512_spec w pool hlo x p hp0 hx0 hpo hp hx hc s mNew hin
+  have compact := Arithmetic.compactSkywalkForward_512 w pool x p hp0 hx0 hpo hp hx hc s [] hin
+  generalize eCompressed : run (compressedCompactForward w 0 512) mNew s=compressedState at compressed ⊢
+  generalize eCompact : run (Arithmetic.compactSkywalkForward w 0 512) [] s=compactState at compact ⊢
+  obtain ⟨ghost,ghostStage,_,ghostPhase,encoded⟩ :=
+    compressed_terminal_encoded_state w pool hlo x p hp0 hpo compressedState
+      ((compressedCompactStage_512 w x p _).mp compressed.2)
+  have ghostTerminal := (Arithmetic.compactSkywalkStage_terminal w pool x p hp0 hx0 hpo hp hx hc
+    ghost.basis ghostStage).2
+  have compactTerminal := (Arithmetic.compactSkywalkStage_terminal w pool x p hp0 hx0 hpo hp hx hc
+    compactState.basis compact.2).2
+  have phase : ghost.phase=compactState.phase :=
+    ghostPhase.trans (compressed.1.trans compact.1.symm)
+  have bits : ∀q∈(skywalkPoolWires w).toFinset,ghost.basis q=compactState.basis q := by
+    intro q hq
+    exact skywalkIntegerStage_agrees w (SkywalkRails.encode false false (x:Int) (p:Int))
+      512 (by decide) ghost.basis compactState.basis ghostTerminal compactTerminal q
+      (List.mem_toFinset.mp hq)
+  have support := Arithmetic.allGroupEncode_pool_support w pool hlo
+  have agreement := pool_run_agrees (allGroupEncode w 170) (skywalkPoolWires w).toFinset
+    support [] ghost compactState phase bits
+  generalize eEncoded : run (allGroupEncode w 170) [] compactState=encodedState at agreement ⊢
+  apply State.extensionality compressedState encodedState
+  · rw [encoded]
+    exact agreement.1
+  · funext q
+    by_cases hq : q∈skywalkPoolWires w
+    · rw [encoded]
+      exact agreement.2 q (List.mem_toFinset.mpr hq)
+    · have forwardFrame := compressedCompactForward_frame w pool hlo 0 512 (by decide) s mNew q hq
+      have compactFrame := Arithmetic.compactSkywalkForward_frame w pool 0 512 (by decide) s [] q hq
+      have encoderFrame := run_preserves_outside (allGroupEncode w 170) [] compactState q
+        (fun h => hq (List.mem_toFinset.mp (support h)))
+      rw [eCompressed] at forwardFrame
+      rw [eCompact] at compactFrame
+      rw [eEncoded] at encoderFrame
+      exact forwardFrame.trans (encoderFrame.trans compactFrame).symm
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== WNativeFirstDirectCallerForward =====
+
+/-! Copy of `Arithmetic/NativeFirstDirectCallerForward` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 4096
+set_option maxHeartbeats 1000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.W.NativeFirstDirect
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.NativeFirstDirect
+attribute [local irreducible] run forward reference literalSkywalkSeed compactSkywalkTick
+  compressedCompactForward compressedPackAfter
+
+private theorem first_tick_count (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
+    measurementCount (compactSkywalkTick w 0)=257 := by
+  have h := (compactSkywalkTick_counts w 0 (by omega) hn).2
+  have e : compactSkywalkTickPostWidth 0=258 := narrowSkywalkWidth_zero
+  rw [e] at h
+  exact h
+
+private theorem first_forward_join (w : Nat → Wire) :
+    compressedCompactForward w 0 512=
+      compactSkywalkTick w 0++compressedCompactForward w 1 511 := by
+  have zero : compressedPackAfter w 0=[] := by
+    rw [compressedPackAfter,show compressedPackDue 0=false from rfl]
+    rfl
+  rw [compressedCompactForward,zero,List.append_nil]
+
+/-- A first native tick takes only the fixed false prefix; the following
+records remain an arbitrary independent stream, including an empty stream. -/
+private theorem old_forward_eval (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (s : State) (tail : List Bool) :
+    run (compressedCompactForward w 0 512) (List.replicate 257 false++tail) s=
+      run (compressedCompactForward w 1 511) tail (run (compactSkywalkTick w 0) [] s) := by
+  rw [first_forward_join,run_append,first_tick_count w hn]
+  have take : (List.replicate 257 false++tail).take 257=List.replicate 257 false := by
+    rw [List.take_append_of_le_length (by simp [List.length_replicate])]
+    simpa only [List.length_replicate] using List.take_length (l := List.replicate 257 false)
+  have drop : (List.replicate 257 false++tail).drop 257=tail := by
+    have nil : (List.replicate 257 false).drop 257=[] := by
+      simpa only [List.length_replicate] using List.drop_length (l := List.replicate 257 false)
+    rw [List.drop_append,List.length_replicate,nil,Nat.sub_self,List.drop_zero,List.nil_append]
+  rw [take,drop,run_replicate_false]
+
+/-- Exact terminal State equality for the entire 512-step compressed forward
+schedule. Prefix and tail measurements are independently arbitrary. -/
+theorem forward_terminal_eq (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x : Nat) (hx : x<p) (s : State) (first tail : List Bool)
+    (hin : LiteralSkywalkSeedValues (literalSkywalkPoolSeed w) 0 x s.basis)
+    (ext : s.basis (w 258)=false) :
+    run (compressedCompactForward w 1 511) tail (run (forward w) first s)=
+      run (compressedCompactForward w 0 512) (List.replicate 257 false++tail)
+        (run (literalSkywalkSeed (literalSkywalkPoolSeed w) p) [] s) := by
+  have hpfx := forward_reference_eq w hn x hx s first [] hin ext
+  have ref : run (reference w) [] s=
+      run (compactSkywalkTick w 0) []
+        (run (literalSkywalkSeed (literalSkywalkPoolSeed w) p) [] s) := by
+    rw [reference,run_append,compactSkywalkTick_zero_eq]
+    simp only [List.take_nil,List.drop_nil]
+  have firstEq := hpfx.trans ref
+  exact (congrArg (fun u : State => run (compressedCompactForward w 1 511) tail u) firstEq).trans
+    (old_forward_eval w hn _ tail).symm
+
+/-- Concrete old hs1/hs2 witnesses needed by compressedPreparation_facts.
+No relationship between first and tail outcome values is required. -/
+theorem forward_terminal_states (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x : Nat) (hx : x<p) (s s1 s2 : State) (first tail : List Bool)
+    (hin : LiteralSkywalkSeedValues (literalSkywalkPoolSeed w) 0 x s.basis)
+    (ext : s.basis (w 258)=false)
+    (h1 : run (forward w) first s=s1)
+    (h2 : run (compressedCompactForward w 1 511) tail s1=s2) :
+    ∃ oldSeed : State,
+      run (literalSkywalkSeed (literalSkywalkPoolSeed w) p) [] s=oldSeed ∧
+      run (compressedCompactForward w 0 512) (List.replicate 257 false++tail) oldSeed=s2 := by
+  refine ⟨run (literalSkywalkSeed (literalSkywalkPoolSeed w) p) [] s,rfl,?_⟩
+  have forward := forward_terminal_eq w hn x hx s first tail hin ext
+  rw [h1,h2] at forward
+  exact forward.symm
+
+end ECDSAAdd.Entrant.W.NativeFirstDirect
+
+end
+
+section
+-- ===== WNativeFirstDirectTailRestore =====
+
+/-! Copy of `Arithmetic/NativeFirstDirectTailRestore` over the tighter width schedule of `WWidths`. -/
+
+set_option maxRecDepth 4096
+set_option maxHeartbeats 1000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.W.NativeFirstDirect
+open ECDSAAdd.Arithmetic
+attribute [local irreducible] run compactSkywalkForward compactSkywalkReverse
+  compressedCompactReverse compressedDecodeRange compressedDecodePrefix
+
+/-- The unchanged 511-tick reverse restores the exact first-tick pool.
+Field data outside that pool may already have changed. -/
+private theorem raw_tail_restore (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x prime : Nat) (hp0 : 0<prime) (hx0 : 0<x) (hpo : prime%2=1)
+    (hp : prime<2^256) (hx : x<prime) (hc : x.Coprime prime)
+    (initial s : State) (m : List Bool)
+    (hinit : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (prime:Int)) 1 initial.basis)
+    (hfinal : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (prime:Int)) 512 s.basis) :
+    (run (compactSkywalkReverse w 1 511) m s).phase=s.phase ∧
+    ∀q∈skywalkPoolWires w,(run (compactSkywalkReverse w 1 511) m s).basis q=initial.basis q := by
+  let start : State := ⟨s.phase,initial.basis⟩
+  have f := compactSkywalkForward_spec w hn x prime 1 511 hp0 hx0 hpo hp hx hc
+    (by omega) start [] hinit
+  have own := (compactSkywalkStage_terminal w hn x prime hp0 hx0 hpo hp hx hc s.basis hfinal).2
+  have reference := (compactSkywalkStage_terminal w hn x prime hp0 hx0 hpo hp hx hc _ f.2).2
+  have inverse := compactSkywalkReverse_roundtrip w hn x prime 1 511 hp0 hx0 hpo hp hx hc
+    (by omega) start [] m hinit
+  have bits : ∀q∈(skywalkPoolWires w).toFinset,
+      s.basis q=(run (compactSkywalkForward w 1 511) [] start).basis q := by
+    intro q hq
+    exact skywalkIntegerStage_agrees w _ 512 (by omega) _ _ own reference q (List.mem_toFinset.mp hq)
+  have agrees := pool_run_agrees (compactSkywalkReverse w 1 511) (skywalkPoolWires w).toFinset
+    (compactSkywalkReverse_support w hn 1 511 (by omega)) m s
+    (run (compactSkywalkForward w 1 511) [] start) f.1.symm bits
+  rw [inverse] at agrees
+  refine ⟨agrees.1,?_⟩
+  intro q hq
+  exact agrees.2 q (List.mem_toFinset.mpr hq)
+
+private theorem decode_zero_step (w : Nat → Wire) (n : Nat) :
+    compressedDecodeRange w 0 (n+1)=compressedDecodeRange w 1 n ++ compressedDecodeBefore w 0 := by
+  rw [compressedDecodeRange]
+
+private theorem tail_decoder (w : Nat → Wire) :
+    compressedDecodeRange w 1 511=compressedDecodePrefix w 512 := by
+  have h := compressedDecodeRange_zero w 512
+  have zero : compressedDecodeBefore w 0=[] := rfl
+  rw [decode_zero_step w 511,zero,List.append_nil] at h
+  exact h
+
+theorem tail_restore_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (hlo : CompressedHistoryAbove w) (x prime : Nat)
+    (hp0 : 0<prime) (hx0 : 0<x) (hpo : prime%2=1)
+    (hp : prime<2^256) (hx : x<prime) (hc : x.Coprime prime)
+    (initial s : State) (m : List Bool)
+    (hinit : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (prime:Int)) 1 initial.basis)
+    (hfinal : CompressedCompactStage w x prime 512 s.basis) :
+    (run (compressedCompactReverse w 1 511) m s).phase=s.phase ∧
+    (∀q∈skywalkPoolWires w,(run (compressedCompactReverse w 1 511) m s).basis q=initial.basis q) ∧
+    (∀q,q∉skywalkPoolWires w → (run (compressedCompactReverse w 1 511) m s).basis q=s.basis q) := by
+  have decoded := compressedCompactStage_decoded w hn hlo x prime 512 hp0 hpo (by omega) s hfinal
+  have restored := raw_tail_restore w hn x prime hp0 hx0 hpo hp hx hc
+    initial (run (compressedDecodePrefix w 512) [] s) m hinit decoded.2
+  have actual : run (compressedCompactReverse w 1 511) m s=
+      run (compactSkywalkReverse w 1 511) m (run (compressedDecodePrefix w 512) [] s) := by
+    rw [compressedCompactReverse_normalize w hn hlo 1 511 (by omega),tail_decoder,
+      run_append,compressedDecodePrefix_measurements,List.take_zero,List.drop_zero]
+  refine ⟨?_,?_,?_⟩
+  · rw [actual]; exact restored.1.trans decoded.1
+  · rw [actual]; exact restored.2
+  · intro q hq
+    exact compressedCompactReverse_frame w hn hlo 1 511 (by omega) s m q hq
+
+end ECDSAAdd.Entrant.W.NativeFirstDirect
+
+end
+
+section
+-- ===== WIntegerRes =====
+/-! Counts, physicality and gate-slot bounds of the narrowed integer passes
+(the integer-pass parts of `WKernel` and `WKernelRes`). -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.W
+open ECDSAAdd.Arithmetic MappedCompressed
+
+section Counts
+attribute [local irreducible] compressedHistoryEncode compressedHistoryDecode
+attribute [local irreducible] compactSkywalkForward compressedCompactForward compressedCompactReverse
+attribute [local irreducible] toffoliCount measurementCount
+
+/-- The delayed codec still emits all 170 packets after tick zero; the ticks
+are 510 Toffolis and 255 records cheaper per pass. -/
+theorem integer_tail_counts :
+    toffoliCount (compressedCompactForward base 1 511)=197118 ∧
+    measurementCount (compressedCompactForward base 1 511)=98346 ∧
+    toffoliCount (compressedCompactReverse base 1 511)=197288 ∧
+    measurementCount (compressedCompactReverse base 1 511)=98176 := by
+  have f := compressedCompactForward_counts base base_pool_nodup 1 511 (by omega)
+  have r := compressedCompactReverse_counts base base_pool_nodup 1 511 (by omega)
+  have t : compactSkywalkForwardT 1 511=196608 := by decide +kernel
+  have m : compactSkywalkForwardM 1 511=98176 := by decide +kernel
+  have packs : compressedPackCount 1 511=170 := by decide
+  simpa only [t,m,packs,Nat.reduceAdd,Nat.reduceMul] using
+    And.intro f.1 (And.intro f.2 r)
+
+end Counts
+
+section Physical
+
+theorem compactTicks_physical (w : Nat → Wire) (i : Nat) (hi : i<512)
+    (hn : (skywalkPoolWires w).Nodup) :
+    GatePhysical (compactSkywalkTick w i) ∧ GatePhysical (compactSkywalkReverseTick w i) := by
+  have bounds := compactSkywalkTick_width_bounds i hi
+  have n := narrowTicks_physical (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
+    (compactSkywalkTick_valid w i hi hn) (by omega)
+    (by rw [compactSkywalkTick_half w i hi,wireBlock_length]; omega)
+  have val := compactSkywalkTick_release_valid w i hi hn
+  have a := compactSigns_physical (compactSkywalkTickARelease w i) val.1
+  have b := compactSigns_physical (compactSkywalkTickBRelease w i) val.2
+  simp only [compactSkywalkTick,compactSkywalkTickCleanup,compactSkywalkReverseTick,
+    compactSkywalkReverseExpand,gatePhysical_append]
+  exact ⟨⟨n.1,a.1,b.1⟩,⟨⟨b.2,a.2⟩,n.2⟩⟩
+
+end Physical
+
+section Slots
+open Challenge Baselines
+attribute [local irreducible] renameProgram compressedCompactForward compressedCompactReverse
+
+theorem compactTick_gateSlots_le (w : Nat → Wire) (i : Nat) (hi : i < 512) :
+    gateSlots (compactSkywalkTick w i) ≤ 6000 ∧
+    gateSlots (compactSkywalkReverseTick w i) ≤ 6000 := by
+  have h := narrowTick_gateSlots_le (compactSkywalkTickLayout w i) (compactSkywalkTickPostWidth i)
+  have hb := compactSkywalkTick_width_bounds i hi
+  rw [compactSkywalkTick_ah w i hi, compactSkywalkTick_half w i hi,
+    compactSkywalkTick_b w i hi, wireBlock_length, wireBlock_length, wireBlock_length] at h
+  have hc : gateSlots (compactSkywalkTickCleanup w i) ≤ 516 := by
+    simp only [compactSkywalkTickCleanup,compactSkywalkTickARelease,compactSkywalkTickBRelease,
+      compactSkywalkSignRelease,compactSkywalkSignWord,gateSlots_append,signComplement_gateSlots,
+      List.length_drop,compactSkywalkTick_half w i hi,compactSkywalkTick_b w i hi,wireBlock_length]
+    omega
+  have he : gateSlots (compactSkywalkReverseExpand w i) = gateSlots (compactSkywalkTickCleanup w i) := by
+    simp only [compactSkywalkReverseExpand,compactSkywalkTickCleanup,compactSkywalkSignExpand,
+      compactSkywalkSignRelease,gateSlots_append,signComplement_gateSlots]; omega
+  simp only [compactSkywalkTick,compactSkywalkReverseTick,gateSlots_append]
+  omega
+
+theorem compactLoops_gateSlots_le (w : Nat → Wire) (i n : Nat) (hn : i+n ≤ 512) :
+    gateSlots (compressedCompactForward w i n) ≤ n*6200 ∧
+    gateSlots (compressedCompactReverse w i n) ≤ n*6200 := by
+  induction n generalizing i with
+  | zero => simp only [compressedCompactForward,compressedCompactReverse,
+      gateSlots_nil,Nat.zero_mul,Nat.le_refl,and_self]
+  | succ n ih =>
+    have h := compactTick_gateSlots_le w i (by omega)
+    have hc := scheduledCodec_gateSlots_le w i
+    have ht := ih (i+1) (by omega)
+    simp only [compressedCompactForward,compressedCompactReverse,gateSlots_append,
+      Nat.succ_mul]
+    omega
+
+end Slots
+
+end ECDSAAdd.Entrant.W
+
+end
+
+
+section
+-- ===== W5History =====
+
+/-! Copy of the tick-dependent parts of `CompactHistory5` over the tighter width
+schedule of `WWidths`.  The five-trit codec itself (`History5.encode`/`decode`,
+their positions `historyId` and their supports) is tick-independent and reused:
+the narrowed ticks touch a subset of the old tick sites, so every history-label
+disjointness argument is unchanged. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.W
+open Arithmetic Secp256k1 History5
+
+theorem compactTick_middle_unused (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (i : Nat) (hi : i < 512)
+    (j : Nat) (hlo : 515 ≤ j) (hhi : j < 770) :
+    w j∉(compactSkywalkTickLayout w i).wires := by
+  have width := compactSkywalkTick_width_bounds i hi
+  apply compactSkywalkStage_tick_away w i hi hn j (by omega)
+  · unfold skywalkPoolPreviousId
+    split_ifs <;> omega
+  all_goals omega
+
+theorem compactTick_support5 (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (i : Nat) (hi : i < 512) :
+    wires (compactSkywalkTick w i)⊆History5.integerSites5 w ∧
+    wires (compactSkywalkReverseTick w i)⊆History5.integerSites5 w := by
+  have lift (q : Wire) (hq : q∈(compactSkywalkTickLayout w i).wires) :
+      q∈History5.integerSites5 w := by
+    have pool := compactSkywalkTick_local_support w i hi hq
+    simp only [skywalkPoolWires,wireBlock,List.mem_map,List.mem_range'_1] at pool
+    obtain ⟨j,hj,rfl⟩ := pool
+    apply (History5.integerSites5_mem w (w j)).mpr
+    refine ⟨j,by omega,?_,rfl⟩
+    by_cases small : j < 515
+    · exact Or.inl small
+    · exact Or.inr (by
+        by_contra bad
+        exact compactTick_middle_unused w hn i hi j (by omega) (by omega) hq)
+  exact ⟨fun q hq => lift q (List.mem_toFinset.mp (compactSkywalkTick_support w i hi hn hq)),
+    fun q hq => lift q (List.mem_toFinset.mp (compactSkywalkReverseTick_support w i hi hn hq))⟩
+
+/-- A five-letter group is not used after the tick that consumes its last G. -/
+theorem historyId_away_compactTick (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (start i : Nat)
+    (hs : start+5 ≤ 512) (hlate : start+6 ≤ i) (hi : i < 512) (j : Fin 10) :
+    w (History5.historyId start j)∉(compactSkywalkTickLayout w i).wires := by
+  have width := compactSkywalkTick_width_bounds i hi
+  have hpos : i ≠ 0 := by omega
+  apply compactSkywalkStage_tick_away w i hi hn (History5.historyId start j)
+    (History5.historyId_bound start hs j)
+  all_goals
+    have hj := j.isLt
+    unfold History5.historyId
+    split_ifs <;> (try simp only [skywalkPoolPreviousId,if_neg hpos]) <;> omega
+
+theorem history_disjoint_compactTick (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (_hlo : History5.HistoryAbove w)
+    (start i : Nat) (hs : start+5 ≤ 512) (hlate : start+6 ≤ i) (hi : i < 512) :
+    Disjoint (wires (History5.encode w start)) (wires (compactSkywalkTick w i)) := by
+  apply Finset.disjoint_left.mpr
+  intro q hq ht
+  obtain ⟨j,rfl⟩ := History5.history_gate_mem w start _ (Or.inl rfl) q hq
+  exact historyId_away_compactTick w hn start i hs hlate hi j
+    (List.mem_toFinset.mp (compactSkywalkTick_support w i hi hn ht))
+
+theorem history_disjoint_compactReverseTick (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (_hlo : History5.HistoryAbove w)
+    (start i : Nat) (hs : start+5 ≤ 512) (hlate : start+6 ≤ i) (hi : i < 512) :
+    Disjoint (wires (History5.decode w start)) (wires (compactSkywalkReverseTick w i)) := by
+  apply Finset.disjoint_left.mpr
+  intro q hq ht
+  obtain ⟨j,rfl⟩ := History5.history_gate_mem w start _ (Or.inr rfl) q hq
+  exact historyId_away_compactTick w hn start i hs hlate hi j
+    (List.mem_toFinset.mp (compactSkywalkReverseTick_support w i hi hn ht))
+
+theorem prefix_disjoint_compactTick (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w)
+    (n i : Nat) (hni : n ≤ i) (hi : i < 512) :
+    Disjoint (wires (History5.encodePrefix w n)) (wires (compactSkywalkTick w i)) := by
+  induction n with
+  | zero => simp [History5.encodePrefix,wires]
+  | succ n ih =>
+    have prior := ih (by omega)
+    have current : Disjoint (wires (History5.packAfter w n)) (wires (compactSkywalkTick w i)) := by
+      cases due : History5.packDue n
+      · simp [History5.packAfter,due,wires]
+      · have bounds := History5.packDue_true n due
+        have d := history_disjoint_compactTick w hn hlo (n-5) i (by omega) (by omega) hi
+        simpa only [History5.packAfter,due,if_true] using d
+    simp only [History5.encodePrefix,wires_append,Finset.disjoint_union_left]
+    exact ⟨prior,current⟩
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== W5Forward =====
+
+/-! Copy of `CompactForward5` over the tighter width schedule of `WWidths`. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.W
+open Arithmetic Secp256k1 History5
+
+def CompressedCompactStage5 (w : Nat → Wire) (x p i : Nat) (bits : BasisState) : Prop :=
+  ∃ raw : State,
+    CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i raw.basis ∧
+    bits=(run (History5.encodePrefix w i) [] raw).basis
+
+def compactForward5 (w : Nat → Wire) (i : Nat) : Nat → Program
+  | 0 => []
+  | n+1 => compactSkywalkTick w i++History5.packAfter w i++compactForward5 w (i+1) n
+
+attribute [local irreducible] run History5.encodePrefix compactForward5 compactSkywalkTick
+  History5.encode
+
+theorem compactStage5_first (w : Nat → Wire) (x p : Nat) (s : State)
+    (h : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    CompressedCompactStage5 w x p 1 s.basis := by
+  refine ⟨s,h,?_⟩
+  simp [History5.encodePrefix,History5.packAfter,History5.packDue,run]
+
+/-- Packing is coherent and uses no records; all tick records stay aligned. -/
+theorem compactStage5_step (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w)
+    (x p i : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2=1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) (hi : i < 512) :
+    Triple (CompressedCompactStage5 w x p i)
+      (compactSkywalkTick w i++History5.packAfter w i) (CompressedCompactStage5 w x p (i+1)) := by
+  intro s m hs
+  obtain ⟨raw,hraw,hbits⟩ := hs
+  let tick := compactSkywalkTick w i
+  let mt := m.take (measurementCount tick)
+  let me := m.drop (measurementCount tick)
+  let actual := run tick mt s
+  let next := run tick [] raw
+  have step := compactSkywalkStageStep w hn x p i hp0 hx0 hpo hp hx hc hi
+  have hnxt := step raw [] hraw
+  have hmt := step raw mt hraw
+  have hd := prefix_disjoint_compactTick w hn hlo i i (Nat.le_refl i) hi
+  have read : ∀q∈wires tick,s.basis q=raw.basis q := by
+    intro q hq
+    rw [hbits]
+    exact run_preserves_outside _ _ _ q (fun he => Finset.disjoint_left.mp hd he hq)
+  have localStep := run_local_increment tick s raw mt read
+  have phase : actual.phase=s.phase := by
+    have hh := localStep.1
+    rw [hmt.1] at hh
+    have neutral : (actual.phase ^^ s.phase)=false := by
+      simpa only [Bool.xor_self] using hh
+    cases ha : actual.phase <;> cases hb : s.phase <;> simp_all
+  have commute := run_disjoint_commute (History5.encodePrefix w i) tick hd [] [] raw
+  have same := run_basis_records tick s (run (History5.encodePrefix w i) [] raw) mt [] hbits
+  have bits : actual.basis=(run (History5.encodePrefix w i) [] next).basis :=
+    same.trans (congrArg State.basis commute.symm)
+  have packPhase := run_no_measurement_phase (History5.packAfter w i)
+    (History5.packAfter_counts w i).2.1 actual me
+  have packBits := run_basis_records (History5.packAfter w i) actual
+    (run (History5.encodePrefix w i) [] next) me [] bits
+  have nextBits : (run (History5.packAfter w i) me actual).basis=
+      (run (History5.encodePrefix w (i+1)) [] next).basis := by
+    rw [History5.encodePrefix,run_append]
+    simp only [List.take_nil,List.drop_nil]
+    exact packBits
+  rw [run_append]
+  exact ⟨packPhase.trans phase,⟨next,hnxt.2,nextBits⟩⟩
+
+theorem compactForward5_spec (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w)
+    (x p i n : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2=1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p) (hi : i+n ≤ 512) :
+    Triple (CompressedCompactStage5 w x p i) (compactForward5 w i n)
+      (CompressedCompactStage5 w x p (i+n)) := by
+  induction n generalizing i with
+  | zero =>
+    rw [compactForward5,Nat.add_zero]
+    intro s m h
+    simpa only [run] using And.intro (rfl : s.phase=s.phase) h
+  | succ n ih =>
+    have first := compactStage5_step w hn hlo x p i hp0 hx0 hpo hp hx hc (by omega)
+    have tail := ih (i+1) (by omega)
+    have index : i+(n+1)=(i+1)+n := by omega
+    rw [compactForward5,index]
+    simpa only [List.append_assoc] using first.seq tail
+
+theorem compactForward5_counts (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512) :
+    toffoliCount (compactForward5 w i n)=compactSkywalkForwardT i n+36*History5.packCount i n ∧
+    measurementCount (compactForward5 w i n)=compactSkywalkForwardM i n := by
+  induction n generalizing i with
+  | zero => simp [compactForward5,compactSkywalkForwardT,compactSkywalkForwardM,
+      History5.packCount,toffoliCount,measurementCount]
+  | succ n ih =>
+    have tick := compactSkywalkTick_counts w i (by omega) hn
+    have pack := History5.packAfter_counts w i
+    have tail := ih (i+1) (by omega)
+    simp only [compactForward5,toffoliCount_append,measurementCount_append,tick.1,tick.2,
+      pack.1,pack.2.1,tail.1,tail.2,compactSkywalkForwardT,compactSkywalkForwardM,
+      History5.packCount]
+    constructor <;> omega
+
+theorem compactForward5_support (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512) :
+    wires (compactForward5 w i n)⊆History5.integerSites5 w := by
+  induction n generalizing i with
+  | zero => simp [compactForward5,wires]
+  | succ n ih =>
+    have tick := (compactTick_support5 w hn i (by omega)).1
+    have pack := (History5.pack_support5 w i (by omega)).1
+    simp only [compactForward5,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨tick,pack⟩,ih (i+1) (by omega)⟩
+
+theorem compactForward5_frame (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512)
+    (s : State) (m : List Bool) (q : Wire) (hq : q∉skywalkPoolWires w) :
+    (run (compactForward5 w i n) m s).basis q=s.basis q := by
+  apply run_preserves_outside
+  intro h
+  exact hq (List.mem_toFinset.mp (History5.integerSites5_pool w
+    (compactForward5_support w hn i n hi h)))
+
+/-- The direct emitted loop is the raw loop with its real history encoding. -/
+theorem compactForward5_normalize (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w)
+    (i n : Nat) (hi : i+n ≤ 512) (s : State) (m : List Bool) :
+    run (compactForward5 w i n) m (run (History5.encodePrefix w i) [] s)=
+      run (History5.encodePrefix w (i+n)) [] (run (compactSkywalkForward w i n) m s) := by
+  induction n generalizing i s m with
+  | zero => simp only [compactForward5,compactSkywalkForward,Nat.add_zero,run]
+  | succ n ih =>
+    have dis := prefix_disjoint_compactTick w hn hlo i i (Nat.le_refl i) (by omega)
+    have commute := run_disjoint_commute (History5.encodePrefix w i) (compactSkywalkTick w i) dis []
+      (m.take (measurementCount (compactSkywalkTick w i))) s
+    have join (t : State) : run (History5.packAfter w i) [] (run (History5.encodePrefix w i) [] t)=
+        run (History5.encodePrefix w (i+1)) [] t := by
+      rw [History5.encodePrefix,run_append]
+      simp only [List.take_nil,List.drop_nil]
+    rw [compactForward5,compactSkywalkForward]
+    simp only [run_append,measurementCount_append,(History5.packAfter_counts w i).2.1,Nat.add_zero,
+      List.take_zero,List.drop_zero,List.take_take,Nat.min_self,List.drop_take_self]
+    rw [←commute,join,ih (i+1) (by omega)]
+    rw [show i+(n+1)=(i+1)+n by omega]
+
+theorem compactForward5_first_normalize (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w) (s : State) (m : List Bool) :
+    run (compactForward5 w 1 511) m s=
+      run (History5.allEncode w 102) [] (run (compactSkywalkForward w 1 511) m s) := by
+  have h := compactForward5_normalize w hn hlo 1 511 (by omega) s m
+  have empty : History5.encodePrefix w 1=[] := by
+    simp [History5.encodePrefix,History5.packAfter,History5.packDue]
+  rw [empty,show (1:Nat)+511=512 from rfl,History5.encodePrefix_512] at h
+  simpa only [run] using h
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== W5Reverse =====
+
+/-! Copy of `CompactReverse5` over the tighter width schedule of `WWidths`. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.W
+open Arithmetic Secp256k1 History5
+
+def compactReverse5 (w : Nat → Wire) (i : Nat) : Nat → Program
+  | 0 => []
+  | n+1 => compactReverse5 w (i+1) n++History5.decodeBefore w i++compactSkywalkReverseTick w i
+
+attribute [local irreducible] run compactReverse5 compactSkywalkReverseTick compactSkywalkReverse
+  History5.decodeRange History5.decodePrefix History5.encodePrefix
+
+theorem compactReverse5_counts_relative (w : Nat → Wire) (i n : Nat) :
+    toffoliCount (compactReverse5 w i n)=
+      toffoliCount (compactSkywalkReverse w i n)+36*History5.packCount i n ∧
+    measurementCount (compactReverse5 w i n)=measurementCount (compactSkywalkReverse w i n) := by
+  induction n generalizing i with
+  | zero => simp [compactReverse5,compactSkywalkReverse,History5.packCount,toffoliCount,
+      measurementCount]
+  | succ n ih =>
+    have pack := History5.packAfter_counts w i
+    have tail := ih (i+1)
+    simp only [compactReverse5,compactSkywalkReverse,History5.packCount,toffoliCount_append,
+      measurementCount_append,pack.2.2.1,pack.2.2.2,tail.1,tail.2]
+    constructor <;> omega
+
+theorem decodeBefore_disjoint_compactReverse (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w)
+    (i j n : Nat) (hgap : i < j) (hbound : j+n ≤ 512) :
+    Disjoint (wires (History5.decodeBefore w i)) (wires (compactSkywalkReverse w j n)) := by
+  induction n generalizing j with
+  | zero => simp [compactSkywalkReverse,wires]
+  | succ n ih =>
+    have tail := ih (j+1) (by omega) (by omega)
+    have head : Disjoint (wires (History5.decodeBefore w i))
+        (wires (compactSkywalkReverseTick w j)) := by
+      cases due : History5.packDue i
+      · simp [History5.decodeBefore,due,wires]
+      · have hd := History5.packDue_true i due
+        have dis := history_disjoint_compactReverseTick w hn hlo (i-5) j
+          (by omega) (by omega) (by omega)
+        simpa only [History5.decodeBefore,due,if_true] using dis
+    simp only [compactSkywalkReverse,wires_append,Finset.disjoint_union_right]
+    exact ⟨tail,head⟩
+
+/-- Zero-record decoders commute past later inverse ticks without a record map. -/
+theorem compactReverse5_normalize (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w)
+    (i n : Nat) (hbound : i+n ≤ 512) (s : State) (m : List Bool) :
+    run (compactReverse5 w i n) m s=
+      run (History5.decodeRange w i n++compactSkywalkReverse w i n) m s := by
+  induction n generalizing i s m with
+  | zero => simp [compactReverse5,History5.decodeRange,compactSkywalkReverse,run]
+  | succ n ih =>
+    have hm := (compactReverse5_counts_relative w (i+1) n).2
+    have hd := decodeBefore_disjoint_compactReverse w hn hlo i (i+1) n (by omega) (by omega)
+    have hc := run_disjoint_commute (History5.decodeBefore w i) (compactSkywalkReverse w (i+1) n)
+      hd [] (m.take (measurementCount (compactSkywalkReverse w (i+1) n)))
+      (run (History5.decodeRange w (i+1) n) [] s)
+    rw [compactReverse5,History5.decodeRange,compactSkywalkReverse]
+    simp only [run_append,measurementCount_append,hm,(History5.packAfter_counts w i).2.2.2,
+      History5.decodeRange_measurements,Nat.add_zero,List.take_zero,List.drop_zero]
+    rw [ih (i+1) (by omega)]
+    have hz : min 0 (measurementCount (compactSkywalkReverse w (i+1) n))=0 :=
+      Nat.min_eq_left (Nat.zero_le _)
+    simp only [run_append,History5.decodeRange_measurements,List.take_zero,List.drop_zero,
+      List.take_take,Nat.min_self,List.drop_take_self,hz]
+    rw [hc]
+
+theorem compactReverse5_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (i n : Nat) (hi : i+n ≤ 512) :
+    toffoliCount (compactReverse5 w i n)=compactSkywalkForwardT i n+36*History5.packCount i n ∧
+    measurementCount (compactReverse5 w i n)=compactSkywalkForwardM i n := by
+  have relative := compactReverse5_counts_relative w i n
+  have compact := compactSkywalkReverse_counts w hn i n hi
+  rwa [compact.1,compact.2] at relative
+
+theorem compactReverse5_support (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512) :
+    wires (compactReverse5 w i n)⊆History5.integerSites5 w := by
+  induction n generalizing i with
+  | zero => simp [compactReverse5,wires]
+  | succ n ih =>
+    have tick := (compactTick_support5 w hn i (by omega)).2
+    have pack := (History5.pack_support5 w i (by omega)).2
+    simp only [compactReverse5,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨ih (i+1) (by omega),pack⟩,tick⟩
+
+theorem compactReverse5_frame (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (i n : Nat) (hi : i+n ≤ 512)
+    (s : State) (m : List Bool) (q : Wire) (hq : q∉skywalkPoolWires w) :
+    (run (compactReverse5 w i n) m s).basis q=s.basis q := by
+  apply run_preserves_outside
+  intro h
+  exact hq (List.mem_toFinset.mp (History5.integerSites5_pool w
+    (compactReverse5_support w hn i n hi h)))
+
+theorem compactStage5_decoded (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (x p n : Nat) (hi : n ≤ 512)
+    (s : State) (h : CompressedCompactStage5 w x p n s.basis) :
+    (run (History5.decodePrefix w n) [] s).phase=s.phase ∧
+    CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) n
+      (run (History5.decodePrefix w n) [] s).basis := by
+  obtain ⟨raw,hraw,hbasis⟩ := h
+  have inverse := History5.prefix_roundtrip w hn n hi raw [] []
+  have records := run_basis_records (History5.decodePrefix w n) s
+    (run (History5.encodePrefix w n) [] raw) [] [] hbasis
+  have bits : (run (History5.decodePrefix w n) [] s).basis=raw.basis :=
+    records.trans (congrArg State.basis inverse)
+  refine ⟨run_no_measurement_phase _ (History5.decodePrefix_measurements w n) s [],?_⟩
+  rw [bits]
+  exact hraw
+
+private theorem w5_raw_tail_restore (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (x prime : Nat) (hp0 : 0 < prime) (hx0 : 0 < x) (hpo : prime%2=1)
+    (hp : prime < 2^256) (hx : x < prime) (hc : x.Coprime prime)
+    (initial s : State) (m : List Bool)
+    (hinit : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (prime:Int)) 1 initial.basis)
+    (hfinal : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (prime:Int)) 512 s.basis) :
+    (run (compactSkywalkReverse w 1 511) m s).phase=s.phase ∧
+    ∀q∈skywalkPoolWires w,(run (compactSkywalkReverse w 1 511) m s).basis q=initial.basis q := by
+  let start : State := ⟨s.phase,initial.basis⟩
+  have forward := compactSkywalkForward_spec w hn x prime 1 511 hp0 hx0 hpo hp hx hc
+    (by omega) start [] hinit
+  have own := (compactSkywalkStage_terminal w hn x prime hp0 hx0 hpo hp hx hc s.basis hfinal).2
+  have reference := (compactSkywalkStage_terminal w hn x prime hp0 hx0 hpo hp hx hc _ forward.2).2
+  have inverse := compactSkywalkReverse_roundtrip w hn x prime 1 511 hp0 hx0 hpo hp hx hc
+    (by omega) start [] m hinit
+  have bits : ∀q∈(skywalkPoolWires w).toFinset,
+      s.basis q=(run (compactSkywalkForward w 1 511) [] start).basis q := by
+    intro q hq
+    exact skywalkIntegerStage_agrees w _ 512 (by omega) _ _ own reference q (List.mem_toFinset.mp hq)
+  have agrees := pool_run_agrees (compactSkywalkReverse w 1 511) (skywalkPoolWires w).toFinset
+    (compactSkywalkReverse_support w hn 1 511 (by omega)) m s
+    (run (compactSkywalkForward w 1 511) [] start) forward.1.symm bits
+  rw [inverse] at agrees
+  exact ⟨agrees.1,fun q hq => agrees.2 q (List.mem_toFinset.mpr hq)⟩
+
+private theorem w5_tail_decoder (w : Nat → Wire) :
+    History5.decodeRange w 1 511=History5.decodePrefix w 512 := by
+  have h := History5.decodeRange_zero w 512
+  have zero : History5.decodeBefore w 0=[] := rfl
+  rw [History5.decodeRange,zero,List.append_nil] at h
+  exact h
+
+/-- The narrowed 511-tick inverse restores the native-first pool and every phase. -/
+theorem tail_restore_pool5 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (hlo : History5.HistoryAbove w) (x prime : Nat)
+    (hp0 : 0 < prime) (hx0 : 0 < x) (hpo : prime%2=1)
+    (hp : prime < 2^256) (hx : x < prime) (hc : x.Coprime prime)
+    (initial s : State) (m : List Bool)
+    (hinit : CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (prime:Int)) 1 initial.basis)
+    (hfinal : CompressedCompactStage5 w x prime 512 s.basis) :
+    (run (compactReverse5 w 1 511) m s).phase=s.phase ∧
+    (∀q∈skywalkPoolWires w,(run (compactReverse5 w 1 511) m s).basis q=initial.basis q) ∧
+    (∀q,q∉skywalkPoolWires w → (run (compactReverse5 w 1 511) m s).basis q=s.basis q) := by
+  have decoded := compactStage5_decoded w hn x prime 512 (by omega) s hfinal
+  have restored := w5_raw_tail_restore w hn x prime hp0 hx0 hpo hp hx hc
+    initial (run (History5.decodePrefix w 512) [] s) m hinit decoded.2
+  have actual : run (compactReverse5 w 1 511) m s=
+      run (compactSkywalkReverse w 1 511) m (run (History5.decodePrefix w 512) [] s) := by
+    rw [compactReverse5_normalize w hn hlo 1 511 (by omega),w5_tail_decoder,
+      run_append,History5.decodePrefix_measurements,List.take_zero,List.drop_zero]
+  refine ⟨?_,?_,?_⟩
+  · rw [actual]; exact restored.1.trans decoded.1
+  · rw [actual]; exact restored.2
+  · intro q hq
+    exact compactReverse5_frame w hn 1 511 (by omega) s m q hq
+
+theorem compactLoops5_gateSlots_le (w : Nat → Wire) (i n : Nat) (hi : i+n ≤ 512) :
+    Challenge.gateSlots (compactForward5 w i n) ≤ n*6200 ∧
+    Challenge.gateSlots (compactReverse5 w i n) ≤ n*6200 := by
+  induction n generalizing i with
+  | zero => simp [compactForward5,compactReverse5,Challenge.gateSlots]
+  | succ n ih =>
+    have tick := compactTick_gateSlots_le w i (by omega)
+    have codec := History5.pack_gateSlots5 w i
+    have tail := ih (i+1) (by omega)
+    simp only [compactForward5,compactReverse5,Challenge.gateSlots_append,Nat.succ_mul]
+    omega
+
+end ECDSAAdd.Entrant.W
+
+end
+
+section
+-- ===== W5OldEq =====
+
+/-! The narrowed five-trit passes agree with the certified ones.  The narrowed
+and the original width schedules coincide at stages 1 and 512, so the stage-1
+input and the stage-512 invariant are literally the original ones; the forward
+terminal State and the reverse result are therefore the original States, and
+every block outside the integer passes is reused unchanged. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.W
+open Arithmetic Secp256k1
+
+theorem compressedCompactStage5_512 (w : Nat → Wire) (x p : Nat) (bits : BasisState) :
+    CompressedCompactStage5 w x p 512 bits ↔ History5.CompressedCompactStage5 w x p 512 bits := by
+  unfold CompressedCompactStage5 History5.CompressedCompactStage5
+  simp only [compactSkywalkStage_eq w _ 512 narrowSkywalkRouteWidth_endpoints.2.2.1]
+
+/-- The narrowed forward pass ends in exactly the original terminal State, for
+arbitrary independent record lists. -/
+theorem compactForward5_old_eq (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2=1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p)
+    (s : State) (mNew mOld : List Bool)
+    (hs : Arithmetic.CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (compactForward5 w 1 511) mNew s=run (History5.compactForward5 w 1 511) mOld s := by
+  rw [compactForward5_first_normalize w hn hlo s mNew,
+    History5.compactForward5_first_normalize w hn hlo s mOld]
+  have fw := compactSkywalkForward_spec w hn x p 1 511 hp0 hx0 hpo hp hx hc (by omega) s mNew
+    ((compactSkywalkStage_one w _ s.basis).mpr hs)
+  have fo := Arithmetic.compactSkywalkForward_spec w hn x p 1 511 hp0 hx0 hpo hp hx hc (by omega)
+    s mOld hs
+  have tw := (Arithmetic.compactSkywalkStage_terminal w hn x p hp0 hx0 hpo hp hx hc _
+    ((compactSkywalkStage_eq w _ 512 narrowSkywalkRouteWidth_endpoints.2.2.1 _).mp fw.2)).2
+  have tO := (Arithmetic.compactSkywalkStage_terminal w hn x p hp0 hx0 hpo hp hx hc _ fo.2).2
+  have e : run (compactSkywalkForward w 1 511) mNew s=
+      run (Arithmetic.compactSkywalkForward w 1 511) mOld s := by
+    apply State.extensionality
+    · exact fw.1.trans fo.1.symm
+    · funext q
+      by_cases hq : q∈skywalkPoolWires w
+      · exact skywalkIntegerStage_agrees w _ 512 (by omega) _ _ tw tO q hq
+      · rw [compactSkywalkForward_frame w hn 1 511 (by omega) s mNew q hq,
+          Arithmetic.compactSkywalkForward_frame w hn 1 511 (by omega) s mOld q hq]
+  rw [e]
+
+/-- From the certified terminal state, the narrowed reverse pass and the
+certified reverse pass agree: both restore the stage-1 pool and keep every
+other wire. -/
+theorem compactReverse5_old_eq (w : Nat → Wire)
+    (hn : (skywalkPoolWires w).Nodup) (hlo : History5.HistoryAbove w)
+    (x p : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2=1)
+    (hp : p < 2^256) (hx : x < p) (hc : x.Coprime p)
+    (n1 s2 s5 : State) (m6 : List Bool)
+    (first : Arithmetic.CompactSkywalkStage w
+      (SkywalkRails.encode false false (x:Int) (p:Int)) 1 n1.basis)
+    (term : History5.CompressedCompactStage5 w x p 512 s2.basis)
+    (hph : s5.phase=s2.phase)
+    (hpool : ∀q∈skywalkPoolWires w,s5.basis q=s2.basis q) :
+    run (compactReverse5 w 1 511) m6 s5=run (History5.compactReverse5 w 1 511) m6 s5 := by
+  have wr := tail_restore_pool5 w hn hlo x p hp0 hx0 hpo hp hx hc n1 s2 m6
+    ((compactSkywalkStage_one w _ n1.basis).mpr first)
+    ((compressedCompactStage5_512 w x p _).mpr term)
+  have orr := History5.tail_restore_pool5 w hn hlo x p hp0 hx0 hpo hp hx hc n1 s2 m6 first term
+  have wa := pool_run_agrees (compactReverse5 w 1 511) (skywalkPoolWires w).toFinset
+    ((compactReverse5_support w hn 1 511 (by omega)).trans (History5.integerSites5_pool w))
+    m6 s5 s2 hph (fun q hq => hpool q (List.mem_toFinset.mp hq))
+  have oa := pool_run_agrees (History5.compactReverse5 w 1 511) (skywalkPoolWires w).toFinset
+    ((History5.compactReverse5_support w hn 1 511 (by omega)).trans (History5.integerSites5_pool w))
+    m6 s5 s2 hph (fun q hq => hpool q (List.mem_toFinset.mp hq))
+  apply State.extensionality
+  · rw [wa.1,wr.1,oa.1,orr.1]
+  · funext q
+    by_cases hq : q∈skywalkPoolWires w
+    · rw [wa.2 q (List.mem_toFinset.mpr hq),wr.2.1 q hq,oa.2 q (List.mem_toFinset.mpr hq),
+        orr.2.1 q hq]
+    · rw [compactReverse5_frame w hn 1 511 (by omega) s5 m6 q hq,
+        History5.compactReverse5_frame w hn 1 511 (by omega) s5 m6 q hq]
+
+/-- Each narrowed pass is 510 Toffolis and 255 records cheaper. -/
+theorem compactSkywalkForward_old_counts :
+    Arithmetic.compactSkywalkForwardT 1 511=compactSkywalkForwardT 1 511+510 ∧
+    Arithmetic.compactSkywalkForwardM 1 511=compactSkywalkForwardM 1 511+255 := by
+  constructor <;> decide +kernel
+
+theorem compactPasses5_old_counts (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
+    toffoliCount (compactForward5 w 1 511)+510=toffoliCount (History5.compactForward5 w 1 511) ∧
+    measurementCount (compactForward5 w 1 511)+255=
+      measurementCount (History5.compactForward5 w 1 511) ∧
+    toffoliCount (compactReverse5 w 1 511)+510=toffoliCount (History5.compactReverse5 w 1 511) ∧
+    measurementCount (compactReverse5 w 1 511)+255=
+      measurementCount (History5.compactReverse5 w 1 511) := by
+  have d := compactSkywalkForward_old_counts
+  have f := compactForward5_counts w hn 1 511 (by omega)
+  have r := compactReverse5_counts w hn 1 511 (by omega)
+  have f' := History5.compactForward5_counts w hn 1 511 (by omega)
+  have r' := History5.compactReverse5_counts w hn 1 511 (by omega)
+  omega
+
+end ECDSAAdd.Entrant.W
+
+end
+
+
 -- ===== ECDSAAdd.Submission.Entrant.OBSigma5 =====
 section
 
@@ -24817,14 +28837,14 @@ def sig (i : Nat) (q : Wire) : Wire :=
 /-- Forward integer ticks `i .. i+n-1`, tick `k` placed by `sig k`. -/
 def forward (i : Nat) : Nat → Program
   | 0 => []
-  | n+1 => renameProgram (sig i) (compactSkywalkTick base i ++ packAfter base i) ++
+  | n+1 => renameProgram (sig i) (W.compactSkywalkTick base i ++ packAfter base i) ++
       forward (i+1) n
 
 /-- Reverse integer ticks, untick `k` placed by `sig k`. -/
 def reverse (i : Nat) : Nat → Program
   | 0 => []
   | n+1 => reverse (i+1) n ++
-      renameProgram (sig i) (decodeBefore base i ++ compactSkywalkReverseTick base i)
+      renameProgram (sig i) (decodeBefore base i ++ W.compactSkywalkReverseTick base i)
 
 
 
@@ -30563,7 +34583,7 @@ set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.OB5
 open Arithmetic MappedCompressed Secp256k1 History5
-attribute [local irreducible] run compactSkywalkTick compactSkywalkReverseTick
+attribute [local irreducible] run W.compactSkywalkTick W.compactSkywalkReverseTick
   History5.encode History5.decode
 
 theorem historyAbove : HistoryAbove base := by
@@ -30618,16 +34638,16 @@ theorem prefix_keep (i : Nat) (hi : i ≤ 512) (raw : State) (l : Nat) (hl : 102
   omega
 
 theorem stage_zero (x i : Nat) (hi : i < 512) (b : BasisState)
-    (h : CompressedCompactStage5 base x p i b) :
+    (h : W.CompressedCompactStage5 base x p i b) :
     b (base (1028+i)) = false ∧ (257 ≤ i → b (base (2053-i)) = false) := by
   obtain ⟨raw, hraw, rfl⟩ := h
-  have virt : ∀ l, 1028 ≤ l → compactSkywalkStageVirtual base i raw.basis (base l) =
+  have virt : ∀ l, 1028 ≤ l → W.compactSkywalkStageVirtual base i raw.basis (base l) =
       raw.basis (base l) := by
     intro l hl
-    have ex := compactSkywalkStage_expanded base i (by omega)
-    apply compactSkywalkStage_virtual_outside
+    have ex := W.compactSkywalkStage_expanded base i (by omega)
+    apply W.compactSkywalkStage_virtual_outside
     · intro hm
-      have hm' : base l ∈ (compactSkywalkSignPoolA base i).expanded :=
+      have hm' : base l ∈ (W.compactSkywalkSignPoolA base i).expanded :=
         List.mem_append_right _ hm
       rw [ex.1] at hm'
       obtain ⟨j, hj, he⟩ := List.mem_map.mp hm'
@@ -30635,7 +34655,7 @@ theorem stage_zero (x i : Nat) (hi : i < 512) (b : BasisState)
       simp only [List.mem_range'_1] at hj
       omega
     · intro hm
-      have hm' : base l ∈ (compactSkywalkSignPoolB base i).expanded :=
+      have hm' : base l ∈ (W.compactSkywalkSignPoolB base i).expanded :=
         List.mem_append_right _ hm
       rw [ex.2] at hm'
       obtain ⟨j, hj, he⟩ := List.mem_map.mp hm'
@@ -30654,9 +34674,9 @@ theorem stage_zero (x i : Nat) (hi : i < 512) (b : BasisState)
     exact List.mem_map.mpr ⟨2053-i, List.mem_range'_1.mpr ⟨by omega, by omega⟩, rfl⟩
 
 theorem stage_one (x : Nat) (s : State)
-    (hs : CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
-    CompressedCompactStage5 base x p 1 s.basis :=
-  compactStage5_first base x p s hs
+    (hs : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    W.CompressedCompactStage5 base x p 1 s.basis :=
+  W.compactStage5_first base x p s hs
 
 theorem prime_facts (x : Nat) (hx0 : 0 < x) (hx : x < p) :
     0 < p ∧ p%2 = 1 ∧ p < 2^256 ∧ x.Coprime p := by
@@ -30670,40 +34690,40 @@ theorem prime_facts (x : Nat) (hx0 : 0 < x) (hx : x < p) :
 
 theorem forward_gen (x : Nat) (hx0 : 0 < x) (hx : x < p) (n : Nat) :
     ∀ i, 1 ≤ i → i+n ≤ 512 → ∀ (t : State) (m : List Bool),
-    CompressedCompactStage5 base x p i t.basis →
+    W.CompressedCompactStage5 base x p i t.basis →
     run (forward i n) m (pullState (sig (i-1)) t) =
-      pullState (sig (i+n-1)) (run (compactForward5 base i n) m t) := by
+      pullState (sig (i+n-1)) (run (W.compactForward5 base i n) m t) := by
   obtain ⟨hp0, hpo, hp, cop⟩ := prime_facts x hx0 hx
   induction n with
   | zero =>
     intro i _ _ t m _
-    simp only [forward, compactForward5, run, Nat.add_zero]
+    simp only [forward, W.compactForward5, run, Nat.add_zero]
   | succ n ih =>
     intro i h1 hb t m ht
     have hi : i ≤ 511 := by omega
     have z := stage_zero x i (by omega) t.basis ht
     rw [pull_step i hi t z.1 z.2]
     have e1 : forward i (n+1) = renameProgram (sig i)
-        (compactSkywalkTick base i ++ packAfter base i) ++ forward (i+1) n := by
+        (W.compactSkywalkTick base i ++ packAfter base i) ++ forward (i+1) n := by
       rw [forward]
-    have e2 : compactForward5 base i (n+1) =
-        (compactSkywalkTick base i ++ packAfter base i) ++
-          compactForward5 base (i+1) n := by
-      rw [compactForward5]
+    have e2 : W.compactForward5 base i (n+1) =
+        (W.compactSkywalkTick base i ++ packAfter base i) ++
+          W.compactForward5 base (i+1) n := by
+      rw [W.compactForward5]
     have cnt := (renameProgram_counts (sig i)
-      (compactSkywalkTick base i ++ packAfter base i)).2
+      (W.compactSkywalkTick base i ++ packAfter base i)).2
     rw [e1, e2, run_append, run_append, cnt, run_rename i hi]
-    have ht' := (compactStage5_step base base_pool_nodup historyAbove x p i hp0 hx0 hpo hp hx
+    have ht' := (W.compactStage5_step base base_pool_nodup historyAbove x p i hp0 hx0 hpo hp hx
       cop (by omega) t (m.take (measurementCount
-        (compactSkywalkTick base i ++ packAfter base i))) ht).2
+        (W.compactSkywalkTick base i ++ packAfter base i))) ht).2
     have step := ih (i+1) (by omega) (by omega) _ (m.drop (measurementCount
-        (compactSkywalkTick base i ++ packAfter base i))) ht'
+        (W.compactSkywalkTick base i ++ packAfter base i))) ht'
     rw [show i+1-1 = i by omega] at step
     rw [step, show i+1+n-1 = i+(n+1)-1 by omega]
 
 theorem forward_run (x : Nat) (hx0 : 0 < x) (hx : x < p) (s : State) (m : List Bool)
-    (hs : CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
-    run (forward 1 511) m s = pullState (sig 511) (run (compactForward5 base 1 511) m s) := by
+    (hs : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (forward 1 511) m s = pullState (sig 511) (run (W.compactForward5 base 1 511) m s) := by
   have h := forward_gen x hx0 hx 511 1 (Nat.le_refl 1) (by omega) s m (stage_one x s hs)
   have e : pullState (sig (1-1)) s = s := by
     apply State.extensionality
@@ -30717,38 +34737,38 @@ theorem forward_run (x : Nat) (hx0 : 0 < x) (hx : x < p) (s : State) (m : List B
 /-! ## Counts -/
 
 theorem counts_gen (i n : Nat) :
-    toffoliCount (forward i n) = toffoliCount (compactForward5 base i n) ∧
-    measurementCount (forward i n) = measurementCount (compactForward5 base i n) ∧
-    Challenge.gateSlots (forward i n) = Challenge.gateSlots (compactForward5 base i n) ∧
-    toffoliCount (reverse i n) = toffoliCount (compactReverse5 base i n) ∧
-    measurementCount (reverse i n) = measurementCount (compactReverse5 base i n) ∧
-    Challenge.gateSlots (reverse i n) = Challenge.gateSlots (compactReverse5 base i n) := by
+    toffoliCount (forward i n) = toffoliCount (W.compactForward5 base i n) ∧
+    measurementCount (forward i n) = measurementCount (W.compactForward5 base i n) ∧
+    Challenge.gateSlots (forward i n) = Challenge.gateSlots (W.compactForward5 base i n) ∧
+    toffoliCount (reverse i n) = toffoliCount (W.compactReverse5 base i n) ∧
+    measurementCount (reverse i n) = measurementCount (W.compactReverse5 base i n) ∧
+    Challenge.gateSlots (reverse i n) = Challenge.gateSlots (W.compactReverse5 base i n) := by
   induction n generalizing i with
-  | zero => simp [forward, reverse, compactForward5, compactReverse5]
+  | zero => simp [forward, reverse, W.compactForward5, W.compactReverse5]
   | succ n ih =>
     have r := ih (i+1)
-    have f := renameProgram_counts (sig i) (compactSkywalkTick base i ++ packAfter base i)
+    have f := renameProgram_counts (sig i) (W.compactSkywalkTick base i ++ packAfter base i)
     have b := renameProgram_counts (sig i)
-      (decodeBefore base i ++ compactSkywalkReverseTick base i)
+      (decodeBefore base i ++ W.compactSkywalkReverseTick base i)
     have fs := Baselines.rename_gateSlots (sig i)
-      (compactSkywalkTick base i ++ packAfter base i)
+      (W.compactSkywalkTick base i ++ packAfter base i)
     have bs := Baselines.rename_gateSlots (sig i)
-      (decodeBefore base i ++ compactSkywalkReverseTick base i)
-    rw [forward, reverse, compactForward5, compactReverse5]
+      (decodeBefore base i ++ W.compactSkywalkReverseTick base i)
+    rw [forward, reverse, W.compactForward5, W.compactReverse5]
     simp only [toffoliCount_append, measurementCount_append, Challenge.gateSlots_append] at f b fs bs ⊢
     omega
 
 theorem forward_counts :
-    toffoliCount (forward 1 511) = toffoliCount (compactForward5 base 1 511) ∧
-    measurementCount (forward 1 511) = measurementCount (compactForward5 base 1 511) ∧
-    Challenge.gateSlots (forward 1 511) = Challenge.gateSlots (compactForward5 base 1 511) :=
+    toffoliCount (forward 1 511) = toffoliCount (W.compactForward5 base 1 511) ∧
+    measurementCount (forward 1 511) = measurementCount (W.compactForward5 base 1 511) ∧
+    Challenge.gateSlots (forward 1 511) = Challenge.gateSlots (W.compactForward5 base 1 511) :=
   let h := counts_gen 1 511
   ⟨h.1, h.2.1, h.2.2.1⟩
 
 theorem reverse_counts :
-    toffoliCount (reverse 1 511) = toffoliCount (compactReverse5 base 1 511) ∧
-    measurementCount (reverse 1 511) = measurementCount (compactReverse5 base 1 511) ∧
-    Challenge.gateSlots (reverse 1 511) = Challenge.gateSlots (compactReverse5 base 1 511) :=
+    toffoliCount (reverse 1 511) = toffoliCount (W.compactReverse5 base 1 511) ∧
+    measurementCount (reverse 1 511) = measurementCount (W.compactReverse5 base 1 511) ∧
+    Challenge.gateSlots (reverse 1 511) = Challenge.gateSlots (W.compactReverse5 base 1 511) :=
   let h := counts_gen 1 511
   ⟨h.2.2.2.1, h.2.2.2.2.1, h.2.2.2.2.2⟩
 
@@ -30757,51 +34777,51 @@ theorem reverse_counts :
 /-- One compressed tick followed by its decode and inverse tick is the identity
 on every compressed stage state. -/
 theorem oneStep_roundtrip (x : Nat) (hx0 : 0 < x) (hx : x < p) (i : Nat) (hi : i < 512)
-    (t : State) (ht : CompressedCompactStage5 base x p i t.basis) (m1 m2 : List Bool) :
-    run (decodeBefore base i ++ compactSkywalkReverseTick base i) m2
-      (run (compactSkywalkTick base i ++ packAfter base i) m1 t) = t := by
+    (t : State) (ht : W.CompressedCompactStage5 base x p i t.basis) (m1 m2 : List Bool) :
+    run (decodeBefore base i ++ W.compactSkywalkReverseTick base i) m2
+      (run (W.compactSkywalkTick base i ++ packAfter base i) m1 t) = t := by
   obtain ⟨hp0, hpo, hp, cop⟩ := prime_facts x hx0 hx
   obtain ⟨raw, hraw, hbits⟩ := ht
-  have hnxt := compactSkywalkStageStep base base_pool_nodup x p i hp0 hx0 hpo hp hx cop hi
+  have hnxt := W.compactSkywalkStageStep base base_pool_nodup x p i hp0 hx0 hpo hp hx cop hi
     raw [] hraw
-  have hd := prefix_disjoint_compactTick base base_pool_nodup historyAbove i i
+  have hd := W.prefix_disjoint_compactTick base base_pool_nodup historyAbove i i
     (Nat.le_refl i) hi
-  have hcomm := run_disjoint_commute (encodePrefix base i) (compactSkywalkTick base i)
+  have hcomm := run_disjoint_commute (encodePrefix base i) (W.compactSkywalkTick base i)
     hd [] [] raw
-  have hb0 := run_basis_records (compactSkywalkTick base i) t
+  have hb0 := run_basis_records (W.compactSkywalkTick base i) t
     (run (encodePrefix base i) [] raw)
-    (m1.take (measurementCount (compactSkywalkTick base i))) [] hbits
-  have hb : (run (compactSkywalkTick base i) (m1.take (measurementCount (compactSkywalkTick base i))) t).basis =
-      (run (encodePrefix base i) [] (run (compactSkywalkTick base i) [] raw)).basis :=
+    (m1.take (measurementCount (W.compactSkywalkTick base i))) [] hbits
+  have hb : (run (W.compactSkywalkTick base i) (m1.take (measurementCount (W.compactSkywalkTick base i))) t).basis =
+      (run (encodePrefix base i) [] (run (W.compactSkywalkTick base i) [] raw)).basis :=
     hb0.trans (congrArg State.basis hcomm.symm)
-  generalize hact : run (compactSkywalkTick base i)
-    (m1.take (measurementCount (compactSkywalkTick base i))) t = actual at hb
+  generalize hact : run (W.compactSkywalkTick base i)
+    (m1.take (measurementCount (W.compactSkywalkTick base i))) t = actual at hb
   have dp : run (decodeBefore base i) []
-      (run (packAfter base i) (m1.drop (measurementCount (compactSkywalkTick base i))) actual)=actual := by
+      (run (packAfter base i) (m1.drop (measurementCount (W.compactSkywalkTick base i))) actual)=actual := by
     cases due : packDue i
     · simp only [packAfter,decodeBefore,due,Bool.false_eq_true,if_false,run]
     · have hd := packDue_true i due
       simpa only [packAfter,decodeBefore,due,if_true,History5.encode,History5.decode] using
         Codec5.roundtripAt (historyMap base (i-5))
         (historyMap_injective base base_pool_nodup (i-5) (by omega)) actual
-          (m1.drop (measurementCount (compactSkywalkTick base i))) []
-  have loc := compactSkywalkStage_local_input base base_pool_nodup x p i hp0 hx0 hpo hp hx cop hi
+          (m1.drop (measurementCount (W.compactSkywalkTick base i))) []
+  have loc := W.compactSkywalkStage_local_input base base_pool_nodup x p i hp0 hx0 hpo hp hx cop hi
     raw hraw
-  have hh : t.basis (compactSkywalkTickLayout base i).history = false := by
+  have hh : t.basis (W.compactSkywalkTickLayout base i).history = false := by
     change t.basis (base (1028+i)) = false
     rw [hbits, prefix_keep i (by omega) raw (1028+i) (by omega)]
     exact loc.2.2.2.2.1
-  have hc : regValue (compactSkywalkTickLayout base i).carry t.basis = 0 := by
-    have e := regValue_congr (compactSkywalkTickLayout base i).carry t.basis raw.basis (by
+  have hc : regValue (W.compactSkywalkTickLayout base i).carry t.basis = 0 := by
+    have e := regValue_congr (W.compactSkywalkTickLayout base i).carry t.basis raw.basis (by
       intro q hq
-      change q ∈ wireBlock base 1540 (compactSkywalkTickPreWidth i - 1) at hq
+      change q ∈ wireBlock base 1540 (W.compactSkywalkTickPreWidth i - 1) at hq
       obtain ⟨l, hl, rfl⟩ := List.mem_map.mp hq
       simp only [List.mem_range'_1] at hl
       rw [hbits, prefix_keep i (by omega) raw l (by omega)])
     rw [e]
     exact loc.2.2.2.2.2
-  have rt := compactSkywalkReverseTick_roundtrip base i hi base_pool_nodup t
-    (m1.take (measurementCount (compactSkywalkTick base i))) m2 hh hc
+  have rt := W.compactSkywalkReverseTick_roundtrip base i hi base_pool_nodup t
+    (m1.take (measurementCount (W.compactSkywalkTick base i))) m2 hh hc
   rw [hact] at rt
   have dz := (packAfter_counts base i).2.2.2
   rw [run_append, run_append, dz, List.take_zero, List.drop_zero, hact, dp, rt]
@@ -30819,10 +34839,10 @@ theorem pool_agree (P : Program) (hP : wires P ⊆ (skywalkPoolWires base).toFin
   exact a.2 q (List.mem_toFinset.mpr hq)
 
 theorem untick_pool (i : Nat) (hi : i < 512) :
-    wires (decodeBefore base i ++ compactSkywalkReverseTick base i) ⊆
+    wires (decodeBefore base i ++ W.compactSkywalkReverseTick base i) ⊆
       (skywalkPoolWires base).toFinset := by
   have pack := (pack_support5 base i hi).2.trans (integerSites5_pool base)
-  have tick := (compactTick_support5 base base_pool_nodup i hi).2.trans (integerSites5_pool base)
+  have tick := (W.compactTick_support5 base base_pool_nodup i hi).2.trans (integerSites5_pool base)
   simpa only [wires_append,Finset.union_subset_iff] using And.intro pack tick
 
 theorem base_pool (l : Nat) (hl : l < 1798) : base l ∈ skywalkPoolWires base :=
@@ -30830,59 +34850,59 @@ theorem base_pool (l : Nat) (hl : l < 1798) : base l ∈ skywalkPoolWires base :
 
 theorem reverse_gen (x : Nat) (hx0 : 0 < x) (hx : x < p) (n : Nat) :
     ∀ i, 1 ≤ i → i+n ≤ 512 → ∀ (t : State) (m2 : List Bool) (v : State) (m : List Bool),
-    CompressedCompactStage5 base x p i t.basis →
+    W.CompressedCompactStage5 base x p i t.basis →
     (∀ q ∈ skywalkPoolWires base,
-      v.basis q = (run (compactForward5 base i n) m2 t).basis q) →
+      v.basis q = (run (W.compactForward5 base i n) m2 t).basis q) →
     run (reverse i n) m (pullState (sig (i+n-1)) v) =
-      pullState (sig (i-1)) (run (compactReverse5 base i n) m v) ∧
-    ∀ q ∈ skywalkPoolWires base, (run (compactReverse5 base i n) m v).basis q = t.basis q := by
+      pullState (sig (i-1)) (run (W.compactReverse5 base i n) m v) ∧
+    ∀ q ∈ skywalkPoolWires base, (run (W.compactReverse5 base i n) m v).basis q = t.basis q := by
   obtain ⟨hp0, hpo, hp, cop⟩ := prime_facts x hx0 hx
   induction n with
   | zero =>
     intro i _ _ t m2 v m _ hv
     refine ⟨?_, ?_⟩
-    · simp only [reverse, compactReverse5, run, Nat.add_zero]
+    · simp only [reverse, W.compactReverse5, run, Nat.add_zero]
     · intro q hq
       have h := hv q hq
-      simpa only [compactReverse5, compactForward5, run] using h
+      simpa only [W.compactReverse5, W.compactForward5, run] using h
   | succ n ih =>
     intro i h1 hb t m2 v m ht hv
     have hi : i ≤ 511 := by omega
     have e1 : reverse i (n+1) = reverse (i+1) n ++ renameProgram (sig i)
-        (decodeBefore base i ++ compactSkywalkReverseTick base i) := by
+        (decodeBefore base i ++ W.compactSkywalkReverseTick base i) := by
       rw [reverse]
-    have e2 : compactReverse5 base i (n+1) = compactReverse5 base (i+1) n ++
-        (decodeBefore base i ++ compactSkywalkReverseTick base i) := by
-      rw [compactReverse5, List.append_assoc]
-    have e3 : compactForward5 base i (n+1) =
-        (compactSkywalkTick base i ++ packAfter base i) ++
-          compactForward5 base (i+1) n := by
-      rw [compactForward5]
+    have e2 : W.compactReverse5 base i (n+1) = W.compactReverse5 base (i+1) n ++
+        (decodeBefore base i ++ W.compactSkywalkReverseTick base i) := by
+      rw [W.compactReverse5, List.append_assoc]
+    have e3 : W.compactForward5 base i (n+1) =
+        (W.compactSkywalkTick base i ++ packAfter base i) ++
+          W.compactForward5 base (i+1) n := by
+      rw [W.compactForward5]
     rw [e3, run_append] at hv
-    have ht' := (compactStage5_step base base_pool_nodup historyAbove x p i hp0 hx0 hpo hp hx
+    have ht' := (W.compactStage5_step base base_pool_nodup historyAbove x p i hp0 hx0 hpo hp hx
       cop (by omega) t (m2.take (measurementCount
-        (compactSkywalkTick base i ++ packAfter base i))) ht).2
+        (W.compactSkywalkTick base i ++ packAfter base i))) ht).2
     have cntR := (counts_gen (i+1) n).2.2.2.2.1
     obtain ⟨r1, r2⟩ := ih (i+1) (by omega) (by omega) _ _ v
-      (m.take (measurementCount (compactReverse5 base (i+1) n))) ht' hv
+      (m.take (measurementCount (W.compactReverse5 base (i+1) n))) ht' hv
     rw [show i+1-1 = i by omega, show i+1+n-1 = i+(n+1)-1 by omega] at r1
     have rt := oneStep_roundtrip x hx0 hx i (by omega) t ht
-      (m2.take (measurementCount (compactSkywalkTick base i ++ packAfter base i)))
-      (m.drop (measurementCount (compactReverse5 base (i+1) n)))
+      (m2.take (measurementCount (W.compactSkywalkTick base i ++ packAfter base i)))
+      (m.drop (measurementCount (W.compactReverse5 base (i+1) n)))
     have agree := pool_agree _ (untick_pool i (by omega))
-      (m.drop (measurementCount (compactReverse5 base (i+1) n))) _ _ r2
+      (m.drop (measurementCount (W.compactReverse5 base (i+1) n))) _ _ r2
     rw [rt] at agree
     have z := stage_zero x i (by omega) t.basis ht
-    have hz1 : (run (decodeBefore base i ++ compactSkywalkReverseTick base i)
-        (m.drop (measurementCount (compactReverse5 base (i+1) n)))
-        (run (compactReverse5 base (i+1) n)
-          (m.take (measurementCount (compactReverse5 base (i+1) n))) v)).basis
+    have hz1 : (run (decodeBefore base i ++ W.compactSkywalkReverseTick base i)
+        (m.drop (measurementCount (W.compactReverse5 base (i+1) n)))
+        (run (W.compactReverse5 base (i+1) n)
+          (m.take (measurementCount (W.compactReverse5 base (i+1) n))) v)).basis
         (base (1028+i)) = false :=
       (agree _ (base_pool (1028+i) (by omega))).trans z.1
-    have hz2 : 257 ≤ i → (run (decodeBefore base i ++ compactSkywalkReverseTick base i)
-        (m.drop (measurementCount (compactReverse5 base (i+1) n)))
-        (run (compactReverse5 base (i+1) n)
-          (m.take (measurementCount (compactReverse5 base (i+1) n))) v)).basis
+    have hz2 : 257 ≤ i → (run (decodeBefore base i ++ W.compactSkywalkReverseTick base i)
+        (m.drop (measurementCount (W.compactReverse5 base (i+1) n)))
+        (run (W.compactReverse5 base (i+1) n)
+          (m.take (measurementCount (W.compactReverse5 base (i+1) n))) v)).basis
         (base (2053-i)) = false := fun big =>
       (agree _ (base_pool (2053-i) (by omega))).trans (z.2 big)
     rw [e1, e2, run_append, run_append, cntR, r1, run_rename i hi,
@@ -30890,12 +34910,12 @@ theorem reverse_gen (x : Nat) (hx0 : 0 < x) (hx : x < p) (n : Nat) :
     exact ⟨rfl, agree⟩
 
 theorem reverse_run (x : Nat) (hx0 : 0 < x) (hx : x < p) (s : State) (m2 : List Bool)
-    (hs : CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis)
+    (hs : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis)
     (v : State)
     (hv : ∀ q ∈ skywalkPoolWires base,
-      v.basis q = (run (compactForward5 base 1 511) m2 s).basis q)
+      v.basis q = (run (W.compactForward5 base 1 511) m2 s).basis q)
     (m : List Bool) :
-    run (reverse 1 511) m (pullState (sig 511) v) = run (compactReverse5 base 1 511) m v := by
+    run (reverse 1 511) m (pullState (sig 511) v) = run (W.compactReverse5 base 1 511) m v := by
   have h := (reverse_gen x hx0 hx 511 1 (Nat.le_refl 1) (by omega) s m2 v m
     (stage_one x s hs) hv).1
   have e : ∀ u : State, pullState (sig (1-1)) u = u := by
@@ -30939,20 +34959,20 @@ theorem good_placed (k l : Nat) (hk : k ≤ 511)
   split_ifs <;> omega
 
 theorem tick_labels (i : Nat) (hi : i < 512) (h1 : 1 ≤ i) (q : Wire)
-    (hq : q ∈ (compactSkywalkTickLayout base i).wires.toFinset) :
+    (hq : q ∈ (W.compactSkywalkTickLayout base i).wires.toFinset) :
     ∃ l, q = base l ∧
       (l < 515 ∨ (770 ≤ l ∧ l ≤ 1028+i) ∨ (1540 ≤ l ∧ l < 1797 ∧ l+i < 2053)) := by
-  have width := compactSkywalkTick_width_bounds i hi
-  have view : (compactSkywalkTickLayout base i).wires =
-      ([skywalkPoolPreviousId i,1028+i,i+compactSkywalkTickPreWidth i,i,770]++
-      List.range' (i+1) (compactSkywalkTickPreWidth i-1)++
-      List.range' 771 (compactSkywalkTickPreWidth i-1)++
-      List.range' 1540 (compactSkywalkTickPreWidth i-1)).map base := by
+  have width := W.compactSkywalkTick_width_bounds i hi
+  have view : (W.compactSkywalkTickLayout base i).wires =
+      ([skywalkPoolPreviousId i,1028+i,i+W.compactSkywalkTickPreWidth i,i,770]++
+      List.range' (i+1) (W.compactSkywalkTickPreWidth i-1)++
+      List.range' 771 (W.compactSkywalkTickPreWidth i-1)++
+      List.range' 1540 (W.compactSkywalkTickPreWidth i-1)).map base := by
     change base (skywalkPoolPreviousId i)::base (1028+i)::
-      base (i+compactSkywalkTickPreWidth i)::base i::base 770::
-      ((compactSkywalkTickLayout base i).ah++(compactSkywalkTickLayout base i).bh++
-      wireBlock base 1540 (compactSkywalkTickPreWidth i-1)) = _
-    rw [compactSkywalkTick_ah base i hi,compactSkywalkTick_bh base i hi]
+      base (i+W.compactSkywalkTickPreWidth i)::base i::base 770::
+      ((W.compactSkywalkTickLayout base i).ah++(W.compactSkywalkTickLayout base i).bh++
+      wireBlock base 1540 (W.compactSkywalkTickPreWidth i-1)) = _
+    rw [W.compactSkywalkTick_ah base i hi,W.compactSkywalkTick_bh base i hi]
     simp [wireBlock,List.map_append,List.append_assoc]
   rw [List.mem_toFinset, view] at hq
   obtain ⟨old, h, rfl⟩ := List.mem_map.mp hq
@@ -30981,10 +35001,10 @@ theorem codec_labels (i : Nat) (hi : i < 512) (q : Wire)
 
 theorem blocks_good (i : Nat) (hi : i < 512) (h1 : 1 ≤ i) :
     (∀ q ∈ wires (renameProgram (sig i)
-      (compactSkywalkTick base i ++ packAfter base i)), Good q) ∧
+      (W.compactSkywalkTick base i ++ packAfter base i)), Good q) ∧
     (∀ q ∈ wires (renameProgram (sig i)
-      (decodeBefore base i ++ compactSkywalkReverseTick base i)), Good q) := by
-  have tick : ∀ q ∈ (compactSkywalkTickLayout base i).wires.toFinset, Good (sig i q) := by
+      (decodeBefore base i ++ W.compactSkywalkReverseTick base i)), Good q) := by
+  have tick : ∀ q ∈ (W.compactSkywalkTickLayout base i).wires.toFinset, Good (sig i q) := by
     intro q hq
     obtain ⟨l, rfl, hl⟩ := tick_labels i hi h1 q hq
     exact good_placed i l (by omega) hl
@@ -30999,7 +35019,7 @@ theorem blocks_good (i : Nat) (hi : i < 512) (h1 : 1 ≤ i) :
     obtain ⟨old, hraw, rfl⟩ := Finset.mem_image.mp hq
     rw [wires_append, Finset.mem_union] at hraw
     rcases hraw with h | h
-    · exact tick old (compactSkywalkTick_support base i hi base_pool_nodup h)
+    · exact tick old (W.compactSkywalkTick_support base i hi base_pool_nodup h)
     · exact codec old (Or.inl h)
   · intro q hq
     rw [renameProgram_support] at hq
@@ -31007,7 +35027,7 @@ theorem blocks_good (i : Nat) (hi : i < 512) (h1 : 1 ≤ i) :
     rw [wires_append, Finset.mem_union] at hraw
     rcases hraw with h | h
     · exact codec old (Or.inr h)
-    · exact tick old (compactSkywalkReverseTick_support base i hi base_pool_nodup h)
+    · exact tick old (W.compactSkywalkReverseTick_support base i hi base_pool_nodup h)
 
 theorem support_gen (i n : Nat) (h1 : 1 ≤ i) (hb : i+n ≤ 512) :
     (∀ q ∈ wires (forward i n), Good q) ∧ (∀ q ∈ wires (reverse i n), Good q) := by
@@ -31043,16 +35063,16 @@ theorem physical_gen (i n : Nat) (hb : i+n ≤ 512) :
   | zero => simp [forward, reverse, GatePhysical]
   | succ n ih =>
     have rest := ih (i+1) (by omega)
-    have tick := compactTicks_physical base i (by omega) base_pool_nodup
+    have tick := W.compactTicks_physical base i (by omega) base_pool_nodup
     have codec := pack_physical5 base base_pool_nodup i (by omega)
     have pack := codec.1
     have unpack := codec.2
     have inj := sig_injective i (by omega)
     have f := gatePhysical_rename _ inj _
-      ((gatePhysical_append (compactSkywalkTick base i) (packAfter base i)).mpr
+      ((gatePhysical_append (W.compactSkywalkTick base i) (packAfter base i)).mpr
         ⟨tick.1, pack⟩)
     have b := gatePhysical_rename _ inj _
-      ((gatePhysical_append (decodeBefore base i) (compactSkywalkReverseTick base i)).mpr
+      ((gatePhysical_append (decodeBefore base i) (W.compactSkywalkReverseTick base i)).mpr
         ⟨unpack, tick.2⟩)
     rw [forward, reverse, gatePhysical_append, gatePhysical_append]
     exact ⟨⟨f, rest.1⟩, ⟨rest.2, b⟩⟩
@@ -31423,11 +35443,12 @@ end
 section
 
 set_option maxRecDepth 8192
-set_option maxHeartbeats 30000
+set_option maxHeartbeats 200000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.KernelOB5
 open Arithmetic Secp256k1 MappedCompressed DirectSkywalk OffsetBorrowedCanonical History5
 attribute [local irreducible] run wires compactForward5 compactReverse5 OB5.forward OB5.reverse
+  W.compactForward5 W.compactReverse5
   HalfField5.segment5 SegmentOB5.program skywalkArithmeticClear
   NativeFirstDirect.forward NativeFirstKnown.inverse OneBankReplay5.replay
   HalfFieldOB5.centerT HalfFieldOB5.canonT
@@ -31500,8 +35521,18 @@ private theorem program_states_core (divide : Bool)
     DirectSkywalkArithmeticStrong divide base (base 2400) x Y s s7 := by
   have first := NativeFirstDirect.caller_first_stage base hn x Y.val hx0 hx s m1 hin
   rw [h1] at first
-  have fwd := OB5.forward_run x hx0 hx s1 m2 first
-  rw [h2,l2] at fwd
+  obtain ⟨hp0,hpo,hpp,cop⟩ := OB5.prime_facts x hx0 hx
+  have pool := skywalkShared_integer_nodup base hn
+  have firstW := (W.compactSkywalkStage_one base _ s1.basis).mpr first
+  -- the narrowed forward pass ends in the certified terminal state `t2`
+  have wEq : run (W.compactForward5 base 1 511) m2 s1=t2 :=
+    (W.compactForward5_old_eq base pool hlo x p hp0 hx0 hpo hpp hx cop s1 m2 m2 first).trans l2
+  have terminal : CompressedCompactStage5 base x p 512 t2.basis := by
+    rw [←l2]
+    exact (compactForward5_spec base pool hlo x p 1 511 hp0 hx0 hpo hpp hx cop
+      (by omega) s1 m2 (compactStage5_first base x p s1 first)).2
+  have fwd := OB5.forward_run x hx0 hx s1 m2 firstW
+  rw [h2,wEq] at fwd
   have e2 : s2=pullState (OB5.sig 511) t2 := fwd
   have e3 : s3=pullState (OB5.sig 511) t3 := by rw [←h3,e2,clear_placed,l3]
   obtain ⟨origin,facts,legal,_,_,entry⟩ := Kernel5.preparation_facts5 hn hlo ho x Y hx0 hx s
@@ -31537,12 +35568,14 @@ private theorem program_states_core (divide : Bool)
     (by rw [l3]; exact keeps.1) (by intro q hq; rw [l3]; exact keeps.2 q hq)
   rw [l5] at recovered
   have poolAgree : ∀q∈skywalkPoolWires base,t5.basis q=
-      (run (compactForward5 base 1 511) m2 s1).basis q := by
+      (run (W.compactForward5 base 1 511) m2 s1).basis q := by
     intro q hq
-    rw [l2]
+    rw [wEq]
     exact recovered.2 q hq
   have oldReverse : run (compactReverse5 base 1 511) m6 t5=s6 := by
-    rw [←h6,e5,OB5.reverse_run x hx0 hx s1 m2 first t5 poolAgree m6]
+    rw [←h6,e5,OB5.reverse_run x hx0 hx s1 m2 firstW t5 poolAgree m6,
+      W.compactReverse5_old_eq base pool hlo x p hp0 hx0 hpo hpp hx cop s1 t2 t5 m6 first terminal
+        recovered.1 recovered.2]
   exact Kernel5.kernel5_states_from_first divide hn hlo ho hf x Y hx0 hx s m1 m2 m3 m4 m5 m6 m7
     hin hg0 hs0 s1 t2 t3 t4 t5 s6 s7 h1 l2 l3 l4 l5 oldReverse h7 first
 
@@ -31592,8 +35625,9 @@ theorem program_spec (divide : Bool)
 attribute [local irreducible] Kernel5.actualKernel5 toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) :
-    toffoliCount (program divide)=1062998 ∧ measurementCount (program divide)=720628 := by
+    toffoliCount (program divide)=1061978 ∧ measurementCount (program divide)=720118 := by
   have cfg := MappedCompressed.LaneA.laneLogical_config
+  have narrow := W.compactPasses5_old_counts base base_pool_nodup
   have old := Kernel5.actualKernel5_counts divide
   have oldField := HalfField5.segment5_counts divide cfg.1 cfg.2.2 cfg.2.1
   have fresh := SegmentOB5.program_counts divide cfg.1 (cfg.2.1 _ (by simp))
@@ -31615,7 +35649,7 @@ theorem program_physical (divide : Bool) : GatePhysical (program divide) := by
 
 theorem program_gateSlots_le (divide : Bool) : Challenge.gateSlots (program divide) ≤ 20500000 := by
   have native := Baselines.nativeFirst_gateSlots_le base
-  have integer := compactLoops5_gateSlots_le base 1 511 (by omega)
+  have integer := W.compactLoops5_gateSlots_le base 1 511 (by omega)
   have f := OB5.forward_counts.2.2
   have r := OB5.reverse_counts.2.2
   have field := SegmentOB5.program_gateSlots_le divide
@@ -31792,8 +35826,8 @@ theorem farithOB_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
 attribute [local irreducible] KernelOB5.program toffoliCount measurementCount
 
 theorem arith_counts (L : ControlledPointLayout) :
-    toffoliCount (arith L false)=1062998 ∧ measurementCount (arith L false)=720628 ∧
-    toffoliCount (arith L true)=1062998 ∧ measurementCount (arith L true)=720628 := by
+    toffoliCount (arith L false)=1061978 ∧ measurementCount (arith L false)=720118 ∧
+    toffoliCount (arith L true)=1061978 ∧ measurementCount (arith L true)=720118 := by
   have a := KernelOB5.program_counts true
   have b := KernelOB5.program_counts false
   have c := renameProgram_counts (wireFn2 L) (KernelOB5.program true)
@@ -32306,8 +36340,8 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2187416 ∧
-    measurementCount (program L cx cy)=1502689 := by
+    toffoliCount (program L cx cy)=2185376 ∧
+    measurementCount (program L cx cy)=1501669 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
@@ -33423,7 +37457,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2188448, 1503716, 1603, 47000000⟩
+def bounds : Challenge.Bounds := ⟨2186408, 1502696, 1603, 47000000⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -33440,7 +37474,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((WrapperOB5.program_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2188448 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2186408 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -33450,7 +37484,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2188448 := by
     change toffoliCount (WrapperOB5.program layout (.some hc) cy (GenericOB5.program layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1503716 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1502696 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -33500,7 +37534,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1503716
+    change measurementCount (normalizeProgram (program C)) ≤ 1502696
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
