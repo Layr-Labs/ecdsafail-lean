@@ -628,7 +628,10 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     by
       intro eq
       have hd : f∈L.r++L.carry := eq ▸ hq
-      exact BalancedCircuit.flagAway L hn f hf (by simp only [List.mem_append] at hd ⊢; tauto)
+      exact BalancedCircuit.flagAway L hn f hf (by
+        rcases List.mem_append.mp hd with hr|hc
+        · exact List.mem_append_left _ (List.mem_append_left _ hr)
+        · exact List.mem_append_right _ hc)
   have wp := prepareFold_run L hn P N v m1 hp ho h0 hl hm
   rw [ew] at wp
   have wf (q : Wire) (ql : q≠L.lower) (qm : q≠L.minus) (q0 : q≠L.r0) :
@@ -636,10 +639,10 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
         Function.update_of_ne ql,Function.update_of_ne qm,Function.update_of_ne q0]
   have w0 : w.basis L.r0=false := by rw [wp]; simp [writeBit]
   have wl : w.basis L.lower=N := by rw [wp]; simp only [writeBit,
-    Function.update_of_ne (show L.lower≠L.r0 by tauto),
-    Function.update_of_ne (show L.lower≠L.minus by tauto),Function.update_self]
+    Function.update_of_ne (show L.lower≠L.r0 by clear * - nd; tauto),
+    Function.update_of_ne (show L.lower≠L.minus by clear * - nd; tauto),Function.update_self]
   have wm : w.basis L.minus=(P && N) := by rw [wp]; simp only [writeBit,
-    Function.update_of_ne (show L.minus≠L.r0 by tauto),Function.update_self]
+    Function.update_of_ne (show L.minus≠L.r0 by clear * - nd; tauto),Function.update_self]
   have shape : BalancedCircuit.rawTarget L=L.r0::BalancedCircuit.foldTarget L := by
     simp [BalancedCircuit.rawTarget,BalancedCircuit.foldTarget,
       BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.append_assoc]
@@ -683,7 +686,7 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     rw [BalancedCircuit.rawTarget,regValue_append] at av
     simpa [regValue,ao] using av
   have ap : a.basis L.parity=P :=
-    (af _ (away _ (by simp))).trans ((wf _ (by tauto) (by tauto) (by tauto)).trans hp)
+    (af _ (away _ (by simp))).trans ((wf _ (by clear * - nd; tauto) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans hp)
   have al : a.basis L.lower=N := (af _ (away _ (by simp))).trans wl
   have bp := signView_run L hn P N a m3 ap ao al
   rw [eb] at bp
@@ -696,10 +699,10 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     change (P ^^ N)=negative (halfResult T)
     rw [show negative (halfResult T)= (N ^^ P) from sg]
     exact Bool.xor_comm _ _
-  have bl : b.basis L.lower=N := (bf _ (by tauto)).trans al
-  have bpar : b.basis L.parity=P := (bf _ (by tauto)).trans ap
+  have bl : b.basis L.lower=N := (bf _ (by clear * - nd; tauto)).trans al
+  have bpar : b.basis L.parity=P := (bf _ (by clear * - nd; tauto)).trans ap
   have bm : b.basis L.minus=(P && N) :=
-    (bf _ (by tauto)).trans ((af _ (away _ (by simp))).trans wm)
+    (bf _ (by clear * - nd; tauto)).trans ((af _ (away _ (by simp))).trans wm)
   have br : regValue L.r b.basis=encodeWord 257 T/2 :=
     (regValue_congr _ _ _ (fun q hq => bf q (dataflag q (by simp [hq]) _ (by simp)))).trans ar
   have bc : ∀q∈L.carry,b.basis q=false := by
@@ -725,7 +728,7 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     have src := biasBits_sources L q hq
     have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
       rcases src with he|he <;> simp [he]
-    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> (clear * - nd; tauto)
     simp only [List.mem_cons,List.mem_append] at hmem
     rcases hmem with he|he|he
     · exact ne he
@@ -762,10 +765,10 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     rw [rel]
     simp only [writeBit,Function.update_of_ne ql,Function.update_of_ne qo,Function.update_of_ne qm]
   have tl : t.basis L.lower=false := by rw [rel]; simp only [writeBit,
-    Function.update_of_ne (show L.lower≠L.minus by tauto),
-    Function.update_of_ne (show L.lower≠L.one by tauto),Function.update_self]
+    Function.update_of_ne (show L.lower≠L.minus by clear * - nd; tauto),
+    Function.update_of_ne (show L.lower≠L.one by clear * - nd; tauto),Function.update_self]
   have cleanOne : t.basis L.one=false := by rw [rel]; simp only [writeBit,
-    Function.update_of_ne (show L.one≠L.minus by tauto),Function.update_self]
+    Function.update_of_ne (show L.one≠L.minus by clear * - nd; tauto),Function.update_self]
   have tm : t.basis L.minus=false := by rw [rel]; simp [writeBit]
   have tv : regValue L.r t.basis=encodeWord 256 (biasedValue R) := by
     apply Eq.trans _ zv
@@ -787,7 +790,8 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have toR (f : Wire) (hf : f∈[L.one,L.minus,L.lower]) : f∉L.r := by
     intro h
     exact BalancedCircuit.flagAway L hn f (by
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf ⊢; tauto) (by simp [h])
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl <;> simp) (by simp [h])
   have phase : e.phase=v.phase := by
     have ephase : e.phase=d.phase := by rw [←ee]; rfl
     have tphase : t.phase=z.phase := by rw [rel]
@@ -797,8 +801,8 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       (add.1.trans (bphase.trans (rot.1.trans wphase)))))
   refine ⟨phase,fl,?_,?_,?_,?_⟩
   · exact (ef _ (toR _ (by simp))).trans ps.2.2.1
-  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by tauto)).trans cleanOne)
-  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by tauto)).trans tm)
+  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by clear * - nd; tauto)).trans cleanOne)
+  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by clear * - nd; tauto)).trans tm)
   · intro q hqr hql hqm
     have qo : q≠L.one := fun eq => hqr (by simp [BalancedCircuit.rawTarget,eq])
     have qr : q∉L.r := fun h => hqr (by simp [BalancedCircuit.rawTarget,h])
@@ -890,8 +894,8 @@ theorem prefixPost (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       List.drop_zero,eu,run_append,run_take,ev,et]
   rw [actual]
   refine ⟨rem.1.trans sv.1,rem.2.1,rem.2.2.1,?_,?_,?_⟩
-  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by tauto) (by tauto)).trans vp
-  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by tauto) (by tauto)).trans
+  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans vp
+  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans
       ((rf _ (away _ (by simp))).trans seed.2.1)
   · intro q hqr hql hqp hqg
     by_cases qo : q=L.one
@@ -950,15 +954,18 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆(activeWires 
     · have h := comp hq
       simp only [member,BalancedCircuit.rawSource,BalancedCleanup.Layout.y,List.mem_toFinset,
         List.mem_append,List.mem_cons,List.not_mem_nil] at h ⊢
+      clear * - h
       tauto
     · rw [add] at hq
       simp only [member,BalancedCircuit.rawSource,BalancedCircuit.rawTarget,
         BalancedCleanup.Layout.y,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,
         List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
       tauto
     · have h := comp hq
       simp only [member,BalancedCircuit.rawSource,BalancedCleanup.Layout.y,List.mem_toFinset,
         List.mem_append,List.mem_cons,List.not_mem_nil] at h ⊢
+      clear * - h
       tauto
   have fs : wires (fold L)⊆(activeWires L).toFinset := by
     intro q hq
@@ -968,6 +975,7 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆(activeWires 
     · rcases biasBits_sources L q h with he|he <;> exact (member q).mpr (Or.inl (by simp [he]))
     · simp only [member,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.mem_append,
         List.mem_cons,List.not_mem_nil] at h ⊢
+      clear * - h
       tauto
     · exact (member q).mpr (Or.inr (Or.inr (Or.inr (List.mem_of_mem_take h))))
     · exact (member q).mpr (Or.inl (by simp [h]))
@@ -976,6 +984,7 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆(activeWires 
     intro q hq
     simp only [BalancedCircuit.seedViews,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
       Finset.mem_singleton,Finset.notMem_empty,List.mem_toFinset,List.mem_cons,List.not_mem_nil] at hq ⊢
+    clear * - hq
     tauto
   have seed : wires (BalancedCircuit.seedViews L)⊆(activeWires L).toFinset := by
     intro q hq
@@ -999,6 +1008,7 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆(activeWires 
     rw [(rotate_wires _).1,if_neg (by omega)] at hq
     simp only [member,BalancedCircuit.rawTarget,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,
       List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil] at hq ⊢
+    clear * - hq
     tauto
   have flip : wires (flipBias L)⊆(activeWires L).toFinset := by
     intro q hq
@@ -1006,6 +1016,7 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆(activeWires 
     have lowmem : ∀q∈L.low,q∈(activeWires L).toFinset := by
       intro q hq
       simp only [member,BalancedCleanup.Layout.low,List.mem_cons] at hq ⊢
+      clear * - hq
       tauto
     have he : q=L.rtail.getD 253 0 := by simpa only [flipBias,wires,Instr.wires,
       Finset.union_empty,Finset.mem_singleton] using hq
@@ -1018,14 +1029,17 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆(activeWires 
     · exact raw hq
     · simp only [prepareFold,member,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
         Finset.mem_singleton,Finset.notMem_empty,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
       tauto
     · exact rot hq
     · simp only [signView,member,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
         Finset.mem_singleton,Finset.notMem_empty,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
       tauto
     · exact fs hq
     · simp only [releaseSelectors,member,wires,Instr.wires,correctionWires,Finset.mem_union,
         Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
       tauto
     · exact ps hq
     · exact flip hq
@@ -1035,19 +1049,20 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆(activeWires 
     rcases hq with hq|hq|hq|hq|hq|hq
     · apply cleanup q
       simp only [BalancedCleanup.program,wires_append,Finset.mem_union,or_assoc]
-      tauto
+      exact Or.inr (Or.inr (Or.inl hq))
     · apply cleanup q
       simp only [BalancedCleanup.program,wires_append,Finset.mem_union,or_assoc]
-      tauto
+      exact Or.inr (Or.inr (Or.inr (Or.inl hq)))
     · apply cleanup q
       simp only [BalancedCleanup.program,wires_append,wires_reverse,Finset.mem_union,or_assoc]
-      tauto
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl hq))))
     · apply cleanup q
       simp only [BalancedCleanup.program,wires_append,wires_reverse,Finset.mem_union,or_assoc]
-      tauto
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl hq)))))
     · exact ps hq
     · simp only [member,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
         Finset.mem_singleton,Finset.notMem_empty,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
       tauto
   intro q hq
   rw [program,wires_append,Finset.mem_union] at hq
@@ -1880,18 +1895,20 @@ theorem restoreRaw_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have sd := scalarND L hn
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
     not_or,not_false_eq_true,and_true] at sd
-  have lm : L.lower≠L.minus := by tauto
-  have om : L.one≠L.minus := by tauto
-  have ol : L.one≠L.lower := by tauto
-  have pl : L.parity≠L.lower := by tauto
-  have po : L.parity≠L.one := by tauto
-  have pm : L.parity≠L.minus := by tauto
-  have r0p : L.r0≠L.parity := by tauto
-  have r0o : L.r0≠L.one := by tauto
+  have lm : L.lower≠L.minus := by clear * - sd; tauto
+  have om : L.one≠L.minus := by clear * - sd; tauto
+  have ol : L.one≠L.lower := by clear * - sd; tauto
+  have pl : L.parity≠L.lower := by clear * - sd; tauto
+  have po : L.parity≠L.one := by clear * - sd; tauto
+  have pm : L.parity≠L.minus := by clear * - sd; tauto
+  have r0p : L.r0≠L.parity := by clear * - sd; tauto
+  have r0o : L.r0≠L.one := by clear * - sd; tauto
   have flags (a : Wire) (ha : a∈L.r++L.y++L.carry)
       (f : Wire) (hf : f∈[L.lower,L.one,L.minus]) : a≠f := by
     intro e
-    exact flagAway L hn f (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hf ⊢; tauto)
+    exact flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl <;> simp)
       (e ▸ ha)
   have uf (a : Wire) (al : a≠L.lower) (ao : a≠L.one) (am : a≠L.minus) : u.basis a=s.basis a := by
     simp [u,writeBit,al,ao,am]
@@ -1917,7 +1934,9 @@ theorem restoreRaw_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have vR : regValue L.r v.basis=encodeWord 256 (T/2) := sub.2.1
   have fa (f : Wire) (hf : f∈[L.lower,L.one,L.minus,L.parity]) : f∉L.r := by
     intro h
-    exact flagAway L hn f (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hf ⊢; tauto)
+    exact flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl|rfl <;> simp)
       (by simp [h])
   have rel : z=⟨v.phase,writeBit (writeBit (writeBit v.basis L.lower false)
       L.one false) L.minus false⟩ :=
@@ -2100,8 +2119,7 @@ theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       intro e
       apply flagAway L hn f hf
       subst a
-      simp only [List.mem_append] at ha ⊢
-      tauto
+      simpa only [List.append_assoc] using List.mem_append_right L.r ha
   have nr (a : Wire) (ha : a∈L.y++L.carry) : a∉L.r := by
     have d := (List.nodup_append'.mp (allND L hn)).2.1
     have dn : (L.r++(L.y++L.carry)).Nodup := by
@@ -2221,8 +2239,7 @@ theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
         apply aw
         subst a
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
-        simp only [work,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
-        tauto
+        rcases hf with rfl|rfl|rfl|rfl|rfl <;> simp [work]
       have rawA : a∉rawTarget L := by simp [rawTarget,ar,ne L.one (by simp)]
       exact (seed.2.2.2.2 a (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))).trans
         ((f4 a rawA (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))).trans
@@ -2732,7 +2749,10 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     by
       intro eq
       have hd : f∈L.r++L.carry := eq ▸ hq
-      exact BalancedCircuit.flagAway L hn f hf (by simp only [List.mem_append] at hd ⊢; tauto)
+      exact BalancedCircuit.flagAway L hn f hf (by
+        rcases List.mem_append.mp hd with hr|hc
+        · exact List.mem_append_left _ (List.mem_append_left _ hr)
+        · exact List.mem_append_right _ hc)
   have wp := prepareFold_run L hn P N v m1 hp ho h0 hl hm
   rw [ew] at wp
   have wf (q : Wire) (ql : q≠L.lower) (qm : q≠L.minus) (q0 : q≠L.r0) :
@@ -2740,10 +2760,10 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
         Function.update_of_ne ql,Function.update_of_ne qm,Function.update_of_ne q0]
   have w0 : w.basis L.r0=false := by rw [wp]; simp [writeBit]
   have wl : w.basis L.lower=N := by rw [wp]; simp only [writeBit,
-    Function.update_of_ne (show L.lower≠L.r0 by tauto),
-    Function.update_of_ne (show L.lower≠L.minus by tauto),Function.update_self]
+    Function.update_of_ne (show L.lower≠L.r0 by clear * - nd; tauto),
+    Function.update_of_ne (show L.lower≠L.minus by clear * - nd; tauto),Function.update_self]
   have wm : w.basis L.minus=(P && N) := by rw [wp]; simp only [writeBit,
-    Function.update_of_ne (show L.minus≠L.r0 by tauto),Function.update_self]
+    Function.update_of_ne (show L.minus≠L.r0 by clear * - nd; tauto),Function.update_self]
   have shape : BalancedCircuit.rawTarget L=L.r0::BalancedCircuit.foldTarget L := by
     simp [BalancedCircuit.rawTarget,BalancedCircuit.foldTarget,
       BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.append_assoc]
@@ -2787,7 +2807,7 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     rw [BalancedCircuit.rawTarget,regValue_append] at av
     simpa [regValue,ao] using av
   have ap : a.basis L.parity=P :=
-    (af _ (away _ (by simp))).trans ((wf _ (by tauto) (by tauto) (by tauto)).trans hp)
+    (af _ (away _ (by simp))).trans ((wf _ (by clear * - nd; tauto) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans hp)
   have al : a.basis L.lower=N := (af _ (away _ (by simp))).trans wl
   have bp := signView_run L hn P N a m3 ap ao al
   rw [eb] at bp
@@ -2800,10 +2820,10 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     change (P ^^ N)=negative (halfResult T)
     rw [show negative (halfResult T)= (N ^^ P) from sg]
     exact Bool.xor_comm _ _
-  have bl : b.basis L.lower=N := (bf _ (by tauto)).trans al
-  have bpar : b.basis L.parity=P := (bf _ (by tauto)).trans ap
+  have bl : b.basis L.lower=N := (bf _ (by clear * - nd; tauto)).trans al
+  have bpar : b.basis L.parity=P := (bf _ (by clear * - nd; tauto)).trans ap
   have bm : b.basis L.minus=(P && N) :=
-    (bf _ (by tauto)).trans ((af _ (away _ (by simp))).trans wm)
+    (bf _ (by clear * - nd; tauto)).trans ((af _ (away _ (by simp))).trans wm)
   have br : regValue L.r b.basis=encodeWord 257 T/2 :=
     (regValue_congr _ _ _ (fun q hq => bf q (dataflag q (by simp [hq]) _ (by simp)))).trans ar
   have bc : ∀q∈L.carry,b.basis q=false := by
@@ -2829,7 +2849,7 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     have src := biasBits_sources L q hq
     have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
       rcases src with he|he <;> simp [he]
-    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> (clear * - nd; tauto)
     simp only [List.mem_cons,List.mem_append] at hmem
     rcases hmem with he|he|he
     · exact ne he
@@ -2868,10 +2888,10 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     rw [rel]
     simp only [writeBit,Function.update_of_ne ql,Function.update_of_ne qo,Function.update_of_ne qm]
   have tl : t.basis L.lower=false := by rw [rel]; simp only [writeBit,
-    Function.update_of_ne (show L.lower≠L.minus by tauto),
-    Function.update_of_ne (show L.lower≠L.one by tauto),Function.update_self]
+    Function.update_of_ne (show L.lower≠L.minus by clear * - nd; tauto),
+    Function.update_of_ne (show L.lower≠L.one by clear * - nd; tauto),Function.update_self]
   have cleanOne : t.basis L.one=false := by rw [rel]; simp only [writeBit,
-    Function.update_of_ne (show L.one≠L.minus by tauto),Function.update_self]
+    Function.update_of_ne (show L.one≠L.minus by clear * - nd; tauto),Function.update_self]
   have tm : t.basis L.minus=false := by rw [rel]; simp [writeBit]
   have tv : regValue L.r t.basis=encodeWord 256 (biasedValue R) := by
     apply Eq.trans _ zv
@@ -2893,7 +2913,8 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have toR (f : Wire) (hf : f∈[L.one,L.minus,L.lower]) : f∉L.r := by
     intro h
     exact BalancedCircuit.flagAway L hn f (by
-      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf ⊢; tauto) (by simp [h])
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl <;> simp) (by simp [h])
   have phase : e.phase=v.phase := by
     have ephase : e.phase=d.phase := by rw [←ee]; rfl
     have tphase : t.phase=z.phase := by rw [rel]
@@ -2903,8 +2924,8 @@ theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       (add.1.trans (bphase.trans (rot.1.trans wphase)))))
   refine ⟨phase,fl,?_,?_,?_,?_⟩
   · exact (ef _ (toR _ (by simp))).trans ps.2.2.1
-  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by tauto)).trans cleanOne)
-  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by tauto)).trans tm)
+  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by clear * - nd; tauto)).trans cleanOne)
+  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by clear * - nd; tauto)).trans tm)
   · intro q hqr hql hqm
     have qo : q≠L.one := fun eq => hqr (by simp [BalancedCircuit.rawTarget,eq])
     have qr : q∉L.r := fun h => hqr (by simp [BalancedCircuit.rawTarget,h])
@@ -3013,8 +3034,8 @@ theorem prefixPost (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       List.drop_zero,eu,run_append,run_take,ev,et]
   rw [actual]
   refine ⟨rem.1.trans sv.1,rem.2.1,rem.2.2.1,?_,?_,?_⟩
-  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by tauto) (by tauto)).trans vp
-  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by tauto) (by tauto)).trans
+  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans vp
+  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans
       ((rf _ (away _ (by simp))).trans seed.2.1)
   · intro q hqr hql hqp hqg
     by_cases qo : q=L.one
@@ -3318,18 +3339,20 @@ theorem restoreRaw_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have sd := scalarND L hn
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
     not_or,not_false_eq_true,and_true] at sd
-  have lm : L.lower≠L.minus := by tauto
-  have om : L.one≠L.minus := by tauto
-  have ol : L.one≠L.lower := by tauto
-  have pl : L.parity≠L.lower := by tauto
-  have po : L.parity≠L.one := by tauto
-  have pm : L.parity≠L.minus := by tauto
-  have r0p : L.r0≠L.parity := by tauto
-  have r0o : L.r0≠L.one := by tauto
+  have lm : L.lower≠L.minus := by clear * - sd; tauto
+  have om : L.one≠L.minus := by clear * - sd; tauto
+  have ol : L.one≠L.lower := by clear * - sd; tauto
+  have pl : L.parity≠L.lower := by clear * - sd; tauto
+  have po : L.parity≠L.one := by clear * - sd; tauto
+  have pm : L.parity≠L.minus := by clear * - sd; tauto
+  have r0p : L.r0≠L.parity := by clear * - sd; tauto
+  have r0o : L.r0≠L.one := by clear * - sd; tauto
   have flags (a : Wire) (ha : a∈L.r++L.y++L.carry)
       (f : Wire) (hf : f∈[L.lower,L.one,L.minus]) : a≠f := by
     intro e
-    exact flagAway L hn f (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hf ⊢; tauto)
+    exact flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl <;> simp)
       (e ▸ ha)
   have uf (a : Wire) (al : a≠L.lower) (ao : a≠L.one) (am : a≠L.minus) : u.basis a=s.basis a := by
     simp [u,writeBit,al,ao,am]
@@ -3355,7 +3378,9 @@ theorem restoreRaw_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have vR : regValue L.r v.basis=encodeWord 256 (T/2) := sub.2.1
   have fa (f : Wire) (hf : f∈[L.lower,L.one,L.minus,L.parity]) : f∉L.r := by
     intro h
-    exact flagAway L hn f (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hf ⊢; tauto)
+    exact flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl|rfl <;> simp)
       (by simp [h])
   have rel : z=⟨v.phase,writeBit (writeBit (writeBit v.basis L.lower false)
       L.one false) L.minus false⟩ :=
@@ -3526,8 +3551,7 @@ theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       intro e
       apply flagAway L hn f hf
       subst a
-      simp only [List.mem_append] at ha ⊢
-      tauto
+      simpa only [List.append_assoc] using List.mem_append_right L.r ha
   have nr (a : Wire) (ha : a∈L.y++L.carry) : a∉L.r := by
     have d := (List.nodup_append'.mp (allND L hn)).2.1
     have dn : (L.r++(L.y++L.carry)).Nodup := by
@@ -3647,8 +3671,7 @@ theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
         apply aw
         subst a
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
-        simp only [work,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
-        tauto
+        rcases hf with rfl|rfl|rfl|rfl|rfl <;> simp [work]
       have rawA : a∉rawTarget L := by simp [rawTarget,ar,ne L.one (by simp)]
       exact (seed.2.2.2.2 a (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))).trans
         ((f4 a rawA (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))).trans
