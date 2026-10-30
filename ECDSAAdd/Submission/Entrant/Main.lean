@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.DiagSquare
+import ECDSAAdd.Submission.Entrant.OneFlag
 namespace ECDSAAdd.Entrant
 open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed CompressedPointDialog
   CompressedAllocation CompressedFieldSupport DirectSkywalk BalancedField History5 EntryFuse EntryFuseFinite
@@ -7,9 +7,9 @@ def program (C : Point) : Program :=
   match C with
   | .zero => []
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
-      Edges.wrapper layout C cy (OwnDiagEndpointActual.genE layout cx cy)
+      Edges.wrapper layout C cy (OwnOneFlagActual.gen layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2154646,1500614,1593,50000004⟩
+def bounds : Challenge.Bounds := ⟨2154646,1500614,1592,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -21,11 +21,10 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
   | @some cx cy hc =>
     have cfg:=MappedCompressed.LaneA.laneLogical_config
     have above:History5.HistoryAbove MappedCompressed.base:=by intro j hj;simp [MappedCompressed.base]
-    have hG:=OwnDiagEndpointActual.genE_sites layout layout_widths layout_nodup cx cy
+    have hG:=OwnOneFlagActual.sites layout layout_widths layout_nodup cx cy
     exact fixed_correct _ b R _
       (Edges.full_spec layout layout_widths layout_nodup R hc b _
-        (OwnDiagEndpointActual.genE_ok layout layout_widths layout_nodup OwnQ6Actual.entry_selected_free
-          OwnQ6Actual.exit_selected_free cfg.1 above cfg.2.1 cfg.2.2 hc) hG)
+        (OwnOneFlagActual.ok layout layout_widths layout_nodup cfg.1 above cfg.2.1 cfg.2.2 hc) hG)
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
@@ -33,49 +32,51 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154646 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
-    have h:=(Edges.wrapper_counts layout layout_widths (OwnDiagEndpointActual.genE layout cx cy) hc).1
+    have h:=(Edges.wrapper_counts layout layout_widths (OwnOneFlagActual.gen layout cx cy) hc).1
     have g:=(SelGeneric5.program_counts layout layout_widths cx cy).1
     have gf:=(genF_counts layout layout_widths cx cy).1
     have gd:=(genFFused_counts_diff layout layout_widths cx cy).1
     have ge:=(OwnExitProducer.genE_counts_diff layout layout_widths cx cy).1
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).1
+    have gn:=(OwnOneFlagActual.counts_eq layout layout_widths cx cy).1
     have ga:=(OwnDiagEndpointActual.genE_counts_diff layout layout_widths cx cy).1
-    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnDiagEndpointActual.genE layout cx cy))≤2154646
+    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnOneFlagActual.gen layout cx cy))≤2154646
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1500614 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc =>
-    have h:=(Edges.wrapper_counts layout layout_widths (OwnDiagEndpointActual.genE layout cx cy) hc).2
+    have h:=(Edges.wrapper_counts layout layout_widths (OwnOneFlagActual.gen layout cx cy) hc).2
     have g:=(SelGeneric5.program_counts layout layout_widths cx cy).2
     have gf:=(genF_counts layout layout_widths cx cy).2
     have gd:=(genFFused_counts_diff layout layout_widths cx cy).2
     have ge:=(OwnExitProducer.genE_counts_diff layout layout_widths cx cy).2
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).2
+    have gn:=(OwnOneFlagActual.counts_eq layout layout_widths cx cy).2
     have ga:=(OwnDiagEndpointActual.genE_counts_diff layout layout_widths cx cy).2
-    change measurementCount (Edges.wrapper layout (.some hc) cy (OwnDiagEndpointActual.genE layout cx cy))≤1500614
+    change measurementCount (Edges.wrapper layout (.some hc) cy (OwnOneFlagActual.gen layout cx cy))≤1500614
     omega
 
-theorem program_qubits (C : Point) : qubits (program C)≤1593 := by
+theorem program_qubits (C : Point) : qubits (program C)≤1592 := by
   cases C with
-  | zero => change qubits []≤1593;rw [qubits_empty];decide
-  | @some cx cy hc => exact OwnDiagEndpointActual.genE_qubits1593 OwnQ6Actual.entry_selected_free OwnQ6Actual.exit_selected_free (.some hc) cx cy
+  | zero => change qubits []≤1592;rw [qubits_empty];decide
+  | @some cx cy hc => exact OwnOneFlagActual.qubits (.some hc) cx cy
 
 theorem program_physical (C : Point) : GatePhysical (program C) := by
   cases C with
   | zero => simp [program,GatePhysical]
   | @some cx cy hc =>
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
-      (OwnDiagEndpointActual.genE_physical layout layout_widths layout_nodup cx cy)
+      (OwnOneFlagActual.physical layout layout_widths layout_nodup cx cy)
 
 theorem program_gateSlots (C : Point) : gateSlots (program C)≤50000004 := by
   cases C with
   | zero => simp [program,gateSlots]
   | @some cx cy hc =>
-    have h:=Edges.wrapper_slots layout layout_widths (.some hc) cy (OwnDiagEndpointActual.genE layout cx cy)
-    have g:=OwnDiagEndpointActual.genE_gateSlots_le layout layout_widths cx cy
-    change gateSlots (Edges.wrapper layout (.some hc) cy (OwnDiagEndpointActual.genE layout cx cy))≤_
+    have h:=Edges.wrapper_slots layout layout_widths (.some hc) cy (OwnOneFlagActual.gen layout cx cy)
+    have g:=OwnOneFlagActual.slots layout layout_widths cx cy
+    change gateSlots (Edges.wrapper layout (.some hc) cy (OwnOneFlagActual.gen layout cx cy))≤_
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -86,7 +87,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change measurementCount (normalizeProgram (program C))≤1500614
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
-    change qubits (normalizeProgram (program C))≤1593
+    change qubits (normalizeProgram (program C))≤1592
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
     change gateSlots (normalizeProgram (program C))≤50000004
