@@ -4922,7 +4922,7 @@ theorem raw_slots : Challenge.gateSlots TerminalGraphEntryRaw.kernel5≤20524006
  omega
 
 /-- Exact counts use the new field body and protected integer budget, not a mutable old parent. -/
-theorem raw_counts : toffoliCount TerminalGraphEntryRaw.kernel5=1048650 ∧
+theorem raw_counts : toffoliCount TerminalGraphEntryRaw.kernel5=1048618 ∧
  measurementCount TerminalGraphEntryRaw.kernel5=720512 := by
  have cfg:=MappedCompressed.LaneA.laneLogical_config
  have r:=TerminalGraphReplay.replay_counts_diff true
@@ -5000,12 +5000,12 @@ theorem kernel5_slots_le : Challenge.gateSlots kernel5≤20524006 := by
 theorem kernel5S_slots_le : Challenge.gateSlots kernel5S≤20524006 :=
  selKernel5.sub.slots.trans kernel5_slots_le
 
-theorem kernel5_counts : toffoliCount kernel5=1048650 ∧ measurementCount kernel5=720512 := by
+theorem kernel5_counts : toffoliCount kernel5=1048618 ∧ measurementCount kernel5=720512 := by
  have h:=TerminalGraphEntryResources.outer_counts TerminalGraphEntryRaw.hostField5
  rw [TerminalGraphEntryQ5.old_shape] at h
  simpa only [kernel5,h.1,h.2] using TerminalGraphEntryResources.raw_counts
 
-theorem kernel5S_counts : toffoliCount kernel5S=1047630 ∧ measurementCount kernel5S=720512 := by
+theorem kernel5S_counts : toffoliCount kernel5S=1047598 ∧ measurementCount kernel5S=720512 := by
  have c:=kernel5_counts
  have t:=selKernel5.tc
  have m:=selKernel5.mc
@@ -5020,7 +5020,7 @@ theorem arithEntryS_physical (L : ControlledPointLayout) (hw:L.Widths) (hn:L.wir
  · exact kernel5S_physical
 
 theorem arithEntryS_counts (L : ControlledPointLayout) :
- toffoliCount (arithEntryS L)=1047630 ∧ measurementCount (arithEntryS L)=720512 := by
+ toffoliCount (arithEntryS L)=1047598 ∧ measurementCount (arithEntryS L)=720512 := by
  simpa only [arithEntryS,(renameProgram_counts (wireFn2 L) kernel5S).1,
    (renameProgram_counts (wireFn2 L) kernel5S).2] using kernel5S_counts
 
@@ -5029,7 +5029,7 @@ theorem arithEntryS_gateSlots_le (L : ControlledPointLayout) :
  simpa only [arithEntryS,Baselines.rename_gateSlots] using kernel5S_slots_le
 
 theorem fusedDivisionF_counts (L : ControlledPointLayout) (hw:L.Widths) (k:Fp) :
- toffoliCount (fusedDivisionF L k)=1048396 ∧ measurementCount (fusedDivisionF L k)=721279 := by
+ toffoliCount (fusedDivisionF L k)=1048364 ∧ measurementCount (fusedDivisionF L k)=721279 := by
  have a:=EntryFuse.fusedY_counts L hw k
  have b:=arithEntryS_counts L
  simp only [fusedDivisionF,toffoliCount_append,measurementCount_append,a.1,a.2,b.1,b.2]
@@ -5201,7 +5201,7 @@ theorem division_slots (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
  omega
 
 theorem division_counts_diff (Dold : Program)
- (oldCounts : toffoliCount Dold=1048650 ∧ measurementCount Dold=721534)
+ (oldCounts : toffoliCount Dold=1048618 ∧ measurementCount Dold=721534)
  (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
  toffoliCount (OwnTerminalGraphEntryQ7.fusedDivisionF L k)+254=toffoliCount Dold ∧
  measurementCount (OwnTerminalGraphEntryQ7.fusedDivisionF L k)+255=measurementCount Dold := by

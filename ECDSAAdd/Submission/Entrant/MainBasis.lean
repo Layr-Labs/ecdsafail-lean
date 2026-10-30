@@ -1919,7 +1919,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       Edges.wrapper layout C cy (OwnQ6Producer.genE layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2155418,1501195,1593,50000004⟩
+def bounds : Challenge.Bounds := ⟨2155354,1501195,1593,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -1939,7 +1939,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155418 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155354 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
@@ -1949,7 +1949,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155418 := by
     have gd:=(genFFused_counts_diff layout layout_widths cx cy).1
     have ge:=(OwnExitProducer.genE_counts_diff layout layout_widths cx cy).1
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).1
-    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnQ6Producer.genE layout cx cy))≤2155418
+    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnQ6Producer.genE layout cx cy))≤2155354
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1501195 := by
@@ -4534,7 +4534,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       Edges.wrapper layout C cy (OwnAll12Producer.genE layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2155162,1500940,1593,50000004⟩
+def bounds : Challenge.Bounds := ⟨2155098,1500940,1593,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -4554,7 +4554,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155162 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155098 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
@@ -4565,7 +4565,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155162 := by
     have ge:=(OwnExitProducer.genE_counts_diff layout layout_widths cx cy).1
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).1
     have ga:=(OwnAll12Producer.genE_counts_diff layout layout_widths cx cy).1
-    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnAll12Producer.genE layout cx cy))≤2155162
+    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnAll12Producer.genE layout cx cy))≤2155098
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1500940 := by

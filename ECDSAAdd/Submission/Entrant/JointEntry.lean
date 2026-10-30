@@ -4038,7 +4038,9 @@ theorem arithmetic_support : wires arithmetic⊆arithmeticSites := by
    tauto
 
 theorem arithmetic_retired : base 1541∉wires arithmetic := by
- have off:base 1541∉arithmeticSites := by decide +kernel
+ have off:base 1541∉arithmeticSites := by
+  rw [arithmeticSites,List.mem_toFinset]
+  decide +kernel
  exact fun h=>off (arithmetic_support h)
 
 theorem arithmetic_avoids (q:Wire) (off:q∉arithmeticSites) : q∉wires arithmetic :=
@@ -5274,7 +5276,9 @@ private theorem joint_44_rest_nodup (l : MixedTranscriptLetter) (hl : l∈remain
 
 theorem firstBody_control_free : base 2400∉wires firstBody := by
   have raw : base 2400∉wires (joint (base 1028) (base 1)) := by
-    have off : base 2400∉sites (base 1028) (base 1) := by decide +kernel
+    have off : base 2400∉sites (base 1028) (base 1) := by
+      rw [sites,List.mem_toFinset]
+      decide +kernel
     exact fun h=>off (joint_support _ _ (by decide +kernel) h)
   have sw := (((SW.Sel.refl (base 2400) OneFlagSW.swapBody OneFlagSW.selSwap_away).window
     (base 1029) (base 2409) false (by decide +kernel))).away

@@ -470,7 +470,7 @@ theorem exitKernel5_gateSlots_le : Challenge.gateSlots exitKernel5≤20500006 :=
   exitKernel5_sub.slots.trans (KernelOB5.program_gateSlots_le false)
 
 theorem exitKernel5_counts :
-    toffoliCount exitKernel5=1048902 ∧ measurementCount exitKernel5=721023 := by
+    toffoliCount exitKernel5=1048870 ∧ measurementCount exitKernel5=721023 := by
   have old := KernelOB5.program_counts false
   have cv := OwnQ5Endpoint.endpoint_counts
   have renNew := renameProgram_counts HostOB5.hostSwap exitSegment5
@@ -5784,7 +5784,7 @@ theorem relocated_counts (F:Program):
   have d:=Q5FusionPhase.relocated_counts F
   exact ⟨a.1.trans (b.1.trans (c.1.trans d.1)),a.2.trans (b.2.trans (c.2.trans d.2))⟩
 
-theorem kernelE_counts:toffoliCount kernelE=1047630 ∧ measurementCount kernelE=719492:=by
+theorem kernelE_counts:toffoliCount kernelE=1047598 ∧ measurementCount kernelE=719492:=by
   have cfg:=MappedCompressed.LaneA.laneLogical_config
   have k:=EntryFuse.kernel5_counts
   have r:=QSiteDirectReplay.replay_counts true cfg.1 (cfg.2.1 _ (by simp))
@@ -5803,7 +5803,7 @@ theorem kernelE_counts:toffoliCount kernelE=1047630 ∧ measurementCount kernelE
   simp only [if_true] at r o
   constructor <;> omega
 
-theorem kernelX_counts:toffoliCount kernelX=1047882 ∧ measurementCount kernelX=720003:=by
+theorem kernelX_counts:toffoliCount kernelX=1047850 ∧ measurementCount kernelX=720003:=by
   have cfg:=MappedCompressed.LaneA.laneLogical_config
   have k:=ExitFuse.exitKernel5_counts
   have r:=QSiteDirectReplay.replay_counts false cfg.1 (cfg.2.1 _ (by simp))
@@ -6895,7 +6895,7 @@ theorem genQ_slots (L:ControlledPointLayout)(hw:L.Widths)(cx cy:Fp):gateSlots (g
   simp only [genQ,midQ,gateSlots_append,rs]
   omega
 
-theorem kernelQS_numbers:toffoliCount EntryFuseQ5.kernelQS=1048138 ∧ measurementCount EntryFuseQ5.kernelQS=720767:=by
+theorem kernelQS_numbers:toffoliCount EntryFuseQ5.kernelQS=1048106 ∧ measurementCount EntryFuseQ5.kernelQS=720767:=by
   have d:=OwnEntryFuseQ5.kernel5S_counts_diff
   have q:=OwnQ5SW.selKernelQ_sel true
   have qt:=q.tc
@@ -6903,10 +6903,10 @@ theorem kernelQS_numbers:toffoliCount EntryFuseQ5.kernelQS=1048138 ∧ measureme
   have c:=OwnQ5Actual.kernel_counts true
   simp only [OwnQ5Runtime.kernelS] at d
   simp only [if_true] at c
-  change toffoliCount OwnEntryFuseQ5.kernel5S=1048138 ∧ measurementCount OwnEntryFuseQ5.kernel5S=720767
+  change toffoliCount OwnEntryFuseQ5.kernel5S=1048106 ∧ measurementCount OwnEntryFuseQ5.kernel5S=720767
   constructor <;> omega
 
-theorem exitKernelQS_numbers:toffoliCount ExitFuseQ5.exitKernelQS=1047882 ∧ measurementCount ExitFuseQ5.exitKernelQS=721023:=by
+theorem exitKernelQS_numbers:toffoliCount ExitFuseQ5.exitKernelQS=1047850 ∧ measurementCount ExitFuseQ5.exitKernelQS=721023:=by
   have d:=ExitFuseQ5.exitKernelQS_counts_diff
   have q:=OwnQ5SW.selKernelQ_sel false
   have qt:=q.tc
@@ -7067,7 +7067,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2153608, 1498280, 1591, 50000004⟩
+def bounds : Challenge.Bounds := ⟨2153544, 1498280, 1591, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -7086,7 +7086,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((OwnDHWrapper.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2153608 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2153544 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
