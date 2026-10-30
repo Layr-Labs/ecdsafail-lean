@@ -36394,6 +36394,382 @@ end ECDSAAdd.Entrant.OneBankReplay5
 end
 
 
+
+section
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnPlusHost
+open Arithmetic MappedCompressed
+
+theorem kernel_active (divide : Bool) (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    wires (OneBankCore5.kernel divide L)⊆(BiasedCircuit.activeWires L).toFinset := by
+  let K : BalancedCircuit.Layout:={L with cout:=L.parity,plus:=L.parity}
+  have eq : OneBankCore5.kernel divide L=OneBankCore5.kernel divide K := by cases divide <;> rfl
+  rw [eq]
+  apply (OneBankCore5.support divide K hw).trans
+  intro q hq
+  simp only [K,BalancedCircuit.Layout.wires,BiasedCircuit.activeWires,
+    BalancedCleanup.Layout.wires,List.mem_toFinset,List.mem_append,List.mem_cons,
+    List.not_mem_nil,or_false,or_assoc] at hq ⊢
+  tauto
+
+theorem kernel_omitted (divide : Bool) (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    L.plus∉wires (OneBankCore5.kernel divide L) := by
+  have nd : ([L.cout,L.plus]++BiasedCircuit.activeWires L).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h:=List.nodup_iff_count.mp hn q
+    simp only [BalancedCircuit.Layout.wires,BiasedCircuit.activeWires,List.count_append,
+      List.count_cons,List.count_nil] at h ⊢
+    omega
+  intro used
+  exact List.disjoint_left.mp (List.nodup_append'.mp nd).2.2 (by simp)
+    (List.mem_toFinset.mp (kernel_active divide L hw used))
+
+theorem kernel_avoids (divide : Bool) :
+    base 766∉wires (OneBankCore5.kernel divide (OneBankCell5.ports base (base 2409))) := by
+  let L:=OneBankCell5.ports base (base 2409)
+  have hw:=OneBankCell5.ports_widths base (base 2409)
+  have hn:L.wires.Nodup:=OneBankCell5.ports_nodup_injective base (base 2409) base_injective
+    (by intro h; obtain ⟨i,hi,he⟩:=List.mem_map.mp h; have e:=base_injective he; have b:=OneBankCell5.ids_bound i hi; omega)
+  exact kernel_omitted divide L hw hn
+
+theorem rename_avoid (e : Equiv.Perm Wire) (q : Wire) (P : Program)
+    (fix : e q=q) (noq : q∉wires P) : q∉wires (renameProgram e P) := by
+  rw [renameProgram_support]
+  intro h
+  obtain ⟨a,ha,he⟩:=Finset.mem_image.mp h
+  have eq:a=q:=e.injective (he.trans fix.symm)
+  exact noq (eq ▸ ha)
+
+end ECDSAAdd.Entrant.OwnPlusHost
+
+end
+
+section
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnPlusHost
+open Arithmetic MappedCompressed
+attribute [local irreducible] wires OneBankCore5.kernel
+
+theorem not_block (q a n : Nat) (sep : q<a ∨ a+n≤q) : base q∉wireBlock base a n := by
+  intro h
+  obtain ⟨i,hi,e⟩:=List.mem_map.mp h
+  have eq:=base_injective e
+  simp only [List.mem_range'_1] at hi
+  omega
+
+theorem half_avoid (divide : Bool) :
+    base 766∉wires (OneBankCell5.half divide base (base 2409)) := by
+  have k:=kernel_avoids divide
+  simpa only [OneBankCell5.half,OneBankCore5.half,wires_append,wires,Instr.wires,
+    Finset.mem_union,Finset.mem_singleton,Finset.notMem_empty,or_false,
+    OneBankCell5.ports,not_or] using
+    And.intro (And.intro (by decide : base 766≠base 2409) k) (by decide : base 766≠base 2409)
+
+theorem swap_avoid : base 766∉wires (swapRegisters (base 2410)
+    (OneBankCell5.ports base (base 2409)).r (OneBankCell5.ports base (base 2409)).y) := by
+  have len:(OneBankCell5.ports base (base 2409)).r.length=
+      (OneBankCell5.ports base (base 2409)).y.length := by
+    rw [OneBankCell5.ports_r,OneBankCell5.ports_y,balancedSharedPorts_r,balancedSharedPorts_y]
+    simp [wireBlock_length]
+  have h:=swapRegisters_wires (base 2410) (OneBankCell5.ports base (base 2409)).r
+    (OneBankCell5.ports base (base 2409)).y len
+  intro used
+  have mem:=h used
+  rw [List.mem_toFinset,List.mem_cons,List.mem_append,OneBankCell5.ports_r,
+    OneBankCell5.ports_y,balancedSharedPorts_r,balancedSharedPorts_y] at mem
+  rcases mem with eq|r|y
+  · exact (by decide : base 766≠base 2410) eq
+  · exact not_block 766 2056 256 (by omega) r
+  · exact not_block 766 770 256 (by omega) y
+
+theorem body_avoid (divide : Bool) :
+    base 766∉wires (OneBankCell5.body divide base (base 2409) (base 2410)) := by
+  cases divide <;> simp only [OneBankCell5.body,Bool.false_eq_true,if_false,if_true,
+    wires_append,Finset.mem_union,not_or]
+  · exact ⟨swap_avoid,half_avoid false⟩
+  · exact ⟨half_avoid true,swap_avoid⟩
+
+theorem select_avoid (b source flag : Wire) (v : Bool) (P : Program)
+    (hb : base 766≠b) (hs : base 766≠source) (hf : base 766≠flag)
+    (hp : base 766∉wires P) : base 766∉wires (transcriptSelectWindow b source flag v P) := by
+  intro used
+  cases v <;>
+    simp only [transcriptSelectWindow,transcriptSelectCompute,transcriptSelectExpose,
+      transcriptSelectErase,Bool.false_eq_true,if_false,if_true,List.nil_append,
+      wires_append,Finset.mem_union,wires,Instr.wires,correctionWires,
+      Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty] at used <;> tauto
+
+theorem cell_avoid (divide : Bool) (g sw : Wire) (ig is : Bool)
+    (hg : base 766≠g) (hs : base 766≠sw) :
+    base 766∉wires (OneBankCell5.cell divide base (base 2400) g sw (base 2409) (base 2410) ig is) := by
+  exact select_avoid _ _ _ _ _ (by decide) hg (by decide)
+    (select_avoid _ _ _ _ _ (by decide) hs (by decide) (body_avoid divide))
+
+theorem endpoint_avoid (divide : Bool) (g : Wire) (ig : Bool) (hg : base 766≠g) :
+    base 766∉wires (OneBankCell5.endpoint divide base (base 2400) g (base 2409) ig) := by
+  exact select_avoid _ _ _ _ _ (by decide) hg (by decide) (half_avoid divide)
+end ECDSAAdd.Entrant.OwnPlusHost
+
+end
+
+section
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnPlusHost
+open Arithmetic MappedCompressed
+attribute [local irreducible] wires OneBankCell5.cell OneBankCell5.endpoint
+
+theorem codec_avoid (start : Nat) (hs : start+5≤512) (P : Program)
+    (hp : P=History5.encode base start ∨ P=History5.decode base start) : base 766∉wires P := by
+  intro used
+  obtain ⟨r,eq⟩:=History5.history_gate_mem base start P hp (base 766) used
+  have bounds:=History5.historyId_region start hs r
+  change base 766=base (History5.historyId start r) at eq
+  have same:=base_injective eq
+  omega
+
+theorem raw_avoid (divide : Bool) (ls : List MixedTranscriptLetter)
+    (controls : ∀l∈ls,base 766≠l.1.1 ∧ base 766≠l.1.2) :
+    base 766∉wires (OneBankReplay5.rawReplay divide ls) := by
+  induction ls with
+  | nil => simp [OneBankReplay5.rawReplay,wires]
+  | cons l ls ih =>
+    have c:=cell_avoid divide l.1.1 l.1.2 l.2.1 l.2.2 (controls l (by simp)).1 (controls l (by simp)).2
+    have rest:=ih (fun k hk=>controls k (List.mem_cons_of_mem _ hk))
+    cases divide <;> simp only [OneBankReplay5.rawReplay,Bool.false_eq_true,if_false,if_true,
+      wires_append,Finset.mem_union,not_or] at c rest ⊢
+    · exact ⟨rest,c⟩
+    · exact ⟨c,rest⟩
+
+theorem body_replay_avoid (divide : Bool) (j : Nat) (hj : j<102) :
+    base 766∉wires (OneBankReplay5.body divide j) := by
+  apply raw_avoid
+  intro l hl
+  have c:=Replay5.letters_controls j hj l hl
+  have no:=codec_avoid (5*j) (by omega) _ (Or.inl rfl)
+  exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
+
+theorem firstSwap_avoid : base 766∉wires Replay5.firstSwap := by
+  apply select_avoid _ _ _ _ _ (by decide) (by decide) (by decide)
+  exact swap_avoid
+
+theorem firstBody_avoid (divide : Bool) : base 766∉wires (OneBankReplay5.firstBody divide) := by
+  have ctrl : ∀l∈Replay5.restLetters,base 766≠l.1.1 ∧ base 766≠l.1.2 := by
+    intro l hl
+    have mem:l∈Replay5.letters 0:=by rw [Replay5.letters_zero];simp [hl]
+    have c:=Replay5.letters_controls 0 (by omega) l mem
+    have no:=codec_avoid 0 (by omega) _ (Or.inl rfl)
+    exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
+  cases divide <;> simp only [OneBankReplay5.firstBody,Bool.false_eq_true,if_false,if_true,
+    wires_append,Finset.mem_union,not_or]
+  · exact ⟨raw_avoid false _ ctrl,firstSwap_avoid⟩
+  · exact ⟨firstSwap_avoid,raw_avoid true _ ctrl⟩
+
+theorem pi_fix (j : Nat) (hj : j<102) : shifted (Placement5.pi j) (base 766)=base 766 := by
+  rw [shifted_base,Placement5.pi_outside j 766 hj]
+  unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion
+  omega
+
+theorem packet_avoid (divide : Bool) (j : Nat) (hj : j<102) :
+    base 766∉wires (OneBankReplay5.packet divide j) := by
+  apply rename_avoid _ _ _ (pi_fix j hj)
+  simp only [OneBankReplay5.basePacket,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨codec_avoid _ (by omega) _ (Or.inr rfl),body_replay_avoid divide j hj⟩,
+    codec_avoid _ (by omega) _ (Or.inl rfl)⟩
+
+theorem firstPacket_avoid (divide : Bool) : base 766∉wires (OneBankReplay5.firstPacket divide) := by
+  apply rename_avoid _ _ _ (pi_fix 0 (by omega))
+  simp only [OneBankReplay5.baseFirstPacket,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨codec_avoid _ (by omega) _ (Or.inr rfl),firstBody_avoid divide⟩,
+    codec_avoid _ (by omega) _ (Or.inl rfl)⟩
+
+theorem endPacket_avoid (divide : Bool) : base 766∉wires (OneBankReplay5.endPacket divide) := by
+  have fix:shifted Placement5.pi0 (base 766)=base 766:=by
+    rw [shifted_base,Placement5.pi0_outside 766]
+    unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion
+    omega
+  apply rename_avoid _ _ _ fix
+  apply endpoint_avoid
+  decide
+
+theorem groups_avoid (divide : Bool) (j n : Nat) (hb : j+n≤102) :
+    base 766∉wires (OneBankReplay5.groups divide j n) := by
+  induction n generalizing j with
+  | zero => simp [OneBankReplay5.groups,PacketSequence.program,wires]
+  | succ n ih =>
+    have head:=packet_avoid divide j (by omega)
+    have tail:=ih (j+1) (by omega)
+    cases divide <;> simp only [OneBankReplay5.groups,PacketSequence.program,Bool.false_eq_true,
+      if_false,if_true,wires_append,Finset.mem_union,not_or] at head tail ⊢
+    · exact ⟨tail,head⟩
+    · exact ⟨head,tail⟩
+
+theorem replay_avoid (divide : Bool) : base 766∉wires (OneBankReplay5.replay divide) := by
+  let e:Equiv.Perm Wire:=⟨OB5.sig 511,OB5.sig 511,OB5.sig_invol 511 (by omega),OB5.sig_invol 511 (by omega)⟩
+  have fix:e (base 766)=base 766:=by decide +kernel
+  apply rename_avoid e _ _ fix
+  cases divide <;> simp only [OneBankReplay5.logicalReplay,Bool.false_eq_true,if_false,if_true,
+    wires_append,Finset.mem_union,not_or]
+  · exact ⟨⟨endPacket_avoid false,groups_avoid false 1 101 (by omega)⟩,firstPacket_avoid false⟩
+  · exact ⟨⟨firstPacket_avoid true,groups_avoid true 1 101 (by omega)⟩,endPacket_avoid true⟩
+theorem copy_avoid : base 766∉wires HalfFieldOB5.copyN := by
+  intro used
+  have mem:=copyRegister_wires_subset none
+    (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y used
+  simp only [Option.toList_none,List.nil_append,List.mem_toFinset,List.mem_append,
+    balancedSharedPorts_r,balancedSharedPorts_y] at mem
+  rcases mem with r|y
+  · exact not_block 766 2056 256 (by omega) r
+  · exact not_block 766 770 256 (by omega) y
+
+end ECDSAAdd.Entrant.OwnPlusHost
+
+end
+
+section
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnPlusEndpoint
+open Arithmetic MappedCompressed Secp256k1 BalancedField OffsetBorrowedCanonical
+open OwnPlusHost
+attribute [local irreducible] run wires
+
+theorem encoder_free (q : Nat) (hq : q=766 ∨ q=768) :
+    base q∉wires (History5.allEncode base 102) := by
+  intro used
+  have mem:=History5.allEncode_history_support base 102 (by omega) used
+  simp only [List.mem_toFinset,List.mem_append] at mem
+  rcases mem with lo|hi
+  · exact not_block q 0 512 (by omega) lo
+  · exact not_block q 1028 512 (by omega) hi
+
+theorem canonical_at (origin : BasisState) (X Y : Fp) (s : State) (q : Nat)
+    (hq : q=766 ∨ q=768) (input : FieldFrameOB5.EncodedCanonicalFrame origin X Y s) :
+    s.basis (base q)=origin (base q) := by
+  obtain ⟨raw,_,pair,encoded⟩:=input
+  have z:base q∉(skywalkSharedField base).z:=by
+    rw [skywalkShared_field_z]
+    exact not_block q 2056 257 (by omega)
+  have a:base q∉(skywalkSharedField base).a:=not_block q 770 257 (by omega)
+  have eq:(pullState (OB5.sig 511) s).basis (base q)=origin (base q):=by
+    rw [encoded]
+    exact (run_preserves_outside _ [] raw _ (encoder_free q hq)).trans (pair.2.2 _ z a)
+  have fix:OB5.sig 511 (base q)=base q:=by rcases hq with rfl|rfl <;> decide +kernel
+  simpa only [pullState,fix] using eq
+
+theorem field_at (origin : BasisState) (X Y : Fp) (s : State) (q : Nat)
+    (hq : q=766 ∨ q=768) (input : FieldFrameOB5.EncodedFieldFrame origin X Y s) :
+    s.basis (base q)=origin (base q) := by
+  obtain ⟨raw,_,pair,encoded⟩:=input
+  have r:base q∉(balancedSharedPorts base (base 2409)).r:=by
+    rw [balancedSharedPorts_r]
+    exact not_block q 2056 256 (by omega)
+  have y:base q∉(balancedSharedPorts base (base 2409)).y:=by
+    rw [balancedSharedPorts_y]
+    exact not_block q 770 256 (by omega)
+  have eq:(pullState (OB5.sig 511) s).basis (base q)=origin (base q):=by
+    rw [encoded]
+    exact (run_preserves_outside _ [] raw _ (encoder_free q hq)).trans (pair.2.2 _ r y)
+  have fix:OB5.sig 511 (base q)=base q:=by rcases hq with rfl|rfl <;> decide +kernel
+  simpa only [pullState,fix] using eq
+
+theorem env_zero (origin : BasisState) (env : Env base origin)
+    (hr : origin (base 2312)=false) (q : Nat) (hq : q=766 ∨ q=768) : origin (base q)=false := by
+  apply OneBankCell5.clean_of_env_work base (base 2409) origin env hr
+  rw [OneBankCell5.ports_work]
+  rcases hq with rfl|rfl <;> simp [OneBankCell5.workIds]
+
+def swap : Equiv.Perm Wire:=Equiv.swap (base 766) (base 768)
+def centerT : Program:=renameProgram swap HalfFieldOB5.centerT
+def canonT : Program:=renameProgram swap HalfFieldOB5.canonT
+
+theorem center_frame (hn : (skywalkSharedWires base).Nodup)
+    (ho : base 2409∉skywalkPoolWires base) (origin : BasisState)
+    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
+    (hr : origin (base 2312)=false) (ha : regValue (skywalkSharedField base).a origin=0)
+    (X : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedCanonicalFrame origin X 0 s) :
+    (run centerT m s).phase=s.phase ∧
+    FieldFrameOB5.EncodedFieldFrame origin (X/2) 0 (run centerT m s) := by
+  have old:=HalfFieldOB5.center_frame hn ho origin env legal hr ha X s m input
+  have before (q : Nat) (hq : q=766 ∨ q=768) : s.basis (base q)=false :=
+    (canonical_at origin X 0 s q hq input).trans (env_zero origin env hr q hq)
+  have after (q : Nat) (hq : q=766 ∨ q=768) : (run HalfFieldOB5.centerT m s).basis (base q)=false :=
+    (field_at origin (X/2) 0 _ q hq old.2).trans (env_zero origin env hr q hq)
+  have eq:=FieldFrameOB5.rebind_swap_run (base 766) (base 768) HalfFieldOB5.centerT s m
+    (before 766 (Or.inl rfl)) (before 768 (Or.inr rfl))
+    (after 766 (Or.inl rfl)) (after 768 (Or.inr rfl))
+  simpa only [centerT,swap,eq] using old
+
+theorem canon_frame (hn : (skywalkSharedWires base).Nodup)
+    (ho : base 2409∉skywalkPoolWires base) (origin : BasisState)
+    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
+    (hr : origin (base 2312)=false) (ha : regValue (skywalkSharedField base).a origin=0)
+    (X : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedFieldFrame origin X 0 s) :
+    (run canonT m s).phase=s.phase ∧
+    FieldFrameOB5.EncodedCanonicalFrame origin (2*X) 0 (run canonT m s) := by
+  have old:=HalfFieldOB5.canon_frame hn ho origin env legal hr ha X s m input
+  have before (q : Nat) (hq : q=766 ∨ q=768) : s.basis (base q)=false :=
+    (field_at origin X 0 s q hq input).trans (env_zero origin env hr q hq)
+  have after (q : Nat) (hq : q=766 ∨ q=768) : (run HalfFieldOB5.canonT m s).basis (base q)=false :=
+    (canonical_at origin (2*X) 0 _ q hq old.2).trans (env_zero origin env hr q hq)
+  have eq:=FieldFrameOB5.rebind_swap_run (base 766) (base 768) HalfFieldOB5.canonT s m
+    (before 766 (Or.inl rfl)) (before 768 (Or.inr rfl))
+    (after 766 (Or.inl rfl)) (after 768 (Or.inr rfl))
+  simpa only [canonT,swap,eq] using old
+theorem endpoint_counts : toffoliCount centerT=255 ∧ measurementCount centerT=255 ∧
+    toffoliCount canonT=255 ∧ measurementCount canonT=255 := by
+  simpa only [centerT,canonT,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
+    using HalfFieldOB5.endpoint_counts
+
+theorem endpoint_physical (hn : (skywalkSharedWires base).Nodup) :
+    GatePhysical centerT ∧ GatePhysical canonT ∧ GatePhysical HalfFieldOB5.copyN := by
+  have old:=HalfFieldOB5.endpoint_physical hn
+  exact ⟨gatePhysical_rename swap swap.injective _ old.1,
+    gatePhysical_rename swap swap.injective _ old.2.1,old.2.2⟩
+
+theorem endpoint_gateSlots_le : Challenge.gateSlots centerT≤6000 ∧ Challenge.gateSlots canonT≤6000 ∧
+    Challenge.gateSlots HalfFieldOB5.copyN≤256 := by
+  simpa only [centerT,canonT,Baselines.rename_gateSlots] using HalfFieldOB5.endpoint_gateSlots_le
+
+theorem old_unused (q : Nat) (hq : q=768 ∨ q=2312) :
+    base q∉wires HalfFieldOB5.centerT ∧ base q∉wires HalfFieldOB5.canonT := by
+  have no : base q∉(HalfField.ids.map base).toFinset := by
+    intro h
+    obtain ⟨i,hi,e⟩:=List.mem_map.mp (List.mem_toFinset.mp h)
+    have eq:=base_injective e
+    simp only [HalfField.ids,List.mem_append,List.mem_cons,List.not_mem_nil,List.mem_range'_1,or_false] at hi
+    omega
+  have a:base q∉wires HalfField5.centerT:=fun h=>no (@HalfField.centerT_sites (base q) h)
+  have b:base q∉wires HalfField5.canonT:=fun h=>no (@HalfField.canonT_sites (base q) h)
+  have fix : HalfFieldOB5.endpointMap (base q)=base q:=by rcases hq with rfl|rfl <;> decide +kernel
+  exact ⟨rename_avoid _ _ _ fix a,rename_avoid _ _ _ fix b⟩
+
+theorem plus_free : base 766∉wires centerT ∧ base 766∉wires canonT := by
+  have avoid (P : Program) (hp : base 768∉wires P) : base 766∉wires (renameProgram swap P) := by
+    rw [renameProgram_support]
+    intro used
+    obtain ⟨old,used,e⟩:=Finset.mem_image.mp used
+    have back:swap (base 768)=base 766:=Equiv.swap_apply_right _ _
+    have same:old=base 768:=swap.injective (e.trans back.symm)
+    exact hp (same ▸ used)
+  exact ⟨avoid _ (old_unused 768 (Or.inl rfl)).1,avoid _ (old_unused 768 (Or.inl rfl)).2⟩
+
+theorem parity_free : base 2312∉wires centerT ∧ base 2312∉wires canonT := by
+  have fix:swap (base 2312)=base 2312:=by decide +kernel
+  exact ⟨rename_avoid _ _ _ fix (old_unused 2312 (Or.inr rfl)).1,
+    rename_avoid _ _ _ fix (old_unused 2312 (Or.inr rfl)).2⟩
+
+end ECDSAAdd.Entrant.OwnPlusEndpoint
+
+end
+
 -- ===== ECDSAAdd.Submission.Entrant.SegmentOB5 =====
 section
 
@@ -36405,8 +36781,8 @@ open Arithmetic Secp256k1 BalancedField MappedCompressed OffsetBorrowedCanonical
 attribute [local irreducible] run wires HalfFieldOB5.centerT HalfFieldOB5.canonT OneBankReplay5.replay
 
 def program (divide : Bool) : Program :=
-  if divide then centerT++(OneBankReplay5.replay true++(copyN++canonT))
-  else centerT++(copyN++(OneBankReplay5.replay false++canonT))
+  if divide then OwnPlusEndpoint.centerT++(OneBankReplay5.replay true++(copyN++OwnPlusEndpoint.canonT))
+  else OwnPlusEndpoint.centerT++(copyN++(OneBankReplay5.replay false++OwnPlusEndpoint.canonT))
 
 private theorem run_four_states (a b c d : Program) (P : State → State → Prop)
     (h : ∀ (s s1 s2 s3 s4 : State) (m1 m2 m3 m4 : List Bool),
@@ -36445,16 +36821,16 @@ theorem program_spec (divide : Bool)
   cases divide
   · let P : State → State → Prop := fun initial out => FieldFrameOB5.EncodedCanonicalFrame origin Y 0 initial →
       out.phase=initial.phase ∧ FieldFrameOB5.EncodedCanonicalFrame origin (fieldResult false origin x Y) 0 out
-    have all := run_four_states centerT copyN (OneBankReplay5.replay false) canonT P (by
+    have all := run_four_states OwnPlusEndpoint.centerT copyN (OneBankReplay5.replay false) OwnPlusEndpoint.canonT P (by
       intro initial s1 s2 s3 s4 m1 m2 m3 m4 h1 h2 h3 h4 hin
-      have c1 := HalfFieldOB5.center_frame hn (hp _ (by simp)) origin env legal hr ha Y initial m1 hin
+      have c1 := OwnPlusEndpoint.center_frame hn (hp _ (by simp)) origin env legal hr ha Y initial m1 hin
       rw [h1] at c1
       have c2 := copy_fill hn origin (Y/2) s1 m2 c1.2
       rw [h2] at c2
       have c3 := OneBankReplay5.inverse_frame origin ctx
         x hx0 hx trace (Y/2) s2 m3 c2.2
       rw [h3] at c3
-      have c4 := HalfFieldOB5.canon_frame hn (hp _ (by simp)) origin env legal hr ha _ s3 m4 c3.2
+      have c4 := OwnPlusEndpoint.canon_frame hn (hp _ (by simp)) origin env legal hr ha _ s3 m4 c3.2
       rw [h4] at c4
       refine ⟨c4.1.trans (c3.1.trans (c2.1.trans c1.1)),?_⟩
       have eq : 2*(if origin (base 2400) then Y/2*(x:Fp) else Y/2)=fieldResult false origin x Y := by
@@ -36467,16 +36843,16 @@ theorem program_spec (divide : Bool)
     simpa only [program,Bool.false_eq_true,if_false] using all input
   · let P : State → State → Prop := fun initial out => FieldFrameOB5.EncodedCanonicalFrame origin Y 0 initial →
       out.phase=initial.phase ∧ FieldFrameOB5.EncodedCanonicalFrame origin (fieldResult true origin x Y) 0 out
-    have all := run_four_states centerT (OneBankReplay5.replay true) copyN canonT P (by
+    have all := run_four_states OwnPlusEndpoint.centerT (OneBankReplay5.replay true) copyN OwnPlusEndpoint.canonT P (by
       intro initial s1 s2 s3 s4 m1 m2 m3 m4 h1 h2 h3 h4 hin
-      have c1 := HalfFieldOB5.center_frame hn (hp _ (by simp)) origin env legal hr ha Y initial m1 hin
+      have c1 := OwnPlusEndpoint.center_frame hn (hp _ (by simp)) origin env legal hr ha Y initial m1 hin
       rw [h1] at c1
       have c2 := OneBankReplay5.forward_frame origin ctx x hx0 hx trace
         (Y/2) s1 m2 c1.2
       rw [h2] at c2
       have c3 := copy_clear hn origin _ s2 m3 c2.2
       rw [h3] at c3
-      have c4 := HalfFieldOB5.canon_frame hn (hp _ (by simp)) origin env legal hr ha _ s3 m4 c3.2
+      have c4 := OwnPlusEndpoint.canon_frame hn (hp _ (by simp)) origin env legal hr ha _ s3 m4 c3.2
       rw [h4] at c4
       refine ⟨c4.1.trans (c3.1.trans (c2.1.trans c1.1)),?_⟩
       have eq : 2*(if origin (base 2400) then Y/2/(x:Fp) else Y/2)=fieldResult true origin x Y := by
@@ -36493,7 +36869,7 @@ attribute [local irreducible] toffoliCount measurementCount
 theorem program_counts (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
     (ho : base 2410∉skywalkSharedWires base) :
     toffoliCount (program divide)=655248 ∧ measurementCount (program divide)=522240 := by
-  have ce := HalfFieldOB5.endpoint_counts
+  have ce := OwnPlusEndpoint.endpoint_counts
   have r := OneBankReplay5.replay_counts divide hn ho
   have len : (balancedSharedPorts base (base 2409)).r.length=
       (balancedSharedPorts base (base 2409)).y.length := by
@@ -36511,14 +36887,14 @@ theorem program_physical (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
     (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base)) :
     GatePhysical (program divide) := by
-  have c := HalfFieldOB5.endpoint_physical hn
+  have c := OwnPlusEndpoint.endpoint_physical hn
   have r := OneBankReplay5.replay_physical divide hn ho hf
   cases divide <;> simp only [program,Bool.false_eq_true,if_false,if_true,gatePhysical_append]
   · exact ⟨c.1,c.2.2,r,c.2.1⟩
   · exact ⟨c.1,r,c.2.2,c.2.1⟩
 
 theorem program_gateSlots_le (divide : Bool) : Challenge.gateSlots (program divide)≤14100000 := by
-  have c := HalfFieldOB5.endpoint_gateSlots_le
+  have c := OwnPlusEndpoint.endpoint_gateSlots_le
   have r := OneBankReplay5.replay_gateSlots_le divide
   cases divide <;> simp only [program,Bool.false_eq_true,if_false,if_true,Challenge.gateSlots_append] <;> omega
 
@@ -37700,6 +38076,33 @@ theorem copy_support : wires HalfFieldOB5.copyN⊆OB5Support.segSites := by
 
 end ECDSAAdd.Entrant.HalfFieldOB5Support
 
+
+section
+namespace ECDSAAdd.Entrant.OwnPlusEndpoint
+open Arithmetic MappedCompressed
+theorem support : wires centerT⊆OB5Support.segSites ∧ wires canonT⊆OB5Support.segSites := by
+  have mem (q : Nat) (hq : q=766 ∨ q=768) : base q∈OB5Support.segSites := by
+    apply List.mem_toFinset.mpr
+    apply List.mem_map.mpr
+    refine ⟨q,?_,rfl⟩
+    simp only [OB5Support.segIndices,List.mem_append,List.mem_cons,List.not_mem_nil,List.mem_range'_1,or_false]
+    omega
+  have rename (P : Program) (hp : wires P⊆OB5Support.segSites) :
+      wires (renameProgram swap P)⊆OB5Support.segSites := by
+    rw [renameProgram_support]
+    intro q hq
+    obtain ⟨old,used,rfl⟩:=Finset.mem_image.mp hq
+    by_cases a:old=base 766
+    · subst old; simpa only [swap,Equiv.swap_apply_left] using mem 768 (Or.inr rfl)
+    · by_cases b:old=base 768
+      · subst old; simpa only [swap,Equiv.swap_apply_right] using mem 766 (Or.inl rfl)
+      · simpa only [swap,Equiv.swap_apply_of_ne_of_ne a b] using hp used
+  exact ⟨rename _ HalfFieldOB5Support.center_support,rename _ HalfFieldOB5Support.canon_support⟩
+end ECDSAAdd.Entrant.OwnPlusEndpoint
+
+end
+
+
 end
 
 
@@ -38543,8 +38946,8 @@ theorem clear_placed (s : State) (m : List Bool) :
   rwa [clear_rename] at h
 
 theorem seg_support (divide : Bool) : wires (SegmentOB5.program divide)⊆OB5Support.segSites := by
-  have ce := HalfFieldOB5Support.center_support
-  have ca := HalfFieldOB5Support.canon_support
+  have ce := OwnPlusEndpoint.support.1
+  have ca := OwnPlusEndpoint.support.2
   have cp := HalfFieldOB5Support.copy_support
   have rp := OneBankReplay5Support.replay_support divide
   cases divide <;> simp only [SegmentOB5.program,Bool.false_eq_true,if_false,if_true,
@@ -39372,8 +39775,8 @@ def logicalReplayS (divide : Bool) : Program :=
 def replayS (divide : Bool) : Program := renameProgram (OB5.sig 511) (logicalReplayS divide)
 
 def segmentS (divide : Bool) : Program :=
-  if divide then HalfFieldOB5.centerT++(replayS true++(HalfFieldOB5.copyN++HalfFieldOB5.canonT))
-  else HalfFieldOB5.centerT++(HalfFieldOB5.copyN++(replayS false++HalfFieldOB5.canonT))
+  if divide then OwnPlusEndpoint.centerT++(replayS true++(HalfFieldOB5.copyN++OwnPlusEndpoint.canonT))
+  else OwnPlusEndpoint.centerT++(HalfFieldOB5.copyN++(replayS false++OwnPlusEndpoint.canonT))
 
 /-- The selector-hosted segment (`KernelOB5.segH`) around the selector-free segment. -/
 def segHS (divide : Bool) : Program :=
@@ -39619,7 +40022,11 @@ theorem selReplay_sel (divide : Bool) :
 
 theorem selSegment_sel (divide : Bool) :
     Sel (base 2400) 1020 (segmentS divide) (SegmentOB5.program divide) := by
-  have a := selCenter_away
+  have old := selCenter_away
+  have fix : OwnPlusEndpoint.swap (base 2400)=base 2400 := by decide +kernel
+  have a := And.intro
+    (OwnPlusHost.rename_avoid _ _ _ fix old.1)
+    (And.intro (OwnPlusHost.rename_avoid _ _ _ fix old.2.1) old.2.2)
   have r := selReplay_sel divide
   cases divide
   · exact ((Sel.refl _ _ a.1).append ((Sel.refl _ _ a.2.2).append
@@ -40333,6 +40740,123 @@ end ECDSAAdd.Entrant.Square5Placement
 end
 
 
+
+section
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnPlusSquare
+open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPointDialog
+attribute [local irreducible] run wires
+
+def swap (L : ControlledPointLayout) : Equiv.Perm Wire :=
+  Equiv.swap (L.core.poolWire 766) (L.core.poolWire 1530)
+def program (L : ControlledPointLayout) : Program := renameProgram (swap L) (Square5Placement.square5 L)
+
+theorem pool (L : ControlledPointLayout) (hw : L.Widths) :
+    ∀ q∈L.dialogPool,swap L q∈L.dialogPool := by
+  intro q hq
+  by_cases a:q=L.core.poolWire 766
+  · subst q; simpa only [swap,Equiv.swap_apply_left] using Square5Placement.pool_member L hw 1530 (by omega)
+  · by_cases b:q=L.core.poolWire 1530
+    · subst q; simpa only [swap,Equiv.swap_apply_right] using Square5Placement.pool_member L hw 766 (by omega)
+    · simpa only [swap,Equiv.swap_apply_of_ne_of_ne a b] using hq
+
+theorem outside (L : ControlledPointLayout) (hw : L.Widths) :
+    ∀ q,q∉L.dialogPool → swap L q=q := by
+  intro q hq
+  have a:q≠L.core.poolWire 766:=fun e=>hq (e.symm ▸ Square5Placement.pool_member L hw 766 (by omega))
+  have b:q≠L.core.poolWire 1530:=fun e=>hq (e.symm ▸ Square5Placement.pool_member L hw 1530 (by omega))
+  exact Equiv.swap_apply_of_ne_of_ne a b
+
+theorem square_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (X Y : Fp) (G : Bool) (baseState : BasisState) :
+    Triple (PointDialogValues L X Y G baseState) (program L)
+      (PointDialogValues L (X-(if G then Y*Y else 0)) Y G baseState) := by
+  intro s m v
+  have fresh := Square5Placement.square5_state_eq L hw hn X.val Y.val G X.isLt s m
+    v.generic v.x v.y v.clean
+  have prior := fastSquare_state_eq L hw hn X.val Y.val G X.isLt s m
+    v.generic v.x v.y v.clean
+  have same := fresh.trans prior.symm
+  have old := fast_step_square L hw hn X Y G baseState s m v
+  rw [←same] at old
+  have eq:=Square5Placement.pool_relabel_state_eq L (swap L) (pool L hw) (outside L hw)
+    (Square5Placement.square5 L) s m v.clean old.2.clean
+  simpa only [program,eq] using old
+
+theorem counts (L : ControlledPointLayout) :
+    toffoliCount (program L)=toffoliCount (Square5Placement.square5 L) ∧
+    measurementCount (program L)=measurementCount (Square5Placement.square5 L) :=
+  renameProgram_counts (swap L) _
+
+theorem physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (program L) :=
+  gatePhysical_rename (swap L) (swap L).injective _ (Square5Placement.square5_physical L hw hn)
+
+theorem slots (L : ControlledPointLayout) : Challenge.gateSlots (program L)=Challenge.gateSlots (Square5Placement.square5 L) :=
+  Baselines.rename_gateSlots _ _
+
+private theorem resident_away (L : ControlledPointLayout) (hn : L.wires.Nodup)
+    (q : Wire) (hq : q∈CompressedPointSquare.residents L) : q∉L.dialogPool :=
+  List.disjoint_left.mp (List.nodup_append'.mp (L.dialogUsed_nodup hn)).2.2 hq
+
+theorem spare_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    L.core.poolWire 1530∉wires (Square5Placement.square5 L) := by
+  rw [Square5Placement.square5,renameProgram_support]
+  intro used
+  obtain ⟨old,used,e⟩:=Finset.mem_image.mp used
+  have support:=fastCandidate_support L hw hn used
+  simp only [List.mem_toFinset,List.mem_cons,List.mem_append,or_assoc] at support
+  rcases support with h|h|h|h|h
+  · subst old
+    have away:=resident_away L hn L.core.generic (by simp [CompressedPointSquare.residents,inPlaceFlags])
+    rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away] at e
+    exact away (e.symm ▸ Square5Placement.pool_member L hw 1530 (by omega))
+  · have away:=resident_away L hn old (by simp [CompressedPointSquare.residents,PointAddLayout.pointWires,h])
+    rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away] at e
+    exact away (e.symm ▸ Square5Placement.pool_member L hw 1530 (by omega))
+  · have away:=resident_away L hn old (by simp [CompressedPointSquare.residents,PointAddLayout.pointWires,h])
+    rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away] at e
+    exact away (e.symm ▸ Square5Placement.pool_member L hw 1530 (by omega))
+  · rw [pool_block L hw 776 (by omega)] at h
+    obtain ⟨i,hi,rfl⟩:=List.mem_map.mp h
+    have bound:i<776:=by simp only [List.mem_range'_1] at hi;omega
+    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)] at e
+    have same:=pool_inj L hw hn _ 1530 (by unfold Square5Placement.blockIndex;split_ifs <;> omega) (by omega) e
+    unfold Square5Placement.blockIndex at same
+    split_ifs at same <;> omega
+  · obtain ⟨i,h1,h2,h3,rfl⟩:=kext_index L _ h
+    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)] at e
+    have same:=pool_inj L hw hn _ 1530 (by unfold Square5Placement.blockIndex;split_ifs <;> omega) (by omega) e
+    unfold Square5Placement.blockIndex at same
+    split_ifs at same <;> omega
+
+theorem plus_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    L.core.poolWire 766∉wires (program L) := by
+  rw [program,renameProgram_support]
+  intro used
+  obtain ⟨old,used,e⟩:=Finset.mem_image.mp used
+  have back:swap L (L.core.poolWire 1530)=L.core.poolWire 766:=Equiv.swap_apply_right _ _
+  have same:old=L.core.poolWire 1530:=(swap L).injective (e.trans back.symm)
+  exact spare_free L hw hn (same ▸ used)
+
+theorem support_transport (L : ControlledPointLayout) (S : Finset Wire)
+    (old : wires (Square5Placement.square5 L)⊆S)
+    (a : L.core.poolWire 766∈S) (b : L.core.poolWire 1530∈S) : wires (program L)⊆S := by
+  rw [program,renameProgram_support]
+  intro q hq
+  obtain ⟨w,used,rfl⟩:=Finset.mem_image.mp hq
+  by_cases x:w=L.core.poolWire 766
+  · subst w; simpa only [swap,Equiv.swap_apply_left] using b
+  · by_cases y:w=L.core.poolWire 1530
+    · subst w; simpa only [swap,Equiv.swap_apply_right] using a
+    · simpa only [swap,Equiv.swap_apply_of_ne_of_ne x y] using old used
+
+end ECDSAAdd.Entrant.OwnPlusSquare
+
+end
+
 -- ===== ECDSAAdd.Submission.Entrant.SquareOB5 =====
 section
 
@@ -40343,7 +40867,7 @@ set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.SquareOB5
 open Arithmetic MappedCompressed ControlledPointLayout Secp256k1
 
-def program (L : ControlledPointLayout) : Program := Square5Placement.square5 L
+def program (L : ControlledPointLayout) : Program := OwnPlusSquare.program L
 
 private theorem resident_away (L : ControlledPointLayout) (hn : L.wires.Nodup)
     (q : Wire) (hq : q ∈ CompressedPointSquare.residents L) : q ∉ L.dialogPool := by
@@ -40360,49 +40884,54 @@ private theorem resident_away (L : ControlledPointLayout) (hn : L.wires.Nodup)
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
     toffoliCount (program L)=56540 ∧ measurementCount (program L)=56548 :=
-  Square5Placement.square5_counts L hw
+  ⟨(OwnPlusSquare.counts L).1.trans (Square5Placement.square5_counts L hw).1,
+   (OwnPlusSquare.counts L).2.trans (Square5Placement.square5_counts L hw).2⟩
 
 theorem support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
     wires (program L) ⊆ (OB5Support.sites L).toFinset := by
-  rw [program,Square5Placement.square5,renameProgram_support]
-  intro q hq
-  obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
-  have support := fastCandidate_support L hw hn used
-  simp only [List.mem_toFinset, List.mem_cons, List.mem_append, or_assoc] at support
-  apply List.mem_toFinset.mpr
-  rcases support with h | h | h | h | h
-  · subst old
-    rw [Square5Placement.block_outside L hw 202 (le_refl _) _
-      (resident_away L hn _ (by simp [CompressedPointSquare.residents, inPlaceFlags]))]
-    simp [OB5Support.sites]
-  · have away := resident_away L hn old (by simp [CompressedPointSquare.residents, PointAddLayout.pointWires, h])
-    rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away]
-    simp only [OB5Support.sites, List.mem_cons, List.mem_append]
-    exact Or.inl (Or.inr h)
-  · have away := resident_away L hn old (by simp [CompressedPointSquare.residents, PointAddLayout.pointWires, h])
-    rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away]
-    simp only [OB5Support.sites, List.mem_cons, List.mem_append]
-    exact Or.inl (Or.inl (Or.inr h))
-  · rw [pool_block L hw 776 (by omega)] at h
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h
-    have bound : i < 776 := by simp only [List.mem_range'_1] at hi; omega
-    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)]
-    apply OB5Support.pool_in_sites
-    apply OB5Support.pool_mem
-    unfold Square5Placement.blockIndex
-    split_ifs <;> omega
-  · obtain ⟨i, h1, h2, h3, rfl⟩ := kext_index L _ h
-    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)]
-    apply OB5Support.pool_in_sites
-    apply OB5Support.pool_mem
-    unfold Square5Placement.blockIndex
-    split_ifs <;> omega
+  have old : wires (Square5Placement.square5 L)⊆(OB5Support.sites L).toFinset := by
+    rw [Square5Placement.square5,renameProgram_support]
+    intro q hq
+    obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
+    have support := fastCandidate_support L hw hn used
+    simp only [List.mem_toFinset, List.mem_cons, List.mem_append, or_assoc] at support
+    apply List.mem_toFinset.mpr
+    rcases support with h | h | h | h | h
+    · subst old
+      rw [Square5Placement.block_outside L hw 202 (le_refl _) _
+        (resident_away L hn _ (by simp [CompressedPointSquare.residents, inPlaceFlags]))]
+      simp [OB5Support.sites]
+    · have away := resident_away L hn old (by simp [CompressedPointSquare.residents, PointAddLayout.pointWires, h])
+      rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away]
+      simp only [OB5Support.sites, List.mem_cons, List.mem_append]
+      exact Or.inl (Or.inr h)
+    · have away := resident_away L hn old (by simp [CompressedPointSquare.residents, PointAddLayout.pointWires, h])
+      rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away]
+      simp only [OB5Support.sites, List.mem_cons, List.mem_append]
+      exact Or.inl (Or.inl (Or.inr h))
+    · rw [pool_block L hw 776 (by omega)] at h
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h
+      have bound : i < 776 := by simp only [List.mem_range'_1] at hi; omega
+      rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)]
+      apply OB5Support.pool_in_sites
+      apply OB5Support.pool_mem
+      unfold Square5Placement.blockIndex
+      split_ifs <;> omega
+    · obtain ⟨i, h1, h2, h3, rfl⟩ := kext_index L _ h
+      rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)]
+      apply OB5Support.pool_in_sites
+      apply OB5Support.pool_mem
+      unfold Square5Placement.blockIndex
+      split_ifs <;> omega
+  exact OwnPlusSquare.support_transport L _ old
+    (List.mem_toFinset.mpr (OB5Support.pool_in_sites L _ (OB5Support.pool_mem L 766 (Or.inr (Or.inl ⟨by omega,by omega⟩)))))
+    (List.mem_toFinset.mpr (OB5Support.pool_in_sites L _ (OB5Support.pool_mem L 1530 (Or.inr (Or.inr (Or.inl ⟨by omega,by omega⟩))))))
 
 theorem physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) : GatePhysical (program L) :=
-  Square5Placement.square5_physical L hw hn
+  OwnPlusSquare.physical L hw hn
 
 theorem gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) : Challenge.gateSlots (program L) ≤ 8000000 :=
-  Square5Placement.square5_gateSlots_le L hw
+  (OwnPlusSquare.slots L).le.trans (Square5Placement.square5_gateSlots_le L hw)
 
 end ECDSAAdd.Entrant.SquareOB5
 
@@ -40427,16 +40956,8 @@ def program (L : ControlledPointLayout) (cx cy : Fp) : Program :=
 theorem square_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (baseState : BasisState) :
     Triple (PointDialogValues L X Y G baseState) (SquareOB5.program L)
-      (PointDialogValues L (X-(if G then Y*Y else 0)) Y G baseState) := by
-  intro s m v
-  have fresh := Square5Placement.square5_state_eq L hw hn X.val Y.val G X.isLt s m
-    v.generic v.x v.y v.clean
-  have prior := fastSquare_state_eq L hw hn X.val Y.val G X.isLt s m
-    v.generic v.x v.y v.clean
-  have same := fresh.trans prior.symm
-  have old := fast_step_square L hw hn X Y G baseState s m v
-  rw [←same] at old
-  exact old
+      (PointDialogValues L (X-(if G then Y*Y else 0)) Y G baseState) :=
+  OwnPlusSquare.square_step L hw hn X Y G baseState
 
 private theorem pool_low_sites (L : ControlledPointLayout) (hw : L.Widths)
     (q : Wire) (hq : q∈L.dialogPool.take 515) : q∈OB5Support.genericSites L := by
@@ -42279,8 +42800,8 @@ theorem copy_avoid : base 2312∉wires HalfFieldOB5.copyN := by
 theorem segment_avoid (divide : Bool) : base 2312∉wires (SegmentOB5.program divide) := by
   cases divide <;> simp only [SegmentOB5.program,Bool.false_eq_true,if_false,if_true,
     wires_append,Finset.mem_union,not_or]
-  · exact ⟨endpoints_avoid.1,⟨copy_avoid,⟨replay_avoid false,endpoints_avoid.2⟩⟩⟩
-  · exact ⟨endpoints_avoid.1,⟨replay_avoid true,⟨copy_avoid,endpoints_avoid.2⟩⟩⟩
+  · exact ⟨OwnPlusEndpoint.parity_free.1,⟨copy_avoid,⟨replay_avoid false,OwnPlusEndpoint.parity_free.2⟩⟩⟩
+  · exact ⟨OwnPlusEndpoint.parity_free.1,⟨replay_avoid true,⟨copy_avoid,OwnPlusEndpoint.parity_free.2⟩⟩⟩
 
 theorem hosted_segment_avoid (divide : Bool) : base 2312∉wires (KernelOB5.segH divide) := by
   let e:Equiv.Perm Wire:=⟨HostOB5.hostSwap,HostOB5.hostSwap,HostOB5.hostSwap_invol,HostOB5.hostSwap_invol⟩
@@ -42504,40 +43025,43 @@ private theorem resident_away (L : ControlledPointLayout) (hn : L.wires.Nodup)
 
 theorem square_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
     wires (SquareOB5.program L) ⊆ (sites L).toFinset := by
-  rw [SquareOB5.program,Square5Placement.square5,renameProgram_support]
-  intro q hq
-  obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
-  have support := fastCandidate_support L hw hn used
-  simp only [List.mem_toFinset, List.mem_cons, List.mem_append, or_assoc] at support
-  apply List.mem_toFinset.mpr
-  rcases support with h | h | h | h | h
-  · subst old
-    rw [Square5Placement.block_outside L hw 202 (le_refl _) _
-      (resident_away L hn _ (by simp [CompressedPointSquare.residents, inPlaceFlags]))]
-    simp [sites]
-  · have away := resident_away L hn old (by simp [CompressedPointSquare.residents, PointAddLayout.pointWires, h])
-    rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away]
-    simp only [sites, List.mem_cons, List.mem_append]
-    exact Or.inl (Or.inr h)
-  · have away := resident_away L hn old (by simp [CompressedPointSquare.residents, PointAddLayout.pointWires, h])
-    rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away]
-    simp only [sites, List.mem_cons, List.mem_append]
-    exact Or.inl (Or.inl (Or.inr h))
-  · rw [pool_block L hw 776 (by omega)] at h
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h
-    have bound : i < 776 := by simp only [List.mem_range'_1] at hi; omega
-    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)]
-    apply pool_in_sites
-    apply pool_mem
-    unfold Square5Placement.blockIndex
-    split_ifs <;> omega
-  · obtain ⟨i, h1, h2, h3, rfl⟩ := kext_index L _ h
-    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)]
-    apply pool_in_sites
-    apply pool_mem
-    unfold Square5Placement.blockIndex
-    split_ifs <;> omega
-
+  have old : wires (Square5Placement.square5 L)⊆(sites L).toFinset := by
+    rw [Square5Placement.square5,renameProgram_support]
+    intro q hq
+    obtain ⟨old, used, rfl⟩ := Finset.mem_image.mp hq
+    have support := fastCandidate_support L hw hn used
+    simp only [List.mem_toFinset, List.mem_cons, List.mem_append, or_assoc] at support
+    apply List.mem_toFinset.mpr
+    rcases support with h | h | h | h | h
+    · subst old
+      rw [Square5Placement.block_outside L hw 202 (le_refl _) _
+        (resident_away L hn _ (by simp [CompressedPointSquare.residents, inPlaceFlags]))]
+      simp [sites]
+    · have away := resident_away L hn old (by simp [CompressedPointSquare.residents, PointAddLayout.pointWires, h])
+      rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away]
+      simp only [sites, List.mem_cons, List.mem_append]
+      exact Or.inl (Or.inr h)
+    · have away := resident_away L hn old (by simp [CompressedPointSquare.residents, PointAddLayout.pointWires, h])
+      rw [Square5Placement.block_outside L hw 202 (le_refl _) _ away]
+      simp only [sites, List.mem_cons, List.mem_append]
+      exact Or.inl (Or.inl (Or.inr h))
+    · rw [pool_block L hw 776 (by omega)] at h
+      obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h
+      have bound : i < 776 := by simp only [List.mem_range'_1] at hi; omega
+      rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)]
+      apply pool_in_sites
+      apply pool_mem
+      unfold Square5Placement.blockIndex
+      split_ifs <;> omega
+    · obtain ⟨i, h1, h2, h3, rfl⟩ := kext_index L _ h
+      rw [Square5Placement.block_apply L hw hn 202 (le_refl _) i (by omega)]
+      apply pool_in_sites
+      apply pool_mem
+      unfold Square5Placement.blockIndex
+      split_ifs <;> omega
+  exact OwnPlusSquare.support_transport L _ old
+    (List.mem_toFinset.mpr (pool_in_sites L _ (pool_mem L 766 (Or.inr (Or.inl ⟨by omega,by omega⟩)))))
+    (List.mem_toFinset.mpr (pool_in_sites L _ (pool_mem L 1530 (Or.inr (Or.inr ⟨by omega,by omega⟩)))))
 
 end ECDSAAdd.Entrant.OwnParityPhysical
 end
@@ -44287,6 +44811,253 @@ theorem finite_host_parity_qubits (C : Point) (cx cy : Fp) :
     (selected_avoids_1800 layout layout_widths layout_nodup cx cy)
 end ECDSAAdd.Entrant.FiniteHostStack
 
+
+section
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnPlusHost
+open Arithmetic MappedCompressed
+attribute [local irreducible] wires
+
+theorem prefix_parity_free : base 766∉NativeFirstDirect.prefixSites base := by
+  intro used
+  simp only [NativeFirstDirect.prefixSites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at used
+  rcases used with ((a|b)|c)|(a|b)
+  · exact not_block 766 0 257 (by omega) a
+  · exact not_block 766 770 258 (by omega) b
+  · exact not_block 766 1540 256 (by omega) c
+  · exact (by decide : base 766≠base 1028) a
+  · exact (by decide : base 766≠base 1797) b
+
+theorem integer_parity_free : base 766∉OB5.integerSites := by
+  intro used
+  obtain ⟨i,e,hi⟩:= (OB5.integerSites_mem _).mp used
+  have same:=base_injective e
+  omega
+
+end ECDSAAdd.Entrant.OwnPlusHost
+
+end
+
+section
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.FiniteHostGeometry766
+open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed DirectSkywalk CompressedPointDialog
+attribute [local irreducible] wires
+
+theorem wireFn2_766 (L : ControlledPointLayout) : wireFn2 L (base 766)=L.core.poolWire 766 := by
+  rfl
+
+theorem placed_avoid766 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (P : Program) (hp : wires P⊆OB5Support.logicalSites) (free : base 766∉wires P) :
+    L.core.poolWire 766∉wires (renameProgram (wireFn2 L) P) := by
+  rw [renameProgram_support]
+  intro h
+  obtain ⟨old,used,eq⟩ := Finset.mem_image.mp h
+  have logical : base 766∈OB5Support.logicalSites := by
+    simp only [OB5Support.logicalSites,List.mem_toFinset,List.mem_map]
+    refine ⟨766,?_,rfl⟩
+    simp only [OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,List.mem_cons,List.not_mem_nil,or_false]
+    omega
+  have slot : base 766∈slots.toFinset := ArithmeticOB5.logical_sub_old logical
+  have mapped : wireFn2 L old=wireFn2 L (base 766) := by simpa only [wireFn2_766] using eq
+  have back := (placement2 L hw hn).injectiveOnSlots old
+    (ArithmeticOB5.logical_sub_old (hp used)) (base 766) slot mapped
+  exact free (back ▸ used)
+
+theorem pfix_avoid766 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    L.core.poolWire 766∉wires (pfix L) := by
+  intro h
+  have choices : L.core.poolWire 766=L.point.finite ∨ L.core.poolWire 766=x0 L := by
+    simpa [pfix,wires,Instr.wires,or_comm] using h
+  rcases choices with eq|eq
+  · exact finRes_ne L hw hn 766 (by omega) L.point.finite (by simp [PointAddLayout.pointWires]) eq.symm
+  · exact finRes_ne L hw hn 766 (by omega) (x0 L)
+      (by simp [PointAddLayout.pointWires,x0_mem L hw]) eq.symm
+
+theorem constant_ports_avoid766 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) :
+    L.core.poolWire 766∉(L.core.generic::(L.recoveryConstant r).wires).toFinset := by
+  intro hq
+  have pool:=L.recoveryConstant_pool hw r
+  have inpool (h : (L.core.poolWire 766)∈(L.recoveryConstant r).src++(L.recoveryConstant r).carry++
+      [(L.recoveryConstant r).high,(L.recoveryConstant r).cin,(L.recoveryConstant r).flag]) :
+      (L.core.poolWire 766)∈L.dialogPool.take 515 := pool ▸ h
+  have low (h : (L.core.poolWire 766)∈L.dialogPool.take 515) : False :=
+    finLow_ne L hw hn 766 (by omega) (L.core.poolWire 766) 515 (by omega) h rfl
+  have hq':=List.mem_toFinset.mp hq
+  have out : (L.recoveryConstant r).out=r := rfl
+  simp only [MeasuredCanonicalModLayout.wires,List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at hq'
+  rw [out] at hq'
+  rcases hq' with h|(((h|h)|h)|h|h|h)
+  · exact finRes_ne L hw hn 766 (by omega) L.core.generic (by simp [inPlaceFlags]) h.symm
+  · exact low (inpool (by simp [h]))
+  · have resident : (L.core.poolWire 766)∈PointAddLayout.pointWires L.point := by
+      rcases hr with rfl|rfl <;> simp [PointAddLayout.pointWires,h]
+    exact finRes_ne L hw hn 766 (by omega) (L.core.poolWire 766) (finRes_point L _ resident) rfl
+  · exact low (inpool (by simp [h]))
+  · exact low (inpool (by simp [h]))
+  · exact low (inpool (by simp [h]))
+  · exact low (inpool (by simp [h]))
+
+theorem add_avoid766 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (r : List Wire) (hr : r=L.point.x ∨ r=L.point.y) (k : Fp) :
+    L.core.poolWire 766∉wires (fastConstAdd L r k) := by
+  intro h
+  have len : r.length=256 := by rcases hr with rfl|rfl; exact hw.inputX;exact hw.inputY
+  have used := FastConst.fastAdd_support _ _ ⟨256,L.recoveryConstant_widths hw r len⟩ h
+  exact constant_ports_avoid766 L hw hn r hr used
+
+theorem neg_avoid766 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) (cx : Fp) :
+    L.core.poolWire 766∉wires (fastConstNeg L cx) := by
+  intro h
+  have used := FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩ h
+  exact constant_ports_avoid766 L hw hn L.point.x (Or.inl rfl) used
+end ECDSAAdd.Entrant.FiniteHostGeometry766
+end
+
+section
+-- Insert after ordinary and finite-host generic helpers, before the final entry.
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OwnPlusFinal
+open Arithmetic MappedCompressed Secp256k1 ControlledPointLayout CompressedPointDialog
+attribute [local irreducible] wires
+
+theorem segment_free (divide : Bool) : base 766∉wires (SegmentOB5.program divide) := by
+  have c:=OwnPlusEndpoint.plus_free
+  have r:=OwnPlusHost.replay_avoid divide
+  have p:=OwnPlusHost.copy_avoid
+  cases divide <;> simp only [SegmentOB5.program,Bool.false_eq_true,if_false,if_true,
+    wires_append,Finset.mem_union,not_or]
+  · exact ⟨c.1,⟨p,⟨r,c.2⟩⟩⟩
+  · exact ⟨c.1,⟨r,⟨p,c.2⟩⟩⟩
+
+theorem hosted_segment_free (divide : Bool) : base 766∉wires (KernelOB5.segH divide) := by
+  let e:Equiv.Perm Wire:=⟨HostOB5.hostSwap,HostOB5.hostSwap,HostOB5.hostSwap_invol,HostOB5.hostSwap_invol⟩
+  have fix:e (base 766)=base 766:=by decide +kernel
+  have mid:=OwnPlusHost.rename_avoid e _ _ fix (segment_free divide)
+  simpa only [KernelOB5.segH,wires_append,wires,Instr.wires,Finset.mem_union,
+    Finset.mem_singleton,Finset.notMem_empty,or_false,not_or] using
+      And.intro (by decide : base 766≠base 511) (And.intro mid (by decide : base 766≠base 511))
+
+theorem kernel_free (divide : Bool) : base 766∉wires (KernelOB5.program divide) := by
+  have a:base 766∉wires (NativeFirstDirect.forward base):=fun h=>OwnPlusHost.prefix_parity_free
+    (List.mem_toFinset.mp ((NativeFirstDirect.prefix_support base).1 h))
+  have z:base 766∉wires (NativeFirstKnown.inverse base):=fun h=>OwnPlusHost.prefix_parity_free
+    (List.mem_toFinset.mp (NativeFirstKnown.inverse_support base h))
+  have f:base 766∉wires stackForwardT:=fun h=>OwnPlusHost.integer_parity_free
+    (StackOB5.forward_support (stackForwardT_subset h))
+  have r:base 766∉wires stackReverseT:=fun h=>OwnPlusHost.integer_parity_free
+    (StackOB5.reverse_support (stackReverseT_subset h))
+  have c:base 766∉wires (skywalkArithmeticClear base):=by
+    simp [skywalkArithmeticClear,skywalkTerminalClear,wires,Instr.wires,base]
+  simp only [KernelOB5.program,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨⟨⟨⟨⟨a,f⟩,c⟩,hosted_segment_free divide⟩,c⟩,r⟩,z⟩
+
+theorem arith_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (multiply : Bool) : L.core.poolWire 766∉wires (ArithmeticOB5.arith L multiply) :=
+  FiniteHostGeometry766.placed_avoid766 L hw hn _
+    (KernelOB5.program_support_logical (!multiply)) (kernel_free (!multiply))
+
+theorem farith_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (multiply : Bool) : L.core.poolWire 766∉wires (ArithmeticOB5.farithOB L multiply) := by
+  have a:=arith_free L hw hn multiply
+  have p:=FiniteHostGeometry766.pfix_avoid766 L hw hn
+  simp only [ArithmeticOB5.farithOB,wires_append,Finset.mem_union,not_or]
+  exact ⟨p,a,p⟩
+
+theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (cx cy : Fp) : L.core.poolWire 766∉wires (GenericOB5.program L cx cy) := by
+  have ca:=FiniteHostGeometry766.add_avoid766 L hw hn
+  have cn:=FiniteHostGeometry766.neg_avoid766 L hw hn cx
+  have di:=farith_free L hw hn false
+  have mu:=farith_free L hw hn true
+  have sq:=OwnPlusSquare.plus_free L hw hn
+  simp only [GenericOB5.program,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨⟨⟨⟨⟨⟨ca _ (Or.inl rfl) _,ca _ (Or.inr rfl) _⟩,di⟩,sq⟩,
+    ca _ (Or.inl rfl) _⟩,mu⟩,cn⟩,ca _ (Or.inr rfl) _⟩
+
+theorem selected_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (cx cy : Fp) : L.core.poolWire 766∉wires (SelGeneric5.program L cx cy) := by
+  intro h
+  exact generic_free L hw hn cx cy ((SelGeneric5.program_sub L hw hn cx cy).wires_sub h)
+
+end ECDSAAdd.Entrant.OwnPlusFinal
+end
+
+section
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.FiniteHostFusion
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed CompressedPointDialog
+open FiniteHostStack
+attribute [local irreducible] wires genF SelGeneric5.program
+
+theorem triple_erase_bound {S : Finset Wire} {l : List Wire} {x y z : Wire}
+    (sub : S⊆l.toFinset) (hx : x∉S) (hy : y∉S) (hz : z∉S)
+    (xl : x∈l) (yl : y∈l) (zl : z∈l) (xy : x≠y) (xz : x≠z) (yz : y≠z) :
+    S.card≤l.length-3 := by
+  have next : S⊆(l.erase x).toFinset := by
+    intro w hw
+    exact List.mem_toFinset.mpr ((List.mem_erase_of_ne (fun e : w=x => hx (e ▸ hw))).mpr
+      (List.mem_toFinset.mp (sub hw)))
+  have yp : y∈l.erase x := (List.mem_erase_of_ne (Ne.symm xy)).mpr yl
+  have zp : z∈l.erase x := (List.mem_erase_of_ne (Ne.symm xz)).mpr zl
+  have bound := double_erase_bound next hy hz yp zp yz
+  rw [List.length_erase_of_mem xl] at bound
+  omega
+
+theorem finite_host_two_omissions (C : Point) (cx cy : Fp)
+    (avoid766 : layout.core.poolWire 766∉wires (SelGeneric5.program layout cx cy)) :
+    qubits (WrapperOB5.program layout C cy (genF layout cx cy))≤1598 := by
+  have supported := WrapperOB5.program_support layout layout_widths layout_nodup C cy _
+    (genF_sites layout layout_widths layout_nodup cx cy)
+  have sub := Finset.union_subset io_support_original supported
+  have absent (k : Nat) (hk : k<2613)
+      (hp : layout.core.poolWire k∉wires (WrapperOB5.program layout C cy (genF layout cx cy))) :
+      layout.core.poolWire k∉ioWires∪wires (WrapperOB5.program layout C cy (genF layout cx cy)) := by
+    intro h
+    rcases Finset.mem_union.mp h with h|h
+    · exact io_avoids_pool k hk h
+    · exact hp h
+  have a := absent 1400 (by omega) (programF_avoid layout layout_widths layout_nodup C cx cy)
+  have b := absent 1800 (by omega)
+    (wrapper_avoid_of_selected layout layout_widths layout_nodup 1800 (by omega)
+      (by omega) (by omega) (by omega) cx cy
+      (selected_avoids_1800 layout layout_widths layout_nodup cx cy) C)
+  have c := absent 766 (by omega)
+    (wrapper_avoid_of_selected layout layout_widths layout_nodup 766 (by omega)
+      (by omega) (by omega) (by omega) cx cy avoid766 C)
+  have m1800 : layout.core.poolWire 1800∈WrapperOB5.sites layout := by
+    simp only [WrapperOB5.sites,List.mem_append,List.mem_singleton]
+    tauto
+  have block : layout.core.poolWire 766∈wireBlock layout.core.poolWire 718 311 := by
+    simp only [wireBlock,List.mem_map,List.mem_range'_1]
+    exact ⟨766,by omega,rfl⟩
+  have m766 : layout.core.poolWire 766∈WrapperOB5.sites layout := by
+    simp only [WrapperOB5.sites,List.mem_append,List.mem_singleton]
+    tauto
+  have neq (i j : Nat) (hi : i<2613) (hj : j<2613) (ne : i≠j) :
+      layout.core.poolWire i≠layout.core.poolWire j := by
+    intro h
+    exact ne (pool_inj layout layout_widths layout_nodup i j hi hj h)
+  have bound := triple_erase_bound sub a b c (pool1400_sites layout) m1800 m766
+    (neq 1400 1800 (by omega) (by omega) (by omega))
+    (neq 1400 766 (by omega) (by omega) (by omega))
+    (neq 1800 766 (by omega) (by omega) (by omega))
+  have len := WrapperOB5.sites_length layout layout_widths
+  change (ioWires∪wires (WrapperOB5.program layout C cy (genF layout cx cy))).card≤1598
+  rw [len] at bound
+  exact bound
+end ECDSAAdd.Entrant.FiniteHostFusion
+end
+
 -- ===== ECDSAAdd.Submission.Entrant.Main =====
 section
 
@@ -44303,7 +45074,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2161178, 1501261, 1599, 50000004⟩
+def bounds : Challenge.Bounds := ⟨2161178, 1501261, 1598, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -44348,14 +45119,15 @@ theorem io_subset_supportOB5 : ioWires ⊆ WrapperOB5.support layout := by
   · exact WrapperOB5.point_5 layout w hp
   · rw [hc]; exact WrapperOB5.control_5 layout
 
-theorem program_qubits (C : Point) : qubits (program C) ≤ 1599 := by
+theorem program_qubits (C : Point) : qubits (program C) ≤ 1598 := by
   cases C with
   | zero =>
-    change qubits [] ≤ 1599
+    change qubits [] ≤ 1598
     rw [qubits_empty]
     decide
   | @some cx cy hc =>
-    exact FiniteHostStack.finite_host_parity_qubits (.some hc) cx cy
+    exact FiniteHostFusion.finite_host_two_omissions (.some hc) cx cy
+      (OwnPlusFinal.selected_free layout layout_widths layout_nodup cx cy)
 
 theorem program_physical (C : Point) : GatePhysical (program C) := by
   cases C with
@@ -44383,7 +45155,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
-    change qubits (normalizeProgram (program C)) ≤ 1599
+    change qubits (normalizeProgram (program C)) ≤ 1598
     rw [normalize_qubits]
     exact program_qubits C
   gateSlots_le C := by
