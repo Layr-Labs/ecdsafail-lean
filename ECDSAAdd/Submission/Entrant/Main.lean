@@ -6917,13 +6917,13 @@ theorem exitKernelQS_numbers:toffoliCount ExitFuseQ5.exitKernelQS=1047882 ∧ me
   constructor <;> omega
 
 theorem genericQ_counts (L:ControlledPointLayout)(hw:L.Widths)(cx cy:Fp):
-    toffoliCount (genericQ L cx cy)+1132=toffoliCount (genericBothF L cx cy) ∧
+    toffoliCount (genericQ L cx cy)+1807=toffoliCount (genericBothF L cx cy) ∧
     measurementCount (genericQ L cx cy)+2918=measurementCount (genericBothF L cx cy):=by
   have sc:=squareQ_counts L
   have sn:=OwnDiagAll12Placed.counts L hw
-  norm_num [OwnDiagLowK.lowkcost2] at sn
+  norm_num [OwnDiagLowK.lowkcost2,OwnDiagLowK.lowkcostTPair,OwnDiagLowK.lowkcostTMake,OwnDiagLowK.lowkcostTClear] at sn
   have so:=SquareOB5.counts L hw
-  have s : toffoliCount (squareQ L)+624=toffoliCount (SquareOB5.program L) ∧
+  have s : toffoliCount (squareQ L)+1299=toffoliCount (SquareOB5.program L) ∧
       measurementCount (squareQ L)+623=measurementCount (SquareOB5.program L) := by
     constructor <;> omega
   have ae:=renameProgram_counts (wireFn2 L) kernelE
@@ -6939,7 +6939,7 @@ theorem genericQ_counts (L:ControlledPointLayout)(hw:L.Widths)(cx cy:Fp):
   constructor <;> omega
 
 theorem genQ_counts (L:ControlledPointLayout)(hw:L.Widths)(cx cy:Fp):
-    toffoliCount (genQ L cx cy)+1132=toffoliCount (genBothF L cx cy) ∧
+    toffoliCount (genQ L cx cy)+1807=toffoliCount (genBothF L cx cy) ∧
     measurementCount (genQ L cx cy)+2918=measurementCount (genBothF L cx cy):=by
   have g:=genericQ_counts L hw cx cy
   have r:=renameProgram_counts (swapF L) (genericQ L cx cy)
@@ -7067,7 +7067,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2154283, 1498280, 1591, 50000004⟩
+def bounds : Challenge.Bounds := ⟨2153608, 1498280, 1591, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -7086,7 +7086,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((OwnDHWrapper.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2154283 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2153608 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
