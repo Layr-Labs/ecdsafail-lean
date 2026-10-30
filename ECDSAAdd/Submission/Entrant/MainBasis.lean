@@ -1919,7 +1919,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       Edges.wrapper layout C cy (OwnQ6Producer.genE layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2155354,1501195,1593,50000004⟩
+def bounds : Challenge.Bounds := ⟨2155482,1501195,1593,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -1939,7 +1939,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155354 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155482 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
@@ -1949,7 +1949,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155354 := by
     have gd:=(genFFused_counts_diff layout layout_widths cx cy).1
     have ge:=(OwnExitProducer.genE_counts_diff layout layout_widths cx cy).1
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).1
-    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnQ6Producer.genE layout cx cy))≤2155354
+    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnQ6Producer.genE layout cx cy))≤2155482
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1501195 := by
@@ -4021,9 +4021,10 @@ open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPoint
   EntryFuseFinite ExitFusionResearch
 
 /-- Source-only generic tail parameter; the actual shortened multiplier is supplied separately. -/
-def generic (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp) : Program :=
+def generic (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp)
+    (ko : Nat := 2^163-1) : Program :=
   fastConstAdd L L.point.x (-cx) ++ D (-cy) ++
-  S ++ fastConstAdd L L.point.x (3*cx-(2^163-1 : Nat)) ++
+  S ++ fastConstAdd L L.point.x (3*cx-(ko : Nat)) ++
   P ++ exitY L cy ++ fastConstNeg L cx
 
 section Correct
@@ -4032,15 +4033,16 @@ variable (D : Fp→Program) (S P : Program) (halfCorrect : HalfMultiplyCorrect L
 variable (divisionCorrect : ∀(X Y k : Fp)(G : Bool)(origin : BasisState),X≠0 →
   Triple (PointDialogValues L X Y G origin) (D k)
     (PointDialogValues L X ((Y+(if G then k else 0))/X) G origin))
+variable {ko : Nat}
 variable (squareCorrect : ∀(X Y : Fp)(G : Bool)(origin : BasisState),
   Triple (PointDialogValues L X Y G origin) S
-    (PointDialogValues L (X-(if G then Y*Y else 0)+(if G then (2^163-1 : Nat) else 0)) Y G origin))
+    (PointDialogValues L (X-(if G then Y*Y else 0)+(if G then (ko : Nat) else 0)) Y G origin))
 include hw hn halfCorrect divisionCorrect squareCorrect
 attribute [local irreducible] run arithS fastConstAdd fastConstNeg fastConstRefl exitY
 
 theorem generic_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
     (hd : cx-genericX X Y cx cy≠0) :
-    Triple (PointDialogValues L X Y true origin) (generic L D S P cx cy)
+    Triple (PointDialogValues L X Y true origin) (generic L D S P cx cy ko)
       (PointDialogValues L (genericX X Y cx cy) (genericY X Y cx cy) true origin) := by
   let a := genericSlope X Y cx cy
   let d := cx-genericX X Y cx cy
@@ -4053,9 +4055,9 @@ theorem generic_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
   simp only [if_true,←sub_eq_add_neg,ha] at h2
   have h3 := squareCorrect (X-cx) a true origin
   simp only [if_true] at h3
-  have h4 := fastStep_addX L hw hn ((X-cx)-a*a+(2^163-1 : Nat)) a true origin (3*cx-(2^163-1 : Nat))
+  have h4 := fastStep_addX L hw hn ((X-cx)-a*a+(ko : Nat)) a true origin (3*cx-(ko : Nat))
   simp only [if_true] at h4
-  have hd4 : ((X-cx)-a*a+(2^163-1 : Nat))+(3*cx-(2^163-1 : Nat))=d := by
+  have hd4 : ((X-cx)-a*a+(ko : Nat))+(3*cx-(ko : Nat))=d := by
     have e := hv.2.1
     change (X-cx)-a*a+3*cx=d at e
     rw [← e]; ring
@@ -4070,13 +4072,13 @@ theorem generic_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
   simpa only [generic,fusedMultiply,List.append_assoc] using h
 
 theorem generic_false (X Y cx cy : Fp) (origin : BasisState) (hX : X≠0) :
-    Triple (PointDialogValues L X Y false origin) (generic L D S P cx cy)
+    Triple (PointDialogValues L X Y false origin) (generic L D S P cx cy ko)
       (PointDialogValues L X Y false origin) := by
   have h1 := fastStep_addX L hw hn X Y false origin (-cx)
   have h2 := divisionCorrect
     X Y (-cy) false origin hX
   have h3 := squareCorrect X (Y/X) false origin
-  have h4 := fastStep_addX L hw hn X (Y/X) false origin (3*cx-(2^163-1 : Nat))
+  have h4 := fastStep_addX L hw hn X (Y/X) false origin (3*cx-(ko : Nat))
   have h5 := fusedMultiply_step L hw hn P halfCorrect X (Y/X) cy false origin hX
   have h6 := fastStep_negX L hw hn X Y false origin cx
   have back : Y/X*X=Y := div_mul_cancel₀ Y hX
@@ -4096,11 +4098,13 @@ open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPoint
   CompressedAllocation CompressedFieldSupport DirectSkywalk BalancedField History5 EntryFuse
   EntryFuseFinite ExitFusionResearch
 attribute [local irreducible] run wires generic
-def mid (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp) : Program :=
-  clrF L ++ renameProgram (swapF L) (generic L D S P cx cy) ++ clrF L
+def mid (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp)
+    (ko : Nat := 2^163-1) : Program :=
+  clrF L ++ renameProgram (swapF L) (generic L D S P cx cy ko) ++ clrF L
 
-def gen (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp) : Program :=
-  zrep L ++ mid L D S P cx cy ++ zrep L
+def gen (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp)
+    (ko : Nat := 2^163-1) : Program :=
+  zrep L ++ mid L D S P cx cy ko ++ zrep L
 
 section WrapCorrect
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -4108,22 +4112,23 @@ variable (D : Fp→Program) (S P : Program) (halfCorrect : HalfMultiplyCorrect L
 variable (divisionCorrect : ∀(X Y k : Fp)(G : Bool)(origin : BasisState),X≠0 →
   Triple (PointDialogValues L X Y G origin) (D k)
     (PointDialogValues L X ((Y+(if G then k else 0))/X) G origin))
+variable {ko : Nat}
 variable (squareCorrect : ∀(X Y : Fp)(G : Bool)(origin : BasisState),
   Triple (PointDialogValues L X Y G origin) S
-    (PointDialogValues L (X-(if G then Y*Y else 0)+(if G then (2^163-1 : Nat) else 0)) Y G origin))
+    (PointDialogValues L (X-(if G then Y*Y else 0)+(if G then (ko : Nat) else 0)) Y G origin))
 include hw hn
 
 theorem midFFused_values (cx cy : Fp) (X Y X' Y' : Fp) (G : Bool) (base : BasisState) (fin : Bool)
-    (hP : ∀ base' : BasisState, Triple (PointDialogValues L X Y G base') (generic L D S P cx cy)
+    (hP : ∀ base' : BasisState, Triple (PointDialogValues L X Y G base') (generic L D S P cx cy ko)
       (PointDialogValues L X' Y' G base'))
     (hf : base L.point.finite = fin)
     (h1 : decide (X.val ≠ 5) = fin) (h2 : decide (X'.val ≠ 5) = fin) :
-    Triple (PointDialogValues L X Y G base) (mid L D S P cx cy) (PointDialogValues L X' Y' G base) := by
+    Triple (PointDialogValues L X Y G base) (mid L D S P cx cy ko) (PointDialogValues L X' Y' G base) := by
   have c1 := clrF_step L hw hn X Y G base
   have hb2 : (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val ≠ 5)))
       L.point.finite = false := by
     simp [writeBit, hf, h1]
-  have sw := swapF_values L hw hn (generic L D S P cx cy) X Y X' Y' G _ hP hb2
+  have sw := swapF_values L hw hn (generic L D S P cx cy ko) X Y X' Y' G _ hP hb2
   have c2 := clrF_step L hw hn X' Y' G
     (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val ≠ 5)))
   have hb3 : writeBit (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val ≠ 5)))
@@ -4140,7 +4145,7 @@ theorem midFFused_values (cx cy : Fp) (X Y X' Y' : Fp) (G : Bool) (base : BasisS
 include halfCorrect divisionCorrect squareCorrect
 
 theorem genFFused_ok {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    GenericOK L hc (gen L D S P cx cy) := by
+    GenericOK L hc (gen L D S P cx cy ko) := by
   intro R b f hg s m v
   have hp := (point_holds _ _ _).mp v.point
   have hfinite : L.point.finite ∉ L.point.x ++ L.point.y := finite_not_x L hn
@@ -4247,11 +4252,11 @@ private theorem metric7_eq (metric : Program → Nat)
 theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (D : Fp→Program) (S P : Program)
     (hD : ∀k,wires (D k)⊆(OB5Support.sites L).toFinset)
     (hS : wires S⊆(OB5Support.sites L).toFinset)
-    (hP : wires P⊆(OB5Support.sites L).toFinset) (cx cy : Fp) :
-    wires (generic L D S P cx cy)⊆(OB5Support.sites L).toFinset := by
+    (hP : wires P⊆(OB5Support.sites L).toFinset) (cx cy : Fp) (ko : Nat := 2^163-1) :
+    wires (generic L D S P cx cy ko)⊆(OB5Support.sites L).toFinset := by
   have ca : wires (fastConstAdd L L.point.x (-cx)) ⊆ (OB5Support.sites L).toFinset := (add_palette L hw (-cx)).trans
     (finConst_sites L hw L.point.x (Or.inl rfl))
-  have cr : wires (fastConstAdd L L.point.x (3*cx-(2^163-1 : Nat))) ⊆ (OB5Support.sites L).toFinset := (add_palette L hw (3*cx-(2^163-1 : Nat))).trans
+  have cr : wires (fastConstAdd L L.point.x (3*cx-(ko : Nat))) ⊆ (OB5Support.sites L).toFinset := (add_palette L hw (3*cx-(ko : Nat))).trans
     (finConst_sites L hw L.point.x (Or.inl rfl))
   have cn : wires (fastConstNeg L cx) ⊆ (OB5Support.sites L).toFinset := (neg_palette L hw cx).trans
     (finConst_sites L hw L.point.x (Or.inl rfl))
@@ -4261,12 +4266,12 @@ theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (D : Fp→Prog
 
 theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (D : Fp→Program) (S P : Program) (hD : ∀k,GatePhysical (D k))
-    (hS : GatePhysical S) (hP : GatePhysical P) (cx cy : Fp) :
-    GatePhysical (generic L D S P cx cy) := by
+    (hS : GatePhysical S) (hP : GatePhysical P) (cx cy : Fp) (ko : Nat := 2^163-1) :
+    GatePhysical (generic L D S P cx cy ko) := by
   have ca := FastConst.fastAdd_physical
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) SquareReduction.c (-cx).val
   have cr := FastConst.fastAdd_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) SquareReduction.c (3*cx-(2^163-1 : Nat)).val
+    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) SquareReduction.c (3*cx-(ko : Nat)).val
   have cn := FastConst.fastNeg_physical
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p cx.val
   have ey := exitY_physical L hw hn cy
@@ -4278,30 +4283,31 @@ theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     (D : Fp→Program) (S P : Program) (k : Nat) (hk : 515≤k ∧ k<2613)
     (hD : ∀c,L.core.poolWire k∉wires (D c))
     (hS : L.core.poolWire k∉wires S) (hP : L.core.poolWire k∉wires P)
-    (cx cy : Fp) : L.core.poolWire k∉wires (generic L D S P cx cy) := by
+    (cx cy : Fp) (ko : Nat := 2^163-1) : L.core.poolWire k∉wires (generic L D S P cx cy ko) := by
   have x := ExitGenericQ5.constant_ports_avoid_large L hw hn k hk L.point.x (Or.inl rfl)
   have y := ExitGenericQ5.constant_ports_avoid_large L hw hn k hk L.point.y (Or.inr rfl)
   have ca := (add_palette L hw (-cx))
-  have cr := (add_palette L hw (3*cx-(2^163-1 : Nat)))
+  have cr := (add_palette L hw (3*cx-(ko : Nat)))
   have cn := (neg_palette L hw cx)
   have ey := exitY_support L hw cy
   simp only [generic,wires_append,Finset.mem_union,not_or]
   exact ⟨⟨⟨⟨⟨⟨fun h=>x (ca h),hD (-cy)⟩,hS⟩,fun h=>x (cr h)⟩,hP⟩,
     fun h=>y (ey h)⟩,fun h=>x (cn h)⟩
 
-theorem gen_shape (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp) :
-    gen L D S P cx cy=GenericQ5Geometry.wrapG L (generic L D S P cx cy) := by
+theorem gen_shape (L : ControlledPointLayout) (D : Fp→Program) (S P : Program) (cx cy : Fp)
+    (ko : Nat := 2^163-1) :
+    gen L D S P cx cy ko=GenericQ5Geometry.wrapG L (generic L D S P cx cy ko) := by
   simp only [gen,mid,GenericQ5Geometry.wrapG]
 
 
 theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (D : Fp→Program) (S P : Program) (hD : ∀k,GatePhysical (D k))
-    (hS : GatePhysical S) (hP : GatePhysical P) (cx cy : Fp) :
-    GatePhysical (gen L D S P cx cy) := by
+    (hS : GatePhysical S) (hP : GatePhysical P) (cx cy : Fp) (ko : Nat := 2^163-1) :
+    GatePhysical (gen L D S P cx cy ko) := by
   have z:=zrep_physical L hn
   have c:=clrF_physical L hw hn
   have r:=gatePhysical_rename (swapF L) (swapF_injective L hw hn) _
-    (generic_physical L hw hn D S P hD hS hP cx cy)
+    (generic_physical L hw hn D S P hD hS hP cx cy ko)
   simp only [gen,mid,gatePhysical_append]
   exact ⟨⟨z,⟨c,r⟩,c⟩,z⟩
 
@@ -4323,8 +4329,8 @@ attribute [local irreducible] fastConstAdd fastConstNeg exitY
 theorem generic_slots_le (L : ControlledPointLayout) (hw : L.Widths)
     (D : Fp → Program) (S P : Program)
     (hD : ∀k,gateSlots (D k) ≤ 20525006)
-    (hS : gateSlots S ≤ 8000000) (hP : gateSlots P ≤ 20500006) (cx cy : Fp) :
-    gateSlots (generic L D S P cx cy) ≤ 49100000 := by
+    (hS : gateSlots S ≤ 8000000) (hP : gateSlots P ≤ 20500006) (cx cy : Fp) (ko : Nat := 2^163-1) :
+    gateSlots (generic L D S P cx cy ko) ≤ 49100000 := by
   have add (k : Fp) : gateSlots (fastConstAdd L L.point.x k) ≤ 15368 := by
     simpa only [fastConstAdd] using FastConst.fastAdd_gateSlots_le
       (g:=L.core.generic) 256 SquareReduction.c k.val
@@ -4334,7 +4340,7 @@ theorem generic_slots_le (L : ControlledPointLayout) (hw : L.Widths)
       (g:=L.core.generic) 256 p cx.val
       (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a := add (-cx)
-  have b := add (3*cx-(2^163-1 : Nat))
+  have b := add (3*cx-(ko : Nat))
   have d := hD (-cy)
   have e := exitY_slots L hw cy
   simp only [generic,gateSlots_append]
@@ -4343,9 +4349,9 @@ theorem generic_slots_le (L : ControlledPointLayout) (hw : L.Widths)
 theorem gen_slots_le (L : ControlledPointLayout) (hw : L.Widths)
     (D : Fp → Program) (S P : Program)
     (hD : ∀k,gateSlots (D k) ≤ 20525006)
-    (hS : gateSlots S ≤ 8000000) (hP : gateSlots P ≤ 20500006) (cx cy : Fp) :
-    gateSlots (gen L D S P cx cy) ≤ 49200000 := by
-  have g := generic_slots_le L hw D S P hD hS hP cx cy
+    (hS : gateSlots S ≤ 8000000) (hP : gateSlots P ≤ 20500006) (cx cy : Fp) (ko : Nat := 2^163-1) :
+    gateSlots (gen L D S P cx cy ko) ≤ 49200000 := by
+  have g := generic_slots_le L hw D S P hD hS hP cx cy ko
   have z := zrep_gateSlots_le L hw
   have c := clrF_gateSlots_le L hw
   simp only [gen,mid,gateSlots_append,rename_gateSlots]
@@ -4534,7 +4540,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       Edges.wrapper layout C cy (OwnAll12Producer.genE layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2155098,1500940,1593,50000004⟩
+def bounds : Challenge.Bounds := ⟨2155226,1500940,1593,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -4554,7 +4560,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155098 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155226 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
@@ -4565,7 +4571,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155098 := by
     have ge:=(OwnExitProducer.genE_counts_diff layout layout_widths cx cy).1
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).1
     have ga:=(OwnAll12Producer.genE_counts_diff layout layout_widths cx cy).1
-    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnAll12Producer.genE layout cx cy))≤2155098
+    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnAll12Producer.genE layout cx cy))≤2155226
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1500940 := by
@@ -4617,3 +4623,4 @@ theorem certificate : Challenge.Certificate entry bounds where
     change gateSlots (normalizeProgram (program C))≤50000004
     rw [normalize_slots];exact program_gateSlots C
 end ECDSAAdd.Entrant.All12CurrentCertificate
+
