@@ -94,7 +94,6 @@ import ECDSAAdd.Arithmetic.PhysicalGateCheck
 import ECDSAAdd.Math.SkywalkTerminalLastControls
 
 
-
 section
 
 /-! Codec-independent biased/short kernel proof cache. Experimental extraction only; never a gate for the already frozen submission. Public source and model credits remain in the candidate note. -/
@@ -4230,6 +4229,7 @@ theorem inverse_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
 end ECDSAAdd.Entrant.ShortBiasedPhysical
 end
 end
+
 
 
 
@@ -22677,6 +22677,824 @@ end ECDSAAdd.Entrant
 end
 
 section
+-- ===== SquareAQ =====
+
+/-! Square with every fold core reflected.
+
+The twelve fold items of the three Karatsuba branches have signs 5(+)/7(-), so an
+alternating schedule needs one sign flip.  The sign of an accumulated correction is
+free: complementing the 163-bit accumulator under the control (CX gates only) turns
+the contribution `-V` into `+(2^163-1-V)`.  With branch order B, A, C and branch C's
+accumulator complemented, all twelve cores are the comparison-free reflected core,
+and the square ends in the plain orientation with the classical offset
+`control·(2^163-1)`, which the following constant addition absorbs. -/
+
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+
+namespace ECDSAAdd.Entrant.SquareAQ
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+/-- The square offset left in the output by the complemented accumulator. -/
+def offset : Nat := 2^163-1
+
+theorem offset_lt : offset<SquareReduction.p := by
+  norm_num [offset,SquareReduction.p,SquareReduction.B,SquareReduction.c]
+
+/-- Controlled complement of a register, as a frame transformer. -/
+theorem complement_frame (r : List Wire) (hr : r.Nodup) (c : Wire) (hc : c∉r)
+    (b : BasisState) (A : Nat) :
+    Triple (SquareFrame r b A) (maskedConstant c r (2^r.length-1))
+      (SquareFrame r b (if b c then 2^r.length-1-A else A)) := by
+  intro s m h
+  rw [maskedConstant_run c r _ hc]
+  have hcs : s.basis c=b c := h.2 c hc
+  cases hb : b c
+  · simp only [hcs,hb,Bool.false_eq_true,if_false]
+    exact ⟨trivial,h⟩
+  · simp only [hcs,hb,if_true]
+    rw [Arithmetic.xorConstant_ones,notRegister_correct r hr]
+    refine ⟨rfl,?_,?_⟩
+    · change regValue r (fun w => if w∈r then !s.basis w else s.basis w)=_
+      rw [regValue_congr r _ (fun w => !s.basis w) (by intro w hw; simp [hw]),
+        regValue_complement,h.1]
+    · intro q hq
+      change (if q∈r then !s.basis q else s.basis q)=b q
+      simp only [hq,if_false]
+      exact h.2 q hq
+
+/-! Branch C: reflected rotation, then the complemented accumulator through the reflected core. -/
+
+def cAcc (L : CuccaroStreamedSquareWideLayout) : AccItem :=
+  ⟨true,[],earlyHTerms (L.core.product.drop 128)++[posTop L],earlyHTerms (L.core.product.drop 128)++[posTop L]⟩
+
+theorem accCMix_eq (L : CuccaroStreamedSquareWideLayout) :
+    accCMix L=[.inl (negRot L),.inr (cAcc L)] := rfl
+
+theorem cAcc_mem (L : CuccaroStreamedSquareWideLayout) : (.inr (cAcc L) : MixItem)∈accCMix L := by
+  rw [accCMix_eq]; simp
+
+theorem negRot_mem (L : CuccaroStreamedSquareWideLayout) : (.inl (negRot L) : MixItem)∈accCMix L := by
+  rw [accCMix_eq]; simp
+
+/-- Accumulated fold whose accumulator is complemented under `c` around the reflected core. -/
+def accFoldQC (L : CuccaroStreamedSquareWideLayout) (c : Wire) (a : AccItem) : Program :=
+  fillIn L a++(maskedConstant c (accReg L) (2^163-1)++(qprog L.measuredCore SquareReduction.p++
+    (maskedConstant c (accReg L) (2^163-1)++fillOut L a)))
+
+theorem accReg_length (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : (accReg L).length=163 :=
+  (acc_lengths L hw).1
+
+theorem accReg_nodup (L : CuccaroStreamedSquareWideLayout) (hn : L.wires.Nodup) : (accReg L).Nodup := by
+  have nw : L.core.work.Nodup := by
+    apply List.nodup_iff_count_le_one.mpr; intro q
+    have hh := List.nodup_iff_count_le_one.mp hn q
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,
+      List.count_append,List.count_cons,List.count_nil] at hh
+    omega
+  exact (List.take_sublist 163 L.core.work).nodup nw
+
+theorem control_not_accReg (L : CuccaroStreamedSquareWideLayout) (c : Wire) (hcw : c∉L.wires) :
+    c∉accReg L := fun h => hcw (by
+  simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,accReg_work L c h])
+
+theorem accFoldQC_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (c : Wire) (hcw : c∉L.wires) (base : BasisState) (a : AccItem)
+    (hv : AccView L base a) (hc : L.PairClean base) (O : Nat) (hO : O<SquareReduction.p) :
+    Triple (SquareFrame L.core.out base O) (accFoldQC L c a)
+      (SquareFrame L.core.out base
+        (((if base c then 2^163-1-Acc.accVal base 0 a.spec else Acc.accVal base 0 a.spec)+
+          (SquareReduction.p-1-O))%SquareReduction.p)) := by
+  intro s m hf
+  have lens := acc_lengths L hw
+  have clean := L.squareFrame_clean hn base s.basis O hf hc
+  let b0 := s.basis
+  have prodOut := L.product_out_disjoint hn
+  have auxAway (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
+      L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉L.core.out :=
+    (L.pairAuxAway hn q hq).2
+  have workZero : ∀q∈L.core.work,b0 q=false := (regValue_zero _ _).mp clean.work
+  have padZero : ∀q∈L.foldPad,b0 q=false := (regValue_zero _ _).mp clean.pad
+  have hz : ∀q∈accZ L,b0 q=false := by
+    intro q hq
+    rcases accZ_mem L q hq with h|h
+    · exact padZero q h
+    · exact workZero q (List.mem_of_mem_drop h)
+  have hb : ∀q∈accBank L,b0 q=false := fun q hq => padZero q (List.mem_of_mem_take hq)
+  have hW0 : ∀q∈wTemp L,b0 q=false := fun q hq => workZero q (wTemp_work L q hq)
+  have prodNotOut (q : Wire) (hq : q∈L.core.product) : q∉L.core.out :=
+    fun ho => List.disjoint_left.mp prodOut hq ho
+  have agree0 : ∀q∈L.core.product,b0 q=base q := fun q hq => hf.2 q (prodNotOut q hq)
+  have cAcc0 : c∉accReg L := control_not_accReg L c hcw
+  have cOut : c∉L.core.out := fun h => hcw (by
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h])
+  have cBase : b0 c=base c := hf.2 c cOut
+  have accNd : (accReg L).Nodup := accReg_nodup L hn
+  let A := Acc.accVal base 0 a.spec
+  let A' := if base c then 2^163-1-A else A
+  have hA : A<2^163 := Acc.accVal_lt base 163 a.spec 0 (by norm_num) hv.specValid
+  have hA' : A'<2^163 := by
+    by_cases h : base c
+    · simp only [A',h,if_true]; omega
+    · simp only [A',h,Bool.false_eq_true,if_false]; exact hA
+  have accZero : regValue (accReg L) b0=0 :=
+    (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
+  have hbuild := fillIn_triple L hw hn base a hv b0 agree0 hz hb clean.cin hW0
+  let mb := measurementCount (fillIn L a)
+  let mc := measurementCount (maskedConstant c (accReg L) (2^163-1))
+  let mk := measurementCount (qprog L.measuredCore SquareReduction.p)
+  rw [accFoldQC,run_append,run_append,run_append,run_append]
+  let u := run (fillIn L a) (m.take mb) s
+  have eu := hbuild s (m.take mb) ⟨accZero,fun _ _ => rfl⟩
+  change u.phase=s.phase ∧ SquareFrame (accReg L) b0 A u.basis at eu
+  have cmp := complement_frame (accReg L) accNd c cAcc0 b0 A
+  rw [accReg_length L hw,cBase] at cmp
+  let m1 := m.drop mb
+  let u2 := run (maskedConstant c (accReg L) (2^163-1)) (m1.take mc) u
+  have eu2 := cmp u (m1.take mc) eu.2
+  change u2.phase=u.phase ∧ SquareFrame (accReg L) b0 A' u2.basis at eu2
+  have keepU (q : Wire) (hq : q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
+      L.core.normFlag,L.core.modFlag]++L.core.out++L.core.product++L.core.work.drop 163) : u2.basis q=b0 q :=
+    eu2.2.2 q (accReg_away L hn q hq)
+  have workU : regValue L.core.work u2.basis=A' := by
+    have sp := regValue_append (L.core.work.take 163) (L.core.work.drop 163) u2.basis
+    rw [List.take_append_drop] at sp
+    have hi : regValue (L.core.work.drop 163) u2.basis=0 :=
+      (regValue_zero _ _).mpr (fun q hq => (keepU q (by simp [hq])).trans (workZero q (List.mem_of_mem_drop hq)))
+    rw [sp,hi]
+    simpa [accReg] using eu2.2.1
+  have outU : regValue L.core.out u2.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => keepU q (by simp [hq]))).trans hf.1
+  have coreNd : L.measuredCore.wires.Nodup :=
+    (List.nodup_cons.mp (by simpa using L.measuredFold_interfaces hn [] (by simp))).2
+  have hp : SquareReduction.p+SquareReduction.c=2^256 := by
+    norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
+  have hAp : A'<SquareReduction.p :=
+    lt_of_lt_of_le hA' (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have carryU : ∀q∈L.measuredCore.carry,u2.basis q=false := by
+    intro q hq
+    simp only [measuredCore,foldCarry,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
+    rcases hq with hq|rfl|rfl
+    · exact (keepU q (by simp [hq])).trans (padZero q hq)
+    · exact (keepU _ (by simp)).trans clean.productHigh
+    · exact (keepU _ (by simp)).trans clean.workHigh
+  let m2 := m1.drop mc
+  have ek := QCore.qprog_correct L.measuredCore 256 SquareReduction.c SquareReduction.p (L.measuredCore_widths hw)
+    coreNd (by decide) hp (by norm_num [SquareReduction.c]) A' O hAp hO u2 (m2.take mk)
+    workU outU ((keepU _ (by simp [measuredCore])).trans clean.outHigh)
+    ((keepU _ (by simp [measuredCore])).trans clean.modFlag)
+    carryU ((keepU _ (by simp [measuredCore])).trans clean.cin)
+  let v := run (qprog L.measuredCore SquareReduction.p) (m2.take mk) u2
+  change v.phase=u2.phase ∧ regValue L.core.out v.basis=(A'+(SquareReduction.p-1-O))%SquareReduction.p ∧
+    ∀q,q∉L.core.out → v.basis q=u2.basis q at ek
+  let base2 : BasisState := fun q => if q∈L.core.out then v.basis q else b0 q
+  have b2off (q : Wire) (hq : q∉L.core.out) : base2 q=b0 q := by simp [base2,hq]
+  have accOut (q : Wire) (hq : q∈accReg L) : q∉L.core.out := auxAway q (by simp [accReg_work L q hq])
+  have frame2 : SquareFrame (accReg L) base2 A' v.basis := by
+    refine ⟨?_,?_⟩
+    · exact (regValue_congr _ _ _ (fun q hq => ek.2.2 q (accOut q hq))).trans eu2.2.1
+    · intro q hq
+      by_cases ho : q∈L.core.out
+      · simp [base2,ho]
+      · rw [b2off q ho,ek.2.2 q ho]; exact eu2.2.2 q hq
+  have cmp2 := complement_frame (accReg L) accNd c cAcc0 base2 A'
+  rw [accReg_length L hw] at cmp2
+  have c2 : base2 c=base c := (b2off c cOut).trans cBase
+  rw [c2] at cmp2
+  have back : (if base c then 2^163-1-A' else A')=A := by
+    by_cases h : base c
+    · simp only [A',h,if_true]; omega
+    · simp only [A',h,Bool.false_eq_true,if_false]
+  rw [back] at cmp2
+  let m3 := m2.drop mk
+  let v2 := run (maskedConstant c (accReg L) (2^163-1)) (m3.take mc) v
+  have ev2 := cmp2 v (m3.take mc) frame2
+  change v2.phase=v.phase ∧ SquareFrame (accReg L) base2 A v2.basis at ev2
+  have hz2 : ∀q∈accZ L,base2 q=false := by
+    intro q hq
+    have ho : q∉L.core.out := by
+      simp only [accZ,List.mem_append] at hq
+      rcases hq with hq|hq
+      · exact auxAway q (by simp [List.mem_of_mem_drop hq])
+      · exact auxAway q (by simp [List.mem_of_mem_drop hq])
+    rw [b2off q ho]; exact hz q hq
+  have hb2 : ∀q∈accBank L,base2 q=false := by
+    intro q hq
+    have ho : q∉L.core.out := auxAway q (by simp [List.mem_of_mem_take hq])
+    rw [b2off q ho]; exact hb q hq
+  have hi2 : base2 L.core.cin=false := by
+    rw [b2off _ (auxAway _ (by simp))]; exact clean.cin
+  have hW2 : ∀q∈wTemp L,base2 q=false := by
+    intro q hq
+    have ho : q∉L.core.out := auxAway q (by simp [wTemp_work L q hq])
+    rw [b2off q ho]; exact hW0 q hq
+  have agree2 : ∀q∈L.core.product,base2 q=base q :=
+    fun q hq => (b2off q (prodNotOut q hq)).trans (agree0 q hq)
+  have hun := fillOut_triple L hw hn base a hv base2 agree2 hz2 hb2 hi2 hW2
+  have eo := hun v2 (m3.drop mc) ev2.2
+  refine ⟨eo.1.trans (ev2.1.trans (ek.1.trans (eu2.1.trans eu.1))),?_,?_⟩
+  · have e : regValue L.core.out (run (fillOut L a) (m3.drop mc) v2).basis=
+        regValue L.core.out v.basis := by
+      apply regValue_congr; intro q hq
+      have na : q∉accReg L := fun h => accOut q h hq
+      rw [eo.2.2 q na]; simp [base2,hq]
+    rw [e,ek.2.1]
+  · intro q hq
+    by_cases ha : q∈accReg L
+    · have z := (regValue_zero _ _).mp eo.2.1 q ha
+      rw [z]
+      exact ((regValue_zero _ _).mp hc.work q (accReg_work L q ha)).symm
+    · rw [eo.2.2 q ha,b2off q hq]; exact hf.2 q hq
+
+theorem accFoldQC_counts (L : CuccaroStreamedSquareWideLayout) (c : Wire) (a : AccItem) :
+    toffoliCount (accFoldQC L c a)=toffoliCount (accFoldQ L a) ∧
+    measurementCount (accFoldQC L c a)=measurementCount (accFoldQ L a) := by
+  have mc := maskedConstant_counts c (accReg L) (2^163-1)
+  simp only [accFoldQC,accFoldQ,toffoliCount_append,measurementCount_append,mc.1,mc.2]
+  constructor <;> omega
+
+theorem accFoldQC_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (control : Wire) (a : AccItem) (cnt : ∀f∈a.terms,SrcOK L f) (ok : ∀f∈a.terms,TermOK f)
+    (cntP : ∀f∈a.pre,∀q,f.src.count q≤L.core.product.count q) (okP : ∀f∈a.pre,TermOK33 f) :
+    ECDSAAdd.wires (accFoldQC L control a)⊆(control::L.wires).toFinset := by
+  have full := accFoldQ_support L hw hn control a cnt ok cntP okP
+  simp only [accFoldQ,wires_append,Finset.union_subset_iff] at full
+  have mc : ECDSAAdd.wires (maskedConstant control (accReg L) (2^163-1))⊆(control::L.wires).toFinset := by
+    intro q hq
+    have h := maskedConstant_wires_subset control (accReg L) (2^163-1) hq
+    simp only [List.mem_toFinset,List.mem_cons] at h ⊢
+    rcases h with h|h
+    · exact Or.inl h
+    · exact Or.inr (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,accReg_work L q h])
+  simp only [accFoldQC,wires_append,Finset.union_subset_iff]
+  exact ⟨full.1.1,mc,full.1.2,mc,full.2⟩
+
+theorem accFoldQC_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (c : Wire) (hcw : c∉L.wires)
+    (a : AccItem) (cnt : ∀f∈a.terms,SrcOK L f) (ok : ∀f∈a.terms,TermOK f)
+    (cntP : ∀f∈a.pre,∀q,f.src.count q≤L.core.product.count q) (okP : ∀f∈a.pre,TermOK33 f) :
+    GatePhysical (accFoldQC L c a) := by
+  have full := accFoldQ_physical L hw hn a cnt ok cntP okP
+  simp only [accFoldQ,gatePhysical_append] at full
+  have mc := maskedConstant_physical c (accReg L) (2^163-1) (control_not_accReg L c hcw)
+  simp only [accFoldQC,gatePhysical_append]
+  exact ⟨full.1.1,mc,full.1.2,mc,full.2⟩
+
+theorem accFoldQC_gateSlots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) (a : AccItem)
+    (ok : ∀f∈a.terms,TermOK f) (okP : ∀f∈a.pre,TermOK33 f) :
+    Challenge.gateSlots (accFoldQC L c a)≤
+      2*(a.terms.length*(14*163))+4*(a.pre.length*(14*33))+(67*256+41)+7000+2*163 := by
+  have full := accFoldQ_gateSlots L hw a ok okP
+  simp only [accFoldQ,Challenge.gateSlots_append] at full
+  have mc := Baselines.maskedConstant_gateSlots_le c (accReg L) (2^163-1)
+  rw [accReg_length L hw] at mc
+  simp only [accFoldQC,Challenge.gateSlots_append]
+  omega
+
+/-! The branch-C body: `-rot128` through the reflected core, then the complemented accumulator. -/
+
+def cBody (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
+  measuredFoldQ L (negRot L)++accFoldQC L c (cAcc L)
+
+theorem cAcc_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    MixStatic L (.inr (cAcc L)) := (acc_static L hw).2.2 _ (cAcc_mem L)
+
+theorem negRot_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    MixStatic L (.inl (negRot L)) := (acc_static L hw).2.2 _ (negRot_mem L)
+
+theorem cAcc_price (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : accPriceQ (cAcc L)=1623 := by
+  norm_num [cAcc,accPriceQ,posTop,earlyHTerms,Acc.earlyTerm,Acc.sbuildT,Acc.EarlyH,Acc.earlyBuildT,
+    Acc.baseBuildT,Acc.buildT,hw.core.product]
+
+theorem cBody_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
+    toffoliCount (cBody L c)=2390 ∧ measurementCount (cBody L c)=2392 := by
+  have st := cAcc_static L hw
+  have q := measuredFoldQ_counts L hw (negRot L)
+  have k := accFoldQC_counts L c (cAcc L)
+  have a := accFoldQ_counts L hw (cAcc L) st.2.1 st.2.2.2
+  rw [cAcc_price L hw] at a
+  simp only [cBody,toffoliCount_append,measurementCount_append,q.1,q.2,k.1,k.2,a.1,a.2]
+  exact ⟨trivial,trivial⟩
+
+theorem cBody_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (control : Wire) : ECDSAAdd.wires (cBody L control)⊆(control::L.wires).toFinset := by
+  have st := cAcc_static L hw
+  have sf := negRot_static L hw
+  have mem : ∀q∈(negRot L).src,q∈L.core.product := by
+    intro q hq
+    have pos := List.count_pos_iff.mpr hq
+    have b := sf q
+    exact List.count_pos_iff.mp (by omega)
+  have a := measuredFoldQ_support L control (negRot L) mem
+  have b := accFoldQC_support L hw hn control (cAcc L) st.1 st.2.1 st.2.2.1 st.2.2.2
+  simp only [cBody,wires_append,Finset.union_subset_iff]
+  exact ⟨a,b⟩
+
+theorem cBody_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+    (hn : (control::L.wires).Nodup) : GatePhysical (cBody L control) := by
+  have nd := (List.nodup_cons.mp hn).2
+  have st := cAcc_static L hw
+  have sf := negRot_static L hw
+  have a := measuredFoldQ_physical L hw nd (negRot L) sf
+  have b := accFoldQC_physical L hw nd control (List.nodup_cons.mp hn).1 (cAcc L) st.1 st.2.1 st.2.2.1 st.2.2.2
+  simp only [cBody,gatePhysical_append]
+  exact ⟨a,b⟩
+
+theorem cBody_gateSlots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
+    Challenge.gateSlots (cBody L c)≤100000 := by
+  have st := cAcc_static L hw
+  have a := measuredFoldQ_gateSlots L hw (negRot L)
+  have b := accFoldQC_gateSlots L hw c (cAcc L) st.2.1 st.2.2.2
+  have lt : (cAcc L).terms.length=5 := by simp [cAcc,earlyHTerms]
+  have lp : (cAcc L).pre.length=0 := by simp [cAcc]
+  rw [lt,lp] at b
+  simp only [cBody,Challenge.gateSlots_append]
+  omega
+
+def middleC (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  withLowK2 L ext control L.core.sum L.core.product (cBody L control)
+def branchC (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  gPrep L++middleC L ext control++gClear L
+
+/-- Branches B and A as in `accPrefixK`, then branch C with the complemented accumulator:
+every fold core is the reflected one and the square ends unreflected. -/
+def program (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  accBranchBK L ext control++accBranchAK L ext control++branchC L ext control
+
+def resCC (P O : Nat) (g : Bool) : Nat :=
+  ofCast false (measuredOrientationCast false O+(-(P : ZMod SquareReduction.p)*2^128+
+    (if g then (offset : ZMod SquareReduction.p) else 0)))
+
+theorem middleC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (S O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (hs : regValue L.core.sum s.basis=S)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (middleC L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (middleC L ext control) records s).basis=
+      resCC ((if s.basis control then S else 0)^2) O (s.basis control) ∧
+    ∀q,q∉L.core.out → (run (middleC L ext control) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have hcw : control∉L.wires := (List.nodup_cons.mp hn).1
+  let M := if s.basis control then S else 0
+  have srcCount (q : Wire) : L.core.sum.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (cBody L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (cBody_support L hw nd control hw'))
+  apply withLowK2_correct L hw control hn L.core.sum L.core.product srcCount (fun _ => le_rfl)
+    (by simp [L.core.sum_length hw.core]) (by simp [L.core.sum_length hw.core])
+    (by simp [hw.core.product,L.core.sum_length hw.core]) ext he.nodup he.away he.len
+    (cBody L control) hbody s records hc hp0 hz
+  intro t m dstValue same
+  rw [hs] at dstValue
+  change regValue L.core.product t.basis=M^2 at dstValue
+  have clean := L.measured_product_frame_clean nd L.core.product (fun _ => le_rfl) s.basis t.basis hc same
+  have prodOut := L.product_out_disjoint nd
+  have outO : regValue L.core.out t.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => same q (fun hp => List.disjoint_left.mp prodOut hp hq))).trans ho
+  have ctrlProd : control∉L.core.product := fun h => hcw (by
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h])
+  have ctrlT : t.basis control=s.basis control := same control ctrlProd
+  have views := accC_views L hw t.basis M dstValue
+  have v1 : L.MeasuredFoldView t.basis (negRot L) := views _ (negRot_mem L)
+  have v2 : AccView L t.basis (cAcc L) := views _ (cAcc_mem L)
+  let pay := measuredFoldPayload t.basis (negRot L)
+  let A := Acc.accVal t.basis 0 (cAcc L).spec
+  let O1 := (pay+(SquareReduction.p-1-O))%SquareReduction.p
+  have hO1 : O1<SquareReduction.p :=
+    Nat.mod_lt _ (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have step1 : Triple (SquareFrame L.core.out t.basis O) (measuredFoldQ L (negRot L))
+      (SquareFrame L.core.out t.basis O1) :=
+    measuredFoldQ_frame L hw nd t.basis (negRot L) v1 rfl clean O hO
+  have step2 := accFoldQC_frame L hw nd control hcw t.basis (cAcc L) v2 clean O1 hO1
+  have all : Triple (SquareFrame L.core.out t.basis O) (cBody L control)
+      (SquareFrame L.core.out t.basis
+        (((if t.basis control then 2^163-1-A else A)+(SquareReduction.p-1-O1))%SquareReduction.p)) :=
+    step1.seq step2
+  obtain ⟨phase,value,frame⟩ := all t m ⟨outO,fun _ _ => rfl⟩
+  refine ⟨phase,?_,frame⟩
+  rw [value,ctrlT]
+  have hA : A<2^163 := Acc.accVal_lt t.basis 163 (cAcc L).spec 0 (by norm_num) v2.specValid
+  have hsum := (accC_mixSum L hw t.basis).trans (L.measuredC_sum hw t.basis (M^2) dstValue)
+  rw [accCMix_eq] at hsum
+  have n1 : mixNeg (.inl (negRot L) : MixItem)=true := rfl
+  have n2 : mixNeg (.inr (cAcc L) : MixItem)=true := rfl
+  simp only [mixSignedSum,mixSignedPayload,n1,n2,if_true,mixPayload,add_zero] at hsum
+  change -(pay : ZMod SquareReduction.p)+-(A : ZMod SquareReduction.p)=
+    -((M^2 : Nat) : ZMod SquareReduction.p)*2^128 at hsum
+  have c0 := measuredReflection_zmod O hO
+  have c1 := measuredReflection_zmod O1 hO1
+  have cO1 : (O1 : ZMod SquareReduction.p)=(pay : ZMod SquareReduction.p)+(-1-(O : ZMod SquareReduction.p)) := by
+    simp only [O1,ZMod.natCast_mod,Nat.cast_add,c0]
+  have bound : ((if s.basis control then 2^163-1-A else A)+(SquareReduction.p-1-O1))%SquareReduction.p<
+      SquareReduction.p := Nat.mod_lt _ (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have key : ((((if s.basis control then 2^163-1-A else A)+(SquareReduction.p-1-O1))%SquareReduction.p : Nat) :
+      ZMod SquareReduction.p)=measuredOrientationCast false O+(-((M^2 : Nat) : ZMod SquareReduction.p)*2^128+
+        (if s.basis control then (offset : ZMod SquareReduction.p) else 0)) := by
+    simp only [measuredOrientationCast,Bool.false_eq_true,if_false]
+    rw [ZMod.natCast_mod,Nat.cast_add,c1,cO1]
+    cases hg : s.basis control
+    · have hM : M=0 := by simp [M,hg]
+      have hpay : (pay : ZMod SquareReduction.p)=0 := by
+        have hP : regValue L.core.product t.basis=0 := by rw [dstValue,hM]; rfl
+        have r := L.rotated128_value hw t.basis 0 hP
+        have e : pay=0 := by
+          change regValue (negRot L).src t.basis*2^(negRot L).shift=0
+          simp only [negRot]
+          rw [r]; simp
+        rw [e,Nat.cast_zero]
+      simp only [hM,Bool.false_eq_true,if_false] at hsum ⊢
+      simp only [ne_eq,OfNat.ofNat_ne_zero,not_false_eq_true,zero_pow,Nat.cast_zero,neg_zero,zero_mul] at hsum ⊢
+      linear_combination -hsum-2*hpay
+    · simp only [if_true]
+      have hAle : A≤2^163-1 := by omega
+      have hoff : ((2^163-1-A : Nat) : ZMod SquareReduction.p)=(offset : ZMod SquareReduction.p)-(A : ZMod SquareReduction.p) := by
+        rw [Nat.cast_sub hAle]; rfl
+      rw [hoff]
+      linear_combination hsum
+  have result := congrArg ZMod.val key
+  rw [ZMod.val_natCast_of_lt bound] at result
+  rw [result]
+  simp only [resCC,ofCast,Bool.false_eq_true,if_false,M]
+
+theorem branchC_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (A B O : Nat)
+    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
+    (ha : regValue L.core.low s.basis=A) (hb : regValue L.core.sum s.basis=B)
+    (bound : A+B<2^129) (ho : regValue L.core.out s.basis=O)
+    (hp0 : regValue L.core.product s.basis=0) (hc : L.PairClean s.basis)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (branchC L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (branchC L ext control) records s).basis=
+      resCC ((if s.basis control then A+B else 0)^2) O (s.basis control) ∧
+    ∀q,q∉L.core.out → (run (branchC L ext control) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have dis := L.measured_sum_disjoint nd
+  have ctrlAway : control∉L.core.sum := by
+    intro bad
+    have h := List.nodup_iff_count.mp hn control
+    have pos := List.count_pos_iff.mpr bad
+    have sumBound := L.measured_sum_count control
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,List.count_cons,
+      List.count_nil,beq_self_eq_true,if_true] at h sumBound
+    omega
+  let middle := middleC L ext control
+  let mp := measurementCount (gPrep L)
+  let rest := records.drop mp
+  let u := run (gPrep L) (records.take mp) s
+  let v := run middle (rest.take (measurementCount middle)) u
+  let out := run (gClear L) (rest.drop (measurementCount middle)) v
+  have prep := gPrep_frame L hw nd s.basis A B ha bound (PairClean.corePad L s.basis hc) hc.cin hc.work
+    s (records.take mp) (show SquareFrame L.core.sum s.basis B s.basis from ⟨hb,fun _ _ => rfl⟩)
+  have productU : regValue L.core.product u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.1 bad hq))).trans hp0
+  have outU : regValue L.core.out u.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq))).trans ho
+  have ctrlU : u.basis control=s.basis control := prep.2.2 control ctrlAway
+  have cleanU : L.PairClean u.basis := by
+    have keep (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
+        L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : u.basis q=s.basis q :=
+      prep.2.2 q (L.measured_sum_aux_away nd q hq)
+    constructor
+    · exact (regValue_congr _ _ _ (fun q hq => keep q (by simp [hq]))).trans hc.pad
+    · exact (regValue_congr _ _ _ (fun q hq => keep q (by simp [hq]))).trans hc.work
+    · exact (keep _ (by simp)).trans hc.productHigh
+    · exact (keep _ (by simp)).trans hc.outHigh
+    · exact (keep _ (by simp)).trans hc.workHigh
+    · exact (keep _ (by simp)).trans hc.cin
+    · exact (keep _ (by simp)).trans hc.normFlag
+    · exact (keep _ (by simp)).trans hc.modFlag
+  have hzU : regValue ext u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => he.away q hq (sum_in L control q bad)))).trans hz
+  have used := middleC_correct L hw ext control hn (A+B) O hO u
+    (rest.take (measurementCount middle)) prep.2.1 outU productU cleanU he hzU
+  rw [ctrlU] at used
+  let restoreBase : BasisState := fun q => if q∈L.core.out then v.basis q else s.basis q
+  have lowOutAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out := by
+    intro bad
+    have h := List.nodup_iff_count.mp nd q
+    have a := List.count_pos_iff.mpr (List.mem_of_mem_take hq)
+    have b := List.count_pos_iff.mpr bad
+    simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,List.count_cons,List.count_nil] at h
+    omega
+  have lowRestore : regValue L.core.low restoreBase=A := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) ha
+    intro q hq
+    simp [restoreBase,lowOutAway q hq]
+  have sumRestore : regValue L.core.sum restoreBase=B := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) hb
+    intro q hq
+    simp [restoreBase,List.disjoint_left.mp dis.2 hq]
+  have padRestore : regValue L.core.pad restoreBase=0 := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) (PairClean.corePad L s.basis hc)
+    intro q hq
+    have away := (L.pairAuxAway nd q (by simp [CuccaroStreamedSquareWideLayout.foldPad,hq])).2
+    simp [restoreBase,away]
+  have cinRestore : restoreBase L.core.cin=false := by
+    have away := (L.pairAuxAway nd L.core.cin (by simp)).2
+    simp [restoreBase,away,hc.cin]
+  have clearPre : SquareFrame L.core.sum restoreBase (A+B) v.basis := by
+    refine ⟨?_,?_⟩
+    · exact (regValue_congr _ _ _ (fun q hq => used.2.2 q (List.disjoint_left.mp dis.2 hq))).trans prep.2.1
+    · intro q hq
+      by_cases outSite : q∈L.core.out
+      · simp [restoreBase,outSite]
+      · simp only [restoreBase,if_neg outSite]
+        exact (used.2.2 q outSite).trans (prep.2.2 q hq)
+  have workRestore : regValue L.core.work restoreBase=0 := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) hc.work
+    intro q hq
+    have away := (L.pairAuxAway nd q (by simp [hq])).2
+    simp [restoreBase,away]
+  have cleared := gClear_frame L hw nd restoreBase A B lowRestore bound padRestore cinRestore workRestore
+    v (rest.drop (measurementCount middle)) clearPre
+  have finalValue : regValue L.core.out out.basis=
+      resCC ((if s.basis control then A+B else 0)^2) O (s.basis control) := by
+    apply Eq.trans (regValue_congr _ _ _ ?_) used.2.1
+    intro q hq
+    have same := cleared.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq)
+    simpa [restoreBase,hq] using same
+  have final : out.phase=s.phase ∧ regValue L.core.out out.basis=
+      resCC ((if s.basis control then A+B else 0)^2) O (s.basis control) ∧
+      ∀q,q∉L.core.out → out.basis q=s.basis q := by
+    refine ⟨cleared.1.trans (used.1.trans prep.1),finalValue,?_⟩
+    intro q hq
+    by_cases sumSite : q∈L.core.sum
+    · exact (regValue_eq_iff L.core.sum out.basis s.basis).mp (cleared.2.1.trans hb.symm) q sumSite
+    · have same := cleared.2.2 q sumSite
+      simpa [restoreBase,hq] using same
+  simpa [branchC,middle,u,v,out,rest,mp,run_append] using final
+
+theorem complete_exact (enabled : Bool) (A B O : Nat) :
+    resCC ((if enabled then A+B else 0)^2)
+      (resAQ ((if enabled then A else 0)^2) (resBQ ((if enabled then B else 0)^2) O)) enabled=
+      (subModValue (if enabled then (A+2^128*B)^2 else 0) O+(if enabled then offset else 0))%SquareReduction.p := by
+  let PA := (if enabled then A else 0)^2
+  let PB := (if enabled then B else 0)^2
+  let PC := (if enabled then A+B else 0)^2
+  let OB := resBQ PB O
+  let OA := resAQ PA OB
+  let OC := resCC PC OA enabled
+  have eb : measuredOrientationCast true OB=measuredOrientationCast false O+
+      ((PB : ZMod SquareReduction.p)*2^128-SquareReduction.c*PB) := cast_ofCast _ _
+  have ea : measuredOrientationCast false OA=measuredOrientationCast true OB+
+      ((PA : ZMod SquareReduction.p)*2^128-PA) := cast_ofCast _ _
+  have ec : measuredOrientationCast false OC=measuredOrientationCast false OA+
+      (-(PC : ZMod SquareReduction.p)*2^128+(if enabled then (offset : ZMod SquareReduction.p) else 0)) :=
+    cast_ofCast _ _
+  simp only [measuredOrientationCast,Bool.false_eq_true,if_false,if_true] at ea eb ec
+  have identity := measured_controlled_square_identity enabled A B
+  change (PA : ZMod SquareReduction.p)*2^128-PA+
+    ((PB : ZMod SquareReduction.p)*2^128-SquareReduction.c*PB)-(PC : ZMod SquareReduction.p)*2^128=
+      -((if enabled then (A+2^128*B)^2 else 0 : Nat) : ZMod SquareReduction.p) at identity
+  have ocBound : OC<SquareReduction.p := ofCast_lt _ _
+  have targetBound : (subModValue (if enabled then (A+2^128*B)^2 else 0) O+(if enabled then offset else 0))%
+      SquareReduction.p<SquareReduction.p :=
+    Nat.mod_lt _ (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have ite_cast : (((if enabled then offset else 0 : Nat)) : ZMod SquareReduction.p)=
+      (if enabled then (offset : ZMod SquareReduction.p) else 0) := by
+    cases enabled <;> simp
+  have cast : (OC : ZMod SquareReduction.p)=
+      (((subModValue (if enabled then (A+2^128*B)^2 else 0) O+(if enabled then offset else 0))%
+        SquareReduction.p : Nat) : ZMod SquareReduction.p) := by
+    rw [ZMod.natCast_mod,Nat.cast_add,subModValue_cast,ite_cast]
+    linear_combination ec+ea+eb+identity
+  have value := congrArg ZMod.val cast
+  simpa only [ZMod.val_natCast_of_lt ocBound,ZMod.val_natCast_of_lt targetBound] using value
+
+theorem correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
+    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
+    (hy : regValue L.core.y s.basis=Y) (ho : regValue L.core.out s.basis=O)
+    (hp0 : regValue L.core.product s.basis=0) (hs0 : s.basis L.core.sumCarry=false)
+    (hc : L.PairClean s.basis)
+    (he : ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (program L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (program L ext control) records s).basis=
+      ((O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p+
+        (if s.basis control then offset else 0))%SquareReduction.p ∧
+    ∀q,q∉L.core.out → (run (program L ext control) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have disInput := L.measured_input_out_disjoint nd
+  have disProduct := L.product_out_disjoint nd
+  have ctrlAway : control∉L.core.out := by
+    intro bad
+    exact (List.nodup_cons.mp hn).1 (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,bad])
+  let A := regValue L.core.low s.basis
+  let B := regValue L.core.high s.basis
+  let enabled := s.basis control
+  let PA := (if enabled then A else 0)^2
+  let PB := (if enabled then B else 0)^2
+  let PC := (if enabled then A+B else 0)^2
+  let OB := resBQ PB O
+  let OA := resAQ PA OB
+  let OC := resCC PC OA enabled
+  have lowAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out :=
+    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_take hq))
+  have highAway (q : Wire) (hq : q∈L.core.high) : q∉L.core.out :=
+    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_drop (List.mem_of_mem_take hq)))
+  have sumAway (q : Wire) (hq : q∈L.core.sum) : q∉L.core.out :=
+    List.disjoint_left.mp (L.measured_sum_disjoint nd).2 hq
+  have sumB : regValue L.core.sum s.basis=B := by
+    simp [CuccaroStreamedSquareLayout.sum,regValue_append,regValue,hs0,B]
+  have ab : A<2^128 := by simpa [A,L.core.low_length hw.core] using regValue_lt L.core.low s.basis
+  have bb : B<2^128 := by simpa [B,L.core.high_length hw.core] using regValue_lt L.core.high s.basis
+  have sumBound : A+B<2^129 := by norm_num at ab bb ⊢;omega
+  have low (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue L.core.low t=A := regValue_congr _ _ _ (fun q hq => hf.2 q (lowAway q hq))
+  have high (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue L.core.high t=B := regValue_congr _ _ _ (fun q hq => hf.2 q (highAway q hq))
+  have sum (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue L.core.sum t=B :=
+    (regValue_congr _ _ _ (fun q hq => hf.2 q (sumAway q hq))).trans sumB
+  have prod (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue L.core.product t=0 :=
+    (regValue_congr _ _ _ (fun q hq => hf.2 q (List.disjoint_left.mp disProduct hq))).trans hp0
+  have extZ (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue ext t=0 :=
+    (regValue_congr _ _ _ (fun q hq => hf.2 q (ext_out L control ext he q hq))).trans hz
+  have stepB : Triple (SquareFrame L.core.out s.basis O) (accBranchBK L ext control)
+      (SquareFrame L.core.out s.basis OB) := by
+    intro t m hf
+    have h := accBranchBK_correct L hw ext control hn B O hO t m (high _ _ hf) hf.1 (prod _ _ hf)
+      (L.squareFrame_clean nd s.basis t.basis O hf hc) he (extZ _ _ hf)
+    rw [hf.2 control ctrlAway] at h
+    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
+  have stepA : Triple (SquareFrame L.core.out s.basis OB) (accBranchAK L ext control)
+      (SquareFrame L.core.out s.basis OA) := by
+    intro t m hf
+    have h := accBranchAK_correct L hw ext control hn A OB (ofCast_lt _ _) t m (low _ _ hf) hf.1 (prod _ _ hf)
+      (L.squareFrame_clean nd s.basis t.basis OB hf hc) he (extZ _ _ hf)
+    rw [hf.2 control ctrlAway] at h
+    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
+  have stepC : Triple (SquareFrame L.core.out s.basis OA) (branchC L ext control)
+      (SquareFrame L.core.out s.basis OC) := by
+    intro t m hf
+    have h := branchC_correct L hw ext control hn A B OA (ofCast_lt _ _) t m
+      (low _ _ hf) (sum _ _ hf) sumBound hf.1 (prod _ _ hf)
+      (L.squareFrame_clean nd s.basis t.basis OA hf hc) he (extZ _ _ hf)
+    rw [hf.2 control ctrlAway] at h
+    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
+  have all := (stepB.seq stepA).seq stepC
+  obtain ⟨phase,value,frame⟩ := all s records ⟨ho,fun _ _ => rfl⟩
+  have split : A+2^128*B=Y := by
+    have highEq : L.core.high=L.core.y.drop 128 := by simp [CuccaroStreamedSquareLayout.high,hw.core.y]
+    have value := regValue_append (L.core.y.take 128) (L.core.y.drop 128) s.basis
+    rw [List.take_append_drop,hy,List.length_take,hw.core.y] at value
+    simpa only [A,B,CuccaroStreamedSquareLayout.low,highEq,show min 128 256=128 by decide] using value.symm
+  have exactResult := complete_exact enabled A B O
+  rw [split] at exactResult
+  unfold subModValue at exactResult
+  exact ⟨phase,value.trans exactResult,frame⟩
+
+theorem counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (he : 300≤ext.length) :
+    toffoliCount (program L ext control)=53954 ∧ measurementCount (program L ext control)=53966 := by
+  have stQ := accQ_static L hw
+  have lo := L.core.low_length hw.core
+  have hi := L.core.high_length hw.core
+  have su := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have a := withLowK2_counts L hw ext control L.core.low (L.core.product.take 256)
+    (mixFoldsQ L true (accAMixQ L)) (by omega) (by omega) (by omega) he
+  have b := withLowK2_counts L hw ext control L.core.high (L.core.product.take 256)
+    (mixFoldsQ L false (accBMixQ L)) (by omega) (by omega) (by omega) he
+  have c := withLowK2_counts L hw ext control L.core.sum L.core.product
+    (cBody L control) (by omega) (by omega) (by rw [hw.core.product,su]) he
+  have fa := mixFoldsQ_counts L hw true (accAMixQ L) stQ.1
+  have fb := mixFoldsQ_counts L hw false (accBMixQ L) stQ.2
+  have fc := cBody_counts L hw control
+  have prices := accQ_item_prices L hw
+  rw [prices.1.1,prices.1.2] at fa
+  rw [prices.2.1.1,prices.2.1.2] at fb
+  have sum := gSum_counts L hw
+  have k128 : lowkcost2 128=6694 := by norm_num [lowkcost2]
+  have k129 : lowkcost2 129=6812 := by norm_num [lowkcost2]
+  rw [lo] at a
+  rw [hi] at b
+  rw [su] at c
+  rw [k128] at a b
+  rw [k129] at c
+  simp only [program,accBranchAK,accBranchBK,branchC,middleC,toffoliCount_append,
+    measurementCount_append,a.1,a.2,b.1,b.2,c.1,c.2,fa.1,fa.2,fb.1,fb.2,fc.1,fc.2,
+    sum.1.1,sum.1.2,sum.2.1,sum.2.2]
+  exact ⟨trivial,trivial⟩
+
+theorem support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
+    ECDSAAdd.wires (program L ext control)⊆(control::L.wires++ext).toFinset := by
+  have stQ := accQ_static L hw
+  have a := mixFoldsQ_support L hw hn control true (accAMixQ L) stQ.1
+  have b := mixFoldsQ_support L hw hn control false (accBMixQ L) stQ.2
+  have c := cBody_support L hw hn control
+  have low := L.core.low_length hw.core
+  have high := L.core.high_length hw.core
+  have sum := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have hl (q : Wire) : L.core.low.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢; omega
+  have hh (q : Wire) : L.core.high.count q ≤ L.core.y.count q :=
+    ((List.take_sublist 128 (L.core.y.drop 128)).count_le q).trans
+      ((List.drop_sublist 128 L.core.y).count_le q)
+  have hb (q : Wire) : L.core.high.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [List.count_append]; omega
+  have hs (q : Wire) : L.core.sum.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [CuccaroStreamedSquareLayout.sum,List.count_append]; omega
+  have hp (q : Wire) : (L.core.product.take 256).count q ≤ L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have sa := withLowK2_support L hw ext control L.core.low (L.core.product.take 256)
+    (mixFoldsQ L true (accAMixQ L)) hl hp (by omega) (by omega) (by omega) he a
+  have sb := withLowK2_support L hw ext control L.core.high (L.core.product.take 256)
+    (mixFoldsQ L false (accBMixQ L)) hb hp (by omega) (by omega) (by omega) he b
+  have sc := withLowK2_support L hw ext control L.core.sum L.core.product
+    (cBody L control) hs (fun _ => le_rfl) (by omega) (by omega)
+    (by rw [hw.core.product,sum]) he c
+  have embed : (control::L.wires).toFinset⊆(control::L.wires++ext).toFinset := by
+    intro q hq; simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at hq ⊢; tauto
+  have prep := (gSum_support L hw control).1.trans embed
+  have unprep := (gSum_support L hw control).2.trans embed
+  simp only [program,accBranchAK,accBranchBK,branchC,middleC,wires_append,
+    Finset.union_subset_iff]
+  exact ⟨⟨sb,sa⟩,⟨prep,sc⟩,unprep⟩
+
+theorem physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control :: L.wires).Nodup) (he : ExtOK L control ext) :
+    GatePhysical (program L ext control) := by
+  have nd := (List.nodup_cons.mp hn).2
+  have stQ := accQ_static L hw
+  have hl (q : Wire) : L.core.low.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢; omega
+  have hh (q : Wire) : L.core.high.count q ≤ L.core.y.count q :=
+    ((List.take_sublist 128 (L.core.y.drop 128)).count_le q).trans
+      ((List.drop_sublist 128 L.core.y).count_le q)
+  have hb (q : Wire) : L.core.high.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [List.count_append]; omega
+  have hs (q : Wire) : L.core.sum.count q ≤ (L.core.y ++ [L.core.sumCarry]).count q := by
+    have h := hh q; simp only [CuccaroStreamedSquareLayout.sum,List.count_append]; omega
+  have hp (q : Wire) : (L.core.product.take 256).count q ≤ L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have low := L.core.low_length hw.core
+  have high := L.core.high_length hw.core
+  have sum := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have a := withLowK2_physical L hw control hn _ _ hl hp (by omega) (by omega) (by omega)
+    ext he.nodup he.away he.len _ (mixFoldsQ_physical L hw nd true (accAMixQ L) stQ.1)
+  have b := withLowK2_physical L hw control hn _ _ hb hp (by omega) (by omega) (by omega)
+    ext he.nodup he.away he.len _ (mixFoldsQ_physical L hw nd false (accBMixQ L) stQ.2)
+  have c := withLowK2_physical L hw control hn _ _ hs (fun _ => le_rfl) (by omega) (by omega)
+    (by rw [hw.core.product,sum]) ext he.nodup he.away he.len _ (cBody_physical L hw control hn)
+  have prep := (gSum_physical L hw nd).1
+  have clear := (gSum_physical L hw nd).2
+  simp only [program,accBranchAK,accBranchBK,branchC,middleC,gatePhysical_append]
+  exact ⟨⟨b,a⟩,⟨prep,c⟩,clear⟩
+
+theorem gateSlots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
+    Challenge.gateSlots (program L ext control) ≤ 8000000 := by
+  have stQ := accQ_static L hw
+  have bd (items : List MixItem) (h : items=accAMixQ L ∨ items=accBMixQ L) :
+      ∀i∈items,∀a,i=.inr a → a.terms.length≤20 ∧ a.pre.length≤4 := by
+    intro i hi a e
+    subst e
+    rcases h with rfl|rfl <;>
+      simp [accAMixQ,accBMixQ] at hi <;> rw [hi] <;>
+      simp [sortedItems,accARaw,accBRaw,accCRaw,termsB,earlyHTerms,Acc.earlyTerm,preW,nafMinusOneItems,List.filter_cons,posTop]
+  have ha := mixFoldsQ_gateSlots L hw true (accAMixQ L) stQ.1 20 (bd _ (Or.inl rfl))
+  have hb := mixFoldsQ_gateSlots L hw false (accBMixQ L) stQ.2 20 (bd _ (Or.inr rfl))
+  have hc := cBody_gateSlots L hw control
+  have la : (accAMixQ L).length = 3 := rfl
+  have lb : (accBMixQ L).length = 7 := rfl
+  rw [la] at ha
+  rw [lb] at hb
+  have low := L.core.low_length hw.core
+  have high := L.core.high_length hw.core
+  have sum := L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have a := withLowK2_gateSlots_le L hw ext control L.core.low (L.core.product.take 256)
+    (mixFoldsQ L true (accAMixQ L)) (by omega) (by omega) (by omega) he
+  have b := withLowK2_gateSlots_le L hw ext control L.core.high (L.core.product.take 256)
+    (mixFoldsQ L false (accBMixQ L)) (by omega) (by omega) (by omega) he
+  have c := withLowK2_gateSlots_le L hw ext control L.core.sum L.core.product
+    (cBody L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  have gs := gSum_gateSlots L hw
+  simp only [program,accBranchAK,accBranchBK,branchC,middleC,Challenge.gateSlots_append]
+  omega
+
+end ECDSAAdd.Entrant.SquareAQ
+
+end
+
+section
 -- ===== FastSquare =====
 
 /-! Point-layout binding of the sign-grouped streamed square, with the same
@@ -22797,18 +23615,18 @@ theorem kext_ok (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     exact List.mem_of_mem_take h
 
 def fastCandidate (L : ControlledPointLayout) : Program :=
-  accPrefixK L.dialogStreamedSquareWide (kext L) L.core.generic
+  SquareAQ.program L.dialogStreamedSquareWide (kext L) L.core.generic
 
 theorem fastCandidate_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastCandidate L)=54210 ∧ measurementCount (fastCandidate L)=54221 :=
-  accPrefixK_counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
+    toffoliCount (fastCandidate L)=53954 ∧ measurementCount (fastCandidate L)=53966 :=
+  SquareAQ.counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
     L.core.generic (by simp [kext,wireBlock_length])
 
 theorem fastCandidate_support (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) :
     wires (fastCandidate L)⊆
       (L.core.generic::L.point.y++L.point.x++L.dialogPool.take 776++kext L).toFinset := by
-  have support := accPrefixK_support L.dialogStreamedSquareWide
+  have support := SquareAQ.support L.dialogStreamedSquareWide
     (L.dialogStreamedSquareWide_widths hw) (L.dialogStreamedSquareWide_nodup hw hn) (kext L)
     L.core.generic (by simp [kext,wireBlock_length])
   have embed : (L.core.generic::L.dialogStreamedSquareWide.wires++kext L).toFinset⊆
@@ -22833,7 +23651,7 @@ theorem fastCandidate_correct (L : ControlledPointLayout) (hw : L.Widths)
     (hc : regValue L.dialogPool s.basis=0) :
     (run (fastCandidate L) m s).phase=s.phase ∧
     regValue L.point.x (run (fastCandidate L) m s).basis=
-      p-1-(X+p-(if B then Y*Y else 0)%p)%p ∧
+      ((X+p-(if B then Y*Y else 0)%p)%p+(if B then SquareAQ.offset else 0))%p ∧
     ∀q,q∉L.point.x → (run (fastCandidate L) m s).basis q=s.basis q := by
   let K := L.dialogStreamedSquareWide
   have hwK := L.dialogStreamedSquareWide_widths hw
@@ -22878,13 +23696,13 @@ theorem fastCandidate_correct (L : ControlledPointLayout) (hw : L.Widths)
     norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c,p]
   have hz : regValue (kext L) s.basis=0 :=
     (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc q (kext_mem L hw q hq))
-  have kernel := accPrefixK_correct K hwK (kext L) L.core.generic controlND Y X
+  have kernel := SquareAQ.correct K hwK (kext L) L.core.generic controlND Y X
     (by simpa only [hp] using hX) s m hy hx prod0 sum0 clean (kext_ok L hw hn) hz
   simpa only [fastCandidate,hb,hp,pow_two] using kernel
 
 theorem fastCandidate_physical (L : ControlledPointLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) : GatePhysical (fastCandidate L) := by
-  apply accPrefixK_physical L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
+  apply SquareAQ.physical L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
   · have nd := L.streamedSquare_control_nodup hw hn
     apply List.nodup_iff_count.mpr; intro q
     have h := List.nodup_iff_count.mp nd q
@@ -22951,7 +23769,7 @@ theorem fastSquare_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
     (hy : regValue L.point.y s.basis=Y) (hc : regValue L.dialogPool s.basis=0) :
     (run (fastSquare L) m s).phase=s.phase ∧
     regValue L.point.x (run (fastSquare L) m s).basis=
-      p-1-(X+p-(if B then Y*Y else 0)%p)%p ∧
+      ((X+p-(if B then Y*Y else 0)%p)%p+(if B then SquareAQ.offset else 0))%p ∧
     ∀q,q∉L.point.x → (run (fastSquare L) m s).basis q=s.basis q := by
   rw [fastSquare_state_eq L hw hn X Y B hX s m hb hx hy hc]
   exact fastCandidate_correct L hw hn X Y B hX s m hb hx hy hc
@@ -22968,7 +23786,7 @@ theorem fastSquare_physical (L : ControlledPointLayout)
 theorem fastSquare_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) :
     Challenge.gateSlots (fastSquare L) ≤ 8000000 := by
   simpa only [fastSquare,Baselines.rename_gateSlots,fastCandidate]
-    using accPrefixK_gateSlots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
+    using SquareAQ.gateSlots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
       L.core.generic (by simp [kext,wireBlock_length])
 
 end ECDSAAdd.Entrant
@@ -25340,15 +26158,19 @@ private instance : Fact (1<p) := ⟨by norm_num [p]⟩
 theorem fast_step_square (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (base : BasisState) :
     Triple (PointDialogValues L X Y G base) (fastSquare L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G base) := by
+      (PointDialogValues L (X-(if G then Y*Y-(SquareAQ.offset:Fp) else 0)) Y G base) := by
   intro s m v
   obtain ⟨hp,hx,hf⟩ := fastSquare_correct L hw hn X.val Y.val G X.isLt s m
     v.generic v.x v.y v.clean
   refine ⟨hp,v.withX hn ?_ hf⟩
-  rw [refl_val,sub_val']
+  have hoff : (SquareAQ.offset:Fp).val=SquareAQ.offset :=
+    ZMod.val_natCast_of_lt (by norm_num [SquareAQ.offset,p])
   cases G
-  · simpa using hx
-  · simpa [ZMod.val_mul] using hx
+  · simpa [Nat.mod_eq_of_lt (ZMod.val_lt X)] using hx
+  · simp only [if_true] at hx ⊢
+    rw [show X-(Y*Y-(SquareAQ.offset:Fp))=(X-Y*Y)+(SquareAQ.offset:Fp) by ring,
+      ZMod.val_add,sub_val',ZMod.val_mul,hoff]
+    exact hx
 
 end SquareStep
 
@@ -33427,165 +34249,6 @@ theorem gadget_physical (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
     simp [gadget, flipIf] at hi <;> rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
     simp_all [RecordedQuantum.PhysicalInstr, ProperGate, eq_comm]
 
-/-- The same gadget when it only uncomputes (`d` and `h` already hold the toggles):
-the two target Toffolis become X-basis erasures with their CZ corrections. -/
-def gadgetM (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) : Program :=
-  [.CCX c f a1, .X g, .CCX a1 g a2, .X g] ++
-  ((if enD then
-     flipIf (!cx) xk ++ [.CCX a2 xk a3] ++ flipIf (!cx) xk ++
-     flipIf (!cy) y0 ++ [.measureX d [] [.CZ a3 y0]] ++ flipIf (!cy) y0 ++
-     flipIf (!cx) xk ++ [.measureX a3 [] [.CZ a2 xk]] ++ flipIf (!cx) xk
-   else []) ++
-  ((if enH then flipIf cx xk ++ [.measureX h [] [.CZ a2 xk]] ++ flipIf cx xk else []) ++
-  [.X g, .measureX a2 [] [.CZ a1 g], .X g, .measureX a1 [] [.CZ c f]]))
-
-
-/-- An X-basis erasure of `t = a ∧ b` with its CZ correction leaves the phase unchanged. -/
-theorem measure_erase (t a b : Wire) (x : Bool) (s : State) (ha : a ≠ t) (hb : b ≠ t)
-    (h : s.basis t = (s.basis a && s.basis b)) :
-    measureAndCorrect t [] [.CZ a b] x s = ⟨s.phase, writeBit s.basis t false⟩ := by
-  obtain ⟨ph, bs⟩ := s
-  simp only at h
-  cases x <;> simp [measureAndCorrect, correct, writeBit, Function.update_apply, ha, hb, h]
-
-set_option linter.unusedTactic false in
-set_option linter.unreachableTactic false in
-set_option linter.unnecessarySeqFocus false in
-set_option linter.unusedSimpArgs false in
-set_option maxHeartbeats 20000000 in
-theorem gadgetM_run (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
-    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
-    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
-    (hd : s.basis d = (enD && s.basis c && s.basis f && !s.basis g &&
-        (s.basis xk == cx) && (s.basis y0 == cy)))
-    (hh : s.basis h = (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))) :
-    run (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
-      if q = d then false else if q = h then false else s.basis q⟩ := by
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
-    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
-  have n1' := Ne.symm n1
-  have n2' := Ne.symm n2
-  have n3' := Ne.symm n3
-  have n4' := Ne.symm n4
-  have n5' := Ne.symm n5
-  have n6' := Ne.symm n6
-  have n7' := Ne.symm n7
-  have n8' := Ne.symm n8
-  have n9' := Ne.symm n9
-  have m1' := Ne.symm m1
-  have m2' := Ne.symm m2
-  have m3' := Ne.symm m3
-  have m4' := Ne.symm m4
-  have m5' := Ne.symm m5
-  have m6' := Ne.symm m6
-  have m7' := Ne.symm m7
-  have m8' := Ne.symm m8
-  have k1' := Ne.symm k1
-  have k2' := Ne.symm k2
-  have k3' := Ne.symm k3
-  have k4' := Ne.symm k4
-  have k5' := Ne.symm k5
-  have k6' := Ne.symm k6
-  have k7' := Ne.symm k7
-  have l1' := Ne.symm l1
-  have l2' := Ne.symm l2
-  have l3' := Ne.symm l3
-  have l4' := Ne.symm l4
-  have l5' := Ne.symm l5
-  have l6' := Ne.symm l6
-  have p1' := Ne.symm p1
-  have p2' := Ne.symm p2
-  have p3' := Ne.symm p3
-  have p4' := Ne.symm p4
-  have p5' := Ne.symm p5
-  have q1' := Ne.symm q1
-  have q2' := Ne.symm q2
-  have q3' := Ne.symm q3
-  have q4' := Ne.symm q4
-  have r1' := Ne.symm r1
-  have r2' := Ne.symm r2
-  have r3' := Ne.symm r3
-  have t1' := Ne.symm t1
-  have t2' := Ne.symm t2
-  have t3' := Ne.symm t3
-  obtain ⟨ph, bs⟩ := s
-  simp only at z1 z2 z3 hd hh ⊢
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-  cases hc : bs c <;> cases hf : bs f <;> cases hg : bs g <;> cases hx : bs xk <;> cases hy : bs y0 <;>
-  simp only [hc, hf, hg, hx, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
-    Bool.not_true, Bool.not_false, beq_self_eq_true, Bool.true_beq, Bool.false_beq, bne_self_eq_false,
-    Bool.true_bne, Bool.false_bne] at hd hh <;>
-  · simp [gadgetM, flipIf, run, writeBit, Function.update_apply, measure_erase, *]
-    funext q
-    by_cases e1 : q = d
-    · subst e1; simp [Function.update_apply, *]
-    by_cases e2 : q = h
-    · subst e2; simp [Function.update_apply, *]
-    by_cases e3 : q = a1
-    · subst e3; simp [Function.update_apply, *]
-    by_cases e4 : q = a2
-    · subst e4; simp [Function.update_apply, *]
-    by_cases e5 : q = a3
-    · subst e5; simp [Function.update_apply, *]
-    by_cases e6 : q = g
-    · subst e6; simp [Function.update_apply, *]
-    by_cases e7 : q = xk
-    · subst e7; simp [Function.update_apply, *]
-    by_cases e8 : q = y0
-    · subst e8; simp [Function.update_apply, *]
-    simp [Function.update_apply, *]
-
-/-- When the gadget only clears `d` and `h`, the measured variant has the same run. -/
-theorem gadgetM_eq (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
-    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
-    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
-    (hd : (s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
-        (s.basis xk == cx) && (s.basis y0 == cy))) = false)
-    (hh : (s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g &&
-        (s.basis xk != cx))) = false) :
-    run (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s =
-      run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s := by
-  have hd' : s.basis d = (enD && s.basis c && s.basis f && !s.basis g &&
-      (s.basis xk == cx) && (s.basis y0 == cy)) := by
-    revert hd; cases s.basis d <;> simp
-  have hh' : s.basis h = (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx)) := by
-    revert hh; cases s.basis h <;> simp
-  rw [gadgetM_run c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hd' hh',
-    gadget_run c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3]
-  congr 1
-  funext q
-  split_ifs
-  · exact hd.symm
-  · exact hh.symm
-  · rfl
-
-theorem gadgetM_wires (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) (q : Wire)
-    (hq : q ∈ wires (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy)) :
-    q ∈ wires (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) := by
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadgetM, gadget, flipIf, wires, Instr.wires, correctionWires] at hq ⊢ <;> tauto
-
-theorem gadgetM_counts (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) :
-    toffoliCount (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 3 ∧
-    measurementCount (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 5 := by
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadgetM, flipIf, toffoliCount, measurementCount]
-
-theorem gadgetM_gateSlots (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) :
-    Challenge.gateSlots (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 35 := by
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadgetM, flipIf, Challenge.gateSlots, Challenge.instructionSlots]
-
-theorem gadgetM_physical (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
-    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) :
-    GatePhysical (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) := by
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-  intro i hi
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadgetM, flipIf] at hi <;> rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
-    simp_all [RecordedQuantum.PhysicalInstr, ProperGate, eq_comm]
-
 end DHGadget
 
 /-- Clears (and, applied again, restores) the doubling and exception flags from the point:
@@ -33593,12 +34256,6 @@ on the non-generic finite class the point is `C`, `-C` or `-(C+C)`; one abscissa
 parity of `y` tell them apart. -/
 def clrDH (L : ControlledPointLayout) (C : Point) (cy : Fp) : Program :=
   DHGadget.gadget L.control L.point.finite L.genericSelect L.doubleSelect L.core.equalNegY
-    (L.point.x.getD (DHClass.kx C) 0) (yLow L) (L.core.poolWire 0) (L.core.poolWire 1) (L.core.poolWire 2)
-    (decide (cy≠-cy)) (exceptionBit C) (DHClass.cxk C) (yBit C)
-
-/-- `clrDH` where it only clears `D` and `H`: the two flag Toffolis become measured erasures. -/
-def clrDHm (L : ControlledPointLayout) (C : Point) (cy : Fp) : Program :=
-  DHGadget.gadgetM L.control L.point.finite L.genericSelect L.doubleSelect L.core.equalNegY
     (L.point.x.getD (DHClass.kx C) 0) (yLow L) (L.core.poolWire 0) (L.core.poolWire 1) (L.core.poolWire 2)
     (decide (cy≠-cy)) (exceptionBit C) (DHClass.cxk C) (yBit C)
 
@@ -34401,47 +35058,6 @@ theorem clrDH_flag (C : Point) (cy : Fp) (R : Point) (b D G H D' H' : Bool)
       (clrDH L C cy)
       (PointDialogBoundary L R b (dialogFlagState L false D' G false false H' false)) :=
   dh_flag L hw hn (DHClass.kx C) (DHClass.kx_lt C) _ _ _ _ R b D G H D' H' hD hH
-
-include hw hn in
-/-- The measured clear: same triple as `clrDH_flag` when both flags end cleared. -/
-theorem clrDHm_flag (C : Point) (cy : Fp) (R : Point) (b D G H : Bool)
-    (hD : false = (D ^^ (decide (cy≠-cy) && b && pointFinite R && !G &&
-      ((pointX R).testBit (DHClass.kx C) == DHClass.cxk C) && (yBit R == yBit C))))
-    (hH : false = (H ^^ (exceptionBit C && b && pointFinite R && !G &&
-      ((pointX R).testBit (DHClass.kx C) != DHClass.cxk C)))) :
-    Triple (PointDialogBoundary L R b (dialogFlagState L false D G false false H false))
-      (clrDHm L C cy)
-      (PointDialogBoundary L R b (dialogFlagState L false false G false false false false)) := by
-  intro s m v
-  have post := clrDH_flag L hw hn C cy R b D G H false false hD hH s m v
-  have nd := dh_nodup L hw hn (DHClass.kx C) (DHClass.kx_lt C)
-  have pool3 : ∀ i, i < 3 → s.basis (L.core.poolWire i) = false := by
-    intro i hi
-    apply (regValue_zero _ _).mp v.clean
-    have mem : L.core.poolWire i ∈ L.dialogPool.take 3 := by
-      rw [pool_block L hw 3 (by omega)]
-      exact List.mem_map.mpr ⟨i, List.mem_range'_1.mpr ⟨by omega, by omega⟩, rfl⟩
-    exact List.mem_of_mem_take mem
-  have hrun := DHGadget.gadget_run L.control L.point.finite L.genericSelect L.doubleSelect
-    L.core.equalNegY (L.point.x.getD (DHClass.kx C) 0) (yLow L) (L.core.poolWire 0) (L.core.poolWire 1)
-    (L.core.poolWire 2) (decide (cy≠-cy)) (exceptionBit C) (DHClass.cxk C) (yBit C) nd s m
-    (pool3 0 (by omega)) (pool3 1 (by omega)) (pool3 2 (by omega))
-  have hr' := dialogFlagState_read L hn false false G false false false false
-  have outD := (post.2.flags L.doubleSelect (by simp [inPlaceFlags])).trans hr'.2.1
-  have outH := (post.2.flags L.core.equalNegY (by simp [inPlaceFlags])).trans hr'.2.2.2.2.2.1
-  have dg : L.doubleSelect ≠ L.core.equalNegY := by
-    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at nd
-    exact nd.2.2.2.2.1.2.1
-  change (run (DHGadget.gadget _ _ _ _ _ _ _ _ _ _ _ _ _ _) m s).basis _ = _ at outD outH
-  rw [hrun] at outD outH
-  simp only [if_true, if_neg (Ne.symm dg)] at outD outH
-  have heq := DHGadget.gadgetM_eq L.control L.point.finite L.genericSelect L.doubleSelect
-    L.core.equalNegY (L.point.x.getD (DHClass.kx C) 0) (yLow L) (L.core.poolWire 0) (L.core.poolWire 1)
-    (L.core.poolWire 2) (decide (cy≠-cy)) (exceptionBit C) (DHClass.cxk C) (yBit C) nd s m
-    (pool3 0 (by omega)) (pool3 1 (by omega)) (pool3 2 (by omega)) outD outH
-  unfold clrDHm
-  rw [heq]
-  exact post
 
 end DHFlag
 
@@ -63353,7 +63969,7 @@ theorem square5_state_eq (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
 
 
 theorem square5_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (square5 L) = 54210 ∧ measurementCount (square5 L) = 54221 := by
+    toffoliCount (square5 L) = 53954 ∧ measurementCount (square5 L) = 53966 := by
   have r := renameProgram_counts (blockPerm L 202) (fastCandidate L)
   have c := fastCandidate_counts L hw
   exact ⟨r.1.trans c.1, r.2.trans c.2⟩
@@ -63395,7 +64011,7 @@ theorem square5_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
 theorem square5_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) :
     Challenge.gateSlots (square5 L) ≤ 8000000 := by
   simpa only [square5, Baselines.rename_gateSlots, fastCandidate] using
-    accPrefixK_gateSlots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
+    SquareAQ.gateSlots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
       L.core.generic (by simp [kext,wireBlock_length])
 
 end ECDSAAdd.Entrant.Square5Placement
@@ -63435,7 +64051,7 @@ theorem outside (L : ControlledPointLayout) (hw : L.Widths) :
 theorem square_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (baseState : BasisState) :
     Triple (PointDialogValues L X Y G baseState) (program L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G baseState) := by
+      (PointDialogValues L (X-(if G then Y*Y-(SquareAQ.offset:Fp) else 0)) Y G baseState) := by
   intro s m v
   have fresh := Square5Placement.square5_state_eq L hw hn X.val Y.val G X.isLt s m
     v.generic v.x v.y v.clean
@@ -63552,7 +64168,7 @@ theorem outside (L : ControlledPointLayout) (hw : L.Widths) :
 theorem square_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (baseState : BasisState) :
     Triple (PointDialogValues L X Y G baseState) (program L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G baseState) := by
+      (PointDialogValues L (X-(if G then Y*Y-(SquareAQ.offset:Fp) else 0)) Y G baseState) := by
   intro s m v
   have old:=OwnPlusSquare.square_step L hw hn X Y G baseState s m v
   have eq:=Square5Placement.pool_relabel_state_eq L (swap L) (pool L hw) (outside L hw)
@@ -63685,7 +64301,7 @@ theorem outside (L : ControlledPointLayout) (hw : L.Widths) :
 theorem square_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (baseState : BasisState) :
     Triple (PointDialogValues L X Y G baseState) (program L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G baseState) := by
+      (PointDialogValues L (X-(if G then Y*Y-(SquareAQ.offset:Fp) else 0)) Y G baseState) := by
   intro s m v
   have old:=OwnGuardSquare.square_step L hw hn X Y G baseState s m v
   have eq:=Square5Placement.pool_relabel_state_eq L (swap L) (pool L hw) (outside L hw)
@@ -63848,7 +64464,7 @@ theorem outside (L : ControlledPointLayout) (hw : L.Widths) :
 theorem square_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (baseState : BasisState) :
     Triple (PointDialogValues L X Y G baseState) (program L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G baseState) := by
+      (PointDialogValues L (X-(if G then Y*Y-(SquareAQ.offset:Fp) else 0)) Y G baseState) := by
   intro s m v
   have old:=OwnQ4Square.square_step L hw hn X Y G baseState s m v
   have eq:=Square5Placement.pool_relabel_state_eq L (swap L) (pool L hw) (outside L hw)
@@ -63993,7 +64609,7 @@ private theorem resident_away (L : ControlledPointLayout) (hn : L.wires.Nodup)
 
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=54210 ∧ measurementCount (program L)=54221 :=
+    toffoliCount (program L)=53954 ∧ measurementCount (program L)=53966 :=
   ⟨(OwnQ5Square.counts L).1.trans ((OwnQ4Square.counts L).1.trans ((OwnGuardSquare.counts L).1.trans ((OwnPlusSquare.counts L).1.trans (Square5Placement.square5_counts L hw).1))),
    (OwnQ5Square.counts L).2.trans ((OwnQ4Square.counts L).2.trans ((OwnGuardSquare.counts L).2.trans ((OwnPlusSquare.counts L).2.trans (Square5Placement.square5_counts L hw).2)))⟩
 
@@ -64072,13 +64688,13 @@ open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPoint
 def program (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx)++fastConstAdd L L.point.y (-cy)++
     ArithmeticOB5.farithOB L false++SquareOB5.program L++
-      fastConstRefl L (3*cx-1)++ArithmeticOB5.farithOB L true++
+      fastConstAdd L L.point.x (3*cx-(SquareAQ.offset:Fp))++ArithmeticOB5.farithOB L true++
         fastConstNeg L cx++fastConstAdd L L.point.y (-cy)
 
 theorem square_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (baseState : BasisState) :
     Triple (PointDialogValues L X Y G baseState) (SquareOB5.program L)
-      (PointDialogValues L (-1-(X-(if G then Y*Y else 0))) Y G baseState) :=
+      (PointDialogValues L (X-(if G then Y*Y-(SquareAQ.offset:Fp) else 0)) Y G baseState) :=
   OwnQ5Square.square_step L hw hn X Y G baseState
 
 private theorem pool_low_sites (L : ControlledPointLayout) (hw : L.Widths)
@@ -64125,9 +64741,8 @@ theorem program_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
   have cn : wires (fastConstNeg L cx)⊆(OB5Support.genericSites L).toFinset :=
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (constant_sites L hw L.point.x (Or.inl rfl))
-  have cr : wires (fastConstRefl L (3*cx-1)) ⊆ (OB5Support.genericSites L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (constant_sites L hw L.point.x (Or.inl rfl))
+  have cr : wires (fastConstAdd L L.point.x (3*cx-(SquareAQ.offset:Fp))) ⊆ (OB5Support.genericSites L).toFinset :=
+    ca _ (Or.inl rfl) _
   have di := ArithmeticOB5.farithOB_support L hw false
   have mu := ArithmeticOB5.farithOB_support L hw true
   have sq := (SquareOB5.support L hw hn).trans (OB5Support.raw_sub_generic L)
@@ -64159,9 +64774,9 @@ theorem generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd : cx
   simp only [if_true,Bool.false_eq_true,if_false,ha] at h3
   have h4 := square_step L hw hn (X-cx) a true base
   simp only [if_true] at h4
-  have h5 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true base (3*cx-1)
+  have h5 := fastStep_addX L hw hn ((X-cx)-(a*a-(SquareAQ.offset:Fp))) a true base (3*cx-(SquareAQ.offset:Fp))
   simp only [if_true] at h5
-  have hd5 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
+  have hd5 : (X-cx)-(a*a-(SquareAQ.offset:Fp))+(3*cx-(SquareAQ.offset:Fp))=d := by
     have e := hv.2.1
     change (X-cx)-a*a+3*cx=d at e
     rw [← e]; ring
@@ -64185,12 +64800,11 @@ theorem generic_false (X Y cx cy : Fp) (base : BasisState)
   have h2 := fastStep_addY L hw hn X Y false base (-cy)
   have h3 := ArithmeticOB5.farithOB_step L hw hn X Y false base false (by simp) hfin
   have h4 := square_step L hw hn X Y false base
-  have h5 := fastStep_refl L hw hn (-1-X) Y false base (3*cx-1)
+  have h5 := fastStep_addX L hw hn X Y false base (3*cx-(SquareAQ.offset:Fp))
   have h6 := ArithmeticOB5.farithOB_step L hw hn X Y false base true (by simp) hfin
   have h7 := fastStep_negX L hw hn X Y false base cx
   have h8 := fastStep_addY L hw hn X Y false base (-cy)
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
-  rw [show -1-(-1-X)=X by ring] at h5
   have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
   simpa only [program,List.append_assoc] using h
 
@@ -64246,12 +64860,12 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2156424 ∧
-    measurementCount (program L cx cy)=1500354 := by
+    toffoliCount (program L cx cy)=2156168 ∧
+    measurementCount (program L cx cy)=1500099 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
-  have r := fastConstRefl_counts L hw (3*cx-1)
+  have r := fastConstAdd_counts L hw L.point.x (Or.inl rfl) (3*cx-(SquareAQ.offset:Fp))
   have arith := ArithmeticOB5.arith_counts L
   have pf : toffoliCount (pfix L) = 0 ∧ measurementCount (pfix L) = 0 := by
     simp [pfix,toffoliCount,measurementCount]
@@ -64272,8 +64886,7 @@ theorem program_physical (cx cy : Fp) : GatePhysical (program L cx cy) := by
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p cx.val
   have di := ArithmeticOB5.farithOB_physical L hw hn false
   have mu := ArithmeticOB5.farithOB_physical L hw hn true
-  have rf := FastConst.fastRefl_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p (3*cx-1).val
+  have rf := ax (3*cx-(SquareAQ.offset:Fp))
   have sq := SquareOB5.physical L hw hn
   simp only [program,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
   exact ⟨⟨⟨⟨⟨⟨⟨ax _,ay _⟩,di⟩,sq⟩,rf⟩,mu⟩,ng⟩,ay _⟩
@@ -64287,8 +64900,7 @@ theorem program_gateSlots_le (cx cy : Fp) :
     (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a1 := ax L.point.x hw.inputX (-cx)
   have a2 := ax L.point.y hw.inputY (-cy)
-  have a3 := FastConst.fastRefl_gateSlots_le (g:=L.core.generic) 256 p (3*cx-1).val
-    (L.recoveryConstant_widths hw L.point.x hw.inputX)
+  have a3 := ax L.point.x hw.inputX (3*cx-(SquareAQ.offset:Fp))
   have d := ArithmeticOB5.arith_gateSlots_le L false
   have e := ArithmeticOB5.arith_gateSlots_le L true
   have pf : Challenge.gateSlots (pfix L) = 3 := rfl
@@ -64337,7 +64949,7 @@ def farithS (L : ControlledPointLayout) (multiply : Bool) : Program :=
 def program (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx)++fastConstAdd L L.point.y (-cy)++
     farithS L false++SquareOB5.program L++
-      fastConstRefl L (3*cx-1)++farithS L true++
+      fastConstAdd L L.point.x (3*cx-(SquareAQ.offset:Fp))++farithS L true++
         fastConstNeg L cx++fastConstAdd L L.point.y (-cy)
 
 theorem dd_eq (Z : Fp) (hz : Z≠0) : ((directDivisor Z.val : Nat) : Fp)=Z := by
@@ -64483,9 +65095,9 @@ theorem generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx) (hd : cx
   simp only [Bool.false_eq_true,if_false,ha] at h3
   have h4 := GenericOB5.square_step L hw hn (X-cx) a true base
   simp only [if_true] at h4
-  have h5 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true base (3*cx-1)
+  have h5 := fastStep_addX L hw hn ((X-cx)-(a*a-(SquareAQ.offset:Fp))) a true base (3*cx-(SquareAQ.offset:Fp))
   simp only [if_true] at h5
-  have hd5 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
+  have hd5 : (X-cx)-(a*a-(SquareAQ.offset:Fp))+(3*cx-(SquareAQ.offset:Fp))=d := by
     have e := hv.2.1
     change (X-cx)-a*a+3*cx=d at e
     rw [← e]; ring
@@ -64511,13 +65123,12 @@ theorem generic_false (X Y cx cy : Fp) (base : BasisState)
   have h2 := fastStep_addY L hw hn X Y false base (-cy)
   have h3 := farithS_step L hw hn X Y false base false hfin
   have h4 := GenericOB5.square_step L hw hn X (Y/D) false base
-  have h5 := fastStep_refl L hw hn (-1-X) (Y/D) false base (3*cx-1)
+  have h5 := fastStep_addX L hw hn X (Y/D) false base (3*cx-(SquareAQ.offset:Fp))
   have h6 := farithS_step L hw hn X (Y/D) false base true hfin
   have h7 := fastStep_negX L hw hn X Y false base cx
   have h8 := fastStep_addY L hw hn X Y false base (-cy)
   have back : Y/D*D=Y := div_mul_cancel₀ Y (dd_ne X)
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
-  rw [show -1-(-1-X)=X by ring] at h5
   rw [back] at h6
   have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
   simpa only [program,List.append_assoc] using h
@@ -64588,8 +65199,8 @@ theorem program_counts_rel (cx cy : Fp) :
 
 include hw in
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2154384 ∧
-    measurementCount (program L cx cy)=1500354 := by
+    toffoliCount (program L cx cy)=2154128 ∧
+    measurementCount (program L cx cy)=1500099 := by
   have r := program_counts_rel L cx cy
   have o := GenericOB5.program_counts L hw cx cy
   constructor <;> omega
@@ -66282,9 +66893,8 @@ theorem program_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
   have cn : wires (fastConstNeg L cx)⊆(OwnParityPhysical.genericSites L).toFinset :=
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (constant_sites L hw L.point.x (Or.inl rfl))
-  have cr : wires (fastConstRefl L (3*cx-1)) ⊆ (OwnParityPhysical.genericSites L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (constant_sites L hw L.point.x (Or.inl rfl))
+  have cr : wires (fastConstAdd L L.point.x (3*cx-(SquareAQ.offset:Fp))) ⊆ (OwnParityPhysical.genericSites L).toFinset :=
+    ca _ (Or.inl rfl) _
   have di := OwnParityArithmetic.farithOB_support L hw false
   have mu := OwnParityArithmetic.farithOB_support L hw true
   have sq := (OwnParityPhysical.square_support L hw hn).trans (OwnParityPhysical.raw_sub_generic L)
@@ -67135,7 +67745,7 @@ holds `x_R ≠ 0`, `5` (point at infinity) or a nonzero difference. -/
 def fastGeneric3F (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx)++fastConstAdd L L.point.y (-cy)++
     arithS L false++SquareOB5.program L++
-      fastConstRefl L (3*cx-1)++arithS L true++
+      fastConstAdd L L.point.x (3*cx-(SquareAQ.offset:Fp))++arithS L true++
         fastConstNeg L cx++fastConstAdd L L.point.y (-cy)
 
 /-- Clear the finite flag, run the block with the spare site on it, restore the flag. -/
@@ -67191,9 +67801,9 @@ theorem fast3F_generic_true (X Y cx cy : Fp) (base : BasisState) (hX : X≠cx)
   simp only [Bool.false_eq_true,if_false,ha] at h3
   have h4 := GenericOB5.square_step L hw hn (X-cx) a true base
   simp only [if_true] at h4
-  have h5 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true base (3*cx-1)
+  have h5 := fastStep_addX L hw hn ((X-cx)-(a*a-(SquareAQ.offset:Fp))) a true base (3*cx-(SquareAQ.offset:Fp))
   simp only [if_true] at h5
-  have hd5 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
+  have hd5 : (X-cx)-(a*a-(SquareAQ.offset:Fp))+(3*cx-(SquareAQ.offset:Fp))=d := by
     have e := hv.2.1
     change (X-cx)-a*a+3*cx=d at e
     rw [← e]; ring
@@ -67216,13 +67826,12 @@ theorem fast3F_generic_false (X Y cx cy : Fp) (base : BasisState) (hX0 : X ≠ 0
   have h2 := fastStep_addY L hw hn X Y false base (-cy)
   have h3 := arith3F_step L hw hn X Y false base false hX0
   have h4 := GenericOB5.square_step L hw hn X (Y/X) false base
-  have h5 := fastStep_refl L hw hn (-1-X) (Y/X) false base (3*cx-1)
+  have h5 := fastStep_addX L hw hn X (Y/X) false base (3*cx-(SquareAQ.offset:Fp))
   have h6 := arith3F_step L hw hn X (Y/X) false base true hX0
   have h7 := fastStep_negX L hw hn X Y false base cx
   have h8 := fastStep_addY L hw hn X Y false base (-cy)
   have back : Y/X*X=Y := div_mul_cancel₀ Y hX0
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7 h8
-  rw [show -1-(-1-X)=X by ring] at h5
   rw [back] at h6
   have h := ((((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7).seq h8
   simpa only [fastGeneric3F,List.append_assoc] using h
@@ -67487,9 +68096,8 @@ theorem fastGeneric3F_sites (cx cy : Fp) :
   have cn : wires (fastConstNeg L cx) ⊆ (OB5Support.sites L).toFinset :=
     (FastConst.fastNeg_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
       (finConst_sites L hw L.point.x (Or.inl rfl))
-  have cr : wires (fastConstRefl L (3*cx-1)) ⊆ (OB5Support.sites L).toFinset :=
-    (FastConst.fastRefl_support _ _ ⟨256,L.recoveryConstant_widths hw L.point.x hw.inputX⟩).trans
-      (finConst_sites L hw L.point.x (Or.inl rfl))
+  have cr : wires (fastConstAdd L L.point.x (3*cx-(SquareAQ.offset:Fp))) ⊆ (OB5Support.sites L).toFinset :=
+    ca _ (Or.inl rfl) _
   have a0 := (arithS_sub L hw hn false).wires_sub.trans (ArithmeticOB5.arith_support L hw false)
   have a1 := (arithS_sub L hw hn true).wires_sub.trans (ArithmeticOB5.arith_support L hw true)
   have sq := SquareOB5.support L hw hn
@@ -68289,7 +68897,7 @@ theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     (cx cy : Fp) : L.core.poolWire 766∉wires (GenericOB5.program L cx cy) := by
   have ca:=FiniteHostGeometry766.add_avoid766 L hw hn
   have cn:=FiniteHostGeometry766.neg_avoid766 L hw hn cx
-  have cr:=FiniteHostGeometry766.refl_avoid766 L hw hn (3*cx-1)
+  have cr:=FiniteHostGeometry766.add_avoid766 L hw hn L.point.x (Or.inl rfl) (3*cx-(SquareAQ.offset:Fp))
   have di:=farith_free L hw hn false
   have mu:=farith_free L hw hn true
   have sq:=OwnQ5Square.prior_free766 L hw hn
@@ -68584,7 +69192,7 @@ theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     (cx cy : Fp) : L.core.poolWire 765∉wires (GenericOB5.program L cx cy) := by
   have ca:=FiniteHostGeometry765.add_avoid765 L hw hn
   have cn:=FiniteHostGeometry765.neg_avoid765 L hw hn cx
-  have cr:=FiniteHostGeometry765.refl_avoid765 L hw hn (3*cx-1)
+  have cr:=FiniteHostGeometry765.add_avoid765 L hw hn L.point.x (Or.inl rfl) (3*cx-(SquareAQ.offset:Fp))
   have di:=farith_free L hw hn false
   have mu:=farith_free L hw hn true
   have sq:=OwnQ5Square.prior_free765 L hw hn
@@ -68855,7 +69463,7 @@ theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     (cx cy : Fp) : L.core.poolWire 767∉wires (GenericOB5.program L cx cy) := by
   have ca:=FiniteHostGeometry767.add_avoid767 L hw hn
   have cn:=FiniteHostGeometry767.neg_avoid767 L hw hn cx
-  have cr:=FiniteHostGeometry767.refl_avoid767 L hw hn (3*cx-1)
+  have cr:=FiniteHostGeometry767.add_avoid767 L hw hn L.point.x (Or.inl rfl) (3*cx-(SquareAQ.offset:Fp))
   have di:=farith_free L hw hn false
   have mu:=farith_free L hw hn true
   have sq:=OwnQ5Square.prior_free767 L hw hn
@@ -69262,7 +69870,7 @@ def outStage (L : ControlledPointLayout) (C : Point) : Program :=
 
 def finiteProgram (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) : Program :=
   inputClass L C cy ++
-  genFlagN L ++ clrDHm L C cy ++
+  genFlagN L ++ clrDH L C cy ++
   renameProgram (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) Gen)) ++
   clrDH L C cy ++ mergeFlagsN L ++
   renameProgram (sigP L) (corners2 L C ++ shared L C) ++
@@ -69385,7 +69993,7 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
   have clrH : false = (H ^^ (exceptionBit C && b && pointFinite R && !G &&
       ((pointX R).testBit (DHClass.kx C) != DHClass.cxk C))) := by
     rw [hE]; simp only [H, G, C]; rw [← cls.2, Bool.xor_self]
-  have hf1 := clrDHm_flag L hw hn C cy R b D G H clrD clrH
+  have hf1 := clrDH_flag L hw hn C cy R b D G H false false clrD clrH
   have read := dialogFlagState_read L hn false false G false false false false
   have h7 := genericD_ok L hw hn hc Gen hGen R b
     (dialogFlagState L false false G false false false false)
@@ -69490,8 +70098,8 @@ theorem shared_wires (L : ControlledPointLayout) (hw : L.Widths) (C : Point) :
 
 theorem finite_counts (L : ControlledPointLayout) (hw : L.Widths) (Gen : Program) {cx cy : Fp}
     (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (finiteProgram L (.some hc) cy Gen) ≤ 526+toffoliCount Gen ∧
-    measurementCount (finiteProgram L (.some hc) cy Gen) ≤ 521+measurementCount Gen := by
+    toffoliCount (finiteProgram L (.some hc) cy Gen) ≤ 528+toffoliCount Gen ∧
+    measurementCount (finiteProgram L (.some hc) cy Gen) ≤ 519+measurementCount Gen := by
   have inp := inputClass_counts L hw hc
   have out := shared_counts L hw hc
   have zero : toffoliCount (corners2 L (.some hc))=0 ∧ measurementCount (corners2 L (.some hc))=0 := by
@@ -69499,8 +70107,6 @@ theorem finite_counts (L : ControlledPointLayout) (hw : L.Widths) (Gen : Program
       (maskedPointConstant_counts _ _ _).1,(maskedPointConstant_counts _ _ _).2]; decide
   have fo : toffoliCount (clrDH L (.some hc) cy) ≤ 5 ∧ measurementCount (clrDH L (.some hc) cy) ≤ 3 :=
     DHGadget.gadget_counts _ _ _ _ _ _ _ _ _ _ _ _ _ _
-  have fm : toffoliCount (clrDHm L (.some hc) cy) ≤ 3 ∧ measurementCount (clrDHm L (.some hc) cy) ≤ 5 :=
-    DHGadget.gadgetM_counts _ _ _ _ _ _ _ _ _ _ _ _ _ _
   have z2 : toffoliCount (chainErase L.control L.point.finite L.genericSelect) = 0 ∧
       measurementCount (chainErase L.control L.point.finite L.genericSelect) = 1 := by
     simp [chainErase, toffoliCount, measurementCount]
@@ -69530,8 +70136,8 @@ theorem wrapper_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
 
 theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (Gen : Program) {cx cy : Fp}
     (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (wrapper L (.some hc) cy Gen) ≤ 526+toffoliCount Gen ∧
-    measurementCount (wrapper L (.some hc) cy Gen) ≤ 521+measurementCount Gen := by
+    toffoliCount (wrapper L (.some hc) cy Gen) ≤ 528+toffoliCount Gen ∧
+    measurementCount (wrapper L (.some hc) cy Gen) ≤ 519+measurementCount Gen := by
   simpa only [wrapper,renameProgram_counts] using
     finite_counts L hw (renameProgram (Wrapper5.U L) Gen) hc
 
@@ -69539,8 +70145,6 @@ theorem finite_wires (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Pr
     wires (finiteProgram L C cy Gen) ⊆ wires (finiteProgramN L C cy Gen) ∪
       wires (renameProgram (sigP L) (shared L C)) := by
   intro q hq
-  have hm : q ∈ wires (clrDHm L C cy) → q ∈ wires (clrDH L C cy) :=
-    DHGadget.gadgetM_wires _ _ _ _ _ _ _ _ _ _ _ _ _ _ q
   simp only [finiteProgram,finiteProgramN,ECDSAAdd.Entrant.outTail,rename_append,
     wires_append,Finset.mem_union] at hq ⊢
   tauto
@@ -69683,8 +70287,6 @@ theorem finite_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
   have hp := finiteProgramN_physical L hw hn C cy Gen hG
   have hs := gatePhysical_rename (sigP L) (sigP_injective L hw hn) (shared L C)
     (shared_physical L hw hn C)
-  have hm : GatePhysical (clrDHm L C cy) :=
-    DHGadget.gadgetM_physical _ _ _ _ _ _ _ _ _ _ _ _ _ _ (dh_nodup L hw hn _ (DHClass.kx_lt C))
   simp only [finiteProgramN,ECDSAAdd.Entrant.outTail,rename_append,gatePhysical_append] at hp
   simp only [finiteProgram,rename_append,gatePhysical_append]
   tauto
@@ -69702,15 +70304,11 @@ theorem shared_slots (L : ControlledPointLayout) (hw : L.Widths) (C : Point) :
   simpa only [shared,pairPorts_length L hw] using hh
 
 theorem wrapper_slots (L : ControlledPointLayout) (hw : L.Widths)
-    (C : Point) (cy : Fp) (Gen : Program) : gateSlots (wrapper L C cy Gen) ≤ 22838+gateSlots Gen := by
+    (C : Point) (cy : Fp) (Gen : Program) : gateSlots (wrapper L C cy Gen) ≤ 22836+gateSlots Gen := by
   have hp := finiteProgramN_gateSlots L hw C cy (renameProgram (Wrapper5.U L) Gen)
   have hs := shared_slots L hw C
-  have hm : gateSlots (clrDHm L C cy) ≤ gateSlots (clrDH L C cy) + 2 := by
-    unfold clrDHm clrDH
-    cases decide (cy≠-cy) <;> cases exceptionBit C <;> cases DHClass.cxk C <;> cases yBit C <;>
-      simp [DHGadget.gadgetM, DHGadget.gadget, DHGadget.flipIf, gateSlots, Challenge.instructionSlots]
   have extra : gateSlots (finiteProgram L C cy (renameProgram (Wrapper5.U L) Gen)) ≤
-      gateSlots (finiteProgramN L C cy (renameProgram (Wrapper5.U L) Gen))+gateSlots (shared L C)+2 := by
+      gateSlots (finiteProgramN L C cy (renameProgram (Wrapper5.U L) Gen))+gateSlots (shared L C) := by
     simp only [finiteProgram,finiteProgramN,ECDSAAdd.Entrant.outTail,gateSlots_append,rename_gateSlots]
     omega
   simp only [wrapper,rename_gateSlots] at *
@@ -69987,7 +70585,7 @@ theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     (cx cy : Fp) : L.core.poolWire 770∉wires (GenericOB5.program L cx cy) := by
   have ca:=FiniteHostGeometry770.add_avoid770 L hw hn
   have cn:=FiniteHostGeometry770.neg_avoid770 L hw hn cx
-  have cr:=FiniteHostGeometry770.refl_avoid770 L hw hn (3*cx-1)
+  have cr:=FiniteHostGeometry770.add_avoid770 L hw hn L.point.x (Or.inl rfl) (3*cx-(SquareAQ.offset:Fp))
   have di:=farith_free L hw hn false
   have mu:=farith_free L hw hn true
   have sq:=OwnQ5Square.plus_free L hw hn
@@ -73936,7 +74534,7 @@ end EntryStep
 
 def genericFFused (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx) ++ fusedDivisionF L (-cy) ++
-  SquareOB5.program L ++ fastConstRefl L (3*cx-1) ++
+  SquareOB5.program L ++ fastConstAdd L L.point.x (3*cx-(SquareAQ.offset:Fp)) ++
   arithS L true ++ fastConstNeg L cx ++ fastConstAdd L L.point.y (-cy)
 
 section Correct
@@ -73946,7 +74544,7 @@ variable (logicalAway : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkShared
 variable (logicalReplay : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410)
   (mixedTranscriptTape base))
 include hw hn logicalND hlo logicalAway logicalReplay
-attribute [local irreducible] run arithS SquareOB5.program fastConstAdd fastConstNeg fastConstRefl fusedDivisionF
+attribute [local irreducible] run arithS SquareOB5.program fastConstAdd fastConstNeg fusedDivisionF
 
 theorem genericF_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
     (hd : cx-genericX X Y cx cy≠0) :
@@ -73963,9 +74561,9 @@ theorem genericF_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
   simp only [if_true,←sub_eq_add_neg,ha] at h2
   have h3 := GenericOB5.square_step L hw hn (X-cx) a true origin
   simp only [if_true] at h3
-  have h4 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true origin (3*cx-1)
+  have h4 := fastStep_addX L hw hn ((X-cx)-(a*a-(SquareAQ.offset:Fp))) a true origin (3*cx-(SquareAQ.offset:Fp))
   simp only [if_true] at h4
-  have hd4 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
+  have hd4 : (X-cx)-(a*a-(SquareAQ.offset:Fp))+(3*cx-(SquareAQ.offset:Fp))=d := by
     have e := hv.2.1
     change (X-cx)-a*a+3*cx=d at e
     rw [←e]; ring
@@ -73988,13 +74586,12 @@ theorem genericF_false (X Y cx cy : Fp) (origin : BasisState) (hX : X≠0) :
   have h2 := fusedDivisionF_step L hw hn logicalND hlo logicalAway logicalReplay
     X Y (-cy) false origin hX
   have h3 := GenericOB5.square_step L hw hn X (Y/X) false origin
-  have h4 := fastStep_refl L hw hn (-1-X) (Y/X) false origin (3*cx-1)
+  have h4 := fastStep_addX L hw hn X (Y/X) false origin (3*cx-(SquareAQ.offset:Fp))
   have h5 := arith3F_step L hw hn X (Y/X) false origin true hX
   have h6 := fastStep_negX L hw hn X Y false origin cx
   have h7 := fastStep_addY L hw hn X Y false origin (-cy)
   have back : Y/X*X=Y := div_mul_cancel₀ Y hX
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5 h6 h7
-  rw [show -1-(-1-X)=X by ring] at h4
   rw [back] at h5
   have h := (((((h1.seq h2).seq h3).seq h4).seq h5).seq h6).seq h7
   simpa only [genericFFused,List.append_assoc] using h
@@ -74110,7 +74707,7 @@ end WrapCorrect
 section Resources
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 attribute [local irreducible] wires toffoliCount measurementCount arithS arithEntryS
-  fastConstAdd fastConstNeg fastConstRefl fusedY SquareOB5.program
+  fastConstAdd fastConstNeg fusedY SquareOB5.program
 
 include hw in
 theorem genericFFused_counts_diff (cx cy : Fp) :
@@ -74158,16 +74755,14 @@ theorem genericFFused_physical (cx cy : Fp) : GatePhysical (genericFFused L cx c
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) SquareReduction.c k.val
   have ay (k : Fp) := FastConst.fastAdd_physical
     (L.recoveryConstant_nodup hw hn L.point.y (Or.inr rfl)) SquareReduction.c k.val
-  have rf := FastConst.fastRefl_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p (3*cx-1).val
   have ng := FastConst.fastNeg_physical
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p cx.val
   have fy := fusedY_physical L hw hn (-cy)
   have di := arithEntryS_physical L hw hn
   have mu := (arithS_sub L hw hn true).physical (ArithmeticOB5.arith_physical L hw hn true)
   have sq := SquareOB5.physical L hw hn
-  simp only [genericFFused,fusedDivisionF,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
-  exact ⟨⟨⟨⟨⟨⟨ax _,⟨fy,di⟩⟩,sq⟩,rf⟩,mu⟩,ng⟩,ay _⟩
+  simp only [genericFFused,fusedDivisionF,fastConstAdd,fastConstNeg,gatePhysical_append]
+  exact ⟨⟨⟨⟨⟨⟨ax _,⟨fy,di⟩⟩,sq⟩,ax _⟩,mu⟩,ng⟩,ay _⟩
 
 include hw hn in
 theorem genFFused_physical (cx cy : Fp) : GatePhysical (genFFused L cx cy) := by
@@ -74185,15 +74780,14 @@ theorem genericFFused_slots (cx cy : Fp) : gateSlots (genericFFused L cx cy) ≤
   have ng := FastConst.fastNeg_gateSlots_le (g:=L.core.generic) 256 p cx.val
     (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a1 := ax L.point.x hw.inputX (-cx)
-  have a3 := FastConst.fastRefl_gateSlots_le (g:=L.core.generic) 256 p (3*cx-1).val
-    (L.recoveryConstant_widths hw L.point.x hw.inputX)
+  have a3 := ax L.point.x hw.inputX (3*cx-(SquareAQ.offset:Fp))
   have a4 := ax L.point.y hw.inputY (-cy)
   have fy := entry_gateSlots_le (L.recoveryConstant L.point.y) L.core.generic
     EntryFuseArithmetic.complement (-cy).val (L.recoveryConstant_widths hw L.point.y hw.inputY)
   have d := arithEntryS_gateSlots_le L
   have e := (arithS_sub L hw hn true).slots.trans (ArithmeticOB5.arith_gateSlots_le L true)
   have sq := SquareOB5.gateSlots_le L hw
-  simp only [genericFFused,fusedDivisionF,fusedY,fastConstAdd,fastConstNeg,fastConstRefl,gateSlots_append]
+  simp only [genericFFused,fusedDivisionF,fusedY,fastConstAdd,fastConstNeg,gateSlots_append]
   omega
 
 include hw hn in
@@ -74285,7 +74879,7 @@ end FiniteSupport
 section ParitySupport
 open FiniteHostStack
 attribute [local irreducible] wires genFFused midFFused genericFFused arithS SquareOB5.program
-  fastConstAdd fastConstNeg fastConstRefl fusedY arithEntryS fastGeneric3F
+  fastConstAdd fastConstNeg fusedY arithEntryS fastGeneric3F
 
 theorem genericFFused_parity_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : wires (genericFFused L cx cy) ⊆ (OwnParityPhysical.genericSites L).toFinset := by
@@ -74408,7 +75002,7 @@ end ParitySupport
 section PlusSupport
 open FiniteHostStack FiniteHostFusion
 attribute [local irreducible] wires genFFused midFFused genericFFused arithS SquareOB5.program
-  fastConstAdd fastConstNeg fastConstRefl fusedY arithEntryS fastGeneric3F
+  fastConstAdd fastConstNeg fusedY arithEntryS fastGeneric3F
 
 theorem genericFFused_avoids766 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : L.core.poolWire 766∉wires (genericFFused L cx cy) := by
@@ -74479,7 +75073,7 @@ end PlusSupport
 section ExtraOmissions
 open FiniteHostStack FiniteHostFusion FiniteHostFive
 attribute [local irreducible] wires genFFused midFFused genericFFused arithS SquareOB5.program
-  fastConstAdd fastConstNeg fastConstRefl fusedY arithEntryS fastGeneric3F
+  fastConstAdd fastConstNeg fusedY arithEntryS fastGeneric3F
 
 theorem genericFFused_avoids765 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : L.core.poolWire 765∉wires (genericFFused L cx cy) := by
@@ -74804,7 +75398,7 @@ end EdgesSupport
 section Q5Inventory
 open FiniteHostStack FiniteHostFusion FiniteHostFive
 attribute [local irreducible] wires genFFused midFFused genericFFused arithS SquareOB5.program
-  fastConstAdd fastConstNeg fastConstRefl fusedY arithEntryS fastGeneric3F
+  fastConstAdd fastConstNeg fusedY arithEntryS fastGeneric3F
 
 theorem genericFFused_avoids770 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : L.core.poolWire 770∉wires (genericFFused L cx cy) := by
@@ -77384,7 +77978,7 @@ open Challenge Baselines
 
 def genericBothF (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   fastConstAdd L L.point.x (-cx) ++ fusedDivisionF L (-cy) ++
-  SquareOB5.program L ++ fastConstRefl L (3*cx-1) ++ fusedExitF L cx cy
+  SquareOB5.program L ++ fastConstAdd L L.point.x (3*cx-(SquareAQ.offset:Fp)) ++ fusedExitF L cx cy
 
 section Correct
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -77393,7 +77987,7 @@ variable (logicalAway : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkShared
 variable (logicalReplay : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410)
   (mixedTranscriptTape base))
 include hw hn logicalND hlo logicalAway logicalReplay
-attribute [local irreducible] run arithS SquareOB5.program fastConstAdd fastConstNeg fastConstRefl fusedDivisionF fusedExitF
+attribute [local irreducible] run arithS SquareOB5.program fastConstAdd fastConstNeg fusedDivisionF fusedExitF
 
 theorem genericBothF_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
     (hd : cx-genericX X Y cx cy≠0) :
@@ -77410,9 +78004,9 @@ theorem genericBothF_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
   simp only [if_true,←sub_eq_add_neg,ha] at h2
   have h3 := GenericOB5.square_step L hw hn (X-cx) a true origin
   simp only [if_true] at h3
-  have h4 := fastStep_refl L hw hn (-1-((X-cx)-a*a)) a true origin (3*cx-1)
+  have h4 := fastStep_addX L hw hn ((X-cx)-(a*a-(SquareAQ.offset:Fp))) a true origin (3*cx-(SquareAQ.offset:Fp))
   simp only [if_true] at h4
-  have hd4 : 3*cx-1-(-1-((X-cx)-a*a))=d := by
+  have hd4 : (X-cx)-(a*a-(SquareAQ.offset:Fp))+(3*cx-(SquareAQ.offset:Fp))=d := by
     have e := hv.2.1
     change (X-cx)-a*a+3*cx=d at e
     rw [←e]; ring
@@ -77431,11 +78025,10 @@ theorem genericBothF_false (X Y cx cy : Fp) (origin : BasisState) (hX : X≠0) :
   have h2 := fusedDivisionF_step L hw hn logicalND hlo logicalAway logicalReplay
     X Y (-cy) false origin hX
   have h3 := GenericOB5.square_step L hw hn X (Y/X) false origin
-  have h4 := fastStep_refl L hw hn (-1-X) (Y/X) false origin (3*cx-1)
+  have h4 := fastStep_addX L hw hn X (Y/X) false origin (3*cx-(SquareAQ.offset:Fp))
   have h5 := fusedExitF_step L hw hn X (Y/X) cx cy false origin hX
   have back : Y/X*X=Y := div_mul_cancel₀ Y hX
   simp only [Bool.false_eq_true,if_false,if_true,add_zero,sub_zero] at h1 h2 h3 h4 h5
-  rw [show -1-(-1-X)=X by ring] at h4
   rw [back] at h5
   have h := ((((h1.seq h2).seq h3).seq h4).seq h5)
   simpa only [genericBothF,List.append_assoc] using h
@@ -77567,7 +78160,7 @@ open Challenge Baselines
 section Resources
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 attribute [local irreducible] wires toffoliCount measurementCount arithS arithEntryS arithExitS
-  fastConstAdd fastConstNeg fastConstRefl fusedY fusedExitY SquareOB5.program
+  fastConstAdd fastConstNeg fusedY fusedExitY SquareOB5.program
 
 theorem genericBothF_bridge (cx cy : Fp) : wires (genericBothF L cx cy) ⊆
     wires (genericFFused L cx cy) ∪ wires (arithExitS L) ∪ wires (fusedExitY L cy) := by
@@ -77614,8 +78207,6 @@ include hw hn in
 theorem genericBothF_physical (cx cy : Fp) : GatePhysical (genericBothF L cx cy) := by
   have ax (k : Fp) := FastConst.fastAdd_physical
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) SquareReduction.c k.val
-  have rf := FastConst.fastRefl_physical
-    (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p (3*cx-1).val
   have ng := FastConst.fastNeg_physical
     (L.recoveryConstant_nodup hw hn L.point.x (Or.inl rfl)) p cx.val
   have fy := fusedY_physical L hw hn (-cy)
@@ -77623,8 +78214,8 @@ theorem genericBothF_physical (cx cy : Fp) : GatePhysical (genericBothF L cx cy)
   have mu := arithExitS_physical L hw hn
   have ex := fusedExitY_physical L hw hn cy
   have sq := SquareOB5.physical L hw hn
-  simp only [genericBothF,fusedExitF,fusedDivisionF,fastConstAdd,fastConstNeg,fastConstRefl,gatePhysical_append]
-  exact ⟨⟨⟨⟨ax _,⟨fy,di⟩⟩,sq⟩,rf⟩,mu,ng,ex⟩
+  simp only [genericBothF,fusedExitF,fusedDivisionF,fastConstAdd,fastConstNeg,gatePhysical_append]
+  exact ⟨⟨⟨⟨ax _,⟨fy,di⟩⟩,sq⟩,ax _⟩,mu,ng,ex⟩
 
 include hw hn in
 theorem genBothF_physical (cx cy : Fp) : GatePhysical (genBothF L cx cy) := by
@@ -77642,8 +78233,7 @@ theorem genericBothF_slots (cx cy : Fp) : gateSlots (genericBothF L cx cy) ≤ 4
   have ng := FastConst.fastNeg_gateSlots_le (g:=L.core.generic) 256 p cx.val
     (L.recoveryConstant_widths hw L.point.x hw.inputX)
   have a1 := ax L.point.x hw.inputX (-cx)
-  have a3 := FastConst.fastRefl_gateSlots_le (g:=L.core.generic) 256 p (3*cx-1).val
-    (L.recoveryConstant_widths hw L.point.x hw.inputX)
+  have a3 := ax L.point.x hw.inputX (3*cx-(SquareAQ.offset:Fp))
   have fy := entry_gateSlots_le (L.recoveryConstant L.point.y) L.core.generic
     EntryFuseArithmetic.complement (-cy).val (L.recoveryConstant_widths hw L.point.y hw.inputY)
   have ex := exit_gateSlots_le (L.recoveryConstant L.point.y) L.core.generic
@@ -77651,7 +78241,7 @@ theorem genericBothF_slots (cx cy : Fp) : gateSlots (genericBothF L cx cy) ≤ 4
   have d := arithEntryS_gateSlots_le L
   have e := arithExitS_gateSlots_le L
   have sq := SquareOB5.gateSlots_le L hw
-  simp only [genericBothF,fusedExitF,fusedDivisionF,fusedY,fusedExitY,fastConstAdd,fastConstNeg,fastConstRefl,gateSlots_append]
+  simp only [genericBothF,fusedExitF,fusedDivisionF,fusedY,fusedExitY,fastConstAdd,fastConstNeg,gateSlots_append]
   omega
 
 include hw hn in
@@ -77742,7 +78332,7 @@ end FiniteSupport
 section ParitySupport
 open FiniteHostStack
 attribute [local irreducible] wires genBothF midBothF genericBothF arithS SquareOB5.program
-  fastConstAdd fastConstNeg fastConstRefl fusedY arithEntryS fastGeneric3F
+  fastConstAdd fastConstNeg fusedY arithEntryS fastGeneric3F
 
 theorem genericBothF_parity_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : wires (genericBothF L cx cy) ⊆ (OwnParityPhysical.genericSites L).toFinset := by
@@ -77858,7 +78448,7 @@ end ParitySupport
 section PlusSupport
 open FiniteHostStack FiniteHostFusion
 attribute [local irreducible] wires genBothF midBothF genericBothF arithS SquareOB5.program
-  fastConstAdd fastConstNeg fastConstRefl fusedY arithEntryS fastGeneric3F
+  fastConstAdd fastConstNeg fusedY arithEntryS fastGeneric3F
 
 theorem genericBothF_avoids766 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : L.core.poolWire 766∉wires (genericBothF L cx cy) := by
@@ -77923,7 +78513,7 @@ end PlusSupport
 section ExtraOmissions
 open FiniteHostStack FiniteHostFusion FiniteHostFive
 attribute [local irreducible] wires genBothF midBothF genericBothF arithS SquareOB5.program
-  fastConstAdd fastConstNeg fastConstRefl fusedY arithEntryS fastGeneric3F
+  fastConstAdd fastConstNeg fusedY arithEntryS fastGeneric3F
 
 theorem genericBothF_avoids765 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : L.core.poolWire 765∉wires (genericBothF L cx cy) := by
@@ -78236,7 +78826,7 @@ end EdgesSupport
 section Q5BothInventory
 open FiniteHostStack FiniteHostFusion FiniteHostFive
 attribute [local irreducible] wires genBothF midBothF genericBothF arithS SquareOB5.program
-  fastConstAdd fastConstNeg fastConstRefl fusedY fusedExitY arithEntryS arithExitS
+  fastConstAdd fastConstNeg fusedY fusedExitY arithEntryS arithExitS
 
 theorem genericBothF_avoids770 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : L.core.poolWire 770∉wires (genericBothF L cx cy) := by
@@ -78364,7 +78954,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2154912, 1500878, 1594, 50000004⟩
+def bounds : Challenge.Bounds := ⟨2154658, 1500621, 1594, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -78383,7 +78973,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2154912 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2154658 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -78396,7 +78986,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2154912 := by
     change toffoliCount (Edges.wrapper layout (.some hc) cy (genBothF layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1500878 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1500621 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -78450,7 +79040,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1500878
+    change measurementCount (normalizeProgram (program C)) ≤ 1500621
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
