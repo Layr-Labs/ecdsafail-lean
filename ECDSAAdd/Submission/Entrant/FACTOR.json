@@ -1,9 +1,0 @@
-{
-  "state": "PREPARED_REQUIRES_FRESH_STRICT_BUILD",
-  "input_sha256": "a6e17b2b259c4122235fb1251929418ca49da4d8c10627cbc731cef8cb5d2627",
-  "sources": {
-    "ShortKernel.lean": "0c643c14bb0b2f62d8b5e68c094779dfb5e310ac8026b830b6a1fe1ed88deda2",
-    "Main.lean": "6210267b0d7dd5c9814f7f60b8ced895a87951498088d13cfa883732a62d8ca9"
-  },
-  "lines": 43106
-}

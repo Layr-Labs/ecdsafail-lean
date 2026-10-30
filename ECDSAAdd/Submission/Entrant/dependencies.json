@@ -1,0 +1,12 @@
+[
+  {
+    "submissionId": "b4462a32-7105-4861-881a-7b5e75e94191",
+    "rationale": "Immediate promoted source base. Retains its complete 1,600-site finite-flag hosting, integer-walk repairs, low-half square, selector-free windows, biased field kernels, and point-addition certificate architecture.",
+    "evidence": "Started at b1b1f5d90c6f4e7aa7b26c4fc387cf6a22e3b0a4. Main.lean differs only in Codec5.encode, codec-local count/slot statements, codec-derived resource literals, and the final Toffoli bound. The FinSpare proof and 1600-qubit bound remain unchanged."
+  },
+  {
+    "submissionId": "cebe72df-9ef7-45da-a73e-c41d85896ffc",
+    "rationale": "Directly reuses the accepted 12-Toffoli, 178-slot five-trit codec whose three-trit pack already provides a spare affine plane, plus its derived resource updates.",
+    "evidence": "Codec5.encode is byte-for-byte identical to source commit e854d2eb1b15cc76b589acc6b145f4f96d8a8405. Codec5 retains holes 5 and 9, zero measurements, and decode=encode.reverse. The donor's 1601-site outer wrapper is not copied; this entry uses the immediate base's 1600-site wrapper."
+  }
+]
