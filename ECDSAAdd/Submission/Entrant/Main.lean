@@ -9,7 +9,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       OwnDHWrapper.wrapper layout C cy (OwnTerminalGraphActual.gen layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2154347,1500319,1592,50000004⟩
+def bounds : Challenge.Bounds := ⟨2154343,1500319,1592,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -28,7 +28,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((OwnDHWrapper.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154347 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154343 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
@@ -41,7 +41,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154347 := by
     have gn:=(OwnOneFlagActual.counts_eq layout layout_widths cx cy).1
     have terminal:=(OwnTerminalGraphActual.counts_diff layout layout_widths cx cy).1
     have ga:=(OwnDiagEndpointActual.genE_counts_diff layout layout_widths cx cy).1
-    change toffoliCount (OwnDHWrapper.wrapper layout (.some hc) cy (OwnTerminalGraphActual.gen layout cx cy))≤2154347
+    change toffoliCount (OwnDHWrapper.wrapper layout (.some hc) cy (OwnTerminalGraphActual.gen layout cx cy))≤2154343
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1500319 := by
