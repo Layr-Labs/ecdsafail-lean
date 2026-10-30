@@ -48227,6 +48227,260 @@ end ECDSAAdd.Entrant.OneBankCell5
 end
 
 
+-- ===== ECDSAAdd.Submission.Entrant.UncompSwap =====
+section
+
+/-! Measured uncompute of the last field-cell swap of the multiply replay.
+
+The multiply (`divide = false`) replay ends with the cell-zero swap
+`swapRegisters effS r y` inside its transcript-select window.  Its output pair is
+`(Z, 0)` (`Replay5.inverse_payload`): the `y` word is the field word of `p ≡ 0` at
+the GCD start.  Since `swapRegisters = [r ^= y] ++ [y ^= effS ∧ r] ++ [r ^= y]`, a
+zero output `y` means `y = effS ∧ (r ⊕ y)` before the Toffoli layer, which therefore
+only uncomputes.  `mswap` replaces that layer by the library `eraseMask` (X-basis
+measurement of every `y` bit with a `CZ(effS, r_i)` correction): the same State on
+every record (`mswap_eq`), 256 fewer Toffolis and 256 more measurements. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.UncompSwap
+open Arithmetic Secp256k1 BalancedField MappedCompressed CompressedFieldSupport
+
+/-- `swapRegisters c r y` whose Toffoli layer is a measured erase. -/
+def mswap (c : Wire) (r y : List Wire) : Program :=
+  copyRegister none y r ++ eraseMask c r y ++ copyRegister none y r
+
+theorem run_noMeas (P : Program) (hP : measurementCount P=0) (m : List Bool) (s : State) :
+    run P m s=run P [] s := by
+  have h := run_take P m s
+  rw [hP,List.take_zero] at h
+  exact h.symm
+
+/-- If the swap's output `y` is zero (`(if c then r else y)=0` on input), the measured swap
+and `swapRegisters` reach the same State for every measurement record. -/
+theorem mswap_eq (c : Wire) (r y : List Wire) (hlen : r.length=y.length)
+    (hnd : (c::(r++y)).Nodup) (s : State) (m : List Bool)
+    (hz : (if s.basis c then regValue r s.basis else regValue y s.basis)=0) :
+    run (mswap c r y) m s=run (swapRegisters c r y) m s := by
+  have nry : (r++y).Nodup := (List.nodup_cons.mp hnd).2
+  have nyr : (y++r).Nodup := List.nodup_append_comm.mp nry
+  have hcr : c∉r := fun h => (List.nodup_cons.mp hnd).1 (List.mem_append_left _ h)
+  have dyr : ∀ w, w∈y → w∉r := fun w hw hr =>
+    List.disjoint_left.mp (List.nodup_append'.mp nry).2.2 hr hw
+  have mA := (copyRegister_counts none y r hlen.symm).2
+  have mB := (copyRegister_counts (some c) r y hlen).2
+  obtain ⟨_,eA,vA⟩ := copyRegister_correct none y r hlen.symm nyr (by simp) s []
+  have hyu : regValue y (run (copyRegister none y r) [] s).basis=regValue y s.basis :=
+    regValue_congr _ _ _ (fun w hw => eA w (dyr w hw))
+  have hcu : (run (copyRegister none y r) [] s).basis c=s.basis c := eA c hcr
+  have hru : regValue r (run (copyRegister none y r) [] s).basis=
+      regValue r s.basis ^^^ regValue y s.basis := by simpa only [copyValue] using vA
+  have hmask : regValue y (run (copyRegister none y r) [] s).basis=
+      if (run (copyRegister none y r) [] s).basis c then
+        regValue r (run (copyRegister none y r) [] s).basis else 0 := by
+    rw [hyu,hcu,hru]
+    cases hc : s.basis c <;> simp only [hc,if_true,if_false,Bool.false_eq_true] at hz ⊢
+    · exact hz
+    · rw [hz]; simp
+  simp only [mswap,swapRegisters,run_append,measurementCount_append,mA,mB,Nat.zero_add,
+    Nat.add_zero,List.take_zero,List.drop_zero]
+  rw [eraseMask_eq_copy c r y hlen hnd _ _ hmask,
+    run_noMeas (copyRegister (some c) r y) mB,run_noMeas (copyRegister none y r) mA (List.drop _ m),
+    run_noMeas (copyRegister none y r) mA m]
+
+theorem mswap_pair (r y : List Wire) (flag : Wire) (len : r.length=y.length)
+    (nd : (flag::(r++y)).Nodup) (origin : BasisState) (X Y : Nat)
+    (hz : (if origin flag then X else Y)=0) :
+    Triple (PairFrame r y origin X Y) (mswap flag r y)
+      (PairFrame r y origin (if origin flag then Y else X) (if origin flag then X else Y)) := by
+  intro s m input
+  have away := (List.nodup_cons.mp nd).1
+  have same := input.2.2 flag (fun h => away (List.mem_append_left _ h))
+    (fun h => away (List.mem_append_right _ h))
+  have hz' : (if s.basis flag then regValue r s.basis else regValue y s.basis)=0 := by
+    rw [same,input.1,input.2.1]; exact hz
+  rw [mswap_eq flag r y len nd s m hz']
+  have out := swapRegisters_correct flag r y len nd s m
+  refine ⟨out.1,?_,?_,fun q qr qy => (out.2.1 q qr qy).trans (input.2.2 q qr qy)⟩
+  · rw [out.2.2.1,same,input.1,input.2.1]
+  · rw [out.2.2.2,same,input.1,input.2.1]
+
+theorem eraseMask_wires (c : Wire) : ∀ (src dst : List Wire),
+    wires (eraseMask c src dst)=wires (copyRegister (some c) src dst)
+  | [],_ => by simp [eraseMask,copyRegister,wires]
+  | _::_,[] => by simp [eraseMask,copyRegister,wires]
+  | a::src,b::dst => by
+    have ih := eraseMask_wires c src dst
+    simp only [eraseMask,copyRegister,copyGate,wires,List.singleton_append,ih,Instr.wires,
+      correctionWires]
+    ext q
+    simp only [Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,
+      or_false,false_or]
+    tauto
+
+theorem eraseMask_counts (c : Wire) : ∀ (src dst : List Wire), src.length=dst.length →
+    toffoliCount (eraseMask c src dst)=0 ∧ measurementCount (eraseMask c src dst)=src.length
+  | [],[],_ => by simp [eraseMask,toffoliCount,measurementCount]
+  | [],_::_,h => by simp at h
+  | _::_,[],h => by simp at h
+  | a::src,b::dst,h => by
+    have ih := eraseMask_counts c src dst (by simpa using h)
+    refine ⟨?_,?_⟩
+    · show toffoliCount (eraseMask c src dst)=0
+      exact ih.1
+    · show 1+measurementCount (eraseMask c src dst)=src.length+1
+      rw [ih.2]; omega
+
+theorem eraseMask_slots (c : Wire) : ∀ (src dst : List Wire), src.length=dst.length →
+    Challenge.gateSlots (eraseMask c src dst)=2*src.length
+  | [],[],_ => by simp [eraseMask,Challenge.gateSlots]
+  | [],_::_,h => by simp at h
+  | _::_,[],h => by simp at h
+  | a::src,b::dst,h => by
+    have ih := eraseMask_slots c src dst (by simpa using h)
+    simp only [eraseMask,Challenge.gateSlots,List.map_cons,List.sum_cons,
+      Challenge.instructionSlots,List.length_nil,List.length_cons] at ih ⊢
+    omega
+
+theorem mswap_wires (c : Wire) (r y : List Wire) :
+    wires (mswap c r y)=wires (swapRegisters c r y) := by
+  simp only [mswap,swapRegisters,wires_append,eraseMask_wires]
+
+theorem mswap_counts (c : Wire) (r y : List Wire) (hlen : r.length=y.length) :
+    toffoliCount (mswap c r y)=0 ∧ measurementCount (mswap c r y)=r.length := by
+  have a := copyRegister_counts none y r hlen.symm
+  have b := eraseMask_counts c r y hlen
+  simp only [Option.isSome_none,Bool.false_eq_true,if_false] at a
+  rw [mswap,toffoliCount_append,toffoliCount_append,measurementCount_append,measurementCount_append,
+    a.1,a.2,b.1,b.2]
+  exact ⟨rfl,by omega⟩
+
+theorem mswap_slots (c : Wire) (r y : List Wire) (hlen : r.length=y.length) :
+    Challenge.gateSlots (mswap c r y)=4*r.length := by
+  have b := eraseMask_slots c r y hlen
+  simp only [mswap,Challenge.gateSlots_append,b,Baselines.copyRegister_gateSlots]
+  omega
+
+theorem mswap_physical (c : Wire) (r y : List Wire) (hn : (c::(r++y)).Nodup) :
+    GatePhysical (mswap c r y) := by
+  have nd := List.nodup_cons.mp hn
+  have yr : (y++r).Nodup := List.nodup_append_comm.mpr nd.2
+  have back := copyRegister_physical none y r yr (by simp)
+  simp only [mswap,gatePhysical_append]
+  exact ⟨⟨back,eraseMask_physical c r y⟩,back⟩
+
+theorem centerWord_zero : centerWord 0=0 := by
+  have hp := BalancedField.constants
+  unfold centerWord centerFp encodeWord
+  simp only [ZMod.val_zero,Nat.cast_zero]
+  rw [if_pos (by omega)]
+  rfl
+
+/-- Selected cell swap with the measured erase as body. -/
+def selectedSwapM (w : Nat → Wire) (b swap sign effS : Wire) (is : Bool) : Program :=
+  transcriptSelectWindow b swap effS is
+    (mswap effS (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y)
+
+theorem selectedSwapM_wires (w : Nat → Wire) (b swap sign effS : Wire) (is : Bool) :
+    wires (selectedSwapM w b swap sign effS is)=
+      wires (EntryFieldSeedCancellation.selectedSwap w b swap sign effS is) := by
+  simp only [selectedSwapM,EntryFieldSeedCancellation.selectedSwap,transcriptSelectWindow,
+    wires_append,mswap_wires]
+
+/-- `EntrySelectedSwapFrame.selectedSwap_frame` for the measured swap, when the output `y`
+word is zero. -/
+theorem selectedSwapM_frame (w : Nat → Wire) (b g swap sign effS : Wire) (is : Bool)
+    (hl : BalancedTranscriptLayout (balancedSharedPorts w sign) b g swap effS)
+    (origin : BasisState) (hs0 : origin effS=false) (X Y : Fp)
+    (hz : (if mixedTranscriptBit origin b swap is then X else Y)=0) :
+    Triple (PairFrame (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y origin
+      (centerWord X) (centerWord Y))
+      (selectedSwapM w b swap sign effS is)
+      (PairFrame (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y origin
+        (centerWord (if mixedTranscriptBit origin b swap is then Y else X))
+        (centerWord (if mixedTranscriptBit origin b swap is then X else Y))) := by
+  have controls := hl.controls
+  simp only [balancedSharedPorts,List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at controls
+  have nd : [b,swap,effS].Nodup := by simp [List.nodup_cons]; tauto
+  have width := BalancedCleanup.widths (balancedSharedPorts w sign).toLayout (balancedSharedPorts_widths w sign)
+  have flagBit : mixedTranscriptBase origin b swap effS is effS=mixedTranscriptBit origin b swap is := by
+    simp only [mixedTranscriptBase,writeBit,Function.update_self]
+  have zero : (if mixedTranscriptBase origin b swap effS is effS then centerWord X else centerWord Y)=0 := by
+    rw [flagBit]
+    cases bit : mixedTranscriptBit origin b swap is <;>
+      simp only [bit,if_true,if_false,Bool.false_eq_true] at hz ⊢ <;> rw [hz,centerWord_zero]
+  have body := mswap_pair _ _ effS (width.2.1.trans width.2.2.1.symm) hl.swapND
+    (mixedTranscriptBase origin b swap effS is) (centerWord X) (centerWord Y) zero
+  have body' : Triple (PairFrame (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y
+      (mixedTranscriptBase origin b swap effS is) (centerWord X) (centerWord Y))
+      (mswap effS (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y)
+      (PairFrame (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y
+        (mixedTranscriptBase origin b swap effS is)
+        (centerWord (if mixedTranscriptBit origin b swap is then Y else X))
+        (centerWord (if mixedTranscriptBit origin b swap is then X else Y))) := by
+    rw [flagBit] at body
+    cases bit : mixedTranscriptBit origin b swap is <;>
+      simpa only [bit,if_true,if_false,Bool.false_eq_true] using body
+  exact transcriptSelectWindow_pairFrame b swap effS is _ _ nd (hl.outside b (by simp))
+    (hl.outside swap (by simp)) (hl.outside effS (by simp)) origin hs0 _ _ _ _ _ body'
+
+theorem selectedSwapM_counts (w : Nat → Wire) (b swap sign effS : Wire) (is : Bool)
+    (hlen : (balancedSharedPorts w sign).r.length=(balancedSharedPorts w sign).y.length) :
+    toffoliCount (selectedSwapM w b swap sign effS is)=1 ∧
+    measurementCount (selectedSwapM w b swap sign effS is)=
+      (balancedSharedPorts w sign).r.length+1 := by
+  have c := mswap_counts effS _ _ hlen
+  have win := transcriptSelectWindow_counts b swap effS is
+    (mswap effS (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y)
+  rw [selectedSwapM,win.1,win.2,c.1,c.2]
+  exact ⟨rfl,rfl⟩
+
+theorem selectedSwapM_slots (w : Nat → Wire) (b swap sign effS : Wire) (is : Bool)
+    (hlen : (balancedSharedPorts w sign).r.length=(balancedSharedPorts w sign).y.length) :
+    Challenge.gateSlots (selectedSwapM w b swap sign effS is)≤
+      4*(balancedSharedPorts w sign).r.length+8 := by
+  have h := Baselines.selectWindow_gateSlots_le b swap effS is
+    (mswap effS (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y)
+  rw [mswap_slots _ _ _ hlen] at h
+  exact h
+
+/-! The cell-zero swap of the multiply replay. -/
+
+def firstSwapM : Program :=
+  selectedSwapM base (base 2400) (base 1028) (base 2409) (base 2410)
+    (mixedTranscriptUnitTrace.getD 0 (false,false)).2
+
+theorem firstSwapM_wires : wires firstSwapM=wires Replay5.firstSwap :=
+  selectedSwapM_wires _ _ _ _ _ _
+
+theorem firstSwapM_counts : toffoliCount firstSwapM=1 ∧ measurementCount firstSwapM=257 := by
+  have width := BalancedCleanup.widths (balancedSharedPorts base (base 2409)).toLayout
+    (balancedSharedPorts_widths base (base 2409))
+  have c := selectedSwapM_counts base (base 2400) (base 1028) (base 2409) (base 2410)
+    (mixedTranscriptUnitTrace.getD 0 (false,false)).2 (width.2.1.trans width.2.2.1.symm)
+  rw [width.2.1] at c
+  exact c
+
+theorem firstSwapM_physical
+    (nd : (base 2410::(balancedSharedPorts base (base 2409)).r++(balancedSharedPorts base (base 2409)).y).Nodup) :
+    GatePhysical firstSwapM := by
+  unfold firstSwapM selectedSwapM
+  exact transcriptWindow_physical _ _ _ _ _ (by decide) (by decide) (mswap_physical _ _ _ nd)
+
+theorem firstSwapM_gateSlots_le : Challenge.gateSlots firstSwapM≤1032 := by
+  have width := BalancedCleanup.widths (balancedSharedPorts base (base 2409)).toLayout
+    (balancedSharedPorts_widths base (base 2409))
+  have h := selectedSwapM_slots base (base 2400) (base 1028) (base 2409) (base 2410)
+    (mixedTranscriptUnitTrace.getD 0 (false,false)).2 (width.2.1.trans width.2.2.1.symm)
+  rw [width.2.1] at h
+  exact h
+
+end ECDSAAdd.Entrant.UncompSwap
+
+end
+
+
 -- ===== ECDSAAdd.Submission.Entrant.OneBankReplay5 =====
 section
 
@@ -48270,7 +48524,7 @@ def groups (divide : Bool) (j n : Nat) : Program := PacketSequence.program divid
 
 def firstBody (divide : Bool) : Program :=
   if divide then Replay5.firstSwap++rawReplay true Replay5.restLetters
-  else rawReplay false Replay5.restLetters++Replay5.firstSwap
+  else rawReplay false Replay5.restLetters++UncompSwap.firstSwapM
 
 def baseFirstPacket (divide : Bool) : Program :=
   History5.decode base 0++firstBody divide++History5.encode base 0
@@ -48361,8 +48615,10 @@ theorem firstBody_support (divide : Bool) : wires (firstBody divide)⊆readSites
     simpa only [tapeLetter,tape] using
       (show base k∈W ∧ base (1028+k)∈W from
         ⟨Finset.mem_union_right _ controls.1,Finset.mem_union_right _ controls.2⟩)
+  have swapM : wires UncompSwap.firstSwapM⊆W := by
+    rw [UncompSwap.firstSwapM_wires]; exact swap
   cases divide <;> simp only [firstBody,Bool.false_eq_true,if_false,if_true,wires_append,Finset.union_subset_iff]
-  · exact ⟨rest,swap⟩
+  · exact ⟨rest,swapM⟩
   · exact ⟨swap,rest⟩
 
 theorem firstBody_read_support (divide : Bool) :
@@ -48506,7 +48762,8 @@ theorem groups_frame (divide : Bool) (j n : Nat) (bound : j+n≤102)
     j n bound (X,Y) s m input
   exact result.2
 
-theorem firstBody_frame (divide : Bool) (origin : BasisState) (ctx : Context origin) (X Y : Fp) :
+theorem firstBody_frame (divide : Bool) (origin : BasisState) (ctx : Context origin) (X Y : Fp)
+    (hz : divide=false → (Replay5.firstPayload divide origin (X,Y)).2=0) :
     Triple (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y
       origin (centerWord X) (centerWord Y)) (firstBody divide)
       (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y origin
@@ -48518,10 +48775,19 @@ theorem firstBody_frame (divide : Bool) (origin : BasisState) (ctx : Context ori
     (first_layout origin ctx) origin ctx.hs0
   cases divide
   · let V := directionalPayload true (mixedTranscriptControls origin (base 2400) Replay5.restLetters) (X,Y)
+    have zero : (if S then V.1 else V.2)=0 := by
+      have h := hz rfl
+      have k : ∀ (b : Bool) (p : Fp×Fp), (if b then (p.2,p.1) else p).2=(if b then p.1 else p.2) := by
+        intro b p; cases b <;> rfl
+      simp only [Replay5.firstPayload,Bool.false_eq_true,if_false,k] at h
+      exact h
+    have swapM := UncompSwap.selectedSwapM_frame base (base 2400) (base 0) (base 1028)
+      (base 2409) (base 2410) (mixedTranscriptUnitTrace.getD 0 (false,false)).2
+      (first_layout origin ctx) origin ctx.hs0 V.1 V.2 zero
     have rest := raw_frame false Replay5.restLetters (rest_layout ctx.hf) origin ctx X Y
-    have out := rest.seq (swap V.1 V.2)
-    cases hS : S <;> simpa only [firstBody,Replay5.firstPayload,Bool.false_eq_true,if_false,
-      Bool.not_false,if_true,S,hS,V] using out
+    have out := rest.seq swapM
+    cases hS : S <;> simpa only [firstBody,UncompSwap.firstSwapM,Replay5.firstPayload,Bool.false_eq_true,
+      if_false,Bool.not_false,if_true,S,hS,V] using out
   · have out := (swap X Y).seq (raw_frame true Replay5.restLetters (rest_layout ctx.hf)
       origin ctx (if S then Y else X) (if S then X else Y))
     cases hS : S <;> simpa only [firstBody,Replay5.firstPayload,if_true,Bool.not_true,
@@ -48529,13 +48795,14 @@ theorem firstBody_frame (divide : Bool) (origin : BasisState) (ctx : Context ori
 
 theorem firstPacket_frame (divide : Bool) (origin : BasisState) (ctx : Context origin)
     (X Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
+    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s)
+    (hz : divide=false → (Replay5.firstPayload divide origin (X,Y)).2=0) :
     (run (firstPacket divide) m s).phase=s.phase ∧
       History5.EncodedFieldFrame5 base (base 2409) origin (Replay5.firstPayload divide origin (X,Y)).1
         (Replay5.firstPayload divide origin (X,Y)).2 (run (firstPacket divide) m s) := by
   have fresh := FieldFrameOB5.encoded_window_step base (base 2400) (base 2409) (base 2410)
     ctx.hn ctx.hp 0 (by decide) origin X Y _ _ _ (firstBody_read_support divide)
-    (firstBody_frame divide origin ctx X Y) s m input ctx.legal
+    (firstBody_frame divide origin ctx X Y hz) s m input ctx.legal
   have eq := Replay5.placed_eq (Placement5.pi 0) (baseFirstPacket divide)
     (fun q hq => Placement5.pi_outside 0 q (by decide) hq) s m
     (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal X Y s input)
@@ -48596,7 +48863,7 @@ theorem logical_forward_frame (origin : BasisState) (ctx : Context origin)
     (fun a b => History5.EncodedFieldFrame5 base (base 2409) origin Y 0 a →
       b.phase=a.phase ∧ History5.EncodedFieldFrame5 base (base 2409) origin Z Z b) (by
       intro a b c d m1 m2 m3 hab hbc hcd h
-      have first := firstPacket_frame true origin ctx Y 0 a m1 h
+      have first := firstPacket_frame true origin ctx Y 0 a m1 h (fun e => absurd e (by decide))
       rw [hab] at first
       have middle := groups_frame true 1 101 (by decide) origin ctx _ _ b m2 first.2
       rw [hbc] at middle
@@ -48624,7 +48891,9 @@ theorem logical_inverse_frame (origin : BasisState) (ctx : Context origin)
       rw [hab] at first
       have middle := groups_frame false 1 101 (by decide) origin ctx _ _ b m2 first.2
       rw [hbc] at middle
-      have last := firstPacket_frame false origin ctx _ _ c m3 middle.2
+      have last := firstPacket_frame false origin ctx _ _ c m3 middle.2 (fun _ => by
+        simp only [Prod.mk.eta]
+        exact congrArg Prod.snd (Replay5.inverse_payload origin x Y hx0 hx trace))
       rw [hcd] at last
       refine ⟨last.1.trans (middle.1.trans first.1),?_⟩
       simpa only [Prod.mk.eta,Replay5.inverse_payload origin x Y hx0 hx trace] using last.2) s m
@@ -48735,11 +49004,13 @@ theorem groups_counts (divide : Bool) (j n : Nat)
 
 theorem firstPacket_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (firstPacket divide)=5389 ∧ measurementCount (firstPacket divide)=4099 := by
+    toffoliCount (firstPacket divide)=(if divide then 5389 else 5133) ∧
+      measurementCount (firstPacket divide)=(if divide then 4099 else 4355) := by
   have raw := raw_counts divide Replay5.restLetters (swap_nodup hn ho)
   have len : Replay5.restLetters.length=4 := by simp [Replay5.restLetters]
   rw [len] at raw
   have sw := Replay5.firstSwap_counts hn ho
+  have swM := UncompSwap.firstSwapM_counts
   have e := History5.encode_counts base 0
   have d := History5.decode_counts base 0
   have renamed := renameProgram_counts (shifted (Placement5.pi 0)) (baseFirstPacket divide)
@@ -48760,7 +49031,8 @@ theorem endPacket_counts (divide : Bool) :
 
 theorem logicalReplay_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (logicalReplay divide)=653820 ∧ measurementCount (logicalReplay divide)=522342 := by
+    toffoliCount (logicalReplay divide)=(if divide then 653820 else 653564) ∧
+      measurementCount (logicalReplay divide)=(if divide then 522342 else 522598) := by
   have first := firstPacket_counts divide hn ho
   have rest := groups_counts divide 1 101 hn ho
   have last := endPacket_counts divide
@@ -48771,7 +49043,8 @@ theorem logicalReplay_counts (divide : Bool)
 
 theorem replay_counts (divide : Bool)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (replay divide)=653820 ∧ measurementCount (replay divide)=522342 := by
+    toffoliCount (replay divide)=(if divide then 653820 else 653564) ∧
+      measurementCount (replay divide)=(if divide then 522342 else 522598) := by
   simpa only [replay,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2] using
     logicalReplay_counts divide hn ho
 
@@ -48835,12 +49108,14 @@ theorem firstPacket_physical (divide : Bool)
     simp only [Replay5.firstSwap,EntryFieldSeedCancellation.selectedSwap]
     apply transcriptWindow_physical _ _ _ _ _ (by decide) (by decide)
     exact swapRegisters_physical _ _ _ (swap_nodup hn (ho _ (by simp)))
+  have swapM : GatePhysical UncompSwap.firstSwapM :=
+    UncompSwap.firstSwapM_physical (swap_nodup hn (ho _ (by simp)))
   have rest := raw_physical divide Replay5.restLetters hn ho (rest_layout hf)
   have e := History5.encode_physical base (skywalkShared_integer_nodup base hn) 0 (by decide)
   have d := History5.decode_physical base (skywalkShared_integer_nodup base hn) 0 (by decide)
   have p : GatePhysical (baseFirstPacket divide) := by
     cases divide <;> simp only [baseFirstPacket,firstBody,Bool.false_eq_true,if_false,if_true,gatePhysical_append]
-    · exact ⟨⟨d,⟨rest,swap⟩⟩,e⟩
+    · exact ⟨⟨d,⟨rest,swapM⟩⟩,e⟩
     · exact ⟨⟨d,⟨swap,rest⟩⟩,e⟩
   exact gatePhysical_rename _ (shifted (Placement5.pi 0)).injective _ p
 
@@ -48893,7 +49168,8 @@ theorem groups_gateSlots_le (divide : Bool) (j n : Nat) : gateSlots (groups divi
     simp only [groups] at rest
     cases divide <;> simp only [groups,PacketSequence.program,Bool.false_eq_true,if_false,if_true,gateSlots_append] <;> omega
 
-theorem firstPacket_gateSlots_le (divide : Bool) : gateSlots (firstPacket divide)≤105156 := by
+theorem firstPacket_gateSlots_le (divide : Bool) : gateSlots (firstPacket divide)≤105388 := by
+  have swapM := UncompSwap.firstSwapM_gateSlots_le
   have raw := raw_gateSlots_le divide Replay5.restLetters
   have len : Replay5.restLetters.length=4 := by simp [Replay5.restLetters]
   rw [len] at raw
@@ -49102,7 +49378,7 @@ theorem firstBody_avoid (divide : Bool) : base 766∉wires (OneBankReplay5.first
     exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
   cases divide <;> simp only [OneBankReplay5.firstBody,Bool.false_eq_true,if_false,if_true,
     wires_append,Finset.mem_union,not_or]
-  · exact ⟨raw_avoid false _ ctrl,firstSwap_avoid⟩
+  · exact ⟨raw_avoid false _ ctrl,by rw [UncompSwap.firstSwapM_wires]; exact firstSwap_avoid⟩
   · exact ⟨firstSwap_avoid,raw_avoid true _ ctrl⟩
 
 theorem pi_fix (j : Nat) (hj : j<102) : shifted (Placement5.pi j) (base 766)=base 766 := by
@@ -49460,7 +49736,7 @@ theorem firstBody_avoid (divide : Bool) : base 765∉wires (OneBankReplay5.first
     exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
   cases divide <;> simp only [OneBankReplay5.firstBody,Bool.false_eq_true,if_false,if_true,
     wires_append,Finset.mem_union,not_or]
-  · exact ⟨raw_avoid false _ ctrl,firstSwap_avoid⟩
+  · exact ⟨raw_avoid false _ ctrl,by rw [UncompSwap.firstSwapM_wires]; exact firstSwap_avoid⟩
   · exact ⟨firstSwap_avoid,raw_avoid true _ ctrl⟩
 
 theorem pi_fix (j : Nat) (hj : j<102) : shifted (Placement5.pi j) (base 765)=base 765 := by
@@ -49821,7 +50097,7 @@ theorem firstBody_avoid (divide : Bool) : base 767∉wires (OneBankReplay5.first
     exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
   cases divide <;> simp only [OneBankReplay5.firstBody,Bool.false_eq_true,if_false,if_true,
     wires_append,Finset.mem_union,not_or]
-  · exact ⟨raw_avoid false _ ctrl,firstSwap_avoid⟩
+  · exact ⟨raw_avoid false _ ctrl,by rw [UncompSwap.firstSwapM_wires]; exact firstSwap_avoid⟩
   · exact ⟨firstSwap_avoid,raw_avoid true _ ctrl⟩
 
 theorem pi_fix (j : Nat) (hj : j<102) : shifted (Placement5.pi j) (base 767)=base 767 := by
@@ -50293,7 +50569,8 @@ attribute [local irreducible] toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
     (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (program divide)=654328 ∧ measurementCount (program divide)=522850 := by
+    toffoliCount (program divide)=(if divide then 654328 else 654072) ∧
+      measurementCount (program divide)=(if divide then 522850 else 523106) := by
   have ce := OwnQ5Endpoint.endpoint_counts
   have r := OneBankReplay5.replay_counts divide hn ho
   have len : (balancedSharedPorts base (base 2409)).r.length=
@@ -52736,7 +53013,8 @@ theorem segH_gateSlots (divide : Bool) :
 attribute [local irreducible] Kernel5.actualKernel5 toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) :
-    toffoliCount (program divide)=1049453 ∧ measurementCount (program divide)=721021 := by
+    toffoliCount (program divide)=(if divide then 1049453 else 1049197) ∧
+      measurementCount (program divide)=(if divide then 721021 else 721277) := by
   have cfg := MappedCompressed.LaneA.laneLogical_config
   have narrow := W.compactPasses5_old_counts base base_pool_nodup
   have repair := Stack5.counts_511 base base_pool_nodup
@@ -52922,7 +53200,7 @@ theorem firstBody_avoid (divide : Bool) : base 1026∉wires (OneBankReplay5.firs
     exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
   cases divide <;> simp only [OneBankReplay5.firstBody,Bool.false_eq_true,if_false,if_true,
     wires_append,Finset.mem_union,not_or]
-  · exact ⟨raw_avoid hKernel false _ ctrl,firstSwap_avoid hKernel⟩
+  · exact ⟨raw_avoid hKernel false _ ctrl,by rw [UncompSwap.firstSwapM_wires]; exact firstSwap_avoid hKernel⟩
   · exact ⟨firstSwap_avoid hKernel,raw_avoid hKernel true _ ctrl⟩
 
 theorem pi_fix (j : Nat) (hj : j<102) : shifted (Placement5.pi j) (base 1026)=base 1026 := by
@@ -53341,8 +53619,8 @@ section
 namespace ECDSAAdd.Entrant.OwnQ5Actual
 open Arithmetic MappedCompressed
  abbrev kernel_spec (divide : Bool) := OwnQ5Integer.program_spec divide (hosted_field_free divide)
- theorem kernel_counts (divide : Bool) : toffoliCount (OwnQ5Integer.program divide)=1049453 ∧
-    measurementCount (OwnQ5Integer.program divide)=721021 := by
+ theorem kernel_counts (divide : Bool) : toffoliCount (OwnQ5Integer.program divide)=(if divide then 1049453 else 1049197) ∧
+    measurementCount (OwnQ5Integer.program divide)=(if divide then 721021 else 721277) := by
   rw [(OwnQ5Integer.program_counts divide).1,(OwnQ5Integer.program_counts divide).2]
   exact KernelOB5.program_counts divide
  theorem kernel_slots (divide : Bool) : Challenge.gateSlots (OwnQ5Integer.program divide)≤20500002 := by
@@ -53805,9 +54083,15 @@ def swapBody : Program :=
 
 def firstSwapS : Program := selW (base 1028) (base 2410) swapBody
 
+def swapBodyM : Program :=
+  UncompSwap.mswap (base 2410) (balancedSharedPorts base (base 2409)).r
+    (balancedSharedPorts base (base 2409)).y
+
+def firstSwapMS : Program := selW (base 1028) (base 2410) swapBodyM
+
 def firstBodyS (divide : Bool) : Program :=
   if divide then firstSwapS++rawReplayS true Replay5.restLetters
-  else rawReplayS false Replay5.restLetters++firstSwapS
+  else rawReplayS false Replay5.restLetters++firstSwapMS
 
 def baseFirstPacketS (divide : Bool) : Program :=
   History5.decode base 0++firstBodyS divide++History5.encode base 0
@@ -53907,6 +54191,10 @@ theorem selSwap_away : base 2400∉wires swapBody := by
       OneBankCell5.ports_y]
     exact Finset.subset_union_right
   exact fun h => selBody_away true (sub h)
+
+theorem selSwapM_away : base 2400∉wires swapBodyM := by
+  rw [swapBodyM,UncompSwap.mswap_wires]
+  exact selSwap_away
 
 theorem selHist_away (start : Nat) (hs : start+5 ≤ 512) :
     base 2400∉wires (History5.encode base start) ∧ base 2400∉wires (History5.decode base start) := by
@@ -54034,6 +54322,11 @@ theorem selFirstSwap_sel : Sel (base 2400) 1 firstSwapS Replay5.firstSwap := by
   exact ((Sel.refl _ _ selSwap_away).window (base 1028) (base 2410)
     (mixedTranscriptUnitTrace.getD 0 (false,false)).2 n).cast (by norm_num) rfl rfl
 
+theorem selFirstSwapM_sel : Sel (base 2400) 1 firstSwapMS UncompSwap.firstSwapM := by
+  have n : [base 2400,base 1028,base 2410].Nodup := by decide
+  exact ((Sel.refl _ _ selSwapM_away).window (base 1028) (base 2410)
+    (mixedTranscriptUnitTrace.getD 0 (false,false)).2 n).cast (by norm_num) rfl rfl
+
 theorem selFirstPacket_sel (divide : Bool) :
     Sel (base 2400) 9 (firstPacketS divide) (OneBankReplay5.firstPacket divide) := by
   have codec := selHist_away 0 (by omega)
@@ -54042,7 +54335,7 @@ theorem selFirstPacket_sel (divide : Bool) :
   rw [len] at r
   have body : Sel (base 2400) 9 (firstBodyS divide) (OneBankReplay5.firstBody divide) := by
     cases divide
-    · exact (r.append selFirstSwap_sel).cast (by norm_num) rfl rfl
+    · exact (r.append selFirstSwapM_sel).cast (by norm_num) rfl rfl
     · exact (selFirstSwap_sel.append r).cast (by norm_num) rfl rfl
   have b : Sel (base 2400) 9 (baseFirstPacketS divide) (OneBankReplay5.baseFirstPacket divide) :=
     (((Sel.refl _ _ codec.2).append body).append (Sel.refl _ _ codec.1)).cast (by norm_num) rfl rfl
@@ -54285,7 +54578,7 @@ attribute [local irreducible] OwnQ5Integer.program toffoliCount measurementCount
 
 theorem arith_counts (L : ControlledPointLayout) :
     toffoliCount (arith L false)=1049453 ∧ measurementCount (arith L false)=721021 ∧
-    toffoliCount (arith L true)=1049453 ∧ measurementCount (arith L true)=721021 := by
+    toffoliCount (arith L true)=1049197 ∧ measurementCount (arith L true)=721277 := by
   have a := OwnQ5Actual.kernel_counts true
   have b := OwnQ5Actual.kernel_counts false
   have c := renameProgram_counts (wireFn2 L) (OwnQ5Integer.program true)
@@ -54703,7 +54996,7 @@ attribute [local irreducible] run OwnQ5Runtime.kernelS OwnQ5Integer.program wire
 
 theorem arithS_counts (L : ControlledPointLayout) :
     toffoliCount (arithS L false)=1048433 ∧ measurementCount (arithS L false)=721021 ∧
-    toffoliCount (arithS L true)=1048433 ∧ measurementCount (arithS L true)=721021 := by
+    toffoliCount (arithS L true)=1048177 ∧ measurementCount (arithS L true)=721277 := by
   have o := ArithmeticOB5.arith_counts L
   have s1 := OwnQ5SW.selKernelQ_sel true
   have s2 := OwnQ5SW.selKernelQ_sel false
@@ -55782,8 +56075,8 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2157308 ∧
-    measurementCount (program L cx cy)=1500460 := by
+    toffoliCount (program L cx cy)=2157052 ∧
+    measurementCount (program L cx cy)=1500716 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
   have c := fastConstNeg_counts L hw cx
@@ -56124,8 +56417,8 @@ theorem program_counts_rel (cx cy : Fp) :
 
 include hw in
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2155268 ∧
-    measurementCount (program L cx cy)=1500460 := by
+    toffoliCount (program L cx cy)=2155012 ∧
+    measurementCount (program L cx cy)=1500716 := by
   have r := program_counts_rel L cx cy
   have o := GenericOB5.program_counts L hw cx cy
   constructor <;> omega
@@ -57427,7 +57720,7 @@ theorem firstBody_avoid (divide : Bool) : base 2312∉wires (OneBankReplay5.firs
     exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
   cases divide <;> simp only [OneBankReplay5.firstBody,Bool.false_eq_true,if_false,if_true,
     wires_append,Finset.mem_union,not_or]
-  · exact ⟨raw_avoid false _ ctrl,firstSwap_avoid⟩
+  · exact ⟨raw_avoid false _ ctrl,by rw [UncompSwap.firstSwapM_wires]; exact firstSwap_avoid⟩
   · exact ⟨firstSwap_avoid,raw_avoid true _ ctrl⟩
 
 theorem pi_fix (j : Nat) (hj : j<102) : shifted (Placement5.pi j) (base 2312)=base 2312 := by
@@ -61675,7 +61968,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2156306, 1501490, 1594, 50000004⟩
+def bounds : Challenge.Bounds := ⟨2156050, 1501746, 1594, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -61692,7 +61985,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2156306 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2156050 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -61703,7 +61996,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2156306 := by
     change toffoliCount (Edges.wrapper layout (.some hc) cy (genF layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1501490 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1501746 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -61755,7 +62048,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1501490
+    change measurementCount (normalizeProgram (program C)) ≤ 1501746
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
