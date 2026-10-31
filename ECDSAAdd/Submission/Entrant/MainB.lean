@@ -4484,13 +4484,13 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       ControlLoan1589.exitKernel_718_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154203 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153959 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=ControlLoan1589.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500698 :=
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500634 :=
   (wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2.1.trans_le
     (ControlLoan1589.wrapper_measurements cx cy hc)
 
@@ -4506,7 +4506,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2154203,1500698,1589,50007736⟩
+def bounds : Challenge.Bounds := ⟨2153959,1500634,1589,50007736⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -4523,12 +4523,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154203 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2153959 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1500698 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1500634 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc => exact wrapper_measurements cx cy hc
@@ -4555,7 +4555,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1500698
+    change measurementCount (normalizeProgram (program C))≤1500634
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1589
@@ -8312,13 +8312,13 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       ControlLoan1589.exitKernel_718_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153313 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153069 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=ControlLoan1589SumCleanupFinal.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499813 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499749 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2
   have old:=ControlLoan1589SumCleanupFinal.wrapper_measurements cx cy hc
   omega
@@ -8336,7 +8336,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2153313,1499813,1589,50007736⟩
+def bounds : Challenge.Bounds := ⟨2153069,1499749,1589,50007736⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -8353,12 +8353,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2153313 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2153069 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1499813 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1499749 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc => exact wrapper_measurements cx cy hc
@@ -8385,7 +8385,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1499813
+    change measurementCount (normalizeProgram (program C))≤1499749
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1589
@@ -17247,14 +17247,14 @@ theorem entryField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context
   let mid := run (placedFirstPacket true) mp state
   have first := placedFirstPacket_frame true true origin ctx enabled x hx trace Y 0
     (fun bad => absurd bad (by decide)) state mp input
-  have tail := entryTail_frame origin ctx ha enabled x hx0 hx trace Y mid (mt.drop 21) first.2
+  have tail := entryTail_frame origin ctx ha enabled x hx0 hx trace Y mid (mt.drop 5) first.2
   have before := field_prefix_codes origin ctx _ _ mid first.2 x hx0 hx trace
-  have after := canonical_prefix_codes origin ctx _ _ (run entryTail (mt.drop 21) mid) tail.2 x hx0 hx trace
+  have after := canonical_prefix_codes origin ctx _ _ (run entryTail (mt.drop 5) mid) tail.2 x hx0 hx trace
   have window := Prefix1590.prefix_window_run_eq entryTail
     (Prefix1590.prefixProgram++(renameProgram Prefix1590.borrow entryTail++Prefix1590.unprefix))
     rfl entryTail_payload_free mid mt before.1 before.2.1 after.1 after.2.1
     (field_768_zero origin ctx _ _ mid first.2)
-    (canonical_768_zero origin ctx _ _ (run entryTail (mt.drop 21) mid) tail.2)
+    (canonical_768_zero origin ctx _ _ (run entryTail (mt.drop 5) mid) tail.2)
     (Prefix1590.prefix_zero_of_codes mid before)
   simp only [entryField,List.append_assoc]
   rw [run_append,window]
@@ -17315,10 +17315,10 @@ private theorem exitHead_borrow_run_eq (origin : BasisState)
     (enabled : origin (base 2400)=true) (Y : Fp) (state : State) (records : List Bool)
     (input : Rolling1588Frame.EncodedCanonicalFrame false origin Y 0 state) :
     run (Prefix1590.prefixProgram++(renameProgram Prefix1590.borrow exitHead++Prefix1590.unprefix))
-      records state=run exitHead (records.drop 21) state := by
-  have result := exitHead_frame origin ctx ha enabled Y state (records.drop 21) input
+      records state=run exitHead (records.drop 5) state := by
+  have result := exitHead_frame origin ctx ha enabled Y state (records.drop 5) input
   have before := canonical_prefix_codes origin ctx Y 0 state input x hx0 hx trace
-  have after := field_prefix_codes origin ctx _ _ (run exitHead (records.drop 21) state) result.2 x hx0 hx trace
+  have after := field_prefix_codes origin ctx _ _ (run exitHead (records.drop 5) state) result.2 x hx0 hx trace
   exact Prefix1590.prefix_window_run_eq exitHead _ rfl exitHead_payload_free state records
     before.1 before.2.1 after.1 after.2.1 (canonical_768_zero origin ctx Y 0 state input)
     (field_768_zero origin ctx _ _ _ result.2) (Prefix1590.prefix_zero_of_codes state before)
@@ -17337,7 +17337,7 @@ theorem exitField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context 
       (Rolling1588Frame.EncodedFieldFrame true origin H.1 H.2) := by
     intro state records input
     rw [exitHead_borrow_run_eq origin ctx ha x hx0 hx trace enabled Y state records input]
-    exact exitHead_frame origin ctx ha enabled Y state (records.drop 21) input
+    exact exitHead_frame origin ctx ha enabled Y state (records.drop 5) input
   have last : StateTriple (Rolling1588Frame.EncodedFieldFrame true origin H.1 H.2)
       (placedFirstPacket false) (Rolling1588Frame.EncodedFieldFrame true origin F.1 F.2) := by
     intro state records input
@@ -25842,13 +25842,13 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154121 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153877 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500023 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499959 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).2.1
   have old:=ControlLoan1589BFFinal.wrapper_measurements cx cy hc
   omega
@@ -25866,7 +25866,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2154121,1500023,1588,50091960⟩
+def bounds : Challenge.Bounds := ⟨2153877,1499959,1588,50091960⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -25883,12 +25883,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154121 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2153877 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1500023 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1499959 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc => exact wrapper_measurements cx cy hc
@@ -25915,7 +25915,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1500023
+    change measurementCount (normalizeProgram (program C))≤1499959
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1588
