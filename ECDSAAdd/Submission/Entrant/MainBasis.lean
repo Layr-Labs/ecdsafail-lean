@@ -1919,7 +1919,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       Edges.wrapper layout C cy (OwnQ6Producer.genE layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2155418,1501195,1593,50000004⟩
+def bounds : Challenge.Bounds := ⟨2155358,1501195,1593,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -1939,7 +1939,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155418 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155358 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
@@ -1949,7 +1949,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155418 := by
     have gd:=(genFFused_counts_diff layout layout_widths cx cy).1
     have ge:=(OwnExitProducer.genE_counts_diff layout layout_widths cx cy).1
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).1
-    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnQ6Producer.genE layout cx cy))≤2155418
+    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnQ6Producer.genE layout cx cy))≤2155358
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1501195 := by
@@ -2279,10 +2279,10 @@ theorem accQ_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
     fun i hi => (acc_static L hw).2.1 i (accBMixQ_mem L i hi)⟩
 theorem accQ_item_prices (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
     (mixFoldsQT true (accAMixQ L)=3089 ∧ mixFoldsQM true (accAMixQ L)=3092) ∧
-    (mixFoldsQT false (accBMixQ L)=7049 ∧ mixFoldsQM false (accBMixQ L)=7056) ∧
+    (mixFoldsQT false (accBMixQ L)=6853 ∧ mixFoldsQM false (accBMixQ L)=6860) ∧
     (mixFoldsQT false (accCMix L)=2646 ∧ mixFoldsQM false (accCMix L)=2647) := by
   norm_num [mixFoldsQT,mixFoldsQM,mixNeg,accAMixQ,accBMixQ,accCMix,rot128F,negP,negRot,rotF,rotC,posTop,
-    accARaw,accBRaw,accCRaw,sortedItems,nafMinusOneItems,List.filter_cons,Acc.buildT,Acc.sbuildT,preW,termsB,
+    accARaw,accBRaw,accCRaw,sortedItems,nafMinusOneItems,List.filter_cons,Acc.buildT,Acc.sbuildTNN,Acc.HCase,Acc.hTerms,Acc.sbuildTN,Acc.sbuildT,Acc.WordCase,Acc.wordTerms,topSlice,List.drop_drop,preW,termsB,
     accPrice,accPriceQ,earlyHTerms,Acc.earlyTerm,Acc.EarlyH,Acc.earlyBuildT,Acc.baseBuildT,hw.core.product,hiReg]
   all_goals (try rw [if_neg (List.cons_ne_nil _ _)])
   all_goals norm_num
@@ -3061,7 +3061,7 @@ theorem accPrefixK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
 
 theorem accPrefixK_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
     (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (accPrefixK L ext control)=4*lowkcost2 128+2*lowkcost2 129+13554 ∧ measurementCount (accPrefixK L ext control)=4*lowkcost2 128+2*lowkcost2 129+13566 := by
+    toffoliCount (accPrefixK L ext control)=4*lowkcost2 128+2*lowkcost2 129+13358 ∧ measurementCount (accPrefixK L ext control)=4*lowkcost2 128+2*lowkcost2 129+13370 := by
   have st := acc_static L hw
   have stQ := accQ_static L hw
   have lo := L.core.low_length hw.core
@@ -3324,7 +3324,7 @@ def fastCandidate (L : ControlledPointLayout) : Program :=
   accPrefixK L.dialogStreamedSquareWide (kext L) L.core.generic
 
 theorem fastCandidate_counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (fastCandidate L)=4*lowkcost2 128+2*lowkcost2 129+13554 ∧ measurementCount (fastCandidate L)=4*lowkcost2 128+2*lowkcost2 129+13566 :=
+    toffoliCount (fastCandidate L)=4*lowkcost2 128+2*lowkcost2 129+13358 ∧ measurementCount (fastCandidate L)=4*lowkcost2 128+2*lowkcost2 129+13370 :=
   accPrefixK_counts L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw) (kext L)
     L.core.generic (by simp [kext,wireBlock_length])
 
@@ -3592,8 +3592,8 @@ open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPoint
 attribute [local irreducible] wires
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=4*lowkcost2 128+2*lowkcost2 129+13554 ∧
-    measurementCount (program L)=4*lowkcost2 128+2*lowkcost2 129+13566 := by
+    toffoliCount (program L)=4*lowkcost2 128+2*lowkcost2 129+13358 ∧
+    measurementCount (program L)=4*lowkcost2 128+2*lowkcost2 129+13370 := by
   have a:=renameProgram_counts (Square5Placement.blockPerm L 202) (OwnAll12Square.fastCandidate L)
   have b:=renameProgram_counts (OwnPlusSquare.swap L) (initial L)
   have c:=renameProgram_counts (OwnGuardSquare.swap L) (plus L)
@@ -3867,8 +3867,8 @@ theorem retired_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
   OwnAll12Placed.swap_target_free _ _ _ (OwnAll12Placed.free1537 L hw hn)
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=4*lowkcost2 128+2*lowkcost2 129+13554 ∧
-    measurementCount (program L)=4*lowkcost2 128+2*lowkcost2 129+13566 := by
+    toffoliCount (program L)=4*lowkcost2 128+2*lowkcost2 129+13358 ∧
+    measurementCount (program L)=4*lowkcost2 128+2*lowkcost2 129+13370 := by
   have e:=renameProgram_counts (swap L) (OwnAll12Placed.program L)
   have c:=OwnAll12Placed.counts L hw
   exact ⟨e.1.trans c.1,e.2.trans c.2⟩
@@ -4540,7 +4540,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       Edges.wrapper layout C cy (OwnAll12Producer.genE layout cx cy)
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2155162,1500940,1593,50000004⟩
+def bounds : Challenge.Bounds := ⟨2155102,1500940,1593,50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -4560,7 +4560,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155162 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155102 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
@@ -4571,7 +4571,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C)≤2155162 := by
     have ge:=(OwnExitProducer.genE_counts_diff layout layout_widths cx cy).1
     have gq:=(OwnQ6Producer.genE_counts_eq layout cx cy).1
     have ga:=(OwnAll12Producer.genE_counts_diff layout layout_widths cx cy).1
-    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnAll12Producer.genE layout cx cy))≤2155162
+    change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnAll12Producer.genE layout cx cy))≤2155102
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1500940 := by

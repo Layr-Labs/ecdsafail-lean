@@ -4715,7 +4715,9 @@ attribute [local irreducible] wires
 theorem raw_free : base 513 ∉ wires HalfField5.centerT ∧
     base 513 ∉ wires HalfField5.canonT := by
   have sup := HalfConvert.support HalfField.tgt (balancedSharedTargetConvert_widths base)
-  have out : base 513 ∉ HalfField.tgt.wires.toFinset := by decide +kernel
+  have out : base 513 ∉ HalfField.tgt.wires.toFinset := by
+    rw [List.mem_toFinset]
+    decide +kernel
   exact ⟨fun h => out (sup.1 h),fun h => out (sup.2 h)⟩
 
 theorem relocated_free : base 1541 ∉ wires HalfFieldOB5.centerT ∧
@@ -5498,7 +5500,7 @@ theorem raw_slots : Challenge.gateSlots Q6EndpointEntryRaw.kernel5≤20500006 :=
  omega
 
 /-- Exact counts use the new field body and protected integer budget, not a mutable old parent. -/
-theorem raw_counts : toffoliCount Q6EndpointEntryRaw.kernel5=1048904 ∧
+theorem raw_counts : toffoliCount Q6EndpointEntryRaw.kernel5=1048874 ∧
  measurementCount Q6EndpointEntryRaw.kernel5=720767 := by
  have cfg:=MappedCompressed.LaneA.laneLogical_config
  have narrow:=W.compactPasses5_old_counts base base_pool_nodup
@@ -5568,12 +5570,12 @@ theorem kernel5_slots_le : Challenge.gateSlots kernel5≤20500006 := by
 theorem kernel5S_slots_le : Challenge.gateSlots kernel5S≤20500006 :=
  selKernel5.sub.slots.trans kernel5_slots_le
 
-theorem kernel5_counts : toffoliCount kernel5=1048904 ∧ measurementCount kernel5=720767 := by
+theorem kernel5_counts : toffoliCount kernel5=1048874 ∧ measurementCount kernel5=720767 := by
  have h:=EndpointEntryResources.outer_counts Q6EndpointEntryRaw.hostField5
  rw [EndpointEntryQ5.old_shape] at h
  simpa only [kernel5,h.1,h.2] using EndpointEntryResources.raw_counts
 
-theorem kernel5S_counts : toffoliCount kernel5S=1047884 ∧ measurementCount kernel5S=720767 := by
+theorem kernel5S_counts : toffoliCount kernel5S=1047854 ∧ measurementCount kernel5S=720767 := by
  have c:=kernel5_counts
  have t:=selKernel5.tc
  have m:=selKernel5.mc
@@ -5588,7 +5590,7 @@ theorem arithEntryS_physical (L : ControlledPointLayout) (hw:L.Widths) (hn:L.wir
  · exact kernel5S_physical
 
 theorem arithEntryS_counts (L : ControlledPointLayout) :
- toffoliCount (arithEntryS L)=1047884 ∧ measurementCount (arithEntryS L)=720767 := by
+ toffoliCount (arithEntryS L)=1047854 ∧ measurementCount (arithEntryS L)=720767 := by
  simpa only [arithEntryS,(renameProgram_counts (wireFn2 L) kernel5S).1,
    (renameProgram_counts (wireFn2 L) kernel5S).2] using kernel5S_counts
 
@@ -5597,7 +5599,7 @@ theorem arithEntryS_gateSlots_le (L : ControlledPointLayout) :
  simpa only [arithEntryS,Baselines.rename_gateSlots] using kernel5S_slots_le
 
 theorem fusedDivisionF_counts (L : ControlledPointLayout) (hw:L.Widths) (k:Fp) :
- toffoliCount (fusedDivisionF L k)=1048650 ∧ measurementCount (fusedDivisionF L k)=721534 := by
+ toffoliCount (fusedDivisionF L k)=1048620 ∧ measurementCount (fusedDivisionF L k)=721534 := by
  have a:=EntryFuse.fusedY_counts L hw k
  have b:=arithEntryS_counts L
  simp only [fusedDivisionF,toffoliCount_append,measurementCount_append,a.1,a.2,b.1,b.2]
@@ -5740,10 +5742,10 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
 attribute [local irreducible] toffoliCount measurementCount
 -- The isolated endpoint foundation already has the optimization; make the
 -- normal-half count premise explicit, and close it in the final MainBasis.
-theorem division_counts (oldNormal : toffoliCount OwnEntryFuseQ5.kernel5=1049158 ∧
+theorem division_counts (oldNormal : toffoliCount OwnEntryFuseQ5.kernel5=1049128 ∧
  measurementCount OwnEntryFuseQ5.kernel5=720767)
  (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
- toffoliCount (OwnEntryFuseQ6.fusedDivisionF L k)=1048904 ∧
+ toffoliCount (OwnEntryFuseQ6.fusedDivisionF L k)=1048874 ∧
  measurementCount (OwnEntryFuseQ6.fusedDivisionF L k)=721534 := by
  have eq:=OwnEntryFuseQ6.kernel5_counts_eq
  have tc:=OwnEntryFuseQ6.selKernel5.tc
@@ -5795,7 +5797,7 @@ theorem division_slots (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
  omega
 
 theorem division_counts_diff (Dold : Program)
- (oldCounts : toffoliCount Dold=1048904 ∧ measurementCount Dold=721534)
+ (oldCounts : toffoliCount Dold=1048874 ∧ measurementCount Dold=721534)
  (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
  toffoliCount (OwnEndpointEntryQ6.fusedDivisionF L k)+254=toffoliCount Dold ∧
  measurementCount (OwnEndpointEntryQ6.fusedDivisionF L k)=measurementCount Dold := by
