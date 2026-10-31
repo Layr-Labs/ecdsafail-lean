@@ -1,3 +1,5 @@
+-- Complete fixed V142 Q1589 control-loan plus 675T leaves and BF fold source closure.
+-- Original file boundaries are sections; original comments and credits remain below.
 import ECDSAAdd.Arithmetic.BalancedCleanupCircuitViews
 import ECDSAAdd.Baselines.SlotSignedSquare
 import ECDSAAdd.Arithmetic.MappedSquarePhysical
@@ -5,7 +7,6 @@ import ECDSAAdd.Framework.RecordPadding
 import ECDSAAdd.Arithmetic.ExactBorrowErase
 import ECDSAAdd.Framework.WireRename
 import ECDSAAdd.Arithmetic.MappedSubtract
-import ECDSAAdd.Submission.Entrant.ShortKernel
 import ECDSAAdd.Arithmetic.BalancedTranscriptSupport
 import ECDSAAdd.Arithmetic.BalancedConvertPhysical
 import ECDSAAdd.Arithmetic.MappedArithmeticPhysical
@@ -99,6 +100,4364 @@ import ECDSAAdd.Arithmetic.FieldRenameKernels
 import ECDSAAdd.Framework.FiniteUnitary
 import ECDSAAdd.Arithmetic.PhysicalGateCheck
 import ECDSAAdd.Math.SkywalkTerminalLastControls
+
+
+-- ===== ECDSAAdd.Submission.Entrant.ShortKernel =====
+section
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedTranscriptSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedConvertPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedArithmeticPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.Rotate
+-- consolidated import: import ECDSAAdd.Arithmetic.EntryForwardSelectedPoolRestore
+-- consolidated import: import ECDSAAdd.Arithmetic.PenultimateMappedForward
+-- consolidated import: import ECDSAAdd.Arithmetic.PenultimateMappedInverse
+-- consolidated import: import ECDSAAdd.Arithmetic.PenultimateMappedResources
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedFieldPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.Registers
+-- consolidated import: import ECDSAAdd.Arithmetic.PhysicalSupportRename
+-- consolidated import: import ECDSAAdd.Framework.WireRenamePool
+-- consolidated import: import ECDSAAdd.Framework.GateInverse
+-- consolidated import: import ECDSAAdd.Baselines.SlotMapped
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedCompactSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedFieldFullEncoding
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedPlacementTransport
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedFieldWindowTransport
+-- consolidated import: import ECDSAAdd.Arithmetic.PairFrameUnique
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedCleanTransport
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseComposeFold
+-- consolidated import: import ECDSAAdd.Arithmetic.OffsetBorrowedFieldProof
+-- consolidated import: import ECDSAAdd.Arithmetic.OffsetBorrowedInverseProof
+-- consolidated import: import ECDSAAdd.Arithmetic.OffsetBorrowedCanonicalEnvironment
+-- consolidated import: import ECDSAAdd.Baselines.SkywalkCertificate
+-- consolidated import: import ECDSAAdd.Baselines.SlotField
+-- consolidated import: import ECDSAAdd.Arithmetic.EndpointSwapTrimProof
+-- consolidated import: import ECDSAAdd.Framework.RunThreeStates
+-- consolidated import: import ECDSAAdd.Framework.PacketSequenceFrame
+-- consolidated import: import ECDSAAdd.Arithmetic.EntrySelectedSwapFrame
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedSquare
+-- consolidated import: import ECDSAAdd.Arithmetic.SwapLow
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.TriangularSquareProof
+-- consolidated import: import ECDSAAdd.Baselines.SlotAlgebra
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedSquareProof
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedPhysical
+-- consolidated import: import ECDSAAdd.Baselines.SlotStreamedSquare
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedViews
+-- consolidated import: import Mathlib.Tactic
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedPointSquareCorrect
+-- consolidated import: import ECDSAAdd.Arithmetic.PointSquarePhysical
+-- consolidated import: import ECDSAAdd.Baselines.SkywalkSlots
+-- consolidated import: import Mathlib.Tactic.ReduceModChar
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredCanonicalMod
+-- consolidated import: import ECDSAAdd.Arithmetic.Compare
+-- consolidated import: import ECDSAAdd.Arithmetic.ComparePhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredGateSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedPointDialogSteps
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedPointDialogResources
+-- consolidated import: import ECDSAAdd.Arithmetic.SkywalkPointPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedFieldConvertProof
+-- consolidated import: import ECDSAAdd.Arithmetic.ConstantBorrow
+-- consolidated import: import ECDSAAdd.Arithmetic.TrailingZeroCompare
+-- consolidated import: import ECDSAAdd.Baselines.SlotBalanced
+-- consolidated import: import ECDSAAdd.Arithmetic.FieldRenameCells
+-- consolidated import: import ECDSAAdd.Arithmetic.NativeFirstDirectCallerStates
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedKernelPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedAllocationSites
+-- consolidated import: import ECDSAAdd.Challenge.Contract
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedPointArithmetic
+-- consolidated import: import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedCompactReverseProgram
+-- consolidated import: import ECDSAAdd.Arithmetic.NativeFirstDirectTailRestore
+-- consolidated import: import ECDSAAdd.Arithmetic.CompactWalkPhysical
+-- consolidated import: import ECDSAAdd.Baselines.SlotCodec
+-- consolidated import: import ECDSAAdd.Arithmetic.LiteralConstPhysical
+-- consolidated import: import ECDSAAdd.Math.SquareReduction
+-- consolidated import: import Mathlib.Tactic.Ring
+-- consolidated import: import Mathlib.Tactic.Linarith
+-- consolidated import: import ECDSAAdd.Framework.CleanWireRebind
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedCompactRestore
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedCompactStage
+-- consolidated import: import ECDSAAdd.Arithmetic.EntryForwardSelectedFieldSegment
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedTranscriptBoundary
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseTranscriptReplay
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedConversionNaturality
+-- consolidated import: import ECDSAAdd.Arithmetic.EntryInverseFirstGroupFrame
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedGroupsFrame
+-- consolidated import: import ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrimForward
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseTranscriptSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.ParametricPointDialogSteps
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedFieldCircuitProof
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedFieldSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseComposeProof
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseTranscriptKernelSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedTranscriptReplay
+-- consolidated import: import ECDSAAdd.Arithmetic.Constant
+-- consolidated import: import ECDSAAdd.Arithmetic.FieldRenameKernels
+-- consolidated import: import ECDSAAdd.Framework.FiniteUnitary
+-- consolidated import: import ECDSAAdd.Arithmetic.PhysicalGateCheck
+-- consolidated import: import ECDSAAdd.Math.SkywalkTerminalLastControls
+
+/-! Codec-independent biased/short kernel proof cache. Experimental extraction only; never a gate for the already frozen submission. Public source and model credits remain in the candidate note. -/
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+set_option exponentiation.threshold 1024
+
+section
+-- ===== BiasedProgram =====
+set_option maxRecDepth 16384
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+set_option exponentiation.threshold 512
+
+namespace ECDSAAdd.Entrant.BiasedCircuit
+open Arithmetic Arithmetic.BalancedField
+
+abbrev Layout := Arithmetic.BalancedCircuit.Layout
+
+def jh : Nat := 2^30+244
+
+def biasBits (L : Layout) : List MappedBit :=
+  (List.range 255).map (fun i => {wire:=some L.lower,flip:=jh.testBit i})++
+    [{wire:=some L.one,flip:=false}]
+
+def prepareFold (L : Layout) : Program :=
+  [.CX L.one L.lower,.CCX L.parity L.lower L.minus,.CX L.parity L.r0]
+
+def signView (L : Layout) : Program := [.CX L.parity L.one,.CX L.lower L.one]
+
+def fold (L : Layout) : Program :=
+  mappedAdd (biasBits L) L.r (L.carry.take 255) L.minus
+
+def releaseSelectors (L : Layout) : Program :=
+  [.CX L.parity L.lower,.CX L.rmsb L.lower,.CX L.rmsb L.one,
+    .measureX L.minus [] [.Z L.parity,.CZ L.parity L.rmsb]]
+
+def flipBias (L : Layout) : Program := [.X (L.rtail.getD 253 0)]
+
+def biasedPrefix (L : Layout) : Program :=
+  BalancedCircuit.seedViews L++(BalancedCircuit.rawAdd L++(prepareFold L++
+    (rotateRight (BalancedCircuit.rawTarget L)++(signView L++(fold L++
+      (releaseSelectors L++(BalancedCleanup.prepareSign L.toLayout++flipBias L)))))))
+
+def cleanupSuffix (L : Layout) : Program :=
+  BalancedCleanup.prepareCompare L.toLayout++
+    (compareLt none L.y L.r L.carry L.one L.parity++
+      ((BalancedCleanup.prepareCompare L.toLayout).reverse++
+        (BalancedCleanup.unnormalize L.toLayout++
+          ((BalancedCleanup.prepareSign L.toLayout).reverse++[.CX L.ymsb L.sourceGuard]))))
+
+def program (L : Layout) : Program := biasedPrefix L++cleanupSuffix L
+
+theorem counts (L : Layout) (hw : L.Widths) :
+    toffoliCount (program L)=1022 ∧ measurementCount (program L)=1022 := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have rw := BalancedCircuit.widths L hw
+  have ra := addInPlace_counts (BalancedCircuit.rawSource L) (BalancedCircuit.rawTarget L)
+    L.carry L.sign (by omega) (by omega)
+  have fa := mappedAdd_counts (biasBits L) L.r (L.carry.take 255) L.minus
+    (by simp [biasBits,w.2.1]) (by simp [List.length_take,hw.2.2,w.2.1])
+  have cm := signComplement_counts L.sign (BalancedCircuit.rawSource L)
+  have pc := signComplement_counts L.lower L.r
+  have ps := signComplement_counts L.sign L.y
+  have pl := signComplement_counts L.lower L.y
+  have un := literalConstAdd_counts L.low (L.carry.take 254) L.lower L.one
+    BalancedCleanup.positiveLiteral (by omega)
+  have co := compareLt_counts none L.y L.r L.carry L.one L.parity
+    (by omega) (by unfold BalancedCircuit.Layout.Widths BalancedCleanup.Layout.Widths at hw; omega)
+  simp only [program,biasedPrefix,cleanupSuffix,prepareFold,fold,signView,releaseSelectors,flipBias,
+    BalancedCircuit.seedViews,BalancedCircuit.rawAdd,BalancedCleanup.prepareSign,
+    BalancedCleanup.prepareCompare,BalancedCleanup.unnormalize,
+    toffoliCount_append,measurementCount_append,toffoliCount_reverse,measurementCount_reverse,
+    ra.1,ra.2,fa.1,fa.2,cm.1,cm.2,pc.1,pc.2,ps.1,ps.2,pl.1,pl.2,un.1,un.2,co.1,co.2,
+    (rotate_counts (BalancedCircuit.rawTarget L)).1,(rotate_counts (BalancedCircuit.rawTarget L)).2.1,
+    (rotate_counts L.r).2.2.1,(rotate_counts L.r).2.2.2]
+  norm_num [toffoliCount,measurementCount,w.1,w.2.1,rw.2.1]
+
+def virtualBias (N H : Bool) : Nat :=
+  (List.range 255).foldr (fun i acc => (jh.testBit i ^^ N).toNat+2*acc) H.toNat
+
+theorem virtualBias_value (N H : Bool) :
+    virtualBias N H=(if N then 2^255-1-jh else jh)+2^255*H.toNat := by
+  cases N <;> cases H <;> decide
+
+theorem biasBits_value (L : Layout) (s : BasisState) :
+    mappedValue (biasBits L) s=virtualBias (s L.lower) (s L.one) := by
+  have aux (is : List Nat) :
+      mappedValue (is.map (fun i => {wire:=some L.lower,flip:=jh.testBit i})++
+        [{wire:=some L.one,flip:=false}]) s=
+      is.foldr (fun i acc => (jh.testBit i ^^ s L.lower).toNat+2*acc) (s L.one).toNat := by
+    induction is with
+    | nil => simp [mappedValue,MappedBit.value]
+    | cons i is ih => simp [mappedValue,MappedBit.value,ih]
+  exact aux _
+
+def biasedValue (R : Int) : Int := if negative R then R-(jh : Int)-1 else R+jh
+
+theorem biased_bounds (R : Int) (hr : Centered R) :
+    -((2^255 : Nat) : Int)≤biasedValue R ∧ biasedValue R<((2^255 : Nat) : Int) ∧
+    (biasedValue R<0 ↔ R<0) := by
+  have hp := constants
+  unfold Centered at hr
+  by_cases hn : R<0 <;> simp [biasedValue,negative,hn,jh] <;> norm_num [q,ECDSAAdd.p] at hr ⊢ <;> omega
+
+theorem biased_magnitude (R : Int) (hr : Centered R) :
+    (if negative R then 2^256-1-encodeWord 256 (biasedValue R)
+      else encodeWord 256 (biasedValue R))=(|R|+(jh : Int)).toNat := by
+  have hp := constants
+  have ab : 0≤|R|+(jh : Int) ∧ |R|+(jh : Int)<((2^256 : Nat) : Int) := by
+    unfold Centered at hr
+    have ha : |R|≤q := abs_le.mpr hr
+    have ha0 := abs_nonneg R
+    norm_num [jh] at ⊢
+    omega
+  by_cases hn : R<0
+  · simp only [negative,hn,decide_true,if_true]
+    rw [BalancedCleanup.complement_encoded]
+    have eq : -biasedValue R-1=|R|+(jh : Int) := by
+      simp [biasedValue,negative,hn,abs_of_neg hn]; ring
+    rw [eq]
+    exact BalancedCleanup.encoded_nonnegative _ _ ab.1 ab.2
+  · simp only [negative,hn,decide_false,Bool.false_eq_true,if_false]
+    have eq : biasedValue R=|R|+(jh : Int) := by
+      simp [biasedValue,negative,hn,abs_of_nonneg (show 0≤R by omega)]
+    rw [eq]
+    exact BalancedCleanup.encoded_nonnegative _ _ ab.1 ab.2
+
+theorem fold_arithmetic (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) :
+    (encodeWord 257 T/2+virtualBias (decide (T<0)) (negative (halfResult T))+
+      (originalParity T && decide (T<0)).toNat)%2^256=
+      encodeWord 256 (biasedValue (halfResult T)) := by
+  have hr := (halfResult_spec T ht).1
+  have hb := biased_bounds (halfResult T) hr
+  have a := BalancedFold.encode_shift 257 T (by
+    norm_num [q,ECDSAAdd.p] at ht ⊢; omega)
+  have b := BalancedFold.encode_shift 256 (biasedValue (halfResult T)) (by
+    norm_num only [Nat.reducePow] at hb ⊢; omega)
+  have par := originalParity_value T
+  have half := (halfResult_spec T ht).2
+  have sig := halfResult_sign T ht
+  rw [virtualBias_value]
+  by_cases he : T%2=0 <;> by_cases hn : T<0
+  all_goals
+    simp [evenLift,he,show (0≤T)↔¬T<0 by omega,hn] at half
+    simp [negative,originalParity,he,hn] at sig
+    by_cases hnR : halfResult T<0 <;>
+      (try simp [hnR] at sig) <;>
+      simp [biasedValue,negative,originalParity,he,hn,hnR] at a b ⊢ <;>
+      norm_num [jh,q,ECDSAAdd.p] at a b ht par half ⊢ <;> omega
+
+
+theorem biasBits_sources (L : Layout) (w : Wire) (hw : w∈mappedWires (biasBits L)) :
+    w=L.lower ∨ w=L.one := by
+  obtain ⟨b,hb,hm⟩ := List.mem_flatMap.mp hw
+  rcases List.mem_append.mp hb with hb|hb
+  · obtain ⟨i,hi,he⟩ := List.mem_map.mp hb
+    subst b
+    left
+    simpa using hm
+  · have he : b={wire:=some L.one,flip:=false} := by simpa using hb
+    subst b
+    right
+    simpa using hm
+
+theorem biased_sign (L : Layout) (hw : L.Widths) (R : Int) (hr : Centered R)
+    (s : BasisState) (hs : regValue L.r s=encodeWord 256 (biasedValue R)) :
+    s L.rmsb=negative R := by
+  have hb := biased_bounds R hr
+  have dec := decode_encodeWord 256 (by omega : 0<256) (biasedValue R)
+    (by norm_num; exact ⟨hb.1,hb.2.1⟩)
+  have val : signedRegValue L.r s=biasedValue R := by
+    unfold signedRegValue
+    rw [(BalancedCleanup.widths L.toLayout hw).2.1,hs,dec]
+  have sign := BalancedCircuit.word_sign L.low L.rmsb s (biasedValue R) val
+  rw [sign]
+  exact decide_eq_decide.mpr hb.2.2
+
+theorem low_split (L : Layout) (hw : L.Widths) :
+    L.low.take 254++[L.rtail.getD 253 0]=L.low := by
+  have h : 254<L.low.length := by rw [(BalancedCleanup.widths L.toLayout hw).1]; omega
+  have e : L.low.take 254++[L.low.getD 254 0]=L.low.take 255 := by
+    conv_rhs => rw [List.take_add_one]
+    rw [List.getElem?_eq_getElem h,List.getD_eq_getElem _ _ h]
+    rfl
+  have d : L.low.getD 254 0=L.rtail.getD 253 0 := rfl
+  rw [d,List.take_of_length_le (show L.low.length≤255 by
+    rw [(BalancedCleanup.widths L.toLayout hw).1])] at e
+  exact e
+
+theorem flipBias_value (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (R : Int) (hr : Centered R) (s : State) (m : List Bool)
+    (hv : regValue L.r s.basis=(|R|+(jh : Int)).toNat) :
+    regValue L.r (run (flipBias L) m s).basis=encodeWord 255 (normalizedR R) := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have n0 : L.toLayout.wires.Nodup := (List.nodup_append'.mp hn).2.1
+  have dr := (List.nodup_append'.mp (L.toLayout.dataND n0)).1
+  have dl : L.low.Nodup := (List.nodup_append'.mp dr).1
+  have split := low_split L hw
+  have nsplit : (L.low.take 254++[L.rtail.getD 253 0]).Nodup := by rw [split]; exact dl
+  have len : (L.low.take 254).length=254 := by simp [List.length_take,w.1]
+  have v := BalancedCleanup.bias_value (L.low.take 254) (L.rtail.getD 253 0) nsplit s m
+  rw [split,len] at v
+  have hp := constants
+  have absb : |R|≤q := abs_le.mpr hr
+  have ab0 := abs_nonneg R
+  have m0 : 0≤|R|+(jh : Int) := by norm_num [jh]; omega
+  have m1 : |R|+(jh : Int)<((2^255 : Nat) : Int) := by
+    norm_num [q,ECDSAAdd.p,jh] at absb ⊢; omega
+  have cast := Int.toNat_of_nonneg m0
+  have msb := regValue_highBit L.low L.rmsb s.basis
+  rw [w.1] at msb
+  change s.basis L.rmsb=true ↔ 2^255≤regValue L.r s.basis at msb
+  have rm : s.basis L.rmsb=false := by
+    rw [hv] at msb
+    cases h : s.basis L.rmsb <;> simp_all <;> omega
+  have low : regValue L.low s.basis=(|R|+(jh : Int)).toNat := by
+    rw [BalancedCleanup.Layout.r,regValue_append] at hv
+    simpa [regValue,rm] using hv
+  rw [low] at v
+  have normalized : normalizedR R=|R|-h := by
+    by_cases hn : R<0
+    · simp [normalizedR,magnitude,signBit,negative,hn,abs_of_neg hn]; ring
+    · simp [normalizedR,magnitude,signBit,negative,hn,abs_of_nonneg (show 0≤R by omega)]
+  have rel : h+(jh : Int)=((2^254 : Nat) : Int) := by decide
+  have nr := normalizedR_bounds R hr
+  have en := BalancedFold.encode_shift 255 (normalizedR R) (by norm_num; omega)
+  have out := regValue_lt L.low (run (flipBias L) m s).basis
+  rw [w.1] at out
+  have fm : (run (flipBias L) m s).basis L.rmsb=false := by
+    have away : L.rtail.getD 253 0∈L.low := by
+      rw [←split]; simp
+    have ne : L.rmsb≠L.rtail.getD 253 0 := by
+      intro e
+      exact List.disjoint_left.mp (List.nodup_append'.mp dr).2.2 (e ▸ away) (by simp)
+    simp only [flipBias,run,writeBit,Function.update_of_ne ne,rm]
+  have full : regValue L.r (run (flipBias L) m s).basis=
+      regValue L.low (run (flipBias L) m s).basis := by
+    simp [BalancedCleanup.Layout.r,regValue_append,regValue,fm]
+  rw [full]
+  change (regValue L.low (run (flipBias L) m s).basis : Int)=_ at v
+  unfold signedDecode at v
+  rw [cast] at v
+  by_cases hm : (|R|+(jh : Int)).toNat<2^254 <;>
+    simp only [hm,if_true,if_false] at v <;>
+    norm_num only [Nat.cast_pow,Nat.cast_ofNat] at v en rel ⊢ <;>
+    omega
+
+
+theorem prepareFold_run (L : Layout) (hn : L.wires.Nodup) (P N : Bool)
+    (s : State) (m : List Bool) (hp : s.basis L.parity=P) (ho : s.basis L.one=N)
+    (hr : s.basis L.r0=P) (hl : s.basis L.lower=false) (hm : s.basis L.minus=false) :
+    run (prepareFold L) m s=⟨s.phase,
+      writeBit (writeBit (writeBit s.basis L.lower N) L.minus (P && N)) L.r0 false⟩ := by
+  have nd : [L.one,L.parity,L.r0,L.lower,L.minus].Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q; have h := List.nodup_iff_count.mp (BalancedCircuit.scalarND L hn) q
+    simp only [List.count_cons,List.count_nil] at h ⊢
+    omega
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have n01 : L.one≠L.parity := by tauto
+  have n10 := Ne.symm n01
+  have n02 : L.one≠L.r0 := by tauto
+  have n20 := Ne.symm n02
+  have n03 : L.one≠L.lower := by tauto
+  have n30 := Ne.symm n03
+  have n04 : L.one≠L.minus := by tauto
+  have n40 := Ne.symm n04
+  have n12 : L.parity≠L.r0 := by tauto
+  have n21 := Ne.symm n12
+  have n13 : L.parity≠L.lower := by tauto
+  have n31 := Ne.symm n13
+  have n14 : L.parity≠L.minus := by tauto
+  have n41 := Ne.symm n14
+  have n23 : L.r0≠L.lower := by tauto
+  have n32 := Ne.symm n23
+  have n24 : L.r0≠L.minus := by tauto
+  have n42 := Ne.symm n24
+  have n34 : L.lower≠L.minus := by tauto
+  have n43 := Ne.symm n34
+  cases P <;> cases N
+  all_goals
+    apply congrArg (State.mk s.phase)
+    funext q
+    by_cases hql : q=L.lower <;> by_cases hqm : q=L.minus <;> by_cases hqr : q=L.r0 <;>
+      simp_all [prepareFold,run,writeBit,Function.update]
+
+theorem signView_run (L : Layout) (hn : L.wires.Nodup) (P N : Bool)
+    (s : State) (m : List Bool) (hp : s.basis L.parity=P) (ho : s.basis L.one=false)
+    (hl : s.basis L.lower=N) :
+    run (signView L) m s=⟨s.phase,writeBit s.basis L.one (P ^^ N)⟩ := by
+  have nd : [L.one,L.parity,L.lower].Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q; have h := List.nodup_iff_count.mp (BalancedCircuit.scalarND L hn) q
+    simp only [List.count_cons,List.count_nil] at h ⊢
+    omega
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have n01 : L.one≠L.parity := by tauto
+  have n10 := Ne.symm n01
+  have n02 : L.one≠L.lower := by tauto
+  have n20 := Ne.symm n02
+  have n12 : L.parity≠L.lower := by tauto
+  have n21 := Ne.symm n12
+  cases P <;> cases N
+  all_goals
+    apply congrArg (State.mk s.phase)
+    funext q
+    by_cases hqo : q=L.one <;> simp_all [signView,run,writeBit,Function.update]
+
+theorem releaseSelectors_run (L : Layout) (hn : L.wires.Nodup) (P H : Bool)
+    (s : State) (m : List Bool) (hp : s.basis L.parity=P) (hh : s.basis L.rmsb=H)
+    (hl : s.basis L.lower=(H ^^ P)) (hm : s.basis L.minus=(P && !H))
+    (ho : s.basis L.one=H) :
+    run (releaseSelectors L) m s=⟨s.phase,
+      writeBit (writeBit (writeBit s.basis L.lower false) L.one false) L.minus false⟩ := by
+  have nd : [L.parity,L.rmsb,L.lower,L.one,L.minus].Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q; have h := List.nodup_iff_count.mp (BalancedCircuit.scalarND L hn) q
+    simp only [List.count_cons,List.count_nil] at h ⊢
+    omega
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have n01 : L.parity≠L.rmsb := by tauto
+  have n10 := Ne.symm n01
+  have n02 : L.parity≠L.lower := by tauto
+  have n20 := Ne.symm n02
+  have n03 : L.parity≠L.one := by tauto
+  have n30 := Ne.symm n03
+  have n04 : L.parity≠L.minus := by tauto
+  have n40 := Ne.symm n04
+  have n12 : L.rmsb≠L.lower := by tauto
+  have n21 := Ne.symm n12
+  have n13 : L.rmsb≠L.one := by tauto
+  have n31 := Ne.symm n13
+  have n14 : L.rmsb≠L.minus := by tauto
+  have n41 := Ne.symm n14
+  have n23 : L.lower≠L.one := by tauto
+  have n32 := Ne.symm n23
+  have n24 : L.lower≠L.minus := by tauto
+  have n42 := Ne.symm n24
+  have n34 : L.one≠L.minus := by tauto
+  have n43 := Ne.symm n34
+  cases P <;> cases H <;> cases hr : m.headD false
+  all_goals
+    apply State.extensionality
+    · simp_all [releaseSelectors,run,measureAndCorrect,correct,writeBit,Function.update]
+    · funext q
+      by_cases hql : q=L.lower <;> by_cases hqm : q=L.minus <;> by_cases hqo : q=L.one <;>
+        simp_all [releaseSelectors,run,measureAndCorrect,correct,writeBit,Function.update]
+
+theorem prepareSign_biased (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (R : Int) (hr : Centered R) (s : State) (m : List Bool)
+    (hv : regValue L.r s.basis=encodeWord 256 (biasedValue R)) (hl : s.basis L.lower=false) :
+    let t := run (BalancedCleanup.prepareSign L.toLayout) m s
+    t.phase=s.phase ∧ regValue L.r t.basis=(|R|+(jh : Int)).toNat ∧
+    t.basis L.lower=negative R ∧
+    (∀q,q∉L.r → q≠L.lower → t.basis q=s.basis q) := by
+  let c : State := ⟨s.phase,writeBit s.basis L.lower (negative R)⟩
+  have la : L.lower∉L.r := fun h => BalancedCircuit.flagAway L hn L.lower (by simp) (by simp [h])
+  have n0 : L.toLayout.wires.Nodup := (List.nodup_append'.mp hn).2.1
+  have dr := (List.nodup_append'.mp (L.toLayout.dataND n0)).1
+  have sign := biased_sign L hw R hr s.basis hv
+  have first (ms : List Bool) : run [.CX L.rmsb L.lower] ms s=c := by
+    simp [run,c,writeBit,hl,sign]
+  have body := signComplement_correct L.lower L.r dr la c m
+  have before : regValue L.r c.basis=encodeWord 256 (biasedValue R) := by
+    exact (regValue_congr _ _ _ (fun q hq => by
+      simp [c,writeBit,show q≠L.lower from fun e => la (e ▸ hq)])).trans hv
+  simp only [BalancedCleanup.prepareSign,run_append,run_take,measurementCount,List.drop_zero,first]
+  refine ⟨body.1,?_,?_,?_⟩
+  · rw [body.2.2,before,show c.basis L.lower=negative R by simp [c,writeBit],
+      (BalancedCleanup.widths L.toLayout hw).2.1,biased_magnitude R hr]
+  · exact (body.2.1 L.lower la).trans (by simp [c,writeBit])
+  · intro q hq hn
+    exact (body.2.1 q hq).trans (by simp [c,writeBit,hn])
+
+
+theorem no_measurement_phase (p : Program) (hm : measurementCount p=0) (s : State) (m : List Bool) :
+    (run p m s).phase=s.phase := by
+  induction p generalizing s m with
+  | nil => rfl
+  | cons i p ih => cases i <;> simp_all [measurementCount,run]
+
+
+
+end ECDSAAdd.Entrant.BiasedCircuit
+
+#print axioms ECDSAAdd.Entrant.BiasedCircuit.counts
+#print axioms ECDSAAdd.Entrant.BiasedCircuit.fold_arithmetic
+
+end
+
+section
+-- ===== BiasedPrefix =====
+set_option maxRecDepth 16384
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+set_option exponentiation.threshold 512
+
+namespace ECDSAAdd.Entrant.BiasedCircuit
+open Arithmetic Arithmetic.BalancedField
+
+structure PrefixPost (L : Layout) (R : Int) (P : Bool) (s t : State) : Prop where
+  phase : t.phase=s.phase
+  value : regValue L.r t.basis=encodeWord 255 (normalizedR R)
+  lower : t.basis L.lower=negative R
+  parity : t.basis L.parity=P
+  guard : t.basis L.sourceGuard=s.basis L.ymsb
+  frame : ∀q,q∉L.r → q≠L.lower → q≠L.parity → q≠L.sourceGuard → t.basis q=s.basis q
+
+def referencePrefix (L : Layout) : Program :=
+  BalancedCircuit.coreProgram L++
+    (BalancedCleanup.prepareSign L.toLayout++BalancedCleanup.normalize L.toLayout)
+
+theorem referencePost (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (X Y : Int) (hx : Centered X) (hy : Centered Y)
+    (s : State) (m : List Bool) (hs : s.basis L.sign=B)
+    (hr : signedRegValue L.r s.basis=X) (hyr : signedRegValue L.y s.basis=Y)
+    (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
+    PrefixPost L (halfResult (rawSum B X Y)) (originalParity (rawSum B X Y)) s
+      (run (referencePrefix L) m s) := by
+  let R := halfResult (rawSum B X Y)
+  let ms := m.drop (measurementCount (BalancedCircuit.coreProgram L))
+  generalize ec : run (BalancedCircuit.coreProgram L) m s=c
+  generalize ed : run (BalancedCleanup.prepareSign L.toLayout) ms c=d
+  generalize ee : run (BalancedCleanup.normalize L.toLayout) ms d=e
+  have core := BalancedCircuit.core_correct L hw hn B X Y hx hy s m hs hr hyr hc
+  rw [ec] at core
+  have n0 : L.toLayout.wires.Nodup := (List.nodup_append'.mp hn).2.1
+  have cen : Centered R := (halfResult_spec _ (rawSum_bounds B X Y hx hy)).1
+  have prep := BalancedCleanup.prepareSign_value L.toLayout hw n0 R cen c ms
+    core.2.1 (core.2.2.2.2.1 _ (by simp [BalancedCircuit.coreClean]))
+  rw [ed] at prep
+  have away (q : Wire)
+      (hq : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.one]++L.y++L.carry) :
+      q∉L.r ∧ q≠L.lower := by
+    have rd : (L.r++([L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.one]++L.y++L.carry)).Nodup := by
+      apply List.nodup_iff_count.mpr
+      intro w
+      have c := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) w
+      simp only [List.count_append,List.count_cons,List.count_nil] at c ⊢
+      omega
+    have ld : (L.lower::([L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.one]++L.y++L.carry)).Nodup := by
+      apply List.nodup_iff_count.mpr
+      intro w
+      have c := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) w
+      simp only [List.count_append,List.count_cons,List.count_nil] at c ⊢
+      omega
+    exact ⟨fun h => List.disjoint_left.mp (List.nodup_append'.mp rd).2.2 h hq,
+      fun e => (List.nodup_cons.mp ld).1 (e ▸ hq)⟩
+  have one : d.basis L.one=false :=
+    (prep.2.2 _ (away _ (by simp)).1 (away _ (by simp)).2).trans
+      (core.2.2.2.2.1 _ (by simp [BalancedCircuit.coreClean]))
+  have clean : ∀q∈L.carry,d.basis q=false := by
+    intro q hq
+    exact (prep.2.2 _ (away _ (by simp [hq])).1 (away _ (by simp [hq])).2).trans
+      (core.2.2.2.2.1 _ (by simp [BalancedCircuit.coreClean,hq]))
+  have rm0 : d.basis L.rmsb=false := by
+    have bit := regValue_highBit L.low L.rmsb d.basis
+    rw [(BalancedCleanup.widths L.toLayout hw).1] at bit
+    change d.basis L.rmsb=true ↔ 2^255≤regValue L.r d.basis at bit
+    rw [prep.1] at bit
+    have mag := magnitude_bounds R cen
+    have hp := constants
+    have cast := Int.toNat_of_nonneg mag.1
+    cases h : d.basis L.rmsb <;> simp_all <;> omega
+  have lo : regValue L.low d.basis=(magnitude R).toNat := by
+    have v := prep.1
+    rw [BalancedCleanup.Layout.r,regValue_append] at v
+    simpa [regValue,rm0] using v
+  have norm := BalancedCleanup.normalize_value L.toLayout hw n0 R cen d ms lo prep.2.1 one clean
+  rw [ee] at norm
+  have ef (q : Wire) (hq : q∉L.r) (hl : q≠L.lower) : e.basis q=c.basis q :=
+    (norm.2.2 q (fun h => hq (by simp [BalancedCleanup.Layout.r,h]))).trans (prep.2.2 q hq hl)
+  have nd := BalancedCircuit.scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have val : regValue L.r e.basis=encodeWord 255 (normalizedR R) := by
+    rw [BalancedCleanup.Layout.r,regValue_append,norm.2.1]
+    have outside : L.rmsb∉L.low := by
+      exact fun h => List.disjoint_left.mp (List.nodup_append'.mp
+        (List.nodup_append'.mp (L.toLayout.dataND n0)).1).2.2 h (by simp)
+    simp [regValue,norm.2.2 _ outside,rm0]
+  have mc : measurementCount (BalancedCleanup.prepareSign L.toLayout)=0 := by
+    simp [BalancedCleanup.prepareSign,measurementCount_append,measurementCount,
+      (signComplement_counts L.lower L.r).2]
+  have phaseD : d.phase=c.phase := by
+    rw [←ed]
+    exact no_measurement_phase _ mc _ _
+  have actual : run (referencePrefix L) m s=e := by
+    rw [referencePrefix,run_append,run_take,ec]
+    rw [run_append,run_take,mc,List.drop_zero,ed,ee]
+  rw [actual]
+  refine ⟨norm.1.trans (phaseD.trans core.1),val,?_,?_,?_,?_⟩
+  · exact (norm.2.2 L.lower (fun h => L.toLayout.flagAway n0 L.lower (by simp)
+      (by simp [BalancedCleanup.Layout.r,h]))).trans prep.2.1
+  · exact (ef _ (away _ (by simp)).1 (away _ (by simp)).2).trans core.2.2.1
+  · exact (ef _ (away _ (by simp)).1 (away _ (by simp)).2).trans core.2.2.2.1
+  · intro q hqr hql hqp hqg
+    exact (ef q hqr hql).trans (core.2.2.2.2.2 q hqr hqp hqg)
+
+
+theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) (v w a b z t d e : State)
+    (m1 m2 m3 m4 m5 m6 m7 : List Bool)
+    (hv : regValue (BalancedCircuit.rawTarget L) v.basis=encodeWord 257 T)
+    (hp : v.basis L.parity=originalParity T) (ho : v.basis L.one=decide (T<0))
+    (h0 : v.basis L.r0=originalParity T) (hl : v.basis L.lower=false)
+    (hm : v.basis L.minus=false) (hc : ∀q∈L.carry,v.basis q=false)
+    (ew : run (prepareFold L) m1 v=w)
+    (ea : run (rotateRight (BalancedCircuit.rawTarget L)) m2 w=a)
+    (eb : run (signView L) m3 a=b) (ez : run (fold L) m4 b=z)
+    (et : run (releaseSelectors L) m5 z=t)
+    (ed : run (BalancedCleanup.prepareSign L.toLayout) m6 t=d)
+    (ee : run (flipBias L) m7 d=e) :
+    e.phase=v.phase ∧ regValue L.r e.basis=encodeWord 255 (normalizedR (halfResult T)) ∧
+    e.basis L.lower=negative (halfResult T) ∧ e.basis L.one=false ∧ e.basis L.minus=false ∧
+    (∀q,q∉BalancedCircuit.rawTarget L → q≠L.lower → q≠L.minus → e.basis q=v.basis q) := by
+  let P := originalParity T
+  let N := decide (T<0)
+  let R := halfResult T
+  let H := negative R
+  have rc : Centered R := (halfResult_spec T ht).1
+  have nd := BalancedCircuit.scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have away (f : Wire)
+      (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower]) :
+      f∉BalancedCircuit.rawTarget L := BalancedCircuit.compose_not_raw L hn f hf
+  have dataflag (q : Wire) (hq : q∈L.r++L.carry) (f : Wire)
+      (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one]) : q≠f :=
+    by
+      intro eq
+      have hd : f∈L.r++L.carry := eq ▸ hq
+      exact BalancedCircuit.flagAway L hn f hf (by
+        rcases List.mem_append.mp hd with hr|hc
+        · exact List.mem_append_left _ (List.mem_append_left _ hr)
+        · exact List.mem_append_right _ hc)
+  have wp := prepareFold_run L hn P N v m1 hp ho h0 hl hm
+  rw [ew] at wp
+  have wf (q : Wire) (ql : q≠L.lower) (qm : q≠L.minus) (q0 : q≠L.r0) :
+      w.basis q=v.basis q := by rw [wp]; simp only [writeBit,
+        Function.update_of_ne ql,Function.update_of_ne qm,Function.update_of_ne q0]
+  have w0 : w.basis L.r0=false := by rw [wp]; simp [writeBit]
+  have wl : w.basis L.lower=N := by rw [wp]; simp only [writeBit,
+    Function.update_of_ne (show L.lower≠L.r0 by clear * - nd; tauto),
+    Function.update_of_ne (show L.lower≠L.minus by clear * - nd; tauto),Function.update_self]
+  have wm : w.basis L.minus=(P && N) := by rw [wp]; simp only [writeBit,
+    Function.update_of_ne (show L.minus≠L.r0 by clear * - nd; tauto),Function.update_self]
+  have shape : BalancedCircuit.rawTarget L=L.r0::BalancedCircuit.foldTarget L := by
+    simp [BalancedCircuit.rawTarget,BalancedCircuit.foldTarget,
+      BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.append_assoc]
+  have wr : regValue (BalancedCircuit.rawTarget L) w.basis=
+      2*regValue (BalancedCircuit.foldTarget L) v.basis := by
+    rw [shape]
+    change (if w.basis L.r0 then 1 else 0)+2*regValue (BalancedCircuit.foldTarget L) w.basis=_
+    rw [w0]
+    simp only [Bool.false_eq_true,if_false,zero_add]
+    congr 1
+    apply regValue_congr
+    intro q hq
+    have qr : q∈BalancedCircuit.rawTarget L := by rw [shape]; simp [hq]
+    have nq : q≠L.r0 := fun e => BalancedCircuit.compose_not_fold_r0 L hn (e ▸ hq)
+    exact wf q (fun e => away L.lower (by simp) (e ▸ qr))
+      (fun e => away L.minus (by simp) (e ▸ qr)) nq
+  have rawv : regValue (BalancedCircuit.foldTarget L) v.basis=encodeWord 257 T/2 := by
+    rw [shape] at hv
+    change (if v.basis L.r0 then 1 else 0)+2*regValue (BalancedCircuit.foldTarget L) v.basis=_ at hv
+    rw [h0] at hv
+    cases hp0 : originalParity T <;> simp [hp0] at hv <;> omega
+  rw [rawv] at wr
+  have rot := rotateRight_spec (BalancedCircuit.rawTarget L) (BalancedCircuit.rawTargetND L hn)
+    (2*(encodeWord 257 T/2)) (by omega) w m2 wr
+  rw [ea] at rot
+  have av : regValue (BalancedCircuit.rawTarget L) a.basis=encodeWord 257 T/2 := by
+    have val := rot.2
+    change regValue (BalancedCircuit.rawTarget L) a.basis=2*(encodeWord 257 T/2)/2 at val
+    omega
+  have af (q : Wire) (hq : q∉BalancedCircuit.rawTarget L) : a.basis q=w.basis q := by
+    simpa only [ea] using (rotate_frame (BalancedCircuit.rawTarget L) w m2).2.1 q hq
+  have ao : a.basis L.one=false := by
+    have bit := regValue_highBit L.r L.one a.basis
+    rw [(BalancedCleanup.widths L.toLayout hw).2.1] at bit
+    change a.basis L.one=true ↔ 2^256≤regValue (BalancedCircuit.rawTarget L) a.basis at bit
+    rw [av] at bit
+    have bound := encodeWord_bound 257 T
+    norm_num at bound bit
+    cases ba : a.basis L.one <;> simp_all <;> omega
+  have ar : regValue L.r a.basis=encodeWord 257 T/2 := by
+    rw [BalancedCircuit.rawTarget,regValue_append] at av
+    simpa [regValue,ao] using av
+  have ap : a.basis L.parity=P :=
+    (af _ (away _ (by simp))).trans ((wf _ (by clear * - nd; tauto) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans hp)
+  have al : a.basis L.lower=N := (af _ (away _ (by simp))).trans wl
+  have bp := signView_run L hn P N a m3 ap ao al
+  rw [eb] at bp
+  have bf (q : Wire) (hq : q≠L.one) : b.basis q=a.basis q := by
+    rw [bp]; simp only [writeBit,Function.update_of_ne hq]
+  have bo : b.basis L.one=H := by
+    rw [bp]
+    simp only [writeBit,Function.update_self]
+    have sg := halfResult_sign T ht
+    change (P ^^ N)=negative (halfResult T)
+    rw [show negative (halfResult T)= (N ^^ P) from sg]
+    exact Bool.xor_comm _ _
+  have bl : b.basis L.lower=N := (bf _ (by clear * - nd; tauto)).trans al
+  have bpar : b.basis L.parity=P := (bf _ (by clear * - nd; tauto)).trans ap
+  have bm : b.basis L.minus=(P && N) :=
+    (bf _ (by clear * - nd; tauto)).trans ((af _ (away _ (by simp))).trans wm)
+  have br : regValue L.r b.basis=encodeWord 257 T/2 :=
+    (regValue_congr _ _ _ (fun q hq => bf q (dataflag q (by simp [hq]) _ (by simp)))).trans ar
+  have bc : ∀q∈L.carry,b.basis q=false := by
+    intro q hq
+    have ql := dataflag q (by simp [hq]) L.lower (by simp)
+    have qm := dataflag q (by simp [hq]) L.minus (by simp)
+    have qo := dataflag q (by simp [hq]) L.one (by simp)
+    have q0 : q≠L.r0 := by
+      intro eq
+      have raw := BalancedCircuit.compose_raw_away L hn q (by simp [hq])
+      exact raw (by simp [BalancedCircuit.rawTarget,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,eq])
+    exact (bf q qo).trans ((af q (BalancedCircuit.compose_raw_away L hn q (by simp [hq]))).trans
+      ((wf q ql qm q0).trans (hc q hq)))
+  have fd : (L.minus::(L.r++L.carry.take 255)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have count := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 255 L.carry).count_le q
+    simp only [List.count_append,List.count_cons,List.count_nil] at count ⊢
+    omega
+  have fs : ∀q∈mappedWires (biasBits L),q∉L.minus::(L.r++L.carry.take 255) := by
+    intro q hq hmem
+    have src := biasBits_sources L q hq
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> (clear * - nd; tauto)
+    simp only [List.mem_cons,List.mem_append] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have add := mappedAdd_correct (biasBits L) L.r (L.carry.take 255) L.minus fd fs
+    (by simp [biasBits,(BalancedCleanup.widths L.toLayout hw).2.1])
+    (by simp [List.length_take,hw.2.2,(BalancedCleanup.widths L.toLayout hw).2.1])
+    b m4 (fun q hq => bc q (List.mem_of_mem_take hq))
+  simp only [show mappedAdd (biasBits L) L.r (L.carry.take 255) L.minus=fold L from rfl,ez] at add
+  have zv : regValue L.r z.basis=encodeWord 256 (biasedValue R) := by
+    rw [add.2.2,biasBits_value,br,bl,bo,bm,(BalancedCleanup.widths L.toLayout hw).2.1]
+    simpa only [Nat.add_comm] using fold_arithmetic T ht
+  have zr : z.basis L.rmsb=H := biased_sign L hw R rc z.basis zv
+  have zp : z.basis L.parity=P :=
+    (add.2.1 _ (fun h => away L.parity (by simp) (by simp [BalancedCircuit.rawTarget,h]))).trans bpar
+  have zl : z.basis L.lower=(H ^^ P) := by
+    rw [add.2.1 _ (fun h => away L.lower (by simp) (by simp [BalancedCircuit.rawTarget,h])),bl]
+    have sg := halfResult_sign T ht
+    change N=(negative (halfResult T) ^^ P)
+    rw [show negative (halfResult T)= (N ^^ P) from sg]
+    cases N <;> cases P <;> rfl
+  have zm : z.basis L.minus=(P && !H) := by
+    rw [add.2.1 _ (fun h => away L.minus (by simp) (by simp [BalancedCircuit.rawTarget,h])),bm]
+    have sg := halfResult_sign T ht
+    change (P && N)=(P && !negative (halfResult T))
+    rw [show negative (halfResult T)= (N ^^ P) from sg]
+    cases N <;> cases P <;> rfl
+  have zo : z.basis L.one=H := (add.2.1 _ (fun h =>
+    BalancedCircuit.flagAway L hn L.one (by simp) (by simp [h]))).trans bo
+  have rel := releaseSelectors_run L hn P H z m5 zp zr zl zm zo
+  rw [et] at rel
+  have tf (q : Wire) (ql : q≠L.lower) (qo : q≠L.one) (qm : q≠L.minus) : t.basis q=z.basis q := by
+    rw [rel]
+    simp only [writeBit,Function.update_of_ne ql,Function.update_of_ne qo,Function.update_of_ne qm]
+  have tl : t.basis L.lower=false := by rw [rel]; simp only [writeBit,
+    Function.update_of_ne (show L.lower≠L.minus by clear * - nd; tauto),
+    Function.update_of_ne (show L.lower≠L.one by clear * - nd; tauto),Function.update_self]
+  have cleanOne : t.basis L.one=false := by rw [rel]; simp only [writeBit,
+    Function.update_of_ne (show L.one≠L.minus by clear * - nd; tauto),Function.update_self]
+  have tm : t.basis L.minus=false := by rw [rel]; simp [writeBit]
+  have tv : regValue L.r t.basis=encodeWord 256 (biasedValue R) := by
+    apply Eq.trans _ zv
+    apply regValue_congr
+    intro q hq
+    exact tf q (dataflag q (by simp [hq]) _ (by simp))
+      (dataflag q (by simp [hq]) _ (by simp)) (dataflag q (by simp [hq]) _ (by simp))
+  have ps := prepareSign_biased L hw hn R rc t m6 tv tl
+  rw [ed] at ps
+  have fl := flipBias_value L hw hn R rc d m7 ps.2.1
+  rw [ee] at fl
+  have ef (q : Wire) (hq : q∉L.r) : e.basis q=d.basis q := by
+    rw [←ee]
+    have mem : L.rtail.getD 253 0∈L.r := by
+      have sp := low_split L hw
+      have ml : L.rtail.getD 253 0∈L.low := by rw [←sp]; simp
+      exact List.mem_append_left _ ml
+    simp only [flipBias,run,writeBit,Function.update_of_ne (show q≠L.rtail.getD 253 0 from fun e => hq (e ▸ mem))]
+  have toR (f : Wire) (hf : f∈[L.one,L.minus,L.lower]) : f∉L.r := by
+    intro h
+    exact BalancedCircuit.flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl <;> simp) (by simp [h])
+  have phase : e.phase=v.phase := by
+    have ephase : e.phase=d.phase := by rw [←ee]; rfl
+    have tphase : t.phase=z.phase := by rw [rel]
+    have bphase : b.phase=a.phase := by rw [bp]
+    have wphase : w.phase=v.phase := by rw [wp]
+    exact ephase.trans (ps.1.trans (tphase.trans
+      (add.1.trans (bphase.trans (rot.1.trans wphase)))))
+  refine ⟨phase,fl,?_,?_,?_,?_⟩
+  · exact (ef _ (toR _ (by simp))).trans ps.2.2.1
+  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by clear * - nd; tauto)).trans cleanOne)
+  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by clear * - nd; tauto)).trans tm)
+  · intro q hqr hql hqm
+    have qo : q≠L.one := fun eq => hqr (by simp [BalancedCircuit.rawTarget,eq])
+    have qr : q∉L.r := fun h => hqr (by simp [BalancedCircuit.rawTarget,h])
+    have q0 : q≠L.r0 := fun eq => hqr (by simp [BalancedCircuit.rawTarget,
+      BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,eq])
+    exact (ef q qr).trans ((ps.2.2.2 q qr hql).trans ((tf q hql qo hqm).trans
+      ((add.2.1 q qr).trans ((bf q qo).trans ((af q hqr).trans (wf q hql hqm q0))))))
+
+
+def remainder (L : Layout) : Program :=
+  prepareFold L++(rotateRight (BalancedCircuit.rawTarget L)++(signView L++(fold L++
+    (releaseSelectors L++(BalancedCleanup.prepareSign L.toLayout++flipBias L)))))
+
+theorem remainder_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) (v : State) (m : List Bool)
+    (hv : regValue (BalancedCircuit.rawTarget L) v.basis=encodeWord 257 T)
+    (hp : v.basis L.parity=originalParity T) (ho : v.basis L.one=decide (T<0))
+    (h0 : v.basis L.r0=originalParity T) (hl : v.basis L.lower=false)
+    (hm : v.basis L.minus=false) (hc : ∀q∈L.carry,v.basis q=false) :
+    let e := run (remainder L) m v
+    e.phase=v.phase ∧ regValue L.r e.basis=encodeWord 255 (normalizedR (halfResult T)) ∧
+    e.basis L.lower=negative (halfResult T) ∧ e.basis L.one=false ∧ e.basis L.minus=false ∧
+    (∀q,q∉BalancedCircuit.rawTarget L → q≠L.lower → q≠L.minus → e.basis q=v.basis q) := by
+  let P : State → State → Prop := fun v e =>
+    regValue (BalancedCircuit.rawTarget L) v.basis=encodeWord 257 T →
+    v.basis L.parity=originalParity T → v.basis L.one=decide (T<0) →
+    v.basis L.r0=originalParity T → v.basis L.lower=false → v.basis L.minus=false →
+    (∀q∈L.carry,v.basis q=false) →
+    e.phase=v.phase ∧ regValue L.r e.basis=encodeWord 255 (normalizedR (halfResult T)) ∧
+    e.basis L.lower=negative (halfResult T) ∧ e.basis L.one=false ∧ e.basis L.minus=false ∧
+    (∀q,q∉BalancedCircuit.rawTarget L → q≠L.lower → q≠L.minus → e.basis q=v.basis q)
+  have run7 := skywalkRunSeven (prepareFold L) (rotateRight (BalancedCircuit.rawTarget L))
+    (signView L) (fold L) (releaseSelectors L) (BalancedCleanup.prepareSign L.toLayout) (flipBias L) P
+    (by
+      intro v w a b z t d e m1 m2 m3 m4 m5 m6 m7 ew ea eb ez et ed ee hv hp ho h0 hl hm hc
+      exact foldStates L hw hn T ht v w a b z t d e m1 m2 m3 m4 m5 m6 m7
+        hv hp ho h0 hl hm hc ew ea eb ez et ed ee) v m
+  exact run7 hv hp ho h0 hl hm hc
+
+theorem prefixPost (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (X Y : Int) (hx : Centered X) (hy : Centered Y)
+    (s : State) (m : List Bool) (hs : s.basis L.sign=B)
+    (hr : signedRegValue L.r s.basis=X) (hyr : signedRegValue L.y s.basis=Y)
+    (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
+    PrefixPost L (halfResult (rawSum B X Y)) (originalParity (rawSum B X Y)) s
+      (run (biasedPrefix L) m s) := by
+  let T := rawSum B X Y
+  let ms := m.drop (measurementCount (BalancedCircuit.rawAdd L))
+  generalize eu : run (BalancedCircuit.seedViews L) m s=u
+  generalize ev : run (BalancedCircuit.rawAdd L) m u=v
+  generalize et : run (remainder L) ms v=t
+  have seed := BalancedCircuit.compose_seed_frame L hw hn s m hc
+  rw [eu] at seed
+  have sv := BalancedCircuit.seed_raw_signed L hw hn B X Y hx hy s m hs hr hyr hc
+  simp only [run_append] at sv
+  simp only [run_take] at sv
+  simp only [show measurementCount (BalancedCircuit.seedViews L)=0 from rfl,List.drop_zero] at sv
+  rw [eu,ev] at sv
+  have cu := (BalancedCircuit.seed_signed L hw hn X Y s m hr hyr hc).2.2
+  rw [eu] at cu
+  have rf (q : Wire) (hq : q∉BalancedCircuit.rawTarget L) : v.basis q=u.basis q := by
+    simpa only [ev] using BalancedCircuit.rawAdd_frame L hw hn u m cu q hq
+  have away (q : Wire)
+      (hq : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower]++L.y++L.carry) :
+      q∉BalancedCircuit.rawTarget L := BalancedCircuit.compose_raw_away L hn q hq
+  have vp : v.basis L.parity=originalParity T := by
+    exact (rf _ (away _ (by simp))).trans (by simpa only [eu] using BalancedCircuit.seed_parity L hw hn B X Y s m hr hyr hc)
+  have vo : v.basis L.one=decide (T<0) :=
+    BalancedCircuit.word_sign L.r L.one v.basis T sv.2.1
+  have vr : v.basis L.r0=originalParity T := by
+    apply BalancedCircuit.word_parity L.r0 (L.rtail++[L.rmsb,L.one]) v.basis T
+    simpa [BalancedCircuit.rawTarget,BalancedCleanup.Layout.r,
+      BalancedCleanup.Layout.low,List.append_assoc] using sv.2.1
+  have vz (q : Wire) (hq : q∈[L.cout,L.minus,L.plus,L.lower]++L.carry) : v.basis q=false := by
+    have cv := BalancedCircuit.compose_clean_views L hn q hq
+    have qo : q≠L.one := fun e => cv.1 (e ▸ (by simp [BalancedCircuit.rawTarget]))
+    exact (rf q cv.1).trans ((seed.2.2 q cv.2.1 qo cv.2.2.1).trans (hc q cv.2.2.2))
+  have vw := BalancedCircuit.word_encoding (BalancedCircuit.rawTarget L) 257
+    (BalancedCircuit.widths L hw).2.1 v.basis T sv.2.1
+  have rem := remainder_correct L hw hn T (rawSum_bounds B X Y hx hy) v ms vw vp vo vr
+    (vz _ (by simp)) (vz _ (by simp)) (fun q hq => vz q (by simp [hq]))
+  rw [et] at rem
+  have nd := BalancedCircuit.scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have actual : run (biasedPrefix L) m s=t := by
+    change run (BalancedCircuit.seedViews L++(BalancedCircuit.rawAdd L++remainder L)) m s=t
+    rw [run_append,run_take,show measurementCount (BalancedCircuit.seedViews L)=0 from rfl,
+      List.drop_zero,eu,run_append,run_take,ev,et]
+  rw [actual]
+  refine ⟨rem.1.trans sv.1,rem.2.1,rem.2.2.1,?_,?_,?_⟩
+  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans vp
+  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans
+      ((rf _ (away _ (by simp))).trans seed.2.1)
+  · intro q hqr hql hqp hqg
+    by_cases qo : q=L.one
+    · subst q
+      exact rem.2.2.2.1.trans (hc _ (by simp [BalancedCircuit.work])).symm
+    by_cases qm : q=L.minus
+    · subst q
+      exact rem.2.2.2.2.1.trans (hc _ (by simp [BalancedCircuit.work])).symm
+    have raw : q∉BalancedCircuit.rawTarget L := by
+      simpa [BalancedCircuit.rawTarget] using And.intro hqr qo
+    exact (rem.2.2.2.2.2 q raw hql qm).trans
+      ((rf q raw).trans (seed.2.2 q hqg qo hqp))
+
+
+end ECDSAAdd.Entrant.BiasedCircuit
+
+end
+
+section
+-- ===== BiasedSupport =====
+set_option maxRecDepth 4096
+set_option maxHeartbeats 700000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.BiasedCircuit
+open Arithmetic Arithmetic.BalancedField
+
+/-- One carry bank and six scalar sites, including the input sign. -/
+def activeWires (L : Layout) : List Wire := [L.sourceGuard,L.minus]++L.toLayout.wires
+
+theorem activeSites (L : Layout) (hw : L.Widths) : (activeWires L).length=774 := by
+  simp [activeWires,BalancedCleanup.Layout.wires,hw.1,hw.2.1,hw.2.2]
+
+theorem support (L : Layout) (hw : L.Widths) : wires (program L)⊆(activeWires L).toFinset := by
+  have w := BalancedCircuit.widths L hw
+  have member (q : Wire) : q∈(activeWires L).toFinset ↔
+      q∈[L.sourceGuard,L.minus,L.parity,L.sign,L.lower,L.one,L.rmsb,L.ymsb,L.r0] ∨
+      q∈L.rtail ∨ q∈L.ylow ∨ q∈L.carry := by
+    simp [activeWires,BalancedCleanup.Layout.wires,or_assoc]
+  have cleanup (q : Wire) (hq : q∈wires (BalancedCleanup.program L.toLayout)) :
+      q∈(activeWires L).toFinset := by
+    have h := BalancedCleanup.support L.toLayout hw hq
+    exact List.mem_toFinset.mpr (List.mem_append_right _ (List.mem_toFinset.mp h))
+  have ps : wires (BalancedCleanup.prepareSign L.toLayout)⊆(activeWires L).toFinset := by
+    intro q hq
+    apply cleanup q
+    simp only [BalancedCleanup.program,wires_append,Finset.mem_union]
+    exact Or.inl hq
+  have add := addInPlace_wires (BalancedCircuit.rawSource L) (BalancedCircuit.rawTarget L)
+    L.carry L.sign (by omega) (by omega)
+  have comp := signComplement_wires_subset L.sign (BalancedCircuit.rawSource L)
+  have raw : wires (BalancedCircuit.rawAdd L)⊆(activeWires L).toFinset := by
+    intro q hq
+    simp only [BalancedCircuit.rawAdd,wires_append,Finset.mem_union,or_assoc] at hq
+    rcases hq with hq|hq|hq
+    · have h := comp hq
+      simp only [member,BalancedCircuit.rawSource,BalancedCleanup.Layout.y,List.mem_toFinset,
+        List.mem_append,List.mem_cons,List.not_mem_nil] at h ⊢
+      clear * - h
+      tauto
+    · rw [add] at hq
+      simp only [member,BalancedCircuit.rawSource,BalancedCircuit.rawTarget,
+        BalancedCleanup.Layout.y,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,
+        List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
+      tauto
+    · have h := comp hq
+      simp only [member,BalancedCircuit.rawSource,BalancedCleanup.Layout.y,List.mem_toFinset,
+        List.mem_append,List.mem_cons,List.not_mem_nil] at h ⊢
+      clear * - h
+      tauto
+  have fs : wires (fold L)⊆(activeWires L).toFinset := by
+    intro q hq
+    have h := mappedAdd_wires_subset (biasBits L) L.r (L.carry.take 255) L.minus hq
+    simp only [List.mem_toFinset,List.mem_append,List.mem_singleton] at h
+    rcases h with ((h|h)|h)|h
+    · rcases biasBits_sources L q h with he|he <;> exact (member q).mpr (Or.inl (by simp [he]))
+    · simp only [member,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.mem_append,
+        List.mem_cons,List.not_mem_nil] at h ⊢
+      clear * - h
+      tauto
+    · exact (member q).mpr (Or.inr (Or.inr (Or.inr (List.mem_of_mem_take h))))
+    · exact (member q).mpr (Or.inl (by simp [h]))
+  have seedSmall : wires (BalancedCircuit.seedViews L)⊆
+      [L.ymsb,L.sourceGuard,L.rmsb,L.one,L.ylow.getD 0 0,L.parity,L.r0].toFinset := by
+    intro q hq
+    simp only [BalancedCircuit.seedViews,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
+      Finset.mem_singleton,Finset.notMem_empty,List.mem_toFinset,List.mem_cons,List.not_mem_nil] at hq ⊢
+    clear * - hq
+    tauto
+  have seed : wires (BalancedCircuit.seedViews L)⊆(activeWires L).toFinset := by
+    intro q hq
+    have low : L.ylow.getD 0 0∈L.ylow := by
+      cases hy : L.ylow with
+      | nil => have hh := hw.2.1; simp [hy] at hh
+      | cons a as => simp [hy]
+    have small := seedSmall hq
+    simp only [List.mem_toFinset,List.mem_cons,List.not_mem_nil] at small
+    rcases small with e|e|e|e|e|e|e|e
+    · exact (member q).mpr (Or.inl (by simp [e]))
+    · exact (member q).mpr (Or.inl (by simp [e]))
+    · exact (member q).mpr (Or.inl (by simp [e]))
+    · exact (member q).mpr (Or.inl (by simp [e]))
+    · exact (member q).mpr (Or.inr (Or.inr (Or.inl (by simpa only [e] using low))))
+    · exact (member q).mpr (Or.inl (by simp [e]))
+    · exact (member q).mpr (Or.inl (by simp [e]))
+    · exact False.elim e
+  have rot : wires (rotateRight (BalancedCircuit.rawTarget L))⊆(activeWires L).toFinset := by
+    intro q hq
+    rw [(rotate_wires _).1,if_neg (by omega)] at hq
+    simp only [member,BalancedCircuit.rawTarget,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,
+      List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil] at hq ⊢
+    clear * - hq
+    tauto
+  have flip : wires (flipBias L)⊆(activeWires L).toFinset := by
+    intro q hq
+    have mem : L.rtail.getD 253 0∈L.low := by rw [←low_split L hw]; simp
+    have lowmem : ∀q∈L.low,q∈(activeWires L).toFinset := by
+      intro q hq
+      simp only [member,BalancedCleanup.Layout.low,List.mem_cons] at hq ⊢
+      clear * - hq
+      tauto
+    have he : q=L.rtail.getD 253 0 := by simpa only [flipBias,wires,Instr.wires,
+      Finset.union_empty,Finset.mem_singleton] using hq
+    exact he ▸ lowmem _ mem
+  have pref : wires (biasedPrefix L)⊆(activeWires L).toFinset := by
+    intro q hq
+    simp only [biasedPrefix,wires_append,Finset.mem_union,or_assoc] at hq
+    rcases hq with hq|hq|hq|hq|hq|hq|hq|hq|hq
+    · exact seed hq
+    · exact raw hq
+    · simp only [prepareFold,member,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
+        Finset.mem_singleton,Finset.notMem_empty,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
+      tauto
+    · exact rot hq
+    · simp only [signView,member,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
+        Finset.mem_singleton,Finset.notMem_empty,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
+      tauto
+    · exact fs hq
+    · simp only [releaseSelectors,member,wires,Instr.wires,correctionWires,Finset.mem_union,
+        Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
+      tauto
+    · exact ps hq
+    · exact flip hq
+  have suf : wires (cleanupSuffix L)⊆(activeWires L).toFinset := by
+    intro q hq
+    simp only [cleanupSuffix,wires_append,wires_reverse,Finset.mem_union,or_assoc] at hq
+    rcases hq with hq|hq|hq|hq|hq|hq
+    · apply cleanup q
+      simp only [BalancedCleanup.program,wires_append,Finset.mem_union,or_assoc]
+      exact Or.inr (Or.inr (Or.inl hq))
+    · apply cleanup q
+      simp only [BalancedCleanup.program,wires_append,Finset.mem_union,or_assoc]
+      exact Or.inr (Or.inr (Or.inr (Or.inl hq)))
+    · apply cleanup q
+      simp only [BalancedCleanup.program,wires_append,wires_reverse,Finset.mem_union,or_assoc]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl hq))))
+    · apply cleanup q
+      simp only [BalancedCleanup.program,wires_append,wires_reverse,Finset.mem_union,or_assoc]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl hq)))))
+    · exact ps hq
+    · simp only [member,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
+        Finset.mem_singleton,Finset.notMem_empty,List.mem_cons,List.not_mem_nil] at hq ⊢
+      clear * - hq
+      tauto
+  intro q hq
+  rw [program,wires_append,Finset.mem_union] at hq
+  rcases hq with hq|hq
+  · exact pref hq
+  · exact suf hq
+
+theorem qubitBound (L : Layout) (hw : L.Widths) : qubitCount (program L)≤774 := by
+  have h := Finset.card_le_card (support L hw)
+  have n := List.toFinset_card_le (activeWires L)
+  rw [activeSites L hw] at n
+  exact h.trans n
+
+
+theorem omitted_sites (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    L.cout∉wires (program L) ∧ L.plus∉wires (program L) := by
+  have nd : ([L.cout,L.plus]++activeWires L).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp hn q
+    simp only [BalancedCircuit.Layout.wires,activeWires,List.count_append,List.count_cons,
+      List.count_nil] at h ⊢
+    omega
+  have away : ∀q∈[L.cout,L.plus],q∉wires (program L) := by
+    intro q hq hp
+    exact List.disjoint_left.mp (List.nodup_append'.mp nd).2.2 hq
+      (List.mem_toFinset.mp (support L hw hp))
+  exact ⟨away _ (by simp),away _ (by simp)⟩
+
+end ECDSAAdd.Entrant.BiasedCircuit
+
+#print axioms ECDSAAdd.Entrant.BiasedCircuit.support
+#print axioms ECDSAAdd.Entrant.BiasedCircuit.qubitBound
+
+end
+
+section
+-- ===== BiasedPhysical =====
+set_option maxRecDepth 4096
+set_option maxHeartbeats 700000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.BiasedCircuit
+open Arithmetic RecordedQuantum
+
+/-- The emitted circuit has distinct ordinary gate targets and controls. -/
+theorem physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) : GatePhysical (program L) := by
+  have n0 : L.toLayout.wires.Nodup := (List.nodup_append'.mp hn).2.1
+  have ofProper (p : Program) (hp : ProperProgram p) : GatePhysical p :=
+    (physical_embed p).mp (physical_of_proper p hp)
+  have seed : GatePhysical (BalancedCircuit.seedViews L) := by
+    have nd := BalancedCircuit.seedND L hw hn
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true] at nd
+    simp_all [BalancedCircuit.seedViews,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
+  have small : GatePhysical (prepareFold L++signView L++releaseSelectors L++flipBias L) := by
+    have nd := BalancedCircuit.scalarND L hn
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true] at nd
+    simp_all [prepareFold,signView,releaseSelectors,flipBias,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
+  have rawND := BalancedCircuit.rawLayoutND L hn
+  have comp : GatePhysical (signComplement L.sign (BalancedCircuit.rawSource L)) := by
+    apply ofProper
+    apply BalancedCleanup.complement_proper
+    exact fun h => (List.nodup_cons.mp rawND).1 (List.mem_append_left _ (List.mem_append_left _ h))
+  have raw : GatePhysical (BalancedCircuit.rawAdd L) := by
+    simp only [BalancedCircuit.rawAdd,gatePhysical_append]
+    exact ⟨⟨comp,addInPlace_physical _ _ _ _ rawND⟩,comp⟩
+  have fnd : (L.minus::(L.r++L.carry.take 255)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 255 L.carry).count_le q
+    simp only [List.count_append,List.count_cons,List.count_nil] at h ⊢
+    omega
+  have mapped : GatePhysical (fold L) := by
+    apply mappedAdd_physical _ _ _ _ fnd
+    intro b hb q hq hmem
+    have mem : q∈mappedWires (biasBits L) := List.mem_flatMap.mpr ⟨b,hb,by simpa using hq⟩
+    have src := biasBits_sources L q mem
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have nd := BalancedCircuit.scalarND L hn
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true] at nd
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    simp only [List.mem_cons,List.mem_append,or_assoc] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have ps := ofProper _ (BalancedCleanup.prepareSign_proper L.toLayout n0)
+  have pc := ofProper _ (BalancedCleanup.prepareCompare_proper L.toLayout n0)
+  have psr := ofProper _ (properProgram_reverse _ (BalancedCleanup.prepareSign_proper L.toLayout n0))
+  have pcr := ofProper _ (properProgram_reverse _ (BalancedCleanup.prepareCompare_proper L.toLayout n0))
+  have un : GatePhysical (BalancedCleanup.unnormalize L.toLayout) := by
+    simp only [BalancedCleanup.unnormalize,gatePhysical_append]
+    exact ⟨⟨by simp [GatePhysical,PhysicalInstr,ProperGate],
+      literalAdd_physical _ _ _ _ _ (List.nodup_cons.mp (L.toLayout.normND n0)).2⟩,
+      by simp [GatePhysical,PhysicalInstr,ProperGate]⟩
+  have cmp := compareLt_physical none L.y L.r L.carry L.one L.parity
+    (L.toLayout.compareND n0) (by simp)
+  have last : GatePhysical [.CX L.ymsb L.sourceGuard] := by
+    have nd := BalancedCircuit.scalarND L hn
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true] at nd
+    have ne : L.ymsb≠L.sourceGuard := Ne.symm (by tauto)
+    simpa [GatePhysical,PhysicalInstr,ProperGate] using ne
+  have rot := (rotate_physical (BalancedCircuit.rawTarget L) (BalancedCircuit.rawTargetND L hn)).1
+  simp only [gatePhysical_append] at small
+  simp only [program,biasedPrefix,cleanupSuffix,gatePhysical_append]
+  exact ⟨⟨seed,⟨raw,⟨small.1.1.1,⟨rot,⟨small.1.1.2,⟨mapped,⟨small.1.2,⟨ps,small.2⟩⟩⟩⟩⟩⟩⟩⟩,
+    ⟨pc,⟨cmp,⟨pcr,⟨un,⟨psr,last⟩⟩⟩⟩⟩⟩
+
+end ECDSAAdd.Entrant.BiasedCircuit
+
+#print axioms ECDSAAdd.Entrant.BiasedCircuit.physical
+
+end
+
+section
+-- ===== BiasedCircuit =====
+set_option maxRecDepth 16384
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+set_option exponentiation.threshold 512
+
+namespace ECDSAAdd.Entrant.BiasedCircuit
+open Arithmetic Arithmetic.BalancedField
+
+theorem prefix_eq_reference (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (X Y : Int) (hx : Centered X) (hy : Centered Y)
+    (s : State) (m n : List Bool) (hs : s.basis L.sign=B)
+    (hr : signedRegValue L.r s.basis=X) (hyr : signedRegValue L.y s.basis=Y)
+    (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
+    run (biasedPrefix L) m s=run (referencePrefix L) n s := by
+  have a := prefixPost L hw hn B X Y hx hy s m hs hr hyr hc
+  have b := referencePost L hw hn B X Y hx hy s n hs hr hyr hc
+  apply State.extensionality
+  · exact a.phase.trans b.phase.symm
+  · funext q
+    by_cases qr : q∈L.r
+    · exact (regValue_eq_iff L.r _ _).mp (a.value.trans b.value.symm) q qr
+    by_cases ql : q=L.lower
+    · subst q; exact a.lower.trans b.lower.symm
+    by_cases qp : q=L.parity
+    · subst q; exact a.parity.trans b.parity.symm
+    by_cases qg : q=L.sourceGuard
+    · subst q; exact a.guard.trans b.guard.symm
+    exact (a.frame q qr ql qp qg).trans (b.frame q qr ql qp qg).symm
+
+theorem reference_program (L : Layout) :
+    BalancedCircuit.program L=referencePrefix L++cleanupSuffix L := by
+  simp only [BalancedCircuit.program_eq_core,referencePrefix,cleanupSuffix,
+    BalancedCleanup.program,List.append_assoc]
+
+/-- Exact single-bank forward kernel for every input phase and measurement record. -/
+theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (X Y : Int) (hx : Centered X) (hy : Centered Y)
+    (s : State) (m : List Bool) (hs : s.basis L.sign=B)
+    (hr : signedRegValue L.r s.basis=X) (hyr : signedRegValue L.y s.basis=Y)
+    (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
+    let t := run (program L) m s
+    t.phase=s.phase ∧
+    regValue L.r t.basis=encodeWord 256 (halfResult (rawSum B X Y)) ∧
+    (∀q∈BalancedCircuit.work L,t.basis q=false) ∧
+    (∀q,q∉L.r → t.basis q=s.basis q) := by
+  let k := measurementCount (referencePrefix L)
+  let tail := m.drop (measurementCount (biasedPrefix L))
+  let n := List.replicate k false++tail
+  have eq : run (program L) m s=run (BalancedCircuit.program L) n s := by
+    rw [program,reference_program,run_append,run_take,run_append,run_take,
+      prefix_eq_reference L hw hn B X Y hx hy s m n hs hr hyr hc]
+    have dn : n.drop (measurementCount (referencePrefix L))=tail := by simp [n,k]
+    rw [dn]
+  rw [eq]
+  exact BalancedCircuit.program_correct L hw hn B X Y hx hy s n hs hr hyr hc
+
+
+/-- Interchangeability with the public balanced kernel, for independent records. -/
+theorem run_eq_balanced (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (X Y : Int) (hx : Centered X) (hy : Centered Y)
+    (s : State) (m n : List Bool) (hs : s.basis L.sign=B)
+    (hr : signedRegValue L.r s.basis=X) (hyr : signedRegValue L.y s.basis=Y)
+    (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
+    run (program L) m s=run (BalancedCircuit.program L) n s := by
+  have a := program_correct L hw hn B X Y hx hy s m hs hr hyr hc
+  have b := BalancedCircuit.program_correct L hw hn B X Y hx hy s n hs hr hyr hc
+  apply State.extensionality
+  · exact a.1.trans b.1.symm
+  · funext q
+    by_cases hq : q∈L.r
+    · exact (regValue_eq_iff L.r _ _).mp (a.2.1.trans b.2.1.symm) q hq
+    · exact (a.2.2.2 q hq).trans (b.2.2.2 q hq).symm
+
+end ECDSAAdd.Entrant.BiasedCircuit
+
+#print axioms ECDSAAdd.Entrant.BiasedCircuit.program_correct
+
+#print axioms ECDSAAdd.Entrant.BiasedCircuit.run_eq_balanced
+
+end
+
+
+section
+-- ===== BiasedInverseProgram =====
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedCircuit Arithmetic.BalancedField
+
+abbrev Layout := BalancedCircuit.Layout
+
+def halfBias : Nat := 2^30 + 244
+
+def biasBits (L : Layout) : List MappedBit :=
+  (List.range 255).map (fun i =>
+    {wire := some L.lower, flip := halfBias.testBit i}) ++
+    [{wire := some L.one, flip := false}]
+
+def recoverPrefix (L : Layout) : Program :=
+  BalancedCleanup.prepareSign L.toLayout ++ BalancedCleanup.normalize L.toLayout ++
+  BalancedCleanup.prepareCompare L.toLayout ++
+  compareLt none L.y L.r L.carry L.one L.parity ++
+  (BalancedCleanup.prepareCompare L.toLayout).reverse
+
+def unbiasView (L : Layout) : Program :=
+  [.X (L.r.getD 254 0)] ++ (BalancedCleanup.prepareSign L.toLayout).reverse
+
+def selectors (L : Layout) : Program :=
+  [.CX L.parity L.lower, .CX L.rmsb L.lower, .CX L.rmsb L.one,
+    .CCX L.parity L.lower L.minus]
+
+def unfoldBias (L : Layout) : Program :=
+  mappedSub (biasBits L) L.r (L.carry.take 255) L.minus
+
+def release (L : Layout) : Program :=
+  [.CX L.rmsb L.lower, .CX L.parity L.one, .CX L.rmsb L.one,
+    .measureX L.minus [] [.CZ L.parity L.rmsb]]
+
+def restoreRaw (L : Layout) : Program :=
+  selectors L ++ unfoldBias L ++ release L ++
+  rotateLeft (rawTarget L) ++ [.CX L.parity L.r0]
+
+def program (L : Layout) : Program :=
+  [.CX L.ymsb L.sourceGuard] ++ recoverPrefix L ++ unbiasView L ++
+  restoreRaw L ++ BalancedInverse.rawSubtract L ++ (seedViews L).reverse
+
+theorem counts (L : Layout) (hw : L.Widths) :
+    toffoliCount (program L) = 1022 ∧ measurementCount (program L) = 1022 := by
+  have w := BalancedCircuit.widths L hw
+  have cw := BalancedCleanup.widths L.toLayout hw
+  have ra := subInPlace_counts (rawSource L) (rawTarget L) L.carry L.sign
+    (by omega) (by omega)
+  have fa := mappedSub_counts (biasBits L) L.r (L.carry.take 255) L.minus
+    (by simp [biasBits, cw.2.1]) (by simp [List.length_take, hw.2.2, cw.2.1])
+  have na := literalConstAdd_counts L.low (L.carry.take 254) L.lower L.one
+    BalancedCleanup.negativeLiteral (by omega)
+  have co := compareLt_counts none L.y L.r L.carry L.one L.parity
+    (by omega) (by omega)
+  have cm := signComplement_counts L.sign (rawSource L)
+  have cr := signComplement_counts L.lower L.r
+  have cy := signComplement_counts L.sign L.y
+  have cl := signComplement_counts L.lower L.y
+  have rr := rotate_counts L.r
+  have rt := rotate_counts (rawTarget L)
+  simp only [program, restoreRaw, recoverPrefix, unbiasView, selectors, unfoldBias, release,
+    BalancedInverse.rawSubtract, BalancedCleanup.prepareSign, BalancedCleanup.normalize,
+    BalancedCleanup.prepareCompare, seedViews, toffoliCount_append, measurementCount_append,
+    toffoliCount_reverse, measurementCount_reverse, ra.1, ra.2, fa.1, fa.2, na.1, na.2,
+    co.1, co.2, cm.1, cm.2, cr.1, cr.2, cy.1, cy.2, cl.1, cl.2,
+    rr.2.2.1, rr.2.2.2, rt.2.2.1, rt.2.2.2, w.2.1, cw.1, cw.2.1]
+  norm_num [toffoliCount, measurementCount]
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+section
+-- ===== BiasedInverseMath =====
+set_option maxRecDepth 16384
+set_option maxHeartbeats 1800000
+set_option exponentiation.threshold 512
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedCircuit Arithmetic.BalancedField
+
+def biased (R : Int) : Int := if R < 0 then R - halfBias - 1 else R + halfBias
+
+def biasSource (n z : Bool) : Nat :=
+  (if n then 2^255 - 1 - halfBias else halfBias) + 2^255 * z.toNat
+
+private theorem mapped_list (is : List Nat) (L : Layout) (s : BasisState) :
+    mappedValue (is.map (fun i => ({wire := some L.lower, flip := halfBias.testBit i} : MappedBit))) s =
+    is.foldr (fun i acc => (s L.lower ^^ halfBias.testBit i).toNat + 2*acc) 0 := by
+  induction is with
+  | nil => rfl
+  | cons i is ih => simp [mappedValue, MappedBit.value, ih, Bool.xor_comm]
+
+private theorem biasSource_calc (n : Bool) :
+    (List.range 255).foldr (fun i acc => (n ^^ halfBias.testBit i).toNat + 2*acc) 0 =
+    if n then 2^255 - 1 - halfBias else halfBias := by
+  cases n <;> decide
+
+theorem biasBits_value (L : Layout) (s : BasisState) :
+    mappedValue (biasBits L) s = biasSource (s L.lower) (s L.one) := by
+  rw [biasBits, mappedValue_append, mapped_list, biasSource_calc]
+  simp [biasSource, mappedValue, MappedBit.value]
+
+theorem biasBits_sources (L : Layout) (a : Wire) (ha : a ∈ mappedWires (biasBits L)) :
+    a = L.lower ∨ a = L.one := by
+  simp only [biasBits, mappedWires, List.flatMap_append, List.flatMap_map,
+    List.mem_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
+    List.mem_flatMap, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with ⟨i, hi, ha⟩ | ha
+  · exact Or.inl (by simpa using ha)
+  · exact Or.inr (by simpa using ha)
+
+theorem biased_bounds (R : Int) (hr : Centered R) :
+    -((2^255 : Nat) : Int) ≤ biased R ∧ biased R < ((2^255 : Nat) : Int) := by
+  unfold Centered q at hr
+  norm_num [ECDSAAdd.p] at hr
+  unfold biased halfBias
+  split_ifs <;> norm_num at ⊢ <;> omega
+
+theorem biased_sign (R : Int) : (biased R < 0) ↔ R < 0 := by
+  unfold biased halfBias
+  split_ifs <;> norm_num at ⊢ <;> omega
+
+theorem biased_magnitude (R : Int) :
+    (if R < 0 then -biased R-1 else biased R) = |R| + halfBias := by
+  by_cases hn : R < 0
+  · simp [biased, hn, abs_of_neg hn]; ring
+  · simp [biased, hn, abs_of_nonneg (by omega : 0 ≤ R)]
+
+theorem normalized_bias (R : Int) :
+    normalizedR R + ((2^254 : Nat) : Int) = |R| + halfBias := by
+  by_cases hn : R < 0
+  · simp [normalizedR, magnitude, signBit, negative, hn, abs_of_neg hn]
+    norm_num [halfBias, h, q, ECDSAAdd.p]
+    omega
+  · simp [normalizedR, magnitude, signBit, negative, hn,
+      abs_of_nonneg (by omega : 0 ≤ R)]
+    norm_num [halfBias, h, q, ECDSAAdd.p]
+    omega
+
+theorem unfold_arithmetic (T : Int) (ht : -(2*q) ≤ T ∧ T ≤ 2*q) :
+    (encodeWord 256 (biased (halfResult T)) + 2^256 -
+      biasSource (decide (T<0)) (negative (halfResult T)) -
+      (originalParity T && decide (T<0)).toNat) % 2^256 = encodeWord 256 (T/2) := by
+  have hb := biased_bounds (halfResult T) (halfResult_spec T ht).1
+  have z := BalancedFold.encode_shift 256 (biased (halfResult T)) (by norm_num at hb ⊢; omega)
+  have wt : -((2^255 : Nat) : Int) ≤ T/2 ∧ T/2 < ((2^255 : Nat) : Int) := by
+    norm_num [q, ECDSAAdd.p] at ht ⊢; omega
+  have w := BalancedFold.encode_shift 256 (T/2) (by norm_num at wt ⊢; omega)
+  have hr := (halfResult_spec T ht).2
+  by_cases hp : T%2=0 <;> by_cases hn : T<0
+  all_goals
+    have pp : originalParity T = decide (¬ T%2=0) := rfl
+    have sn := halfResult_sign T ht
+    simp only [pp, hp, hn, not_true_eq_false, not_false_eq_true,
+      decide_true, decide_false, Bool.false_xor, Bool.true_xor,
+      Bool.not_false, Bool.not_true] at sn
+    simp only [evenLift, hp, if_true, if_false] at hr
+    try split_ifs at hr
+    all_goals
+      norm_num [q, ECDSAAdd.p] at ht hr
+      by_cases nr : halfResult T < 0
+      all_goals
+        simp only [nr, decide_true, decide_false, Bool.false_eq_true,
+          Bool.true_eq_false] at sn
+        all_goals simp only [biased, nr, if_true, if_false] at z ⊢
+        all_goals simp only [biasSource, negative, nr, originalParity, ne_eq, hp, hn,
+          not_true_eq_false, not_false_eq_true, decide_true, decide_false,
+          if_true, if_false, Bool.and_self, Bool.and_false, Bool.false_and,
+          Bool.toNat_true, Bool.toNat_false] at ⊢
+        all_goals norm_num [halfBias] at z w ⊢
+        all_goals split_ifs at z w <;> omega
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+section
+-- ===== BiasedInversePrefix =====
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedField
+open Arithmetic.BalancedCleanup
+
+theorem prefix_states (L : BalancedCleanup.Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (R Y : Int) (B : Bool) (hr : Centered R) (hy : Centered Y) (s : State)
+    (m1 m2 m3 m4 m5 : List Bool) (s1 s2 s3 s4 s5 : State)
+    (hR : regValue L.r s.basis=encodeWord 256 R) (hY : regValue L.y s.basis=encodeWord 256 Y)
+    (hS : s.basis L.sign=B) (hz : s.basis L.lower=false) (ho : s.basis L.one=false)
+    (hc : ∀q∈L.carry,s.basis q=false)
+    (hs1 : run (prepareSign L) m1 s=s1) (hs2 : run (normalize L) m2 s1=s2)
+    (hs3 : run (prepareCompare L) m3 s2=s3)
+    (hs4 : run (compareLt none L.y L.r L.carry L.one L.parity) m4 s3=s4)
+    (hs5 : run (prepareCompare L).reverse m5 s4=s5) :
+    s5.phase=s.phase ∧ regValue L.r s5.basis=encodeWord 255 (normalizedR R) ∧
+    s5.basis L.lower=negative R ∧
+    s5.basis L.parity=(s.basis L.parity ^^ decide (q < |2*R-signedY B Y|)) ∧
+    ∀a,a∉L.r → a≠L.lower → a≠L.parity → s5.basis a=s.basis a := by
+  have w := widths L hw
+  have nd := L.normND hn
+  have flags := L.flagsND hn
+  have pa := clifford_parity_away L hw hn
+  have ar : L.parity∉L.r := fun h => L.flagAway hn L.parity (by simp) (by simp [h])
+  have ay : L.parity∉L.y := fun h => L.flagAway hn L.parity (by simp) (by simp [h])
+  have al : L.parity≠L.lower := by have hh := (List.nodup_cons.mp flags).1; simp at hh; tauto
+  have oa : L.one∉L.r := fun h => L.flagAway hn L.one (by simp) (by simp [h])
+  have ol : L.one≠L.lower := by have hh := List.nodup_iff_count.mp flags L.one; simp [List.count_cons] at hh; intro e; simp [e] at hh; omega
+  have sy : L.sign∉L.r := fun h => L.flagAway hn L.sign (by simp) (by simp [h])
+  have sl : L.sign≠L.lower := by have hh := List.nodup_iff_count.mp flags L.sign; simp [List.count_cons] at hh; intro e; simp [←e] at hh; omega
+  have ca (q : Wire) (hq : q∈L.carry) : q∉L.r ∧ q≠L.lower := by
+    have d := List.nodup_append'.mp (L.dataND hn)
+    exact ⟨fun h => List.disjoint_left.mp d.2.2 h (by simp [hq]),
+      fun e => L.flagAway hn L.lower (by simp) (by simp [←e,hq])⟩
+  have v1 := prepareSign_value L hw hn R hr s m1 hR hz
+  rw [hs1] at v1
+  have one1 : s1.basis L.one=false := (v1.2.2 _ oa ol).trans ho
+  have clean1 : ∀q∈L.carry,s1.basis q=false := fun q hq => (v1.2.2 q (ca q hq).1 (ca q hq).2).trans (hc q hq)
+  have Y1 : regValue L.y s1.basis=encodeWord 256 Y := by
+    have d := List.nodup_append'.mp (L.dataND hn)
+    exact (regValue_congr _ _ _ (fun q hq => v1.2.2 q
+      (fun r => List.disjoint_left.mp d.2.2 r (by simp [hq]))
+      (fun e => L.flagAway hn L.lower (by simp) (by simp [←e,hq])))).trans hY
+  have rm0 : s1.basis L.rmsb=false := by
+    have hi := regValue_highBit L.low L.rmsb s1.basis
+    rw [w.1] at hi
+    change s1.basis L.rmsb=true ↔ 2^255≤regValue L.r s1.basis at hi
+    rw [v1.1] at hi
+    have b := magnitude_bounds R hr; have p := constants
+    have cast := Int.toNat_of_nonneg b.1
+    cases e : s1.basis L.rmsb
+    · rfl
+    · simp [e] at hi
+      omega
+  have low1 : regValue L.low s1.basis=(magnitude R).toNat := by
+    have h := v1.1; rw [Layout.r,regValue_append] at h; simpa [regValue,rm0] using h
+  have v2 := normalize_value L hw hn R hr s1 m2 low1 v1.2.1 one1 clean1
+  rw [hs2] at v2
+  have rmAway : L.rmsb∉L.low := by have d := List.nodup_append'.mp (List.nodup_append'.mp (L.dataND hn)).1; exact fun h => List.disjoint_left.mp d.2.2 h (by simp)
+  have R2 : regValue L.r s2.basis=encodeWord 255 (normalizedR R) := by
+    rw [Layout.r,regValue_append,v2.2.1]; simp [regValue,v2.2.2 _ rmAway,rm0]
+  have Y2 : regValue L.y s2.basis=encodeWord 256 Y := by
+    exact (regValue_congr _ _ _ (fun q hq => v2.2.2 q (by
+      intro hl; exact List.disjoint_left.mp (List.nodup_append'.mp (L.dataND hn)).2.2
+        (show q∈L.r from by simp [Layout.r,hl])
+        (show q∈L.y++L.carry from by simp [hq])))).trans Y1
+  have S2 : s2.basis L.sign=B := (v2.2.2 _ (fun h => sy (by simp [Layout.r,h]))).trans ((v1.2.2 _ sy sl).trans hS)
+  have L2 : s2.basis L.lower=negative R := (v2.2.2 _ (fun h => (List.nodup_cons.mp (List.nodup_cons.mp nd).2).1 (by simp [h]))).trans v1.2.1
+  have v3 := prepareCompare_value L hw hn R Y B hr hy s2 m3 R2 Y2 S2 L2
+  rw [hs3] at v3
+  have frame2 (q : Wire) (hq : q∉L.r) : s2.basis q=s1.basis q := v2.2.2 q (fun h => hq (by simp [Layout.r,h]))
+  have one3 : s3.basis L.one=false := (v3.2.2 _ oa (fun h => L.flagAway hn L.one (by simp) (by simp [h]))).trans ((frame2 _ oa).trans one1)
+  have clean3 : ∀q∈L.carry,s3.basis q=false := by
+    intro q hq; have d := List.nodup_append'.mp (List.nodup_append'.mp (L.dataND hn)).2.1
+    exact (v3.2.2 q (ca q hq).1 (fun hyq => List.disjoint_left.mp d.2.2 hyq hq)).trans ((frame2 q (ca q hq).1).trans (clean1 q hq))
+  have cmp := compareLt_correct none L.y L.r L.carry L.one L.parity (L.compareND hn)
+    (by simp) (by omega) (by unfold Layout.Widths at hw; omega) s3 m4 one3 clean3
+  rw [hs4] at cmp
+  have pred : decide (regValue L.y s3.basis<regValue L.r s3.basis)=decide (q < |2*R-signedY B Y|) := by
+    apply decide_eq_decide.mpr
+    have interval := cleanup_interval_identity B R Y hr hy
+    omega
+  have A3 : s3.basis L.parity=s.basis L.parity := (v3.2.2 _ ar ay).trans ((frame2 _ ar).trans (v1.2.2 _ ar al))
+  have A4 : s4.basis L.parity=(s.basis L.parity ^^ decide (q < |2*R-signedY B Y|)) := by
+    rw [cmp.2.2,A3,pred]
+    simp [controlValue]
+  have ex5 := inverse_except (prepareCompare L) (prepareCompare_proper L hn) L.parity pa.2 s2 s4 m3 m5 (by rw [hs3]; exact ⟨cmp.1,cmp.2.1⟩)
+  rw [hs5] at ex5
+  have keep5 := run_preserves_outside (prepareCompare L).reverse m5 s4 L.parity
+    (by rw [wires_reverse]; exact pa.2)
+  rw [hs5] at keep5
+  refine ⟨ex5.1.trans (v2.1.trans ?_), ?_, ?_, keep5.trans A4, ?_⟩
+  · rw [←hs1]
+    exact FiniteUnitary.run_phase _ (prepareSign_proper L hn) s m1
+  · exact (regValue_congr _ _ _ (fun a ha => ex5.2 a
+      (fun e => ar (e ▸ ha)))).trans R2
+  · exact (ex5.2 _ (Ne.symm al)).trans L2
+  · intro a har hal hap
+    exact (ex5.2 a hap).trans ((frame2 a har).trans (v1.2.2 a har hal))
+
+theorem recoverPrefix_correct (L : Layout) (hw : L.Widths) (hn : L.toLayout.wires.Nodup)
+    (R Y : Int) (B : Bool) (hr : Centered R) (hy : Centered Y) (s : State) (m : List Bool)
+    (hR : regValue L.r s.basis=encodeWord 256 R) (hY : regValue L.y s.basis=encodeWord 256 Y)
+    (hS : s.basis L.sign=B) (hz : s.basis L.lower=false) (ho : s.basis L.one=false)
+    (hc : ∀q∈L.carry,s.basis q=false) :
+    let t := run (recoverPrefix L) m s
+    t.phase=s.phase ∧ regValue L.r t.basis=encodeWord 255 (normalizedR R) ∧
+    t.basis L.lower=negative R ∧
+    t.basis L.parity=(s.basis L.parity ^^ decide (q < |2*R-signedY B Y|)) ∧
+    ∀a,a∉L.r → a≠L.lower → a≠L.parity → t.basis a=s.basis a := by
+  unfold recoverPrefix
+  simp only [List.append_assoc, run_append, run_take]
+  exact prefix_states L.toLayout hw hn R Y B hr hy s
+    _ _ _ _ _ _ _ _ _ _ hR hY hS hz ho hc rfl rfl rfl rfl rfl
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+section
+-- ===== BiasedInverseViews =====
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedField
+
+private theorem complement_run (q : Wire) (xs : List Wire) (hq : q∉xs)
+    (hn : xs.Nodup) (s : State) (m : List Bool) :
+    run (signComplement q xs) m s =
+      ⟨s.phase, fun a => if a∈xs then s.basis a ^^ s.basis q else s.basis a⟩ := by
+  induction xs generalizing s with
+  | nil => simp [signComplement,run]
+  | cons a xs ih =>
+    have hqa : q≠a := fun e => hq (by simp [e])
+    have hqt : q∉xs := fun h => hq (by simp [h])
+    have nd := List.nodup_cons.mp hn
+    simp only [signComplement,List.map_cons,run]
+    change run (signComplement q xs) m
+      ⟨s.phase,writeBit s.basis a (s.basis a ^^ s.basis q)⟩ = _
+    rw [ih hqt nd.2]
+    apply congrArg (State.mk s.phase)
+    funext b
+    by_cases ba : b=a <;> by_cases bx : b∈xs <;>
+      simp_all [writeBit]
+    all_goals subst b; simp [Function.update_self]
+
+theorem complement_reverse (q : Wire) (xs : List Wire) (hn : xs.Nodup)
+    (hq : q∉xs) (s : State) (m : List Bool) :
+    run (signComplement q xs).reverse m s = run (signComplement q xs) m s := by
+  have shape : (signComplement q xs).reverse=signComplement q xs.reverse := by
+    simp [signComplement]
+  rw [shape,complement_run _ _ (by simpa using hq) (List.nodup_reverse.mpr hn),
+    complement_run _ _ hq hn]
+  simp
+
+theorem low_split (L : Layout) (hw : L.Widths) :
+    L.low = L.r.take 254 ++ [L.r.getD 254 0] := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have idx : 254 < L.r.length := by omega
+  have split : L.r.take 254 ++ [L.r.getD 254 0] = L.r.take 255 := by
+    conv_rhs => rw [show 255=254+1 from rfl, List.take_add_one]
+    rw [List.getD_eq_getElem _ _ idx,List.getElem?_eq_getElem idx]
+    rfl
+  rw [split, BalancedCleanup.Layout.r, ←w.1]
+  simp
+
+theorem biased_from_magnitude (R : Int) (hr : Centered R) :
+    (if negative R then 2^256-1-(|R|+(halfBias : Int)).toNat
+      else (|R|+(halfBias : Int)).toNat) = encodeWord 256 (biased R) := by
+  have hb := biased_bounds R hr
+  have enc := BalancedFold.encode_shift 256 (biased R) (by norm_num at hb ⊢; omega)
+  have mag := Int.toNat_of_nonneg (show 0≤|R|+(halfBias : Int) by
+    have := abs_nonneg R; norm_num [halfBias]; omega)
+  by_cases hn : R<0
+  · rw [if_pos ((biased_sign R).mpr hn)] at enc
+    simp [negative,hn,biased,abs_of_neg hn] at enc mag ⊢
+    norm_num [halfBias] at enc mag ⊢
+    omega
+  · rw [if_neg (fun h => hn ((biased_sign R).mp h))] at enc
+    simp [negative,hn,biased,abs_of_nonneg (by omega : 0≤R)] at enc mag ⊢
+    omega
+
+theorem biased_msb (L : Layout) (hw : L.Widths) (R : Int) (hr : Centered R)
+    (s : BasisState) (hR : regValue L.r s=encodeWord 256 (biased R)) :
+    s L.rmsb=negative R := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have decoded : signedRegValue L.r s=biased R := by
+    unfold signedRegValue
+    rw [w.2.1,hR]
+    exact decode_encodeWord 256 (by norm_num) _ (by
+      simpa using biased_bounds R hr)
+  have sign := signedRegValue_neg_iff L.low L.rmsb s
+  change (signedRegValue L.r s<0 ↔ s L.rmsb=true) at sign
+  rw [decoded,biased_sign] at sign
+  cases e : s L.rmsb <;> simp_all [negative]
+
+theorem unbiasView_correct (L : Layout) (hw : L.Widths) (hn : L.toLayout.wires.Nodup)
+    (R : Int) (hr : Centered R) (s : State) (m : List Bool)
+    (hR : regValue L.r s.basis=encodeWord 255 (normalizedR R))
+    (hl : s.basis L.lower=negative R) :
+    let t := run (unbiasView L) m s
+    t.phase=s.phase ∧ regValue L.r t.basis=encodeWord 256 (biased R) ∧
+    t.basis L.lower=false ∧
+    ∀a,a∉L.r → a≠L.lower → t.basis a=s.basis a := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have nd := (List.nodup_append'.mp (L.toLayout.dataND hn)).1
+  have lowND := (List.nodup_append'.mp nd).1
+  have la : L.lower∉L.r := fun h => L.toLayout.flagAway hn L.lower (by simp) (by simp [h])
+  have rmAway : L.rmsb∉L.low := fun h =>
+    List.disjoint_left.mp (List.nodup_append'.mp nd).2.2 h (by simp)
+  let bit := L.r.getD 254 0
+  have shape : L.low=L.r.take 254++[bit] := low_split L hw
+  have bitLow : bit∈L.low := by rw [shape]; simp
+  have bitR : bit∈L.r := by simp [BalancedCleanup.Layout.r,bitLow]
+  have bitNe : L.rmsb≠bit := fun e => rmAway (e.symm ▸ bitLow)
+  have lowlen : (L.r.take 254).length=254 := by simp [w.2.1]
+  have top := regValue_highBit L.low L.rmsb s.basis
+  rw [w.1] at top
+  change s.basis L.rmsb=true ↔ 2^255≤regValue L.r s.basis at top
+  have bound := encodeWord_bound 255 (normalizedR R)
+  have rms : s.basis L.rmsb=false := by
+    rw [hR] at top
+    cases e : s.basis L.rmsb <;> simp_all
+    omega
+  have lowR : regValue L.low s.basis=encodeWord 255 (normalizedR R) := by
+    rw [BalancedCleanup.Layout.r,regValue_append] at hR
+    simpa [regValue,rms] using hR
+  let u := run [.X bit] m s
+  have uf (a : Wire) (ha : a≠bit) : u.basis a=s.basis a := by simp [u,run,writeBit,ha]
+  have vb := BalancedCleanup.bias_value (L.r.take 254) bit
+    (by rw [←shape]; exact lowND) s m
+  rw [←shape,lowlen,lowR,normalizedR_lowword_decode R hr,normalized_bias] at vb
+  have uR : regValue L.r u.basis=(|R|+(halfBias : Int)).toNat := by
+    have lowU : regValue L.low u.basis=(|R|+(halfBias : Int)).toNat := by
+      simpa only [Int.toNat_natCast] using congrArg Int.toNat vb
+    rw [BalancedCleanup.Layout.r,regValue_append,lowU]
+    simp [regValue,uf _ bitNe,rms]
+  have uL : u.basis L.lower=negative R :=
+    (uf L.lower (fun e => la (by rw [e]; exact bitR))).trans hl
+  let v := run (signComplement L.lower L.r) m u
+  have cv := signComplement_correct L.lower L.r nd la u m
+  have vR : regValue L.r v.basis=encodeWord 256 (biased R) := by
+    rw [cv.2.2,uR,uL,w.2.1,biased_from_magnitude R hr]
+  have vL : v.basis L.lower=negative R := (cv.2.1 _ la).trans uL
+  have vm : v.basis L.rmsb=negative R := biased_msb L hw R hr v.basis vR
+  have actual : run (unbiasView L) m s=run [.CX L.rmsb L.lower] m v := by
+    simp only [unbiasView,BalancedCleanup.prepareSign,List.reverse_append,
+      List.reverse_singleton,List.append_assoc,run_append,run_take,measurementCount,
+      List.drop_zero,measurementCount_reverse,(signComplement_counts L.lower L.r).2]
+    rw [complement_reverse _ _ nd la]
+    have cm (t : State) : run (signComplement L.lower L.r) (m.take 0) t =
+        run (signComplement L.lower L.r) m t := by
+      simpa only [(signComplement_counts L.lower L.r).2] using
+        run_take (signComplement L.lower L.r) m t
+    rw [cm]
+    rfl
+  rw [actual]
+  refine ⟨cv.1,?_,?_,?_⟩
+  · exact (regValue_congr _ _ _ (fun a ha => by
+      simp [run,writeBit,show a≠L.lower from fun e => la (e ▸ ha)])).trans vR
+  · simp [run,writeBit,vL,vm]
+  · intro a har hal
+    simp only [run,writeBit,Function.update_of_ne hal]
+    exact (cv.2.1 a har).trans (uf a (fun e => har (e.symm ▸ bitR)))
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+section
+-- ===== BiasedInverseFlags =====
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedCircuit Arithmetic.BalancedField
+
+theorem selectors_run (L : Layout) (hn : L.wires.Nodup) (P N : Bool)
+    (s : State) (m : List Bool) (hp : s.basis L.parity=P)
+    (hh : s.basis L.rmsb=(N ^^ P)) (hl : s.basis L.lower=false)
+    (hm : s.basis L.minus=false) (ho : s.basis L.one=false) :
+    run (selectors L) m s=⟨s.phase,
+      writeBit (writeBit (writeBit s.basis L.lower N) L.one (N ^^ P)) L.minus (P && N)⟩ := by
+  have nd : [L.parity,L.rmsb,L.lower,L.one,L.minus].Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro a; have h := List.nodup_iff_count.mp (scalarND L hn) a
+    simp only [List.count_cons,List.count_nil] at h ⊢
+    omega
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  rcases nd with ⟨⟨h0_1,h0_2,h0_3,h0_4⟩,⟨h1_2,h1_3,h1_4⟩,⟨h2_3,h2_4⟩,h3_4⟩
+  have h0_1r := Ne.symm h0_1
+  have h0_2r := Ne.symm h0_2
+  have h0_3r := Ne.symm h0_3
+  have h0_4r := Ne.symm h0_4
+  have h1_2r := Ne.symm h1_2
+  have h1_3r := Ne.symm h1_3
+  have h1_4r := Ne.symm h1_4
+  have h2_3r := Ne.symm h2_3
+  have h2_4r := Ne.symm h2_4
+  have h3_4r := Ne.symm h3_4
+  cases P <;> cases N
+  all_goals
+    simp only [selectors,run]
+    apply congrArg (State.mk s.phase)
+    funext a
+    by_cases hm : a=L.minus <;> by_cases ho : a=L.one <;> by_cases hl : a=L.lower <;>
+      simp_all [writeBit,Function.update]
+
+theorem release_run (L : Layout) (hn : L.wires.Nodup) (P N : Bool)
+    (s : State) (m : List Bool) (hp : s.basis L.parity=P)
+    (hh : s.basis L.rmsb=N) (hl : s.basis L.lower=N)
+    (hm : s.basis L.minus=(P && N)) (ho : s.basis L.one=(N ^^ P)) :
+    run (release L) m s=⟨s.phase,
+      writeBit (writeBit (writeBit s.basis L.lower false) L.one false) L.minus false⟩ := by
+  have nd : [L.parity,L.rmsb,L.lower,L.one,L.minus].Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro a; have h := List.nodup_iff_count.mp (scalarND L hn) a
+    simp only [List.count_cons,List.count_nil] at h ⊢
+    omega
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  rcases nd with ⟨⟨h0_1,h0_2,h0_3,h0_4⟩,⟨h1_2,h1_3,h1_4⟩,⟨h2_3,h2_4⟩,h3_4⟩
+  have h0_1r := Ne.symm h0_1
+  have h0_2r := Ne.symm h0_2
+  have h0_3r := Ne.symm h0_3
+  have h0_4r := Ne.symm h0_4
+  have h1_2r := Ne.symm h1_2
+  have h1_3r := Ne.symm h1_3
+  have h1_4r := Ne.symm h1_4
+  have h2_3r := Ne.symm h2_3
+  have h2_4r := Ne.symm h2_4
+  have h3_4r := Ne.symm h3_4
+  cases P <;> cases N <;> cases hx : m.headD false
+  all_goals
+    apply State.extensionality
+    · simp_all [release,run,measureAndCorrect,correct,writeBit,Function.update]
+    · funext a
+      by_cases hm : a=L.minus <;> by_cases ho : a=L.one <;> by_cases hl : a=L.lower <;>
+        simp_all [release,run,measureAndCorrect,correct,writeBit,Function.update]
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+section
+-- ===== BiasedInverseUnfold =====
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedCircuit Arithmetic.BalancedField
+
+theorem unfoldBias_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) (s : State) (m : List Bool)
+    (hl : s.basis L.lower=decide (T<0)) (ho : s.basis L.one=negative (halfResult T))
+    (hm : s.basis L.minus=(originalParity T && decide (T<0)))
+    (hR : regValue L.r s.basis=encodeWord 256 (biased (halfResult T)))
+    (hc : ∀a∈L.carry,s.basis a=false) :
+    let t := run (unfoldBias L) m s
+    t.phase=s.phase ∧ regValue L.r t.basis=encodeWord 256 (T/2) ∧
+    ∀a,a∉L.r → t.basis a=s.basis a := by
+  have nd : (L.lower::L.one::L.minus::(L.r++L.carry.take 255)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro a
+    have h := List.nodup_iff_count.mp (allND L hn) a
+    have t := (List.take_sublist 255 L.carry).count_le a
+    simp only [List.count_append,List.count_cons,List.count_nil] at h ⊢
+    omega
+  have n1 := List.nodup_cons.mp nd
+  have n2 := List.nodup_cons.mp n1.2
+  have source : ∀a∈mappedWires (biasBits L),a∉L.minus::(L.r++L.carry.take 255) := by
+    intro a ha
+    rcases biasBits_sources L a ha with rfl|rfl
+    · exact fun h => n1.1 (by simp [h])
+    · exact n2.1
+  have w := BalancedCleanup.widths L.toLayout hw
+  have sub := BalancedInverse.mappedSub_any_correct (biasBits L) L.r (L.carry.take 255) L.minus
+    n2.2 source (by simp [biasBits,w.2.1])
+    (by simp [List.length_take,hw.2.2,w.2.1]) s m
+    (fun a ha => hc a (List.mem_of_mem_take ha))
+  refine ⟨sub.1,?_,sub.2.1⟩
+  rw [unfoldBias,sub.2.2,hR,biasBits_value,hl,ho,hm,w.2.1]
+  exact unfold_arithmetic T ht
+
+theorem half_msb (L : Layout) (hw : L.Widths) (T : Int)
+    (ht : -(2*q)≤T ∧ T≤2*q) (s : BasisState)
+    (hR : regValue L.r s=encodeWord 256 (T/2)) : s L.rmsb=decide (T<0) := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have decoded : signedRegValue L.r s=T/2 := by
+    unfold signedRegValue
+    rw [w.2.1,hR]
+    apply decode_encodeWord 256 (by norm_num)
+    norm_num [q,ECDSAAdd.p] at ht ⊢
+    omega
+  have sign := word_sign L.low L.rmsb s (T/2) decoded
+  have eq : (T/2<0) ↔ T<0 := by omega
+  simpa only [eq] using sign
+
+theorem half_encoding (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) :
+    2*encodeWord 256 (T/2)+(originalParity T).toNat=encodeWord 257 T := by
+  norm_num [q,ECDSAAdd.p] at ht
+  have e := BalancedFold.encode_shift 257 T (by norm_num; omega)
+  have f := BalancedFold.encode_shift 256 (T/2) (by norm_num; omega)
+  have pa := originalParity_value T
+  cases hp : originalParity T <;> simp [hp] at pa ⊢ <;> norm_num at e f ⊢ <;>
+    split_ifs at e f <;> omega
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+section
+-- ===== BiasedInverseRestore =====
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedCircuit Arithmetic.BalancedField
+
+theorem restoreRaw_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) (s : State) (m : List Bool)
+    (hp : s.basis L.parity=originalParity T)
+    (hR : regValue L.r s.basis=encodeWord 256 (biased (halfResult T)))
+    (hl : s.basis L.lower=false) (ho : s.basis L.one=false) (hm : s.basis L.minus=false)
+    (hc : ∀a∈L.carry,s.basis a=false) :
+    let t := run (restoreRaw L) m s
+    t.phase=s.phase ∧ regValue (rawTarget L) t.basis=encodeWord 257 T ∧
+    t.basis L.lower=false ∧ t.basis L.minus=false ∧
+    ∀a,a∉rawTarget L → a≠L.lower → a≠L.minus → t.basis a=s.basis a := by
+  let P := originalParity T
+  let N := decide (T<0)
+  let u : State := ⟨s.phase,writeBit (writeBit (writeBit s.basis L.lower N)
+    L.one (N ^^ P)) L.minus (P && N)⟩
+  let v := run (unfoldBias L) m u
+  let m1 := m.drop (measurementCount (unfoldBias L))
+  let z := run (release L) m1 v
+  let m2 := m1.drop 1
+  let rot := run (rotateLeft (rawTarget L)) m2 z
+  let out := run [.CX L.parity L.r0] m2 rot
+  have sd := scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at sd
+  have lm : L.lower≠L.minus := by clear * - sd; tauto
+  have om : L.one≠L.minus := by clear * - sd; tauto
+  have ol : L.one≠L.lower := by clear * - sd; tauto
+  have pl : L.parity≠L.lower := by clear * - sd; tauto
+  have po : L.parity≠L.one := by clear * - sd; tauto
+  have pm : L.parity≠L.minus := by clear * - sd; tauto
+  have r0p : L.r0≠L.parity := by clear * - sd; tauto
+  have r0o : L.r0≠L.one := by clear * - sd; tauto
+  have flags (a : Wire) (ha : a∈L.r++L.y++L.carry)
+      (f : Wire) (hf : f∈[L.lower,L.one,L.minus]) : a≠f := by
+    intro e
+    exact flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl <;> simp)
+      (e ▸ ha)
+  have uf (a : Wire) (al : a≠L.lower) (ao : a≠L.one) (am : a≠L.minus) : u.basis a=s.basis a := by
+    simp [u,writeBit,al,ao,am]
+  have uL : u.basis L.lower=N := by simp [u,writeBit,lm,Ne.symm ol]
+  have uO : u.basis L.one=(N ^^ P) := by simp [u,writeBit,om]
+  have uM : u.basis L.minus=(P && N) := by simp [u,writeBit]
+  have uP : u.basis L.parity=P := (uf _ pl po pm).trans hp
+  have sign := biased_msb L hw _ (halfResult_spec T ht).1 s.basis hR
+  rw [negative,halfResult_sign T ht] at sign
+  have sel : run (selectors L) m s=u := selectors_run L hn P N s m hp sign hl hm ho
+  have uR : regValue L.r u.basis=encodeWord 256 (biased (halfResult T)) := by
+    apply Eq.trans _ hR
+    apply regValue_congr
+    intro a ha
+    exact uf a (flags a (by simp [ha]) _ (by simp))
+      (flags a (by simp [ha]) _ (by simp)) (flags a (by simp [ha]) _ (by simp))
+  have uC : ∀a∈L.carry,u.basis a=false := by
+    intro a ha
+    exact (uf a (flags a (by simp [ha]) _ (by simp))
+      (flags a (by simp [ha]) _ (by simp)) (flags a (by simp [ha]) _ (by simp))).trans (hc a ha)
+  have sub := unfoldBias_correct L hw hn T ht u m uL
+    (by rw [negative,halfResult_sign T ht]; exact uO) uM uR uC
+  have vR : regValue L.r v.basis=encodeWord 256 (T/2) := sub.2.1
+  have fa (f : Wire) (hf : f∈[L.lower,L.one,L.minus,L.parity]) : f∉L.r := by
+    intro h
+    exact flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl|rfl <;> simp)
+      (by simp [h])
+  have rel : z=⟨v.phase,writeBit (writeBit (writeBit v.basis L.lower false)
+      L.one false) L.minus false⟩ :=
+    release_run L hn P N v m1 ((sub.2.2 _ (fa _ (by simp))).trans uP)
+      (half_msb L hw T ht v.basis vR)
+      ((sub.2.2 _ (fa _ (by simp))).trans uL)
+      ((sub.2.2 _ (fa _ (by simp))).trans uM)
+      ((sub.2.2 _ (fa _ (by simp))).trans uO)
+  have zf (a : Wire) (al : a≠L.lower) (ao : a≠L.one) (am : a≠L.minus) : z.basis a=v.basis a := by
+    rw [rel]; simp [writeBit,al,ao,am]
+  have zL : z.basis L.lower=false := by rw [rel]; simp [writeBit,lm,Ne.symm ol]
+  have zM : z.basis L.minus=false := by rw [rel]; simp [writeBit]
+  have zO : z.basis L.one=false := by rw [rel]; simp [writeBit,om]
+  have zR : regValue L.r z.basis=encodeWord 256 (T/2) := by
+    apply Eq.trans _ vR
+    apply regValue_congr
+    intro a ha
+    exact zf a (flags a (by simp [ha]) _ (by simp))
+      (flags a (by simp [ha]) _ (by simp)) (flags a (by simp [ha]) _ (by simp))
+  have zP : z.basis L.parity=P := (zf _ pl po pm).trans ((sub.2.2 _ (fa _ (by simp))).trans uP)
+  have rp := BalancedInverse.rotate_unfold L hw hn (T/2) z m2 zO zR
+  have away (a : Wire) (ha : a∉L.r) (ao : a≠L.one) : a∉rawTarget L := by
+    simp [rawTarget,ha,ao]
+  have pr : rot.basis L.parity=P := (rp.2.2.2 _ (away _ (fa _ (by simp)) po)).trans zP
+  have outV : regValue (rawTarget L) out.basis=encodeWord 257 T := by
+    have shape : rawTarget L=L.r0::foldTarget L := by
+      simp [rawTarget,foldTarget,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.append_assoc]
+    have r0Away : L.r0∉foldTarget L := by
+      have nd := rawTargetND L hn
+      rw [shape] at nd
+      exact (List.nodup_cons.mp nd).1
+    have tail : regValue (foldTarget L) out.basis=encodeWord 256 (T/2) := by
+      apply Eq.trans _ rp.2.2.1
+      apply regValue_congr
+      intro a ha
+      change out.basis a=rot.basis a
+      simp [out,run,writeBit,show a≠L.r0 from fun e => r0Away (e ▸ ha)]
+    rw [shape]
+    change (if out.basis L.r0 then 1 else 0)+2*regValue (foldTarget L) out.basis=_
+    have r0rot : rot.basis L.r0=false := rp.2.1
+    have low : out.basis L.r0=P := by simp [out,run,writeBit,r0rot,pr]
+    rw [low,tail]
+    have he := half_encoding T ht
+    cases hp' : P <;> simpa [P,hp',Nat.add_comm] using he
+  have actual : run (restoreRaw L) m s=out := by
+    simp only [restoreRaw,List.append_assoc]
+    rw [run_append,run_take]
+    simp only [show measurementCount (selectors L)=0 from rfl,List.drop_zero]
+    rw [sel,run_append,run_take]
+    change run (release L ++ (rotateLeft (rawTarget L) ++ [.CX L.parity L.r0])) m1 v=out
+    rw [run_append,run_take]
+    simp only [show measurementCount (release L)=1 from rfl]
+    change run (rotateLeft (rawTarget L) ++ [.CX L.parity L.r0]) m2 z=out
+    rw [run_append,run_take,(rotate_counts (rawTarget L)).2.2.2,List.drop_zero]
+  rw [actual]
+  have of (a : Wire) (ar : a∉rawTarget L) : out.basis a=z.basis a := by
+    have ar0 : a≠L.r0 := fun e => ar (by simp [rawTarget,BalancedCleanup.Layout.r,
+      BalancedCleanup.Layout.low,e])
+    simp only [out,run,writeBit,Function.update_of_ne ar0]
+    exact rp.2.2.2 a ar
+  refine ⟨?_,outV,?_,?_,?_⟩
+  · change rot.phase=s.phase
+    exact rp.1.trans ((congrArg State.phase rel).trans sub.1)
+  · exact (of _ (away _ (fa _ (by simp)) (Ne.symm ol))).trans zL
+  · exact (of _ (away _ (fa _ (by simp)) (Ne.symm om))).trans zM
+  · intro a ar al am
+    have ar' : a∉L.r := fun h => ar (by simp [rawTarget,h])
+    have ao : a≠L.one := fun e => ar (by simp [rawTarget,e])
+    exact (of a ar).trans ((zf a al ao am).trans ((sub.2.2 a ar').trans (uf a al ao am)))
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+section
+-- ===== BiasedInverse =====
+set_option maxRecDepth 8192
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedCircuit Arithmetic.BalancedField
+attribute [local irreducible] run measurementCount
+
+/-- Exact multiply-direction inverse with one shared carry bank. -/
+theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (R Y : Int) (hr : Centered R) (hy : Centered Y)
+    (s : State) (m : List Bool) (hs : s.basis L.sign=B)
+    (hR : signedRegValue L.r s.basis=R) (hY : signedRegValue L.y s.basis=Y)
+    (hc : ∀a∈work L,s.basis a=false) :
+    let t := run (program L) m s
+    t.phase=s.phase ∧ regValue L.r t.basis=encodeWord 256 (BalancedInverse.result B R Y) ∧
+    (∀a∈work L,t.basis a=false) ∧ (∀a,a∉L.r → t.basis a=s.basis a) := by
+  let X := BalancedInverse.result B R Y
+  let T := rawSum B X Y
+  let P := originalParity T
+  let u0 := run [.CX L.ymsb L.sourceGuard] m s
+  let u1 := run (recoverPrefix L) m u0
+  let m1 := m.drop (measurementCount (recoverPrefix L))
+  let u2 := run (unbiasView L) m1 u1
+  let m2 := m1.drop (measurementCount (unbiasView L))
+  let u3 := run (restoreRaw L) m2 u2
+  let m3 := m2.drop (measurementCount (restoreRaw L))
+  let u4 := run (BalancedInverse.rawSubtract L) m3 u3
+  let m4 := m3.drop (measurementCount (BalancedInverse.rawSubtract L))
+  let out := run (seedViews L).reverse m4 u4
+  have hx : Centered X := BalancedInverse.result_bounds B R Y
+  have ht : -(2*q)≤T ∧ T≤2*q := rawSum_bounds B X Y hx hy
+  have half : halfResult T=R := BalancedInverse.result_half B R Y hr hy
+  have par : decide (q < |2*R-signedY B Y|)=P := BalancedInverse.result_parity B R Y hr hy
+  have w := BalancedCleanup.widths L.toLayout hw
+  have rwid := BalancedCircuit.widths L hw
+  have cnd : L.toLayout.wires.Nodup := (List.nodup_append'.mp hn).2.1
+  have nd := scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  rcases nd with ⟨⟨h0_1,h0_2,h0_3,h0_4,h0_5,h0_6,h0_7,h0_8,h0_9,h0_10⟩,⟨h1_2,h1_3,h1_4,h1_5,h1_6,h1_7,h1_8,h1_9,h1_10⟩,⟨h2_3,h2_4,h2_5,h2_6,h2_7,h2_8,h2_9,h2_10⟩,⟨h3_4,h3_5,h3_6,h3_7,h3_8,h3_9,h3_10⟩,⟨h4_5,h4_6,h4_7,h4_8,h4_9,h4_10⟩,⟨h5_6,h5_7,h5_8,h5_9,h5_10⟩,⟨h6_7,h6_8,h6_9,h6_10⟩,⟨h7_8,h7_9,h7_10⟩,⟨h8_9,h8_10⟩,h9_10⟩
+  have h0_1r := Ne.symm h0_1
+  have h0_2r := Ne.symm h0_2
+  have h0_3r := Ne.symm h0_3
+  have h0_4r := Ne.symm h0_4
+  have h0_5r := Ne.symm h0_5
+  have h0_6r := Ne.symm h0_6
+  have h0_7r := Ne.symm h0_7
+  have h0_8r := Ne.symm h0_8
+  have h0_9r := Ne.symm h0_9
+  have h0_10r := Ne.symm h0_10
+  have h1_2r := Ne.symm h1_2
+  have h1_3r := Ne.symm h1_3
+  have h1_4r := Ne.symm h1_4
+  have h1_5r := Ne.symm h1_5
+  have h1_6r := Ne.symm h1_6
+  have h1_7r := Ne.symm h1_7
+  have h1_8r := Ne.symm h1_8
+  have h1_9r := Ne.symm h1_9
+  have h1_10r := Ne.symm h1_10
+  have h2_3r := Ne.symm h2_3
+  have h2_4r := Ne.symm h2_4
+  have h2_5r := Ne.symm h2_5
+  have h2_6r := Ne.symm h2_6
+  have h2_7r := Ne.symm h2_7
+  have h2_8r := Ne.symm h2_8
+  have h2_9r := Ne.symm h2_9
+  have h2_10r := Ne.symm h2_10
+  have h3_4r := Ne.symm h3_4
+  have h3_5r := Ne.symm h3_5
+  have h3_6r := Ne.symm h3_6
+  have h3_7r := Ne.symm h3_7
+  have h3_8r := Ne.symm h3_8
+  have h3_9r := Ne.symm h3_9
+  have h3_10r := Ne.symm h3_10
+  have h4_5r := Ne.symm h4_5
+  have h4_6r := Ne.symm h4_6
+  have h4_7r := Ne.symm h4_7
+  have h4_8r := Ne.symm h4_8
+  have h4_9r := Ne.symm h4_9
+  have h4_10r := Ne.symm h4_10
+  have h5_6r := Ne.symm h5_6
+  have h5_7r := Ne.symm h5_7
+  have h5_8r := Ne.symm h5_8
+  have h5_9r := Ne.symm h5_9
+  have h5_10r := Ne.symm h5_10
+  have h6_7r := Ne.symm h6_7
+  have h6_8r := Ne.symm h6_8
+  have h6_9r := Ne.symm h6_9
+  have h6_10r := Ne.symm h6_10
+  have h7_8r := Ne.symm h7_8
+  have h7_9r := Ne.symm h7_9
+  have h7_10r := Ne.symm h7_10
+  have h8_9r := Ne.symm h8_9
+  have h8_10r := Ne.symm h8_10
+  have h9_10r := Ne.symm h9_10
+  have flagR (f : Wire) (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one]) :
+      f∉L.r := fun h => flagAway L hn f hf (by simp [h])
+  have away (a : Wire)
+      (ha : a∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower]++L.y++L.carry) :
+      a∉rawTarget L := compose_raw_away L hn a ha
+  have neq (a : Wire) (ha : a∈L.y++L.carry)
+      (f : Wire) (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one]) : a≠f :=
+    by
+      intro e
+      apply flagAway L hn f hf
+      subst a
+      simpa only [List.append_assoc] using List.mem_append_right L.r ha
+  have nr (a : Wire) (ha : a∈L.y++L.carry) : a∉L.r := by
+    have d := (List.nodup_append'.mp (allND L hn)).2.1
+    have dn : (L.r++(L.y++L.carry)).Nodup := by
+      simpa only [List.append_assoc] using d
+    exact fun h => List.disjoint_left.mp (List.nodup_append'.mp dn).2.2 h ha
+  have f0 (a : Wire) (ha : a≠L.sourceGuard) : u0.basis a=s.basis a := by
+    simp [u0,run,writeBit,ha]
+  have g0 : u0.basis L.sourceGuard=s.basis L.ymsb := by
+    simp [u0,run,writeBit,hc L.sourceGuard (by simp [work])]
+  have r0 : regValue L.r u0.basis=encodeWord 256 R := by
+    apply Eq.trans _ (word_encoding L.r 256 w.2.1 s.basis R hR)
+    exact regValue_congr _ _ _ (fun a ha => f0 a
+      (fun e => flagR L.sourceGuard (by simp) (e ▸ ha)))
+  have y0 : regValue L.y u0.basis=encodeWord 256 Y := by
+    apply Eq.trans _ (word_encoding L.y 256 w.2.2.1 s.basis Y hY)
+    exact regValue_congr _ _ _ (fun a ha => f0 a (neq a (by simp [ha]) _ (by simp)))
+  have z0 (a : Wire) (ha : a∈work L) (hg : a≠L.sourceGuard) : u0.basis a=false :=
+    (f0 a hg).trans (hc a ha)
+  have pre := recoverPrefix_correct L hw cnd R Y B hr hy u0 m r0 y0
+    ((f0 _ (by assumption)).trans hs) (z0 _ (by simp [work]) (by assumption))
+    (z0 _ (by simp [work]) (by assumption))
+    (fun a ha => z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp)))
+  have p1 : u1.basis L.parity=P := by
+    rw [pre.2.2.2.1,z0 _ (by simp [work]) (by assumption),par]
+    exact Bool.false_xor P
+  have view := unbiasView_correct L hw cnd R hr u1 m1 pre.2.1 pre.2.2.1
+  have f2 (a : Wire) (ar : a∉L.r) (al : a≠L.lower) (ap : a≠L.parity) : u2.basis a=u0.basis a :=
+    (view.2.2.2 a ar al).trans (pre.2.2.2.2 a ar al ap)
+  have p2 : u2.basis L.parity=P :=
+    (view.2.2.2 _ (flagR _ (by simp)) (by assumption)).trans p1
+  have r2 : regValue L.r u2.basis=encodeWord 256 (biased (halfResult T)) := by
+    rw [half]; exact view.2.1
+  have restore := restoreRaw_correct L hw hn T ht u2 m2 p2 r2 view.2.2.1
+    ((f2 _ (flagR _ (by simp)) (by assumption) (by assumption)).trans (z0 _ (by simp [work]) (by assumption)))
+    ((f2 _ (flagR _ (by simp)) (by assumption) (by assumption)).trans (z0 _ (by simp [work]) (by assumption)))
+    (fun a ha => (f2 a (nr a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
+      (neq a (by simp [ha]) _ (by simp))).trans
+      (z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp))))
+  have f3 (a : Wire) (ar : a∉rawTarget L) (al : a≠L.lower) (am : a≠L.minus)
+      (ap : a≠L.parity) : u3.basis a=u0.basis a :=
+    (restore.2.2.2.2 a ar al am).trans
+      (f2 a (fun h => ar (by simp [rawTarget,h])) al ap)
+  have p3 : u3.basis L.parity=P :=
+    (restore.2.2.2.2 _ (away _ (by simp)) (by assumption) (by assumption)).trans p2
+  have y3 : signedRegValue L.y u3.basis=Y := by
+    apply Eq.trans _ hY
+    unfold signedRegValue
+    congr 1
+    apply regValue_congr
+    intro a ha
+    exact (f3 a (away a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
+      (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
+      (f0 a (neq a (by simp [ha]) _ (by simp)))
+  have g3 : u3.basis L.sourceGuard=u3.basis L.ymsb := by
+    have g := (f3 _ (away _ (by simp)) (by assumption) (by assumption) (by assumption)).trans g0
+    have y := (f3 L.ymsb (away _ (by simp [BalancedCleanup.Layout.y]))
+      (by assumption) (by assumption) (by assumption)).trans (f0 _ (by assumption))
+    exact g.trans y.symm
+  have src3 : signedRegValue (rawSource L) u3.basis=Y :=
+    (signed_extension L.ylow L.ymsb L.sourceGuard u3.basis g3).trans y3
+  have raw3 : signedRegValue (rawTarget L) u3.basis=T := by
+    unfold signedRegValue
+    rw [rwid.2.1,restore.2.1]
+    apply decode_encodeWord 257 (by norm_num)
+    have c := constants
+    norm_num at ⊢
+    omega
+  have carry3 : regValue L.carry u3.basis=0 := by
+    apply (regValue_zero _ _).mpr
+    intro a ha
+    exact (f3 a (away a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
+      (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
+      (z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp)))
+  have sign3 : u3.basis L.sign=B :=
+    (f3 _ (away _ (by simp)) (by assumption) (by assumption) (by assumption)).trans ((f0 _ (by assumption)).trans hs)
+  have sub := BalancedInverse.rawSubtract_signed L hw hn B X Y hx u3 m3 sign3 src3 raw3 carry3
+  have y4 : signedRegValue L.y u4.basis=Y := by
+    apply Eq.trans _ y3
+    unfold signedRegValue
+    congr 1
+    exact regValue_congr _ _ _ (fun a ha => sub.2.2 a (away a (by simp [ha])))
+  have g4 : u4.basis L.sourceGuard=u4.basis L.ymsb :=
+    (sub.2.2 _ (away _ (by simp))).trans (g3.trans
+      (sub.2.2 _ (away _ (by simp [BalancedCleanup.Layout.y]))).symm)
+  have p4 : u4.basis L.parity=P := (sub.2.2 _ (away _ (by simp))).trans p3
+  have seed := BalancedInverse.unseed_packet L hw hn B X Y hx u4 m4 sub.2.1 y4 g4 p4
+  have f4 (a : Wire) (ar : a∉rawTarget L) (al : a≠L.lower) (am : a≠L.minus)
+      (ap : a≠L.parity) : u4.basis a=u0.basis a := (sub.2.2 a ar).trans (f3 a ar al am ap)
+  have clean : ∀a∈work L,out.basis a=false := by
+    intro a ha
+    simp only [work,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,or_assoc] at ha
+    rcases ha with rfl|rfl|rfl|rfl|rfl|rfl|rfl|ha
+    · exact seed.2.1
+    · exact (seed.2.2.2.2 _ (by assumption) (by assumption) (by assumption)).trans
+        ((f4 _ (away _ (by simp)) (by assumption) (by assumption) (by assumption)).trans
+          (z0 _ (by simp [work]) (by assumption)))
+    · exact (seed.2.2.2.2 _ (by assumption) (by assumption) (by assumption)).trans
+        ((sub.2.2 _ (away _ (by simp))).trans restore.2.2.2.1)
+    · exact (seed.2.2.2.2 _ (by assumption) (by assumption) (by assumption)).trans
+        ((f4 _ (away _ (by simp)) (by assumption) (by assumption) (by assumption)).trans
+          (z0 _ (by simp [work]) (by assumption)))
+    · exact seed.2.2.2.1
+    · exact (seed.2.2.2.2 _ (by assumption) (by assumption) (by assumption)).trans
+        ((sub.2.2 _ (away _ (by simp))).trans restore.2.2.1)
+    · exact seed.2.2.1
+    · exact (seed.2.2.2.2 a (neq a (by simp [ha]) _ (by simp))
+        (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
+        ((f4 a (away a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
+          (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
+          (z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp))))
+  have frame : ∀a,a∉L.r → out.basis a=s.basis a := by
+    intro a ar
+    by_cases aw : a∈work L
+    · exact (clean a aw).trans (hc a aw).symm
+    · have ne (f : Wire) (hf : f∈[L.sourceGuard,L.one,L.parity,L.lower,L.minus]) : a≠f := by
+        intro e
+        apply aw
+        subst a
+        simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+        rcases hf with rfl|rfl|rfl|rfl|rfl <;> simp [work]
+      have rawA : a∉rawTarget L := by simp [rawTarget,ar,ne L.one (by simp)]
+      exact (seed.2.2.2.2 a (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))).trans
+        ((f4 a rawA (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))).trans
+          (f0 a (ne _ (by simp))))
+  have value : regValue L.r out.basis=encodeWord 256 X := by
+    have corr := BalancedInverse.unseed_correlations L hw B X Y hx u4 sub.2.1 y4 g4 p4
+    have narrow : signedRegValue L.r u4.basis=X :=
+      (signed_extension (L.r0::L.rtail) L.rmsb L.one u4.basis corr.1).symm.trans sub.2.1
+    apply Eq.trans _ (word_encoding L.r 256 w.2.1 u4.basis X narrow)
+    apply regValue_congr
+    intro a ha
+    have ne (f : Wire) (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one]) : a≠f :=
+      fun e => flagR f hf (e ▸ ha)
+    exact seed.2.2.2.2 a (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))
+  have actual : run (program L) m s=out := by
+    simp only [program,List.append_assoc]
+    rw [run_append,run_take]
+    simp only [show measurementCount [.CX L.ymsb L.sourceGuard]=0 from by simp only [measurementCount],List.drop_zero]
+    change run (recoverPrefix L ++ (unbiasView L ++ (restoreRaw L ++
+      (BalancedInverse.rawSubtract L ++ (seedViews L).reverse)))) m u0=out
+    rw [run_append,run_take]
+    change run (unbiasView L ++ (restoreRaw L ++
+      (BalancedInverse.rawSubtract L ++ (seedViews L).reverse))) m1 u1=out
+    rw [run_append,run_take]
+    change run (restoreRaw L ++ (BalancedInverse.rawSubtract L ++ (seedViews L).reverse)) m2 u2=out
+    rw [run_append,run_take]
+    change run (BalancedInverse.rawSubtract L ++ (seedViews L).reverse) m3 u3=out
+    rw [run_append,run_take]
+  rw [actual]
+  have ph0 : u0.phase=s.phase := by simp [u0,run]
+  exact ⟨seed.1.trans (sub.1.trans (restore.1.trans (view.1.trans (pre.1.trans ph0)))),value,clean,frame⟩
+
+/-- Whole-state interchangeability permits independent measurement tapes. -/
+theorem kernel_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (R Y : Int) (hr : Centered R) (hy : Centered Y)
+    (s : State) (m n : List Bool) (hs : s.basis L.sign=B)
+    (hR : signedRegValue L.r s.basis=R) (hY : signedRegValue L.y s.basis=Y)
+    (hc : ∀a∈work L,s.basis a=false) :
+    run (program L) m s=run (BalancedInverse.program L) n s := by
+  have fresh := program_correct L hw hn B R Y hr hy s m hs hR hY hc
+  have old := BalancedInverse.program_correct L hw hn B R Y hr hy s n hs hR hY hc
+  apply State.extensionality
+  · exact fresh.1.trans old.1.symm
+  · funext a
+    by_cases ha : a∈L.r
+    · exact (regValue_eq_iff L.r _ _).mp (fresh.2.1.trans old.2.1.symm) a ha
+    · exact (fresh.2.2.2 a ha).trans (old.2.2.2 a ha).symm
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+section
+-- ===== BiasedInverseSupport =====
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic Arithmetic.BalancedCircuit
+
+theorem support (L : Layout) (hw : L.Widths) : wires (program L) ⊆ L.wires.toFinset := by
+  have old := BalancedInverse.support L hw
+  simp only [BalancedInverse.program,wires_append,Finset.union_subset_iff] at old
+  have cl := BalancedCleanup.support L.toLayout hw
+  have embed : L.toLayout.wires.toFinset ⊆ L.wires.toFinset := by
+    intro a ha
+    simp only [Layout.wires,List.toFinset_append,Finset.mem_union]
+    exact Or.inr ha
+  have cls := Finset.Subset.trans cl embed
+  simp only [BalancedCleanup.program,wires_append,Finset.union_subset_iff] at cls
+  have pre : wires (recoverPrefix L) ⊆ L.wires.toFinset := by
+    simp only [recoverPrefix,wires_append,Finset.union_subset_iff]
+    tauto
+  have member (a : Wire) : a∈L.wires.toFinset ↔
+      a∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one,L.rmsb,L.ymsb,L.r0] ∨
+      a∈L.rtail ∨ a∈L.ylow ∨ a∈L.carry := by
+    simp [Layout.wires,BalancedCleanup.Layout.wires,or_assoc]
+  have small (a : Wire) (ha : a∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one,L.rmsb,L.ymsb,L.r0]) :
+      a∈L.wires.toFinset := (member a).mpr (Or.inl ha)
+  have rmem (a : Wire) (ha : a∈L.r) : a∈L.wires.toFinset := by
+    simp only [BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.mem_append,
+      List.mem_cons,List.not_mem_nil,or_false,or_assoc] at ha
+    simp only [member,List.mem_cons,List.not_mem_nil,or_false]
+    tauto
+  have flip : wires [.X (L.r.getD 254 0)] ⊆ L.wires.toFinset := by
+    have w := BalancedCleanup.widths L.toLayout hw
+    have idx : 254<L.r.length := by omega
+    have bit : L.r.getD 254 0∈L.r := by
+      rw [List.getD_eq_getElem _ _ idx]
+      exact List.getElem_mem _
+    simpa [wires,Instr.wires] using rmem _ bit
+  have view : wires (unbiasView L) ⊆ L.wires.toFinset := by
+    simp only [unbiasView,wires_append,Finset.union_subset_iff]
+    exact ⟨flip,cls.2.2.2.2.2.2⟩
+  have mapped := mappedSub_wires_subset (biasBits L) L.r (L.carry.take 255) L.minus
+  have unfoldS : wires (unfoldBias L) ⊆ L.wires.toFinset := by
+    intro a ha
+    have h := mapped ha
+    simp only [List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,or_assoc] at h
+    rcases h with h|h|h|h
+    · rcases biasBits_sources L a h with rfl|rfl <;> exact small _ (by simp)
+    · exact rmem a h
+    · exact (member a).mpr (Or.inr (Or.inr (Or.inr (List.mem_of_mem_take h))))
+    · exact small a (by simp [h])
+  have sel : wires (selectors L) ⊆ L.wires.toFinset := by
+    intro a ha
+    simp only [selectors,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
+      Finset.mem_singleton,Finset.notMem_empty] at ha
+    apply small
+    simp only [List.mem_cons,List.not_mem_nil]
+    tauto
+  have rel : wires (release L) ⊆ L.wires.toFinset := by
+    intro a ha
+    simp only [release,wires,Instr.wires,correctionWires,Finset.mem_union,Finset.mem_insert,
+      Finset.mem_singleton,Finset.notMem_empty] at ha
+    apply small
+    simp only [List.mem_cons,List.not_mem_nil]
+    tauto
+  have ins : wires [.CX L.parity L.r0] ⊆ L.wires.toFinset := by
+    intro a ha
+    simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty] at ha
+    apply small
+    simp only [List.mem_cons,List.not_mem_nil]
+    tauto
+  simp only [program,restoreRaw,wires_append,Finset.union_subset_iff]
+  tauto
+
+end ECDSAAdd.Entrant.BiasedInverse
+
+end
+
+
+section
+namespace ECDSAAdd.Entrant.ShortKernelDependencies
+open Arithmetic Arithmetic.BalancedField Secp256k1 Challenge Baselines Arithmetic.FieldRename
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] literalConstAdd compareLt rotateLeft rotateRight signComplement addInPlace subInPlace mappedAdd mappedSub swapRegisters transcriptSelectWindow
+theorem biasedCircuit_support (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    wires (BiasedCircuit.program L)⊆L.wires.toFinset := by
+  intro q hq
+  have h := BiasedCircuit.support L hw hq
+  simp only [BiasedCircuit.activeWires,BalancedCircuit.Layout.wires,List.mem_toFinset,
+    List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at h ⊢
+  tauto
+
+theorem bf_r_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    (mapCircuit f L).r=L.r.map f := r_map f L.toLayout
+theorem bf_y_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    (mapCircuit f L).y=L.y.map f := y_map f L.toLayout
+theorem bf_low_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    (mapCircuit f L).low=L.low.map f := low_map f L.toLayout
+
+theorem bf_biasBits_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    (BiasedCircuit.biasBits L).map (mapBit f)=BiasedCircuit.biasBits (mapCircuit f L) := by
+  simp only [BiasedCircuit.biasBits,List.map_append,List.map_map,List.map_cons,List.map_nil]
+  rfl
+
+theorem bf_flip_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    renameProgram f (BiasedCircuit.flipBias L)=BiasedCircuit.flipBias (mapCircuit f L) := by
+  have h : 253<L.rtail.length := by rw [hw.1]; omega
+  simp [BiasedCircuit.flipBias,renameProgram,renameInstr,mapCircuit,mapCleanup,
+    List.getD_eq_getElem?_getD,List.getElem?_eq_getElem h]
+
+theorem bf_prefix_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) (hw : L.Widths)
+    (hy : L.ylow≠[]) :
+    renameProgram f (BiasedCircuit.biasedPrefix L)=BiasedCircuit.biasedPrefix (mapCircuit f L) := by
+  have pf : renameProgram f (BiasedCircuit.prepareFold L)=
+      BiasedCircuit.prepareFold (mapCircuit f L) := by
+    simp only [BiasedCircuit.prepareFold,mapCircuit,mapCleanup,renameProgram,
+      List.map_cons,List.map_nil,renameInstr]
+  have sv : renameProgram f (BiasedCircuit.signView L)=BiasedCircuit.signView (mapCircuit f L) := by
+    simp only [BiasedCircuit.signView,mapCircuit,mapCleanup,renameProgram,
+      List.map_cons,List.map_nil,renameInstr]
+  have rs : renameProgram f (BiasedCircuit.releaseSelectors L)=
+      BiasedCircuit.releaseSelectors (mapCircuit f L) := by
+    simp only [BiasedCircuit.releaseSelectors,mapCircuit,mapCleanup,renameProgram,
+      List.map_cons,List.map_nil,renameInstr,renameCorrection]
+  have fd : renameProgram f (BiasedCircuit.fold L)=BiasedCircuit.fold (mapCircuit f L) := by
+    simp only [BiasedCircuit.fold,mappedAdd_natural,bf_biasBits_map,List.map_take,bf_r_map]
+    rfl
+  simp only [BiasedCircuit.biasedPrefix,rename_append,seedViews_natural f L hy,rawAdd_natural,
+    pf,rotateRight_natural,rawTarget_map,sv,fd,rs,prepareSign_natural,bf_flip_natural f L hw]
+  rfl
+
+theorem bf_suffix_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    renameProgram f (BiasedCircuit.cleanupSuffix L)=BiasedCircuit.cleanupSuffix (mapCircuit f L) := by
+  simp only [BiasedCircuit.cleanupSuffix,BalancedCleanup.unnormalize,BalancedCleanup.prepareCompare,
+    rename_append,rename_reverse,prepareSign_natural,literalConstAdd_natural,rotateLeft_natural,
+    signComplement_natural,compareLt_natural,bf_low_map,bf_r_map,bf_y_map,List.map_take]
+  rfl
+
+theorem biasedCircuit_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    renameProgram f (BiasedCircuit.program L)=BiasedCircuit.program (mapCircuit f L) := by
+  have hy : L.ylow≠[] := by
+    intro e
+    have h := hw.2.1
+    rw [e] at h
+    simp at h
+  simp only [BiasedCircuit.program,rename_append,bf_prefix_natural f L hw hy,bf_suffix_natural]
+
+theorem bi_biasBits_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    (BiasedInverse.biasBits L).map (mapBit f)=BiasedInverse.biasBits (mapCircuit f L) := by
+  simp only [BiasedInverse.biasBits,List.map_append,List.map_map,List.map_cons,List.map_nil]
+  rfl
+
+theorem bi_recoverPrefix_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    renameProgram f (BiasedInverse.recoverPrefix L)=BiasedInverse.recoverPrefix (mapCircuit f L) := by
+  simp only [BiasedInverse.recoverPrefix,BalancedCleanup.normalize,BalancedCleanup.prepareCompare,
+    rename_append,rename_reverse,prepareSign_natural,literalConstAdd_natural,
+    rotateLeft_natural,signComplement_natural,compareLt_natural,mapCircuit,low_map,r_map,y_map,List.map_take]
+  rfl
+
+theorem bi_r_getD_map (f : Wire → Wire) (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    (mapCircuit f L).r.getD 254 0=f (L.r.getD 254 0) := by
+  have w := (BalancedCleanup.widths L.toLayout hw).2.1
+  have h : 254<L.r.length := by omega
+  change (mapCleanup f L.toLayout).r.getD 254 0=f (L.r.getD 254 0)
+  rw [r_map,List.getD_eq_getElem _ _ (by simpa only [List.length_map] using h),
+    List.getD_eq_getElem _ _ h,List.getElem_map]
+
+theorem bi_unbiasView_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    renameProgram f (BiasedInverse.unbiasView L)=BiasedInverse.unbiasView (mapCircuit f L) := by
+  simp only [BiasedInverse.unbiasView,rename_append,rename_reverse,prepareSign_natural,
+    bi_r_getD_map f L hw]
+  rfl
+
+theorem bi_selectors_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    renameProgram f (BiasedInverse.selectors L)=BiasedInverse.selectors (mapCircuit f L) := rfl
+
+theorem bi_release_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    renameProgram f (BiasedInverse.release L)=BiasedInverse.release (mapCircuit f L) := rfl
+
+theorem bi_restoreRaw_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    renameProgram f (BiasedInverse.restoreRaw L)=BiasedInverse.restoreRaw (mapCircuit f L) := by
+  have rm : (mapCircuit f L).r=L.r.map f := r_map f L.toLayout
+  simp only [BiasedInverse.restoreRaw,BiasedInverse.unfoldBias,rename_append,
+    bi_selectors_natural,mappedSub_natural,bi_biasBits_map,bi_release_natural,
+    rotateLeft_natural,rawTarget_map,rm,List.map_take]
+  rfl
+
+/-- Relabeling uses the valid result width so the selected high bit is present. -/
+theorem biasedInverse_natural (f : Wire → Wire) (L : BalancedCircuit.Layout)
+    (hy : L.ylow ≠ []) (hw : L.Widths) :
+    renameProgram f (BiasedInverse.program L)=BiasedInverse.program (mapCircuit f L) := by
+  simp only [BiasedInverse.program,rename_append,rename_reverse,
+    bi_recoverPrefix_natural,bi_unbiasView_natural f L hw,bi_restoreRaw_natural,
+    rawSubtract_natural,seedViews_natural f L hy]
+  rfl
+
+
+end ECDSAAdd.Entrant.ShortKernelDependencies
+end
+
+-- ===== Root verified Short kernel Arithmetic =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedFold
+open Arithmetic
+set_option maxRecDepth 8192
+set_option maxHeartbeats 200000
+set_option linter.unusedSimpArgs false
+abbrev Layout := BalancedCircuit.Layout
+
+def lowBits (L : Layout) : List MappedBit := (BiasedCircuit.biasBits L).take 255
+
+def shortFold (L : Layout) : Program :=
+  mappedAdd (lowBits L) L.low (L.carry.take 254) L.minus ++ [.CX L.parity L.rmsb]
+
+def shortUnfold (L : Layout) : Program :=
+  mappedSub (lowBits L) L.low (L.carry.take 254) L.minus ++ [.CX L.parity L.rmsb]
+
+theorem lowBits_length (L : Layout) : (lowBits L).length=255 := by
+  simp [lowBits,BiasedCircuit.biasBits]
+
+theorem short_counts (L : Layout) (hw : L.Widths) :
+    toffoliCount (shortFold L)=254 ∧ measurementCount (shortFold L)=254 ∧
+    toffoliCount (shortUnfold L)=254 ∧ measurementCount (shortUnfold L)=254 := by
+  have widths := BalancedCleanup.widths L.toLayout hw
+  have len : (lowBits L).length=L.low.length := by rw [lowBits_length,widths.1]
+  have carry : (L.carry.take 254).length+1=L.low.length := by
+    simp [List.length_take,hw.2.2,widths.1]
+  have a := mappedAdd_counts (lowBits L) L.low (L.carry.take 254) L.minus len carry
+  have b := mappedSub_counts (lowBits L) L.low (L.carry.take 254) L.minus len carry
+  simp only [shortFold,shortUnfold,toffoliCount_append,measurementCount_append,a.1,a.2,b.1,b.2,widths.1]
+  norm_num [toffoliCount,measurementCount]
+
+theorem low_sum_mod (n x y xh yh c : Nat) :
+    (((x+2^n*xh)+(y+2^n*yh)+c)%2^(n+1))%2^n=(x+y+c)%2^n := by
+  rw [Nat.mod_mod_of_dvd _ (show 2^n∣2^(n+1) from ⟨2,by simp [Nat.pow_succ]⟩)]
+  simp [Nat.add_mod,Nat.mul_mod]
+
+theorem reg_low_mod (ys : List Wire) (top : Wire) (s : BasisState) :
+    regValue (ys++[top]) s %2^ys.length=regValue ys s := by
+  rw [regValue_append]
+  simp [Nat.add_mod,Nat.mul_mod,Nat.mod_eq_of_lt (regValue_lt ys s)]
+
+/-- The full adder's low word is independent of the source and target top bits. -/
+theorem full_add_low (bits : List MappedBit) (b : MappedBit) (ys carry : List Wire)
+    (top cin : Wire) (hl : bits.length=ys.length) (hc : carry.length=ys.length)
+    (hn : (cin::((ys++[top])++carry)).Nodup)
+    (hs : ∀q∈mappedWires (bits++[b]),q∉cin::((ys++[top])++carry))
+    (s : State) (m : List Bool) (clean : ∀q∈carry,s.basis q=false) :
+    regValue ys (run (mappedAdd (bits++[b]) (ys++[top]) carry cin) m s).basis=
+      (mappedValue bits s.basis+regValue ys s.basis+(s.basis cin).toNat)%2^ys.length := by
+  have add := mappedAdd_correct (bits++[b]) (ys++[top]) carry cin hn hs
+    (by simp [hl]) (by simp [hc]) s m clean
+  have h := congrArg (fun v : Nat => v%2^ys.length) add.2.2
+  dsimp only at h
+  rw [reg_low_mod] at h
+  rw [mappedValue_append,regValue_append,hl,List.length_append,List.length_singleton] at h
+  simpa only [mappedValue,regValue,List.foldr_cons,List.foldr_nil,Nat.mul_zero,Nat.add_zero,
+    low_sum_mod] using h
+
+/-- A known high output bit lets the full ripple be replaced by a low ripple and CX. -/
+theorem full_add_eq_short (bits : List MappedBit) (b : MappedBit)
+    (ys carry small : List Wire) (top cin control : Wire)
+    (hl : bits.length=ys.length) (hc : carry.length=ys.length)
+    (hsmall : small.length+1=ys.length)
+    (hn : (cin::((ys++[top])++carry)).Nodup)
+    (hs : ∀q∈mappedWires (bits++[b]),q∉cin::((ys++[top])++carry))
+    (hn' : (cin::(ys++small)).Nodup)
+    (hs' : ∀q∈mappedWires bits,q∉cin::(ys++small))
+    (htop : top∉ys) (hcontrol : control∉ys)
+    (s : State) (m n : List Bool)
+    (clean : ∀q∈carry,s.basis q=false) (clean' : ∀q∈small,s.basis q=false)
+    (high : (run (mappedAdd (bits++[b]) (ys++[top]) carry cin) m s).basis top =
+      (s.basis top ^^ s.basis control)) :
+    run (mappedAdd (bits++[b]) (ys++[top]) carry cin) m s =
+    run (mappedAdd bits ys small cin ++ [.CX control top]) n s := by
+  have full := mappedAdd_correct (bits++[b]) (ys++[top]) carry cin hn hs
+    (by simp [hl]) (by simp [hc]) s m clean
+  have low := full_add_low bits b ys carry top cin hl hc hn hs s m clean
+  have narrow := mappedAdd_correct bits ys small cin hn' hs' hl hsmall s n clean'
+  rw [run_append]
+  simp only [run_take,run]
+  generalize he : run (mappedAdd (bits++[b]) (ys++[top]) carry cin) m s = v at full low high ⊢
+  generalize hf : run (mappedAdd bits ys small cin) n s = u at narrow ⊢
+  refine State.extensionality v ⟨u.phase,writeBit u.basis top (u.basis top ^^ u.basis control)⟩
+    (full.1.trans narrow.1.symm) ?_
+  funext q
+  by_cases qt : q=top
+  · subst q
+    change v.basis top = (writeBit u.basis top (u.basis top ^^ u.basis control)) top
+    rw [writeBit,Function.update_self,narrow.2.1 top htop,narrow.2.1 control hcontrol]
+    exact high
+  · simp only [writeBit,Function.update_of_ne qt]
+    by_cases qy : q∈ys
+    · exact (regValue_eq_iff ys v.basis u.basis).mp (low.trans narrow.2.2.symm) q qy
+    · exact (full.2.1 q (by simp [qy,qt])).trans (narrow.2.1 q qy).symm
+theorem biasBits_split (L : Layout) :
+    BiasedCircuit.biasBits L = lowBits L ++ [{wire:=some L.one,flip:=false}] := by
+  simp [lowBits,BiasedCircuit.biasBits,List.take_append]
+
+theorem biased_fold_eq (L : Layout) (hw : L.Widths)
+    (hn : (L.minus::(L.r++L.carry.take 255)).Nodup)
+    (hs : ∀q∈mappedWires (BiasedCircuit.biasBits L),q∉L.minus::(L.r++L.carry.take 255))
+    (hn' : (L.minus::(L.low++L.carry.take 254)).Nodup)
+    (hs' : ∀q∈mappedWires (lowBits L),q∉L.minus::(L.low++L.carry.take 254))
+    (htop : L.rmsb∉L.low) (hpar : L.parity∉L.low)
+    (T : Int) (ht : -(2*Arithmetic.BalancedField.q)≤T ∧ T≤2*Arithmetic.BalancedField.q)
+    (s : State) (m n : List Bool)
+    (hv : regValue L.r s.basis=Arithmetic.BalancedField.encodeWord 257 T/2)
+    (hl : s.basis L.lower=decide (T<0))
+    (ho : s.basis L.one=Arithmetic.BalancedField.negative (Arithmetic.BalancedField.halfResult T))
+    (hp : s.basis L.parity=Arithmetic.BalancedField.originalParity T)
+    (hm : s.basis L.minus=(Arithmetic.BalancedField.originalParity T && decide (T<0)))
+    (clean : ∀q∈L.carry,s.basis q=false) :
+    run (BiasedCircuit.fold L) m s=run (shortFold L) n s := by
+  have widths := BalancedCleanup.widths L.toLayout hw
+  have add := mappedAdd_correct (BiasedCircuit.biasBits L) L.r (L.carry.take 255) L.minus hn hs
+    (by simp [BiasedCircuit.biasBits,widths.2.1])
+    (by simp [List.length_take,hw.2.2,widths.2.1]) s m
+    (fun q hq => clean q (List.mem_of_mem_take hq))
+  have val : regValue L.r (run (BiasedCircuit.fold L) m s).basis =
+      Arithmetic.BalancedField.encodeWord 256 (BiasedCircuit.biasedValue (Arithmetic.BalancedField.halfResult T)) := by
+    rw [BiasedCircuit.fold,add.2.2,BiasedCircuit.biasBits_value,hv,hl,ho,hm,widths.2.1]
+    simpa only [Nat.add_comm] using BiasedCircuit.fold_arithmetic T ht
+  have out := BiasedCircuit.biased_sign L hw _ (Arithmetic.BalancedField.halfResult_spec T ht).1 _ val
+  have enc := BiasedInverse.half_encoding T ht
+  have raw : regValue L.r s.basis=Arithmetic.BalancedField.encodeWord 256 (T/2) := by
+    rw [hv]
+    cases p : Arithmetic.BalancedField.originalParity T <;> simp [p] at enc <;> omega
+  have inp := BiasedInverse.half_msb L hw T ht s.basis raw
+  have high : (run (BiasedCircuit.fold L) m s).basis L.rmsb =
+      (s.basis L.rmsb ^^ s.basis L.parity) := by
+    rw [out,inp,hp]
+    exact Arithmetic.BalancedField.halfResult_sign T ht
+  have oldShape : BiasedCircuit.fold L = mappedAdd
+      (lowBits L ++ [{wire:=some L.one,flip:=false}]) (L.low++[L.rmsb])
+      (L.carry.take 255) L.minus := by
+    rw [BiasedCircuit.fold,biasBits_split]; rfl
+  rw [oldShape] at high ⊢
+  exact full_add_eq_short (lowBits L) {wire:=some L.one,flip:=false} L.low
+    (L.carry.take 255) (L.carry.take 254) L.rmsb L.minus L.parity
+    (by rw [lowBits_length,widths.1])
+    (by simp [List.length_take,hw.2.2,widths.1])
+    (by simp [List.length_take,hw.2.2,widths.1])
+    hn (by simpa only [←biasBits_split] using hs) hn' hs' htop hpar s m n
+    (fun q hq => clean q (List.mem_of_mem_take hq))
+    (fun q hq => clean q (List.mem_of_mem_take hq)) high
+theorem biased_fold_layout_eq (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*Arithmetic.BalancedField.q)≤T ∧ T≤2*Arithmetic.BalancedField.q)
+    (s : State) (m n : List Bool)
+    (hv : regValue L.r s.basis=Arithmetic.BalancedField.encodeWord 257 T/2)
+    (hl : s.basis L.lower=decide (T<0))
+    (ho : s.basis L.one=Arithmetic.BalancedField.negative (Arithmetic.BalancedField.halfResult T))
+    (hp : s.basis L.parity=Arithmetic.BalancedField.originalParity T)
+    (hm : s.basis L.minus=(Arithmetic.BalancedField.originalParity T && decide (T<0)))
+    (clean : ∀q∈L.carry,s.basis q=false) :
+    run (BiasedCircuit.fold L) m s=run (shortFold L) n s := by
+  have nd := BalancedCircuit.scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have fullND : (L.minus::(L.r++L.carry.take 255)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have count := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 255 L.carry).count_le q
+    simp only [List.count_append,List.count_cons,List.count_nil] at count ⊢
+    omega
+  have smallND : (L.minus::(L.low++L.carry.take 254)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have count := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 254 L.carry).count_le q
+    simp only [BalancedCleanup.Layout.r,List.count_append,List.count_cons,List.count_nil] at count ⊢
+    omega
+  have fullSrc : ∀q∈mappedWires (BiasedCircuit.biasBits L),q∉L.minus::(L.r++L.carry.take 255) := by
+    intro q hq hmem
+    have src := BiasedCircuit.biasBits_sources L q hq
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    simp only [List.mem_cons,List.mem_append] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have smallSrc : ∀q∈mappedWires (lowBits L),q∉L.minus::(L.low++L.carry.take 254) := by
+    intro q hq hmem
+    have fullq : q∈mappedWires (BiasedCircuit.biasBits L) := by
+      rw [biasBits_split]
+      simp only [mappedWires,List.flatMap_append,List.mem_append]
+      exact Or.inl hq
+    have src := BiasedCircuit.biasBits_sources L q fullq
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    simp only [List.mem_cons,List.mem_append] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [BalancedCleanup.Layout.r,he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have topAway : L.rmsb∉L.low := by
+    intro bad
+    have data := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) L.rmsb
+    have cnt := List.count_pos_iff.mpr bad
+    simp only [BalancedCleanup.Layout.r,List.count_append,List.count_cons,List.count_nil] at data
+    simp at data
+    omega
+  have parityAway : L.parity∉L.low := by
+    intro bad
+    exact BalancedCircuit.flagAway L hn L.parity (by simp) (by simp [BalancedCleanup.Layout.r,bad])
+  exact biased_fold_eq L hw fullND fullSrc smallND smallSrc topAway parityAway T ht s m n hv hl ho hp hm clean
+end ECDSAAdd.Entrant.ShortBiasedFold
+end
+
+-- ===== Root verified Short kernel FoldStates =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedFold
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.BalancedField ECDSAAdd.Entrant.BiasedCircuit
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option exponentiation.threshold 1024
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+theorem foldStates (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) (v w a b z t d e : State)
+    (m1 m2 m3 m4 m5 m6 m7 : List Bool)
+    (hv : regValue (BalancedCircuit.rawTarget L) v.basis=encodeWord 257 T)
+    (hp : v.basis L.parity=originalParity T) (ho : v.basis L.one=decide (T<0))
+    (h0 : v.basis L.r0=originalParity T) (hl : v.basis L.lower=false)
+    (hm : v.basis L.minus=false) (hc : ∀q∈L.carry,v.basis q=false)
+    (ew : run (prepareFold L) m1 v=w)
+    (ea : run (rotateRight (BalancedCircuit.rawTarget L)) m2 w=a)
+    (eb : run (signView L) m3 a=b) (ez : run (shortFold L) m4 b=z)
+    (et : run (releaseSelectors L) m5 z=t)
+    (ed : run (BalancedCleanup.prepareSign L.toLayout) m6 t=d)
+    (ee : run (flipBias L) m7 d=e) :
+    e.phase=v.phase ∧ regValue L.r e.basis=encodeWord 255 (normalizedR (halfResult T)) ∧
+    e.basis L.lower=negative (halfResult T) ∧ e.basis L.one=false ∧ e.basis L.minus=false ∧
+    (∀q,q∉BalancedCircuit.rawTarget L → q≠L.lower → q≠L.minus → e.basis q=v.basis q) := by
+  let P := originalParity T
+  let N := decide (T<0)
+  let R := halfResult T
+  let H := negative R
+  have rc : Centered R := (halfResult_spec T ht).1
+  have nd := BalancedCircuit.scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have away (f : Wire)
+      (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower]) :
+      f∉BalancedCircuit.rawTarget L := BalancedCircuit.compose_not_raw L hn f hf
+  have dataflag (q : Wire) (hq : q∈L.r++L.carry) (f : Wire)
+      (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one]) : q≠f :=
+    by
+      intro eq
+      have hd : f∈L.r++L.carry := eq ▸ hq
+      exact BalancedCircuit.flagAway L hn f hf (by
+        rcases List.mem_append.mp hd with hr|hc
+        · exact List.mem_append_left _ (List.mem_append_left _ hr)
+        · exact List.mem_append_right _ hc)
+  have wp := prepareFold_run L hn P N v m1 hp ho h0 hl hm
+  rw [ew] at wp
+  have wf (q : Wire) (ql : q≠L.lower) (qm : q≠L.minus) (q0 : q≠L.r0) :
+      w.basis q=v.basis q := by rw [wp]; simp only [writeBit,
+        Function.update_of_ne ql,Function.update_of_ne qm,Function.update_of_ne q0]
+  have w0 : w.basis L.r0=false := by rw [wp]; simp [writeBit]
+  have wl : w.basis L.lower=N := by rw [wp]; simp only [writeBit,
+    Function.update_of_ne (show L.lower≠L.r0 by clear * - nd; tauto),
+    Function.update_of_ne (show L.lower≠L.minus by clear * - nd; tauto),Function.update_self]
+  have wm : w.basis L.minus=(P && N) := by rw [wp]; simp only [writeBit,
+    Function.update_of_ne (show L.minus≠L.r0 by clear * - nd; tauto),Function.update_self]
+  have shape : BalancedCircuit.rawTarget L=L.r0::BalancedCircuit.foldTarget L := by
+    simp [BalancedCircuit.rawTarget,BalancedCircuit.foldTarget,
+      BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.append_assoc]
+  have wr : regValue (BalancedCircuit.rawTarget L) w.basis=
+      2*regValue (BalancedCircuit.foldTarget L) v.basis := by
+    rw [shape]
+    change (if w.basis L.r0 then 1 else 0)+2*regValue (BalancedCircuit.foldTarget L) w.basis=_
+    rw [w0]
+    simp only [Bool.false_eq_true,if_false,zero_add]
+    congr 1
+    apply regValue_congr
+    intro q hq
+    have qr : q∈BalancedCircuit.rawTarget L := by rw [shape]; simp [hq]
+    have nq : q≠L.r0 := fun e => BalancedCircuit.compose_not_fold_r0 L hn (e ▸ hq)
+    exact wf q (fun e => away L.lower (by simp) (e ▸ qr))
+      (fun e => away L.minus (by simp) (e ▸ qr)) nq
+  have rawv : regValue (BalancedCircuit.foldTarget L) v.basis=encodeWord 257 T/2 := by
+    rw [shape] at hv
+    change (if v.basis L.r0 then 1 else 0)+2*regValue (BalancedCircuit.foldTarget L) v.basis=_ at hv
+    rw [h0] at hv
+    cases hp0 : originalParity T <;> simp [hp0] at hv <;> omega
+  rw [rawv] at wr
+  have rot := rotateRight_spec (BalancedCircuit.rawTarget L) (BalancedCircuit.rawTargetND L hn)
+    (2*(encodeWord 257 T/2)) (by omega) w m2 wr
+  rw [ea] at rot
+  have av : regValue (BalancedCircuit.rawTarget L) a.basis=encodeWord 257 T/2 := by
+    have val := rot.2
+    change regValue (BalancedCircuit.rawTarget L) a.basis=2*(encodeWord 257 T/2)/2 at val
+    omega
+  have af (q : Wire) (hq : q∉BalancedCircuit.rawTarget L) : a.basis q=w.basis q := by
+    simpa only [ea] using (rotate_frame (BalancedCircuit.rawTarget L) w m2).2.1 q hq
+  have ao : a.basis L.one=false := by
+    have bit := regValue_highBit L.r L.one a.basis
+    rw [(BalancedCleanup.widths L.toLayout hw).2.1] at bit
+    change a.basis L.one=true ↔ 2^256≤regValue (BalancedCircuit.rawTarget L) a.basis at bit
+    rw [av] at bit
+    have bound := encodeWord_bound 257 T
+    norm_num at bound bit
+    cases ba : a.basis L.one <;> simp_all <;> omega
+  have ar : regValue L.r a.basis=encodeWord 257 T/2 := by
+    rw [BalancedCircuit.rawTarget,regValue_append] at av
+    simpa [regValue,ao] using av
+  have ap : a.basis L.parity=P :=
+    (af _ (away _ (by simp))).trans ((wf _ (by clear * - nd; tauto) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans hp)
+  have al : a.basis L.lower=N := (af _ (away _ (by simp))).trans wl
+  have bp := signView_run L hn P N a m3 ap ao al
+  rw [eb] at bp
+  have bf (q : Wire) (hq : q≠L.one) : b.basis q=a.basis q := by
+    rw [bp]; simp only [writeBit,Function.update_of_ne hq]
+  have bo : b.basis L.one=H := by
+    rw [bp]
+    simp only [writeBit,Function.update_self]
+    have sg := halfResult_sign T ht
+    change (P ^^ N)=negative (halfResult T)
+    rw [show negative (halfResult T)= (N ^^ P) from sg]
+    exact Bool.xor_comm _ _
+  have bl : b.basis L.lower=N := (bf _ (by clear * - nd; tauto)).trans al
+  have bpar : b.basis L.parity=P := (bf _ (by clear * - nd; tauto)).trans ap
+  have bm : b.basis L.minus=(P && N) :=
+    (bf _ (by clear * - nd; tauto)).trans ((af _ (away _ (by simp))).trans wm)
+  have br : regValue L.r b.basis=encodeWord 257 T/2 :=
+    (regValue_congr _ _ _ (fun q hq => bf q (dataflag q (by simp [hq]) _ (by simp)))).trans ar
+  have bc : ∀q∈L.carry,b.basis q=false := by
+    intro q hq
+    have ql := dataflag q (by simp [hq]) L.lower (by simp)
+    have qm := dataflag q (by simp [hq]) L.minus (by simp)
+    have qo := dataflag q (by simp [hq]) L.one (by simp)
+    have q0 : q≠L.r0 := by
+      intro eq
+      have raw := BalancedCircuit.compose_raw_away L hn q (by simp [hq])
+      exact raw (by simp [BalancedCircuit.rawTarget,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,eq])
+    exact (bf q qo).trans ((af q (BalancedCircuit.compose_raw_away L hn q (by simp [hq]))).trans
+      ((wf q ql qm q0).trans (hc q hq)))
+  have fd : (L.minus::(L.r++L.carry.take 255)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have count := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 255 L.carry).count_le q
+    simp only [List.count_append,List.count_cons,List.count_nil] at count ⊢
+    omega
+  have fs : ∀q∈mappedWires (biasBits L),q∉L.minus::(L.r++L.carry.take 255) := by
+    intro q hq hmem
+    have src := biasBits_sources L q hq
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> (clear * - nd; tauto)
+    simp only [List.mem_cons,List.mem_append] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have foldEq := biased_fold_layout_eq L hw hn T ht b m4 m4 br bl bo bpar bm bc
+  rw [←foldEq] at ez
+  have add := mappedAdd_correct (biasBits L) L.r (L.carry.take 255) L.minus fd fs
+    (by simp [biasBits,(BalancedCleanup.widths L.toLayout hw).2.1])
+    (by simp [List.length_take,hw.2.2,(BalancedCleanup.widths L.toLayout hw).2.1])
+    b m4 (fun q hq => bc q (List.mem_of_mem_take hq))
+  simp only [show mappedAdd (biasBits L) L.r (L.carry.take 255) L.minus=fold L from rfl,ez] at add
+  have zv : regValue L.r z.basis=encodeWord 256 (biasedValue R) := by
+    rw [add.2.2,biasBits_value,br,bl,bo,bm,(BalancedCleanup.widths L.toLayout hw).2.1]
+    simpa only [Nat.add_comm] using fold_arithmetic T ht
+  have zr : z.basis L.rmsb=H := biased_sign L hw R rc z.basis zv
+  have zp : z.basis L.parity=P :=
+    (add.2.1 _ (fun h => away L.parity (by simp) (by simp [BalancedCircuit.rawTarget,h]))).trans bpar
+  have zl : z.basis L.lower=(H ^^ P) := by
+    rw [add.2.1 _ (fun h => away L.lower (by simp) (by simp [BalancedCircuit.rawTarget,h])),bl]
+    have sg := halfResult_sign T ht
+    change N=(negative (halfResult T) ^^ P)
+    rw [show negative (halfResult T)= (N ^^ P) from sg]
+    cases N <;> cases P <;> rfl
+  have zm : z.basis L.minus=(P && !H) := by
+    rw [add.2.1 _ (fun h => away L.minus (by simp) (by simp [BalancedCircuit.rawTarget,h])),bm]
+    have sg := halfResult_sign T ht
+    change (P && N)=(P && !negative (halfResult T))
+    rw [show negative (halfResult T)= (N ^^ P) from sg]
+    cases N <;> cases P <;> rfl
+  have zo : z.basis L.one=H := (add.2.1 _ (fun h =>
+    BalancedCircuit.flagAway L hn L.one (by simp) (by simp [h]))).trans bo
+  have rel := releaseSelectors_run L hn P H z m5 zp zr zl zm zo
+  rw [et] at rel
+  have tf (q : Wire) (ql : q≠L.lower) (qo : q≠L.one) (qm : q≠L.minus) : t.basis q=z.basis q := by
+    rw [rel]
+    simp only [writeBit,Function.update_of_ne ql,Function.update_of_ne qo,Function.update_of_ne qm]
+  have tl : t.basis L.lower=false := by rw [rel]; simp only [writeBit,
+    Function.update_of_ne (show L.lower≠L.minus by clear * - nd; tauto),
+    Function.update_of_ne (show L.lower≠L.one by clear * - nd; tauto),Function.update_self]
+  have cleanOne : t.basis L.one=false := by rw [rel]; simp only [writeBit,
+    Function.update_of_ne (show L.one≠L.minus by clear * - nd; tauto),Function.update_self]
+  have tm : t.basis L.minus=false := by rw [rel]; simp [writeBit]
+  have tv : regValue L.r t.basis=encodeWord 256 (biasedValue R) := by
+    apply Eq.trans _ zv
+    apply regValue_congr
+    intro q hq
+    exact tf q (dataflag q (by simp [hq]) _ (by simp))
+      (dataflag q (by simp [hq]) _ (by simp)) (dataflag q (by simp [hq]) _ (by simp))
+  have ps := prepareSign_biased L hw hn R rc t m6 tv tl
+  rw [ed] at ps
+  have fl := flipBias_value L hw hn R rc d m7 ps.2.1
+  rw [ee] at fl
+  have ef (q : Wire) (hq : q∉L.r) : e.basis q=d.basis q := by
+    rw [←ee]
+    have mem : L.rtail.getD 253 0∈L.r := by
+      have sp := low_split L hw
+      have ml : L.rtail.getD 253 0∈L.low := by rw [←sp]; simp
+      exact List.mem_append_left _ ml
+    simp only [flipBias,run,writeBit,Function.update_of_ne (show q≠L.rtail.getD 253 0 from fun e => hq (e ▸ mem))]
+  have toR (f : Wire) (hf : f∈[L.one,L.minus,L.lower]) : f∉L.r := by
+    intro h
+    exact BalancedCircuit.flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl <;> simp) (by simp [h])
+  have phase : e.phase=v.phase := by
+    have ephase : e.phase=d.phase := by rw [←ee]; rfl
+    have tphase : t.phase=z.phase := by rw [rel]
+    have bphase : b.phase=a.phase := by rw [bp]
+    have wphase : w.phase=v.phase := by rw [wp]
+    exact ephase.trans (ps.1.trans (tphase.trans
+      (add.1.trans (bphase.trans (rot.1.trans wphase)))))
+  refine ⟨phase,fl,?_,?_,?_,?_⟩
+  · exact (ef _ (toR _ (by simp))).trans ps.2.2.1
+  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by clear * - nd; tauto)).trans cleanOne)
+  · exact (ef _ (toR _ (by simp))).trans ((ps.2.2.2 _ (toR _ (by simp)) (by clear * - nd; tauto)).trans tm)
+  · intro q hqr hql hqm
+    have qo : q≠L.one := fun eq => hqr (by simp [BalancedCircuit.rawTarget,eq])
+    have qr : q∉L.r := fun h => hqr (by simp [BalancedCircuit.rawTarget,h])
+    have q0 : q≠L.r0 := fun eq => hqr (by simp [BalancedCircuit.rawTarget,
+      BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,eq])
+    exact (ef q qr).trans ((ps.2.2.2 q qr hql).trans ((tf q hql qo hqm).trans
+      ((add.2.1 q qr).trans ((bf q qo).trans ((af q hqr).trans (wf q hql hqm q0))))))
+
+
+end ECDSAAdd.Entrant.ShortBiasedFold
+end
+
+-- ===== Root verified Short kernel Prefix =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedFold
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.BalancedField ECDSAAdd.Entrant.BiasedCircuit
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option exponentiation.threshold 1024
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+
+def remainder (L : Layout) : Program :=
+  prepareFold L++(rotateRight (BalancedCircuit.rawTarget L)++(signView L++(shortFold L++
+    (releaseSelectors L++(BalancedCleanup.prepareSign L.toLayout++flipBias L)))))
+
+theorem remainder_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) (v : State) (m : List Bool)
+    (hv : regValue (BalancedCircuit.rawTarget L) v.basis=encodeWord 257 T)
+    (hp : v.basis L.parity=originalParity T) (ho : v.basis L.one=decide (T<0))
+    (h0 : v.basis L.r0=originalParity T) (hl : v.basis L.lower=false)
+    (hm : v.basis L.minus=false) (hc : ∀q∈L.carry,v.basis q=false) :
+    let e := run (remainder L) m v
+    e.phase=v.phase ∧ regValue L.r e.basis=encodeWord 255 (normalizedR (halfResult T)) ∧
+    e.basis L.lower=negative (halfResult T) ∧ e.basis L.one=false ∧ e.basis L.minus=false ∧
+    (∀q,q∉BalancedCircuit.rawTarget L → q≠L.lower → q≠L.minus → e.basis q=v.basis q) := by
+  let P : State → State → Prop := fun v e =>
+    regValue (BalancedCircuit.rawTarget L) v.basis=encodeWord 257 T →
+    v.basis L.parity=originalParity T → v.basis L.one=decide (T<0) →
+    v.basis L.r0=originalParity T → v.basis L.lower=false → v.basis L.minus=false →
+    (∀q∈L.carry,v.basis q=false) →
+    e.phase=v.phase ∧ regValue L.r e.basis=encodeWord 255 (normalizedR (halfResult T)) ∧
+    e.basis L.lower=negative (halfResult T) ∧ e.basis L.one=false ∧ e.basis L.minus=false ∧
+    (∀q,q∉BalancedCircuit.rawTarget L → q≠L.lower → q≠L.minus → e.basis q=v.basis q)
+  have run7 := skywalkRunSeven (prepareFold L) (rotateRight (BalancedCircuit.rawTarget L))
+    (signView L) (shortFold L) (releaseSelectors L) (BalancedCleanup.prepareSign L.toLayout) (flipBias L) P
+    (by
+      intro v w a b z t d e m1 m2 m3 m4 m5 m6 m7 ew ea eb ez et ed ee hv hp ho h0 hl hm hc
+      exact foldStates L hw hn T ht v w a b z t d e m1 m2 m3 m4 m5 m6 m7
+        hv hp ho h0 hl hm hc ew ea eb ez et ed ee) v m
+  exact run7 hv hp ho h0 hl hm hc
+
+
+def biasedPrefix (L : Layout) : Program :=
+  BalancedCircuit.seedViews L++(BalancedCircuit.rawAdd L++remainder L)
+
+theorem prefixPost (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (X Y : Int) (hx : Centered X) (hy : Centered Y)
+    (s : State) (m : List Bool) (hs : s.basis L.sign=B)
+    (hr : signedRegValue L.r s.basis=X) (hyr : signedRegValue L.y s.basis=Y)
+    (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
+    PrefixPost L (halfResult (rawSum B X Y)) (originalParity (rawSum B X Y)) s
+      (run (biasedPrefix L) m s) := by
+  let T := rawSum B X Y
+  let ms := m.drop (measurementCount (BalancedCircuit.rawAdd L))
+  generalize eu : run (BalancedCircuit.seedViews L) m s=u
+  generalize ev : run (BalancedCircuit.rawAdd L) m u=v
+  generalize et : run (remainder L) ms v=t
+  have seed := BalancedCircuit.compose_seed_frame L hw hn s m hc
+  rw [eu] at seed
+  have sv := BalancedCircuit.seed_raw_signed L hw hn B X Y hx hy s m hs hr hyr hc
+  simp only [run_append] at sv
+  simp only [run_take] at sv
+  simp only [show measurementCount (BalancedCircuit.seedViews L)=0 from rfl,List.drop_zero] at sv
+  rw [eu,ev] at sv
+  have cu := (BalancedCircuit.seed_signed L hw hn X Y s m hr hyr hc).2.2
+  rw [eu] at cu
+  have rf (q : Wire) (hq : q∉BalancedCircuit.rawTarget L) : v.basis q=u.basis q := by
+    simpa only [ev] using BalancedCircuit.rawAdd_frame L hw hn u m cu q hq
+  have away (q : Wire)
+      (hq : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower]++L.y++L.carry) :
+      q∉BalancedCircuit.rawTarget L := BalancedCircuit.compose_raw_away L hn q hq
+  have vp : v.basis L.parity=originalParity T := by
+    exact (rf _ (away _ (by simp))).trans (by simpa only [eu] using BalancedCircuit.seed_parity L hw hn B X Y s m hr hyr hc)
+  have vo : v.basis L.one=decide (T<0) :=
+    BalancedCircuit.word_sign L.r L.one v.basis T sv.2.1
+  have vr : v.basis L.r0=originalParity T := by
+    apply BalancedCircuit.word_parity L.r0 (L.rtail++[L.rmsb,L.one]) v.basis T
+    simpa [BalancedCircuit.rawTarget,BalancedCleanup.Layout.r,
+      BalancedCleanup.Layout.low,List.append_assoc] using sv.2.1
+  have vz (q : Wire) (hq : q∈[L.cout,L.minus,L.plus,L.lower]++L.carry) : v.basis q=false := by
+    have cv := BalancedCircuit.compose_clean_views L hn q hq
+    have qo : q≠L.one := fun e => cv.1 (e ▸ (by simp [BalancedCircuit.rawTarget]))
+    exact (rf q cv.1).trans ((seed.2.2 q cv.2.1 qo cv.2.2.1).trans (hc q cv.2.2.2))
+  have vw := BalancedCircuit.word_encoding (BalancedCircuit.rawTarget L) 257
+    (BalancedCircuit.widths L hw).2.1 v.basis T sv.2.1
+  have rem := remainder_correct L hw hn T (rawSum_bounds B X Y hx hy) v ms vw vp vo vr
+    (vz _ (by simp)) (vz _ (by simp)) (fun q hq => vz q (by simp [hq]))
+  rw [et] at rem
+  have nd := BalancedCircuit.scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have actual : run (biasedPrefix L) m s=t := by
+    change run (BalancedCircuit.seedViews L++(BalancedCircuit.rawAdd L++remainder L)) m s=t
+    rw [run_append,run_take,show measurementCount (BalancedCircuit.seedViews L)=0 from rfl,
+      List.drop_zero,eu,run_append,run_take,ev,et]
+  rw [actual]
+  refine ⟨rem.1.trans sv.1,rem.2.1,rem.2.2.1,?_,?_,?_⟩
+  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans vp
+  · exact (rem.2.2.2.2.2 _ (away _ (by simp)) (by clear * - nd; tauto) (by clear * - nd; tauto)).trans
+      ((rf _ (away _ (by simp))).trans seed.2.1)
+  · intro q hqr hql hqp hqg
+    by_cases qo : q=L.one
+    · subst q
+      exact rem.2.2.2.1.trans (hc _ (by simp [BalancedCircuit.work])).symm
+    by_cases qm : q=L.minus
+    · subst q
+      exact rem.2.2.2.2.1.trans (hc _ (by simp [BalancedCircuit.work])).symm
+    have raw : q∉BalancedCircuit.rawTarget L := by
+      simpa [BalancedCircuit.rawTarget] using And.intro hqr qo
+    exact (rem.2.2.2.2.2 q raw hql qm).trans
+      ((rf q raw).trans (seed.2.2 q hqg qo hqp))
+
+
+def program (L : Layout) : Program := biasedPrefix L++BiasedCircuit.cleanupSuffix L
+
+theorem counts (L : Layout) (hw : L.Widths) :
+    toffoliCount (program L)=1021 ∧ measurementCount (program L)=1021 := by
+  have old := BiasedCircuit.counts L hw
+  have widths := BalancedCleanup.widths L.toLayout hw
+  have fa := mappedAdd_counts (BiasedCircuit.biasBits L) L.r (L.carry.take 255) L.minus
+    (by simp [BiasedCircuit.biasBits,widths.2.1])
+    (by simp [List.length_take,hw.2.2,widths.2.1])
+  have short := short_counts L hw
+  simp only [BiasedCircuit.program,BiasedCircuit.biasedPrefix,BiasedCircuit.fold,
+    toffoliCount_append,measurementCount_append,fa.1,fa.2,widths.2.1] at old
+  simp only [program,biasedPrefix,remainder,toffoliCount_append,measurementCount_append,short.1,short.2.1]
+  omega
+
+theorem prefix_eq_reference (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (X Y : Int) (hx : Centered X) (hy : Centered Y)
+    (s : State) (m n : List Bool) (hs : s.basis L.sign=B)
+    (hr : signedRegValue L.r s.basis=X) (hyr : signedRegValue L.y s.basis=Y)
+    (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
+    run (biasedPrefix L) m s=run (referencePrefix L) n s := by
+  have a := prefixPost L hw hn B X Y hx hy s m hs hr hyr hc
+  have b := referencePost L hw hn B X Y hx hy s n hs hr hyr hc
+  apply State.extensionality
+  · exact a.phase.trans b.phase.symm
+  · funext q
+    by_cases qr : q∈L.r
+    · exact (regValue_eq_iff L.r _ _).mp (a.value.trans b.value.symm) q qr
+    by_cases ql : q=L.lower
+    · subst q; exact a.lower.trans b.lower.symm
+    by_cases qp : q=L.parity
+    · subst q; exact a.parity.trans b.parity.symm
+    by_cases qg : q=L.sourceGuard
+    · subst q; exact a.guard.trans b.guard.symm
+    exact (a.frame q qr ql qp qg).trans (b.frame q qr ql qp qg).symm
+
+/-- Exact single-bank forward kernel for every input phase and measurement record. -/
+theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (X Y : Int) (hx : Centered X) (hy : Centered Y)
+    (s : State) (m : List Bool) (hs : s.basis L.sign=B)
+    (hr : signedRegValue L.r s.basis=X) (hyr : signedRegValue L.y s.basis=Y)
+    (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
+    let t := run (program L) m s
+    t.phase=s.phase ∧
+    regValue L.r t.basis=encodeWord 256 (halfResult (rawSum B X Y)) ∧
+    (∀q∈BalancedCircuit.work L,t.basis q=false) ∧
+    (∀q,q∉L.r → t.basis q=s.basis q) := by
+  let k := measurementCount (referencePrefix L)
+  let tail := m.drop (measurementCount (biasedPrefix L))
+  let n := List.replicate k false++tail
+  have eq : run (program L) m s=run (BalancedCircuit.program L) n s := by
+    rw [program,reference_program,run_append,run_take,run_append,run_take,
+      prefix_eq_reference L hw hn B X Y hx hy s m n hs hr hyr hc]
+    have dn : n.drop (measurementCount (referencePrefix L))=tail := by simp [n,k]
+    rw [dn]
+  rw [eq]
+  exact BalancedCircuit.program_correct L hw hn B X Y hx hy s n hs hr hyr hc
+
+end ECDSAAdd.Entrant.ShortBiasedFold
+end
+
+-- ===== Root verified Short kernel Inverse =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedFold
+open ECDSAAdd.Arithmetic ECDSAAdd.Entrant.ShortKernelDependencies
+set_option maxHeartbeats 200000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+
+theorem low_sub_mod (n x y : Nat) (xh yh c : Bool) (hx : x<2^n) :
+    ((y+2^n*yh.toNat+2^(n+1)-(x+2^n*xh.toNat)-c.toNat)%2^(n+1))%2^n =
+      (y+2^n-x-c.toNat)%2^n := by
+  rw [Nat.mod_mod_of_dvd _ (show 2^n∣2^(n+1) from ⟨2,by simp [Nat.pow_succ]⟩)]
+  have eq : y+2^n*yh.toNat+2^(n+1)-(x+2^n*xh.toNat)-c.toNat =
+      (y+2^n-x-c.toNat)+2^n*((if xh then 0 else 1)+yh.toNat) := by
+    rw [Nat.pow_succ]
+    cases xh <;> cases yh <;> cases c <;> simp [Bool.toNat] <;> omega
+  rw [eq,Nat.add_mod]
+  simp
+theorem full_sub_low (bits : List MappedBit) (b : MappedBit) (ys carry : List Wire)
+    (top cin : Wire) (hl : bits.length=ys.length) (hc : carry.length=ys.length)
+    (hn : (cin::((ys++[top])++carry)).Nodup)
+    (hs : ∀q∈mappedWires (bits++[b]),q∉cin::((ys++[top])++carry))
+    (s : State) (m : List Bool) (clean : ∀q∈carry,s.basis q=false) :
+    regValue ys (run (mappedSub (bits++[b]) (ys++[top]) carry cin) m s).basis=
+      (regValue ys s.basis+2^ys.length-mappedValue bits s.basis-(s.basis cin).toNat)%2^ys.length := by
+  have add := BalancedInverse.mappedSub_any_correct (bits++[b]) (ys++[top]) carry cin hn hs
+    (by simp [hl]) (by simp [hc]) s m clean
+  have h := congrArg (fun v : Nat => v%2^ys.length) add.2.2
+  dsimp only at h
+  rw [reg_low_mod] at h
+  rw [mappedValue_append,regValue_append,hl,List.length_append,List.length_singleton] at h
+  have small : mappedValue bits s.basis<2^ys.length := by
+    simpa only [hl] using mappedValue_lt bits s.basis
+  rw [show regValue [top] s.basis=(s.basis top).toNat by
+    cases e : s.basis top <;> simp [regValue,e],
+    show mappedValue [b] s.basis=(b.value s.basis).toNat by simp [mappedValue]] at h
+  change regValue ys (run (mappedSub (bits++[b]) (ys++[top]) carry cin) m s).basis =
+    ((regValue ys s.basis+2^ys.length*(s.basis top).toNat+2^(ys.length+1)-
+      (mappedValue bits s.basis+2^ys.length*(b.value s.basis).toNat)-(s.basis cin).toNat)%
+      2^(ys.length+1))%2^ys.length at h
+  rw [low_sub_mod ys.length (mappedValue bits s.basis) (regValue ys s.basis)
+    (b.value s.basis) (s.basis top) (s.basis cin) small] at h
+  exact h
+
+
+theorem full_sub_eq_short (bits : List MappedBit) (b : MappedBit)
+    (ys carry small : List Wire) (top cin control : Wire)
+    (hl : bits.length=ys.length) (hc : carry.length=ys.length)
+    (hsmall : small.length+1=ys.length)
+    (hn : (cin::((ys++[top])++carry)).Nodup)
+    (hs : ∀q∈mappedWires (bits++[b]),q∉cin::((ys++[top])++carry))
+    (hn' : (cin::(ys++small)).Nodup)
+    (hs' : ∀q∈mappedWires bits,q∉cin::(ys++small))
+    (htop : top∉ys) (hcontrol : control∉ys)
+    (s : State) (m n : List Bool)
+    (clean : ∀q∈carry,s.basis q=false) (clean' : ∀q∈small,s.basis q=false)
+    (high : (run (mappedSub (bits++[b]) (ys++[top]) carry cin) m s).basis top =
+      (s.basis top ^^ s.basis control)) :
+    run (mappedSub (bits++[b]) (ys++[top]) carry cin) m s =
+    run (mappedSub bits ys small cin ++ [.CX control top]) n s := by
+  have full := BalancedInverse.mappedSub_any_correct (bits++[b]) (ys++[top]) carry cin hn hs
+    (by simp [hl]) (by simp [hc]) s m clean
+  have low := full_sub_low bits b ys carry top cin hl hc hn hs s m clean
+  have narrow := BalancedInverse.mappedSub_any_correct bits ys small cin hn' hs' hl hsmall s n clean'
+  rw [run_append]
+  simp only [run_take,run]
+  generalize he : run (mappedSub (bits++[b]) (ys++[top]) carry cin) m s = v at full low high ⊢
+  generalize hf : run (mappedSub bits ys small cin) n s = u at narrow ⊢
+  refine State.extensionality v ⟨u.phase,writeBit u.basis top (u.basis top ^^ u.basis control)⟩
+    (full.1.trans narrow.1.symm) ?_
+  funext q
+  by_cases qt : q=top
+  · subst q
+    change v.basis top = (writeBit u.basis top (u.basis top ^^ u.basis control)) top
+    rw [writeBit,Function.update_self,narrow.2.1 top htop,narrow.2.1 control hcontrol]
+    exact high
+  · simp only [writeBit,Function.update_of_ne qt]
+    by_cases qy : q∈ys
+    · exact (regValue_eq_iff ys v.basis u.basis).mp (low.trans narrow.2.2.symm) q qy
+    · exact (full.2.1 q (by simp [qy,qt])).trans (narrow.2.1 q qy).symm
+theorem biased_unfold_layout_eq (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*Arithmetic.BalancedField.q)≤T ∧ T≤2*Arithmetic.BalancedField.q)
+    (s : State) (m n : List Bool)
+    (hv : regValue L.r s.basis=Arithmetic.BalancedField.encodeWord 256 (BiasedInverse.biased (Arithmetic.BalancedField.halfResult T)))
+    (hl : s.basis L.lower=decide (T<0))
+    (ho : s.basis L.one=Arithmetic.BalancedField.negative (Arithmetic.BalancedField.halfResult T))
+    (hp : s.basis L.parity=Arithmetic.BalancedField.originalParity T)
+    (hm : s.basis L.minus=(Arithmetic.BalancedField.originalParity T && decide (T<0)))
+    (clean : ∀q∈L.carry,s.basis q=false) :
+    run (BiasedInverse.unfoldBias L) m s=run (shortUnfold L) n s := by
+  have nd := BalancedCircuit.scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have fullND : (L.minus::(L.r++L.carry.take 255)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have count := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 255 L.carry).count_le q
+    simp only [List.count_append,List.count_cons,List.count_nil] at count ⊢
+    omega
+  have smallND : (L.minus::(L.low++L.carry.take 254)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have count := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 254 L.carry).count_le q
+    simp only [BalancedCleanup.Layout.r,List.count_append,List.count_cons,List.count_nil] at count ⊢
+    omega
+  have fullSrc : ∀q∈mappedWires (BiasedCircuit.biasBits L),q∉L.minus::(L.r++L.carry.take 255) := by
+    intro q hq hmem
+    have src := BiasedCircuit.biasBits_sources L q hq
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    simp only [List.mem_cons,List.mem_append] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have smallSrc : ∀q∈mappedWires (lowBits L),q∉L.minus::(L.low++L.carry.take 254) := by
+    intro q hq hmem
+    have fullq : q∈mappedWires (BiasedCircuit.biasBits L) := by
+      rw [biasBits_split]
+      simp only [mappedWires,List.flatMap_append,List.mem_append]
+      exact Or.inl hq
+    have src := BiasedCircuit.biasBits_sources L q fullq
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    simp only [List.mem_cons,List.mem_append] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [BalancedCleanup.Layout.r,he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have topAway : L.rmsb∉L.low := by
+    intro bad
+    have data := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) L.rmsb
+    have cnt := List.count_pos_iff.mpr bad
+    simp only [BalancedCleanup.Layout.r,List.count_append,List.count_cons,List.count_nil] at data
+    simp at data
+    omega
+  have parityAway : L.parity∉L.low := by
+    intro bad
+    exact BalancedCircuit.flagAway L hn L.parity (by simp) (by simp [BalancedCleanup.Layout.r,bad])
+  have sub := BiasedInverse.unfoldBias_correct L hw hn T ht s m hl ho hm hv clean
+  have out := BiasedInverse.half_msb L hw T ht _ sub.2.1
+  have inp := BiasedInverse.biased_msb L hw _ (Arithmetic.BalancedField.halfResult_spec T ht).1 s.basis hv
+  have high : (run (BiasedInverse.unfoldBias L) m s).basis L.rmsb =
+      (s.basis L.rmsb ^^ s.basis L.parity) := by
+    rw [out,inp,hp,Arithmetic.BalancedField.negative,Arithmetic.BalancedField.halfResult_sign T ht]
+    cases hN : decide (T<0) <;> cases hP : Arithmetic.BalancedField.originalParity T <;> rfl
+  have oldShape : BiasedInverse.unfoldBias L = mappedSub
+      (lowBits L ++ [{wire:=some L.one,flip:=false}]) (L.low++[L.rmsb])
+      (L.carry.take 255) L.minus := by
+    change mappedSub (BiasedCircuit.biasBits L) L.r (L.carry.take 255) L.minus=_
+    rw [biasBits_split]; rfl
+  have widths := BalancedCleanup.widths L.toLayout hw
+  rw [oldShape] at high ⊢
+  exact full_sub_eq_short (lowBits L) {wire:=some L.one,flip:=false} L.low
+    (L.carry.take 255) (L.carry.take 254) L.rmsb L.minus L.parity
+    (by rw [lowBits_length,widths.1])
+    (by simp [List.length_take,hw.2.2,widths.1])
+    (by simp [List.length_take,hw.2.2,widths.1])
+    fullND (by simpa only [←biasBits_split] using fullSrc) smallND smallSrc topAway parityAway s m n
+    (fun q hq => clean q (List.mem_of_mem_take hq))
+    (fun q hq => clean q (List.mem_of_mem_take hq)) high
+end ECDSAAdd.Entrant.ShortBiasedFold
+end
+
+-- ===== Root verified Short kernel InverseProgram =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedInverse
+open ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.BalancedCircuit ECDSAAdd.Arithmetic.BalancedField
+open ECDSAAdd.Entrant.BiasedInverse ECDSAAdd.Entrant.ShortBiasedFold
+abbrev Layout := ECDSAAdd.Arithmetic.BalancedCircuit.Layout
+set_option maxRecDepth 8192
+set_option maxHeartbeats 6000000
+set_option exponentiation.threshold 1024
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+
+def unfoldBias (L : Layout) : Program := shortUnfold L
+
+def restoreRaw (L : Layout) : Program :=
+  selectors L ++ unfoldBias L ++ release L ++ rotateLeft (rawTarget L) ++ [.CX L.parity L.r0]
+
+def program (L : Layout) : Program :=
+  [.CX L.ymsb L.sourceGuard] ++ recoverPrefix L ++ unbiasView L ++
+  restoreRaw L ++ BalancedInverse.rawSubtract L ++ (seedViews L).reverse
+
+theorem unfoldBias_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) (s : State) (m : List Bool)
+    (hp : s.basis L.parity=originalParity T)
+    (hl : s.basis L.lower=decide (T<0)) (ho : s.basis L.one=negative (halfResult T))
+    (hm : s.basis L.minus=(originalParity T && decide (T<0)))
+    (hR : regValue L.r s.basis=encodeWord 256 (biased (halfResult T)))
+    (hc : ∀a∈L.carry,s.basis a=false) :
+    let t := run (unfoldBias L) m s
+    t.phase=s.phase ∧ regValue L.r t.basis=encodeWord 256 (T/2) ∧
+    ∀a,a∉L.r → t.basis a=s.basis a := by
+  have eq := biased_unfold_layout_eq L hw hn T ht s m m hR hl ho hp hm hc
+  rw [unfoldBias,←eq]
+  exact BiasedInverse.unfoldBias_correct L hw hn T ht s m hl ho hm hR hc
+
+theorem restoreRaw_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (T : Int) (ht : -(2*q)≤T ∧ T≤2*q) (s : State) (m : List Bool)
+    (hp : s.basis L.parity=originalParity T)
+    (hR : regValue L.r s.basis=encodeWord 256 (biased (halfResult T)))
+    (hl : s.basis L.lower=false) (ho : s.basis L.one=false) (hm : s.basis L.minus=false)
+    (hc : ∀a∈L.carry,s.basis a=false) :
+    let t := run (restoreRaw L) m s
+    t.phase=s.phase ∧ regValue (rawTarget L) t.basis=encodeWord 257 T ∧
+    t.basis L.lower=false ∧ t.basis L.minus=false ∧
+    ∀a,a∉rawTarget L → a≠L.lower → a≠L.minus → t.basis a=s.basis a := by
+  let P := originalParity T
+  let N := decide (T<0)
+  let u : State := ⟨s.phase,writeBit (writeBit (writeBit s.basis L.lower N)
+    L.one (N ^^ P)) L.minus (P && N)⟩
+  let v := run (unfoldBias L) m u
+  let m1 := m.drop (measurementCount (unfoldBias L))
+  let z := run (release L) m1 v
+  let m2 := m1.drop 1
+  let rot := run (rotateLeft (rawTarget L)) m2 z
+  let out := run [.CX L.parity L.r0] m2 rot
+  have sd := scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at sd
+  have lm : L.lower≠L.minus := by clear * - sd; tauto
+  have om : L.one≠L.minus := by clear * - sd; tauto
+  have ol : L.one≠L.lower := by clear * - sd; tauto
+  have pl : L.parity≠L.lower := by clear * - sd; tauto
+  have po : L.parity≠L.one := by clear * - sd; tauto
+  have pm : L.parity≠L.minus := by clear * - sd; tauto
+  have r0p : L.r0≠L.parity := by clear * - sd; tauto
+  have r0o : L.r0≠L.one := by clear * - sd; tauto
+  have flags (a : Wire) (ha : a∈L.r++L.y++L.carry)
+      (f : Wire) (hf : f∈[L.lower,L.one,L.minus]) : a≠f := by
+    intro e
+    exact flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl <;> simp)
+      (e ▸ ha)
+  have uf (a : Wire) (al : a≠L.lower) (ao : a≠L.one) (am : a≠L.minus) : u.basis a=s.basis a := by
+    simp [u,writeBit,al,ao,am]
+  have uL : u.basis L.lower=N := by simp [u,writeBit,lm,Ne.symm ol]
+  have uO : u.basis L.one=(N ^^ P) := by simp [u,writeBit,om]
+  have uM : u.basis L.minus=(P && N) := by simp [u,writeBit]
+  have uP : u.basis L.parity=P := (uf _ pl po pm).trans hp
+  have sign := biased_msb L hw _ (halfResult_spec T ht).1 s.basis hR
+  rw [negative,halfResult_sign T ht] at sign
+  have sel : run (selectors L) m s=u := selectors_run L hn P N s m hp sign hl hm ho
+  have uR : regValue L.r u.basis=encodeWord 256 (biased (halfResult T)) := by
+    apply Eq.trans _ hR
+    apply regValue_congr
+    intro a ha
+    exact uf a (flags a (by simp [ha]) _ (by simp))
+      (flags a (by simp [ha]) _ (by simp)) (flags a (by simp [ha]) _ (by simp))
+  have uC : ∀a∈L.carry,u.basis a=false := by
+    intro a ha
+    exact (uf a (flags a (by simp [ha]) _ (by simp))
+      (flags a (by simp [ha]) _ (by simp)) (flags a (by simp [ha]) _ (by simp))).trans (hc a ha)
+  have sub := unfoldBias_correct L hw hn T ht u m uP uL
+    (by rw [negative,halfResult_sign T ht]; exact uO) uM uR uC
+  have vR : regValue L.r v.basis=encodeWord 256 (T/2) := sub.2.1
+  have fa (f : Wire) (hf : f∈[L.lower,L.one,L.minus,L.parity]) : f∉L.r := by
+    intro h
+    exact flagAway L hn f (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+      rcases hf with rfl|rfl|rfl|rfl <;> simp)
+      (by simp [h])
+  have rel : z=⟨v.phase,writeBit (writeBit (writeBit v.basis L.lower false)
+      L.one false) L.minus false⟩ :=
+    release_run L hn P N v m1 ((sub.2.2 _ (fa _ (by simp))).trans uP)
+      (half_msb L hw T ht v.basis vR)
+      ((sub.2.2 _ (fa _ (by simp))).trans uL)
+      ((sub.2.2 _ (fa _ (by simp))).trans uM)
+      ((sub.2.2 _ (fa _ (by simp))).trans uO)
+  have zf (a : Wire) (al : a≠L.lower) (ao : a≠L.one) (am : a≠L.minus) : z.basis a=v.basis a := by
+    rw [rel]; simp [writeBit,al,ao,am]
+  have zL : z.basis L.lower=false := by rw [rel]; simp [writeBit,lm,Ne.symm ol]
+  have zM : z.basis L.minus=false := by rw [rel]; simp [writeBit]
+  have zO : z.basis L.one=false := by rw [rel]; simp [writeBit,om]
+  have zR : regValue L.r z.basis=encodeWord 256 (T/2) := by
+    apply Eq.trans _ vR
+    apply regValue_congr
+    intro a ha
+    exact zf a (flags a (by simp [ha]) _ (by simp))
+      (flags a (by simp [ha]) _ (by simp)) (flags a (by simp [ha]) _ (by simp))
+  have zP : z.basis L.parity=P := (zf _ pl po pm).trans ((sub.2.2 _ (fa _ (by simp))).trans uP)
+  have rp := BalancedInverse.rotate_unfold L hw hn (T/2) z m2 zO zR
+  have away (a : Wire) (ha : a∉L.r) (ao : a≠L.one) : a∉rawTarget L := by
+    simp [rawTarget,ha,ao]
+  have pr : rot.basis L.parity=P := (rp.2.2.2 _ (away _ (fa _ (by simp)) po)).trans zP
+  have outV : regValue (rawTarget L) out.basis=encodeWord 257 T := by
+    have shape : rawTarget L=L.r0::foldTarget L := by
+      simp [rawTarget,foldTarget,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.append_assoc]
+    have r0Away : L.r0∉foldTarget L := by
+      have nd := rawTargetND L hn
+      rw [shape] at nd
+      exact (List.nodup_cons.mp nd).1
+    have tail : regValue (foldTarget L) out.basis=encodeWord 256 (T/2) := by
+      apply Eq.trans _ rp.2.2.1
+      apply regValue_congr
+      intro a ha
+      change out.basis a=rot.basis a
+      simp [out,run,writeBit,show a≠L.r0 from fun e => r0Away (e ▸ ha)]
+    rw [shape]
+    change (if out.basis L.r0 then 1 else 0)+2*regValue (foldTarget L) out.basis=_
+    have r0rot : rot.basis L.r0=false := rp.2.1
+    have low : out.basis L.r0=P := by simp [out,run,writeBit,r0rot,pr]
+    rw [low,tail]
+    have he := half_encoding T ht
+    cases hp' : P <;> simpa [P,hp',Nat.add_comm] using he
+  have actual : run (restoreRaw L) m s=out := by
+    simp only [restoreRaw,List.append_assoc]
+    rw [run_append,run_take]
+    simp only [show measurementCount (selectors L)=0 from rfl,List.drop_zero]
+    rw [sel,run_append,run_take]
+    change run (release L ++ (rotateLeft (rawTarget L) ++ [.CX L.parity L.r0])) m1 v=out
+    rw [run_append,run_take]
+    simp only [show measurementCount (release L)=1 from rfl]
+    change run (rotateLeft (rawTarget L) ++ [.CX L.parity L.r0]) m2 z=out
+    rw [run_append,run_take,(rotate_counts (rawTarget L)).2.2.2,List.drop_zero]
+  rw [actual]
+  have of (a : Wire) (ar : a∉rawTarget L) : out.basis a=z.basis a := by
+    have ar0 : a≠L.r0 := fun e => ar (by simp [rawTarget,BalancedCleanup.Layout.r,
+      BalancedCleanup.Layout.low,e])
+    simp only [out,run,writeBit,Function.update_of_ne ar0]
+    exact rp.2.2.2 a ar
+  refine ⟨?_,outV,?_,?_,?_⟩
+  · change rot.phase=s.phase
+    exact rp.1.trans ((congrArg State.phase rel).trans sub.1)
+  · exact (of _ (away _ (fa _ (by simp)) (Ne.symm ol))).trans zL
+  · exact (of _ (away _ (fa _ (by simp)) (Ne.symm om))).trans zM
+  · intro a ar al am
+    have ar' : a∉L.r := fun h => ar (by simp [rawTarget,h])
+    have ao : a≠L.one := fun e => ar (by simp [rawTarget,e])
+    exact (of a ar).trans ((zf a al ao am).trans ((sub.2.2 a ar').trans (uf a al ao am)))
+
+section KernelSemantics
+attribute [local irreducible] run measurementCount
+theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (R Y : Int) (hr : Centered R) (hy : Centered Y)
+    (s : State) (m : List Bool) (hs : s.basis L.sign=B)
+    (hR : signedRegValue L.r s.basis=R) (hY : signedRegValue L.y s.basis=Y)
+    (hc : ∀a∈work L,s.basis a=false) :
+    let t := run (program L) m s
+    t.phase=s.phase ∧ regValue L.r t.basis=encodeWord 256 (BalancedInverse.result B R Y) ∧
+    (∀a∈work L,t.basis a=false) ∧ (∀a,a∉L.r → t.basis a=s.basis a) := by
+  let X := BalancedInverse.result B R Y
+  let T := rawSum B X Y
+  let P := originalParity T
+  let u0 := run [.CX L.ymsb L.sourceGuard] m s
+  let u1 := run (recoverPrefix L) m u0
+  let m1 := m.drop (measurementCount (recoverPrefix L))
+  let u2 := run (unbiasView L) m1 u1
+  let m2 := m1.drop (measurementCount (unbiasView L))
+  let u3 := run (restoreRaw L) m2 u2
+  let m3 := m2.drop (measurementCount (restoreRaw L))
+  let u4 := run (BalancedInverse.rawSubtract L) m3 u3
+  let m4 := m3.drop (measurementCount (BalancedInverse.rawSubtract L))
+  let out := run (seedViews L).reverse m4 u4
+  have hx : Centered X := BalancedInverse.result_bounds B R Y
+  have ht : -(2*q)≤T ∧ T≤2*q := rawSum_bounds B X Y hx hy
+  have half : halfResult T=R := BalancedInverse.result_half B R Y hr hy
+  have par : decide (q < |2*R-signedY B Y|)=P := BalancedInverse.result_parity B R Y hr hy
+  have w := BalancedCleanup.widths L.toLayout hw
+  have rwid := BalancedCircuit.widths L hw
+  have cnd : L.toLayout.wires.Nodup := (List.nodup_append'.mp hn).2.1
+  have nd := scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  rcases nd with ⟨⟨h0_1,h0_2,h0_3,h0_4,h0_5,h0_6,h0_7,h0_8,h0_9,h0_10⟩,⟨h1_2,h1_3,h1_4,h1_5,h1_6,h1_7,h1_8,h1_9,h1_10⟩,⟨h2_3,h2_4,h2_5,h2_6,h2_7,h2_8,h2_9,h2_10⟩,⟨h3_4,h3_5,h3_6,h3_7,h3_8,h3_9,h3_10⟩,⟨h4_5,h4_6,h4_7,h4_8,h4_9,h4_10⟩,⟨h5_6,h5_7,h5_8,h5_9,h5_10⟩,⟨h6_7,h6_8,h6_9,h6_10⟩,⟨h7_8,h7_9,h7_10⟩,⟨h8_9,h8_10⟩,h9_10⟩
+  have h0_1r := Ne.symm h0_1
+  have h0_2r := Ne.symm h0_2
+  have h0_3r := Ne.symm h0_3
+  have h0_4r := Ne.symm h0_4
+  have h0_5r := Ne.symm h0_5
+  have h0_6r := Ne.symm h0_6
+  have h0_7r := Ne.symm h0_7
+  have h0_8r := Ne.symm h0_8
+  have h0_9r := Ne.symm h0_9
+  have h0_10r := Ne.symm h0_10
+  have h1_2r := Ne.symm h1_2
+  have h1_3r := Ne.symm h1_3
+  have h1_4r := Ne.symm h1_4
+  have h1_5r := Ne.symm h1_5
+  have h1_6r := Ne.symm h1_6
+  have h1_7r := Ne.symm h1_7
+  have h1_8r := Ne.symm h1_8
+  have h1_9r := Ne.symm h1_9
+  have h1_10r := Ne.symm h1_10
+  have h2_3r := Ne.symm h2_3
+  have h2_4r := Ne.symm h2_4
+  have h2_5r := Ne.symm h2_5
+  have h2_6r := Ne.symm h2_6
+  have h2_7r := Ne.symm h2_7
+  have h2_8r := Ne.symm h2_8
+  have h2_9r := Ne.symm h2_9
+  have h2_10r := Ne.symm h2_10
+  have h3_4r := Ne.symm h3_4
+  have h3_5r := Ne.symm h3_5
+  have h3_6r := Ne.symm h3_6
+  have h3_7r := Ne.symm h3_7
+  have h3_8r := Ne.symm h3_8
+  have h3_9r := Ne.symm h3_9
+  have h3_10r := Ne.symm h3_10
+  have h4_5r := Ne.symm h4_5
+  have h4_6r := Ne.symm h4_6
+  have h4_7r := Ne.symm h4_7
+  have h4_8r := Ne.symm h4_8
+  have h4_9r := Ne.symm h4_9
+  have h4_10r := Ne.symm h4_10
+  have h5_6r := Ne.symm h5_6
+  have h5_7r := Ne.symm h5_7
+  have h5_8r := Ne.symm h5_8
+  have h5_9r := Ne.symm h5_9
+  have h5_10r := Ne.symm h5_10
+  have h6_7r := Ne.symm h6_7
+  have h6_8r := Ne.symm h6_8
+  have h6_9r := Ne.symm h6_9
+  have h6_10r := Ne.symm h6_10
+  have h7_8r := Ne.symm h7_8
+  have h7_9r := Ne.symm h7_9
+  have h7_10r := Ne.symm h7_10
+  have h8_9r := Ne.symm h8_9
+  have h8_10r := Ne.symm h8_10
+  have h9_10r := Ne.symm h9_10
+  have flagR (f : Wire) (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one]) :
+      f∉L.r := fun h => flagAway L hn f hf (by simp [h])
+  have away (a : Wire)
+      (ha : a∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower]++L.y++L.carry) :
+      a∉rawTarget L := compose_raw_away L hn a ha
+  have neq (a : Wire) (ha : a∈L.y++L.carry)
+      (f : Wire) (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one]) : a≠f :=
+    by
+      intro e
+      apply flagAway L hn f hf
+      subst a
+      simpa only [List.append_assoc] using List.mem_append_right L.r ha
+  have nr (a : Wire) (ha : a∈L.y++L.carry) : a∉L.r := by
+    have d := (List.nodup_append'.mp (allND L hn)).2.1
+    have dn : (L.r++(L.y++L.carry)).Nodup := by
+      simpa only [List.append_assoc] using d
+    exact fun h => List.disjoint_left.mp (List.nodup_append'.mp dn).2.2 h ha
+  have f0 (a : Wire) (ha : a≠L.sourceGuard) : u0.basis a=s.basis a := by
+    simp [u0,run,writeBit,ha]
+  have g0 : u0.basis L.sourceGuard=s.basis L.ymsb := by
+    simp [u0,run,writeBit,hc L.sourceGuard (by simp [work])]
+  have r0 : regValue L.r u0.basis=encodeWord 256 R := by
+    apply Eq.trans _ (word_encoding L.r 256 w.2.1 s.basis R hR)
+    exact regValue_congr _ _ _ (fun a ha => f0 a
+      (fun e => flagR L.sourceGuard (by simp) (e ▸ ha)))
+  have y0 : regValue L.y u0.basis=encodeWord 256 Y := by
+    apply Eq.trans _ (word_encoding L.y 256 w.2.2.1 s.basis Y hY)
+    exact regValue_congr _ _ _ (fun a ha => f0 a (neq a (by simp [ha]) _ (by simp)))
+  have z0 (a : Wire) (ha : a∈work L) (hg : a≠L.sourceGuard) : u0.basis a=false :=
+    (f0 a hg).trans (hc a ha)
+  have pre := recoverPrefix_correct L hw cnd R Y B hr hy u0 m r0 y0
+    ((f0 _ (by assumption)).trans hs) (z0 _ (by simp [work]) (by assumption))
+    (z0 _ (by simp [work]) (by assumption))
+    (fun a ha => z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp)))
+  have p1 : u1.basis L.parity=P := by
+    rw [pre.2.2.2.1,z0 _ (by simp [work]) (by assumption),par]
+    exact Bool.false_xor P
+  have view := unbiasView_correct L hw cnd R hr u1 m1 pre.2.1 pre.2.2.1
+  have f2 (a : Wire) (ar : a∉L.r) (al : a≠L.lower) (ap : a≠L.parity) : u2.basis a=u0.basis a :=
+    (view.2.2.2 a ar al).trans (pre.2.2.2.2 a ar al ap)
+  have p2 : u2.basis L.parity=P :=
+    (view.2.2.2 _ (flagR _ (by simp)) (by assumption)).trans p1
+  have r2 : regValue L.r u2.basis=encodeWord 256 (biased (halfResult T)) := by
+    rw [half]; exact view.2.1
+  have restore := restoreRaw_correct L hw hn T ht u2 m2 p2 r2 view.2.2.1
+    ((f2 _ (flagR _ (by simp)) (by assumption) (by assumption)).trans (z0 _ (by simp [work]) (by assumption)))
+    ((f2 _ (flagR _ (by simp)) (by assumption) (by assumption)).trans (z0 _ (by simp [work]) (by assumption)))
+    (fun a ha => (f2 a (nr a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
+      (neq a (by simp [ha]) _ (by simp))).trans
+      (z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp))))
+  have f3 (a : Wire) (ar : a∉rawTarget L) (al : a≠L.lower) (am : a≠L.minus)
+      (ap : a≠L.parity) : u3.basis a=u0.basis a :=
+    (restore.2.2.2.2 a ar al am).trans
+      (f2 a (fun h => ar (by simp [rawTarget,h])) al ap)
+  have p3 : u3.basis L.parity=P :=
+    (restore.2.2.2.2 _ (away _ (by simp)) (by assumption) (by assumption)).trans p2
+  have y3 : signedRegValue L.y u3.basis=Y := by
+    apply Eq.trans _ hY
+    unfold signedRegValue
+    congr 1
+    apply regValue_congr
+    intro a ha
+    exact (f3 a (away a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
+      (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
+      (f0 a (neq a (by simp [ha]) _ (by simp)))
+  have g3 : u3.basis L.sourceGuard=u3.basis L.ymsb := by
+    have g := (f3 _ (away _ (by simp)) (by assumption) (by assumption) (by assumption)).trans g0
+    have y := (f3 L.ymsb (away _ (by simp [BalancedCleanup.Layout.y]))
+      (by assumption) (by assumption) (by assumption)).trans (f0 _ (by assumption))
+    exact g.trans y.symm
+  have src3 : signedRegValue (rawSource L) u3.basis=Y :=
+    (signed_extension L.ylow L.ymsb L.sourceGuard u3.basis g3).trans y3
+  have raw3 : signedRegValue (rawTarget L) u3.basis=T := by
+    unfold signedRegValue
+    rw [rwid.2.1,restore.2.1]
+    apply decode_encodeWord 257 (by norm_num)
+    have c := constants
+    norm_num at ⊢
+    omega
+  have carry3 : regValue L.carry u3.basis=0 := by
+    apply (regValue_zero _ _).mpr
+    intro a ha
+    exact (f3 a (away a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
+      (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
+      (z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp)))
+  have sign3 : u3.basis L.sign=B :=
+    (f3 _ (away _ (by simp)) (by assumption) (by assumption) (by assumption)).trans ((f0 _ (by assumption)).trans hs)
+  have sub := BalancedInverse.rawSubtract_signed L hw hn B X Y hx u3 m3 sign3 src3 raw3 carry3
+  have y4 : signedRegValue L.y u4.basis=Y := by
+    apply Eq.trans _ y3
+    unfold signedRegValue
+    congr 1
+    exact regValue_congr _ _ _ (fun a ha => sub.2.2 a (away a (by simp [ha])))
+  have g4 : u4.basis L.sourceGuard=u4.basis L.ymsb :=
+    (sub.2.2 _ (away _ (by simp))).trans (g3.trans
+      (sub.2.2 _ (away _ (by simp [BalancedCleanup.Layout.y]))).symm)
+  have p4 : u4.basis L.parity=P := (sub.2.2 _ (away _ (by simp))).trans p3
+  have seed := BalancedInverse.unseed_packet L hw hn B X Y hx u4 m4 sub.2.1 y4 g4 p4
+  have f4 (a : Wire) (ar : a∉rawTarget L) (al : a≠L.lower) (am : a≠L.minus)
+      (ap : a≠L.parity) : u4.basis a=u0.basis a := (sub.2.2 a ar).trans (f3 a ar al am ap)
+  have clean : ∀a∈work L,out.basis a=false := by
+    intro a ha
+    simp only [work,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,or_assoc] at ha
+    rcases ha with rfl|rfl|rfl|rfl|rfl|rfl|rfl|ha
+    · exact seed.2.1
+    · exact (seed.2.2.2.2 _ (by assumption) (by assumption) (by assumption)).trans
+        ((f4 _ (away _ (by simp)) (by assumption) (by assumption) (by assumption)).trans
+          (z0 _ (by simp [work]) (by assumption)))
+    · exact (seed.2.2.2.2 _ (by assumption) (by assumption) (by assumption)).trans
+        ((sub.2.2 _ (away _ (by simp))).trans restore.2.2.2.1)
+    · exact (seed.2.2.2.2 _ (by assumption) (by assumption) (by assumption)).trans
+        ((f4 _ (away _ (by simp)) (by assumption) (by assumption) (by assumption)).trans
+          (z0 _ (by simp [work]) (by assumption)))
+    · exact seed.2.2.2.1
+    · exact (seed.2.2.2.2 _ (by assumption) (by assumption) (by assumption)).trans
+        ((sub.2.2 _ (away _ (by simp))).trans restore.2.2.1)
+    · exact seed.2.2.1
+    · exact (seed.2.2.2.2 a (neq a (by simp [ha]) _ (by simp))
+        (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
+        ((f4 a (away a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
+          (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
+          (z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp))))
+  have frame : ∀a,a∉L.r → out.basis a=s.basis a := by
+    intro a ar
+    by_cases aw : a∈work L
+    · exact (clean a aw).trans (hc a aw).symm
+    · have ne (f : Wire) (hf : f∈[L.sourceGuard,L.one,L.parity,L.lower,L.minus]) : a≠f := by
+        intro e
+        apply aw
+        subst a
+        simp only [List.mem_cons,List.not_mem_nil,or_false] at hf
+        rcases hf with rfl|rfl|rfl|rfl|rfl <;> simp [work]
+      have rawA : a∉rawTarget L := by simp [rawTarget,ar,ne L.one (by simp)]
+      exact (seed.2.2.2.2 a (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))).trans
+        ((f4 a rawA (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))).trans
+          (f0 a (ne _ (by simp))))
+  have value : regValue L.r out.basis=encodeWord 256 X := by
+    have corr := BalancedInverse.unseed_correlations L hw B X Y hx u4 sub.2.1 y4 g4 p4
+    have narrow : signedRegValue L.r u4.basis=X :=
+      (signed_extension (L.r0::L.rtail) L.rmsb L.one u4.basis corr.1).symm.trans sub.2.1
+    apply Eq.trans _ (word_encoding L.r 256 w.2.1 u4.basis X narrow)
+    apply regValue_congr
+    intro a ha
+    have ne (f : Wire) (hf : f∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one]) : a≠f :=
+      fun e => flagR f hf (e ▸ ha)
+    exact seed.2.2.2.2 a (ne _ (by simp)) (ne _ (by simp)) (ne _ (by simp))
+  have actual : run (program L) m s=out := by
+    simp only [program,List.append_assoc]
+    rw [run_append,run_take]
+    simp only [show measurementCount [.CX L.ymsb L.sourceGuard]=0 from by simp only [measurementCount],List.drop_zero]
+    change run (recoverPrefix L ++ (unbiasView L ++ (restoreRaw L ++
+      (BalancedInverse.rawSubtract L ++ (seedViews L).reverse)))) m u0=out
+    rw [run_append,run_take]
+    change run (unbiasView L ++ (restoreRaw L ++
+      (BalancedInverse.rawSubtract L ++ (seedViews L).reverse))) m1 u1=out
+    rw [run_append,run_take]
+    change run (restoreRaw L ++ (BalancedInverse.rawSubtract L ++ (seedViews L).reverse)) m2 u2=out
+    rw [run_append,run_take]
+    change run (BalancedInverse.rawSubtract L ++ (seedViews L).reverse) m3 u3=out
+    rw [run_append,run_take]
+  rw [actual]
+  have ph0 : u0.phase=s.phase := by simp [u0,run]
+  exact ⟨seed.1.trans (sub.1.trans (restore.1.trans (view.1.trans (pre.1.trans ph0)))),value,clean,frame⟩
+
+/-- Whole-state interchangeability permits independent measurement tapes. -/
+theorem kernel_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (B : Bool) (R Y : Int) (hr : Centered R) (hy : Centered Y)
+    (s : State) (m n : List Bool) (hs : s.basis L.sign=B)
+    (hR : signedRegValue L.r s.basis=R) (hY : signedRegValue L.y s.basis=Y)
+    (hc : ∀a∈work L,s.basis a=false) :
+    run (program L) m s=run (BalancedInverse.program L) n s := by
+  have fresh := program_correct L hw hn B R Y hr hy s m hs hR hY hc
+  have old := BalancedInverse.program_correct L hw hn B R Y hr hy s n hs hR hY hc
+  apply State.extensionality
+  · exact fresh.1.trans old.1.symm
+  · funext a
+    by_cases ha : a∈L.r
+    · exact (regValue_eq_iff L.r _ _).mp (fresh.2.1.trans old.2.1.symm) a ha
+    · exact (fresh.2.2.2 a ha).trans (old.2.2.2 a ha).symm
+
+end KernelSemantics
+
+theorem counts (L : Layout) (hw : L.Widths) :
+    toffoliCount (program L)=1021 ∧ measurementCount (program L)=1021 := by
+  have old := BiasedInverse.counts L hw
+  have widths := BalancedCleanup.widths L.toLayout hw
+  have fa := mappedSub_counts (BiasedInverse.biasBits L) L.r (L.carry.take 255) L.minus
+    (by simp [BiasedInverse.biasBits,widths.2.1])
+    (by simp [List.length_take,hw.2.2,widths.2.1])
+  have short := short_counts L hw
+  simp only [BiasedInverse.program,BiasedInverse.restoreRaw,BiasedInverse.unfoldBias,
+    toffoliCount_append,measurementCount_append,fa.1,fa.2,widths.2.1] at old
+  simp only [program,restoreRaw,unfoldBias,toffoliCount_append,measurementCount_append,short.2.2.1,short.2.2.2]
+  omega
+
+end ECDSAAdd.Entrant.ShortBiasedInverse
+end
+
+-- ===== Root verified Short kernel Properties =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedProperties
+open ECDSAAdd.Arithmetic ECDSAAdd.Entrant.ShortKernelDependencies
+abbrev Layout := BalancedCircuit.Layout
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+
+private theorem mapped_support (L : Layout) (P : Program)
+    (bound : wires P ⊆ (mappedWires (ShortBiasedFold.lowBits L)++L.low++L.carry.take 254++[L.minus]).toFinset) :
+    wires P ⊆ L.wires.toFinset := by
+  have member (a : Wire) : a∈L.wires.toFinset ↔
+      a∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one,L.rmsb,L.ymsb,L.r0] ∨
+      a∈L.rtail ∨ a∈L.ylow ∨ a∈L.carry := by
+    simp [BalancedCircuit.Layout.wires,BalancedCleanup.Layout.wires,or_assoc]
+  intro a ha
+  have h := bound ha
+  simp only [List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,or_assoc] at h
+  rcases h with src|lo|cy|last
+  · have full : a∈mappedWires (BiasedCircuit.biasBits L) := by
+      rw [ShortBiasedFold.biasBits_split]
+      simp only [mappedWires,List.flatMap_append,List.mem_append]
+      exact Or.inl src
+    rcases BiasedCircuit.biasBits_sources L a full with rfl|rfl <;> simp [member]
+  · simp only [BalancedCleanup.Layout.low,List.mem_cons] at lo
+    simp only [member,List.mem_cons,List.not_mem_nil,or_false]
+    tauto
+  · exact (member a).mpr (Or.inr (Or.inr (Or.inr (List.mem_of_mem_take cy))))
+  · simp [member,last]
+
+private theorem cx_support (L : Layout) : wires [.CX L.parity L.rmsb]⊆L.wires.toFinset := by
+  intro q hq
+  have eq : q=L.parity ∨ q=L.rmsb := by simpa [wires,Instr.wires] using hq
+  rcases eq with rfl|rfl <;> simp [BalancedCircuit.Layout.wires,BalancedCleanup.Layout.wires]
+
+theorem short_support (L : Layout) :
+    wires (ShortBiasedFold.shortFold L) ⊆ L.wires.toFinset ∧
+    wires (ShortBiasedFold.shortUnfold L) ⊆ L.wires.toFinset := by
+  constructor
+  · simp only [ShortBiasedFold.shortFold,wires_append,Finset.union_subset_iff]
+    exact ⟨mapped_support L _ (mappedAdd_wires_subset _ _ _ _),cx_support L⟩
+  · simp only [ShortBiasedFold.shortUnfold,wires_append,Finset.union_subset_iff]
+    exact ⟨mapped_support L _ (mappedSub_wires_subset _ _ _ _),cx_support L⟩
+
+theorem forward_support (L : Layout) (hw : L.Widths) :
+    wires (ShortBiasedFold.program L) ⊆ L.wires.toFinset := by
+  have old := biasedCircuit_support L hw
+  have narrow := (short_support L).1
+  simp only [BiasedCircuit.program,BiasedCircuit.biasedPrefix,wires_append,Finset.union_subset_iff] at old
+  simp only [ShortBiasedFold.program,ShortBiasedFold.biasedPrefix,ShortBiasedFold.remainder,
+    wires_append,Finset.union_subset_iff]
+  tauto
+
+theorem inverse_support (L : Layout) (hw : L.Widths) :
+    wires (ShortBiasedInverse.program L) ⊆ L.wires.toFinset := by
+  have old := BiasedInverse.support L hw
+  have narrow := (short_support L).2
+  simp only [BiasedInverse.program,BiasedInverse.restoreRaw,wires_append,Finset.union_subset_iff] at old
+  simp only [ShortBiasedInverse.program,ShortBiasedInverse.restoreRaw,ShortBiasedInverse.unfoldBias,
+    wires_append,Finset.union_subset_iff]
+  tauto
+
+/-- Support transport for either swap order around an arbitrary supported kernel. -/
+theorem body_support (divide : Bool) (L : Layout) (eff : Wire) (hw : L.Widths)
+    (P : Program) (hP : wires P ⊆ L.wires.toFinset) :
+    wires (if divide then ([.X L.sign]++P++[.X L.sign])++swapRegisters eff L.r L.y
+      else swapRegisters eff L.r L.y++([.X L.sign]++P++[.X L.sign])) ⊆ (eff::L.wires).toFinset := by
+  have hk : wires P ⊆ (eff::L.wires).toFinset :=
+    hP.trans (by simp only [List.toFinset_cons]; exact Finset.subset_insert _ _)
+  have hx : wires [.X L.sign] ⊆ (eff::L.wires).toFinset := by
+    intro q hq
+    have eq : q=L.sign := by simpa [wires,Instr.wires] using hq
+    subst q
+    simp [BalancedCircuit.Layout.wires,BalancedCleanup.Layout.wires]
+  have width := BalancedCleanup.widths L.toLayout hw
+  have sw : wires (swapRegisters eff L.r L.y) ⊆ (eff::L.wires).toFinset := by
+    apply (swapRegisters_wires eff L.r L.y (width.2.1.trans width.2.2.1.symm)).trans
+    intro q hq
+    simp only [List.mem_toFinset,List.mem_cons,List.mem_append,BalancedCircuit.Layout.wires,
+      BalancedCleanup.Layout.wires,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,
+      BalancedCleanup.Layout.y,List.not_mem_nil] at hq ⊢
+    tauto
+  cases divide <;> simp only [Bool.false_eq_true,if_false,if_true,wires_append,Finset.union_subset_iff] <;> tauto
+
+end ECDSAAdd.Entrant.ShortBiasedProperties
+end
+
+-- ===== Root verified Short kernel Resources =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedResources
+open ECDSAAdd.Arithmetic ECDSAAdd.Challenge ECDSAAdd.Baselines
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+theorem biasedCircuit_gateSlots_le (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    gateSlots (ShortBiasedFold.program L) ≤ 24000 := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have kw := BalancedCircuit.widths L hw
+  have hb : (ShortBiasedFold.lowBits L).length=255 := by exact ShortBiasedFold.lowBits_length L
+  have a := addInPlace_gateSlots_le (BalancedCircuit.rawSource L) (BalancedCircuit.rawTarget L)
+    L.carry L.sign
+  have r := (rotate_gateSlots_le (BalancedCircuit.rawTarget L)).1
+  have l := (rotate_gateSlots_le L.r).2
+  have m := mappedAdd_gateSlots_le (ShortBiasedFold.lowBits L) L.low (L.carry.take 254) L.minus
+  have u := literalAdd_gateSlots_le L.low (L.carry.take 254) L.lower L.one
+    BalancedCleanup.positiveLiteral
+  have c := compareLt_gateSlots_le none L.y L.r L.carry L.one L.parity
+  rw [kw.1] at a
+  rw [kw.2.1] at r
+  rw [w.2.1] at l
+  rw [hb] at m
+  rw [w.1] at u
+  rw [w.2.1,w.2.2.1] at c
+  simp only [ShortBiasedFold.program,ShortBiasedFold.biasedPrefix,ShortBiasedFold.remainder,BiasedCircuit.cleanupSuffix,
+    BiasedCircuit.prepareFold,BiasedCircuit.signView,ShortBiasedFold.shortFold,
+    BiasedCircuit.releaseSelectors,BiasedCircuit.flipBias,BalancedCircuit.seedViews,
+    BalancedCircuit.rawAdd,BalancedCleanup.prepareSign,BalancedCleanup.prepareCompare,
+    BalancedCleanup.unnormalize,gateSlots_append,reverse_gateSlots,signComplement_gateSlots,
+    gateSlots_cons,gateSlots_nil,instructionSlots,kw.1,w.2.1,w.2.2.1,List.length_cons,List.length_nil]
+  omega
+
+theorem biasedInverse_gateSlots_le (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    Challenge.gateSlots (ShortBiasedInverse.program L) ≤ 25000 := by
+  have w := BalancedCleanup.widths L.toLayout hw
+  have rw := BalancedCircuit.widths L hw
+  have a := literalAdd_gateSlots_le L.low (L.carry.take 254) L.lower L.one
+    BalancedCleanup.negativeLiteral
+  have c := compareLt_gateSlots_le none L.y L.r L.carry L.one L.parity
+  have b := mappedSub_gateSlots_le (ShortBiasedFold.lowBits L) L.low (L.carry.take 254) L.minus
+  have s := subInPlace_gateSlots_le (BalancedCircuit.rawSource L) (BalancedCircuit.rawTarget L) L.carry L.sign
+  have r := (rotate_gateSlots_le L.r).2
+  have rt := (rotate_gateSlots_le (BalancedCircuit.rawTarget L)).2
+  rw [w.1] at a
+  rw [w.2.2.1,w.2.1] at c
+  have bl : (ShortBiasedFold.lowBits L).length=255 := ShortBiasedFold.lowBits_length L
+  rw [bl,w.1] at b
+  rw [rw.1,rw.2.1] at s
+  rw [w.2.1] at r
+  rw [rw.2.1] at rt
+  simp only [ShortBiasedInverse.program,BiasedInverse.recoverPrefix,BiasedInverse.unbiasView,
+    ShortBiasedInverse.restoreRaw,BiasedInverse.selectors,ShortBiasedInverse.unfoldBias,ShortBiasedFold.shortUnfold,BiasedInverse.release,
+    BalancedInverse.rawSubtract,BalancedCleanup.prepareSign,BalancedCleanup.normalize,
+    BalancedCleanup.prepareCompare,BalancedCircuit.seedViews,gateSlots_append,reverse_gateSlots,
+    signComplement_gateSlots,gateSlots_cons,gateSlots_nil,instructionSlots,
+    w.2.1,w.2.2.1,rw.1,List.length_cons,List.length_nil]
+  omega
+end ECDSAAdd.Entrant.ShortBiasedResources
+end
+
+-- ===== Root verified Short kernel Natural =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedNatural
+open ECDSAAdd.Arithmetic ECDSAAdd.Entrant.ShortKernelDependencies ECDSAAdd.Arithmetic.FieldRename
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+attribute [local irreducible] mappedAdd mappedSub rotateLeft rotateRight signComplement literalConstAdd compareLt addInPlace subInPlace
+
+theorem lowBits_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    (ShortBiasedFold.lowBits L).map (mapBit f)=ShortBiasedFold.lowBits (mapCircuit f L) := by
+  simp only [ShortBiasedFold.lowBits,List.map_take,bf_biasBits_map]
+
+theorem shortFold_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    renameProgram f (ShortBiasedFold.shortFold L)=ShortBiasedFold.shortFold (mapCircuit f L) := by
+  simp only [ShortBiasedFold.shortFold,rename_append,mappedAdd_natural,lowBits_map,List.map_take,bf_low_map]
+  rfl
+
+theorem shortUnfold_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    renameProgram f (ShortBiasedFold.shortUnfold L)=ShortBiasedFold.shortUnfold (mapCircuit f L) := by
+  simp only [ShortBiasedFold.shortUnfold,rename_append,mappedSub_natural,lowBits_map,List.map_take,bf_low_map]
+  rfl
+
+theorem forward_prefix_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) (hw : L.Widths)
+    (hy : L.ylow≠[]) :
+    renameProgram f (ShortBiasedFold.biasedPrefix L)=ShortBiasedFold.biasedPrefix (mapCircuit f L) := by
+  have pf : renameProgram f (BiasedCircuit.prepareFold L)=
+      BiasedCircuit.prepareFold (mapCircuit f L) := by
+    simp only [BiasedCircuit.prepareFold,mapCircuit,mapCleanup,renameProgram,
+      List.map_cons,List.map_nil,renameInstr]
+  have sv : renameProgram f (BiasedCircuit.signView L)=BiasedCircuit.signView (mapCircuit f L) := by
+    simp only [BiasedCircuit.signView,mapCircuit,mapCleanup,renameProgram,
+      List.map_cons,List.map_nil,renameInstr]
+  have rs : renameProgram f (BiasedCircuit.releaseSelectors L)=
+      BiasedCircuit.releaseSelectors (mapCircuit f L) := by
+    simp only [BiasedCircuit.releaseSelectors,mapCircuit,mapCleanup,renameProgram,
+      List.map_cons,List.map_nil,renameInstr,renameCorrection]
+  have fd := shortFold_natural f L
+  simp only [ShortBiasedFold.biasedPrefix,ShortBiasedFold.remainder,rename_append,seedViews_natural f L hy,rawAdd_natural,
+    pf,rotateRight_natural,rawTarget_map,sv,fd,rs,prepareSign_natural,bf_flip_natural f L hw]
+  rfl
+
+theorem forward_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) (hw : L.Widths) :
+    renameProgram f (ShortBiasedFold.program L)=ShortBiasedFold.program (mapCircuit f L) := by
+  have hy : L.ylow≠[] := by
+    intro e
+    have h:=hw.2.1
+    rw [e] at h
+    simp at h
+  simp only [ShortBiasedFold.program,rename_append,forward_prefix_natural f L hw hy,bf_suffix_natural]
+
+theorem restoreRaw_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
+    renameProgram f (ShortBiasedInverse.restoreRaw L)=ShortBiasedInverse.restoreRaw (mapCircuit f L) := by
+  simp only [ShortBiasedInverse.restoreRaw,ShortBiasedInverse.unfoldBias,rename_append,
+    bi_selectors_natural,shortUnfold_natural,bi_release_natural,rotateLeft_natural,rawTarget_map]
+  rfl
+
+theorem inverse_natural (f : Wire → Wire) (L : BalancedCircuit.Layout)
+    (hy : L.ylow≠[]) (hw : L.Widths) :
+    renameProgram f (ShortBiasedInverse.program L)=ShortBiasedInverse.program (mapCircuit f L) := by
+  simp only [ShortBiasedInverse.program,rename_append,rename_reverse,
+    bi_recoverPrefix_natural,bi_unbiasView_natural f L hw,restoreRaw_natural,
+    rawSubtract_natural,seedViews_natural f L hy]
+  rfl
+end ECDSAAdd.Entrant.ShortBiasedNatural
+end
+
+-- ===== ECDSAAdd.Submission.Entrant.OneBankPhysical5 =====
+section
+
+/-! Structural physicality of the protected one-bank field programs. -/
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.OneBankPhysical5
+open Arithmetic RecordedQuantum BalancedCircuit
+attribute [local irreducible] GatePhysical addInPlace subInPlace mappedAdd mappedSub
+  literalConstAdd compareLt signComplement rotateLeft rotateRight
+
+private theorem reverse_physical (P : Program) (h : GatePhysical P) : GatePhysical P.reverse := by
+  unfold GatePhysical at h ⊢
+  intro i hi
+  exact h i (List.mem_reverse.mp hi)
+
+private theorem cleanup_scalar (L : BalancedCleanup.Layout) (hn : L.wires.Nodup) :
+    [L.parity,L.sign,L.lower,L.one,L.rmsb,L.ymsb,L.r0].Nodup := by
+  apply List.nodup_iff_count.mpr
+  intro q
+  have h := List.nodup_iff_count.mp hn q
+  simp only [BalancedCleanup.Layout.wires,List.count_append,List.count_cons,List.count_nil] at h ⊢
+  omega
+
+theorem cleanup_physical (L : BalancedCleanup.Layout) (_hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (BalancedCleanup.program L) := by
+  have nd := cleanup_scalar L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have low := (L.normND hn).tail
+  have data := L.dataND hn
+  have rND : L.r.Nodup := (List.nodup_append'.mp data).1
+  have cmpND : (L.parity :: L.one :: L.y++L.r++L.carry).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp (L.allND hn) q
+    simp only [List.count_append,List.count_cons,List.count_nil] at h ⊢
+    omega
+  have rot := (rotate_physical L.r rND).2
+  have sc := signComplement_physical L.lower L.r (fun h => L.flagAway hn L.lower (by simp) (by simp [h]))
+  have sy := signComplement_physical L.sign L.y (fun h => L.flagAway hn L.sign (by simp) (by simp [h]))
+  have ly := signComplement_physical L.lower L.y (fun h => L.flagAway hn L.lower (by simp) (by simp [h]))
+  have seed : GatePhysical [.CX L.rmsb L.lower] := by
+    simp [GatePhysical,PhysicalInstr,ProperGate]
+    tauto
+  have packet : GatePhysical [.X L.r0,.CX L.sign L.r0,.CX L.lower L.r0] := by
+    simp [GatePhysical,PhysicalInstr,ProperGate]
+    tauto
+  have xs : GatePhysical [.X L.rmsb,.X L.ymsb] := by simp [GatePhysical,PhysicalInstr,ProperGate]
+  have x : GatePhysical [.X L.lower] := by simp [GatePhysical,PhysicalInstr,ProperGate]
+  have a := literalAdd_physical L.low (L.carry.take 254) L.lower L.one BalancedCleanup.negativeLiteral low
+  have b := literalAdd_physical L.low (L.carry.take 254) L.lower L.one BalancedCleanup.positiveLiteral low
+  have cmp := compareLt_physical none L.y L.r L.carry L.one L.parity cmpND (by simp)
+  have ps : GatePhysical (BalancedCleanup.prepareSign L) := by
+    simpa only [BalancedCleanup.prepareSign,gatePhysical_append] using And.intro seed sc
+  have pc : GatePhysical (BalancedCleanup.prepareCompare L) := by
+    simpa only [BalancedCleanup.prepareCompare,gatePhysical_append] using
+      And.intro (And.intro (And.intro (And.intro rot packet) sy) ly) xs
+  have un : GatePhysical (BalancedCleanup.unnormalize L) := by
+    simpa only [BalancedCleanup.unnormalize,gatePhysical_append] using And.intro (And.intro x b) x
+  simp only [BalancedCleanup.program,BalancedCleanup.normalize,gatePhysical_append]
+  exact ⟨ps,a,pc,cmp,reverse_physical _ pc,un,reverse_physical _ ps⟩
+
+private theorem seed_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) : GatePhysical (seedViews L) := by
+  have nd := seedND L hw hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  simp [seedViews,GatePhysical,PhysicalInstr,ProperGate]
+  tauto
+
+private theorem small_physical (L : Layout) (hn : L.wires.Nodup) :
+    GatePhysical (prepareFold L) ∧ GatePhysical (releaseSelectors L) ∧
+      GatePhysical (BalancedInverse.recoverSelectors L) ∧ GatePhysical (BalancedInverse.undoPreparation L) ∧
+      GatePhysical [.CX L.ymsb L.sourceGuard] ∧ GatePhysical [.CX L.minus L.cout] := by
+  have nd := scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  simp [prepareFold,releaseSelectors,BalancedInverse.recoverSelectors,
+    BalancedInverse.undoPreparation,GatePhysical,PhysicalInstr,ProperGate]
+  tauto
+
+private theorem fold_adder_physical (L : Layout) (hn : L.wires.Nodup) :
+    GatePhysical (mappedAdd (foldBits L) (foldTarget L++[L.cout]) L.carry L.parity) := by
+  have nd : ([L.plus,L.minus]++(L.parity::(foldTarget L++[L.cout])++L.carry)).Nodup := by
+    simpa only [List.cons_append,List.nil_append,List.append_assoc] using foldND L hn
+  have parts := List.nodup_append'.mp nd
+  apply mappedAdd_physical _ _ _ _ parts.2.1
+  intro b hb q hq hbad
+  simp only [foldBits,List.mem_append,List.mem_map,List.mem_singleton] at hb
+  rcases hb with ⟨i,_,rfl⟩ | rfl
+  · have eq : q=(if sparseF.testBit (i+1) then L.plus else L.minus) := by
+      exact (Option.mem_some_iff.mp hq).symm
+    subst q
+    exact List.disjoint_left.mp parts.2.2 (by split_ifs <;> simp) hbad
+  · simp at hq
+
+private theorem fold_sub_physical (L : Layout) (hn : L.wires.Nodup) :
+    GatePhysical (mappedSub (foldBits L) (foldTarget L++[L.cout]) L.carry L.parity) := by
+  simpa only [mappedSub,gatePhysical_append] using
+    And.intro (And.intro (notRegister_physical _) (fold_adder_physical L hn)) (notRegister_physical _)
+
+theorem circuit_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (BalancedCircuit.program L) := by
+  have raw := (signedWords_physical L.sign (rawSource L) (rawTarget L) L.carry (rawLayoutND L hn)).1
+  have small := small_physical L hn
+  have fold : GatePhysical (BalancedCircuit.fold L) := by
+    simpa only [BalancedCircuit.fold,gatePhysical_append] using And.intro (fold_adder_physical L hn) small.2.2.2.2.2
+  have rot := (rotate_physical (rawTarget L) (rawTargetND L hn)).1
+  have cl := cleanup_physical L.toLayout hw (List.nodup_append'.mp hn).2.1
+  simp only [BalancedCircuit.program,gatePhysical_append]
+  refine ⟨⟨⟨⟨⟨⟨⟨seed_physical L hw hn,?_⟩,small.1⟩,fold⟩,rot⟩,small.2.1⟩,cl⟩,small.2.2.2.2.1⟩
+  simpa only [rawAdd,signedAdd] using raw
+
+theorem inverse_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (BalancedInverse.program L) := by
+  have nd := rawLayoutND L hn
+  have sc := signComplement_physical L.sign (rawSource L)
+    (fun h => (List.nodup_cons.mp nd).1 (by simp [h]))
+  have sub := subInPlace_physical (rawSource L) (rawTarget L) L.carry L.sign nd
+  have raw : GatePhysical (BalancedInverse.rawSubtract L) := by
+    simpa only [BalancedInverse.rawSubtract,gatePhysical_append] using And.intro (And.intro sc sub) sc
+  have small := small_physical L hn
+  have fold : GatePhysical (BalancedInverse.undoFold L) := by
+    simpa only [BalancedInverse.undoFold,gatePhysical_append] using And.intro small.2.2.2.2.2 (fold_sub_physical L hn)
+  have rot := (rotate_physical (rawTarget L) (rawTargetND L hn)).2
+  have cl := cleanup_physical L.toLayout hw (List.nodup_append'.mp hn).2.1
+  simp only [BalancedInverse.program,BalancedInverse.recoverParity,gatePhysical_append]
+  refine ⟨⟨⟨⟨⟨⟨⟨small.2.2.2.2.1,cl⟩,small.2.2.1⟩,rot⟩,fold⟩,small.2.2.2.1⟩,?_⟩,
+    reverse_physical _ (seed_physical L hw hn)⟩
+  exact raw
+
+end ECDSAAdd.Entrant.OneBankPhysical5
+
+end
+
+
+
+-- ===== Generic BiasPhysical =====
+section
+set_option maxHeartbeats 1800000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.BiasedInverse
+open Arithmetic RecordedQuantum
+attribute [local irreducible] mappedSub BalancedCircuit.seedViews BalancedInverse.rawSubtract
+
+theorem physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) : GatePhysical (program L) := by
+  have oldF:=OneBankPhysical5.circuit_physical L hw hn
+  have oldI:=OneBankPhysical5.inverse_physical L hw hn
+  simp only [BalancedCircuit.program_eq_core,BalancedCleanup.program,gatePhysical_append] at oldF
+  simp only [BalancedInverse.program,BalancedInverse.recoverParity,gatePhysical_append] at oldI
+  have pre : GatePhysical (recoverPrefix L) := by
+    simp only [recoverPrefix,gatePhysical_append]
+    tauto
+  have view : GatePhysical (unbiasView L) := by
+    simp only [unbiasView,gatePhysical_append]
+    exact ⟨by simp [GatePhysical,PhysicalInstr,ProperGate],by tauto⟩
+  have small : GatePhysical (selectors L++release L++[.CX L.parity L.r0]) := by
+    have nd:=BalancedCircuit.scalarND L hn
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true] at nd
+    simp_all [selectors,release,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
+  have fnd : (L.minus::(L.r++L.carry.take 255)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h:=List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take:=(List.take_sublist 255 L.carry).count_le q
+    simp only [List.count_append,List.count_cons,List.count_nil] at h ⊢
+    omega
+  have ma : GatePhysical (mappedAdd (biasBits L) L.r (L.carry.take 255) L.minus) := by
+    apply mappedAdd_physical _ _ _ _ fnd
+    intro b hb q hq hmem
+    have mem : q∈mappedWires (biasBits L) := List.mem_flatMap.mpr ⟨b,hb,by simpa using hq⟩
+    have src:=biasBits_sources L q mem
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have nd:=BalancedCircuit.scalarND L hn
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true] at nd
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    simp only [List.mem_cons,List.mem_append,or_assoc] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have mapped : GatePhysical (unfoldBias L) := by
+    have nt := notRegister_physical L.r
+    simpa only [unfoldBias,mappedSub,gatePhysical_append] using And.intro (And.intro nt ma) nt
+  simp only [gatePhysical_append] at small
+  simp only [program,restoreRaw,gatePhysical_append]
+  tauto
+end ECDSAAdd.Entrant.BiasedInverse
+end
+
+-- ===== Generic ShortPhysical =====
+section
+namespace ECDSAAdd.Entrant.ShortBiasedPhysical
+open ECDSAAdd.Arithmetic ECDSAAdd.RecordedQuantum ECDSAAdd.Entrant.ShortBiasedFold
+abbrev Layout := ECDSAAdd.Arithmetic.BalancedCircuit.Layout
+set_option maxHeartbeats 1800000
+set_option maxRecDepth 8192
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+
+theorem narrow_physical (L : Layout) (hn : L.wires.Nodup) :
+    GatePhysical (shortFold L) ∧ GatePhysical (shortUnfold L) := by
+  have nd := BalancedCircuit.scalarND L hn
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  have fullND : (L.minus::(L.r++L.carry.take 255)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have count := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 255 L.carry).count_le q
+    simp only [List.count_append,List.count_cons,List.count_nil] at count ⊢
+    omega
+  have smallND : (L.minus::(L.low++L.carry.take 254)).Nodup := by
+    apply List.nodup_iff_count.mpr
+    intro q
+    have count := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) q
+    have take := (List.take_sublist 254 L.carry).count_le q
+    simp only [BalancedCleanup.Layout.r,List.count_append,List.count_cons,List.count_nil] at count ⊢
+    omega
+  have fullSrc : ∀q∈mappedWires (BiasedCircuit.biasBits L),q∉L.minus::(L.r++L.carry.take 255) := by
+    intro q hq hmem
+    have src := BiasedCircuit.biasBits_sources L q hq
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    simp only [List.mem_cons,List.mem_append] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have smallSrc : ∀q∈mappedWires (lowBits L),q∉L.minus::(L.low++L.carry.take 254) := by
+    intro q hq hmem
+    have fullq : q∈mappedWires (BiasedCircuit.biasBits L) := by
+      rw [biasBits_split]
+      simp only [mappedWires,List.flatMap_append,List.mem_append]
+      exact Or.inl hq
+    have src := BiasedCircuit.biasBits_sources L q fullq
+    have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
+      rcases src with he|he <;> simp [he]
+    have ne : q≠L.minus := by rcases src with rfl|rfl <;> tauto
+    simp only [List.mem_cons,List.mem_append] at hmem
+    rcases hmem with he|he|he
+    · exact ne he
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [BalancedCleanup.Layout.r,he])
+    · exact BalancedCircuit.flagAway L hn q flag (by simp [List.mem_of_mem_take he])
+  have topAway : L.rmsb∉L.low := by
+    intro bad
+    have data := List.nodup_iff_count.mp (BalancedCircuit.allND L hn) L.rmsb
+    have cnt := List.count_pos_iff.mpr bad
+    simp only [BalancedCleanup.Layout.r,List.count_append,List.count_cons,List.count_nil] at data
+    simp at data
+    omega
+  have parityAway : L.parity∉L.low := by
+    intro bad
+    exact BalancedCircuit.flagAway L hn L.parity (by simp) (by simp [BalancedCleanup.Layout.r,bad])
+  have ma : GatePhysical (mappedAdd (ShortBiasedFold.lowBits L) L.low (L.carry.take 254) L.minus) := by
+    apply mappedAdd_physical _ _ _ _ smallND
+    intro bit hb q hq
+    apply smallSrc q
+    exact List.mem_flatMap.mpr ⟨bit,hb,by simpa using hq⟩
+  have ms : GatePhysical (mappedSub (ShortBiasedFold.lowBits L) L.low (L.carry.take 254) L.minus) := by
+    have nt := notRegister_physical L.low
+    simpa only [mappedSub,gatePhysical_append] using And.intro (And.intro nt ma) nt
+  have cx : GatePhysical [.CX L.parity L.rmsb] := by
+    simp_all [GatePhysical,PhysicalInstr,ProperGate,ne_comm]
+  simp only [ShortBiasedFold.shortFold,ShortBiasedFold.shortUnfold,gatePhysical_append]
+  exact ⟨⟨ma,cx⟩,⟨ms,cx⟩⟩
+
+theorem forward_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (ShortBiasedFold.program L) := by
+  have old := BiasedCircuit.physical L hw hn
+  have narrow := (narrow_physical L hn).1
+  simp only [BiasedCircuit.program,BiasedCircuit.biasedPrefix,gatePhysical_append] at old
+  simp only [ShortBiasedFold.program,ShortBiasedFold.biasedPrefix,ShortBiasedFold.remainder,gatePhysical_append]
+  tauto
+
+theorem inverse_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (ShortBiasedInverse.program L) := by
+  have old := BiasedInverse.physical L hw hn
+  have narrow := (narrow_physical L hn).2
+  simp only [BiasedInverse.program,BiasedInverse.restoreRaw,gatePhysical_append] at old
+  simp only [ShortBiasedInverse.program,ShortBiasedInverse.restoreRaw,ShortBiasedInverse.unfoldBias,gatePhysical_append]
+  tauto
+end ECDSAAdd.Entrant.ShortBiasedPhysical
+end
+end -- original module boundary
+
+-- ===== ECDSAAdd.Submission.Entrant.MainPre =====
+section
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedCleanupCircuitViews
+-- consolidated import: import ECDSAAdd.Baselines.SlotSignedSquare
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedSquarePhysical
+-- consolidated import: import ECDSAAdd.Framework.RecordPadding
+-- consolidated import: import ECDSAAdd.Arithmetic.ExactBorrowErase
+-- consolidated import: import ECDSAAdd.Framework.WireRename
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedSubtract
+-- consolidated import: import ECDSAAdd.Submission.Entrant.ShortKernel
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedTranscriptSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedConvertPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedArithmeticPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.Rotate
+-- consolidated import: import ECDSAAdd.Arithmetic.EntryForwardSelectedPoolRestore
+-- consolidated import: import ECDSAAdd.Arithmetic.PenultimateMappedForward
+-- consolidated import: import ECDSAAdd.Arithmetic.PenultimateMappedInverse
+-- consolidated import: import ECDSAAdd.Arithmetic.PenultimateMappedResources
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedFieldPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.Registers
+-- consolidated import: import ECDSAAdd.Arithmetic.PhysicalSupportRename
+-- consolidated import: import ECDSAAdd.Framework.WireRenamePool
+-- consolidated import: import ECDSAAdd.Framework.GateInverse
+-- consolidated import: import ECDSAAdd.Baselines.SlotMapped
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedCompactSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedFieldFullEncoding
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedPlacementTransport
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedFieldWindowTransport
+-- consolidated import: import ECDSAAdd.Arithmetic.PairFrameUnique
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedCleanTransport
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseComposeFold
+-- consolidated import: import ECDSAAdd.Arithmetic.OffsetBorrowedFieldProof
+-- consolidated import: import ECDSAAdd.Arithmetic.OffsetBorrowedInverseProof
+-- consolidated import: import ECDSAAdd.Arithmetic.OffsetBorrowedCanonicalEnvironment
+-- consolidated import: import ECDSAAdd.Baselines.SkywalkCertificate
+-- consolidated import: import ECDSAAdd.Baselines.SlotField
+-- consolidated import: import ECDSAAdd.Arithmetic.EndpointSwapTrimProof
+-- consolidated import: import ECDSAAdd.Framework.RunThreeStates
+-- consolidated import: import ECDSAAdd.Framework.PacketSequenceFrame
+-- consolidated import: import ECDSAAdd.Arithmetic.EntrySelectedSwapFrame
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedSquare
+-- consolidated import: import ECDSAAdd.Arithmetic.SwapLow
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.TriangularSquareProof
+-- consolidated import: import ECDSAAdd.Baselines.SlotAlgebra
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedSquareProof
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedPhysical
+-- consolidated import: import ECDSAAdd.Baselines.SlotStreamedSquare
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredStreamedViews
+-- consolidated import: import Mathlib.Tactic
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedPointSquareCorrect
+-- consolidated import: import ECDSAAdd.Arithmetic.PointSquarePhysical
+-- consolidated import: import ECDSAAdd.Baselines.SkywalkSlots
+-- consolidated import: import Mathlib.Tactic.ReduceModChar
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredCanonicalMod
+-- consolidated import: import ECDSAAdd.Arithmetic.Compare
+-- consolidated import: import ECDSAAdd.Arithmetic.ComparePhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.MeasuredGateSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedPointDialogSteps
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedPointDialogResources
+-- consolidated import: import ECDSAAdd.Arithmetic.SkywalkPointPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedFieldConvertProof
+-- consolidated import: import ECDSAAdd.Arithmetic.ConstantBorrow
+-- consolidated import: import ECDSAAdd.Arithmetic.TrailingZeroCompare
+-- consolidated import: import ECDSAAdd.Baselines.SlotBalanced
+-- consolidated import: import ECDSAAdd.Arithmetic.FieldRenameCells
+-- consolidated import: import ECDSAAdd.Arithmetic.NativeFirstDirectCallerStates
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedKernelPhysical
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedAllocationSites
+-- consolidated import: import ECDSAAdd.Challenge.Contract
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedPointArithmetic
+-- consolidated import: import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedCompactReverseProgram
+-- consolidated import: import ECDSAAdd.Arithmetic.NativeFirstDirectTailRestore
+-- consolidated import: import ECDSAAdd.Arithmetic.CompactWalkPhysical
+-- consolidated import: import ECDSAAdd.Baselines.SlotCodec
+-- consolidated import: import ECDSAAdd.Arithmetic.LiteralConstPhysical
+-- consolidated import: import ECDSAAdd.Math.SquareReduction
+-- consolidated import: import Mathlib.Tactic.Ring
+-- consolidated import: import Mathlib.Tactic.Linarith
+-- consolidated import: import ECDSAAdd.Framework.CleanWireRebind
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedCompactRestore
+-- consolidated import: import ECDSAAdd.Arithmetic.CompressedCompactStage
+-- consolidated import: import ECDSAAdd.Arithmetic.EntryForwardSelectedFieldSegment
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedTranscriptBoundary
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseTranscriptReplay
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedConversionNaturality
+-- consolidated import: import ECDSAAdd.Arithmetic.EntryInverseFirstGroupFrame
+-- consolidated import: import ECDSAAdd.Arithmetic.MappedCompressedGroupsFrame
+-- consolidated import: import ECDSAAdd.Arithmetic.EntryMappedFieldSegmentTrimForward
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseTranscriptSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.ParametricPointDialogSteps
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedFieldCircuitProof
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedFieldSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseComposeProof
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedInverseTranscriptKernelSupport
+-- consolidated import: import ECDSAAdd.Arithmetic.BalancedTranscriptReplay
+-- consolidated import: import ECDSAAdd.Arithmetic.Constant
+-- consolidated import: import ECDSAAdd.Arithmetic.FieldRenameKernels
+-- consolidated import: import ECDSAAdd.Framework.FiniteUnitary
+-- consolidated import: import ECDSAAdd.Arithmetic.PhysicalGateCheck
+-- consolidated import: import ECDSAAdd.Math.SkywalkTerminalLastControls
 
 
 -- ===== ECDSAAdd.Submission.Entrant.HalfConvert =====
@@ -55193,978 +59552,6 @@ end ECDSAAdd.Entrant.HostOB5
 end
 
 
-section
--- ===== TickGapBudget =====
-set_option maxRecDepth 8192
-set_option maxHeartbeats 2000000
-namespace ECDSAAdd.Entrant.TickGap
-
-theorem scaled_budget (p x i : Nat) (hx : x  ≤  p) :
-    ∃ j k : Nat, j+k=i  ∧ 
-      (SkywalkNat.step^[i] (SkywalkNat.init x p)).u * 2^j  ≤  p  ∧ 
-      (SkywalkNat.step^[i] (SkywalkNat.init x p)).v * 2^k  ≤  p := by
-  induction i with
-  | zero => exact ⟨0,0,rfl,by simpa [SkywalkNat.init] using hx,by simp [SkywalkNat.init]⟩
-  | succ i ih =>
-    obtain ⟨j,k,hjk,hu,hv⟩ := ih
-    rw [Function.iterate_succ_apply']
-    generalize SkywalkNat.step^[i] (SkywalkNat.init x p)=z at hu hv ⊢
-    by_cases hz : z.u=0
-    · refine ⟨j+1,k,by omega,?_,?_⟩
-      · simp [SkywalkNat.step,hz]
-      · simpa [SkywalkNat.step,hz] using hv
-    · by_cases he : z.u%2=0
-      · refine ⟨j+1,k,by omega,?_,?_⟩
-        · simp only [SkywalkNat.step,if_neg hz,if_pos he,pow_succ]
-          have hhalf : z.u/2*2 ≤ z.u := by omega
-          nlinarith [Nat.mul_le_mul_right (2^j) hhalf]
-        · simpa [SkywalkNat.step,hz,he] using hv
-      · by_cases hle : z.v ≤ z.u
-        · refine ⟨j+1,k,by omega,?_,?_⟩
-          · simp only [SkywalkNat.step,if_neg hz,if_neg he,if_pos hle,pow_succ]
-            have hhalf : (z.u-z.v)/2*2 ≤ z.u := by omega
-            nlinarith [Nat.mul_le_mul_right (2^j) hhalf]
-          · simpa [SkywalkNat.step,hz,he,hle] using hv
-        · refine ⟨k+1,j,by omega,?_,?_⟩
-          · simp only [SkywalkNat.step,if_neg hz,if_neg he,if_neg hle,pow_succ]
-            have hhalf : (z.v-z.u)/2*2 ≤ z.v := by omega
-            nlinarith [Nat.mul_le_mul_right (2^k) hhalf]
-          · simpa [SkywalkNat.step,hz,he,hle] using hu
-
-private theorem two_pow_sum (a b : Nat) (ha : 2 ≤ a) (hb : 2 ≤ b) :
-    2^a+2^b ≤ 2^(a+b-1) := by
-  obtain ⟨c,rfl⟩ : ∃ c, a=c+2 := ⟨a-2,by omega⟩
-  obtain ⟨d,rfl⟩ : ∃ d, b=d+2 := ⟨b-2,by omega⟩
-  have he : c+2+(d+2)-1=c+d+3 := by omega
-  rw [he, pow_add, pow_add, pow_add]
-  norm_num
-  rw [pow_add]
-  have hc : 1 ≤ 2^c := Nat.one_le_two_pow
-  have hd : 1 ≤ 2^d := Nat.one_le_two_pow
-  nlinarith [Nat.mul_le_mul hc hd]
-
-private theorem scaled_lt (u p j : Nat) (hp : p < 2^256) (hu : u*2^j ≤ p) (hj : j ≤ 256) :
-    u < 2^(256-j) := by
-  have he : 2^(256-j)*2^j=(2:Nat)^256 := by rw [←pow_add]; congr 1; omega
-  by_contra h
-  have hle := Nat.mul_le_mul_right (2^j) (Nat.le_of_not_gt h)
-  omega
-
-/-- A strict fixed-modulus sum cap across the late 32-stage band. -/
-theorem strict_sum_band (x p i : Nat) (hp0 : 0 < p) (hpo : p%2=1)
-    (hp : p < 2^256) (gap : p+2^32 < 2^256) (hx : x < p)
-    (cop : x.Coprime p) (hi : 256 ≤ i  ∧  i ≤ 287) :
-    let z := SkywalkNat.step^[i] (SkywalkNat.init x p)
-    z.u+z.v < 2^(511-i) := by
-  dsimp only
-  obtain ⟨j,k,hjk,hu,hv⟩ := scaled_budget p x i (Nat.le_of_lt hx)
-  have valid := SkywalkNat.iter_valid i (SkywalkNat.init x p) hp0 hpo
-  let z := SkywalkNat.step^[i] (SkywalkNat.init x p)
-  change z.u*2^j ≤ p at hu
-  change z.v*2^k ≤ p at hv
-  change 0 < z.v  ∧  z.v%2=1  ∧  z.u.gcd z.v=x.gcd p at valid
-  change z.u+z.v < _
-  by_cases hz : z.u=0
-  · have hv1 : z.v=1 := by
-      have hg := valid.2.2.trans cop
-      rw [hz,Nat.gcd_zero_left] at hg
-      exact hg
-    have hi' : 1 ≤ 511-i := by omega
-    have pow := Nat.pow_le_pow_right (by norm_num : 1 ≤ (2:Nat)) hi'
-    simp only [pow_one] at pow
-    omega
-  have hu0 : 1 ≤ z.u := by omega
-  have hv0 : 1 ≤ z.v := by omega
-  have hj : j ≤ 255 := by
-    by_contra h
-    have hpw := Nat.pow_le_pow_right (by norm_num : 1 ≤ (2:Nat)) (show 256 ≤ j by omega)
-    nlinarith
-  have hk : k ≤ 255 := by
-    by_contra h
-    have hpw := Nat.pow_le_pow_right (by norm_num : 1 ≤ (2:Nat)) (show 256 ≤ k by omega)
-    nlinarith
-  have ju := scaled_lt z.u p j hp hu (by omega)
-  have kv := scaled_lt z.v p k hp hv (by omega)
-  by_cases hje : j=255
-  · have ue : z.u=1 := by simp only [hje] at ju; norm_num at ju; omega
-    have kk : k=i-255 := by omega
-    have kp : k ≤ 32 := by omega
-    have kp32 := Nat.pow_le_pow_right (by norm_num : 1 ≤ (2:Nat)) kp
-    have ep : 2^(256-k)*2^k=(2:Nat)^256 := by rw [←pow_add]; congr 1; omega
-    have ek : 511-i=256-k := by omega
-    rw [ue,ek]
-    by_contra h
-    have hbig : 2^(256-k) ≤ z.v+1 := by omega
-    have mul := Nat.mul_le_mul_right (2^k) hbig
-    nlinarith
-  · by_cases hke : k=255
-    · have ve : z.v=1 := by simp only [hke] at kv; norm_num at kv; omega
-      have jj : j=i-255 := by omega
-      have jp : j ≤ 32 := by omega
-      have jp32 := Nat.pow_le_pow_right (by norm_num : 1 ≤ (2:Nat)) jp
-      have ep : 2^(256-j)*2^j=(2:Nat)^256 := by rw [←pow_add]; congr 1; omega
-      have ek : 511-i=256-j := by omega
-      rw [ve,ek]
-      by_contra h
-      have hbig : 2^(256-j) ≤ z.u+1 := by omega
-      have mul := Nat.mul_le_mul_right (2^j) hbig
-      nlinarith
-    · have a : 2 ≤ 256-j := by omega
-      have b : 2 ≤ 256-k := by omega
-      have bound := two_pow_sum (256-j) (256-k) a b
-      have e : (256-j)+(256-k)-1=511-i := by omega
-      rw [e] at bound
-      omega
-end ECDSAAdd.Entrant.TickGap
-
-end
-section
-set_option maxRecDepth 20000
-set_option maxHeartbeats 3000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.TickGap
-open Arithmetic
-
-def signedAddTop (q : Wire) (x y carry : List Wire) : Program :=
-  signComplement q x ++ TopCarry.addInPlaceTop x y carry q ++ signComplement q x
-
-def Shape (n V : Nat) : Prop := V < 2^n ∨ 3*2^n ≤ V
-
-theorem shape_complement (n V : Nat) (hv : V < 2^(n+2)) (h : Shape n V) :
-    Shape n (2^(n+2)-1-V) := by
-  have pow : 2^(n+2) = 4*2^n := by rw [pow_add]; norm_num; ring
-  unfold Shape at *
-  omega
-
-theorem shape_of_signed (n V : Nat) (hv : V < 2^(n+2))
-    (lo : -((2^n:Nat):Int) ≤ signedDecode (n+2) V)
-    (hi : signedDecode (n+2) V < ((2^n:Nat):Int)) : Shape n V := by
-  have p2 : 2^(n+2) = 4*2^n := by rw [pow_add]; norm_num; ring
-  have p1 : 2^(n+2-1) = 2*2^n := by rw [show n+2-1=n+1 by omega,pow_succ]; ring
-  unfold signedDecode at lo hi
-  split_ifs at lo hi <;> unfold Shape <;> omega
-
-theorem signedAddTop_eq (n : Nat) (q : Wire) (x y cs : List Wire)
-    (hx : x.length=n+2) (hy : y.length=n+2) (hc : cs.length+1=y.length)
-    (hn : (q::(x++y++cs)).Nodup) (s : State) (m : List Bool)
-    (clean : ∀ w ∈ cs, s.basis w=false)
-    (source : Shape n (regValue x s.basis))
-    (sum : Shape n (regValue y (run (signedAdd q x y cs) [] s).basis)) :
-    run (signedAddTop q x y cs) m s=run (signedAdd q x y cs) m s := by
-  have hxnd : x.Nodup := (List.nodup_append'.mp (List.nodup_append'.mp (List.nodup_cons.mp hn).2).1).1
-  have qx : q∉x := fun h => (List.nodup_cons.mp hn).1 (by simp [h])
-  have dis : List.Disjoint x (y++cs) := by
-    have h : (x++(y++cs)).Nodup := by simpa only [List.append_assoc] using (List.nodup_cons.mp hn).2
-    exact (List.nodup_append'.mp h).2.2
-  have zx := (signComplement_counts q x).2
-  let u := run (signComplement q x) [] s
-  have fan := signComplement_correct q x hxnd qx s []
-  have ux : Shape n (regValue x u.basis) := by
-    change Shape n (regValue x (run (signComplement q x) [] s).basis)
-    rw [fan.2.2]
-    cases hs : s.basis q
-    · exact source
-    · simpa only [hx,if_true] using shape_complement n _ (by simpa [hx] using regValue_lt x s.basis) source
-  have clean' : ∀ w ∈ cs, u.basis w=false := by
-    intro w hw
-    exact (fan.2.1 w (fun h => List.disjoint_left.mp dis h (List.mem_append_right _ hw))).trans (clean w hw)
-  have out (r : List Bool) :
-      regValue y (run (signComplement q x) r (run (addInPlace x y cs q) r u)).basis =
-      regValue y (run (addInPlace x y cs q) r u).basis := by
-    have h := signComplement_correct q x hxnd qx (run (addInPlace x y cs q) r u) r
-    apply regValue_congr
-    intro w hw
-    exact h.2.1 w (fun hxw => List.disjoint_left.mp dis hxw (List.mem_append_left _ hw))
-  have old : regValue y (run (signedAdd q x y cs) [] s).basis =
-      regValue y (run (addInPlace x y cs q) [] u).basis := by
-    simp only [signedAdd,List.append_assoc]
-    rw [TopCarry.run_zero_head _ _ [] s zx,run_append,run_take]
-    simpa only [List.drop_nil,u] using out []
-  have add := addInPlace_correct x y cs q hn (hx.trans hy.symm) hc u [] clean'
-  have us : Shape n ((regValue x u.basis+regValue y u.basis+(u.basis q).toNat)%2^(n+2)) := by
-    rw [old,add.2.2,hy] at sum
-    exact sum
-  have eq (r : List Bool) := TopCarry.addInPlaceTop_eq n x y cs q hy (hx.trans hy.symm)
-    hc hn u r clean' ux us
-  simp only [signedAddTop,signedAdd,List.append_assoc]
-  rw [TopCarry.run_zero_head _ _ m s zx,TopCarry.run_zero_head _ _ m s zx]
-  rw [run_append,run_append,run_take,run_take,eq]
-  have mc := TopCarry.addInPlaceTop_counts n x y cs q hy (hx.trans hy.symm) hc
-  have mo := addInPlace_counts x y cs q (hx.trans hy.symm) hc
-  rw [mc.2,mo.2,hy]
-  rfl
-end ECDSAAdd.Entrant.TickGap
-end
-section
-set_option maxRecDepth 20000
-set_option maxHeartbeats 3000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.TickGap
-open Arithmetic
-
-def recordTop (sx sy q : Wire) (x y cs : List Wire) : Program :=
-  skywalkSignToggle sx sy q ++ signedAddTop q x y cs ++ skywalkSignToggle sx sy q
-
-theorem signedAddTop_counts (n : Nat) (q : Wire) (x y cs : List Wire)
-    (hx : x.length=n+2) (hy : y.length=n+2) (hc : cs.length+1=y.length) :
-    toffoliCount (signedAddTop q x y cs)=n ∧ measurementCount (signedAddTop q x y cs)=n+1 := by
-  have h := TopCarry.addInPlaceTop_counts n x y cs q hy (hx.trans hy.symm) hc
-  simp only [signedAddTop,toffoliCount_append,measurementCount_append,
-    (signComplement_counts q x).1,(signComplement_counts q x).2,h.1,h.2]
-  exact ⟨by omega,by omega⟩
-
-theorem toggle_frame (sx sy q : Wire) (hqx : sx≠q) (hqy : sy≠q)
-    (s : State) (m : List Bool) (w : Wire) (hw : w≠q) :
-    (run (skywalkSignToggle sx sy q) m s).basis w=s.basis w := by
-  rw [skywalkSignToggle_correct sx sy q hqx hqy]
-  simp [writeBit,hw]
-
-theorem recordTop_eq (n : Nat) (sx sy q : Wire) (x y cs : List Wire)
-    (hx : x.length=n+2) (hy : y.length=n+2) (hc : cs.length+1=y.length)
-    (hn : (q::(x++y++cs)).Nodup) (hqx : sx≠q) (hqy : sy≠q)
-    (s : State) (m : List Bool) (clean : ∀w∈cs,s.basis w=false)
-    (source : Shape n (regValue x s.basis))
-    (sum : Shape n (regValue y (run (signedRecord sx sy q x y cs) [] s).basis)) :
-    run (recordTop sx sy q x y cs) m s=run (signedRecord sx sy q x y cs) m s := by
-  have qrest := (List.nodup_cons.mp hn).1
-  have away (w : Wire) (hw : w∈x++y++cs) : w≠q := by
-    intro he; subst w; exact qrest hw
-  let u := run (skywalkSignToggle sx sy q) [] s
-  have ut (w : Wire) (hw : w≠q) : u.basis w=s.basis w := toggle_frame sx sy q hqx hqy s [] w hw
-  have ux : regValue x u.basis=regValue x s.basis :=
-    regValue_congr _ _ _ (fun w hw => ut w (away w (by simp [hw])))
-  have uc : ∀w∈cs,u.basis w=false := by
-    intro w hw
-    exact (ut w (away w (by simp [hw]))).trans (clean w hw)
-  have zx := (skywalkSignToggle_counts sx sy q).2
-  have out (r : List Bool) :
-      regValue y (run (skywalkSignToggle sx sy q) r (run (signedAdd q x y cs) r u)).basis =
-      regValue y (run (signedAdd q x y cs) r u).basis :=
-    regValue_congr _ _ _ (fun w hw => toggle_frame sx sy q hqx hqy _ r w (away w (by simp [hw])))
-  have old : regValue y (run (signedRecord sx sy q x y cs) [] s).basis =
-      regValue y (run (signedAdd q x y cs) [] u).basis := by
-    simp only [signedRecord,List.append_assoc]
-    rw [TopCarry.run_zero_head _ _ [] s zx,run_append,run_take]
-    simpa only [List.drop_nil,u] using out []
-  rw [old] at sum
-  have eq (r : List Bool) := signedAddTop_eq n q x y cs hx hy hc hn u r uc (ux ▸ source) sum
-  have mc := (signedAddTop_counts n q x y cs hx hy hc).2
-  have mo := (signedWord_counts q x y cs (hx.trans hy.symm) hc).2.1
-  simp only [recordTop,signedRecord,List.append_assoc]
-  rw [TopCarry.run_zero_head _ _ m s zx,TopCarry.run_zero_head _ _ m s zx]
-  rw [run_append,run_append,run_take,run_take,eq,mc,mo,hy]
-  rfl
-end ECDSAAdd.Entrant.TickGap
-end
-section
-set_option maxRecDepth 20000
-set_option maxHeartbeats 3000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.TickGap
-open Arithmetic
-
-def narrowTop (L : NarrowSignedRecordLayout) (n : Nat) : Program :=
-  recordTop L.sx L.sy L.q (L.x.take n) (L.y.take n) (L.carry.take (n-1)) ++
-    signComplement L.q (L.y.drop n)
-
-theorem record_source (L : NarrowSignedRecordLayout) (n : Nat) (hw : L.Widths n) (hn : L.wires.Nodup)
-    (s : State) (m : List Bool) (hq : s.basis L.q=false) (clean : regValue L.carryLow s.basis=0) :
-    regValue L.xp (run (signedRecord L.sx L.sy L.q L.xp L.yp L.carryLow) m s).basis = regValue L.xp s.basis := by
-  have h := signedRecord_spec L.xlo L.ylo L.sx L.sy L.q L.carryLow (L.short_nodup hn)
-    (hw.x.trans hw.y.symm) (hw.carry.trans hw.y.symm)
-    (signedRegValue L.xp s.basis) (signedRegValue L.yp s.basis) s m ⟨hq,rfl,rfl,clean⟩
-  have eq := (signedRegValue_eq_iff L.xp _ _).mp h.2.2.1
-  exact regValue_congr _ _ _ eq
-
-theorem narrowTop_eq (n : Nat) (L : NarrowSignedRecordLayout) (hw : L.Widths (n+2))
-    (hn : L.wires.Nodup) (s : State) (m : List Bool)
-    (hq : s.basis L.q=false) (clean : regValue L.carryLow s.basis=0)
-    (source : Shape n (regValue L.xp (run (narrowSignedRecord L (n+2)) [] s).basis))
-    (sum : Shape n (regValue L.yp (run (narrowSignedRecord L (n+2)) [] s).basis)) :
-    run (narrowTop L (n+2)) m s=run (narrowSignedRecord L (n+2)) m s := by
-  have views := L.views (n+2) hw
-  have clean' : ∀w∈L.carryLow,s.basis w=false := (regValue_zero _ _).mp clean
-  have qx : L.sx≠L.q := by
-    intro he
-    exact (List.nodup_cons.mp (L.short_nodup hn)).1 (by simp [NarrowSignedRecordLayout.xp,←he])
-  have qy : L.sy≠L.q := by
-    intro he
-    exact (List.nodup_cons.mp (L.short_nodup hn)).1 (by simp [NarrowSignedRecordLayout.yp,←he])
-  have fan (r : List Wire) (hr : ∀w∈r,w∉L.yhigh) (v : State) (record : List Bool) :
-      regValue r (run (signComplement L.q L.yhigh) record v).basis=regValue r v.basis := by
-    have f := signComplement_correct L.q L.yhigh (L.high_nodup hn) (L.q_high hn) v record
-    exact regValue_congr _ _ _ (fun w hw => f.2.1 w (hr w hw))
-  have xaway : ∀w∈L.xp,w∉L.yhigh := by
-    intro w hw'
-    exact L.other_away_high hn w (by simp only [NarrowSignedRecordLayout.x,List.mem_append] at *; tauto)
-  have yaway : ∀w∈L.yp,w∉L.yhigh := by
-    intro w hw'
-    exact L.other_away_high hn w (by simp [hw'])
-  have outx : regValue L.xp (run (narrowSignedRecord L (n+2)) [] s).basis=
-      regValue L.xp (run (signedRecord L.sx L.sy L.q L.xp L.yp L.carryLow) [] s).basis := by
-    simp only [narrowSignedRecord,views.1,views.2.1,views.2.2.1,views.2.2.2]
-    rw [run_append,run_take]
-    simpa using fan L.xp xaway (run (signedRecord L.sx L.sy L.q L.xp L.yp L.carryLow) [] s) []
-  have outy : regValue L.yp (run (narrowSignedRecord L (n+2)) [] s).basis=
-      regValue L.yp (run (signedRecord L.sx L.sy L.q L.xp L.yp L.carryLow) [] s).basis := by
-    simp only [narrowSignedRecord,views.1,views.2.1,views.2.2.1,views.2.2.2]
-    rw [run_append,run_take]
-    simpa using fan L.yp yaway (run (signedRecord L.sx L.sy L.q L.xp L.yp L.carryLow) [] s) []
-  rw [outx,record_source L (n+2) hw hn s [] hq clean] at source
-  rw [outy] at sum
-  have eq (r : List Bool) := recordTop_eq n L.sx L.sy L.q L.xp L.yp L.carryLow
-    hw.x hw.y (hw.carry.trans hw.y.symm) (L.short_nodup hn) qx qy s r clean' source sum
-  have mc := signedAddTop_counts n L.q L.xp L.yp L.carryLow hw.x hw.y (hw.carry.trans hw.y.symm)
-  have rz := (skywalkSignToggle_counts L.sx L.sy L.q).2
-  have old := (signedWord_counts L.q L.xp L.yp L.carryLow (hw.x.trans hw.y.symm) (hw.carry.trans hw.y.symm)).2.1
-  have counts : measurementCount (recordTop L.sx L.sy L.q L.xp L.yp L.carryLow)=
-      measurementCount (signedRecord L.sx L.sy L.q L.xp L.yp L.carryLow) := by
-    simp only [recordTop,signedRecord,measurementCount_append,rz,mc.2,old,hw.y]
-    omega
-  simp only [narrowTop,narrowSignedRecord,views.1,views.2.1,views.2.2.1,views.2.2.2]
-  rw [run_append,run_append,run_take,run_take,eq,counts]
-end ECDSAAdd.Entrant.TickGap
-end
-
-section
-set_option maxRecDepth 20000
-set_option maxHeartbeats 3000000
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.TickGap
-open Arithmetic Baselines Challenge RecordedQuantum
-
-theorem signedAddTop_support (q : Wire) (x y cs : List Wire)
-    (hx : x.length=y.length) (hc : cs.length+1=y.length) :
-    wires (signedAddTop q x y cs) ⊆ wires (signedAdd q x y cs) := by
-  rw [(signedWord_wires q x y cs hx hc).1]
-  have fan : wires (signComplement q x) ⊆ (q::(x++y++cs)).toFinset := by
-    intro w hw
-    have h := signComplement_wires_subset q x hw
-    simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
-    tauto
-  simp only [signedAddTop,wires_append,Finset.union_subset_iff]
-  exact ⟨⟨fan,TopCarry.addInPlaceTop_wires x y cs q⟩,fan⟩
-
-theorem narrowTop_counts (n : Nat) (L : NarrowSignedRecordLayout) (hw : L.Widths (n+2)) :
-    toffoliCount (narrowTop L (n+2))+1=toffoliCount (narrowSignedRecord L (n+2)) ∧
-      measurementCount (narrowTop L (n+2))=measurementCount (narrowSignedRecord L (n+2)) := by
-  have v := L.views (n+2) hw
-  have h := signedAddTop_counts n L.q L.xp L.yp L.carryLow hw.x hw.y (hw.carry.trans hw.y.symm)
-  have old := narrowSignedRecord_counts L (n+2) hw
-  have z := skywalkSignToggle_counts L.sx L.sy L.q
-  have f := signComplement_counts L.q L.yhigh
-  simp only [narrowTop,recordTop,v.1,v.2.1,v.2.2.1,v.2.2.2,
-    toffoliCount_append,measurementCount_append,z.1,z.2,h.1,h.2,f.1,f.2,old.1,old.2.1]
-  exact ⟨by omega,by omega⟩
-
-theorem narrowTop_support (n : Nat) (L : NarrowSignedRecordLayout) (hw : L.Widths (n+2)) :
-    wires (narrowTop L (n+2)) ⊆ wires (narrowSignedRecord L (n+2)) := by
-  have v := L.views (n+2) hw
-  have sub := signedAddTop_support L.q L.xp L.yp L.carryLow (hw.x.trans hw.y.symm) (hw.carry.trans hw.y.symm)
-  simp only [narrowTop,narrowSignedRecord,recordTop,signedRecord,v.1,v.2.1,v.2.2.1,v.2.2.2,wires_append]
-  exact Finset.union_subset_union (Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) sub)
-    (Finset.Subset.refl _)) (Finset.Subset.refl _)
-
-theorem signedAddTop_physical (q : Wire) (x y cs : List Wire) (hn : (q::(x++y++cs)).Nodup) :
-    GatePhysical (signedAddTop q x y cs) := by
-  have qx : q∉x := fun hx => (List.nodup_cons.mp hn).1 (by simp [hx])
-  have fan := signComplement_physical q x qx
-  have top := TopCarry.addInPlaceTop_physical x y cs q hn
-  simp only [signedAddTop,gatePhysical_append]
-  exact ⟨⟨fan,top⟩,fan⟩
-
-theorem narrowTop_physical (n : Nat) (L : NarrowSignedRecordLayout) (hw : L.Widths (n+2))
-    (hn : L.wires.Nodup) : GatePhysical (narrowTop L (n+2)) := by
-  have v := L.views (n+2) hw
-  have nd := L.short_nodup hn
-  have qx : L.sx≠L.q := by
-    intro he; exact (List.nodup_cons.mp nd).1 (by simp [NarrowSignedRecordLayout.xp,←he])
-  have qy : L.sy≠L.q := by
-    intro he; exact (List.nodup_cons.mp nd).1 (by simp [NarrowSignedRecordLayout.yp,←he])
-  have toggle : GatePhysical (skywalkSignToggle L.sx L.sy L.q) := by
-    simp [skywalkSignToggle,GatePhysical,PhysicalInstr,ProperGate,qx,qy]
-  have top := signedAddTop_physical L.q L.xp L.yp L.carryLow nd
-  have fan := signComplement_physical L.q L.yhigh (L.q_high hn)
-  simp only [narrowTop,recordTop,v.1,v.2.1,v.2.2.1,v.2.2.2,gatePhysical_append]
-  exact ⟨⟨⟨toggle,top⟩,toggle⟩,fan⟩
-
-theorem top_slots_le_old (x y cs : List Wire) (c : Wire) :
-    gateSlots (TopCarry.addInPlaceTop x y cs c) ≤ gateSlots (addInPlace x y cs c) := by
-  induction x generalizing y cs c with
-  | nil => simp [TopCarry.addInPlaceTop,addInPlace]
-  | cons a as ih =>
-    cases as with
-    | nil =>
-      cases y with
-      | nil => simp [TopCarry.addInPlaceTop,addInPlace]
-      | cons b bs => cases bs <;> simp [TopCarry.addInPlaceTop,addInPlace]
-    | cons a' as =>
-      cases y with
-      | nil => simp [TopCarry.addInPlaceTop,addInPlace]
-      | cons b bs =>
-        cases bs with
-        | nil => simp [TopCarry.addInPlaceTop,addInPlace]
-        | cons b' bs =>
-          cases cs with
-          | nil => simp [TopCarry.addInPlaceTop,addInPlace]
-          | cons d ds =>
-            have h := ih (b'::bs) ds d
-            simp only [TopCarry.addInPlaceTop,addInPlace,gateSlots_append] at h ⊢
-            split_ifs <;> simp only [majority_gateSlots,gateSlots_cons,gateSlots_nil,instructionSlots] at h ⊢ <;> omega
-
-theorem narrowTop_slots (n : Nat) (L : NarrowSignedRecordLayout) (hw : L.Widths (n+2)) :
-    gateSlots (narrowTop L (n+2)) ≤ gateSlots (narrowSignedRecord L (n+2)) := by
-  have v := L.views (n+2) hw
-  have top := top_slots_le_old L.xp L.yp L.carryLow L.q
-  simp only [narrowTop,narrowSignedRecord,recordTop,signedRecord,signedAddTop,signedAdd,
-    v.1,v.2.1,v.2.2.1,v.2.2.2,gateSlots_append]
-  omega
-end ECDSAAdd.Entrant.TickGap
-end
-
-section
-set_option maxRecDepth 20000
-set_option maxHeartbeats 4000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.TickGap
-open Arithmetic
-
-/-- The two post-tick signed values fit below the strict late-stage cap. -/
-theorem band_step_values (x p i : Nat) (hp0 : 0 < p) (hpo : p%2=1)
-    (hp : p < 2^256) (gap : p+2^32 < 2^256) (hx : x < p) (cop : x.Coprime p)
-    (hi : 255 ≤ i  ∧  i ≤ 286) :
-    let r := SkywalkTrace.next^[i] (SkywalkRails.encode false false (x:Int) (p:Int));
-    let n := W.compactSkywalkTickPostWidth i-2;
-    -((2^n:Nat):Int)  ≤  (SkywalkRails.step r).h  ∧  (SkywalkRails.step r).h  <  ((2^n:Nat):Int)  ∧ 
-    -((2^n:Nat):Int)  ≤  (SkywalkRails.step r).k  ∧  (SkywalkRails.step r).k  <  ((2^n:Nat):Int) := by
-  dsimp only
-  have nw : W.compactSkywalkTickPostWidth i-2=510-i := by
-    unfold W.compactSkywalkTickPostWidth W.narrowSkywalkWidth
-    omega
-  rw [nw]
-  have cap := strict_sum_band x p (i+1) hp0 hpo hp gap hx cop (by omega)
-  obtain ⟨G,S,enc⟩ := SkywalkTrace.iter_encoded (i+1) false false (SkywalkNat.init x p) hp0 hpo
-  simp only [SkywalkNat.init] at enc
-  rw [Function.iterate_succ_apply'] at enc
-  let r := SkywalkTrace.next^[i] (SkywalkRails.encode false false (x:Int) (p:Int))
-  let z := SkywalkNat.step^[i+1] (SkywalkNat.init x p)
-  change SkywalkTrace.next r=SkywalkRails.encode G S (z.u:Int) (z.v:Int) at enc
-  change z.u+z.v < 2^(511-(i+1)) at cap
-  have exp : 511-(i+1)=510-i := by omega
-  rw [exp] at cap
-  have abs := SkywalkRails.encode_abs_sum_bound G S z.u z.v (z.u+z.v) (Nat.le_refl _)
-  rw [←enc] at abs
-  change |(SkywalkRails.step r).h|  ≤  ((z.u+z.v:Nat):Int)  ∧ 
-    |(SkywalkRails.step r).k|  ≤  ((z.u+z.v:Nat):Int) at abs
-  have cap' : ((z.u+z.v:Nat):Int) < ((2^(510-i):Nat):Int) := by exact_mod_cast cap
-  have ah := abs_le.mp abs.1
-  have ak := abs_le.mp abs.2
-  dsimp only [r] at ah ak
-  exact ⟨by omega,by omega,by omega,by omega⟩
-
-theorem repaired_output_shape (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (x p i : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2=1)
-    (hp : p < 2^256) (gap : p+2^32 < 2^256) (hx : x < p) (cop : x.Coprime p)
-    (hi : 255 ≤ i  ∧  i ≤ 286) (s : State) (m : List Bool)
-    (hs : W.CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s.basis) :
-    let L := W.compactSkywalkTickLayout w i;
-    let n := W.compactSkywalkTickPostWidth i;
-    Shape (n-2) (regValue (L.half.take n) (run (W.repairedTick w i) m s).basis)  ∧ 
-      Shape (n-2) (regValue (L.b.take n) (run (W.repairedTick w i) m s).basis) := by
-  dsimp only
-  have hgap : p+2^32 ≤ 2^256 := Nat.le_of_lt gap
-  rw [W.repairedTick_eq w hn x p i hp0 hx0 hpo hp hgap hx cop (by omega) s m hs]
-  have input := W.compactSkywalkStage_local_input w hn x p i hp0 hx0 hpo hp hgap hx cop (by omega) s hs
-  have fit := W.narrowSkywalk_iter_fit x p i hp0 hx0 hpo hp hgap hx cop (by omega)
-  have out := W.compactSkywalkTickOutput_spec w i (by omega) hn _ _ _ fit.1 fit.2.1 fit.2.2.1 fit.2.2.2.1 fit.2.2.2.2 s [] input
-  have bounds := band_step_values x p i hp0 hpo hp gap hx cop hi
-  let L := W.compactSkywalkTickLayout w i
-  let n := W.compactSkywalkTickPostWidth i
-  have ns : n-2+2=n := by
-    have width := W.compactSkywalkTick_width_bounds i (by omega)
-    dsimp only [n]
-    omega
-  have lenA : n ≤ L.half.length := by
-    rw [W.compactSkywalkTick_half w i (by omega),wireBlock_length]
-    exact (W.compactSkywalkTick_width_bounds i (by omega)).2.2.1
-  have lenB : n ≤ L.b.length := by
-    rw [W.compactSkywalkTick_b w i (by omega),wireBlock_length]
-    exact (W.compactSkywalkTick_width_bounds i (by omega)).2.2.1
-  have aview : (W.compactSkywalkTickARelease w i).retained=L.half.take n :=
-    compactSkywalkSignWord_retained _ _ (by omega) lenA
-  have bview : (W.compactSkywalkTickBRelease w i).retained=L.b.take n :=
-    compactSkywalkSignWord_retained _ _ (by omega) lenB
-  have a := out.2.1
-  have b := out.2.2.1
-  rw [aview] at a
-  rw [bview] at b
-  have lenA' : (L.half.take n).length=n := by simp [List.length_take,Nat.min_eq_left lenA]
-  have lenB' : (L.b.take n).length=n := by simp [List.length_take,Nat.min_eq_left lenB]
-  unfold signedRegValue at a b
-  rw [lenA'] at a
-  rw [lenB'] at b
-  change Shape (n-2) (regValue (L.half.take n) (run (W.compactSkywalkTick w i) [] s).basis) ∧
-    Shape (n-2) (regValue (L.b.take n) (run (W.compactSkywalkTick w i) [] s).basis)
-  constructor
-  · apply shape_of_signed (n-2) _ (by simpa [ns,lenA'] using regValue_lt (L.half.take n) (run (W.compactSkywalkTick w i) [] s).basis)
-    · rw [ns,a]; exact bounds.1
-    · rw [ns,a]; exact bounds.2.1
-  · apply shape_of_signed (n-2) _ (by simpa [ns,lenB'] using regValue_lt (L.b.take n) (run (W.compactSkywalkTick w i) [] s).basis)
-    · rw [ns,b]; exact bounds.2.2.1
-    · rw [ns,b]; exact bounds.2.2.2
-end ECDSAAdd.Entrant.TickGap
-end
-
-section
-set_option maxRecDepth 20000
-set_option maxHeartbeats 4000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.TickGap
-open Arithmetic
-
-def head (w : Nat → Wire) (i : Nat) : Program :=
-  let L := W.compactSkywalkTickLayout w i
-  (if i=224 ∨ (256 ≤ i  ∧  i ≤ 509) then W.repairedRoute L
-    else skywalkRoute L.a0 L.b0 L.ah L.bh) ++ skywalkSignedHalf L.aSign L.ext
-
-def tail (w : Nat → Wire) (i : Nat) : Program :=
-  [.CX (W.compactSkywalkTickLayout w i).previous (W.compactSkywalkTickLayout w i).a0] ++
-    W.compactSkywalkTickCleanup w i
-
-def tick (w : Nat → Wire) (i : Nat) : Program :=
-  if 255 ≤ i  ∧  i ≤ 286 then
-    head w i ++ narrowTop (narrowSkywalkRecordLayout (W.compactSkywalkTickLayout w i)
-      (W.compactSkywalkTickPostWidth i)) (W.compactSkywalkTickPostWidth i) ++ tail w i
-  else W.repairedTick w i
-
-theorem old_split (w : Nat → Wire) (i : Nat) :
-    W.repairedTick w i = head w i ++
-      narrowSignedRecord (narrowSkywalkRecordLayout (W.compactSkywalkTickLayout w i)
-        (W.compactSkywalkTickPostWidth i)) (W.compactSkywalkTickPostWidth i) ++ tail w i := by
-  simp only [W.repairedTick,head,tail,W.compactSkywalkTick,narrowSkywalkTick]
-  split_ifs  <;> simp only [List.append_assoc]
-
-theorem repairedRoute_small_support (L : SkywalkIntegerLayout) (hv : L.Valid) (hpos : 0 < L.bMid.length) :
-    wires (W.repairedRoute L) ⊆ (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
-  have lo := swapRegisters_wires L.a0 L.aMid L.bMid hv.mids
-  have tm : L.bMid.getD (L.bMid.length-1) 0∈L.bMid := W.repair_member_getD _ _ (by omega)
-  have ls : wires (swapRegisters L.a0 L.aMid L.bMid) ⊆
-      (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
-    intro q hq
-    have h := lo hq
-    simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh] at h ⊢
-    tauto
-  have ss : wires (W.signRepair L.aSign L.bSign L.previous (L.bMid.getD (L.bMid.length-1) 0)) ⊆
-      (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
-    intro q hq
-    simp only [W.signRepair,wires,Instr.wires,correctionWires,Finset.mem_union,
-      Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false] at hq
-    simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh,
-      List.not_mem_nil,or_false]
-    have ht : q=L.bMid.getD (L.bMid.length-1) 0 → q∈L.bMid := fun he => he ▸ tm
-    tauto
-  have cx : wires [.CX L.a0 L.b0] ⊆ (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
-    intro q hq
-    simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false] at hq
-    simp only [List.mem_toFinset,List.mem_cons,List.mem_append]
-    tauto
-  simp only [W.repairedRoute,W.repairedSwap,wires_append,Finset.union_subset_iff]
-  exact ⟨⟨ls,ss⟩,cx⟩
-
-theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolWires w).Nodup)
-    (s : State) (m : List Bool) (q : Wire)
-    (hq : q∈(W.compactSkywalkTickLayout w i).history::(W.compactSkywalkTickLayout w i).carry) :
-    (run (head w i) m s).basis q=s.basis q := by
-  let L := W.compactSkywalkTickLayout w i
-  have hv : L.Valid := W.compactSkywalkTick_valid w i hi hn
-  have hpos : 0 < L.bMid.length := by
-    change 0 < (wireBlock w 771 (W.compactSkywalkTickPreWidth i-2)).length
-    rw [wireBlock_length]
-    have width := W.compactSkywalkTick_width_bounds i hi
-    omega
-  have dis : List.Disjoint (L.history::L.carry) (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)) := by
-    have nd : ((L.history::L.carry)++(L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh))).Nodup := by
-      apply List.nodup_iff_count.mpr
-      intro a
-      have h := List.nodup_iff_count.mp hv.nodup a
-      simp only [SkywalkIntegerLayout.wires,List.count_cons,List.count_append] at h ⊢
-      omega
-    exact (List.nodup_append'.mp nd).2.2
-  have qaway : q∉L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh) := List.disjoint_left.mp dis hq
-  have sup : wires (head w i) ⊆ (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
-    have inc : (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset ⊆
-        (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
-      intro a ha
-      simp only [List.mem_toFinset,List.mem_cons] at ha ⊢
-      tauto
-    have repair := (repairedRoute_small_support L hv hpos).trans inc
-    have full : wires (skywalkRoute L.a0 L.b0 L.ah L.bh) ⊆
-        (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
-      intro a ha
-      have h := skywalkRoute_wires_subset L.a0 L.b0 L.ah L.bh (L.high_lengths hv) ha
-      simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
-      tauto
-    have half : wires (skywalkSignedHalf L.aSign L.ext) ⊆
-        (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
-      intro a ha
-      simp only [skywalkSignedHalf,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
-        Finset.mem_singleton,Finset.notMem_empty,or_false] at ha
-      simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,List.mem_singleton]
-      tauto
-    simp only [head,wires_append,Finset.union_subset_iff]
-    split_ifs  <;> exact ⟨by assumption,half⟩
-  exact run_preserves_outside _ _ _ _ (fun h => qaway (List.mem_toFinset.mp (sup h)))
-
-theorem tail_prefix (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolWires w).Nodup)
-    (s : State) (m : List Bool) (q : Wire)
-    (hq : q∈(W.compactSkywalkTickLayout w i).half.take (W.compactSkywalkTickPostWidth i) ++
-      (W.compactSkywalkTickLayout w i).b.take (W.compactSkywalkTickPostWidth i)) :
-    (run (tail w i) m s).basis q=s.basis q := by
-  let L := W.compactSkywalkTickLayout w i
-  let n := W.compactSkywalkTickPostWidth i
-  have hv : L.Valid := W.compactSkywalkTick_valid w i hi hn
-  have words := W.compactSkywalkTick_words_disjoint w i hi hn
-  have nd := (List.nodup_cons.mp (L.record_nodup hv)).2
-  have wa : L.half.Nodup := (List.nodup_append'.mp (List.nodup_append'.mp nd).1).1
-  have wb : L.b.Nodup := (List.nodup_append'.mp (List.nodup_append'.mp nd).1).2.1
-  have adot : List.Disjoint (L.half.take n) (L.half.drop n) := by
-    apply (List.nodup_append'.mp ?_).2.2
-    rw [List.take_append_drop]
-    exact wa
-  have bdot : List.Disjoint (L.b.take n) (L.b.drop n) := by
-    apply (List.nodup_append'.mp ?_).2.2
-    rw [List.take_append_drop]
-    exact wb
-  have apart : q∉L.half.drop n := by
-    rcases List.mem_append.mp hq with hqa|hqb
-    · exact List.disjoint_left.mp adot hqa
-    · exact fun h => List.disjoint_left.mp words (List.mem_of_mem_drop h) (List.mem_of_mem_take hqb)
-  have bpart : q∉L.b.drop n := by
-    rcases List.mem_append.mp hq with hqa|hqb
-    · exact fun h => List.disjoint_left.mp words (List.mem_of_mem_take hqa) (List.mem_of_mem_drop h)
-    · exact List.disjoint_left.mp bdot hqb
-  have q0 : q≠L.a0 := by
-    have qm : q∈L.half++L.b := by
-      rcases List.mem_append.mp hq with hqa|hqb
-      · exact List.mem_append_left _ (List.mem_of_mem_take hqa)
-      · exact List.mem_append_right _ (List.mem_of_mem_take hqb)
-    intro he
-    subst q
-    have h := List.nodup_iff_count.mp hv.nodup L.a0
-    have hq' := List.count_pos_iff.mpr qm
-    simp only [SkywalkIntegerLayout.wires,SkywalkIntegerLayout.half,SkywalkIntegerLayout.b,List.count_nil,List.count_cons,List.count_append,
-      List.count_singleton] at h hq'
-    simp only [beq_self_eq_true,if_true] at h
-    omega
-  have valid := W.compactSkywalkTick_release_valid w i hi hn
-  have af (v : State) (r : List Bool) :
-      (run (compactSkywalkSignRelease (W.compactSkywalkTickARelease w i)) r v).basis q=v.basis q :=
-    (compactSkywalkSignRelease_phase_frame _ valid.1 v r).2.1 q apart
-  have bf (v : State) (r : List Bool) :
-      (run (compactSkywalkSignRelease (W.compactSkywalkTickBRelease w i)) r v).basis q=v.basis q :=
-    (compactSkywalkSignRelease_phase_frame _ valid.2 v r).2.1 q bpart
-  simp only [tail,W.compactSkywalkTickCleanup,run_append,run_take]
-  rw [bf,af]
-  change Function.update s.basis L.a0 (s.basis L.a0 ^^ s.basis L.previous) q = s.basis q
-  exact Function.update_of_ne q0 _ _
-end ECDSAAdd.Entrant.TickGap
-end
-
-section
-set_option maxRecDepth 20000
-set_option maxHeartbeats 4000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.TickGap
-open Arithmetic
-
-theorem tick_eq (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (x p i : Nat) (hp0 : 0 < p) (hx0 : 0 < x) (hpo : p%2=1)
-    (hp : p < 2^256) (gap : p+2^32 < 2^256) (hx : x < p) (cop : x.Coprime p) (hi : i < 512)
-    (s : State) (m : List Bool)
-    (hs : W.CompactSkywalkStage w (SkywalkRails.encode false false (x:Int) (p:Int)) i s.basis) :
-    run (tick w i) m s=run (W.repairedTick w i) m s := by
-  by_cases band : 255 ≤ i  ∧  i ≤ 286
-  · let L := W.compactSkywalkTickLayout w i
-    let n := W.compactSkywalkTickPostWidth i
-    let R := narrowSkywalkRecordLayout L n
-    let P := head w i
-    let Q := narrowSignedRecord R n
-    let E := tail w i
-    let u := run P (m.take (measurementCount P)) s
-    let v := run Q (m.drop (measurementCount P)) u
-    have hv : L.Valid := W.compactSkywalkTick_valid w i hi hn
-    have width := W.compactSkywalkTick_width_bounds i hi
-    have npos : 2 ≤ n := width.2.1
-    have nlen : n ≤ L.half.length := by rw [W.compactSkywalkTick_half w i hi,wireBlock_length]; exact width.2.2.1
-    have hw : R.Widths n := narrowSkywalkRecord_widths L hv n (by omega) nlen
-    have nd : R.wires.Nodup := narrowSkywalkRecord_nodup L hv n (by omega) nlen
-    have n2 : n-2+2=n := by omega
-    have hw' : R.Widths (n-2+2) := by simpa only [n2] using hw
-    have whole : run (W.repairedTick w i) m s=
-        run E ((m.drop (measurementCount P)).drop (measurementCount Q)) v := by
-      rw [old_split,List.append_assoc,run_append,run_take,run_append,run_take]
-      simp only [P,Q,E,u,v,run_take]
-      rfl
-    have sizes := repaired_output_shape w hn x p i hp0 hx0 hpo hp gap hx cop band s m hs
-    have keep (r : List Wire) (hr : r⊆L.half.take n++L.b.take n) :
-        regValue r (run (W.repairedTick w i) m s).basis=regValue r v.basis := by
-      rw [whole]
-      apply regValue_congr
-      intro q hq
-      exact tail_prefix w i hi hn v _ q (hr hq)
-    have shapeX : Shape (n-2) (regValue (L.half.take n) v.basis) := by
-      rw [←keep _ (by intro q hq; exact List.mem_append_left _ hq)]
-      exact sizes.1
-    have shapeY : Shape (n-2) (regValue (L.b.take n) v.basis) := by
-      rw [←keep _ (by intro q hq; exact List.mem_append_right _ hq)]
-      exact sizes.2
-    have record0 : (run Q [] u).basis=v.basis := run_basis_records Q u u [] (m.drop (measurementCount P)) rfl
-    have orig := narrowSkywalkRecord_views L hv n (by omega) nlen
-    have views := R.views n hw
-    have xx : R.xp=L.half.take n := by rw [←views.1]; rw [orig.1]
-    have yy : R.yp=L.b.take n := by rw [←views.2.1]; rw [orig.2.1]
-    have input := W.compactSkywalkStage_local_input w hn x p i hp0 hx0 hpo hp (Nat.le_of_lt gap) hx cop hi s hs
-    have uq : u.basis R.q=false := by
-      apply (head_aux w i hi hn s _ L.history (List.mem_cons_self)).trans
-      exact input.2.2.2.2.1
-    have clean : regValue R.carryLow u.basis=0 := by
-      apply (regValue_zero _ _).mpr
-      intro q hq
-      have qm : q∈L.carry := List.mem_of_mem_take hq
-      apply (head_aux w i hi hn s _ q (List.mem_cons_of_mem _ qm)).trans
-      exact (regValue_zero _ _).mp input.2.2.2.2.2 q qm
-    have eq (r : List Bool) : run (narrowTop R n) r u=run Q r u := by
-      have a : Shape (n-2) (regValue R.xp (run (narrowSignedRecord R (n-2+2)) [] u).basis) := by
-        rw [n2,xx,record0]
-        exact shapeX
-      have b : Shape (n-2) (regValue R.yp (run (narrowSignedRecord R (n-2+2)) [] u).basis) := by
-        rw [n2,yy,record0]
-        exact shapeY
-      simpa only [n2] using narrowTop_eq (n-2) R hw' nd u r uq clean a b
-    have counts : measurementCount (narrowTop R n)=measurementCount Q := by
-      simpa only [n2] using (narrowTop_counts (n-2) R hw').2
-    simp only [tick,if_pos band]
-    rw [old_split]
-    change run ((P++narrowTop R n)++E) m s=run ((P++Q)++E) m s
-    conv_lhs => rw [List.append_assoc,run_append P (narrowTop R n++E)]
-    conv_rhs => rw [List.append_assoc,run_append P (Q++E)]
-    change run (narrowTop R n++E) (m.drop (measurementCount P)) u = run (Q++E) (m.drop (measurementCount P)) u
-    rw [run_append (narrowTop R n) E,run_append Q E]
-    rw [run_take (narrowTop R n),run_take Q,eq,counts]
-  · simp only [tick,if_neg band]
-
-def due (i : Nat) : Nat := if 255 ≤ i  ∧  i ≤ 286 then 1 else 0
-
-theorem tick_counts (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolWires w).Nodup) :
-    toffoliCount (tick w i)+due i=toffoliCount (W.repairedTick w i)  ∧ 
-    measurementCount (tick w i)=measurementCount (W.repairedTick w i) := by
-  by_cases band : 255 ≤ i  ∧  i ≤ 286
-  · let L := W.compactSkywalkTickLayout w i
-    let n := W.compactSkywalkTickPostWidth i
-    let R := narrowSkywalkRecordLayout L n
-    have width := W.compactSkywalkTick_width_bounds i hi
-    have hv : L.Valid := W.compactSkywalkTick_valid w i hi hn
-    have nlen : n ≤ L.half.length := by rw [W.compactSkywalkTick_half w i hi,wireBlock_length]; exact width.2.2.1
-    have hw : R.Widths n := narrowSkywalkRecord_widths L hv n (by omega) nlen
-    have n2 : n-2+2=n := by dsimp only [n]; omega
-    have hw' : R.Widths (n-2+2) := by simpa only [n2] using hw
-    have h := narrowTop_counts (n-2) R hw'
-    simp only [n2] at h
-    dsimp only [R,n,L] at h
-    rw [old_split]
-    simp only [tick,if_pos band,due,if_pos band,toffoliCount_append,measurementCount_append]
-    exact ⟨by omega,by omega⟩
-  · simp only [tick,if_neg band,due,if_neg band,Nat.add_zero,and_self]
-
-theorem tick_support (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolWires w).Nodup) :
-    wires (tick w i) ⊆ wires (W.repairedTick w i) := by
-  by_cases band : 255 ≤ i  ∧  i ≤ 286
-  · let L := W.compactSkywalkTickLayout w i
-    let n := W.compactSkywalkTickPostWidth i
-    let R := narrowSkywalkRecordLayout L n
-    have width := W.compactSkywalkTick_width_bounds i hi
-    have hv : L.Valid := W.compactSkywalkTick_valid w i hi hn
-    have nlen : n ≤ L.half.length := by rw [W.compactSkywalkTick_half w i hi,wireBlock_length]; exact width.2.2.1
-    have hw : R.Widths n := narrowSkywalkRecord_widths L hv n (by omega) nlen
-    have n2 : n-2+2=n := by dsimp only [n]; omega
-    have hw' : R.Widths (n-2+2) := by simpa only [n2] using hw
-    have h := narrowTop_support (n-2) R hw'
-    simp only [n2] at h
-    dsimp only [R,n,L] at h
-    rw [old_split]
-    simp only [tick,if_pos band,wires_append]
-    exact Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) h) (Finset.Subset.refl _)
-  · simp only [tick,if_neg band]
-    exact Finset.Subset.refl _
-
-theorem tick_slots (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolWires w).Nodup) :
-    Challenge.gateSlots (tick w i)  ≤  Challenge.gateSlots (W.repairedTick w i) := by
-  by_cases band : 255 ≤ i  ∧  i ≤ 286
-  · let L := W.compactSkywalkTickLayout w i
-    let n := W.compactSkywalkTickPostWidth i
-    let R := narrowSkywalkRecordLayout L n
-    have width := W.compactSkywalkTick_width_bounds i hi
-    have hv : L.Valid := W.compactSkywalkTick_valid w i hi hn
-    have nlen : n ≤ L.half.length := by rw [W.compactSkywalkTick_half w i hi,wireBlock_length]; exact width.2.2.1
-    have hw : R.Widths n := narrowSkywalkRecord_widths L hv n (by omega) nlen
-    have n2 : n-2+2=n := by dsimp only [n]; omega
-    have hw' : R.Widths (n-2+2) := by simpa only [n2] using hw
-    have h := narrowTop_slots (n-2) R hw'
-    simp only [n2] at h
-    dsimp only [R,n,L] at h
-    rw [old_split]
-    simp only [tick,if_pos band,Challenge.gateSlots_append]
-    omega
-  · simp only [tick,if_neg band]
-    exact Nat.le_refl _
-
-theorem tick_physical (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolWires w).Nodup) :
-    GatePhysical (tick w i) := by
-  by_cases band : 255 ≤ i  ∧  i ≤ 286
-  · let L := W.compactSkywalkTickLayout w i
-    let n := W.compactSkywalkTickPostWidth i
-    let R := narrowSkywalkRecordLayout L n
-    have width := W.compactSkywalkTick_width_bounds i hi
-    have hv : L.Valid := W.compactSkywalkTick_valid w i hi hn
-    have nlen : n ≤ L.half.length := by rw [W.compactSkywalkTick_half w i hi,wireBlock_length]; exact width.2.2.1
-    have hw : R.Widths n := narrowSkywalkRecord_widths L hv n (by omega) nlen
-    have n2 : n-2+2=n := by dsimp only [n]; omega
-    have hw' : R.Widths (n-2+2) := by simpa only [n2] using hw
-    have h := narrowTop_physical (n-2) R hw' (narrowSkywalkRecord_nodup L hv n (by omega) nlen)
-    simp only [n2] at h
-    dsimp only [R,n,L] at h
-    have old := W.repairedTick_physical w i hi hn
-    rw [old_split] at old
-    simp only [tick,if_pos band,gatePhysical_append] at old ⊢
-    exact ⟨⟨old.1.1,h⟩,old.2⟩
-  · simpa only [tick,if_neg band] using W.repairedTick_physical w i hi hn
-end ECDSAAdd.Entrant.TickGap
-end
-
-section
-set_option maxRecDepth 20000
-set_option maxHeartbeats 4000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.TickGap
-open Arithmetic MappedCompressed Secp256k1 History5 OB5
-
-theorem tick_eq5 (x : Nat) (hx0 : 0 < x) (hx : x < p) (i : Nat) (hi : i < 512)
-    (s : State) (m : List Bool) (hs : W.CompressedCompactStage5 base x p i s.basis) :
-    run (tick base i) m s=run (W.repairedTick base i) m s := by
-  obtain ⟨raw,hraw,hbits⟩ := hs
-  have dis := Stack5.prefix_disjoint_layout base base_pool_nodup i i (Nat.le_refl i) hi
-  have read : ∀q∈(W.compactSkywalkTickLayout base i).wires.toFinset,s.basis q=raw.basis q := by
-    intro q hq
-    rw [hbits]
-    exact run_preserves_outside _ _ _ q (fun he => Finset.disjoint_left.mp dis he hq)
-  have old := W.repairedTick_support base i hi base_pool_nodup
-  have fresh := (tick_support base i hi base_pool_nodup).trans old
-  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
-  have gap : p+2^32 < 2^256 := by norm_num [p]
-  exact Stack5.local_replace _ _ _ fresh old s raw m m read
-    (tick_eq base base_pool_nodup x p i hp0 hx0 hpo hp gap hx cop hi raw m hraw)
-
-theorem block_eq (x : Nat) (hx0 : 0 < x) (hx : x < p) (i : Nat) (hi : i < 512)
-    (s : State) (m : List Bool) (hs : W.CompressedCompactStage5 base x p i s.basis) :
-    run (tick base i++FirstNonzeroCodec.pack8first base i) m s=run (W.repairedTick base i++FirstNonzeroCodec.pack8first base i) m s := by
-  rw [run_append (tick base i),run_append (W.repairedTick base i),run_take (tick base i),run_take (W.repairedTick base i)]
-  rw [tick_eq5 x hx0 hx i hi s m hs,(tick_counts base i hi base_pool_nodup).2]
-
-def forward (i : Nat) : Nat → Program
-  | 0 => []
-  | n+1 => renameProgram (sig i) (tick base i++FirstNonzeroCodec.pack8first base i)++forward (i+1) n
-
-/-- The replacement forward prefix has exactly the existing logical trajectory. -/
-theorem forward_gen (x : Nat) (hx0 : 0 < x) (hx : x < p) (n : Nat) :
-    ∀ i, 1 ≤ i → i+n ≤ 512 → ∀(s : State)(m : List Bool),
-    W.CompressedCompactStage5 base x p i s.basis →
-    run (forward i n) m (pullState (sig (i-1)) s)=
-      pullState (sig (i+n-1)) (run (Stack5.forward5 base i n) m s) := by
-  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
-  have hpGap : p+2^32 ≤ 2^256 := by norm_num [p]
-  induction n with
-  | zero => intro i _ _ s m _; simp only [forward,Stack5.forward5,run,Nat.add_zero]
-  | succ n ih =>
-    intro i h1 hb s m hs
-    have hi : i ≤ 511 := by omega
-    have z := StackOB5.stage_zero x i (by omega) s.basis hs
-    rw [pull_step i hi s z.1 z.2]
-    have cnt : measurementCount (renameProgram (sig i) (tick base i++FirstNonzeroCodec.pack8first base i))=
-        measurementCount (W.repairedTick base i++FirstNonzeroCodec.pack8first base i) := by
-      rw [(renameProgram_counts (sig i) (tick base i++FirstNonzeroCodec.pack8first base i)).2]
-      simp only [measurementCount_append,(tick_counts base i (by omega) base_pool_nodup).2]
-    rw [forward,Stack5.forward5,run_append _ (forward (i+1) n),run_append _ (Stack5.forward5 base (i+1) n),cnt,StackOB5.forward_step_records,OB5.run_rename i hi]
-    rw [block_eq x hx0 hx i (by omega) s _ hs]
-    rw [StackOB5.forward_step_eq base base_pool_nodup x p i hp0 hx0 hpo hp hpGap hx cop _ _ hs]
-    have next := (Stack5.step_spec base base_pool_nodup StackOB5.historyAbove x p i hp0 hx0 hpo hp hpGap hx
-      cop (by omega) s (m.take (measurementCount (W.repairedTick base i++History5.packAfter base i))) hs).2
-    have step := ih (i+1) (by omega) (by omega) _ (m.drop (measurementCount (W.repairedTick base i++History5.packAfter base i))) next
-    rw [show i+1-1=i by omega] at step
-    rw [step,show i+1+n-1=i+(n+1)-1 by omega]
-
-theorem forward_eq (x : Nat) (hx0 : 0 < x) (hx : x < p) (i n : Nat) (h1 : 1 ≤ i) (hi : i+n ≤ 512)
-    (s : State) (m : List Bool) (hs : W.CompressedCompactStage5 base x p i s.basis) :
-    run (forward i n) m (pullState (sig (i-1)) s)=run (StackOB5.forward i n) m (pullState (sig (i-1)) s) := by
-  rw [forward_gen x hx0 hx n i h1 hi s m hs,StackOB5.forward_gen x hx0 hx n i h1 hi s m hs]
-
-def count (i : Nat) : Nat → Nat
-  | 0 => 0
-  | n+1 => due i+count (i+1) n
-
-theorem forward_metrics (i n : Nat) (hi : i+n ≤ 512) :
-    toffoliCount (forward i n)+count i n=toffoliCount (StackOB5.forward i n)  ∧ 
-    measurementCount (forward i n)=measurementCount (StackOB5.forward i n)  ∧ 
-    Challenge.gateSlots (forward i n) ≤ Challenge.gateSlots (StackOB5.forward i n) := by
-  induction n generalizing i with
-  | zero => simp [forward,StackOB5.forward,count]
-  | succ n ih =>
-    have rest := ih (i+1) (by omega)
-    have stepCounts := tick_counts base i (by omega) base_pool_nodup
-    have slots := tick_slots base i (by omega) base_pool_nodup
-    have a := renameProgram_counts (sig i) (tick base i++FirstNonzeroCodec.pack8first base i)
-    have b := renameProgram_counts (sig i) (W.repairedTick base i++FirstNonzeroCodec.pack8first base i)
-    have c := Baselines.rename_gateSlots (sig i) (tick base i++FirstNonzeroCodec.pack8first base i)
-    have d := Baselines.rename_gateSlots (sig i) (W.repairedTick base i++FirstNonzeroCodec.pack8first base i)
-    simp only [forward,StackOB5.forward,count,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append] at a b c d ⊢
-    exact ⟨by omega,by omega,by omega⟩
-
-theorem forward_support (i n : Nat) (hi : i+n ≤ 512) : wires (forward i n)⊆wires (StackOB5.forward i n) := by
-  induction n generalizing i with
-  | zero => simp [forward,StackOB5.forward]
-  | succ n ih =>
-    have fresh := tick_support base i (by omega) base_pool_nodup
-    have block : wires (tick base i++FirstNonzeroCodec.pack8first base i) ⊆ wires (W.repairedTick base i++FirstNonzeroCodec.pack8first base i) := by
-      simp only [wires_append]
-      exact Finset.union_subset_union fresh (Finset.Subset.refl _)
-    have ren : wires (renameProgram (sig i) (tick base i++FirstNonzeroCodec.pack8first base i)) ⊆
-        wires (renameProgram (sig i) (W.repairedTick base i++FirstNonzeroCodec.pack8first base i)) := by
-      rw [renameProgram_support,renameProgram_support]
-      exact Finset.image_mono (sig i) block
-    simp only [forward,StackOB5.forward,wires_append]
-    exact Finset.union_subset_union ren (ih (i+1) (by omega))
-
-theorem forward_physical (i n : Nat) (hi : i+n ≤ 512) : GatePhysical (forward i n) := by
-  induction n generalizing i with
-  | zero => simp [forward,GatePhysical]
-  | succ n ih =>
-    have stepPhysical := tick_physical base i (by omega) base_pool_nodup
-    have codec := (FirstNonzeroCodec.packet_physical base base_pool_nodup i (by omega)).1
-    have ren := gatePhysical_rename (sig i) (sig_injective i (by omega)) _
-      ((gatePhysical_append _ _).mpr ⟨stepPhysical,codec⟩)
-    simp only [forward,gatePhysical_append]
-    exact ⟨ren,ih (i+1) (by omega)⟩
-
-theorem count_508 : count 1 508=32 := by decide +kernel
-end ECDSAAdd.Entrant.TickGap
-end
-
 -- ===== Tick511Gates =====
 section
 
@@ -57027,7 +60414,7 @@ theorem stackReverse_split510 : StackOB5.reverse 1 510 =
 
 /-- Forward ticks `1`–`509` with the three-Toffoli tick `509`. -/
 def stackForward509 : Program :=
-  TickGap.forward 1 508 ++ renameProgram (OB5.sig 509) (tick509F ++ History5.packAfter base 509)
+  StackOB5.forward 1 508 ++ renameProgram (OB5.sig 509) (tick509F ++ History5.packAfter base 509)
 
 /-- Forward ticks `1`–`510` with the Clifford tick `510`. -/
 def stackForward510 : Program :=
@@ -57041,7 +60428,7 @@ def stackForwardT : Program := stackForward510 ++ renameProgram (OB5.sig 511) ti
 def stackReverseT : Program := renameProgram (OB5.sig 511) tickR ++ stackReverse510
 
 theorem stackForward509_metrics :
-    toffoliCount stackForward509+33=toffoliCount (StackOB5.forward 1 509) ∧
+    toffoliCount stackForward509+1=toffoliCount (StackOB5.forward 1 509) ∧
     measurementCount stackForward509=measurementCount (StackOB5.forward 1 509) ∧
     Challenge.gateSlots stackForward509≤Challenge.gateSlots (StackOB5.forward 1 509) := by
   have n := renameProgram_counts (OB5.sig 509) (tick509F ++ History5.packAfter base 509)
@@ -57050,8 +60437,6 @@ theorem stackForward509_metrics :
   have os := Baselines.rename_gateSlots (OB5.sig 509) (W.repairedTick base 509 ++ History5.packAfter base 509)
   have c := tick509_counts
   have sl := tick509_slots
-  have prefMetrics := TickGap.forward_metrics 1 508 (by omega)
-  rw [TickGap.count_508] at prefMetrics
   rw [←tick509ExF_explicit] at c sl
   simp only [stackForward509,stackForward_split509,toffoliCount_append,measurementCount_append,
     Challenge.gateSlots_append] at n o ns os ⊢
@@ -57060,7 +60445,7 @@ theorem stackForward509_metrics :
   · constructor <;> omega
 
 theorem stackForward510_metrics :
-    toffoliCount stackForward510+37=toffoliCount (StackOB5.forward 1 510) ∧
+    toffoliCount stackForward510+5=toffoliCount (StackOB5.forward 1 510) ∧
     measurementCount stackForward510=measurementCount (StackOB5.forward 1 510) ∧
     Challenge.gateSlots stackForward510≤Challenge.gateSlots (StackOB5.forward 1 510) := by
   have n := renameProgram_counts (OB5.sig 510) (tick510F ++ History5.packAfter base 510)
@@ -57106,11 +60491,6 @@ theorem stackForward509_run (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : Li
     apply State.extensionality
     · rfl
     · funext q; show s.basis (OB5.sig 0 q)=s.basis q; rw [OB5.sig_zero]
-  have prefixCounts := (TickGap.forward_metrics 1 508 (by omega)).2.1
-  have prefixEq (r : List Bool) : run (TickGap.forward 1 508) r s=run (StackOB5.forward 1 508) r s := by
-    have h := TickGap.forward_eq x hx0 hx 1 508 (by omega) (by omega) s r (StackOB5.stage_one x s first)
-    rw [e0] at h
-    exact h
   have pref := StackOB5.forward_gen x hx0 hx 508 1 (by omega) (by omega) s (m.take k) (StackOB5.stage_one x s first)
   rw [e0, show 1+508-1=508 by rfl] at pref
   obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
@@ -57126,7 +60506,7 @@ theorem stackForward509_run (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : Li
   rw [←tick509ExF_explicit] at c
   have mc : measurementCount tick509F = measurementCount (W.repairedTick base 509) :=
     c.2.2.2.trans c.2.1.symm
-  rw [stackForward509,stackForward_split509,run_append,run_append,prefixCounts,cnt,prefixEq]
+  rw [stackForward509,stackForward_split509,run_append,run_append,cnt]
   change run (renameProgram (OB5.sig 509) (tick509F ++ History5.packAfter base 509)) (m.drop k)
       (run (StackOB5.forward 1 508) (m.take k) s) =
     run (renameProgram (OB5.sig 509) (W.repairedTick base 509 ++ History5.packAfter base 509)) (m.drop k)
@@ -57311,7 +60691,7 @@ theorem stackForward509_subset : wires stackForward509 ⊆ wires (StackOB5.forwa
     rw [wires_append,wires_append,tick509ExF_explicit]
     exact Finset.union_subset_union tick509F_sub (Finset.Subset.refl _)
   rw [stackForward509,stackForward_split509,wires_append,wires_append,renameProgram_support,renameProgram_support]
-  exact Finset.union_subset_union (TickGap.forward_support 1 508 (by omega)) (Finset.image_subset_image t)
+  exact Finset.union_subset_union (Finset.Subset.refl _) (Finset.image_subset_image t)
 
 theorem stackForward510_subset : wires stackForward510 ⊆ wires (StackOB5.forward 1 510) := by
   have t : wires (tick510F ++ History5.packAfter base 510) ⊆
@@ -57337,7 +60717,7 @@ theorem stackReverseT_subset : wires stackReverseT ⊆ wires (StackOB5.reverse 1
   rw [stackReverseT,stackReverse_splitT,wires_append,wires_append,renameProgram_support,renameProgram_support]
   exact Finset.union_subset_union (Finset.image_subset_image tickR_subsetT) stackReverse510_subset
 
-theorem stackForwardT_metrics : toffoliCount stackForwardT+40=toffoliCount (StackOB5.forward 1 511) ∧
+theorem stackForwardT_metrics : toffoliCount stackForwardT+8=toffoliCount (StackOB5.forward 1 511) ∧
     measurementCount stackForwardT+1=measurementCount (StackOB5.forward 1 511) ∧
     Challenge.gateSlots stackForwardT≤Challenge.gateSlots (StackOB5.forward 1 511) := by
   have nf := renameProgram_counts (OB5.sig 511) tickF
@@ -57380,7 +60760,7 @@ theorem stackForwardT_physical : GatePhysical stackForwardT := by
   have blk9 := gatePhysical_rename _ (OB5.sig_injective 509 (by omega)) _
     ((gatePhysical_append tick509F (History5.packAfter base 509)).mpr ⟨tick509_physical, pk9⟩)
   exact (gatePhysical_append _ _).mpr ⟨(gatePhysical_append _ _).mpr
-    ⟨(gatePhysical_append _ _).mpr ⟨TickGap.forward_physical 1 508 (by omega), blk9⟩, blk⟩,
+    ⟨(gatePhysical_append _ _).mpr ⟨(StackOB5.physical_gen 1 508 (by omega)).1, blk9⟩, blk⟩,
     gatePhysical_rename _ (OB5.sig_injective 511 (by omega)) _ tf⟩
 
 theorem stackReverseT_physical : GatePhysical stackReverseT := by
@@ -57818,7 +61198,7 @@ theorem segH_gateSlots (divide : Bool) :
 attribute [local irreducible] Kernel5.actualKernel5 toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) :
-    toffoliCount (program divide)=(if divide then 1049412 else 1049156) ∧
+    toffoliCount (program divide)=(if divide then 1049444 else 1049188) ∧
     measurementCount (program divide)=(if divide then 721021 else 721277) := by
   have cfg := MappedCompressed.LaneA.laneLogical_config
   have narrow := W.compactPasses5_old_counts base base_pool_nodup
@@ -58421,7 +61801,7 @@ section
 namespace ECDSAAdd.Entrant.OwnQ5Actual
 open Arithmetic MappedCompressed
  abbrev kernel_spec (divide : Bool) := OwnQ5Integer.program_spec divide (hosted_field_free divide)
- theorem kernel_counts (divide : Bool) : toffoliCount (OwnQ5Integer.program divide)=(if divide then 1049412 else 1049156) ∧
+ theorem kernel_counts (divide : Bool) : toffoliCount (OwnQ5Integer.program divide)=(if divide then 1049444 else 1049188) ∧
     measurementCount (OwnQ5Integer.program divide)=(if divide then 721021 else 721277) := by
   rw [(OwnQ5Integer.program_counts divide).1,(OwnQ5Integer.program_counts divide).2]
   exact KernelOB5.program_counts divide
@@ -59379,8 +62759,8 @@ theorem farithOB_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
 attribute [local irreducible] OwnQ5Integer.program toffoliCount measurementCount
 
 theorem arith_counts (L : ControlledPointLayout) :
-    toffoliCount (arith L false)=1049412 ∧ measurementCount (arith L false)=721021 ∧
-    toffoliCount (arith L true)=1049156 ∧ measurementCount (arith L true)=721277 := by
+    toffoliCount (arith L false)=1049444 ∧ measurementCount (arith L false)=721021 ∧
+    toffoliCount (arith L true)=1049188 ∧ measurementCount (arith L true)=721277 := by
   have a := OwnQ5Actual.kernel_counts true
   have b := OwnQ5Actual.kernel_counts false
   have c := renameProgram_counts (wireFn2 L) (OwnQ5Integer.program true)
@@ -59797,8 +63177,8 @@ section ResourcesA
 attribute [local irreducible] run OwnQ5Runtime.kernelS OwnQ5Integer.program wires toffoliCount measurementCount
 
 theorem arithS_counts (L : ControlledPointLayout) :
-    toffoliCount (arithS L false)=1048392 ∧ measurementCount (arithS L false)=721021 ∧
-    toffoliCount (arithS L true)=1048136 ∧ measurementCount (arithS L true)=721277 := by
+    toffoliCount (arithS L false)=1048424 ∧ measurementCount (arithS L false)=721021 ∧
+    toffoliCount (arithS L true)=1048168 ∧ measurementCount (arithS L true)=721277 := by
   have o := ArithmeticOB5.arith_counts L
   have s1 := OwnQ5SW.selKernelQ_sel true
   have s2 := OwnQ5SW.selKernelQ_sel false
@@ -60877,7 +64257,7 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2156928 ∧
+    toffoliCount (program L cx cy)=2156992 ∧
     measurementCount (program L cx cy)=1500674 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
@@ -61219,7 +64599,7 @@ theorem program_counts_rel (cx cy : Fp) :
 
 include hw in
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2154888 ∧
+    toffoliCount (program L cx cy)=2154952 ∧
     measurementCount (program L cx cy)=1500674 := by
   have r := program_counts_rel L cx cy
   have o := GenericOB5.program_counts L hw cx cy
@@ -69449,7 +72829,7 @@ theorem kernel5_gateSlots_le : Challenge.gateSlots kernel5≤20500006 :=
   kernel5_sub.slots.trans (KernelOB5.program_gateSlots_le true)
 
 theorem kernel5_counts :
-    toffoliCount kernel5=1049158 ∧ measurementCount kernel5=720767 := by
+    toffoliCount kernel5=1049190 ∧ measurementCount kernel5=720767 := by
   have old := KernelOB5.program_counts true
   have cv := OwnQ5Endpoint.endpoint_counts
   have renNew := renameProgram_counts HostOB5.hostSwap field5
@@ -70037,7 +73417,7 @@ theorem kernel5S_counts_diff : toffoliCount kernel5S+254=toffoliCount (SW.kernel
   have oldSelT := (SW.selKernel_sel true).tc
   have oldSelM := (SW.selKernel_sel true).mc
   have old := KernelOB5.program_counts true
-  change toffoliCount (KernelOB5.program true)=1049412 ∧ measurementCount (KernelOB5.program true)=721021 at old
+  change toffoliCount (KernelOB5.program true)=1049444 ∧ measurementCount (KernelOB5.program true)=721021 at old
   have new := kernel5_counts
   constructor <;> omega
 
@@ -70107,7 +73487,7 @@ theorem kernel5_1026_free : base 1026∉wires kernel5 := by
 theorem kernel5S_1026_free : base 1026∉wires kernel5S := by
   simpa only [kernel5S] using Q5FusionPhase.relocated_1026_free hostField5S hostField5S_free
 
-theorem kernel5_counts : toffoliCount kernel5=1049158 ∧ measurementCount kernel5=720767 := by
+theorem kernel5_counts : toffoliCount kernel5=1049190 ∧ measurementCount kernel5=720767 := by
   have c := Q5FusionPhase.relocated_counts hostField5
   rw [old_shape] at c
   simpa only [kernel5,c.1,c.2] using EntryFuse.kernel5_counts
@@ -73422,13 +76802,13 @@ theorem kernelS_counts_diff :
   have om := (OwnQ5SW.selKernelQ_sel false).mc
   omega
 
-theorem kernel_counts : toffoliCount kernel=1048902 ∧ measurementCount kernel=721023 := by
+theorem kernel_counts : toffoliCount kernel=1048934 ∧ measurementCount kernel=721023 := by
   have c := kernel_counts_diff
   have old := OwnQ5Actual.kernel_counts false
-  change toffoliCount (OwnQ5Integer.program false)=1049156 ∧ measurementCount (OwnQ5Integer.program false)=721277 at old
+  change toffoliCount (OwnQ5Integer.program false)=1049188 ∧ measurementCount (OwnQ5Integer.program false)=721277 at old
   omega
 
-theorem kernelS_counts : toffoliCount kernelS=1047882 ∧ measurementCount kernelS=721023 := by
+theorem kernelS_counts : toffoliCount kernelS=1047914 ∧ measurementCount kernelS=721023 := by
   have c := kernel_counts
   have t := selKernel.tc
   have m := selKernel.mc
@@ -73443,7 +76823,7 @@ theorem arithExit_counts_diff (L : ControlledPointLayout) :
   simpa only [arithExit,arithS,OwnQ5Runtime.kernelS,Bool.not_true,r.1,r.2,o.1,o.2] using c
 
 theorem arithExit_counts (L : ControlledPointLayout) :
-    toffoliCount (arithExit L)=1047882 ∧ measurementCount (arithExit L)=721023 := by
+    toffoliCount (arithExit L)=1047914 ∧ measurementCount (arithExit L)=721023 := by
   have c := kernelS_counts
   have r := renameProgram_counts (wireFn2 L) kernelS
   simpa only [arithExit,r.1,r.2] using c
@@ -74190,7 +77570,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2155418, 1501195, 1594, 50000004⟩
+def bounds : Challenge.Bounds := ⟨2155482, 1501195, 1594, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -74209,7 +77589,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2155418 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2155482 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -74590,4 +77970,8 @@ theorem segH_free (divide : Bool) : base 1541∉wires (KernelOB5.segH divide) :=
 theorem segHS_free (divide : Bool) : base 1541∉wires (SW.segHS divide) :=
   fun h => segH_free hKernel divide ((SW.selSegH_sel divide).sub.wires_sub h)
 end ECDSAAdd.Entrant.OwnQ6FieldFree
+
+
+end -- original EOF section
+end -- original module boundary
 
