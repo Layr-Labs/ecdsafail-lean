@@ -28026,7 +28026,7 @@ def V : Program := [
   .X 8,
   .CCX 1 2 9,
   .CCX 9 3 5,
-  .CCX 1 2 9,
+  .measureX 9 [] [.CZ 1 2],
   .CCX 5 4 9,
   .CCX 9 6 1,
   .CCX 1 7 2,
@@ -28038,10 +28038,10 @@ def V : Program := [
   .CCX 2 8 0,
   .CCX 1 7 2,
   .CCX 2 8 0,
-  .CCX 5 4 9,
+  .measureX 9 [] [.CZ 5 4],
   .CCX 1 2 9,
-  .CCX 9 3 5,
-  .CCX 1 2 9,
+  .measureX 5 [] [.CZ 9 3],
+  .measureX 9 [] [.CZ 1 2],
   .X 8,
   .X 6,
   .X 2,
@@ -28063,7 +28063,7 @@ def V : Program := [
   .CCX 2 8 5,
   .CCX 0 7 2,
   .CCX 2 8 5,
-  .CCX 1 3 9,
+  .measureX 9 [] [.CZ 1 3],
   .X 0,
   .CCX 5 0 2,
   .CCX 5 2 0,
@@ -28080,13 +28080,13 @@ def V : Program := [
   .CCX 9 4 2,
   .CCX 2 8 5,
   .CCX 0 7 2,
-  .CCX 2 8 5,
+  .measureX 5 [] [.CZ 2 8],
   .CCX 0 7 2,
   .CCX 2 6 0,
   .CCX 9 4 2,
   .CCX 2 6 0,
   .CCX 9 4 2,
-  .CCX 1 3 9,
+  .measureX 9 [] [.CZ 1 3],
   .X 8,
   .X 2,
   .X 7,
@@ -28107,7 +28107,7 @@ def V : Program := [
   .CCX 3 8 5,
   .CCX 0 7 3,
   .CCX 3 8 5,
-  .CCX 1 2 9,
+  .measureX 9 [] [.CZ 1 2],
   .CCX 5 0 3,
   .CCX 5 3 0,
   .CCX 5 0 3,
@@ -28122,13 +28122,13 @@ def V : Program := [
   .CCX 9 4 3,
   .CCX 3 8 5,
   .CCX 0 7 3,
-  .CCX 3 8 5,
+  .measureX 5 [] [.CZ 3 8],
   .CCX 0 7 3,
   .CCX 3 6 0,
   .CCX 9 4 3,
   .CCX 3 6 0,
   .CCX 9 4 3,
-  .CCX 1 2 9,
+  .measureX 9 [] [.CZ 1 2],
   .X 7,
   .X 2,
   .X 1,
@@ -28138,39 +28138,39 @@ def V : Program := [
   .CCX 3 4 1,
   .CCX 2 3 5,
   .CCX 5 4 1,
-  .CCX 2 3 5,
+  .measureX 5 [] [.CZ 2 3],
   .CCX 0 2 9,
   .CCX 9 3 5,
-  .CCX 0 2 9,
+  .measureX 9 [] [.CZ 0 2],
   .CCX 5 4 9,
   .CCX 9 6 8,
   .CCX 8 7 1,
   .CCX 9 6 8,
   .CCX 8 7 1,
-  .CCX 5 4 9,
+  .measureX 9 [] [.CZ 5 4],
   .CCX 0 2 9,
-  .CCX 9 3 5,
-  .CCX 0 2 9,
+  .measureX 5 [] [.CZ 9 3],
+  .measureX 9 [] [.CZ 0 2],
   .CCX 0 3 5,
   .CCX 5 4 9,
   .CCX 9 6 2,
   .CCX 2 8 1,
   .CCX 9 6 2,
   .CCX 2 8 1,
-  .CCX 5 4 9,
-  .CCX 0 3 5,
+  .measureX 9 [] [.CZ 5 4],
+  .measureX 5 [] [.CZ 0 3],
   .CCX 0 2 9,
   .CCX 9 3 5,
-  .CCX 0 2 9,
+  .measureX 9 [] [.CZ 0 2],
   .CCX 5 4 9,
   .CCX 9 6 7,
   .CCX 7 8 1,
   .CCX 9 6 7,
   .CCX 7 8 1,
-  .CCX 5 4 9,
+  .measureX 9 [] [.CZ 5 4],
   .CCX 0 2 9,
-  .CCX 9 3 5,
-  .CCX 0 2 9,
+  .measureX 5 [] [.CZ 9 3],
+  .measureX 9 [] [.CZ 0 2],
   .CX 0 6,
   .CX 1 6,
   .CX 2 6,
@@ -28182,7 +28182,183 @@ def V : Program := [
   .CX 0 1,
   .CX 1 0]
 
-def invV : Program := V.reverse
+def invV : Program := [
+  .CX 1 0,
+  .CX 0 1,
+  .CX 1 0,
+  .CX 8 6,
+  .CX 7 6,
+  .CX 4 6,
+  .CX 3 6,
+  .CX 2 6,
+  .CX 1 6,
+  .CX 0 6,
+  .CCX 0 2 9,
+  .CCX 9 3 5,
+  .measureX 9 [] [.CZ 0 2],
+  .CCX 5 4 9,
+  .CCX 7 8 1,
+  .CCX 9 6 7,
+  .CCX 7 8 1,
+  .CCX 9 6 7,
+  .measureX 9 [] [.CZ 5 4],
+  .CCX 0 2 9,
+  .measureX 5 [] [.CZ 9 3],
+  .measureX 9 [] [.CZ 0 2],
+  .CCX 0 3 5,
+  .CCX 5 4 9,
+  .CCX 2 8 1,
+  .CCX 9 6 2,
+  .CCX 2 8 1,
+  .CCX 9 6 2,
+  .measureX 9 [] [.CZ 5 4],
+  .measureX 5 [] [.CZ 0 3],
+  .CCX 0 2 9,
+  .CCX 9 3 5,
+  .measureX 9 [] [.CZ 0 2],
+  .CCX 5 4 9,
+  .CCX 8 7 1,
+  .CCX 9 6 8,
+  .CCX 8 7 1,
+  .CCX 9 6 8,
+  .measureX 9 [] [.CZ 5 4],
+  .CCX 0 2 9,
+  .measureX 5 [] [.CZ 9 3],
+  .measureX 9 [] [.CZ 0 2],
+  .CCX 2 3 5,
+  .CCX 5 4 1,
+  .measureX 5 [] [.CZ 2 3],
+  .CCX 3 4 1,
+  .CCX 0 3 1,
+  .CCX 0 2 1,
+  .CX 2 1,
+  .X 1,
+  .X 2,
+  .X 7,
+  .CCX 1 2 9,
+  .CCX 9 4 3,
+  .CCX 3 6 0,
+  .CCX 9 4 3,
+  .CCX 3 6 0,
+  .CCX 0 7 3,
+  .CCX 3 8 5,
+  .CCX 0 7 3,
+  .CCX 3 8 5,
+  .CCX 9 4 3,
+  .CCX 3 6 0,
+  .CCX 9 4 3,
+  .CCX 3 6 0,
+  .CCX 0 7 3,
+  .CCX 3 8 5,
+  .CCX 0 7 3,
+  .CCX 3 8 5,
+  .measureX 9 [] [.CZ 1 2],
+  .CCX 5 0 3,
+  .CCX 5 3 0,
+  .CCX 5 0 3,
+  .CCX 1 2 9,
+  .CCX 3 8 5,
+  .CCX 0 7 3,
+  .CCX 3 8 5,
+  .CCX 0 7 3,
+  .CCX 3 6 0,
+  .CCX 9 4 3,
+  .CCX 3 6 0,
+  .CCX 9 4 3,
+  .CCX 3 8 5,
+  .CCX 0 7 3,
+  .measureX 5 [] [.CZ 3 8],
+  .CCX 0 7 3,
+  .CCX 3 6 0,
+  .CCX 9 4 3,
+  .CCX 3 6 0,
+  .CCX 9 4 3,
+  .measureX 9 [] [.CZ 1 2],
+  .X 7,
+  .X 2,
+  .X 8,
+  .CCX 1 3 9,
+  .CCX 9 4 2,
+  .CCX 2 6 0,
+  .CCX 9 4 2,
+  .CCX 2 6 0,
+  .CCX 0 7 2,
+  .CCX 2 8 5,
+  .CCX 0 7 2,
+  .CCX 2 8 5,
+  .CCX 9 4 2,
+  .CCX 2 6 0,
+  .CCX 9 4 2,
+  .CCX 2 6 0,
+  .CCX 0 7 2,
+  .CCX 2 8 5,
+  .CCX 0 7 2,
+  .CCX 2 8 5,
+  .measureX 9 [] [.CZ 1 3],
+  .X 0,
+  .CCX 5 0 2,
+  .CCX 5 2 0,
+  .CCX 5 0 2,
+  .X 0,
+  .CCX 1 3 9,
+  .CCX 2 8 5,
+  .CCX 0 7 2,
+  .CCX 2 8 5,
+  .CCX 0 7 2,
+  .CCX 2 6 0,
+  .CCX 9 4 2,
+  .CCX 2 6 0,
+  .CCX 9 4 2,
+  .CCX 2 8 5,
+  .CCX 0 7 2,
+  .measureX 5 [] [.CZ 2 8],
+  .CCX 0 7 2,
+  .CCX 2 6 0,
+  .CCX 9 4 2,
+  .CCX 2 6 0,
+  .CCX 9 4 2,
+  .measureX 9 [] [.CZ 1 3],
+  .X 8,
+  .X 2,
+  .X 6,
+  .X 8,
+  .CCX 1 2 9,
+  .CCX 9 3 5,
+  .measureX 9 [] [.CZ 1 2],
+  .CCX 5 4 9,
+  .CCX 2 8 0,
+  .CCX 1 7 2,
+  .CCX 2 8 0,
+  .CCX 1 7 2,
+  .CCX 9 6 1,
+  .CCX 2 8 0,
+  .CCX 1 7 2,
+  .CCX 2 8 0,
+  .CCX 1 7 2,
+  .CCX 9 6 1,
+  .measureX 9 [] [.CZ 5 4],
+  .CCX 1 2 9,
+  .measureX 5 [] [.CZ 9 3],
+  .measureX 9 [] [.CZ 1 2],
+  .X 8,
+  .X 6,
+  .X 2,
+  .CCX 1 3 8,
+  .CCX 1 0 8,
+  .CCX 1 7 8,
+  .CCX 1 8 7,
+  .CCX 1 0 2,
+  .CCX 1 2 0,
+  .CCX 1 4 0,
+  .CCX 1 0 2,
+  .CX 8 6,
+  .CX 7 6,
+  .CX 4 6,
+  .CX 3 6,
+  .CX 2 6,
+  .CX 1 6,
+  .CX 0 6]
+
 
 /-- Exact source-domain masks, with each raw trit in its two source ports. -/
 def rawWords : List Nat := [2, 6, 9, 10, 18, 22, 25, 26, 34, 37, 38, 42, 66, 70, 73, 74, 82, 86, 89, 90, 98, 101, 102, 106, 130, 134, 137, 138, 146, 149, 150, 153, 154, 162, 166, 169, 170, 258, 262, 265, 266, 274, 278, 281, 282, 290, 293, 294, 298, 322, 326, 329, 330, 338, 341, 342, 345, 346, 354, 357, 358, 361, 362, 386, 390, 393, 394, 402, 405, 406, 409, 410, 418, 422, 425, 426, 514, 518, 521, 522, 530, 534, 537, 538, 546, 549, 550, 554, 578, 582, 585, 586, 594, 597, 598, 601, 602, 610, 613, 614, 617, 618, 642, 646, 649, 650, 658, 662, 665, 666, 674, 678, 681, 682]
@@ -28235,46 +28411,30 @@ private theorem proper_safe (P : Program) (hp : ProperProgram P) (x : Nat) : saf
     have ht : ProperProgram P := fun j hj => hp j (by simp [hj])
     cases i <;> simp_all [ProperGate,MeasuredCodec5.safe,MeasuredCodec5.safeStep]
 
-theorem V_proper : ProperProgram V := proper_of_all V (by decide +kernel)
-theorem invV_proper : ProperProgram invV := properProgram_reverse V V_proper
+/-- `invV` is `V.reverse` with its 21 hole-zero uncomputes turned into measured erases. -/
+private def codecPhysicalBool : Instr → Bool
+  | .measureX _ _ _ => true
+  | i => properBool i
 
-theorem V_physical : GatePhysical V := physical_of_proper V V_proper
-theorem invV_physical : GatePhysical invV := physical_of_proper invV invV_proper
+private theorem codecPhysical_of_all (P : Program) (h : P.all codecPhysicalBool=true) : GatePhysical P := by
+  intro i hi
+  have hh := (List.all_eq_true.mp h) i hi
+  cases i <;> simp_all [codecPhysicalBool,properBool,PhysicalInstr,ProperGate]
 
-theorem V_counts : toffoliCount V=142 ∧ measurementCount V=0 := by decide +kernel
-theorem invV_counts : toffoliCount invV=142 ∧ measurementCount invV=0 := by
-  simpa only [invV,toffoliCount_reverse,measurementCount_reverse] using V_counts
+theorem V_physical : GatePhysical V := codecPhysical_of_all V (by decide +kernel)
+theorem invV_physical : GatePhysical invV := codecPhysical_of_all invV (by decide +kernel)
 
-theorem V_slots : gateSlots V=175 := by decide +kernel
-theorem invV_slots : gateSlots invV=175 := by
-  simpa only [invV,reverse_gateSlots] using V_slots
+theorem V_counts : toffoliCount V=121 ∧ measurementCount V=21 := by decide +kernel
+theorem invV_counts : toffoliCount invV=121 ∧ measurementCount invV=21 := by decide +kernel
+
+theorem V_slots : gateSlots V=196 := by decide +kernel
+theorem invV_slots : gateSlots invV=196 := by decide +kernel
 
 theorem V_support_exact : wires V=Finset.range 10 := by decide +kernel
-theorem invV_support_exact : wires invV=Finset.range 10 := by
-  rw [invV,wires_reverse,V_support_exact]
+theorem invV_support_exact : wires invV=Finset.range 10 := by decide +kernel
 
 theorem V_support : wires V⊆Finset.range 10 := by rw [V_support_exact]
 theorem invV_support : wires invV⊆Finset.range 10 := by rw [invV_support_exact]
-
-theorem V_phase (s : State) (m : List Bool) : (run V m s).phase=s.phase :=
-  proper_phase V V_proper s m
-
-theorem invV_phase (s : State) (m : List Bool) : (run invV m s).phase=s.phase :=
-  proper_phase invV invV_proper s m
-
-theorem V_independent (s : State) (m n : List Bool) : run V m s=run V n s :=
-  State.extensionality _ _ ((V_phase s m).trans (V_phase s n).symm)
-    (run_basis_records _ s s m n rfl)
-
-theorem invV_independent (s : State) (m n : List Bool) : run invV m s=run invV n s :=
-  State.extensionality _ _ ((invV_phase s m).trans (invV_phase s n).symm)
-    (run_basis_records _ s s m n rfl)
-
-theorem invV_V (s : State) (m n : List Bool) : run invV n (run V m s)=s :=
-  run_reverse_proper V V_proper s m n
-
-theorem V_invV (s : State) (m n : List Bool) : run V n (run invV m s)=s := by
-  simpa only [invV,List.reverse_reverse] using run_reverse_proper invV invV_proper s m n
 
 theorem V_outside (s : State) (m : List Bool) (q : Wire) (hq : q∉Finset.range 10) :
     (run V m s).basis q=s.basis q :=
@@ -28316,29 +28476,33 @@ private theorem local_model (P : Program) (hs : wires P⊆Finset.range 10)
     exact (agree.2 q (Finset.mem_range.mpr hq)).trans
       (congrArg (fun t : State => t.basis q) modeled)
 
+private theorem local_model_at (P : Program) (hs : wires P⊆Finset.range 10)
+    (s : State) (m : List Bool) (x : Nat) (hx : ∀q<10,s.basis q=bitsOf x q)
+    (hp : safe P x=true) :
+    (run P m s).phase=s.phase ∧ ∀q<10,(run P m s).basis q=bitsOf (bitRun P x) q := by
+  have agree := pool_run_agrees P (Finset.range 10) hs m s ⟨s.phase,bitsOf x⟩ rfl
+    (fun q hq => hx q (Finset.mem_range.mp hq))
+  have modeled := run_sim P m s.phase x
+  rw [sim_safe P x hp m s.phase] at modeled
+  refine ⟨agree.1.trans ?_,?_⟩
+  · rw [modeled]
+  · intro q hq
+    exact (agree.2 q (Finset.mem_range.mpr hq)).trans
+      (congrArg (fun t : State => t.basis q) modeled)
+
 /-- These propositions evaluate the emitted program, not a free truth table. -/
 private theorem finite_V : ∀x<1024,x.testBit 5=false → x.testBit 9=false →
-    (bitRun V x).testBit 5=false ∧ (bitRun V x).testBit 9=false ∧
-    payloadParity (bitsOf (bitRun V x))=payloadParity (bitsOf x) ∧
+    safe V x=true ∧ (bitRun V x).testBit 5=false ∧ (bitRun V x).testBit 9=false ∧
     (codeOf (bitsOf x)∈canonicalCodes → (bitRun V x).testBit 0=false) := by
   have finite : ∀x : Fin 1024,x.val.testBit 5=false → x.val.testBit 9=false →
-      (bitRun V x.val).testBit 5=false ∧ (bitRun V x.val).testBit 9=false ∧
-      payloadParity (bitsOf (bitRun V x.val))=payloadParity (bitsOf x.val) ∧
+      safe V x.val=true ∧ (bitRun V x.val).testBit 5=false ∧ (bitRun V x.val).testBit 9=false ∧
       (codeOf (bitsOf x.val)∈canonicalCodes → (bitRun V x.val).testBit 0=false) := by
     decide +kernel
   intro x hx h5 h9
   exact finite ⟨x,hx⟩ h5 h9
 
-private theorem finite_invV : ∀x<1024,x.testBit 5=false → x.testBit 9=false →
-    (bitRun invV x).testBit 5=false ∧ (bitRun invV x).testBit 9=false ∧
-    payloadParity (bitsOf (bitRun invV x))=payloadParity (bitsOf x) := by
-  decide +kernel
-
-private theorem finite_raw_first : ∀x<1024,x∈rawWords →
-    safe ParityCodec5New.encodeFirst x=true ∧
-    (bitRun ParityCodec5New.encodeFirst x).testBit 5=false ∧
-    (bitRun ParityCodec5New.encodeFirst x).testBit 9=false ∧
-    codeOf (bitsOf (bitRun ParityCodec5New.encodeFirst x))∈canonicalCodes := by
+private theorem finite_roundtrip : ∀x<1024,x.testBit 5=false → x.testBit 9=false →
+    safe invV (bitRun V x)=true ∧ bitRun invV (bitRun V x)=x := by
   decide +kernel
 
 private theorem finite_raw_regular : ∀x<1024,x∈rawWords →
@@ -28352,46 +28516,62 @@ attribute [local irreducible] V invV run
 
 theorem V_spec (s : State) (m : List Bool) (h5 : s.basis 5=false) (h9 : s.basis 9=false) :
     (run V m s).basis 5=false ∧ (run V m s).basis 9=false ∧
-    payloadParity (run V m s).basis=payloadParity s.basis ∧
     (codeOf s.basis∈canonicalCodes → (run V m s).basis 0=false) := by
   let x := rawCodeOf s.basis
-  have model := local_model V V_support s m (proper_safe V V_proper x)
-  have finite := finite_V x (rawCodeOf_lt s.basis)
+  have finite := (finite_V x (rawCodeOf_lt s.basis)
     ((rawCodeOf_testBit s.basis 5 (by decide)).trans h5)
-    ((rawCodeOf_testBit s.basis 9 (by decide)).trans h9)
+    ((rawCodeOf_testBit s.basis 9 (by decide)).trans h9)).2
+  have model := local_model V V_support s m (finite_V x (rawCodeOf_lt s.basis)
+    ((rawCodeOf_testBit s.basis 5 (by decide)).trans h5)
+    ((rawCodeOf_testBit s.basis 9 (by decide)).trans h9)).1
   have old : ∀q<10,bitsOf x q=s.basis q := rawCodeOf_testBit s.basis
   refine ⟨(model.2 5 (by decide)).trans finite.1,
-    (model.2 9 (by decide)).trans finite.2.1,?_,?_⟩
-  · exact (parity_congr _ _ model.2).trans (finite.2.2.1.trans (parity_congr _ _ old))
+    (model.2 9 (by decide)).trans finite.2.1,?_⟩
   · intro member
     have codes : codeOf (bitsOf x)∈canonicalCodes := by
       rw [codeOf_congr _ _ old]
       exact member
-    exact (model.2 0 (by decide)).trans (finite.2.2.2 codes)
+    exact (model.2 0 (by decide)).trans (finite.2.2 codes)
 
 theorem V_holes (s : State) (m : List Bool) (h5 : s.basis 5=false) (h9 : s.basis 9=false) :
     (run V m s).basis 5=false ∧ (run V m s).basis 9=false :=
   ⟨(V_spec s m h5 h9).1,(V_spec s m h5 h9).2.1⟩
 
-theorem V_parity (s : State) (m : List Bool) (h5 : s.basis 5=false) (h9 : s.basis 9=false) :
-    payloadParity (run V m s).basis=payloadParity s.basis := (V_spec s m h5 h9).2.2.1
-
 theorem V_zero (s : State) (m : List Bool) (h5 : s.basis 5=false) (h9 : s.basis 9=false)
     (member : codeOf s.basis∈canonicalCodes) : (run V m s).basis 0=false :=
-  (V_spec s m h5 h9).2.2.2 member
+  (V_spec s m h5 h9).2.2 member
 
-theorem invV_spec (s : State) (m : List Bool) (h5 : s.basis 5=false) (h9 : s.basis 9=false) :
-    (run invV m s).basis 5=false ∧ (run invV m s).basis 9=false ∧
-    payloadParity (run invV m s).basis=payloadParity s.basis := by
+theorem V_phase (s : State) (m : List Bool) (h5 : s.basis 5=false) (h9 : s.basis 9=false) :
+    (run V m s).phase=s.phase :=
+  (local_model V V_support s m (finite_V (rawCodeOf s.basis) (rawCodeOf_lt s.basis)
+    ((rawCodeOf_testBit s.basis 5 (by decide)).trans h5)
+    ((rawCodeOf_testBit s.basis 9 (by decide)).trans h9)).1).1
+
+theorem V_independent (s : State) (m n : List Bool) (h5 : s.basis 5=false) (h9 : s.basis 9=false) :
+    run V m s=run V n s :=
+  State.extensionality _ _ ((V_phase s m h5 h9).trans (V_phase s n h5 h9).symm)
+    (run_basis_records _ s s m n rfl)
+
+/-- The measured erases in `invV` are exact on every hole-zero input of `V`. -/
+theorem invV_V (s : State) (m n : List Bool) (h5 : s.basis 5=false) (h9 : s.basis 9=false) :
+    run invV n (run V m s)=s := by
   let x := rawCodeOf s.basis
-  have model := local_model invV invV_support s m (proper_safe invV invV_proper x)
-  have finite := finite_invV x (rawCodeOf_lt s.basis)
+  have hx : ∀q<10,s.basis q=bitsOf x q := fun q hq => (rawCodeOf_testBit s.basis q hq).symm
+  have f := finite_roundtrip x (rawCodeOf_lt s.basis)
     ((rawCodeOf_testBit s.basis 5 (by decide)).trans h5)
     ((rawCodeOf_testBit s.basis 9 (by decide)).trans h9)
-  have old : ∀q<10,bitsOf x q=s.basis q := rawCodeOf_testBit s.basis
-  exact ⟨(model.2 5 (by decide)).trans finite.1,
-    (model.2 9 (by decide)).trans finite.2.1,
-    (parity_congr _ _ model.2).trans (finite.2.2.trans (parity_congr _ _ old))⟩
+  have mv := local_model_at V V_support s m x hx (finite_V x (rawCodeOf_lt s.basis)
+    ((rawCodeOf_testBit s.basis 5 (by decide)).trans h5)
+    ((rawCodeOf_testBit s.basis 9 (by decide)).trans h9)).1
+  have mi := local_model_at invV invV_support (run V m s) n (bitRun V x) mv.2 f.1
+  apply State.extensionality
+  · exact mi.1.trans mv.1
+  · funext q
+    by_cases hq : q<10
+    · rw [mi.2 q hq,f.2]
+      exact (hx q hq).symm
+    · have hq' : q∉Finset.range 10 := fun h => hq (Finset.mem_range.mp h)
+      rw [invV_outside _ _ q hq',V_outside _ _ q hq']
 
 private theorem raw_to_codes (P : Program) (hs : wires P⊆Finset.range 10)
     (finite : ∀x<1024,x∈rawWords → safe P x=true ∧
@@ -28406,12 +28586,6 @@ private theorem raw_to_codes (P : Program) (hs : wires P⊆Finset.range 10)
     (model.2 9 (by decide)).trans f.2.2.1,?_⟩
   rw [codeOf_congr _ _ model.2]
   exact f.2.2.2
-
-theorem raw_to_canonical (s : State) (m : List Bool) (member : rawCodeOf s.basis∈rawWords) :
-    (run ParityCodec5New.encodeFirst m s).basis 5=false ∧
-    (run ParityCodec5New.encodeFirst m s).basis 9=false ∧
-    codeOf (run ParityCodec5New.encodeFirst m s).basis∈canonicalCodes :=
-  raw_to_codes _ ParityCodec5New.first_support.1 finite_raw_first s m member
 
 theorem raw_to_canonical_regular (s : State) (m : List Bool) (member : rawCodeOf s.basis∈rawWords) :
     (run ParityCodec5New.encode m s).basis 5=false ∧
@@ -28429,18 +28603,18 @@ def parityAt (f : Fin 10→Wire) (b : BasisState) : Bool := payloadParity (fun q
 private def pull (f : Fin 10→Wire) (s : State) : State :=
   ⟨s.phase,fun q => s.basis (label f q)⟩
 
-theorem VAt_counts (f : Fin 10→Wire) : toffoliCount (VAt f)=142 ∧ measurementCount (VAt f)=0 := by
+theorem VAt_counts (f : Fin 10→Wire) : toffoliCount (VAt f)=121 ∧ measurementCount (VAt f)=21 := by
   simpa only [VAt,(renameProgram_counts (label f) V).1,
     (renameProgram_counts (label f) V).2] using V_counts
 
-theorem invVAt_counts (f : Fin 10→Wire) : toffoliCount (invVAt f)=142 ∧ measurementCount (invVAt f)=0 := by
+theorem invVAt_counts (f : Fin 10→Wire) : toffoliCount (invVAt f)=121 ∧ measurementCount (invVAt f)=21 := by
   simpa only [invVAt,(renameProgram_counts (label f) invV).1,
     (renameProgram_counts (label f) invV).2] using invV_counts
 
-theorem VAt_slots (f : Fin 10→Wire) : gateSlots (VAt f)=175 := by
+theorem VAt_slots (f : Fin 10→Wire) : gateSlots (VAt f)=196 := by
   simpa only [VAt,rename_gateSlots] using V_slots
 
-theorem invVAt_slots (f : Fin 10→Wire) : gateSlots (invVAt f)=175 := by
+theorem invVAt_slots (f : Fin 10→Wire) : gateSlots (invVAt f)=196 := by
   simpa only [invVAt,rename_gateSlots] using invV_slots
 
 theorem VAt_support_exact (f : Fin 10→Wire) : wires (VAt f)=Finset.univ.image f := by
@@ -28474,18 +28648,24 @@ private theorem mapped_run (P : Program) (hs : wires P⊆Finset.range 10)
     P hs m (pull f s) s rfl (fun _ _ => rfl)
   exact ⟨h.1,fun q hq => h.2 q (Finset.mem_range.mpr hq)⟩
 
-theorem VAt_phase (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m : List Bool) :
+theorem VAt_phase (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m : List Bool)
+    (h5 : s.basis (f 5)=false) (h9 : s.basis (f 9)=false) :
     (run (VAt f) m s).phase=s.phase :=
-  (mapped_run V V_support f hf s m).1.trans (V_phase (pull f s) m)
+  (mapped_run V V_support f hf s m).1.trans (V_phase (pull f s) m
+    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 5<10 by decide)] using h5)
+    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 9<10 by decide)] using h9))
 
-theorem invVAt_phase (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m : List Bool) :
-    (run (invVAt f) m s).phase=s.phase :=
-  (mapped_run invV invV_support f hf s m).1.trans (invV_phase (pull f s) m)
+theorem VAt_independent (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m n : List Bool)
+    (h5 : s.basis (f 5)=false) (h9 : s.basis (f 9)=false) :
+    run (VAt f) m s=run (VAt f) n s :=
+  State.extensionality _ _ ((VAt_phase f hf s m h5 h9).trans (VAt_phase f hf s n h5 h9).symm)
+    (run_basis_records _ s s m n rfl)
 
 private theorem mapped_inverse (P Q : Program) (hp : wires P⊆Finset.range 10)
     (hq : wires Q⊆Finset.range 10)
-    (undo : ∀s m n,run Q n (run P m s)=s)
-    (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m n : List Bool) :
+    (undo : ∀s m n,s.basis 5=false → s.basis 9=false → run Q n (run P m s)=s)
+    (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m n : List Bool)
+    (h5 : (pull f s).basis 5=false) (h9 : (pull f s).basis 9=false) :
     run (renameProgram (label f) Q) n (run (renameProgram (label f) P) m s)=s := by
   let t := pull f s
   have pe := run_rename_pool (label f) (Finset.range 10) (FirstNonzeroCodec.label_inj' f hf)
@@ -28493,7 +28673,7 @@ private theorem mapped_inverse (P Q : Program) (hp : wires P⊆Finset.range 10)
   have pd := run_rename_pool (label f) (Finset.range 10) (FirstNonzeroCodec.label_inj' f hf)
     Q hq n (run P m t) (run (renameProgram (label f) P) m s) pe.1.symm
     (fun q h => (pe.2 q h).symm)
-  have inv := undo t m n
+  have inv := undo t m n h5 h9
   apply State.extensionality
   · calc
       _=(run Q n (run P m t)).phase := pd.1
@@ -28507,13 +28687,12 @@ private theorem mapped_inverse (P Q : Program) (hp : wires P⊆Finset.range 10)
         (run (renameProgram (label f) P) m s) q h).trans
         (run_rename_pool_outside (label f) (Finset.range 10) P hp m s q h)
 
-theorem invVAt_VAt (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m n : List Bool) :
+theorem invVAt_VAt (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m n : List Bool)
+    (h5 : s.basis (f 5)=false) (h9 : s.basis (f 9)=false) :
     run (invVAt f) n (run (VAt f) m s)=s :=
   mapped_inverse V invV V_support invV_support invV_V f hf s m n
-
-theorem VAt_invVAt (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m n : List Bool) :
-    run (VAt f) n (run (invVAt f) m s)=s :=
-  mapped_inverse invV V invV_support V_support V_invV f hf s m n
+    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 5<10 by decide)] using h5)
+    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 9<10 by decide)] using h9)
 
 theorem VAt_holes (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m : List Bool)
     (h5 : s.basis (f 5)=false) (h9 : s.basis (f 9)=false) :
@@ -28538,44 +28717,15 @@ theorem VAt_zero (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m 
   simpa only [VAt,label,MeasuredCodec5.label,dif_pos (show 0<10 by decide)] using
     (placed.2 0 (by decide)).trans h
 
-theorem VAt_parity (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m : List Bool)
-    (h5 : s.basis (f 5)=false) (h9 : s.basis (f 9)=false) :
-    parityAt f (run (VAt f) m s).basis=parityAt f s.basis := by
-  have h := V_parity (pull f s) m
-    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 5<10 by decide)] using h5)
-    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 9<10 by decide)] using h9)
-  exact (parity_congr _ _ (mapped_run V V_support f hf s m).2).trans h
-
-theorem invVAt_holes (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m : List Bool)
-    (h5 : s.basis (f 5)=false) (h9 : s.basis (f 9)=false) :
-    (run (invVAt f) m s).basis (f 5)=false ∧ (run (invVAt f) m s).basis (f 9)=false := by
-  have h := invV_spec (pull f s) m
-    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 5<10 by decide)] using h5)
-    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 9<10 by decide)] using h9)
-  have placed := mapped_run invV invV_support f hf s m
-  constructor
-  · simpa only [invVAt,label,MeasuredCodec5.label,dif_pos (show 5<10 by decide)] using
-      (placed.2 5 (by decide)).trans h.1
-  · simpa only [invVAt,label,MeasuredCodec5.label,dif_pos (show 9<10 by decide)] using
-      (placed.2 9 (by decide)).trans h.2.1
-
-theorem invVAt_parity (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m : List Bool)
-    (h5 : s.basis (f 5)=false) (h9 : s.basis (f 9)=false) :
-    parityAt f (run (invVAt f) m s).basis=parityAt f s.basis := by
-  have h := (invV_spec (pull f s) m
-    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 5<10 by decide)] using h5)
-    (by simpa only [pull,label,MeasuredCodec5.label,dif_pos (show 9<10 by decide)] using h9)).2.2
-  exact (parity_congr _ _ (mapped_run invV invV_support f hf s m).2).trans h
-
 def perm (w : Nat→Wire) : Program := VAt (History5.historyMap w 0)
 def invPerm (w : Nat→Wire) : Program := invVAt (History5.historyMap w 0)
 
-theorem perm_counts (w : Nat→Wire) : toffoliCount (perm w)=142 ∧ measurementCount (perm w)=0 :=
+theorem perm_counts (w : Nat→Wire) : toffoliCount (perm w)=121 ∧ measurementCount (perm w)=21 :=
   VAt_counts _
-theorem invPerm_counts (w : Nat→Wire) : toffoliCount (invPerm w)=142 ∧ measurementCount (invPerm w)=0 :=
+theorem invPerm_counts (w : Nat→Wire) : toffoliCount (invPerm w)=121 ∧ measurementCount (invPerm w)=21 :=
   invVAt_counts _
-theorem perm_slots (w : Nat→Wire) : gateSlots (perm w)=175 := VAt_slots _
-theorem invPerm_slots (w : Nat→Wire) : gateSlots (invPerm w)=175 := invVAt_slots _
+theorem perm_slots (w : Nat→Wire) : gateSlots (perm w)=196 := VAt_slots _
+theorem invPerm_slots (w : Nat→Wire) : gateSlots (invPerm w)=196 := invVAt_slots _
 
 theorem perm_physical (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) : GatePhysical (perm w) :=
   VAt_physical _ (History5.historyMap_injective w hn 0 (by decide))
@@ -28587,20 +28737,24 @@ theorem perm_support (w : Nat→Wire) : wires (perm w)=wires (NewHistory5.encode
 theorem invPerm_support (w : Nat→Wire) : wires (invPerm w)=wires (NewHistory5.encode w 0) := by
   rw [invPerm,invVAt_support_exact,NewHistory5.encode,(ParityCodec5New.supportAt_exact _).1]
 
-theorem perm_phase (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool) :
+theorem perm_phase (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
+    (h5 : s.basis (History5.historyMap w 0 5)=false)
+    (h9 : s.basis (History5.historyMap w 0 9)=false) :
     (run (perm w) m s).phase=s.phase :=
-  VAt_phase _ (History5.historyMap_injective w hn 0 (by decide)) s m
-theorem invPerm_phase (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool) :
-    (run (invPerm w) m s).phase=s.phase :=
-  invVAt_phase _ (History5.historyMap_injective w hn 0 (by decide)) s m
+  VAt_phase _ (History5.historyMap_injective w hn 0 (by decide)) s m h5 h9
+
+theorem perm_independent (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m n : List Bool)
+    (h5 : s.basis (History5.historyMap w 0 5)=false)
+    (h9 : s.basis (History5.historyMap w 0 9)=false) :
+    run (perm w) m s=run (perm w) n s :=
+  VAt_independent _ (History5.historyMap_injective w hn 0 (by decide)) s m n h5 h9
 
 theorem perm_roundtrip (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup)
-    (s : State) (m n : List Bool) : run (invPerm w) n (run (perm w) m s)=s :=
-  invVAt_VAt _ (History5.historyMap_injective w hn 0 (by decide)) s m n
-
-theorem invPerm_roundtrip (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup)
-    (s : State) (m n : List Bool) : run (perm w) n (run (invPerm w) m s)=s :=
-  VAt_invVAt _ (History5.historyMap_injective w hn 0 (by decide)) s m n
+    (s : State) (m n : List Bool)
+    (h5 : s.basis (History5.historyMap w 0 5)=false)
+    (h9 : s.basis (History5.historyMap w 0 9)=false) :
+    run (invPerm w) n (run (perm w) m s)=s :=
+  invVAt_VAt _ (History5.historyMap_injective w hn 0 (by decide)) s m n h5 h9
 
 theorem perm_zero (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
     (h5 : s.basis (History5.historyMap w 0 5)=false)
@@ -31282,9 +31436,9 @@ private theorem prefix_zero (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
       run (Prefix1590Codec.invPerm w) n (run (Prefix1590Codec.perm w) m s)=s := by
   have holes := Prefix1590Codec.VAt_holes (History5.historyMap w 0)
     (History5.historyMap_injective w hn 0 (by decide)) s m codes.1 codes.2.1
-  exact ⟨Prefix1590Codec.perm_phase w hn s m,
+  exact ⟨Prefix1590Codec.perm_phase w hn s m codes.1 codes.2.1,
     Prefix1590Codec.perm_zero w hn s m codes.1 codes.2.1 codes.2.2,
-    holes.1,holes.2,Prefix1590Codec.perm_roundtrip w hn s m n⟩
+    holes.1,holes.2,Prefix1590Codec.perm_roundtrip w hn s m n codes.1 codes.2.1⟩
 
 /-- V clears G0 and restores both holes on the actual encoded field frame. -/
 theorem encoded_frame_prefix_zero (w : Nat → Wire) (sign : Wire)
@@ -33599,9 +33753,9 @@ theorem firstPacket_metrics (divide : Bool) :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryField_metrics :
-    toffoliCount entryField=toffoliCount FrontierEntry1591Field.entryField+281 ∧
-    measurementCount entryField=measurementCount FrontierEntry1591Field.entryField ∧
-    gateSlots entryField=gateSlots FrontierEntry1591Field.entryField+358 := by
+    toffoliCount entryField=toffoliCount FrontierEntry1591Field.entryField+239 ∧
+    measurementCount entryField=measurementCount FrontierEntry1591Field.entryField+42 ∧
+    gateSlots entryField=gateSlots FrontierEntry1591Field.entryField+400 := by
   have first:=firstPacket_metrics true
   simp only [renameProgram_counts,rename_gateSlots] at first
   have pc:=Prefix1590Codec.perm_counts base
@@ -33613,9 +33767,9 @@ theorem entryField_metrics :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitField_metrics :
-    toffoliCount exitField=toffoliCount FrontierEntry1591Field.exitField+281 ∧
-    measurementCount exitField=measurementCount FrontierEntry1591Field.exitField ∧
-    gateSlots exitField=gateSlots FrontierEntry1591Field.exitField+358 := by
+    toffoliCount exitField=toffoliCount FrontierEntry1591Field.exitField+239 ∧
+    measurementCount exitField=measurementCount FrontierEntry1591Field.exitField+42 ∧
+    gateSlots exitField=gateSlots FrontierEntry1591Field.exitField+400 := by
   have first:=firstPacket_metrics false
   simp only [renameProgram_counts,rename_gateSlots] at first
   have pc:=Prefix1590Codec.perm_counts base
@@ -33627,33 +33781,33 @@ theorem exitField_metrics :
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem hosted_metrics (P Q : Program)
-    (h : toffoliCount P=toffoliCount Q+281 ∧ measurementCount P=measurementCount Q ∧
-      gateSlots P=gateSlots Q+358) :
+    (h : toffoliCount P=toffoliCount Q+239 ∧ measurementCount P=measurementCount Q+42 ∧
+      gateSlots P=gateSlots Q+400) :
     toffoliCount (FrontierEntry1591Field.hosted P)=
-      toffoliCount (FrontierEntry1591Field.hosted Q)+281 ∧
+      toffoliCount (FrontierEntry1591Field.hosted Q)+239 ∧
     measurementCount (FrontierEntry1591Field.hosted P)=
-      measurementCount (FrontierEntry1591Field.hosted Q) ∧
+      measurementCount (FrontierEntry1591Field.hosted Q)+42 ∧
     gateSlots (FrontierEntry1591Field.hosted P)=
-      gateSlots (FrontierEntry1591Field.hosted Q)+358 := by
+      gateSlots (FrontierEntry1591Field.hosted Q)+400 := by
   simp only [FrontierEntry1591Field.hosted,toffoliCount_append,measurementCount_append,
     gateSlots_append,renameProgram_counts,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem parity_metrics (P Q : Program)
-    (h : toffoliCount P=toffoliCount Q+281 ∧ measurementCount P=measurementCount Q ∧
-      gateSlots P=gateSlots Q+358) :
+    (h : toffoliCount P=toffoliCount Q+239 ∧ measurementCount P=measurementCount Q+42 ∧
+      gateSlots P=gateSlots Q+400) :
     toffoliCount (ParityField1591.program FrontierEntry1591Field.controls
       FrontierEntry1591Field.work FrontierEntry1591Field.host P)=
       toffoliCount (ParityField1591.program FrontierEntry1591Field.controls
-        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+281 ∧
+        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+239 ∧
     measurementCount (ParityField1591.program FrontierEntry1591Field.controls
       FrontierEntry1591Field.work FrontierEntry1591Field.host P)=
       measurementCount (ParityField1591.program FrontierEntry1591Field.controls
-        FrontierEntry1591Field.work FrontierEntry1591Field.host Q) ∧
+        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+42 ∧
     gateSlots (ParityField1591.program FrontierEntry1591Field.controls
       FrontierEntry1591Field.work FrontierEntry1591Field.host P)=
       gateSlots (ParityField1591.program FrontierEntry1591Field.controls
-        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+358 := by
+        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+400 := by
   have a:=ParityField1591.counts FrontierEntry1591Field.controls
     FrontierEntry1591Field.work FrontierEntry1591Field.host P
   have b:=ParityField1591.counts FrontierEntry1591Field.controls
@@ -33667,24 +33821,24 @@ private theorem wrapped_metrics (F F0 H H0 W W0 : Program)
       FrontierEntry1591Field.work FrontierEntry1591Field.host H)
     (hW0 : W0=ParityField1591.program FrontierEntry1591Field.controls
       FrontierEntry1591Field.work FrontierEntry1591Field.host H0)
-    (h : toffoliCount F=toffoliCount F0+281 ∧ measurementCount F=measurementCount F0 ∧
-      gateSlots F=gateSlots F0+358) :
-    toffoliCount W=toffoliCount W0+281 ∧ measurementCount W=measurementCount W0 ∧
-      gateSlots W=gateSlots W0+358 := by
+    (h : toffoliCount F=toffoliCount F0+239 ∧ measurementCount F=measurementCount F0+42 ∧
+      gateSlots F=gateSlots F0+400) :
+    toffoliCount W=toffoliCount W0+239 ∧ measurementCount W=measurementCount W0+42 ∧
+      gateSlots W=gateSlots W0+400 := by
   subst W W0 H H0
   exact parity_metrics _ _ (hosted_metrics _ _ h)
 
-theorem entry_metrics : toffoliCount entry=toffoliCount FrontierEntry1591Field.entry+281 ∧
-    measurementCount entry=measurementCount FrontierEntry1591Field.entry ∧
-    gateSlots entry=gateSlots FrontierEntry1591Field.entry+358 :=
+theorem entry_metrics : toffoliCount entry=toffoliCount FrontierEntry1591Field.entry+239 ∧
+    measurementCount entry=measurementCount FrontierEntry1591Field.entry+42 ∧
+    gateSlots entry=gateSlots FrontierEntry1591Field.entry+400 :=
   wrapped_metrics entryField FrontierEntry1591Field.entryField
     entryHosted FrontierEntry1591Field.entryHosted entry FrontierEntry1591Field.entry
     (by unfold entryHosted; rfl) (by unfold FrontierEntry1591Field.entryHosted; rfl)
     (by unfold entry; rfl) (by unfold FrontierEntry1591Field.entry; rfl) entryField_metrics
 
-theorem exit_metrics : toffoliCount exit=toffoliCount FrontierEntry1591Field.exit+281 ∧
-    measurementCount exit=measurementCount FrontierEntry1591Field.exit ∧
-    gateSlots exit=gateSlots FrontierEntry1591Field.exit+358 :=
+theorem exit_metrics : toffoliCount exit=toffoliCount FrontierEntry1591Field.exit+239 ∧
+    measurementCount exit=measurementCount FrontierEntry1591Field.exit+42 ∧
+    gateSlots exit=gateSlots FrontierEntry1591Field.exit+400 :=
   wrapped_metrics exitField FrontierEntry1591Field.exitField
     exitHosted FrontierEntry1591Field.exitHosted exit FrontierEntry1591Field.exit
     (by unfold exitHosted; rfl) (by unfold FrontierEntry1591Field.exitHosted; rfl)
@@ -33851,20 +34005,20 @@ theorem exitKernel_768_free : base 768∉wires exitKernel := by
     And.intro firstHosted_768_free (And.intro exit_768_free lastHosted_768_free)
 
 private theorem kernel_metrics (P Q : Program)
-    (h : toffoliCount P=toffoliCount Q+281 ∧ measurementCount P=measurementCount Q ∧
-      gateSlots P=gateSlots Q+358) :
+    (h : toffoliCount P=toffoliCount Q+239 ∧ measurementCount P=measurementCount Q+42 ∧
+      gateSlots P=gateSlots Q+400) :
     toffoliCount (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase P
       FrontierEntry1591Kernel.lastPhase)=
       toffoliCount (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase Q
-        FrontierEntry1591Kernel.lastPhase)+281 ∧
+        FrontierEntry1591Kernel.lastPhase)+239 ∧
     measurementCount (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase P
       FrontierEntry1591Kernel.lastPhase)=
       measurementCount (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase Q
-        FrontierEntry1591Kernel.lastPhase) ∧
+        FrontierEntry1591Kernel.lastPhase)+42 ∧
     gateSlots (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase P
       FrontierEntry1591Kernel.lastPhase)=
       gateSlots (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase Q
-        FrontierEntry1591Kernel.lastPhase)+358 := by
+        FrontierEntry1591Kernel.lastPhase)+400 := by
   have a:=FrontierEntry1591Native.relocated_counts FrontierEntry1591Kernel.firstPhase P
     FrontierEntry1591Kernel.lastPhase
   have b:=FrontierEntry1591Native.relocated_counts FrontierEntry1591Kernel.firstPhase Q
@@ -33882,57 +34036,57 @@ private theorem relocated_alias_metrics (P Q K K0 : Program)
       FrontierEntry1591Kernel.lastPhase)
     (hK0 : K0=FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase Q
       FrontierEntry1591Kernel.lastPhase)
-    (h : toffoliCount P=toffoliCount Q+281 ∧ measurementCount P=measurementCount Q ∧
-      gateSlots P=gateSlots Q+358) :
-    toffoliCount K=toffoliCount K0+281 ∧ measurementCount K=measurementCount K0 ∧
-      gateSlots K=gateSlots K0+358 := by
+    (h : toffoliCount P=toffoliCount Q+239 ∧ measurementCount P=measurementCount Q+42 ∧
+      gateSlots P=gateSlots Q+400) :
+    toffoliCount K=toffoliCount K0+239 ∧ measurementCount K=measurementCount K0+42 ∧
+      gateSlots K=gateSlots K0+400 := by
   subst K K0
   exact kernel_metrics P Q h
 
 theorem entryKernel_metrics :
-    toffoliCount entryKernel=toffoliCount FrontierEntry1591Kernel.entryKernel+281 ∧
-    measurementCount entryKernel=measurementCount FrontierEntry1591Kernel.entryKernel ∧
-    gateSlots entryKernel=gateSlots FrontierEntry1591Kernel.entryKernel+358 :=
+    toffoliCount entryKernel=toffoliCount FrontierEntry1591Kernel.entryKernel+239 ∧
+    measurementCount entryKernel=measurementCount FrontierEntry1591Kernel.entryKernel+42 ∧
+    gateSlots entryKernel=gateSlots FrontierEntry1591Kernel.entryKernel+400 :=
   relocated_alias_metrics entry FrontierEntry1591Field.entry
     entryKernel FrontierEntry1591Kernel.entryKernel
     (by unfold entryKernel; rfl) (by unfold FrontierEntry1591Kernel.entryKernel; rfl) entry_metrics
 
 theorem exitKernel_metrics :
-    toffoliCount exitKernel=toffoliCount FrontierEntry1591Kernel.exitKernel+281 ∧
-    measurementCount exitKernel=measurementCount FrontierEntry1591Kernel.exitKernel ∧
-    gateSlots exitKernel=gateSlots FrontierEntry1591Kernel.exitKernel+358 :=
+    toffoliCount exitKernel=toffoliCount FrontierEntry1591Kernel.exitKernel+239 ∧
+    measurementCount exitKernel=measurementCount FrontierEntry1591Kernel.exitKernel+42 ∧
+    gateSlots exitKernel=gateSlots FrontierEntry1591Kernel.exitKernel+400 :=
   relocated_alias_metrics exit FrontierEntry1591Field.exit
     exitKernel FrontierEntry1591Kernel.exitKernel
     (by unfold exitKernel; rfl) (by unfold FrontierEntry1591Kernel.exitKernel; rfl) exit_metrics
 
 theorem entryKernel_counts :
-    toffoliCount entryKernel=toffoliCount OwnOneFlagEntryQ7.kernel5S+281 ∧
-    measurementCount entryKernel=measurementCount OwnOneFlagEntryQ7.kernel5S := by
+    toffoliCount entryKernel=toffoliCount OwnOneFlagEntryQ7.kernel5S+239 ∧
+    measurementCount entryKernel=measurementCount OwnOneFlagEntryQ7.kernel5S+42 := by
   have fresh:=entryKernel_metrics
   have old:=FrontierEntry1591Kernel.entry_counts_eq
-  exact ⟨fresh.1.trans (congrArg (fun n : Nat=>n+281) old.1),fresh.2.1.trans old.2⟩
+  exact ⟨fresh.1.trans (congrArg (fun n : Nat=>n+239) old.1),fresh.2.1.trans (congrArg (fun n : Nat=>n+42) old.2)⟩
 
 theorem exitKernel_counts :
-    toffoliCount exitKernel=toffoliCount OwnOneFlagExitQ7.kernelS+281 ∧
-    measurementCount exitKernel=measurementCount OwnOneFlagExitQ7.kernelS := by
+    toffoliCount exitKernel=toffoliCount OwnOneFlagExitQ7.kernelS+239 ∧
+    measurementCount exitKernel=measurementCount OwnOneFlagExitQ7.kernelS+42 := by
   have fresh:=exitKernel_metrics
   have old:=FrontierEntry1591Kernel.exit_counts_eq
-  exact ⟨fresh.1.trans (congrArg (fun n : Nat=>n+281) old.1),fresh.2.1.trans old.2⟩
+  exact ⟨fresh.1.trans (congrArg (fun n : Nat=>n+239) old.1),fresh.2.1.trans (congrArg (fun n : Nat=>n+42) old.2)⟩
 
 theorem entryKernel_slots_eq : gateSlots entryKernel=
-    gateSlots FrontierEntry1591Kernel.entryKernel+358 :=
+    gateSlots FrontierEntry1591Kernel.entryKernel+400 :=
   entryKernel_metrics.2.2
 
 theorem exitKernel_slots_eq : gateSlots exitKernel=
-    gateSlots FrontierEntry1591Kernel.exitKernel+358 :=
+    gateSlots FrontierEntry1591Kernel.exitKernel+400 :=
   exitKernel_metrics.2.2
 
-theorem entryKernel_slots : gateSlots entryKernel≤20502812 := by
+theorem entryKernel_slots : gateSlots entryKernel≤20502854 := by
   have fresh:=entryKernel_slots_eq
   have old:=FrontierEntry1591Kernel.entry_slots
   omega
 
-theorem exitKernel_slots : gateSlots exitKernel≤20502812 := by
+theorem exitKernel_slots : gateSlots exitKernel≤20502854 := by
   have fresh:=exitKernel_slots_eq
   have old:=FrontierEntry1591Kernel.exit_slots
   omega
@@ -34213,8 +34367,15 @@ theorem prefix_holes (s : State) (m : List Bool)
     Prefix1590Codec.VAt_holes (History5.historyMap base 0)
       (History5.historyMap_injective base base_pool_nodup 0 (by decide)) s m h5 h9
 
-theorem prefix_phase (s : State) (m : List Bool) : (run prefixProgram m s).phase=s.phase := by
-  simpa only [prefixProgram] using Prefix1590Codec.perm_phase base base_pool_nodup s m
+theorem prefix_phase (s : State) (m : List Bool)
+    (h5 : s.basis (base 1030)=false) (h9 : s.basis (base 1032)=false) :
+    (run prefixProgram m s).phase=s.phase := by
+  simpa only [prefixProgram] using Prefix1590Codec.perm_phase base base_pool_nodup s m h5 h9
+
+theorem prefix_independent (s : State) (m n : List Bool)
+    (h5 : s.basis (base 1030)=false) (h9 : s.basis (base 1032)=false) :
+    run prefixProgram m s=run prefixProgram n s := by
+  simpa only [prefixProgram] using Prefix1590Codec.perm_independent base base_pool_nodup s m n h5 h9
 
 private theorem prefix_768_free : base 768∉wires prefixProgram := by
   intro used
@@ -34242,13 +34403,15 @@ theorem prefix_window_run_eq (P Window : Program)
     (shape : Window=prefixProgram++(renameProgram borrow P++unprefix))
     (free : ∀i : Fin 8,payload0 i∉wires P) (s : State) (m : List Bool)
     (h5 : s.basis (base 1030)=false) (h9 : s.basis (base 1032)=false)
-    (o5 : (run P m s).basis (base 1030)=false) (o9 : (run P m s).basis (base 1032)=false)
-    (workIn : s.basis (base 768)=false) (workOut : (run P m s).basis (base 768)=false)
-    (zero : (run prefixProgram [] s).basis (base 0)=false) : run Window m s=run P m s := by
+    (o5 : (run P (m.drop 21) s).basis (base 1030)=false)
+    (o9 : (run P (m.drop 21) s).basis (base 1032)=false)
+    (workIn : s.basis (base 768)=false) (workOut : (run P (m.drop 21) s).basis (base 768)=false)
+    (zero : (run prefixProgram [] s).basis (base 0)=false) : run Window m s=run P (m.drop 21) s := by
+  let mr:=m.drop 21
   let v:=run prefixProgram [] s
-  let out:=run P m s
-  have phase : v.phase=s.phase := prefix_phase s []
-  have locality:=run_measured_locality P (wires P) (Finset.Subset.refl _) v s m phase
+  let out:=run P mr s
+  have phase : v.phase=s.phase := prefix_phase s [] h5 h9
+  have locality:=run_measured_locality P (wires P) (Finset.Subset.refl _) v s mr phase
     (prefix_agrees_on_program P free s [] h5 h9)
   have firstSame : ∀q∈wires prefixProgram,out.basis q=s.basis q := by
     intro q hq
@@ -34256,39 +34419,39 @@ theorem prefix_window_run_eq (P Window : Program)
     rcases first_port_split r with rfl|rfl|⟨i,hi⟩
     · exact o5.trans h5.symm
     · exact o9.trans h9.symm
-    · exact run_preserves_outside P m s _ (by simpa only [payload0,hi] using free i)
+    · exact run_preserves_outside P mr s _ (by simpa only [payload0,hi] using free i)
   have sameV:=run_local_increment prefixProgram out s [] firstSame
-  have commute : run P m v=run prefixProgram [] out := by
+  have commute : run P mr v=run prefixProgram [] out := by
     apply State.extensionality
-    · exact locality.1.trans (prefix_phase out []).symm
+    · exact locality.1.trans (prefix_phase out [] o5 o9).symm
     · funext q
       by_cases used : q∈wires P
       · exact (locality.2 q used).trans
           (prefix_agrees_on_program P free out [] o5 o9 q used).symm
-      · rw [run_preserves_outside P m v q used]
+      · rw [run_preserves_outside P mr v q used]
         by_cases hv : q∈wires prefixProgram
         · exact (sameV.2 q hv).symm
         · rw [run_preserves_outside prefixProgram [] out q hv,
-            run_preserves_outside prefixProgram [] s q hv,run_preserves_outside P m s q used]
+            run_preserves_outside prefixProgram [] s q hv,run_preserves_outside P mr s q used]
   have vwork : v.basis (base 768)=false :=
     (run_preserves_outside prefixProgram [] s _ prefix_768_free).trans workIn
-  have owork : (run P m v).basis (base 768)=false := by
+  have owork : (run P mr v).basis (base 768)=false := by
     rw [commute]
     exact (run_preserves_outside prefixProgram [] out _ prefix_768_free).trans workOut
-  have rebound : run (renameProgram borrow P) m v=run P m v := by
+  have rebound : run (renameProgram borrow P) mr v=run P mr v := by
     simpa only [ParityHostTransport5.program,borrow] using
-      ParityHostTransport5.run_eq (base 768) (base 0) P v m vwork zero owork (free 0)
-  have em : measurementCount prefixProgram=0 := by
+      ParityHostTransport5.run_eq (base 768) (base 0) P v mr vwork zero owork (free 0)
+  have em : measurementCount prefixProgram=21 := by
     simpa only [prefixProgram] using (Prefix1590Codec.perm_counts base).2
   have rm := (renameProgram_counts borrow P).2
+  have pre : run prefixProgram (m.take (measurementCount prefixProgram)) s=v :=
+    prefix_independent s _ [] h5 h9
   have execution : run Window m s=
-      run unprefix (m.drop (measurementCount P)) (run (renameProgram borrow P) m v) := by
-    rw [shape]
-    simpa only [em,rm,List.take_zero,List.drop_zero] using
-      run_three_records prefixProgram (renameProgram borrow P) unprefix s m
+      run unprefix (mr.drop (measurementCount P)) (run (renameProgram borrow P) mr v) := by
+    rw [shape,run_three_records,pre,rm,em]
   rw [execution,rebound,commute]
   simpa only [prefixProgram,unprefix] using
-    Prefix1590Codec.perm_roundtrip base base_pool_nodup out [] (m.drop (measurementCount P))
+    Prefix1590Codec.perm_roundtrip base base_pool_nodup out [] (mr.drop (measurementCount P)) o5 o9
 
 private theorem codeAt_pull_sig (s : State) :
     Prefix1590Codec.codeAt (History5.historyMap base 0) (pullState (OB5.sig 511) s).basis=
@@ -34442,14 +34605,14 @@ theorem entryField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context
   let mid:=run (placedFirstPacket true) mp s
   have first:=placedFirstPacket_frame true origin ctx enabled x hx trace Y 0
     (fun e => absurd e (by decide)) s mp input
-  have tail:=entryTail_frame origin ctx ha enabled x hx0 hx trace Y mid mt first.2
+  have tail:=entryTail_frame origin ctx ha enabled x hx0 hx trace Y mid (mt.drop 21) first.2
   have before:=field_prefix_codes origin ctx _ _ mid first.2 x hx0 hx trace
-  have after:=canonical_prefix_codes origin ctx _ _ (run entryTail mt mid) tail.2 x hx0 hx trace
+  have after:=canonical_prefix_codes origin ctx _ _ (run entryTail (mt.drop 21) mid) tail.2 x hx0 hx trace
   have window:=prefix_window_run_eq entryTail
     (prefixProgram++(renameProgram borrow entryTail++unprefix)) rfl entryTail_payload_free mid mt
     before.1 before.2.1 after.1 after.2.1
     (field_768_zero origin ctx _ _ mid first.2)
-    (canonical_768_zero origin ctx _ _ (run entryTail mt mid) tail.2)
+    (canonical_768_zero origin ctx _ _ (run entryTail (mt.drop 21) mid) tail.2)
     (prefix_zero_of_codes mid before)
   rw [entryField,run_append,window]
   exact ⟨tail.1.trans first.1,tail.2⟩
@@ -38746,10 +38909,10 @@ theorem exitHead_borrow_run_eq (origin : BasisState) (ctx : FrontierReplay1591.C
       SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
     (enabled : origin (base 2400)=true) (Y : Fp) (s : State) (m : List Bool)
     (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    run (prefixProgram++(renameProgram borrow exitHead++unprefix)) m s=run exitHead m s := by
-  have old:=exitHead_frame origin ctx ha enabled Y s m input
+    run (prefixProgram++(renameProgram borrow exitHead++unprefix)) m s=run exitHead (m.drop 21) s := by
+  have old:=exitHead_frame origin ctx ha enabled Y s (m.drop 21) input
   have before:=canonical_prefix_codes origin ctx Y 0 s input x hx0 hx trace
-  have after:=field_prefix_codes origin ctx _ _ (run exitHead m s) old.2 x hx0 hx trace
+  have after:=field_prefix_codes origin ctx _ _ (run exitHead (m.drop 21) s) old.2 x hx0 hx trace
   exact prefix_window_run_eq exitHead _ rfl exitHead_payload_free s m
     before.1 before.2.1 after.1 after.2.1
     (canonical_768_zero origin ctx Y 0 s input)
@@ -38772,7 +38935,7 @@ theorem exitField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context 
     (NewFieldFrameOB5.EncodedFieldFrame origin H.1 H.2)
     (NewFieldFrameOB5.EncodedFieldFrame origin F.1 F.2)
     (fun t records h => by
-      have old:=exitHead_frame origin ctx ha enabled Y t records h
+      have old:=exitHead_frame origin ctx ha enabled Y t (records.drop 21) h
       exact exit_state_transport
         (fun out => out.phase=t.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin H.1 H.2 out) _ _
         (exitHead_borrow_run_eq origin ctx ha x hx0 hx trace enabled Y t records h) old)
@@ -40663,14 +40826,14 @@ theorem entryField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context
   let mid:=run (placedFirstPacket true) mp s
   have first:=placedFirstPacket_frame true origin ctx enabled x hx trace Y 0
     (fun e => absurd e (by decide)) s mp input
-  have tail:=entryTail_frame origin ctx ha enabled x hx0 hx trace Y mid mt first.2
+  have tail:=entryTail_frame origin ctx ha enabled x hx0 hx trace Y mid (mt.drop 21) first.2
   have before:=Prefix1590.field_prefix_codes origin ctx _ _ mid first.2 x hx0 hx trace
-  have after:=Prefix1590.canonical_prefix_codes origin ctx _ _ (run entryTail mt mid) tail.2 x hx0 hx trace
+  have after:=Prefix1590.canonical_prefix_codes origin ctx _ _ (run entryTail (mt.drop 21) mid) tail.2 x hx0 hx trace
   have window:=Prefix1590.prefix_window_run_eq entryTail
     (Prefix1590.prefixProgram++(renameProgram Prefix1590.borrow entryTail++Prefix1590.unprefix)) rfl entryTail_payload_free mid mt
     before.1 before.2.1 after.1 after.2.1
     (Prefix1590.field_768_zero origin ctx _ _ mid first.2)
-    (Prefix1590.canonical_768_zero origin ctx _ _ (run entryTail mt mid) tail.2)
+    (Prefix1590.canonical_768_zero origin ctx _ _ (run entryTail (mt.drop 21) mid) tail.2)
     (Prefix1590.prefix_zero_of_codes mid before)
   rw [entryField,run_append,window]
   exact ⟨tail.1.trans first.1,tail.2⟩
@@ -40771,10 +40934,10 @@ theorem exitHead_borrow_run_eq (origin : BasisState) (ctx : FrontierReplay1591.C
       SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
     (enabled : origin (base 2400)=true) (Y : Fp) (s : State) (m : List Bool)
     (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    run (Prefix1590.prefixProgram++(renameProgram Prefix1590.borrow exitHead++Prefix1590.unprefix)) m s=run exitHead m s := by
-  have old:=exitHead_frame origin ctx ha enabled Y s m input
+    run (Prefix1590.prefixProgram++(renameProgram Prefix1590.borrow exitHead++Prefix1590.unprefix)) m s=run exitHead (m.drop 21) s := by
+  have old:=exitHead_frame origin ctx ha enabled Y s (m.drop 21) input
   have before:=Prefix1590.canonical_prefix_codes origin ctx Y 0 s input x hx0 hx trace
-  have after:=Prefix1590.field_prefix_codes origin ctx _ _ (run exitHead m s) old.2 x hx0 hx trace
+  have after:=Prefix1590.field_prefix_codes origin ctx _ _ (run exitHead (m.drop 21) s) old.2 x hx0 hx trace
   exact Prefix1590.prefix_window_run_eq exitHead _ rfl exitHead_payload_free s m
     before.1 before.2.1 after.1 after.2.1
     (Prefix1590.canonical_768_zero origin ctx Y 0 s input)
@@ -40797,7 +40960,7 @@ theorem exitField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context 
     (NewFieldFrameOB5.EncodedFieldFrame origin H.1 H.2)
     (NewFieldFrameOB5.EncodedFieldFrame origin F.1 F.2)
     (fun t records h => by
-      have old:=exitHead_frame origin ctx ha enabled Y t records h
+      have old:=exitHead_frame origin ctx ha enabled Y t (records.drop 21) h
       exact exit_state_transport
         (fun out => out.phase=t.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin H.1 H.2 out) _ _
         (exitHead_borrow_run_eq origin ctx ha x hx0 hx trace enabled Y t records h) old)
@@ -41409,14 +41572,14 @@ theorem gen_qubits (D : Fp→Program) (S P : Program)
       d768 s768 p768 cx cy) C cy
 
 theorem gen_counts_diff (L : ControlledPointLayout) (D : Fp→Program) (S P : Program)
-    (dc : ∀k,toffoliCount (D k)=toffoliCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+281 ∧
-      measurementCount (D k)=measurementCount (OwnOneFlagEntryQ7.fusedDivisionF L k))
+    (dc : ∀k,toffoliCount (D k)=toffoliCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+239 ∧
+      measurementCount (D k)=measurementCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+42)
     (sc : toffoliCount S=toffoliCount (OwnDiagAll12PlacedQ7.program L) ∧
       measurementCount S=measurementCount (OwnDiagAll12PlacedQ7.program L))
-    (pc : toffoliCount P=toffoliCount (OwnOneFlagExitQ7.arithExit L)+281 ∧
-      measurementCount P=measurementCount (OwnOneFlagExitQ7.arithExit L)) (cx cy : Fp) :
-    toffoliCount (All12Generic.gen L D S P cx cy)=toffoliCount (OwnOneFlagActual.gen L cx cy)+562 ∧
-      measurementCount (All12Generic.gen L D S P cx cy)=measurementCount (OwnOneFlagActual.gen L cx cy) := by
+    (pc : toffoliCount P=toffoliCount (OwnOneFlagExitQ7.arithExit L)+239 ∧
+      measurementCount P=measurementCount (OwnOneFlagExitQ7.arithExit L)+42) (cx cy : Fp) :
+    toffoliCount (All12Generic.gen L D S P cx cy)=toffoliCount (OwnOneFlagActual.gen L cx cy)+478 ∧
+      measurementCount (All12Generic.gen L D S P cx cy)=measurementCount (OwnOneFlagActual.gen L cx cy)+84 := by
   have d:=dc (-cy)
   simp only [OwnOneFlagActual.gen,OneFlagProducer.gen,All12Generic.gen,
     All12Generic.mid,All12Generic.generic,toffoliCount_append,measurementCount_append,
@@ -41425,9 +41588,9 @@ theorem gen_counts_diff (L : ControlledPointLayout) (D : Fp→Program) (S P : Pr
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths)
     (D : Fp→Program) (S P : Program)
-    (ds : ∀k,gateSlots (D k)≤20527812) (ss : gateSlots S≤8000000)
-    (ps : gateSlots P≤20502812) (cx cy : Fp) :
-    gateSlots (All12Generic.gen L D S P cx cy)≤49205612 := by
+    (ds : ∀k,gateSlots (D k)≤20527854) (ss : gateSlots S≤8000000)
+    (ps : gateSlots P≤20502854) (cx cy : Fp) :
+    gateSlots (All12Generic.gen L D S P cx cy)≤49205696 := by
   have add (k : Fp) : gateSlots (fastConstAdd L L.point.x k)≤15368 := by
     simpa only [fastConstAdd] using FastConst.fastAdd_gateSlots_le
       (g:=L.core.generic) 256 SquareReduction.c k.val
@@ -41469,46 +41632,46 @@ theorem physical (K E : Program) (ks : wires K⊆OB5Support.logicalSites)
     (Prefix1590Square.physical L hw hn) (placed_physical E es ep L hw hn) cx cy
 
 private theorem division_counts_diff (K : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+281 ∧
-      measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S)
+    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+239 ∧
+      measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S+42)
     (L : ControlledPointLayout) (k : Fp) :
-    toffoliCount (division K L k)=toffoliCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+281 ∧
-      measurementCount (division K L k)=measurementCount (OwnOneFlagEntryQ7.fusedDivisionF L k) := by
+    toffoliCount (division K L k)=toffoliCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+239 ∧
+      measurementCount (division K L k)=measurementCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+42 := by
   simp only [division,FrontierEntry1591Callers.entry,OwnOneFlagEntryQ7.fusedDivisionF,OwnOneFlagEntryQ7.arithEntryS,
     toffoliCount_append,measurementCount_append,renameProgram_counts]
   constructor <;> omega
 
 private theorem exit_counts_diff (K : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagExitQ7.kernelS+281 ∧
-      measurementCount K=measurementCount OwnOneFlagExitQ7.kernelS)
+    (kc : toffoliCount K=toffoliCount OwnOneFlagExitQ7.kernelS+239 ∧
+      measurementCount K=measurementCount OwnOneFlagExitQ7.kernelS+42)
     (L : ControlledPointLayout) :
-    toffoliCount (exit K L)=toffoliCount (OwnOneFlagExitQ7.arithExit L)+281 ∧
-      measurementCount (exit K L)=measurementCount (OwnOneFlagExitQ7.arithExit L) := by
+    toffoliCount (exit K L)=toffoliCount (OwnOneFlagExitQ7.arithExit L)+239 ∧
+      measurementCount (exit K L)=measurementCount (OwnOneFlagExitQ7.arithExit L)+42 := by
   simpa only [exit,OwnOneFlagExitQ7.arithExit,renameProgram_counts] using kc
 
 theorem counts_diff (K E : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+281 ∧
-      measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S)
-    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+281 ∧
-      measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS)
+    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+239 ∧
+      measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S+42)
+    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+239 ∧
+      measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS+42)
     (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen K E L cx cy)=toffoliCount (OwnOneFlagActual.gen L cx cy)+562 ∧
-      measurementCount (gen K E L cx cy)=measurementCount (OwnOneFlagActual.gen L cx cy) :=
+    toffoliCount (gen K E L cx cy)=toffoliCount (OwnOneFlagActual.gen L cx cy)+478 ∧
+      measurementCount (gen K E L cx cy)=measurementCount (OwnOneFlagActual.gen L cx cy)+84 :=
   Prefix1590Inventory.gen_counts_diff L _ _ _ (division_counts_diff K kc L)
     (Prefix1590Square.counts L) (exit_counts_diff E ec L) cx cy
 
-private theorem division_slots (K : Program) (ks : gateSlots K≤20502812)
+private theorem division_slots (K : Program) (ks : gateSlots K≤20502854)
     (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
-    gateSlots (division K L k)≤20527812 := by
+    gateSlots (division K L k)≤20527854 := by
   have y:=entry_gateSlots_le (L.recoveryConstant L.point.y) L.core.generic
     EntryFuseArithmetic.complement k.val (L.recoveryConstant_widths hw L.point.y hw.inputY)
   simp only [division,FrontierEntry1591Callers.entry,EntryFuse.fusedY,gateSlots_append,rename_gateSlots]
   omega
 
-theorem slots (K E : Program) (ks : gateSlots K≤20502812) (es : gateSlots E≤20502812)
+theorem slots (K E : Program) (ks : gateSlots K≤20502854) (es : gateSlots E≤20502854)
     (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen K E L cx cy)≤49205612 := by
-  have placed : gateSlots (exit E L)≤20502812 := by
+    gateSlots (gen K E L cx cy)≤49205696 := by
+  have placed : gateSlots (exit E L)≤20502854 := by
     simpa only [exit,rename_gateSlots] using es
   exact Prefix1590Inventory.gen_slots L hw _ _ _ (division_slots K ks L hw)
     (Prefix1590Square.slots L hw) placed cx cy
@@ -41559,20 +41722,20 @@ theorem qubits (K E : Program) (ks : wires K⊆OB5Support.logicalSites)
     (Prefix1590Square.retired_free768 layout layout_widths layout_nodup)
     (placed_768_free E es e768 layout layout_widths layout_nodup) C cx cy
 
-theorem wrapper_slots (K E : Program) (ks : gateSlots K≤20502812)
-    (es : gateSlots E≤20502812) (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen K E layout cx cy))≤50005616 := by
+theorem wrapper_slots (K E : Program) (ks : gateSlots K≤20502854)
+    (es : gateSlots E≤20502854) (C : Point) (cx cy : Fp) :
+    gateSlots (Edges.wrapper layout C cy (gen K E layout cx cy))≤50005700 := by
   have generic:=slots K E ks es layout layout_widths cx cy
   have outer:=Edges.wrapper_slots layout layout_widths C cy (gen K E layout cx cy)
   omega
 
 theorem wrapper_toffoli (K E : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+281 ∧
-      measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S)
-    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+281 ∧
-      measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS)
+    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+239 ∧
+      measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S+42)
+    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+239 ∧
+      measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS+42)
     (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤2155142 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤2155058 := by
   have h:=(Edges.wrapper_counts layout layout_widths (gen K E layout cx cy) hc).1
   have g:=(SelGeneric5.program_counts layout layout_widths cx cy).1
   have gf:=(genF_counts layout layout_widths cx cy).1
@@ -41585,12 +41748,12 @@ theorem wrapper_toffoli (K E : Program)
   omega
 
 theorem wrapper_measurements (K E : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+281 ∧
-      measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S)
-    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+281 ∧
-      measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS)
+    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+239 ∧
+      measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S+42)
+    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+239 ∧
+      measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS+42)
     (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤1500614 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤1500698 := by
   have h:=(Edges.wrapper_counts layout layout_widths (gen K E layout cx cy) hc).2
   have g:=(SelGeneric5.program_counts layout layout_widths cx cy).2
   have gf:=(genF_counts layout layout_widths cx cy).2
@@ -41985,12 +42148,12 @@ theorem entryKernel_slots_eq : gateSlots entryKernel=gateSlots Prefix1590.entryK
 theorem exitKernel_slots_eq : gateSlots exitKernel=gateSlots Prefix1590.exitKernel+1018 :=
   exitKernel_metrics.2.2
 
-theorem entryKernel_slots : gateSlots entryKernel≤20503830 := by
+theorem entryKernel_slots : gateSlots entryKernel≤20503872 := by
   have h:=entryKernel_slots_eq
   have old:=Prefix1590.entryKernel_slots
   omega
 
-theorem exitKernel_slots : gateSlots exitKernel≤20503830 := by
+theorem exitKernel_slots : gateSlots exitKernel≤20503872 := by
   have h:=exitKernel_slots_eq
   have old:=Prefix1590.exitKernel_slots
   omega
@@ -42049,7 +42212,7 @@ theorem gen_counts (L : ControlledPointLayout) (cx cy : Fp) :
   ⟨(actual_gen_metrics L cx cy).1,(actual_gen_metrics L cx cy).2.1⟩
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen L cx cy)≤49207648 := by
+    gateSlots (gen L cx cy)≤49207732 := by
   have fresh:=(actual_gen_metrics L cx cy).2.2
   have old:=Prefix1590Point.slots Prefix1590.entryKernel Prefix1590.exitKernel
     Prefix1590.entryKernel_slots Prefix1590.exitKernel_slots L hw cx cy
@@ -42063,19 +42226,19 @@ private theorem wrapper_metrics (L : ControlledPointLayout) (C : Point) (cy : Fp
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2155142 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2155058 := by
   have diff:=wrapper_metrics layout (.some hc) cy _ _ (actual_gen_metrics layout cx cy)
   exact diff.1.trans_le (Prefix1590Point.wrapper_toffoli Prefix1590.entryKernel Prefix1590.exitKernel
     Prefix1590.entryKernel_counts Prefix1590.exitKernel_counts cx cy hc)
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500614 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500698 := by
   have diff:=wrapper_metrics layout (.some hc) cy _ _ (actual_gen_metrics layout cx cy)
   exact diff.2.1.trans_le (Prefix1590Point.wrapper_measurements Prefix1590.entryKernel Prefix1590.exitKernel
     Prefix1590.entryKernel_counts Prefix1590.exitKernel_counts cx cy hc)
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50007652 := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50007736 := by
   have diff:=(wrapper_metrics layout C cy _ _ (actual_gen_metrics layout cx cy)).2.2
   have old:=Prefix1590Point.wrapper_slots Prefix1590.entryKernel Prefix1590.exitKernel
     Prefix1590.entryKernel_slots Prefix1590.exitKernel_slots C cx cy

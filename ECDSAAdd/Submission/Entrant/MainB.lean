@@ -4419,7 +4419,7 @@ theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
       ControlLoan1589.exitKernel_physical L hw hn) cx cy
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen L cx cy)≤49207648 :=
+    gateSlots (gen L cx cy)≤49207732 :=
   (gen_metrics L hw cx cy).2.2.trans (ControlLoan1589.gen_slots L hw cx cy)
 
 private theorem logical718 : base 718∈OB5Support.logicalSites := by
@@ -4484,18 +4484,18 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       ControlLoan1589.exitKernel_718_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154467 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154383 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=ControlLoan1589.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500614 :=
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500698 :=
   (wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2.1.trans_le
     (ControlLoan1589.wrapper_measurements cx cy hc)
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50007652 :=
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50007736 :=
   (wrapper_metrics layout C cy _ _ (gen_metrics layout layout_widths cx cy)).2.2.trans
     (ControlLoan1589.wrapper_slots C cx cy)
 
@@ -4506,7 +4506,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2154467,1500614,1589,50007652⟩
+def bounds : Challenge.Bounds := ⟨2154383,1500698,1589,50007736⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -4523,12 +4523,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154467 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154383 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1500614 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1500698 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc => exact wrapper_measurements cx cy hc
@@ -4545,7 +4545,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50007652 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50007736 := by
   cases C with
   | zero => simp [program,gateSlots]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -4555,13 +4555,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1500614
+    change measurementCount (normalizeProgram (program C))≤1500698
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1589
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50007652
+    change gateSlots (normalizeProgram (program C))≤50007736
     rw [normalize_slots];exact program_gateSlots C
 
 end ECDSAAdd.Entrant.ControlLoan1589SumCleanupFinal
@@ -7302,9 +7302,9 @@ attribute [local irreducible] fastConstAdd fastConstNeg exitY
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths)
     (D : Fp→Program) (S P : Program)
-    (ds : ∀k,gateSlots (D k)≤20528830) (ss : gateSlots S≤8000000)
-    (ps : gateSlots P≤20503830) (cx cy : Fp) :
-    gateSlots (gen L D S P cx cy)≤49207648 := by
+    (ds : ∀k,gateSlots (D k)≤20528872) (ss : gateSlots S≤8000000)
+    (ps : gateSlots P≤20503872) (cx cy : Fp) :
+    gateSlots (gen L D S P cx cy)≤49207732 := by
   have add (k : Fp) : gateSlots (fastConstAdd L L.point.x k)≤15368 := by
     simpa only [fastConstAdd] using FastConst.fastAdd_gateSlots_le
       (g:=L.core.generic) 256 SquareReduction.c k.val
@@ -7410,9 +7410,9 @@ theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     (placed_physical ControlLoan1589.exitKernel ControlLoan1589.exitKernel_support
       ControlLoan1589.exitKernel_physical L hw hn) cx cy
 
-private theorem division_slots_bound (K : Program) (ks : gateSlots K≤20503830)
+private theorem division_slots_bound (K : Program) (ks : gateSlots K≤20503872)
     (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
-    gateSlots (division K L k)≤20528830 := by
+    gateSlots (division K L k)≤20528872 := by
   have y:=entry_gateSlots_le (L.recoveryConstant L.point.y) L.core.generic
     EntryFuseArithmetic.complement k.val (L.recoveryConstant_widths hw L.point.y hw.inputY)
   simp only [division,FrontierEntry1591Callers.entry,EntryFuse.fusedY,
@@ -7420,7 +7420,7 @@ private theorem division_slots_bound (K : Program) (ks : gateSlots K≤20503830)
   omega
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen L cx cy)≤49207648 :=
+    gateSlots (gen L cx cy)≤49207732 :=
   Offset.gen_slots L hw _ _ _
     (division_slots_bound ControlLoan1589.entryKernel ControlLoan1589.entryKernel_slots L hw)
     (ControlLoan1589BFSquare.slots L hw)
@@ -7515,19 +7515,19 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       ControlLoan1589.exitKernel_718_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153597 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2153513 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=ControlLoan1589SumCleanupFinal.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499741 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499825 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2
   have old:=ControlLoan1589SumCleanupFinal.wrapper_measurements cx cy hc
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50007652 := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50007736 := by
   have generic:=gen_slots layout layout_widths cx cy
   have outer:=Edges.wrapper_slots layout layout_widths C cy (gen layout cx cy)
   omega
@@ -7539,7 +7539,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2153597,1499741,1589,50007652⟩
+def bounds : Challenge.Bounds := ⟨2153513,1499825,1589,50007736⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -7556,12 +7556,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2153597 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2153513 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1499741 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1499825 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc => exact wrapper_measurements cx cy hc
@@ -7578,7 +7578,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50007652 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50007736 := by
   cases C with
   | zero => simp [program,gateSlots]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -7588,13 +7588,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1499741
+    change measurementCount (normalizeProgram (program C))≤1499825
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1589
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50007652
+    change gateSlots (normalizeProgram (program C))≤50007736
     rw [normalize_slots];exact program_gateSlots C
 
 end ECDSAAdd.Entrant.ControlLoan1589BFFinal
@@ -14687,14 +14687,14 @@ theorem entryField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context
   let mid := run (placedFirstPacket true) mp state
   have first := placedFirstPacket_frame true true origin ctx enabled x hx trace Y 0
     (fun bad => absurd bad (by decide)) state mp input
-  have tail := entryTail_frame origin ctx ha enabled x hx0 hx trace Y mid mt first.2
+  have tail := entryTail_frame origin ctx ha enabled x hx0 hx trace Y mid (mt.drop 21) first.2
   have before := field_prefix_codes origin ctx _ _ mid first.2 x hx0 hx trace
-  have after := canonical_prefix_codes origin ctx _ _ (run entryTail mt mid) tail.2 x hx0 hx trace
+  have after := canonical_prefix_codes origin ctx _ _ (run entryTail (mt.drop 21) mid) tail.2 x hx0 hx trace
   have window := Prefix1590.prefix_window_run_eq entryTail
     (Prefix1590.prefixProgram++(renameProgram Prefix1590.borrow entryTail++Prefix1590.unprefix))
     rfl entryTail_payload_free mid mt before.1 before.2.1 after.1 after.2.1
     (field_768_zero origin ctx _ _ mid first.2)
-    (canonical_768_zero origin ctx _ _ (run entryTail mt mid) tail.2)
+    (canonical_768_zero origin ctx _ _ (run entryTail (mt.drop 21) mid) tail.2)
     (Prefix1590.prefix_zero_of_codes mid before)
   simp only [entryField,List.append_assoc]
   rw [run_append,window]
@@ -14755,10 +14755,10 @@ private theorem exitHead_borrow_run_eq (origin : BasisState)
     (enabled : origin (base 2400)=true) (Y : Fp) (state : State) (records : List Bool)
     (input : Rolling1588Frame.EncodedCanonicalFrame false origin Y 0 state) :
     run (Prefix1590.prefixProgram++(renameProgram Prefix1590.borrow exitHead++Prefix1590.unprefix))
-      records state=run exitHead records state := by
-  have result := exitHead_frame origin ctx ha enabled Y state records input
+      records state=run exitHead (records.drop 21) state := by
+  have result := exitHead_frame origin ctx ha enabled Y state (records.drop 21) input
   have before := canonical_prefix_codes origin ctx Y 0 state input x hx0 hx trace
-  have after := field_prefix_codes origin ctx _ _ (run exitHead records state) result.2 x hx0 hx trace
+  have after := field_prefix_codes origin ctx _ _ (run exitHead (records.drop 21) state) result.2 x hx0 hx trace
   exact Prefix1590.prefix_window_run_eq exitHead _ rfl exitHead_payload_free state records
     before.1 before.2.1 after.1 after.2.1 (canonical_768_zero origin ctx Y 0 state input)
     (field_768_zero origin ctx _ _ _ result.2) (Prefix1590.prefix_zero_of_codes state before)
@@ -14777,7 +14777,7 @@ theorem exitField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context 
       (Rolling1588Frame.EncodedFieldFrame true origin H.1 H.2) := by
     intro state records input
     rw [exitHead_borrow_run_eq origin ctx ha x hx0 hx trace enabled Y state records input]
-    exact exitHead_frame origin ctx ha enabled Y state records input
+    exact exitHead_frame origin ctx ha enabled Y state (records.drop 21) input
   have last : StateTriple (Rolling1588Frame.EncodedFieldFrame true origin H.1 H.2)
       (placedFirstPacket false) (Rolling1588Frame.EncodedFieldFrame true origin F.1 F.2) := by
     intro state records input
@@ -23120,7 +23120,7 @@ theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
       Rolling1588.exitKernel_physical L hw hn) cx cy
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen L cx cy)≤49266614 := by
+    gateSlots (gen L cx cy)≤49266698 := by
   have diff:=(gen_delta L cx cy).2.2
   have old:=ControlLoan1589BFFinal.gen_slots L hw cx cy
   omega
@@ -23227,19 +23227,19 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154659 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154575 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499951 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1500035 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).2.1
   have old:=ControlLoan1589BFFinal.wrapper_measurements cx cy hc
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50066618 := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50066702 := by
   have diff:=(wrapper_delta layout C cy _ _ (gen_delta layout cx cy)).2.2
   have old:=ControlLoan1589BFFinal.wrapper_slots C cx cy
   omega
@@ -23251,7 +23251,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2154659,1499951,1588,50066618⟩
+def bounds : Challenge.Bounds := ⟨2154575,1500035,1588,50066702⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -23268,12 +23268,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154659 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2154575 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1499951 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1500035 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc => exact wrapper_measurements cx cy hc
@@ -23290,7 +23290,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50066618 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50066702 := by
   cases C with
   | zero => simp [program,gateSlots]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -23300,13 +23300,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1499951
+    change measurementCount (normalizeProgram (program C))≤1500035
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50066618
+    change gateSlots (normalizeProgram (program C))≤50066702
     rw [normalize_slots];exact program_gateSlots C
 
 end ECDSAAdd.Entrant.Rolling1588BFFinal
