@@ -28007,54 +28007,43 @@ open Arithmetic Challenge RecordedQuantum Baselines
 open MeasuredCodec5 (bitsOf bitRun safe run_sim sim_safe)
 
 def V : Program := [
-  .X 4,
-  .CCX 1 4 5,
-  .CCX 5 0 2,
-  .CCX 5 2 0,
-  .measureX 5 [] [.CZ 1 4],
-  .X 4,
-  .X 6,
+  .CX 1 6,
+  .CX 1 7,
+  .CCX 1 0 2,
   .CCX 1 2 5,
-  .CCX 5 6 4,
-  .measureX 5 [] [.CZ 1 2],
+  .X 4,
+  .CCX 5 4 0,
+  .X 4,
   .X 6,
+  .CCX 5 6 4,
+  .X 6,
+  .measureX 5 [] [.CZ 1 2],
+  .X 4,
+  .CCX 1 4 7,
+  .X 4,
   .CX 2 4,
-  .CX 7 6,
-  .CX 4 7,
-  .CX 2 8,
-  .CX 3 2,
   .X 2,
   .CX 0 1,
   .CX 2 1,
-  .CCX 0 2 1,
-  .CX 3 1,
-  .CX 2 4,
-  .CCX 6 4 2,
-  .CX 2 4,
-  .CX 7 8,
-  .CCX 6 8 7,
-  .CX 7 8,
-  .CCX 0 3 5,
-  .CCX 2 7 9,
-  .CCX 5 9 1,
-  .measureX 9 [] [.CZ 2 7],
-  .measureX 5 [] [.CZ 0 3],
-  .CX 7 8,
-  .CCX 6 8 7,
-  .CX 7 8,
-  .CX 2 4,
-  .CCX 6 4 2,
-  .CX 2 4,
-  .X 2,
-  .CCX 2 3 5,
-  .CCX 5 4 1,
-  .measureX 5 [] [.CZ 2 3],
-  .X 2,
-  .X 2,
-  .CX 3 2,
+  .CCX 6 7 9,
+  .CX 2 5,
+  .CX 9 5,
+  .CCX 2 9 5,
+  .CX 3 5,
+  .CCX 0 5 1,
+  .measureX 5 [] [.Z 2, .Z 9, .CZ 2 9, .Z 3],
+  .measureX 9 [] [.CZ 6 7],
+  .CX 2 5,
   .CX 2 8,
-  .CX 4 7,
-  .CX 7 6,
+  .X 8,
+  .CCX 0 8 5,
+  .X 8,
+  .CX 2 8,
+  .CCX 3 4 9,
+  .CCX 9 5 1,
+  .measureX 9 [] [.CZ 3 4],
+  .measureX 5 [] [.Z 2, .CZ 0 2, .CZ 0 8, .Z 0],
+  .X 2,
   .CX 2 4,
   .CX 1 0,
   .CX 0 1,
@@ -28065,54 +28054,43 @@ def invV : Program := [
   .CX 0 1,
   .CX 1 0,
   .CX 2 4,
-  .CX 7 6,
-  .CX 4 7,
-  .CX 2 8,
-  .CX 3 2,
   .X 2,
   .CX 0 1,
   .CX 2 1,
-  .CCX 0 2 1,
-  .CX 3 1,
-  .CX 2 4,
-  .CCX 6 4 2,
-  .CX 2 4,
-  .CX 7 8,
-  .CCX 6 8 7,
-  .CX 7 8,
-  .CCX 0 3 5,
-  .CCX 2 7 9,
-  .CCX 5 9 1,
-  .measureX 9 [] [.CZ 2 7],
-  .measureX 5 [] [.CZ 0 3],
-  .CX 7 8,
-  .CCX 6 8 7,
-  .CX 7 8,
-  .CX 2 4,
-  .CCX 6 4 2,
-  .CX 2 4,
-  .X 2,
-  .CCX 2 3 5,
-  .CCX 5 4 1,
-  .measureX 5 [] [.CZ 2 3],
-  .X 2,
-  .X 2,
-  .CX 3 2,
+  .CCX 6 7 9,
+  .CX 2 5,
+  .CX 9 5,
+  .CCX 2 9 5,
+  .CX 3 5,
+  .CCX 0 5 1,
+  .measureX 5 [] [.Z 2, .Z 9, .CZ 2 9, .Z 3],
+  .measureX 9 [] [.CZ 6 7],
+  .CX 2 5,
   .CX 2 8,
-  .CX 4 7,
-  .CX 7 6,
+  .X 8,
+  .CCX 0 8 5,
+  .X 8,
+  .CX 2 8,
+  .CCX 3 4 9,
+  .CCX 9 5 1,
+  .measureX 9 [] [.CZ 3 4],
+  .measureX 5 [] [.Z 2, .CZ 0 2, .CZ 0 8, .Z 0],
+  .X 2,
   .CX 2 4,
-  .X 6,
+  .X 4,
+  .CCX 1 4 7,
+  .X 4,
   .CCX 1 2 5,
+  .X 6,
   .CCX 5 6 4,
-  .measureX 5 [] [.CZ 1 2],
   .X 6,
   .X 4,
-  .CCX 1 4 5,
-  .CCX 5 2 0,
-  .CCX 5 0 2,
-  .measureX 5 [] [.CZ 1 4],
-  .X 4]
+  .CCX 5 4 0,
+  .X 4,
+  .measureX 5 [] [.CZ 1 2],
+  .CCX 1 0 2,
+  .CX 1 7,
+  .CX 1 6]
 
 def rawWords : List Nat := [2, 6, 9, 10, 18, 22, 25, 26, 34, 37, 38, 42, 66, 70, 73, 74, 82, 86, 89, 90, 98, 101, 102, 106, 130, 134, 137, 138, 146, 149, 150, 153, 154, 162, 166, 169, 170, 258, 262, 265, 266, 274, 278, 281, 282, 290, 293, 294, 298, 322, 326, 329, 330, 338, 341, 342, 345, 346, 354, 357, 358, 361, 362, 386, 390, 393, 394, 402, 405, 406, 409, 410, 418, 422, 425, 426, 514, 518, 521, 522, 530, 534, 537, 538, 546, 549, 550, 554, 578, 582, 585, 586, 594, 597, 598, 601, 602, 610, 613, 614, 617, 618, 642, 646, 649, 650, 658, 662, 665, 666, 674, 678, 681, 682]
 
@@ -28179,11 +28157,11 @@ private theorem codecPhysical_of_all (P : Program) (h : P.all codecPhysicalBool=
 theorem V_physical : GatePhysical V := codecPhysical_of_all V (by decide +kernel)
 theorem invV_physical : GatePhysical invV := codecPhysical_of_all invV (by decide +kernel)
 
-theorem V_counts : toffoliCount V= 15 ∧ measurementCount V= 5 := by decide +kernel
-theorem invV_counts : toffoliCount invV= 15 ∧ measurementCount invV= 5 := by decide +kernel
+theorem V_counts : toffoliCount V= 11 ∧ measurementCount V= 5 := by decide +kernel
+theorem invV_counts : toffoliCount invV= 11 ∧ measurementCount invV= 5 := by decide +kernel
 
-theorem V_slots : gateSlots V= 57 := by decide +kernel
-theorem invV_slots : gateSlots invV= 57 := by decide +kernel
+theorem V_slots : gateSlots V= 52 := by decide +kernel
+theorem invV_slots : gateSlots invV= 52 := by decide +kernel
 
 theorem V_support_exact : wires V=Finset.range 10 := by decide +kernel
 theorem invV_support_exact : wires invV=Finset.range 10 := by decide +kernel
@@ -28358,18 +28336,18 @@ def parityAt (f : Fin 10→Wire) (b : BasisState) : Bool := payloadParity (fun q
 private def pull (f : Fin 10→Wire) (s : State) : State :=
   ⟨s.phase,fun q => s.basis (label f q)⟩
 
-theorem VAt_counts (f : Fin 10→Wire) : toffoliCount (VAt f)= 15 ∧ measurementCount (VAt f)= 5 := by
+theorem VAt_counts (f : Fin 10→Wire) : toffoliCount (VAt f)= 11 ∧ measurementCount (VAt f)= 5 := by
   simpa only [VAt,(renameProgram_counts (label f) V).1,
     (renameProgram_counts (label f) V).2] using V_counts
 
-theorem invVAt_counts (f : Fin 10→Wire) : toffoliCount (invVAt f)= 15 ∧ measurementCount (invVAt f)= 5 := by
+theorem invVAt_counts (f : Fin 10→Wire) : toffoliCount (invVAt f)= 11 ∧ measurementCount (invVAt f)= 5 := by
   simpa only [invVAt,(renameProgram_counts (label f) invV).1,
     (renameProgram_counts (label f) invV).2] using invV_counts
 
-theorem VAt_slots (f : Fin 10→Wire) : gateSlots (VAt f)= 57 := by
+theorem VAt_slots (f : Fin 10→Wire) : gateSlots (VAt f)= 52 := by
   simpa only [VAt,rename_gateSlots] using V_slots
 
-theorem invVAt_slots (f : Fin 10→Wire) : gateSlots (invVAt f)= 57 := by
+theorem invVAt_slots (f : Fin 10→Wire) : gateSlots (invVAt f)= 52 := by
   simpa only [invVAt,rename_gateSlots] using invV_slots
 
 theorem VAt_support_exact (f : Fin 10→Wire) : wires (VAt f)=Finset.univ.image f := by
@@ -28475,12 +28453,12 @@ theorem VAt_zero (f : Fin 10→Wire) (hf : Function.Injective f) (s : State) (m 
 def perm (w : Nat→Wire) : Program := VAt (History5.historyMap w 0)
 def invPerm (w : Nat→Wire) : Program := invVAt (History5.historyMap w 0)
 
-theorem perm_counts (w : Nat→Wire) : toffoliCount (perm w)= 15 ∧ measurementCount (perm w)= 5 :=
+theorem perm_counts (w : Nat→Wire) : toffoliCount (perm w)= 11 ∧ measurementCount (perm w)= 5 :=
   VAt_counts _
-theorem invPerm_counts (w : Nat→Wire) : toffoliCount (invPerm w)= 15 ∧ measurementCount (invPerm w)= 5 :=
+theorem invPerm_counts (w : Nat→Wire) : toffoliCount (invPerm w)= 11 ∧ measurementCount (invPerm w)= 5 :=
   invVAt_counts _
-theorem perm_slots (w : Nat→Wire) : gateSlots (perm w)= 57 := VAt_slots _
-theorem invPerm_slots (w : Nat→Wire) : gateSlots (invPerm w)= 57 := invVAt_slots _
+theorem perm_slots (w : Nat→Wire) : gateSlots (perm w)= 52 := VAt_slots _
+theorem invPerm_slots (w : Nat→Wire) : gateSlots (invPerm w)= 52 := invVAt_slots _
 
 theorem perm_physical (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) : GatePhysical (perm w) :=
   VAt_physical _ (History5.historyMap_injective w hn 0 (by decide))
@@ -33508,9 +33486,9 @@ theorem firstPacket_metrics (divide : Bool) :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryField_metrics :
-    toffoliCount entryField=toffoliCount FrontierEntry1591Field.entryField+27 ∧
+    toffoliCount entryField=toffoliCount FrontierEntry1591Field.entryField+19 ∧
     measurementCount entryField=measurementCount FrontierEntry1591Field.entryField+10 ∧
-    gateSlots entryField=gateSlots FrontierEntry1591Field.entryField+122 := by
+    gateSlots entryField=gateSlots FrontierEntry1591Field.entryField+112 := by
   have first:=firstPacket_metrics true
   simp only [renameProgram_counts,rename_gateSlots] at first
   have pc:=Prefix1590Codec.perm_counts base
@@ -33522,9 +33500,9 @@ theorem entryField_metrics :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitField_metrics :
-    toffoliCount exitField=toffoliCount FrontierEntry1591Field.exitField+27 ∧
+    toffoliCount exitField=toffoliCount FrontierEntry1591Field.exitField+19 ∧
     measurementCount exitField=measurementCount FrontierEntry1591Field.exitField+10 ∧
-    gateSlots exitField=gateSlots FrontierEntry1591Field.exitField+122 := by
+    gateSlots exitField=gateSlots FrontierEntry1591Field.exitField+112 := by
   have first:=firstPacket_metrics false
   simp only [renameProgram_counts,rename_gateSlots] at first
   have pc:=Prefix1590Codec.perm_counts base
@@ -33536,25 +33514,25 @@ theorem exitField_metrics :
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem hosted_metrics (P Q : Program)
-    (h : toffoliCount P=toffoliCount Q+27 ∧ measurementCount P=measurementCount Q+10 ∧
-      gateSlots P=gateSlots Q+122) :
+    (h : toffoliCount P=toffoliCount Q+19 ∧ measurementCount P=measurementCount Q+10 ∧
+      gateSlots P=gateSlots Q+112) :
     toffoliCount (FrontierEntry1591Field.hosted P)=
-      toffoliCount (FrontierEntry1591Field.hosted Q)+27 ∧
+      toffoliCount (FrontierEntry1591Field.hosted Q)+19 ∧
     measurementCount (FrontierEntry1591Field.hosted P)=
       measurementCount (FrontierEntry1591Field.hosted Q)+10 ∧
     gateSlots (FrontierEntry1591Field.hosted P)=
-      gateSlots (FrontierEntry1591Field.hosted Q)+122 := by
+      gateSlots (FrontierEntry1591Field.hosted Q)+112 := by
   simp only [FrontierEntry1591Field.hosted,toffoliCount_append,measurementCount_append,
     gateSlots_append,renameProgram_counts,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem parity_metrics (P Q : Program)
-    (h : toffoliCount P=toffoliCount Q+27 ∧ measurementCount P=measurementCount Q+10 ∧
-      gateSlots P=gateSlots Q+122) :
+    (h : toffoliCount P=toffoliCount Q+19 ∧ measurementCount P=measurementCount Q+10 ∧
+      gateSlots P=gateSlots Q+112) :
     toffoliCount (ParityField1591.program FrontierEntry1591Field.controls
       FrontierEntry1591Field.work FrontierEntry1591Field.host P)=
       toffoliCount (ParityField1591.program FrontierEntry1591Field.controls
-        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+27 ∧
+        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+19 ∧
     measurementCount (ParityField1591.program FrontierEntry1591Field.controls
       FrontierEntry1591Field.work FrontierEntry1591Field.host P)=
       measurementCount (ParityField1591.program FrontierEntry1591Field.controls
@@ -33562,7 +33540,7 @@ private theorem parity_metrics (P Q : Program)
     gateSlots (ParityField1591.program FrontierEntry1591Field.controls
       FrontierEntry1591Field.work FrontierEntry1591Field.host P)=
       gateSlots (ParityField1591.program FrontierEntry1591Field.controls
-        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+122 := by
+        FrontierEntry1591Field.work FrontierEntry1591Field.host Q)+112 := by
   have a:=ParityField1591.counts FrontierEntry1591Field.controls
     FrontierEntry1591Field.work FrontierEntry1591Field.host P
   have b:=ParityField1591.counts FrontierEntry1591Field.controls
@@ -33576,24 +33554,24 @@ private theorem wrapped_metrics (F F0 H H0 W W0 : Program)
       FrontierEntry1591Field.work FrontierEntry1591Field.host H)
     (hW0 : W0=ParityField1591.program FrontierEntry1591Field.controls
       FrontierEntry1591Field.work FrontierEntry1591Field.host H0)
-    (h : toffoliCount F=toffoliCount F0+27 ∧ measurementCount F=measurementCount F0+10 ∧
-      gateSlots F=gateSlots F0+122) :
-    toffoliCount W=toffoliCount W0+27 ∧ measurementCount W=measurementCount W0+10 ∧
-      gateSlots W=gateSlots W0+122 := by
+    (h : toffoliCount F=toffoliCount F0+19 ∧ measurementCount F=measurementCount F0+10 ∧
+      gateSlots F=gateSlots F0+112) :
+    toffoliCount W=toffoliCount W0+19 ∧ measurementCount W=measurementCount W0+10 ∧
+      gateSlots W=gateSlots W0+112 := by
   subst W W0 H H0
   exact parity_metrics _ _ (hosted_metrics _ _ h)
 
-theorem entry_metrics : toffoliCount entry=toffoliCount FrontierEntry1591Field.entry+27 ∧
+theorem entry_metrics : toffoliCount entry=toffoliCount FrontierEntry1591Field.entry+19 ∧
     measurementCount entry=measurementCount FrontierEntry1591Field.entry+10 ∧
-    gateSlots entry=gateSlots FrontierEntry1591Field.entry+122 :=
+    gateSlots entry=gateSlots FrontierEntry1591Field.entry+112 :=
   wrapped_metrics entryField FrontierEntry1591Field.entryField
     entryHosted FrontierEntry1591Field.entryHosted entry FrontierEntry1591Field.entry
     (by unfold entryHosted; rfl) (by unfold FrontierEntry1591Field.entryHosted; rfl)
     (by unfold entry; rfl) (by unfold FrontierEntry1591Field.entry; rfl) entryField_metrics
 
-theorem exit_metrics : toffoliCount exit=toffoliCount FrontierEntry1591Field.exit+27 ∧
+theorem exit_metrics : toffoliCount exit=toffoliCount FrontierEntry1591Field.exit+19 ∧
     measurementCount exit=measurementCount FrontierEntry1591Field.exit+10 ∧
-    gateSlots exit=gateSlots FrontierEntry1591Field.exit+122 :=
+    gateSlots exit=gateSlots FrontierEntry1591Field.exit+112 :=
   wrapped_metrics exitField FrontierEntry1591Field.exitField
     exitHosted FrontierEntry1591Field.exitHosted exit FrontierEntry1591Field.exit
     (by unfold exitHosted; rfl) (by unfold FrontierEntry1591Field.exitHosted; rfl)
@@ -33760,12 +33738,12 @@ theorem exitKernel_768_free : base 768∉wires exitKernel := by
     And.intro firstHosted_768_free (And.intro exit_768_free lastHosted_768_free)
 
 private theorem kernel_metrics (P Q : Program)
-    (h : toffoliCount P=toffoliCount Q+27 ∧ measurementCount P=measurementCount Q+10 ∧
-      gateSlots P=gateSlots Q+122) :
+    (h : toffoliCount P=toffoliCount Q+19 ∧ measurementCount P=measurementCount Q+10 ∧
+      gateSlots P=gateSlots Q+112) :
     toffoliCount (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase P
       FrontierEntry1591Kernel.lastPhase)=
       toffoliCount (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase Q
-        FrontierEntry1591Kernel.lastPhase)+27 ∧
+        FrontierEntry1591Kernel.lastPhase)+19 ∧
     measurementCount (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase P
       FrontierEntry1591Kernel.lastPhase)=
       measurementCount (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase Q
@@ -33773,7 +33751,7 @@ private theorem kernel_metrics (P Q : Program)
     gateSlots (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase P
       FrontierEntry1591Kernel.lastPhase)=
       gateSlots (FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase Q
-        FrontierEntry1591Kernel.lastPhase)+122 := by
+        FrontierEntry1591Kernel.lastPhase)+112 := by
   have a:=FrontierEntry1591Native.relocated_counts FrontierEntry1591Kernel.firstPhase P
     FrontierEntry1591Kernel.lastPhase
   have b:=FrontierEntry1591Native.relocated_counts FrontierEntry1591Kernel.firstPhase Q
@@ -33791,49 +33769,49 @@ private theorem relocated_alias_metrics (P Q K K0 : Program)
       FrontierEntry1591Kernel.lastPhase)
     (hK0 : K0=FrontierEntry1591Native.relocated FrontierEntry1591Kernel.firstPhase Q
       FrontierEntry1591Kernel.lastPhase)
-    (h : toffoliCount P=toffoliCount Q+27 ∧ measurementCount P=measurementCount Q+10 ∧
-      gateSlots P=gateSlots Q+122) :
-    toffoliCount K=toffoliCount K0+27 ∧ measurementCount K=measurementCount K0+10 ∧
-      gateSlots K=gateSlots K0+122 := by
+    (h : toffoliCount P=toffoliCount Q+19 ∧ measurementCount P=measurementCount Q+10 ∧
+      gateSlots P=gateSlots Q+112) :
+    toffoliCount K=toffoliCount K0+19 ∧ measurementCount K=measurementCount K0+10 ∧
+      gateSlots K=gateSlots K0+112 := by
   subst K K0
   exact kernel_metrics P Q h
 
 theorem entryKernel_metrics :
-    toffoliCount entryKernel=toffoliCount FrontierEntry1591Kernel.entryKernel+27 ∧
+    toffoliCount entryKernel=toffoliCount FrontierEntry1591Kernel.entryKernel+19 ∧
     measurementCount entryKernel=measurementCount FrontierEntry1591Kernel.entryKernel+10 ∧
-    gateSlots entryKernel=gateSlots FrontierEntry1591Kernel.entryKernel+122 :=
+    gateSlots entryKernel=gateSlots FrontierEntry1591Kernel.entryKernel+112 :=
   relocated_alias_metrics entry FrontierEntry1591Field.entry
     entryKernel FrontierEntry1591Kernel.entryKernel
     (by unfold entryKernel; rfl) (by unfold FrontierEntry1591Kernel.entryKernel; rfl) entry_metrics
 
 theorem exitKernel_metrics :
-    toffoliCount exitKernel=toffoliCount FrontierEntry1591Kernel.exitKernel+27 ∧
+    toffoliCount exitKernel=toffoliCount FrontierEntry1591Kernel.exitKernel+19 ∧
     measurementCount exitKernel=measurementCount FrontierEntry1591Kernel.exitKernel+10 ∧
-    gateSlots exitKernel=gateSlots FrontierEntry1591Kernel.exitKernel+122 :=
+    gateSlots exitKernel=gateSlots FrontierEntry1591Kernel.exitKernel+112 :=
   relocated_alias_metrics exit FrontierEntry1591Field.exit
     exitKernel FrontierEntry1591Kernel.exitKernel
     (by unfold exitKernel; rfl) (by unfold FrontierEntry1591Kernel.exitKernel; rfl) exit_metrics
 
 theorem entryKernel_counts :
-    toffoliCount entryKernel=toffoliCount OwnOneFlagEntryQ7.kernel5S+27 ∧
+    toffoliCount entryKernel=toffoliCount OwnOneFlagEntryQ7.kernel5S+19 ∧
     measurementCount entryKernel=measurementCount OwnOneFlagEntryQ7.kernel5S+10 := by
   have fresh:=entryKernel_metrics
   have old:=FrontierEntry1591Kernel.entry_counts_eq
-  exact ⟨fresh.1.trans (congrArg (fun n : Nat=>n+27) old.1),fresh.2.1.trans (congrArg (fun n : Nat=>n+10) old.2)⟩
+  exact ⟨fresh.1.trans (congrArg (fun n : Nat=>n+19) old.1),fresh.2.1.trans (congrArg (fun n : Nat=>n+10) old.2)⟩
 
 theorem exitKernel_counts :
-    toffoliCount exitKernel=toffoliCount OwnOneFlagExitQ7.kernelS+27 ∧
+    toffoliCount exitKernel=toffoliCount OwnOneFlagExitQ7.kernelS+19 ∧
     measurementCount exitKernel=measurementCount OwnOneFlagExitQ7.kernelS+10 := by
   have fresh:=exitKernel_metrics
   have old:=FrontierEntry1591Kernel.exit_counts_eq
-  exact ⟨fresh.1.trans (congrArg (fun n : Nat=>n+27) old.1),fresh.2.1.trans (congrArg (fun n : Nat=>n+10) old.2)⟩
+  exact ⟨fresh.1.trans (congrArg (fun n : Nat=>n+19) old.1),fresh.2.1.trans (congrArg (fun n : Nat=>n+10) old.2)⟩
 
 theorem entryKernel_slots_eq : gateSlots entryKernel=
-    gateSlots FrontierEntry1591Kernel.entryKernel+122 :=
+    gateSlots FrontierEntry1591Kernel.entryKernel+112 :=
   entryKernel_metrics.2.2
 
 theorem exitKernel_slots_eq : gateSlots exitKernel=
-    gateSlots FrontierEntry1591Kernel.exitKernel+122 :=
+    gateSlots FrontierEntry1591Kernel.exitKernel+112 :=
   exitKernel_metrics.2.2
 
 theorem entryKernel_slots : gateSlots entryKernel≤20502854 := by
@@ -41327,13 +41305,13 @@ theorem gen_qubits (D : Fp→Program) (S P : Program)
       d768 s768 p768 cx cy) C cy
 
 theorem gen_counts_diff (L : ControlledPointLayout) (D : Fp→Program) (S P : Program)
-    (dc : ∀k,toffoliCount (D k)=toffoliCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+27 ∧
+    (dc : ∀k,toffoliCount (D k)=toffoliCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+19 ∧
       measurementCount (D k)=measurementCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+10)
     (sc : toffoliCount S=toffoliCount (OwnDiagAll12PlacedQ7.program L) ∧
       measurementCount S=measurementCount (OwnDiagAll12PlacedQ7.program L))
-    (pc : toffoliCount P=toffoliCount (OwnOneFlagExitQ7.arithExit L)+27 ∧
+    (pc : toffoliCount P=toffoliCount (OwnOneFlagExitQ7.arithExit L)+19 ∧
       measurementCount P=measurementCount (OwnOneFlagExitQ7.arithExit L)+10) (cx cy : Fp) :
-    toffoliCount (All12Generic.gen L D S P cx cy)=toffoliCount (OwnOneFlagActual.gen L cx cy)+54 ∧
+    toffoliCount (All12Generic.gen L D S P cx cy)=toffoliCount (OwnOneFlagActual.gen L cx cy)+38 ∧
       measurementCount (All12Generic.gen L D S P cx cy)=measurementCount (OwnOneFlagActual.gen L cx cy)+20 := by
   have d:=dc (-cy)
   simp only [OwnOneFlagActual.gen,OneFlagProducer.gen,All12Generic.gen,
@@ -41387,30 +41365,30 @@ theorem physical (K E : Program) (ks : wires K⊆OB5Support.logicalSites)
     (Prefix1590Square.physical L hw hn) (placed_physical E es ep L hw hn) cx cy
 
 private theorem division_counts_diff (K : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+27 ∧
+    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+19 ∧
       measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S+10)
     (L : ControlledPointLayout) (k : Fp) :
-    toffoliCount (division K L k)=toffoliCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+27 ∧
+    toffoliCount (division K L k)=toffoliCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+19 ∧
       measurementCount (division K L k)=measurementCount (OwnOneFlagEntryQ7.fusedDivisionF L k)+10 := by
   simp only [division,FrontierEntry1591Callers.entry,OwnOneFlagEntryQ7.fusedDivisionF,OwnOneFlagEntryQ7.arithEntryS,
     toffoliCount_append,measurementCount_append,renameProgram_counts]
   constructor <;> omega
 
 private theorem exit_counts_diff (K : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagExitQ7.kernelS+27 ∧
+    (kc : toffoliCount K=toffoliCount OwnOneFlagExitQ7.kernelS+19 ∧
       measurementCount K=measurementCount OwnOneFlagExitQ7.kernelS+10)
     (L : ControlledPointLayout) :
-    toffoliCount (exit K L)=toffoliCount (OwnOneFlagExitQ7.arithExit L)+27 ∧
+    toffoliCount (exit K L)=toffoliCount (OwnOneFlagExitQ7.arithExit L)+19 ∧
       measurementCount (exit K L)=measurementCount (OwnOneFlagExitQ7.arithExit L)+10 := by
   simpa only [exit,OwnOneFlagExitQ7.arithExit,renameProgram_counts] using kc
 
 theorem counts_diff (K E : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+27 ∧
+    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+19 ∧
       measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S+10)
-    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+27 ∧
+    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+19 ∧
       measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS+10)
     (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen K E L cx cy)=toffoliCount (OwnOneFlagActual.gen L cx cy)+54 ∧
+    toffoliCount (gen K E L cx cy)=toffoliCount (OwnOneFlagActual.gen L cx cy)+38 ∧
       measurementCount (gen K E L cx cy)=measurementCount (OwnOneFlagActual.gen L cx cy)+20 :=
   Prefix1590Inventory.gen_counts_diff L _ _ _ (division_counts_diff K kc L)
     (Prefix1590Square.counts L) (exit_counts_diff E ec L) cx cy
@@ -41485,12 +41463,12 @@ theorem wrapper_slots (K E : Program) (ks : gateSlots K≤20502854)
   omega
 
 theorem wrapper_toffoli (K E : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+27 ∧
+    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+19 ∧
       measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S+10)
-    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+27 ∧
+    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+19 ∧
       measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS+10)
     (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤2154634 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤2154618 := by
   have h:=(Edges.wrapper_counts layout layout_widths (gen K E layout cx cy) hc).1
   have g:=(SelGeneric5.program_counts layout layout_widths cx cy).1
   have gf:=(genF_counts layout layout_widths cx cy).1
@@ -41503,9 +41481,9 @@ theorem wrapper_toffoli (K E : Program)
   omega
 
 theorem wrapper_measurements (K E : Program)
-    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+27 ∧
+    (kc : toffoliCount K=toffoliCount OwnOneFlagEntryQ7.kernel5S+19 ∧
       measurementCount K=measurementCount OwnOneFlagEntryQ7.kernel5S+10)
-    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+27 ∧
+    (ec : toffoliCount E=toffoliCount OwnOneFlagExitQ7.kernelS+19 ∧
       measurementCount E=measurementCount OwnOneFlagExitQ7.kernelS+10)
     (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
     measurementCount (Edges.wrapper layout (.some hc) cy (gen K E layout cx cy))≤1500634 := by
@@ -41981,7 +41959,7 @@ private theorem wrapper_metrics (L : ControlledPointLayout) (C : Point) (cy : Fp
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154634 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2154618 := by
   have diff:=wrapper_metrics layout (.some hc) cy _ _ (actual_gen_metrics layout cx cy)
   exact diff.1.trans_le (Prefix1590Point.wrapper_toffoli Prefix1590.entryKernel Prefix1590.exitKernel
     Prefix1590.entryKernel_counts Prefix1590.exitKernel_counts cx cy hc)
