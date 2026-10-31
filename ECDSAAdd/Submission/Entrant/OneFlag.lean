@@ -4934,14 +4934,14 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
  CompressedAllocation CompressedFieldSupport DirectSkywalk BalancedField History5 EntryFuse EntryFuseFinite
 attribute [local irreducible] wires run toffoliCount measurementCount fastConstAdd fastConstNeg
  def generic (L : ControlledPointLayout) (P : Program) (cx cy : Fp) : Program :=
-  All12Generic.generic L (OwnOneFlagEntryQ7.fusedDivisionF L) (OwnDiagAll12PlacedQ7.program L) P cx cy
+  All12Generic.generic L (OwnOneFlagEntryQ7.fusedDivisionF L) (OwnDiagAll12PlacedQ7.program L) P cx cy OwnDiagAll12Square.sqOff
  def gen (L : ControlledPointLayout) (P : Program) (cx cy : Fp) : Program :=
-  All12Generic.gen L (OwnOneFlagEntryQ7.fusedDivisionF L) (OwnDiagAll12PlacedQ7.program L) P cx cy
+  All12Generic.gen L (OwnOneFlagEntryQ7.fusedDivisionF L) (OwnDiagAll12PlacedQ7.program L) P cx cy OwnDiagAll12Square.sqOff
  private theorem q7part35_metric_generic (metric : Program→Nat)
    (app : ∀a b,metric (a++b)=metric a+metric b)
    (L : ControlledPointLayout) (D Dold : Fp→Program) (S Sold P Pold : Program)
    (d : ∀k,metric (D k)=metric (Dold k)) (sq : metric S=metric Sold) (p : metric P=metric Pold)
-   (cx cy : Fp) : metric (All12Generic.generic L D S P cx cy)=metric (All12Generic.generic L Dold Sold Pold cx cy) := by
+   (cx cy : Fp) {ko : Nat} : metric (All12Generic.generic L D S P cx cy ko)=metric (All12Generic.generic L Dold Sold Pold cx cy ko) := by
   simp only [All12Generic.generic,app]
   rw [d (-cy),sq,p]
  theorem generic_counts_eq (L : ControlledPointLayout) (hw:L.Widths) (P : Program)
@@ -4970,9 +4970,9 @@ attribute [local irreducible] wires run toffoliCount measurementCount fastConstA
  theorem square_step (L : ControlledPointLayout) (hw:L.Widths) (hn:L.wires.Nodup)
    (X Y : Fp) (G : Bool) (origin : BasisState) :
    Triple (PointDialogValues L X Y G origin) (OwnDiagAll12PlacedQ7.program L)
-    (PointDialogValues L (X-(if G then Y*Y else 0)+(if G then (2^163-1:Nat) else 0)) Y G origin) := by
+    (PointDialogValues L (X-(if G then Y*Y else 0)+(if G then (OwnDiagAll12Square.sqOff:Nat) else 0)) Y G origin) := by
   have h:=OwnDiagAll12PlacedQ7.correct L hw hn X Y G origin
-  cases G <;> simpa only [OwnDiagAll12Square.cFlipK,Bool.false_eq_true,if_false,if_true,Nat.cast_zero] using h
+  cases G <;> simpa only [Bool.false_eq_true,if_false,if_true,Nat.cast_zero] using h
 end ECDSAAdd.Entrant.OneFlagProducer
 
 
@@ -4987,20 +4987,20 @@ attribute [local irreducible] wires run fastConstAdd fastConstNeg
   (ps : wires P⊆(OB5Support.sites L).toFinset) (cx cy : Fp) :
   wires (generic L P cx cy)⊆(OB5Support.sites L).toFinset :=
   All12Generic.generic_sites L hw _ _ _ (OneFlagEntryProperties.division_support L hw)
-   (OwnDiagAll12PlacedQ7.support L hw hn) ps cx cy
+   (OwnDiagAll12PlacedQ7.support L hw hn) ps cx cy OwnDiagAll12Square.sqOff
  theorem gen_sites (L : ControlledPointLayout) (hw:L.Widths) (hn:L.wires.Nodup) (P : Program)
   (ps : wires P⊆(OB5Support.sites L).toFinset) (cx cy : Fp) :
   wires (gen L P cx cy)⊆(OB5Support.genericSites L).toFinset := by
-  rw [gen,All12Generic.gen_shape]
+  rw [gen,All12Generic.gen_shape (ko := OwnDiagAll12Square.sqOff)]
   exact GenericQ5Geometry.wrapG_sites L hw hn _ (generic_sites L hw hn P ps cx cy)
  theorem gen_physical (L : ControlledPointLayout) (hw:L.Widths) (hn:L.wires.Nodup) (P : Program)
   (pp : GatePhysical P) (cx cy : Fp) : GatePhysical (gen L P cx cy) :=
   All12Generic.gen_physical L hw hn _ _ _ (OneFlagEntryProperties.division_physical L hw hn)
-   (OwnDiagAll12PlacedQ7.physical L hw hn) pp cx cy
+   (OwnDiagAll12PlacedQ7.physical L hw hn) pp cx cy OwnDiagAll12Square.sqOff
  theorem gen_slots (L : ControlledPointLayout) (hw:L.Widths) (P : Program)
   (pp : gateSlots P≤20500006) (cx cy : Fp) : gateSlots (gen L P cx cy)≤49200000 :=
   All12Generic.gen_slots_le L hw _ _ _ (OneFlagEntryProperties.division_slots L hw)
-   (OwnDiagAll12PlacedQ7.slots L hw) pp cx cy
+   (OwnDiagAll12PlacedQ7.slots L hw) pp cx cy OwnDiagAll12Square.sqOff
  theorem generic_free (L : ControlledPointLayout) (hw:L.Widths) (hn:L.wires.Nodup) (P : Program)
   (pf : ∀k∈[1800,766,765,767,770,1285,1286],L.core.poolWire k∉wires P)
   (k : Nat) (hk:k∈[1800,766,765,767,770,1285,1286]) (cx cy : Fp) :
@@ -5010,7 +5010,7 @@ attribute [local irreducible] wires run fastConstAdd fastConstNeg
    rcases hk with rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> omega
   exact All12Generic.generic_free L hw hn _ _ _ k bounds
    (OneFlagEntryProperties.division_free L hw hn k hk)
-   (OwnDiagAll12PlacedQ7.square_free L hw hn k hk) (pf k hk) cx cy
+   (OwnDiagAll12PlacedQ7.square_free L hw hn k hk) (pf k hk) cx cy OwnDiagAll12Square.sqOff
  theorem gen_ok (L : ControlledPointLayout) (hw:L.Widths) (hn:L.wires.Nodup) (P : Program)
   (halfCorrect : ExitFusionResearch.HalfMultiplyCorrect L P)
   (logicalND : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
@@ -5024,7 +5024,7 @@ attribute [local irreducible] wires run fastConstAdd fastConstNeg
   (ps : wires P⊆(OB5Support.sites layout).toFinset)
   (pf : ∀k∈[1800,766,765,767,770,1285,1286],layout.core.poolWire k∉wires P)
   (C : Point) (cx cy : Fp) : qubits (Edges.wrapper layout C cy (gen layout P cx cy))≤1592 := by
-  rw [gen,All12Generic.gen_shape]
+  rw [gen,All12Generic.gen_shape (ko := OwnDiagAll12Square.sqOff)]
   apply GenericQ7Geometry.edges_wrapG_qubits _ (generic_sites layout layout_widths layout_nodup P ps cx cy)
   · intro k hk
     exact generic_free layout layout_widths layout_nodup P pf k (List.mem_append_left [1285,1286] hk) cx cy
