@@ -1,4 +1,4 @@
--- Complete fixed V142 Q1589 control-loan plus 675T leaves and BF fold source closure.
+-- Complete rolling Q1588 plus LowZero18; two approved unused proof cones are omitted.
 -- Original file boundaries are sections; original comments and credits remain below.
 import ECDSAAdd.Arithmetic.BalancedCleanupCircuitViews
 import ECDSAAdd.Baselines.SlotSignedSquare
