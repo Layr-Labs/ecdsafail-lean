@@ -32085,10 +32085,9 @@ def gadget (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) : Program :=
   ((if enD then
      flipIf (!cx) xk ++ [.CCX a2 xk a3] ++ flipIf (!cx) xk ++
      flipIf (!cy) y0 ++ [.CCX a3 y0 d] ++ flipIf (!cy) y0 ++
-     (if enH then [.CX a2 h, .CX a3 h] else []) ++
      flipIf (!cx) xk ++ [.measureX a3 [] [.CZ a2 xk]] ++ flipIf (!cx) xk
    else []) ++
-  ((if enH && !enD then flipIf cx xk ++ [.CCX a2 xk h] ++ flipIf cx xk else []) ++
+  ((if enH then flipIf cx xk ++ [.CCX a2 xk h] ++ flipIf cx xk else []) ++
   [.X g, .measureX a2 [] [.CZ a1 g], .X g, .measureX a1 [] [.CZ c f]]))
 
 set_option linter.unusedTactic false in
@@ -32156,7 +32155,7 @@ theorem gadget_run (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   simp only at z1 z2 z3 ⊢
   cases enD <;> cases enH <;> cases cx <;> cases cy <;>
   · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
-      Bool.false_eq_true, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
     simp only [measureAndCorrect]
     split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
     all_goals
@@ -32169,7 +32168,7 @@ theorem gadget_run (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
       simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
         cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
 
-set_option maxHeartbeats 4000000 in
+
 theorem gadget_wires (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) (q : Wire)
     (hq : q ∈ wires (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy)) :
     q = c ∨ q = f ∨ q = g ∨ q = d ∨ q = h ∨ q = xk ∨ q = y0 ∨ q = a1 ∨ q = a2 ∨ q = a3 := by
@@ -32178,13 +32177,6 @@ theorem gadget_wires (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) (q
 
 theorem gadget_counts (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) :
     toffoliCount (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 5 ∧
-    measurementCount (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 3 := by
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadget, flipIf, toffoliCount, measurementCount]
-
-/-- With the CNOT exception toggle (pepedesigner dde9ce14) the gadget costs at most four Toffolis. -/
-theorem gadget_counts4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) :
-    toffoliCount (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 4 ∧
     measurementCount (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 3 := by
   cases enD <;> cases enH <;> cases cx <;> cases cy <;>
     simp [gadget, flipIf, toffoliCount, measurementCount]
@@ -32203,165 +32195,6 @@ theorem gadget_physical (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
     simp [gadget, flipIf] at hi <;> rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
     simp_all [RecordedQuantum.PhysicalInstr, ProperGate, eq_comm]
 
-/-- The same gadget when it only uncomputes (`d` and `h` already hold the toggles):
-the two target Toffolis become X-basis erasures with their CZ corrections. -/
-def gadgetM (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) : Program :=
-  [.CCX c f a1, .X g, .CCX a1 g a2, .X g] ++
-  ((if enD then
-     flipIf (!cx) xk ++ [.CCX a2 xk a3] ++ flipIf (!cx) xk ++
-     flipIf (!cy) y0 ++ [.measureX d [] [.CZ a3 y0]] ++ flipIf (!cy) y0 ++
-     flipIf (!cx) xk ++ [.measureX a3 [] [.CZ a2 xk]] ++ flipIf (!cx) xk
-   else []) ++
-  ((if enH then flipIf cx xk ++ [.measureX h [] [.CZ a2 xk]] ++ flipIf cx xk else []) ++
-  [.X g, .measureX a2 [] [.CZ a1 g], .X g, .measureX a1 [] [.CZ c f]]))
-
-
-/-- An X-basis erasure of `t = a ∧ b` with its CZ correction leaves the phase unchanged. -/
-theorem measure_erase (t a b : Wire) (x : Bool) (s : State) (ha : a ≠ t) (hb : b ≠ t)
-    (h : s.basis t = (s.basis a && s.basis b)) :
-    measureAndCorrect t [] [.CZ a b] x s = ⟨s.phase, writeBit s.basis t false⟩ := by
-  obtain ⟨ph, bs⟩ := s
-  simp only at h
-  cases x <;> simp [measureAndCorrect, correct, writeBit, Function.update_apply, ha, hb, h]
-
-set_option linter.unusedTactic false in
-set_option linter.unreachableTactic false in
-set_option linter.unnecessarySeqFocus false in
-set_option linter.unusedSimpArgs false in
-set_option maxHeartbeats 20000000 in
-theorem gadgetM_run (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
-    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
-    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
-    (hd : s.basis d = (enD && s.basis c && s.basis f && !s.basis g &&
-        (s.basis xk == cx) && (s.basis y0 == cy)))
-    (hh : s.basis h = (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))) :
-    run (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
-      if q = d then false else if q = h then false else s.basis q⟩ := by
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
-    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
-  have n1' := Ne.symm n1
-  have n2' := Ne.symm n2
-  have n3' := Ne.symm n3
-  have n4' := Ne.symm n4
-  have n5' := Ne.symm n5
-  have n6' := Ne.symm n6
-  have n7' := Ne.symm n7
-  have n8' := Ne.symm n8
-  have n9' := Ne.symm n9
-  have m1' := Ne.symm m1
-  have m2' := Ne.symm m2
-  have m3' := Ne.symm m3
-  have m4' := Ne.symm m4
-  have m5' := Ne.symm m5
-  have m6' := Ne.symm m6
-  have m7' := Ne.symm m7
-  have m8' := Ne.symm m8
-  have k1' := Ne.symm k1
-  have k2' := Ne.symm k2
-  have k3' := Ne.symm k3
-  have k4' := Ne.symm k4
-  have k5' := Ne.symm k5
-  have k6' := Ne.symm k6
-  have k7' := Ne.symm k7
-  have l1' := Ne.symm l1
-  have l2' := Ne.symm l2
-  have l3' := Ne.symm l3
-  have l4' := Ne.symm l4
-  have l5' := Ne.symm l5
-  have l6' := Ne.symm l6
-  have p1' := Ne.symm p1
-  have p2' := Ne.symm p2
-  have p3' := Ne.symm p3
-  have p4' := Ne.symm p4
-  have p5' := Ne.symm p5
-  have q1' := Ne.symm q1
-  have q2' := Ne.symm q2
-  have q3' := Ne.symm q3
-  have q4' := Ne.symm q4
-  have r1' := Ne.symm r1
-  have r2' := Ne.symm r2
-  have r3' := Ne.symm r3
-  have t1' := Ne.symm t1
-  have t2' := Ne.symm t2
-  have t3' := Ne.symm t3
-  obtain ⟨ph, bs⟩ := s
-  simp only at z1 z2 z3 hd hh ⊢
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-  cases hc : bs c <;> cases hf : bs f <;> cases hg : bs g <;> cases hx : bs xk <;> cases hy : bs y0 <;>
-  simp only [hc, hf, hg, hx, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
-    Bool.not_true, Bool.not_false, beq_self_eq_true, Bool.true_beq, Bool.false_beq, bne_self_eq_false,
-    Bool.true_bne, Bool.false_bne] at hd hh <;>
-  · simp [gadgetM, flipIf, run, writeBit, Function.update_apply, measure_erase, *]
-    funext q
-    by_cases e1 : q = d
-    · subst e1; simp [Function.update_apply, *]
-    by_cases e2 : q = h
-    · subst e2; simp [Function.update_apply, *]
-    by_cases e3 : q = a1
-    · subst e3; simp [Function.update_apply, *]
-    by_cases e4 : q = a2
-    · subst e4; simp [Function.update_apply, *]
-    by_cases e5 : q = a3
-    · subst e5; simp [Function.update_apply, *]
-    by_cases e6 : q = g
-    · subst e6; simp [Function.update_apply, *]
-    by_cases e7 : q = xk
-    · subst e7; simp [Function.update_apply, *]
-    by_cases e8 : q = y0
-    · subst e8; simp [Function.update_apply, *]
-    simp [Function.update_apply, *]
-
-/-- When the gadget only clears `d` and `h`, the measured variant has the same run. -/
-theorem gadgetM_eq (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
-    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
-    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
-    (hd : (s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
-        (s.basis xk == cx) && (s.basis y0 == cy))) = false)
-    (hh : (s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g &&
-        (s.basis xk != cx))) = false) :
-    run (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s =
-      run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s := by
-  have hd' : s.basis d = (enD && s.basis c && s.basis f && !s.basis g &&
-      (s.basis xk == cx) && (s.basis y0 == cy)) := by
-    revert hd; cases s.basis d <;> simp
-  have hh' : s.basis h = (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx)) := by
-    revert hh; cases s.basis h <;> simp
-  rw [gadgetM_run c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hd' hh',
-    gadget_run c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3]
-  congr 1
-  funext q
-  split_ifs
-  · exact hd.symm
-  · exact hh.symm
-  · rfl
-
-theorem gadgetM_wires (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) (q : Wire)
-    (hq : q ∈ wires (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy)) :
-    q ∈ wires (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) := by
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadgetM, gadget, flipIf, wires, Instr.wires, correctionWires] at hq ⊢ <;> tauto
-
-theorem gadgetM_counts (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) :
-    toffoliCount (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 3 ∧
-    measurementCount (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 5 := by
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadgetM, flipIf, toffoliCount, measurementCount]
-
-theorem gadgetM_gateSlots (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool) :
-    Challenge.gateSlots (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) ≤ 35 := by
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadgetM, flipIf, Challenge.gateSlots, Challenge.instructionSlots]
-
-theorem gadgetM_physical (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
-    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) :
-    GatePhysical (gadgetM c f g d h xk y0 a1 a2 a3 enD enH cx cy) := by
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-  intro i hi
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadgetM, flipIf] at hi <;> rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
-    simp_all [RecordedQuantum.PhysicalInstr, ProperGate, eq_comm]
-
 end DHGadget
 
 /-- Clears (and, applied again, restores) the doubling and exception flags from the point:
@@ -32371,13 +32204,6 @@ def clrDH (L : ControlledPointLayout) (C : Point) (cy : Fp) : Program :=
   DHGadget.gadget L.control L.point.finite L.genericSelect L.doubleSelect L.core.equalNegY
     (L.point.x.getD (DHClass.kx C) 0) (yLow L) (L.core.poolWire 0) (L.core.poolWire 1) (L.core.poolWire 2)
     (decide (cy≠-cy)) (exceptionBit C) (DHClass.cxk C) (yBit C)
-
-/-- `clrDH` where it only clears `D` and `H`: the two flag Toffolis become measured erasures. -/
-def clrDHm (L : ControlledPointLayout) (C : Point) (cy : Fp) : Program :=
-  DHGadget.gadgetM L.control L.point.finite L.genericSelect L.doubleSelect L.core.equalNegY
-    (L.point.x.getD (DHClass.kx C) 0) (yLow L) (L.core.poolWire 0) (L.core.poolWire 1) (L.core.poolWire 2)
-    (decide (cy≠-cy)) (exceptionBit C) (DHClass.cxk C) (yBit C)
-
 
 /-- A pool site used only by the generic block; it is relabelled onto `doubleSelect`,
 which is cleared while the block runs. -/
@@ -33178,48 +33004,6 @@ theorem clrDH_flag (C : Point) (cy : Fp) (R : Point) (b D G H D' H' : Bool)
       (clrDH L C cy)
       (PointDialogBoundary L R b (dialogFlagState L false D' G false false H' false)) :=
   dh_flag L hw hn (DHClass.kx C) (DHClass.kx_lt C) _ _ _ _ R b D G H D' H' hD hH
-
-include hw hn in
-/-- The measured clear: same triple as `clrDH_flag` when both flags end cleared. -/
-theorem clrDHm_flag (C : Point) (cy : Fp) (R : Point) (b D G H : Bool)
-    (hD : false = (D ^^ (decide (cy≠-cy) && b && pointFinite R && !G &&
-      ((pointX R).testBit (DHClass.kx C) == DHClass.cxk C) && (yBit R == yBit C))))
-    (hH : false = (H ^^ (exceptionBit C && b && pointFinite R && !G &&
-      ((pointX R).testBit (DHClass.kx C) != DHClass.cxk C)))) :
-    Triple (PointDialogBoundary L R b (dialogFlagState L false D G false false H false))
-      (clrDHm L C cy)
-      (PointDialogBoundary L R b (dialogFlagState L false false G false false false false)) := by
-  intro s m v
-  have post := clrDH_flag L hw hn C cy R b D G H false false hD hH s m v
-  have nd := dh_nodup L hw hn (DHClass.kx C) (DHClass.kx_lt C)
-  have pool3 : ∀ i, i < 3 → s.basis (L.core.poolWire i) = false := by
-    intro i hi
-    apply (regValue_zero _ _).mp v.clean
-    have mem : L.core.poolWire i ∈ L.dialogPool.take 3 := by
-      rw [pool_block L hw 3 (by omega)]
-      exact List.mem_map.mpr ⟨i, List.mem_range'_1.mpr ⟨by omega, by omega⟩, rfl⟩
-    exact List.mem_of_mem_take mem
-  have hrun := DHGadget.gadget_run L.control L.point.finite L.genericSelect L.doubleSelect
-    L.core.equalNegY (L.point.x.getD (DHClass.kx C) 0) (yLow L) (L.core.poolWire 0) (L.core.poolWire 1)
-    (L.core.poolWire 2) (decide (cy≠-cy)) (exceptionBit C) (DHClass.cxk C) (yBit C) nd s m
-    (pool3 0 (by omega)) (pool3 1 (by omega)) (pool3 2 (by omega))
-  have hr' := dialogFlagState_read L hn false false G false false false false
-  have outD := (post.2.flags L.doubleSelect (by simp [inPlaceFlags])).trans hr'.2.1
-  have outH := (post.2.flags L.core.equalNegY (by simp [inPlaceFlags])).trans hr'.2.2.2.2.2.1
-  have dg : L.doubleSelect ≠ L.core.equalNegY := by
-    simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at nd
-    exact nd.2.2.2.2.1.2.1
-  change (run (DHGadget.gadget _ _ _ _ _ _ _ _ _ _ _ _ _ _) m s).basis _ = _ at outD outH
-  rw [hrun] at outD outH
-  simp only [if_true, if_neg (Ne.symm dg)] at outD outH
-  have heq := DHGadget.gadgetM_eq L.control L.point.finite L.genericSelect L.doubleSelect
-    L.core.equalNegY (L.point.x.getD (DHClass.kx C) 0) (yLow L) (L.core.poolWire 0) (L.core.poolWire 1)
-    (L.core.poolWire 2) (decide (cy≠-cy)) (exceptionBit C) (DHClass.cxk C) (yBit C) nd s m
-    (pool3 0 (by omega)) (pool3 1 (by omega)) (pool3 2 (by omega)) outD outH
-  unfold clrDHm
-  rw [heq]
-  exact post
-
 
 end DHFlag
 
@@ -70913,710 +70697,6 @@ theorem finite_host_five_omissions (C : Point) (cx cy : Fp)
 end ECDSAAdd.Entrant.FiniteHostFive
 
 end
-section
-set_option maxRecDepth 8192
-set_option maxHeartbeats 4000000
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant
-open Arithmetic Secp256k1 ControlledPointLayout Challenge Baselines RecordedQuantum
-
-/-! Measured flag tails for an output classifier whose flags already hold the toggles. -/
-
-/-- `bitTest` when it only clears `t` (`t = w ∧ (y = a)`): an X-basis erasure with a CZ correction. -/
-def bitTestM (w y t : Wire) (a : Bool) : Program :=
-  if a then [.measureX t [] [.CZ w y]] else [.X y, .measureX t [] [.CZ w y], .X y]
-
-/-- `fusedTail` with the `t₁` toggle measured. -/
-def fusedTailM (y t₁ t₂ : Wire) (a : Bool) (w : Wire) : Program :=
-  .CX t₁ t₂ :: (bitTestM w y t₁ a ++ [.CX t₁ t₂, .CX w t₂])
-
-/-- `plainTail` with the `t₁` toggle measured. -/
-def plainTailM (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) : Program :=
-  (if e₁ then bitTestM w y t₁ a₁ else []) ++ (if e₂ then bitTest w y t₂ a₂ else [])
-
-def pairTailM (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) : Program :=
-  if tailFused e₁ a₁ e₂ a₂ then fusedTailM y t₁ t₂ a₁ w else plainTailM y t₁ t₂ e₁ a₁ e₂ a₂ w
-
-/-- `affineClassTail` with the `t₁` and `t₃` toggles measured. -/
-def affineClassTailM (r y t₁ t₂ t₃ wa wb : Wire)
-    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire) : Program :=
-  chainAnd h r wa ++ [.CX h wb, .CX wa wb] ++
-  pairTailM y t₁ t₂ e₁ a₁ e₂ a₂ wa ++ bitTestM wb y t₃ a₃ ++
-  [.CX wa wb, .CX h wb] ++ chainErase h r wa
-
-/-- `affineClassSameTail` with the `t₁` and `t₃` toggles measured. -/
-def affineClassSameTailM (y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire) : Program :=
-  pairTailM y t₁ t₂ e₁ a₁ e₂ a₂ h ++ bitTestM h y t₃ a₃
-
-set_option linter.unusedTactic false in
-set_option linter.unreachableTactic false in
-set_option maxHeartbeats 20000000 in
-theorem affineSameTailM_run (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
-    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
-    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
-    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃))) :
-    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
-      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
-    not_false_eq_true,and_true] at hnd
-  obtain ⟨⟨n1,n2,n3,n4⟩,⟨m1,m2,m3⟩,⟨k1,k2⟩,l1⟩ := hnd
-  have n1' := Ne.symm n1
-  have n2' := Ne.symm n2
-  have n3' := Ne.symm n3
-  have n4' := Ne.symm n4
-  have m1' := Ne.symm m1
-  have m2' := Ne.symm m2
-  have m3' := Ne.symm m3
-  have k1' := Ne.symm k1
-  have k2' := Ne.symm k2
-  have l1' := Ne.symm l1
-  obtain ⟨ph, bs⟩ := s
-  simp only at hp1 hp3 ⊢
-  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> cases a₃ <;>
-  cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
-  simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
-    beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
-  · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
-      inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
-    all_goals
-      funext q
-      by_cases e1 : q = t₁
-      · subst e1; simp [Function.update_apply, *]
-      by_cases e2 : q = t₂
-      · subst e2; simp [Function.update_apply, *]
-      by_cases e3 : q = t₃
-      · subst e3; simp [Function.update_apply, *]
-      by_cases e4 : q = y
-      · subst e4; simp [Function.update_apply, *]
-      simp [Function.update_apply, *]
-/-- `affineInputSuffix` with the measured class tail. -/
-def affineInputSuffixM (c r y t₁ t₂ t₃ wa wb : Wire)
-    (e₁ a₁ e₂ a₂ a₃ : Bool) (bs : List ZeroBit) (a b : Nat) : Program :=
-  affineClassSelect r (bs.map ZeroBit.input) a b ++
-  zeroWith (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃) c bs ++
-  affineClassSelect r (bs.map ZeroBit.input) a b
-
-/-- `affineInputWith` whose flag toggles `t₁`, `t₃` only clear: they are measured. -/
-def affineInputWithM (y t₁ t₂ t₃ wb : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
-    (c : Wire) : List ZeroBit → Nat → Nat → Program
-  | [], _, _ => affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c
-  | q::qs, a, b =>
-    let flip := if a % 2 = 1 then [.X q.input] else []
-    flip ++
-    (if a % 2 = b % 2 then
-      chainAnd c q.input q.work ++
-      affineInputWithM y t₁ t₂ t₃ wb e₁ a₁ e₂ a₂ a₃ q.work qs (a/2) (b/2) ++
-      chainErase c q.input q.work
-    else affineInputSuffixM c q.input y t₁ t₂ t₃ q.work wb e₁ a₁ e₂ a₂ a₃ qs (a/2) (b/2)) ++
-    flip
-
-theorem zeroWith_effect_runQ (used : List Wire) (P : Bool → BasisState → Prop)
-    (E : Bool → BasisState → BasisState) (T : Wire → Program)
-    (hP : ∀ w, w ∉ used → ∀ u s v, P u (writeBit s w v) ↔ P u s)
-    (hframe : ∀ v s w, w ∉ used → E v s w = s w)
-    (hwrite : ∀ v s w z, w ∉ used →
-      E v (writeBit s w z) = writeBit (E v s) w z)
-    (hT : ∀ c, c ∉ used → ∀ s m, P (s.basis c) s.basis →
-      run (T c) m s = ⟨s.phase, E (s.basis c) s.basis⟩)
-    (c : Wire) (bs : List ZeroBit) (hcu : c ∉ used)
-    (hnd : (c :: bs.flatMap ZeroBit.wires).Nodup)
-    (hdis : ∀ b ∈ bs, b.input ∉ used ∧ b.work ∉ used)
-    (s : State) (m : List Bool) (hs : P (s.basis c && bs.all (fun b => !s.basis b.input)) s.basis)
-    (hz : ∀ b ∈ bs, s.basis b.work = false) :
-    run (zeroWith T c bs) m s =
-      ⟨s.phase, E (s.basis c && bs.all (fun b => !s.basis b.input)) s.basis⟩ := by
-  induction bs generalizing c s m with
-  | nil => simpa [zeroWith] using hT c hcu s m (by simpa using hs)
-  | cons b bs ih =>
-    have hn : (c :: b.input :: b.work :: bs.flatMap ZeroBit.wires).Nodup := hnd
-    simp only [List.nodup_cons, List.mem_cons, not_or] at hn
-    obtain ⟨⟨hci,hcw,hcr⟩,⟨hiw,hir⟩,hwr,hnr⟩ := hn
-    have hchild : (b.work :: bs.flatMap ZeroBit.wires).Nodup := List.nodup_cons.mpr ⟨hwr,hnr⟩
-    have hbu := hdis b (by simp)
-    have htail (d : ZeroBit) (hd : d ∈ bs) : d.work ≠ b.work ∧ d.input ≠ b.work := by
-      constructor <;> intro he <;> apply hwr <;>
-        apply List.mem_flatMap.mpr <;> refine ⟨d,hd,?_⟩ <;> simp [ZeroBit.wires,he]
-    let q := s.basis c && !s.basis b.input
-    let t : State := ⟨s.phase, writeBit s.basis b.work q⟩
-    have hp : run (chainAnd c b.input b.work) m s = t := by
-      rw [chainAnd_run c b.input b.work hci hiw]
-      simp [t,q,hz b (by simp)]
-    have htZ : ∀ d ∈ bs, t.basis d.work = false := by
-      intro d hd
-      simpa [t,writeBit,(htail d hd).1] using hz d (by simp [hd])
-    have hall : bs.all (fun d => !t.basis d.input) = bs.all (fun d => !s.basis d.input) := by
-      apply Bool.eq_iff_iff.mpr
-      simp only [List.all_eq_true]
-      constructor <;> intro h d hd <;> simpa [t,writeBit,(htail d hd).2] using h d hd
-    have htP : P (t.basis b.work && bs.all (fun d => !t.basis d.input)) t.basis := by
-      rw [hall, show t.basis b.work = q by simp [t,writeBit]]
-      apply (hP b.work hbu.2 _ s.basis q).mpr
-      simpa [q, List.all_cons, Bool.and_assoc] using hs
-    change run (chainAnd c b.input b.work ++ zeroWith T b.work bs ++ chainErase c b.input b.work) m s = _
-    rw [run_append,run_take,run_append,run_take]
-    simp only [measurementCount_append,
-      show measurementCount (chainAnd c b.input b.work) = 0 from rfl,
-      Nat.zero_add,List.drop_zero]
-    rw [hp,ih b.work hbu.2 hchild (fun d hd => hdis d (by simp [hd])) t m htP htZ]
-    rw [chainErase_run c b.input b.work hci hiw hcw _ _ (by
-      change E _ t.basis b.work = (E _ t.basis c && !E _ t.basis b.input)
-      rw [hframe _ _ _ hbu.2,hframe _ _ _ hcu,hframe _ _ _ hbu.1]
-      simp [t,writeBit,hcw,hiw,q])]
-    have htw : t.basis b.work = q := by simp [t,writeBit]
-    rw [hall,htw]
-    simp only [List.all_cons]
-    change (⟨s.phase, writeBit (E (q && bs.all (fun d => !s.basis d.input))
-      (writeBit s.basis b.work q)) b.work false⟩ : State) =
-      ⟨s.phase,E (s.basis c && (!s.basis b.input && bs.all (fun d => !s.basis d.input))) s.basis⟩
-    rw [hwrite _ _ _ _ hbu.2]
-    apply congrArg (State.mk s.phase)
-    have hval : (q && bs.all (fun d => !s.basis d.input)) =
-        (s.basis c && (!s.basis b.input && bs.all (fun d => !s.basis d.input))) := by
-      simp [q,Bool.and_assoc]
-    rw [hval]
-    funext w
-    by_cases hw : w = b.work
-    · subst w
-      simp [writeBit,hframe _ _ _ hbu.2,hz b (by simp)]
-    · simp [writeBit,Function.update_apply,hw]
-
-
-set_option linter.unusedTactic false in
-set_option linter.unreachableTactic false in
-set_option maxHeartbeats 40000000 in
-theorem affineClassTailM_run (r y t₁ t₂ t₃ wa wb : Wire)
-    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
-    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
-    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
-    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
-    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃))) :
-    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
-      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
-  have hn := hnd
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
-  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
-    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
-    ⟨h3A,h3B⟩,hAB⟩ := hn
-  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
-  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
-  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
-  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
-  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
-  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
-  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
-  obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
-  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> cases a₃ <;>
-  cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
-  simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
-    beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
-  · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
-      chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
-      DHGadget.measure_erase, *]
-    all_goals
-      funext q
-      by_cases e1 : q = t₁
-      · subst e1; simp [Function.update_apply, *]
-      by_cases e2 : q = t₂
-      · subst e2; simp [Function.update_apply, *]
-      by_cases e3 : q = t₃
-      · subst e3; simp [Function.update_apply, *]
-      by_cases e4 : q = y
-      · subst e4; simp [Function.update_apply, *]
-      by_cases e5 : q = wa
-      · subst e5; simp [Function.update_apply, *]
-      by_cases e6 : q = wb
-      · subst e6; simp [Function.update_apply, *]
-      by_cases e7 : q = r
-      · subst e7; simp [Function.update_apply, *]
-      simp [Function.update_apply, *]
-
-
-theorem affine_chain_runM (r y t₁ t₂ t₃ wa wb c : Wire)
-    (e₁ a₁ e₂ a₂ a₃ : Bool) (bs : List ZeroBit)
-    (hnd : (c::r::y::t₁::t₂::t₃::wa::wb::bs.flatMap ZeroBit.wires).Nodup)
-    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
-    (hz : ∀ b ∈ bs, s.basis b.work = false)
-    (hp1 : s.basis t₁ = (e₁ && ((s.basis c && bs.all (fun b => !s.basis b.input)) && !s.basis r) &&
-      (s.basis y == a₁)))
-    (hp3 : s.basis t₃ = (((s.basis c && bs.all (fun b => !s.basis b.input)) && s.basis r) &&
-      (s.basis y == a₃))) :
-    run (zeroWith (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃) c bs) m s =
-      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃
-        (s.basis c && bs.all (fun b => !s.basis b.input)) s.basis⟩ := by
-  let used := [r,y,t₁,t₂,t₃,wa,wb]
-  have hn := hnd
-  simp only [List.nodup_cons,List.mem_cons,not_or] at hn
-  have hcu : c ∉ used := by simp only [used,List.mem_cons,List.not_mem_nil,not_or,or_false]; tauto
-  have hchain : (c::bs.flatMap ZeroBit.wires).Nodup := by
-    simp only [List.nodup_cons] at *; tauto
-  have hdis : ∀ b ∈ bs, b.input ∉ used ∧ b.work ∉ used := by
-    intro b hbs
-    have hi : b.input ∈ bs.flatMap ZeroBit.wires := List.mem_flatMap.mpr ⟨b,hbs,by simp [ZeroBit.wires]⟩
-    have hw : b.work ∈ bs.flatMap ZeroBit.wires := List.mem_flatMap.mpr ⟨b,hbs,by simp [ZeroBit.wires]⟩
-    simp only [used,List.mem_cons,List.not_mem_nil,not_or,or_false]
-    constructor <;> (repeat' constructor) <;> intro h <;> subst h <;> tauto
-  apply zeroWith_effect_runQ used (fun v st => st wa = false ∧ st wb = false ∧
-      st t₁ = (e₁ && (v && !st r) && (st y == a₁)) ∧ st t₃ = ((v && st r) && (st y == a₃)))
-    (affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃)
-    (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃) _ _ _ _ c bs hcu hchain hdis s m ⟨ha,hb,hp1,hp3⟩ hz
-  · intro w hw u st v
-    simp only [used,List.mem_cons,List.not_mem_nil,not_or,or_false] at hw
-    simp [writeBit,Function.update_apply,Ne.symm hw.1,Ne.symm hw.2.1,Ne.symm hw.2.2.1,
-      Ne.symm hw.2.2.2.2.1,Ne.symm hw.2.2.2.2.2.1,Ne.symm hw.2.2.2.2.2.2]
-  · intro v st w hw
-    simp only [used,List.mem_cons,List.not_mem_nil,not_or,or_false] at hw
-    exact inputClassEffect_frame y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (v && !st r) (v && st r) st w
-      (by simp [hw.2.2.1,hw.2.2.2.1,hw.2.2.2.2.1])
-  · intro v st w z hw
-    simp only [used,List.mem_cons,List.not_mem_nil,not_or,or_false] at hw
-    have hr : writeBit st w z r = st r := by simp [writeBit,Ne.symm hw.1]
-    simp only [affineClassEffect,hr]
-    exact inputClassEffect_write y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (v && !st r) (v && st r) st w z
-      (by simp [hw.2.1,hw.2.2.1,hw.2.2.2.1,hw.2.2.2.2.1])
-  · intro h hh st rec hs
-    apply affineClassTailM_run r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h _ st rec hs.1 hs.2.1 hs.2.2.1 hs.2.2.2
-    simp only [used,List.mem_cons,List.not_mem_nil,not_or,or_false] at hh
-    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,or_false]
-    tauto
-
-theorem affineInputSuffixM_run (c r y t₁ t₂ t₃ wa wb : Wire)
-    (e₁ a₁ e₂ a₂ a₃ : Bool) (bs : List ZeroBit) (a b : Nat)
-    (hnd : (c::r::y::t₁::t₂::t₃::wa::wb::bs.flatMap ZeroBit.wires).Nodup)
-    (ha : a < 2^bs.length) (hb : b < 2^bs.length)
-    (s : State) (m : List Bool) (hza : s.basis wa = false) (hzb : s.basis wb = false)
-    (hz : ∀ q ∈ bs, s.basis q.work = false)
-    (hp1 : s.basis t₁ = (e₁ && ((s.basis c && decide (regValue (bs.map ZeroBit.input) s.basis = a)) &&
-      !s.basis r) && (s.basis y == a₁)))
-    (hp3 : s.basis t₃ = (((s.basis c && decide (regValue (bs.map ZeroBit.input) s.basis = b)) &&
-      s.basis r) && (s.basis y == a₃))) :
-    run (affineInputSuffixM c r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ bs a b) m s =
-      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃
-        ((s.basis c && decide (regValue (bs.map ZeroBit.input) s.basis = a)) && !s.basis r)
-        ((s.basis c && decide (regValue (bs.map ZeroBit.input) s.basis = b)) && s.basis r) s.basis⟩ := by
-  let src := bs.map ZeroBit.input
-  have hn := hnd
-  simp only [List.nodup_cons,List.mem_cons,not_or] at hn
-  have hbs : (bs.flatMap ZeroBit.wires).Nodup := by tauto
-  have hsplit := List.nodup_append.mp ((affine_ports_perm bs).nodup_iff.mp hbs)
-  have insub : src ⊆ bs.flatMap ZeroBit.wires := by
-    intro w hw
-    obtain ⟨q,hq,rfl⟩ := List.mem_map.mp hw
-    exact List.mem_flatMap.mpr ⟨q,hq,by simp [ZeroBit.wires]⟩
-  have ext (w : Wire) (hw : w ∉ bs.flatMap ZeroBit.wires) : w ∉ src := fun h => hw (insub h)
-  have hc : c ∉ src := ext c (by tauto)
-  have hr : r ∉ src := ext r (by tauto)
-  have hy : y ∉ src := ext y (by tauto)
-  have h1 : t₁ ∉ src := ext t₁ (by tauto)
-  have h2 : t₂ ∉ src := ext t₂ (by tauto)
-  have h3 : t₃ ∉ src := ext t₃ (by tauto)
-  have hwa : wa ∉ src := ext wa (by tauto)
-  have hwb : wb ∉ src := ext wb (by tauto)
-  have ha' : a < 2^src.length := by simpa [src] using ha
-  have hb' : b < 2^src.length := by simpa [src] using hb
-  have hpre := affineClassSelect_correct r src a b hsplit.1 hr ha' hb' s m
-  let pre := run (affineClassSelect r src a b) m s
-  have hwork (q : ZeroBit) (hq : q ∈ bs) : q.work ∉ src := by
-    have hw : q.work ∈ bs.map ZeroBit.work := List.mem_map.mpr ⟨q,hq,rfl⟩
-    intro hi
-    exact hsplit.2.2 _ hi _ hw rfl
-  have hclean : ∀ q ∈ bs, pre.basis q.work = false := by
-    intro q hq
-    exact (hpre.2.1 _ (hwork q hq)).trans (hz q hq)
-  have hall : bs.all (fun q => !pre.basis q.input) =
-      decide (regValue src s.basis = (if s.basis r then b else a)) := by
-    apply Bool.eq_iff_iff.mpr
-    rw [List.all_eq_true]
-    simp only [Bool.not_eq_true']
-    have heq : (∀ q ∈ bs, pre.basis q.input = false) ↔ regValue src pre.basis = 0 := by
-      rw [regValue_zero]
-      simp [src]
-    rw [heq]
-    change (regValue src pre.basis = 0) ↔ _
-    rw [hpre.2.2]
-    simp
-  have hcr : pre.basis c = s.basis c := hpre.2.1 c hc
-  have hrr : pre.basis r = s.basis r := hpre.2.1 r hr
-  have hA : ((pre.basis c && bs.all (fun q => !pre.basis q.input)) && !pre.basis r) =
-      ((s.basis c && decide (regValue src s.basis = a)) && !s.basis r) := by
-    rw [hall,hcr,hrr]
-    cases s.basis r <;> simp
-  have hB : ((pre.basis c && bs.all (fun q => !pre.basis q.input)) && pre.basis r) =
-      ((s.basis c && decide (regValue src s.basis = b)) && s.basis r) := by
-    rw [hall,hcr,hrr]
-    cases s.basis r <;> simp
-  have e1 : pre.basis t₁ = s.basis t₁ := hpre.2.1 t₁ h1
-  have e3 : pre.basis t₃ = s.basis t₃ := hpre.2.1 t₃ h3
-  have ey : pre.basis y = s.basis y := hpre.2.1 y hy
-  have hp1' : pre.basis t₁ = (e₁ && ((pre.basis c && bs.all (fun b => !pre.basis b.input)) &&
-      !pre.basis r) && (pre.basis y == a₁)) := by
-    rw [e1, ey, hA]; exact hp1
-  have hp3' : pre.basis t₃ = (((pre.basis c && bs.all (fun b => !pre.basis b.input)) &&
-      pre.basis r) && (pre.basis y == a₃)) := by
-    rw [e3, ey, hB]; exact hp3
-  have hh := affine_chain_runM r y t₁ t₂ t₃ wa wb c e₁ a₁ e₂ a₂ a₃ bs hnd pre m
-    ((hpre.2.1 wa hwa).trans hza) ((hpre.2.1 wb hwb).trans hzb) hclean hp1' hp3'
-  change run (affineClassSelect r src a b ++ _ ++ affineClassSelect r src a b) m s = _
-  apply affineSelect_conjugate r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ _ _ src a b _
-    hsplit.1 hr hy h1 h2 h3 (by tauto) (by tauto) (by tauto) ha' hb' s m
-  change run _ m pre = _
-  rw [hh]
-  change (⟨pre.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ _ _ pre.basis⟩ : State) = _
-  rw [hA,hB,hpre.1]
-
-theorem affineInputWithM_run (y t₁ t₂ t₃ wb : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
-    (c : Wire) (bs : List ZeroBit) (a b : Nat)
-    (hnd : (c::y::t₁::t₂::t₃::wb::bs.flatMap ZeroBit.wires).Nodup)
-    (ha : a < 2^bs.length) (hb : b < 2^bs.length)
-    (s : State) (m : List Bool) (hzb : s.basis wb = false)
-    (hz : ∀ q ∈ bs, s.basis q.work = false)
-    (hp1 : s.basis t₁ = (e₁ && (s.basis c && decide (regValue (bs.map ZeroBit.input) s.basis = a)) &&
-      (s.basis y == a₁)))
-    (hp3 : s.basis t₃ = ((s.basis c && decide (regValue (bs.map ZeroBit.input) s.basis = b)) &&
-      (s.basis y == a₃))) :
-    run (affineInputWithM y t₁ t₂ t₃ wb e₁ a₁ e₂ a₂ a₃ c bs a b) m s =
-      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃
-        (s.basis c && decide (regValue (bs.map ZeroBit.input) s.basis = a))
-        (s.basis c && decide (regValue (bs.map ZeroBit.input) s.basis = b)) s.basis⟩ := by
-  induction bs generalizing c a b s m with
-  | nil =>
-    have ha0 : a=0 := by simpa using ha
-    have hb0 : b=0 := by simpa using hb
-    simp only [List.flatMap_nil,List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false] at hnd
-    simpa [affineInputWithM,ha0,hb0,regValue] using
-      affineSameTailM_run c y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (by
-        simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false]; tauto) s m
-        (by simpa [ha0,regValue] using hp1) (by simpa [hb0,regValue] using hp3)
-  | cons q qs ih =>
-    have hn := hnd
-    change (c::y::t₁::t₂::t₃::wb::q.input::q.work::qs.flatMap ZeroBit.wires).Nodup at hn
-    simp only [List.nodup_cons,List.mem_cons,not_or] at hn
-    have hci : c ≠ q.input := by tauto
-    have hiw : q.input ≠ q.work := by tauto
-    have hcw : c ≠ q.work := by tauto
-    have hri : q.input ∉ qs.flatMap ZeroBit.wires := by tauto
-    have hrw : q.work ∉ qs.flatMap ZeroBit.wires := by tauto
-    have ha' : a/2 < 2^qs.length := by simp only [List.length_cons,Nat.pow_succ] at ha; omega
-    have hb' : b/2 < 2^qs.length := by simp only [List.length_cons,Nat.pow_succ] at hb; omega
-    let flip : Program := if a%2=1 then [.X q.input] else []
-    let pre : State := ⟨s.phase,writeBit s.basis q.input (s.basis q.input ^^ decide (a%2=1))⟩
-    have hf : run flip m s = pre := by
-      by_cases he : a%2=1
-      · simp [flip,he,pre,run]
-      · simp [flip,he,pre,run,writeBit]
-    have hfm : measurementCount flip = 0 := by dsimp [flip]; split_ifs <;> rfl
-    have hpre (w : Wire) (hw : w ≠ q.input) : pre.basis w = s.basis w := by simp [pre,writeBit,hw]
-    have hpz : pre.basis q.work = false := (hpre _ hiw.symm).trans (hz q (by simp))
-    have hpb : pre.basis wb = false := (hpre _ (by tauto)).trans hzb
-    have hit (d : ZeroBit) (hd : d ∈ qs) : d.input ≠ q.input ∧ d.work ≠ q.input ∧
-        d.input ≠ q.work ∧ d.work ≠ q.work := by
-      have hi : d.input ∈ qs.flatMap ZeroBit.wires := List.mem_flatMap.mpr ⟨d,hd,by simp [ZeroBit.wires]⟩
-      have hw : d.work ∈ qs.flatMap ZeroBit.wires := List.mem_flatMap.mpr ⟨d,hd,by simp [ZeroBit.wires]⟩
-      exact ⟨fun e => hri (e ▸ hi),fun e => hri (e ▸ hw),
-        fun e => hrw (e ▸ hi),fun e => hrw (e ▸ hw)⟩
-    have hpsz : ∀ d ∈ qs, pre.basis d.work = false := by
-      intro d hd
-      exact (hpre _ (hit d hd).2.1).trans (hz d (by simp [hd]))
-    have hval : regValue (qs.map ZeroBit.input) pre.basis = regValue (qs.map ZeroBit.input) s.basis := by
-      apply regValue_congr
-      intro w hw
-      obtain ⟨d,hd,rfl⟩ := List.mem_map.mp hw
-      exact hpre _ (hit d hd).1
-    let U := s.basis c && decide (regValue ((q::qs).map ZeroBit.input) s.basis = a)
-    let V := s.basis c && decide (regValue ((q::qs).map ZeroBit.input) s.basis = b)
-    have hrestore (rec : List Bool) :
-        run flip rec ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V pre.basis⟩ =
-        ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V s.basis⟩ := by
-      have hyi : y ≠ q.input := by tauto
-      have h1i : t₁ ≠ q.input := by tauto
-      have h2i : t₂ ≠ q.input := by tauto
-      have h3i : t₃ ≠ q.input := by tauto
-      have haway : q.input ∉ [y,t₁,t₂,t₃] := by
-        simp only [List.mem_cons,List.not_mem_nil,not_or,or_false]; tauto
-      have hframe : inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V s.basis q.input = s.basis q.input :=
-        inputClassEffect_frame _ _ _ _ _ _ _ _ _ _ _ _ _ (by
-          simp only [List.mem_cons,List.not_mem_nil,not_or,or_false]; tauto)
-      have hwrite := inputClassEffect_write y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V s.basis q.input
-        (s.basis q.input ^^ decide (a%2=1)) haway
-      change run flip rec ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V
-        (writeBit s.basis q.input (s.basis q.input ^^ decide (a%2=1)))⟩ = _
-      rw [hwrite]
-      by_cases he : a%2=1 <;> simp only [flip,he,decide_true,decide_false,if_true,if_false,run]
-      all_goals
-        apply congrArg (State.mk s.phase)
-        funext w
-        by_cases hw : w=q.input
-        · subst w; simp [writeBit,hframe]
-        · simp [writeBit,hw]
-    change run (flip ++ _ ++ flip) m s = _
-    rw [run_append,run_take,run_append,run_take]
-    simp only [measurementCount_append,hfm,Nat.zero_add,List.drop_zero]
-    rw [hf]
-    split_ifs with heq
-    · let v := pre.basis c && !pre.basis q.input
-      let mid : State := ⟨s.phase,writeBit pre.basis q.work v⟩
-      have hfirst : run (chainAnd c q.input q.work) m pre = mid := by
-        rw [chainAnd_run c q.input q.work hci hiw]
-        rw [hpz]
-        simp only [Bool.false_xor]
-        rfl
-      have hchild : (q.work::y::t₁::t₂::t₃::wb::qs.flatMap ZeroBit.wires).Nodup := by
-        simp only [List.nodup_cons,List.mem_cons,not_or]; tauto
-      have hmz : ∀ d ∈ qs, mid.basis d.work = false := by
-        intro d hd
-        simpa [mid,writeBit,(hit d hd).2.2.2] using hpsz d hd
-      have hmb : mid.basis wb = false := by simpa [mid,writeBit,show wb ≠ q.work from by tauto] using hpb
-      have hmv : regValue (qs.map ZeroBit.input) mid.basis = regValue (qs.map ZeroBit.input) s.basis := by
-        rw [← hval]
-        apply regValue_congr
-        intro w hw
-        obtain ⟨d,hd,rfl⟩ := List.mem_map.mp hw
-        simp [mid,writeBit,(hit d hd).2.2.1]
-      have hA : (mid.basis q.work && decide (regValue (qs.map ZeroBit.input) mid.basis = a/2)) = U := by
-        rw [hmv]
-        dsimp [U]
-        change _ = (s.basis c && decide ((if s.basis q.input then 1 else 0) + 2 * regValue (qs.map ZeroBit.input) s.basis = a))
-        rw [affine_low_match]
-        simp [mid,v,pre,writeBit,hci,Bool.and_assoc]
-      have hB : (mid.basis q.work && decide (regValue (qs.map ZeroBit.input) mid.basis = b/2)) = V := by
-        rw [hmv]
-        dsimp [V]
-        change _ = (s.basis c && decide ((if s.basis q.input then 1 else 0) + 2 * regValue (qs.map ZeroBit.input) s.basis = b))
-        rw [affine_low_match,← heq]
-        simp [mid,v,pre,writeBit,hci,Bool.and_assoc]
-      have hm1 : mid.basis t₁ = s.basis t₁ := by
-        simp [mid,pre,writeBit,show t₁ ≠ q.work from by tauto,show t₁ ≠ q.input from by tauto]
-      have hm3 : mid.basis t₃ = s.basis t₃ := by
-        simp [mid,pre,writeBit,show t₃ ≠ q.work from by tauto,show t₃ ≠ q.input from by tauto]
-      have hmy : mid.basis y = s.basis y := by
-        simp [mid,pre,writeBit,show y ≠ q.work from by tauto,show y ≠ q.input from by tauto]
-      have hi := ih q.work (a/2) (b/2) hchild ha' hb' mid m hmb hmz
-        (by rw [hm1, hmy, hA]; exact hp1) (by rw [hm3, hmy, hB]; exact hp3)
-      rw [hA,hB] at hi
-      rw [run_append,run_take,run_append,run_take]
-      simp only [measurementCount_append,show measurementCount (chainAnd c q.input q.work)=0 from rfl,
-        Nat.zero_add,List.drop_zero]
-      rw [hfirst,hi]
-      rw [chainErase_run c q.input q.work hci hiw hcw _ _ (by
-        simp [inputClassEffect,pairEffect,mid,v,writeBit,Function.update_apply,
-          show q.work ≠ t₁ from by tauto,show q.work ≠ t₂ from by tauto,show q.work ≠ t₃ from by tauto,
-          show c ≠ t₁ from by tauto,show c ≠ t₂ from by tauto,show c ≠ t₃ from by tauto,
-          show q.input ≠ t₁ from by tauto,show q.input ≠ t₂ from by tauto,show q.input ≠ t₃ from by tauto,
-          hcw,hiw])]
-      have hclear : writeBit (inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V mid.basis) q.work false =
-          inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V pre.basis := by
-        dsimp [mid]
-        rw [inputClassEffect_write y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V pre.basis q.work v (by
-          simp only [List.mem_cons,List.not_mem_nil,not_or,or_false]; tauto)]
-        funext w
-        by_cases hw : w=q.work
-        · subst w
-          simp only [writeBit,Function.update_apply,if_pos rfl]
-          rw [inputClassEffect_frame y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ U V pre.basis q.work (by
-            simp only [List.mem_cons,List.not_mem_nil,not_or,or_false]; tauto)]
-          exact hpz.symm
-        · simp [writeBit,hw]
-      rw [hclear]
-      exact hrestore _
-    · have hdiff : decide (b%2=1) = !decide (a%2=1) := by
-        have hma := Nat.mod_lt a (by decide : 0<2)
-        have hmb := Nat.mod_lt b (by decide : 0<2)
-        by_cases ha0 : a%2=1
-        · have hb0 : b%2≠1 := by omega
-          simp only [ha0,hb0,decide_true,decide_false,Bool.not_true]
-        · have hb0 : b%2=1 := by omega
-          simp only [ha0,hb0,decide_true,decide_false,Bool.not_false]
-      have hsf : (c::q.input::y::t₁::t₂::t₃::q.work::wb::qs.flatMap ZeroBit.wires).Nodup := by
-        simp only [List.nodup_cons,List.mem_cons,not_or]; tauto
-      have hA : ((pre.basis c && decide (regValue (qs.map ZeroBit.input) pre.basis = a/2)) && !pre.basis q.input) = U := by
-        rw [hval]
-        dsimp [U]
-        change _ = (s.basis c && decide ((if s.basis q.input then 1 else 0) + 2 * regValue (qs.map ZeroBit.input) s.basis = a))
-        rw [affine_low_match]
-        simp [pre,writeBit,hci,Bool.and_assoc,Bool.and_comm,Bool.and_left_comm]
-      have hB : ((pre.basis c && decide (regValue (qs.map ZeroBit.input) pre.basis = b/2)) && pre.basis q.input) = V := by
-        rw [hval]
-        dsimp [V]
-        change _ = (s.basis c && decide ((if s.basis q.input then 1 else 0) + 2 * regValue (qs.map ZeroBit.input) s.basis = b))
-        rw [affine_low_match,hdiff]
-        have hnot (x d : Bool) : !(x ^^ !d) = (x ^^ d) := by
-          cases x <;> cases d <;> rfl
-        simp [pre,writeBit,hci,hnot,Bool.and_assoc,Bool.and_comm,Bool.and_left_comm]
-      have hs := affineInputSuffixM_run c q.input y t₁ t₂ t₃ q.work wb e₁ a₁ e₂ a₂ a₃ qs (a/2) (b/2)
-        hsf ha' hb' pre m hpz hpb hpsz
-        (by rw [hpre t₁ (by tauto), hpre y (by tauto), hA]; exact hp1)
-        (by rw [hpre t₃ (by tauto), hpre y (by tauto), hB]; exact hp3)
-      rw [hA,hB] at hs
-      rw [hs]
-      exact hrestore _
-
-
-/-- An instruction is kept, or a Toffoli is replaced by the X-basis erasure of its target. -/
-def MRel (i j : Instr) : Prop :=
-  j = i ∨ ∃ a b t, i = .CCX a b t ∧ j = .measureX t [] [.CZ a b]
-
-theorem mrel_refl (P : Program) : List.Forall₂ MRel P P := by
-  induction P with
-  | nil => exact .nil
-  | cons i P ih => exact .cons (Or.inl rfl) ih
-
-theorem mrel_append {P Q P' Q' : Program} (h : List.Forall₂ MRel P Q) (h' : List.Forall₂ MRel P' Q') :
-    List.Forall₂ MRel (P ++ P') (Q ++ Q') := by
-  induction h with
-  | nil => simpa using h'
-  | cons hab _ ih => exact .cons hab ih
-
-theorem mrel_wires {P Q : Program} (h : List.Forall₂ MRel P Q) : wires Q = wires P := by
-  induction h with
-  | nil => rfl
-  | @cons i j P Q hij _ ih =>
-    simp only [wires, ih]
-    rcases hij with rfl | ⟨a, b, t, rfl, rfl⟩
-    · rfl
-    · congr 1
-      ext q
-      simp [Instr.wires, correctionWires]
-      tauto
-
-theorem mrel_physical {P Q : Program} (h : List.Forall₂ MRel P Q) (hP : GatePhysical P) :
-    GatePhysical Q := by
-  induction h with
-  | nil => intro i hi; simp at hi
-  | @cons i j P Q hij _ ih =>
-    intro k hk
-    rcases List.mem_cons.mp hk with rfl | hk
-    · rcases hij with rfl | ⟨a, b, t, rfl, rfl⟩
-      · exact hP k (by simp)
-      · simp [RecordedQuantum.PhysicalInstr]
-    · exact ih (fun x hx => hP x (by simp [hx])) k hk
-
-theorem mrel_slots {P Q : Program} (h : List.Forall₂ MRel P Q) : gateSlots Q ≤ 2 * gateSlots P := by
-  induction h with
-  | nil => simp [gateSlots]
-  | @cons i j P Q hij _ ih =>
-    simp only [gateSlots, List.map_cons, List.sum_cons] at ih ⊢
-    rcases hij with rfl | ⟨a, b, t, rfl, rfl⟩
-    · have h0 : instructionSlots j ≠ 0 := by cases j <;> simp [instructionSlots]
-      have : 1 ≤ instructionSlots j := Nat.pos_of_ne_zero h0
-      omega
-    · simp [instructionSlots]; omega
-
-theorem bitTest_mrel (w y t : Wire) (a : Bool) : List.Forall₂ MRel (bitTest w y t a) (bitTestM w y t a) := by
-  cases a
-  · simp only [bitTest, bitTestM, zeroFlag, Bool.false_eq_true, if_false]
-    exact .cons (Or.inl rfl) (.cons (Or.inr ⟨w, y, t, rfl, rfl⟩) (.cons (Or.inl rfl) .nil))
-  · simp only [bitTest, bitTestM, if_true]
-    exact .cons (Or.inr ⟨w, y, t, rfl, rfl⟩) .nil
-
-theorem pairTail_mrel (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (w : Wire) :
-    List.Forall₂ MRel (pairTail y t₁ t₂ e₁ a₁ e₂ a₂ w) (pairTailM y t₁ t₂ e₁ a₁ e₂ a₂ w) := by
-  unfold pairTail pairTailM
-  split_ifs
-  · simp only [fusedTail, fusedTailM]
-    exact .cons (Or.inl rfl) (mrel_append (bitTest_mrel w y t₁ a₁) (mrel_refl _))
-  · simp only [plainTail, plainTailM]
-    apply mrel_append
-    · split_ifs
-      · exact bitTest_mrel w y t₁ a₁
-      · exact .nil
-    · exact mrel_refl _
-
-theorem affineClassTail_mrel (r y t₁ t₂ t₃ wa wb : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire) :
-    List.Forall₂ MRel (affineClassTail r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h)
-      (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) := by
-  unfold affineClassTail affineClassTailM
-  exact mrel_append (mrel_append (mrel_append (mrel_append (mrel_refl _) (pairTail_mrel _ _ _ _ _ _ _ _))
-    (bitTest_mrel _ _ _ _)) (mrel_refl _)) (mrel_refl _)
-
-theorem zeroWith_mrel (T T' : Wire → Program) (hT : ∀ c, List.Forall₂ MRel (T c) (T' c))
-    (c : Wire) (bs : List ZeroBit) : List.Forall₂ MRel (zeroWith T c bs) (zeroWith T' c bs) := by
-  induction bs generalizing c with
-  | nil => exact hT c
-  | cons b bs ih =>
-    simp only [zeroWith]
-    exact mrel_append (mrel_append (mrel_refl _) (ih b.work)) (mrel_refl _)
-
-theorem affineInputWith_mrel (y t₁ t₂ t₃ wb : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
-    (c : Wire) (bs : List ZeroBit) (a b : Nat) :
-    List.Forall₂ MRel (affineInputWith y t₁ t₂ t₃ wb e₁ a₁ e₂ a₂ a₃ c bs a b)
-      (affineInputWithM y t₁ t₂ t₃ wb e₁ a₁ e₂ a₂ a₃ c bs a b) := by
-  induction bs generalizing c a b with
-  | nil =>
-    simp only [affineInputWith, affineInputWithM, affineClassSameTail, affineClassSameTailM]
-    exact mrel_append (pairTail_mrel _ _ _ _ _ _ _ _) (bitTest_mrel _ _ _ _)
-  | cons q qs ih =>
-    simp only [affineInputWith, affineInputWithM]
-    apply mrel_append (mrel_append (mrel_refl _) _) (mrel_refl _)
-    split_ifs
-    · exact mrel_append (mrel_append (mrel_refl _) (ih _ _ _)) (mrel_refl _)
-    · simp only [affineInputSuffix, affineInputSuffixM]
-      exact mrel_append (mrel_append (mrel_refl _)
-        (zeroWith_mrel _ _ (fun h => affineClassTail_mrel _ _ _ _ _ _ _ _ _ _ _ _ h) _ _)) (mrel_refl _)
-
-theorem affineInputWithM_counts (y t₁ t₂ t₃ wb : Wire) (a₁ e₂ a₂ a₃ : Bool)
-    (c : Wire) (bs : List ZeroBit) (a b : Nat) :
-    toffoliCount (affineInputWithM y t₁ t₂ t₃ wb true a₁ e₂ a₂ a₃ c bs a b) + 2 =
-      bs.length + 1 + tailCost true a₁ e₂ a₂ ∧
-    measurementCount (affineInputWithM y t₁ t₂ t₃ wb true a₁ e₂ a₂ a₃ c bs a b) = bs.length + 2 := by
-  induction bs generalizing c a b with
-  | nil =>
-    cases e₂ <;> cases a₁ <;> cases a₂ <;> cases a₃ <;>
-      simp [affineInputWithM, affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, tailCost,
-        bitTestM, bitTest, zeroFlag, toffoliCount, measurementCount]
-  | cons q qs ih =>
-    have hf : toffoliCount (if a % 2 = 1 then [.X q.input] else []) = 0 ∧
-        measurementCount (if a % 2 = 1 then [.X q.input] else []) = 0 := by
-      split_ifs <;> exact ⟨rfl,rfl⟩
-    have hi := ih q.work (a/2) (b/2)
-    have ht : ∀ h, toffoliCount (affineClassTailM q.input y t₁ t₂ t₃ q.work wb true a₁ e₂ a₂ a₃ h) + 2 =
-        2 + tailCost true a₁ e₂ a₂ ∧
-        measurementCount (affineClassTailM q.input y t₁ t₂ t₃ q.work wb true a₁ e₂ a₂ a₃ h) = 3 := by
-      intro h
-      cases e₂ <;> cases a₁ <;> cases a₂ <;> cases a₃ <;>
-        simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, tailCost, chainAnd, chainErase,
-          bitTestM, bitTest, zeroFlag, toffoliCount, measurementCount]
-    have hz : ∀ (c : Wire) (bs : List ZeroBit),
-        toffoliCount (zeroWith (affineClassTailM q.input y t₁ t₂ t₃ q.work wb true a₁ e₂ a₂ a₃) c bs) + 2 =
-          bs.length + 2 + tailCost true a₁ e₂ a₂ ∧
-        measurementCount (zeroWith (affineClassTailM q.input y t₁ t₂ t₃ q.work wb true a₁ e₂ a₂ a₃) c bs) =
-          bs.length + 3 := by
-      intro c bs
-      induction bs generalizing c with
-      | nil => simpa [zeroWith] using ht c
-      | cons d ds ihd =>
-        have h := ihd d.work
-        simp only [zeroWith, chainAnd, chainErase, toffoliCount_append, measurementCount_append,
-          List.length_cons]
-        simp [toffoliCount, measurementCount] at h ⊢
-        omega
-    simp only [affineInputWithM,toffoliCount_append,measurementCount_append,hf.1,hf.2,
-      Nat.zero_add,Nat.add_zero,List.length_cons]
-    split_ifs
-    · simp only [toffoliCount_append,measurementCount_append,
-        show toffoliCount (chainAnd c q.input q.work) = 1 from rfl,
-        show measurementCount (chainAnd c q.input q.work) = 0 from rfl,
-        show toffoliCount (chainErase c q.input q.work) = 0 from rfl,
-        show measurementCount (chainErase c q.input q.work) = 1 from rfl]
-      exact ⟨by omega,by omega⟩
-    · have h := hz c qs
-      simp only [affineInputSuffixM,toffoliCount_append,measurementCount_append,
-        (affineClassSelect_counts q.input (qs.map ZeroBit.input) (a/2) (b/2)).1,
-        (affineClassSelect_counts q.input (qs.map ZeroBit.input) (a/2) (b/2)).2]
-      exact ⟨by omega,by omega⟩
-
-theorem mrel_rename (f : Wire → Wire) {P Q : Program} (h : List.Forall₂ MRel P Q) :
-    List.Forall₂ MRel (renameProgram f P) (renameProgram f Q) := by
-  induction h with
-  | nil => exact .nil
-  | @cons i j P Q hij _ ih =>
-    refine .cons ?_ ih
-    rcases hij with rfl | ⟨a, b, t, rfl, rfl⟩
-    · exact Or.inl rfl
-    · exact Or.inr ⟨f a, f b, f t, rfl, rfl⟩
-
-end ECDSAAdd.Entrant
-end
-
 -- ===== Shared affine output classification =====
 section
 set_option maxRecDepth 8192
@@ -71799,156 +70879,43 @@ theorem shared_flag (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
   rw [←u1 q hq]
   simp only [writeBit,Function.update_apply]
 
-/-- The output classifier whose `generic` and `doubleSelect` toggles only clear: measured. -/
-def sharedM (L : ControlledPointLayout) (C : Point) : Program :=
-  affineInputWithM (yLow L) L.core.generic L.core.equalNegY L.doubleSelect (L.core.poolWire 513)
-    true (yBit C) (exceptionBit C) (yBit (-C)) (yBit (C+C)) L.control
-    (pairPorts L) (pairCode C) (pairCode (C+C))
-
-theorem sharedM_boundary (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (R C : Point) (b : Bool) (f : BasisState)
-    (hf1 : f L.core.generic = (b && pointEqual R C))
-    (hf3 : f L.doubleSelect = (b && pointEqual R (C+C))) :
-    Triple (PointDialogBoundary L R b f) (sharedM L C)
-      (PointDialogBoundary L R b
-        (writeBit (writeBit (writeBit f L.core.generic
-          (f L.core.generic ^^ (b && pointEqual R C))) L.core.equalNegY
-          (f L.core.equalNegY ^^ ((b && exceptionBit C) && pointEqual R (-C)))) L.doubleSelect
-          (f L.doubleSelect ^^ (b && pointEqual R (C+C))))) := by
-  intro s m v
-  have hmaps := pairPorts_maps L hw
-  have clean : ∀ q ∈ pairPorts L, s.basis q.work = false := by
-    intro q hq
-    have hm : q.work ∈ L.dialogPool.take 256 := by
-      rw [← hmaps.2]; exact List.mem_map.mpr ⟨q,hq,rfl⟩
-    exact (regValue_zero _ _).mp v.clean _ (List.mem_of_mem_take hm)
-  have pk : L.core.poolWire 513 ∈ L.dialogPool := by
-    have hm : L.core.poolWire 513 ∈ L.dialogPool.take 515 := by
-      rw [pool_block L hw 515 (by omega)]
-      simp [wireBlock,List.mem_map,List.mem_range'_1]
-      exact ⟨513,by omega,rfl⟩
-    exact List.mem_of_mem_take hm
-  have hzb := (regValue_zero _ _).mp v.clean _ pk
-  have ha : pairCode C < 2^(pairPorts L).length := by rw [pairPorts_length L hw]; exact pairCode_lt C
-  have hb : pairCode (C+C) < 2^(pairPorts L).length := by rw [pairPorts_length L hw]; exact pairCode_lt _
-  have hx : regValue ((pairPorts L).map ZeroBit.input) s.basis = pairCode R := by
-    rw [hmaps.1]; exact pairSrc_value L hw R s.basis v.point
-  have hy := yLow_value L hw R s.basis v.point
-  have k₁ : (true && (s.basis L.control && decide (pairCode R=pairCode C)) &&
-      (s.basis (yLow L) == yBit C)) = (b && pointEqual R C) := by
-    rw [hy,v.control,← pair_value_eq R C]
-    simp [Bool.and_assoc]
-  have k₂ : (exceptionBit C && (s.basis L.control && decide (pairCode R=pairCode C)) &&
-      (s.basis (yLow L) == yBit (-C))) = ((b && exceptionBit C) && pointEqual R (-C)) := by
-    rw [hy,v.control,← pair_value_eq R (-C),pairCode_neg]
-    simp [Bool.and_assoc,Bool.and_comm,Bool.and_left_comm]
-  have k₃ : ((s.basis L.control && decide (pairCode R=pairCode (C+C))) &&
-      (s.basis (yLow L) == yBit (C+C))) = (b && pointEqual R (C+C)) := by
-    rw [hy,v.control,← pair_value_eq R (C+C)]
-    simp [Bool.and_assoc]
-  have hp1 : s.basis L.core.generic = (true && (s.basis L.control &&
-      decide (regValue ((pairPorts L).map ZeroBit.input) s.basis = pairCode C)) &&
-      (s.basis (yLow L) == yBit C)) := by
-    rw [hx, k₁]; exact (v.flags _ (by simp [inPlaceFlags])).trans hf1
-  have hp3 : s.basis L.doubleSelect = ((s.basis L.control &&
-      decide (regValue ((pairPorts L).map ZeroBit.input) s.basis = pairCode (C+C))) &&
-      (s.basis (yLow L) == yBit (C+C))) := by
-    rw [hx, k₃]; exact (v.flags _ (by simp [inPlaceFlags])).trans hf3
-  have hh := affineInputWithM_run (yLow L) L.core.generic L.core.equalNegY L.doubleSelect
-    (L.core.poolWire 513) true (yBit C) (exceptionBit C) (yBit (-C)) (yBit (C+C))
-    L.control (pairPorts L) (pairCode C) (pairCode (C+C))
-    (shared_nodup L hw hn) ha hb s m hzb clean hp1 hp3
-  rw [hx] at hh
-  have heq : run (sharedM L C) m s =
-      ⟨s.phase,writeBit (writeBit (writeBit s.basis L.core.generic
-        (s.basis L.core.generic ^^ (b && pointEqual R C))) L.core.equalNegY
-        (s.basis L.core.equalNegY ^^ ((b && exceptionBit C) && pointEqual R (-C)))) L.doubleSelect
-        (s.basis L.doubleSelect ^^ (b && pointEqual R (C+C)))⟩ := by
-    rw [sharedM,hh]
-    simp only [inputClassEffect,pairEffect,k₁,k₂,k₃]
-  refine ⟨by rw [heq],v.withFlags hn ?_ ?_⟩
-  · intro q hq
-    rw [heq]
-    simp only [writeBit,Function.update_apply]
-    rw [v.flags L.core.generic (by simp [inPlaceFlags]),
-      v.flags L.core.equalNegY (by simp [inPlaceFlags]),
-      v.flags L.doubleSelect (by simp [inPlaceFlags])]
-    split_ifs <;> first | rfl | exact v.flags q hq
-  · intro q hq
-    rw [heq]
-    have h1 : q ≠ L.core.generic := fun e => hq (e ▸ by simp [inPlaceFlags])
-    have h2 : q ≠ L.core.equalNegY := fun e => hq (e ▸ by simp [inPlaceFlags])
-    have h3 : q ≠ L.doubleSelect := fun e => hq (e ▸ by simp [inPlaceFlags])
-    simp [writeBit,h1,h2,h3]
-
-theorem sharedM_flag (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (R C : Point) (b O D I G E H K : Bool)
-    (hG : G = (b && pointEqual R C)) (hD : D = (b && pointEqual R (C+C))) :
-    Triple (PointDialogBoundary L R b (dialogFlagState L O D I G E H K)) (sharedM L C)
-      (PointDialogBoundary L R b (dialogFlagState L O (D ^^ (b && pointEqual R (C+C))) I
-        (G ^^ (b && pointEqual R C)) E (H ^^ ((b && exceptionBit C) && pointEqual R (-C))) K)) := by
-  have hr := dialogFlagState_read L hn O D I G E H K
-  have hh := sharedM_boundary L hw hn R C b (dialogFlagState L O D I G E H K)
-    (hr.2.2.2.1.trans hG) (hr.2.1.trans hD)
-  simp only [hr.2.1,hr.2.2.2.1,hr.2.2.2.2.2.1] at hh
-  refine hh.conseq (fun _ h => h) (fun _ h => h.congrFlags ?_)
-  intro q hq
-  have u1 := (dialogFlagState_update L hn O D I G E H K
-    (G ^^ (b && pointEqual R C))).2.2.2.1
-  have u2 := (dialogFlagState_update L hn O D I (G ^^ (b && pointEqual R C)) E H K
-    (H ^^ ((b && exceptionBit C) && pointEqual R (-C)))).2.2.2.2.2.1
-  have u3 := (dialogFlagState_update L hn O D I (G ^^ (b && pointEqual R C)) E
-    (H ^^ ((b && exceptionBit C) && pointEqual R (-C))) K
-    (D ^^ (b && pointEqual R (C+C)))).2.1
-  rw [←u3 q hq]
-  simp only [writeBit,Function.update_apply]
-  rw [←u2 q hq]
-  simp only [writeBit,Function.update_apply]
-  rw [←u1 q hq]
-  simp only [writeBit,Function.update_apply]
-
-theorem sharedM_counts (L : ControlledPointLayout) (hw : L.Widths) {cx cy : Fp}
-    (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (sharedM L (.some hc))=256 ∧ measurementCount (sharedM L (.some hc))=258 := by
-  have tc : tailCost true (yBit (.some hc)) (exceptionBit (.some hc)) (yBit (-((.some hc) : Point)))=1 := by
-    rw [yBit_neg hc]
-    cases yBit (.some hc) <;> cases exceptionBit (.some hc) <;> decide
-  have hh := affineInputWithM_counts (yLow L) L.core.generic L.core.equalNegY L.doubleSelect
-    (L.core.poolWire 513) (yBit (.some hc)) (exceptionBit (.some hc))
-    (yBit (-((.some hc) : Point))) (yBit ((.some hc)+(.some hc)))
-    L.control (pairPorts L) (pairCode (.some hc)) (pairCode ((.some hc)+(.some hc)))
-  rw [pairPorts_length L hw, tc] at hh
-  simp only [sharedM]
-  exact ⟨by omega, hh.2⟩
-
-theorem sharedM_mrel (L : ControlledPointLayout) (C : Point) : List.Forall₂ MRel (shared L C) (sharedM L C) :=
-  affineInputWith_mrel _ _ _ _ _ _ _ _ _ _ _ _ _ _
-
-theorem sharedM_rename_wires (L : ControlledPointLayout) (f : Wire → Wire) (C : Point) :
-    wires (renameProgram f (sharedM L C)) = wires (renameProgram f (shared L C)) :=
-  mrel_wires (mrel_rename f (sharedM_mrel L C))
-
 def outStage (L : ControlledPointLayout) (C : Point) : Program :=
   zeroFlag L.point.finite L.control L.core.generic ++ corners2 L C ++ shared L C
 
-def outStageM (L : ControlledPointLayout) (C : Point) : Program :=
-  zeroFlag L.point.finite L.control L.core.generic ++ corners2 L C ++ sharedM L C
-
 def finiteProgram (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) : Program :=
   inputClass L C cy ++
-  genFlagN L ++ clrDHm L C cy ++
+  genFlagN L ++ clrDH L C cy ++
   renameProgram (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) Gen)) ++
   clrDH L C cy ++ mergeFlagsN L ++
-  renameProgram (sigP L) (corners2 L C ++ sharedM L C) ++
+  renameProgram (sigP L) (corners2 L C ++ shared L C) ++
   chainErase L.control L.point.finite L.genericSelect
 
 private theorem equal_simp [DecidableEq Point] (R C : Point) : pointEqual R C=decide (R=C) := by
   simp only [pointEqual,pointCode_injective.eq_iff]
 
-theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+def finiteProgramWith (L : ControlledPointLayout) (C : Point) (cy : Fp)
+    (Gen Clear Restore : Program) : Program :=
+  inputClass L C cy ++ genFlagN L ++ Clear ++
+  renameProgram (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) Gen)) ++
+  Restore ++ mergeFlagsN L ++ renameProgram (sigP L) (corners2 L C ++ shared L C) ++
+  chainErase L.control L.point.finite L.genericSelect
+
+theorem finite_specWith (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (R : Point) {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool)
-    (Gen : Program) (hGen : GenericOK L hc Gen) :
-    Triple (PointDialogBoundary L R b (fun _=>false)) (finiteProgram L (.some hc) cy Gen)
+    (Gen : Program) (hGen : GenericOK L hc Gen) (Clear Restore : Program)
+    (hClear : ∀ R b D G H, (G=true → b=true ∧ pointFinite R=true) →
+      Triple (PointDialogBoundary L R b (dialogFlagState L false D G false false H false))
+        (clrDH L (.some hc) cy)
+        (PointDialogBoundary L R b (dialogFlagState L false false G false false false false)) →
+      Triple (PointDialogBoundary L R b (dialogFlagState L false D G false false H false))
+        Clear (PointDialogBoundary L R b (dialogFlagState L false false G false false false false)))
+    (hRestore : ∀ R b G D H, (G=true → b=true ∧ pointFinite R=true) →
+      Triple (PointDialogBoundary L R b (dialogFlagState L false false G false false false false))
+        (clrDH L (.some hc) cy)
+        (PointDialogBoundary L R b (dialogFlagState L false D G false false H false)) →
+      Triple (PointDialogBoundary L R b (dialogFlagState L false false G false false false false))
+        Restore (PointDialogBoundary L R b (dialogFlagState L false D G false false H false))) :
+    Triple (PointDialogBoundary L R b (fun _=>false)) (finiteProgramWith L (.some hc) cy Gen Clear Restore)
       (PointDialogBoundary L (if b then R+.some hc else R) b (fun _=>false)) := by
   classical
   let C : Point := .some hc
@@ -71979,6 +70946,13 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
   have hGv : ((((false ^^ (b && pointFinite R)) ^^ D) ^^ I) ^^ H) = G := by
     rw [hfin, hO]; simp only [G, dialogOrdinary, O, D, I, H, Bool.false_xor]
   have hgen := (dialogOrdinary_true b R C hC)
+  have covered : G=true → b=true ∧ pointFinite R=true := by
+    intro hg
+    obtain ⟨hb,h0,-⟩ := hgen.mp hg
+    refine ⟨hb,?_⟩
+    cases R with
+    | zero => exact False.elim (h0 rfl)
+    | some hr => rfl
   have hR1fin : (b && pointFinite R1) = (b && pointFinite R) := by
     by_cases hg : G = true
     · obtain ⟨hb, h0, _, hn', _⟩ := hgen.mp hg
@@ -72059,7 +71033,8 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
   have clrH : false = (H ^^ (exceptionBit C && b && pointFinite R && !G &&
       ((pointX R).testBit (DHClass.kx C) != DHClass.cxk C))) := by
     rw [hE]; simp only [H, G, C]; rw [← cls.2, Bool.xor_self]
-  have hf1 := clrDHm_flag L hw hn C cy R b D G H clrD clrH
+  have hf1 := clrDH_flag L hw hn C cy R b D G H false false clrD clrH
+  have hf1 := hClear R b D G H covered hf1
   have read := dialogFlagState_read L hn false false G false false false false
   have h7 := genericD_ok L hw hn hc Gen hGen R b
     (dialogFlagState L false false G false false false false)
@@ -72080,6 +71055,12 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
     · have hR1 : R1 = R := by simp only [R1]; rw [if_neg hg]
       rw [hR1, hE, Bool.false_xor]; simp only [H, G, C]; exact cls.2
   have hu := clrDH_flag L hw hn C cy R1 b false G false D H resD resH
+  have covered1 : G=true → b=true ∧ pointFinite R1=true := by
+    intro hg
+    have cv := covered hg
+    rw [cv.1,cv.2] at hR1fin
+    exact ⟨cv.1,by simpa using hR1fin⟩
+  have hu := hRestore R1 b G D H covered1 hu
   have h9 := genFlagN_flag L hn R1 b false D G false false H false
   rw [hI1] at h9
   have h10a := zeroFlag_flagG L hn R1 b false D I false false H false
@@ -72091,28 +71072,27 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
   have heout : ((b && exceptionBit C) && pointEqual S (-C))=H := by
     rw [hE]
     simpa [H,S,dialogExceptionEnabled,equal_simp] using hf.2.2.2
+  have h10 := shared_flag L hw hn S C b false D I O false H false
   have hdo : (b && pointEqual S (C+C))=D := by
     have hcy : decide (cy≠-cy)=true := by rw [cy_ne_neg hc]
     have hk : K=b := by simp [K,hcy]
     rw [←hk,hK]
     simpa only [equal_simp] using hf.2.1
-  have h10 := sharedM_flag L hw hn S C b false D I O false H false
-    (by rw [equal_simp]; exact hf.1.symm) hdo.symm
   rw [heout,hdo,Bool.xor_self,Bool.xor_self] at h10
   simp only [equal_simp] at h10
   rw [hf.1,Bool.xor_self] at h10
-  have hout := park_triple L hw hn (outStageM L C) R1 S b
+  have hout := park_triple L hw hn (outStage L C) R1 S b
     (dialogFlagState L false D I false false H false) (dialogFlagState L false false I false false false false)
     (dialogFlagState_read L hn false D I false false H false).2.2.2.1
     (dialogFlagState_read L hn false false I false false false false).2.2.2.1
-    (by simpa only [outStageM, List.append_assoc] using (h10a.seq h8).seq h10)
+    (by simpa only [outStage, List.append_assoc] using (h10a.seq h8).seq h10)
   have merge_run (s : State) (m : List Bool) :
-      run (mergeFlagsN L ++ renameProgram (sigP L) (corners2 L C ++ sharedM L C)) m s =
-        run (genFlagN L ++ renameProgram (sigP L) (outStageM L C)) m s := by
-    have shape : genFlagN L ++ renameProgram (sigP L) (outStageM L C) =
+      run (mergeFlagsN L ++ renameProgram (sigP L) (corners2 L C ++ shared L C)) m s =
+        run (genFlagN L ++ renameProgram (sigP L) (outStage L C)) m s := by
+    have shape : genFlagN L ++ renameProgram (sigP L) (outStage L C) =
         (genFlagN L ++ zeroFlag L.point.finite L.control (parkWire L)) ++
-          renameProgram (sigP L) (corners2 L C ++ sharedM L C) := by
-      simp only [outStageM,rename_append,sigP_zeroFlag L hw hn,List.append_assoc]
+          renameProgram (sigP L) (corners2 L C ++ shared L C) := by
+      simp only [outStage,rename_append,sigP_zeroFlag L hw hn,List.append_assoc]
     rw [shape,run_append,run_take]
     rw [run_append (genFlagN L ++ zeroFlag L.point.finite L.control (parkWire L)),run_take]
     simp only [show measurementCount (mergeFlagsN L)=0 from rfl,
@@ -72120,7 +71100,7 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
       List.drop_zero]
     rw [mergeFlagsN_run_eq L hw hn s m]
   have hmerged : Triple (PointDialogBoundary L R1 b (dialogFlagState L false D G false false H false))
-      (mergeFlagsN L ++ renameProgram (sigP L) (corners2 L C ++ sharedM L C))
+      (mergeFlagsN L ++ renameProgram (sigP L) (corners2 L C ++ shared L C))
       (PointDialogBoundary L S b (dialogFlagState L false false I false false false false)) := by
     intro s m hs
     rw [merge_run]
@@ -72131,7 +71111,16 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
   have h12 := chainErase_equalI L hn S b false false (dialogInversePoint b R C)
     false false false false (by rw [← hf.2.2.1, hzero])
   have h := ((((((h3.seq h6).seq hf1).seq h7).seq hu).seq hmerged).seq h12)
-  simpa only [finiteProgram,List.append_assoc,dialogFlagState_zero] using h
+  simpa only [finiteProgramWith,List.append_assoc,dialogFlagState_zero] using h
+
+theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (R : Point) {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool)
+    (Gen : Program) (hGen : GenericOK L hc Gen) :
+    Triple (PointDialogBoundary L R b (fun _=>false)) (finiteProgram L (.some hc) cy Gen)
+      (PointDialogBoundary L (if b then R+.some hc else R) b (fun _=>false)) := by
+  simpa only [finiteProgram,finiteProgramWith] using
+    finite_specWith L hw hn R hc b Gen hGen (clrDH L (.some hc) cy) (clrDH L (.some hc) cy)
+      (fun _ _ _ _ _ _ h => h) (fun _ _ _ _ _ _ h => h)
 
 
 theorem shared_counts (L : ControlledPointLayout) (hw : L.Widths) {cx cy : Fp}
@@ -72165,17 +71154,15 @@ theorem shared_wires (L : ControlledPointLayout) (hw : L.Widths) (C : Point) :
 
 theorem finite_counts (L : ControlledPointLayout) (hw : L.Widths) (Gen : Program) {cx cy : Fp}
     (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (finiteProgram L (.some hc) cy Gen) ≤ 523+toffoliCount Gen ∧
-    measurementCount (finiteProgram L (.some hc) cy Gen) ≤ 523+measurementCount Gen := by
+    toffoliCount (finiteProgram L (.some hc) cy Gen) ≤ 528+toffoliCount Gen ∧
+    measurementCount (finiteProgram L (.some hc) cy Gen) ≤ 519+measurementCount Gen := by
   have inp := inputClass_counts L hw hc
-  have out := sharedM_counts L hw hc
+  have out := shared_counts L hw hc
   have zero : toffoliCount (corners2 L (.some hc))=0 ∧ measurementCount (corners2 L (.some hc))=0 := by
     simp only [corners2,toffoliCount_append,measurementCount_append,
       (maskedPointConstant_counts _ _ _).1,(maskedPointConstant_counts _ _ _).2]; decide
-  have fo : toffoliCount (clrDH L (.some hc) cy) ≤ 4 ∧ measurementCount (clrDH L (.some hc) cy) ≤ 3 :=
-    DHGadget.gadget_counts4 _ _ _ _ _ _ _ _ _ _ _ _ _ _
-  have fm : toffoliCount (clrDHm L (.some hc) cy) ≤ 3 ∧ measurementCount (clrDHm L (.some hc) cy) ≤ 5 :=
-    DHGadget.gadgetM_counts _ _ _ _ _ _ _ _ _ _ _ _ _ _
+  have fo : toffoliCount (clrDH L (.some hc) cy) ≤ 5 ∧ measurementCount (clrDH L (.some hc) cy) ≤ 3 :=
+    DHGadget.gadget_counts _ _ _ _ _ _ _ _ _ _ _ _ _ _
   have z2 : toffoliCount (chainErase L.control L.point.finite L.genericSelect) = 0 ∧
       measurementCount (chainErase L.control L.point.finite L.genericSelect) = 1 := by
     simp [chainErase, toffoliCount, measurementCount]
@@ -72205,8 +71192,8 @@ theorem wrapper_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
 
 theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (Gen : Program) {cx cy : Fp}
     (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (wrapper L (.some hc) cy Gen) ≤ 523+toffoliCount Gen ∧
-    measurementCount (wrapper L (.some hc) cy Gen) ≤ 523+measurementCount Gen := by
+    toffoliCount (wrapper L (.some hc) cy Gen) ≤ 528+toffoliCount Gen ∧
+    measurementCount (wrapper L (.some hc) cy Gen) ≤ 519+measurementCount Gen := by
   simpa only [wrapper,renameProgram_counts] using
     finite_counts L hw (renameProgram (Wrapper5.U L) Gen) hc
 
@@ -72214,11 +71201,8 @@ theorem finite_wires (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Pr
     wires (finiteProgram L C cy Gen) ⊆ wires (finiteProgramN L C cy Gen) ∪
       wires (renameProgram (sigP L) (shared L C)) := by
   intro q hq
-  have hm : q ∈ wires (clrDHm L C cy) → q ∈ wires (clrDH L C cy) :=
-    DHGadget.gadgetM_wires _ _ _ _ _ _ _ _ _ _ _ _ _ _ q
-  have hsw := sharedM_rename_wires L (sigP L) C
   simp only [finiteProgram,finiteProgramN,ECDSAAdd.Entrant.outTail,rename_append,
-    wires_append,Finset.mem_union,hsw] at hq ⊢
+    wires_append,Finset.mem_union] at hq ⊢
   tauto
 
 theorem wrapper_wires (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) :
@@ -72357,10 +71341,8 @@ theorem finite_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
     (C : Point) (cy : Fp) (Gen : Program) (hG : GatePhysical Gen) :
     GatePhysical (finiteProgram L C cy Gen) := by
   have hp := finiteProgramN_physical L hw hn C cy Gen hG
-  have hs := gatePhysical_rename (sigP L) (sigP_injective L hw hn) (sharedM L C)
-    (mrel_physical (sharedM_mrel L C) (shared_physical L hw hn C))
-  have hm : GatePhysical (clrDHm L C cy) :=
-    DHGadget.gadgetM_physical _ _ _ _ _ _ _ _ _ _ _ _ _ _ (dh_nodup L hw hn _ (DHClass.kx_lt C))
+  have hs := gatePhysical_rename (sigP L) (sigP_injective L hw hn) (shared L C)
+    (shared_physical L hw hn C)
   simp only [finiteProgramN,ECDSAAdd.Entrant.outTail,rename_append,gatePhysical_append] at hp
   simp only [finiteProgram,rename_append,gatePhysical_append]
   tauto
@@ -72378,16 +71360,11 @@ theorem shared_slots (L : ControlledPointLayout) (hw : L.Widths) (C : Point) :
   simpa only [shared,pairPorts_length L hw] using hh
 
 theorem wrapper_slots (L : ControlledPointLayout) (hw : L.Widths)
-    (C : Point) (cy : Fp) (Gen : Program) : gateSlots (wrapper L C cy Gen) ≤ 25680+gateSlots Gen := by
+    (C : Point) (cy : Fp) (Gen : Program) : gateSlots (wrapper L C cy Gen) ≤ 22836+gateSlots Gen := by
   have hp := finiteProgramN_gateSlots L hw C cy (renameProgram (Wrapper5.U L) Gen)
-  have hs0 := shared_slots L hw C
-  have hs : gateSlots (sharedM L C) ≤ 5672 := (mrel_slots (sharedM_mrel L C)).trans (by omega)
-  have hm : gateSlots (clrDHm L C cy) ≤ gateSlots (clrDH L C cy) + 8 := by
-    unfold clrDHm clrDH
-    cases decide (cy≠-cy) <;> cases exceptionBit C <;> cases DHClass.cxk C <;> cases yBit C <;>
-      simp [DHGadget.gadgetM, DHGadget.gadget, DHGadget.flipIf, gateSlots, Challenge.instructionSlots]
+  have hs := shared_slots L hw C
   have extra : gateSlots (finiteProgram L C cy (renameProgram (Wrapper5.U L) Gen)) ≤
-      gateSlots (finiteProgramN L C cy (renameProgram (Wrapper5.U L) Gen))+gateSlots (sharedM L C)+8 := by
+      gateSlots (finiteProgramN L C cy (renameProgram (Wrapper5.U L) Gen))+gateSlots (shared L C) := by
     simp only [finiteProgram,finiteProgramN,ECDSAAdd.Entrant.outTail,gateSlots_append,rename_gateSlots]
     omega
   simp only [wrapper,rename_gateSlots] at *
@@ -80247,7 +79224,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2155416, 1501199, 1594, 50002848⟩
+def bounds : Challenge.Bounds := ⟨2155416, 1501195, 1594, 50000004⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -80279,7 +79256,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2155416 := by
     change toffoliCount (Edges.wrapper layout (.some hc) cy (OwnExitProducer.genE layout cx cy)) ≤ _
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1501199 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1501195 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -80318,7 +79295,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (OwnExitProducer.genE_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50002848 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50000004 := by
   cases C with
   | zero => simp [program, gateSlots]
   | @some cx cy hc =>
@@ -80333,7 +79310,7 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1501199
+    change measurementCount (normalizeProgram (program C)) ≤ 1501195
     rw [normalize_measurements]
     exact program_measurements C
   qubits_le C := by
@@ -80341,7 +79318,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     rw [normalize_qubits]
     exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50002848
+    change gateSlots (normalizeProgram (program C)) ≤ 50000004
     rw [normalize_slots]
     exact program_gateSlots C
 
