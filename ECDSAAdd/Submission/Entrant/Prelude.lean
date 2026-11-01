@@ -70893,10 +70893,29 @@ def finiteProgram (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Progr
 private theorem equal_simp [DecidableEq Point] (R C : Point) : pointEqual R C=decide (R=C) := by
   simp only [pointEqual,pointCode_injective.eq_iff]
 
-theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+def finiteProgramWith (L : ControlledPointLayout) (C : Point) (cy : Fp)
+    (Gen Clear Restore : Program) : Program :=
+  inputClass L C cy ++ genFlagN L ++ Clear ++
+  renameProgram (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) Gen)) ++
+  Restore ++ mergeFlagsN L ++ renameProgram (sigP L) (corners2 L C ++ shared L C) ++
+  chainErase L.control L.point.finite L.genericSelect
+
+theorem finite_specWith (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (R : Point) {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool)
-    (Gen : Program) (hGen : GenericOK L hc Gen) :
-    Triple (PointDialogBoundary L R b (fun _=>false)) (finiteProgram L (.some hc) cy Gen)
+    (Gen : Program) (hGen : GenericOK L hc Gen) (Clear Restore : Program)
+    (hClear : ∀ R b D G H, (G=true → b=true ∧ pointFinite R=true) →
+      Triple (PointDialogBoundary L R b (dialogFlagState L false D G false false H false))
+        (clrDH L (.some hc) cy)
+        (PointDialogBoundary L R b (dialogFlagState L false false G false false false false)) →
+      Triple (PointDialogBoundary L R b (dialogFlagState L false D G false false H false))
+        Clear (PointDialogBoundary L R b (dialogFlagState L false false G false false false false)))
+    (hRestore : ∀ R b G D H, (G=true → b=true ∧ pointFinite R=true) →
+      Triple (PointDialogBoundary L R b (dialogFlagState L false false G false false false false))
+        (clrDH L (.some hc) cy)
+        (PointDialogBoundary L R b (dialogFlagState L false D G false false H false)) →
+      Triple (PointDialogBoundary L R b (dialogFlagState L false false G false false false false))
+        Restore (PointDialogBoundary L R b (dialogFlagState L false D G false false H false))) :
+    Triple (PointDialogBoundary L R b (fun _=>false)) (finiteProgramWith L (.some hc) cy Gen Clear Restore)
       (PointDialogBoundary L (if b then R+.some hc else R) b (fun _=>false)) := by
   classical
   let C : Point := .some hc
@@ -70927,6 +70946,13 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
   have hGv : ((((false ^^ (b && pointFinite R)) ^^ D) ^^ I) ^^ H) = G := by
     rw [hfin, hO]; simp only [G, dialogOrdinary, O, D, I, H, Bool.false_xor]
   have hgen := (dialogOrdinary_true b R C hC)
+  have covered : G=true → b=true ∧ pointFinite R=true := by
+    intro hg
+    obtain ⟨hb,h0,-⟩ := hgen.mp hg
+    refine ⟨hb,?_⟩
+    cases R with
+    | zero => exact False.elim (h0 rfl)
+    | some hr => rfl
   have hR1fin : (b && pointFinite R1) = (b && pointFinite R) := by
     by_cases hg : G = true
     · obtain ⟨hb, h0, _, hn', _⟩ := hgen.mp hg
@@ -71008,6 +71034,7 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
       ((pointX R).testBit (DHClass.kx C) != DHClass.cxk C))) := by
     rw [hE]; simp only [H, G, C]; rw [← cls.2, Bool.xor_self]
   have hf1 := clrDH_flag L hw hn C cy R b D G H false false clrD clrH
+  have hf1 := hClear R b D G H covered hf1
   have read := dialogFlagState_read L hn false false G false false false false
   have h7 := genericD_ok L hw hn hc Gen hGen R b
     (dialogFlagState L false false G false false false false)
@@ -71028,6 +71055,12 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
     · have hR1 : R1 = R := by simp only [R1]; rw [if_neg hg]
       rw [hR1, hE, Bool.false_xor]; simp only [H, G, C]; exact cls.2
   have hu := clrDH_flag L hw hn C cy R1 b false G false D H resD resH
+  have covered1 : G=true → b=true ∧ pointFinite R1=true := by
+    intro hg
+    have cv := covered hg
+    rw [cv.1,cv.2] at hR1fin
+    exact ⟨cv.1,by simpa using hR1fin⟩
+  have hu := hRestore R1 b G D H covered1 hu
   have h9 := genFlagN_flag L hn R1 b false D G false false H false
   rw [hI1] at h9
   have h10a := zeroFlag_flagG L hn R1 b false D I false false H false
@@ -71078,7 +71111,16 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
   have h12 := chainErase_equalI L hn S b false false (dialogInversePoint b R C)
     false false false false (by rw [← hf.2.2.1, hzero])
   have h := ((((((h3.seq h6).seq hf1).seq h7).seq hu).seq hmerged).seq h12)
-  simpa only [finiteProgram,List.append_assoc,dialogFlagState_zero] using h
+  simpa only [finiteProgramWith,List.append_assoc,dialogFlagState_zero] using h
+
+theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (R : Point) {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool)
+    (Gen : Program) (hGen : GenericOK L hc Gen) :
+    Triple (PointDialogBoundary L R b (fun _=>false)) (finiteProgram L (.some hc) cy Gen)
+      (PointDialogBoundary L (if b then R+.some hc else R) b (fun _=>false)) := by
+  simpa only [finiteProgram,finiteProgramWith] using
+    finite_specWith L hw hn R hc b Gen hGen (clrDH L (.some hc) cy) (clrDH L (.some hc) cy)
+      (fun _ _ _ _ _ _ h => h) (fun _ _ _ _ _ _ h => h)
 
 
 theorem shared_counts (L : ControlledPointLayout) (hw : L.Widths) {cx cy : Fp}
