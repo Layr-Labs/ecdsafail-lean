@@ -1,8 +1,8 @@
-import ECDSAAdd.Submission.Entrant.FusedBoundaryFinal
+import ECDSAAdd.Submission.Entrant.SharedErase
 
 namespace ECDSAAdd.Entrant
-def program := FusedBoundaryFinal.program
-def entry := FusedBoundaryFinal.entry
-def bounds := FusedBoundaryFinal.bounds
-theorem certificate : Challenge.Certificate entry bounds := FusedBoundaryFinal.certificate
+def program := SharedErase.program
+def entry := SharedErase.entry
+def bounds := SharedErase.bounds
+theorem certificate : Challenge.Certificate entry bounds := SharedErase.certificate
 end ECDSAAdd.Entrant
