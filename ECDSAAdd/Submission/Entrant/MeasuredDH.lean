@@ -350,7 +350,7 @@ theorem wrapper_counts (L : ControlledPointLayout) (Gen : Program) {cx cy : Fp}
     rename_gateSlots,hd,he]
   omega
 
-private theorem boundary_work (L : ControlledPointLayout) : L.inPlaceFlags++L.dialogPool ⊆ L.work := by
+theorem boundary_work (L : ControlledPointLayout) : L.inPlaceFlags++L.dialogPool ⊆ L.work := by
   intro q hq
   have h1 := List.count_pos_iff.mpr hq
   have ht := (List.take_sublist 2613 L.core.pool).count_le q
@@ -361,7 +361,7 @@ private theorem boundary_work (L : ControlledPointLayout) : L.inPlaceFlags++L.di
     List.count_cons,List.count_nil] at h1 ht ⊢
   omega
 
-private theorem boundary_unique (L : ControlledPointLayout) (P Q : Program)
+theorem boundary_unique (L : ControlledPointLayout) (P Q : Program)
     (hp : wires P⊆L.dialogUsedWires.toFinset) (hq : wires Q⊆L.dialogUsedWires.toFinset)
     (s : State) (m : List Bool) (R : Point) (b : Bool)
     (pv : PointDialogBoundary L R b (fun _ => false) (run P m s).basis)
