@@ -1,6 +1,7 @@
 import ECDSAAdd.Submission.Entrant.MainB
 import ECDSAAdd.Submission.Entrant.TrimRow
 import ECDSAAdd.Submission.Entrant.TrimSq3
+import ECDSAAdd.Submission.Entrant.MeasuredZeroClear
 
 -- ===== ECDSAAdd.Submission.Entrant.LowZero =====
 section
@@ -16625,6 +16626,91 @@ end
 
 -- ===== ECDSAAdd.Submission.Entrant.FiniteFlagIntervalPoint =====
 section
+namespace ECDSAAdd.Entrant.FiniteFlagInterval
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed CompressedPointDialog
+attribute [local irreducible] wires
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+
+def clearF : Program := [.X L.point.finite] ++ MeasuredZeroClear.equalClear
+  (probeControl L) L.point.finite (zeroPorts (probeTail L) (L.dialogPool.take 251)) 164506
+
+include hw hn in
+theorem clearF_eq (s : State) (m : List Bool) (hz : regValue (L.dialogPool.take 251) s.basis=0)
+    (hzero : (run (clrF L) m s).basis L.point.finite=false) :
+    run (clearF L) m s=run (clrF L) m s := by
+  let bs := zeroPorts (probeTail L) (L.dialogPool.take 251)
+  let s1 := run [Instr.X L.point.finite] [] s
+  have hl := (probeTail_length L hw).trans (work_length L hw).symm
+  have nd : (probeControl L::L.point.finite::bs.flatMap ZeroBit.wires).Nodup :=
+    (((zeroPorts_perm _ _ hl).cons _).cons _).nodup_iff.mpr (probe_nodup L hw hn)
+  have hz1 : ∀b∈bs,s1.basis b.work=false := by
+    intro b hb
+    have mem : b.work∈L.dialogPool.take 251 := by
+      rw [←(zeroPorts_maps _ _ hl).2]
+      exact List.mem_map.mpr ⟨b,hb,rfl⟩
+    have ne : b.work≠L.point.finite := fun eq =>
+      fin_not_pool L hn (eq ▸ List.mem_of_mem_take mem)
+    simpa [s1,run,writeBit,ne] using (regValue_zero _ _).mp hz b.work mem
+  have zero : (run (equalConstant (probeControl L) L.point.finite bs 164506) m s1).basis
+      L.point.finite=false := by
+    simpa only [clrF,run_append,show measurementCount [Instr.X L.point.finite]=0 from rfl,
+      List.take_zero,List.drop_zero] using hzero
+  have eq := MeasuredZeroClear.equal_run_eq _ _ bs 164506 nd s1 m hz1 zero
+  simpa only [clearF,clrF,run_append,show measurementCount [Instr.X L.point.finite]=0 from rfl,
+    List.take_zero,List.drop_zero] using eq
+
+include hw hn in
+theorem clearF_step (X Y : Fp) (G : Bool) (base : BasisState)
+    (hf : base L.point.finite=decide (X.val / 16 ≠ sentinelHigh)) :
+    Triple (PointDialogValues L X Y G base) (clearF L)
+      (PointDialogValues L X Y G
+        (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val / 16 ≠ sentinelHigh)))) := by
+  intro s m v
+  have hz : regValue (L.dialogPool.take 251) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp v.clean q (List.mem_of_mem_take hq))
+  have zero : (run (clrF L) m s).basis L.point.finite=false := by
+    rw [clrF_run L hw hn s m hz,probe_value L hw,v.x]
+    simp [writeBit,v.rest _ (finite_not_x L hn),hf]
+  rw [clearF_eq L hw hn s m hz zero]
+  exact clrF_step L hw hn X Y G base s m v
+
+theorem clearF_support : wires (clearF L) ⊆ wires (clrF L) := by
+  simp only [clearF,clrF,wires_append]
+  exact Finset.union_subset_union (Finset.Subset.refl _) (MeasuredZeroClear.equal_support _ _ _ _)
+
+include hw in
+theorem clearF_counts : toffoliCount (clearF L)=250 ∧ measurementCount (clearF L)=251 := by
+  have h := MeasuredZeroClear.equal_counts (probeControl L) L.point.finite
+    (zeroPorts (probeTail L) (L.dialogPool.take 251)) 164506
+  rw [ports_length L hw] at h
+  simp only [clearF,toffoliCount_append,measurementCount_append,h.1,h.2]
+  exact ⟨rfl,rfl⟩
+
+include hw in
+theorem clearF_slots : gateSlots (clearF L)=1769 := by
+  have ne : zeroPorts (probeTail L) (L.dialogPool.take 251)≠[] := by
+    intro h
+    have len := ports_length L hw
+    rw [h] at len
+    contradiction
+  have h := MeasuredZeroClear.equal_slots (probeControl L) L.point.finite
+    (zeroPorts (probeTail L) (L.dialogPool.take 251)) 164506 ne
+  have old := clrF_slots_exact L hw
+  simp only [clearF,clrF,gateSlots_append] at old ⊢
+  omega
+
+include hw hn in
+theorem clearF_physical : GatePhysical (clearF L) := by
+  have hl := (probeTail_length L hw).trans (work_length L hw).symm
+  simp only [clearF,gatePhysical_append]
+  refine ⟨?_,MeasuredZeroClear.equal_physical _ _ _ _ ?_⟩
+  · intro i hi; simp only [List.mem_singleton] at hi; subst hi; trivial
+  · exact (((zeroPorts_perm _ _ hl).cons _).cons _).nodup_iff.mpr (probe_nodup L hw hn)
+
+end ECDSAAdd.Entrant.FiniteFlagInterval
+end
+
+section
 set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -16634,7 +16720,7 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
 attribute [local irreducible] run wires
 abbrev generic := ReflectionE1TickGapLow48.generic
 def mid (L : ControlledPointLayout) (cx cy : Fp) : Program :=
-  clrF L ++ renameProgram (swapF L) (generic L cx cy) ++ clrF L
+  clearF L ++ renameProgram (swapF L) (generic L cx cy) ++ clrF L
 def gen (L : ControlledPointLayout) (cx cy : Fp) : Program := zrep L ++ mid L cx cy ++ zrep L
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
@@ -16644,7 +16730,7 @@ theorem midFFused_values (cx cy : Fp) (X Y X' Y' : Fp) (G : Bool) (base : BasisS
     (hf : base L.point.finite = fin)
     (h1 : decide (X.val / 16 ≠ sentinelHigh) = fin) (h2 : decide (X'.val / 16 ≠ sentinelHigh) = fin) :
     Triple (PointDialogValues L X Y G base) (mid L cx cy) (PointDialogValues L X' Y' G base) := by
-  have c1 := clrF_step L hw hn X Y G base
+  have c1 := clearF_step L hw hn X Y G base (hf.trans h1.symm)
   have hb2 : (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val / 16 ≠ sentinelHigh)))
       L.point.finite = false := by
     simp [writeBit, hf, h1]
@@ -16745,6 +16831,8 @@ theorem gen_support_subset (L : ControlledPointLayout) (hw : L.Widths) (cx cy : 
     fun h => zrep_support_old L hw h
   have hc : q ∈ wires (clrF L) → q ∈ wires (ECDSAAdd.Entrant.clrF L) :=
     fun h => clrF_support_old L hw h
+  have he : q ∈ wires (clearF L) → q ∈ wires (ECDSAAdd.Entrant.clrF L) :=
+    fun h => hc (clearF_support L h)
   simp only [gen,mid,ReflectionE1TickGapLow48.gen,ReflectionE1TickGapLow48.mid,
     generic,wires_append,Finset.mem_union] at used ⊢
   tauto
@@ -16754,16 +16842,17 @@ theorem gen_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodu
   (gen_support_subset L hw cx cy).trans (ReflectionE1TickGapLow48.gen_sites L hw hn cx cy)
 
 theorem gen_counts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+8 = toffoliCount (ReflectionE1TickGapLow48.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+9 = toffoliCount (ReflectionE1TickGapLow48.gen L cx cy) ∧
     measurementCount (gen L cx cy)+8 = measurementCount (ReflectionE1TickGapLow48.gen L cx cy) ∧
-    gateSlots (gen L cx cy)+20 = gateSlots (ReflectionE1TickGapLow48.gen L cx cy) := by
+    gateSlots (gen L cx cy)+24 = gateSlots (ReflectionE1TickGapLow48.gen L cx cy) := by
   have z := zrep_counts L
   have c := clrF_counts L hw
+  have e := clearF_counts L hw
   have oz := ECDSAAdd.Entrant.zrep_counts L
   have oc := ECDSAAdd.Entrant.clrF_counts L hw
   simp only [gen,mid,ReflectionE1TickGapLow48.gen,ReflectionE1TickGapLow48.mid,generic,
     toffoliCount_append,measurementCount_append,gateSlots_append,z.1,z.2,c.1,c.2,
-    oz.1,oz.2,oc.1,oc.2,zrep_slots_exact L hw,clrF_slots_exact L hw,
+    oz.1,oz.2,oc.1,oc.2,e.1,e.2,zrep_slots_exact L hw,clrF_slots_exact L hw,clearF_slots L hw,
     old_zrep_slots_exact L hw,old_clrF_slots_exact L hw]
   omega
 
@@ -16771,9 +16860,10 @@ theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     (cx cy : Fp) : GatePhysical (gen L cx cy) := by
   have z := zrep_physical L hn
   have c := clrF_physical L hw hn
+  have e := clearF_physical L hw hn
   have g := gatePhysical_rename (swapF L) (swapF_injective L hw hn) _
     (ReflectionE1TickGapLow48.generic_physical L hw hn cx cy)
-  simpa only [gen,mid,gatePhysical_append,generic] using And.intro (And.intro z (And.intro (And.intro c g) c)) z
+  simpa only [gen,mid,gatePhysical_append,generic] using And.intro (And.intro z (And.intro (And.intro e g) c)) z
 
 theorem wrapper_support_mono (L : ControlledPointLayout) (C : Point) (cy : Fp)
     (P Q : Program) (h : wires P ⊆ wires Q) :
@@ -16786,11 +16876,11 @@ theorem wrapper_support_mono (L : ControlledPointLayout) (C : Point) (cy : Fp)
     | apply Finset.image_subset_image
 
 theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cx cy : Fp) :
-    toffoliCount (Edges.wrapper L C cy (gen L cx cy))+8 =
+    toffoliCount (Edges.wrapper L C cy (gen L cx cy))+9 =
       toffoliCount (Edges.wrapper L C cy (ReflectionE1TickGapLow48.gen L cx cy)) ∧
     measurementCount (Edges.wrapper L C cy (gen L cx cy))+8 =
       measurementCount (Edges.wrapper L C cy (ReflectionE1TickGapLow48.gen L cx cy)) ∧
-    gateSlots (Edges.wrapper L C cy (gen L cx cy))+20 =
+    gateSlots (Edges.wrapper L C cy (gen L cx cy))+24 =
       gateSlots (Edges.wrapper L C cy (ReflectionE1TickGapLow48.gen L cx cy)) := by
   have h := gen_counts L hw cx cy
   simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,measurementCount_append,
@@ -16804,7 +16894,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
   exact card.trans (ReflectionE1TickGapLow48.wrapper_qubits C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2152826 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2152825 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
   omega
@@ -16816,7 +16906,7 @@ theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50141922 := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50141918 := by
   have h := (wrapper_counts layout layout_widths C cx cy).2.2
   have old := ReflectionE1TickGapLow48.wrapper_slots C cx cy
   omega
@@ -16828,7 +16918,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152826,1499148,1588,50141922⟩
+def bounds : Challenge.Bounds := ⟨2152825,1499148,1588,50141918⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -16845,7 +16935,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2152826 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2152825 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -16867,7 +16957,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50141922 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50141918 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -16883,7 +16973,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C)) ≤ 1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50141922
+    change gateSlots (normalizeProgram (program C)) ≤ 50141918
     rw [normalize_slots];exact program_gateSlots C
 
 end ECDSAAdd.Entrant.FiniteFlagInterval
