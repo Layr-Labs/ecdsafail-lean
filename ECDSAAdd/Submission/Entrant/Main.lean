@@ -16115,13 +16115,786 @@ theorem certificate : Challenge.Certificate entry bounds where
 end ECDSAAdd.Entrant.ReflectionE1TickGapLow48
 end -- original module boundary
 
+-- ===== ECDSAAdd.Submission.Entrant.FiniteFlagIntervalMath =====
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.FiniteFlagInterval
+open Arithmetic Secp256k1
+
+def sentinel : Nat := 5264208
+def sentinelHigh : Nat := 329013
+
+theorem nonresidue_0 : ((5264208 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_1 : ((5264209 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_2 : ((5264210 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_3 : ((5264211 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_4 : ((5264212 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_5 : ((5264213 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_6 : ((5264214 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_7 : ((5264215 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_8 : ((5264216 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_9 : ((5264217 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_10 : ((5264218 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_11 : ((5264219 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_12 : ((5264220 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_13 : ((5264221 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_14 : ((5264222 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem nonresidue_15 : ((5264223 : ZMod 115792089237316195423570985008687907853269984665640564039457584007908834671663)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+  reduce_mod_char
+
+theorem interval_nonresidue (n : Nat) (lo : 5264208 ≤ n) (hi : n < 5264224) :
+    ((n : Fp)^3 + 7)^((p-1)/2) = -1 := by
+  have hp : 115792089237316195423570985008687907853269984665640564039457584007908834671663 = p := by norm_num [p]
+  have he : (p-1)/2 = 57896044618658097711785492504343953926634992332820282019728792003954417335831 := by norm_num [p]
+  rw [he]
+  have transport (q a : Nat) (hq : q = p)
+      (h : ((a : ZMod q)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1) :
+      ((a : Fp)^3+7)^57896044618658097711785492504343953926634992332820282019728792003954417335831 = -1 := by
+    subst q
+    exact h
+  interval_cases n
+  · exact transport _ 5264208 hp nonresidue_0
+  · exact transport _ 5264209 hp nonresidue_1
+  · exact transport _ 5264210 hp nonresidue_2
+  · exact transport _ 5264211 hp nonresidue_3
+  · exact transport _ 5264212 hp nonresidue_4
+  · exact transport _ 5264213 hp nonresidue_5
+  · exact transport _ 5264214 hp nonresidue_6
+  · exact transport _ 5264215 hp nonresidue_7
+  · exact transport _ 5264216 hp nonresidue_8
+  · exact transport _ 5264217 hp nonresidue_9
+  · exact transport _ 5264218 hp nonresidue_10
+  · exact transport _ 5264219 hp nonresidue_11
+  · exact transport _ 5264220 hp nonresidue_12
+  · exact transport _ 5264221 hp nonresidue_13
+  · exact transport _ 5264222 hp nonresidue_14
+  · exact transport _ 5264223 hp nonresidue_15
+
+theorem curve_x_not_interval {x y : Fp} (hc : curve.toAffine.Nonsingular x y) :
+    ¬ (5264208 ≤ x.val ∧ x.val < 5264224) := by
+  intro h
+  have power := interval_nonresidue x.val h.1 h.2
+  rw [ZMod.natCast_zmod_val] at power
+  have eq := hc.1
+  rw [WeierstrassCurve.Affine.equation_iff] at eq
+  have square : y^2 = x^3+7 := by simpa [curve,curveA,curveB] using eq
+  haveI : Fact (Nat.Prime p) := ⟨p_prime⟩
+  have hy : y ≠ 0 := by
+    intro hz
+    rw [← square,hz,zero_pow (by decide),zero_pow (by norm_num [p])] at power
+    simp at power
+  have fermat := ZMod.pow_card_sub_one_eq_one hy
+  have even : p-1 = 2*((p-1)/2) := by norm_num [p]
+  rw [even,pow_mul,square,power] at fermat
+  have two : ((2 : Nat) : Fp) = 0 := by
+    have sum : (-1 : Fp)+1 = 1+1 := by rw [fermat]
+    rw [neg_add_cancel] at sum
+    exact_mod_cast (by rw [sum]; norm_num : (2 : Fp) = 0)
+  rw [ZMod.natCast_eq_zero_iff] at two
+  norm_num [p] at two
+
+theorem curve_x_high_ne {x y : Fp} (hc : curve.toAffine.Nonsingular x y) :
+    x.val / 16 ≠ sentinelHigh := by
+  intro h
+  have excluded := curve_x_not_interval hc
+  unfold sentinelHigh at h
+  omega
+
+theorem sentinel_lt : sentinel < p := by norm_num [sentinel,p]
+theorem sentinel_val : (sentinel : Fp).val = sentinel :=
+  ZMod.val_natCast_of_lt sentinel_lt
+theorem sentinel_ne_zero : (sentinel : Fp) ≠ 0 := by
+  intro h
+  have := congrArg ZMod.val h
+  rw [sentinel_val,ZMod.val_zero] at this
+  norm_num [sentinel] at this
+theorem sentinel_high : sentinel / 16 = sentinelHigh := rfl
+
+end ECDSAAdd.Entrant.FiniteFlagInterval
+end
+
+-- ===== ECDSAAdd.Submission.Entrant.FiniteFlagIntervalGadget =====
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.FiniteFlagInterval
+open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPointDialog
+attribute [local irreducible] wires
+
+def probeX (L : ControlledPointLayout) : List Wire := L.point.x.drop 4
+def probeControl (L : ControlledPointLayout) : Wire := (probeX L).headD 0
+def probeTail (L : ControlledPointLayout) : List Wire := (probeX L).tail
+def zrep (L : ControlledPointLayout) : Program :=
+  [.X L.point.finite] ++ maskedConstant L.point.finite L.point.x sentinel ++ [.X L.point.finite]
+def clrF (L : ControlledPointLayout) : Program :=
+  [.X L.point.finite] ++ equalConstant (probeControl L) L.point.finite
+    (zeroPorts (probeTail L) (L.dialogPool.take 251)) 164506
+
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw in
+theorem probe_length : (probeX L).length = 252 := by
+  simp [probeX,show L.point.x.length = 256 from hw.inputX]
+include hw in
+theorem probe_cons : probeX L = probeControl L :: probeTail L := by
+  have h := probe_length L hw
+  unfold probeControl probeTail
+  cases e : probeX L with
+  | nil => simp [e] at h
+  | cons a t => rfl
+include hw in
+theorem probeTail_length : (probeTail L).length = 251 := by
+  simp [probeTail,probe_length L hw]
+include hw in
+theorem probeControl_mem : probeControl L ∈ L.point.x := by
+  apply List.mem_of_mem_drop
+  change probeControl L ∈ probeX L
+  rw [probe_cons L hw]
+  simp
+theorem probeTail_mem (q : Wire) (hq : q ∈ probeTail L) : q ∈ L.point.x :=
+  List.mem_of_mem_drop (List.mem_of_mem_tail hq)
+include hw in
+theorem work_length : (L.dialogPool.take 251).length = 251 := by
+  simp [L.dialogPool_length hw]
+include hw hn in
+theorem probe_nodup :
+    (probeControl L :: L.point.finite :: probeTail L ++ L.dialogPool.take 251).Nodup := by
+  apply List.nodup_iff_count.mpr
+  intro q
+  have h := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) q
+  have hp := (List.take_sublist 251 L.dialogPool).count_le q
+  have hx := (List.drop_sublist 4 L.point.x).count_le q
+  have hc := congrArg (List.count q) (probe_cons L hw)
+  simp only [dialogUsedWires,PointAddLayout.pointWires,List.count_append,List.count_cons,
+    List.count_nil,List.cons_append] at h hc ⊢
+  change (probeX L).count q ≤ L.point.x.count q at hx
+  omega
+include hw hn in
+theorem finite_ne_probe : L.point.finite ≠ probeControl L := by
+  intro h
+  apply fin_not_x L hn
+  rw [h]
+  exact probeControl_mem L hw
+include hw in
+theorem probe_value_cons (s : BasisState) :
+    regValue (probeX L) s = (if s (probeControl L) then 1 else 0) + 2*regValue (probeTail L) s := by
+  conv_lhs => rw [probe_cons L hw]
+  rfl
+include hw in
+theorem probe_value (s : BasisState) : regValue (probeX L) s = regValue L.point.x s / 16 := by
+  exact CuccaroStreamedSquareWideLayout.regValue_drop_div L.point.x 4
+    (by have h : L.point.x.length = 256 := hw.inputX; omega) s
+
+include hw hn in
+theorem clrF_run (s : State) (m : List Bool) (hz : regValue (L.dialogPool.take 251) s.basis = 0) :
+    run (clrF L) m s = ⟨s.phase, writeBit s.basis L.point.finite
+      (s.basis L.point.finite ^^ decide (regValue (probeX L) s.basis ≠ sentinelHigh))⟩ := by
+  have nd := probe_nodup L hw hn
+  have hfx := finite_ne_probe L hw hn
+  have hft : L.point.finite ∉ (probeTail L) := by
+    intro h; exact fin_not_x L hn (probeTail_mem L _ h)
+  have hfp : L.point.finite ∉ L.dialogPool.take 251 := by
+    intro h
+    have hh := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) L.point.finite
+    have a := List.count_pos_iff.mpr (List.mem_of_mem_take h)
+    simp only [dialogUsedWires, PointAddLayout.pointWires, List.count_append, List.count_cons,
+      beq_self_eq_true, if_true] at hh
+    omega
+  let s1 : State := ⟨s.phase, writeBit s.basis L.point.finite (!s.basis L.point.finite)⟩
+  have h1 : run [.X L.point.finite] [] s = s1 := rfl
+  have hz1 : regValue (L.dialogPool.take 251) s1.basis = 0 := by
+    rw [← hz]; apply regValue_congr; intro q hq
+    have : q ≠ L.point.finite := fun e => hfp (e ▸ hq)
+    simp [s1, writeBit, this]
+  have hh := equalPorts_correct (probeControl L) L.point.finite (probeTail L) (L.dialogPool.take 251) 164506
+    ((probeTail_length L hw).trans (work_length L hw).symm) nd
+    (by rw [probeTail_length L hw]; norm_num) s1 m hz1
+  have hm0 : measurementCount [Instr.X L.point.finite] = 0 := rfl
+  rw [clrF, run_append, hm0, List.take_zero, List.drop_zero, h1, hh]
+  have e1 : s1.basis L.point.finite = !s.basis L.point.finite := by simp [s1, writeBit]
+  have e2 : s1.basis (probeControl L) = s.basis (probeControl L) := by simp [s1, writeBit, Ne.symm hfx]
+  have e3 : regValue (probeTail L) s1.basis = regValue (probeTail L) s.basis := by
+    apply regValue_congr; intro q hq
+    have : q ≠ L.point.finite := fun e => hft (e ▸ hq)
+    simp [s1, writeBit, this]
+  rw [e1, e2, e3, probe_value_cons L hw]
+  congr 1
+  funext q
+  by_cases hq : q = L.point.finite
+  · subst hq
+    simp only [s1, writeBit, Function.update_self]
+    cases s.basis L.point.finite <;> cases s.basis (probeControl L) <;>
+      by_cases ht : regValue (probeTail L) s.basis = 164506 <;> simp [ht,sentinelHigh] <;> omega
+  · simp [s1, writeBit, Function.update_of_ne hq]
+
+include hw hn in
+theorem zrep_run (s : State) (m : List Bool) :
+    (run (zrep L) m s).phase = s.phase ∧
+    (∀ q, q ∉ L.point.x → (run (zrep L) m s).basis q = s.basis q) ∧
+    regValue L.point.x (run (zrep L) m s).basis =
+      regValue L.point.x s.basis ^^^ (if s.basis L.point.finite then 0 else sentinel) := by
+  have hfx := fin_not_x L hn
+  have hnd := finX_nodup L hn
+  let s1 : State := ⟨s.phase, writeBit s.basis L.point.finite (!s.basis L.point.finite)⟩
+  have h1 : run [.X L.point.finite] [] s = s1 := rfl
+  have hm0 : measurementCount [Instr.X L.point.finite] = 0 := rfl
+  have hmc := (maskedConstant_counts L.point.finite L.point.x sentinel).2
+  have hk : sentinel < 2 ^ L.point.x.length := by
+    rw [show L.point.x.length = 256 from hw.inputX]; norm_num [sentinel]
+  obtain ⟨tp, tout, tx⟩ := maskedConstant_correct L.point.finite L.point.x sentinel hnd hfx hk s1 []
+  obtain ⟨t, ht⟩ : ∃ t : State, t = run (maskedConstant L.point.finite L.point.x sentinel) [] s1 := ⟨_, rfl⟩
+  rw [← ht] at tp tout tx
+  have hrun : run (zrep L) m s = ⟨t.phase, writeBit t.basis L.point.finite (!t.basis L.point.finite)⟩ := by
+    rw [zrep, run_append, run_append, measurementCount_append, hm0, hmc, Nat.add_zero,
+      List.take_zero, List.drop_zero, List.take_nil, List.drop_nil, h1, ← ht]
+    rfl
+  have tf : t.basis L.point.finite = !s.basis L.point.finite := by
+    rw [tout _ hfx]; simp [s1, writeBit]
+  rw [hrun]
+  refine ⟨tp, ?_, ?_⟩
+  · intro q hq
+    by_cases hqf : q = L.point.finite
+    · subst hqf; simp [writeBit, tf]
+    · simp only [writeBit, Function.update_of_ne hqf]
+      rw [tout q hq]; simp [s1, writeBit, Function.update_of_ne hqf]
+  · have e1 : regValue L.point.x (writeBit t.basis L.point.finite (!t.basis L.point.finite)) =
+        regValue L.point.x t.basis := by
+      apply regValue_congr; intro q hq
+      have : q ≠ L.point.finite := fun e => hfx (e ▸ hq)
+      simp [writeBit, this]
+    have e2 : regValue L.point.x s1.basis = regValue L.point.x s.basis := by
+      apply regValue_congr; intro q hq
+      have : q ≠ L.point.finite := fun e => hfx (e ▸ hq)
+      simp [s1, writeBit, this]
+    show regValue L.point.x (writeBit t.basis L.point.finite (!t.basis L.point.finite)) = _
+    rw [e1, tx, e2]
+    have : s1.basis L.point.finite = !s.basis L.point.finite := by simp [s1, writeBit]
+    rw [this]
+    cases s.basis L.point.finite <;> rfl
+
+include hw hn in
+theorem clrF_step (X Y : Fp) (G : Bool) (base : BasisState) :
+    Triple (PointDialogValues L X Y G base) (clrF L)
+      (PointDialogValues L X Y G
+        (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val / 16 ≠ sentinelHigh)))) := by
+  intro s m v
+  have hz : regValue (L.dialogPool.take 251) s.basis = 0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp v.clean q (List.mem_of_mem_take hq))
+  rw [clrF_run L hw hn s m hz,probe_value L hw]
+  have hfxy := finite_not_x L hn
+  have hfs : s.basis L.point.finite = base L.point.finite := v.rest _ hfxy
+  have hfx := fin_not_x L hn
+  have hfy : L.point.finite ∉ L.point.y := fun h => hfxy (List.mem_append_right _ h)
+  refine ⟨rfl, ?_, ?_, ?_, ?_, ?_⟩
+  · show regValue L.point.x (writeBit s.basis L.point.finite _) = _
+    rw [← v.x]; apply regValue_congr; intro q hq
+    have : q ≠ L.point.finite := fun e => hfx (e ▸ hq)
+    simp [writeBit, this]
+  · show regValue L.point.y (writeBit s.basis L.point.finite _) = _
+    rw [← v.y]; apply regValue_congr; intro q hq
+    have : q ≠ L.point.finite := fun e => hfy (e ▸ hq)
+    simp [writeBit, this]
+  · show writeBit s.basis L.point.finite _ L.core.generic = _
+    simp [writeBit, Ne.symm (fin_ne_generic L hn), v.generic]
+  · show regValue L.dialogPool (writeBit s.basis L.point.finite _) = _
+    rw [← v.clean]; apply regValue_congr; intro q hq
+    have : q ≠ L.point.finite := fun e => fin_not_pool L hn (e ▸ hq)
+    simp [writeBit, this]
+  · intro q hq
+    show writeBit s.basis L.point.finite _ q = writeBit base L.point.finite _ q
+    by_cases hqf : q = L.point.finite
+    · subst hqf; simp [writeBit, hfs, v.x]
+    · simp [writeBit, hqf, v.rest q hq]
+
+include hw hn in
+theorem zrep_step (X X' Y : Fp) (G : Bool) (base : BasisState)
+    (hX : X'.val = X.val ^^^ (if base L.point.finite then 0 else sentinel)) :
+    Triple (PointDialogValues L X Y G base) (zrep L) (PointDialogValues L X' Y G base) := by
+  intro s m v
+  obtain ⟨hp, hout, hx⟩ := zrep_run L hw hn s m
+  have hf : s.basis L.point.finite = base L.point.finite := v.rest _ (finite_not_x L hn)
+  refine ⟨hp, v.withX hn ?_ hout⟩
+  rw [hx, v.x, hf, hX]
+
+end ECDSAAdd.Entrant.FiniteFlagInterval
+end
+
+-- ===== ECDSAAdd.Submission.Entrant.FiniteFlagIntervalResources =====
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 2000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.FiniteFlagInterval
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed CompressedPointDialog
+attribute [local irreducible] wires
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+
+include hw in
+theorem ports_length : (zeroPorts (probeTail L) (L.dialogPool.take 251)).length = 251 := by
+  have h := (zeroPorts_maps (probeTail L) (L.dialogPool.take 251)
+    ((probeTail_length L hw).trans (work_length L hw).symm)).1
+  simpa only [List.length_map,probeTail_length L hw] using congrArg List.length h
+
+theorem zrep_counts : toffoliCount (zrep L) = 0 ∧ measurementCount (zrep L) = 0 := by
+  have h := maskedConstant_counts L.point.finite L.point.x sentinel
+  simp only [zrep,toffoliCount_append,measurementCount_append,h.1,h.2]
+  exact ⟨rfl,rfl⟩
+
+include hw in
+theorem clrF_counts : toffoliCount (clrF L) = 251 ∧ measurementCount (clrF L) = 251 := by
+  have h := equalConstant_counts (probeControl L) L.point.finite
+    (zeroPorts (probeTail L) (L.dialogPool.take 251)) 164506
+  rw [ports_length L hw] at h
+  simp only [clrF,toffoliCount_append,measurementCount_append,h.1,h.2]
+  exact ⟨rfl,rfl⟩
+
+include hn in
+theorem zrep_physical : GatePhysical (zrep L) := by
+  simp only [zrep,gatePhysical_append]
+  refine ⟨⟨?_,maskedConstant_physical _ _ _ (fin_not_x L hn)⟩,?_⟩
+  all_goals intro i hi; simp only [List.mem_singleton] at hi; subst hi; trivial
+
+include hw hn in
+theorem clrF_physical : GatePhysical (clrF L) := by
+  have hl := (probeTail_length L hw).trans (work_length L hw).symm
+  simp only [clrF,gatePhysical_append]
+  refine ⟨?_,equalConstant_physical _ _ _ _ ?_⟩
+  · intro i hi; simp only [List.mem_singleton] at hi; subst hi; trivial
+  · exact (((zeroPorts_perm _ _ hl).cons _).cons _).nodup_iff.mpr (probe_nodup L hw hn)
+
+include hw in
+theorem old_clrF_support : wires (ECDSAAdd.Entrant.clrF L) =
+    (L.point.finite :: (L.point.x ++ L.dialogPool.take 255)).toFinset := by
+  have hl := (finTail_length L hw).trans (finWork255_length L hw).symm
+  rw [ECDSAAdd.Entrant.clrF,wires_append,equalConstant_wires]
+  ext q
+  have hp : q ∈ (zeroPorts L.point.x.tail (L.dialogPool.take 255)).flatMap ZeroBit.wires ↔
+      q ∈ L.point.x.tail ++ L.dialogPool.take 255 :=
+    (zeroPorts_perm L.point.x.tail (L.dialogPool.take 255) hl).mem_iff
+  have hx : q ∈ L.point.x ↔ q = x0 L ∨ q ∈ L.point.x.tail := by
+    conv_lhs => rw [x_cons L hw]
+    simp
+  simp only [Finset.mem_union,wires,Instr.wires,Finset.union_empty,Finset.mem_singleton,
+    List.mem_toFinset,List.mem_cons] at *
+  rw [hp]
+  simp only [List.mem_append] at *
+  tauto
+
+include hw in
+theorem zrep_support_old : wires (zrep L) ⊆ wires (ECDSAAdd.Entrant.clrF L) := by
+  rw [old_clrF_support L hw]
+  intro q used
+  simp only [zrep,wires_append,Finset.mem_union] at used
+  rcases used with (h | h) | h
+  · have eq : q = L.point.finite := by simpa [wires,Instr.wires] using h
+    simp [eq]
+  · have h' := List.mem_toFinset.mp (maskedConstant_wires_subset _ _ _ h)
+    simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h' ⊢
+    tauto
+  · have eq : q = L.point.finite := by simpa [wires,Instr.wires] using h
+    simp [eq]
+
+include hw in
+theorem clrF_support_old : wires (clrF L) ⊆ wires (ECDSAAdd.Entrant.clrF L) := by
+  rw [old_clrF_support L hw]
+  intro q used
+  simp only [clrF,wires_append,Finset.mem_union] at used
+  rcases used with h | h
+  · have eq : q = L.point.finite := by simpa [wires,Instr.wires] using h
+    simp [eq]
+  · rw [equalConstant_wires] at h
+    have h' := List.mem_toFinset.mp h
+    rcases List.mem_cons.mp h' with e | h'
+    · subst q
+      simp [probeControl_mem L hw]
+    rcases List.mem_cons.mp h' with e | h'
+    · subst q; simp
+    have hl := (probeTail_length L hw).trans (work_length L hw).symm
+    rcases List.mem_append.mp ((zeroPorts_perm _ _ hl).subset h') with inp | work
+    · simp [probeTail_mem L q inp]
+    · have included : L.dialogPool.take 251 ⊆ L.dialogPool.take 255 := by
+        have h : L.dialogPool.take 251 = (L.dialogPool.take 255).take 251 := by
+          rw [List.take_take]; rfl
+        rw [h]
+        exact List.take_subset _ _
+      simp [included work]
+
+include hw in
+theorem zrep_slots : gateSlots (zrep L) ≤ 258 := by
+  have h := maskedConstant_gateSlots_le L.point.finite L.point.x sentinel
+  rw [show L.point.x.length = 256 from hw.inputX] at h
+  have one : gateSlots [Instr.X L.point.finite] = 1 := rfl
+  simp only [zrep,gateSlots_append,one]
+  omega
+
+include hw in
+theorem clrF_slots : gateSlots (clrF L) ≤ 2261 := by
+  have h := equalConstant_gateSlots_le (probeControl L) L.point.finite
+    (zeroPorts (probeTail L) (L.dialogPool.take 251)) 164506
+  rw [ports_length L hw] at h
+  have one : gateSlots [Instr.X L.point.finite] = 1 := rfl
+  simp only [clrF,gateSlots_append,one]
+  omega
+
+def constantSlots : Nat → Nat → Nat
+  | 0, _ => 0
+  | n+1, k => (if k % 2 = 1 then 1 else 0) + constantSlots n (k/2)
+
+theorem xor_slots_exact (r : List Wire) (k : Nat) :
+    gateSlots (xorConstant r k) = constantSlots r.length k := by
+  induction r generalizing k with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [xorConstant,constantSlots,List.length_cons,gateSlots_append]
+    split <;> simp [gateSlots_cons,instructionSlots,ih]
+
+theorem masked_slots_exact (c : Wire) (r : List Wire) (k : Nat) :
+    gateSlots (maskedConstant c r k) = constantSlots r.length k := by
+  induction r generalizing k with
+  | nil => rfl
+  | cons w ws ih =>
+    simp only [maskedConstant,constantSlots,List.length_cons,gateSlots_append]
+    split <;> simp [gateSlots_cons,instructionSlots,ih]
+
+theorem equal_slots_exact (c t : Wire) (bs : List ZeroBit) (k : Nat) :
+    gateSlots (equalConstant c t bs k) = 7*bs.length+1+2*constantSlots bs.length k := by
+  simp only [equalConstant,gateSlots_append,zeroControlled_gateSlots,xor_slots_exact,List.length_map]
+  omega
+
+include hw in
+theorem zrep_slots_exact : gateSlots (zrep L) = 10 := by
+  have one : gateSlots [Instr.X L.point.finite] = 1 := rfl
+  simp only [zrep,gateSlots_append,one,masked_slots_exact,
+    show L.point.x.length = 256 from hw.inputX]
+  decide +kernel
+
+include hw in
+theorem old_zrep_slots_exact : gateSlots (ECDSAAdd.Entrant.zrep L) = 4 := by
+  have one : gateSlots [Instr.X L.point.finite] = 1 := rfl
+  simp only [ECDSAAdd.Entrant.zrep,gateSlots_append,one,masked_slots_exact,
+    show L.point.x.length = 256 from hw.inputX]
+  decide +kernel
+
+include hw in
+theorem clrF_slots_exact : gateSlots (clrF L) = 1773 := by
+  have one : gateSlots [Instr.X L.point.finite] = 1 := rfl
+  simp only [clrF,gateSlots_append,one,equal_slots_exact,ports_length L hw]
+  decide +kernel
+
+include hw in
+theorem old_clrF_slots_exact : gateSlots (ECDSAAdd.Entrant.clrF L) = 1789 := by
+  have one : gateSlots [Instr.X L.point.finite] = 1 := rfl
+  simp only [ECDSAAdd.Entrant.clrF,gateSlots_append,one,equal_slots_exact,finClr_ports_length L hw]
+  decide +kernel
+
+end ECDSAAdd.Entrant.FiniteFlagInterval
+end
+
+-- ===== ECDSAAdd.Submission.Entrant.FiniteFlagIntervalPoint =====
+section
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.FiniteFlagInterval
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed
+  CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
+attribute [local irreducible] run wires
+abbrev generic := ReflectionE1TickGapLow48.generic
+def mid (L : ControlledPointLayout) (cx cy : Fp) : Program :=
+  clrF L ++ renameProgram (swapF L) (generic L cx cy) ++ clrF L
+def gen (L : ControlledPointLayout) (cx cy : Fp) : Program := zrep L ++ mid L cx cy ++ zrep L
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+theorem midFFused_values (cx cy : Fp) (X Y X' Y' : Fp) (G : Bool) (base : BasisState) (fin : Bool)
+    (hP : ∀ base' : BasisState, Triple (PointDialogValues L X Y G base') (generic L cx cy)
+      (PointDialogValues L X' Y' G base'))
+    (hf : base L.point.finite = fin)
+    (h1 : decide (X.val / 16 ≠ sentinelHigh) = fin) (h2 : decide (X'.val / 16 ≠ sentinelHigh) = fin) :
+    Triple (PointDialogValues L X Y G base) (mid L cx cy) (PointDialogValues L X' Y' G base) := by
+  have c1 := clrF_step L hw hn X Y G base
+  have hb2 : (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val / 16 ≠ sentinelHigh)))
+      L.point.finite = false := by
+    simp [writeBit, hf, h1]
+  have sw := swapF_values L hw hn (generic L cx cy) X Y X' Y' G _ hP hb2
+  have c2 := clrF_step L hw hn X' Y' G
+    (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val / 16 ≠ sentinelHigh)))
+  have hb3 : writeBit (writeBit base L.point.finite (base L.point.finite ^^ decide (X.val / 16 ≠ sentinelHigh)))
+      L.point.finite ((writeBit base L.point.finite (base L.point.finite ^^ decide (X.val / 16 ≠ sentinelHigh)))
+        L.point.finite ^^ decide (X'.val / 16 ≠ sentinelHigh)) = base := by
+    funext q
+    by_cases hq : q = L.point.finite
+    · subst hq; simp [writeBit, hf, h1, h2]
+    · simp [writeBit, hq]
+  rw [hb3] at c2
+  exact (c1.seq sw).seq c2
+
+
+theorem genFFused_ok {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    GenericOK L hc (gen L cx cy) := by
+  intro R b f hg s m v
+  have hp := (point_holds _ _ _).mp v.point
+  have hfinite : L.point.finite ∉ L.point.x ++ L.point.y := finite_not_x L hn
+  have outside (q : Wire) (hq : q ∉ PointAddLayout.pointWires L.point) : q ∉ L.point.x ++ L.point.y := by
+    simp only [PointAddLayout.pointWires,List.mem_append,List.mem_cons,not_or] at hq ⊢
+    exact ⟨hq.1.2,hq.2⟩
+  have hgen : s.basis L.core.generic = f L.core.generic := v.flags _ (by simp [inPlaceFlags])
+  cases R with
+  | zero =>
+    have hG : f L.core.generic = false := by
+      cases h : f L.core.generic
+      · rfl
+      · exact absurd rfl (hg h).1
+    have values : PointDialogValues L 0 0 false s.basis s.basis :=
+      ⟨hp.2.1, hp.2.2, hgen.trans hG, v.clean, fun _ _ => rfl⟩
+    have hfin : s.basis L.point.finite = false := hp.1
+    have z1 := zrep_step L hw hn 0 (sentinel : Fp) 0 false s.basis (by rw [hfin, sentinel_val]; rfl)
+    have mid := midFFused_values L hw hn cx cy (sentinel : Fp) 0 (sentinel : Fp) 0 false s.basis false
+      (fun base' => ReflectionE1TickGapLow48.generic_false L hw hn (sentinel : Fp) 0 cx cy base' sentinel_ne_zero) hfin
+      (by rw [sentinel_val, sentinel_high]; decide) (by rw [sentinel_val, sentinel_high]; decide)
+    have z2 := zrep_step L hw hn (sentinel : Fp) 0 0 false s.basis (by rw [hfin, sentinel_val]; rfl)
+    obtain ⟨phase, hv⟩ := ((z1.seq mid).seq z2) s m values
+    refine ⟨phase, ?_⟩
+    rw [hG]
+    exact v.withPoint hn ((point_holds _ _ _).mpr ⟨(hv.rest _ hfinite).trans hp.1, hv.x, hv.y⟩)
+      (fun q hq => hv.rest q (outside q hq))
+  | @some x y hr =>
+    have hfin : s.basis L.point.finite = true := hp.1
+    have hx5 : decide (x.val / 16 ≠ sentinelHigh) = true := decide_eq_true (curve_x_high_ne hr)
+    cases hG : f L.core.generic with
+    | false =>
+      have values : PointDialogValues L x y false s.basis s.basis :=
+        ⟨hp.2.1, hp.2.2, hgen.trans hG, v.clean, fun _ _ => rfl⟩
+      have z1 := zrep_step L hw hn x x y false s.basis (by rw [hfin]; simp)
+      have mid := midFFused_values L hw hn cx cy x y x y false s.basis true
+        (fun base' => ReflectionE1TickGapLow48.generic_false L hw hn x y cx cy base' (curve_x_ne_zero hr)) hfin hx5 hx5
+      have z2 := zrep_step L hw hn x x y false s.basis (by rw [hfin]; simp)
+      obtain ⟨phase, hv⟩ := ((z1.seq mid).seq z2) s m values
+      refine ⟨phase, ?_⟩
+      simp only [Bool.false_eq_true, if_false]
+      exact v.withPoint hn ((point_holds _ _ _).mpr ⟨(hv.rest _ hfinite).trans hp.1, hv.x, hv.y⟩)
+        (fun q hq => hv.rest q (outside q hq))
+    | true =>
+      have he := hg hG
+      have den := dialog_denominators_ne_zero hr hc he.2.1 he.2.2.1 he.2.2.2
+      have hg5 : decide ((genericX x y cx cy).val / 16 ≠ sentinelHigh) = true :=
+        decide_eq_true (curve_x_high_ne (generic_nonsingular hr hc den.1))
+      have values : PointDialogValues L x y true s.basis s.basis :=
+        ⟨hp.2.1, hp.2.2, hgen.trans hG, v.clean, fun _ _ => rfl⟩
+      have z1 := zrep_step L hw hn x x y true s.basis (by rw [hfin]; simp)
+      have mid := midFFused_values L hw hn cx cy x y (genericX x y cx cy) (genericY x y cx cy) true s.basis true
+        (fun base' => ReflectionE1TickGapLow48.generic_true L hw hn x y cx cy base' den.1 den.2) hfin hx5 hg5
+      have z2 := zrep_step L hw hn (genericX x y cx cy) (genericX x y cx cy) (genericY x y cx cy) true
+        s.basis (by rw [hfin]; simp)
+      obtain ⟨phase, hv⟩ := ((z1.seq mid).seq z2) s m values
+      refine ⟨phase, ?_⟩
+      simp only [if_true, ← genericAdd_correct hr hc den.1, genericAdd]
+      exact v.withPoint hn ((point_holds _ _ _).mpr ⟨(hv.rest _ hfinite).trans hp.1, hv.x, hv.y⟩)
+        (fun q hq => hv.rest q (outside q hq))
+
+end ECDSAAdd.Entrant.FiniteFlagInterval
+end
+
+-- ===== ECDSAAdd.Submission.Entrant.FiniteFlagIntervalFinal =====
+section
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.FiniteFlagInterval
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed
+  CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+  ReflectionE1TickGapLow48.generic
+
+theorem gen_support_subset (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
+    wires (gen L cx cy) ⊆ wires (ReflectionE1TickGapLow48.gen L cx cy) := by
+  intro q used
+  have hz : q ∈ wires (zrep L) → q ∈ wires (ECDSAAdd.Entrant.clrF L) :=
+    fun h => zrep_support_old L hw h
+  have hc : q ∈ wires (clrF L) → q ∈ wires (ECDSAAdd.Entrant.clrF L) :=
+    fun h => clrF_support_old L hw h
+  simp only [gen,mid,ReflectionE1TickGapLow48.gen,ReflectionE1TickGapLow48.mid,
+    generic,wires_append,Finset.mem_union] at used ⊢
+  tauto
+
+theorem gen_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (cx cy : Fp) : wires (gen L cx cy) ⊆ (OB5Support.genericSites L).toFinset :=
+  (gen_support_subset L hw cx cy).trans (ReflectionE1TickGapLow48.gen_sites L hw hn cx cy)
+
+theorem gen_counts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
+    toffoliCount (gen L cx cy)+8 = toffoliCount (ReflectionE1TickGapLow48.gen L cx cy) ∧
+    measurementCount (gen L cx cy)+8 = measurementCount (ReflectionE1TickGapLow48.gen L cx cy) ∧
+    gateSlots (gen L cx cy)+20 = gateSlots (ReflectionE1TickGapLow48.gen L cx cy) := by
+  have z := zrep_counts L
+  have c := clrF_counts L hw
+  have oz := ECDSAAdd.Entrant.zrep_counts L
+  have oc := ECDSAAdd.Entrant.clrF_counts L hw
+  simp only [gen,mid,ReflectionE1TickGapLow48.gen,ReflectionE1TickGapLow48.mid,generic,
+    toffoliCount_append,measurementCount_append,gateSlots_append,z.1,z.2,c.1,c.2,
+    oz.1,oz.2,oc.1,oc.2,zrep_slots_exact L hw,clrF_slots_exact L hw,
+    old_zrep_slots_exact L hw,old_clrF_slots_exact L hw]
+  omega
+
+theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (cx cy : Fp) : GatePhysical (gen L cx cy) := by
+  have z := zrep_physical L hn
+  have c := clrF_physical L hw hn
+  have g := gatePhysical_rename (swapF L) (swapF_injective L hw hn) _
+    (ReflectionE1TickGapLow48.generic_physical L hw hn cx cy)
+  simpa only [gen,mid,gatePhysical_append,generic] using And.intro (And.intro z (And.intro (And.intro c g) c)) z
+
+theorem wrapper_support_mono (L : ControlledPointLayout) (C : Point) (cy : Fp)
+    (P Q : Program) (h : wires P ⊆ wires Q) :
+    wires (Edges.wrapper L C cy P) ⊆ wires (Edges.wrapper L C cy Q) := by
+  simp only [Edges.wrapper,Edges.finiteProgram,wires_append,renameProgram_support]
+  repeat' first
+    | exact h
+    | exact Finset.Subset.refl _
+    | apply Finset.union_subset_union
+    | apply Finset.image_subset_image
+
+theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cx cy : Fp) :
+    toffoliCount (Edges.wrapper L C cy (gen L cx cy))+8 =
+      toffoliCount (Edges.wrapper L C cy (ReflectionE1TickGapLow48.gen L cx cy)) ∧
+    measurementCount (Edges.wrapper L C cy (gen L cx cy))+8 =
+      measurementCount (Edges.wrapper L C cy (ReflectionE1TickGapLow48.gen L cx cy)) ∧
+    gateSlots (Edges.wrapper L C cy (gen L cx cy))+20 =
+      gateSlots (Edges.wrapper L C cy (ReflectionE1TickGapLow48.gen L cx cy)) := by
+  have h := gen_counts L hw cx cy
+  simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,measurementCount_append,
+    gateSlots_append,renameProgram_counts,rename_gateSlots]
+  omega
+
+theorem wrapper_qubits (C : Point) (cx cy : Fp) :
+    qubits (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 1588 := by
+  have h := wrapper_support_mono layout C cy _ _ (gen_support_subset layout layout_widths cx cy)
+  have card := Finset.card_le_card (Finset.union_subset_union (Finset.Subset.refl ioWires) h)
+  exact card.trans (ReflectionE1TickGapLow48.wrapper_qubits C cx cy)
+
+theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2152826 := by
+  have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
+  have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
+  omega
+
+theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 1499148 := by
+  have h := (wrapper_counts layout layout_widths (.some hc) cx cy).2.1
+  have old := ReflectionE1TickGapLow48.wrapper_measurements cx cy hc
+  omega
+
+theorem wrapper_slots (C : Point) (cx cy : Fp) :
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50141922 := by
+  have h := (wrapper_counts layout layout_widths C cx cy).2.2
+  have old := ReflectionE1TickGapLow48.wrapper_slots C cx cy
+  omega
+
+def program (C : Point) : Program :=
+  match C with
+  | .zero => []
+  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
+      Edges.wrapper layout C cy (gen layout cx cy)
+
+def entry : Challenge.Entry := fun C => normalizeProgram (program C)
+def bounds : Challenge.Bounds := ⟨2152826,1499148,1588,50141922⟩
+
+theorem program_correct (C : Point) (b : Bool) (R : Point) :
+    Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
+  cases C with
+  | zero =>
+    intro s m hs
+    simpa only [program,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self]
+      using And.intro (Eq.refl s.phase) hs
+  | @some cx cy hc =>
+    have sites:=gen_sites layout layout_widths layout_nodup cx cy
+    exact fixed_correct _ b R _
+      (Edges.full_spec layout layout_widths layout_nodup R hc b _
+        (genFFused_ok layout layout_widths layout_nodup hc) sites)
+      ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
+        (WrapperOB5.support_used layout layout_widths))
+
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2152826 := by
+  cases C with
+  | zero => simp [program,toffoliCount]
+  | @some cx cy hc => exact wrapper_toffoli cx cy hc
+
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1499148 := by
+  cases C with
+  | zero => simp [program,measurementCount]
+  | @some cx cy hc => exact wrapper_measurements cx cy hc
+
+theorem program_qubits (C : Point) : qubits (program C) ≤ 1588 := by
+  cases C with
+  | zero => change qubits [] ≤ 1588;rw [qubits_empty];decide
+  | @some cx cy hc => exact wrapper_qubits (.some hc) cx cy
+
+theorem program_physical (C : Point) : GatePhysical (program C) := by
+  cases C with
+  | zero => simp [program,GatePhysical]
+  | @some cx cy hc =>
+    exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
+      (gen_physical layout layout_widths layout_nodup cx cy)
+
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50141922 := by
+  cases C with
+  | zero => simp [program]
+  | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
+
+theorem certificate : Challenge.Certificate entry bounds where
+  correct C b R := (normalize_triple _ _ _).mpr (program_correct C b R)
+  physical C := normalize_physical _ (program_physical C)
+  toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
+  measurements_le C := by
+    change measurementCount (normalizeProgram (program C)) ≤ 1499148
+    rw [normalize_measurements];exact program_measurements C
+  qubits_le C := by
+    change qubits (normalizeProgram (program C)) ≤ 1588
+    rw [normalize_qubits];exact program_qubits C
+  gateSlots_le C := by
+    change gateSlots (normalizeProgram (program C)) ≤ 50141922
+    rw [normalize_slots];exact program_gateSlots C
+
+end ECDSAAdd.Entrant.FiniteFlagInterval
+end
+
 -- ===== ECDSAAdd.Submission.Entrant.Main =====
 section
--- consolidated import: import ECDSAAdd.Submission.Entrant.ReflectionE1Low48Final
 namespace ECDSAAdd.Entrant
-def program := ReflectionE1TickGapLow48.program
-def entry := ReflectionE1TickGapLow48.entry
-def bounds := ReflectionE1TickGapLow48.bounds
-theorem certificate : Challenge.Certificate entry bounds := ReflectionE1TickGapLow48.certificate
+def program := FiniteFlagInterval.program
+def entry := FiniteFlagInterval.entry
+def bounds := FiniteFlagInterval.bounds
+theorem certificate : Challenge.Certificate entry bounds := FiniteFlagInterval.certificate
 end ECDSAAdd.Entrant
-end -- original module boundary
+end
