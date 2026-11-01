@@ -90,3 +90,4 @@ theorem certificate : Challenge.Certificate entry bounds where
     rw [normalize_slots]; exact program_gateSlots C
 
 end ECDSAAdd.Entrant.FusedBoundaryFinal
+-- decoder rebase, submitted 2026-11-01T15:54:17Z
