@@ -315,7 +315,7 @@ theorem same_context (P Q A B : Program)
 def finiteProgram (L : ControlledPointLayout) (C : Point) (cy : Fp) (Gen : Program) : Program :=
   inputClass L C cy ++ prefixProgram L C ++
   renameProgram (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) Gen)) ++ suffixProgram L C ++
-  renameProgram (sigP L) (corners2 L C++Edges.shared L C) ++
+  renameProgram (sigP L) (corners2 L C++Edges.sharedM L C) ++
   chainErase L.control L.point.finite L.genericSelect
 
 theorem finite_run (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -323,7 +323,7 @@ theorem finite_run (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nod
     run (Edges.finiteProgramWith L C cy Gen (adapterProgram L C true) (adapterProgram L C false)) m s=
       run (finiteProgram L C cy Gen) m s := by
   let G := renameProgram (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) Gen))
-  let T := renameProgram (sigP L) (corners2 L C++Edges.shared L C)++
+  let T := renameProgram (sigP L) (corners2 L C++Edges.sharedM L C)++
     chainErase L.control L.point.finite L.genericSelect
   have a := same_context (genFlagN L++adapterProgram L C true) (prefixProgram L C)
     (inputClass L C cy) (G++(adapterProgram L C false++mergeFlagsN L)++T)
