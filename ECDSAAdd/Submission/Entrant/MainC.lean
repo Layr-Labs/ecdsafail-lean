@@ -3875,11 +3875,373 @@ theorem c6c_bits (w : R.W) (st : BasisState) (A B : Nat) (hT : regValue R.T st=2
 
 end ECDSAAdd.Entrant.KRegs
 
+section
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 8192
+namespace ECDSAAdd.Entrant.KRegs
+open ECDSAAdd ECDSAAdd.Arithmetic
+
+/-! In the 129-bit leaf (`2h+1 ≤ n`), `T = 2ab+b² < 2^(|T|-1)` before `T −= b²` and after
+`T += b²`, so the borrow/carry into the top bit of `T` is always zero and both adders can run
+on the low `|T|-1` bits (one majority/erase pair fewer each). -/
+
+theorem addHeadI_take_sublist (n : Nat) (x y c : List Wire) (cin : Wire) (hx : x.length=n+3)
+    (hy : y.length=n+3) (hc : c.length=n+2) :
+    (addHeadI (x.take (n+2)) (y.take (n+2)) (c.take (n+1)) cin).Sublist (addHeadI x y c cin) := by
+  match x, y, c, hx, hy, hc with
+  | a::a'::x', b::b'::y', c0::c', hx, hy, hc =>
+    have r := add_take_sublist n (a'::x') (b'::y') c' c0 (by simpa using hx) (by simpa using hy)
+      (by simpa using hc)
+    simp only [List.take_succ_cons] at r ⊢
+    simp only [addHeadI]
+    exact (List.Sublist.refl _).append ((r.append (List.Sublist.refl _)).append (List.Sublist.refl _))
+
+theorem addLowNC1_take_sublist (n : Nat) (x y c : List Wire) (cin : Wire) (hx : x.length=n+4)
+    (hy : y.length=n+4) (hc : c.length=n+3) :
+    (addLowNC1 (x.take (n+3)) (y.take (n+3)) (c.take (n+2)) cin).Sublist (addLowNC1 x y c cin) := by
+  match x, y, c, hx, hy, hc with
+  | a::x', b::y', c0::c', hx, hy, hc =>
+    have r := addHeadI_take_sublist n x' y' c' cin (by simpa using hx) (by simpa using hy)
+      (by simpa using hc)
+    simp only [addLowNC1,List.take_succ_cons,List.tail_cons,List.headD_cons]
+    exact (r.append (List.Sublist.refl _)).append (List.Sublist.refl _)
+
+theorem subLowNC1_take_sublist (n : Nat) (x y c : List Wire) (cin : Wire) (hx : x.length=n+4)
+    (hy : y.length=n+4) (hc : c.length=n+3) :
+    (subLowNC1 (x.take (n+3)) (y.take (n+3)) (c.take (n+2)) cin).Sublist (subLowNC1 x y c cin) := by
+  simp only [subLowNC1]
+  exact ((notRegister_take_sublist y (n+3)).append (addLowNC1_take_sublist n x y c cin hx hy hc)).append
+    (notRegister_take_sublist y (n+3))
+
+theorem take_tail_headD (l : List Wire) (k : Nat) (hk : 2≤k) : (l.take k).tail.headD 0=l.tail.headD 0 := by
+  rcases l with _|⟨a,l⟩
+  · simp
+  · obtain ⟨j,rfl⟩ : ∃j,k=j+1 := ⟨k-1,by omega⟩
+    simp only [List.take_succ_cons,List.tail_cons]
+    exact take_headD l j (by omega)
+
+theorem trim_pow (n h : Nat) : 2^(2*(n-h+1)-1)=2*2^(n-h)*2^(n-h) := by
+  rw [show 2*(n-h+1)-1=((n-h)+(n-h))+1 by omega,pow_succ,pow_add]; ring
+
+theorem trim_bound (n h a b : Nat) (hc : 2*h+1≤n) (ha : a<2^h) (hb : b<2^(n-h)) :
+    2*a*b+b^2<2^(2*(n-h+1)-1) := by
+  rw [trim_pow]
+  have hB : 2*2^h≤2^(n-h) := by
+    rw [← pow_succ']; exact Nat.pow_le_pow_right (by norm_num) (by omega)
+  generalize 2^(n-h)=B at *
+  have h2a : 2*a+1≤B := by omega
+  have h1 := Nat.mul_le_mul_right b h2a
+  have h2 : b*b≤b*B := Nat.mul_le_mul_left b hb.le
+  have h3 : b*B<B*B := Nat.mul_lt_mul_of_pos_right hb (by omega)
+  nlinarith
+
+theorem sq_trim_bound (n h b : Nat) (hb : b<2^(n-h)) : b^2<2^(2*(n-h+1)-1) := by
+  rw [trim_pow]
+  generalize 2^(n-h)=B at *
+  have h2 : b*b≤b*B := Nat.mul_le_mul_left b hb.le
+  have h3 : b*B<B*B := Nat.mul_lt_mul_of_pos_right hb (by omega)
+  nlinarith
+
+variable (R : KRegs)
+
+def trimOK : Prop := 2*R.h+1≤R.bank.length
+instance : Decidable R.trimOK := by unfold trimOK; infer_instance
+
+def topOK : Prop := R.trimOK ∧ (R.dhi++R.zB).length=R.T.length ∧
+  (R.carry.take (R.T.length-1)).length+1=R.T.length ∧ 4≤R.T.length
+instance : Decidable R.topOK := by unfold topOK; infer_instance
+
+/-- `m7y` on the low `|T|-1` bits when the top bit of `T` is provably clear. -/
+def m7t : Program := if R.topOK then
+  subLowNC1 ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+    ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin else R.m7y
+/-- `c7y` on the low `|T|-1` bits when the top bit of `T` is provably clear. -/
+def c7t : Program := if R.topOK then
+  addLowNC1 ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+    ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin else R.c7y
+
+theorem topOK_of (w : R.W) (hc : R.trimOK) : R.topOK := by
+  have l := R.t_lensg w
+  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+  have h4 := w.h4; have hh := w.hh; have hSl := w.S; have hTl := w.T
+  exact ⟨hc,l.1,l.2.1,by omega⟩
+
+theorem m7t_sub : R.m7t.Sublist R.m7y := by
+  unfold m7t
+  split_ifs with h
+  · obtain ⟨-,h1,h2,h3⟩ := h
+    have e : R.m7y=subLowNC1 (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin :=
+      if_pos ⟨h1,h2,by omega⟩
+    rw [e]
+    have e1 : R.T.length-1=(R.T.length-4)+3 := by omega
+    have e2 : R.T.length-2=(R.T.length-4)+2 := by omega
+    rw [e1,e2]
+    exact subLowNC1_take_sublist _ _ _ _ _ (by omega) (by omega)
+      (by rw [List.length_take]; simp only [List.length_take] at h2; omega)
+  · exact List.Sublist.refl _
+
+theorem c7t_sub : R.c7t.Sublist R.c7y := by
+  unfold c7t
+  split_ifs with h
+  · obtain ⟨-,h1,h2,h3⟩ := h
+    have e : R.c7y=addLowNC1 (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin :=
+      if_pos ⟨h1,h2,by omega⟩
+    rw [e]
+    have e1 : R.T.length-1=(R.T.length-4)+3 := by omega
+    have e2 : R.T.length-2=(R.T.length-4)+2 := by omega
+    rw [e1,e2]
+    exact addLowNC1_take_sublist _ _ _ _ _ (by omega) (by omega)
+      (by rw [List.length_take]; simp only [List.length_take] at h2; omega)
+  · exact List.Sublist.refl _
+
+theorem m7t_wires : wires R.m7t⊆wires R.m7 :=
+  (DiagSq.wires_of_mem (fun _ h => (R.m7t_sub).subset h)).trans R.m7y_wires
+theorem c7t_wires : wires R.c7t⊆wires R.c7 :=
+  (DiagSq.wires_of_mem (fun _ h => (R.c7t_sub).subset h)).trans R.c7y_wires
+theorem m7t_physical (hn : R.all.Nodup) : GatePhysical R.m7t :=
+  fun i h => R.m7y_physical hn i ((R.m7t_sub).subset h)
+theorem c7t_physical (hn : R.all.Nodup) : GatePhysical R.c7t :=
+  fun i h => R.c7y_physical hn i ((R.c7t_sub).subset h)
+theorem m7t_slots : Challenge.gateSlots R.m7t≤Challenge.gateSlots R.m7 :=
+  (slots_sublist R.m7t_sub).trans R.m7y_slots
+theorem c7t_slots : Challenge.gateSlots R.c7t≤Challenge.gateSlots R.c7 :=
+  (slots_sublist R.c7t_sub).trans R.c7y_slots
+
+theorem m7t_counts (w : R.W) : toffoliCount R.m7t+(if R.trimOK then 1 else 0)+2=toffoliCount R.m7 ∧
+    measurementCount R.m7t+(if R.trimOK then 1 else 0)=measurementCount R.m7 := by
+  have y := R.m7y_counts w
+  have l := R.t_lensg w
+  by_cases hc : R.trimOK
+  · rw [if_pos hc]
+    obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+    have h4 := w.h4; have hh := w.hh; have hSl := w.S; have hTl := w.T
+    have em : R.m7t=subLowNC1 ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin := if_pos (R.topOK_of w hc)
+    have ey : R.m7y=subLowNC1 (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin :=
+      if_pos ⟨l.1,l.2.1,l.2.2.1⟩
+    have lx : ((R.dhi++R.zB).take (R.T.length-1)).length=(R.T.take (R.T.length-1)).length := by
+      simp only [List.length_take]; omega
+    have lc : ((R.carry.take (R.T.length-1)).take (R.T.length-2)).length+1=(R.T.take (R.T.length-1)).length := by
+      have := l.2.1; simp only [List.length_take] at this ⊢; omega
+    have a := subLowNC1_counts ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin
+      (by rw [lx]; simp only [List.length_take]; omega) (by simp only [List.length_take]; omega)
+      (by simp only [List.length_take] at lc ⊢; omega)
+    have b := LowZero.subLowNC_counts _ _ _ R.cin lx lc (by simp only [List.length_take]; omega)
+    have c := subInPlace_counts _ _ _ R.cin lx lc
+    have a' := subLowNC1_counts (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+      (by rw [l.1]; omega) (by omega) (by have := l.2.1; omega)
+    have b' := LowZero.subLowNC_counts _ _ _ R.cin l.1 l.2.1 l.2.2.1
+    have c' := subInPlace_counts _ _ _ R.cin l.1 l.2.1
+    have ma : measurementCount (subLowNC1 ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+        ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin)=
+        measurementCount (LowZero.subLowNC ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+        ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin) := by
+      simp only [subLowNC1,LowZero.subLowNC,measurementCount_append,addLowNC1_mc]
+    have ma' : measurementCount (subLowNC1 (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin)=
+        measurementCount (LowZero.subLowNC (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin) := by
+      simp only [subLowNC1,LowZero.subLowNC,measurementCount_append,addLowNC1_mc]
+    rw [em]; rw [ey] at y
+    simp only [List.length_take] at c
+    constructor <;> omega
+  · rw [if_neg hc]
+    have em : R.m7t=R.m7y := if_neg (fun h => hc h.1)
+    rw [em]; exact ⟨by omega,by omega⟩
+
+theorem c7t_counts (w : R.W) : toffoliCount R.c7t+(if R.trimOK then 1 else 0)+2=toffoliCount R.c7 ∧
+    measurementCount R.c7t+(if R.trimOK then 1 else 0)=measurementCount R.c7 := by
+  have y := R.c7y_counts w
+  have l := R.t_lensg w
+  by_cases hc : R.trimOK
+  · rw [if_pos hc]
+    obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
+    have h4 := w.h4; have hh := w.hh; have hSl := w.S; have hTl := w.T
+    have em : R.c7t=addLowNC1 ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin := if_pos (R.topOK_of w hc)
+    have ey : R.c7y=addLowNC1 (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin :=
+      if_pos ⟨l.1,l.2.1,l.2.2.1⟩
+    have lx : ((R.dhi++R.zB).take (R.T.length-1)).length=(R.T.take (R.T.length-1)).length := by
+      simp only [List.length_take]; omega
+    have lc : ((R.carry.take (R.T.length-1)).take (R.T.length-2)).length+1=(R.T.take (R.T.length-1)).length := by
+      have := l.2.1; simp only [List.length_take] at this ⊢; omega
+    have a := addLowNC1_counts ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin
+      (by rw [lx]; simp only [List.length_take]; omega) (by simp only [List.length_take]; omega)
+      (by simp only [List.length_take] at lc ⊢; omega)
+    have b := LowZero.addLowNC_counts _ _ _ R.cin lx lc (by simp only [List.length_take]; omega)
+    have c := addInPlace_counts _ _ _ R.cin lx lc
+    have a' := addLowNC1_counts (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+      (by rw [l.1]; omega) (by omega) (by have := l.2.1; omega)
+    have b' := LowZero.addLowNC_counts _ _ _ R.cin l.1 l.2.1 l.2.2.1
+    have c' := addInPlace_counts _ _ _ R.cin l.1 l.2.1
+    have ma := addLowNC1_mc ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+        ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin
+    have ma' := addLowNC1_mc (R.dhi++R.zB) R.T (R.carry.take (R.T.length-1)) R.cin
+    rw [em]; rw [ey] at y
+    simp only [List.length_take] at c
+    constructor <;> omega
+  · rw [if_neg hc]
+    have em : R.c7t=R.c7y := if_neg (fun h => hc h.1)
+    rw [em]; exact ⟨by omega,by omega⟩
+
+theorem top_nodup (hn : R.all.Nodup) :
+    (R.cin::(((R.dhi++R.zB).take (R.T.length-1))++(R.T.take (R.T.length-1))++
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)))).Nodup := by
+  have full : (R.cin::((R.dhi++R.zB)++R.T++(R.carry.take (R.T.length-1)))).Nodup :=
+    knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega)
+  exact full.sublist ((((List.take_sublist _ _).append (List.take_sublist _ _)).append
+    (List.take_sublist _ _)).cons₂ _)
+
+theorem m7t_correct (w : R.W) (hn : R.all.Nodup) (s : State) (m : List Bool)
+    (hcl : ∀q∈R.carry.take (R.T.length-1),s.basis q=false)
+    (hnc : (s.basis ((R.dhi++R.zB).headD 0) && !s.basis (R.T.headD 0))=false) (hi : s.basis R.cin=false)
+    (h1 : s.basis ((R.dhi++R.zB).tail.headD 0)=false)
+    (hA : R.trimOK → regValue (R.dhi++R.zB) s.basis<2^(R.T.length-1))
+    (hb : R.trimOK → regValue (R.dhi++R.zB) s.basis≤regValue R.T s.basis%2^(R.T.length-1)) :
+    (run R.m7t m s).phase=s.phase ∧ (∀q,q∉R.T → (run R.m7t m s).basis q=s.basis q) ∧
+    regValue R.T (run R.m7t m s).basis=(regValue R.T s.basis+2^R.T.length-regValue (R.dhi++R.zB) s.basis-(s.basis R.cin).toNat)%2^R.T.length := by
+  by_cases hc : R.trimOK
+  swap
+  · have em : R.m7t=R.m7y := if_neg (fun h => hc h.1)
+    rw [em]; exact R.m7y_correct w hn s m hcl hnc hi h1
+  have hA := hA hc
+  have hb := hb hc
+  have top := R.topOK_of w hc
+  obtain ⟨-,h1l,h2,h3⟩ := top
+  have em : R.m7t=subLowNC1 ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin := if_pos (R.topOK_of w hc)
+  have lx : ((R.dhi++R.zB).take (R.T.length-1)).length=(R.T.take (R.T.length-1)).length := by
+    simp only [List.length_take]; omega
+  have lc : ((R.carry.take (R.T.length-1)).take (R.T.length-2)).length+1=(R.T.take (R.T.length-1)).length := by
+    simp only [List.length_take] at h2 ⊢; omega
+  have hTn : R.T.Nodup := knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega)
+  have e2 := subLowNC1_run ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin m s (R.top_nodup hn) hi
+      (by rw [take_tail_headD _ _ (by omega)]; exact h1) (by simp only [List.length_take]; omega)
+  have r := LowZero.subLowNC_correct _ _ _ R.cin (R.top_nodup hn) lx lc (by simp only [List.length_take]; omega) s m
+    (fun q h => hcl q (List.mem_of_mem_take h))
+    (by rw [take_headD _ _ (by omega),take_headD _ _ (by omega)]; exact hnc) hi
+  rw [em,e2]
+  refine ⟨r.1,fun q h => r.2.1 q (fun h' => h (List.mem_of_mem_take h')),?_⟩
+  set t := run (LowZero.subLowNC ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin) m s with ht
+  set P := 2^(R.T.length-1) with hP
+  have h2P : 2^R.T.length=2*P := by rw [hP,← pow_succ']; congr 1; omega
+  have xv : regValue ((R.dhi++R.zB).take (R.T.length-1)) s.basis=regValue (R.dhi++R.zB) s.basis := by
+    rw [CuccaroStreamedSquareWideLayout.regValue_take_mod _ _ (by omega),Nat.mod_eq_of_lt hA]
+  have yv : regValue (R.T.take (R.T.length-1)) s.basis=regValue R.T s.basis%P :=
+    CuccaroStreamedSquareWideLayout.regValue_take_mod _ _ (by omega) _
+  have dkeep : regValue (R.T.drop (R.T.length-1)) t.basis=regValue (R.T.drop (R.T.length-1)) s.basis := by
+    apply regValue_congr
+    intro q hq
+    apply r.2.1
+    intro hq'
+    exact List.disjoint_take_drop hTn (le_refl (R.T.length-1)) hq' hq
+  have split (st : BasisState) : regValue R.T st=regValue (R.T.take (R.T.length-1)) st+
+      P*regValue (R.T.drop (R.T.length-1)) st := by
+    have e := regValue_append (R.T.take (R.T.length-1)) (R.T.drop (R.T.length-1)) st
+    rw [List.take_append_drop,List.length_take,Nat.min_eq_left (by omega)] at e
+    exact e
+  have dv : regValue (R.T.drop (R.T.length-1)) s.basis=regValue R.T s.basis/P :=
+    CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by omega) _
+  have tlt : regValue R.T s.basis<2*P := by rw [← h2P]; exact regValue_lt _ _
+  have md := Nat.mod_add_div (regValue R.T s.basis) P
+  have Ppos : 0<P := by rw [hP]; positivity
+  have lowv : regValue (R.T.take (R.T.length-1)) t.basis=regValue R.T s.basis%P-regValue (R.dhi++R.zB) s.basis := by
+    rw [r.2.2,xv,yv,hi,Bool.toNat_false,Nat.sub_zero,List.length_take,Nat.min_eq_left (by omega),← hP]
+    rw [show regValue R.T s.basis%P+P-regValue (R.dhi++R.zB) s.basis=
+      (regValue R.T s.basis%P-regValue (R.dhi++R.zB) s.basis)+P by omega,Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by have := Nat.mod_lt (regValue R.T s.basis) Ppos; omega)]
+  rw [split t.basis,lowv,dkeep,dv,hi,Bool.toNat_false,Nat.sub_zero,h2P]
+  have mle := Nat.mod_le (regValue R.T s.basis) P
+  generalize regValue R.T s.basis%P=M at *
+  generalize regValue R.T s.basis/P=D at *
+  generalize regValue R.T s.basis=TV at *
+  generalize regValue (R.dhi++R.zB) s.basis=AV at *
+  have dq : P*D=TV-M := by omega
+  rw [dq,show TV+2*P-AV=(TV-AV)+2*P by omega,Nat.add_mod_right,Nat.mod_eq_of_lt (by omega)]
+  omega
+
+theorem c7t_correct (w : R.W) (hn : R.all.Nodup) (s : State) (m : List Bool)
+    (hcl : ∀q∈R.carry.take (R.T.length-1),s.basis q=false)
+    (hnc : (s.basis ((R.dhi++R.zB).headD 0) && s.basis (R.T.headD 0))=false) (hi : s.basis R.cin=false)
+    (h1 : s.basis ((R.dhi++R.zB).tail.headD 0)=false)
+    (hA : R.trimOK → regValue (R.dhi++R.zB) s.basis<2^(R.T.length-1))
+    (hb : R.trimOK → regValue R.T s.basis%2^(R.T.length-1)+regValue (R.dhi++R.zB) s.basis<2^(R.T.length-1)) :
+    (run R.c7t m s).phase=s.phase ∧ (∀q,q∉R.T → (run R.c7t m s).basis q=s.basis q) ∧
+    regValue R.T (run R.c7t m s).basis=(regValue (R.dhi++R.zB) s.basis+regValue R.T s.basis+(s.basis R.cin).toNat)%2^R.T.length := by
+  by_cases hc : R.trimOK
+  swap
+  · have em : R.c7t=R.c7y := if_neg (fun h => hc h.1)
+    rw [em]; exact R.c7y_correct w hn s m hcl hnc hi h1
+  have hA := hA hc
+  have hb := hb hc
+  have top := R.topOK_of w hc
+  obtain ⟨-,h1l,h2,h3⟩ := top
+  have em : R.c7t=addLowNC1 ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin := if_pos (R.topOK_of w hc)
+  have lx : ((R.dhi++R.zB).take (R.T.length-1)).length=(R.T.take (R.T.length-1)).length := by
+    simp only [List.length_take]; omega
+  have lc : ((R.carry.take (R.T.length-1)).take (R.T.length-2)).length+1=(R.T.take (R.T.length-1)).length := by
+    simp only [List.length_take] at h2 ⊢; omega
+  have hTn : R.T.Nodup := knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega)
+  have e2 := addLowNC1_run ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin m s (R.top_nodup hn) hi
+      (by rw [take_tail_headD _ _ (by omega)]; exact h1)
+  have r := LowZero.addLowNC_correct _ _ _ R.cin (R.top_nodup hn) lx lc (by simp only [List.length_take]; omega) s m
+    (fun q h => hcl q (List.mem_of_mem_take h))
+    (by rw [take_headD _ _ (by omega),take_headD _ _ (by omega)]; exact hnc) hi
+  rw [em,e2]
+  refine ⟨r.1,fun q h => r.2.1 q (fun h' => h (List.mem_of_mem_take h')),?_⟩
+  set t := run (LowZero.addLowNC ((R.dhi++R.zB).take (R.T.length-1)) (R.T.take (R.T.length-1))
+      ((R.carry.take (R.T.length-1)).take (R.T.length-2)) R.cin) m s with ht
+  set P := 2^(R.T.length-1) with hP
+  have h2P : 2^R.T.length=2*P := by rw [hP,← pow_succ']; congr 1; omega
+  have xv : regValue ((R.dhi++R.zB).take (R.T.length-1)) s.basis=regValue (R.dhi++R.zB) s.basis := by
+    rw [CuccaroStreamedSquareWideLayout.regValue_take_mod _ _ (by omega),Nat.mod_eq_of_lt hA]
+  have yv : regValue (R.T.take (R.T.length-1)) s.basis=regValue R.T s.basis%P :=
+    CuccaroStreamedSquareWideLayout.regValue_take_mod _ _ (by omega) _
+  have dkeep : regValue (R.T.drop (R.T.length-1)) t.basis=regValue (R.T.drop (R.T.length-1)) s.basis := by
+    apply regValue_congr
+    intro q hq
+    apply r.2.1
+    intro hq'
+    exact List.disjoint_take_drop hTn (le_refl (R.T.length-1)) hq' hq
+  have split (st : BasisState) : regValue R.T st=regValue (R.T.take (R.T.length-1)) st+
+      P*regValue (R.T.drop (R.T.length-1)) st := by
+    have e := regValue_append (R.T.take (R.T.length-1)) (R.T.drop (R.T.length-1)) st
+    rw [List.take_append_drop,List.length_take,Nat.min_eq_left (by omega)] at e
+    exact e
+  have dv : regValue (R.T.drop (R.T.length-1)) s.basis=regValue R.T s.basis/P :=
+    CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by omega) _
+  have tlt : regValue R.T s.basis<2*P := by rw [← h2P]; exact regValue_lt _ _
+  have md := Nat.mod_add_div (regValue R.T s.basis) P
+  have Ppos : 0<P := by rw [hP]; positivity
+  have lowv : regValue (R.T.take (R.T.length-1)) t.basis=regValue (R.dhi++R.zB) s.basis+regValue R.T s.basis%P := by
+    rw [r.2.2,xv,yv,hi,Bool.toNat_false,Nat.add_zero,List.length_take,Nat.min_eq_left (by omega),← hP]
+    exact Nat.mod_eq_of_lt (by omega)
+  rw [split t.basis,lowv,dkeep,dv,hi,Bool.toNat_false,Nat.add_zero,h2P]
+  have mle := Nat.mod_le (regValue R.T s.basis) P
+  have dle : regValue R.T s.basis/P≤1 := by
+    have := Nat.div_lt_of_lt_mul (show regValue R.T s.basis<P*2 by omega); omega
+  generalize regValue R.T s.basis%P=M at *
+  generalize regValue R.T s.basis/P=D at *
+  generalize regValue R.T s.basis=TV at *
+  generalize regValue (R.dhi++R.zB) s.basis=AV at *
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp dle with e|e
+  · subst e; simp only [Nat.mul_zero,Nat.add_zero] at md ⊢
+    rw [Nat.mod_eq_of_lt (by omega)]; omega
+  · subst e; simp only [Nat.mul_one] at md ⊢
+    rw [Nat.mod_eq_of_lt (by omega)]; omega
+
+end ECDSAAdd.Entrant.KRegs
+end
+
 namespace ECDSAAdd.Entrant.LowZero18KG
 open Arithmetic KG
 variable (K : KG)
-def make : Program := K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7y++K.R.m8z++K.R.scl1591
-def clear : Program := K.R.smk++K.R.c8z++K.R.c7y++K.R.c6c++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c
+def make : Program := K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7t++K.R.m8z++K.R.scl1591
+def clear : Program := K.R.smk++K.R.c8z++K.R.c7t++K.R.c6c++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c
 theorem make_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Bool)
     (hd0 : regValue K.R.dst s.basis=0) (hS0 : regValue K.R.S s.basis=0)
     (hT0 : regValue K.R.T s.basis=0) (hX0 : regValue K.X s.basis=0)
@@ -3922,14 +4284,14 @@ theorem make_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Bool
   have nD : K.R.dst.Nodup := knd hR (fun q => by simp only [KRegs.all,List.count_cons,List.count_append]; omega)
   have cinO : K.R.cin∉K.R.dst ∧ K.R.cin∉K.R.S ∧ K.R.cin∉K.R.T := K.R.outside hR K.R.cin (by simp)
   have cinX : K.R.cin∉K.X := xo _ (by simp)
-  obtain ⟨a7,r8,e8⟩ := kseq (K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7y++K.R.m8z) K.R.scl1591 m s
-  obtain ⟨a6,r7,e7⟩ := kseq (K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7y) K.R.m8z a7 s
-  obtain ⟨a5,r6,e6⟩ := kseq (K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c) K.R.m7y a6 s
+  obtain ⟨a7,r8,e8⟩ := kseq (K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7t++K.R.m8z) K.R.scl1591 m s
+  obtain ⟨a6,r7,e7⟩ := kseq (K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7t) K.R.m8z a7 s
+  obtain ⟨a5,r6,e6⟩ := kseq (K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c) K.R.m7t a6 s
   obtain ⟨a4,r5,e5⟩ := kseq (K.Q1++K.Q2++K.R.smk++K.Q5) K.R.m6c a5 s
   obtain ⟨a3,r4,e4⟩ := kseq (K.Q1++K.Q2++K.R.smk) K.Q5 a4 s
   obtain ⟨a2,r3,e3⟩ := kseq (K.Q1++K.Q2) K.R.smk a3 s
   obtain ⟨r1,r2,e2⟩ := kseq K.Q1 K.Q2 a2 s
-  rw [show (make K)=K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7y++K.R.m8z++K.R.scl1591 from rfl,e8,e7,e6,e5,e4,e3,e2]
+  rw [show (make K)=K.Q1++K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7t++K.R.m8z++K.R.scl1591 from rfl,e8,e7,e6,e5,e4,e3,e2]
   -- Q1: a^2 into dlo
   have st1 := sp.mk1 s r1 (zero _ _ hd0 (fun q h => mt h)) (zero _ _ hX0 (fun q h => x1 h)) hp0 hc0 hz0 hi0
   rw [ha] at st1
@@ -4017,9 +4379,11 @@ theorem make_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Bool
   have dlo6 : regValue K.R.dlo s6.basis=a^2 := (regValue_congr _ _ _ (fun q hq => st6.2.2 q (kdis hn (fun q => by have c := K.R.counts q; simp only [all,X,KRegs.all,List.count_cons,List.count_append]; omega) q hq))).trans dlo5
   have dhi6 : regValue K.R.dhi s6.basis=b^2 := (regValue_congr _ _ _ (fun q hq => st6.2.2 q (kdis hn (fun q => by have c := K.R.counts q; simp only [all,X,KRegs.all,List.count_cons,List.count_append]; omega) q hq))).trans dhi5
   -- T -= b^2
-  have st7 : (run K.R.m7y r6 s6).phase=s6.phase ∧ regValue K.R.T (run K.R.m7y r6 s6).basis=2*a*b ∧
-      ∀q,q∉K.R.T → (run K.R.m7y r6 s6).basis q=s6.basis q := by
-    obtain ⟨p,f,v⟩ := K.R.m7y_correct w hR s6 r6
+  have xv6 : regValue (K.R.dhi++K.R.zB) s6.basis=b^2 := by
+    rw [regValue_append,dhi6,outV s6 G6 K.R.zB (by intro q h; simp [mt h]),zero K.R.zB K.R.z hz0 (fun q h => List.mem_of_mem_take (show q∈K.R.z.take 2 from h))]; simp
+  have st7 : (run K.R.m7t r6 s6).phase=s6.phase ∧ regValue K.R.T (run K.R.m7t r6 s6).basis=2*a*b ∧
+      ∀q,q∉K.R.T → (run K.R.m7t r6 s6).basis q=s6.basis q := by
+    obtain ⟨p,f,v⟩ := K.R.m7t_correct w hR s6 r6
       (fun q hq => (regValue_zero _ _).mp ((outV s6 G6 _ (by intro q h; simp [mt h])).trans
         (zero _ _ hc0 (fun q h => mt h))) q hq)
       (by
@@ -4030,12 +4394,16 @@ theorem make_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Bool
         cases decide (b^2%2=1) <;> rfl)
       ((G6 _ cinO.1 cinO.2.1 cinO.2.2 cinX).trans hi0)
       (by rw [ECDSAAdd.Entrant.KRegs.bit1 K.R.dhi K.R.zB s6.basis (K.R.dhi_two w),dhi6,ECDSAAdd.Entrant.KRegs.sq_bit1]; rfl)
+      (fun _ => by rw [xv6,hTl,hSl]; exact ECDSAAdd.Entrant.KRegs.sq_trim_bound K.R.bank.length K.R.h b bLt)
+      (fun tc => by
+        have tb := ECDSAAdd.Entrant.KRegs.trim_bound K.R.bank.length K.R.h a b tc aLt bLt
+        rw [xv6,st6.2.1,hTl,hSl,Nat.mod_eq_of_lt tb]; omega)
     refine ⟨p,?_,f⟩
     rw [v,regValue_append,dhi6,outV s6 G6 K.R.zB (by intro q h; simp [mt h]),zero K.R.zB K.R.z hz0 (fun q h => List.mem_of_mem_take (show q∈K.R.z.take 2 from h)),
       st6.2.1,G6 _ cinO.1 cinO.2.1 cinO.2.2 cinX,hi0]
     simp only [Nat.mul_zero,Nat.add_zero,Bool.toNat_false,Nat.sub_zero]
     rw [ksubmod _ _ _ (by omega) (by rw [ex] at sqLt; omega)]; omega
-  generalize run K.R.m7y r6 s6=s7 at st7 ⊢
+  generalize run K.R.m7t r6 s6=s7 at st7 ⊢
   have G7 : ∀q,q∉K.R.dst → q∉K.R.S → q∉K.R.T → q∉K.X → s7.basis q=s.basis q :=
     fun q h hS hT x => (st7.2.2 q hT).trans (G6 q h hS hT x)
   have dlo7 : regValue K.R.dlo s7.basis=a^2 := (regValue_congr _ _ _ (fun q hq => st7.2.2 q (kdis hn (fun q => by have c := K.R.counts q; simp only [all,X,KRegs.all,List.count_cons,List.count_append]; omega) q hq))).trans dlo6
@@ -4146,14 +4514,14 @@ theorem clear_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Boo
     rw [Nat.mul_add,Nat.mul_one,←hsplit] at hm
     exact square_bound _ _ (by omega)
   have aSq : a^2<2^(2*K.R.h) := square_bound _ _ aLt
-  obtain ⟨a7,r8,e8⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7y++K.R.c6c++K.Q5c++K.R.scl1591++K.Q2c) K.Q1c m s
-  obtain ⟨a6,r7,e7⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7y++K.R.c6c++K.Q5c++K.R.scl1591) K.Q2c a7 s
-  obtain ⟨a5,r6,e6⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7y++K.R.c6c++K.Q5c) K.R.scl1591 a6 s
-  obtain ⟨a4,r5,e5⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7y++K.R.c6c) K.Q5c a5 s
-  obtain ⟨a3,r4,e4⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7y) K.R.c6c a4 s
-  obtain ⟨a2,r3,e3⟩ := kseq (K.R.smk++K.R.c8z) K.R.c7y a3 s
+  obtain ⟨a7,r8,e8⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7t++K.R.c6c++K.Q5c++K.R.scl1591++K.Q2c) K.Q1c m s
+  obtain ⟨a6,r7,e7⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7t++K.R.c6c++K.Q5c++K.R.scl1591) K.Q2c a7 s
+  obtain ⟨a5,r6,e6⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7t++K.R.c6c++K.Q5c) K.R.scl1591 a6 s
+  obtain ⟨a4,r5,e5⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7t++K.R.c6c) K.Q5c a5 s
+  obtain ⟨a3,r4,e4⟩ := kseq (K.R.smk++K.R.c8z++K.R.c7t) K.R.c6c a4 s
+  obtain ⟨a2,r3,e3⟩ := kseq (K.R.smk++K.R.c8z) K.R.c7t a3 s
   obtain ⟨r1,r2,e2⟩ := kseq K.R.smk K.R.c8z a2 s
-  rw [show (clear K)=K.R.smk++K.R.c8z++K.R.c7y++K.R.c6c++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c from rfl,e8,e7,e6,e5,e4,e3,e2]
+  rw [show (clear K)=K.R.smk++K.R.c8z++K.R.c7t++K.R.c6c++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c from rfl,e8,e7,e6,e5,e4,e3,e2]
   -- rebuild S
   have st1 := K.R.smk_correct w hR s r1 hS0 hz0 hc0 hi0
   rw [ha,hb] at st1
@@ -4204,9 +4572,11 @@ theorem clear_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Boo
   have S2 : regValue K.R.S t2.basis=a+b := (regValue_congr _ _ _ (fun q hq => st2.2.2 q (kdis hn (fun q => by have c := K.R.counts q; simp only [all,X,KRegs.all,List.count_cons,List.count_append]; omega) q hq))).trans st1.2.1
   have T2 : regValue K.R.T t2.basis=2*a*b := (regValue_congr _ _ _ (fun q hq => st2.2.2 q (kdis hn (fun q => by have c := K.R.counts q; simp only [all,X,KRegs.all,List.count_cons,List.count_append]; omega) q hq))).trans T1
   -- T += b^2
-  have st3 : (run K.R.c7y r3 t2).phase=t2.phase ∧ regValue K.R.T (run K.R.c7y r3 t2).basis=2*a*b+b^2 ∧
-      ∀q,q∉K.R.T → (run K.R.c7y r3 t2).basis q=t2.basis q := by
-    obtain ⟨p,f,v⟩ := K.R.c7y_correct w hR t2 r3
+  have xv2 : regValue (K.R.dhi++K.R.zB) t2.basis=b^2 := by
+    rw [regValue_append,dhi2,outV t2 G2 K.R.zB (by intro q h; simp [mt h]),zero K.R.zB K.R.z hz0 (fun q h => List.mem_of_mem_take (show q∈K.R.z.take 2 from h))]; simp
+  have st3 : (run K.R.c7t r3 t2).phase=t2.phase ∧ regValue K.R.T (run K.R.c7t r3 t2).basis=2*a*b+b^2 ∧
+      ∀q,q∉K.R.T → (run K.R.c7t r3 t2).basis q=t2.basis q := by
+    obtain ⟨p,f,v⟩ := K.R.c7t_correct w hR t2 r3
       (fun q hq => (regValue_zero _ _).mp ((outV t2 G2 _ (by intro q h; simp [mt h])).trans
         (zero _ _ hc0 (fun q h => mt h))) q hq)
       (by
@@ -4215,12 +4585,16 @@ theorem clear_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Boo
         rw [hT]; exact Bool.and_false _)
       ((G2 _ cinO.1 cinO.2.1 cinO.2.2 cinX).trans hi0)
       (by rw [ECDSAAdd.Entrant.KRegs.bit1 K.R.dhi K.R.zB t2.basis (K.R.dhi_two w),dhi2,ECDSAAdd.Entrant.KRegs.sq_bit1]; rfl)
+      (fun _ => by rw [xv2,hTl,hSl]; exact ECDSAAdd.Entrant.KRegs.sq_trim_bound K.R.bank.length K.R.h b bLt)
+      (fun tc => by
+        have tb := ECDSAAdd.Entrant.KRegs.trim_bound K.R.bank.length K.R.h a b tc aLt bLt
+        rw [xv2,T2,hTl,hSl,Nat.mod_eq_of_lt (by omega)]; omega)
     refine ⟨p,?_,f⟩
     rw [v,regValue_append,dhi2,outV t2 G2 K.R.zB (by intro q h; simp [mt h]),zero K.R.zB K.R.z hz0 (fun q h => List.mem_of_mem_take (show q∈K.R.z.take 2 from h)),
       T2,G2 _ cinO.1 cinO.2.1 cinO.2.2 cinX,hi0]
     simp only [Nat.mul_zero,Nat.add_zero,Bool.toNat_false]
     rw [Nat.mod_eq_of_lt (by rw [ex] at sqLt; omega)]; ring
-  generalize run K.R.c7y r3 t2=t3 at st3 ⊢
+  generalize run K.R.c7t r3 t2=t3 at st3 ⊢
   have G3 : ∀q,q∉K.R.dst → q∉K.R.S → q∉K.R.T → q∉K.X → t3.basis q=s.basis q :=
     fun q h hS hT x => (st3.2.2 q hT).trans (G2 q h hS hT x)
   have dlo3 : regValue K.R.dlo t3.basis=a^2 := (regValue_congr _ _ _ (fun q hq => st3.2.2 q (kdis hn (fun q => by have c := K.R.counts q; simp only [all,X,KRegs.all,List.count_cons,List.count_append]; omega) q hq))).trans dlo2
@@ -4321,15 +4695,15 @@ theorem clear_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Boo
 
 
 theorem make_counts (w : K.R.W) :
-    toffoliCount (make K)+4=toffoliCount K.Q1+toffoliCount K.Q2+toffoliCount K.Q5+(kextra K.R.bank.length K.R.h-(K.R.bank.length-K.R.h)) ∧
-    measurementCount (make K)=measurementCount K.Q1+measurementCount K.Q2+measurementCount K.Q5+
+    toffoliCount (make K)+4+(if K.R.trimOK then 1 else 0)=toffoliCount K.Q1+toffoliCount K.Q2+toffoliCount K.Q5+(kextra K.R.bank.length K.R.h-(K.R.bank.length-K.R.h)) ∧
+    measurementCount (make K)+(if K.R.trimOK then 1 else 0)=measurementCount K.Q1+measurementCount K.Q2+measurementCount K.Q5+
       kextra K.R.bank.length K.R.h := by
   have p := K.R.piece_counts w
   have z := K.R.scl1591_counts w
   have mz := K.R.m8z_counts w
-  have mz7 := K.R.m7y_counts w
+  have mz7 := K.R.m7t_counts w
   have mc6 := K.R.m6c_counts w
-  have e : (make K)=K.Q1++K.Q2++K.R.smk++K.Q5++(K.R.m6c++K.R.m7y++K.R.m8z)++K.R.scl1591 := by
+  have e : (make K)=K.Q1++K.Q2++K.R.smk++K.Q5++(K.R.m6c++K.R.m7t++K.R.m8z)++K.R.scl1591 := by
     simp only [make,List.append_assoc]
   have q1 := p.2.2.2.2.1
   have q2 := p.2.2.2.2.2.1
@@ -4339,15 +4713,15 @@ theorem make_counts (w : K.R.W) :
   constructor <;> omega
 
 theorem clear_counts (w : K.R.W) :
-    toffoliCount (clear K)+4=toffoliCount K.Q1c+toffoliCount K.Q2c+toffoliCount K.Q5c+(kextra K.R.bank.length K.R.h-(K.R.bank.length-K.R.h)) ∧
-    measurementCount (clear K)=measurementCount K.Q1c+measurementCount K.Q2c+measurementCount K.Q5c+
+    toffoliCount (clear K)+4+(if K.R.trimOK then 1 else 0)=toffoliCount K.Q1c+toffoliCount K.Q2c+toffoliCount K.Q5c+(kextra K.R.bank.length K.R.h-(K.R.bank.length-K.R.h)) ∧
+    measurementCount (clear K)+(if K.R.trimOK then 1 else 0)=measurementCount K.Q1c+measurementCount K.Q2c+measurementCount K.Q5c+
       kextra K.R.bank.length K.R.h := by
   have p := K.R.piece_counts w
   have z := K.R.scl1591_counts w
   have mc8 := K.R.c8z_counts w
-  have mc7 := K.R.c7y_counts w
+  have mc7 := K.R.c7t_counts w
   have cc6 := K.R.c6c_counts w
-  have e : (clear K)=K.R.smk++(K.R.c8z++K.R.c7y++K.R.c6c)++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c := by
+  have e : (clear K)=K.R.smk++(K.R.c8z++K.R.c7t++K.R.c6c)++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c := by
     simp only [clear,List.append_assoc]
   have q1 := p.2.2.2.2.2.2.1
   have q2 := p.2.2.2.2.2.2.2
@@ -4366,22 +4740,22 @@ theorem steps_support (w : K.R.W)
     ECDSAAdd.wires (make K)⊆K.all.toFinset ∧ ECDSAAdd.wires (clear K)⊆K.all.toFinset := by
   have p := K.R.piece_support w
   have sc := K.R.scl1591_support w
-  have e1 : (make K)=K.Q1++K.Q2++K.R.smk++K.Q5++(K.R.m6c++K.R.m7y++K.R.m8z)++K.R.scl1591 := by
+  have e1 : (make K)=K.Q1++K.Q2++K.R.smk++K.Q5++(K.R.m6c++K.R.m7t++K.R.m8z)++K.R.scl1591 := by
     simp only [make,List.append_assoc]
-  have e2 : (clear K)=K.R.smk++(K.R.c8z++K.R.c7y++K.R.c6c)++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c := by
+  have e2 : (clear K)=K.R.smk++(K.R.c8z++K.R.c7t++K.R.c6c)++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c := by
     simp only [clear,List.append_assoc]
   have lift {P : Program} (h : ECDSAAdd.wires P⊆K.R.all.toFinset) : ECDSAAdd.wires P⊆K.all.toFinset :=
     fun q hq => K.r_sub q (h hq)
   have ap {P Q : Program} (h1 : ECDSAAdd.wires P⊆K.all.toFinset) (h2 : ECDSAAdd.wires Q⊆K.all.toFinset) :
       ECDSAAdd.wires (P++Q)⊆K.all.toFinset := by rw [wires_append]; exact Finset.union_subset h1 h2
-  have pz : ECDSAAdd.wires (K.R.m6c++K.R.m7y++K.R.m8z)⊆K.R.all.toFinset := by
+  have pz : ECDSAAdd.wires (K.R.m6c++K.R.m7t++K.R.m8z)⊆K.R.all.toFinset := by
     have h := p.2.2.1
     simp only [wires_append,Finset.union_subset_iff] at h ⊢
-    exact ⟨⟨(K.R.m6c_wires w).trans h.1.1,(K.R.m7y_wires).trans h.1.2⟩,(K.R.m8z_wires w).trans h.2⟩
-  have cz : ECDSAAdd.wires (K.R.c8z++K.R.c7y++K.R.c6c)⊆K.R.all.toFinset := by
+    exact ⟨⟨(K.R.m6c_wires w).trans h.1.1,(K.R.m7t_wires).trans h.1.2⟩,(K.R.m8z_wires w).trans h.2⟩
+  have cz : ECDSAAdd.wires (K.R.c8z++K.R.c7t++K.R.c6c)⊆K.R.all.toFinset := by
     have h := p.2.2.2.1
     simp only [wires_append,Finset.union_subset_iff] at h ⊢
-    exact ⟨⟨(K.R.c8z_wires w).trans h.1.1,(K.R.c7y_wires).trans h.1.2⟩,(K.R.c6c_wires w).trans h.2⟩
+    exact ⟨⟨(K.R.c8z_wires w).trans h.1.1,(K.R.c7t_wires).trans h.1.2⟩,(K.R.c6c_wires w).trans h.2⟩
   rw [e1,e2]
   exact ⟨ap (ap (ap (ap (ap s1 s2) (lift p.1)) s5) (lift pz)) (lift sc),
     ap (ap (ap (ap (ap (lift p.1) (lift cz)) s5c) (lift sc)) s2c) s1c⟩
@@ -4392,20 +4766,20 @@ theorem steps_physical (w : K.R.W) (hn : K.all.Nodup)
     GatePhysical (make K) ∧ GatePhysical (clear K) := by
   have p := K.R.piece_physical (K.rnd hn)
   have sc := K.R.scl1591_physical w (K.rnd hn)
-  have e1 : (make K)=K.Q1++K.Q2++K.R.smk++K.Q5++(K.R.m6c++K.R.m7y++K.R.m8z)++K.R.scl1591 := by
+  have e1 : (make K)=K.Q1++K.Q2++K.R.smk++K.Q5++(K.R.m6c++K.R.m7t++K.R.m8z)++K.R.scl1591 := by
     simp only [make,List.append_assoc]
-  have e2 : (clear K)=K.R.smk++(K.R.c8z++K.R.c7y++K.R.c6c)++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c := by
+  have e2 : (clear K)=K.R.smk++(K.R.c8z++K.R.c7t++K.R.c6c)++K.Q5c++K.R.scl1591++K.Q2c++K.Q1c := by
     simp only [clear,List.append_assoc]
   have ap {P Q : Program} (h1 : GatePhysical P) (h2 : GatePhysical Q) : GatePhysical (P++Q) :=
     (gatePhysical_append P Q).mpr ⟨h1,h2⟩
-  have pz : GatePhysical (K.R.m6c++K.R.m7y++K.R.m8z) := by
+  have pz : GatePhysical (K.R.m6c++K.R.m7t++K.R.m8z) := by
     have h := p.2.2.1
     simp only [gatePhysical_append] at h ⊢
-    exact ⟨⟨K.R.m6c_physical w (K.R.carry_take_nodup (K.rnd hn) _) h.1.1,K.R.m7y_physical (K.rnd hn)⟩,K.R.m8z_physical (K.rnd hn)⟩
-  have cz : GatePhysical (K.R.c8z++K.R.c7y++K.R.c6c) := by
+    exact ⟨⟨K.R.m6c_physical w (K.R.carry_take_nodup (K.rnd hn) _) h.1.1,K.R.m7t_physical (K.rnd hn)⟩,K.R.m8z_physical (K.rnd hn)⟩
+  have cz : GatePhysical (K.R.c8z++K.R.c7t++K.R.c6c) := by
     have h := p.2.2.2.1
     simp only [gatePhysical_append] at h ⊢
-    exact ⟨⟨K.R.c8z_physical w (K.rnd hn),K.R.c7y_physical (K.rnd hn)⟩,K.R.c6c_physical w h.2⟩
+    exact ⟨⟨K.R.c8z_physical w (K.rnd hn),K.R.c7t_physical (K.rnd hn)⟩,K.R.c6c_physical w h.2⟩
   rw [e1,e2]
   exact ⟨ap (ap (ap (ap (ap p1 p2) p.1) p5) pz) sc,ap (ap (ap (ap (ap p.1 cz) p5c) sc) p2c) p1c⟩
 
@@ -4421,10 +4795,10 @@ theorem steps_slots2 (w : K.R.W) :
       (2*(Challenge.gateSlots K.R.smk+Challenge.gateSlots K.R.scl)+Challenge.gateSlots (K.R.m6++K.R.m7++K.R.m8)+
       Challenge.gateSlots (K.R.c8++K.R.c7++K.R.c6)) := by
   have ms := K.R.m8z_slots w
-  have ms7 := K.R.m7y_slots
+  have ms7 := K.R.m7t_slots
   have ms6 := K.R.m6c_slots w
   have mc8 := K.R.c8z_slots w
-  have mc7 := K.R.c7y_slots
+  have mc7 := K.R.c7t_slots
   have mc6 := K.R.c6c_slots w
   have sc := K.R.scl1591_slots
   simp only [make,clear,Challenge.gateSlots_append] at sc ⊢; omega
@@ -4436,15 +4810,15 @@ variable (K : KG)
 attribute [local irreducible] toffoliCount measurementCount Challenge.gateSlots wires
 
 theorem make_counts_old (w : K.R.W) :
-    toffoliCount (make K)+4=toffoliCount (FrontierSumCleanup1591KG.make K) ∧
-    measurementCount (make K)=measurementCount (FrontierSumCleanup1591KG.make K) := by
+    toffoliCount (make K)+4+(if K.R.trimOK then 1 else 0)=toffoliCount (FrontierSumCleanup1591KG.make K) ∧
+    measurementCount (make K)+(if K.R.trimOK then 1 else 0)=measurementCount (FrontierSumCleanup1591KG.make K) := by
   have a := make_counts K w
   have b := FrontierSumCleanup1591KG.make_counts K w
   constructor <;> omega
 
 theorem clear_counts_old (w : K.R.W) :
-    toffoliCount (clear K)+4=toffoliCount (FrontierSumCleanup1591KG.clear K) ∧
-    measurementCount (clear K)=measurementCount (FrontierSumCleanup1591KG.clear K) := by
+    toffoliCount (clear K)+4+(if K.R.trimOK then 1 else 0)=toffoliCount (FrontierSumCleanup1591KG.clear K) ∧
+    measurementCount (clear K)+(if K.R.trimOK then 1 else 0)=measurementCount (FrontierSumCleanup1591KG.clear K) := by
   have a := clear_counts K w
   have b := FrontierSumCleanup1591KG.clear_counts K w
   constructor <;> omega
@@ -4453,17 +4827,17 @@ theorem make_support_subset (w : K.R.W) :
     wires (make K)⊆wires (FrontierSumCleanup1591KG.make K) := by
   simp only [make,FrontierSumCleanup1591KG.make,wires_append]
   repeat' apply Finset.union_subset_union
-  all_goals first | exact K.R.m6c_wires w | exact K.R.m7y_wires | exact K.R.m8z_wires w | exact Finset.Subset.refl _
+  all_goals first | exact K.R.m6c_wires w | exact K.R.m7t_wires | exact K.R.m8z_wires w | exact Finset.Subset.refl _
 
 theorem clear_support_subset (w : K.R.W) :
     wires (clear K)⊆wires (FrontierSumCleanup1591KG.clear K) := by
   simp only [clear,FrontierSumCleanup1591KG.clear,wires_append]
   repeat' apply Finset.union_subset_union
-  all_goals first | exact K.R.c8z_wires w | exact K.R.c7y_wires | exact K.R.c6c_wires w | exact Finset.Subset.refl _
+  all_goals first | exact K.R.c8z_wires w | exact K.R.c7t_wires | exact K.R.c6c_wires w | exact Finset.Subset.refl _
 
 theorem make_slots_old (w : K.R.W) :
     Challenge.gateSlots (make K)≤Challenge.gateSlots (FrontierSumCleanup1591KG.make K) := by
-  have a := K.R.m7y_slots
+  have a := K.R.m7t_slots
   have b := K.R.m8z_slots w
   have c := K.R.m6c_slots w
   simp only [make,FrontierSumCleanup1591KG.make,Challenge.gateSlots_append]
@@ -4472,7 +4846,7 @@ theorem make_slots_old (w : K.R.W) :
 theorem clear_slots_old (w : K.R.W) :
     Challenge.gateSlots (clear K)≤Challenge.gateSlots (FrontierSumCleanup1591KG.clear K) := by
   have a := K.R.c8z_slots w
-  have b := K.R.c7y_slots
+  have b := K.R.c7t_slots
   have c := K.R.c6c_slots w
   simp only [clear,FrontierSumCleanup1591KG.clear,Challenge.gateSlots_append]
   omega
@@ -4830,6 +5204,9 @@ theorem kgH_counts (h : src.length=128) :
     · show measurementCount (TrimSquare3.tsqc3 (oregs L ext src dst).S (oregs L ext src dst).T (oregs L ext src dst).pad (oregs L ext src dst).carry (oregs L ext src dst).cin)=_; rw [q.2.2,e,f]; rfl
   have rb : (kgH L ext src dst).R.bank.length=src.length := ol.2
   have rh : (kgH L ext src dst).R.h=64 := rfl
+  have tk : ¬(kgH L ext src dst).R.trimOK := by
+    show ¬(2*(kgH L ext src dst).R.h+1≤(kgH L ext src dst).R.bank.length); rw [rb,rh,h]; norm_num
+  rw [if_neg tk,Nat.add_zero] at mk cl
   rw [t1.1,t2.1,t5.1,t1.2.1,t2.2.1,t5.2.1,rb,rh,h] at mk
   rw [t1.2.2.1,t2.2.2.1,t5.2.2.1,t1.2.2.2,t2.2.2.2,t5.2.2.2,rb,rh,h] at cl
   norm_num [DiagSq.cost,raw_kcost,raw_ksq,kcost,ksq,kextra,signedSquareRowsCount] at mk cl
@@ -4837,8 +5214,8 @@ theorem kgH_counts (h : src.length=128) :
 
 include hw h128 hsmax hlen he in
 theorem kgS_counts (h : src.length=129) :
-    toffoliCount (LowZero18KG.make (kgS L ext src dst))=6689 ∧ measurementCount (LowZero18KG.make (kgS L ext src dst))=6802 ∧
-    toffoliCount (LowZero18KG.clear (kgS L ext src dst))=6656 ∧ measurementCount (LowZero18KG.clear (kgS L ext src dst))=6802 := by
+    toffoliCount (LowZero18KG.make (kgS L ext src dst))=6688 ∧ measurementCount (LowZero18KG.make (kgS L ext src dst))=6801 ∧
+    toffoliCount (LowZero18KG.clear (kgS L ext src dst))=6655 ∧ measurementCount (LowZero18KG.clear (kgS L ext src dst))=6801 := by
   have w := oregs_W L hw ext src dst h128 hsmax hlen he
   have wi := iregs_W L hw ext src dst h128 hsmax hlen he
   have wj := jregsS_W L hw ext src dst h hlen he
@@ -4882,6 +5259,9 @@ theorem kgS_counts (h : src.length=129) :
     ⟨j1.1,j1.2,j2.1,Nat.eq_sub_of_add_eq j2.2⟩
   have rb : (kgS L ext src dst).R.bank.length=src.length := ol.2
   have rh : (kgS L ext src dst).R.h=64 := rfl
+  have tk : (kgS L ext src dst).R.trimOK := by
+    show 2*(kgS L ext src dst).R.h+1≤(kgS L ext src dst).R.bank.length; rw [rb,rh,h]
+  rw [if_pos tk] at mk cl
   rw [t1.1,t2.1,t5.1,t1.2.1,t2.2.1,t5.2.1,rb,rh,h] at mk
   rw [t1.2.2.1,t2.2.2.1,t5.2.2.1,t1.2.2.2,t2.2.2.2,t5.2.2.2,rb,rh,h] at cl
   norm_num [DiagSq.cost,raw_kcost,raw_ksq,kcost,ksq,kextra,signedSquareRowsCount] at mk cl
@@ -4944,9 +5324,9 @@ theorem kg_spec (hall : (kg L ext src dst).all.Nodup) : (kg L ext src dst).Spec 
   · rw [kg,if_pos c] at hall ⊢; exact kgH_spec L hw ext src dst h128 hsmax hlen he c hall
   · rw [kg,if_neg c] at hall ⊢; exact kgS_spec L hw ext src dst h128 hsmax hlen he (by omega) hall
 
-def lowkcost2 (n : Nat) : Nat := if n=128 then 6684 else 6802
-def lowkcostTMake (n : Nat) : Nat := if n=128 then 6572 else 6689
-def lowkcostTClear (n : Nat) : Nat := if n=128 then 6540 else 6656
+def lowkcost2 (n : Nat) : Nat := if n=128 then 6684 else 6801
+def lowkcostTMake (n : Nat) : Nat := if n=128 then 6572 else 6688
+def lowkcostTClear (n : Nat) : Nat := if n=128 then 6540 else 6655
 def lowkcostTPair (n : Nat) : Nat := lowkcostTMake n+lowkcostTClear n
 
 include hw h128 hsmax hlen he in
@@ -5100,19 +5480,19 @@ theorem kg_Q1_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext 
 theorem kg_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext src dst : List Wire)
     (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
     (he : 300≤ext.length) :
-    toffoliCount (LowZero18KG.make (kg L ext src dst))+25=
+    toffoliCount (LowZero18KG.make (kg L ext src dst))+25+(if src.length=128 then 0 else 1)=
       toffoliCount (FrontierSumCleanup1591KG.make (FrontierSumCleanup1591LowK.kg L ext src dst)) ∧
-    measurementCount (LowZero18KG.make (kg L ext src dst))+9=
+    measurementCount (LowZero18KG.make (kg L ext src dst))+9+(if src.length=128 then 0 else 1)=
       measurementCount (FrontierSumCleanup1591KG.make (FrontierSumCleanup1591LowK.kg L ext src dst)) ∧
-    toffoliCount (LowZero18KG.clear (kg L ext src dst))+25=
+    toffoliCount (LowZero18KG.clear (kg L ext src dst))+25+(if src.length=128 then 0 else 1)=
       toffoliCount (FrontierSumCleanup1591KG.clear (FrontierSumCleanup1591LowK.kg L ext src dst)) ∧
-    measurementCount (LowZero18KG.clear (kg L ext src dst))+9=
+    measurementCount (LowZero18KG.clear (kg L ext src dst))+9+(if src.length=128 then 0 else 1)=
       measurementCount (FrontierSumCleanup1591KG.clear (FrontierSumCleanup1591LowK.kg L ext src dst)) := by
   have a := kg_counts L hw ext src dst h128 h129 hd he
   have b := FrontierSumCleanup1591LowK.kg_counts L hw ext src dst h128 h129 hd he
   by_cases h : src.length=128
   all_goals simp only [lowkcostTMake,lowkcostTClear,lowkcost2,FrontierSumCleanup1591LowK.lowkcostTMake,
-    FrontierSumCleanup1591LowK.lowkcostTClear,FrontierSumCleanup1591LowK.lowkcost2,h,ite_true,ite_false] at a b
+    FrontierSumCleanup1591LowK.lowkcostTClear,FrontierSumCleanup1591LowK.lowkcost2,h,ite_true,ite_false] at a b ⊢
   all_goals exact ⟨by omega,by omega,by omega,by omega⟩
 
 end ECDSAAdd.Entrant.LowZero18LowK
@@ -5140,7 +5520,7 @@ theorem loan_make_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.W
       SquareCarryLoan719BF.make,FrontierSumCleanup1591KG.make,SquareCarryLoan719.patchKG,
       kgH,FrontierSumCleanup1591LowK.kgH,KRegs.m5,wires_append]
     repeat' apply Finset.union_subset_union
-    all_goals first | exact ip | exact jp | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).1 | exact (oregs L ext src dst).m7y_wires |
+    all_goals first | exact ip | exact jp | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).1 | exact (oregs L ext src dst).m7t_wires |
       exact (oregs L ext src dst).m6c_wires w |
       exact (oregs L ext src dst).m8z_wires w | exact Finset.Subset.refl _
   · have jp := LowZero18Diagonal.make_support_subset (jregsS L ext src dst)
@@ -5149,7 +5529,7 @@ theorem loan_make_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.W
       SquareCarryLoan719BF.make,FrontierSumCleanup1591KG.make,SquareCarryLoan719.patchKG,
       kgS,FrontierSumCleanup1591LowK.kgS,KRegs.m2,wires_append]
     repeat' apply Finset.union_subset_union
-    all_goals first | exact ip | exact jp | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).1 | exact (oregs L ext src dst).m7y_wires |
+    all_goals first | exact ip | exact jp | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).1 | exact (oregs L ext src dst).m7t_wires |
       exact (oregs L ext src dst).m6c_wires w |
       exact (oregs L ext src dst).m8z_wires w | exact Finset.Subset.refl _
 
@@ -5169,13 +5549,13 @@ theorem loan_clear_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.
       kgH,FrontierSumCleanup1591LowK.kgH,KRegs.c5,wires_append]
     repeat' apply Finset.union_subset_union
     all_goals first | exact ipc | exact jhc | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).2 | exact (oregs L ext src dst).c8z_wires w |
-      exact (oregs L ext src dst).c7y_wires | exact (oregs L ext src dst).c6c_wires w | exact Finset.Subset.refl _
+      exact (oregs L ext src dst).c7t_wires | exact (oregs L ext src dst).c6c_wires w | exact Finset.Subset.refl _
   · simp only [kg,FrontierSumCleanup1591LowK.kg,h,ite_false,LowZero18KG.clear,
       SquareCarryLoan719BF.clear,FrontierSumCleanup1591KG.clear,SquareCarryLoan719.patchKG,
       kgS,FrontierSumCleanup1591LowK.kgS,KRegs.c2,wires_append]
     repeat' apply Finset.union_subset_union
     all_goals first | exact ipc | exact jsc | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).2 | exact (oregs L ext src dst).c8z_wires w |
-      exact (oregs L ext src dst).c7y_wires | exact (oregs L ext src dst).c6c_wires w | exact Finset.Subset.refl _
+      exact (oregs L ext src dst).c7t_wires | exact (oregs L ext src dst).c6c_wires w | exact Finset.Subset.refl _
 
 theorem loan_make_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext src dst : List Wire) (h128 : 128≤src.length) (h129 : src.length≤129)
@@ -5185,7 +5565,7 @@ theorem loan_make_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have w := oregs_W L hw ext src dst h128 h129 hd he
   have wi := iregs_W L hw ext src dst h128 h129 hd he
   have ip := LowZero18Diagonal.makeC_slots_old (iregs L ext src dst) wi
-  have a := (oregs L ext src dst).m7y_slots
+  have a := (oregs L ext src dst).m7t_slots
   have b := (oregs L ext src dst).m8z_slots w
   have c6 := (oregs L ext src dst).m6c_slots w
   have q5 := TrimSquare3.tsq3_slots_rel (oregs L ext src dst).S (oregs L ext src dst).T (oregs L ext src dst).pad (oregs L ext src dst).carry (oregs L ext src dst).cin
@@ -5217,7 +5597,7 @@ theorem loan_clear_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths
       Challenge.gateSlots (SquareCarryLoan719BF.clear L (FrontierSumCleanup1591LowK.kg L ext src dst)) := by
   have w := oregs_W L hw ext src dst h128 h129 hd he
   have a := (oregs L ext src dst).c8z_slots w
-  have b := (oregs L ext src dst).c7y_slots
+  have b := (oregs L ext src dst).c7t_slots
   have c6 := (oregs L ext src dst).c6c_slots w
   have q5 := TrimSquare3.tsq3_slots_rel (oregs L ext src dst).S (oregs L ext src dst).T (oregs L ext src dst).pad (oregs L ext src dst).carry (oregs L ext src dst).cin
   have q2 := TrimSquare3.tsq3_slots_rel (oregs L ext src dst).hi (oregs L ext src dst).dhi (oregs L ext src dst).pad (oregs L ext src dst).carry (oregs L ext src dst).cin
@@ -5261,7 +5641,7 @@ def clear (L : CuccaroStreamedSquareWideLayout) (R : KG) : Program :=
   LowZero18KG.clear (patchKG L R)
 
 def clearPrefix (R : KG) : Program :=
-  R.R.smk++R.R.c8z++R.R.c7y++R.R.c6c++R.Q5c++R.R.scl1591++R.Q2c
+  R.R.smk++R.R.c8z++R.R.c7t++R.R.c6c++R.Q5c++R.R.scl1591++R.Q2c
 
 def withLowK2 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire)
     (control : Wire) (src dst : List Wire) (body : Program) : Program :=
@@ -5368,7 +5748,7 @@ theorem target_clearPrefix_free :
     all_goals repeat' apply Finset.union_subset_union
     all_goals first | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).2 | exact LowZero18Diagonal.clear_support_subset _ |
       exact (LowZero18LowK.oregs L ext src dst).c8z_wires w |
-      exact (LowZero18LowK.oregs L ext src dst).c7y_wires | exact (LowZero18LowK.oregs L ext src dst).c6c_wires w |
+      exact (LowZero18LowK.oregs L ext src dst).c7t_wires | exact (LowZero18LowK.oregs L ext src dst).c6c_wires w |
       exact Finset.Subset.refl _
   exact fun used=>old (sub used)
 
@@ -5376,14 +5756,14 @@ include hw hn hs hd h128 hsmax hlen hx hdx he in
 theorem make_tail_free :
     target L∉wires ((LowZero18LowK.kg L ext src dst).Q2++
       (LowZero18LowK.kg L ext src dst).R.smk++(LowZero18LowK.kg L ext src dst).Q5++
-      (LowZero18LowK.kg L ext src dst).R.m6c++(LowZero18LowK.kg L ext src dst).R.m7y++
+      (LowZero18LowK.kg L ext src dst).R.m6c++(LowZero18LowK.kg L ext src dst).R.m7t++
       (LowZero18LowK.kg L ext src dst).R.m8z++(LowZero18LowK.kg L ext src dst).R.scl1591) := by
   have old := SquareCarryLoan719BFSupport.make_tail_free
     L hw control hn ext src dst hs hd h128 hsmax hlen hx hdx he
   have w := LowZero18LowK.oregs_W L hw ext src dst h128 hsmax hlen he
   have sub : wires ((LowZero18LowK.kg L ext src dst).Q2++
       (LowZero18LowK.kg L ext src dst).R.smk++(LowZero18LowK.kg L ext src dst).Q5++
-      (LowZero18LowK.kg L ext src dst).R.m6c++(LowZero18LowK.kg L ext src dst).R.m7y++
+      (LowZero18LowK.kg L ext src dst).R.m6c++(LowZero18LowK.kg L ext src dst).R.m7t++
       (LowZero18LowK.kg L ext src dst).R.m8z++(LowZero18LowK.kg L ext src dst).R.scl1591)⊆
     wires ((FrontierSumCleanup1591LowK.kg L ext src dst).Q2++
       (FrontierSumCleanup1591LowK.kg L ext src dst).R.smk++(FrontierSumCleanup1591LowK.kg L ext src dst).Q5++
@@ -5395,7 +5775,7 @@ theorem make_tail_free :
       simp only [LowZero18LowK.kg,FrontierSumCleanup1591LowK.kg,h,ite_true,
         LowZero18LowK.kgH,FrontierSumCleanup1591LowK.kgH,KRegs.m5,wires_append]
       repeat' apply Finset.union_subset_union
-      all_goals first | exact jp | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).1 | exact (LowZero18LowK.oregs L ext src dst).m7y_wires |
+      all_goals first | exact jp | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).1 | exact (LowZero18LowK.oregs L ext src dst).m7t_wires |
         exact (LowZero18LowK.oregs L ext src dst).m6c_wires w |
         exact (LowZero18LowK.oregs L ext src dst).m8z_wires w | exact Finset.Subset.refl _
     · have jp := LowZero18Diagonal.make_support_subset (LowZero18LowK.jregsS L ext src dst)
@@ -5403,7 +5783,7 @@ theorem make_tail_free :
       simp only [LowZero18LowK.kg,FrontierSumCleanup1591LowK.kg,h,ite_false,
         LowZero18LowK.kgS,FrontierSumCleanup1591LowK.kgS,KRegs.m2,wires_append]
       repeat' apply Finset.union_subset_union
-      all_goals first | exact jp | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).1 | exact (LowZero18LowK.oregs L ext src dst).m7y_wires |
+      all_goals first | exact jp | exact (TrimSquare3.tsq3_wires_le _ _ _ _ _).1 | exact (LowZero18LowK.oregs L ext src dst).m7t_wires |
         exact (LowZero18LowK.oregs L ext src dst).m6c_wires w |
         exact (LowZero18LowK.oregs L ext src dst).m8z_wires w | exact Finset.Subset.refl _
   exact fun used=>old (sub used)
@@ -5440,7 +5820,7 @@ theorem patchKG_make_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths
     (regValue_zero _ _).mp hX0 q (by simp only [KG.X,List.mem_append];tauto))
   have headEq (records : List Bool) := SquareCarryLoan719.q1_run_eq L hw K sp targetX1 hostFree innerZero
     s records dlo0 x10 hp0 hc0 hz0 hi0 ((regValue_zero _ _).mp hS0 _ hostS)
-  let tail := K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7y++K.R.m8z++K.R.scl1591
+  let tail := K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7t++K.R.m8z++K.R.scl1591
   have oldShape : LowZero18KG.make K=K.Q1++tail := by simp only [LowZero18KG.make,tail,List.append_assoc]
   have newShape : LowZero18Square.make L K=renameProgram (earlyPerm L) K.Q1++tail := by
     simp only [LowZero18Square.make,SquareCarryLoan719.patchKG,LowZero18KG.make,tail,List.append_assoc]
@@ -6423,9 +6803,9 @@ theorem withLowK2_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
     (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
     (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
     (he : 300≤ext.length) :
-    toffoliCount (withLowK2 L ext control src dst body)+50=
+    toffoliCount (withLowK2 L ext control src dst body)+50+2*(if src.length=128 then 0 else 1)=
       toffoliCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) ∧
-    measurementCount (withLowK2 L ext control src dst body)+18=
+    measurementCount (withLowK2 L ext control src dst body)+18+2*(if src.length=128 then 0 else 1)=
       measurementCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) := by
   have d := LowZero18LowK.kg_counts_diff L hw ext src dst h128 h129 hd he
   simp only [withLowK2,SquareCarryLoan719BF.withLowK2,toffoliCount_append,measurementCount_append,
@@ -6461,8 +6841,8 @@ theorem withLowK2_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
 
 theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (raw L ext control)+150=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
-    measurementCount (raw L ext control)+54=measurementCount (SquareCarryLoan719BF.raw L ext control) := by
+    toffoliCount (raw L ext control)+152=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
+    measurementCount (raw L ext control)+56=measurementCount (SquareCarryLoan719BF.raw L ext control) := by
   have low := L.core.low_length hw.core
   have high := L.core.high_length hw.core
   have sum := L.core.sum_length hw.core
@@ -6473,6 +6853,9 @@ theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
   have a := withLowK2_counts_diff L hw ext control L.core.low (L.core.product.take 256)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
+  rw [if_neg (show ¬L.core.sum.length=128 by omega)] at c
+  rw [if_pos high] at b
+  rw [if_pos low] at a
   simp only [raw,SquareCarryLoan719BF.raw,LowZero18Square.branchCK,LowZero18Square.branchBF,
     LowZero18Square.branchAF,SquareCarryLoan719BF.branchCK,SquareCarryLoan719BF.branchBF,
     SquareCarryLoan719BF.branchAF,reflection,SquareCarryLoan719BF.reflection,
@@ -6523,15 +6906,15 @@ private theorem mRename (f : Wire→Wire) (P : Program) :
     measurementCount (renameProgram f P)=measurementCount P := (renameProgram_counts f P).2
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+150=toffoliCount (SquareCarryLoan719BF.program L) ∧
-    measurementCount (program L)+54=measurementCount (SquareCarryLoan719BF.program L) := by
+    toffoliCount (program L)+152=toffoliCount (SquareCarryLoan719BF.program L) ∧
+    measurementCount (program L)+56=measurementCount (SquareCarryLoan719BF.program L) := by
   have h := raw_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
   simpa only [program,SquareCarryLoan719BF.program,place,SquareCarryLoan719BF.place,
     fastCandidate,SquareCarryLoan719BF.fastCandidate,tRename,mRename] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=52233 ∧ measurementCount (program L)=53021 := by
+    toffoliCount (program L)=52231 ∧ measurementCount (program L)=53019 := by
   have a := counts_diff L hw
   have b := SquareCarryLoan719BF.counts L hw
   constructor <;> omega
@@ -6682,7 +7065,7 @@ def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
     (exit Rolling1588.exitKernel L) cx cy
 
 private def Metrics (P Q : Program) : Prop :=
-  toffoliCount P+150=toffoliCount Q ∧ measurementCount P+54=measurementCount Q ∧
+  toffoliCount P+152=toffoliCount Q ∧ measurementCount P+56=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private theorem gen_metrics_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
@@ -6704,8 +7087,8 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
     ⟨counts.1,counts.2,LowZero18Square.slots_le L hw⟩
 
 theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+150=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
-    measurementCount (gen L cx cy)+54=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
+    toffoliCount (gen L cx cy)+152=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
+    measurementCount (gen L cx cy)+56=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
   ⟨(gen_metrics L hw cx cy).1,(gen_metrics L hw cx cy).2.1⟩
 
 private theorem wrapper_metrics (L : ControlledPointLayout) (C : Point) (cy : Fp)
@@ -6775,7 +7158,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
     (Rolling1588BFFinal.wrapper_qubits C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152469 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152467 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -6798,7 +7181,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152469,1499933,1588,50118933+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152467,1499933,1588,50118933+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -6815,7 +7198,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152469 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152467 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -15949,9 +16332,9 @@ private theorem window_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
     (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
     (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
     (he : 300≤ext.length) :
-    toffoliCount (LowZero18Square.withLowK2 L ext control src dst body)+50=
+    toffoliCount (LowZero18Square.withLowK2 L ext control src dst body)+50+2*(if src.length=128 then 0 else 1)=
       toffoliCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) ∧
-    measurementCount (LowZero18Square.withLowK2 L ext control src dst body)+18=
+    measurementCount (LowZero18Square.withLowK2 L ext control src dst body)+18+2*(if src.length=128 then 0 else 1)=
       measurementCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) := by
   have a:=LowZero18Square.withLowK2_counts_diff L hw ext control src dst body h128 h129 hd he
   have b:=LowZero18Square.withLowK2_counts_diff L hw ext control src dst body h128 h129 hd he
@@ -15975,8 +16358,8 @@ private theorem window_slots (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
 
 private theorem core_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (core L ext control)+150=toffoliCount (ReflectionE1Square.core L ext control) ∧
-    measurementCount (core L ext control)+54=measurementCount (ReflectionE1Square.core L ext control) := by
+    toffoliCount (core L ext control)+152=toffoliCount (ReflectionE1Square.core L ext control) ∧
+    measurementCount (core L ext control)+56=measurementCount (ReflectionE1Square.core L ext control) := by
   have low:=L.core.low_length hw.core
   have high:=L.core.high_length hw.core
   have sum:=L.core.sum_length hw.core
@@ -15987,6 +16370,9 @@ private theorem core_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.W
     (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
   have a:=window_counts L hw ext control L.core.low (L.core.product.take 256)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
+  rw [if_neg (show ¬L.core.sum.length=128 by omega)] at c
+  rw [if_pos high] at b
+  rw [if_pos low] at a
   simp only [core,ReflectionE1Square.core,LowZero18Square.branchCK,LowZero18Square.branchBF,
     LowZero18Square.branchAF,SquareCarryLoan719BF.branchCK,SquareCarryLoan719BF.branchBF,
     SquareCarryLoan719BF.branchAF,toffoliCount_append,measurementCount_append]
@@ -16030,15 +16416,15 @@ private theorem core_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
   omega
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+150=toffoliCount (ReflectionE1Square.program L) ∧
-    measurementCount (program L)+54=measurementCount (ReflectionE1Square.program L) := by
+    toffoliCount (program L)+152=toffoliCount (ReflectionE1Square.program L) ∧
+    measurementCount (program L)+56=measurementCount (ReflectionE1Square.program L) := by
   have h:=core_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
   simpa only [program,ReflectionE1Square.program,fastCore,ReflectionE1Square.fastCore,
     (ReflectionE1Square.place_counts _ _).1,(ReflectionE1Square.place_counts _ _).2] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=51978 ∧ measurementCount (program L)=52766 := by
+    toffoliCount (program L)=51976 ∧ measurementCount (program L)=52764 := by
   have a:=counts_diff L hw
   have b:=ReflectionE1Square.counts L hw
   constructor <;> omega
@@ -16301,8 +16687,8 @@ theorem sqRet_kernels (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen
   have mk : sqRet L∉wires (LowZero18KG.make (LowZero18LowK.kg L ext src dst)) := fun h => offAll (sup.1 h)
   have cl : sqRet L∉wires (LowZero18KG.clear (LowZero18LowK.kg L ext src dst)) := fun h => offAll (sup.2 h)
   let K := LowZero18LowK.kg L ext src dst
-  let T := K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7y++K.R.m8z++K.R.scl1591
-  let C := K.R.smk++K.R.c8z++K.R.c7y++K.R.c6c++K.Q5c++K.R.scl1591++K.Q2c
+  let T := K.Q2++K.R.smk++K.Q5++K.R.m6c++K.R.m7t++K.R.m8z++K.R.scl1591
+  let C := K.R.smk++K.R.c8z++K.R.c7t++K.R.c6c++K.Q5c++K.R.scl1591++K.Q2c
   have o1 : LowZero18KG.make K=K.Q1++T := by simp only [LowZero18KG.make,T,List.append_assoc]
   have n1 : LowZero18Square.make L K=renameProgram (SquareCarryLoan719.earlyPerm L) K.Q1++T := by
     simp only [LowZero18Square.make,LowZero18KG.make,SquareCarryLoan719.patchKG,T,List.append_assoc]
@@ -16566,8 +16952,8 @@ theorem program760_slots (L : ControlledPointLayout) :
     Challenge.gateSlots_append,Baselines.rename_gateSlots]
 
 theorem counts_diff760 (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program760 L)+150=toffoliCount (ReflectionE1Square.program L) ∧
-    measurementCount (program760 L)+54=measurementCount (ReflectionE1Square.program L) := by
+    toffoliCount (program760 L)+152=toffoliCount (ReflectionE1Square.program L) ∧
+    measurementCount (program760 L)+56=measurementCount (ReflectionE1Square.program L) := by
   rw [(program760_counts L).1,(program760_counts L).2]
   exact ReflectionE1Low48Square.counts_diff L hw
 
@@ -17506,7 +17892,7 @@ private theorem fact_of_shape (R : Program→Prop) (P Q : Program)
   exact fact
 
 private def Facts (P Q : Program) : Prop :=
-  toffoliCount P+150=toffoliCount Q ∧ measurementCount P+54=measurementCount Q ∧
+  toffoliCount P+152=toffoliCount Q ∧ measurementCount P+56=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private def context (A P B : Program) : Program := A++(P++B)
@@ -17602,8 +17988,8 @@ private theorem gen_facts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : F
   · exact wrap_facts _ _ _ _ _ (generic_facts L hw cx cy)
 
 theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+150=toffoliCount (ReflectionE1TickGap.gen L cx cy) ∧
-    measurementCount (gen L cx cy)+54=measurementCount (ReflectionE1TickGap.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+152=toffoliCount (ReflectionE1TickGap.gen L cx cy) ∧
+    measurementCount (gen L cx cy)+56=measurementCount (ReflectionE1TickGap.gen L cx cy) ∧
     gateSlots (gen L cx cy)≤gateSlots (ReflectionE1TickGap.gen L cx cy) :=
   ⟨(gen_facts L hw cx cy).1,(gen_facts L hw cx cy).2.1,(gen_facts L hw cx cy).2.2⟩
 
@@ -17633,8 +18019,8 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
 
 private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
     (P Q : Program) (h : Facts P Q) :
-    toffoliCount (Edges.wrapper L C cy P)+150=toffoliCount (Edges.wrapper L C cy Q) ∧
-    measurementCount (Edges.wrapper L C cy P)+54=measurementCount (Edges.wrapper L C cy Q) ∧
+    toffoliCount (Edges.wrapper L C cy P)+152=toffoliCount (Edges.wrapper L C cy Q) ∧
+    measurementCount (Edges.wrapper L C cy P)+56=measurementCount (Edges.wrapper L C cy Q) ∧
     gateSlots (Edges.wrapper L C cy P)≤gateSlots (Edges.wrapper L C cy Q) := by
   rcases h with ⟨ht,hm,hs⟩
   simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,measurementCount_append,
@@ -17642,7 +18028,7 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151568 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151566 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
   have old:=ReflectionE1TickGap.wrapper_toffoli cx cy hc
   omega
@@ -17820,7 +18206,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151568,1499158,1588,50168933+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151566,1499158,1588,50168933+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -17837,7 +18223,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151568 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151566 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -18680,7 +19066,7 @@ theorem wrapper_qubits760 (C : Point) (cx cy : Fp) :
   exact card.trans (ReflectionE1TickGapLow48.wrapper_qubits760 C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151551 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151549 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
   omega
@@ -18704,7 +19090,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151551,1499142,1588,50170295+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151549,1499142,1588,50170295+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -18721,7 +19107,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151551 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151549 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -18781,7 +19167,7 @@ def program (C : Point) : Program :=
       MeasuredDH.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151545,1499140,1588,50170284+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151543,1499140,1588,50170284+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -18799,13 +19185,13 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151545 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151543 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151545
+    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151543
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499140 := by
