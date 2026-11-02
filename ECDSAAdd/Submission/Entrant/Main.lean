@@ -26805,29 +26805,50 @@ def lit (q : Wire) (v : Bool) : Program := if v then [] else [.X q]
 /-! Decode tail on local wires: 0 `h` (zero-test result), 1 `x_r1`, 2 `x_r2`, 3 `y0`, 4 control,
 5 finite flag, 6 generic select, 7–9 clean scratch. -/
 
-/-- Pivot role 1: the sentinel and `C.x` share `x_r1 = a1`, `(-2C).x` has the other value. -/
-def decode1 (a1 a2 b2 yb : Bool) : Program :=
-  lit 1 a1 ++ [.CCX 0 1 7] ++ lit 1 a1 ++
-  [.CX 7 0] ++
-  lit 2 b2 ++ [.CCX 0 2 8] ++ lit 2 b2 ++
-  lit 3 yb ++ [.CCX 8 3 9] ++ lit 3 yb ++
-  [.CX 7 9, .X 9, .CCX 4 9 6, .X 9, .CX 7 9] ++
-  lit 3 yb ++ [.measureX 9 [] [.CZ 8 3]] ++ lit 3 yb ++
-  [.X 5] ++ lit 2 (!a2) ++ [.measureX 5 [] [.CZ 7 2]] ++ lit 2 (!a2) ++
-  lit 2 b2 ++ [.measureX 8 [] [.CZ 0 2]] ++ lit 2 b2 ++
-  [.CX 7 0] ++
-  lit 1 a1 ++ [.measureX 7 [] [.CZ 0 1]] ++ lit 1 a1
+def decodeCore : Program :=
+  [.CX 1 0,
+   .CX 2 0,
+   .CX 3 0,
+   .CX 5 0,
+   .CCX 0 4 7,
+   .CX 5 0,
+   .CX 3 0,
+   .CX 4 0,
+   .CX 5 0,
+   .CX 7 0,
+   .CX 7 1,
+   .CCX 0 1 8,
+   .CX 7 1,
+   .CX 7 0,
+   .CX 5 0,
+   .CX 4 0,
+   .CX 2 0,
+   .CX 1 0,
+   .CX 8 7,
+   .CX 7 0,
+   .CCX 7 0 9,
+   .CX 7 0,
+   .CX 8 7,
+   .CX 4 6,
+   .CX 7 6,
+   .CX 8 6,
+   .CX 9 6,
+   .measureX 7 [] [.Z 4, .Z 6, .Z 8, .Z 9],
+   .CX 5 8,
+   .CX 5 9,
+   .measureX 5 [] [.CZ 0 9],
+   .CX 8 9,
+   .measureX 8 [] [.Z 1, .Z 4, .Z 6, .CZ 0 1, .CZ 0 4, .CZ 1 2, .CZ 1 9, .CZ 2 6, .CZ 3 6, .CZ 3 9],
+   .measureX 9 [] [.CZ 0 4, .CZ 1 6, .CZ 2 6, .CZ 3 4]]
 
-/-- Pivot role 2: `C.x` and `(-2C).x` share `x_r1 = b1`, the sentinel has the other value. -/
+/-- Map the two pivot bits to the affine indicators of {A,S} and {B,S}. -/
+def decode1 (a1 a2 b2 yb : Bool) : Program :=
+  let frame := lit 1 a1 ++ lit 2 b2 ++ (if a2 == b2 then [.CX 1 2] else []) ++ lit 3 yb
+  frame ++ [.X 5] ++ decodeCore ++ frame.reverse
+
 def decode2 (b1 a2 s2 yb : Bool) : Program :=
-  lit 1 b1 ++ [.CCX 0 1 7] ++ lit 1 b1 ++
-  lit 2 (!a2) ++ [.CCX 7 2 8] ++ lit 2 (!a2) ++
-  lit 3 yb ++ [.CCX 8 3 9] ++ lit 3 yb ++
-  [.CX 5 9, .CX 7 9, .CX 8 9, .CCX 4 9 6, .CX 8 9, .CX 7 9, .CX 5 9] ++
-  lit 3 yb ++ [.measureX 9 [] [.CZ 8 3]] ++ lit 3 yb ++
-  [.CX 7 0, .X 5] ++ lit 2 s2 ++ [.measureX 5 [] [.CZ 0 2]] ++ lit 2 s2 ++ [.CX 7 0] ++
-  lit 2 (!a2) ++ [.measureX 8 [] [.CZ 7 2]] ++ lit 2 (!a2) ++
-  lit 1 b1 ++ [.measureX 7 [] [.CZ 0 1]] ++ lit 1 b1
+  let frame := lit 1 b1 ++ lit 2 s2 ++ (if a2 == s2 then [.CX 1 2] else []) ++ [.CX 2 1] ++ lit 3 yb
+  frame ++ [.X 5] ++ decodeCore ++ frame.reverse
 
 /-- The generic flag produced by role 1 from the zero-test bit and the pivot bits. -/
 def gen1 (a1 b2 yb : Bool) (x : Nat) : Bool :=
@@ -26849,19 +26870,19 @@ def pre1 (a1 a2 : Bool) (x : Nat) : Bool :=
 def pre2 (b1 s2 : Bool) (x : Nat) : Bool :=
   x.testBit 5 == !(x.testBit 0 && (x.testBit 1 != b1) && (x.testBit 2 == s2))
 
-theorem decode1_ok : ∀ a1 a2 b2 yb : Bool, ∀ x : Fin 128, pre1 a1 a2 x.val = true →
+theorem decode1_ok : ∀ a1 a2 b2 yb : Bool, ∀ x : Fin 128, pre1 a1 a2 x.val = true → x.val.testBit 6 = false →
     safe (decode1 a1 a2 b2 yb) x.val = true ∧
       bitRun (decode1 a1 a2 b2 yb) x.val = out x.val (gen1 a1 b2 yb x.val) := by
   decide +kernel
 
-theorem decode2_ok : ∀ b1 a2 s2 yb : Bool, ∀ x : Fin 128, pre2 b1 s2 x.val = true →
+theorem decode2_ok : ∀ b1 a2 s2 yb : Bool, ∀ x : Fin 128, pre2 b1 s2 x.val = true → x.val.testBit 6 = false →
     safe (decode2 b1 a2 s2 yb) x.val = true ∧
       bitRun (decode2 b1 a2 s2 yb) x.val = out x.val (gen2 b1 a2 yb x.val) := by
   decide +kernel
 
 theorem decode_counts (a1 a2 b2 yb : Bool) :
-    toffoliCount (decode1 a1 a2 b2 yb) = 4 ∧ measurementCount (decode1 a1 a2 b2 yb) = 4 ∧
-    toffoliCount (decode2 a1 a2 b2 yb) = 4 ∧ measurementCount (decode2 a1 a2 b2 yb) = 4 := by
+    toffoliCount (decode1 a1 a2 b2 yb) = 3 ∧ measurementCount (decode1 a1 a2 b2 yb) = 4 ∧
+    toffoliCount (decode2 a1 a2 b2 yb) = 3 ∧ measurementCount (decode2 a1 a2 b2 yb) = 4 := by
   cases a1 <;> cases a2 <;> cases b2 <;> cases yb <;> decide
 
 
@@ -26946,6 +26967,7 @@ theorem decodeT_support (tr : Tri) (yb : Bool) : wires (decodeT tr yb) ⊆ Finse
 
 theorem tail_run (tr : Tri) (v : tr.Valid) (yb : Bool) (h xr1 xr2 y0 c f g g1 wB t : Wire)
     (hnd : [h, xr1, xr2, y0, c, f, g, g1, wB, t].Nodup) (s : State) (m : List Bool)
+    (hg : s.basis g = false)
     (hz : s.basis g1 = false ∧ s.basis wB = false ∧ s.basis t = false)
     (hf : s.basis f = !(s.basis h && decide ((s.basis xr1, s.basis xr2) = tr.pat tr.S))) :
     run (renameProgram (LocalWireModel.label
@@ -26996,7 +27018,7 @@ theorem tail_run (tr : Tri) (v : tr.Valid) (yb : Bool) (h xr1 xr2 y0 c f g g1 wB
         simp only [pre1, b0, b1, b2, b5, hf, Tri.pat, eq1, neS, Prod.mk.injEq]
         cases s.basis h <;> cases s.basis xr1 <;> cases s.basis xr2 <;>
           cases tr.S.testBit tr.r1 <;> cases tr.A.testBit tr.r2 <;> decide
-      have k := decode1_ok (tr.A.testBit tr.r1) (tr.A.testBit tr.r2) (tr.B.testBit tr.r2) yb ⟨x, x7⟩ pre
+      have k := decode1_ok (tr.A.testBit tr.r1) (tr.A.testBit tr.r2) (tr.B.testBit tr.r2) yb ⟨x, x7⟩ pre (b6.trans hg)
       simp only [ro, if_true]
       refine ⟨k.1, ?_⟩
       rw [k.2]
@@ -27010,7 +27032,7 @@ theorem tail_run (tr : Tri) (v : tr.Valid) (yb : Bool) (h xr1 xr2 y0 c f g g1 wB
         simp only [pre2, b0, b1, b2, b5, hf, Tri.pat, ne1, Prod.mk.injEq]
         cases s.basis h <;> cases s.basis xr1 <;> cases s.basis xr2 <;>
           cases tr.A.testBit tr.r1 <;> cases tr.S.testBit tr.r2 <;> decide
-      have k := decode2_ok (tr.A.testBit tr.r1) (tr.A.testBit tr.r2) (tr.S.testBit tr.r2) yb ⟨x, x7⟩ pre
+      have k := decode2_ok (tr.A.testBit tr.r1) (tr.A.testBit tr.r2) (tr.S.testBit tr.r2) yb ⟨x, x7⟩ pre (b6.trans hg)
       simp only [ro', Bool.false_eq_true, if_false]
       refine ⟨k.1, ?_⟩
       rw [k.2]
@@ -27060,9 +27082,9 @@ def tail (tr : Tri) (yb : Bool) (xr1 xr2 y0 c f g g1 wB t : Wire) (h : Wire) : P
     (fun q : Fin 10 => [h, xr1, xr2, y0, c, f, g, g1, wB, t].getD q.val 0)) (decodeT tr yb)
 
 /-- Tail precondition: clean scratch and the finite flag is the negated sentinel match. -/
-def tailPre (tr : Tri) (xr1 xr2 f g1 wB t : Wire) (u : Bool) (st : BasisState) : Prop :=
+def tailPre (tr : Tri) (xr1 xr2 f g g1 wB t : Wire) (u : Bool) (st : BasisState) : Prop :=
   st g1 = false ∧ st wB = false ∧ st t = false ∧
-    st f = !(u && decide ((st xr1, st xr2) = tr.pat tr.S))
+    st g = false ∧ st f = !(u && decide ((st xr1, st xr2) = tr.pat tr.S))
 
 /-- Tail effect: the finite flag is cleared and the generic select is toggled. -/
 def tailEff (tr : Tri) (yb : Bool) (xr1 xr2 y0 c f g : Wire) (u : Bool) (st : BasisState) : BasisState :=
@@ -27076,12 +27098,12 @@ theorem chain_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xr1 xr2 y0 c f g g1 wB 
     (hdis : ∀ b ∈ bs, b.input ∉ [xr1, xr2, y0, c, f, g, g1, wB, t] ∧
       b.work ∉ [xr1, xr2, y0, c, f, g, g1, wB, t])
     (s : State) (m : List Bool)
-    (hs : tailPre tr xr1 xr2 f g1 wB t (s.basis c0 && bs.all (fun b => !s.basis b.input)) s.basis)
+    (hs : tailPre tr xr1 xr2 f g g1 wB t (s.basis c0 && bs.all (fun b => !s.basis b.input)) s.basis)
     (hz : ∀ b ∈ bs, s.basis b.work = false) :
     run (zeroWith (tail tr yb xr1 xr2 y0 c f g g1 wB t) c0 bs) m s =
       ⟨s.phase, tailEff tr yb xr1 xr2 y0 c f g (s.basis c0 && bs.all (fun b => !s.basis b.input)) s.basis⟩ := by
   set used : List Wire := [xr1, xr2, y0, c, f, g, g1, wB, t] with hu
-  apply zeroWith_effect_runQ used (tailPre tr xr1 xr2 f g1 wB t) (tailEff tr yb xr1 xr2 y0 c f g)
+  apply zeroWith_effect_runQ used (tailPre tr xr1 xr2 f g g1 wB t) (tailEff tr yb xr1 xr2 y0 c f g)
   · intro w hw u st z
     have h1 : w ≠ g1 := fun e => hw (by simp [hu, e])
     have h2 : w ≠ wB := fun e => hw (by simp [hu, e])
@@ -27089,7 +27111,8 @@ theorem chain_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xr1 xr2 y0 c f g g1 wB 
     have h4 : w ≠ f := fun e => hw (by simp [hu, e])
     have h5 : w ≠ xr1 := fun e => hw (by simp [hu, e])
     have h6 : w ≠ xr2 := fun e => hw (by simp [hu, e])
-    simp [tailPre, writeBit, Function.update, Ne.symm h1, Ne.symm h2, Ne.symm h3, Ne.symm h4,
+    have h7 : w ≠ g := fun e => hw (by simp [hu, e])
+    simp [tailPre, Ne.symm h7, writeBit, Function.update, Ne.symm h1, Ne.symm h2, Ne.symm h3, Ne.symm h4,
       Ne.symm h5, Ne.symm h6]
   · intro u st w hw
     have h4 : w ≠ f := fun e => hw (by simp [hu, e])
@@ -27115,7 +27138,7 @@ theorem chain_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xr1 xr2 y0 c f g g1 wB 
         · simp [Function.update, qg, qf, qw]
   · intro c' hc' st m' hp
     have hnd' : [c', xr1, xr2, y0, c, f, g, g1, wB, t].Nodup := List.nodup_cons.mpr ⟨hc', hused⟩
-    exact tail_run tr v yb c' xr1 xr2 y0 c f g g1 wB t hnd' st m' ⟨hp.1, hp.2.1, hp.2.2.1⟩ hp.2.2.2
+    exact tail_run tr v yb c' xr1 xr2 y0 c f g g1 wB t hnd' st m' hp.2.2.2.1 ⟨hp.1, hp.2.1, hp.2.2.1⟩ hp.2.2.2.2
   · exact hcu
   · exact hnd
   · exact hdis
@@ -27176,6 +27199,7 @@ theorem shape_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xr1 xr2 y0 c f g g1 wB 
     (hwl : (it.map w).length = work.length) (hwn : work.Nodup)
     (hdisj : ∀ q ∈ work, q ∉ (i0 :: it).map w ∧ q ∉ [xr1, xr2, y0, c, f, g, g1, wB, t])
     (s : State) (m : List Bool)
+    (hg : s.basis g = false)
     (hz : (∀ q ∈ work, s.basis q = false) ∧ s.basis g1 = false ∧ s.basis wB = false ∧ s.basis t = false)
     (hf : s.basis f = !(((i0 :: it).all fun i => s.basis (w i) == tr.tgt i (s.basis xr1, s.basis xr2)) &&
       decide ((s.basis xr1, s.basis xr2) = tr.pat tr.S))) :
@@ -27264,12 +27288,13 @@ theorem shape_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xr1 xr2 y0 c f g g1 wB 
     have hwk : b.work ∈ work := by
       have := (List.mem_map (f := ZeroBit.work)).mpr ⟨b, hb, rfl⟩; rwa [zp.2] at this
     exact ⟨fun h => usedNotP _ h (by rw [hlw]; exact List.mem_cons_of_mem _ hin), (hdisj _ hwk).2⟩
-  have hs3 : tailPre tr xr1 xr2 f g1 wB t
+  have hs3 : tailPre tr xr1 xr2 f g g1 wB t
       (s2.basis (w i0) && (zeroPorts (it.map w) work).all (fun b => !s2.basis b.input)) s2.basis := by
-    refine ⟨?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩
     · rw [s2out g1 (usedNotP g1 (by simp))]; exact hz.2.1
     · rw [s2out wB (usedNotP wB (by simp))]; exact hz.2.2.1
     · rw [s2out t (usedNotP t (by simp))]; exact hz.2.2.2
+    · rw [s2out g (usedNotP g (by simp))]; exact hg
     · rw [s2out f (usedNotP f (by simp)), huV, k1, k2]; exact hf
   have hz3 : ∀ b ∈ zeroPorts (it.map w) work, s2.basis b.work = false := by
     intro b hb
@@ -27353,6 +27378,7 @@ theorem classifier_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wir
     (hext : [y0, c, f, g, g1, wB, t].Nodup)
     (hextx : ∀ q ∈ [y0, c, f, g, g1, wB, t], q ∉ xs ∧ q ∉ work)
     (s : State) (m : List Bool)
+    (hg : s.basis g = false)
     (hz : (∀ q ∈ work, s.basis q = false) ∧ s.basis g1 = false ∧ s.basis wB = false ∧ s.basis t = false)
     (hf : s.basis f = !(matchBit tr xs s.basis &&
       decide ((s.basis (xs.getD tr.r1 0), s.basis (xs.getD tr.r2 0)) = tr.pat tr.S))) :
@@ -27436,7 +27462,7 @@ theorem classifier_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wir
   have hf' : s.basis f = !(((i0 :: it).all fun i => s.basis (w i) == tr.tgt i (s.basis xr1, s.basis xr2)) &&
       decide ((s.basis xr1, s.basis xr2) = tr.pat tr.S)) := by rw [← hmb]; exact hf
   have run_eq := shape_run tr v yb xr1 xr2 y0 c f g g1 wB t w i0 it work hPn' x1P' x2P' hused hextP
-    (by rw [hitl, hwl]) hwn hdisj' s m hz hf'
+    (by rw [hitl, hwl]) hwn hdisj' s m hg hz hf'
   rw [hmb]
   have hprog : classifier tr yb xs work y0 c f g g1 wB t =
       tr.remapList xr1 xr2 w (i0 :: it) ++ ([.X (w i0)] ++
@@ -27922,7 +27948,7 @@ theorem stage_mid [DecidableEq Point] (L : ControlledPointLayout) (hw : L.Widths
   have CR := classifier_run (triOf (.some hc)) v (yBit (dialogExceptionPoint (.some hc))) L.point.x
     (L.dialogPool.take 253) (yLow L) L.control L.point.finite L.genericSelect
     (L.dialogPool.getD 253 0) (L.dialogPool.getD 254 0) (L.dialogPool.getD 255 0)
-    hxn hxl hwl hwn hdisj hext hextx s1 (List.drop (measurementCount (FiniteFlagInterval.zrep L)) m) hz hf'
+    hxn hxl hwl hwn hdisj hext hextx s1 (List.drop (measurementCount (FiniteFlagInterval.zrep L)) m) s1g hz hf'
   rw [CR]
   refine ⟨Z.1, ?_, ?_, ?_, ?_⟩
   · rw [← hX]
@@ -28389,10 +28415,10 @@ theorem decodeT_physical (tr : Tri) (yb : Bool) : GatePhysical (decodeT tr yb) :
   · exact (decode_physical _ _ _ _).2
 
 theorem decode_slots (a1 a2 b2 yb : Bool) :
-    gateSlots (decode1 a1 a2 b2 yb) ≤ 35 ∧ gateSlots (decode2 a1 a2 b2 yb) ≤ 35 := by
+    gateSlots (decode1 a1 a2 b2 yb) ≤ 64 ∧ gateSlots (decode2 a1 a2 b2 yb) ≤ 64 := by
   cases a1 <;> cases a2 <;> cases b2 <;> cases yb <;> decide
 
-theorem decodeT_slots (tr : Tri) (yb : Bool) : gateSlots (decodeT tr yb) ≤ 35 := by
+theorem decodeT_slots (tr : Tri) (yb : Bool) : gateSlots (decodeT tr yb) ≤ 64 := by
   unfold decodeT
   split_ifs
   · exact (decode_slots _ _ _ _).1
@@ -28419,7 +28445,7 @@ theorem tail_physical (tr : Tri) (yb : Bool) (xr1 xr2 y0 c f g g1 wB t h : Wire)
     (decodeT_physical tr yb)
 
 theorem tail_counts (tr : Tri) (yb : Bool) (xr1 xr2 y0 c f g g1 wB t h : Wire) :
-    toffoliCount (tail tr yb xr1 xr2 y0 c f g g1 wB t h) = 4 ∧
+    toffoliCount (tail tr yb xr1 xr2 y0 c f g g1 wB t h) = 3 ∧
     measurementCount (tail tr yb xr1 xr2 y0 c f g g1 wB t h) = 4 := by
   unfold tail
   rw [(renameProgram_counts _ _).1, (renameProgram_counts _ _).2]
@@ -28697,7 +28723,7 @@ theorem classifier_physical (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : Lis
 
 theorem classifier_counts (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wire)
     (y0 c f g g1 wB t : Wire) (hwl : work.length = 253) :
-    toffoliCount (classifier tr yb xs work y0 c f g g1 wB t) = 257 ∧
+    toffoliCount (classifier tr yb xs work y0 c f g g1 wB t) = 256 ∧
     measurementCount (classifier tr yb xs work y0 c f g g1 wB t) = 257 ∧
     gateSlots (classifier tr yb xs work y0 c f g g1 wB t) ≤ 4000 := by
   obtain ⟨i0, it, hidx, hitl⟩ := idx_split tr v
@@ -28709,7 +28735,7 @@ theorem classifier_counts (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List 
     rw [hPt]
     have := congrArg List.length zp.2
     simpa [hwl] using this
-  have zc := zeroWith_counts_general (tail tr yb (xs.getD tr.r1 0) (xs.getD tr.r2 0) y0 c f g g1 wB t) 4 4
+  have zc := zeroWith_counts_general (tail tr yb (xs.getD tr.r1 0) (xs.getD tr.r2 0) y0 c f g g1 wB t) 3 4
     (fun h => tail_counts tr yb _ _ y0 c f g g1 wB t h)
     ((tr.idx.map (fun i => xs.getD i 0)).headD 0) (zeroPorts (tr.idx.map (fun i => xs.getD i 0)).tail work)
   rw [hbl] at zc
@@ -28729,10 +28755,10 @@ theorem classifier_counts (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List 
   omega
 
 /-- The tightest uniform slot bound: 3 slots a remapped bit twice, the two flips, 7 a chain rung,
-and the 35-slot worst decode tail. -/
+and the 64-slot worst decode tail. -/
 theorem classifier_slots (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wire)
     (y0 c f g g1 wB t : Wire) (hwl : work.length = 253) :
-    gateSlots (classifier tr yb xs work y0 c f g g1 wB t) ≤ 3332 := by
+    gateSlots (classifier tr yb xs work y0 c f g g1 wB t) ≤ 3361 := by
   obtain ⟨i0, it, hidx, hitl⟩ := idx_split tr v
   have ix := Tri.idx_facts v
   have zp := zeroPorts_maps (it.map (fun i => xs.getD i 0)) work (by simp [hitl, hwl])
@@ -29041,8 +29067,8 @@ theorem stage_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     · subst h'; exact Or.inr (Or.inr (pool_take_mem 255 (by decide)))
 
 theorem stage_counts {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (stage layout (.some hc)) = 257 ∧ measurementCount (stage layout (.some hc)) = 257 ∧
-      Challenge.gateSlots (stage layout (.some hc)) ≤ 3590 := by
+    toffoliCount (stage layout (.some hc)) = 256 ∧ measurementCount (stage layout (.some hc)) = 257 ∧
+      Challenge.gateSlots (stage layout (.some hc)) ≤ 3619 := by
   have c := classifier_counts (triOf (.some hc)) (triOf_valid hc) (yBit (dialogExceptionPoint (.some hc)))
     layout.point.x (layout.dialogPool.take 253) (yLow layout) layout.control layout.point.finite
     layout.genericSelect (layout.dialogPool.getD 253 0) (layout.dialogPool.getD 254 0)
@@ -29153,7 +29179,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper' layout C (tailGen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151226, 1498871, 1587, 50197722⟩
+def bounds : Challenge.Bounds := ⟨2151225, 1498871, 1587, 50197751⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -29165,7 +29191,7 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
   | @some cx cy hc =>
     exact fixed_correct _ control R _ (full_spec' hc control R) (support_used' hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151226 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151225 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -29175,7 +29201,7 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151226 := by
     have old := CodexYParityProbe.program_toffoli (.some hc)
     change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
       2151471 at old
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151226
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151225
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498871 := by
@@ -29213,7 +29239,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
   | zero => simp [program, GatePhysical]
   | @some cx cy hc => exact wrapper'_physical hc
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50197722 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50197751 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -29222,7 +29248,7 @@ theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50197722 := by
     have old := CodexYParityProbe.program_gateSlots (.some hc)
     change gateSlots (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
       50194132 at old
-    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50197722
+    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50197751
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -29236,7 +29262,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C)) ≤ 1587
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50197722
+    change gateSlots (normalizeProgram (program C)) ≤ 50197751
     rw [normalize_slots]; exact program_gateSlots C
 
 end Cert
@@ -32206,7 +32232,7 @@ def program2 (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper2 layout C cx cy
 
 def entry2 : Challenge.Entry := fun C => normalizeProgram (program2 C)
-def bounds2 : Challenge.Bounds := ⟨2150983, 1498628, 1587, 50203383⟩
+def bounds2 : Challenge.Bounds := ⟨2150982, 1498628, 1587, 50203412⟩
 
 theorem program2_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program2 C) (encodes control (if control then R+C else R)) := by
@@ -32218,7 +32244,7 @@ theorem program2_correct (C : Point) (control : Bool) (R : Point) :
   | @some cx cy hc =>
     exact fixed_correct _ control R _ (full_spec2 hc control R) (support2_used hc)
 
-theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150983 := by
+theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150982 := by
   cases C with
   | zero => simp [program2, toffoliCount]
   | @some cx cy hc =>
@@ -32226,8 +32252,8 @@ theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150983 := 
     have o : 504 ≤ toffoliCount (oldOut layout (.some hc)) := (old_out_counts hc).1
     have st := (outStage_counts hc).1
     have old := program_toffoli (.some hc)
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151226 at old
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150983
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151225 at old
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150982
     omega
 
 theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498628 := by
@@ -32264,15 +32290,15 @@ theorem program2_physical (C : Point) : GatePhysical (program2 C) := by
   | zero => simp [program2, GatePhysical]
   | @some cx cy hc => exact wrapper2_physical hc
 
-theorem program2_gateSlots (C : Point) : gateSlots (program2 C) ≤ 50203383 := by
+theorem program2_gateSlots (C : Point) : gateSlots (program2 C) ≤ 50203412 := by
   cases C with
   | zero => simp [program2]
   | @some cx cy hc =>
     have r := (counts2_rel hc).2.2
     have st := (outStage_counts hc).2.2
     have old := program_gateSlots (.some hc)
-    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50197722 at old
-    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50203383
+    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50197751 at old
+    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50203412
     omega
 
 theorem certificate2 : Challenge.Certificate entry2 bounds2 where
@@ -32286,7 +32312,7 @@ theorem certificate2 : Challenge.Certificate entry2 bounds2 where
     change qubits (normalizeProgram (program2 C)) ≤ 1587
     rw [normalize_qubits]; exact program2_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program2 C)) ≤ 50203383
+    change gateSlots (normalizeProgram (program2 C)) ≤ 50203412
     rw [normalize_slots]; exact program2_gateSlots C
 
 end OutCert
