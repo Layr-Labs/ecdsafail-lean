@@ -1,8 +1,9 @@
-import ECDSAAdd.Submission.Entrant.FusedBoundaryFinal
+import ECDSAAdd.Baselines.SkywalkCertificate
+import ECDSAAdd.Submission.Entrant.CodexAffineMath
+import ECDSAAdd.Submission.Entrant.CodexAffineGadget
 
 namespace ECDSAAdd.Entrant
-def program := FusedBoundaryFinal.program
-def entry := FusedBoundaryFinal.entry
-def bounds := FusedBoundaryFinal.bounds
-theorem certificate : Challenge.Certificate entry bounds := FusedBoundaryFinal.certificate
+def entry := Baselines.normalizedSkywalk
+def bounds := Baselines.skywalkBounds
+theorem certificate : Challenge.Certificate entry bounds := Baselines.skywalkCertificate
 end ECDSAAdd.Entrant
