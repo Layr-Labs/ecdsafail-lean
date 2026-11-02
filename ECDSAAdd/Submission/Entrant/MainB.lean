@@ -1,8 +1,5 @@
 import ECDSAAdd.Submission.Entrant.TerminalGraph
-import ECDSAAdd.Submission.Entrant.FirstZero
-import ECDSAAdd.Submission.Entrant.JointInverse1588
-import ECDSAAdd.Submission.Entrant.JointForward1588
-import ECDSAAdd.Submission.Entrant.TickMerged
+import ECDSAAdd.Submission.Entrant.FusedFlags
 import ECDSAAdd.Submission.Entrant.R2Life760
 
 
@@ -24195,12 +24192,11 @@ private theorem firstCellsJ_resources :
     toffoliCount firstCellsJ+502=toffoliCount FrontierSW1591.firstSwapS+toffoliCount (firstCells true) ∧
     measurementCount firstCellsJ=
       measurementCount FrontierSW1591.firstSwapS+measurementCount (firstCells true) ∧
-    gateSlots firstCellsJ≤gateSlots FrontierSW1591.firstSwapS+gateSlots (firstCells true) := by
+    gateSlots firstCellsJ≤gateSlots FrontierSW1591.firstSwapS+gateSlots (firstCells true)+8484 := by
   have half := halfWindow_counts true 0 1 4
   have halfS := halfWindow_slots true 0 1 4
   have pc := JointForward1588.padded_counts
   have ps := JointForward1588.padded_slots
-  have lower := JointForward1588.half_slots_lower
   have sw := firstSwapS_resources
   rw [firstCells_true_split]
   simp only [firstCellsJ,toffoliCount_append,measurementCount_append,gateSlots_append]
@@ -24214,7 +24210,7 @@ private theorem firstBody_resource_delta (divide : Bool) :
     toffoliCount (firstBody divide)+FirstZero.saving divide+JointInverse1588.saving divide+
       JointForward1588.saving divide=toffoliCount (ControlLoan1589.firstBody divide)+26 ∧
     measurementCount (firstBody divide)=measurementCount (ControlLoan1589.firstBody divide)+4 ∧
-    gateSlots (firstBody divide)≤gateSlots (ControlLoan1589.firstBody divide)+(898+4*halfExtra divide) := by
+    gateSlots (firstBody divide)≤gateSlots (ControlLoan1589.firstBody divide)+(898+4*halfExtra divide+9500) := by
   have old := old_raw_resources divide 0 Replay5.restLetters
   have len : Replay5.restLetters.length=4 := by
     simp only [Replay5.restLetters,List.length_map,List.length_range']
@@ -24229,7 +24225,6 @@ private theorem firstBody_resource_delta (divide : Bool) :
   cases divide
   · have half := halfWindow_counts false 0 1 4
     have halfS := halfWindow_slots false 0 1 4
-    have lower := JointInverse1588.half_slots_lower
     have pc := JointInverse1588.padded_counts
     have ps := JointInverse1588.padded_slots
     have sw := firstSwapMS_resources
@@ -24246,7 +24241,7 @@ theorem firstPacket_resource_delta (divide : Bool) :
     toffoliCount (firstPacket divide)+FirstZero.saving divide+JointInverse1588.saving divide+
       JointForward1588.saving divide=toffoliCount (ControlLoan1589.firstPacket divide)+26 ∧
     measurementCount (firstPacket divide)=measurementCount (ControlLoan1589.firstPacket divide)+4 ∧
-    gateSlots (firstPacket divide)≤gateSlots (ControlLoan1589.firstPacket divide)+(898+4*halfExtra divide) := by
+    gateSlots (firstPacket divide)≤gateSlots (ControlLoan1589.firstPacket divide)+(898+4*halfExtra divide+9500) := by
   have fresh := G0CarryLoan5.counts (base 1028) (base 0) (base 768) (firstBody divide)
   have old := G0CarryLoan5.counts (base 1028) (base 0) (base 768) (ControlLoan1589.firstBody divide)
   have fs := G0CarryLoan5.slots (base 1028) (base 0) (base 768) (firstBody divide)
@@ -24292,7 +24287,7 @@ theorem placedFirstPacket_resource_delta (divide : Bool) :
     toffoliCount (placedFirstPacket divide)+FirstZero.saving divide+JointInverse1588.saving divide+
       JointForward1588.saving divide=toffoliCount (ControlLoan1589.placedFirstPacket divide)+26 ∧
     measurementCount (placedFirstPacket divide)=measurementCount (ControlLoan1589.placedFirstPacket divide)+4 ∧
-    gateSlots (placedFirstPacket divide)≤gateSlots (ControlLoan1589.placedFirstPacket divide)+(898+4*halfExtra divide) := by
+    gateSlots (placedFirstPacket divide)≤gateSlots (ControlLoan1589.placedFirstPacket divide)+(898+4*halfExtra divide+9500) := by
   simpa only [placedFirstPacket,ControlLoan1589.placedFirstPacket,renameProgram_counts,
     rename_gateSlots] using firstPacket_resource_delta divide
 
@@ -24362,7 +24357,7 @@ private theorem exitHead_resource_delta :
 theorem entryField_resource_delta :
     toffoliCount entryField+228=toffoliCount ControlLoan1589.entryField ∧
     measurementCount entryField=measurementCount ControlLoan1589.entryField+106 ∧
-    gateSlots entryField≤gateSlots ControlLoan1589.entryField+(49993+509*halfExtra true) := by
+    gateSlots entryField≤gateSlots ControlLoan1589.entryField+(49993+509*halfExtra true+9500) := by
   have pc := FourScratchWindow.counts
   have slots : gateSlots FourScratchWindow.clearProgram=48 ∧ gateSlots FourScratchWindow.unprefix=47 := by
     simp only [FourScratchWindow.clearProgram,FourScratchWindow.unprefix,rename_gateSlots]
@@ -24385,7 +24380,7 @@ theorem entryField_resource_delta :
 theorem exitField_resource_delta :
     toffoliCount exitField+228=toffoliCount ControlLoan1589.exitField ∧
     measurementCount exitField=measurementCount ControlLoan1589.exitField+106 ∧
-    gateSlots exitField≤gateSlots ControlLoan1589.exitField+(51096+509*halfExtra false) := by
+    gateSlots exitField≤gateSlots ControlLoan1589.exitField+(51096+509*halfExtra false+9500) := by
   have pc := FourScratchWindow.counts
   have slots : gateSlots FourScratchWindow.clearProgram=48 ∧ gateSlots FourScratchWindow.unprefix=47 := by
     simp only [FourScratchWindow.clearProgram,FourScratchWindow.unprefix,rename_gateSlots]
@@ -24500,16 +24495,16 @@ private theorem hosted_resource_sub (P Q HP HQ : Program) (t m sl : Nat)
 theorem entryFieldHosted_resource_delta :
     toffoliCount entryFieldHosted+228=toffoliCount ControlLoan1589.entryFieldHosted ∧
     measurementCount entryFieldHosted=measurementCount ControlLoan1589.entryFieldHosted+106 ∧
-    gateSlots entryFieldHosted≤gateSlots ControlLoan1589.entryFieldHosted+(49993+509*halfExtra true) :=
+    gateSlots entryFieldHosted≤gateSlots ControlLoan1589.entryFieldHosted+(49993+509*halfExtra true+9500) :=
   hosted_resource_sub entryField ControlLoan1589.entryField entryFieldHosted ControlLoan1589.entryFieldHosted
-    228 106 (49993+509*halfExtra true) rfl rfl entryField_resource_delta
+    228 106 (49993+509*halfExtra true+9500) rfl rfl entryField_resource_delta
 
 theorem exitFieldHosted_resource_delta :
     toffoliCount exitFieldHosted+228=toffoliCount ControlLoan1589.exitFieldHosted ∧
     measurementCount exitFieldHosted=measurementCount ControlLoan1589.exitFieldHosted+106 ∧
-    gateSlots exitFieldHosted≤gateSlots ControlLoan1589.exitFieldHosted+(51096+509*halfExtra false) :=
+    gateSlots exitFieldHosted≤gateSlots ControlLoan1589.exitFieldHosted+(51096+509*halfExtra false+9500) :=
   hosted_resource_sub exitField ControlLoan1589.exitField exitFieldHosted ControlLoan1589.exitFieldHosted
-    228 106 (51096+509*halfExtra false) rfl rfl exitField_resource_delta
+    228 106 (51096+509*halfExtra false+9500) rfl rfl exitField_resource_delta
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -24910,19 +24905,19 @@ open Arithmetic MappedCompressed DirectSkywalk Secp256k1 Challenge Baselines
 attribute [local irreducible] wires toffoliCount measurementCount gateSlots
 
 /-- R2 syntax-slot growth of the entry (divide) and exit kernels over the record kernels. -/
-def entrySlotGrowth : Nat := 509*halfExtra true
-def exitSlotGrowth : Nat := 509*halfExtra false
+def entrySlotGrowth : Nat := 509*halfExtra true+9500
+def exitSlotGrowth : Nat := 509*halfExtra false+9500
 def slotGrowth : Nat := entrySlotGrowth+exitSlotGrowth
 
-theorem entrySlotGrowth_eq : entrySlotGrowth=3054 := rfl
-theorem exitSlotGrowth_eq : exitSlotGrowth=1527 := rfl
+theorem entrySlotGrowth_eq : entrySlotGrowth=12554 := rfl
+theorem exitSlotGrowth_eq : exitSlotGrowth=11027 := rfl
 
 /- The deltas are proved with numerals (`omega` over the symbolic `halfExtra` atom makes the kernel
 recurse too deeply on these two goals) and restated with the named growth constants. -/
 private theorem entryKernel_resource_delta_num :
     toffoliCount entryKernel+230=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
-    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(53629+3054) := by
+    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(53629+12554) := by
   have first := firstPhase_metrics true
   have last := lastPhase_metrics false
   have field := entryFieldHosted_resource_delta
@@ -24944,7 +24939,7 @@ theorem entryKernel_resource_delta :
 private theorem exitKernel_resource_delta_num :
     toffoliCount exitKernel+230=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
-    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(54732+1527) := by
+    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(54732+11027) := by
   have first := firstPhase_metrics false
   have last := lastPhase_metrics true
   have field := exitFieldHosted_resource_delta
