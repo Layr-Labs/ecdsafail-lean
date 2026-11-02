@@ -2,6 +2,7 @@ import ECDSAAdd.Submission.Entrant.TerminalGraph
 import ECDSAAdd.Submission.Entrant.FirstZero
 import ECDSAAdd.Submission.Entrant.JointInverse1588
 import ECDSAAdd.Submission.Entrant.JointForward1588
+import ECDSAAdd.Submission.Entrant.TickMerged
 
 
 -- ===== ECDSAAdd.Submission.Entrant.FrontierSumCleanup1591Primitive =====
@@ -8618,16 +8619,17 @@ def reverse (isA : Bool) (i : Nat) : Nat → Program
   | n+1 => reverse isA (i+1) n ++ renameProgram (OB5.sig i)
       (unpackAtTick isA i ++ W.ReverseCarry.compactReceiverTick base i)
 
+/-- Ticks `509` and `510` run as one forced block `tickMF` (terrapinelf, f753049b). -/
 def stackForward (isA : Bool) : Program :=
   forward isA 1 508 ++
-    renameProgram (OB5.sig 509) (tick509F ++ packAtTick isA 509) ++
-    renameProgram (OB5.sig 510) (tick510F ++ packAtTick isA 510) ++
+    renameProgram (OB5.sig 510) (tickMF ++ packAtTick isA 510) ++
     renameProgram (OB5.sig 511) tickF
 
+/-- Reverse ticks `510` and `509` run as one forced block `tickMR`. -/
 def stackReverse (isA : Bool) : Program :=
   renameProgram (OB5.sig 511) tickR ++
-    renameProgram (OB5.sig 510) (unpackAtTick isA 510 ++ tick510R) ++
-    reverse isA 1 509
+    renameProgram (OB5.sig 510) (unpackAtTick isA 510 ++ tickMR) ++
+    reverse isA 1 508
 
 def firstPhase (isA : Bool) : Program :=
   FrontierEntry1591Native.forward base ++ stackForward isA ++ skywalkArithmeticClear base
@@ -20538,20 +20540,38 @@ theorem reverse_support_eq (isA : Bool) (i n : Nat) :
 
 theorem stackForward_support_eq (isA : Bool) :
     wires (stackForward isA)=wires NewStackOB5.stackForwardT := by
-  have p509 := packAtTick_support_eq isA 509
   have p510 := packAtTick_support_eq isA 510
-  simp only [NewStackOB5.packFirst,show ¬(509:Nat)=5 from by decide,
-    show ¬(510:Nat)=5 from by decide,if_false] at p509 p510
+  simp only [NewStackOB5.packFirst,show ¬(510:Nat)=5 from by decide,if_false] at p510
+  have e509 : NewHistory5.packAfter base 509=[] := by decide +kernel
+  have merged : wires (renameProgram (OB5.sig 510) tickMF)=
+      wires (renameProgram (OB5.sig 509) tick509F)∪wires (renameProgram (OB5.sig 510) tick510F) := by
+    decide +kernel
+  rw [renameProgram_support,renameProgram_support,renameProgram_support] at merged
   simp only [stackForward,NewStackOB5.stackForwardT,NewStackOB5.stackForward510,
-    NewStackOB5.stackForward509,wires_append,renameProgram_support,
-    forward_support_eq,p509,p510]
+    NewStackOB5.stackForward509,e509,List.append_nil,wires_append,renameProgram_support,
+    Finset.image_union,forward_support_eq,p510,merged]
+  ext q
+  simp only [Finset.mem_union]
+  tauto
 
 theorem stackReverse_support_eq (isA : Bool) :
     wires (stackReverse isA)=wires NewStackOB5.stackReverseT := by
   have p510 := unpackAtTick_support_eq isA 510
   simp only [NewStackOB5.unpackFirst,show ¬(510:Nat)=5 from by decide,if_false] at p510
-  simp only [stackReverse,NewStackOB5.stackReverseT,NewStackOB5.stackReverse510,
-    wires_append,renameProgram_support,reverse_support_eq,p510,Finset.union_assoc]
+  have e509 : NewStackOB5.unpackFirst base 509=[] := by decide +kernel
+  have merged : wires (renameProgram (OB5.sig 510) tickMR)=
+      wires (renameProgram (OB5.sig 510) tick510R)∪
+        wires (renameProgram (OB5.sig 509) (W.ReverseCarry.compactReceiverTick base 509)) := by
+    rw [tick509ExR_explicit]
+    decide +kernel
+  rw [renameProgram_support,renameProgram_support,renameProgram_support] at merged
+  rw [NewStackOB5.stackReverseT,NewStackOB5.stackReverse510,NewStackOB5.reverse_snoc 1 508,
+    show (1:Nat)+508=509 from rfl,e509,List.nil_append]
+  simp only [stackReverse,wires_append,renameProgram_support,Finset.image_union,
+    reverse_support_eq,p510,merged]
+  ext q
+  simp only [Finset.mem_union]
+  tauto
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -21175,18 +21195,15 @@ theorem stage_zero (isA : Bool) (x i : Nat) (hi : i < 512) (b : BasisState)
  def stackForward509 (isA : Bool) : Program :=
   forward isA 1 508 ++ renameProgram (sig 509) (tick509F ++ packAfter base isA 509)
  def stackForward510 (isA : Bool) : Program :=
-  stackForward509 isA ++ renameProgram (sig 510) (tick510F ++ packAfter base isA 510)
+  forward isA 1 508 ++ renameProgram (sig 510) (tickMF ++ packAfter base isA 510)
  def stackForwardT (isA : Bool) : Program :=
   stackForward510 isA ++ renameProgram (sig 511) tickF
 
  theorem stackForward_eq_packets (isA : Bool) :
     stackForwardT isA=Rolling1588.stackForward isA := by
-  have p509 : packAfter base isA 509=Rolling1588.packAtTick isA 509 := by
-    simpa only [packFirst,show ¬(509:Nat)=5 from by decide,if_false] using packFirst_base isA 509
   have p510 : packAfter base isA 510=Rolling1588.packAtTick isA 510 := by
     simpa only [packFirst,show ¬(510:Nat)=5 from by decide,if_false] using packFirst_base isA 510
-  simp only [stackForwardT,stackForward510,stackForward509,Rolling1588.stackForward,
-    forward_eq_packets,p509,p510]
+  simp only [stackForwardT,stackForward510,Rolling1588.stackForward,forward_eq_packets,p510]
 
  theorem stackForward_split509 (isA : Bool) : forward isA 1 509=forward isA 1 508 ++
     renameProgram (sig 509) (W.repairedTick base 509 ++ packAfter base isA 509) := by
@@ -21215,14 +21232,20 @@ theorem stage_zero (isA : Bool) (x i : Nat) (hi : i < 512) (b : BasisState)
   simp only [stackForward509,stackForward_split509,measurementCount_append,
     (renameProgram_counts _ _).2,tick]
 
+ theorem pack509 (isA : Bool) : packAfter base isA 509=[] := by
+  simp only [packAfter,show History5.packDue 509=false from by decide,Bool.false_eq_true,if_false]
+
+ theorem stackForward510_shape (isA : Bool) : forward isA 1 510=forward isA 1 508 ++
+    (renameProgram (sig 509) (W.repairedTick base 509) ++
+      renameProgram (sig 510) (W.repairedTick base 510 ++ packAfter base isA 510)) := by
+  rw [stackForward_split510 isA,stackForward_split509 isA,pack509 isA,List.append_nil,List.append_assoc]
+
  theorem stackForward510_records (isA : Bool) :
     measurementCount (stackForward510 isA)=measurementCount (forward isA 1 510) := by
-  have c := tick510_counts
-  rw [←tick510ExF_explicit] at c
-  have tick : measurementCount tick510F=measurementCount (W.repairedTick base 510) :=
-    c.2.2.2.1.trans c.2.1.symm
-  simp only [stackForward510,stackForward_split510,measurementCount_append,
-    (renameProgram_counts _ _).2,stackForward509_records,tick]
+  have mf := tickMF_records
+  rw [stackForward510,stackForward510_shape isA]
+  simp only [measurementCount_append,(renameProgram_counts _ _).2,mf]
+  omega
 
 attribute [local irreducible] run wires measurementCount forward regularForward compactForward
   stackForward509 stackForward510 stackForwardT
@@ -21264,40 +21287,120 @@ theorem stackForward509_run (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (s : S
     run_append,run_append,mc,tick509_forced_forward isA x hx0 hx a stage]
 
 
+theorem prefix_agree509 (isA : Bool) (raw : State) (q : Wire)
+    (hq : q∈(W.compactSkywalkTickLayout base 509).wires.toFinset∪
+      (W.compactSkywalkTickLayout base 510).wires.toFinset) :
+    (run (encodePrefix base isA 509) [] raw).basis q=
+      (run (History5.encodePrefix base 509) [] raw).basis q := by
+  rcases Finset.mem_union.mp hq with h|h
+  · have dn := prefix_disjoint_layout base isA base_pool_nodup 509 509 (le_refl _) (by omega)
+    have oldDis := Stack5.prefix_disjoint_layout base base_pool_nodup 509 509 (le_refl _) (by omega)
+    exact (run_preserves_outside _ _ _ q (fun h'=>Finset.disjoint_left.mp dn h' h)).trans
+      (run_preserves_outside _ _ _ q (fun h'=>Finset.disjoint_left.mp oldDis h' h)).symm
+  · have dn := prefix_disjoint_layout base isA base_pool_nodup 509 510 (by omega) (by omega)
+    have oldDis := Stack5.prefix_disjoint_layout base base_pool_nodup 509 510 (by omega) (by omega)
+    exact (run_preserves_outside _ _ _ q (fun h'=>Finset.disjoint_left.mp dn h' h)).trans
+      (run_preserves_outside _ _ _ q (fun h'=>Finset.disjoint_left.mp oldDis h' h)).symm
+
+theorem sitesM_layout (q : Wire) (hq : q∈sitesM) :
+    q∈(W.compactSkywalkTickLayout base 509).wires.toFinset∪
+      (W.compactSkywalkTickLayout base 510).wires.toFinset := by
+  have split : ∀ q∈sitesM,q∈sites509 ∨ q∈sites510 := by decide
+  rcases split q hq with h|h
+  · exact Finset.mem_union_left _
+      (W.compactSkywalkTick_support base 509 (by omega) base_pool_nodup (sites509_tick q h))
+  · exact Finset.mem_union_right _
+      (W.compactSkywalkTick_support base 510 (by omega) base_pool_nodup (sites510_tick q h))
+
+/-- Merged forward ticks `509`–`510` on a rolling-codec stage state. -/
+theorem tickMF_forced_new (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State)
+    (hs : Stage base isA x p 509 s.basis) (m : List Bool) :
+    run tickMF m s=run (W.repairedTick base 509 ++ W.repairedTick base 510) m s := by
+  obtain ⟨raw,hraw,hbits⟩ := hs
+  have ht : W.CompressedCompactStage5 base x p 509 (run (History5.encodePrefix base 509) [] raw).basis :=
+    ⟨raw,hraw,rfl⟩
+  have hP : wires tickMF⊆(W.compactSkywalkTickLayout base 509).wires.toFinset∪
+      (W.compactSkywalkTickLayout base 510).wires.toFinset :=
+    fun q hq => sitesM_layout q (List.mem_toFinset.mp (tickMF_wires hq))
+  have hQ : wires (W.repairedTick base 509 ++ W.repairedTick base 510)⊆
+      (W.compactSkywalkTickLayout base 509).wires.toFinset∪
+        (W.compactSkywalkTickLayout base 510).wires.toFinset := by
+    rw [wires_append]
+    exact Finset.union_subset_union (W.repairedTick_support base 509 (by omega) base_pool_nodup)
+      (W.repairedTick_support base 510 (by omega) base_pool_nodup)
+  exact Stack5.local_replace _ _ _ hP hQ s _ m m
+    (fun q hq => (congrFun hbits q).trans (prefix_agree509 isA raw q hq))
+    (tickMF_forced x hx0 hx _ ht m)
+
+theorem stage509_bitsM_new (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State)
+    (hs : Stage base isA x p 509 s.basis) :
+    ∃ G S : Bool,∃ uv∈pairs509,∀ q∈sitesM,s.basis q=pre509 G S uv.1 uv.2 q := by
+  obtain ⟨raw,hraw,hbits⟩ := hs
+  obtain ⟨G,S,uv,huv,bits⟩ := stage509_bitsM x hx0 hx (run (History5.encodePrefix base 509) [] raw)
+    ⟨raw,hraw,rfl⟩
+  refine ⟨G,S,uv,huv,fun q hq => ?_⟩
+  rw [hbits]
+  exact (prefix_agree509 isA raw q (sitesM_layout q hq)).trans (bits q hq)
+
+theorem stage509_cleanR (isA : Bool) (x : Nat) (s : State) (stage : Stage base isA x p 509 s.basis) :
+    s.basis (base 1538)=false ∧ s.basis (base 1543)=false := by
+  obtain ⟨raw,hraw,hbits⟩ := stage
+  have t := stage509_clean x (run (History5.encodePrefix base 509) [] raw) ⟨raw,hraw,rfl⟩
+  have k1 := prefix_keep isA 509 (by omega) raw 1538 (by omega)
+  have k2 := prefix_keep isA 509 (by omega) raw 1543 (by omega)
+  have o1 := StackOB5Base.prefix_keep 509 (by omega) raw 1538 (by omega)
+  have o2 := StackOB5Base.prefix_keep 509 (by omega) raw 1543 (by omega)
+  rw [o1,o2] at t
+  rw [hbits,k1,k2]
+  exact t
+
 theorem stackForward510_run (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
     (first : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
     run (stackForward510 isA) m s = run (forward isA 1 510) m s := by
-  let k := measurementCount (regularForward base isA 1 509)
-  let a := run (regularForward base isA 1 509) (m.take k) s
-  have cnt := forward_regular_records isA 1 509
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have hpGap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have cnt := forward_regular_records isA 1 508
   have e0 : pullState (OB5.sig (1-1)) s = s := by
     apply State.extensionality
     · rfl
     · funext q; show s.basis (OB5.sig 0 q)=s.basis q; rw [OB5.sig_zero]
-  have pref := forward_gen isA x hx0 hx 509 1 (by omega) (by omega) s (m.take k) (stage_one base isA x p s first)
-  rw [e0, show 1+509-1=509 by rfl] at pref
-  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
-  have hpGap : p+2^32     ≤     2^256 := by norm_num [p]
-  have stage := ((regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p 1 509
-    hp0 hx0 hpo hp hpGap hx cop (by omega)) s (m.take k) (stage_one base isA x p s first)).2
-  change Stage base isA x p 510 a.basis at stage
-  have z := stage_zero isA x 510 (by omega) a.basis stage
-  have move := OB5.pull_step 510 (by omega) a z.1 z.2
-  change pullState (OB5.sig 509) a = pullState (OB5.sig 510) a at move
-  change run (forward isA 1 509) (m.take k) s = pullState (OB5.sig 509) a at pref
-  have c := tick510_counts
-  rw [←tick510ExF_explicit] at c
-  have mc : measurementCount tick510F = measurementCount (W.repairedTick base 510) :=
-    c.2.2.2.1.trans c.2.1.symm
-  rw [stackForward510,stackForward_split510 isA,run_append,run_append,stackForward509_records,cnt,
-    stackForward509_run isA x hx0 hx s _ first]
-  change run (renameProgram (OB5.sig 510) (tick510F ++ packAfter base isA 510)) (m.drop k)
-      (run (forward isA 1 509) (m.take k) s) =
-    run (renameProgram (OB5.sig 510) (W.repairedTick base 510 ++ packAfter base isA 510)) (m.drop k)
-      (run (forward isA 1 509) (m.take k) s)
-  rw [pref,move,OB5.run_rename 510 (by omega),OB5.run_rename 510 (by omega),
-    run_append,run_append,mc,tick510_forced_forward isA x hx0 hx a stage]
-
+  have pref := forward_gen isA x hx0 hx 508 1 (by omega) (by omega) s
+    (m.take (measurementCount (regularForward base isA 1 508))) (stage_one base isA x p s first)
+  rw [e0, show 1+508-1=508 by rfl] at pref
+  have stage : Stage base isA x p 509
+      (run (regularForward base isA 1 508) (m.take (measurementCount (regularForward base isA 1 508))) s).basis :=
+    ((regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p 1 508
+      hp0 hx0 hpo hp hpGap hx cop (by omega)) s _ (stage_one base isA x p s first)).2
+  obtain ⟨a, ha⟩ : ∃ a : State,
+      run (regularForward base isA 1 508) (m.take (measurementCount (regularForward base isA 1 508))) s = a :=
+    ⟨_, rfl⟩
+  rw [ha] at stage pref
+  obtain ⟨r, hr⟩ : ∃ r : List Bool, m.drop (measurementCount (regularForward base isA 1 508)) = r := ⟨_, rfl⟩
+  rw [stackForward510, stackForward510_shape isA, run_append (forward isA 1 508),
+    run_append (forward isA 1 508), cnt, pref, hr]
+  have z9 := stage_zero isA x 509 (by omega) a.basis stage
+  have cl := stage509_cleanR isA x a stage
+  have m9 : pullState (OB5.sig 508) a = pullState (OB5.sig 509) a := OB5.pull_step 509 (by omega) a z9.1 z9.2
+  have m10 : pullState (OB5.sig 509) a = pullState (OB5.sig 510) a :=
+    OB5.pull_step 510 (by omega) a cl.1 (fun _ => cl.2)
+  have bStage := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 509 hp0 hx0 hpo hp hpGap hx
+    cop (by omega) a (r.take (measurementCount (W.repairedTick base 509 ++ packAfter base isA 509))) stage).2
+  simp only [pack509 isA,List.append_nil] at bStage
+  have z10 := stage_zero isA x 510 (by omega) _ bStage
+  have m10b : pullState (OB5.sig 509)
+      (run (W.repairedTick base 509) (r.take (measurementCount (W.repairedTick base 509))) a) =
+      pullState (OB5.sig 510)
+        (run (W.repairedTick base 509) (r.take (measurementCount (W.repairedTick base 509))) a) :=
+    OB5.pull_step 510 (by omega) _ z10.1 z10.2
+  have n9 : measurementCount (renameProgram (OB5.sig 509) (W.repairedTick base 509))=
+      measurementCount (W.repairedTick base 509) := (renameProgram_counts _ _).2
+  have mcM : measurementCount tickMF=measurementCount (W.repairedTick base 509 ++ W.repairedTick base 510) := by
+    rw [measurementCount_append]; exact tickMF_records
+  rw [run_append (renameProgram (OB5.sig 509) (W.repairedTick base 509)), n9, m9, OB5.run_rename 509 (by omega),
+    m10b, OB5.run_rename 510 (by omega), m10, OB5.run_rename 510 (by omega),
+    run_append tickMF, mcM, tickMF_forced_new isA x hx0 hx a stage,
+    ← run_append (W.repairedTick base 509 ++ W.repairedTick base 510) (packAfter base isA 510),
+    List.append_assoc, run_append (W.repairedTick base 509)]
 
 theorem stackForwardT_run (isA : Bool) (_hn : (skywalkSharedWires base).Nodup) (_hlo : History5.HistoryAbove base)
     (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
@@ -21334,7 +21437,7 @@ theorem stackForwardT_run (isA : Bool) (_hn : (skywalkSharedWires base).Nodup) (
 
 
  def stackReverse510 (isA : Bool) : Program :=
-  renameProgram (sig 510) (decodeBefore base isA 510 ++ tick510R) ++ reverse isA 1 509
+  renameProgram (sig 510) (decodeBefore base isA 510 ++ tickMR) ++ reverse isA 1 508
  def stackReverseT (isA : Bool) : Program :=
   renameProgram (sig 511) tickR ++ stackReverse510 isA
 
@@ -21673,6 +21776,73 @@ theorem block510_eq_new (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (t : State
     (le_of_eq tick510_counts.2.2.2.2.2.1) (le_of_eq tick510_counts.2.2.2.2.2.2.2)
     (fun c hc => conc510R G S u hu c hc) a abits (mD.drop d)
 
+theorem decode509 (isA : Bool) : decodeBefore base isA 509=[] := by
+  simp only [decodeBefore,show History5.packDue 509=false from by decide,Bool.false_eq_true,if_false]
+
+theorem reverse_split509 (isA : Bool) : reverse isA 1 509=
+    renameProgram (sig 509) (W.ReverseCarry.compactReceiverTick base 509) ++ reverse isA 1 508 := by
+  have packet : unpackFirst base isA 509=[] := by
+    unfold unpackFirst
+    rw [if_neg (by decide)]
+    exact decode509 isA
+  rw [reverse_snoc isA 1 508,show 1+508=509 by rfl,packet,List.nil_append]
+
+theorem stackReverse510_shape (isA : Bool) : reverse isA 1 510=
+    (renameProgram (sig 510) (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510) ++
+      renameProgram (sig 509) (W.ReverseCarry.compactReceiverTick base 509)) ++ reverse isA 1 508 := by
+  rw [reverse_split510,reverse_split509,List.append_assoc]
+
+/-- After ticks `509`, `510` and the pack, decoding and the merged reverse block agree with
+decoding and the original reverse ticks `510`, `509`. -/
+theorem blockM_eq_new (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (t : State)
+    (ht : Stage base isA x p 509 t.basis) (m1 m2 : List Bool) :
+    run (decodeBefore base isA 510 ++ tickMR) m2
+        (run ((W.repairedTick base 509 ++ W.repairedTick base 510) ++ packAfter base isA 510) m1 t)=
+      run (decodeBefore base isA 510 ++
+          (W.ReverseCarry.compactReceiverTick base 510 ++ W.ReverseCarry.compactReceiverTick base 509)) m2
+        (run ((W.repairedTick base 509 ++ W.repairedTick base 510) ++ packAfter base isA 510) m1 t) := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have hgap : p+2^32 ≤ 2^256 := by norm_num [p]
+  obtain ⟨G,S,uv,huv,bits⟩ := stage509_bitsM_new isA x hx0 hx t ht
+  have due : History5.packDue 510=true := by decide
+  have rep : W.repairedTick base 510=W.compactSkywalkTick base 510 := by
+    rw [tick510ExF_explicit,tick510ExF_compact]
+  set k := measurementCount (W.repairedTick base 509 ++ W.repairedTick base 510) with hk
+  set k9 := measurementCount (W.repairedTick base 509) with hk9
+  set d := measurementCount (decodeBefore base isA 510) with hd
+  set b := run (W.repairedTick base 509) ((m1.take k).take k9) t with hb
+  set a := run (W.repairedTick base 509 ++ W.repairedTick base 510) (m1.take k) t with ha
+  have bStage : Stage base isA x p 510 b.basis := by
+    have h := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 509 hp0 hx0 hpo hp hgap hx
+      cop (by omega) t ((m1.take k).take k9) ht).2
+    simp only [pack509 isA,List.append_nil] at h
+    exact h
+  have aSplit : a=run (W.repairedTick base 510) ((m1.take k).drop k9) b := by
+    rw [ha,hb,run_append,←hk9]
+  have legal := tick_pack_legal base isA base_pool_nodup x p 510 hp0 hx0 hpo hp hgap hx cop
+    (by omega) b ((m1.take k).drop k9) bStage due
+  rw [←rep,←aSplit] at legal
+  have dp : run (decodeBefore base isA 510) (m2.take d)
+      (run (packAfter base isA 510) (m1.drop k) a)=a := by
+    simpa only [packAfter,decodeBefore,due,if_true] using
+      encode_decode_roundtrip base isA base_pool_nodup (510-5) (by omega) a
+        (m1.drop k) (m2.take d) legal
+  have abits : ∀q∈sitesM,a.basis q=
+      (run (tick509ExF ++ tick510ExF) [] ⟨false,pre509 G S uv.1 uv.2⟩).basis q := by
+    intro q hq
+    rw [ha,tick509ExF_explicit,tick510ExF_explicit,
+      site_run (tick509ExF ++ tick510ExF) sitesM pairF_wires t ⟨false,pre509 G S uv.1 uv.2⟩ bits
+        (m1.take k) q hq]
+    exact congrFun (run_basis_records (tick509ExF ++ tick510ExF) _ _ (m1.take k) [] rfl) q
+  rw [run_append (W.repairedTick base 509 ++ W.repairedTick base 510),
+    run_append (decodeBefore base isA 510) tickMR,
+    run_append (decodeBefore base isA 510),←hk,←hd,←ha,dp,
+    tick510ExR_explicit,tick509ExR_explicit]
+  symm
+  exact forced_eqN (tick510ExR ++ tick509ExR) tickMR sitesM _ 4 (recsUpTo 4) (take_recsUpTo 4)
+    pairR_wires tickMR_wires (le_of_eq tickM_counts.2.2.2.2.2.2.2) (le_of_eq tickM_counts.2.2.2.2.2.1)
+    (fun c hc => concMR G S uv huv c hc) a abits (m2.drop d)
+
 theorem stackReverse510_run (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (s1 : State) (mE : List Bool)
     (first : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s1.basis)
     (u : State) (hu : ∀q∈skywalkPoolWires base,
@@ -21680,43 +21850,113 @@ theorem stackReverse510_run (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (s1 : 
     run (stackReverse510 isA) mD (pullState (sig 510) u)=
       run (reverse isA 1 510) mD (pullState (sig 510) u) := by
   obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
-  have hgap : p+2^32  ≤  2^256 := by norm_num [p]
-  have stage : Stage base isA x p 510
-      (run (regularForward base isA 1 509)
-        (mE.take (measurementCount (regularForward base isA 1 509))) s1).basis :=
-    ((regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p 1 509
+  have hgap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have stage : Stage base isA x p 509
+      (run (regularForward base isA 1 508)
+        (mE.take (measurementCount (regularForward base isA 1 508))) s1).basis :=
+    ((regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p 1 508
       hp0 hx0 hpo hp hgap hx cop (by omega)) s1 _ (stage_one base isA x p s1 first)).2
   have fwd : run (regularForward base isA 1 510) mE s1=
-      run (W.repairedTick base 510 ++ packAfter base isA 510)
-        (mE.drop (measurementCount (regularForward base isA 1 509)))
-        (run (regularForward base isA 1 509)
-          (mE.take (measurementCount (regularForward base isA 1 509))) s1) := by
-    rw [regularForward_snoc base isA 1 509,show (1:Nat)+509=510 by rfl,run_append]
+      run ((W.repairedTick base 509 ++ W.repairedTick base 510) ++ packAfter base isA 510)
+        (mE.drop (measurementCount (regularForward base isA 1 508)))
+        (run (regularForward base isA 1 508)
+          (mE.take (measurementCount (regularForward base isA 1 508))) s1) := by
+    rw [regularForward_snoc base isA 1 509,show (1:Nat)+509=510 from rfl,
+      regularForward_snoc base isA 1 508,show (1:Nat)+508=509 from rfl,pack509 isA,List.append_nil,
+      List.append_assoc,run_append,List.append_assoc]
   rw [fwd] at hu
-  generalize run (regularForward base isA 1 509)
-    (mE.take (measurementCount (regularForward base isA 1 509))) s1=a at stage hu
-  have c := tick510_counts
-  rw [←tick510ExR_explicit] at c
-  have mc : measurementCount (decodeBefore base isA 510 ++ tick510R)=
-      measurementCount (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510) := by
-    rw [measurementCount_append,measurementCount_append,c.2.2.2.2.2.1,c.2.2.2.2.2.2.2]
-  have rn := (renameProgram_counts (sig 510) (decodeBefore base isA 510 ++ tick510R)).2
-  have ro := (renameProgram_counts (sig 510)
-    (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510)).2
-  have pool : ∀q∈sites510,q∈(skywalkPoolWires base).toFinset :=
-    fun q hq => List.mem_toFinset.mpr (sites510_pool q hq)
-  have hB : wires (decodeBefore base isA 510 ++ tick510R)⊆(skywalkPoolWires base).toFinset := by
-    have dec := (History5.pack_support5 base 510 (by omega)).2.trans (History5.integerSites5_pool base)
-    rw [←decodeBefore_support_eq base isA 510] at dec
+  obtain ⟨r2,hr2⟩ : ∃ r2 : List Bool,mE.drop (measurementCount (regularForward base isA 1 508))=r2 :=
+    ⟨_,rfl⟩
+  obtain ⟨a,ha⟩ : ∃ a : State,
+      run (regularForward base isA 1 508) (mE.take (measurementCount (regularForward base isA 1 508))) s1=a :=
+    ⟨_,rfl⟩
+  rw [hr2,ha] at hu
+  rw [ha] at stage
+  have pool : ∀ q∈sitesM,q∈(skywalkPoolWires base).toFinset :=
+    fun q hq => List.mem_toFinset.mpr (sitesM_pool q hq)
+  have dec : wires (decodeBefore base isA 510)⊆(skywalkPoolWires base).toFinset := by
+    have d := (History5.pack_support5 base 510 (by omega)).2.trans (History5.integerSites5_pool base)
+    rw [←decodeBefore_support_eq base isA 510] at d
+    exact d
+  have hB : wires (decodeBefore base isA 510 ++ tickMR)⊆(skywalkPoolWires base).toFinset := by
     rw [wires_append,Finset.union_subset_iff]
-    exact ⟨dec,fun q hq => pool q (List.mem_toFinset.mp (tick510R_wires hq))⟩
+    exact ⟨dec,fun q hq => pool q (List.mem_toFinset.mp (tickMR_wires hq))⟩
+  have u10 := untick_pool base isA base_pool_nodup 510 (by omega)
+  have u9 := untick_pool base isA base_pool_nodup 509 (by omega)
+  rw [decode509 isA,List.nil_append] at u9
+  have hO : wires (decodeBefore base isA 510 ++ (W.ReverseCarry.compactReceiverTick base 510 ++
+      W.ReverseCarry.compactReceiverTick base 509))⊆(skywalkPoolWires base).toFinset := by
+    rw [←List.append_assoc,wires_append,Finset.union_subset_iff]
+    exact ⟨u10,u9⟩
   have inner (r : List Bool) :
-      run (decodeBefore base isA 510 ++ tick510R) r u=
-        run (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510) r u :=
-    Stack5.local_replace _ _ _ hB (untick_pool base isA base_pool_nodup 510 (by omega)) u _ r r
-      (fun q hq => hu q (List.mem_toFinset.mp hq)) (block510_eq_new isA x hx0 hx a stage _ r)
-  rw [stackReverse510,reverse_split510,run_append,run_append,rn,ro,mc,
-    OB5.run_rename 510 (by omega),OB5.run_rename 510 (by omega),inner]
+      run (decodeBefore base isA 510 ++ tickMR) r u=
+        run (decodeBefore base isA 510 ++ (W.ReverseCarry.compactReceiverTick base 510 ++
+          W.ReverseCarry.compactReceiverTick base 509)) r u :=
+    Stack5.local_replace _ _ _ hB hO u _ r r
+      (fun q hq => hu q (List.mem_toFinset.mp hq)) (blockM_eq_new isA x hx0 hx a stage r2 r)
+  have bStage := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 509 hp0 hx0 hpo hp hgap hx
+    cop (by omega) a [] stage).2
+  simp only [pack509 isA,List.append_nil] at bStage
+  obtain ⟨b,hbdef⟩ : ∃ b : State,run (W.repairedTick base 509) [] a=b := ⟨_,rfl⟩
+  rw [hbdef] at bStage
+  have rawE : run ((W.repairedTick base 509 ++ W.repairedTick base 510) ++ packAfter base isA 510) [] a=
+      run (W.repairedTick base 510 ++ packAfter base isA 510) [] b := by
+    rw [←hbdef,List.append_assoc,run_append (W.repairedTick base 509)]
+    simp only [List.take_nil,List.drop_nil]
+  have hu' : ∀ q∈skywalkPoolWires base,
+      u.basis q=(run (W.repairedTick base 510 ++ packAfter base isA 510) [] b).basis q := by
+    intro q hq
+    rw [hu q hq,←rawE]
+    exact congrFun (run_basis_records _ a a r2 [] rfl) q
+  have z10 := stage_zero isA x 510 (by omega) b.basis bStage
+  have cl := stage509_cleanR isA x a stage
+  have rt10 (r1 : List Bool) := oneStep_roundtrip base isA base_pool_nodup x p 510 hp0 hx0 hpo hp hgap hx
+    cop (by omega) b bStage [] r1
+  have rt9 (r1 : List Bool) := oneStep_roundtrip base isA base_pool_nodup x p 509 hp0 hx0 hpo hp hgap hx
+    cop (by omega) a stage [] r1
+  simp only [decode509 isA,pack509 isA,List.nil_append,List.append_nil,hbdef] at rt9
+  have rn10 := (renameProgram_counts (sig 510)
+    (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510)).2
+  have key (r : List Bool) :
+      run (renameProgram (sig 510) (decodeBefore base isA 510 ++ tickMR)) r (pullState (sig 510) u)=
+        run (renameProgram (sig 510) (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510) ++
+          renameProgram (sig 509) (W.ReverseCarry.compactReceiverTick base 509)) r (pullState (sig 510) u) := by
+    rw [OB5.run_rename 510 (by omega),inner r,
+      run_append (renameProgram (sig 510) (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510)),
+      OB5.run_rename 510 (by omega),←List.append_assoc,
+      run_append (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510),rn10]
+    obtain ⟨r1,hr1⟩ : ∃ r1 : List Bool,r.take (measurementCount (decodeBefore base isA 510 ++
+      W.ReverseCarry.compactReceiverTick base 510))=r1 := ⟨_,rfl⟩
+    obtain ⟨r3,hr3⟩ : ∃ r3 : List Bool,r.drop (measurementCount (decodeBefore base isA 510 ++
+      W.ReverseCarry.compactReceiverTick base 510))=r3 := ⟨_,rfl⟩
+    rw [hr1,hr3]
+    have a1 := OB5.pool_agree _ u10 r1 u _ hu'
+    rw [rt10 r1] at a1
+    have a2 := OB5.pool_agree _ u9 r3 _ _ a1
+    rw [rt9 r3] at a2
+    have v1c : (run (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510) r1 u).basis
+        (base (1028+510))=false :=
+      (a1 _ (OB5.base_pool _ (by omega))).trans z10.1
+    have v1d : 257 ≤ 510 → (run (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510) r1 u).basis
+        (base (2053-510))=false :=
+      fun big => (a1 _ (OB5.base_pool _ (by omega))).trans (z10.2 big)
+    rw [←OB5.pull_step 510 (by omega) _ v1c v1d,OB5.run_rename 509 (by omega)]
+    exact (OB5.pull_step 510 (by omega) _ ((a2 _ (OB5.base_pool _ (by omega))).trans cl.1)
+      (fun _ => (a2 _ (OB5.base_pool _ (by omega))).trans cl.2)).symm
+  have mcEq : measurementCount (renameProgram (sig 510) (decodeBefore base isA 510 ++ tickMR))=
+      measurementCount (renameProgram (sig 510) (decodeBefore base isA 510 ++
+        W.ReverseCarry.compactReceiverTick base 510) ++
+        renameProgram (sig 509) (W.ReverseCarry.compactReceiverTick base 509)) := by
+    have c := tickMR_records
+    have n := (renameProgram_counts (sig 510) (decodeBefore base isA 510 ++ tickMR)).2
+    have o9 := (renameProgram_counts (sig 509) (W.ReverseCarry.compactReceiverTick base 509)).2
+    simp only [measurementCount_append] at n rn10 o9 ⊢
+    omega
+  rw [stackReverse510,stackReverse510_shape isA,
+    run_append (renameProgram (sig 510) (decodeBefore base isA 510 ++ tickMR)),
+    run_append (renameProgram (sig 510) (decodeBefore base isA 510 ++
+      W.ReverseCarry.compactReceiverTick base 510) ++
+        renameProgram (sig 509) (W.ReverseCarry.compactReceiverTick base 509)),←mcEq,key]
 
 theorem regular_pack511 (isA : Bool) : packAfter base isA 511=[] := by
   simp only [packAfter,show History5.packDue 511=false from by decide,Bool.false_eq_true,if_false]
@@ -23612,36 +23852,46 @@ private theorem reverse_metrics (isA : Bool) (i n : Nat) :
     exact ⟨by omega,by omega,by omega⟩
 
 theorem stackForward_metrics (isA : Bool) :
-    toffoliCount (stackForward isA)=toffoliCount NewStackOB5.stackForwardT ∧
+    toffoliCount (stackForward isA)+1=toffoliCount NewStackOB5.stackForwardT ∧
     measurementCount (stackForward isA)=measurementCount NewStackOB5.stackForwardT ∧
-    gateSlots (stackForward isA)=gateSlots NewStackOB5.stackForwardT+101*(if isA then 24 else 12) := by
+    gateSlots (stackForward isA)=gateSlots NewStackOB5.stackForwardT+101*(if isA then 24 else 12)+5 := by
   have head := forward_metrics isA 1 508
-  have p509 := packAtTick_metrics isA 509
   have p510 := packAtTick_metrics isA 510
   have count : ordinaryCount 1 508=100 := by decide +kernel
   rw [count] at head
-  simp only [NewStackOB5.packFirst,show ¬(509:Nat)=5 from by decide,if_false,
-    ordinaryDue,show History5.packDue 509=false from rfl,Bool.false_eq_true,if_false,Nat.mul_zero,Nat.add_zero] at p509
   simp only [NewStackOB5.packFirst,show ¬(510:Nat)=5 from by decide,if_false,
     ordinaryDue,show History5.packDue 510=true from rfl,if_true,Nat.mul_one] at p510
+  have e509 : NewHistory5.packAfter base 509=[] := by decide +kernel
+  have tm : toffoliCount tickMF+1=toffoliCount tick509F+toffoliCount tick510F ∧
+      measurementCount tickMF=measurementCount tick509F+measurementCount tick510F ∧
+      gateSlots tickMF=gateSlots tick509F+gateSlots tick510F+5 := by decide +kernel
   simp only [stackForward,NewStackOB5.stackForwardT,NewStackOB5.stackForward510,
-    NewStackOB5.stackForward509,toffoliCount_append,measurementCount_append,gateSlots_append,
-    (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
+    NewStackOB5.stackForward509,e509,List.append_nil,toffoliCount_append,measurementCount_append,
+    gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   simp only [slotBonus] at head p510
   exact ⟨by omega,by omega,by omega⟩
 
 theorem stackReverse_metrics (isA : Bool) :
-    toffoliCount (stackReverse isA)=toffoliCount NewStackOB5.stackReverseT ∧
+    toffoliCount (stackReverse isA)+1=toffoliCount NewStackOB5.stackReverseT ∧
     measurementCount (stackReverse isA)=measurementCount NewStackOB5.stackReverseT ∧
-    gateSlots (stackReverse isA)=gateSlots NewStackOB5.stackReverseT+101*(if isA then 24 else 12) := by
-  have tail := reverse_metrics isA 1 509
+    gateSlots (stackReverse isA)+9=gateSlots NewStackOB5.stackReverseT+101*(if isA then 24 else 12) := by
+  have tail := reverse_metrics isA 1 508
   have p510 := unpackAtTick_metrics isA 510
-  have count : ordinaryCount 1 509=100 := by decide +kernel
+  have count : ordinaryCount 1 508=100 := by decide +kernel
   rw [count] at tail
   simp only [NewStackOB5.unpackFirst,show ¬(510:Nat)=5 from by decide,if_false,
     ordinaryDue,show History5.packDue 510=true from rfl,if_true,Nat.mul_one] at p510
-  simp only [stackReverse,NewStackOB5.stackReverseT,NewStackOB5.stackReverse510,
-    toffoliCount_append,measurementCount_append,gateSlots_append,
+  have e509 : NewStackOB5.unpackFirst base 509=[] := by decide +kernel
+  have tm : toffoliCount tickMR+1=toffoliCount tick510R+
+        toffoliCount (W.ReverseCarry.compactReceiverTick base 509) ∧
+      measurementCount tickMR=measurementCount tick510R+
+        measurementCount (W.ReverseCarry.compactReceiverTick base 509) ∧
+      gateSlots tickMR+9=gateSlots tick510R+gateSlots (W.ReverseCarry.compactReceiverTick base 509) := by
+    rw [tick509ExR_explicit]
+    decide +kernel
+  rw [NewStackOB5.stackReverseT,NewStackOB5.stackReverse510,NewStackOB5.reverse_snoc 1 508,
+    show (1:Nat)+508=509 from rfl,e509,List.nil_append]
+  simp only [stackReverse,toffoliCount_append,measurementCount_append,gateSlots_append,
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   simp only [slotBonus] at tail p510
   exact ⟨by omega,by omega,by omega⟩
@@ -23706,35 +23956,33 @@ private theorem reverse_physical (isA : Bool) (i n : Nat) (hi : i+n≤512) :
 
 theorem stackForward_physical (isA : Bool) : GatePhysical (stackForward isA) := by
   have tf : GatePhysical tickF := by simp [tickF,base,GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate]
-  have b509 := gatePhysical_rename _ (OB5.sig_injective 509 (by omega)) _
-    ((gatePhysical_append _ _).mpr ⟨tick509_physical,packAtTick_physical isA 509 (by omega)⟩)
-  have b510 := gatePhysical_rename _ (OB5.sig_injective 510 (by omega)) _
-    ((gatePhysical_append _ _).mpr ⟨tick510_physical.1,packAtTick_physical isA 510 (by omega)⟩)
+  have bM := gatePhysical_rename _ (OB5.sig_injective 510 (by omega)) _
+    ((gatePhysical_append _ _).mpr ⟨tickM_physical.1,packAtTick_physical isA 510 (by omega)⟩)
   simpa only [stackForward,gatePhysical_append] using
-    And.intro (And.intro (And.intro (forward_physical isA 1 508 (by omega)) b509) b510)
+    And.intro (And.intro (forward_physical isA 1 508 (by omega)) bM)
       (gatePhysical_rename _ (OB5.sig_injective 511 (by omega)) _ tf)
 
 theorem stackReverse_physical (isA : Bool) : GatePhysical (stackReverse isA) := by
   have tr : GatePhysical tickR := by simp [tickR,base,GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate]
-  have b510 := gatePhysical_rename _ (OB5.sig_injective 510 (by omega)) _
-    ((gatePhysical_append _ _).mpr ⟨unpackAtTick_physical isA 510 (by omega),tick510_physical.2⟩)
+  have bM := gatePhysical_rename _ (OB5.sig_injective 510 (by omega)) _
+    ((gatePhysical_append _ _).mpr ⟨unpackAtTick_physical isA 510 (by omega),tickM_physical.2⟩)
   simpa only [stackReverse,gatePhysical_append] using
-    And.intro (And.intro (gatePhysical_rename _ (OB5.sig_injective 511 (by omega)) _ tr) b510)
-      (reverse_physical isA 1 509 (by omega))
+    And.intro (And.intro (gatePhysical_rename _ (OB5.sig_injective 511 (by omega)) _ tr) bM)
+      (reverse_physical isA 1 508 (by omega))
 
 theorem firstPhase_metrics (isA : Bool) :
-    toffoliCount (firstPhase isA)=toffoliCount FrontierEntry1591Kernel.firstPhase ∧
+    toffoliCount (firstPhase isA)+1=toffoliCount FrontierEntry1591Kernel.firstPhase ∧
     measurementCount (firstPhase isA)=measurementCount FrontierEntry1591Kernel.firstPhase ∧
-    gateSlots (firstPhase isA)=gateSlots FrontierEntry1591Kernel.firstPhase+101*(if isA then 24 else 12) := by
+    gateSlots (firstPhase isA)=gateSlots FrontierEntry1591Kernel.firstPhase+101*(if isA then 24 else 12)+5 := by
   have stack := stackForward_metrics isA
   simp only [firstPhase,FrontierEntry1591Kernel.firstPhase,toffoliCount_append,
     measurementCount_append,gateSlots_append]
   exact ⟨by omega,by omega,by omega⟩
 
 theorem lastPhase_metrics (isA : Bool) :
-    toffoliCount (lastPhase isA)=toffoliCount FrontierEntry1591Kernel.lastPhase ∧
+    toffoliCount (lastPhase isA)+1=toffoliCount FrontierEntry1591Kernel.lastPhase ∧
     measurementCount (lastPhase isA)=measurementCount FrontierEntry1591Kernel.lastPhase ∧
-    gateSlots (lastPhase isA)=gateSlots FrontierEntry1591Kernel.lastPhase+101*(if isA then 24 else 12) := by
+    gateSlots (lastPhase isA)+9=gateSlots FrontierEntry1591Kernel.lastPhase+101*(if isA then 24 else 12) := by
   have stack := stackReverse_metrics isA
   simp only [lastPhase,FrontierEntry1591Kernel.lastPhase,toffoliCount_append,
     measurementCount_append,gateSlots_append]
@@ -23920,25 +24168,25 @@ open Arithmetic MappedCompressed DirectSkywalk Secp256k1 Challenge Baselines
 attribute [local irreducible] wires toffoliCount measurementCount gateSlots
 
 theorem entryKernel_resource_delta :
-    toffoliCount entryKernel+229=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+231=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
     gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+53629 := by
   have first := firstPhase_metrics true
   have last := lastPhase_metrics false
   have field := entryFieldHosted_resource_delta
-  norm_num at first last
+  simp only [if_true,Bool.false_eq_true,if_false] at first last
   simp only [entryKernel,ControlLoan1589.entryKernel,ControlLoan1589.kernel,
     toffoliCount_append,measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitKernel_resource_delta :
-    toffoliCount exitKernel+229=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+231=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
     gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+54732 := by
   have first := firstPhase_metrics false
   have last := lastPhase_metrics true
   have field := exitFieldHosted_resource_delta
-  norm_num at first last
+  simp only [if_true,Bool.false_eq_true,if_false] at first last
   simp only [exitKernel,ControlLoan1589.exitKernel,ControlLoan1589.kernel,
     toffoliCount_append,measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
@@ -27194,23 +27442,23 @@ private def DeltaSub (P Q : Program) (t m slots : Nat) : Prop :=
   toffoliCount P+t=toffoliCount Q ∧ measurementCount P=measurementCount Q+m ∧
     gateSlots P≤gateSlots Q+slots
 
-private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 229 106 53629)
+private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 231 106 53629)
     (L : ControlledPointLayout) (c : Fp) :
-    DeltaSub (division K L c) (division K0 L c) 229 106 53629 := by
+    DeltaSub (division K L c) (division K0 L c) 231 106 53629 := by
   simp only [DeltaSub,division,FrontierEntry1591Callers.entry,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
 
-private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 229 106 54732)
-    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 229 106 54732 := by
+private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 231 106 54732)
+    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 231 106 54732 := by
   simpa only [DeltaSub,exit,renameProgram_counts,rename_gateSlots] using h
 
 private theorem gen_delta_of_shapes (L : ControlledPointLayout)
     (D D0 : Fp→Program) (S S0 P P0 G G0 : Program) (cx cy : Fp)
     (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D0 S0 P0 cx cy)
-    (hd : ∀c,DeltaSub (D c) (D0 c) 229 106 53629)
-    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 229 106 54732) :
-    DeltaSub G G0 458 212 108361 := by
+    (hd : ∀c,DeltaSub (D c) (D0 c) 231 106 53629)
+    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 231 106 54732) :
+    DeltaSub G G0 462 212 108361 := by
   subst G G0
   have d:=hd (-cy)
   simp only [Delta,DeltaLe,DeltaSub,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
@@ -27218,7 +27466,7 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 458 212 108361 := by
+    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 462 212 108361 := by
   have squareCounts:=SquareCarryLoan719BF.counts_eq L
   have squareSlots:=SquareCarryLoan719BF.slots_eq L
   exact gen_delta_of_shapes L
@@ -27236,14 +27484,14 @@ private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
       Rolling1588.exitKernel_resource_delta L)
 
 theorem gen_resource_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+458=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+462=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ControlLoan1589BFFinal.gen L cx cy)+212 ∧
     gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+108361 :=
   gen_delta L cx cy
 
 private theorem wrapper_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : DeltaSub P Q 458 212 108361) :
-    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 458 212 108361 := by
+    (P Q : Program) (h : DeltaSub P Q 462 212 108361) :
+    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 462 212 108361 := by
   simp only [DeltaSub,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -27393,7 +27641,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152593 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152589 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -27417,7 +27665,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152593,1499963,1588,50118933⟩
+def bounds : Challenge.Bounds := ⟨2152589,1499963,1588,50118933⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -27434,7 +27682,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152593 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152589 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
