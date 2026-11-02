@@ -16865,6 +16865,124 @@ theorem iter_sum_deficit (x p i : Nat) (hpo : p%2=1) (hq : p+2^32 ≤ 2^256) (hx
       omega
 
 
+/-- `Deficit` with the strict gap of an odd modulus, `p + 2^32 < 2^256`. -/
+def Deficit1 (i : Nat) (z : SkywalkNat.State) : Prop :=
+  z.u=0 ∨ ∃ j k, j+k=i ∧ 2^j*z.u+2^32+1 ≤ 2^256 ∧ 2^k*z.v+2^32+1 ≤ 2^256
+
+set_option maxHeartbeats 4000000 in
+theorem deficit1_step (i : Nat) (z : SkywalkNat.State) (h : Deficit1 i z) :
+    Deficit1 (i+1) (SkywalkNat.step z) := by
+  rcases h with h|⟨j,k,hjk,hu,hv⟩
+  · left; unfold SkywalkNat.step; rw [if_pos h]; exact h
+  · by_cases hz : z.u=0
+    · left; unfold SkywalkNat.step; rw [if_pos hz]; exact hz
+    by_cases he : z.u%2=0
+    · right
+      refine ⟨j+1,k,by omega,?_,?_⟩
+      · unfold SkywalkNat.step; rw [if_neg hz,if_pos he]; dsimp only
+        have : 2^(j+1)*(z.u/2)=2^j*z.u := by
+          rw [pow_succ]; have : z.u=2*(z.u/2) := by omega
+          conv_rhs => rw [this]
+          ring
+        omega
+      · unfold SkywalkNat.step; rw [if_neg hz,if_pos he]; exact hv
+    by_cases hle : z.v ≤ z.u
+    · right
+      refine ⟨j+1,k,by omega,?_,?_⟩
+      · unfold SkywalkNat.step; rw [if_neg hz,if_neg he,if_pos hle]; dsimp only
+        have h1 : 2^(j+1)*((z.u-z.v)/2) ≤ 2^j*z.u := by
+          rw [pow_succ]
+          have : 2*((z.u-z.v)/2) ≤ z.u := by omega
+          calc 2^j*2*((z.u-z.v)/2)=2^j*(2*((z.u-z.v)/2)) := by ring
+            _ ≤ 2^j*z.u := Nat.mul_le_mul_left _ this
+        omega
+      · unfold SkywalkNat.step; rw [if_neg hz,if_neg he,if_pos hle]; exact hv
+    · right
+      refine ⟨k+1,j,by omega,?_,?_⟩
+      · unfold SkywalkNat.step; rw [if_neg hz,if_neg he,if_neg hle]; dsimp only
+        have h1 : 2^(k+1)*((z.v-z.u)/2) ≤ 2^k*z.v := by
+          rw [pow_succ]
+          have : 2*((z.v-z.u)/2) ≤ z.v := by omega
+          calc 2^k*2*((z.v-z.u)/2)=2^k*(2*((z.v-z.u)/2)) := by ring
+            _ ≤ 2^k*z.v := Nat.mul_le_mul_left _ this
+        omega
+      · unfold SkywalkNat.step; rw [if_neg hz,if_neg he,if_neg hle]; exact hu
+
+set_option maxHeartbeats 4000000 in
+theorem deficit1_iter (x p : Nat) (hpo : p%2=1) (hq : p+2^32 ≤ 2^256) (hx : x<p) (i : Nat) :
+    Deficit1 i (SkywalkNat.step^[i] (SkywalkNat.init x p)) := by
+  have h256 : (2:Nat)^256%2=0 := by norm_num
+  have h32 : (2:Nat)^32%2=0 := by norm_num
+  have hq1 : p+2^32+1 ≤ 2^256 := by omega
+  induction i with
+  | zero => right; exact ⟨0,0,rfl,by simp [SkywalkNat.init]; omega,by simp [SkywalkNat.init]; omega⟩
+  | succ i ih => rw [Function.iterate_succ_apply']; exact deficit1_step i _ ih
+
+set_option maxHeartbeats 4000000 in
+/-- The strict gap of the odd modulus extends the sum cap of ticks 256–286 to tick 287. -/
+theorem iter_sum_deficit287 (x p : Nat) (hpo : p%2=1) (hq : p+2^32 ≤ 2^256) (hx : x<p)
+    (hc : x.Coprime p) :
+    (SkywalkNat.step^[287] (SkywalkNat.init x p)).u+(SkywalkNat.step^[287] (SkywalkNat.init x p)).v
+      < 2^(511-287) := by
+  have hp0 : 0 < p := by omega
+  have valid := SkywalkNat.iter_valid 287 (SkywalkNat.init x p) hp0 hpo
+  generalize hz : SkywalkNat.step^[287] (SkywalkNat.init x p)=z at valid
+  have hd := deficit1_iter x p hpo hq hx 287
+  rw [hz] at hd
+  have e224 : (511-287:Nat)=224 := by norm_num
+  rw [e224]
+  have big : 2^8 ≤ (2:Nat)^224 := Nat.pow_le_pow_right (by norm_num) (by norm_num)
+  rcases hd with h0|⟨j,k,hjk,hu,hv⟩
+  · have g : z.u.gcd z.v=1 := by rw [valid.2.2]; exact hc
+    rw [h0,Nat.gcd_zero_left] at g
+    omega
+  · have hv1 : 1 ≤ z.v := valid.1
+    by_cases hu0 : z.u=0
+    · have g : z.u.gcd z.v=1 := by rw [valid.2.2]; exact hc
+      rw [hu0,Nat.gcd_zero_left] at g
+      omega
+    have hu' : 2^j*z.u+2^32 ≤ 2^256 := by omega
+    have hv' : 2^k*z.v+2^32 ≤ 2^256 := by omega
+    have hk := pow_le_of_mul hv1 hv'
+    have hj := pow_le_of_mul (Nat.one_le_iff_ne_zero.mpr hu0) hu'
+    have hur := rail_lt j z.u hu' (by omega)
+    have hvr := rail_lt k z.v hv' (by omega)
+    have e256 : (2:Nat)^256=2^32*2^224 := by rw [←pow_add]
+    have hpos : 0 < (2:Nat)^32 := by positivity
+    by_cases hj255 : j=255
+    · subst hj255
+      have k32 : k=32 := by omega
+      subst k32
+      have u1 : z.u ≤ 1 := by simp at hur; omega
+      have v2 : z.v+1 < 2^224 := by
+        by_contra hcon
+        have := Nat.mul_le_mul_left (2^32) (Nat.le_of_not_gt hcon)
+        rw [e256] at hv
+        rw [Nat.mul_add] at this
+        omega
+      omega
+    by_cases hk255 : k=255
+    · subst hk255
+      have j32 : j=32 := by omega
+      subst j32
+      have v1 : z.v ≤ 1 := by simp at hvr; omega
+      have u2 : z.u+1 < 2^224 := by
+        by_contra hcon
+        have := Nat.mul_le_mul_left (2^32) (Nat.le_of_not_gt hcon)
+        rw [e256] at hu
+        rw [Nat.mul_add] at this
+        omega
+      omega
+    · have pp := pow_pair2 (256-j) (256-k) (by omega) (by omega)
+      have e : 256-j+(256-k)-2=223 := by omega
+      rw [e] at pp
+      have e2 : (2:Nat)^224=2*2^223 := by rw [show (224:Nat)=223+1 by rfl,pow_succ]; ring
+      have big2 : 4 ≤ (2:Nat)^223 := by
+        calc 4=2^2 := by norm_num
+          _ ≤ 2^223 := Nat.pow_le_pow_right (by norm_num) (by norm_num)
+      omega
+
+
 
 /-- Any strict sum cap gives strict rail bounds. -/
 theorem rails_lt_of_sum (x p i N : Nat) (hp0 : 0<p) (hpo : p%2=1)
@@ -18319,8 +18437,8 @@ theorem compactSkywalkTick_aMid_split (w : Nat → Wire) (i : Nat) (hi : i < 512
   rw [i2] at b
   exact ⟨a.symm,b.symm⟩
 
-/-- Trimmed reverse ticks: 224 and 256–286, where both stage rails fit one bit narrower. -/
-def trimTick (i : Nat) : Prop := i=224 ∨ (256 ≤ i ∧ i ≤ 286)
+/-- Trimmed reverse ticks: 224 and 256–287, where both stage rails fit one bit narrower. -/
+def trimTick (i : Nat) : Prop := i=224 ∨ (256 ≤ i ∧ i ≤ 287)
 
 instance (i : Nat) : Decidable (trimTick i) := by unfold trimTick; infer_instance
 
@@ -18348,7 +18466,9 @@ theorem compactSkywalkStage_tops (w : Nat → Wire) (hn : (skywalkPoolWires w).N
       exact iter_sum_late x p 224 hx0 hpo hp hq hx (le_refl _)
     · have e : compactSkywalkTickPreWidth i-2=511-i := by rw [hR]; split_ifs <;> omega
       rw [e]
-      exact iter_sum_deficit x p i hpo hq hx hc h0 h1
+      by_cases h287 : i=287
+      · subst h287; exact iter_sum_deficit287 x p hpo hq hx hc
+      · exact iter_sum_deficit x p i hpo hq hx hc h0 (by omega)
   dsimp only at fit loc
   obtain ⟨la,lb,_⟩ := loc
   have split := compactSkywalkTick_aMid_split w i hi
@@ -24291,9 +24411,9 @@ theorem counts_relative (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) (i 
 theorem counts_511 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
     toffoliCount (forward5 w 1 511)+257=toffoliCount (W.compactForward5 w 1 511) ∧
     measurementCount (forward5 w 1 511)=measurementCount (W.compactForward5 w 1 511)+256 ∧
-    toffoliCount (reverse5 w 1 511)+542=toffoliCount (W.compactReverse5 w 1 511) ∧
+    toffoliCount (reverse5 w 1 511)+543=toffoliCount (W.compactReverse5 w 1 511) ∧
     measurementCount (reverse5 w 1 511)=measurementCount (W.compactReverse5 w 1 511) := by
-  have r : reverseCount 1 511=542 := by decide +kernel
+  have r : reverseCount 1 511=543 := by decide +kernel
   have c := counts_relative w hn 1 511 (by omega)
   rw [W.repair_count_511,W.fwd_count_511,r] at c
   exact ⟨by omega,c.2.1,c.2.2.1,c.2.2.2⟩
@@ -43575,7 +43695,7 @@ theorem segH_gateSlots (divide : Bool) :
 attribute [local irreducible] Kernel5.actualKernel5 toffoliCount measurementCount
 
 theorem program_counts (divide : Bool) :
-    toffoliCount (program divide)=(if divide then 1049410 else 1049154) ∧
+    toffoliCount (program divide)=(if divide then 1049409 else 1049153) ∧
     measurementCount (program divide)=(if divide then 721022 else 721278) := by
   have cfg := MappedCompressed.LaneA.laneLogical_config
   have narrow := W.compactPasses5_old_counts base base_pool_nodup
@@ -44178,7 +44298,7 @@ section
 namespace ECDSAAdd.Entrant.OwnQ5Actual
 open Arithmetic MappedCompressed
  abbrev kernel_spec (divide : Bool) := OwnQ5Integer.program_spec divide (hosted_field_free divide)
- theorem kernel_counts (divide : Bool) : toffoliCount (OwnQ5Integer.program divide)=(if divide then 1049410 else 1049154) ∧
+ theorem kernel_counts (divide : Bool) : toffoliCount (OwnQ5Integer.program divide)=(if divide then 1049409 else 1049153) ∧
     measurementCount (OwnQ5Integer.program divide)=(if divide then 721022 else 721278) := by
   rw [(OwnQ5Integer.program_counts divide).1,(OwnQ5Integer.program_counts divide).2]
   exact KernelOB5.program_counts divide
@@ -45136,8 +45256,8 @@ theorem farithOB_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
 attribute [local irreducible] OwnQ5Integer.program toffoliCount measurementCount
 
 theorem arith_counts (L : ControlledPointLayout) :
-    toffoliCount (arith L false)=1049410 ∧ measurementCount (arith L false)=721022 ∧
-    toffoliCount (arith L true)=1049154 ∧ measurementCount (arith L true)=721278 := by
+    toffoliCount (arith L false)=1049409 ∧ measurementCount (arith L false)=721022 ∧
+    toffoliCount (arith L true)=1049153 ∧ measurementCount (arith L true)=721278 := by
   have a := OwnQ5Actual.kernel_counts true
   have b := OwnQ5Actual.kernel_counts false
   have c := renameProgram_counts (wireFn2 L) (OwnQ5Integer.program true)
@@ -45554,8 +45674,8 @@ section ResourcesA
 attribute [local irreducible] run OwnQ5Runtime.kernelS OwnQ5Integer.program wires toffoliCount measurementCount
 
 theorem arithS_counts (L : ControlledPointLayout) :
-    toffoliCount (arithS L false)=1048390 ∧ measurementCount (arithS L false)=721022 ∧
-    toffoliCount (arithS L true)=1048134 ∧ measurementCount (arithS L true)=721278 := by
+    toffoliCount (arithS L false)=1048389 ∧ measurementCount (arithS L false)=721022 ∧
+    toffoliCount (arithS L true)=1048133 ∧ measurementCount (arithS L true)=721278 := by
   have o := ArithmeticOB5.arith_counts L
   have s1 := OwnQ5SW.selKernelQ_sel true
   have s2 := OwnQ5SW.selKernelQ_sel false
@@ -46634,7 +46754,7 @@ variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw
 
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2156924 ∧
+    toffoliCount (program L cx cy)=2156922 ∧
     measurementCount (program L cx cy)=1500676 := by
   have a k := fastConstAdd_counts L hw L.point.x (Or.inl rfl) k
   have b k := fastConstAdd_counts L hw L.point.y (Or.inr rfl) k
@@ -46976,7 +47096,7 @@ theorem program_counts_rel (cx cy : Fp) :
 
 include hw in
 theorem program_counts (cx cy : Fp) :
-    toffoliCount (program L cx cy)=2154884 ∧
+    toffoliCount (program L cx cy)=2154882 ∧
     measurementCount (program L cx cy)=1500676 := by
   have r := program_counts_rel L cx cy
   have o := GenericOB5.program_counts L hw cx cy
@@ -56087,7 +56207,7 @@ theorem kernel5_gateSlots_le : Challenge.gateSlots kernel5≤20500006 :=
   kernel5_sub.slots.trans (KernelOB5.program_gateSlots_le true)
 
 theorem kernel5_counts :
-    toffoliCount kernel5=1049156 ∧ measurementCount kernel5=720768 := by
+    toffoliCount kernel5=1049155 ∧ measurementCount kernel5=720768 := by
   have old := KernelOB5.program_counts true
   have cv := OwnQ5Endpoint.endpoint_counts
   have renNew := renameProgram_counts HostOB5.hostSwap field5
@@ -56675,7 +56795,7 @@ theorem kernel5S_counts_diff : toffoliCount kernel5S+254=toffoliCount (SW.kernel
   have oldSelT := (SW.selKernel_sel true).tc
   have oldSelM := (SW.selKernel_sel true).mc
   have old := KernelOB5.program_counts true
-  change toffoliCount (KernelOB5.program true)=1049410 ∧ measurementCount (KernelOB5.program true)=721022 at old
+  change toffoliCount (KernelOB5.program true)=1049409 ∧ measurementCount (KernelOB5.program true)=721022 at old
   have new := kernel5_counts
   constructor <;> omega
 
@@ -56745,7 +56865,7 @@ theorem kernel5_1026_free : base 1026∉wires kernel5 := by
 theorem kernel5S_1026_free : base 1026∉wires kernel5S := by
   simpa only [kernel5S] using Q5FusionPhase.relocated_1026_free hostField5S hostField5S_free
 
-theorem kernel5_counts : toffoliCount kernel5=1049156 ∧ measurementCount kernel5=720768 := by
+theorem kernel5_counts : toffoliCount kernel5=1049155 ∧ measurementCount kernel5=720768 := by
   have c := Q5FusionPhase.relocated_counts hostField5
   rw [old_shape] at c
   simpa only [kernel5,c.1,c.2] using EntryFuse.kernel5_counts
@@ -60060,13 +60180,13 @@ theorem kernelS_counts_diff :
   have om := (OwnQ5SW.selKernelQ_sel false).mc
   omega
 
-theorem kernel_counts : toffoliCount kernel=1048900 ∧ measurementCount kernel=721024 := by
+theorem kernel_counts : toffoliCount kernel=1048899 ∧ measurementCount kernel=721024 := by
   have c := kernel_counts_diff
   have old := OwnQ5Actual.kernel_counts false
-  change toffoliCount (OwnQ5Integer.program false)=1049154 ∧ measurementCount (OwnQ5Integer.program false)=721278 at old
+  change toffoliCount (OwnQ5Integer.program false)=1049153 ∧ measurementCount (OwnQ5Integer.program false)=721278 at old
   omega
 
-theorem kernelS_counts : toffoliCount kernelS=1047880 ∧ measurementCount kernelS=721024 := by
+theorem kernelS_counts : toffoliCount kernelS=1047879 ∧ measurementCount kernelS=721024 := by
   have c := kernel_counts
   have t := selKernel.tc
   have m := selKernel.mc
@@ -60081,7 +60201,7 @@ theorem arithExit_counts_diff (L : ControlledPointLayout) :
   simpa only [arithExit,arithS,OwnQ5Runtime.kernelS,Bool.not_true,r.1,r.2,o.1,o.2] using c
 
 theorem arithExit_counts (L : ControlledPointLayout) :
-    toffoliCount (arithExit L)=1047880 ∧ measurementCount (arithExit L)=721024 := by
+    toffoliCount (arithExit L)=1047879 ∧ measurementCount (arithExit L)=721024 := by
   have c := kernelS_counts
   have r := renameProgram_counts (wireFn2 L) kernelS
   simpa only [arithExit,r.1,r.2] using c
@@ -60828,7 +60948,7 @@ def program (C : Point) : Program :=
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2155414, 1501199, 1594, 50002840⟩
+def bounds : Challenge.Bounds := ⟨2155412, 1501199, 1594, 50002840⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -60847,7 +60967,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ hG).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2155414 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2155412 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
