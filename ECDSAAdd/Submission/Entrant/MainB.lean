@@ -2,7 +2,6 @@ import ECDSAAdd.Submission.Entrant.TerminalGraph
 import ECDSAAdd.Submission.Entrant.FusedFlags
 import ECDSAAdd.Submission.Entrant.TickMerged508
 import ECDSAAdd.Submission.Entrant.R2Life760
-import ECDSAAdd.Submission.Entrant.NativeKnownH
 
 
 -- ===== ECDSAAdd.Submission.Entrant.FrontierSumCleanup1591Primitive =====
@@ -8922,62 +8921,6 @@ theorem certificate : Challenge.Certificate entry bounds where
 end ECDSAAdd.Entrant.ControlLoan1589BFFinal
 end -- original module boundary
 
--- ===== Native first-tick inverse with the swapped known-output receiver =====
-section
-set_option maxRecDepth 4096
-set_option maxHeartbeats 400000
-namespace ECDSAAdd.Entrant.FrontierEntry1591NativeH
-open Arithmetic RecordedQuantum Secp256k1 FrontierEntry1591Native
-attribute [local irreducible] run wires NativeFirstDirect.forward NativeKnownH.inverse
-  NativeFirstKnown.inverse
-
-/-- The hosted native inverse with `NativeKnownH.inverse` in place of `NativeFirstKnown.inverse`. -/
-def inverse (w : Nat → Wire) : Program :=
-  Transport.program (w 1797) (w 511) (NativeKnownH.inverse w)
-
-theorem host_away (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
-    w 511∉wires (NativeKnownH.inverse w) :=
-  fun h => (native_host_away w hn).2 (NativeKnownH.inverse_wires_sub w hn h)
-
-theorem inverse_roundtrip (w : Nat → Wire) (hn : (skywalkSharedWires w).Nodup)
-    (x y : Nat) (hx : x<p) (s : State) (mF mI : List Bool)
-    (hin : SkywalkArithmeticInput w x y s.basis) :
-    run (inverse w) mI (run (FrontierEntry1591Native.forward w) mF s)=s := by
-  have pool := skywalkShared_integer_nodup w hn
-  have before := caller_clean w hn x y s hin
-  have after := forward_clean w hn x y hx s mF hin
-  have ready := NativeFirstDirect.caller_ready w hn x y s.basis hin
-  have pBound : p<2^256 := by norm_num [p]
-  have x256 : x<2^256 := lt_trans hx pBound
-  have round := NativeKnownH.inverse_roundtrip w pool x x256 s mF mI ready.1
-  rw [forward_run_eq w hn x y hx s mF hin]
-  have workOut : (run (NativeKnownH.inverse w) mI (run (NativeFirstDirect.forward w) mF s)).basis (w 1797)=false := by
-    rw [round]; exact before.1
-  rw [inverse,Transport.run_eq _ _ _ _ mI after.1 after.2 workOut (host_away w pool)]
-  exact round
-
-theorem counts (w : Nat → Wire) :
-    toffoliCount (inverse w)=252 ∧ measurementCount (inverse w)=508 := by
-  have i := Transport.counts (w 1797) (w 511) (NativeKnownH.inverse w)
-  rw [(NativeKnownH.inverse_counts w).1,(NativeKnownH.inverse_counts w).2] at i
-  exact i
-
-theorem wires_sub (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
-    wires (inverse w)⊆wires (FrontierEntry1591Native.inverse w) := by
-  rw [inverse,FrontierEntry1591Native.inverse,Transport.support,Transport.support]
-  exact Finset.image_subset_image (NativeKnownH.inverse_wires_sub w hn)
-
-theorem slots_le (w : Nat → Wire) : Challenge.gateSlots (inverse w)≤10000 := by
-  rw [inverse,Transport.slots]
-  exact NativeKnownH.inverse_gateSlots_le w
-
-theorem physical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
-    GatePhysical (inverse w) :=
-  Transport.physical _ _ _ (NativeKnownH.inverse_physical w hn)
-
-end ECDSAAdd.Entrant.FrontierEntry1591NativeH
-end
-
 -- ===== ECDSAAdd.Submission.Entrant.Rolling1588Packets =====
 section
 -- consolidated import: import ECDSAAdd.Submission.Entrant.ControlLoan1589Program
@@ -9226,7 +9169,7 @@ def firstPhase (isA : Bool) : Program :=
   FrontierEntry1591Native.forward base ++ stackForward isA ++ skywalkArithmeticClear base
 
 def lastPhase (isA : Bool) : Program :=
-  skywalkArithmeticClear base ++ stackReverse isA ++ FrontierEntry1591NativeH.inverse base
+  skywalkArithmeticClear base ++ stackReverse isA ++ FrontierEntry1591Native.inverse base
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -23631,17 +23574,10 @@ theorem first_support_eq (isA : Bool) :
   simp only [firstPhase,Rolling1588.firstPhase,FrontierEntry1591Kernel.firstPhase,
     wires_append,Rolling1588.stackForward_support_eq,Finset.union_assoc]
 
-theorem last_support_sub (isA : Bool) :
-    wires (lastPhase isA)⊆wires FrontierEntry1591Kernel.lastPhase := by
+theorem last_support_eq (isA : Bool) :
+    wires (lastPhase isA)=wires FrontierEntry1591Kernel.lastPhase := by
   simp only [lastPhase,Rolling1588.lastPhase,FrontierEntry1591Kernel.lastPhase,
     wires_append,Rolling1588.stackReverse_support_eq,Finset.union_assoc]
-  exact Finset.union_subset_union (Finset.Subset.refl _)
-    (Finset.union_subset_union (Finset.Subset.refl _)
-      (FrontierEntry1591NativeH.wires_sub base base_pool_nodup))
-
-theorem last_free_of_old (isA : Bool) {q : Wire} (h : q∉wires FrontierEntry1591Kernel.lastPhase) :
-    q∉wires (lastPhase isA) :=
-  fun m => h (last_support_sub isA m)
 
 private theorem raw_extra_free (q : Nat) (hq : q=721 ∨ q=722) :
     base q∉wires FrontierEntry1591Kernel.firstPhase ∧
@@ -23667,7 +23603,7 @@ theorem first_hosts_free (isA : Bool) (q : Wire) (hq : q∈phaseHosts) :
 
 theorem last_hosts_free (isA : Bool) (q : Wire) (hq : q∈phaseHosts) :
     q∉wires (lastPhase isA) := by
-  apply last_free_of_old
+  rw [last_support_eq]
   simp only [phaseHosts,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
   rcases hq with rfl|rfl|rfl
   · exact (raw_extra_free 721 (by simp)).2
@@ -23683,7 +23619,7 @@ theorem phase_first_719_free (isA : Bool) :
 theorem phase_last_719_free (isA : Bool) :
     base 719∉wires (renameProgram phaseHost (lastPhase isA)) := by
   apply phase_719_free
-  apply last_free_of_old
+  rw [last_support_eq]
   exact FrontierEntry1591Kernel.last_host_free _ (by simp [FrontierEntry1591Native.hostSites])
 
 /-! R2: the native, integer and clearing passes never touch `base 760`. -/
@@ -23735,7 +23671,7 @@ theorem phase_first_760_free (isA : Bool) :
 theorem phase_last_760_free (isA : Bool) :
     base 760∉wires (renameProgram phaseHost (lastPhase isA)) := by
   apply phase_760_free
-  apply last_free_of_old
+  rw [last_support_eq]
   exact raw_760_free.2
 
 theorem phase_work_free (P : Program) (free : ∀q∈phaseHosts,q∉wires P) :
@@ -24037,8 +23973,9 @@ theorem raw_result_of_roundtrip (a b : Bool) (F : Program) (s : State) (m : List
   have firstPool : wires (firstPhase b)⊆(skywalkPoolWires base).toFinset := by
     rw [first_support_eq]
     exact FrontierEntry1591Kernel.first_pool
-  have lastPool : wires (lastPhase b)⊆(skywalkPoolWires base).toFinset :=
-    (last_support_sub b).trans FrontierEntry1591Kernel.last_pool
+  have lastPool : wires (lastPhase b)⊆(skywalkPoolWires base).toFinset := by
+    rw [last_support_eq]
+    exact FrontierEntry1591Kernel.last_pool
   have all := run_three_states (firstPhase a) F (lastPhase b)
     (fun initial out=>initial=s → out.phase=s.phase ∧
       regValue (wireBlock base 2056 256) out.basis=value ∧
@@ -24162,8 +24099,8 @@ theorem phases_roundtrip (isA : Bool) (hn : (skywalkSharedWires base).Nodup)
   simpa only [firstPhase,lastPhase,Rolling1588.firstPhase,Rolling1588.lastPhase,List.append_assoc] using
     compose_roundtrip (FrontierEntry1591Native.forward base) (Rolling1588.stackForward isA)
       (skywalkArithmeticClear base) (Rolling1588.stackReverse isA)
-      (FrontierEntry1591NativeH.inverse base) s mp mr clearM twice stack
-      (fun mn mi=>FrontierEntry1591NativeH.inverse_roundtrip base hn x y hx s mn mi input)
+      (FrontierEntry1591Native.inverse base) s mp mr clearM twice stack
+      (fun mn mi=>FrontierEntry1591Native.inverse_roundtrip base hn x y hx s mn mi input)
 
 /-- The actual native722 placement needs no additional zero-bit condition.
 Its integer facts are supplied by the matching A/B stack theorems. -/
@@ -25560,13 +25497,10 @@ theorem firstPhase_metrics (isA : Bool) :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem lastPhase_metrics (isA : Bool) :
-    toffoliCount (lastPhase isA)+8=toffoliCount FrontierEntry1591Kernel.lastPhase ∧
+    toffoliCount (lastPhase isA)+4=toffoliCount FrontierEntry1591Kernel.lastPhase ∧
     measurementCount (lastPhase isA)=measurementCount FrontierEntry1591Kernel.lastPhase ∧
-    gateSlots (lastPhase isA)≤gateSlots FrontierEntry1591Kernel.lastPhase+101*(if isA then 24 else 12)+31+10000 := by
+    gateSlots (lastPhase isA)=gateSlots FrontierEntry1591Kernel.lastPhase+101*(if isA then 24 else 12)+31 := by
   have stack := stackReverse_metrics isA
-  have old := FrontierEntry1591Native.counts base
-  have new := FrontierEntry1591NativeH.counts base
-  have sl := FrontierEntry1591NativeH.slots_le base
   simp only [lastPhase,FrontierEntry1591Kernel.lastPhase,toffoliCount_append,
     measurementCount_append,gateSlots_append]
   exact ⟨by omega,by omega,by omega⟩
@@ -25579,7 +25513,7 @@ theorem firstPhase_physical (isA : Bool) : GatePhysical (firstPhase isA) := by
 theorem lastPhase_physical (isA : Bool) : GatePhysical (lastPhase isA) := by
   simpa only [lastPhase,gatePhysical_append] using
     And.intro (And.intro mappedClear_physical (stackReverse_physical isA))
-      (FrontierEntry1591NativeH.physical base base_pool_nodup)
+      (FrontierEntry1591Native.physical base base_pool_nodup).2
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -25664,7 +25598,7 @@ theorem last_hosted_support_subset_old (isA : Bool) :
         {base 721,base 722} := by
   have oldFree : ∀q∈[base 718,base 719],q∉wires (lastPhase isA) := by
     intro q hq
-    apply last_free_of_old
+    rw [last_support_eq]
     exact FrontierEntry1591Kernel.last_host_free q (by
       simp only [FrontierEntry1591Native.hostSites,List.mem_toFinset,List.mem_cons,
         List.not_mem_nil,or_false]
@@ -25674,10 +25608,8 @@ theorem last_hosted_support_subset_old (isA : Bool) :
     fun q hq=>last_hosts_free isA q (by
       simp only [phaseHosts,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq ⊢
       tauto)
-  have h := phase_support_subset_old (lastPhase isA) oldFree newFree
-  rw [FrontierEntry1591Native.hosted_support] at h ⊢
-  exact h.trans (Finset.union_subset_union (Finset.image_subset_image (last_support_sub isA))
-    (Finset.Subset.refl _))
+  simpa only [FrontierEntry1591Native.hosted_support,last_support_eq] using
+    phase_support_subset_old (lastPhase isA) oldFree newFree
 
 private theorem extra_support : ({base 721,base 722} : Finset Wire)⊆OB5Support.logicalSites := by
   have site (i : Nat) (hi : i=721 ∨ i=722) : base i∈OB5Support.logicalSites := by
@@ -25763,9 +25695,9 @@ theorem exitSlotGrowth_eq : exitSlotGrowth=11027 := rfl
 /- The deltas are proved with numerals (`omega` over the symbolic `halfExtra` atom makes the kernel
 recurse too deeply on these two goals) and restated with the named growth constants. -/
 private theorem entryKernel_resource_delta_num :
-    toffoliCount entryKernel+237=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+233=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
-    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+12554) := by
+    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(53762+12554) := by
   have first := firstPhase_metrics true
   have last := lastPhase_metrics false
   have field := entryFieldHosted_resource_delta
@@ -25778,16 +25710,16 @@ private theorem entryKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryKernel_resource_delta :
-    toffoliCount entryKernel+237=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+233=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
-    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+entrySlotGrowth) := by
+    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(53762+entrySlotGrowth) := by
   rw [entrySlotGrowth_eq]
   exact entryKernel_resource_delta_num
 
 private theorem exitKernel_resource_delta_num :
-    toffoliCount exitKernel+237=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+233=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
-    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+11027) := by
+    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(54865+11027) := by
   have first := firstPhase_metrics false
   have last := lastPhase_metrics true
   have field := exitFieldHosted_resource_delta
@@ -25800,9 +25732,9 @@ private theorem exitKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitKernel_resource_delta :
-    toffoliCount exitKernel+237=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+233=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
-    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+exitSlotGrowth) := by
+    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(54865+exitSlotGrowth) := by
   rw [exitSlotGrowth_eq]
   exact exitKernel_resource_delta_num
 
@@ -25880,7 +25812,7 @@ private theorem first_hosted_768_free (isA : Bool) :
 private theorem last_hosted_768_free (isA : Bool) :
     base 768∉wires (renameProgram Rolling1588Lifetime.phaseHost (lastPhase isA)) := by
   apply phase_free_of_raw _ _ (by decide +kernel)
-  apply Rolling1588Lifetime.last_free_of_old
+  rw [Rolling1588Lifetime.last_support_eq]
   exact raw_768_free.2
 
 private theorem first_hosted_718_free (isA : Bool) :
@@ -25892,7 +25824,7 @@ private theorem first_hosted_718_free (isA : Bool) :
 private theorem last_hosted_718_free (isA : Bool) :
     base 718∉wires (renameProgram Rolling1588Lifetime.phaseHost (lastPhase isA)) := by
   apply phase_free_of_raw _ _ (by decide +kernel)
-  apply Rolling1588Lifetime.last_free_of_old
+  rw [Rolling1588Lifetime.last_support_eq]
   exact FrontierEntry1591Kernel.last_host_free _ (by simp [FrontierEntry1591Native.hostSites])
 
 theorem entryKernel_768_free : base 768∉wires entryKernel := by
@@ -29189,23 +29121,23 @@ private def DeltaSub (P Q : Program) (t m slots : Nat) : Prop :=
   toffoliCount P+t=toffoliCount Q ∧ measurementCount P=measurementCount Q+m ∧
     gateSlots P≤gateSlots Q+slots
 
-private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 237 106 (63762+Rolling1588.entrySlotGrowth))
+private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 233 106 (53762+Rolling1588.entrySlotGrowth))
     (L : ControlledPointLayout) (c : Fp) :
-    DeltaSub (division K L c) (division K0 L c) 237 106 (63762+Rolling1588.entrySlotGrowth) := by
+    DeltaSub (division K L c) (division K0 L c) 233 106 (53762+Rolling1588.entrySlotGrowth) := by
   simp only [DeltaSub,division,FrontierEntry1591Callers.entry,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
 
-private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 237 106 (64865+Rolling1588.exitSlotGrowth))
-    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 237 106 (64865+Rolling1588.exitSlotGrowth) := by
+private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 233 106 (54865+Rolling1588.exitSlotGrowth))
+    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 233 106 (54865+Rolling1588.exitSlotGrowth) := by
   simpa only [DeltaSub,exit,renameProgram_counts,rename_gateSlots] using h
 
 private theorem gen_delta_of_shapes (L : ControlledPointLayout)
     (D D0 : Fp→Program) (S S0 P P0 G G0 : Program) (cx cy : Fp)
     (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D0 S0 P0 cx cy)
-    (hd : ∀c,DeltaSub (D c) (D0 c) 237 106 (63762+Rolling1588.entrySlotGrowth))
-    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 237 106 (64865+Rolling1588.exitSlotGrowth)) :
-    DeltaSub G G0 474 212 (128627+Rolling1588.slotGrowth) := by
+    (hd : ∀c,DeltaSub (D c) (D0 c) 233 106 (53762+Rolling1588.entrySlotGrowth))
+    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 233 106 (54865+Rolling1588.exitSlotGrowth)) :
+    DeltaSub G G0 466 212 (108627+Rolling1588.slotGrowth) := by
   subst G G0
   have d:=hd (-cy)
   simp only [Delta,DeltaLe,DeltaSub,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
@@ -29214,7 +29146,7 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 474 212 (128627+Rolling1588.slotGrowth) := by
+    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 466 212 (108627+Rolling1588.slotGrowth) := by
   have squareCounts:=SquareCarryLoan719BF.counts_eq L
   have squareSlots:=SquareCarryLoan719BF.slots_eq L
   exact gen_delta_of_shapes L
@@ -29232,14 +29164,14 @@ private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
       Rolling1588.exitKernel_resource_delta L)
 
 theorem gen_resource_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+474=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+466=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ControlLoan1589BFFinal.gen L cx cy)+212 ∧
-    gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+(128627+Rolling1588.slotGrowth) :=
+    gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+(108627+Rolling1588.slotGrowth) :=
   gen_delta L cx cy
 
 private theorem wrapper_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : DeltaSub P Q 474 212 (128627+Rolling1588.slotGrowth)) :
-    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 474 212 (128627+Rolling1588.slotGrowth) := by
+    (P Q : Program) (h : DeltaSub P Q 466 212 (108627+Rolling1588.slotGrowth)) :
+    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 466 212 (108627+Rolling1588.slotGrowth) := by
   simp only [DeltaSub,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -29282,7 +29214,7 @@ theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
       Rolling1588.exitKernel_physical L hw hn) cx cy
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen L cx cy)≤49336359+Rolling1588.slotGrowth := by
+    gateSlots (gen L cx cy)≤49316359+Rolling1588.slotGrowth := by
   have diff:=(gen_delta L cx cy).2.2
   have old:=ControlLoan1589BFFinal.gen_slots L hw cx cy
   omega
@@ -29389,7 +29321,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152564 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152572 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -29401,7 +29333,7 @@ theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50139199+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50119199+Rolling1588.slotGrowth := by
   have diff:=(wrapper_delta layout C cy _ _ (gen_delta layout cx cy)).2.2
   have old:=ControlLoan1589BFFinal.wrapper_slots C cx cy
   omega
@@ -29413,7 +29345,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152564,1499965,1588,50139199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152572,1499965,1588,50119199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -29430,7 +29362,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152564 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152572 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -29452,7 +29384,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50139199+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50119199+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program,gateSlots]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -29468,7 +29400,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C))≤1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50139199+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C))≤50119199+Rolling1588.slotGrowth
     rw [normalize_slots];exact program_gateSlots C
 
 end ECDSAAdd.Entrant.Rolling1588BFFinal
