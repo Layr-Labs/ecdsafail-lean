@@ -7366,8 +7366,28 @@ def withLowK2 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire)
 
 def branchCK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
   OwnDiagAll12Square.gPrep L++
-    withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyC L control)++
+    withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCK L control)++
     OwnDiagAll12Square.gClear L
+
+set_option maxHeartbeats 4000000 in
+theorem withLowK2_bodyCK (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) :
+    toffoliCount (withLowK2 L ext control src dst (OwnDiagAll12Square.bodyCK L control))+3=
+      toffoliCount (withLowK2 L ext control src dst (OwnDiagAll12Square.bodyC L control)) ∧
+    measurementCount (withLowK2 L ext control src dst (OwnDiagAll12Square.bodyCK L control))=
+      measurementCount (withLowK2 L ext control src dst (OwnDiagAll12Square.bodyC L control)) ∧
+    wires (withLowK2 L ext control src dst (OwnDiagAll12Square.bodyCK L control))⊆
+      wires (withLowK2 L ext control src dst (OwnDiagAll12Square.bodyC L control)) ∧
+    Challenge.gateSlots (withLowK2 L ext control src dst (OwnDiagAll12Square.bodyCK L control))≤
+      Challenge.gateSlots (withLowK2 L ext control src dst (OwnDiagAll12Square.bodyC L control)) := by
+  have r := OwnDiagAll12Square.bodyCK_rel L hw control
+  refine ⟨?_,?_,?_,?_⟩
+  · simp only [withLowK2,toffoliCount_append,(renameProgram_counts _ _).1]; omega
+  · simp only [withLowK2,measurementCount_append,(renameProgram_counts _ _).2]; omega
+  · simp only [withLowK2,wires_append,renameProgram_support]
+    repeat' apply Finset.union_subset_union
+    all_goals first | exact Finset.image_subset_image r.2.2.1 | exact Finset.Subset.refl _
+  · simp only [withLowK2,Challenge.gateSlots_append,Baselines.rename_gateSlots]; omega
 
 def branchBF (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
   withLowK2 L ext control L.core.high (L.core.product.take 256) (ControlLoan1589BFFold.bBody L control)
@@ -7990,7 +8010,7 @@ theorem reflection_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   simpa only [reflection,eq] using old
 
 def middleCK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
-  LowZero18Square.withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyC L control)
+  LowZero18Square.withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCK L control)
 
 theorem middleCK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (S O : Nat) (hO : O<SquareReduction.p)
@@ -8009,11 +8029,11 @@ theorem middleCK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     have d := (List.drop_sublist 128 L.core.y).count_le q
     simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
     omega
-  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (OwnDiagAll12Square.bodyC L control) := fun q hq hw' =>
-    he.away q hq (List.mem_toFinset.mp (OwnDiagAll12Square.bodyC_support L hw nd control hw'))
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (OwnDiagAll12Square.bodyCK L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (OwnDiagAll12Square.bodyCK_support L hw nd control hw'))
   apply LowZero18Square.withLowK2_correct L hw control hn L.core.sum L.core.product srcCount (fun _ => le_rfl)
     (by simp [L.core.sum_length hw.core]) (by simp [L.core.sum_length hw.core])
-    (by simp [hw.core.product,L.core.sum_length hw.core]) ext he.nodup he.away he.len (OwnDiagAll12Square.bodyC L control) hbody
+    (by simp [hw.core.product,L.core.sum_length hw.core]) ext he.nodup he.away he.len (OwnDiagAll12Square.bodyCK L control) hbody
     s records hc hp0 hz
   intro t m dstValue same
   have ctrlT : t.basis control=s.basis control :=
@@ -8024,7 +8044,7 @@ theorem middleCK_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have outO : regValue L.core.out t.basis=O :=
     (regValue_congr _ _ _ (fun q hq => same q
       (fun hp => List.disjoint_left.mp (L.product_out_disjoint nd) hp hq))).trans ho
-  have r := OwnDiagAll12Square.accMiddleCF_body L hw control hn M O hO t m pv
+  have r := OwnDiagAll12Square.accMiddleCFK_body L hw control hn M O hO t m pv
     (by intro h; rw [ctrlT] at h; simp [M,h]) clean outO
   rw [ctrlT] at r
   exact r
@@ -8553,7 +8573,7 @@ theorem withLowK2_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
 
 theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (raw L ext control)+158=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
+    toffoliCount (raw L ext control)+161=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
     measurementCount (raw L ext control)+56=measurementCount (SquareCarryLoan719BF.raw L ext control) := by
   have low := L.core.low_length hw.core
   have high := L.core.high_length hw.core
@@ -8561,6 +8581,7 @@ theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
   have c := withLowK2_counts_diff L hw ext control L.core.sum L.core.product
     (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
   have b := withLowK2_counts_diff L hw ext control L.core.high (L.core.product.take 256)
     (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
   have a := withLowK2_counts_diff L hw ext control L.core.low (L.core.product.take 256)
@@ -8583,6 +8604,7 @@ theorem raw_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
   have c := withLowK2_support_subset L hw ext control L.core.sum L.core.product
     (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
   have b := withLowK2_support_subset L hw ext control L.core.high (L.core.product.take 256)
     (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
   have a := withLowK2_support_subset L hw ext control L.core.low (L.core.product.take 256)
@@ -8591,7 +8613,7 @@ theorem raw_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     LowZero18Square.branchAF,SquareCarryLoan719BF.branchCK,SquareCarryLoan719BF.branchBF,
     SquareCarryLoan719BF.branchAF,reflection,SquareCarryLoan719BF.reflection,wires_append]
   repeat' apply Finset.union_subset_union
-  all_goals first | exact c | exact b | exact a | exact Finset.Subset.refl _
+  all_goals first | exact k3.trans c | exact c | exact b | exact a | exact Finset.Subset.refl _
 
 theorem raw_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
@@ -8602,6 +8624,7 @@ theorem raw_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
   have c := withLowK2_slots_le L hw ext control L.core.sum L.core.product
     (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
   have b := withLowK2_slots_le L hw ext control L.core.high (L.core.product.take 256)
     (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
   have a := withLowK2_slots_le L hw ext control L.core.low (L.core.product.take 256)
@@ -8618,7 +8641,7 @@ private theorem mRename (f : Wire→Wire) (P : Program) :
     measurementCount (renameProgram f P)=measurementCount P := (renameProgram_counts f P).2
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+158=toffoliCount (SquareCarryLoan719BF.program L) ∧
+    toffoliCount (program L)+161=toffoliCount (SquareCarryLoan719BF.program L) ∧
     measurementCount (program L)+56=measurementCount (SquareCarryLoan719BF.program L) := by
   have h := raw_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
@@ -8626,7 +8649,7 @@ theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
     fastCandidate,SquareCarryLoan719BF.fastCandidate,tRename,mRename] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=52216 ∧ measurementCount (program L)=53019 := by
+    toffoliCount (program L)=52213 ∧ measurementCount (program L)=53019 := by
   have a := counts_diff L hw
   have b := SquareCarryLoan719BF.counts L hw
   constructor <;> omega
@@ -8715,6 +8738,12 @@ private theorem raw_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
   have c := withLowK2_physical_of_old L hw ext control hn he L.core.sum L.core.product
     (OwnDiagAll12Square.bodyC L control) sc.2.2.1 (fun _=>le_rfl)
     (by omega) (by omega) (by rw [hw.core.product,sum]) old.1.1.1.1.2
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
+  have c : GatePhysical (withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCK L control)) := by
+    have pb := OwnDiagAll12Square.bodyCK_physical L hw (List.nodup_cons.mp hn).2 control (List.nodup_cons.mp hn).1
+    have pr := gatePhysical_rename (foldPerm L ext) (foldPerm L ext).injective _ pb
+    simp only [withLowK2,gatePhysical_append] at c ⊢
+    tauto
   have b := withLowK2_physical_of_old L hw ext control hn he L.core.high (L.core.product.take 256)
     (ControlLoan1589BFFold.bBody L control) sc.2.1 sc.2.2.2
     (by omega) (by omega) (by omega) old.1.1.2
@@ -8777,7 +8806,7 @@ def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
     (exit Rolling1588.exitKernel L) cx cy
 
 private def Metrics (P Q : Program) : Prop :=
-  toffoliCount P+158=toffoliCount Q ∧ measurementCount P+56=measurementCount Q ∧
+  toffoliCount P+161=toffoliCount Q ∧ measurementCount P+56=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private theorem gen_metrics_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
@@ -8799,7 +8828,7 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
     ⟨counts.1,counts.2,LowZero18Square.slots_le L hw⟩
 
 theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+158=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+161=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)+56=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
   ⟨(gen_metrics L hw cx cy).1,(gen_metrics L hw cx cy).2.1⟩
 
@@ -8870,7 +8899,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
     (Rolling1588BFFinal.wrapper_qubits C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152444 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152441 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -8893,7 +8922,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152444,1499935,1588,50118933+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152441,1499935,1588,50118933+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -8910,7 +8939,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152444 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152441 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -18066,7 +18095,7 @@ private theorem window_slots (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
 
 private theorem core_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (core L ext control)+158=toffoliCount (ReflectionE1Square.core L ext control) ∧
+    toffoliCount (core L ext control)+161=toffoliCount (ReflectionE1Square.core L ext control) ∧
     measurementCount (core L ext control)+56=measurementCount (ReflectionE1Square.core L ext control) := by
   have low:=L.core.low_length hw.core
   have high:=L.core.high_length hw.core
@@ -18074,6 +18103,7 @@ private theorem core_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.W
   have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
   have c:=window_counts L hw ext control L.core.sum L.core.product
     (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
   have b:=window_counts L hw ext control L.core.high (L.core.product.take 256)
     (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
   have a:=window_counts L hw ext control L.core.low (L.core.product.take 256)
@@ -18095,6 +18125,7 @@ private theorem core_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : 
   have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
   have c:=window_support L hw ext control L.core.sum L.core.product
     (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
   have b:=window_support L hw ext control L.core.high (L.core.product.take 256)
     (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
   have a:=window_support L hw ext control L.core.low (L.core.product.take 256)
@@ -18103,7 +18134,7 @@ private theorem core_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : 
     LowZero18Square.branchAF,SquareCarryLoan719BF.branchCK,SquareCarryLoan719BF.branchBF,
     SquareCarryLoan719BF.branchAF,wires_append]
   repeat' apply Finset.union_subset_union
-  all_goals first | exact c | exact b | exact a | exact Finset.Subset.refl _
+  all_goals first | exact k3.trans c | exact c | exact b | exact a | exact Finset.Subset.refl _
 
 private theorem core_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
@@ -18114,6 +18145,7 @@ private theorem core_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
   have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
   have c:=window_slots L hw ext control L.core.sum L.core.product
     (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
   have b:=window_slots L hw ext control L.core.high (L.core.product.take 256)
     (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
   have a:=window_slots L hw ext control L.core.low (L.core.product.take 256)
@@ -18124,7 +18156,7 @@ private theorem core_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
   omega
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+158=toffoliCount (ReflectionE1Square.program L) ∧
+    toffoliCount (program L)+161=toffoliCount (ReflectionE1Square.program L) ∧
     measurementCount (program L)+56=measurementCount (ReflectionE1Square.program L) := by
   have h:=core_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
@@ -18132,7 +18164,7 @@ theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
     (ReflectionE1Square.place_counts _ _).1,(ReflectionE1Square.place_counts _ _).2] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=51961 ∧ measurementCount (program L)=52764 := by
+    toffoliCount (program L)=51958 ∧ measurementCount (program L)=52764 := by
   have a:=counts_diff L hw
   have b:=ReflectionE1Square.counts L hw
   constructor <;> omega
@@ -18199,7 +18231,7 @@ def bodySwap (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (B : Progra
 def branchCK760 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
   OwnDiagAll12Square.gPrep L++
     LowZero18Square.withLowK2 L ext control L.core.sum L.core.product
-      (bodySwap L ext (OwnDiagAll12Square.bodyC L control))++
+      (bodySwap L ext (OwnDiagAll12Square.bodyCK L control))++
     OwnDiagAll12Square.gClear L
 
 def branchBF760 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
@@ -18529,7 +18561,7 @@ theorem core760_free : sqRet L∉wires (core760 L ext control) := by
     hb hp (by omega) (by omega) (by simp [hw.core.product,high]) _ (ControlLoan1589BFFold.bBody_support L hw nd control)
   have sc := withLowK2_760_free L hw control hn ext hx hdx hext L.core.sum L.core.product
     hs (fun _=>le_rfl) (by omega) (by omega) (by rw [hw.core.product,sum]) _
-    (OwnDiagAll12Square.bodyC_support L hw nd control)
+    (OwnDiagAll12Square.bodyCK_support L hw nd control)
   have coreOff := sqRet_not_core L hw control hn
   have gs := g_core_support L hw
   have gp : sqRet L∉wires (OwnDiagAll12Square.gPrep L) := fun u => coreOff (List.mem_toFinset.mp (gs.1 u))
@@ -18660,7 +18692,7 @@ theorem program760_slots (L : ControlledPointLayout) :
     Challenge.gateSlots_append,Baselines.rename_gateSlots]
 
 theorem counts_diff760 (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program760 L)+158=toffoliCount (ReflectionE1Square.program L) ∧
+    toffoliCount (program760 L)+161=toffoliCount (ReflectionE1Square.program L) ∧
     measurementCount (program760 L)+56=measurementCount (ReflectionE1Square.program L) := by
   rw [(program760_counts L).1,(program760_counts L).2]
   exact ReflectionE1Low48Square.counts_diff L hw
@@ -18715,7 +18747,7 @@ theorem core760_ins : wires (core760 L ext control)⊆
   have b := withLowK2_ins L hw control ext hx hdx hext L.core.high (L.core.product.take 256) _
     (ControlLoan1589BFFold.bBody_support L hw nd control)
   have c := withLowK2_ins L hw control ext hx hdx hext L.core.sum L.core.product _
-    (OwnDiagAll12Square.bodyC_support L hw nd control)
+    (OwnDiagAll12Square.bodyCK_support L hw nd control)
   intro q hq
   simp only [core760,branchCK760,branchBF760,branchAF760,wires_append,Finset.mem_union] at hq
   simp only [ReflectionE1Low48Square.core,LowZero18Square.branchCK,LowZero18Square.branchBF,
@@ -19148,9 +19180,9 @@ theorem branchCK760_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     run (branchCK760 L ext control) records s=run (LowZero18Square.branchCK L ext control) records s := by
   have nd := (List.nodup_cons.mp hn).2
   have dis := L.measured_sum_disjoint nd
-  let W := LowZero18Square.withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyC L control)
+  let W := LowZero18Square.withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCK L control)
   let W' := LowZero18Square.withLowK2 L ext control L.core.sum L.core.product
-    (bodySwap L ext (OwnDiagAll12Square.bodyC L control))
+    (bodySwap L ext (OwnDiagAll12Square.bodyCK L control))
   let mp := measurementCount (OwnDiagAll12Square.gPrep L)
   let u := run (OwnDiagAll12Square.gPrep L) (records.take mp) s
   have prep := OwnDiagAll12Square.gPrep_frame L hw nd s.basis A B ha bound (PairClean.corePad L s.basis hc) hc.cin hc.work
@@ -19188,7 +19220,7 @@ theorem branchCK760_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have mid := withLowK2_swap_run_eq L hw control hn L.core.sum L.core.product srcCount (fun _ => le_rfl)
     (by simp [L.core.sum_length hw.core]) (by simp [L.core.sum_length hw.core])
     (by simp [hw.core.product,L.core.sum_length hw.core]) ext he.nodup he.away he.len _
-    (OwnDiagAll12Square.bodyC_support L hw nd control) u _ cleanU productU hzU old
+    (OwnDiagAll12Square.bodyCK_support L hw nd control) u _ cleanU productU hzU old
   rw [shapeNew,shapeOld,run3,run3,withLowK2_swap_mc]
   exact congrArg _ mid
 
@@ -19600,7 +19632,7 @@ private theorem fact_of_shape (R : Program→Prop) (P Q : Program)
   exact fact
 
 private def Facts (P Q : Program) : Prop :=
-  toffoliCount P+158=toffoliCount Q ∧ measurementCount P+56=measurementCount Q ∧
+  toffoliCount P+161=toffoliCount Q ∧ measurementCount P+56=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private def context (A P B : Program) : Program := A++(P++B)
@@ -19696,7 +19728,7 @@ private theorem gen_facts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : F
   · exact wrap_facts _ _ _ _ _ (generic_facts L hw cx cy)
 
 theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+158=toffoliCount (ReflectionE1TickGap.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+161=toffoliCount (ReflectionE1TickGap.gen L cx cy) ∧
     measurementCount (gen L cx cy)+56=measurementCount (ReflectionE1TickGap.gen L cx cy) ∧
     gateSlots (gen L cx cy)≤gateSlots (ReflectionE1TickGap.gen L cx cy) :=
   ⟨(gen_facts L hw cx cy).1,(gen_facts L hw cx cy).2.1,(gen_facts L hw cx cy).2.2⟩
@@ -19727,7 +19759,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
 
 private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
     (P Q : Program) (h : Facts P Q) :
-    toffoliCount (Edges.wrapper L C cy P)+158=toffoliCount (Edges.wrapper L C cy Q) ∧
+    toffoliCount (Edges.wrapper L C cy P)+161=toffoliCount (Edges.wrapper L C cy Q) ∧
     measurementCount (Edges.wrapper L C cy P)+56=measurementCount (Edges.wrapper L C cy Q) ∧
     gateSlots (Edges.wrapper L C cy P)≤gateSlots (Edges.wrapper L C cy Q) := by
   rcases h with ⟨ht,hm,hs⟩
@@ -19736,7 +19768,7 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151543 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151540 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
   have old:=ReflectionE1TickGap.wrapper_toffoli cx cy hc
   omega
@@ -19914,7 +19946,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151543,1499160,1588,50168933+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151540,1499160,1588,50168933+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -19931,7 +19963,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151543 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151540 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -20774,7 +20806,7 @@ theorem wrapper_qubits760 (C : Point) (cx cy : Fp) :
   exact card.trans (ReflectionE1TickGapLow48.wrapper_qubits760 C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151526 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151523 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
   omega
@@ -20798,7 +20830,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151526,1499144,1588,50170295+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151523,1499144,1588,50170295+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -20815,7 +20847,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151526 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151523 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -20875,7 +20907,7 @@ def program (C : Point) : Program :=
       MeasuredDH.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151520,1499142,1588,50170284+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151517,1499142,1588,50170284+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -20893,13 +20925,13 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151520 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151517 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151520
+    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151517
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499142 := by
@@ -20968,7 +21000,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151518,1499142,1587,50193866⟩
+def bounds : Challenge.Bounds := ⟨2151515,1499142,1587,50193866⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -20986,13 +21018,13 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151518 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151515 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151518
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151515
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499142 := by
@@ -21801,7 +21833,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151516,1499140,1587,50193866⟩
+def bounds : Challenge.Bounds := ⟨2151513,1499140,1587,50193866⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -21819,14 +21851,14 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
         (genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151516 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151513 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151516
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151513
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499140 := by
@@ -23368,7 +23400,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151514,1499138,1587,50193866⟩
+def bounds : Challenge.Bounds := ⟨2151511,1499138,1587,50193866⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -23386,14 +23418,14 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
         (genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151514 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151511 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151514
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151511
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499138 := by
@@ -26040,7 +26072,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper' layout C (tailGen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151269, 1498891, 1587, 50197456⟩
+def bounds : Challenge.Bounds := ⟨2151266, 1498891, 1587, 50197456⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -26052,7 +26084,7 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
   | @some cx cy hc =>
     exact fixed_correct _ control R _ (full_spec' hc control R) (support_used' hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151269 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151266 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -26061,8 +26093,8 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151269 := by
     have st := (stage_counts hc).1
     have old := CodexYParityProbe.program_toffoli (.some hc)
     change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      2151514 at old
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151269
+      2151511 at old
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151266
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498891 := by
