@@ -1,8 +1,8 @@
-import ECDSAAdd.Submission.Entrant.FusedBoundaryFinal
+import ECDSAAdd.Submission.Entrant.CodexAffineProbe
 
 namespace ECDSAAdd.Entrant
-def program := FusedBoundaryFinal.program
-def entry := FusedBoundaryFinal.entry
-def bounds := FusedBoundaryFinal.bounds
-theorem certificate : Challenge.Certificate entry bounds := FusedBoundaryFinal.certificate
+def program := CodexAffineProbe.program
+def entry := CodexAffineProbe.entry
+def bounds := CodexAffineProbe.bounds
+theorem certificate : Challenge.Certificate entry bounds := CodexAffineProbe.certificate
 end ECDSAAdd.Entrant
