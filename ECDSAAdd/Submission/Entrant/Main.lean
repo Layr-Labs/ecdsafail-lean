@@ -12634,7 +12634,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
     (Rolling1588BFFinal.wrapper_qubits C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152412 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152410 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -12657,7 +12657,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152412,1499935,1588,50119199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152410,1499935,1588,50119199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -12674,7 +12674,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152412 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152410 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -17908,7 +17908,7 @@ private theorem wrapper_counts_delta (L : ControlledPointLayout) (C : Point) (cy
   constructor <;> omega
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151821 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151819 := by
   have diff:=(wrapper_counts_delta layout (.some hc) cy _ _
     (gen_counts_delta layout layout_widths cx cy)).1
   have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
@@ -17951,7 +17951,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151821,1499214,1588,50169199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151819,1499214,1588,50169199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -17968,7 +17968,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151821 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151819 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -20355,6 +20355,296 @@ theorem count_508 : count 1 508=62 := by decide +kernel
 end ECDSAAdd.Entrant.TickRanges
 end
 
+namespace ECDSAAdd.Entrant
+open Arithmetic MappedCompressed Secp256k1 History5
+
+set_option maxRecDepth 16384
+set_option maxHeartbeats 16000000
+
+/-- Return the final basis integer when both measurement outcomes preserve phase at every step. -/
+def phaseClean508 : Program → Nat → Option Nat
+  | [], b => some b
+  | .X t :: p, b => phaseClean508 p (b ^^^ 2^t)
+  | .CX c t :: p, b => phaseClean508 p (flipN_t8 b t (b.testBit c))
+  | .CCX a c t :: p, b => phaseClean508 p (flipN_t8 b t (b.testBit a && b.testBit c))
+  | .measureX t c₀ c₁ :: p, b =>
+    let d := flipN_t8 b t (b.testBit t)
+    if corrP_t8 c₀ false d = false ∧ corrP_t8 c₁ (b.testBit t) d = false then
+      phaseClean508 p d
+    else none
+
+theorem phaseClean508_sound (p : Program) (b v : Nat) (h : phaseClean508 p b = some v) (m : List Bool) :
+    runN_t8 p m (false,b) = (false,v) := by
+  induction p generalizing b m with
+  | nil =>
+    simp [phaseClean508] at h
+    simp [runN_t8,h]
+  | cons g p ih =>
+    cases g with
+    | X t => exact ih _ h m
+    | CX c t => exact ih _ h m
+    | CCX a c t => exact ih _ h m
+    | measureX t c₀ c₁ =>
+      simp only [phaseClean508] at h
+      split at h
+      · rename_i clean
+        obtain ⟨h0,h1⟩ := clean
+        have suffix :=  ih _ h m.tail
+        cases m with
+        | nil => simpa [runN_t8,List.headD,h0,h1] using suffix
+        | cons z ms => cases z <;> simpa [runN_t8,List.headD,h0,h1] using suffix
+      · contradiction
+
+def agree508 (p q : Program) (b : Nat) : Bool :=
+  match phaseClean508 q b with
+  | none => false
+  | some v => decide (phaseClean508 p b = some v)
+
+theorem agree508_sound (p q : Program) (b : Nat) (h : agree508 p q b = true) (m : List Bool) :
+    runN_t8 p m (false,b) = runN_t8 q m (false,b) := by
+  cases hq : phaseClean508 q b with
+  | none => simp [agree508,hq] at h
+  | some v =>
+    have hp : phaseClean508 p b = some v := by simpa [agree508,hq] using h
+    rw [phaseClean508_sound p b v hp, phaseClean508_sound q b v hq]
+
+def forward6 : Program :=
+  [.CX 525 790,
+   .CX 789 790,
+   .CX 527 528,
+   .CX 787 528,
+   .CCX 790 528 786,
+   .CX 525 788,
+   .CX 526 788,
+   .CX 787 788,
+   .CCX 788 524 1556,
+   .CX 790 787,
+   .CCX 787 786 1553,
+   .CX 524 527,
+   .CX 786 527,
+   .CX 789 527,
+   .CX 790 787,
+   .CX 1553 787,
+   .CCX 527 787 1554,
+   .CX 525 526,
+   .CX 1554 526,
+   .CX 1556 526,
+   .CX 523 1554,
+   .CX 524 1554,
+   .CX 525 1554,
+   .CX 527 1554,
+   .CX 1553 1554,
+   .CCX 526 1554 529,
+   .CX 523 1553,
+   .CX 525 1553,
+   .CX 786 1553,
+   .CX 788 1553,
+   .CCX 1553 526 1552,
+   .CX 523 524,
+   .CX 525 787,
+   .CX 525 790,
+   .CX 1554 1557,
+   .CX 1552 1558,
+   .CX 524 525,
+   .CX 787 525,
+   .CX 523 1553,
+   .CX 524 1553,
+   .CX 527 1553,
+   .CX 786 1553,
+   .CX 1552 1553,
+   .CX 1554 1553,
+   .CX 523 1554,
+   .CX 524 1554,
+   .CX 527 1554,
+   .CX 529 1554,
+   .CX 786 1554,
+   .CX 1552 1554,
+   .CX 523 1552,
+   .CX 528 1552,
+   .CX 786 1552,
+   .CX 787 1552,
+   .CX 788 1552,
+   .CX 790 1552,
+   .CX 1554 1552,
+   .CX 1557 1552,
+   .CX 524 528,
+   .CX 527 528,
+   .CX 529 528,
+   .CX 787 528,
+   .CX 788 528,
+   .CX 790 528,
+   .CX 1552 528,
+   .X 527,
+   .CX 523 527,
+   .CX 524 527,
+   .CX 525 527,
+   .CX 526 527,
+   .CX 529 527,
+   .CX 786 527,
+   .CX 1554 527,
+   .CX 1557 527,
+   .CX 1558 527,
+   .CX 525 526,
+   .measureX 787 [] [.Z 1552, .Z 523, .Z 529, .Z 1556, .Z 789, .CZ 1554 524, .CZ 1554 523, .CZ 1554 529, .CZ 1554 789, .CZ 1554 790, .CZ 1554 786, .CZ 1553 523, .CZ 1553 529, .CZ 1553 788, .CZ 1553 789, .CZ 527 789, .CZ 1552 789, .CZ 525 1556, .CZ 525 789, .CZ 524 523, .CZ 524 1556, .CZ 524 789, .CZ 523 529],
+   .X 786,
+   .measureX 786 [] [.Z 1553, .Z 1552, .Z 525, .Z 523, .Z 529, .Z 1558, .Z 788, .CZ 1554 524, .CZ 1553 524, .CZ 527 1552],
+   .measureX 790 [] [.CZ 523 789],
+   .measureX 789 [] [.Z 1554, .Z 1553, .Z 1552, .CZ 1554 523, .CZ 523 529, .CZ 523 1558, .CZ 523 1557],
+   .measureX 1557 [] [.Z 527, .Z 1552, .CZ 1554 524, .CZ 527 524, .CZ 527 529, .CZ 527 788, .CZ 524 529],
+   .measureX 1556 [] [.CZ 523 788, .CZ 524 788],
+   .measureX 788 [] [.Z 1553, .Z 525, .Z 1558, .CZ 1554 524, .CZ 525 524, .CZ 524 529, .CZ 524 1558],
+   .measureX 1558 [] [.Z 1553, .Z 529, .CZ 1554 525, .CZ 1553 527],
+   .measureX 529 [] [.Z 1552, .CZ 1554 525, .CZ 527 1552, .CZ 1552 525],
+   .CX 526 786]
+
+theorem forward6_counts :
+    toffoliCount forward6 = 6 ∧ measurementCount forward6 = 9 := by decide +kernel
+
+theorem forward6_wires : wires forward6 ⊆ sitesT8.toFinset := by decide +kernel
+
+theorem forward6_physical : GatePhysical forward6 := by
+  simp (config := {maxSteps := 4000000}) [forward6,GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate]
+
+abbrev previousForward508 : Program := tick508ExF ++ tickMF
+
+def forward6_pair (uv : Nat × Nat) : Bool :=
+  [false,true].all fun g => [false,true].all fun s =>
+    agree508 forward6 previousForward508 (encN_t8 (pre508 g s uv.1 uv.2) sitesT8)
+
+theorem forward6_table : pairs508.all forward6_pair = true := by decide +kernel
+
+theorem forward6_forced (g s : Bool) (uv : Nat × Nat) (member : uv ∈ pairs508) (m : List Bool) :
+    run forward6 m ⟨false,pre508 g s uv.1 uv.2⟩ = run previousForward508 m ⟨false,pre508 g s uv.1 uv.2⟩ := by
+  have table := forward6_table
+  simp only [List.all_eq_true] at table
+  have row := table uv member
+  simp only [forward6_pair,List.all_eq_true] at row
+  have h := row g (by cases g <;> simp) s (by cases s <;> simp)
+  have eqr := agree508_sound _ _ _ h m
+  rw [tb_enc_t8 (pre508 g s uv.1 uv.2) sitesT8 (pre508_supp g s uv.1 uv.2)]
+  simp only [run_sim_t8,eqr]
+
+theorem forward6_resources :
+    toffoliCount forward6 + 2 = toffoliCount previousForward508 ∧
+    measurementCount forward6 = measurementCount previousForward508 ∧
+    Challenge.gateSlots forward6 ≤ Challenge.gateSlots previousForward508 := by decide +kernel
+
+theorem forward6_on_site (g s : Bool) (uv : Nat × Nat) (h : uv ∈ pairs508)
+    (st : State) (bits : ∀ q ∈ sitesT8, st.basis q = pre508 g s uv.1 uv.2 q) (m : List Bool) :
+    run forward6 m st = run previousForward508 m st := by
+  apply forced_eqN forward6 previousForward508 sitesT8 (pre508 g s uv.1 uv.2) 9
+    (recsUpTo 9) (take_recsUpTo 9) forward6_wires (by decide +kernel)
+    (by decide +kernel) (by decide +kernel) _ st bits m
+  intro r _
+  rw [forward6_forced g s uv h r]
+  exact ⟨rfl, fun _ _ => rfl⟩
+
+end ECDSAAdd.Entrant
+
+namespace ECDSAAdd.Entrant.ForwardSixPlacement
+open ECDSAAdd Arithmetic MappedCompressed Secp256k1 History5 OB5
+open Rolling1588.Integer
+set_option maxRecDepth 20000
+set_option maxHeartbeats 2000000
+
+theorem at_stage (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a : State) (hs : Stage base isA x p 508 a.basis) (r : List Bool) :
+    run forward6 r a = run (tick508ExF ++ tickMF) r a := by
+  obtain ⟨g,s,uv,huv,bits⟩ := stage508_bitsT_new isA x hx0 hx a hs
+  exact forward6_on_site g s uv huv a bits r
+
+theorem place (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a : State) (stage : Stage base isA x p 508 a.basis) (r : List Bool) :
+    run (renameProgram (sig 510) forward6) r (pullState (sig 507) a) =
+    run (renameProgram (sig 508) tick508ExF ++ renameProgram (sig 510) tickMF)
+      r (pullState (sig 507) a) := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have z8 := stage_zero_gen isA x 508 508 (by omega) (by omega) a.basis stage
+  have z9 := stage_zero_gen isA x 508 509 (by omega) (by omega) a.basis stage
+  have z10 := stage_zero_gen isA x 508 510 (by omega) (by omega) a.basis stage
+  have m8 : pullState (sig 507) a = pullState (sig 508) a := OB5.pull_step 508 (by omega) a z8.1 z8.2
+  have m9 : pullState (sig 508) a = pullState (sig 509) a := OB5.pull_step 509 (by omega) a z9.1 z9.2
+  have m10 : pullState (sig 509) a = pullState (sig 510) a := OB5.pull_step 510 (by omega) a z10.1 z10.2
+  let b := run tick508ExF (r.take (measurementCount tick508ExF)) a
+  have s9 : Stage base isA x p 509 b.basis := by
+    have step := (Rolling1588.Integer.step_spec base isA base_pool_nodup StackOB5.historyAbove x p 508
+      hp0 hx0 hpo hp gap hx cop (by omega) a (r.take (measurementCount tick508ExF)) stage).2
+    simpa only [pack508 isA, List.append_nil, tick508ExF_explicit, b] using step
+  have b9 := stage_zero_gen isA x 509 509 (by omega) (by omega) b.basis s9
+  have b10 := stage_zero_gen isA x 509 510 (by omega) (by omega) b.basis s9
+  have align : pullState (sig 508) b = pullState (sig 510) b :=
+    (OB5.pull_step 509 (by omega) b b9.1 b9.2).trans (OB5.pull_step 510 (by omega) b b10.1 b10.2)
+  rw [m8, run_append, (renameProgram_counts _ _).2, OB5.run_rename 508 (by omega)]
+  change run (renameProgram (sig 510) forward6) r (pullState (sig 508) a) =
+    run (renameProgram (sig 510) tickMF) (r.drop (measurementCount tick508ExF)) (pullState (sig 508) b)
+  rw [align, m9, m10, OB5.run_rename 510 (by omega), OB5.run_rename 510 (by omega),
+    at_stage isA x hx0 hx a stage, run_append]
+
+end ECDSAAdd.Entrant.ForwardSixPlacement
+
+namespace ECDSAAdd.Entrant.ForwardSixPlacement
+open Arithmetic MappedCompressed Secp256k1 History5 OB5
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
+
+def prior : Program := renameProgram (sig 508) tick508ExF ++ renameProgram (sig 510) tickMF
+def merged : Program := renameProgram (sig 510) forward6
+def after (isA : Bool) : Program :=
+  renameProgram (sig 510) (Rolling1588.packAtTick isA 510) ++ renameProgram (sig 511) tickF
+
+theorem prior_resources : toffoliCount merged+2=toffoliCount prior ∧
+    measurementCount merged=measurementCount prior ∧ Challenge.gateSlots merged ≤ Challenge.gateSlots prior := by
+  have h := forward6_resources
+  simpa only [merged, prior, previousForward508, toffoliCount_append, measurementCount_append,
+    Challenge.gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots] using h
+
+theorem prior_support : wires merged ⊆ wires prior := by decide +kernel
+
+theorem previous_shape (isA : Bool) :
+    Rolling1588.stackForward isA = Rolling1588.forward isA 1 507 ++ (prior ++ after isA) := by
+  have snoc := Rolling1588.Integer.forward_snoc isA 1 507
+  have pack : Rolling1588.Integer.packFirst base isA 508=[] := by
+    simp only [Rolling1588.Integer.packFirst,show ¬(508:Nat)=5 from by decide,if_false,
+      Rolling1588.Integer.pack508 isA]
+  rw [show (1:Nat)+507=508 by rfl,pack,List.append_nil,Rolling1588.Integer.forward_eq_packets,
+    Rolling1588.Integer.forward_eq_packets,tick508ExF_explicit] at snoc
+  rw [Rolling1588.stackForward,snoc]
+  simp only [prior,after,renameProgram,List.map_append,List.append_assoc]
+
+theorem prior_at_prefix (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (s : State) (first : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis)
+    (u r : List Bool) :
+    run merged r (run (Rolling1588.forward isA 1 507) u s) =
+    run prior r (run (Rolling1588.forward isA 1 507) u s) := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have init := Rolling1588.Integer.stage_one base isA x p s first
+  have st := ((Rolling1588.Integer.regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p
+    1 507 hp0 hx0 hpo hp gap hx cop (by omega)) s u init).2
+  have start : pullState (sig (1-1)) s=s := by
+    apply State.extensionality
+    · rfl
+    · funext q
+      change s.basis (sig 0 q)=s.basis q
+      rw [sig_zero]
+  have pre := Rolling1588.Integer.forward_gen isA x hx0 hx 507 1 (by omega) (by omega) s u init
+  rw [start,Rolling1588.Integer.forward_eq_packets] at pre
+  rw [pre]
+  exact place isA x hx0 hx _ st r
+
+theorem replace_at_prefix (P Q R : Program) (s : State) (m : List Bool)
+    (counts : measurementCount P=measurementCount Q)
+    (prefixSame : ∀ u, run P u s=run Q u s)
+    (same : ∀ u v, run merged v (run Q u s)=run prior v (run Q u s)) :
+    run (P ++ (merged ++ R)) m s = run (Q ++ (prior ++ R)) m s := by
+  simp only [run_append P,run_append Q,run_append merged,run_append prior,counts,prior_resources.2.1]
+  rw [prefixSame,same]
+
+end ECDSAAdd.Entrant.ForwardSixPlacement
+
 -- ===== ECDSAAdd.Submission.Entrant.Rolling1588TickGapWalk =====
 section
 -- consolidated import: import ECDSAAdd.Submission.Entrant.TickGap1591Arithmetic
@@ -20402,9 +20692,7 @@ def count (i : Nat) : Nat → Nat
   | n+1 => TickRanges.due i+count (i+1) n
 
 def stackForward (isA : Bool) : Program :=
-  forward isA 1 508 ++
-    renameProgram (sig 510) (tickMF++Rolling1588.packAtTick isA 510) ++
-    renameProgram (sig 511) tickF
+  forward isA 1 507 ++ (ForwardSixPlacement.merged ++ ForwardSixPlacement.after isA)
 
 attribute [local irreducible] forward stackForward Rolling1588.forward
   Rolling1588.Integer.forward Rolling1588.stackForward
@@ -20500,13 +20788,15 @@ theorem forward_metrics (isA : Bool) (i n : Nat) (bound : i+n ≤ 512) :
 theorem count_508 : count 1 508=62 := by decide +kernel
 
 theorem stackForward_metrics (isA : Bool) :
-    toffoliCount (stackForward isA)+62=toffoliCount (Rolling1588.stackForward isA) ∧
+    toffoliCount (stackForward isA)+64=toffoliCount (Rolling1588.stackForward isA) ∧
       measurementCount (stackForward isA)=measurementCount (Rolling1588.stackForward isA) ∧
       Challenge.gateSlots (stackForward isA) ≤ Challenge.gateSlots (Rolling1588.stackForward isA) := by
-  have head := forward_metrics isA 1 508 (by omega)
-  rw [count_508] at head
-  simp only [stackForward,Rolling1588.stackForward,toffoliCount_append,
-    measurementCount_append,Challenge.gateSlots_append]
+  have head := forward_metrics isA 1 507 (by omega)
+  have c : count 1 507=62 := by decide +kernel
+  rw [c] at head
+  have tail := ForwardSixPlacement.prior_resources
+  rw [stackForward,ForwardSixPlacement.previous_shape]
+  simp only [toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem forward_integer_support (isA : Bool) (i n : Nat) (bound : i+n ≤ 512) :
@@ -20531,10 +20821,10 @@ theorem forward_support (isA : Bool) (i n : Nat) (bound : i+n ≤ 512) :
 
 theorem stackForward_support (isA : Bool) :
     wires (stackForward isA)⊆wires (Rolling1588.stackForward isA) := by
-  simp only [stackForward,Rolling1588.stackForward,wires_append]
-  exact Finset.union_subset_union
-    (Finset.union_subset_union (forward_support isA 1 508 (by omega)) (Finset.Subset.refl _))
-      (Finset.Subset.refl _)
+  rw [stackForward,ForwardSixPlacement.previous_shape]
+  simp only [wires_append]
+  exact Finset.union_subset_union (forward_support isA 1 507 (by omega))
+    (Finset.union_subset_union ForwardSixPlacement.prior_support (Finset.Subset.refl _))
 
 private theorem append_run_eq (P Q R : Program) (s : State) (m : List Bool)
     (records : measurementCount P=measurementCount Q)
@@ -20547,12 +20837,11 @@ theorem stackForward_run_eq (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
     (first : W.CompactSkywalkStage base
       (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
     run (stackForward isA) m s=run (Rolling1588.stackForward isA) m s := by
-  have same := append_run_eq (forward isA 1 508) (Rolling1588.forward isA 1 508)
-    (renameProgram (sig 510) (tickMF++Rolling1588.packAtTick isA 510) ++
-      renameProgram (sig 511) tickF) s m
-    (forward_metrics isA 1 508 (by omega)).2.1
-    (fun r=>forward_first_run_eq isA x hx0 hx 508 (by omega) s r first)
-  simpa only [stackForward,Rolling1588.stackForward,List.append_assoc] using same
+  rw [stackForward,ForwardSixPlacement.previous_shape]
+  exact ForwardSixPlacement.replace_at_prefix _ _ _ s m
+    (forward_metrics isA 1 507 (by omega)).2.1
+    (fun r => forward_first_run_eq isA x hx0 hx 507 (by omega) s r first)
+    (ForwardSixPlacement.prior_at_prefix isA x hx0 hx s first)
 
 theorem stackForward_boundary (isA : Bool)
     (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
@@ -20681,7 +20970,7 @@ theorem phases_roundtrip (isA : Bool) (hn : (skywalkSharedWires base).Nodup)
   exact Rolling1588Lifetime.phases_roundtrip isA hn hlo x y hx0 hx s mE mD input
 
 theorem first_metrics (isA : Bool) :
-    toffoliCount (firstPhase isA)+62=toffoliCount (Rolling1588.firstPhase isA) ∧
+    toffoliCount (firstPhase isA)+64=toffoliCount (Rolling1588.firstPhase isA) ∧
       measurementCount (firstPhase isA)=measurementCount (Rolling1588.firstPhase isA) ∧
       gateSlots (firstPhase isA) ≤ gateSlots (Rolling1588.firstPhase isA) := by
   have stack := stackForward_metrics isA
@@ -20734,9 +21023,12 @@ theorem forward_physical (isA : Bool) (i n : Nat) (bound : i+n ≤ 512) :
 
 theorem stackForward_physical (isA : Bool) : GatePhysical (stackForward isA) := by
   have old := Rolling1588.stackForward_physical isA
-  simp only [Rolling1588.stackForward,gatePhysical_append] at old
-  simpa only [stackForward,gatePhysical_append] using
-    And.intro (And.intro (forward_physical isA 1 508 (by omega)) old.1.2) old.2
+  rw [ForwardSixPlacement.previous_shape] at old
+  simp only [gatePhysical_append] at old
+  rw [stackForward]
+  simp only [gatePhysical_append]
+  exact ⟨forward_physical isA 1 507 (by omega),
+    gatePhysical_rename _ (sig_injective 510 (by omega)) _ forward6_physical,old.2.2⟩
 
 theorem first_physical (isA : Bool) : GatePhysical (firstPhase isA) := by
   have old := Rolling1588.firstPhase_physical isA
@@ -20784,7 +21076,7 @@ theorem kernel_run_eq (a b : Bool) (F : Program)
     (fun r=>first_hosted_run_eq a hn x y hx0 hx s r input)
 
 theorem kernel_metrics (a b : Bool) (F : Program) :
-    toffoliCount (kernel a b F)+62=toffoliCount (oldKernel a b F) ∧
+    toffoliCount (kernel a b F)+64=toffoliCount (oldKernel a b F) ∧
       measurementCount (kernel a b F)=measurementCount (oldKernel a b F) ∧
       gateSlots (kernel a b F) ≤ gateSlots (oldKernel a b F) := by
   have first := first_metrics a
@@ -20838,16 +21130,16 @@ theorem exit_correct : ExitCorrect exitKernel := by
 
 private theorem metrics_of_shapes (P Q A B : Program)
     (left : P=A) (right : Q=B)
-    (metrics : toffoliCount A+62=toffoliCount B ∧
+    (metrics : toffoliCount A+64=toffoliCount B ∧
       measurementCount A=measurementCount B ∧ gateSlots A ≤ gateSlots B) :
-    toffoliCount P+62=toffoliCount Q ∧
+    toffoliCount P+64=toffoliCount Q ∧
       measurementCount P=measurementCount Q ∧ gateSlots P ≤ gateSlots Q := by
   cases left
   cases right
   exact metrics
 
 theorem entryKernel_metrics :
-    toffoliCount entryKernel+62=toffoliCount Rolling1588.entryKernel ∧
+    toffoliCount entryKernel+64=toffoliCount Rolling1588.entryKernel ∧
       measurementCount entryKernel=measurementCount Rolling1588.entryKernel ∧
       gateSlots entryKernel ≤ gateSlots Rolling1588.entryKernel := by
   have left : entryKernel=kernel true false Rolling1588.entryFieldHosted := by
@@ -20862,7 +21154,7 @@ theorem entryKernel_metrics :
     (kernel_metrics true false Rolling1588.entryFieldHosted)
 
 theorem exitKernel_metrics :
-    toffoliCount exitKernel+62=toffoliCount Rolling1588.exitKernel ∧
+    toffoliCount exitKernel+64=toffoliCount Rolling1588.exitKernel ∧
       measurementCount exitKernel=measurementCount Rolling1588.exitKernel ∧
       gateSlots exitKernel ≤ gateSlots Rolling1588.exitKernel := by
   have left : exitKernel=kernel false true Rolling1588.exitFieldHosted := by
@@ -21198,14 +21490,14 @@ private def Facts (n : Nat) (P Q : Program) : Prop :=
     gateSlots P ≤ gateSlots Q ∧ wires P⊆wires Q
 
 private theorem append_facts (P Q C : Program)
-    (count : toffoliCount P+62=toffoliCount Q ∧ measurementCount P=measurementCount Q ∧
-      gateSlots P ≤ gateSlots Q) (sub : wires P⊆wires Q) : Facts 62 (P++C) (Q++C) := by
+    (count : toffoliCount P+64=toffoliCount Q ∧ measurementCount P=measurementCount Q ∧
+      gateSlots P ≤ gateSlots Q) (sub : wires P⊆wires Q) : Facts 64 (P++C) (Q++C) := by
   simp only [Facts,toffoliCount_append,measurementCount_append,gateSlots_append,wires_append]
   exact ⟨by omega,by omega,by omega,Finset.union_subset_union sub (Finset.Subset.refl _)⟩
 
 private theorem tail_facts (a : Bool) :
-    Facts 62 (Rolling1588TickGap.tailPhase a) (ReflectionE1.tailP a) := by
-  apply relation_of_shapes (Facts 62) _ _
+    Facts 64 (Rolling1588TickGap.tailPhase a) (ReflectionE1.tailP a) := by
+  apply relation_of_shapes (Facts 64) _ _
     (Rolling1588TickGap.stackForward a++skywalkArithmeticClear base)
     (Rolling1588.stackForward a++skywalkArithmeticClear base)
   · unfold Rolling1588TickGap.tailPhase
@@ -21218,8 +21510,8 @@ private theorem tail_facts (a : Bool) :
 private def restContext (f g : Wire→Wire) (P R : Program) : Program :=
   renameProgram f (renameProgram g P++R)
 
-private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 62 P Q) :
-    Facts 62 (restContext f g P R) (restContext f g Q R) := by
+private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 64 P Q) :
+    Facts 64 (restContext f g P R) (restContext f g Q R) := by
   rcases h with ⟨ht,hm,hs,hw⟩
   have sub : wires (restContext f g P R)⊆wires (restContext f g Q R) := by
     simp only [restContext,renameProgram_support,wires_append]
@@ -21230,8 +21522,8 @@ private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 62 P
   exact ⟨by omega,by omega,by omega,sub⟩
 
 private theorem restE_facts (L : ControlledPointLayout) :
-    Facts 62 (restE L) (ReflectionE1.restE L) := by
-  apply relation_of_shapes (Facts 62) _ _
+    Facts 64 (restE L) (ReflectionE1.restE L) := by
+  apply relation_of_shapes (Facts 64) _ _
     (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase true)
       (Rolling1588.entryFieldHosted++
         renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase false)))
@@ -21245,8 +21537,8 @@ private theorem restE_facts (L : ControlledPointLayout) :
   · exact rest_facts _ _ _ _ _ (tail_facts true)
 
 private theorem restX_facts (L : ControlledPointLayout) :
-    Facts 62 (restX L) (ReflectionE1.restX L) := by
-  apply relation_of_shapes (Facts 62) _ _
+    Facts 64 (restX L) (ReflectionE1.restX L) := by
+  apply relation_of_shapes (Facts 64) _ _
     (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase false)
       (Rolling1588.exitFieldHosted++
         renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase true)))
@@ -21263,8 +21555,8 @@ private def stagesContext (Y M E S X EY N : Program) : Program :=
   (Y++M++E)++(S++X++EY)++N
 
 private theorem stages_facts (Y M E E0 S X X0 EY N : Program)
-    (entry : Facts 62 E E0) (exit : Facts 62 X X0) :
-    Facts 124 (stagesContext Y M E S X EY N) (stagesContext Y M E0 S X0 EY N) := by
+    (entry : Facts 64 E E0) (exit : Facts 64 X X0) :
+    Facts 128 (stagesContext Y M E S X EY N) (stagesContext Y M E0 S X0 EY N) := by
   rcases entry with ⟨et,em,es,ew⟩
   rcases exit with ⟨xt,xm,xs,xw⟩
   have sub : wires (stagesContext Y M E S X EY N)⊆
@@ -21294,8 +21586,8 @@ private theorem old_generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
   rfl
 
 private theorem generic_facts (L : ControlledPointLayout) (cx cy : Fp) :
-    Facts 124 (generic L cx cy) (ReflectionE1.generic L cx cy) := by
-  exact relation_of_shapes (Facts 124) _ _ _ _
+    Facts 128 (generic L cx cy) (ReflectionE1.generic L cx cy) := by
+  exact relation_of_shapes (Facts 128) _ _ _ _
     (generic_shape L cx cy) (old_generic_shape L cx cy)
     (stages_facts (fusedY L (-cy)) (E1QubitPlacement.entryM L (-cx))
       (restE L) (ReflectionE1.restE L) (ReflectionE1.squareEntry L (ReflectionE1.correction cx))
@@ -21359,7 +21651,7 @@ private def wrapContext (Z C : Program) (f : Wire→Wire) (P : Program) : Progra
   Z++(C++renameProgram f P++C)++Z
 
 private theorem wrap_facts (Z C : Program) (f : Wire→Wire) (P Q : Program)
-    (h : Facts 124 P Q) : Facts 124 (wrapContext Z C f P) (wrapContext Z C f Q) := by
+    (h : Facts 128 P Q) : Facts 128 (wrapContext Z C f P) (wrapContext Z C f Q) := by
   rcases h with ⟨ht,hm,hs,hw⟩
   have sub : wires (wrapContext Z C f P)⊆wires (wrapContext Z C f Q) := by
     simp only [wrapContext,wires_append,renameProgram_support]
@@ -21373,8 +21665,8 @@ private theorem wrap_facts (Z C : Program) (f : Wire→Wire) (P Q : Program)
   exact ⟨by omega,by omega,by omega,sub⟩
 
 private theorem gen_facts (L : ControlledPointLayout) (cx cy : Fp) :
-    Facts 124 (gen L cx cy) (ReflectionE1.gen L cx cy) := by
-  apply relation_of_shapes (Facts 124) _ _
+    Facts 128 (gen L cx cy) (ReflectionE1.gen L cx cy) := by
+  apply relation_of_shapes (Facts 128) _ _
     (wrapContext (zrep L) (clrF L) (swapF L) (generic L cx cy))
     (wrapContext (zrep L) (clrF L) (swapF L) (ReflectionE1.generic L cx cy))
   · unfold gen mid wrapContext
@@ -21384,7 +21676,7 @@ private theorem gen_facts (L : ControlledPointLayout) (cx cy : Fp) :
   · exact wrap_facts _ _ _ _ _ (generic_facts L cx cy)
 
 theorem gen_metrics (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+124=toffoliCount (ReflectionE1.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+128=toffoliCount (ReflectionE1.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ReflectionE1.gen L cx cy) ∧
     gateSlots (gen L cx cy) ≤ gateSlots (ReflectionE1.gen L cx cy) :=
   ⟨(gen_facts L cx cy).1,(gen_facts L cx cy).2.1,(gen_facts L cx cy).2.2.1⟩
@@ -21416,8 +21708,8 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
   tauto
 
 private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : Facts 124 P Q) :
-    toffoliCount (Edges.wrapper L C cy P)+124=toffoliCount (Edges.wrapper L C cy Q) ∧
+    (P Q : Program) (h : Facts 128 P Q) :
+    toffoliCount (Edges.wrapper L C cy P)+128=toffoliCount (Edges.wrapper L C cy Q) ∧
     measurementCount (Edges.wrapper L C cy P)=measurementCount (Edges.wrapper L C cy Q) ∧
     gateSlots (Edges.wrapper L C cy P) ≤ gateSlots (Edges.wrapper L C cy Q) := by
   rcases h with ⟨ht,hm,hs,_⟩
@@ -21426,7 +21718,7 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151697 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151691 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout cx cy)).1
   have old:=ReflectionE1.wrapper_toffoli cx cy hc
   omega
@@ -21463,7 +21755,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151697,1499214,1588,50169199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151691,1499214,1588,50169199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -21480,7 +21772,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151697 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151691 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -23503,7 +23795,7 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151491 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151485 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
   have old:=ReflectionE1TickGap.wrapper_toffoli cx cy hc
   omega
@@ -23681,7 +23973,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151491,1499140,1588,50169199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151485,1499140,1588,50169199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -23698,7 +23990,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151491 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151485 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -24541,7 +24833,7 @@ theorem wrapper_qubits760 (C : Point) (cx cy : Fp) :
   exact card.trans (ReflectionE1TickGapLow48.wrapper_qubits760 C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151474 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151468 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
   omega
@@ -24565,7 +24857,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151474,1499124,1588,50170561+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151468,1499124,1588,50170561+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -24582,7 +24874,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151474 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151468 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -24642,7 +24934,7 @@ def program (C : Point) : Program :=
       MeasuredDH.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151497,1499142,1588,50170550+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151491,1499142,1588,50170550+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -24660,13 +24952,13 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151497 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151491 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151497
+    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151491
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499142 := by
@@ -24735,7 +25027,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151466,1499122,1587,50194132⟩
+def bounds : Challenge.Bounds := ⟨2151460,1499122,1587,50194132⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -24753,13 +25045,13 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151466 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151460 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151466
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151460
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499122 := by
@@ -25568,7 +25860,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151464,1499120,1587,50194132⟩
+def bounds : Challenge.Bounds := ⟨2151458,1499120,1587,50194132⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -25586,14 +25878,14 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
         (genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151464 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151458 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151464
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151458
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499120 := by
@@ -27135,7 +27427,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151462,1499118,1587,50194132⟩
+def bounds : Challenge.Bounds := ⟨2151456,1499118,1587,50194132⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -27153,14 +27445,14 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
         (genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151462 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151456 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151462
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151456
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1499118 := by
@@ -29833,7 +30125,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper' layout C (tailGen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151216, 1498871, 1587, 50197751⟩
+def bounds : Challenge.Bounds := ⟨2151210, 1498871, 1587, 50197751⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -29845,7 +30137,7 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
   | @some cx cy hc =>
     exact fixed_correct _ control R _ (full_spec' hc control R) (support_used' hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151216 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151210 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -29854,8 +30146,8 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151216 := by
     have st := (stage_counts hc).1
     have old := CodexYParityProbe.program_toffoli (.some hc)
     change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      2151462 at old
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151216
+      2151456 at old
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151210
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498871 := by
@@ -32886,7 +33178,7 @@ def program2 (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper2 layout C cx cy
 
 def entry2 : Challenge.Entry := fun C => normalizeProgram (program2 C)
-def bounds2 : Challenge.Bounds := ⟨2150973, 1498628, 1587, 50203412⟩
+def bounds2 : Challenge.Bounds := ⟨2150967, 1498628, 1587, 50203412⟩
 
 theorem program2_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program2 C) (encodes control (if control then R+C else R)) := by
@@ -32898,7 +33190,7 @@ theorem program2_correct (C : Point) (control : Bool) (R : Point) :
   | @some cx cy hc =>
     exact fixed_correct _ control R _ (full_spec2 hc control R) (support2_used hc)
 
-theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150973 := by
+theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150967 := by
   cases C with
   | zero => simp [program2, toffoliCount]
   | @some cx cy hc =>
@@ -32906,8 +33198,8 @@ theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150973 := 
     have o : 504 ≤ toffoliCount (oldOut layout (.some hc)) := (old_out_counts hc).1
     have st := (outStage_counts hc).1
     have old := program_toffoli (.some hc)
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151216 at old
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150973
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151210 at old
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150967
     omega
 
 theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498628 := by
