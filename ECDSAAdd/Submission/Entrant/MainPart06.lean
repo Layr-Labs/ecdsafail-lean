@@ -3365,9 +3365,16 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151566 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151564 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout cx cy)).1
-  have old:=ReflectionE1.wrapper_toffoli cx cy hc
+  have entryDelta := (ReflectionE1.gen_counts_delta layout layout_widths cx cy).1
+  have baseline := Rolling1588BFFinal.wrapper_toffoli cx cy hc
+  have entryWrapperDelta :
+      toffoliCount (Edges.wrapper layout (.some hc) cy (ReflectionE1.gen layout cx cy))+755=
+        toffoliCount (Edges.wrapper layout (.some hc) cy (Rolling1588BFFinal.gen layout cx cy)) := by
+    simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
+      (renameProgram_counts _ _).1]
+    omega
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
@@ -3402,7 +3409,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151566,1499214,1588,50189199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151564,1499214,1588,50189199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -3419,7 +3426,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151566 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151564 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -5821,7 +5828,7 @@ theorem exit_splitX (L : ControlledPointLayout) (k : Nat) :
 
 /-! ### Resources of the merged exit inside the stage -/
 
-theorem x1_counts (k : Nat) : toffoliCount (x1 k)=770 ∧ measurementCount (x1 k)=1027 := by
+theorem x1_counts (k : Nat) : toffoliCount (x1 k)=769 ∧ measurementCount (x1 k)=1027 := by
   rw [x1_eq,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
   exact ExitMerge.program_counts base (base 2400) k
 
@@ -5835,7 +5842,7 @@ theorem x1_physical (k : Nat) : GatePhysical (x1 k) := by
     (ExitMerge.program_physical base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k)
 
 theorem restXX_metrics (L : ControlledPointLayout) (k : Nat) :
-    toffoliCount (restXX L k)+252=toffoliCount (ReflectionE1TickGap.restX L)+770 ∧
+    toffoliCount (restXX L k)+252=toffoliCount (ReflectionE1TickGap.restX L)+769 ∧
     measurementCount (restXX L k)+508=measurementCount (ReflectionE1TickGap.restX L)+1027 ∧
     Challenge.gateSlots (restXX L k) ≤ Challenge.gateSlots (ReflectionE1TickGap.restX L)+22000 := by
   have c := x1_counts k

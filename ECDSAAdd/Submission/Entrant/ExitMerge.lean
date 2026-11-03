@@ -1,4 +1,5 @@
 import ECDSAAdd.Submission.Entrant.Prelude
+import ECDSAAdd.Submission.Entrant.KAddResourceBridgeDraft
 import ECDSAAdd.Arithmetic.NativeFirstDirectForwardProof
 import ECDSAAdd.Arithmetic.NativeFirstDirectValues
 import ECDSAAdd.Arithmetic.Compare
@@ -200,7 +201,7 @@ def loadT (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
 
 /-- Compare-first constant addition `x ↦ x + g·k mod p` merged into the direct first tick. -/
 def merged (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  comparePart w g k++(parGates w g k++rotateRight (kR w))++prodPart w g++loadK w g k++kAddM w++loadK w g k++
+  comparePart w g k++(parGates w g k++rotateRight (kR w))++prodPart w g++loadK w g k++KAddCallerBridgeResearch.flagKAdd w++loadK w g k++
   [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]++
   copyRegister none (wireBlock w 770 257) (hpR w)++hAddT w++[.CX (w 1028) (w 0),.X (w 0)]++
   loadT w g k++eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)++loadT w g k++
@@ -539,6 +540,67 @@ theorem stepKAdd (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
   simp [kR,wireBlock_length]
 
 end Concrete2
+
+
+/-! Checked actual-MF flag/zero step wrappers, migrated without an import cycle. -/
+
+theorem kAdd_literal (w : Nat → Wire) : E1Merge.kAddM w = KAddCallerBridgeResearch.literalKAdd w := rfl
+
+/-- Derive the actual carry cleanliness from the real MF frame and original carry-bank premise. -/
+theorem carry_clean (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
+    (hc : ∀q∈E1Merge.aC w,b0 q=false) (s : BasisState)
+    (hs : E1Merge.MF w b0 H X T par f gp fp s) : s (w 1796)=false := by
+  have away : w 1796∉E1Merge.mutL w := by
+    simp only [E1Merge.mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
+    refine ⟨⟨⟨E1Merge.nb w hn 1796 0 258 (by omega) (by omega) (by omega),
+      E1Merge.nb w hn 1796 770 258 (by omega) (by omega) (by omega)⟩,
+      E1Merge.nb w hn 1796 1029 256 (by omega) (by omega) (by omega)⟩,?_,?_,?_,?_⟩
+    all_goals exact E1Merge.w_ne w hn _ _ (by omega) (by omega) (by omega)
+  have member : w 1796∈E1Merge.aC w := by
+    apply List.mem_map.mpr
+    refine ⟨1796,?_,rfl⟩
+    simp only [List.mem_range'_1]
+    omega
+  exact (hs.2.2.2.2.2.2.2 _ away).trans (hc _ member)
+
+/-- Actual-MF flag substitution: postWord comes from the original stepKAdd at the empty record. -/
+theorem stepKAddFlag (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
+    (hc : ∀q∈E1Merge.aC w,b0 q=false) (hcin : b0 (w 1797)=false)
+    (D : Nat) (hD : D<ECDSAAdd.p) (hp : par=decide (D%2=1))
+    (hWord : (H+X)%2^258=E1CallerValueFactsResearch.Kword D par) :
+    Triple (E1Merge.MF w b0 H X T par f gp fp) (KAddCallerBridgeResearch.flagKAdd w)
+      (E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp) := by
+  intro s m hs
+  have old := E1Merge.stepKAdd w hn b0 H X T par f gp fp hc hcin
+  rw [kAdd_literal] at old
+  have oldEmpty := old s [] hs
+  have postWord : regValue (wireBlock w 770 258) (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis =
+      E1CallerValueFactsResearch.Kword D par := oldEmpty.2.2.1.trans hWord
+  have clean := carry_clean w hn b0 H X T par f gp fp hc s.basis hs
+  have equal := KAddCallerBridgeResearch.forward_run_eq_pool w hn s m clean D hD par hp hs.2.2.2.1 postWord
+  exact (congrArg (fun t : State => t.phase=s.phase ∧
+    E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp t.basis) equal).mp (old s m hs)
+
+/-- Actual-MF zero substitution, including the ExitMerge caller that opens E1Merge. -/
+theorem stepKAddZero (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
+    (hc : ∀q∈E1Merge.aC w,b0 q=false) (hcin : b0 (w 1797)=false)
+    (Y : Nat) (hY : Y<ECDSAAdd.p) (hWord : (H+X)%2^258=Y/2) :
+    Triple (E1Merge.MF w b0 H X T par f gp fp) (KAddCallerBridgeResearch.zeroKAdd w)
+      (E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp) := by
+  intro s m hs
+  have old := E1Merge.stepKAdd w hn b0 H X T par f gp fp hc hcin
+  rw [kAdd_literal] at old
+  have oldEmpty := old s [] hs
+  have postWord : regValue (wireBlock w 770 258) (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis = Y/2 :=
+    oldEmpty.2.2.1.trans hWord
+  have clean := carry_clean w hn b0 H X T par f gp fp hc s.basis hs
+  have equal := KAddCallerBridgeResearch.exit_run_eq_pool w hn s m clean Y hY postWord
+  exact (congrArg (fun t : State => t.phase=s.phase ∧
+    E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp t.basis) equal).mp (old s m hs)
+
 
 
 def CF (w : Nat → Wire) (b0 : BasisState) (S : Nat) (F : Bool) (s : BasisState) : Prop :=
@@ -1224,8 +1286,10 @@ theorem merged_triple (k : Nat) (hk : k<p) (b0 : BasisState) (X : Nat) (hX : X<p
   simp only [if_true,show ¬ (722=721) from by decide,if_false,Bool.false_xor] at s4b
   have s5 := stepLoadK w g hn b0 k 0 (X/2) 0 par f (G && par) (f && par) hg
   rw [Nat.zero_xor,show b0 g=G from rfl,lkv_eq k G f par hfg] at s5
-  have s6 := stepKAdd w hn b0 (tk k G f par) (X/2) 0 par f (G && par) (f && par) hac h1797
-  rw [show (tk k G f par+X/2)%2^258=K by rw [Nat.add_comm]; exact a2] at s6
+  have kWord : (tk k G f par+X/2)%2^258=K := by rw [Nat.add_comm]; exact a2
+  have s6 := stepKAddFlag w hn b0 (tk k G f par) (X/2) 0 par f (G && par) (f && par) hac h1797
+    dx (Nat.mod_lt _ (by rw [p_val]; norm_num)) rfl (by exact kWord)
+  rw [kWord] at s6
   have s7 := stepLoadK w g hn b0 k (tk k G f par) K 0 par f (G && par) (f && par) hg
   rw [show b0 g=G from rfl,lkv_eq k G f par hfg,Nat.xor_self] at s7
   have s8 := stepMeasFp w hn b0 0 K 0 par f (G && par)
@@ -1443,7 +1507,7 @@ theorem merged_support (w : Nat → Wire) (g : Wire) (k : Nat) :
     refine ⟨⟨⟨⟨⟨?_,mskH g G _⟩,mskH _ (I 514 (by omega)) _⟩,mskH _ (I 1028 (by omega)) _⟩,
       mskH _ (I 721 (by omega)) _⟩,mskH _ (I 722 (by omega)) _⟩
     exact (xorConstant_wires_subset (hR w) _).trans (lsub w g _ (B 0 258 (by omega)))
-  have hK : wires (kAddM w)⊆(mSites w g).toFinset := by
+  have hKOld : wires (kAddM w)⊆(mSites w g).toFinset := by
     apply (mappedAdd_wires_subset _ _ _ _).trans
     apply lsub; intro q hq
     simp only [mappedRead_wires,List.mem_append,List.mem_singleton] at hq
@@ -1452,6 +1516,15 @@ theorem merged_support (w : Nat → Wire) (g : Wire) (k : Nat) :
     · exact B 770 258 (by omega) q hq
     · exact B 1540 257 (by omega) q hq
     · exact I 1797 (by omega)
+  have hK : wires (KAddCallerBridgeResearch.flagKAdd w)⊆(mSites w g).toFinset := by
+    apply (KAddResourceBridgeResearch.flag_support w).trans
+    simp only [Finset.union_subset_iff]
+    constructor
+    · simpa only [←kAdd_literal] using hKOld
+    · intro q hq
+      have eq : q=w 1028 := Finset.mem_singleton.mp hq
+      rw [eq]
+      exact List.mem_toFinset.mpr (I 1028 (by omega))
   have hM1 : wires [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]⊆(mSites w g).toFinset := by
     apply gate_sub; intro q hq
     simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
@@ -1507,7 +1580,7 @@ theorem merged_support (w : Nat → Wire) (g : Wire) (k : Nat) :
 
 
 theorem merged_counts (w : Nat → Wire) (g : Wire) (k : Nat) :
-    toffoliCount (merged w g k)=1025 ∧ measurementCount (merged w g k)=1027 := by
+    toffoliCount (merged w g k)=1024 ∧ measurementCount (merged w g k)=1027 := by
   have m1 (c : Wire) (r : List Wire) (v : Nat) := maskedConstant_counts c r v
   have x1 (r : List Wire) (v : Nat) := xorConstant_counts r v
   have n1 := notRegister_counts (srcR w)
@@ -1529,14 +1602,19 @@ theorem merged_counts (w : Nat → Wire) (g : Wire) (k : Nat) :
   have lt : (tR w).length=256 := by simp [tR,wireBlock_length]
   rw [lx] at c1'
   rw [lk] at k1
+  have kOld : toffoliCount (KAddCallerBridgeResearch.literalKAdd w)=257 ∧
+      measurementCount (KAddCallerBridgeResearch.literalKAdd w)=257 := k1
+  have kDelta := KAddCallerBridgeResearch.flag_counts w
+  have kNew : toffoliCount (KAddCallerBridgeResearch.flagKAdd w)=256 ∧
+      measurementCount (KAddCallerBridgeResearch.flagKAdd w)=257 := by omega
   rw [lh] at h1
   rw [lt] at e1
   have hT := hAddT_counts w
   rw [hAddM,h1.1,h1.2] at hT
   have hT' : toffoliCount (hAddT w)=255 ∧ measurementCount (hAddT w)=256 := by omega
-  simp only [merged,comparePart,prodPart,loadK,kAddM,hT'.1,hT'.2,loadT,toffoliCount_append,
+  simp only [merged,comparePart,prodPart,loadK,kNew.1,kNew.2,hT'.1,hT'.2,loadT,toffoliCount_append,
     measurementCount_append,(m1 _ _ _).1,(m1 _ _ _).2,(x1 _ _).1,(x1 _ _).2,n1.1,n1.2,c1'.1,c1'.2.1,
-    r1.1,r1.2.1,k1.1,k1.2,h1.1,h1.2,e1.1,e1.2,cp1.1,cp1.2,pg.1,pg.2]
+    r1.1,r1.2.1,h1.1,h1.2,e1.1,e1.2,cp1.1,cp1.2,pg.1,pg.2]
   simp [toffoliCount,measurementCount]
 
 section Phys
@@ -1579,7 +1657,7 @@ theorem merged_physical (k : Nat) : GatePhysical (merged w g k) := by
         exact ⟨nb w hn 513 0 256 (by omega) (by omega) (by omega),nb w hn 513 770 256 (by omega) (by omega) (by omega),
           nb w hn 513 256 256 (by omega) (by omega) (by omega)⟩
     · simp
-  have kP : GatePhysical (kAddM w) := by
+  have kPOld : GatePhysical (kAddM w) := by
     apply mappedAdd_physical
     · rw [List.cons_append]
       have d := blk_dis w hn 770 258 1540 257 (by omega) (by omega) (by omega)
@@ -1597,6 +1675,8 @@ theorem merged_physical (k : Nat) : GatePhysical (merged w g k) := by
       · intro e; exact nb w hn 1797 0 258 (by omega) (by omega) (by omega) (e ▸ hq')
       · exact fun h' => hR_kR w hn _ h' hq'
       · exact fun h' => List.disjoint_left.mp (blk_dis w hn 0 258 1540 257 (by omega) (by omega) (by omega)) hq' h'
+  have kP : GatePhysical (KAddCallerBridgeResearch.flagKAdd w) :=
+    KAddResourceBridgeResearch.flag_gatePhysical w hn (by simpa only [←kAdd_literal] using kPOld)
   have hP : GatePhysical (hAddM w) := by
     apply mappedAdd_physical
     · rw [List.cons_append]
@@ -1715,11 +1795,15 @@ theorem merged_slots (w : Nat → Wire) (g : Wire) (k : Nat) : Challenge.gateSlo
   have lhR : (hR w).length=258 := by simp [hR,wireBlock_length]
   rw [lk] at r1
   rw [mappedRead_length,lhR] at k1
+  have kOld : Challenge.gateSlots (KAddCallerBridgeResearch.literalKAdd w)≤17*258 := k1
+  have kNew : Challenge.gateSlots (KAddCallerBridgeResearch.flagKAdd w)+5≤17*258 := by
+    rw [←(KAddCallerBridgeResearch.flag_counts w).2.2]
+    exact kOld
   rw [dBits_length] at h1
   rw [lh] at e1
   have hS := hAddT_slots w
   rw [hAddM] at hS
-  simp only [merged,Challenge.gateSlots_append,pr,w0,q1,q2,cp,kAddM]
+  simp only [merged,Challenge.gateSlots_append,pr,w0,q1,q2,cp]
   omega
 
 end ECDSAAdd.Entrant.E1Merge
@@ -1846,7 +1930,7 @@ def loadKX (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
   maskedConstant (w 722) (hR w) (cfpX k)
 
 def addPart (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  FastConst.maskedNot g (kR w)++loadKX w g k++kAddM w++loadKX w g k++
+  FastConst.maskedNot g (kR w)++loadKX w g k++KAddCallerBridgeResearch.zeroKAdd w++loadKX w g k++
   [.measureX (w 722) [] [.CZ (w 514) (w 1028)],.measureX (w 721) [] [.CZ g (w 1028)]]
 
 def parBack (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
@@ -2343,8 +2427,11 @@ theorem program_triple (k : Nat) (hk : k<p) (b0 : BasisState) (X : Nat) (hX : X<
   have s10 := stepNegK w g hn b0 0 K 0 par f (G && par) (f && par) hKlt hg
   have s11 := stepLoadKX w g hn b0 k 0 (if G then 2^258-1-K else K) 0 par f (G && par) (f && par) hg
   rw [Nat.zero_xor,show b0 g=G from rfl,lkvX_eq k G f par hfg] at s11
-  have s12 := stepKAdd w hn b0 (tkX k G f par) (if G then 2^258-1-K else K) 0 par f (G && par) (f && par) hac h1797
-  rw [show (tkX k G f par+(if G then 2^258-1-K else K))%2^258=Y/2 by rw [Nat.add_comm]; exact a5] at s12
+  have kWord : (tkX k G f par+(if G then 2^258-1-K else K))%2^258=Y/2 := by
+    rw [Nat.add_comm]; exact a5
+  have s12 := stepKAddZero w hn b0 (tkX k G f par) (if G then 2^258-1-K else K) 0 par f (G && par) (f && par)
+    hac h1797 Y a6 kWord
+  rw [kWord] at s12
   have s13 := stepLoadKX w g hn b0 k (tkX k G f par) (Y/2) 0 par f (G && par) (f && par) hg
   rw [show b0 g=G from rfl,lkvX_eq k G f par hfg,Nat.xor_self] at s13
   have s14 := stepMeasFp w hn b0 0 (Y/2) 0 par f (G && par)
@@ -2482,7 +2569,7 @@ end Run
 /-! ### Resources -/
 
 theorem program_counts (w : Nat → Wire) (g : Wire) (k : Nat) :
-    toffoliCount (program w g k)=770 ∧ measurementCount (program w g k)=1027 := by
+    toffoliCount (program w g k)=769 ∧ measurementCount (program w g k)=1027 := by
   have m1 (c : Wire) (r : List Wire) (v : Nat) := maskedConstant_counts c r v
   have x1 (r : List Wire) (v : Nat) := xorConstant_counts r v
   have n1 := notRegister_counts (tR w)
@@ -2505,11 +2592,16 @@ theorem program_counts (w : Nat → Wire) (g : Wire) (k : Nat) :
   have lx : (xR w).length=256 := by simp [xR,wireBlock_length]
   rw [lt] at c1'
   rw [lk] at k1
+  have kOld : toffoliCount (KAddCallerBridgeResearch.literalKAdd w)=257 ∧
+      measurementCount (KAddCallerBridgeResearch.literalKAdd w)=257 := k1
+  have kDelta := KAddCallerBridgeResearch.zero_counts w
+  have kNew : toffoliCount (KAddCallerBridgeResearch.zeroKAdd w)=256 ∧
+      measurementCount (KAddCallerBridgeResearch.zeroKAdd w)=257 := by omega
   rw [lh] at kh
   rw [lx] at e1
-  simp only [program,fPart,eraseH,addPart,eraseF,loadTX,loadKX,knownH,kAddM,FastConst.maskedNot,
+  simp only [program,fPart,eraseH,addPart,eraseF,loadTX,loadKX,knownH,kNew.1,kNew.2,FastConst.maskedNot,
     toffoliCount_append,measurementCount_append,(m1 _ _ _).1,(m1 _ _ _).2,(x1 _ _).1,(x1 _ _).2,
-    n1.1,n1.2,c1'.1,c1'.2.1,r1.2.2.1,r1.2.2.2,k1.1,k1.2,kh.1,kh.2,e1.1,e1.2,cp1.1,cp1.2,pb.1,pb.2]
+    n1.1,n1.2,c1'.1,c1'.2.1,r1.2.2.1,r1.2.2.2,kh.1,kh.2,e1.1,e1.2,cp1.1,cp1.2,pb.1,pb.2]
   simp [toffoliCount,measurementCount]
 
 theorem program_support (w : Nat → Wire) (g : Wire) (k : Nat) :
@@ -2607,7 +2699,7 @@ theorem program_support (w : Nat → Wire) (g : Wire) (k : Nat) :
     refine ⟨⟨⟨⟨⟨?_,mskH g G _⟩,mskH _ (I 514 (by omega)) _⟩,mskH _ (I 1028 (by omega)) _⟩,
       mskH _ (I 721 (by omega)) _⟩,mskH _ (I 722 (by omega)) _⟩
     exact (xorConstant_wires_subset (hR w) _).trans (lsub w g _ (B 0 258 (by omega)))
-  have hK : wires (kAddM w)⊆(mSites w g).toFinset := by
+  have hKOld : wires (kAddM w)⊆(mSites w g).toFinset := by
     apply (mappedAdd_wires_subset _ _ _ _).trans
     apply lsub; intro q hq
     simp only [mappedRead_wires,List.mem_append,List.mem_singleton] at hq
@@ -2616,6 +2708,9 @@ theorem program_support (w : Nat → Wire) (g : Wire) (k : Nat) :
     · exact B 770 258 (by omega) q hq
     · exact B 1540 257 (by omega) q hq
     · exact I 1797 (by omega)
+  have hK : wires (KAddCallerBridgeResearch.zeroKAdd w)⊆(mSites w g).toFinset := by
+    apply (KAddResourceBridgeResearch.zero_support w).trans
+    simpa only [←kAdd_literal] using hKOld
   have hM : wires ([.measureX (w 722) [] [.CZ (w 514) (w 1028)],.measureX (w 721) [] [.CZ g (w 1028)]] : Program)⊆
       (mSites w g).toFinset := by
     rw [show ([.measureX (w 722) [] [.CZ (w 514) (w 1028)],.measureX (w 721) [] [.CZ g (w 1028)]] : Program)=
@@ -2718,7 +2813,7 @@ theorem program_physical (k : Nat) : GatePhysical (program w g k) := by
       simp only [List.mem_cons,List.mem_append,not_or]
       exact ⟨ne i 1797 (by omega) (by omega) (by omega),nb w hn i 1 257 (by omega) (by omega) (by omega),
         nb w hn i 1540 256 (by omega) (by omega) (by omega)⟩
-  have kP : GatePhysical (kAddM w) := by
+  have kPOld : GatePhysical (kAddM w) := by
     apply mappedAdd_physical
     · rw [List.cons_append]
       have d := blk_dis w hn 770 258 1540 257 (by omega) (by omega) (by omega)
@@ -2736,6 +2831,8 @@ theorem program_physical (k : Nat) : GatePhysical (program w g k) := by
       · intro e; exact nb w hn 1797 0 258 (by omega) (by omega) (by omega) (e ▸ hq')
       · exact fun h' => hR_kR w hn _ h' hq'
       · exact fun h' => List.disjoint_left.mp (blk_dis w hn 0 258 1540 257 (by omega) (by omega) (by omega)) hq' h'
+  have kP : GatePhysical (KAddCallerBridgeResearch.zeroKAdd w) :=
+    KAddResourceBridgeResearch.zero_gatePhysical w hn (by simpa only [←kAdd_literal] using kPOld)
   have eP : GatePhysical (eraseLtChain (tR w) (xR w) (hC3 w) (w 1797) (w 514)) := by
     apply eraseLtChain_physical
     have a1 := blk_dis w hn 1029 256 770 256 (by omega) (by omega) (by omega)
@@ -2849,10 +2946,14 @@ theorem program_slots (w : Nat → Wire) (g : Wire) (k : Nat) : Challenge.gateSl
   have lhR : (hR w).length=258 := by simp [hR,wireBlock_length]
   rw [lk] at r1
   rw [mappedRead_length,lhR] at k1
+  have kOld : Challenge.gateSlots (KAddCallerBridgeResearch.literalKAdd w)≤17*258 := k1
+  have kNew : Challenge.gateSlots (KAddCallerBridgeResearch.zeroKAdd w)+7≤17*258 := by
+    rw [←(KAddCallerBridgeResearch.zero_counts w).2.2]
+    exact kOld
   rw [dBitsX_length] at h1
   rw [lt] at e1
   rw [lp,lt] at c1'
-  simp only [program,fPart,eraseH,addPart,eraseF,knownH,kAddM,Challenge.gateSlots_append,g1,g2,g3,w0,q1,cp,nT]
+  simp only [program,fPart,eraseH,addPart,eraseF,knownH,Challenge.gateSlots_append,g1,g2,g3,w0,q1,cp,nT]
   omega
 
 end ECDSAAdd.Entrant.ExitMerge
