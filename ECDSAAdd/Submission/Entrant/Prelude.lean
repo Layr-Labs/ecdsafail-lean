@@ -56302,6 +56302,16 @@ theorem pool_three (A B C : Program)
   exact ⟨p3.1,p3.2.1,fun q hq =>
     (p3.2.2 q hq).2.trans ((p2.2.2 q hq).2.trans (p1.2.2 q hq).2)⟩
 
+private theorem placed_frame_unique_resource17 (origin : BasisState) (X Y : Fp) (s t : State)
+    (hs : FieldFrameOB5.EncodedFieldFrame origin X Y s)
+    (ht : FieldFrameOB5.EncodedFieldFrame origin X Y t)
+    (phase : s.phase=t.phase) : s=t := by
+  have eq := encoded_field_unique5 origin X Y
+    (pullState (OB5.sig 511) s) (pullState (OB5.sig 511) t) hs ht phase
+  have pulled := congrArg (pullState (OB5.sig 511)) eq
+  simpa only [OB5.pull_invol 511 (by decide)] using pulled
+
+
 theorem center5_compare (hn : (skywalkSharedWires base).Nodup)
     (hp : base 2409∉skywalkPoolWires base) (origin : BasisState)
     (env : Env base origin) (legal : History5.RawLegal base 102 origin)
@@ -56327,11 +56337,8 @@ theorem center5_compare (hn : (skywalkSharedWires base).Nodup)
   have retarget := encoded_retarget5 hn origin hr hy Y (pullState (OB5.sig 511) a)
     (pullState (OB5.sig 511) v) phase.symm logicalSame logicalValue input
   have old := OwnQ5Endpoint.center_frame hn hp origin env legal hr ha Y a records input
-  have eq := encoded_field_unique5 origin (Y/2) 0
-    (pullState (OB5.sig 511) (run OwnQ5Endpoint.centerT records a))
-    (pullState (OB5.sig 511) v) old.2 retarget (old.1.trans phase)
-  have pulled := congrArg (pullState (OB5.sig 511)) eq
-  simpa only [OB5.pull_invol 511 (by decide)] using pulled
+  exact placed_frame_unique_resource17 origin (Y/2) 0
+    (run OwnQ5Endpoint.centerT records a) v old.2 retarget (old.1.trans phase)
 
 theorem field5_unhosted_state
     (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
@@ -61294,7 +61301,18 @@ attribute [local irreducible] wires
 theorem raw_free : base 513 ∉ wires HalfField5.centerT ∧
     base 513 ∉ wires HalfField5.canonT := by
   have sup := HalfConvert.support HalfField.tgt (balancedSharedTargetConvert_widths base)
-  have out : base 513 ∉ HalfField.tgt.wires.toFinset := by decide +kernel
+  have ids : HalfField.tgt.wires =
+      ([1797,1027,1796,2311] ++ List.range' 2056 255 ++ List.range' 1540 255).map base := by
+    simp only [HalfField.tgt, balancedSharedTargetConvert, BalancedConvert.Layout.wires,
+      wireBlock, List.map_append, List.map_cons, List.map_nil]
+  have out : base 513 ∉ HalfField.tgt.wires.toFinset := by
+    intro h
+    rw [List.mem_toFinset, ids] at h
+    obtain ⟨i, hi, he⟩ := List.mem_map.mp h
+    have eq := base_injective he
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, List.mem_range'_1,
+      or_false] at hi
+    omega
   exact ⟨fun h => out (sup.1 h),fun h => out (sup.2 h)⟩
 
 theorem relocated_free : base 1541 ∉ wires HalfFieldOB5.centerT ∧

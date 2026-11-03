@@ -18840,7 +18840,15 @@ theorem endpoint_eff_free : base 2410∉wires OwnQ5Endpoint.centerT ∧ base 241
 theorem eff_free (divide : Bool) : base 2410∉wires (program divide) := by
   have ep := endpoint_eff_free
   have r := OneFlagReplay.replay_eff_free divide
-  have cp : base 2410∉wires copyN := by decide +kernel
+  have cp : base 2410∉wires copyN := by
+    change base 2410∉wires HalfField.copyN
+    intro h
+    obtain ⟨i, hi, he⟩ := List.mem_map.mp
+      (List.mem_toFinset.mp (HalfField.copyN_sites h))
+    have eq := base_injective he
+    simp only [HalfField.ids, List.mem_append, List.mem_cons,
+      List.not_mem_nil, List.mem_range'_1, or_false] at hi
+    omega
   cases divide <;> simp only [program,Bool.false_eq_true,if_false,if_true,wires_append,Finset.mem_union,not_or]
     at r ⊢
   · exact ⟨ep.1,cp,r,ep.2⟩
@@ -22901,6 +22909,10 @@ theorem hosted_forward_run_eq (hn : (skywalkSharedWires base).Nodup)
 
 theorem acceptedSwap_pool (q : Wire) (hq : q∈skywalkPoolWires base) :
     acceptedSwap q∈skywalkPoolWires base := by
+  have apply_eq : acceptedSwap q =
+      Equiv.swap (base 1542) (base 720)
+        (Equiv.swap (base 1541) (base 719) (Equiv.swap (base 1026) (base 718) q)) := rfl
+  rw [apply_eq]
   have sw (a b : Nat) (ha : a<1798) (hb : b<1798) (v : Wire)
       (hv : v∈skywalkPoolWires base) : Equiv.swap (base a) (base b) v∈skywalkPoolWires base := by
     by_cases va : v=base a
@@ -22913,6 +22925,22 @@ theorem acceptedSwap_pool (q : Wire) (hq : q∈skywalkPoolWires base) :
   exact sw 1542 720 (by omega) (by omega) _
     (sw 1541 719 (by omega) (by omega) _ (sw 1026 718 (by omega) (by omega) q hq))
 
+private theorem phase_pool_transport (perm : Wire → Wire) (pool : List Wire)
+    (field hostedForward plainForward : State)
+    (hperm : ∀ q ∈ pool, perm q ∈ pool)
+    (hf : pullState perm hostedForward = plainForward)
+    (hp : field.phase = hostedForward.phase)
+    (hv : ∀ q ∈ pool, field.basis q = hostedForward.basis q) :
+    (pullState perm field).phase = plainForward.phase ∧
+      ∀ q ∈ pool, (pullState perm field).basis q = plainForward.basis q := by
+  constructor
+  · have h : (pullState perm hostedForward).phase = plainForward.phase :=
+      congrArg State.phase hf
+    exact hp.trans h
+  · intro q hq
+    exact (hv _ (hperm q hq)).trans (congrArg (fun z : State => z.basis q) hf)
+
+
 theorem hosted_inverse_run_eq (hn : (skywalkSharedWires base).Nodup)
     (x y : Nat) (hx : x<p) (initial field : State) (mF mI : List Bool)
     (hin : SkywalkArithmeticInput base x y initial.basis)
@@ -22922,15 +22950,13 @@ theorem hosted_inverse_run_eq (hn : (skywalkSharedWires base).Nodup)
     run (hosted (inverse base)) mI field=run (hosted (NativeFirstKnown.inverse base)) mI field := by
   have f := hosted_run (NativeFirstDirect.forward base) mF initial
   rw [accepted_pull_clean x y initial hin] at f
-  have phase : (pullState acceptedSwap field).phase=
-      (run (NativeFirstDirect.forward base) mF initial).phase :=
-    hphase.trans (by simpa only [pullState] using congrArg State.phase f)
-  have pool : ∀q∈skywalkPoolWires base,(pullState acceptedSwap field).basis q=
-      (run (NativeFirstDirect.forward base) mF initial).basis q := by
-    intro q hq
-    exact (hpool _ (acceptedSwap_pool q hq)).trans (congrArg (fun z : State => z.basis q) f)
+  have transported := phase_pool_transport acceptedSwap (skywalkPoolWires base)
+    field (run (hosted (NativeFirstDirect.forward base)) mF initial)
+    (run (NativeFirstDirect.forward base) mF initial) acceptedSwap_pool f hphase hpool
   apply hosted_run_eq
-  exact inverse_run_eq base hn x y hx initial (pullState acceptedSwap field) mF mI hin phase pool
+  exact inverse_run_eq base hn x y hx initial (pullState acceptedSwap field) mF mI hin
+    transported.1 transported.2
+
 
 theorem hosted_counts (P : Program) :
     toffoliCount (hosted P)=toffoliCount P ∧ measurementCount (hosted P)=measurementCount P := by
@@ -23325,9 +23351,145 @@ theorem physical : GatePhysical encode ∧ GatePhysical decode := by
   exact ⟨(gatePhysical_append _ _).mpr ⟨ht,MeasuredCodec5.physical.1⟩,
     (gatePhysical_append _ _).mpr ⟨MeasuredCodec5.physical.2,hu⟩⟩
 
+theorem parity_block_0 : ∀ i : Fin 32, legalNat (32*0+i.val)=true → rawParity (bitsOf (32*0+i.val))=payloadParity (bitsOf (bitRun encode (32*0+i.val))) := by
+  decide +kernel
+
+theorem parity_block_1 : ∀ i : Fin 32, legalNat (32*1+i.val)=true → rawParity (bitsOf (32*1+i.val))=payloadParity (bitsOf (bitRun encode (32*1+i.val))) := by
+  decide +kernel
+
+theorem parity_block_2 : ∀ i : Fin 32, legalNat (32*2+i.val)=true → rawParity (bitsOf (32*2+i.val))=payloadParity (bitsOf (bitRun encode (32*2+i.val))) := by
+  decide +kernel
+
+theorem parity_block_3 : ∀ i : Fin 32, legalNat (32*3+i.val)=true → rawParity (bitsOf (32*3+i.val))=payloadParity (bitsOf (bitRun encode (32*3+i.val))) := by
+  decide +kernel
+
+theorem parity_block_4 : ∀ i : Fin 32, legalNat (32*4+i.val)=true → rawParity (bitsOf (32*4+i.val))=payloadParity (bitsOf (bitRun encode (32*4+i.val))) := by
+  decide +kernel
+
+theorem parity_block_5 : ∀ i : Fin 32, legalNat (32*5+i.val)=true → rawParity (bitsOf (32*5+i.val))=payloadParity (bitsOf (bitRun encode (32*5+i.val))) := by
+  decide +kernel
+
+theorem parity_block_6 : ∀ i : Fin 32, legalNat (32*6+i.val)=true → rawParity (bitsOf (32*6+i.val))=payloadParity (bitsOf (bitRun encode (32*6+i.val))) := by
+  decide +kernel
+
+theorem parity_block_7 : ∀ i : Fin 32, legalNat (32*7+i.val)=true → rawParity (bitsOf (32*7+i.val))=payloadParity (bitsOf (bitRun encode (32*7+i.val))) := by
+  decide +kernel
+
+theorem parity_block_8 : ∀ i : Fin 32, legalNat (32*8+i.val)=true → rawParity (bitsOf (32*8+i.val))=payloadParity (bitsOf (bitRun encode (32*8+i.val))) := by
+  decide +kernel
+
+theorem parity_block_9 : ∀ i : Fin 32, legalNat (32*9+i.val)=true → rawParity (bitsOf (32*9+i.val))=payloadParity (bitsOf (bitRun encode (32*9+i.val))) := by
+  decide +kernel
+
+theorem parity_block_10 : ∀ i : Fin 32, legalNat (32*10+i.val)=true → rawParity (bitsOf (32*10+i.val))=payloadParity (bitsOf (bitRun encode (32*10+i.val))) := by
+  decide +kernel
+
+theorem parity_block_11 : ∀ i : Fin 32, legalNat (32*11+i.val)=true → rawParity (bitsOf (32*11+i.val))=payloadParity (bitsOf (bitRun encode (32*11+i.val))) := by
+  decide +kernel
+
+theorem parity_block_12 : ∀ i : Fin 32, legalNat (32*12+i.val)=true → rawParity (bitsOf (32*12+i.val))=payloadParity (bitsOf (bitRun encode (32*12+i.val))) := by
+  decide +kernel
+
+theorem parity_block_13 : ∀ i : Fin 32, legalNat (32*13+i.val)=true → rawParity (bitsOf (32*13+i.val))=payloadParity (bitsOf (bitRun encode (32*13+i.val))) := by
+  decide +kernel
+
+theorem parity_block_14 : ∀ i : Fin 32, legalNat (32*14+i.val)=true → rawParity (bitsOf (32*14+i.val))=payloadParity (bitsOf (bitRun encode (32*14+i.val))) := by
+  decide +kernel
+
+theorem parity_block_15 : ∀ i : Fin 32, legalNat (32*15+i.val)=true → rawParity (bitsOf (32*15+i.val))=payloadParity (bitsOf (bitRun encode (32*15+i.val))) := by
+  decide +kernel
+
+theorem parity_block_16 : ∀ i : Fin 32, legalNat (32*16+i.val)=true → rawParity (bitsOf (32*16+i.val))=payloadParity (bitsOf (bitRun encode (32*16+i.val))) := by
+  decide +kernel
+
+theorem parity_block_17 : ∀ i : Fin 32, legalNat (32*17+i.val)=true → rawParity (bitsOf (32*17+i.val))=payloadParity (bitsOf (bitRun encode (32*17+i.val))) := by
+  decide +kernel
+
+theorem parity_block_18 : ∀ i : Fin 32, legalNat (32*18+i.val)=true → rawParity (bitsOf (32*18+i.val))=payloadParity (bitsOf (bitRun encode (32*18+i.val))) := by
+  decide +kernel
+
+theorem parity_block_19 : ∀ i : Fin 32, legalNat (32*19+i.val)=true → rawParity (bitsOf (32*19+i.val))=payloadParity (bitsOf (bitRun encode (32*19+i.val))) := by
+  decide +kernel
+
+theorem parity_block_20 : ∀ i : Fin 32, legalNat (32*20+i.val)=true → rawParity (bitsOf (32*20+i.val))=payloadParity (bitsOf (bitRun encode (32*20+i.val))) := by
+  decide +kernel
+
+theorem parity_block_21 : ∀ i : Fin 32, legalNat (32*21+i.val)=true → rawParity (bitsOf (32*21+i.val))=payloadParity (bitsOf (bitRun encode (32*21+i.val))) := by
+  decide +kernel
+
+theorem parity_block_22 : ∀ i : Fin 32, legalNat (32*22+i.val)=true → rawParity (bitsOf (32*22+i.val))=payloadParity (bitsOf (bitRun encode (32*22+i.val))) := by
+  decide +kernel
+
+theorem parity_block_23 : ∀ i : Fin 32, legalNat (32*23+i.val)=true → rawParity (bitsOf (32*23+i.val))=payloadParity (bitsOf (bitRun encode (32*23+i.val))) := by
+  decide +kernel
+
+theorem parity_block_24 : ∀ i : Fin 32, legalNat (32*24+i.val)=true → rawParity (bitsOf (32*24+i.val))=payloadParity (bitsOf (bitRun encode (32*24+i.val))) := by
+  decide +kernel
+
+theorem parity_block_25 : ∀ i : Fin 32, legalNat (32*25+i.val)=true → rawParity (bitsOf (32*25+i.val))=payloadParity (bitsOf (bitRun encode (32*25+i.val))) := by
+  decide +kernel
+
+theorem parity_block_26 : ∀ i : Fin 32, legalNat (32*26+i.val)=true → rawParity (bitsOf (32*26+i.val))=payloadParity (bitsOf (bitRun encode (32*26+i.val))) := by
+  decide +kernel
+
+theorem parity_block_27 : ∀ i : Fin 32, legalNat (32*27+i.val)=true → rawParity (bitsOf (32*27+i.val))=payloadParity (bitsOf (bitRun encode (32*27+i.val))) := by
+  decide +kernel
+
+theorem parity_block_28 : ∀ i : Fin 32, legalNat (32*28+i.val)=true → rawParity (bitsOf (32*28+i.val))=payloadParity (bitsOf (bitRun encode (32*28+i.val))) := by
+  decide +kernel
+
+theorem parity_block_29 : ∀ i : Fin 32, legalNat (32*29+i.val)=true → rawParity (bitsOf (32*29+i.val))=payloadParity (bitsOf (bitRun encode (32*29+i.val))) := by
+  decide +kernel
+
+theorem parity_block_30 : ∀ i : Fin 32, legalNat (32*30+i.val)=true → rawParity (bitsOf (32*30+i.val))=payloadParity (bitsOf (bitRun encode (32*30+i.val))) := by
+  decide +kernel
+
+theorem parity_block_31 : ∀ i : Fin 32, legalNat (32*31+i.val)=true → rawParity (bitsOf (32*31+i.val))=payloadParity (bitsOf (bitRun encode (32*31+i.val))) := by
+  decide +kernel
+
+theorem finite_parity_blocks (b i : Fin 32) : legalNat (32*b.val+i.val)=true → rawParity (bitsOf (32*b.val+i.val))=payloadParity (bitsOf (bitRun encode (32*b.val+i.val))) := by
+  rcases b with ⟨b,hb⟩
+  have casesB : b=0 ∨ b=1 ∨ b=2 ∨ b=3 ∨ b=4 ∨ b=5 ∨ b=6 ∨ b=7 ∨ b=8 ∨ b=9 ∨ b=10 ∨ b=11 ∨ b=12 ∨ b=13 ∨ b=14 ∨ b=15 ∨ b=16 ∨ b=17 ∨ b=18 ∨ b=19 ∨ b=20 ∨ b=21 ∨ b=22 ∨ b=23 ∨ b=24 ∨ b=25 ∨ b=26 ∨ b=27 ∨ b=28 ∨ b=29 ∨ b=30 ∨ b=31 := by omega
+  rcases casesB with h0 | h1 | h2 | h3 | h4 | h5 | h6 | h7 | h8 | h9 | h10 | h11 | h12 | h13 | h14 | h15 | h16 | h17 | h18 | h19 | h20 | h21 | h22 | h23 | h24 | h25 | h26 | h27 | h28 | h29 | h30 | h31
+  · subst b; exact parity_block_0 i
+  · subst b; exact parity_block_1 i
+  · subst b; exact parity_block_2 i
+  · subst b; exact parity_block_3 i
+  · subst b; exact parity_block_4 i
+  · subst b; exact parity_block_5 i
+  · subst b; exact parity_block_6 i
+  · subst b; exact parity_block_7 i
+  · subst b; exact parity_block_8 i
+  · subst b; exact parity_block_9 i
+  · subst b; exact parity_block_10 i
+  · subst b; exact parity_block_11 i
+  · subst b; exact parity_block_12 i
+  · subst b; exact parity_block_13 i
+  · subst b; exact parity_block_14 i
+  · subst b; exact parity_block_15 i
+  · subst b; exact parity_block_16 i
+  · subst b; exact parity_block_17 i
+  · subst b; exact parity_block_18 i
+  · subst b; exact parity_block_19 i
+  · subst b; exact parity_block_20 i
+  · subst b; exact parity_block_21 i
+  · subst b; exact parity_block_22 i
+  · subst b; exact parity_block_23 i
+  · subst b; exact parity_block_24 i
+  · subst b; exact parity_block_25 i
+  · subst b; exact parity_block_26 i
+  · subst b; exact parity_block_27 i
+  · subst b; exact parity_block_28 i
+  · subst b; exact parity_block_29 i
+  · subst b; exact parity_block_30 i
+  · subst b; exact parity_block_31 i
+
 theorem finite_parity : ∀ x<1024, legalNat x=true →
     rawParity (bitsOf x)=payloadParity (bitsOf (bitRun encode x)) := by
-  decide +kernel
+  intro x hx
+  have e : 32*(x/32)+x%32=x := by omega
+  have h := finite_parity_blocks ⟨x/32,by omega⟩ ⟨x%32,by omega⟩
+  simpa only [e] using h
 
 theorem encode_parity (s : State) (m : List Bool) (h : legal s.basis) :
     rawParity s.basis=payloadParity (run encode m s).basis := by
@@ -29501,12 +29663,131 @@ private theorem finite_roundtrip : ∀x<1024,x.testBit 5=false → x.testBit 9=f
     safe invV (bitRun V x)=true ∧ bitRun invV (bitRun V x)=x := by
   decide +kernel
 
-private theorem finite_raw_regular : ∀x<1024,x∈rawWords →
-    safe ParityCodec5New.encode x=true ∧
-    (bitRun ParityCodec5New.encode x).testBit 5=false ∧
-    (bitRun ParityCodec5New.encode x).testBit 9=false ∧
-    codeOf (bitsOf (bitRun ParityCodec5New.encode x))∈canonicalCodes := by
+def good (x : Nat) : Prop := safe ParityCodec5New.encode x=true ∧ (bitRun ParityCodec5New.encode x).testBit 5=false ∧ (bitRun ParityCodec5New.encode x).testBit 9=false ∧ codeOf (bitsOf (bitRun ParityCodec5New.encode x))∈canonicalCodes
+instance good_decidable (x : Nat) : Decidable (good x) := by unfold good; infer_instance
+
+theorem member_block_0 : ∀ x ∈ ([2, 6, 9, 10]:List Nat), good x := by
   decide +kernel
+
+theorem member_block_1 : ∀ x ∈ ([18, 22, 25, 26]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_2 : ∀ x ∈ ([34, 37, 38, 42]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_3 : ∀ x ∈ ([66, 70, 73, 74]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_4 : ∀ x ∈ ([82, 86, 89, 90]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_5 : ∀ x ∈ ([98, 101, 102, 106]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_6 : ∀ x ∈ ([130, 134, 137, 138]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_7 : ∀ x ∈ ([146, 149, 150, 153]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_8 : ∀ x ∈ ([154, 162, 166, 169]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_9 : ∀ x ∈ ([170, 258, 262, 265]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_10 : ∀ x ∈ ([266, 274, 278, 281]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_11 : ∀ x ∈ ([282, 290, 293, 294]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_12 : ∀ x ∈ ([298, 322, 326, 329]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_13 : ∀ x ∈ ([330, 338, 341, 342]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_14 : ∀ x ∈ ([345, 346, 354, 357]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_15 : ∀ x ∈ ([358, 361, 362, 386]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_16 : ∀ x ∈ ([390, 393, 394, 402]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_17 : ∀ x ∈ ([405, 406, 409, 410]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_18 : ∀ x ∈ ([418, 422, 425, 426]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_19 : ∀ x ∈ ([514, 518, 521, 522]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_20 : ∀ x ∈ ([530, 534, 537, 538]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_21 : ∀ x ∈ ([546, 549, 550, 554]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_22 : ∀ x ∈ ([578, 582, 585, 586]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_23 : ∀ x ∈ ([594, 597, 598, 601]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_24 : ∀ x ∈ ([602, 610, 613, 614]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_25 : ∀ x ∈ ([617, 618, 642, 646]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_26 : ∀ x ∈ ([649, 650, 658, 662]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_27 : ∀ x ∈ ([665, 666, 674, 678]:List Nat), good x := by
+  decide +kernel
+
+theorem member_block_28 : ∀ x ∈ ([681, 682]:List Nat), good x := by
+  decide +kernel
+
+theorem finite_raw_regular : ∀x<1024,x∈rawWords →
+    safe ParityCodec5New.encode x=true ∧ (bitRun ParityCodec5New.encode x).testBit 5=false ∧ (bitRun ParityCodec5New.encode x).testBit 9=false ∧ codeOf (bitsOf (bitRun ParityCodec5New.encode x))∈canonicalCodes := by
+  intro x _ hx
+  have casesX : x∈([2, 6, 9, 10]:List Nat) ∨ x∈([18, 22, 25, 26]:List Nat) ∨ x∈([34, 37, 38, 42]:List Nat) ∨ x∈([66, 70, 73, 74]:List Nat) ∨ x∈([82, 86, 89, 90]:List Nat) ∨ x∈([98, 101, 102, 106]:List Nat) ∨ x∈([130, 134, 137, 138]:List Nat) ∨ x∈([146, 149, 150, 153]:List Nat) ∨ x∈([154, 162, 166, 169]:List Nat) ∨ x∈([170, 258, 262, 265]:List Nat) ∨ x∈([266, 274, 278, 281]:List Nat) ∨ x∈([282, 290, 293, 294]:List Nat) ∨ x∈([298, 322, 326, 329]:List Nat) ∨ x∈([330, 338, 341, 342]:List Nat) ∨ x∈([345, 346, 354, 357]:List Nat) ∨ x∈([358, 361, 362, 386]:List Nat) ∨ x∈([390, 393, 394, 402]:List Nat) ∨ x∈([405, 406, 409, 410]:List Nat) ∨ x∈([418, 422, 425, 426]:List Nat) ∨ x∈([514, 518, 521, 522]:List Nat) ∨ x∈([530, 534, 537, 538]:List Nat) ∨ x∈([546, 549, 550, 554]:List Nat) ∨ x∈([578, 582, 585, 586]:List Nat) ∨ x∈([594, 597, 598, 601]:List Nat) ∨ x∈([602, 610, 613, 614]:List Nat) ∨ x∈([617, 618, 642, 646]:List Nat) ∨ x∈([649, 650, 658, 662]:List Nat) ∨ x∈([665, 666, 674, 678]:List Nat) ∨ x∈([681, 682]:List Nat) := by
+    simpa only [rawWords,List.mem_cons,List.not_mem_nil,or_false,or_assoc] using hx
+  rcases casesX with h0 | h1 | h2 | h3 | h4 | h5 | h6 | h7 | h8 | h9 | h10 | h11 | h12 | h13 | h14 | h15 | h16 | h17 | h18 | h19 | h20 | h21 | h22 | h23 | h24 | h25 | h26 | h27 | h28
+  · exact member_block_0 x h0
+  · exact member_block_1 x h1
+  · exact member_block_2 x h2
+  · exact member_block_3 x h3
+  · exact member_block_4 x h4
+  · exact member_block_5 x h5
+  · exact member_block_6 x h6
+  · exact member_block_7 x h7
+  · exact member_block_8 x h8
+  · exact member_block_9 x h9
+  · exact member_block_10 x h10
+  · exact member_block_11 x h11
+  · exact member_block_12 x h12
+  · exact member_block_13 x h13
+  · exact member_block_14 x h14
+  · exact member_block_15 x h15
+  · exact member_block_16 x h16
+  · exact member_block_17 x h17
+  · exact member_block_18 x h18
+  · exact member_block_19 x h19
+  · exact member_block_20 x h20
+  · exact member_block_21 x h21
+  · exact member_block_22 x h22
+  · exact member_block_23 x h23
+  · exact member_block_24 x h24
+  · exact member_block_25 x h25
+  · exact member_block_26 x h26
+  · exact member_block_27 x h27
+  · exact member_block_28 x h28
 
 attribute [local irreducible] V invV run
 
