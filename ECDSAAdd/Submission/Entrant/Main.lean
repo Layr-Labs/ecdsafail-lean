@@ -7,6 +7,7 @@ import ECDSAAdd.Baselines.SlotAlgebra
 import ECDSAAdd.Arithmetic.PointFixedPrimitivesPhysical
 import ECDSAAdd.Submission.Entrant.MainB
 import ECDSAAdd.Submission.Entrant.QTop
+import ECDSAAdd.Submission.Entrant.ExitMerge
 import ECDSAAdd.Submission.Entrant.FusedFlags
 
 -- ===== merged module ECDSAAdd.Submission.Entrant.TrimRow =====
@@ -13105,1713 +13106,6 @@ theorem slots_le (L : ControlledPointLayout) :
 end ECDSAAdd.Entrant.ReflectionE1Square
 end -- original module boundary
 
--- ===== ECDSAAdd.Submission.Entrant.E1Merge =====
-section
--- consolidated import: import ECDSAAdd.Arithmetic.NativeFirstDirectForwardProof
--- consolidated import: import ECDSAAdd.Arithmetic.NativeFirstDirectValues
--- consolidated import: import ECDSAAdd.Arithmetic.Compare
--- consolidated import: import ECDSAAdd.Arithmetic.ComparePhysical
--- consolidated import: import ECDSAAdd.Arithmetic.MaskedConstant
--- consolidated import: import ECDSAAdd.Arithmetic.MappedSources
--- consolidated import: import ECDSAAdd.Arithmetic.MappedArithmeticPhysical
--- consolidated import: import ECDSAAdd.Arithmetic.MeasuredArithmeticPhysical
--- consolidated import: import ECDSAAdd.Arithmetic.Copy
--- consolidated import: import ECDSAAdd.Arithmetic.Rotate
--- consolidated import: import ECDSAAdd.Arithmetic.Reduction
--- consolidated import: import ECDSAAdd.Arithmetic.MeasuredGateSupport
--- consolidated import: import ECDSAAdd.Arithmetic.NativeFirstDirectSupport
--- consolidated import: import ECDSAAdd.Baselines.SlotAlgebra
--- consolidated import: import ECDSAAdd.Baselines.SlotMapped
--- consolidated import: import ECDSAAdd.Baselines.SlotNativeFirst
-
-set_option linter.unreachableTactic false
-set_option linter.unusedSectionVars false
-set_option linter.unnecessarySeqFocus false
-set_option linter.constructorNameAsVariable false
-
-set_option maxHeartbeats 4000000
-set_option maxRecDepth 100000
-set_option exponentiation.threshold 1024
-set_option linter.unusedSimpArgs false
-set_option linter.unusedTactic false
-set_option linter.unusedVariables false
-
-namespace ECDSAAdd.Entrant.E1Merge
-open ECDSAAdd ECDSAAdd.Arithmetic NativeFirstDirect RecordedQuantum
-
-/-! ### Arithmetic of the merged first tick -/
-
-theorem p_val : p = 115792089237316195423570985008687907853269984665640564039457584007908834671663 := by
-  norm_num [ECDSAAdd.p]
-
-/-- bit 0 of the selected constant `g·k − f·p`. -/
-def ksel0 (k : Nat) (G f : Bool) : Bool := (G && decide (k%2=1)) ^^ f
-/-- low bit of the input implied by `(g,f,par)`. -/
-def x0 (k : Nat) (G f par : Bool) : Bool := par ^^ ksel0 k G f
-
-/-- Constant added to `x>>1` to obtain the first-tick `K` word directly. -/
-def tk (k : Nat) (G f par : Bool) : Nat :=
-  if f then (if G then (kConstant false par+2^258-(p+par.toNat-(x0 k G f par).toNat-k)/2)%2^258 else 0)
-  else if G then (kConstant false par+((x0 k G f par).toNat+k-par.toNat)/2)%2^258
-  else kConstant false par
-
-def delta (par : Bool) : Nat := if par then p else 2^257-p
-
-def thr (k : Nat) (G par : Bool) : Nat := if G then (if par then (k+p+1)/2 else (k+1)/2) else 0
-
-theorem hC_val : hConstant = 57896044618658097711785492504343953926634992332820282019728792003954417335832 := by
-  norm_num [hConstant, ECDSAAdd.p]
-theorem kC_val (par : Bool) : kConstant false par =
-    if par then 405272312330606683982498447530407677486444946329741974138101544027698101223913
-    else 115792089237316195423570985008687907853269984665640564039457584007908834671663 := by
-  cases par <;> norm_num [kConstant, ECDSAAdd.p]
-
-
-theorem arith (k X : Nat) (hk : k<p) (hX : X<p) (G : Bool) :
-    let f := decide (2^256-1-(if G then 2^256-p+k else 0)<X)
-    let dx := (X+(if G then k else 0))%p
-    let par := decide (dx%2=1)
-    let K := (dx/2+kConstant false par)%2^258
-    let H := (K%2^257+delta par)%2^257
-    decide (X%2=1)=x0 k G f par ∧
-    (X/2+tk k G f par)%2^258=K ∧
-    H=dx/2+(if par then hConstant else 0) ∧
-    f=decide (H<thr k G par) ∧
-    tk k G f par<2^258 := by
-  intro f dx par K H
-  rw [p_val] at hk hX
-  simp only [f,dx,par,K,H,tk,delta,thr,x0,ksel0,kC_val,hC_val,p_val,Nat.reducePow]
-  clear H K par dx f
-  cases G
-  · have e1 : (X+0)%115792089237316195423570985008687907853269984665640564039457584007908834671663=X := Nat.mod_eq_of_lt (by omega)
-    have e2 : decide (115792089237316195423570985008687907853269984665640564039457584007913129639936-1-0<X)=false := by
-      simp only [decide_eq_false_iff_not]; omega
-    simp only [if_false,Bool.false_eq_true,e1,e2,Bool.false_and,Bool.false_xor,Bool.xor_false]
-    rcases Nat.mod_two_eq_zero_or_one X with h|h <;>
-    simp only [h,show (0=1)=False from by decide,decide_false,decide_true,if_false,if_true,
-      Bool.false_eq_true,Bool.toNat_false,Bool.toNat_true] <;>
-    exact ⟨by (first | exact True.intro | (rw [decide_eq_true_iff]; omega) | (rw [decide_eq_false_iff_not]; omega)),by (first | exact True.intro | omega),by (first | exact True.intro | omega),by (first | exact True.intro | (rw [eq_comm, decide_eq_true_iff]; omega) | (rw [eq_comm, decide_eq_false_iff_not]; omega)),by (first | exact True.intro | omega)⟩
-  · simp only [if_true,Bool.true_and]
-    by_cases hf : 115792089237316195423570985008687907853269984665640564039457584007908834671663≤X+k
-    · have e1 : (X+k)%115792089237316195423570985008687907853269984665640564039457584007908834671663=X+k-115792089237316195423570985008687907853269984665640564039457584007908834671663 := by
-        rw [Nat.mod_eq_sub_mod hf,Nat.mod_eq_of_lt (by omega)]
-      have e2 : decide (115792089237316195423570985008687907853269984665640564039457584007913129639936-1-(115792089237316195423570985008687907853269984665640564039457584007913129639936-115792089237316195423570985008687907853269984665640564039457584007908834671663+k)<X)=true := by
-        simp only [decide_eq_true_iff]; omega
-      simp only [e1,e2,Bool.xor_true]
-      clear e1 e2
-      rcases Nat.mod_two_eq_zero_or_one (X+k-115792089237316195423570985008687907853269984665640564039457584007908834671663) with h|h <;>
-      rcases Nat.mod_two_eq_zero_or_one k with h2|h2 <;>
-      simp only [h,h2,show (0=1)=False from by decide,decide_false,decide_true,if_false,if_true,
-        Bool.false_eq_true,Bool.toNat_false,Bool.toNat_true,Bool.not_true,Bool.not_false,
-        Bool.xor_true,Bool.xor_false,Bool.true_xor,Bool.false_xor] <;>
-      exact ⟨by (first | exact True.intro | (rw [decide_eq_true_iff]; omega) | (rw [decide_eq_false_iff_not]; omega)),by (first | exact True.intro | omega),by (first | exact True.intro | omega),by (first | exact True.intro | (rw [eq_comm, decide_eq_true_iff]; omega) | (rw [eq_comm, decide_eq_false_iff_not]; omega)),by (first | exact True.intro | omega)⟩
-    · have e1 : (X+k)%115792089237316195423570985008687907853269984665640564039457584007908834671663=X+k := Nat.mod_eq_of_lt (by omega)
-      have e2 : decide (115792089237316195423570985008687907853269984665640564039457584007913129639936-1-(115792089237316195423570985008687907853269984665640564039457584007913129639936-115792089237316195423570985008687907853269984665640564039457584007908834671663+k)<X)=false := by
-        simp only [decide_eq_false_iff_not]; omega
-      simp only [e1,e2,Bool.xor_false]
-      clear e1 e2
-      rcases Nat.mod_two_eq_zero_or_one (X+k) with h|h <;>
-      rcases Nat.mod_two_eq_zero_or_one k with h2|h2 <;>
-      simp only [h,h2,show (0=1)=False from by decide,decide_false,decide_true,if_false,if_true,
-        Bool.false_eq_true,Bool.toNat_false,Bool.toNat_true,Bool.not_true,Bool.not_false,
-        Bool.xor_true,Bool.xor_false,Bool.true_xor,Bool.false_xor] <;>
-      exact ⟨by (first | exact True.intro | (rw [decide_eq_true_iff]; omega) | (rw [decide_eq_false_iff_not]; omega)),by (first | exact True.intro | omega),by (first | exact True.intro | omega),by (first | exact True.intro | (rw [eq_comm, decide_eq_true_iff]; omega) | (rw [eq_comm, decide_eq_false_iff_not]; omega)),by (first | exact True.intro | omega)⟩
-
-/-! ### Circuit -/
-
-def cmpC : Nat := 2^256-p
-
-def srcR (w : Nat → Wire) : List Wire := wireBlock w 0 256
-def xR (w : Nat → Wire) : List Wire := wireBlock w 770 256
-def cR (w : Nat → Wire) : List Wire := wireBlock w 256 256
-def hR (w : Nat → Wire) : List Wire := wireBlock w 0 258
-def kR (w : Nat → Wire) : List Wire := wireBlock w 770 258
-def tR (w : Nat → Wire) : List Wire := wireBlock w 1029 256
-def hpR (w : Nat → Wire) : List Wire := wireBlock w 1 257
-def aC (w : Nat → Wire) : List Wire := wireBlock w 1540 257
-def hC2 (w : Nat → Wire) : List Wire := wireBlock w 1540 256
-def hp8 (w : Nat → Wire) : List Wire := wireBlock w 1 256
-def hC3 (w : Nat → Wire) : List Wire := wireBlock w 1540 255
-
-def comparePart (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  maskedConstant g (srcR w) (cmpC+k)++notRegister (srcR w)++
-  compareLt none (srcR w) (xR w) (cR w) (w 513) (w 514)++
-  notRegister (srcR w)++maskedConstant g (srcR w) (cmpC+k)
-
-def parGates (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  [.CX (w 770) (w 1028)]++(if k%2=1 then [.CX g (w 1028)] else [])++[.CX (w 514) (w 1028)]++
-  [.CX (w 1028) (w 770)]++(if k%2=1 then [.CX g (w 770)] else [])++[.CX (w 514) (w 770)]
-
-def prodPart (w : Nat → Wire) (g : Wire) : Program :=
-  [.CCX g (w 1028) (w 721),.CCX (w 514) (w 1028) (w 722)]
-
-def c1 (k : Nat) : Nat := tk k false false false
-def cg (k : Nat) : Nat := tk k true false false ^^^ tk k false false false
-def cf (k : Nat) : Nat := tk k true true false ^^^ tk k true false false
-def cp (k : Nat) : Nat := tk k false false true ^^^ tk k false false false
-def cgp (k : Nat) : Nat :=
-  tk k true false true ^^^ tk k true false false ^^^ tk k false false true ^^^ tk k false false false
-def cfp (k : Nat) : Nat :=
-  tk k true true true ^^^ tk k true true false ^^^ tk k true false true ^^^ tk k true false false
-
-def loadK (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  xorConstant (hR w) (c1 k)++maskedConstant g (hR w) (cg k)++maskedConstant (w 514) (hR w) (cf k)++
-  maskedConstant (w 1028) (hR w) (cp k)++maskedConstant (w 721) (hR w) (cgp k)++
-  maskedConstant (w 722) (hR w) (cfp k)
-
-def kAddM (w : Nat → Wire) : Program := mappedAdd (mappedRead (hR w) false) (kR w) (aC w) (w 1797)
-
-def dBits (w : Nat → Wire) : List MappedBit := (List.range 257).map (fun j =>
-  let a := (2^257-p).testBit j
-  let b := p.testBit j
-  if a=b then ({wire:=none,flip:=a} : MappedBit) else {wire:=some (w 1028),flip:=a})
-
-def hAddM (w : Nat → Wire) : Program := mappedAdd (dBits w) (hpR w) (hC2 w) (w 1797)
-
-/-- `hAddM` with its first carry trimmed. The first mapped bit is the literal `1`
-(`2^257-p` and `p` are both odd) and the carry-in `w 1797` is clean, so the first
-majority's Toffoli `CCX (w 1) (w 1797) (w 1540)` never fires; it is dropped. -/
-def hPost (w : Nat → Wire) : Program :=
-  mappedAdd (dBits w).tail (hpR w).tail (hC2 w).tail (w 1540) ++
-    mappedEraseCarry {wire:=none,flip:=true} (w 1) (w 1797) (w 1540) ++
-    mappedSum {wire:=none,flip:=true} (w 1) (w 1797)
-
-def hAddT (w : Nat → Wire) : Program := [.CX (w 1) (w 1540),.CX (w 1797) (w 1540)] ++ hPost w
-
-
-def thrA (k : Nat) : Nat := (k+1)/2
-def thrB (k : Nat) : Nat := (k+1)/2 ^^^ (k+p+1)/2
-
-def loadT (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  maskedConstant g (tR w) (thrA k)++maskedConstant (w 721) (tR w) (thrB k)
-
-/-- Compare-first constant addition `x ↦ x + g·k mod p` merged into the direct first tick. -/
-def merged (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  comparePart w g k++(parGates w g k++rotateRight (kR w))++prodPart w g++loadK w g k++kAddM w++loadK w g k++
-  [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]++
-  copyRegister none (wireBlock w 770 257) (hpR w)++hAddT w++[.CX (w 1028) (w 0),.X (w 0)]++
-  loadT w g k++eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)++loadT w g k++
-  [.measureX (w 721) [] [.CZ g (w 1028)]]
-
-/-! ### Layout facts -/
-
-section Layout
-variable (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-include hn
-
-theorem mem_blk (i a n : Nat) (hi : i<1798) (ha : a+n≤1798) :
-    w i ∈ wireBlock w a n ↔ a ≤ i ∧ i < a + n := by
-  constructor
-  · intro h
-    obtain ⟨j,hj,he⟩ := List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj
-    have := skywalkPool_index_inj w hn i j hi (by omega) he.symm
-    omega
-  · intro h
-    exact List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩
-
-theorem w_ne (i j : Nat) (hi : i<1798) (hj : j<1798) (h : i≠j) : w i≠w j :=
-  index_ne w hn i j hi hj h
-
-omit hn in
-theorem blk_sub (a n b m : Nat) (h1 : b≤a) (h2 : a+n≤b+m) : ∀q∈wireBlock w a n,q∈wireBlock w b m := by
-  intro q hq
-  obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
-  simp only [List.mem_range'_1] at hi
-  exact List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩
-
-theorem blk_nd (a n : Nat) (ha : a+n≤1798) : (wireBlock w a n).Nodup := block_nodup w hn a n ha
-
-theorem blk_dis (a n b m : Nat) (ha : a+n≤1798) (hb : b+m≤1798) (sep : a+n≤b ∨ b+m≤a) :
-    List.Disjoint (wireBlock w a n) (wireBlock w b m) := block_disjoint w hn a n b m ha hb sep
-
-theorem g_out (g : Wire) (hg : g∉skywalkPoolWires w) (a n : Nat) (ha : a+n≤1798) : g∉wireBlock w a n :=
-  fun h => hg (blk_sub w a n 0 1798 (by omega) (by omega) g h)
-
-theorem g_ne (g : Wire) (hg : g∉skywalkPoolWires w) (i : Nat) (hi : i<1798) : g≠w i := by
-  intro e; apply hg; rw [e]
-  exact List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩
-
-end Layout
-
-
-/-! ### Frame -/
-
-def mutL (w : Nat → Wire) : List Wire := hR w++kR w++tR w++[w 1028,w 514,w 721,w 722]
-
-def MF (w : Nat → Wire) (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (s : BasisState) : Prop :=
-  regValue (hR w) s=H ∧ regValue (kR w) s=X ∧ regValue (tR w) s=T ∧
-  s (w 1028)=par ∧ s (w 514)=f ∧ s (w 721)=gp ∧ s (w 722)=fp ∧ ∀q,q∉mutL w → s q=b0 q
-
-theorem keep (R : List Wire) (s t : BasisState) (hf : ∀q,q∉R → t q=s q) (C : List Wire)
-    (hC : ∀q∈C,q∉R) : regValue C t=regValue C s :=
-  regValue_congr C t s (fun q hq => hf q (hC q hq))
-
-section Steps
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn
-
-theorem hR_nd : (hR w).Nodup := blk_nd w hn 0 258 (by omega)
-theorem kR_nd : (kR w).Nodup := blk_nd w hn 770 258 (by omega)
-theorem tR_nd : (tR w).Nodup := blk_nd w hn 1029 256 (by omega)
-
-theorem hR_kR : ∀q∈kR w,q∉hR w := fun q hq h =>
-  List.disjoint_left.mp (blk_dis w hn 0 258 770 258 (by omega) (by omega) (by omega)) h hq
-theorem hR_tR : ∀q∈tR w,q∉hR w := fun q hq h =>
-  List.disjoint_left.mp (blk_dis w hn 0 258 1029 256 (by omega) (by omega) (by omega)) h hq
-theorem kR_hR : ∀q∈hR w,q∉kR w := fun q hq h => hR_kR w hn q h hq
-theorem kR_tR : ∀q∈tR w,q∉kR w := fun q hq h =>
-  List.disjoint_left.mp (blk_dis w hn 770 258 1029 256 (by omega) (by omega) (by omega)) h hq
-theorem tR_hR : ∀q∈hR w,q∉tR w := fun q hq h => hR_tR w hn q h hq
-theorem tR_kR : ∀q∈kR w,q∉tR w := fun q hq h => kR_tR w hn q h hq
-
-theorem nb (i a n : Nat) (hi : i<1798) (ha : a+n≤1798) (sep : i < a ∨ a + n ≤ i) : w i ∉ wireBlock w a n :=
-  block_not_mem w hn i a n hi ha sep
-
-theorem out_of_mut (R : List Wire) (hR' : ∀q∈R,q∈mutL w) (q : Wire) (hq : q∉mutL w) : q∉R :=
-  fun h => hq (hR' q h)
-
-theorem hR_mut : ∀q∈hR w,q∈mutL w := fun q hq => by simp [mutL,hq]
-theorem kR_mut : ∀q∈kR w,q∈mutL w := fun q hq => by simp [mutL,hq]
-theorem tR_mut : ∀q∈tR w,q∈mutL w := fun q hq => by simp [mutL,hq]
-
-/-- An operation that changes only the `H` block. -/
-theorem stepH (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (s t : State)
-    (h : MF w b0 H X T par f gp fp s.basis) (hf : ∀q,q∉hR w → t.basis q=s.basis q) (H' : Nat)
-    (hv : regValue (hR w) t.basis=H') : MF w b0 H' X T par f gp fp t.basis := by
-  obtain ⟨h1,h2,h3,h4,h5,h6,h7,h8⟩ := h
-  refine ⟨hv,?_,?_,?_,?_,?_,?_,?_⟩
-  · rw [keep _ _ _ hf _ (hR_kR w hn)]; exact h2
-  · rw [keep _ _ _ hf _ (hR_tR w hn)]; exact h3
-  · rw [hf _ (nb w hn 1028 0 258 (by omega) (by omega) (by omega))]; exact h4
-  · rw [hf _ (nb w hn 514 0 258 (by omega) (by omega) (by omega))]; exact h5
-  · rw [hf _ (nb w hn 721 0 258 (by omega) (by omega) (by omega))]; exact h6
-  · rw [hf _ (nb w hn 722 0 258 (by omega) (by omega) (by omega))]; exact h7
-  · intro q hq; rw [hf q (out_of_mut w hn _ (hR_mut w hn) q hq)]; exact h8 q hq
-
-/-- An operation that changes only the `K` block. -/
-theorem stepK (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (s t : State)
-    (h : MF w b0 H X T par f gp fp s.basis) (hf : ∀q,q∉kR w → t.basis q=s.basis q) (X' : Nat)
-    (hv : regValue (kR w) t.basis=X') : MF w b0 H X' T par f gp fp t.basis := by
-  obtain ⟨h1,h2,h3,h4,h5,h6,h7,h8⟩ := h
-  refine ⟨?_,hv,?_,?_,?_,?_,?_,?_⟩
-  · rw [keep _ _ _ hf _ (kR_hR w hn)]; exact h1
-  · rw [keep _ _ _ hf _ (kR_tR w hn)]; exact h3
-  · rw [hf _ (nb w hn 1028 770 258 (by omega) (by omega) (by omega))]; exact h4
-  · rw [hf _ (nb w hn 514 770 258 (by omega) (by omega) (by omega))]; exact h5
-  · rw [hf _ (nb w hn 721 770 258 (by omega) (by omega) (by omega))]; exact h6
-  · rw [hf _ (nb w hn 722 770 258 (by omega) (by omega) (by omega))]; exact h7
-  · intro q hq; rw [hf q (out_of_mut w hn _ (kR_mut w hn) q hq)]; exact h8 q hq
-
-/-- An operation that changes only the threshold block. -/
-theorem stepT (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (s t : State)
-    (h : MF w b0 H X T par f gp fp s.basis) (hf : ∀q,q∉tR w → t.basis q=s.basis q) (T' : Nat)
-    (hv : regValue (tR w) t.basis=T') : MF w b0 H X T' par f gp fp t.basis := by
-  obtain ⟨h1,h2,h3,h4,h5,h6,h7,h8⟩ := h
-  refine ⟨?_,?_,hv,?_,?_,?_,?_,?_⟩
-  · rw [keep _ _ _ hf _ (tR_hR w hn)]; exact h1
-  · rw [keep _ _ _ hf _ (tR_kR w hn)]; exact h2
-  · rw [hf _ (nb w hn 1028 1029 256 (by omega) (by omega) (by omega))]; exact h4
-  · rw [hf _ (nb w hn 514 1029 256 (by omega) (by omega) (by omega))]; exact h5
-  · rw [hf _ (nb w hn 721 1029 256 (by omega) (by omega) (by omega))]; exact h6
-  · rw [hf _ (nb w hn 722 1029 256 (by omega) (by omega) (by omega))]; exact h7
-  · intro q hq; rw [hf q (out_of_mut w hn _ (tR_mut w hn) q hq)]; exact h8 q hq
-
-/-- An operation that changes one scalar wire `w j` of the frame. -/
-theorem stepBit (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (s t : State) (j : Nat)
-    (hj : j=1028 ∨ j=514 ∨ j=721 ∨ j=722)
-    (h : MF w b0 H X T par f gp fp s.basis) (hf : ∀q,q≠w j → t.basis q=s.basis q) :
-    MF w b0 H X T (if j=1028 then t.basis (w j) else par) (if j=514 then t.basis (w j) else f)
-      (if j=721 then t.basis (w j) else gp) (if j=722 then t.basis (w j) else fp) t.basis := by
-  obtain ⟨h1,h2,h3,h4,h5,h6,h7,h8⟩ := h
-  have hjr : j<1798 := by omega
-  have nh : w j∉hR w := nb w hn j 0 258 hjr (by omega) (by omega)
-  have nk : w j∉kR w := nb w hn j 770 258 hjr (by omega) (by omega)
-  have nt : w j∉tR w := nb w hn j 1029 256 hjr (by omega) (by omega)
-  have ne (i : Nat) (hi : i<1798) (hij : i≠j) : w i≠w j := w_ne w hn i j hi hjr hij
-  refine ⟨?_,?_,?_,?_,?_,?_,?_,?_⟩
-  · rw [regValue_congr _ _ s.basis (fun q hq => hf q (fun e => nh (e ▸ hq)))]; exact h1
-  · rw [regValue_congr _ _ s.basis (fun q hq => hf q (fun e => nk (e ▸ hq)))]; exact h2
-  · rw [regValue_congr _ _ s.basis (fun q hq => hf q (fun e => nt (e ▸ hq)))]; exact h3
-  · by_cases e : j=1028
-    · simp [e]
-    · simp only [e,if_false]; rw [hf _ (ne 1028 (by omega) (Ne.symm e))]; exact h4
-  · by_cases e : j=514
-    · simp [e]
-    · simp only [e,if_false]; rw [hf _ (ne 514 (by omega) (Ne.symm e))]; exact h5
-  · by_cases e : j=721
-    · simp [e]
-    · simp only [e,if_false]; rw [hf _ (ne 721 (by omega) (Ne.symm e))]; exact h6
-  · by_cases e : j=722
-    · simp [e]
-    · simp only [e,if_false]; rw [hf _ (ne 722 (by omega) (Ne.symm e))]; exact h7
-  · intro q hq
-    have : q≠w j := by
-      intro e; apply hq; rw [e]
-      rcases hj with rfl|rfl|rfl|rfl <;> simp [mutL]
-    rw [hf q this]; exact h8 q hq
-
-end Steps
-
-
-/-! ### Concrete steps -/
-
-theorem run_cx (a b : Wire) (m : List Bool) (s : State) :
-    run [.CX a b] m s=⟨s.phase,writeBit s.basis b (s.basis b ^^ s.basis a)⟩ := rfl
-theorem run_ccx (a b c : Wire) (m : List Bool) (s : State) :
-    run [.CCX a b c] m s=⟨s.phase,writeBit s.basis c (s.basis c ^^ (s.basis a && s.basis b))⟩ := rfl
-theorem run_x (a : Wire) (m : List Bool) (s : State) :
-    run [.X a] m s=⟨s.phase,writeBit s.basis a (!s.basis a)⟩ := rfl
-
-theorem run_meas_and (t a b : Wire) (m : List Bool) (s : State) (ha : a≠t) (hb : b≠t)
-    (ht : s.basis t=(s.basis a && s.basis b)) :
-    run [.measureX t [] [.CZ a b]] m s=⟨s.phase,writeBit s.basis t false⟩ := by
-  simp only [run,measureAndCorrect]
-  cases m.headD false <;> simp [correct,writeBit,Function.update_of_ne ha,Function.update_of_ne hb,ht]
-
-section Concrete
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn
-
-theorem kR_split (s : BasisState) :
-    regValue (kR w) s=(s (w 770)).toNat+2*regValue (wireBlock w 771 257) s := by
-  have e : kR w=w 770::wireBlock w 771 257 := by
-    simp [kR,wireBlock,List.range'_succ]
-  rw [e]; cases h : s (w 770) <;> simp [regValue,h]
-
-theorem hR_split (s : BasisState) :
-    regValue (hR w) s=(s (w 0)).toNat+2*regValue (hpR w) s := by
-  have e : hR w=w 0::hpR w := by
-    simp [hR,hpR,wireBlock,List.range'_succ]
-  rw [e]; cases h : s (w 0) <;> simp [regValue,h]
-
-theorem hR_src (s : BasisState) :
-    regValue (hR w) s=regValue (srcR w) s+2^256*regValue (wireBlock w 256 2) s := by
-  have e : hR w=srcR w++wireBlock w 256 2 := by
-    rw [hR,srcR,wireBlock_append]
-  rw [e,regValue_append,srcR,wireBlock_length]
-
-theorem kR_x (s : BasisState) :
-    regValue (kR w) s=regValue (xR w) s+2^256*regValue (wireBlock w 1026 2) s := by
-  have e : kR w=xR w++wireBlock w 1026 2 := by
-    rw [kR,xR,wireBlock_append]
-  rw [e,regValue_append,xR,wireBlock_length]
-
-theorem kR_low (s : BasisState) :
-    regValue (kR w) s=regValue (wireBlock w 770 257) s+2^257*regValue (wireBlock w 1027 1) s := by
-  have e : kR w=wireBlock w 770 257++wireBlock w 1027 1 := by
-    rw [kR,wireBlock_append]
-  rw [e,regValue_append,wireBlock_length]
-
-/-- A CX targeting the parity wire. -/
-theorem stepParCX (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (c : Wire) (cv : Bool)
-    (hc : c≠w 1028) (hcv : ∀s : BasisState,MF w b0 H X T par f gp fp s → s c=cv) :
-    Triple (MF w b0 H X T par f gp fp) [.CX c (w 1028)] (MF w b0 H X T (par ^^ cv) f gp fp) := by
-  intro s m h
-  rw [run_cx]
-  refine ⟨rfl,?_⟩
-  have := stepBit w hn b0 H X T par f gp fp s ⟨s.phase,writeBit s.basis (w 1028)
-    (s.basis (w 1028) ^^ s.basis c)⟩ 1028 (by omega) h
-    (fun q hq => by simp [writeBit,Function.update_of_ne hq])
-  simpa [writeBit,h.2.2.2.1,hcv s.basis h] using this
-
-/-- A CX targeting bit 0 of the K block. -/
-theorem stepLowCX (b0 : BasisState) (H Y T : Nat) (b par f gp fp : Bool) (c : Wire) (cv : Bool)
-    (hc : c≠w 770) (hcv : ∀s : BasisState,MF w b0 H (2*Y+b.toNat) T par f gp fp s → s c=cv) :
-    Triple (MF w b0 H (2*Y+b.toNat) T par f gp fp) [.CX c (w 770)]
-      (MF w b0 H (2*Y+(b ^^ cv).toNat) T par f gp fp) := by
-  intro s m h
-  rw [run_cx]
-  refine ⟨rfl,?_⟩
-  have m770 : w 770∈kR w := (mem_blk w hn 770 770 258 (by omega) (by omega)).mpr (by omega)
-  have rest : ∀q∈wireBlock w 771 257,q≠w 770 := fun q hq e =>
-    nb w hn 770 771 257 (by omega) (by omega) (by omega) (e ▸ hq)
-  apply stepK w hn b0 H _ T par f gp fp s _ h
-  · intro q hq; have : q≠w 770 := fun e => hq (e ▸ m770)
-    simp [writeBit,Function.update_of_ne this]
-  · have sp := kR_split w hn s.basis
-    have sp2 := kR_split w hn (writeBit s.basis (w 770) (s.basis (w 770) ^^ s.basis c))
-    rw [h.2.1] at sp
-    rw [sp2,regValue_congr _ _ s.basis (fun q hq => by simp [writeBit,Function.update_of_ne (rest q hq)])]
-    rw [hcv s.basis h]
-    simp only [writeBit,Function.update_self]
-    cases hb : s.basis (w 770) <;> cases b <;> cases cv <;> simp [hb] at sp ⊢ <;> omega
-
-end Concrete
-
-
-section Concrete2
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn
-
-theorem stepXorH (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (v : Nat) (hv : v<2^258) :
-    Triple (MF w b0 H X T par f gp fp) (xorConstant (hR w) v) (MF w b0 (H^^^v) X T par f gp fp) := by
-  intro s m h
-  obtain ⟨hp,he,hval⟩ := xorConstant_correct (hR w) (hR_nd w hn) v (by simpa [hR,wireBlock_length] using hv) s m
-  exact ⟨hp,stepH w hn b0 H X T par f gp fp s _ h he _ (by rw [hval,h.1])⟩
-
-theorem stepMaskH (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (c : Wire) (cv : Bool)
-    (hc : c∉hR w) (hcv : ∀s : BasisState,MF w b0 H X T par f gp fp s → s c=cv) (v : Nat) (hv : v<2^258) :
-    Triple (MF w b0 H X T par f gp fp) (maskedConstant c (hR w) v)
-      (MF w b0 (H^^^(if cv then v else 0)) X T par f gp fp) := by
-  intro s m h
-  obtain ⟨hp,he,hval⟩ := maskedConstant_correct c (hR w) v (hR_nd w hn) hc
-    (by simpa [hR,wireBlock_length] using hv) s m
-  exact ⟨hp,stepH w hn b0 H X T par f gp fp s _ h he _ (by rw [hval,h.1,hcv s.basis h])⟩
-
-theorem stepMaskT (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (c : Wire) (cv : Bool)
-    (hc : c∉tR w) (hcv : ∀s : BasisState,MF w b0 H X T par f gp fp s → s c=cv) (v : Nat) (hv : v<2^256) :
-    Triple (MF w b0 H X T par f gp fp) (maskedConstant c (tR w) v)
-      (MF w b0 H X (T^^^(if cv then v else 0)) par f gp fp) := by
-  intro s m h
-  obtain ⟨hp,he,hval⟩ := maskedConstant_correct c (tR w) v (tR_nd w hn) hc
-    (by simpa [tR,wireBlock_length] using hv) s m
-  exact ⟨hp,stepT w hn b0 H X T par f gp fp s _ h he _ (by rw [hval,h.2.2.1,hcv s.basis h])⟩
-
-theorem stepCCX (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (a b : Wire) (j : Nat)
-    (hj : j=721 ∨ j=722) (av bv : Bool) (ha : a≠w j) (hb : b≠w j)
-    (hav : ∀s : BasisState,MF w b0 H X T par f gp fp s → s a=av)
-    (hbv : ∀s : BasisState,MF w b0 H X T par f gp fp s → s b=bv) :
-    Triple (MF w b0 H X T par f gp fp) [.CCX a b (w j)]
-      (MF w b0 H X T par f (if j=721 then gp ^^ (av && bv) else gp)
-        (if j=722 then fp ^^ (av && bv) else fp)) := by
-  intro s m h
-  rw [run_ccx]
-  refine ⟨rfl,?_⟩
-  have := stepBit w hn b0 H X T par f gp fp s ⟨s.phase,writeBit s.basis (w j)
-    (s.basis (w j) ^^ (s.basis a && s.basis b))⟩ j (by omega) h
-    (fun q hq => by simp [writeBit,Function.update_of_ne hq])
-  rcases hj with rfl|rfl
-  · simpa [writeBit,h.2.2.2.2.2.1,hav s.basis h,hbv s.basis h] using this
-  · simpa [writeBit,h.2.2.2.2.2.2.1,hav s.basis h,hbv s.basis h] using this
-
-theorem stepKAdd (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
-    (hc : ∀q∈aC w,b0 q=false) (hcin : b0 (w 1797)=false) :
-    Triple (MF w b0 H X T par f gp fp) (kAddM w) (MF w b0 H ((H+X)%2^258) T par f gp fp) := by
-  intro s m h
-  have caway : ∀q∈aC w,q∉mutL w := by
-    intro q hq hm
-    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
-    simp only [List.mem_range'_1] at hi
-    simp only [mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hm
-    rcases hm with ((hm|hm)|hm)|hm|hm|hm|hm
-    · exact nb w hn i 0 258 (by omega) (by omega) (by omega) hm
-    · exact nb w hn i 770 258 (by omega) (by omega) (by omega) hm
-    · exact nb w hn i 1029 256 (by omega) (by omega) (by omega) hm
-    all_goals exact w_ne w hn _ _ (by omega) (by omega) (by omega) hm
-  have m1797 : w 1797∉mutL w := by
-    simp only [mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-    refine ⟨⟨⟨nb w hn 1797 0 258 (by omega) (by omega) (by omega),nb w hn 1797 770 258 (by omega) (by omega) (by omega)⟩,
-      nb w hn 1797 1029 256 (by omega) (by omega) (by omega)⟩,?_,?_,?_,?_⟩ <;>
-      exact w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have nd : (w 1797::(kR w++aC w)).Nodup := by
-    apply List.nodup_cons.mpr
-    refine ⟨?_,List.nodup_append'.mpr ⟨kR_nd w hn,blk_nd w hn 1540 257 (by omega),
-      blk_dis w hn 770 258 1540 257 (by omega) (by omega) (by omega)⟩⟩
-    simp only [List.mem_append,not_or]
-    exact ⟨nb w hn 1797 770 258 (by omega) (by omega) (by omega),nb w hn 1797 1540 257 (by omega) (by omega) (by omega)⟩
-  have src : ∀q∈mappedWires (mappedRead (hR w) false),q∉w 1797::(kR w++aC w) := by
-    rw [mappedRead_wires]
-    intro q hq hm
-    simp only [List.mem_cons,List.mem_append] at hm
-    rcases hm with e|e|e
-    · exact nb w hn 1797 0 258 (by omega) (by omega) (by omega) (e ▸ hq)
-    · exact hR_kR w hn q e hq
-    · exact List.disjoint_left.mp (blk_dis w hn 0 258 1540 257 (by omega) (by omega) (by omega)) hq e
-  have cl : ∀q∈aC w,s.basis q=false := fun q hq => (h.2.2.2.2.2.2.2 q (caway q hq)).trans (hc q hq)
-  obtain ⟨hp,he,hval⟩ := mappedAdd_correct (mappedRead (hR w) false) (kR w) (aC w) (w 1797) nd src
-    (by simp [mappedRead_length,hR,kR,wireBlock_length]) (by simp [aC,kR,wireBlock_length]) s m cl
-  refine ⟨hp,stepK w hn b0 H X T par f gp fp s _ h he _ ?_⟩
-  rw [hval,mappedRead_value,h.1,h.2.1,(h.2.2.2.2.2.2.2 _ m1797).trans hcin]
-  simp [kR,wireBlock_length]
-
-end Concrete2
-
-
-def CF (w : Nat → Wire) (b0 : BasisState) (S : Nat) (F : Bool) (s : BasisState) : Prop :=
-  regValue (srcR w) s=S ∧ s (w 514)=F ∧ ∀q,q∉srcR w → q≠w 514 → s q=b0 q
-
-section Compare
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn
-
-theorem src_nd : (srcR w).Nodup := blk_nd w hn 0 256 (by omega)
-theorem w514_src : w 514∉srcR w := nb w hn 514 0 256 (by omega) (by omega) (by omega)
-
-theorem cfMask (b0 : BasisState) (S : Nat) (F : Bool) (c : Wire) (hc : c∉srcR w) (hc' : c≠w 514)
-    (v : Nat) (hv : v<2^256) :
-    Triple (CF w b0 S F) (maskedConstant c (srcR w) v) (CF w b0 (S^^^(if b0 c then v else 0)) F) := by
-  intro s m h
-  obtain ⟨hp,he,hval⟩ := maskedConstant_correct c (srcR w) v (src_nd w hn) hc
-    (by simpa [srcR,wireBlock_length] using hv) s m
-  refine ⟨hp,?_,?_,?_⟩
-  · rw [hval,h.1,h.2.2 c hc hc']
-  · rw [he _ (w514_src w hn)]; exact h.2.1
-  · intro q h1 h2; rw [he q h1]; exact h.2.2 q h1 h2
-
-theorem cfNot (b0 : BasisState) (S : Nat) (F : Bool) :
-    Triple (CF w b0 S F) (notRegister (srcR w)) (CF w b0 (2^256-1-S) F) := by
-  intro s m h
-  rw [notRegister_correct (srcR w) (src_nd w hn)]
-  refine ⟨rfl,?_,?_,?_⟩
-  · change regValue (srcR w) (fun q => if q∈srcR w then !s.basis q else s.basis q)=_
-    rw [regValue_congr (srcR w) _ (fun q => !s.basis q) (by intro q hq; simp [hq]),
-      regValue_complement,h.1]
-    simp [srcR,wireBlock_length]
-  · change (if w 514∈srcR w then !s.basis (w 514) else s.basis (w 514))=_
-    simp [w514_src w hn,h.2.1]
-  · intro q h1 h2
-    change (if q∈srcR w then !s.basis q else s.basis q)=_
-    simp [h1,h.2.2 q h1 h2]
-
-theorem cfCmp (b0 : BasisState) (S : Nat) (F : Bool) (X : Nat) (hx : regValue (xR w) b0=X)
-    (hc : ∀q∈cR w,b0 q=false) (hcin : b0 (w 513)=false) :
-    Triple (CF w b0 S F) (compareLt none (srcR w) (xR w) (cR w) (w 513) (w 514))
-      (CF w b0 S (F ^^ decide (S<X))) := by
-  intro s m h
-  have xs : ∀q∈xR w,q∉srcR w := fun q hq h' =>
-    List.disjoint_left.mp (blk_dis w hn 0 256 770 256 (by omega) (by omega) (by omega)) h' hq
-  have x514 : ∀q∈xR w,q≠w 514 := fun q hq e => nb w hn 514 770 256 (by omega) (by omega) (by omega) (e ▸ hq)
-  have cs : ∀q∈cR w,q∉srcR w := fun q hq h' =>
-    List.disjoint_left.mp (blk_dis w hn 0 256 256 256 (by omega) (by omega) (by omega)) h' hq
-  have c514 : ∀q∈cR w,q≠w 514 := fun q hq e => nb w hn 514 256 256 (by omega) (by omega) (by omega) (e ▸ hq)
-  have n513 : w 513∉srcR w := nb w hn 513 0 256 (by omega) (by omega) (by omega)
-  have e513 : w 513≠w 514 := w_ne w hn 513 514 (by omega) (by omega) (by omega)
-  have nd : (w 514::w 513::(srcR w++xR w++cR w)).Nodup := by
-    have a1 := blk_dis w hn 0 256 770 256 (by omega) (by omega) (by omega)
-    have a2 := blk_dis w hn 0 256 256 256 (by omega) (by omega) (by omega)
-    have a3 := blk_dis w hn 770 256 256 256 (by omega) (by omega) (by omega)
-    have l1 : (srcR w++xR w).Nodup := List.nodup_append'.mpr ⟨src_nd w hn,blk_nd w hn 770 256 (by omega),a1⟩
-    have l2 : (srcR w++xR w++cR w).Nodup := by
-      apply List.nodup_append'.mpr
-      refine ⟨l1,blk_nd w hn 256 256 (by omega),?_⟩
-      apply List.disjoint_left.mpr
-      intro q hq hc'
-      rcases List.mem_append.mp hq with h1|h1
-      · exact List.disjoint_left.mp a2 h1 hc'
-      · exact List.disjoint_left.mp a3 h1 hc'
-    refine List.nodup_cons.mpr ⟨?_,List.nodup_cons.mpr ⟨?_,l2⟩⟩
-    · simp only [List.mem_cons,List.mem_append,not_or]
-      exact ⟨e513.symm,⟨w514_src w hn,nb w hn 514 770 256 (by omega) (by omega) (by omega)⟩,
-        nb w hn 514 256 256 (by omega) (by omega) (by omega)⟩
-    · simp only [List.mem_append,not_or]
-      exact ⟨⟨n513,nb w hn 513 770 256 (by omega) (by omega) (by omega)⟩,
-        nb w hn 513 256 256 (by omega) (by omega) (by omega)⟩
-  obtain ⟨hp,he,hv⟩ := compareLt_correct none (srcR w) (xR w) (cR w) (w 513) (w 514) nd (by simp)
-    (by simp [srcR,xR,wireBlock_length]) (by simp [cR,xR,wireBlock_length]) s m
-    ((h.2.2 _ n513 e513).trans hcin) (fun q hq => (h.2.2 q (cs q hq) (c514 q hq)).trans (hc q hq))
-  refine ⟨hp,?_,?_,?_⟩
-  · rw [regValue_congr _ _ s.basis (fun q hq => he q (fun e => w514_src w hn (e ▸ hq)))]; exact h.1
-  · rw [hv,h.2.1,h.1,regValue_congr _ _ b0 (fun q hq => h.2.2 q (xs q hq) (x514 q hq)),hx]
-    simp [controlValue]
-  · intro q h1 h2; rw [he q h2]; exact h.2.2 q h1 h2
-
-theorem cfCompare (b0 : BasisState) (F : Bool) (k X : Nat) (hk : cmpC+k<2^256)
-    (hx : regValue (xR w) b0=X) (hc : ∀q∈cR w,b0 q=false) (hcin : b0 (w 513)=false)
-    (gs : g∉srcR w) (g514 : g≠w 514) :
-    Triple (CF w b0 0 F) (comparePart w g k)
-      (CF w b0 0 (F ^^ decide (2^256-1-(if b0 g then cmpC+k else 0)<X))) := by
-  have t := ((((cfMask w hn b0 0 F g gs g514 (cmpC+k) hk).seq
-    (cfNot w hn b0 _ F)).seq (cfCmp w hn b0 _ F X hx hc hcin)).seq
-    (cfNot w hn b0 _ _)).seq (cfMask w hn b0 _ _ g gs g514 (cmpC+k) hk)
-  apply Triple.conseq (fun _ h => h) t
-  intro s h
-  have lt : (if b0 g then cmpC+k else 0)<2^256 := by split <;> omega
-  refine ⟨?_,?_,h.2.2⟩
-  · rw [h.1]
-    have e : 2^256-1-(2^256-1-(0^^^(if b0 g then cmpC+k else 0)))=(if b0 g then cmpC+k else 0) := by
-      simp only [Nat.zero_xor]; omega
-    rw [e,Nat.xor_self]
-  · rw [h.2.1]; simp only [Nat.zero_xor]
-
-end Compare
-
-
-def dScalar (par : Bool) : Nat :=
-  (List.range 257).foldr (fun j acc => (if par then p.testBit j else (2^257-p).testBit j).toNat+2*acc) 0
-
-theorem dScalar_value (par : Bool) : dScalar par=delta par := by
-  cases par <;> decide
-
-private theorem selected_bit_value (flag : Wire) (a b : Bool) (s : BasisState) :
-    (if a=b then ({wire:=none,flip:=a} : MappedBit)
-      else {wire:=some flag,flip:=a}).value s=if s flag then b else a := by
-  cases a <;> cases b <;> cases hf : s flag <;> simp [MappedBit.value,hf]
-
-private theorem d_list_value (is : List Nat) (flag : Wire) (s : BasisState) :
-    mappedValue (is.map (fun j =>
-      let a := (2^257-p).testBit j
-      let b := p.testBit j
-      if a=b then ({wire:=none,flip:=a} : MappedBit) else {wire:=some flag,flip:=a})) s=
-      is.foldr (fun j acc => (if s flag then p.testBit j else (2^257-p).testBit j).toNat+2*acc) 0 := by
-  induction is with
-  | nil => rfl
-  | cons j is ih =>
-    simp only [List.map_cons,mappedValue,List.foldr_cons]
-    rw [ih,selected_bit_value]
-
-theorem dBits_value (w : Nat → Wire) (s : BasisState) : mappedValue (dBits w) s=delta (s (w 1028)) := by
-  rw [dBits,d_list_value]
-  exact dScalar_value (s (w 1028))
-
-theorem dBits_length (w : Nat → Wire) : (dBits w).length=257 := by simp [dBits]
-
-theorem dBits_cons (w : Nat → Wire) :
-    ∃ b' bs, dBits w = {wire:=none,flip:=true} :: b' :: bs := by
-  have e : List.range 257 = 0 :: 1 :: List.range' 2 255 := by
-    rw [List.range_eq_range']; rfl
-  have t1 : (2^257-p).testBit 0 = true := by rw [p_val]; decide
-  have t2 : p.testBit 0 = true := by rw [p_val]; decide
-  rw [dBits, e, List.map_cons, List.map_cons]
-  simp only [t1, t2, ite_true]
-  exact ⟨_, _, rfl⟩
-
-theorem hpR_cons (w : Nat → Wire) : ∃ y' ys, hpR w = w 1 :: y' :: ys :=
-  ⟨w 2, (List.range' 3 255).map w, by
-    rw [hpR, wireBlock, show (257:Nat) = 255+1+1 from rfl, List.range'_succ, List.range'_succ]; rfl⟩
-
-theorem hC2_cons (w : Nat → Wire) : ∃ cs, hC2 w = w 1540 :: cs :=
-  ⟨(List.range' 1541 255).map w, by
-    rw [hC2, wireBlock, show (256:Nat) = 255+1 from rfl, List.range'_succ]; rfl⟩
-
-theorem hAddM_split (w : Nat → Wire) :
-    hAddM w = [.CX (w 1) (w 1540),.CX (w 1797) (w 1540)] ++ [.CCX (w 1) (w 1797) (w 1540)] ++ hPost w := by
-  obtain ⟨b', bs, hD⟩ := dBits_cons w
-  obtain ⟨y', ys, hY⟩ := hpR_cons w
-  obtain ⟨cs, hC⟩ := hC2_cons w
-  simp only [hAddM, hPost, hD, hY, hC, List.tail_cons, mappedAdd, mappedMajority, List.append_assoc,
-    List.cons_append, List.nil_append, if_true]
-
-/-- Dropping a Toffoli whose second control is false after a measurement-free prefix. -/
-theorem run_drop_ccx (P Q : Program) (a b t : Wire) (m : List Bool) (s : State)
-    (hP : measurementCount P = 0) (hb : (run P [] s).basis b = false) :
-    run (P ++ [.CCX a b t] ++ Q) m s = run (P ++ Q) m s := by
-  rw [List.append_assoc, run_append, run_append P Q, hP]
-  simp only [List.take_zero, List.drop_zero, List.cons_append, List.nil_append, run, hb,
-    Bool.and_false, Bool.xor_false, writeBit, Function.update_eq_self]
-
-theorem hAddT_run (w : Nat → Wire) (h17 : w 1797 ≠ w 1540) (m : List Bool) (s : State)
-    (hc : s.basis (w 1797) = false) : run (hAddT w) m s = run (hAddM w) m s := by
-  rw [hAddM_split, hAddT, run_drop_ccx]
-  · rfl
-  · simp only [run, writeBit, Function.update_of_ne h17, hc]
-
-theorem hAddT_counts (w : Nat → Wire) :
-    toffoliCount (hAddT w) + 1 = toffoliCount (hAddM w) ∧
-      measurementCount (hAddT w) = measurementCount (hAddM w) := by
-  rw [hAddM_split, hAddT]
-  simp only [toffoliCount_append, measurementCount_append]
-  constructor
-  · simp [toffoliCount]; omega
-  · simp [measurementCount]
-
-theorem hAddT_wires (w : Nat → Wire) : wires (hAddT w) ⊆ wires (hAddM w) := by
-  rw [hAddM_split, hAddT]
-  simp only [wires_append]
-  exact Finset.union_subset_union (Finset.subset_union_left) (Finset.Subset.refl _)
-
-theorem hAddT_physical (w : Nat → Wire) (h : GatePhysical (hAddM w)) : GatePhysical (hAddT w) := by
-  rw [hAddM_split] at h
-  rw [hAddT]
-  simp only [gatePhysical_append] at h ⊢
-  exact ⟨h.1.1, h.2⟩
-
-theorem hAddT_slots (w : Nat → Wire) :
-    Challenge.gateSlots (hAddT w) + 1 = Challenge.gateSlots (hAddM w) := by
-  rw [hAddM_split, hAddT]
-  simp only [Challenge.gateSlots_append]
-  simp [Challenge.gateSlots, Challenge.instructionSlots]
-  omega
-
-
-theorem dBits_wire (w : Nat → Wire) (q : Wire) (hq : q∈mappedWires (dBits w)) : q=w 1028 := by
-  simp only [dBits,mappedWires,List.mem_flatMap,List.mem_map] at hq
-  obtain ⟨b,⟨j,_,rfl⟩,hb⟩ := hq
-  split at hb <;> simp_all
-
-section Rest
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn
-
-theorem stepCompareMF (b0 : BasisState) (k X : Nat) (hk : cmpC+k<2^256) (hX : X<2^256)
-    (hc : ∀ i, 258 ≤ i → i < 512 → b0 (w i) = false) (hcin : b0 (w 513)=false)
-    (gs : g∉srcR w) (g514 : g≠w 514) (gm : g∉mutL w) :
-    Triple (MF w b0 0 X 0 false false false false) (comparePart w g k)
-      (MF w b0 0 X 0 false (decide (2^256-1-(if b0 g then cmpC+k else 0)<X)) false false) := by
-  intro s m h
-  obtain ⟨h1,h2,h3,h4,h5,h6,h7,h8⟩ := h
-  have sp := hR_src w hn s.basis
-  have kx := kR_x w hn s.basis
-  have xl := regValue_lt (xR w) s.basis
-  have sl := regValue_lt (srcR w) s.basis
-  simp only [xR,srcR,wireBlock_length] at xl sl
-  rw [h1] at sp; rw [h2] at kx
-  have hx : regValue (xR w) s.basis=X := by
-    have : regValue (wireBlock w 1026 2) s.basis=0 := by
-      by_contra hne; have : 1≤regValue (wireBlock w 1026 2) s.basis := Nat.one_le_iff_ne_zero.mpr hne
-      have : 2^256≤2^256*regValue (wireBlock w 1026 2) s.basis := Nat.le_mul_of_pos_right _ this
-      omega
-    omega
-  have src0 : regValue (srcR w) s.basis=0 := by omega
-  have top0 : regValue (wireBlock w 256 2) s.basis=0 := by
-    by_contra hne; have : 1≤regValue (wireBlock w 256 2) s.basis := Nat.one_le_iff_ne_zero.mpr hne
-    have : 2^256≤2^256*regValue (wireBlock w 256 2) s.basis := Nat.le_mul_of_pos_right _ this
-    omega
-  have hzero := (regValue_zero _ _).mp h1
-  have cc : ∀q∈cR w,s.basis q=false := by
-    intro q hq
-    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
-    simp only [List.mem_range'_1] at hi
-    by_cases hi2 : i<258
-    · exact hzero _ ((mem_blk w hn i 0 258 (by omega) (by omega)).mpr (by omega))
-    · rw [h8 _ ?_]; exact hc i (by omega) (by omega)
-      simp only [mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-      refine ⟨⟨⟨nb w hn i 0 258 (by omega) (by omega) (by omega),nb w hn i 770 258 (by omega) (by omega) (by omega)⟩,
-        nb w hn i 1029 256 (by omega) (by omega) (by omega)⟩,?_,?_,?_,?_⟩ <;>
-        exact w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have m513 : w 513∉mutL w := by
-    simp only [mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-    refine ⟨⟨⟨nb w hn 513 0 258 (by omega) (by omega) (by omega),nb w hn 513 770 258 (by omega) (by omega) (by omega)⟩,
-      nb w hn 513 1029 256 (by omega) (by omega) (by omega)⟩,?_,?_,?_,?_⟩ <;>
-      exact w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have cfr := cfCompare w g hn s.basis false k X hk hx cc ((h8 _ m513).trans hcin) gs g514 s m
-    ⟨src0,h5,fun _ _ _ => rfl⟩
-  obtain ⟨tp,c1',c2',c3'⟩ := cfr
-  refine ⟨tp,?_⟩
-  simp only [Bool.false_xor] at c2'
-  have gv : s.basis g=b0 g := h8 g gm
-  rw [gv] at c2'
-  have same : ∀q,q∉srcR w → q≠w 514 → (run (comparePart w g k) m s).basis q=s.basis q := c3'
-  have srcm : ∀q∈srcR w,q∈mutL w := fun q hq => hR_mut w hn q (blk_sub w 0 256 0 258 (by omega) (by omega) q hq)
-  have m514 : w 514∈mutL w := by simp [mutL]
-  refine ⟨?_,?_,?_,?_,c2',?_,?_,?_⟩
-  · rw [hR_src w hn,c1',regValue_congr _ _ s.basis (fun q hq => same q (fun h' =>
-      List.disjoint_left.mp (blk_dis w hn 0 256 256 2 (by omega) (by omega) (by omega)) h' hq)
-      (fun e => nb w hn 514 256 2 (by omega) (by omega) (by omega) (e ▸ hq))),top0]; simp
-  · rw [regValue_congr (kR w) _ s.basis (fun q hq => same q (fun h' =>
-      List.disjoint_left.mp (blk_dis w hn 0 256 770 258 (by omega) (by omega) (by omega)) h' hq)
-      (fun e => nb w hn 514 770 258 (by omega) (by omega) (by omega) (e ▸ hq)))]; exact h2
-  · rw [regValue_congr (tR w) _ s.basis (fun q hq => same q (fun h' =>
-      List.disjoint_left.mp (blk_dis w hn 0 256 1029 256 (by omega) (by omega) (by omega)) h' hq)
-      (fun e => nb w hn 514 1029 256 (by omega) (by omega) (by omega) (e ▸ hq)))]; exact h3
-  · rw [same _ (nb w hn 1028 0 256 (by omega) (by omega) (by omega)) (w_ne w hn _ _ (by omega) (by omega) (by omega))]; exact h4
-  · rw [same _ (nb w hn 721 0 256 (by omega) (by omega) (by omega)) (w_ne w hn _ _ (by omega) (by omega) (by omega))]; exact h6
-  · rw [same _ (nb w hn 722 0 256 (by omega) (by omega) (by omega)) (w_ne w hn _ _ (by omega) (by omega) (by omega))]; exact h7
-  · intro q hq
-    rw [same q (fun h' => hq (srcm q h')) (fun e => hq (e ▸ m514))]; exact h8 q hq
-
-theorem stepMeasFp (b0 : BasisState) (H X T : Nat) (par f gp : Bool) :
-    Triple (MF w b0 H X T par f gp (f && par)) [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]
-      (MF w b0 H X T par f gp false) := by
-  intro s m h
-  rw [run_meas_and (w 722) (w 514) (w 1028) m s (w_ne w hn _ _ (by omega) (by omega) (by omega))
-    (w_ne w hn _ _ (by omega) (by omega) (by omega)) (by rw [h.2.2.2.2.2.2.1,h.2.2.2.2.1,h.2.2.2.1])]
-  refine ⟨rfl,?_⟩
-  have := stepBit w hn b0 H X T par f gp (f && par) s ⟨s.phase,writeBit s.basis (w 722) false⟩ 722
-    (by omega) h (fun q hq => by simp [writeBit,Function.update_of_ne hq])
-  simpa [writeBit] using this
-
-theorem stepMeasGp (b0 : BasisState) (H X T : Nat) (par f fp : Bool) (gm : g∉mutL w)
-    (g515 : g≠w 721) :
-    Triple (MF w b0 H X T par f (b0 g && par) fp) [.measureX (w 721) [] [.CZ g (w 1028)]]
-      (MF w b0 H X T par f false fp) := by
-  intro s m h
-  rw [run_meas_and (w 721) g (w 1028) m s g515
-    (w_ne w hn _ _ (by omega) (by omega) (by omega)) (by rw [h.2.2.2.2.2.1,h.2.2.2.1,h.2.2.2.2.2.2.2 g gm])]
-  refine ⟨rfl,?_⟩
-  have := stepBit w hn b0 H X T par f (b0 g && par) fp s ⟨s.phase,writeBit s.basis (w 721) false⟩ 721
-    (by omega) h (fun q hq => by simp [writeBit,Function.update_of_ne hq])
-  simpa [writeBit] using this
-
-theorem stepCopy (b0 : BasisState) (X T : Nat) (par f gp fp : Bool) :
-    Triple (MF w b0 0 X T par f gp fp) (copyRegister none (wireBlock w 770 257) (hpR w))
-      (MF w b0 (2*(X%2^257)) X T par f gp fp) := by
-  intro s m h
-  have nd : (wireBlock w 770 257++hpR w).Nodup := List.nodup_append'.mpr
-    ⟨blk_nd w hn 770 257 (by omega),blk_nd w hn 1 257 (by omega),
-      blk_dis w hn 770 257 1 257 (by omega) (by omega) (by omega)⟩
-  obtain ⟨hp,he,hval⟩ := copyRegister_correct none (wireBlock w 770 257) (hpR w)
-    (by simp [hpR,wireBlock_length]) nd (by simp) s m
-  refine ⟨hp,stepH w hn b0 0 X T par f gp fp s _ h ?_ _ ?_⟩
-  · intro q hq; exact he q (fun h' => hq (blk_sub w 1 257 0 258 (by omega) (by omega) q h'))
-  · have sp := hR_split w hn s.basis
-    have sp2 := hR_split w hn (run (copyRegister none (wireBlock w 770 257) (hpR w)) m s).basis
-    have kl := kR_low w hn s.basis
-    have ll := regValue_lt (wireBlock w 770 257) s.basis
-    simp only [wireBlock_length] at ll
-    rw [h.1] at sp; rw [h.2.1] at kl
-    rw [sp2,hval,he _ (nb w hn 0 1 257 (by omega) (by omega) (by omega))]
-    simp only [copyValue]
-    have e0 : regValue (hpR w) s.basis=0 := by omega
-    have b0' : s.basis (w 0)=false := by
-      cases hb : s.basis (w 0)
-      · rfl
-      · simp [hb] at sp; omega
-    rw [e0,b0',Nat.zero_xor]
-    have : regValue (wireBlock w 770 257) s.basis=X%2^257 := by omega
-    rw [this]; simp
-
-end Rest
-
-
-section Rest2
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn
-
-theorem aC_out : ∀q∈aC w,q∉mutL w := by
-  intro q hq hm
-  obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
-  simp only [List.mem_range'_1] at hi
-  simp only [mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hm
-  rcases hm with ((hm|hm)|hm)|hm|hm|hm|hm
-  · exact nb w hn i 0 258 (by omega) (by omega) (by omega) hm
-  · exact nb w hn i 770 258 (by omega) (by omega) (by omega) hm
-  · exact nb w hn i 1029 256 (by omega) (by omega) (by omega) hm
-  all_goals exact w_ne w hn _ _ (by omega) (by omega) (by omega) hm
-
-theorem w1797_out : w 1797∉mutL w := by
-  simp only [mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-  refine ⟨⟨⟨nb w hn 1797 0 258 (by omega) (by omega) (by omega),nb w hn 1797 770 258 (by omega) (by omega) (by omega)⟩,
-    nb w hn 1797 1029 256 (by omega) (by omega) (by omega)⟩,?_,?_,?_,?_⟩ <;>
-    exact w_ne w hn _ _ (by omega) (by omega) (by omega)
-
-theorem stepHAdd (b0 : BasisState) (Y X T : Nat) (par f gp fp : Bool) (hY : Y<2^257)
-    (hc : ∀q∈aC w,b0 q=false) (hcin : b0 (w 1797)=false) :
-    Triple (MF w b0 (2*Y) X T par f gp fp) (hAddM w)
-      (MF w b0 (2*((delta par+Y)%2^257)) X T par f gp fp) := by
-  intro s m h
-  rw [hAddM]
-  have nd : (w 1797::(hpR w++hC2 w)).Nodup := by
-    apply List.nodup_cons.mpr
-    refine ⟨?_,List.nodup_append'.mpr ⟨blk_nd w hn 1 257 (by omega),blk_nd w hn 1540 256 (by omega),
-      blk_dis w hn 1 257 1540 256 (by omega) (by omega) (by omega)⟩⟩
-    simp only [List.mem_append,not_or]
-    exact ⟨nb w hn 1797 1 257 (by omega) (by omega) (by omega),nb w hn 1797 1540 256 (by omega) (by omega) (by omega)⟩
-  have srcw : ∀q∈mappedWires (dBits w),q∉w 1797::(hpR w++hC2 w) := by
-    intro q hq
-    rw [dBits_wire w q hq]
-    simp only [List.mem_cons,List.mem_append,not_or]
-    exact ⟨w_ne w hn _ _ (by omega) (by omega) (by omega),nb w hn 1028 1 257 (by omega) (by omega) (by omega),
-      nb w hn 1028 1540 256 (by omega) (by omega) (by omega)⟩
-  have cl : ∀q∈hC2 w,s.basis q=false := fun q hq =>
-    have hq' : q∈aC w := blk_sub w 1540 256 1540 257 (by omega) (by omega) q hq
-    (h.2.2.2.2.2.2.2 q (aC_out w hn q hq')).trans (hc q hq')
-  obtain ⟨hp,he,hval⟩ := mappedAdd_correct (dBits w) (hpR w) (hC2 w) (w 1797) nd srcw
-    (by simp [dBits_length,hpR,wireBlock_length]) (by simp [hC2,hpR,wireBlock_length]) s m cl
-  refine ⟨hp,stepH w hn b0 (2*Y) X T par f gp fp s _ h ?_ _ ?_⟩
-  · intro q hq; exact he q (fun h' => hq (blk_sub w 1 257 0 258 (by omega) (by omega) q h'))
-  · have sp := hR_split w hn s.basis
-    have sp2 := hR_split w hn (run (mappedAdd (dBits w) (hpR w) (hC2 w) (w 1797)) m s).basis
-    rw [h.1] at sp
-    have b0' : s.basis (w 0)=false := by
-      cases hb : s.basis (w 0)
-      · rfl
-      · simp [hb] at sp; omega
-    have e0 : regValue (hpR w) s.basis=Y := by rw [b0'] at sp; simp at sp; omega
-    rw [sp2,he _ (nb w hn 0 1 257 (by omega) (by omega) (by omega)),b0',hval,dBits_value,e0,
-      h.2.2.2.1,(h.2.2.2.2.2.2.2 _ (w1797_out w hn)).trans hcin]
-    simp [hpR,wireBlock_length]
-
-theorem stepHAddT (b0 : BasisState) (Y X T : Nat) (par f gp fp : Bool) (hY : Y<2^257)
-    (hc : ∀q∈aC w,b0 q=false) (hcin : b0 (w 1797)=false) :
-    Triple (MF w b0 (2*Y) X T par f gp fp) (hAddT w)
-      (MF w b0 (2*((delta par+Y)%2^257)) X T par f gp fp) := by
-  intro s m h
-  have c17 : s.basis (w 1797)=false := (h.2.2.2.2.2.2.2 _ (w1797_out w hn)).trans hcin
-  rw [hAddT_run w (w_ne w hn 1797 1540 (by omega) (by omega) (by omega)) m s c17]
-  exact stepHAdd w hn b0 Y X T par f gp fp hY hc hcin s m h
-
-theorem stepW0 (b0 : BasisState) (Y X T : Nat) (par f gp fp : Bool) :
-    Triple (MF w b0 (2*Y) X T par f gp fp) [.CX (w 1028) (w 0),.X (w 0)]
-      (MF w b0 (2*Y+(!par).toNat) X T par f gp fp) := by
-  intro s m h
-  have e : run [.CX (w 1028) (w 0),.X (w 0)] m s=⟨s.phase,writeBit s.basis (w 0) (!(s.basis (w 0) ^^ s.basis (w 1028)))⟩ := by
-    simp [run,writeBit]
-  rw [e]
-  refine ⟨rfl,stepH w hn b0 (2*Y) X T par f gp fp s _ h ?_ _ ?_⟩
-  · intro q hq
-    have : q≠w 0 := fun e' => hq (e' ▸ (mem_blk w hn 0 0 258 (by omega) (by omega)).mpr (by omega))
-    simp [writeBit,Function.update_of_ne this]
-  · have sp := hR_split w hn s.basis
-    have sp2 := hR_split w hn (writeBit s.basis (w 0) (!(s.basis (w 0) ^^ s.basis (w 1028))))
-    rw [h.1] at sp
-    have b0' : s.basis (w 0)=false := by
-      cases hb : s.basis (w 0)
-      · rfl
-      · simp [hb] at sp; omega
-    have rest : regValue (hpR w) (writeBit s.basis (w 0) (!(s.basis (w 0) ^^ s.basis (w 1028))))=
-        regValue (hpR w) s.basis := regValue_congr _ _ _ (fun q hq => by
-      have : q≠w 0 := fun e' => nb w hn 0 1 257 (by omega) (by omega) (by omega) (e' ▸ hq)
-      simp [writeBit,Function.update_of_ne this])
-    rw [sp2,rest,b0',h.2.2.2.1]
-    rw [b0'] at sp
-    simp [writeBit] at sp ⊢
-    omega
-
-theorem stepErase (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
-    (hc : ∀q∈aC w,b0 q=false) (hcin : b0 (w 1797)=false) (hH : H<2^257) (hf : f=decide (H/2<T)) :
-    Triple (MF w b0 H X T par f gp fp) (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514))
-      (MF w b0 H X T par false gp fp) := by
-  intro s m h
-  have nd : (w 514::w 1797::(hp8 w++tR w++hC3 w)).Nodup := by
-    have a1 := blk_dis w hn 1 256 1029 256 (by omega) (by omega) (by omega)
-    have a2 := blk_dis w hn 1 256 1540 255 (by omega) (by omega) (by omega)
-    have a3 := blk_dis w hn 1029 256 1540 255 (by omega) (by omega) (by omega)
-    have l1 : (hp8 w++tR w).Nodup := List.nodup_append'.mpr ⟨blk_nd w hn 1 256 (by omega),tR_nd w hn,a1⟩
-    have l2 : (hp8 w++tR w++hC3 w).Nodup := by
-      apply List.nodup_append'.mpr
-      refine ⟨l1,blk_nd w hn 1540 255 (by omega),?_⟩
-      apply List.disjoint_left.mpr
-      intro q hq hc'
-      rcases List.mem_append.mp hq with h1|h1
-      · exact List.disjoint_left.mp a2 h1 hc'
-      · exact List.disjoint_left.mp a3 h1 hc'
-    refine List.nodup_cons.mpr ⟨?_,List.nodup_cons.mpr ⟨?_,l2⟩⟩
-    · simp only [List.mem_cons,List.mem_append,not_or]
-      exact ⟨w_ne w hn _ _ (by omega) (by omega) (by omega),⟨nb w hn 514 1 256 (by omega) (by omega) (by omega),
-        nb w hn 514 1029 256 (by omega) (by omega) (by omega)⟩,nb w hn 514 1540 255 (by omega) (by omega) (by omega)⟩
-    · simp only [List.mem_append,not_or]
-      exact ⟨⟨nb w hn 1797 1 256 (by omega) (by omega) (by omega),nb w hn 1797 1029 256 (by omega) (by omega) (by omega)⟩,
-        nb w hn 1797 1540 255 (by omega) (by omega) (by omega)⟩
-  have cl : ∀q∈hC3 w,s.basis q=false := fun q hq =>
-    have hq' : q∈aC w := blk_sub w 1540 255 1540 257 (by omega) (by omega) q hq
-    (h.2.2.2.2.2.2.2 q (aC_out w hn q hq')).trans (hc q hq')
-  have sp := hR_split w hn s.basis
-  rw [h.1] at sp
-  have e8 : hpR w=hp8 w++wireBlock w 257 1 := by rw [hpR,hp8,wireBlock_append]
-  have sp8 := regValue_append (hp8 w) (wireBlock w 257 1) s.basis
-  rw [←e8] at sp8
-  have l8 := regValue_lt (hp8 w) s.basis
-  simp only [hp8,wireBlock_length] at sp8 l8
-  have hpv : regValue (hp8 w) s.basis=H/2 := by
-    have : regValue (wireBlock w 257 1) s.basis=0 := by
-      by_contra hne; have : 1≤regValue (wireBlock w 257 1) s.basis := Nat.one_le_iff_ne_zero.mpr hne
-      have : 2^256≤2^256*regValue (wireBlock w 257 1) s.basis := Nat.le_mul_of_pos_right _ this
-      cases hb : s.basis (w 0) <;> simp [hb] at sp <;> omega
-    cases hb : s.basis (w 0) <;> simp [hb] at sp <;> simp only [hp8] at * <;> omega
-  have r := eraseLtChain_correct (hp8 w) (tR w) (hC3 w) (w 1797) (w 514) nd
-    (by simp [hp8,tR,wireBlock_length]) (by simp [hC3,tR,wireBlock_length]) s m cl
-    (by rw [h.2.2.2.2.1,hpv,h.2.2.1,(h.2.2.2.2.2.2.2 _ (w1797_out w hn)).trans hcin,hf]; simp)
-  rw [r]
-  refine ⟨rfl,?_⟩
-  have := stepBit w hn b0 H X T par f gp fp s ⟨s.phase,writeBit s.basis (w 514) false⟩ 514
-    (by omega) h (fun q hq => by simp [writeBit,Function.update_of_ne hq])
-  simpa [writeBit] using this
-
-end Rest2
-
-
-section Compose
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn
-
-theorem g_mut (hg : g∉skywalkPoolWires w) : g∉mutL w := by
-  simp only [mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-  refine ⟨⟨⟨g_out w hn g hg 0 258 (by omega),g_out w hn g hg 770 258 (by omega)⟩,g_out w hn g hg 1029 256 (by omega)⟩,
-    g_ne w hn g hg 1028 (by omega),g_ne w hn g hg 514 (by omega),g_ne w hn g hg 721 (by omega),g_ne w hn g hg 722 (by omega)⟩
-
-theorem low_bit (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool) (s : BasisState)
-    (h : MF w b0 H X T par f gp fp s) : s (w 770)=decide (X%2=1) := by
-  have sp := kR_split w hn s
-  rw [h.2.1] at sp
-  cases hb : s (w 770) <;> simp [hb] at sp ⊢ <;> omega
-
-omit hn in
-theorem xor_clear (a b c : Bool) : (((a ^^ (((false ^^ a) ^^ b) ^^ c)) ^^ b) ^^ c)=false := by
-  cases a <;> cases b <;> cases c <;> rfl
-omit hn in
-theorem xor_clear2 (a c : Bool) : ((a ^^ ((false ^^ a) ^^ c)) ^^ c)=false := by
-  cases a <;> cases c <;> rfl
-
-theorem stepPar (b0 : BasisState) (k X : Nat) (f : Bool) (hg : g∉skywalkPoolWires w) :
-    Triple (MF w b0 0 X 0 false f false false) (parGates w g k)
-      (MF w b0 0 (2*(X/2)) 0 (decide (X%2=1) ^^ (b0 g && decide (k%2=1)) ^^ f) f false false) := by
-  have gm := g_mut w g hn hg
-  have g1028 : g≠w 1028 := g_ne w hn g hg 1028 (by omega)
-  have g770 : g≠w 770 := g_ne w hn g hg 770 (by omega)
-  have e1 : w 770≠w 1028 := w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have e2 : w 514≠w 1028 := w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have e3 : w 1028≠w 770 := w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have e4 : w 514≠w 770 := w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have gv (H X T : Nat) (par f gp fp : Bool) : ∀s : BasisState,MF w b0 H X T par f gp fp s → s g=b0 g :=
-    fun s h => h.2.2.2.2.2.2.2 g gm
-  have xs : X=2*(X/2)+(decide (X%2=1)).toNat := by
-    rcases Nat.mod_two_eq_zero_or_one X with hx|hx <;> simp [hx] <;> omega
-  apply Triple.conseq (fun s h => by rw [xs] at h; exact h) ?_ (fun s h => h)
-  by_cases hk : k%2=1
-  · rw [parGates,if_pos hk,if_pos hk]
-    have t := (stepParCX w hn b0 0 _ 0 false f false false (w 770) (decide (X%2=1)) e1
-      (fun s h => by have := low_bit w hn b0 _ _ _ _ _ _ _ s h; rw [this]; simp; omega)).seq
-      ((stepParCX w hn b0 0 _ 0 _ f false false g (b0 g) g1028 (gv _ _ _ _ _ _ _)).seq
-      ((stepParCX w hn b0 0 _ 0 _ f false false (w 514) f e2 (fun s h => h.2.2.2.2.1)).seq
-      ((stepLowCX w hn b0 0 (X/2) 0 (decide (X%2=1)) _ f false false (w 1028) _ e3 (fun s h => h.2.2.2.1)).seq
-      ((stepLowCX w hn b0 0 (X/2) 0 _ _ f false false g (b0 g) g770 (gv _ _ _ _ _ _ _)).seq
-      (stepLowCX w hn b0 0 (X/2) 0 _ _ f false false (w 514) f e4 (fun s h => h.2.2.2.2.1))))))
-    apply Triple.conseq (fun _ h => h) t
-    intro s h
-    rw [xor_clear] at h
-    simpa [hk] using h
-  · rw [parGates,if_neg hk,if_neg hk]
-    try simp only [List.nil_append]
-    have t := (stepParCX w hn b0 0 _ 0 false f false false (w 770) (decide (X%2=1)) e1
-      (fun s h => by have := low_bit w hn b0 _ _ _ _ _ _ _ s h; rw [this]; simp; omega)).seq
-      ((stepParCX w hn b0 0 _ 0 _ f false false (w 514) f e2 (fun s h => h.2.2.2.2.1)).seq
-      ((stepLowCX w hn b0 0 (X/2) 0 (decide (X%2=1)) _ f false false (w 1028) _ e3 (fun s h => h.2.2.2.1)).seq
-      (stepLowCX w hn b0 0 (X/2) 0 _ _ f false false (w 514) f e4 (fun s h => h.2.2.2.2.1))))
-    apply Triple.conseq (fun _ h => h) t
-    intro s h
-    rw [xor_clear2] at h
-    simpa [hk] using h
-
-theorem stepRot (b0 : BasisState) (X : Nat) (par f gp fp : Bool) :
-    Triple (MF w b0 0 (2*(X/2)) 0 par f gp fp) (rotateRight (kR w)) (MF w b0 0 (X/2) 0 par f gp fp) := by
-  intro s m h
-  have r := rotateRight_spec (kR w) (kR_nd w hn) (2*(X/2)) (by omega) s m h.2.1
-  have fr := rotate_frame (kR w) s m
-  refine ⟨r.1,stepK w hn b0 0 _ 0 par f gp fp s _ h fr.2.1 _ ?_⟩
-  have := r.2
-  change regValue (kR w) _=_ at this
-  rw [this]; omega
-
-end Compose
-
-
-theorem kC_lt (par : Bool) : kConstant false par<2^258 := by
-  cases par <;> norm_num [kConstant,ECDSAAdd.p]
-
-theorem tk_lt (k : Nat) (G f par : Bool) : tk k G f par<2^258 := by
-  unfold tk
-  split_ifs
-  · exact Nat.mod_lt _ (by norm_num)
-  · norm_num
-  · exact Nat.mod_lt _ (by norm_num)
-  · exact kC_lt par
-
-theorem xlt (a b : Nat) (ha : a<2^258) (hb : b<2^258) : a^^^b<2^258 := Nat.xor_lt_two_pow ha hb
-
-theorem c1_lt (k : Nat) : c1 k<2^258 := tk_lt k _ _ _
-theorem cg_lt (k : Nat) : cg k<2^258 := xlt _ _ (tk_lt k _ _ _) (tk_lt k _ _ _)
-theorem cf_lt (k : Nat) : cf k<2^258 := xlt _ _ (tk_lt k _ _ _) (tk_lt k _ _ _)
-theorem cp_lt (k : Nat) : cp k<2^258 := xlt _ _ (tk_lt k _ _ _) (tk_lt k _ _ _)
-theorem cgp_lt (k : Nat) : cgp k<2^258 :=
-  xlt _ _ (xlt _ _ (xlt _ _ (tk_lt k _ _ _) (tk_lt k _ _ _)) (tk_lt k _ _ _)) (tk_lt k _ _ _)
-theorem cfp_lt (k : Nat) : cfp k<2^258 :=
-  xlt _ _ (xlt _ _ (xlt _ _ (tk_lt k _ _ _) (tk_lt k _ _ _)) (tk_lt k _ _ _)) (tk_lt k _ _ _)
-
-def lkv (k : Nat) (G f par gp fp : Bool) : Nat :=
-  c1 k ^^^ (if G then cg k else 0) ^^^ (if f then cf k else 0) ^^^ (if par then cp k else 0) ^^^
-    (if gp then cgp k else 0) ^^^ (if fp then cfp k else 0)
-
-theorem lkv_eq (k : Nat) (G f par : Bool) (hfg : f=true → G=true) :
-    lkv k G f par (G && par) (f && par)=tk k G f par := by
-  cases G <;> cases f <;> cases par <;> simp at hfg <;>
-    simp [lkv,c1,cg,cf,cp,cgp,cfp,Nat.xor_assoc,Nat.xor_comm,Nat.xor_left_comm,Nat.xor_self]
-
-def ltv (k : Nat) (G gp : Bool) : Nat := (if G then thrA k else 0) ^^^ (if gp then thrB k else 0)
-
-theorem ltv_eq (k : Nat) (G par : Bool) : ltv k G (G && par)=thr k G par := by
-  cases G <;> cases par <;> simp [ltv,thr,thrA,thrB,Nat.xor_assoc,Nat.xor_self]
-
-section Compose2
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn
-
-theorem stepLoadK (b0 : BasisState) (k H X T : Nat) (par f gp fp : Bool) (hg : g∉skywalkPoolWires w) :
-    Triple (MF w b0 H X T par f gp fp) (loadK w g k)
-      (MF w b0 (H^^^lkv k (b0 g) f par gp fp) X T par f gp fp) := by
-  have gm := g_mut w g hn hg
-  have gh : g∉hR w := g_out w hn g hg 0 258 (by omega)
-  have h514 : w 514∉hR w := nb w hn 514 0 258 (by omega) (by omega) (by omega)
-  have h1028 : w 1028∉hR w := nb w hn 1028 0 258 (by omega) (by omega) (by omega)
-  have h515 : w 721∉hR w := nb w hn 721 0 258 (by omega) (by omega) (by omega)
-  have h516 : w 722∉hR w := nb w hn 722 0 258 (by omega) (by omega) (by omega)
-  have t := (stepXorH w hn b0 H X T par f gp fp (c1 k) (c1_lt k)).seq
-    ((stepMaskH w hn b0 _ X T par f gp fp g (b0 g) gh (fun s h => h.2.2.2.2.2.2.2 g gm) (cg k) (cg_lt k)).seq
-    ((stepMaskH w hn b0 _ X T par f gp fp (w 514) f h514 (fun s h => h.2.2.2.2.1) (cf k) (cf_lt k)).seq
-    ((stepMaskH w hn b0 _ X T par f gp fp (w 1028) par h1028 (fun s h => h.2.2.2.1) (cp k) (cp_lt k)).seq
-    ((stepMaskH w hn b0 _ X T par f gp fp (w 721) gp h515 (fun s h => h.2.2.2.2.2.1) (cgp k) (cgp_lt k)).seq
-    (stepMaskH w hn b0 _ X T par f gp fp (w 722) fp h516 (fun s h => h.2.2.2.2.2.2.1) (cfp k) (cfp_lt k))))))
-  unfold loadK
-  simp only [List.append_assoc]
-  apply Triple.conseq (fun _ h => h) t
-  intro s h
-  have e : H^^^c1 k^^^(if b0 g then cg k else 0)^^^(if f then cf k else 0)^^^(if par then cp k else 0)^^^
-      (if gp then cgp k else 0)^^^(if fp then cfp k else 0)=H^^^lkv k (b0 g) f par gp fp := by
-    simp only [lkv,Nat.xor_assoc]
-  rw [e] at h; exact h
-
-theorem stepLoadT (b0 : BasisState) (k H X T : Nat) (hk : k<p) (par f gp fp : Bool)
-    (hg : g∉skywalkPoolWires w) :
-    Triple (MF w b0 H X T par f gp fp) (loadT w g k)
-      (MF w b0 H X (T^^^ltv k (b0 g) gp) par f gp fp) := by
-  have gm := g_mut w g hn hg
-  have gt : g∉tR w := g_out w hn g hg 1029 256 (by omega)
-  have h515 : w 721∉tR w := nb w hn 721 1029 256 (by omega) (by omega) (by omega)
-  rw [p_val] at hk
-  have la : thrA k<2^256 := by unfold thrA; omega
-  have lb : thrB k<2^256 := Nat.xor_lt_two_pow la (by rw [p_val]; omega)
-  have t := (stepMaskT w hn b0 H X T par f gp fp g (b0 g) gt (fun s h => h.2.2.2.2.2.2.2 g gm) (thrA k) la).seq
-    (stepMaskT w hn b0 H X _ par f gp fp (w 721) gp h515 (fun s h => h.2.2.2.2.2.1) (thrB k) lb)
-  unfold loadT
-  apply Triple.conseq (fun _ h => h) t
-  intro s h
-  simpa only [ltv,Nat.xor_assoc] using h
-
-end Compose2
-
-
-section Main
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn hg
-
-theorem merged_triple (k : Nat) (hk : k<p) (b0 : BasisState) (X : Nat) (hX : X<p)
-    (hc : ∀ i, 258 ≤ i → i < 512 → b0 (w i) = false) (hcin : b0 (w 513)=false)
-    (hac : ∀q∈aC w,b0 q=false) (h1797 : b0 (w 1797)=false) :
-    let G := b0 g
-    let f := decide (2^256-1-(if G then 2^256-p+k else 0)<X)
-    let dx := (X+(if G then k else 0))%p
-    let par := decide (dx%2=1)
-    let K := (dx/2+kConstant false par)%2^258
-    let H := (K%2^257+delta par)%2^257
-    Triple (MF w b0 0 X 0 false false false false) (merged w g k)
-      (MF w b0 (2*H+(!par).toNat) K 0 par false false false) := by
-  intro G f dx par K H
-  obtain ⟨a1,a2,a3,a4,a5⟩ := arith k X hk hX G
-  change decide (X%2=1)=x0 k G f par at a1
-  change (X/2+tk k G f par)%2^258=K at a2
-  change H=dx/2+(if par then hConstant else 0) at a3
-  change f=decide (H<thr k G par) at a4
-  have gm := g_mut w g hn hg
-  have hp' := p_val
-  have hpar : (decide (X%2=1) ^^ (G && decide (k%2=1)) ^^ f)=par := by
-    have e : decide (X%2=1)=x0 k G f par := a1
-    rw [e]; unfold x0 ksel0
-    generalize (G && decide (k%2=1))=a
-    cases par <;> cases a <;> cases f <;> rfl
-  have hfg : f=true → G=true := by
-    intro hf; cases hG : G
-    · have : f=false := by
-        simp only [f,hG,Bool.false_eq_true,if_false,decide_eq_false_iff_not]; rw [p_val] at hX; omega
-      rw [this] at hf; exact absurd hf (by simp)
-    · rfl
-  have fC : decide (2^256-1-(if b0 g then cmpC+k else 0)<X)=f := by simp [f,G,cmpC]
-  have s1 := stepCompareMF w g hn b0 k X (by unfold cmpC; rw [p_val] at hk ⊢; omega) (by rw [p_val] at hX; omega)
-    hc hcin (g_out w hn g hg 0 256 (by omega)) (g_ne w hn g hg 514 (by omega)) gm
-  rw [fC] at s1
-  have s2 := stepPar w g hn b0 k X f hg
-  rw [show (decide (X%2=1) ^^ (b0 g && decide (k%2=1)) ^^ f)=par from hpar] at s2
-  have s3 := stepRot w hn b0 X par f false false
-  have s4a := stepCCX w hn b0 0 (X/2) 0 par f false false g (w 1028) 721 (by omega) G par
-    (g_ne w hn g hg 721 (by omega)) (w_ne w hn _ _ (by omega) (by omega) (by omega))
-    (fun s h => h.2.2.2.2.2.2.2 g gm) (fun s h => h.2.2.2.1)
-  simp only [if_true,show ¬ (721=722) from by decide,if_false,Bool.false_xor] at s4a
-  have s4b := stepCCX w hn b0 0 (X/2) 0 par f (G && par) false (w 514) (w 1028) 722 (by omega) f par
-    (w_ne w hn _ _ (by omega) (by omega) (by omega)) (w_ne w hn _ _ (by omega) (by omega) (by omega))
-    (fun s h => h.2.2.2.2.1) (fun s h => h.2.2.2.1)
-  simp only [if_true,show ¬ (722=721) from by decide,if_false,Bool.false_xor] at s4b
-  have s5 := stepLoadK w g hn b0 k 0 (X/2) 0 par f (G && par) (f && par) hg
-  rw [Nat.zero_xor,show b0 g=G from rfl,lkv_eq k G f par hfg] at s5
-  have s6 := stepKAdd w hn b0 (tk k G f par) (X/2) 0 par f (G && par) (f && par) hac h1797
-  rw [show (tk k G f par+X/2)%2^258=K by rw [Nat.add_comm]; exact a2] at s6
-  have s7 := stepLoadK w g hn b0 k (tk k G f par) K 0 par f (G && par) (f && par) hg
-  rw [show b0 g=G from rfl,lkv_eq k G f par hfg,Nat.xor_self] at s7
-  have s8 := stepMeasFp w hn b0 0 K 0 par f (G && par)
-  have s9 := stepCopy w hn b0 K 0 par f (G && par) false
-  have s10 := stepHAddT w hn b0 (K%2^257) K 0 par f (G && par) false (Nat.mod_lt _ (by norm_num)) hac h1797
-  rw [show (delta par+K%2^257)%2^257=H by simp only [H]; rw [Nat.add_comm]] at s10
-  have s11 := stepW0 w hn b0 H K 0 par f (G && par) false
-  have s12 := stepLoadT w g hn b0 k (2*H+(!par).toNat) K 0 hk par f (G && par) false hg
-  rw [Nat.zero_xor,show b0 g=G from rfl,ltv_eq] at s12
-  have hHlt : 2*H+(!par).toNat<2^257 := by
-    have dxl : dx<p := Nat.mod_lt _ (by rw [p_val]; norm_num)
-    rw [a3]; rw [p_val] at dxl
-    cases par <;> simp [hC_val] <;> omega
-  have s13 := stepErase w hn b0 (2*H+(!par).toNat) K (thr k G par) par f (G && par) false hac h1797 hHlt
-    (by rw [show (2*H+(!par).toNat)/2=H by cases par <;> simp <;> omega]; exact a4)
-  have s14 := stepLoadT w g hn b0 k (2*H+(!par).toNat) K (thr k G par) hk par false (G && par) false hg
-  rw [show b0 g=G from rfl,ltv_eq,Nat.xor_self] at s14
-  have s15 := stepMeasGp w g hn b0 (2*H+(!par).toNat) K 0 par false false gm (g_ne w hn g hg 721 (by omega))
-  have t := s1.seq (s2.seq (s3.seq (s4a.seq (s4b.seq (s5.seq (s6.seq (s7.seq (s8.seq (s9.seq (s10.seq
-    (s11.seq (s12.seq (s13.seq (s14.seq s15))))))))))))))
-  unfold merged prodPart
-  simp only [List.append_assoc,List.cons_append,List.nil_append] at t ⊢
-  exact t
-
-end Main
-
-
-section Final
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn hg
-
-/-- The merged circuit leaves exactly the state of the old compare-first constant addition
-followed by the direct first tick, on every measurement record. -/
-theorem merged_eq_forward (k : Nat) (hk : k<p) (X : Nat) (hX : X<p) (t u : State) (m m' : List Bool)
-    (tk0 : regValue (kR w) t.basis=X) (th0 : regValue (hR w) t.basis=0) (tt0 : regValue (tR w) t.basis=0)
-    (t1028 : t.basis (w 1028)=false) (t514 : t.basis (w 514)=false) (t515 : t.basis (w 721)=false)
-    (t516 : t.basis (w 722)=false)
-    (hc : ∀ i, 258 ≤ i → i < 512 → t.basis (w i) = false) (hcin : t.basis (w 513)=false)
-    (hac : ∀q∈aC w,t.basis q=false) (h1797 : t.basis (w 1797)=false)
-    (hu : u.phase=t.phase) (hu2 : ∀q,q∉kR w → u.basis q=t.basis q)
-    (hu3 : regValue (kR w) u.basis=(X+(if t.basis g then k else 0))%p) :
-    run (merged w g k) m t=run (NativeFirstDirect.forward w) m' u := by
-  have mf0 : MF w t.basis 0 X 0 false false false false t.basis :=
-    ⟨th0,tk0,tt0,t1028,t514,t515,t516,fun _ _ => rfl⟩
-  have tri := merged_triple w g hn hg k hk t.basis X hX hc hcin hac h1797 t m mf0
-  obtain ⟨a1,a2,a3,a4,a5⟩ := arith k X hk hX (t.basis g)
-  generalize hG : t.basis g=G at tri a1 a2 a3 a4 a5 hu3
-  generalize hdx : (X+(if G then k else 0))%p=dx at tri a1 a2 a3 a4 a5 hu3
-  generalize hpar : decide (dx%2=1)=par at tri a1 a2 a3 a4 a5
-  generalize hK : (dx/2+kConstant false par)%2^258=K at tri a1 a2 a3 a4 a5
-  generalize hH : (K%2^257+delta par)%2^257=H at tri a1 a2 a3 a4 a5
-  obtain ⟨lp,l1,l2,l3,l4,l5,l6,l7,l8⟩ := tri
-  have dxlt : dx<p := by rw [←hdx]; exact Nat.mod_lt _ (by rw [p_val]; norm_num)
-  have kh : ∀q∈hR w,q∉kR w := kR_hR w hn
-  have kt : ∀q∈tR w,q∉kR w := kR_tR w hn
-  have hin : LiteralSkywalkSeedValues (literalSkywalkPoolSeed w) 0 dx u.basis := by
-    constructor
-    · change regValue (wireBlock w 0 258) u.basis=0
-      rw [show wireBlock w 0 258=hR w from rfl,regValue_congr _ _ t.basis (fun q hq => hu2 q (kh q hq)),th0]
-    · change regValue (wireBlock w 770 258) u.basis=dx
-      exact hu3
-    · change regValue (wireBlock w 1540 257) u.basis=0
-      apply (regValue_zero _ _).mpr
-      intro q hq
-      rw [hu2 q (fun h' => List.disjoint_left.mp (blk_dis w hn 770 258 1540 257 (by omega) (by omega) (by omega)) h' hq)]
-      exact hac q hq
-    · change u.basis (w 1797)=false
-      rw [hu2 _ (nb w hn 1797 770 258 (by omega) (by omega) (by omega))]; exact h1797
-    · change u.basis (w 1028)=false
-      rw [hu2 _ (nb w hn 1028 770 258 (by omega) (by omega) (by omega))]; exact t1028
-    · change u.basis (w 1797)=false
-      rw [hu2 _ (nb w hn 1797 770 258 (by omega) (by omega) (by omega))]; exact h1797
-  obtain ⟨zp,zh,zk,z0,z1028,zrest⟩ := forward_spec w hn dx dxlt u m' hin
-  have e770 : u.basis (w 770)=par := by
-    have sp := kR_split w hn u.basis
-    rw [hu3] at sp
-    rw [←hpar]
-    cases hb : u.basis (w 770) <;> simp [hb] at sp ⊢ <;> omega
-  rw [e770] at zh zk z1028
-  rw [hK] at zk
-  have hv : 2*(dx/2+(if par then hConstant else 0))+(!par).toNat=2*H+(!par).toNat := by rw [a3]
-  rw [hv] at zh
-  apply State.extensionality
-  · rw [lp,zp,hu]
-  · funext q
-    by_cases qh : q∈hR w
-    · exact (regValue_eq_iff (hR w) _ _).mp (l1.trans zh.symm) q qh
-    by_cases qk : q∈kR w
-    · exact (regValue_eq_iff (kR w) _ _).mp (l2.trans zk.symm) q qk
-    by_cases q1 : q=w 1028
-    · rw [q1,l4,z1028]
-    have nmut : q∉NativeFirstDirect.mutable w := by
-      simp only [NativeFirstDirect.mutable,List.mem_append,List.mem_singleton,not_or]
-      exact ⟨⟨fun h' => qh (blk_sub w 0 257 0 258 (by omega) (by omega) q h'),qk⟩,q1⟩
-    rw [zrest q nmut,hu2 q qk]
-    by_cases qt : q∈tR w
-    · rw [(regValue_zero _ _).mp l3 q qt,(regValue_zero _ _).mp tt0 q qt]
-    by_cases q4 : q=w 514
-    · rw [q4,l5,t514]
-    by_cases q5 : q=w 721
-    · rw [q5,l6,t515]
-    by_cases q6 : q=w 722
-    · rw [q6,l7,t516]
-    apply l8
-    simp only [mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-    exact ⟨⟨⟨qh,qk⟩,qt⟩,q1,q4,q5,q6⟩
-
-end Final
-
-
-/-! ### Resources -/
-
-def mSites (w : Nat → Wire) (g : Wire) : List Wire :=
-  wireBlock w 0 515++wireBlock w 770 515++wireBlock w 1540 258++[w 721,w 722,g]
-
-theorem in_mSites (w : Nat → Wire) (g : Wire) (i : Nat)
-    (hi : i < 515 ∨ (770 ≤ i ∧ i < 1285) ∨ (1540 ≤ i ∧ i < 1798) ∨ i = 721 ∨ i = 722) : w i∈mSites w g := by
-  simp only [mSites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
-  rcases hi with h|h|h|h|h
-  · exact Or.inl (Or.inl (Or.inl (List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩)))
-  · exact Or.inl (Or.inl (Or.inr (List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩)))
-  · exact Or.inl (Or.inr (List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩))
-  · subst h; exact Or.inr (Or.inl rfl)
-  · subst h; exact Or.inr (Or.inr (Or.inl rfl))
-
-theorem blk_mSites (w : Nat → Wire) (g : Wire) (a n : Nat)
-    (h : a + n ≤ 515 ∨ (770 ≤ a ∧ a + n ≤ 1285) ∨ (1540 ≤ a ∧ a + n ≤ 1798)) :
-    ∀q∈wireBlock w a n,q∈mSites w g := by
-  intro q hq
-  obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
-  simp only [List.mem_range'_1] at hi
-  exact in_mSites w g i (by omega)
-
-theorem g_mSites (w : Nat → Wire) (g : Wire) : g∈mSites w g := by simp [mSites]
-
-theorem dBits_wires_sub (w : Nat → Wire) : ∀q∈mappedWires (dBits w),q=w 1028 := dBits_wire w
-
-theorem lsub (w : Nat → Wire) (g : Wire) (l : List Wire) (h : ∀q∈l,q∈mSites w g) :
-    l.toFinset⊆(mSites w g).toFinset := by
-  intro q hq; exact List.mem_toFinset.mpr (h q (List.mem_toFinset.mp hq))
-
-theorem gate_sub (w : Nat → Wire) (g : Wire) (i : Instr) (h : ∀q∈i.wires,q∈mSites w g) :
-    wires [i]⊆(mSites w g).toFinset := by
-  intro q hq
-  simp only [wires,Finset.union_empty] at hq
-  exact List.mem_toFinset.mpr (h q hq)
-
-theorem merged_support (w : Nat → Wire) (g : Wire) (k : Nat) :
-    wires (merged w g k)⊆(mSites w g).toFinset := by
-  have B := blk_mSites w g
-  have I := in_mSites w g
-  have G := g_mSites w g
-  have mskH (c : Wire) (hc : c∈mSites w g) (v : Nat) : wires (maskedConstant c (hR w) v)⊆(mSites w g).toFinset :=
-    (maskedConstant_wires_subset c (hR w) v).trans (lsub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 0 258 (by omega) q hq))
-  have mskT (c : Wire) (hc : c∈mSites w g) (v : Nat) : wires (maskedConstant c (tR w) v)⊆(mSites w g).toFinset :=
-    (maskedConstant_wires_subset c (tR w) v).trans (lsub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 1029 256 (by omega) q hq))
-  have mskS (v : Nat) : wires (maskedConstant g (srcR w) v)⊆(mSites w g).toFinset :=
-    (maskedConstant_wires_subset g (srcR w) v).trans (lsub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact G
-      · exact B 0 256 (by omega) q hq))
-  have notS : wires (notRegister (srcR w))⊆(mSites w g).toFinset := by
-    rw [notRegister_wires]; exact lsub w g _ (B 0 256 (by omega))
-  have cmp : wires (compareLt none (srcR w) (xR w) (cR w) (w 513) (w 514))⊆(mSites w g).toFinset := by
-    rw [(compareLt_wires none (srcR w) (xR w) (cR w) (w 513) (w 514) (by simp [srcR,xR,wireBlock_length])
-      (by simp [cR,xR,wireBlock_length])).1]
-    apply lsub; intro q hq
-    simp only [Option.toList_none,List.nil_append,List.mem_cons,List.mem_append] at hq
-    rcases hq with rfl|rfl|(hq|hq)|hq
-    · exact I 514 (by omega)
-    · exact I 513 (by omega)
-    · exact B 0 256 (by omega) q hq
-    · exact B 770 256 (by omega) q hq
-    · exact B 256 256 (by omega) q hq
-  have hC : wires (comparePart w g k)⊆(mSites w g).toFinset := by
-    simp only [comparePart,wires_append,Finset.union_subset_iff]
-    exact ⟨⟨⟨⟨mskS _,notS⟩,cmp⟩,notS⟩,mskS _⟩
-  have cx (a b : Nat) (ha : a < 515 ∨ (770 ≤ a ∧ a < 1285) ∨ (1540 ≤ a ∧ a < 1798) ∨ a = 721 ∨ a = 722)
-      (hb : b < 515 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 721 ∨ b = 722) :
-      wires [.CX (w a) (w b)]⊆(mSites w g).toFinset := gate_sub w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact I a ha
-    · exact I b hb)
-  have cxg (b : Nat) (hb : b < 515 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 721 ∨ b = 722) :
-      wires [.CX g (w b)]⊆(mSites w g).toFinset := gate_sub w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact G
-    · exact I b hb)
-  have hP : wires (parGates w g k)⊆(mSites w g).toFinset := by
-    unfold parGates
-    split_ifs <;> simp only [wires_append,Finset.union_subset_iff] <;>
-      refine ⟨⟨⟨⟨⟨?_,?_⟩,?_⟩,?_⟩,?_⟩,?_⟩ <;>
-      first | exact cx _ _ (by omega) (by omega) | exact cxg _ (by omega) | simp [wires]
-  have hR' : wires (rotateRight (kR w))⊆(mSites w g).toFinset := by
-    rw [(rotate_wires (kR w)).1]
-    simp only [kR,wireBlock_length,show ¬(258<2) by omega,if_false]
-    exact lsub w g _ (B 770 258 (by omega))
-  have hPr : wires (prodPart w g)⊆(mSites w g).toFinset := by
-    unfold prodPart
-    rw [show ([.CCX g (w 1028) (w 721),.CCX (w 514) (w 1028) (w 722)] : Program)=
-      [.CCX g (w 1028) (w 721)]++[.CCX (w 514) (w 1028) (w 722)] from rfl,wires_append,Finset.union_subset_iff]
-    constructor <;> apply gate_sub <;> intro q hq <;>
-      simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq <;>
-      rcases hq with rfl|rfl|rfl <;> first | exact G | exact I _ (by omega)
-  have hL : wires (loadK w g k)⊆(mSites w g).toFinset := by
-    simp only [loadK,wires_append,Finset.union_subset_iff]
-    refine ⟨⟨⟨⟨⟨?_,mskH g G _⟩,mskH _ (I 514 (by omega)) _⟩,mskH _ (I 1028 (by omega)) _⟩,
-      mskH _ (I 721 (by omega)) _⟩,mskH _ (I 722 (by omega)) _⟩
-    exact (xorConstant_wires_subset (hR w) _).trans (lsub w g _ (B 0 258 (by omega)))
-  have hK : wires (kAddM w)⊆(mSites w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply lsub; intro q hq
-    simp only [mappedRead_wires,List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · exact B 0 258 (by omega) q hq
-    · exact B 770 258 (by omega) q hq
-    · exact B 1540 257 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hM1 : wires [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]⊆(mSites w g).toFinset := by
-    apply gate_sub; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl <;> exact I _ (by omega)
-  have hM2 : wires [.measureX (w 721) [] [.CZ g (w 1028)]]⊆(mSites w g).toFinset := by
-    apply gate_sub; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl
-    · exact I _ (by omega)
-    · exact G
-    · exact I _ (by omega)
-  have hCp : wires (copyRegister none (wireBlock w 770 257) (hpR w))⊆(mSites w g).toFinset := by
-    rw [copyRegister_wires none _ _ (by simp [hpR,wireBlock_length])]
-    split
-    · exact Finset.empty_subset _
-    · apply lsub; intro q hq
-      simp only [Option.toList_none,List.nil_append,List.mem_append] at hq
-      rcases hq with hq|hq
-      · exact B 770 257 (by omega) q hq
-      · exact B 1 257 (by omega) q hq
-  have hH : wires (hAddM w)⊆(mSites w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply lsub; intro q hq
-    simp only [List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · rw [dBits_wire w q hq]; exact I 1028 (by omega)
-    · exact B 1 257 (by omega) q hq
-    · exact B 1540 256 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hW : wires [.CX (w 1028) (w 0),.X (w 0)]⊆(mSites w g).toFinset := by
-    rw [show ([.CX (w 1028) (w 0),.X (w 0)] : Program)=[.CX (w 1028) (w 0)]++[.X (w 0)] from rfl,
-      wires_append,Finset.union_subset_iff]
-    refine ⟨cx 1028 0 (by omega) (by omega),gate_sub w g _ ?_⟩
-    intro q hq; simp only [Instr.wires,Finset.mem_singleton] at hq; rw [hq]; exact I 0 (by omega)
-  have hT : wires (loadT w g k)⊆(mSites w g).toFinset := by
-    simp only [loadT,wires_append,Finset.union_subset_iff]
-    exact ⟨mskT g G _,mskT _ (I 721 (by omega)) _⟩
-  have hE : wires (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514))⊆(mSites w g).toFinset := by
-    apply (eraseLtChain_wires_subset _ _ _ _ _).trans
-    apply lsub; intro q hq
-    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with ((hq|hq)|hq)|rfl|rfl
-    · exact B 1 256 (by omega) q hq
-    · exact B 1029 256 (by omega) q hq
-    · exact B 1540 255 (by omega) q hq
-    · exact I 1797 (by omega)
-    · exact I 514 (by omega)
-  have hHT : wires (hAddT w)⊆(mSites w g).toFinset := (hAddT_wires w).trans hH
-  simp only [merged,wires_append,Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hC,hP,hR'⟩,hPr⟩,hL⟩,hK⟩,hL⟩,hM1⟩,hCp⟩,hHT⟩,hW⟩,hT⟩,hE⟩,hT⟩,hM2⟩
-
-
-theorem merged_counts (w : Nat → Wire) (g : Wire) (k : Nat) :
-    toffoliCount (merged w g k)=1025 ∧ measurementCount (merged w g k)=1027 := by
-  have m1 (c : Wire) (r : List Wire) (v : Nat) := maskedConstant_counts c r v
-  have x1 (r : List Wire) (v : Nat) := xorConstant_counts r v
-  have n1 := notRegister_counts (srcR w)
-  have c1' := compareLt_counts none (srcR w) (xR w) (cR w) (w 513) (w 514)
-    (by simp [srcR,xR,wireBlock_length]) (by simp [cR,xR,wireBlock_length])
-  have r1 := rotate_counts (kR w)
-  have k1 := mappedAdd_counts (mappedRead (hR w) false) (kR w) (aC w) (w 1797)
-    (by simp [mappedRead_length,hR,kR,wireBlock_length]) (by simp [aC,kR,wireBlock_length])
-  have h1 := mappedAdd_counts (dBits w) (hpR w) (hC2 w) (w 1797)
-    (by simp [dBits_length,hpR,wireBlock_length]) (by simp [hC2,hpR,wireBlock_length])
-  have e1 := eraseLtChain_counts (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)
-    (by simp [hp8,tR,wireBlock_length]) (by simp [hC3,tR,wireBlock_length])
-  have cp1 := copyRegister_counts none (wireBlock w 770 257) (hpR w) (by simp [hpR,wireBlock_length])
-  have pg : toffoliCount (parGates w g k)=0 ∧ measurementCount (parGates w g k)=0 := by
-    unfold parGates; split_ifs <;> simp [toffoliCount,measurementCount]
-  have lx : (xR w).length=256 := by simp [xR,wireBlock_length]
-  have lk : (kR w).length=258 := by simp [kR,wireBlock_length]
-  have lh : (hpR w).length=257 := by simp [hpR,wireBlock_length]
-  have lt : (tR w).length=256 := by simp [tR,wireBlock_length]
-  rw [lx] at c1'
-  rw [lk] at k1
-  rw [lh] at h1
-  rw [lt] at e1
-  have hT := hAddT_counts w
-  rw [hAddM,h1.1,h1.2] at hT
-  have hT' : toffoliCount (hAddT w)=255 ∧ measurementCount (hAddT w)=256 := by omega
-  simp only [merged,comparePart,prodPart,loadK,kAddM,hT'.1,hT'.2,loadT,toffoliCount_append,
-    measurementCount_append,(m1 _ _ _).1,(m1 _ _ _).2,(x1 _ _).1,(x1 _ _).2,n1.1,n1.2,c1'.1,c1'.2.1,
-    r1.1,r1.2.1,k1.1,k1.2,h1.1,h1.2,e1.1,e1.2,cp1.1,cp1.2,pg.1,pg.2]
-  simp [toffoliCount,measurementCount]
-
-section Phys
-variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
-include hn hg
-
-theorem merged_physical (k : Nat) : GatePhysical (merged w g k) := by
-  have ne (i j : Nat) (hi : i<1798) (hj : j<1798) (h : i≠j) : w i≠w j := w_ne w hn i j hi hj h
-  have gn (i : Nat) (hi : i<1798) : g≠w i := g_ne w hn g hg i hi
-  have cxp (a b : Wire) (h : a≠b) : GatePhysical [.CX a b] := by
-    simp [GatePhysical,PhysicalInstr,ProperGate,h]
-  have ccxp (a b c : Wire) (h1 : a≠c) (h2 : b≠c) : GatePhysical [.CCX a b c] := by
-    simp [GatePhysical,PhysicalInstr,ProperGate,h1,h2]
-  have mp (c : Wire) (c' : Wire) : GatePhysical [.measureX c [] [.CZ c' c]] ∧
-      GatePhysical [.measureX (w 722) [] [.CZ (w 514) (w 1028)]] := by
-    simp [GatePhysical,PhysicalInstr]
-  have gS : g∉srcR w := g_out w hn g hg 0 256 (by omega)
-  have gH : g∉hR w := g_out w hn g hg 0 258 (by omega)
-  have gT : g∉tR w := g_out w hn g hg 1029 256 (by omega)
-  have cmpP : GatePhysical (compareLt none (srcR w) (xR w) (cR w) (w 513) (w 514)) := by
-    apply compareLt_physical
-    · have a1 := blk_dis w hn 0 256 770 256 (by omega) (by omega) (by omega)
-      have a2 := blk_dis w hn 0 256 256 256 (by omega) (by omega) (by omega)
-      have a3 := blk_dis w hn 770 256 256 256 (by omega) (by omega) (by omega)
-      have l1 : (srcR w++xR w).Nodup := List.nodup_append'.mpr ⟨src_nd w hn,blk_nd w hn 770 256 (by omega),a1⟩
-      have l2 : (srcR w++xR w++cR w).Nodup := by
-        apply List.nodup_append'.mpr
-        refine ⟨l1,blk_nd w hn 256 256 (by omega),?_⟩
-        apply List.disjoint_left.mpr
-        intro q hq hc'
-        rcases List.mem_append.mp hq with h1|h1
-        · exact List.disjoint_left.mp a2 h1 hc'
-        · exact List.disjoint_left.mp a3 h1 hc'
-      simp only [List.cons_append,List.append_assoc] at l2 ⊢
-      refine List.nodup_cons.mpr ⟨?_,List.nodup_cons.mpr ⟨?_,by simpa [List.append_assoc] using l2⟩⟩
-      · simp only [List.mem_cons,List.mem_append,not_or]
-        exact ⟨ne 514 513 (by omega) (by omega) (by omega),nb w hn 514 0 256 (by omega) (by omega) (by omega),
-          nb w hn 514 770 256 (by omega) (by omega) (by omega),nb w hn 514 256 256 (by omega) (by omega) (by omega)⟩
-      · simp only [List.mem_append,not_or]
-        exact ⟨nb w hn 513 0 256 (by omega) (by omega) (by omega),nb w hn 513 770 256 (by omega) (by omega) (by omega),
-          nb w hn 513 256 256 (by omega) (by omega) (by omega)⟩
-    · simp
-  have kP : GatePhysical (kAddM w) := by
-    apply mappedAdd_physical
-    · rw [List.cons_append]
-      have d := blk_dis w hn 770 258 1540 257 (by omega) (by omega) (by omega)
-      refine List.nodup_cons.mpr ⟨?_,List.nodup_append'.mpr ⟨kR_nd w hn,blk_nd w hn 1540 257 (by omega),d⟩⟩
-      simp only [List.mem_append,not_or]
-      exact ⟨nb w hn 1797 770 258 (by omega) (by omega) (by omega),nb w hn 1797 1540 257 (by omega) (by omega) (by omega)⟩
-    · intro b hb q hq
-      simp only [mappedRead,List.mem_map] at hb
-      obtain ⟨q',hq',rfl⟩ := hb
-      simp only [Option.mem_def,Option.some.injEq] at hq
-      subst hq
-      rw [List.cons_append]
-      simp only [List.mem_cons,List.mem_append,not_or]
-      refine ⟨?_,?_,?_⟩
-      · intro e; exact nb w hn 1797 0 258 (by omega) (by omega) (by omega) (e ▸ hq')
-      · exact fun h' => hR_kR w hn _ h' hq'
-      · exact fun h' => List.disjoint_left.mp (blk_dis w hn 0 258 1540 257 (by omega) (by omega) (by omega)) hq' h'
-  have hP : GatePhysical (hAddM w) := by
-    apply mappedAdd_physical
-    · rw [List.cons_append]
-      have d := blk_dis w hn 1 257 1540 256 (by omega) (by omega) (by omega)
-      refine List.nodup_cons.mpr ⟨?_,List.nodup_append'.mpr ⟨blk_nd w hn 1 257 (by omega),blk_nd w hn 1540 256 (by omega),d⟩⟩
-      simp only [List.mem_append,not_or]
-      exact ⟨nb w hn 1797 1 257 (by omega) (by omega) (by omega),nb w hn 1797 1540 256 (by omega) (by omega) (by omega)⟩
-    · intro b hb q hq
-      have : q∈mappedWires (dBits w) := List.mem_flatMap.mpr ⟨b,hb,by simpa using hq⟩
-      rw [dBits_wire w q this,List.cons_append]
-      simp only [List.mem_cons,List.mem_append,not_or]
-      exact ⟨ne 1028 1797 (by omega) (by omega) (by omega),nb w hn 1028 1 257 (by omega) (by omega) (by omega),
-        nb w hn 1028 1540 256 (by omega) (by omega) (by omega)⟩
-  have eP : GatePhysical (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)) := by
-    apply eraseLtChain_physical
-    have a1 := blk_dis w hn 1 256 1029 256 (by omega) (by omega) (by omega)
-    have a2 := blk_dis w hn 1 256 1540 255 (by omega) (by omega) (by omega)
-    have a3 := blk_dis w hn 1029 256 1540 255 (by omega) (by omega) (by omega)
-    have l1 : (hp8 w++tR w).Nodup := List.nodup_append'.mpr ⟨blk_nd w hn 1 256 (by omega),tR_nd w hn,a1⟩
-    have l2 : (hp8 w++tR w++hC3 w).Nodup := by
-      apply List.nodup_append'.mpr
-      refine ⟨l1,blk_nd w hn 1540 255 (by omega),?_⟩
-      apply List.disjoint_left.mpr
-      intro q hq hc'
-      rcases List.mem_append.mp hq with h1|h1
-      · exact List.disjoint_left.mp a2 h1 hc'
-      · exact List.disjoint_left.mp a3 h1 hc'
-    rw [List.cons_append,List.cons_append]
-    refine List.nodup_cons.mpr ⟨?_,l2⟩
-    simp only [List.mem_append,not_or]
-    exact ⟨⟨nb w hn 1797 1 256 (by omega) (by omega) (by omega),nb w hn 1797 1029 256 (by omega) (by omega) (by omega)⟩,
-      nb w hn 1797 1540 255 (by omega) (by omega) (by omega)⟩
-  have cpP : GatePhysical (copyRegister none (wireBlock w 770 257) (hpR w)) :=
-    copyRegister_physical none _ _ (List.nodup_append'.mpr ⟨blk_nd w hn 770 257 (by omega),
-      blk_nd w hn 1 257 (by omega),blk_dis w hn 770 257 1 257 (by omega) (by omega) (by omega)⟩) (by simp)
-  have parP : GatePhysical (parGates w g k) := by
-    unfold parGates
-    split_ifs <;> simp only [gatePhysical_append] <;>
-      refine ⟨⟨⟨⟨⟨?_,?_⟩,?_⟩,?_⟩,?_⟩,?_⟩ <;>
-      first
-        | exact cxp _ _ (ne _ _ (by omega) (by omega) (by omega))
-        | exact cxp _ _ (gn _ (by omega))
-        | simp [GatePhysical]
-  have rotP := (rotate_physical (kR w) (kR_nd w hn)).1
-  have prodP : GatePhysical (prodPart w g) := by
-    unfold prodPart
-    rw [show ([.CCX g (w 1028) (w 721),.CCX (w 514) (w 1028) (w 722)] : Program)=
-      [.CCX g (w 1028) (w 721)]++[.CCX (w 514) (w 1028) (w 722)] from rfl,gatePhysical_append]
-    exact ⟨ccxp _ _ _ (gn _ (by omega)) (ne _ _ (by omega) (by omega) (by omega)),
-      ccxp _ _ _ (ne _ _ (by omega) (by omega) (by omega)) (ne _ _ (by omega) (by omega) (by omega))⟩
-  have h514 : w 514∉hR w := nb w hn 514 0 258 (by omega) (by omega) (by omega)
-  have h1028 : w 1028∉hR w := nb w hn 1028 0 258 (by omega) (by omega) (by omega)
-  have h1286 : w 721∉hR w := nb w hn 721 0 258 (by omega) (by omega) (by omega)
-  have h1287 : w 722∉hR w := nb w hn 722 0 258 (by omega) (by omega) (by omega)
-  have t1286 : w 721∉tR w := nb w hn 721 1029 256 (by omega) (by omega) (by omega)
-  have lkP : GatePhysical (loadK w g k) := by
-    simp only [loadK,gatePhysical_append]
-    exact ⟨⟨⟨⟨⟨xorConstant_physical _ _,maskedConstant_physical _ _ _ gH⟩,maskedConstant_physical _ _ _ h514⟩,
-      maskedConstant_physical _ _ _ h1028⟩,maskedConstant_physical _ _ _ h1286⟩,maskedConstant_physical _ _ _ h1287⟩
-  have ltP : GatePhysical (loadT w g k) := by
-    simp only [loadT,gatePhysical_append]
-    exact ⟨maskedConstant_physical _ _ _ gT,maskedConstant_physical _ _ _ t1286⟩
-  have w0P : GatePhysical [.CX (w 1028) (w 0),.X (w 0)] := by
-    simp [GatePhysical,PhysicalInstr,ProperGate,ne 1028 0 (by omega) (by omega) (by omega)]
-  have cP : GatePhysical (comparePart w g k) := by
-    simp only [comparePart,gatePhysical_append]
-    exact ⟨⟨⟨⟨maskedConstant_physical _ _ _ gS,notRegister_physical _⟩,cmpP⟩,notRegister_physical _⟩,
-      maskedConstant_physical _ _ _ gS⟩
-  have m1 : GatePhysical [.measureX (w 722) [] [.CZ (w 514) (w 1028)]] := by simp [GatePhysical,PhysicalInstr]
-  have m2 : GatePhysical [.measureX (w 721) [] [.CZ g (w 1028)]] := by simp [GatePhysical,PhysicalInstr]
-  have hPT : GatePhysical (hAddT w) := hAddT_physical w hP
-  simp only [merged,gatePhysical_append]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨cP,parP,rotP⟩,prodP⟩,lkP⟩,kP⟩,lkP⟩,m1⟩,cpP⟩,hPT⟩,w0P⟩,ltP⟩,eP⟩,ltP⟩,m2⟩
-
-end Phys
-
-theorem gs1 (i : Instr) : Challenge.gateSlots [i]=Challenge.instructionSlots i := by
-  simp [Challenge.gateSlots]
-
-theorem merged_slots (w : Nat → Wire) (g : Wire) (k : Nat) : Challenge.gateSlots (merged w g k)≤25000 := by
-  have m1 (c : Wire) (r : List Wire) (v : Nat) := Baselines.maskedConstant_gateSlots_le c r v
-  have x1 (r : List Wire) (v : Nat) := Baselines.xorConstant_gateSlots_le r v
-  have c1' := Baselines.compareLt_gateSlots_le none (srcR w) (xR w) (cR w) (w 513) (w 514)
-  have r1 := (Baselines.rotate_gateSlots_le (kR w)).1
-  have k1 := Baselines.mappedAdd_gateSlots_le (mappedRead (hR w) false) (kR w) (aC w) (w 1797)
-  have h1 := Baselines.mappedAdd_gateSlots_le (dBits w) (hpR w) (hC2 w) (w 1797)
-  have e1 := Baselines.eraseLt_gateSlots_le (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)
-  have pg : Challenge.gateSlots (parGates w g k)≤6 := by
-    unfold parGates; split_ifs <;> simp [Challenge.gateSlots,Challenge.instructionSlots]
-  have pr : Challenge.gateSlots (prodPart w g)=2 := by simp [prodPart,Challenge.gateSlots,Challenge.instructionSlots]
-  have w0 : Challenge.gateSlots [.CX (w 1028) (w 0),.X (w 0)]=2 := by simp [Challenge.gateSlots,Challenge.instructionSlots]
-  have q1 : Challenge.gateSlots [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]=2 := by
-    simp [Challenge.gateSlots,Challenge.instructionSlots]
-  have q2 : Challenge.gateSlots [.measureX (w 721) [] [.CZ g (w 1028)]]=2 := by
-    simp [Challenge.gateSlots,Challenge.instructionSlots]
-  have lK : Challenge.gateSlots (loadK w g k)≤6*258 := by
-    simp only [loadK,Challenge.gateSlots_append]
-    have := x1 (hR w) (c1 k); have := m1 g (hR w) (cg k); have := m1 (w 514) (hR w) (cf k)
-    have := m1 (w 1028) (hR w) (cp k); have := m1 (w 721) (hR w) (cgp k); have := m1 (w 722) (hR w) (cfp k)
-    simp only [hR,wireBlock_length] at *
-    omega
-  have lT : Challenge.gateSlots (loadT w g k)≤2*256 := by
-    simp only [loadT,Challenge.gateSlots_append]
-    have := m1 g (tR w) (thrA k); have := m1 (w 721) (tR w) (thrB k)
-    simp only [tR,wireBlock_length] at *
-    omega
-  have cP : Challenge.gateSlots (comparePart w g k)≤4*256+12*256+4 := by
-    simp only [comparePart,Challenge.gateSlots_append,Baselines.notRegister_gateSlots]
-    have := m1 g (srcR w) (cmpC+k)
-    simp only [srcR,xR,wireBlock_length] at *
-    omega
-  have cp : Challenge.gateSlots (copyRegister none (wireBlock w 770 257) (hpR w))=257 := by
-    simp [hpR,wireBlock_length]
-  have lk : (kR w).length=258 := by simp [kR,wireBlock_length]
-  have lh : (hp8 w).length=256 := by simp [hp8,wireBlock_length]
-  have lhR : (hR w).length=258 := by simp [hR,wireBlock_length]
-  rw [lk] at r1
-  rw [mappedRead_length,lhR] at k1
-  rw [dBits_length] at h1
-  rw [lh] at e1
-  have hS := hAddT_slots w
-  rw [hAddM] at hS
-  simp only [merged,Challenge.gateSlots_append,pr,w0,q1,q2,cp,kAddM]
-  omega
-
-end ECDSAAdd.Entrant.E1Merge
-
-end -- original module boundary
 
 -- ===== ECDSAAdd.Submission.Entrant.E1QubitPlacement =====
 section
@@ -23487,6 +21781,846 @@ end ECDSAAdd.Entrant.R2SqEp760
 
 end -- R2 square
 
+-- ===== Exit-side merged tick (ExitMerge) in the multiplication kernel =====
+section
+
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.ExitMergeKernel
+open Arithmetic MappedCompressed DirectSkywalk Secp256k1 Rolling1588Lifetime BalancedField
+  ControlledPointLayout CompressedPointDialog
+attribute [local irreducible] run wires
+
+/-! ### Placement of the merged exit circuit in the unhosted phase coordinates -/
+
+def pi : Equiv.Perm Wire := E1QubitPlacement.rho.trans E1QubitPlacement.nativeSwap
+
+def piN (i : Nat) : Nat :=
+  if E1QubitPlacement.rhoN i=1797 then 511 else if E1QubitPlacement.rhoN i=511 then 1797
+  else E1QubitPlacement.rhoN i
+
+theorem pi_base (i : Nat) : pi (base i)=base (piN i) := by
+  change E1QubitPlacement.nativeSwap (E1QubitPlacement.rho (base i))=_
+  rw [E1QubitPlacement.rho_base]
+  unfold E1QubitPlacement.nativeSwap
+  rw [E1QubitPlacement.swap_base]
+  unfold piN
+  rfl
+
+/-- The merged exit circuit, placed like the direct first tick. -/
+def x1 (k : Nat) : Program := renameProgram pi (ExitMerge.program base (base 2400) k)
+
+/-- The exit last phase with the inverse tick and the controlled negation merged. -/
+def lastX (k : Nat) : Program :=
+  skywalkArithmeticClear base ++ Rolling1588.stackReverse true ++ x1 k
+
+def negDiv (k x : Nat) (G : Bool) : Nat := if G then (k+p-x)%p else x
+
+theorem forward_placed :
+    FrontierEntry1591Native.forward base=renameProgram pi (NativeFirstDirect.forward base) := by
+  have e := E1QubitPlacement.rho_fix E1QubitPlacement.nativeSwap
+  change renameProgram (fun q => E1QubitPlacement.nativeSwap (E1QubitPlacement.rho q))
+    (NativeFirstDirect.forward base)=renameProgram E1QubitPlacement.nativeSwap
+      (NativeFirstDirect.forward base) at e
+  rw [show renameProgram pi (NativeFirstDirect.forward base)=renameProgram
+    (fun q => E1QubitPlacement.nativeSwap (E1QubitPlacement.rho q)) (NativeFirstDirect.forward base) from rfl,e]
+  rfl
+
+theorem mem_pool_iff (q : Wire) : q∈skywalkPoolWires base ↔ ∃ i, i < 1798 ∧ q=base i := by
+  constructor
+  · intro h
+    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp h
+    simp only [List.mem_range'_1] at hi
+    exact ⟨i,by omega,rfl⟩
+  · rintro ⟨i,hi,rfl⟩
+    exact List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩
+
+theorem piN_lt (i : Nat) (hi : i < 1798) : piN i < 1798 := by
+  unfold piN E1QubitPlacement.rhoN; split_ifs <;> omega
+
+theorem pi_pool (q : Wire) (hq : q∈skywalkPoolWires base) : pi q∈skywalkPoolWires base := by
+  obtain ⟨i,hi,rfl⟩ := (mem_pool_iff q).mp hq
+  rw [pi_base]
+  exact (mem_pool_iff _).mpr ⟨_,piN_lt i hi,rfl⟩
+
+theorem pi_out (r : Wire) (h : r∉skywalkPoolWires base) : pi r=r := by
+  have ne (i : Nat) (hi : i < 1798) : r≠base i := fun e => h ((mem_pool_iff r).mpr ⟨i,hi,e⟩)
+  simp only [pi,Equiv.trans_apply,E1QubitPlacement.rho,E1QubitPlacement.nativeSwap,
+    Equiv.swap_apply_of_ne_of_ne (ne 511 (by omega)) (ne 725 (by omega)),
+    Equiv.swap_apply_of_ne_of_ne (ne 721 (by omega)) (ne 723 (by omega)),
+    Equiv.swap_apply_of_ne_of_ne (ne 722 (by omega)) (ne 724 (by omega)),
+    Equiv.swap_apply_of_ne_of_ne (ne 1797 (by omega)) (ne 511 (by omega))]
+
+theorem pi_symm_pool (q : Wire) (hq : q∈skywalkPoolWires base) : pi.symm q∈skywalkPoolWires base := by
+  by_contra h
+  have e := pi_out (pi.symm q) h
+  rw [Equiv.apply_symm_apply] at e
+  rw [←e] at h
+  exact h hq
+
+theorem piN_kR (i : Nat) (hi : 770 ≤ i ∧ i < 1028) : piN i=i := by
+  unfold piN E1QubitPlacement.rhoN; split_ifs <;> omega
+
+theorem pi_kR (q : Wire) (hq : q∈wireBlock base 770 258) : pi q=q := by
+  obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
+  simp only [List.mem_range'_1] at hi
+  rw [pi_base,piN_kR i (by omega)]
+
+theorem pi_symm_kR (q : Wire) (hq : q∈wireBlock base 770 258) : pi.symm q=q := by
+  have := pi_kR q hq
+  rw [←this,Equiv.symm_apply_apply,this]
+
+theorem pi_fix (i : Nat) (hi : i < 258 ∨ (770 ≤ i ∧ i < 1285) ∨ (1540 ≤ i ∧ i < 1797) ∨ i=2400) :
+    pi (base i)=base i := by
+  rw [pi_base]; congr 1
+  unfold piN E1QubitPlacement.rhoN; split_ifs <;> omega
+
+/-! ### The merged exit circuit on the image of the placed first tick
+
+Every state comparison below goes through `pull_basis`/`pull_phase` rewrites, so the kernel never
+has to evaluate a concrete program to see through `pullState`. -/
+
+theorem pull_basis (f : Wire → Wire) (t : State) (q : Wire) : (pullState f t).basis q=t.basis (f q) := rfl
+theorem pull_phase (f : Wire → Wire) (t : State) : (pullState f t).phase=t.phase := rfl
+theorem x1_eq (k : Nat) : x1 k=renameProgram pi (ExitMerge.program base (base 2400) k) := rfl
+
+theorem x1_run (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn r : List Bool)
+    (input : SkywalkArithmeticInput base x y s.basis)
+    (hphase : v.phase=(run (FrontierEntry1591Native.forward base) mn s).phase)
+    (hpool : ∀q∈skywalkPoolWires base,v.basis q=(run (FrontierEntry1591Native.forward base) mn s).basis q) :
+    (run (x1 k) r v).phase=s.phase ∧
+    regValue (wireBlock base 770 258) (run (x1 k) r v).basis=negDiv k x (v.basis (base 2400)) ∧
+    (∀q∈skywalkPoolWires base,q∉wireBlock base 770 258 → (run (x1 k) r v).basis q=s.basis q) ∧
+    (∀q,q∉skywalkPoolWires base → (run (x1 k) r v).basis q=v.basis q) := by
+  rw [x1_eq]
+  have rr := run_rename pi pi.injective (ExitMerge.program base (base 2400) k) r v
+  have fr := run_rename pi pi.injective (NativeFirstDirect.forward base) mn s
+  rw [←forward_placed] at fr
+  have sh : (i : Nat) → (hi : i < 2314) → (hdx : ¬(770 ≤ i ∧ i < 1026)) → (hdy : ¬(2056 ≤ i ∧ i < 2312)) →
+      s.basis (base i)=false := by
+    intro i hi hdx hdy
+    apply input.2.2
+    · exact List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩
+    · intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
+      simp only [List.mem_range'_1] at hj
+      have := base_injective e; omega
+    · intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
+      simp only [List.mem_range'_1] at hj
+      have := base_injective e; omega
+  have izero (i : Nat) (hi : i < 1798) (hx' : ¬(770 ≤ i ∧ i < 1026)) : (pullState pi s).basis (base i)=false := by
+    rw [pull_basis,pi_base]
+    have h1 := piN_lt i hi
+    apply sh _ (by omega) _ (by omega)
+    unfold piN E1QubitPlacement.rhoN; split_ifs <;> omega
+  have blk0 (a n : Nat) (h : a+n ≤ 1798) (hd : a+n ≤ 770 ∨ 1026 ≤ a) :
+      regValue (wireBlock base a n) (pullState pi s).basis=0 := by
+    apply (regValue_zero _ _).mpr
+    intro q hq
+    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hi
+    exact izero i (by omega) (by omega)
+  have hxr : regValue (wireBlock base 770 256) (pullState pi s).basis=x := by
+    rw [regValue_congr _ _ s.basis (fun q hq => by
+      rw [pull_basis,pi_kR q (E1Merge.blk_sub base 770 256 770 258 (by omega) (by omega) q hq)])]
+    exact input.1
+  have seed : LiteralSkywalkSeedValues (literalSkywalkPoolSeed base) 0 x (pullState pi s).basis := by
+    refine ⟨blk0 0 258 (by omega) (by omega),?_,blk0 1540 257 (by omega) (by omega),
+      izero 1797 (by omega) (by omega),izero 1028 (by omega) (by omega),izero 1797 (by omega) (by omega)⟩
+    change regValue (E1Merge.kR base) (pullState pi s).basis=x
+    rw [E1Merge.kR_x base base_pool_nodup,show E1Merge.xR base=wireBlock base 770 256 from rfl,hxr,
+      blk0 1026 2 (by omega) (by omega)]
+    simp
+  have fpool : ∀q∈skywalkPoolWires base,
+      (pullState pi v).basis q=(run (NativeFirstDirect.forward base) mn (pullState pi s)).basis q := by
+    intro q hq
+    rw [←fr,pull_basis,pull_basis]
+    exact hpool _ (pi_pool q hq)
+  have fphase : (pullState pi v).phase=(run (NativeFirstDirect.forward base) mn (pullState pi s)).phase := by
+    rw [←fr,pull_phase,pull_phase]; exact hphase
+  have pr := ExitMerge.program_run base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k hk x hx
+    (pullState pi s) (pullState pi v) mn r seed (blk0 1029 256 (by omega) (by omega))
+    (izero 514 (by omega) (by omega)) (izero 721 (by omega) (by omega)) (izero 722 (by omega) (by omega))
+    fphase fpool
+  rw [←rr] at pr
+  obtain ⟨p1,p2,p3,p4⟩ := pr
+  rw [pull_phase,pull_phase] at p1
+  rw [pull_basis,pi_fix 2400 (by omega)] at p2
+  refine ⟨p1,?_,?_,?_⟩
+  · rw [regValue_congr _ _ (pullState pi (run (renameProgram pi (ExitMerge.program base (base 2400) k)) r v)).basis
+      (fun q hq => by rw [pull_basis,pi_kR q hq])]
+    exact p2
+  · intro q hq hk'
+    have hs : pi.symm q∉E1Merge.kR base := fun h => hk' (by
+      have e := pi_kR _ h; rw [Equiv.apply_symm_apply] at e; rw [e]; exact h)
+    have h3 := p3 _ (pi_symm_pool q hq) hs
+    rw [pull_basis,pull_basis,Equiv.apply_symm_apply] at h3
+    exact h3
+  · intro q hq
+    have hs : pi.symm q∉skywalkPoolWires base := fun h => hq (by
+      have := pi_pool _ h; rwa [Equiv.apply_symm_apply] at this)
+    have h4 := p4 _ hs
+    rw [pull_basis,pull_basis,Equiv.apply_symm_apply] at h4
+    exact h4
+
+/-! ### Kernel with the merged exit: unhosted form -/
+
+private theorem compose_half (N F C R : Program) (s : State) (mp mr : List Bool)
+    (clearM : measurementCount C=0)
+    (twice : ∀ (t : State) mc,run C [] (run C mc t)=t)
+    (stack : ∀mn mf md,run R md (run F mf (run N mn s))=run N mn s) :
+    run (C++R) mr (run (N++(F++C)) mp s)=run N (mp.take (measurementCount N)) s := by
+  simp only [run_append,clearM,List.take_zero,List.drop_zero]
+  rw [twice,stack]
+
+theorem prefix_roundtrip (hn : (skywalkSharedWires base).Nodup)
+    (hlo : History5.HistoryAbove base) (x y : Nat) (hx0 : 0 < x) (hx : x < p)
+    (s : State) (mp mr : List Bool) (input : SkywalkArithmeticInput base x y s.basis) :
+    run (skywalkArithmeticClear base ++ Rolling1588.stackReverse true) mr
+        (run (Rolling1588.firstPhase true) mp s)=
+      run (FrontierEntry1591Native.forward base)
+        (mp.take (measurementCount (FrontierEntry1591Native.forward base))) s := by
+  have clearM : measurementCount (skywalkArithmeticClear base)=0 := by
+    simp [skywalkArithmeticClear,skywalkTerminalClear,measurementCount]
+  have twice (t : State) (mc : List Bool) : run (skywalkArithmeticClear base) []
+      (run (skywalkArithmeticClear base) mc t)=t := by
+    simpa only [skywalkArithmeticClear] using skywalkTerminalClear_twice
+      (base 511) (base 512) (base 770) (arith_clear_gates base hn) t mc []
+  have stack (mn mf md : List Bool) :
+      run (Rolling1588.stackReverse true) md (run (Rolling1588.stackForward true) mf
+        (run (FrontierEntry1591Native.forward base) mn s))=
+      run (FrontierEntry1591Native.forward base) mn s :=
+    Rolling1588.stack_roundtrip true hn hlo x hx0 hx _ mf md
+      (FrontierEntry1591Native.caller_first_stageW base hn x y hx0 hx s mn input)
+  simpa only [Rolling1588.firstPhase,List.append_assoc] using
+    compose_half (FrontierEntry1591Native.forward base) (Rolling1588.stackForward true)
+      (skywalkArithmeticClear base) (Rolling1588.stackReverse true) s mp mr clearM twice stack
+
+theorem prefix_pool :
+    wires (skywalkArithmeticClear base ++ Rolling1588.stackReverse true)⊆(skywalkPoolWires base).toFinset := by
+  have h := (last_support_sub true).trans FrontierEntry1591Kernel.last_pool
+  intro q hq
+  apply h
+  simp only [Rolling1588Lifetime.lastPhase,Rolling1588.lastPhase,wires_append,Finset.mem_union] at hq ⊢
+  tauto
+
+theorem first_pool (isA : Bool) : wires (Rolling1588.firstPhase isA)⊆(skywalkPoolWires base).toFinset := by
+  have h := first_support_eq isA
+  simp only [Rolling1588Lifetime.firstPhase] at h
+  rw [h]; exact FrontierEntry1591Kernel.first_pool
+
+theorem g_not_pool : base 2400∉skywalkPoolWires base := E1QubitPlacement.g2400
+
+theorem num_not_pool (q : Wire) (hq : q∈skywalkPoolWires base) : q∉wireBlock base 2056 256 := by
+  obtain ⟨i,hi,rfl⟩ := (mem_pool_iff q).mp hq
+  intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
+  simp only [List.mem_range'_1] at hj; have := base_injective e; omega
+
+theorem kR_pool (q : Wire) (hq : q∈wireBlock base 770 258) : q∈skywalkPoolWires base := by
+  obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
+  simp only [List.mem_range'_1] at hi
+  exact (mem_pool_iff _).mpr ⟨i,by omega,rfl⟩
+
+theorem rawX (F : Program) (k : Nat) (hk : k < p) (hn : (skywalkSharedWires base).Nodup)
+    (hlo : History5.HistoryAbove base) (x y : Nat) (hx0 : 0 < x) (hx : x < p)
+    (s : State) (m : List Bool) (value : Nat) (input : SkywalkArithmeticInput base x y s.basis)
+    (fieldResult : ∀mp mf,
+      let beforeA := run (Rolling1588.firstPhase false) mp s
+      let beforeB := run (Rolling1588.firstPhase true) mp s
+      let after := run F mf beforeA
+      after.phase=beforeB.phase ∧ regValue (wireBlock base 2056 256) after.basis=value ∧
+        ∀q,q∉wireBlock base 2056 256 → after.basis q=beforeB.basis q) :
+    let out := run (FrontierEntry1591Native.kernel (Rolling1588.firstPhase false) F (lastX k)) m s
+    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=value ∧
+      regValue (wireBlock base 770 258) out.basis=negDiv k x (s.basis (base 2400)) ∧
+      ∀q,q∉wireBlock base 2056 256 → q∉wireBlock base 770 258 → out.basis q=s.basis q := by
+  intro out
+  obtain ⟨mp,mf,mr,eqOut⟩ : ∃ mp mf mr,
+      out=run (lastX k) mr (run F mf (run (Rolling1588.firstPhase false) mp s)) :=
+    ⟨_,_,_,by
+      show run (FrontierEntry1591Native.kernel (Rolling1588.firstPhase false) F (lastX k)) m s=_
+      rw [FrontierEntry1591Native.kernel,run_append,run_append]⟩
+  obtain ⟨r1,r2,r3⟩ := fieldResult mp mf
+  generalize hAfter : run F mf (run (Rolling1588.firstPhase false) mp s)=after at eqOut r1 r2 r3
+  generalize hBefore : run (Rolling1588.firstPhase true) mp s=beforeB at r1 r2 r3
+  have eqOut2 : out=run (x1 k)
+      (mr.drop (measurementCount (skywalkArithmeticClear base ++ Rolling1588.stackReverse true)))
+      (run (skywalkArithmeticClear base ++ Rolling1588.stackReverse true)
+        (mr.take (measurementCount (skywalkArithmeticClear base ++ Rolling1588.stackReverse true))) after) := by
+    rw [eqOut,show lastX k=(skywalkArithmeticClear base ++ Rolling1588.stackReverse true)++x1 k from rfl,
+      run_append]
+  have agree := pool_run_agrees (skywalkArithmeticClear base ++ Rolling1588.stackReverse true)
+    (skywalkPoolWires base).toFinset prefix_pool
+    (mr.take (measurementCount (skywalkArithmeticClear base ++ Rolling1588.stackReverse true))) after beforeB r1
+    (fun q hq => r3 q (num_not_pool q (List.mem_toFinset.mp hq)))
+  generalize hv : run (skywalkArithmeticClear base ++ Rolling1588.stackReverse true)
+    (mr.take (measurementCount (skywalkArithmeticClear base ++ Rolling1588.stackReverse true))) after=v
+    at eqOut2 agree
+  have vB := prefix_roundtrip hn hlo x y hx0 hx s mp
+    (mr.take (measurementCount (skywalkArithmeticClear base ++ Rolling1588.stackReverse true))) input
+  rw [hBefore] at vB
+  rw [vB] at agree
+  have xr := x1_run k hk x y hx s v _
+    (mr.drop (measurementCount (skywalkArithmeticClear base ++ Rolling1588.stackReverse true))) input agree.1
+    (fun q hq => agree.2 q (List.mem_toFinset.mpr hq))
+  rw [←eqOut2] at xr
+  obtain ⟨o1,o2,o3,o4⟩ := xr
+  have offA (q : Wire) (hq : q∉skywalkPoolWires base) : v.basis q=after.basis q := by
+    rw [←hv]
+    exact run_preserves_outside _ _ after q (fun h => hq (List.mem_toFinset.mp (prefix_pool h)))
+  have offB (q : Wire) (hq : q∉skywalkPoolWires base) : beforeB.basis q=s.basis q := by
+    rw [←hBefore]
+    exact run_preserves_outside _ _ s q (fun h => hq (List.mem_toFinset.mp (first_pool true h)))
+  have g2056 : base 2400∉wireBlock base 2056 256 := by
+    intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
+    simp only [List.mem_range'_1] at hj; have := base_injective e; omega
+  have gv : v.basis (base 2400)=s.basis (base 2400) := by
+    rw [offA _ g_not_pool,r3 _ g2056,offB _ g_not_pool]
+  have numOut (q : Wire) (hq : q∈wireBlock base 2056 256) : out.basis q=after.basis q := by
+    have np : q∉skywalkPoolWires base := fun h => num_not_pool q h hq
+    rw [o4 q np,offA q np]
+  refine ⟨o1,?_,?_,?_⟩
+  · rw [regValue_congr _ _ after.basis numOut]; exact r2
+  · rw [o2,gv]
+  · intro q h1 h2
+    by_cases hp : q∈skywalkPoolWires base
+    · exact o3 q hp h2
+    · rw [o4 q hp,offA q hp,r3 q h1,offB q hp]
+
+/-! ### Kernel with the merged exit: hosted form -/
+
+private theorem phase_sites_split' : phaseSites=FrontierEntry1591Native.workSites∪phaseHosts := by
+  ext q
+  simp only [phaseSites,phaseHosts,FrontierEntry1591Native.workSites,Finset.mem_union,
+    List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false]
+  tauto
+
+private theorem rebind (P F Q : Program) (s : State) (m : List Bool)
+    (input : ∀q∈phaseSites,s.basis q=false)
+    (firstFree : ∀q∈phaseHosts,q∉wires P)
+    (firstClean : ∀records,∀q∈FrontierEntry1591Native.workSites,
+      (run P records s).basis q=false)
+    (fieldFree : ∀q∈FrontierEntry1591Native.workSites,q∉wires F)
+    (lastFree : ∀q∈phaseHosts,q∉wires Q)
+    (output : ∀q∈phaseSites,
+      (run (FrontierEntry1591Native.kernel P F Q) m s).basis q=false) :
+    run (renameProgram phaseHost P++(F++renameProgram phaseHost Q)) m s=
+      run (FrontierEntry1591Native.kernel P F Q) m s := by
+  let mp := m.take (measurementCount P)
+  let rest := m.drop (measurementCount P)
+  let mf := rest.take (measurementCount F)
+  let mr := rest.drop (measurementCount F)
+  let before := run P mp s
+  let after := run F mf before
+  have finalClean : ∀q∈phaseSites,(run Q mr after).basis q=false := by
+    simpa only [FrontierEntry1591Native.kernel,run_append] using output
+  have lastInput : ∀q∈phaseSites,after.basis q=false := by
+    intro q hq
+    rw [phase_sites_split'] at hq
+    rcases Finset.mem_union.mp hq with work|host
+    · exact (run_preserves_outside F mf before q (fieldFree q work)).trans (firstClean mp q work)
+    · exact (run_preserves_outside Q mr after q (lastFree q host)).symm.trans
+        (finalClean q (by rw [phase_sites_split'];exact Finset.mem_union_right _ host))
+  have firstOutput : ∀q∈phaseSites,(run P mp s).basis q=false := by
+    intro q hq
+    rw [phase_sites_split'] at hq
+    rcases Finset.mem_union.mp hq with work|host
+    · exact firstClean mp q work
+    · exact (run_preserves_outside P mp s q (firstFree q host)).trans
+        (input q (by rw [phase_sites_split'];exact Finset.mem_union_right _ host))
+  have first := phase_run_eq P s mp input firstOutput
+  have last := phase_run_eq Q after mr lastInput finalClean
+  simp only [FrontierEntry1591Native.kernel,run_append,(renameProgram_counts _ _).2]
+  rw [first]
+  exact last
+
+theorem x1_hosts_free (k : Nat) (q : Wire) (hq : q∈phaseHosts) : q∉wires (x1 k) := by
+  intro h
+  rw [x1_eq,renameProgram_support] at h
+  obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp h
+  obtain ⟨i,rfl,hi⟩ := E1QubitPlacement.S_cases _ (ExitMerge.program_support base (base 2400) k ha)
+  rw [pi_base] at hq
+  simp only [phaseHosts,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
+  rcases hq with e|e|e <;> have := base_injective e <;> unfold piN E1QubitPlacement.rhoN at this <;>
+    split_ifs at this <;> omega
+
+theorem lastX_hosts_free (k : Nat) (q : Wire) (hq : q∈phaseHosts) : q∉wires (lastX k) := by
+  have old := last_hosts_free true q hq
+  simp only [Rolling1588Lifetime.lastPhase,Rolling1588.lastPhase,wires_append,Finset.mem_union,not_or] at old
+  simp only [lastX,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨old.1.1,old.1.2⟩,x1_hosts_free k q hq⟩
+
+theorem top_zero (t : BasisState) (h : regValue (wireBlock base 770 258) t < 2^256) :
+    ∀q∈wireBlock base 1026 2,t q=false := by
+  have sp := E1Merge.kR_x base base_pool_nodup t
+  change regValue (wireBlock base 770 258) t=_ at sp
+  apply (regValue_zero _ _).mp
+  by_contra hne
+  have : 1 ≤ regValue (wireBlock base 1026 2) t := Nat.one_le_iff_ne_zero.mpr hne
+  have : 2^256 ≤ 2^256*regValue (wireBlock base 1026 2) t := Nat.le_mul_of_pos_right _ this
+  omega
+
+theorem negDiv_lt (k x : Nat) (G : Bool) (hx : x < p) : negDiv k x G < p := by
+  unfold negDiv; split
+  · exact Nat.mod_lt _ (by norm_num [p])
+  · exact hx
+
+theorem p_lt : p < 2^256 := by norm_num [p]
+
+theorem sites_not_num (q : Wire) (hq : q∈phaseSites) : q∉wireBlock base 2056 256 := by
+  simp only [phaseSites,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
+  intro h; obtain ⟨j,hj,e'⟩ := List.mem_map.mp h
+  simp only [List.mem_range'_1] at hj
+  rcases hq with e|e|e|e|e|e <;> rw [e] at e' <;> have := base_injective e' <;> omega
+
+theorem sites_not_kR (q : Wire) (hq : q∈phaseSites) (h26 : q≠base 1026) : q∉wireBlock base 770 258 := by
+  simp only [phaseSites,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
+  intro h; obtain ⟨j,hj,e'⟩ := List.mem_map.mp h
+  simp only [List.mem_range'_1] at hj
+  rcases hq with e|e|e|e|e|e
+  · exact h26 e
+  all_goals (rw [e] at e'; have := base_injective e'; omega)
+
+theorem hostedX (F : Program) (k : Nat) (hk : k < p) (hn : (skywalkSharedWires base).Nodup)
+    (hlo : History5.HistoryAbove base) (x y : Nat) (hx0 : 0 < x) (hx : x < p)
+    (s : State) (m : List Bool) (value : Nat) (input : SkywalkArithmeticInput base x y s.basis)
+    (integerBoundary : ∀mn mf,
+      run (Rolling1588.stackForward false) mf (run (FrontierEntry1591Native.forward base) mn s)=
+        pullState (OB5.sig 511) (run (Rolling1588.allEncode base false 102) []
+          (run (W.compactSkywalkForward base 1 511) []
+            (run (FrontierEntry1591Native.forward base) mn s))))
+    (fieldFree : ∀q∈FrontierEntry1591Native.workSites,q∉wires F)
+    (fieldResult : ∀mp mf,
+      let beforeA := run (Rolling1588.firstPhase false) mp s
+      let beforeB := run (Rolling1588.firstPhase true) mp s
+      let after := run F mf beforeA
+      after.phase=beforeB.phase ∧ regValue (wireBlock base 2056 256) after.basis=value ∧
+        ∀q,q∉wireBlock base 2056 256 → after.basis q=beforeB.basis q) :
+    let out := run (renameProgram phaseHost (Rolling1588.firstPhase false)++
+      (F++renameProgram phaseHost (lastX k))) m s
+    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=value ∧
+      regValue (wireBlock base 770 258) out.basis=negDiv k x (s.basis (base 2400)) ∧
+      ∀q,q∉wireBlock base 2056 256 → q∉wireBlock base 770 258 → out.basis q=s.basis q := by
+  have raw := rawX F k hk hn hlo x y hx0 hx s m value input fieldResult
+  have clean := caller_phase_clean x y s input
+  obtain ⟨o1,o2,o3,o4⟩ := raw
+  have output : ∀q∈phaseSites,
+      (run (FrontierEntry1591Native.kernel (Rolling1588.firstPhase false) F (lastX k)) m s).basis q=false := by
+    intro q hq
+    have hq' := hq
+    simp only [phaseSites,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq'
+    by_cases h26 : q=base 1026
+    · subst h26
+      apply top_zero _ (by rw [o3]; exact (negDiv_lt k x _ hx).trans p_lt)
+      exact List.mem_map.mpr ⟨1026,by simp only [List.mem_range'_1]; omega,rfl⟩
+    · rw [o4 q (sites_not_num q hq) (sites_not_kR q hq h26)]
+      exact clean q hq
+  have same := rebind (Rolling1588.firstPhase false) F (lastX k) s m clean (first_hosts_free false)
+    (fun records => first_clean_of_boundary false hn x y hx0 hx s records input integerBoundary)
+    fieldFree (lastX_hosts_free k) output
+  dsimp only
+  rw [same]
+  exact ⟨o1,o2,o3,o4⟩
+
+/-! ### The TickGap exit kernel with the merged exit -/
+
+def kernelX (k : Nat) : Program :=
+  renameProgram phaseHost (Rolling1588TickGap.firstPhase false)++
+    (Rolling1588.exitFieldHosted++renameProgram phaseHost (lastX k))
+
+def ExitNegCorrect (K : Program) (k : Nat) : Prop := ∀
+    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
+    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
+    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
+    (x : Nat) (Y : Fp) (hx0 : 0 < x) (hx : x < p) (s : State) (m : List Bool)
+    (input : SkywalkArithmeticInput base x Y.val s.basis)
+    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false),
+    let out := run K m s
+    out.phase=s.phase ∧ regValue (skywalkArithmeticNumerator base) out.basis=centerWord (Y*(x:Fp)/2) ∧
+      regValue (skywalkArithmeticDivisor base) out.basis=negDiv k x (s.basis (base 2400)) ∧
+      ∀q,q∉skywalkArithmeticNumerator base → q∉skywalkArithmeticDivisor base → out.basis q=s.basis q
+
+private theorem append_run_eq' (P Q R : Program) (s : State) (m : List Bool)
+    (records : measurementCount P=measurementCount Q)
+    (same : ∀r,run P r s=run Q r s) :
+    run (P++R) m s=run (Q++R) m s := by
+  rw [run_append,run_append,records,same]
+
+theorem kernelX_correct (k : Nat) (hk : k < p) : ExitNegCorrect (kernelX k) k := by
+  intro hn hlo ho hf x Y hx0 hx s m input hg hs
+  have records : measurementCount (renameProgram phaseHost (Rolling1588TickGap.firstPhase false))=
+      measurementCount (renameProgram phaseHost (Rolling1588.firstPhase false)) := by
+    rw [(renameProgram_counts _ _).2,(renameProgram_counts _ _).2,(Rolling1588TickGap.first_metrics false).2.1]
+  have eq := append_run_eq' _ _ (Rolling1588.exitFieldHosted++renameProgram phaseHost (lastX k)) s m records
+    (fun r => Rolling1588TickGap.first_hosted_run_eq false hn x Y.val hx0 hx s r input)
+  have res := hostedX Rolling1588.exitFieldHosted k hk hn hlo x Y.val hx0 hx s m (centerWord (Y*(x:Fp)/2)) input
+    (fun mn mf => Rolling1588.stackForward_boundary false hn hlo x hx0 hx _ mf
+      (FrontierEntry1591Native.caller_first_stageW base hn x Y.val hx0 hx s mn input))
+    Rolling1588.exitFieldHosted_work_free
+    (fun mp mf => Rolling1588.exit_boundary hn hlo ho hf x Y hx0 hx s mp mf input hg hs)
+  dsimp only at res ⊢
+  rw [kernelX,eq]
+  obtain ⟨o1,o2,o3,o4⟩ := res
+  have tz := top_zero _ (by rw [o3]; exact (negDiv_lt k x _ hx).trans p_lt)
+  have sp := E1Merge.kR_x base base_pool_nodup
+    (run (renameProgram phaseHost (Rolling1588.firstPhase false)++
+      (Rolling1588.exitFieldHosted++renameProgram phaseHost (lastX k))) m s).basis
+  change regValue (wireBlock base 770 258) _=regValue (wireBlock base 770 256) _+_ at sp
+  rw [o3,(regValue_zero _ _).mpr tz] at sp
+  refine ⟨o1,o2,by simp only [skywalkArithmeticDivisor]; omega,?_⟩
+  intro q h1 h2
+  by_cases hk' : q∈wireBlock base 770 258
+  · have top : q∈wireBlock base 1026 2 := by
+      obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hk'
+      simp only [List.mem_range'_1] at hi
+      refine List.mem_map.mpr ⟨i,?_,rfl⟩
+      simp only [List.mem_range'_1]
+      by_contra hc
+      exact h2 (List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩)
+    rw [tz q top]
+    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp top
+    simp only [List.mem_range'_1] at hi
+    exact (input.2.2 _ (List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩) h2 h1).symm
+  · exact o4 q h1 hk'
+
+/-! ### Point-layout transfer -/
+
+theorem wordTransferX (L : ControlledPointLayout) (f : Wire → Wire) (k : Nat)
+    (domain : Finset Wire)
+    (injective : ∀a∈domain,∀b∈domain,f a=f b → a=b)
+    (divisorMap : (wireBlock base 770 256).map f=L.point.x)
+    (numeratorMap : (wireBlock base 2056 256).map f=L.point.y)
+    (controlMap : f (base 2400)=L.core.generic)
+    (sharedWork : ∀q∈skywalkSharedWires base,q∈domain → q∉wireBlock base 770 256 →
+      q∉wireBlock base 2056 256 → f q∈L.dialogPool)
+    (selectorG : f (base 2409)∈L.dialogPool)
+    (selectorS : f (base 2410)∈L.dialogPool)
+    (dxSites : (wireBlock base 770 256).toFinset⊆domain)
+    (dySites : (wireBlock base 2056 256).toFinset⊆domain)
+    (gSite : base 2400∈domain)
+    (X : Nat) (Y : Fp) (R : Nat)
+    (s : State) (m : List Bool)
+    (hX : regValue L.point.x s.basis=X) (hY : regValue L.point.y s.basis=Y.val)
+    (clean : regValue L.dialogPool s.basis=0)
+    (P : Program) (programSites : wires P⊆domain)
+    (P_spec : ∀(t : State)(records : List Bool),
+      SkywalkArithmeticInput base X Y.val t.basis →
+      t.basis (base 2409)=false → t.basis (base 2410)=false →
+      (run P records t).phase=t.phase ∧
+      regValue (skywalkArithmeticNumerator base) (run P records t).basis=R ∧
+      regValue (skywalkArithmeticDivisor base) (run P records t).basis=negDiv k X (t.basis (base 2400)) ∧
+      ∀ q,q∉skywalkArithmeticNumerator base → q∉skywalkArithmeticDivisor base →
+        (run P records t).basis q=t.basis q) :
+    (run (renameProgram f P) m s).phase=s.phase ∧
+    regValue L.point.y (run (renameProgram f P) m s).basis=R ∧
+    regValue L.point.x (run (renameProgram f P) m s).basis=negDiv k X (s.basis L.core.generic) ∧
+      ∀q,q∉L.point.y → q∉L.point.x → (run (renameProgram f P) m s).basis q=s.basis q := by
+  let t := ECDSAAdd.Entrant.selInput domain f s
+  have inputBits (q : Wire) (hq : q∈domain) : t.basis q=s.basis (f q) := by
+    simp only [t,ECDSAAdd.Entrant.selInput,if_pos hq]
+  have zero (q : Wire) (hq : f q∈L.dialogPool) : t.basis q=false := by
+    change (if q∈domain then s.basis (f q) else false)=false
+    split
+    · exact (regValue_zero _ _).mp clean _ hq
+    · rfl
+  have input : SkywalkArithmeticInput base X Y.val t.basis := by
+    refine ⟨?_,?_,?_⟩
+    · change regValue (wireBlock base 770 256) t.basis=X
+      rw [ECDSAAdd.Entrant.selRegMap f _ t.basis s.basis
+        (fun q hq => inputBits q (dxSites (List.mem_toFinset.mpr hq))),divisorMap]
+      exact hX
+    · change regValue (wireBlock base 2056 256) t.basis=Y.val
+      rw [ECDSAAdd.Entrant.selRegMap f _ t.basis s.basis
+        (fun q hq => inputBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
+      exact hY
+    · intro q hq hdx hdy
+      by_cases used : q∈domain
+      · exact zero q (sharedWork q hq used hdx hdy)
+      · simp only [t,ECDSAAdd.Entrant.selInput,if_neg used]
+  have strong := P_spec t m input (zero _ selectorG) (zero _ selectorS)
+  have transfer := run_rename_pool f domain injective P programSites m t s rfl inputBits
+  have tg : t.basis (base 2400)=s.basis L.core.generic := by rw [inputBits _ gSite,controlMap]
+  refine ⟨transfer.1.trans strong.1,?_,?_,?_⟩
+  · rw [←numeratorMap]
+    exact (ECDSAAdd.Entrant.selRegMap f _ (run P m t).basis
+      (run (renameProgram f P) m s).basis
+      (fun q hq => (transfer.2 q (dySites (List.mem_toFinset.mpr hq))).symm)).symm.trans strong.2.1
+  · rw [←divisorMap,←tg]
+    exact (ECDSAAdd.Entrant.selRegMap f _ (run P m t).basis
+      (run (renameProgram f P) m s).basis
+      (fun q hq => (transfer.2 q (dxSites (List.mem_toFinset.mpr hq))).symm)).symm.trans strong.2.2.1
+  · intro q outY outX
+    by_cases image : q∈domain.image f
+    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp image
+      have awayY : a∉skywalkArithmeticNumerator base := by
+        intro mem; apply outY; rw [←numeratorMap]; exact List.mem_map.mpr ⟨a,mem,rfl⟩
+      have awayX : a∉skywalkArithmeticDivisor base := by
+        intro mem; apply outX; rw [←divisorMap]; exact List.mem_map.mpr ⟨a,mem,rfl⟩
+      exact (transfer.2 a ha).trans ((strong.2.2.2 a awayY awayX).trans (inputBits a ha))
+    · exact run_rename_pool_outside f domain P programSites m s q image
+
+theorem lx_support (k : Nat) : wires (lastX k)⊆wires (Rolling1588.lastPhase true)∪wires (x1 k) := by
+  intro q hq
+  simp only [lastX,Rolling1588.lastPhase,wires_append,Finset.mem_union] at hq ⊢
+  tauto
+
+theorem x1_logical (k : Nat) : wires (x1 k)⊆(E1QubitPlacement.S).image pi := by
+  rw [x1_eq,renameProgram_support]
+  exact Finset.image_subset_image (ExitMerge.program_support base (base 2400) k)
+
+theorem host_pi (q : Wire) : phaseHost (pi q)=E1QubitPlacement.sig (E1QubitPlacement.rho q) := rfl
+
+theorem hostedX1_logical (k : Nat) :
+    wires (renameProgram phaseHost (x1 k))⊆OB5Support.logicalSites := by
+  intro q hq
+  rw [renameProgram_support] at hq
+  obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp hq
+  obtain ⟨b,hb,rfl⟩ := Finset.mem_image.mp (x1_logical k ha)
+  obtain ⟨i,rfl,hi⟩ := E1QubitPlacement.S_cases b hb
+  rw [host_pi,E1QubitPlacement.rho_base,E1QubitPlacement.sig_base]
+  exact E1QubitPlacement.sw_logical _ (E1QubitPlacement.rhoN_range i hi)
+
+theorem kernelX_support (k : Nat) : wires (kernelX k)⊆OB5Support.logicalSites := by
+  have old := Rolling1588TickGap.exitKernel_support
+  intro q hq
+  simp only [kernelX,wires_append,Finset.mem_union,renameProgram_support] at hq
+  simp only [Rolling1588TickGap.exitKernel,Rolling1588TickGap.kernel,wires_append,
+    renameProgram_support] at old
+  rcases hq with h|h|h
+  · exact old (Finset.mem_union_left _ h)
+  · exact old (Finset.mem_union_right _ (Finset.mem_union_left _ h))
+  · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp h
+    rcases Finset.mem_union.mp (lx_support k ha) with h1|h1
+    · exact old (Finset.mem_union_right _ (Finset.mem_union_right _ (Finset.mem_image.mpr ⟨a,h1,rfl⟩)))
+    · exact hostedX1_logical k (by rw [renameProgram_support]; exact Finset.mem_image.mpr ⟨a,h1,rfl⟩)
+
+def HalfMultiplyNegCorrect (L : ControlledPointLayout) (P : Program) (k : Nat) : Prop :=
+  ∀(X Y : Nat),X < p → 0 < X → Y < p → ∀(s : State)(m : List Bool),
+    regValue L.point.x s.basis=X → regValue L.point.y s.basis=Y → regValue L.dialogPool s.basis=0 →
+    (run P m s).phase=s.phase ∧
+    regValue L.point.y (run P m s).basis=centerWord (((Y:Fp)*(X:Fp))/2) ∧
+    regValue L.point.x (run P m s).basis=negDiv k X (s.basis L.core.generic) ∧
+    ∀q,q∉L.point.y → q∉L.point.x → (run P m s).basis q=s.basis q
+
+theorem exitX_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (k : Nat) (hk : k < p) :
+    HalfMultiplyNegCorrect L (FrontierEntry1591Callers.exit (kernelX k) L) k := by
+  intro X Y hX hX0 hY s m hx hy hc
+  have yValue : (Y:Fp).val=Y := ZMod.val_natCast_of_lt hY
+  rcases placement2 L hw hn with ⟨injective,divisorMap,numeratorMap,controlMap,sharedWork,
+    selectorG,selectorS,zeroFlag⟩
+  have dx : (wireBlock base 770 256).toFinset⊆OB5Support.logicalSites := by
+    intro q hq
+    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp (List.mem_toFinset.mp hq)
+    apply List.mem_toFinset.mpr
+    apply List.mem_map.mpr
+    refine ⟨i,?_,rfl⟩
+    simp only [wireBlock,List.mem_range'_1] at hi
+    simp only [OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
+      List.mem_cons,List.not_mem_nil,or_false]
+    omega
+  have dy : (wireBlock base 2056 256).toFinset⊆OB5Support.logicalSites := by
+    intro q hq
+    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp (List.mem_toFinset.mp hq)
+    apply List.mem_toFinset.mpr
+    apply List.mem_map.mpr
+    refine ⟨i,?_,rfl⟩
+    simp only [wireBlock,List.mem_range'_1] at hi
+    simp only [OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
+      List.mem_cons,List.not_mem_nil,or_false]
+    omega
+  have gSite : base 2400∈OB5Support.logicalSites := by
+    have := E1QubitPlacement.sw_logical 2400 (by unfold E1QubitPlacement.Rng; omega)
+    simpa [E1QubitPlacement.sw] using this
+  have config := MappedCompressed.LaneA.laneLogical_config
+  have above : History5.HistoryAbove base := by intro j hj; simp [base]
+  have result := wordTransferX L (wireFn2 L) k OB5Support.logicalSites
+    (fun a ha b hb eq => injective a (ArithmeticOB5.logical_sub_old ha) b
+      (ArithmeticOB5.logical_sub_old hb) eq)
+    divisorMap numeratorMap controlMap
+    (fun q hq used hx hy => sharedWork q hq (ArithmeticOB5.logical_sub_old used) hx hy)
+    selectorG selectorS dx dy gSite X (Y:Fp) (centerWord (((Y:Fp)*(X:Fp))/2))
+    s m hx (hy.trans yValue.symm) hc
+    (kernelX k) (kernelX_support k)
+    (fun t records input hg hs => kernelX_correct k hk
+      config.1 above config.2.1 config.2.2 X (Y:Fp) hX0 hX t records input hg hs)
+  simpa only [FrontierEntry1591Callers.exit] using result
+
+private theorem sub_val'' (x y : Fp) : (x-y).val=(x.val+p-y.val)%p := by
+  haveI : NeZero p := ⟨by norm_num [p]⟩
+  rw [sub_eq_add_neg,ZMod.val_add,ZMod.neg_val',Nat.add_mod_mod]
+  rw [←Nat.add_sub_assoc (le_of_lt (ZMod.val_lt y))]
+
+/-! ### Point step: the multiplication kernel with the merged negation, then `exitY` -/
+
+theorem fusedMultiplyX_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (P : Program) (cx : Fp) (correct : HalfMultiplyNegCorrect L P cx.val)
+    (X Y k : Fp) (G : Bool) (origin : BasisState) (hX : X≠0) :
+    Triple (PointDialogValues L X Y G origin) (P++ExitFusionResearch.exitY L k)
+      (PointDialogValues L (if G then cx-X else X) (Y*X-(if G then k else 0)) G origin) := by
+  intro s m v
+  let n := measurementCount P
+  let a := run P (m.take n) s
+  have hp : 0 < X.val := Nat.pos_of_ne_zero (fun hz => hX ((ZMod.val_eq_zero X).mp hz))
+  have half := correct X.val Y.val X.isLt hp Y.isLt s (m.take n) v.x v.y v.clean
+  have poolY (q : Wire) (hq : q∈L.dialogPool) : q∉L.point.y :=
+    fun h => finPool_not_xy L hn q hq (List.mem_append_right _ h)
+  have poolX (q : Wire) (hq : q∈L.dialogPool) : q∉L.point.x :=
+    fun h => finPool_not_xy L hn q hq (List.mem_append_left _ h)
+  have genY : L.core.generic∉L.point.y :=
+    fun h => finGeneric_not_xy L hn (List.mem_append_right _ h)
+  have genX : L.core.generic∉L.point.x :=
+    fun h => finGeneric_not_xy L hn (List.mem_append_left _ h)
+  have ag : a.basis L.core.generic=G := (half.2.2.2 _ genY genX).trans v.generic
+  have ac : regValue L.dialogPool a.basis=0 := by
+    rw [regValue_congr _ _ _ (fun q hq => half.2.2.2 q (poolY q hq) (poolX q hq)),v.clean]
+  have av : regValue L.point.y a.basis=centerWord ((Y*X)/2) := by
+    simpa only [ZMod.natCast_zmod_val] using half.2.1
+  have out := ExitFusionResearch.exitY_correct L hw hn ((Y*X)/2) k a (m.drop n) av ac
+  let b := run (ExitFusionResearch.exitY L k) (m.drop n) a
+  have phase : b.phase=s.phase := out.1.trans half.1
+  have xy (q : Wire) (hq : q∈L.point.x) : q∉L.point.y := by
+    intro h
+    have nd := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) q
+    have p1 := List.count_pos_iff.mpr hq
+    have p2 := List.count_pos_iff.mpr h
+    simp only [ControlledPointLayout.dialogUsedWires,PointAddLayout.pointWires,List.count_append,
+      List.count_cons] at nd
+    omega
+  have frame (q : Wire) (hy : q∉L.point.y) (hx : q∉L.point.x) : b.basis q=s.basis q :=
+    (out.2.2 q hy).trans (half.2.2.2 q hy hx)
+  have twice : 2*((Y*X)/2)=Y*X := by
+    have two : (2:Fp)≠0 := by decide
+    field_simp
+  have bv : regValue L.point.y b.basis=(Y*X-(if G then k else 0)).val := by
+    rw [out.2.1,ag,twice]
+  have bx : regValue L.point.x b.basis=(if G then cx-X else X).val := by
+    rw [regValue_congr _ _ a.basis (fun q hq => out.2.2 q (xy q hq)),half.2.2.1,v.generic]
+    cases G
+    · rfl
+    · simp only [negDiv,if_true]; rw [sub_val'']
+  rw [run_append]
+  change b.phase=s.phase ∧ PointDialogValues L (if G then cx-X else X) (Y*X-(if G then k else 0)) G origin b.basis
+  refine ⟨phase,bx,bv,?_,?_,?_⟩
+  · exact (frame _ genY genX).trans v.generic
+  · rw [←v.clean]
+    exact regValue_congr _ _ _ (fun q hq => frame q (poolY q hq) (poolX q hq))
+  · intro q hq
+    exact (frame q (fun h => hq (List.mem_append_right _ h)) (fun h => hq (List.mem_append_left _ h))).trans
+      (v.rest q hq)
+
+def restXX (L : ControlledPointLayout) (k : Nat) : Program :=
+  renameProgram (wireFn2 L)
+    (renameProgram phaseHost (Rolling1588TickGap.tailPhase false)++
+      (Rolling1588.exitFieldHosted++renameProgram phaseHost (lastX k)))
+
+theorem exit_splitX (L : ControlledPointLayout) (k : Nat) :
+    FrontierEntry1591Callers.exit (kernelX k) L=E1QubitPlacement.tickF L++restXX L k := by
+  have tick:=E1QubitPlacement.tick_eq L
+  change renameProgram (wireFn2 L)
+      (renameProgram Rolling1588Lifetime.phaseHost (FrontierEntry1591Native.forward base))=
+        E1QubitPlacement.tickF L at tick
+  simp only [FrontierEntry1591Callers.exit,kernelX,Rolling1588TickGap.firstPhase,restXX,
+    renameProgram,List.map_append,List.append_assoc] at tick ⊢
+  rw [tick]
+
+/-! ### Resources of the merged exit inside the stage -/
+
+theorem x1_counts (k : Nat) : toffoliCount (x1 k)=770 ∧ measurementCount (x1 k)=1027 := by
+  rw [x1_eq,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
+  exact ExitMerge.program_counts base (base 2400) k
+
+theorem x1_slots (k : Nat) : Challenge.gateSlots (x1 k) ≤ 22000 := by
+  rw [x1_eq,Baselines.rename_gateSlots]
+  exact ExitMerge.program_slots base (base 2400) k
+
+theorem x1_physical (k : Nat) : GatePhysical (x1 k) := by
+  rw [x1_eq]
+  exact gatePhysical_rename pi pi.injective _
+    (ExitMerge.program_physical base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k)
+
+theorem restXX_metrics (L : ControlledPointLayout) (k : Nat) :
+    toffoliCount (restXX L k)+252=toffoliCount (ReflectionE1TickGap.restX L)+770 ∧
+    measurementCount (restXX L k)+508=measurementCount (ReflectionE1TickGap.restX L)+1027 ∧
+    Challenge.gateSlots (restXX L k) ≤ Challenge.gateSlots (ReflectionE1TickGap.restX L)+22000 := by
+  have c := x1_counts k
+  have sl := x1_slots k
+  have i := FrontierEntry1591NativeH.counts base
+  simp only [restXX,ReflectionE1TickGap.restX,lastX,Rolling1588.lastPhase,toffoliCount_append,
+    measurementCount_append,Challenge.gateSlots_append,(renameProgram_counts _ _).1,
+    (renameProgram_counts _ _).2,Baselines.rename_gateSlots]
+  omega
+
+theorem restXX_support (L : ControlledPointLayout) (k : Nat) :
+    wires (restXX L k)⊆wires (ReflectionE1TickGap.restX L)∪
+      wires (renameProgram (wireFn2 L) (renameProgram phaseHost (x1 k))) := by
+  intro q hq
+  simp only [restXX,ReflectionE1TickGap.restX,lastX,Rolling1588.lastPhase,renameProgram_support,
+    wires_append,Finset.image_union,Finset.mem_union] at hq ⊢
+  tauto
+
+theorem placedX1_sites (L : ControlledPointLayout) (hw : L.Widths) (k : Nat) :
+    wires (renameProgram (wireFn2 L) (renameProgram phaseHost (x1 k)))⊆(OB5Support.sites L).toFinset :=
+  OB5Support.placed_support_logical L hw _ (hostedX1_logical k)
+
+theorem hostedX1_labels (k : Nat) (q : Wire) (hq : q∈wires (renameProgram phaseHost (x1 k))) :
+    ∃ j, q=base (E1QubitPlacement.sw (E1QubitPlacement.rhoN j)) ∧
+      (j < 515 ∨ (770 ≤ j ∧ j < 1285) ∨ (1540 ≤ j ∧ j < 1798) ∨ j=721 ∨ j=722 ∨ j=2400) := by
+  rw [renameProgram_support] at hq
+  obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp hq
+  obtain ⟨b,hb,rfl⟩ := Finset.mem_image.mp (x1_logical k ha)
+  obtain ⟨j,rfl,hj⟩ := E1QubitPlacement.S_cases b hb
+  exact ⟨j,by rw [host_pi,E1QubitPlacement.rho_base,E1QubitPlacement.sig_base],hj⟩
+
+theorem kernelX_physical (k : Nat) : GatePhysical (kernelX k) := by
+  have old := Rolling1588TickGap.exitKernel_physical
+  simp only [Rolling1588TickGap.exitKernel,Rolling1588TickGap.kernel,gatePhysical_append] at old
+  have last := Rolling1588.lastPhase_physical true
+  simp only [Rolling1588.lastPhase,gatePhysical_append] at last
+  have lx : GatePhysical (lastX k) := by
+    simp only [lastX,gatePhysical_append]; exact ⟨last.1,x1_physical k⟩
+  simp only [kernelX,gatePhysical_append]
+  exact ⟨old.1,old.2.1,gatePhysical_rename phaseHost phaseHost.injective _ lx⟩
+
+theorem restXX_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) (k : Nat) :
+    GatePhysical (restXX L k) := by
+  have physical := FrontierEntry1591Native.placed_physical L hw hn (kernelX k) (kernelX_support k)
+    (kernelX_physical k)
+  have e : GatePhysical (FrontierEntry1591Callers.exit (kernelX k) L) := by
+    unfold FrontierEntry1591Callers.exit; exact physical
+  rw [exit_splitX,gatePhysical_append] at e
+  exact e.2
+
+theorem sw760 (j : Nat)
+    (hj : j < 515 ∨ (770 ≤ j ∧ j < 1285) ∨ (1540 ≤ j ∧ j < 1798) ∨ j=721 ∨ j=722 ∨ j=2400) :
+    E1QubitPlacement.sw (E1QubitPlacement.rhoN j)≠760 := by
+  have range:=E1QubitPlacement.rhoN_range j hj
+  generalize E1QubitPlacement.rhoN j=i at range ⊢
+  unfold E1QubitPlacement.Rng at range
+  unfold E1QubitPlacement.sw
+  split_ifs <;> omega
+
+theorem kernelX_760_free (k : Nat) : base 760∉wires (kernelX k) := by
+  have old := Rolling1588TickGap.exitKernel_760_free
+  simp only [Rolling1588TickGap.exitKernel,Rolling1588TickGap.kernel,wires_append,
+    renameProgram_support,Finset.mem_union,not_or] at old
+  simp only [kernelX,wires_append,renameProgram_support,Finset.mem_union,not_or]
+  refine ⟨old.1,old.2.1,?_⟩
+  intro h
+  obtain ⟨a,ha,e⟩ := Finset.mem_image.mp h
+  rcases Finset.mem_union.mp (lx_support k ha) with h1|h1
+  · exact old.2.2 (Finset.mem_image.mpr ⟨a,h1,e⟩)
+  · obtain ⟨j,e',hj⟩ := hostedX1_labels k (phaseHost a) (by
+      rw [renameProgram_support]; exact Finset.mem_image.mpr ⟨a,h1,rfl⟩)
+    rw [e] at e'
+    exact sw760 j hj (base_injective e').symm
+
+end ECDSAAdd.Entrant.ExitMergeKernel
+
+end -- exit merge section
+
 -- ===== ECDSAAdd.Submission.Entrant.ReflectionE1Low48Generic =====
 section
 -- consolidated import: import ECDSAAdd.Submission.Entrant.ReflectionE1TickGapFinal
@@ -23579,8 +22713,42 @@ theorem secondStage_step (X Y k cy : Fp) (G : Bool) (origin : BasisState)
 
 end CorrectStages
 
+/-- The second stage with the last reverse tick and the trailing constant negation merged. -/
+def secondStageX (L : ControlledPointLayout) (k cy cx : Fp) : Program :=
+  squareEntry L k++ExitMergeKernel.restXX L cx.val++exitY L cy
+
+section CorrectStagesX
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+
+theorem secondStageX_step (X Y k cy cx : Fp) (G : Bool) (origin : BasisState)
+    (hx : X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)+
+      (if G then k else 0)≠0) :
+    let Z:=X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)+
+      (if G then k else 0)
+    Triple (PointDialogValues L X Y G origin) (secondStageX L k cy cx)
+      (PointDialogValues L (if G then cx-Z else Z) (Y*Z-(if G then cy else 0)) G origin) := by
+  let Z:=X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)
+  have square:=SquareCarryLoan719BF.step L hw hn X Y G origin
+  have add:=fastStep_addX L hw hn Z Y G origin k
+  have multiply:=ExitMergeKernel.fusedMultiplyX_step L hw hn
+    (FrontierEntry1591Callers.exit (ExitMergeKernel.kernelX cx.val) L) cx
+    (ExitMergeKernel.exitX_correct L hw hn cx.val cx.isLt)
+    (Z+(if G then k else 0)) Y cy G origin hx
+  have prior:=(square.seq add).seq multiply
+  simp only [secondStageX,List.append_assoc]
+  apply E1QubitPlacement.tri_transfer
+    (A:=squareEntry L k)
+    (B:=SquareCarryLoan719BF.program L++fastConstAdd L L.point.x k++E1QubitPlacement.tickF L)
+    (R:=ExitMergeKernel.restXX L cx.val++exitY L cy)
+  · intro s v m1 m2
+    exact squareEntry_base L hw hn k X Y G origin s m1 m2 v
+  · simpa only [ExitMergeKernel.exit_splitX,List.append_assoc,Z] using prior
+
+end CorrectStagesX
+
 def generic (L : ControlledPointLayout) (cx cy : Fp) : Program :=
-  ReflectionE1TickGap.entryStage L (-cx) (-cy)++secondStage L (ReflectionE1.correction cx) cy++fastConstNeg L cx
+  ReflectionE1TickGap.entryStage L (-cx) (-cy)++secondStageX L (ReflectionE1.correction cx) cy cx
 
 def mid (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   clrF L++renameProgram (swapF L) (generic L cx cy)++clrF L
@@ -23612,27 +22780,24 @@ theorem generic_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
     rw [←e]
     unfold ReflectionE1.correction
     ring
-  have second:=secondStage_step L hw hn (X-cx) a (ReflectionE1.correction cx) cy true origin
+  have second:=secondStageX_step L hw hn (X-cx) a (ReflectionE1.correction cx) cy cx true origin
     (by simpa only [if_true,hd4] using hd)
   simp only [if_true,hd4] at second
-  have finish:=fastStep_negX L hw hn d (a*d-cy) true origin cx
-  simp only [if_true] at finish
-  rw [show cx-d=genericX X Y cx cy by dsimp [d];ring] at finish
-  rw [show a*d-cy=genericY X Y cx cy from hv.2.2] at second finish
-  exact (first.seq second).seq finish
+  rw [show cx-d=genericX X Y cx cy by dsimp [d];ring,
+    show a*d-cy=genericY X Y cx cy from hv.2.2] at second
+  exact first.seq second
 
 theorem generic_false (X Y cx cy : Fp) (origin : BasisState) (hX : X≠0) :
     Triple (PointDialogValues L X Y false origin) (generic L cx cy)
       (PointDialogValues L X Y false origin) := by
   have first:=ReflectionE1TickGap.entryStage_step L hw hn X Y (-cx) (-cy) false origin
     (by simpa only [Bool.false_eq_true,if_false,add_zero] using hX)
-  have second:=secondStage_step L hw hn X (Y/X) (ReflectionE1.correction cx) cy false origin
+  have second:=secondStageX_step L hw hn X (Y/X) (ReflectionE1.correction cx) cy cx false origin
     (by simpa only [Bool.false_eq_true,if_false,add_zero,sub_zero] using hX)
-  have finish:=fastStep_negX L hw hn X Y false origin cx
   have back : Y/X*X=Y:=div_mul_cancel₀ Y hX
-  simp only [Bool.false_eq_true,if_false,add_zero,sub_zero] at first second finish
+  simp only [Bool.false_eq_true,if_false,add_zero,sub_zero] at first second
   rw [back] at second
-  exact (first.seq second).seq finish
+  exact first.seq second
 
 
 theorem midFFused_values (cx cy : Fp) (X Y X' Y' : Fp) (G : Bool) (base : BasisState) (fin : Bool)
@@ -23740,14 +22905,19 @@ private theorem fact_of_shape (R : Program→Prop) (P Q : Program)
   exact fact
 
 private def Facts (P Q : Program) : Prop :=
-  toffoliCount P+215=toffoliCount Q ∧ measurementCount P+85=measurementCount Q ∧
-    gateSlots P≤gateSlots Q
+  toffoliCount P+463=toffoliCount Q ∧ measurementCount P+333=measurementCount Q ∧
+    gateSlots P≤gateSlots Q+22000
 
 private def context (A P B : Program) : Program := A++(P++B)
 
-private theorem context_facts (A P Q B : Program) (h : Facts P Q) :
-    Facts (context A P B) (context A Q B) := by
+private theorem context_facts2 (A P Q B B' : Program)
+    (h : toffoliCount P+215=toffoliCount Q ∧ measurementCount P+85=measurementCount Q ∧
+      gateSlots P≤gateSlots Q)
+    (h' : toffoliCount B+248=toffoliCount B' ∧ measurementCount B+248=measurementCount B' ∧
+      gateSlots B≤gateSlots B'+22000) :
+    Facts (context A P B) (context A Q B') := by
   rcases h with ⟨ht,hm,hs⟩
+  rcases h' with ⟨ht',hm',hs'⟩
   simp only [Facts,context,toffoliCount_append,measurementCount_append,gateSlots_append]
   exact ⟨by omega,by omega,by omega⟩
 
@@ -23761,11 +22931,25 @@ private def suffix (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   E1ReflectedPlacement.entryR L (ReflectionE1.correction cx)++ReflectionE1TickGap.restX L++
     exitY L cy++fastConstNeg L cx
 
+/-- The new suffix: the multiplication kernel ends in the merged exit, no trailing negation. -/
+private def suffixX (L : ControlledPointLayout) (cx cy : Fp) : Program :=
+  E1ReflectedPlacement.entryR L (ReflectionE1.correction cx)++ExitMergeKernel.restXX L cx.val++
+    exitY L cy
+
 private theorem generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
     generic L cx cy=context (ReflectionE1TickGap.entryStage L (-cx) (-cy))
-      (R2SqEp760.program760 L) (suffix L cx cy) := by
-  unfold generic secondStage squareEntry context suffix
+      (R2SqEp760.program760 L) (suffixX L cx cy) := by
+  unfold generic secondStageX squareEntry context suffixX
   simp only [List.append_assoc]
+
+private theorem suffix_facts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
+    toffoliCount (suffixX L cx cy)+248=toffoliCount (suffix L cx cy) ∧
+    measurementCount (suffixX L cx cy)+248=measurementCount (suffix L cx cy) ∧
+    gateSlots (suffixX L cx cy)≤gateSlots (suffix L cx cy)+22000 := by
+  have r := ExitMergeKernel.restXX_metrics L cx.val
+  have n := fastConstNeg_counts L hw cx
+  simp only [suffixX,suffix,toffoliCount_append,measurementCount_append,gateSlots_append]
+  exact ⟨by omega,by omega,by omega⟩
 
 private theorem old_generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
     ReflectionE1TickGap.generic L cx cy=context (ReflectionE1TickGap.entryStage L (-cx) (-cy))
@@ -23775,44 +22959,90 @@ private theorem old_generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
 
 private theorem generic_facts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     Facts (generic L cx cy) (ReflectionE1TickGap.generic L cx cy) := by
-  have square : Facts (R2SqEp760.program760 L) (ReflectionE1Square.program L) :=
-    ⟨(R2SqEp760.counts_diff760 L hw).1,(R2SqEp760.counts_diff760 L hw).2,
-      R2SqEp760.slots_le760 L hw⟩
   exact relation_of_shapes Facts _ _ _ _ (generic_shape L cx cy) (old_generic_shape L cx cy)
-    (context_facts (ReflectionE1TickGap.entryStage L (-cx) (-cy)) _ _ (suffix L cx cy) square)
+    (context_facts2 (ReflectionE1TickGap.entryStage L (-cx) (-cy)) _ _ (suffixX L cx cy) (suffix L cx cy)
+      ⟨(R2SqEp760.counts_diff760 L hw).1,(R2SqEp760.counts_diff760 L hw).2,R2SqEp760.slots_le760 L hw⟩
+      (suffix_facts L hw cx cy))
 
-/-- R2: the new square adds at most its host site `poolWire 1363` to the old generic support. -/
+/-- The new square adds its host site; the merged exit adds only its placed circuit. -/
 theorem generic_support_envelope (L : ControlledPointLayout) (cx cy : Fp) :
-    wires (generic L cx cy)⊆wires (ReflectionE1TickGap.generic L cx cy)∪wires (R2SqEp760.program760 L) := by
+    wires (generic L cx cy)⊆wires (ReflectionE1TickGap.generic L cx cy)∪wires (R2SqEp760.program760 L)∪
+      wires (renameProgram (wireFn2 L) (renameProgram Rolling1588Lifetime.phaseHost
+        (ExitMergeKernel.x1 cx.val))) := by
   rw [generic_shape,old_generic_shape]
-  exact context_wires _ _ _ _
+  intro q hq
+  have rx := ExitMergeKernel.restXX_support L cx.val
+  simp only [context,suffixX,suffix,wires_append,Finset.mem_union] at hq ⊢
+  rcases hq with h|h|(h|h)|h
+  · exact Or.inl (Or.inl (Or.inl h))
+  · exact Or.inl (Or.inr h)
+  · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inl (Or.inl (Or.inl h))))))
+  · rcases Finset.mem_union.mp (rx h) with h'|h'
+    · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inl (Or.inl (Or.inr h'))))))
+    · exact Or.inr h'
+  · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inl (Or.inr h)))))
+
+private def logicalTargetX (i : Nat) : Nat :=
+  if i=1800 then 2312 else if i=770 then 1026 else if i=1285 then 1541 else
+    if i=1286 then 1542 else if i=769 then 1797 else i
+
+private theorem target_factsX (L : ControlledPointLayout) (i : Nat)
+    (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
+    wireFn2 L (base (logicalTargetX i))=L.core.poolWire i ∧
+    base (logicalTargetX i)∈OB5Support.logicalSites ∧
+    logicalTargetX i∈[2312,766,765,767,1026,1541,1542,1797,768,718,719] := by
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
+  rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
+  all_goals refine ⟨rfl,?_,by decide⟩
+  all_goals
+    apply List.mem_toFinset.mpr
+    apply List.mem_map.mpr
+    refine ⟨_,?_,rfl⟩
+    simp only [logicalTargetX,OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
+      List.mem_cons,List.not_mem_nil,or_false]
+    norm_num
+
+private theorem placedX1_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (k i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
+    L.core.poolWire i∉wires (renameProgram (wireFn2 L) (renameProgram Rolling1588Lifetime.phaseHost
+      (ExitMergeKernel.x1 k))) := by
+  obtain ⟨map,logical,target⟩:=target_factsX L i hi
+  rw [renameProgram_support]
+  intro used
+  obtain ⟨q,hq,eq⟩:=Finset.mem_image.mp used
+  have same : wireFn2 L q=wireFn2 L (base (logicalTargetX i)):=eq.trans map.symm
+  have back:=(placement2 L hw hn).injectiveOnSlots q
+    (ArithmeticOB5.logical_sub_old (ExitMergeKernel.hostedX1_logical k hq)) (base (logicalTargetX i))
+    (ArithmeticOB5.logical_sub_old logical) same
+  rw [back] at hq
+  obtain ⟨j,e,hj⟩ := ExitMergeKernel.hostedX1_labels k _ hq
+  exact E1QubitPlacement.sw_avoid j hj (base_injective e ▸ target)
 
 theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : wires (generic L cx cy)⊆(OB5Support.sites L).toFinset :=
-  (generic_support_envelope L cx cy).trans (Finset.union_subset
+  (generic_support_envelope L cx cy).trans (Finset.union_subset (Finset.union_subset
     (ReflectionE1TickGap.generic_sites L hw hn cx cy) (R2SqEp760.program760_support L hw hn))
+    (ExitMergeKernel.placedX1_sites L hw cx.val))
 
 theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
     L.core.poolWire i∉wires (generic L cx cy) := by
   intro used
-  rcases Finset.mem_union.mp (generic_support_envelope L cx cy used) with old|sq
-  · exact ReflectionE1TickGap.generic_free L hw hn cx cy i hi old
-  · exact R2SqEp760.program760_free_old L hw hn i hi sq
-
-private theorem context_physical (A P Q B : Program) (old : GatePhysical (context A Q B))
-    (fresh : GatePhysical P) : GatePhysical (context A P B) := by
-  simp only [context,gatePhysical_append] at old ⊢
-  exact ⟨old.1,fresh,old.2.2⟩
+  rcases Finset.mem_union.mp (generic_support_envelope L cx cy used) with old|x
+  · rcases Finset.mem_union.mp old with old|sq
+    · exact ReflectionE1TickGap.generic_free L hw hn cx cy i hi old
+    · exact R2SqEp760.program760_free_old L hw hn i hi sq
+  · exact placedX1_free L hw hn cx.val i hi x
 
 theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : GatePhysical (generic L cx cy) := by
   have old:=fact_of_shape GatePhysical _ _ (old_generic_shape L cx cy).symm
     (ReflectionE1TickGap.generic_physical L hw hn cx cy)
-  exact fact_of_shape GatePhysical _ _ (generic_shape L cx cy)
-    (context_physical (ReflectionE1TickGap.entryStage L (-cx) (-cy))
-      (R2SqEp760.program760 L) (ReflectionE1Square.program L) (suffix L cx cy) old
-      (R2SqEp760.program760_physical L hw hn))
+  have rx := ExitMergeKernel.restXX_physical L hw hn cx.val
+  simp only [context,suffix,gatePhysical_append] at old
+  rw [generic_shape]
+  simp only [context,suffixX,gatePhysical_append]
+  exact ⟨old.1,R2SqEp760.program760_physical L hw hn,⟨old.2.2.1.1.1,rx⟩,old.2.2.1.2⟩
 
 private def wrapContext (Z C : Program) (f : Wire→Wire) (P : Program) : Program :=
   Z++(C++renameProgram f P++C)++Z
@@ -23836,9 +23066,9 @@ private theorem gen_facts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : F
   · exact wrap_facts _ _ _ _ _ (generic_facts L hw cx cy)
 
 theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+215=toffoliCount (ReflectionE1TickGap.gen L cx cy) ∧
-    measurementCount (gen L cx cy)+85=measurementCount (ReflectionE1TickGap.gen L cx cy) ∧
-    gateSlots (gen L cx cy)≤gateSlots (ReflectionE1TickGap.gen L cx cy) :=
+    toffoliCount (gen L cx cy)+463=toffoliCount (ReflectionE1TickGap.gen L cx cy) ∧
+    measurementCount (gen L cx cy)+333=measurementCount (ReflectionE1TickGap.gen L cx cy) ∧
+    gateSlots (gen L cx cy)≤gateSlots (ReflectionE1TickGap.gen L cx cy)+22000 :=
   ⟨(gen_facts L hw cx cy).1,(gen_facts L hw cx cy).2.1,(gen_facts L hw cx cy).2.2⟩
 
 theorem gen_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -23867,28 +23097,28 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
 
 private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
     (P Q : Program) (h : Facts P Q) :
-    toffoliCount (Edges.wrapper L C cy P)+215=toffoliCount (Edges.wrapper L C cy Q) ∧
-    measurementCount (Edges.wrapper L C cy P)+85=measurementCount (Edges.wrapper L C cy Q) ∧
-    gateSlots (Edges.wrapper L C cy P)≤gateSlots (Edges.wrapper L C cy Q) := by
+    toffoliCount (Edges.wrapper L C cy P)+463=toffoliCount (Edges.wrapper L C cy Q) ∧
+    measurementCount (Edges.wrapper L C cy P)+333=measurementCount (Edges.wrapper L C cy Q) ∧
+    gateSlots (Edges.wrapper L C cy P)≤gateSlots (Edges.wrapper L C cy Q)+22000 := by
   rcases h with ⟨ht,hm,hs⟩
   simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,measurementCount_append,
     gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151465 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151217 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
   have old:=ReflectionE1TickGap.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499131 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1498883 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).2.1
   have old:=ReflectionE1TickGap.wrapper_measurements cx cy hc
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50189199+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50211199+Rolling1588.slotGrowth := by
   have diff:=(wrapper_facts layout C cy _ _ (gen_facts layout layout_widths cx cy)).2.2
   have old:=ReflectionE1TickGap.wrapper_slots C cx cy
   omega
@@ -23991,21 +23221,21 @@ theorem restX_760_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires
 
 theorem generic_760_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (entryK : base 760∉wires Rolling1588TickGap.entryKernel)
-    (exitK : base 760∉wires Rolling1588TickGap.exitKernel)
+    (_exitK : base 760∉wires Rolling1588TickGap.exitKernel)
     (square : L.core.poolWire 760∉wires (R2SqEp760.program760 L)) (cx cy : Fp) :
     L.core.poolWire 760∉wires (ReflectionE1TickGapLow48.generic L cx cy) := by
   have bounds : 515≤760 ∧ 760<2613 := by omega
-  have x := ExitGenericQ5.constant_ports_avoid_large L hw hn 760 bounds L.point.x (Or.inl rfl)
   have y := ExitGenericQ5.constant_ports_avoid_large L hw hn 760 bounds L.point.y (Or.inr rfl)
-  have cn := (All12Generic.neg_palette L hw cx)
   have ey := exitY_support L hw cy
   have fy := fusedY_support L hw (-cy)
+  have rx : L.core.poolWire 760∉wires (ExitMergeKernel.restXX L cx.val) :=
+    suffix_free _ _ _ _ (ExitMergeKernel.exit_splitX L cx.val)
+      (placed_760 L hw hn _ (ExitMergeKernel.kernelX_support cx.val) (ExitMergeKernel.kernelX_760_free cx.val))
   simp only [ReflectionE1TickGapLow48.generic,ReflectionE1TickGap.entryStage,
-    ReflectionE1TickGapLow48.secondStage,ReflectionE1TickGapLow48.squareEntry,
+    ReflectionE1TickGapLow48.secondStageX,ReflectionE1TickGapLow48.squareEntry,
     wires_append,Finset.mem_union,not_or]
-  exact ⟨⟨⟨⟨fun h=>y (fy h),entryM_760_free L hw hn (-cx)⟩,restE_760_free L hw hn entryK⟩,
-    ⟨⟨⟨square,entryR_760_free L hw hn _⟩,restX_760_free L hw hn exitK⟩,fun h=>y (ey h)⟩⟩,
-    fun h=>x (cn h)⟩
+  exact ⟨⟨⟨fun h=>y (fy h),entryM_760_free L hw hn (-cx)⟩,restE_760_free L hw hn entryK⟩,
+    ⟨⟨⟨square,entryR_760_free L hw hn _⟩,rx⟩,fun h=>y (ey h)⟩⟩
 
 end ECDSAAdd.Entrant.R2Final760
 
@@ -24054,7 +23284,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151465,1499131,1588,50189199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151217,1498883,1588,50211199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -24071,12 +23301,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151465 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151217 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1499131 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498883 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc => exact wrapper_measurements cx cy hc
@@ -24093,7 +23323,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50189199+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50211199+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -24103,13 +23333,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1499131
+    change measurementCount (normalizeProgram (program C)) ≤ 1498883
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C)) ≤ 1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50189199+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C)) ≤ 50211199+Rolling1588.slotGrowth
     rw [normalize_slots];exact program_gateSlots C
 
 
@@ -24914,19 +24144,19 @@ theorem wrapper_qubits760 (C : Point) (cx cy : Fp) :
   exact card.trans (ReflectionE1TickGapLow48.wrapper_qubits760 C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151448 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151200 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
   omega
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 1499115 := by
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 1498867 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).2.1
   have old := ReflectionE1TickGapLow48.wrapper_measurements cx cy hc
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50190561+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50212561+Rolling1588.slotGrowth := by
   have h := (wrapper_counts layout layout_widths C cx cy).2.2
   have old := ReflectionE1TickGapLow48.wrapper_slots C cx cy
   omega
@@ -24938,7 +24168,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151448,1499115,1588,50190561+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151200,1498867,1588,50212561+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -24955,12 +24185,12 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151448 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151200 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1499115 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498867 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc => exact wrapper_measurements cx cy hc
@@ -24977,7 +24207,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50190561+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50212561+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -24987,13 +24217,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1499115
+    change measurementCount (normalizeProgram (program C)) ≤ 1498867
     rw [normalize_measurements];exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C)) ≤ 1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50190561+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C)) ≤ 50212561+Rolling1588.slotGrowth
     rw [normalize_slots];exact program_gateSlots C
 
 end ECDSAAdd.Entrant.FiniteFlagInterval
@@ -25015,7 +24245,7 @@ def program (C : Point) : Program :=
       MeasuredDH.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151480,1499142,1588,50190550+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151232,1498894,1588,50212550+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -25033,22 +24263,22 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151480 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151232 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151480
+    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151232
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1499142 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1498894 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).2.1
     have old := FiniteFlagInterval.wrapper_measurements cx cy hc
-    change measurementCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤1499142
+    change measurementCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤1498894
     omega
 
 theorem program_qubits (C : Point) : qubits (program C)≤1588 := by
@@ -25066,13 +24296,13 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact MeasuredDH.wrapper_physical layout layout_widths layout_nodup _ cy _
       (FiniteFlagInterval.gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50190550+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50212550+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).2.2
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
-    change gateSlots (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤50190550+Rolling1588.slotGrowth
+    change gateSlots (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤50212550+Rolling1588.slotGrowth
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -25080,13 +24310,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1499142
+    change measurementCount (normalizeProgram (program C))≤1498894
     rw [normalize_measurements]; exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1588
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50190550+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C))≤50212550+Rolling1588.slotGrowth
     rw [normalize_slots]; exact program_gateSlots C
 end ECDSAAdd.Entrant.MeasuredDHFinal
 end
@@ -25108,7 +24338,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151440,1499113,1587,50214132⟩
+def bounds : Challenge.Bounds := ⟨2151192,1498865,1587,50236132⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -25126,22 +24356,22 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151440 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151192 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151440
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151192
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1499113 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1498865 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).2.1
     have old := FiniteFlagInterval.wrapper_measurements cx cy hc
-    change measurementCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤1499113
+    change measurementCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤1498865
     omega
 
 theorem program_qubits (C : Point) : qubits (program C)≤1587 := by
@@ -25159,7 +24389,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact FusedFlags.wrapper_physical layout layout_widths layout_nodup _ cy _
       (FiniteFlagInterval.gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50214132 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50236132 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -25167,7 +24397,7 @@ theorem program_gateSlots (C : Point) : gateSlots (program C)≤50214132 := by
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
     have growth : Rolling1588.slotGrowth=23581 := rfl
     rw [growth] at old
-    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤50214132
+    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤50236132
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -25175,13 +24405,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1499113
+    change measurementCount (normalizeProgram (program C))≤1498865
     rw [normalize_measurements]; exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1587
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50214132
+    change gateSlots (normalizeProgram (program C))≤50236132
     rw [normalize_slots]; exact program_gateSlots C
 
 end ECDSAAdd.Entrant.FusedBoundaryFinal
@@ -25941,7 +25171,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151438,1499111,1587,50214132⟩
+def bounds : Challenge.Bounds := ⟨2151190,1498863,1587,50236132⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -25959,24 +25189,24 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
         (genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151438 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151190 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151438
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151190
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1499111 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1498863 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).2.1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).2.1
     have old := FiniteFlagInterval.wrapper_measurements cx cy hc
-    change measurementCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤1499111
+    change measurementCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤1498863
     omega
 
 theorem program_qubits (C : Point) : qubits (program C)≤1587 := by
@@ -25994,7 +25224,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact FusedFlags.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50214132 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50236132 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -26003,7 +25233,7 @@ theorem program_gateSlots (C : Point) : gateSlots (program C)≤50214132 := by
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
     have growth : Rolling1588.slotGrowth=23581 := rfl
     rw [growth] at old
-    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50214132
+    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50236132
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -26011,13 +25241,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1499111
+    change measurementCount (normalizeProgram (program C))≤1498863
     rw [normalize_measurements]; exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1587
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50214132
+    change gateSlots (normalizeProgram (program C))≤50236132
     rw [normalize_slots]; exact program_gateSlots C
 
 end ECDSAAdd.Entrant.CodexAffineProbe
@@ -27508,7 +26738,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151436,1499109,1587,50214132⟩
+def bounds : Challenge.Bounds := ⟨2151188,1498861,1587,50236132⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -27526,24 +26756,24 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
         (genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151436 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151188 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151436
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151188
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1499109 := by
+theorem program_measurements (C : Point) : measurementCount (program C)≤1498861 := by
   cases C with
   | zero => simp [program,measurementCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).2.1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).2.1
     have old := FiniteFlagInterval.wrapper_measurements cx cy hc
-    change measurementCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤1499109
+    change measurementCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤1498861
     omega
 
 theorem program_qubits (C : Point) : qubits (program C)≤1587 := by
@@ -27561,7 +26791,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact FusedFlags.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50214132 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50236132 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -27570,7 +26800,7 @@ theorem program_gateSlots (C : Point) : gateSlots (program C)≤50214132 := by
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
     have growth : Rolling1588.slotGrowth=23581 := rfl
     rw [growth] at old
-    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50214132
+    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50236132
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -27578,13 +26808,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1499109
+    change measurementCount (normalizeProgram (program C))≤1498861
     rw [normalize_measurements]; exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C))≤1587
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50214132
+    change gateSlots (normalizeProgram (program C))≤50236132
     rw [normalize_slots]; exact program_gateSlots C
 
 end ECDSAAdd.Entrant.CodexYParityProbe
@@ -30206,7 +29436,7 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper' layout C (tailGen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151190, 1498862, 1587, 50217751⟩
+def bounds : Challenge.Bounds := ⟨2150942, 1498614, 1587, 50239751⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -30218,7 +29448,7 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
   | @some cx cy hc =>
     exact fixed_correct _ control R _ (full_spec' hc control R) (support_used' hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151190 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2150942 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -30227,11 +29457,11 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151190 := by
     have st := (stage_counts hc).1
     have old := CodexYParityProbe.program_toffoli (.some hc)
     change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      2151436 at old
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151190
+      2151188 at old
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2150942
     omega
 
-theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498862 := by
+theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498614 := by
   cases C with
   | zero => simp [program, measurementCount]
   | @some cx cy hc =>
@@ -30240,8 +29470,8 @@ theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498
     have st := (stage_counts hc).2.1
     have old := CodexYParityProbe.program_measurements (.some hc)
     change measurementCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      1499109 at old
-    change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498862
+      1498861 at old
+    change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498614
     omega
 
 theorem program_qubits (C : Point) : qubits (program C) ≤ 1587 := by
@@ -30266,7 +29496,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
   | zero => simp [program, GatePhysical]
   | @some cx cy hc => exact wrapper'_physical hc
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50217751 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50239751 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -30274,8 +29504,8 @@ theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50217751 := by
     have st := (stage_counts hc).2.2
     have old := CodexYParityProbe.program_gateSlots (.some hc)
     change gateSlots (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      50214132 at old
-    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50217751
+      50236132 at old
+    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50239751
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -30283,13 +29513,13 @@ theorem certificate : Challenge.Certificate entry bounds where
   physical C := normalize_physical _ (program_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program C)) ≤ 1498862
+    change measurementCount (normalizeProgram (program C)) ≤ 1498614
     rw [normalize_measurements]; exact program_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program C)) ≤ 1587
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50217751
+    change gateSlots (normalizeProgram (program C)) ≤ 50239751
     rw [normalize_slots]; exact program_gateSlots C
 
 end Cert
@@ -33259,7 +32489,7 @@ def program2 (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper2 layout C cx cy
 
 def entry2 : Challenge.Entry := fun C => normalizeProgram (program2 C)
-def bounds2 : Challenge.Bounds := ⟨2150947, 1498619, 1587, 50223412⟩
+def bounds2 : Challenge.Bounds := ⟨2150699, 1498371, 1587, 50245412⟩
 
 theorem program2_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program2 C) (encodes control (if control then R+C else R)) := by
@@ -33271,7 +32501,7 @@ theorem program2_correct (C : Point) (control : Bool) (R : Point) :
   | @some cx cy hc =>
     exact fixed_correct _ control R _ (full_spec2 hc control R) (support2_used hc)
 
-theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150947 := by
+theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150699 := by
   cases C with
   | zero => simp [program2, toffoliCount]
   | @some cx cy hc =>
@@ -33279,11 +32509,11 @@ theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150947 := 
     have o : 504 ≤ toffoliCount (oldOut layout (.some hc)) := (old_out_counts hc).1
     have st := (outStage_counts hc).1
     have old := program_toffoli (.some hc)
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2151190 at old
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150947
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2150942 at old
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150699
     omega
 
-theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498619 := by
+theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498371 := by
   cases C with
   | zero => simp [program2, measurementCount]
   | @some cx cy hc =>
@@ -33291,8 +32521,8 @@ theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 14
     have o : 505 ≤ measurementCount (oldOut layout (.some hc)) := (old_out_counts hc).2
     have st := (outStage_counts hc).2.1
     have old := program_measurements (.some hc)
-    change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498862 at old
-    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498619
+    change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498614 at old
+    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498371
     split_ifs at st <;> omega
 
 theorem program2_qubits (C : Point) : qubits (program2 C) ≤ 1587 := by
@@ -33317,15 +32547,15 @@ theorem program2_physical (C : Point) : GatePhysical (program2 C) := by
   | zero => simp [program2, GatePhysical]
   | @some cx cy hc => exact wrapper2_physical hc
 
-theorem program2_gateSlots (C : Point) : gateSlots (program2 C) ≤ 50223412 := by
+theorem program2_gateSlots (C : Point) : gateSlots (program2 C) ≤ 50245412 := by
   cases C with
   | zero => simp [program2]
   | @some cx cy hc =>
     have r := (counts2_rel hc).2.2
     have st := (outStage_counts hc).2.2
     have old := program_gateSlots (.some hc)
-    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50217751 at old
-    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50223412
+    change gateSlots (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 50239751 at old
+    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50245412
     omega
 
 theorem certificate2 : Challenge.Certificate entry2 bounds2 where
@@ -33333,13 +32563,13 @@ theorem certificate2 : Challenge.Certificate entry2 bounds2 where
   physical C := normalize_physical _ (program2_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program2_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program2 C)) ≤ 1498619
+    change measurementCount (normalizeProgram (program2 C)) ≤ 1498371
     rw [normalize_measurements]; exact program2_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program2 C)) ≤ 1587
     rw [normalize_qubits]; exact program2_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program2 C)) ≤ 50223412
+    change gateSlots (normalizeProgram (program2 C)) ≤ 50245412
     rw [normalize_slots]; exact program2_gateSlots C
 
 end OutCert
