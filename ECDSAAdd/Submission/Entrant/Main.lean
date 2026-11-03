@@ -2736,13 +2736,17 @@ theorem predec2_ok : ∀ s1 b2 yc : Bool, ∀ x : Fin 32,
 5 finite flag (scratch, then restored), 6 inverse flag, 7 infinity flag, 8 double flag,
 9 exception flag, 10–12 clean scratch. -/
 
-/-- Erase the corner flags given `x = C.x` on 10 (via 5) and `x = (-2C).x` on 12. -/
+/-- Erase the corner flags given `x = C.x` on 10 (via 5) and `x = (-2C).x` on 12.
+With the exception flag present (`e`), `O ⊕ H = c ∧ [x = C.x]`, so one `CX` replaces the
+Toffoli that computed that product. -/
 def leaves (yc y2c e : Bool) : Program :=
   [.measureX 6 [] [.CZ 4 11]] ++
-  [.CCX 4 10 5] ++
-  lit 3 yc ++ [.measureX 7 [] [.CZ 5 3]] ++ lit 3 yc ++
-  (if e then lit 3 (!yc) ++ [.measureX 9 [] [.CZ 5 3]] ++ lit 3 (!yc) else []) ++
-  [.measureX 5 [] [.CZ 4 10]] ++
+  (if e then
+    [.CX 9 7] ++ lit 3 (!yc) ++ [.measureX 9 [] [.CZ 7 3]] ++ lit 3 (!yc) ++
+    [.measureX 7 [] [.CZ 4 10]]
+  else
+    [.CCX 4 10 5] ++ lit 3 yc ++ [.measureX 7 [] [.CZ 5 3]] ++ lit 3 yc ++
+    [.measureX 5 [] [.CZ 4 10]]) ++
   [.CCX 4 12 5] ++
   lit 3 y2c ++ [.measureX 8 [] [.CZ 5 3]] ++ lit 3 y2c ++
   [.measureX 5 [] [.CZ 4 12]] ++
@@ -2816,9 +2820,10 @@ theorem predec_counts (b1 s2 yc : Bool) :
   cases b1 <;> cases s2 <;> cases yc <;> decide
 
 theorem otail_counts (a1 s2 b2 yc y2c e : Bool) :
-    toffoliCount (otail1 a1 s2 b2 yc y2c e) = 5 ∧ toffoliCount (otail2 a1 s2 b2 yc y2c e) = 5 ∧
-    measurementCount (otail1 a1 s2 b2 yc y2c e) = (if e then 9 else 8) ∧
-    measurementCount (otail2 a1 s2 b2 yc y2c e) = (if e then 9 else 8) := by
+    toffoliCount (otail1 a1 s2 b2 yc y2c e) = (if e then 4 else 5) ∧
+    toffoliCount (otail2 a1 s2 b2 yc y2c e) = (if e then 4 else 5) ∧
+    measurementCount (otail1 a1 s2 b2 yc y2c e) = 8 ∧
+    measurementCount (otail2 a1 s2 b2 yc y2c e) = 8 := by
   cases a1 <;> cases s2 <;> cases b2 <;> cases yc <;> cases y2c <;> cases e <;> decide
 
 end OutputGadgets
@@ -3209,7 +3214,7 @@ theorem otail_slots (tr : Tri) (yc y2c e : Bool) : gateSlots (otail tr yc y2c e)
     cases a <;> cases b <;> cases c <;> cases yc <;> cases y2c <;> cases e <;> decide
 
 theorem otail_counts' (tr : Tri) (yc y2c e : Bool) :
-    toffoliCount (otail tr yc y2c e) = 5 ∧ measurementCount (otail tr yc y2c e) = (if e then 9 else 8) := by
+    toffoliCount (otail tr yc y2c e) = (if e then 4 else 5) ∧ measurementCount (otail tr yc y2c e) = 8 := by
   unfold otail
   by_cases ro : tr.role1 = true
   · rw [if_pos ro]
@@ -3241,8 +3246,8 @@ theorem otailL_physical (tr : Tri) (yc y2c e : Bool) (xr1 xr2 y0 c f g O D H t1 
     (otail_physical tr yc y2c e)
 
 theorem otailL_counts (tr : Tri) (yc y2c e : Bool) (xr1 xr2 y0 c f g O D H t1 t2 u h : Wire) :
-    toffoliCount (otailL tr yc y2c e xr1 xr2 y0 c f g O D H t1 t2 u h) = 5 ∧
-    measurementCount (otailL tr yc y2c e xr1 xr2 y0 c f g O D H t1 t2 u h) = (if e then 9 else 8) := by
+    toffoliCount (otailL tr yc y2c e xr1 xr2 y0 c f g O D H t1 t2 u h) = (if e then 4 else 5) ∧
+    measurementCount (otailL tr yc y2c e xr1 xr2 y0 c f g O D H t1 t2 u h) = 8 := by
   unfold otailL
   rw [(renameProgram_counts _ _).1, (renameProgram_counts _ _).2]
   exact otail_counts' tr yc y2c e
@@ -3748,8 +3753,8 @@ theorem oclassifier_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : L
 
 theorem oclassifier_counts (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : List Wire)
     (y0 c f g O D H t1 t2 u : Wire) (hwl : work.length = 253) :
-    toffoliCount (oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) = 258 ∧
-    measurementCount (oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) = 253 + (if e then 9 else 8) := by
+    toffoliCount (oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) = 253 + (if e then 4 else 5) ∧
+    measurementCount (oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) = 253 + 8 := by
   obtain ⟨i0, it, hidx, hitl⟩ := idx_split tr v
   have zp := zeroPorts_maps (it.map (fun i => xs.getD i 0)) work (by simp [hitl, hwl])
   have hbl : (zeroPorts (tr.idx.map (fun i => xs.getD i 0)).tail work).length = 253 := by
@@ -3759,7 +3764,7 @@ theorem oclassifier_counts (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work 
     have := congrArg List.length zp.2
     simpa [hwl] using this
   have zc := zeroWith_counts_general
-    (otailL tr yc y2c e (xs.getD tr.r1 0) (xs.getD tr.r2 0) y0 c f g O D H t1 t2 u) 5 (if e then 9 else 8)
+    (otailL tr yc y2c e (xs.getD tr.r1 0) (xs.getD tr.r2 0) y0 c f g O D H t1 t2 u) (if e then 4 else 5) 8
     (fun h => otailL_counts tr yc y2c e _ _ y0 c f g O D H t1 t2 u h)
     ((tr.idx.map (fun i => xs.getD i 0)).headD 0) (zeroPorts (tr.idx.map (fun i => xs.getD i 0)).tail work)
   rw [hbl] at zc
@@ -4517,11 +4522,39 @@ theorem c2c_ocorners_slots (L : ControlledPointLayout) (hw : L.Widths) (C : Poin
   simp only [ocorners, gateSlots_append]
   omega
 
-/-- 261 Toffolis, 253 + 9 or 8 measurements, and the slot bounds summed:
+open Classical in
+/-- For a finite constant the exception point `-2C` is never `O`, `C` or `-C`, so the
+exception flag is always live and the output tail takes its four-Toffoli branch. -/
+theorem exceptionBit_finite {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    exceptionBit (.some hc : Point) = true := by
+  have eb : exceptionBit (.some hc : Point) = decide (dialogExceptionEnabled (.some hc : Point)) := by
+    simp [exceptionBit, equal_simp, dialogExceptionEnabled, Bool.and_assoc]
+  rw [eb]
+  apply decide_eq_true
+  have hy : cy ≠ -cy := of_decide_eq_true (cy_ne_neg hc)
+  have hd := doublePoint_correct hc hy
+  have e1 : pairCode (.some hc : Point) = cx.val := rfl
+  have e2 : pairCode (doublePoint hc hy) = (doubleX cx cy).val := rfl
+  have hAB : pairCode (.some hc : Point) ≠ pairCode ((.some hc : Point) + .some hc) := by
+    rw [← hd, e1, e2]; exact fun e => NoThreeTorsion.double_x_ne hc (ZMod.val_injective _ e).symm
+  have hB : pairCode ((.some hc : Point) + .some hc) ≠ 0 := by
+    rw [← hd, e2]; exact fun e => curve_x_ne_zero (double_nonsingular hc hy) ((ZMod.val_eq_zero _).mp e)
+  refine ⟨fun e => ?_, fun e => ?_, fun e => ?_⟩
+  · have h := congrArg pairCode e
+    rw [dialogExceptionPoint, pairCode_neg] at h
+    exact hB h
+  · have h := congrArg pairCode e
+    rw [dialogExceptionPoint, pairCode_neg] at h
+    exact hAB h.symm
+  · have h2 : (.some hc : Point) + .some hc = .some hc := neg_injective e
+    have h3 : (.some hc : Point) = 0 := add_eq_left.mp h2
+    exact absurd h3 (by simp)
+
+/-- 260 Toffolis, 253 + 8 measurements, and the slot bounds summed:
 13 (predecode) + 2048 (corners) + 3342 (output classifier) + 258 (sentinel recode). -/
 theorem outStage_counts {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (outStage layout (.some hc)) = 261 ∧
-    measurementCount (outStage layout (.some hc)) = 253 + (if exceptionBit (.some hc) then 9 else 8) ∧
+    toffoliCount (outStage layout (.some hc)) = 260 ∧
+    measurementCount (outStage layout (.some hc)) = 253 + 8 ∧
     gateSlots (outStage layout (.some hc)) ≤ 5661 := by
   have hpl := dialogPool_length layout layout_widths
   have hwl : (layout.dialogPool.take 253).length = 253 := by simp; omega
@@ -4542,6 +4575,7 @@ theorem outStage_counts {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     (layout.dialogPool.getD 255 0) hwl
   have z := FiniteFlagInterval.zrep_counts layout
   have zs := FiniteFlagInterval.zrep_slots layout layout_widths
+  simp only [exceptionBit_finite hc, ↓reduceIte] at cc
   unfold outStage
   simp only [toffoliCount_append, measurementCount_append, gateSlots_append, pc.1, pc.2.1, oc.1, oc.2,
     cc.1, cc.2, z.1, z.2]
@@ -5643,7 +5677,7 @@ def program2 (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper2 layout C cx cy
 
 def entry2 : Challenge.Entry := fun C => normalizeProgram (program2 C)
-def bounds2 : Challenge.Bounds := ⟨2150578, 1498380, 1587, 50225383⟩
+def bounds2 : Challenge.Bounds := ⟨2150577, 1498379, 1587, 50225383⟩
 
 theorem program2_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program2 C) (encodes control (if control then R+C else R)) := by
@@ -5655,7 +5689,7 @@ theorem program2_correct (C : Point) (control : Bool) (R : Point) :
   | @some cx cy hc =>
     exact fixed_correct _ control R _ (full_spec2 hc control R) (support2_used hc)
 
-theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150578 := by
+theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150577 := by
   cases C with
   | zero => simp [program2, toffoliCount]
   | @some cx cy hc =>
@@ -5664,10 +5698,10 @@ theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2150578 := 
     have st := (outStage_counts hc).1
     have old := program_toffoli (.some hc)
     change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2150821 at old
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150578
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150577
     omega
 
-theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498380 := by
+theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498379 := by
   cases C with
   | zero => simp [program2, measurementCount]
   | @some cx cy hc =>
@@ -5676,8 +5710,8 @@ theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 14
     have st := (outStage_counts hc).2.1
     have old := program_measurements (.some hc)
     change measurementCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 1498623 at old
-    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498380
-    split_ifs at st <;> omega
+    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498379
+    omega
 
 theorem program2_qubits (C : Point) : qubits (program2 C) ≤ 1587 := by
   cases C with
@@ -5717,7 +5751,7 @@ theorem certificate2 : Challenge.Certificate entry2 bounds2 where
   physical C := normalize_physical _ (program2_physical C)
   toffoli_le C := (normalize_toffoli _).trans (program2_toffoli C)
   measurements_le C := by
-    change measurementCount (normalizeProgram (program2 C)) ≤ 1498380
+    change measurementCount (normalizeProgram (program2 C)) ≤ 1498379
     rw [normalize_measurements]; exact program2_measurements C
   qubits_le C := by
     change qubits (normalizeProgram (program2 C)) ≤ 1587
