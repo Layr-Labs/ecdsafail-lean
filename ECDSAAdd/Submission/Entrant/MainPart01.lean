@@ -6,6 +6,7 @@ import ECDSAAdd.Baselines.SlotSignedSquare
 import ECDSAAdd.Baselines.SlotAlgebra
 import ECDSAAdd.Arithmetic.PointFixedPrimitivesPhysical
 import ECDSAAdd.Submission.Entrant.MainB
+import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.FusedFlags
 
 set_option Elab.async false
