@@ -5828,7 +5828,7 @@ theorem exit_splitX (L : ControlledPointLayout) (k : Nat) :
 
 /-! ### Resources of the merged exit inside the stage -/
 
-theorem x1_counts (k : Nat) : toffoliCount (x1 k)=769 ∧ measurementCount (x1 k)=1027 := by
+theorem x1_counts (k : Nat) : toffoliCount (x1 k)=768 ∧ measurementCount (x1 k)=1027 := by
   rw [x1_eq,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
   exact ExitMerge.program_counts base (base 2400) k
 
@@ -5842,7 +5842,7 @@ theorem x1_physical (k : Nat) : GatePhysical (x1 k) := by
     (ExitMerge.program_physical base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k)
 
 theorem restXX_metrics (L : ControlledPointLayout) (k : Nat) :
-    toffoliCount (restXX L k)+252=toffoliCount (ReflectionE1TickGap.restX L)+769 ∧
+    toffoliCount (restXX L k)+253=toffoliCount (ReflectionE1TickGap.restX L)+769 ∧
     measurementCount (restXX L k)+508=measurementCount (ReflectionE1TickGap.restX L)+1027 ∧
     Challenge.gateSlots (restXX L k) ≤ Challenge.gateSlots (ReflectionE1TickGap.restX L)+22000 := by
   have c := x1_counts k
