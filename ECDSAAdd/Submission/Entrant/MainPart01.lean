@@ -6,9 +6,12 @@ import ECDSAAdd.Baselines.SlotSignedSquare
 import ECDSAAdd.Baselines.SlotAlgebra
 import ECDSAAdd.Arithmetic.PointFixedPrimitivesPhysical
 import ECDSAAdd.Submission.Entrant.MainB
+import ECDSAAdd.Submission.Entrant.QTop
+import ECDSAAdd.Submission.Entrant.ExitMerge
 import ECDSAAdd.Submission.Entrant.FusedFlags
 
 set_option Elab.async false
+
 -- ===== merged module ECDSAAdd.Submission.Entrant.TrimRow =====
 section
 /-! TrimRow: the lowest carry of the FIRST signed row of every leaf square is a copy.
@@ -739,10 +742,10 @@ is one CX.  -/
 
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-set_option linter.unnecessarySeqFocus false
 set_option linter.unusedTactic false
 set_option linter.unreachableTactic false
+set_option linter.unnecessarySeqFocus false
+set_option linter.unusedVariables false
 
 namespace ECDSAAdd.Entrant.TrimMid
 open ECDSAAdd ECDSAAdd.Arithmetic RecordedQuantum
