@@ -3365,12 +3365,12 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151564 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151562 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout cx cy)).1
   have entryDelta := (ReflectionE1.gen_counts_delta layout layout_widths cx cy).1
   have baseline := Rolling1588BFFinal.wrapper_toffoli cx cy hc
   have entryWrapperDelta :
-      toffoliCount (Edges.wrapper layout (.some hc) cy (ReflectionE1.gen layout cx cy))+755=
+      toffoliCount (Edges.wrapper layout (.some hc) cy (ReflectionE1.gen layout cx cy))+757=
         toffoliCount (Edges.wrapper layout (.some hc) cy (Rolling1588BFFinal.gen layout cx cy)) := by
     simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
       (renameProgram_counts _ _).1]
@@ -3409,7 +3409,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151564,1499214,1588,50189199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151562,1499214,1588,50189199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -3426,7 +3426,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151564 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151562 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -5111,7 +5111,7 @@ theorem pi_base (i : Nat) : pi (base i)=base (piN i) := by
   rfl
 
 /-- The merged exit circuit, placed like the direct first tick. -/
-def x1 (k : Nat) : Program := renameProgram pi (ExitMerge.program base (base 2400) k)
+def x1 (k : Nat) : Program := renameProgram pi (E1AffineEndpoints52Research.Exit.program base (base 2400) k)
 
 /-- The exit last phase with the inverse tick and the controlled negation merged. -/
 def lastX (k : Nat) : Program :=
@@ -5185,7 +5185,7 @@ has to evaluate a concrete program to see through `pullState`. -/
 
 theorem pull_basis (f : Wire → Wire) (t : State) (q : Wire) : (pullState f t).basis q=t.basis (f q) := rfl
 theorem pull_phase (f : Wire → Wire) (t : State) : (pullState f t).phase=t.phase := rfl
-theorem x1_eq (k : Nat) : x1 k=renameProgram pi (ExitMerge.program base (base 2400) k) := rfl
+theorem x1_eq (k : Nat) : x1 k=renameProgram pi (E1AffineEndpoints52Research.Exit.program base (base 2400) k) := rfl
 
 theorem x1_run (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn r : List Bool)
     (input : SkywalkArithmeticInput base x y s.basis)
@@ -5196,7 +5196,7 @@ theorem x1_run (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn
     (∀q∈skywalkPoolWires base,q∉wireBlock base 770 258 → (run (x1 k) r v).basis q=s.basis q) ∧
     (∀q,q∉skywalkPoolWires base → (run (x1 k) r v).basis q=v.basis q) := by
   rw [x1_eq]
-  have rr := run_rename pi pi.injective (ExitMerge.program base (base 2400) k) r v
+  have rr := run_rename pi pi.injective (E1AffineEndpoints52Research.Exit.program base (base 2400) k) r v
   have fr := run_rename pi pi.injective (NativeFirstDirect.forward base) mn s
   rw [←forward_placed] at fr
   have sh : (i : Nat) → (hi : i < 2314) → (hdx : ¬(770 ≤ i ∧ i < 1026)) → (hdy : ¬(2056 ≤ i ∧ i < 2312)) →
@@ -5240,7 +5240,7 @@ theorem x1_run (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn
     exact hpool _ (pi_pool q hq)
   have fphase : (pullState pi v).phase=(run (NativeFirstDirect.forward base) mn (pullState pi s)).phase := by
     rw [←fr,pull_phase,pull_phase]; exact hphase
-  have pr := ExitMerge.program_run base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k hk x hx
+  have pr := E1AffineEndpoints52Research.Exit.program_run base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k hk x hx
     (pullState pi s) (pullState pi v) mn r seed (blk0 1029 256 (by omega) (by omega))
     (izero 514 (by omega) (by omega)) (izero 721 (by omega) (by omega)) (izero 722 (by omega) (by omega))
     fphase fpool
@@ -5249,7 +5249,7 @@ theorem x1_run (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn
   rw [pull_phase,pull_phase] at p1
   rw [pull_basis,pi_fix 2400 (by omega)] at p2
   refine ⟨p1,?_,?_,?_⟩
-  · rw [regValue_congr _ _ (pullState pi (run (renameProgram pi (ExitMerge.program base (base 2400) k)) r v)).basis
+  · rw [regValue_congr _ _ (pullState pi (run (renameProgram pi (E1AffineEndpoints52Research.Exit.program base (base 2400) k)) r v)).basis
       (fun q hq => by rw [pull_basis,pi_kR q hq])]
     exact p2
   · intro q hq hk'
@@ -5440,7 +5440,7 @@ theorem x1_hosts_free (k : Nat) (q : Wire) (hq : q∈phaseHosts) : q∉wires (x1
   intro h
   rw [x1_eq,renameProgram_support] at h
   obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp h
-  obtain ⟨i,rfl,hi⟩ := E1QubitPlacement.S_cases _ (ExitMerge.program_support base (base 2400) k ha)
+  obtain ⟨i,rfl,hi⟩ := E1QubitPlacement.S_cases _ (E1AffineEndpoints52Research.Exit.program_support base (base 2400) k ha)
   rw [pi_base] at hq
   simp only [phaseHosts,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
   rcases hq with e|e|e <;> have := base_injective e <;> unfold piN E1QubitPlacement.rhoN at this <;>
@@ -5668,7 +5668,7 @@ theorem lx_support (k : Nat) : wires (lastX k)⊆wires (Rolling1588.lastPhase tr
 
 theorem x1_logical (k : Nat) : wires (x1 k)⊆(E1QubitPlacement.S).image pi := by
   rw [x1_eq,renameProgram_support]
-  exact Finset.image_subset_image (ExitMerge.program_support base (base 2400) k)
+  exact Finset.image_subset_image (E1AffineEndpoints52Research.Exit.program_support base (base 2400) k)
 
 theorem host_pi (q : Wire) : phaseHost (pi q)=E1QubitPlacement.sig (E1QubitPlacement.rho q) := rfl
 
@@ -5828,21 +5828,21 @@ theorem exit_splitX (L : ControlledPointLayout) (k : Nat) :
 
 /-! ### Resources of the merged exit inside the stage -/
 
-theorem x1_counts (k : Nat) : toffoliCount (x1 k)=769 ∧ measurementCount (x1 k)=1027 := by
+theorem x1_counts (k : Nat) : toffoliCount (x1 k)=767 ∧ measurementCount (x1 k)=1027 := by
   rw [x1_eq,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
-  exact ExitMerge.program_counts base (base 2400) k
+  exact E1AffineEndpoints52Research.Exit.program_counts base (base 2400) k
 
 theorem x1_slots (k : Nat) : Challenge.gateSlots (x1 k) ≤ 22000 := by
   rw [x1_eq,Baselines.rename_gateSlots]
-  exact ExitMerge.program_slots base (base 2400) k
+  exact E1AffineEndpoints52Research.Exit.program_slots base (base 2400) k
 
 theorem x1_physical (k : Nat) : GatePhysical (x1 k) := by
   rw [x1_eq]
   exact gatePhysical_rename pi pi.injective _
-    (ExitMerge.program_physical base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k)
+    (E1AffineEndpoints52Research.Exit.program_physical base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k)
 
 theorem restXX_metrics (L : ControlledPointLayout) (k : Nat) :
-    toffoliCount (restXX L k)+252=toffoliCount (ReflectionE1TickGap.restX L)+769 ∧
+    toffoliCount (restXX L k)+252=toffoliCount (ReflectionE1TickGap.restX L)+767 ∧
     measurementCount (restXX L k)+508=measurementCount (ReflectionE1TickGap.restX L)+1027 ∧
     Challenge.gateSlots (restXX L k) ≤ Challenge.gateSlots (ReflectionE1TickGap.restX L)+22000 := by
   have c := x1_counts k
