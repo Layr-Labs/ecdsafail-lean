@@ -3349,9 +3349,15 @@ theorem kbig2_nodup (L : CuccaroStreamedSquareWideLayout) (control : Wire)
 
 theorem ktmp_wires (L : CuccaroStreamedSquareWideLayout) (q : Wire) (h : q∈ktmp L) : q∈L.wires := by
   have h' : q∈L.foldPad := List.mem_of_mem_drop h
-  simp only [foldPad,List.mem_append] at h'
-  simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.mem_append,List.mem_cons]
-  tauto
+  change q∈L.core.pad++L.overflowPad at h'
+  change q∈L.core.wires++L.overflowPad
+  rcases List.mem_append.mp h' with hp | he
+  · apply List.mem_append_left _
+    change q∈(((((L.core.y++L.core.out)++L.core.product)++L.core.pad)++L.core.work)++_)
+    apply List.mem_append_left _
+    apply List.mem_append_left _
+    exact List.mem_append_right _ hp
+  · exact List.mem_append_right _ he
 
 theorem ext_split4 (ext : List Wire) (a b c : Nat) (q : Wire) :
     ((ext.take 132).take a).count q+((ext.drop 132).take 66).count q+

@@ -1,530 +1,8 @@
 import ECDSAAdd.Submission.Entrant.TerminalGraph
 import ECDSAAdd.Submission.Entrant.FusedFlags
+import ECDSAAdd.Submission.Entrant.TickMerged508
 import ECDSAAdd.Submission.Entrant.R2Life760
-
--- Immutable PR359 TickMerged508 proof, inlined to retain the existing eight-module scope.
-
-/-! Reverse ticks 510, 509 and 508 as one forced block (9 Toffolis instead of 11 for the
-merged ticks 510/509 followed by tick 508).  The circuit was found by exhaustive search
-over the forced states at tick 508 (`u+v ≤ 8`, terminating within three more steps) and is
-checked here on every forced state and every measurement record.  Builds on the 509/510
-merge of terrapinelf (f753049b), ported by e-man07 (e1b7db22, a6dcb576). -/
-
-section
-
-set_option maxRecDepth 8192
-set_option maxHeartbeats 16000000
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant
-open Arithmetic MappedCompressed Secp256k1 History5
-
-/-- Gate list of repairedTick base 508. -/
-def tick508ExF : Program :=
-  [.CX 787 525, .CX 788 526, .CX 789 527, .CCX 524 525 787, .CCX 524 526 788, .CCX 524 527 789,
-    .CX 787 525, .CX 788 526, .CX 789 527, .CX 528 790, .measureX 528 [] [.CZ 523 790],
-    .CX 790 528, .CX 528 790, .CX 789 790, .CX 789 528, .CX 524 786, .CX 528 529, .X 1552,
-    .CX 528 1552, .CX 789 1552, .CX 1552 525, .CX 1552 526, .CX 1552 527, .CX 1552 528,
-    .CX 525 786, .CX 525 1552, .CCX 786 1552 1556, .CX 525 1556, .CX 525 1552, .CX 525 786,
-    .CX 526 787, .CX 526 1556, .CCX 787 1556 1557, .CX 526 1557, .CX 526 1556, .CX 526 787,
-    .CX 527 788, .CX 527 1557, .CCX 788 1557 1558, .CX 527 1558, .CX 527 1557, .CX 527 788,
-    .CX 528 789, .CX 1558 789, .measureX 1558 [] [.CZ 527 788, .CZ 527 1557, .CZ 788 1557],
-    .CX 527 788, .CX 1557 788, .measureX 1557 [] [.CZ 526 787, .CZ 526 1556, .CZ 787 1556],
-    .CX 526 787, .CX 1556 787, .measureX 1556 [] [.CZ 525 786, .CZ 525 1552, .CZ 786 1552],
-    .CX 525 786, .CX 1552 786, .CX 1552 525, .CX 1552 526, .CX 1552 527, .CX 1552 528, .X 1552,
-    .CX 528 1552, .CX 789 1552, .CX 1552 790, .CX 523 524, .CX 528 529, .CX 789 790]
-
-/-- Gate list of compactReceiverTick base 508. -/
-def tick508ExR : Program :=
-  [.CX 789 790, .CX 528 529, .CX 523 524, .CX 1552 790, .X 1552, .CX 528 1552, .CX 789 1552,
-    .X 786, .X 787, .X 788, .X 789, .CX 1552 525, .CX 1552 526, .CX 1552 527, .CX 1552 528,
-    .CX 525 786, .CX 525 1552, .CCX 786 1552 1556, .CX 525 1556, .CX 525 1552, .CX 525 786,
-    .CX 526 787, .CX 526 1556, .CCX 787 1556 1557, .CX 526 1557, .CX 526 1556, .CX 526 787,
-    .measureX 789 [] [.CZ 527 788, .CZ 527 1557, .CZ 788 1557], .CX 528 789, .CX 527 788,
-    .CX 1557 788, .measureX 1557 [] [.CZ 526 787, .CZ 526 1556, .CZ 787 1556], .CX 526 787,
-    .CX 1556 787, .measureX 1556 [] [.CZ 525 786, .CZ 525 1552, .CZ 786 1552], .CX 525 786,
-    .CX 1552 786, .CX 1552 525, .CX 1552 526, .CX 1552 527, .CX 1552 528, .X 786, .X 787, .X 788,
-    .X 789, .X 1552, .CX 528 1552, .CX 789 1552, .CX 528 529, .CX 524 786, .CX 787 525,
-    .CX 788 526, .CX 789 527, .CX 790 528, .CCX 524 525 787, .CCX 524 526 788, .CCX 524 527 789,
-    .CCX 524 528 790, .CX 787 525, .CX 788 526, .CX 789 527, .CX 790 528]
-
-/-- Reverse ticks 510, 509 and 508 on the forward outputs of ticks 508-510. -/
-def tickMR8 : Program :=
-  [.CX 1553 1552, .CX 1554 1552, .CCX 523 1552 528, .CX 1554 1553, .X 1553, .CX 526 525,
-    .CCX 1553 525 529, .CX 525 524, .CX 526 524, .CX 529 526, .CX 1554 526, .X 526,
-    .CCX 524 526 787, .CX 529 525, .CX 1552 525, .CX 1553 525, .CX 1554 525, .CX 525 529,
-    .CX 787 529, .CX 1552 529, .CX 1553 529, .CX 1554 529, .CCX 525 529 788, .CX 525 524,
-    .CX 526 524, .CX 529 524, .CX 787 524, .CX 1552 524, .CX 1553 524, .X 524, .CX 524 525,
-    .CX 526 525, .CX 529 525, .CX 787 525, .CX 788 525, .CX 1552 525, .CX 1553 525, .X 525,
-    .CCX 524 525 789, .CX 525 524, .CX 789 524, .CCX 523 524 790, .X 1552, .CX 788 525,
-    .CCX 1552 525 1556, .CX 524 523, .CX 525 523, .CX 529 523, .CX 787 523, .CX 788 523,
-    .CX 789 523, .CX 1556 526, .X 526, .CCX 523 526 1557, .CX 525 523, .CX 529 523, .CX 787 523,
-    .CX 526 525, .CX 529 525, .CX 787 525, .CX 788 525, .CX 1552 525, .CX 1553 525, .CX 1554 525,
-    .CCX 523 525 1558, .X 786, .CX 527 786, .X 789, .CX 524 789, .CX 527 789, .CX 788 789,
-    .CX 1558 1557, .CX 1558 1556, .CX 1558 790, .CX 1558 789, .CX 1558 787, .CX 1558 524,
-    .CX 1557 1556, .CX 1557 1554, .CX 1557 527, .CX 1557 523, .CX 1556 1558, .CX 1556 1557,
-    .CX 1556 790, .CX 1556 789, .CX 1556 788, .CX 1556 529, .CX 1556 524, .CX 1554 1556,
-    .CX 1554 1553, .CX 1554 788, .CX 1554 787, .CX 1554 527, .CX 1554 523, .CX 1556 1554,
-    .CX 1553 1558, .CX 1553 1557, .CX 1553 1554, .CX 1553 790, .CX 1553 789, .CX 1553 788,
-    .CX 1553 787, .CX 1553 529, .CX 1553 527, .CX 1553 524, .CX 1553 523, .CX 1554 1553,
-    .CX 1552 1558, .CX 1552 789, .CX 1552 525, .CX 790 1558, .CX 790 1554, .CX 790 1553,
-    .CX 790 1552, .CX 790 789, .CX 790 788, .CX 790 787, .CX 790 524, .CX 1552 790, .CX 789 1558,
-    .CX 1558 789, .CX 788 1554, .CX 788 529, .CX 788 527, .CX 788 523, .CX 1554 788, .CX 787 1556,
-    .CX 787 788, .CX 787 527, .CX 787 525, .CX 787 523, .CX 788 787, .CX 529 1557, .CX 529 1553,
-    .CX 529 788, .CX 529 527, .CX 529 525, .CX 529 523, .CX 528 1554, .CX 528 1552, .CX 528 790,
-    .CX 528 789, .CX 528 529, .CX 528 524, .CX 527 1557, .CX 527 1554, .CX 527 1553, .CX 527 788,
-    .CX 527 787, .CX 527 524, .CX 527 523, .CX 526 1557, .CX 526 1554, .CX 526 788, .CX 526 787,
-    .CX 526 525, .CX 787 526, .CX 525 1557, .CX 525 1554, .CX 525 1552, .CX 525 529, .CX 525 527,
-    .CX 525 526, .CX 525 524, .CX 526 525, .CX 524 1554, .CX 524 1552, .CX 524 788, .CX 524 527,
-    .CX 524 526, .CX 526 524, .CX 523 1554, .CX 523 1552, .CX 523 789, .CX 523 788, .CX 523 787,
-    .CX 523 527, .CX 523 526, .CX 523 525, .CX 523 524, .X 523, .X 526, .X 529, .X 787, .X 788,
-    .X 790, .X 1552, .X 1553, .X 1554,
-    .measureX 1557 [] [.Z 523, .Z 524, .Z 525, .Z 527, .Z 528, .Z 787, .Z 789, .Z 529, .Z 1552, .CZ 524 525, .CZ 524 787],
-    .measureX 1557 [] [], .X 1556,
-    .measureX 1556 [] [.Z 524, .Z 525, .Z 527, .Z 528, .Z 787, .Z 789, .Z 529, .Z 1552, .Z 1554, .CZ 523 526, .CZ 523 787, .CZ 523 788, .CZ 523 529, .CZ 523 1552, .CZ 524 527, .CZ 524 787, .CZ 524 529, .CZ 524 1552],
-    .X 1554,
-    .measureX 1554 [] [.Z 523, .Z 524, .Z 525, .Z 527, .Z 787, .Z 790, .Z 529, .Z 1552, .CZ 524 526, .CZ 524 788],
-    .measureX 1553 [] [.Z 527, .Z 790, .Z 529, .Z 1552, .CZ 523 526, .CZ 523 787, .CZ 523 788, .CZ 523 529, .CZ 523 1552, .CZ 524 526, .CZ 524 527, .CZ 524 787, .CZ 524 788, .CZ 524 529, .CZ 524 1552, .CZ 525 787],
-    .measureX 1552 [] [.Z 523, .Z 528, .Z 788, .CZ 523 524, .CZ 523 525, .CZ 523 526, .CZ 523 788, .CZ 524 526, .CZ 524 527, .CZ 524 787, .CZ 524 529, .CZ 525 788, .CZ 525 789, .CZ 525 529, .CZ 526 790, .CZ 526 529, .CZ 527 787, .CZ 527 788, .CZ 527 790, .CZ 527 529],
-    .measureX 529 [] [.Z 523, .Z 524, .Z 525, .Z 526, .Z 527, .Z 528, .Z 787, .CZ 523 526, .CZ 523 788, .CZ 524 526, .CZ 524 788, .CZ 525 789, .CZ 525 790, .CZ 526 789, .CZ 527 787, .CZ 527 788, .CZ 528 787],
-    .CX 524 786, .X 786]
-
-/-- The eighteen physical wires of ticks 508 to 510. -/
-def sitesT8 : List Wire :=
-  [523, 524, 525, 526, 527, 528, 529, 786, 787, 788, 789, 790, 1552, 1553, 1554, 1556, 1557, 1558]
-
-/-- The wires of tick 508 itself. -/
-def sites508 : List Wire :=
-  [523, 524, 525, 526, 527, 528, 529, 786, 787, 788, 789, 790, 1552, 1556, 1557, 1558]
-
-/-- The coprime pairs `(u,v)` with odd `v`, `u+v ≤ 8`, that terminate within three steps. -/
-def pairs508 : List (Nat × Nat) :=
-  [(0, 1), (1, 1), (2, 1), (3, 1), (4, 1), (5, 1), (6, 1), (7, 1), (1, 3), (2, 3), (5, 3), (1, 5),
-   (3, 5), (1, 7)]
-
-/-- Forced input of tick 508: orientation `G`, five-bit rails `encode G S u v`. -/
-def pre508 (G S : Bool) (u v : Nat) : BasisState := fun q =>
-  if q = 523 then G
-  else if q = 524 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).a % 2 = 1)
-  else if q = 525 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).a / 2 % 2 = 1)
-  else if q = 526 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).a / 4 % 2 = 1)
-  else if q = 527 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).a / 8 % 2 = 1)
-  else if q = 528 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).a < 0)
-  else if q = 786 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).b % 2 = 1)
-  else if q = 787 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).b / 2 % 2 = 1)
-  else if q = 788 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).b / 4 % 2 = 1)
-  else if q = 789 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).b / 8 % 2 = 1)
-  else if q = 790 then decide ((SkywalkRails.encode G S (u : Int) (v : Int)).b < 0)
-  else false
-
-theorem tick508ExF_explicit : W.repairedTick base 508 = tick508ExF := by decide +kernel
-theorem tick508ExR_explicit : W.ReverseCarry.compactReceiverTick base 508 = tick508ExR := by
-  decide +kernel
-
-/-- Forward ticks 508 to 510. -/
-abbrev tripF : Program := tick508ExF ++ tick509ExF ++ tick510ExF
-/-- Reverse ticks 510, 509, 508. -/
-abbrev tripR : Program := tick510ExR ++ tick509ExR ++ tick508ExR
-
-theorem tripF_wires : wires tripF ⊆ sitesT8.toFinset := by decide +kernel
-theorem tripR_wires : wires tripR ⊆ sitesT8.toFinset := by decide +kernel
-theorem tickMR8_wires : wires tickMR8 ⊆ sitesT8.toFinset := by decide +kernel
-theorem sitesT8_pool : ∀ q ∈ sitesT8, q ∈ skywalkPoolWires base := by decide +kernel
-theorem tick508_wires : wires tick508ExF ⊆ sites508.toFinset := by decide +kernel
-theorem sites508_tick : ∀ q ∈ sites508, q ∈ wires (W.compactSkywalkTick base 508) := by
-  decide +kernel
-
-theorem tickN_counts :
-    toffoliCount tickMR8 = 9 ∧ measurementCount tickMR8 = 7 ∧
-    toffoliCount tripR = 13 ∧ measurementCount tripR = 7 := by decide +kernel
-
-theorem tickN_physical : GatePhysical tickMR8 := by
-  simp (config := { maxSteps := 4000000 }) [tickMR8, GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate]
-
-
-/-! Compact simulation: the basis state is a single natural number (bit `q` is wire `q`), so the
-kernel evaluates gates with GMP arithmetic instead of nested `Function.update` closures.
-`run_sim_t8` proves once that this simulation is faithful. -/
-
-def tbN_t8 (b : Nat) : BasisState := fun q => b.testBit q
-
-def corrP_t8 : List Correction → Bool → Nat → Bool
-  | [], ph, _ => ph
-  | .Z t :: cs, ph, b => corrP_t8 cs (ph ^^ b.testBit t) b
-  | .CZ x y :: cs, ph, b => corrP_t8 cs (ph ^^ (b.testBit x && b.testBit y)) b
-
-def flipN_t8 (b t : Nat) (c : Bool) : Nat := if c then b ^^^ 2^t else b
-
-def runN_t8 : Program → List Bool → Bool × Nat → Bool × Nat
-  | [], _, s => s
-  | .X t :: p, m, s => runN_t8 p m (s.1, s.2 ^^^ 2^t)
-  | .CX c t :: p, m, s => runN_t8 p m (s.1, flipN_t8 s.2 t (s.2.testBit c))
-  | .CCX a b t :: p, m, s => runN_t8 p m (s.1, flipN_t8 s.2 t (s.2.testBit a && s.2.testBit b))
-  | .measureX t c₀ c₁ :: p, m, s =>
-      runN_t8 p m.tail
-        (corrP_t8 (if m.headD false then c₁ else c₀) (s.1 ^^ (m.headD false && s.2.testBit t))
-          (flipN_t8 s.2 t (s.2.testBit t)),
-         flipN_t8 s.2 t (s.2.testBit t))
-
-theorem testBit_flipN_t8 (b t q : Nat) (c : Bool) :
-    (flipN_t8 b t c).testBit q = (b.testBit q ^^ (c && decide (t = q))) := by
-  cases c <;> simp [flipN_t8, Nat.testBit_xor, Nat.testBit_two_pow]
-
-theorem writeBit_tbN_t8 (b t : Nat) (c : Bool) :
-    writeBit (tbN_t8 b) t (tbN_t8 b t ^^ c) = tbN_t8 (flipN_t8 b t c) := by
-  funext q
-  by_cases h : q = t
-  · subst h; simp [writeBit, tbN_t8, testBit_flipN_t8]
-  · have h' : ¬ (t = q) := fun e => h e.symm
-    simp [writeBit, tbN_t8, testBit_flipN_t8, Function.update, h, h']
-
-theorem corr_sim_t8 (cs : List Correction) (ph : Bool) (b : Nat) :
-    correct cs ⟨ph, tbN_t8 b⟩ = ⟨corrP_t8 cs ph b, tbN_t8 b⟩ := by
-  induction cs generalizing ph with
-  | nil => rfl
-  | cons c cs ih => cases c <;> simp [correct, corrP_t8, ih, tbN_t8]
-
-theorem run_sim_t8 (P : Program) (m : List Bool) (ph : Bool) (b : Nat) :
-    run P m ⟨ph, tbN_t8 b⟩ = ⟨(runN_t8 P m (ph, b)).1, tbN_t8 (runN_t8 P m (ph, b)).2⟩ := by
-  induction P generalizing m ph b with
-  | nil => rfl
-  | cons i P ih =>
-    cases i with
-    | X t =>
-      have e : writeBit (tbN_t8 b) t (!tbN_t8 b t) = tbN_t8 (b ^^^ 2^t) := by
-        funext q
-        by_cases h : q = t
-        · subst h; simp [writeBit, tbN_t8, Nat.testBit_xor, Nat.testBit_two_pow]
-        · have h' : ¬ (t = q) := fun e => h e.symm
-          simp [writeBit, tbN_t8, Nat.testBit_xor, Nat.testBit_two_pow, Function.update, h, h']
-      simp only [run, runN_t8, e]; exact ih _ _ _
-    | CX c t =>
-      have e := writeBit_tbN_t8 b t (tbN_t8 b c)
-      simp only [run, runN_t8]
-      have e2 : writeBit (tbN_t8 b) t (tbN_t8 b t ^^ tbN_t8 b c) = tbN_t8 (flipN_t8 b t (b.testBit c)) := e
-      simp only [e2]; exact ih _ _ _
-    | CCX x y t =>
-      have e := writeBit_tbN_t8 b t (tbN_t8 b x && tbN_t8 b y)
-      simp only [run, runN_t8]
-      have e2 : writeBit (tbN_t8 b) t (tbN_t8 b t ^^ (tbN_t8 b x && tbN_t8 b y)) =
-          tbN_t8 (flipN_t8 b t (b.testBit x && b.testBit y)) := e
-      simp only [e2]; exact ih _ _ _
-    | measureX t c₀ c₁ =>
-      have e2 : writeBit (tbN_t8 b) t false = tbN_t8 (flipN_t8 b t (b.testBit t)) := by
-        funext q
-        by_cases h : q = t
-        · subst h; simp [writeBit, tbN_t8, testBit_flipN_t8]
-        · have h' : ¬ (t = q) := fun e => h e.symm
-          simp [writeBit, tbN_t8, testBit_flipN_t8, Function.update, h, h']
-      simp only [run, runN_t8, measureAndCorrect, e2, corr_sim_t8]
-      generalize m.headD false = mm
-      cases mm <;> exact ih _ _ _
-
-def encN_t8 (f : BasisState) (l : List Wire) : Nat :=
-  l.foldl (fun a w => if f w then a ||| 2^w else a) 0
-
-theorem foldl_tb_t8 (f : BasisState) (l : List Wire) (a q : Nat) :
-    (l.foldl (fun a w => if f w then a ||| 2^w else a) a).testBit q =
-      (a.testBit q || (decide (q ∈ l) && f q)) := by
-  induction l generalizing a with
-  | nil => simp
-  | cons w l ih =>
-    simp only [List.foldl, ih]
-    by_cases hf : f w = true
-    · by_cases hq : q = w
-      · subst hq; simp [hf, Nat.testBit_or, Nat.testBit_two_pow]
-      · have hq' : ¬ (w = q) := fun e => hq e.symm
-        simp [hf, Nat.testBit_or, Nat.testBit_two_pow, hq, hq']
-    · simp [hf]
-      by_cases hq : q = w
-      · subst hq; simp [hf]
-      · simp [hq]
-
-theorem tb_enc_t8 (f : BasisState) (l : List Wire) (h : ∀ q, f q = true → q ∈ l) :
-    f = tbN_t8 (encN_t8 f l) := by
-  funext q
-  simp only [tbN_t8, encN_t8, foldl_tb_t8, Nat.zero_testBit, Bool.false_or]
-  cases hf : f q
-  · simp
-  · simp [h q hf]
-
-theorem pre508_supp (G S : Bool) (u v : Nat) : ∀ q, pre508 G S u v q = true → q ∈ sitesT8 := by
-  intro q h
-  unfold pre508 at h
-  split_ifs at h <;> (subst_vars; simp [sitesT8])
-
-def padk_t8 : Nat → List Bool → List Bool
-  | 0, _ => []
-  | k+1, m => m.headD false :: padk_t8 k m.tail
-
-def runAll_t8 : Program → Bool × Nat → List (List Bool × (Bool × Nat))
-  | [], s => [([], s)]
-  | .X t :: p, s => runAll_t8 p (s.1, s.2 ^^^ 2^t)
-  | .CX c t :: p, s => runAll_t8 p (s.1, flipN_t8 s.2 t (s.2.testBit c))
-  | .CCX a b t :: p, s => runAll_t8 p (s.1, flipN_t8 s.2 t (s.2.testBit a && s.2.testBit b))
-  | .measureX t c₀ c₁ :: p, s =>
-      (runAll_t8 p (corrP_t8 c₀ (s.1 ^^ (false && s.2.testBit t)) (flipN_t8 s.2 t (s.2.testBit t)),
-          flipN_t8 s.2 t (s.2.testBit t))).map (fun rx => (false :: rx.1, rx.2)) ++
-      (runAll_t8 p (corrP_t8 c₁ (s.1 ^^ (true && s.2.testBit t)) (flipN_t8 s.2 t (s.2.testBit t)),
-          flipN_t8 s.2 t (s.2.testBit t))).map (fun rx => (true :: rx.1, rx.2))
-
-theorem runAll_spec1_t8 (P : Program) (m : List Bool) (s : Bool × Nat) :
-    (padk_t8 (measurementCount P) m, runN_t8 P m s) ∈ runAll_t8 P s := by
-  induction P generalizing m s with
-  | nil => simp [runAll_t8, runN_t8, padk_t8, measurementCount]
-  | cons i P ih =>
-    cases i with
-    | X t => simp only [measurementCount, runAll_t8, runN_t8]; exact ih _ _
-    | CX c t => simp only [measurementCount, runAll_t8, runN_t8]; exact ih _ _
-    | CCX a b t => simp only [measurementCount, runAll_t8, runN_t8]; exact ih _ _
-    | measureX t c₀ c₁ =>
-      simp only [measurementCount]
-      rw [show 1 + measurementCount P = measurementCount P + 1 by omega]
-      simp only [padk_t8, runAll_t8, runN_t8, List.mem_append, List.mem_map]
-      cases hm : m.headD false
-      · left
-        exact ⟨_, ih m.tail _, by simp⟩
-      · right
-        exact ⟨_, ih m.tail _, by simp⟩
-
-theorem runAll_spec2_t8 (P : Program) (m : List Bool) (s : Bool × Nat) (r : List Bool)
-    (x : Bool × Nat) (h : (r, x) ∈ runAll_t8 P s) (hr : padk_t8 (measurementCount P) m = r) :
-    x = runN_t8 P m s := by
-  induction P generalizing m s r x with
-  | nil => simp [runAll_t8, runN_t8] at h ⊢; exact h.2
-  | cons i P ih =>
-    cases i with
-    | X t => simp only [measurementCount, runAll_t8, runN_t8] at h hr ⊢; exact ih _ _ _ _ h hr
-    | CX c t => simp only [measurementCount, runAll_t8, runN_t8] at h hr ⊢; exact ih _ _ _ _ h hr
-    | CCX a b t => simp only [measurementCount, runAll_t8, runN_t8] at h hr ⊢; exact ih _ _ _ _ h hr
-    | measureX t c₀ c₁ =>
-      simp only [measurementCount] at hr
-      rw [show 1 + measurementCount P = measurementCount P + 1 by omega] at hr
-      simp only [padk_t8] at hr
-      simp only [runAll_t8, List.mem_append, List.mem_map] at h
-      simp only [runN_t8]
-      rcases h with ⟨⟨r', y⟩, hy, he⟩ | ⟨⟨r', y⟩, hy, he⟩
-      · simp only [Prod.mk.injEq] at he
-        obtain ⟨he1, he2⟩ := he
-        subst he2; subst he1
-        simp only [List.cons.injEq] at hr
-        obtain ⟨hr1, hr2⟩ := hr
-        rw [hr1]
-        exact ih _ _ _ _ hy hr2
-      · simp only [Prod.mk.injEq] at he
-        obtain ⟨he1, he2⟩ := he
-        subst he2; subst he1
-        simp only [List.cons.injEq] at hr
-        obtain ⟨hr1, hr2⟩ := hr
-        rw [hr1]
-        exact ih _ _ _ _ hy hr2
-
-theorem runN_eq_of_all_t8 (P Q : Program) (s : Bool × Nat)
-    (hk : measurementCount P = measurementCount Q)
-    (h : decide (runAll_t8 P s = runAll_t8 Q s) = true) (m : List Bool) :
-    runN_t8 P m s = runN_t8 Q m s := by
-  have h' : runAll_t8 P s = runAll_t8 Q s := of_decide_eq_true h
-  have mem := runAll_spec1_t8 P m s
-  rw [h'] at mem
-  exact runAll_spec2_t8 Q m s _ _ mem (by rw [hk])
-
-def chkT_t8 (P Q F : Program) (e : Nat) : Bool :=
-  decide (runAll_t8 P (false, (runN_t8 F [] (false, e)).2) = runAll_t8 Q (false, (runN_t8 F [] (false, e)).2))
-
-theorem conc_nat_t8 (P Q F : Program) (sites : List Wire) (e : Nat)
-    (hk : measurementCount P = measurementCount Q) (h : chkT_t8 P Q F e = true) (c : List Bool) :
-    (run P c ⟨false, (run F [] ⟨false, tbN_t8 e⟩).basis⟩).phase =
-      (run Q c ⟨false, (run F [] ⟨false, tbN_t8 e⟩).basis⟩).phase ∧
-    ∀ q ∈ sites,
-      (run P c ⟨false, (run F [] ⟨false, tbN_t8 e⟩).basis⟩).basis q =
-        (run Q c ⟨false, (run F [] ⟨false, tbN_t8 e⟩).basis⟩).basis q := by
-  have eq := runN_eq_of_all_t8 P Q (false, (runN_t8 F [] (false, e)).2) hk h c
-  rw [run_sim_t8 F [] false e]
-  simp only [run_sim_t8]
-  rw [eq]
-  exact ⟨rfl, fun _ _ => rfl⟩
-
-def chkPair_t8 (uv : Nat × Nat) : Bool :=
-  [false, true].all fun G => [false, true].all fun S =>
-    chkT_t8 tripR tickMR8 tripF (encN_t8 (pre508 G S uv.1 uv.2) sitesT8)
-
-theorem chkP_0_1 : chkPair_t8 (0, 1) = true := by decide +kernel
-theorem chkP_1_1 : chkPair_t8 (1, 1) = true := by decide +kernel
-theorem chkP_2_1 : chkPair_t8 (2, 1) = true := by decide +kernel
-theorem chkP_3_1 : chkPair_t8 (3, 1) = true := by decide +kernel
-theorem chkP_4_1 : chkPair_t8 (4, 1) = true := by decide +kernel
-theorem chkP_5_1 : chkPair_t8 (5, 1) = true := by decide +kernel
-theorem chkP_6_1 : chkPair_t8 (6, 1) = true := by decide +kernel
-theorem chkP_7_1 : chkPair_t8 (7, 1) = true := by decide +kernel
-theorem chkP_1_3 : chkPair_t8 (1, 3) = true := by decide +kernel
-theorem chkP_2_3 : chkPair_t8 (2, 3) = true := by decide +kernel
-theorem chkP_5_3 : chkPair_t8 (5, 3) = true := by decide +kernel
-theorem chkP_1_5 : chkPair_t8 (1, 5) = true := by decide +kernel
-theorem chkP_3_5 : chkPair_t8 (3, 5) = true := by decide +kernel
-theorem chkP_1_7 : chkPair_t8 (1, 7) = true := by decide +kernel
-
-theorem chkAll_true_t8 : pairs508.all chkPair_t8 = true := by
-  simp only [pairs508, List.all_cons, List.all_nil, Bool.and_true, chkP_0_1, chkP_1_1, chkP_2_1, chkP_3_1, chkP_4_1, chkP_5_1, chkP_6_1, chkP_7_1, chkP_1_3, chkP_2_3, chkP_5_3, chkP_1_5, chkP_3_5, chkP_1_7]
-
-theorem concMR8 : ∀ G S : Bool, ∀ uv ∈ pairs508, ∀ c ∈ recsUpTo 7,
-    (run tripR c ⟨false, (run tripF [] ⟨false, pre508 G S uv.1 uv.2⟩).basis⟩).phase =
-      (run tickMR8 c ⟨false, (run tripF [] ⟨false, pre508 G S uv.1 uv.2⟩).basis⟩).phase ∧
-    ∀ q ∈ sitesT8,
-      (run tripR c ⟨false, (run tripF [] ⟨false, pre508 G S uv.1 uv.2⟩).basis⟩).basis q =
-        (run tickMR8 c ⟨false, (run tripF [] ⟨false, pre508 G S uv.1 uv.2⟩).basis⟩).basis q := by
-  intro G S uv huv c _
-  have h := chkAll_true_t8
-  simp only [List.all_eq_true] at h
-  have h1 := h uv huv
-  simp only [chkPair_t8, List.all_eq_true] at h1
-  have h1 := h1 G (by cases G <;> simp) S (by cases S <;> simp)
-  have hk : measurementCount tripR = measurementCount tickMR8 := by
-    obtain ⟨_, c2, _, c4⟩ := tickN_counts
-    exact c4.trans c2.symm
-  rw [tb_enc_t8 (pre508 G S uv.1 uv.2) sitesT8 (pre508_supp G S uv.1 uv.2)]
-  exact conc_nat_t8 _ _ _ _ _ hk h1 c
-
-theorem signed5_cases (a b c d e : Wire) (s : BasisState) (v : Int)
-    (h : signedRegValue [a, b, c, d, e] s = v) :
-    s a = decide (v % 2 = 1) ∧ s b = decide (v / 2 % 2 = 1) ∧ s c = decide (v / 4 % 2 = 1) ∧
-      s d = decide (v / 8 % 2 = 1) ∧ s e = decide (v < 0) := by
-  unfold signedRegValue signedDecode at h
-  simp only [regValue, List.length] at h
-  cases ha : s a <;> cases hb : s b <;> cases hc : s c <;> cases hd : s d <;> cases he : s e <;>
-    simp [ha, hb, hc, hd, he] at h <;> subst h <;> decide
-
-theorem pairs508_of (z : SkywalkNat.State) (hs : z.u + z.v ≤ 8) (h0 : 0 < z.v) (h1 : z.v % 2 = 1)
-    (hg : z.u.gcd z.v = 1) (ht : (SkywalkNat.step^[3] z).u = 0) : (z.u, z.v) ∈ pairs508 := by
-  obtain ⟨u, v⟩ := z
-  simp only at hs h0 h1 hg ht ⊢
-  have hv : v = 1 ∨ v = 3 ∨ v = 5 ∨ v = 7 := by omega
-  rcases hv with rfl | rfl | rfl | rfl <;>
-  · have hu : u ≤ 7 := by omega
-    clear hs h0 h1
-    interval_cases u <;> revert hg ht <;> decide
-
-theorem retainedA508 :
-    (W.compactSkywalkSignPoolA base 508).retained =
-      [base 508, base 509, base 510, base 511, base 512] := by
-  decide +kernel
-theorem retainedB508 :
-    (W.compactSkywalkSignPoolB base 508).retained =
-      [base 770, base 771, base 772, base 773, base 774] := by
-  decide +kernel
-theorem releasedA508 : base 513 ∈ (W.compactSkywalkSignPoolA base 508).released := by
-  decide +kernel
-
-theorem sites509_sub : ∀ q ∈ [1553], q ∈ wires (W.compactSkywalkTick base 509) := by
-  decide +kernel
-theorem sites510_sub : ∀ q ∈ [1554], q ∈ wires (W.compactSkywalkTick base 510) := by
-  decide +kernel
-
-attribute [local irreducible] run W.compactSkywalkStageVirtual SkywalkTrace.next Nat.iterate
-  W.compactSkywalkTick History5.encodePrefix
-
-/-- The compressed stage before tick 508 pins the eighteen wires of ticks 508 to 510 to one
-of the forced inputs. -/
-theorem stage508_bits (x : Nat) (hx0 : 0 < x) (hx : x < p) (s : State)
-    (stage : W.CompressedCompactStage5 base x p 508 s.basis) :
-    ∃ G S : Bool, ∃ uv ∈ pairs508, ∀ q ∈ sitesT8, s.basis q = pre508 G S uv.1 uv.2 q := by
-  have hp0 : 0<p := by norm_num [p]
-  have hpo : p%2=1 := by norm_num [p]
-  have hp : p<2^256 := by norm_num [p]
-  have cop := (StackOB5.prime_facts x hx0 hx).2.2.2
-  obtain ⟨raw, hraw, hbits⟩ := stage
-  have fields := (W.compactSkywalkStage_fields_iff base _ 508 (by omega) base_pool_nodup raw.basis).mp hraw
-  obtain ⟨readA, readB, prev, -, future, carry, -, cleanA, -⟩ := fields
-  obtain ⟨G, S, encoded⟩ := SkywalkTrace.iter_encoded 508 false false (SkywalkNat.init x p) hp0 hpo
-  have sum := W.iter_sum_width x p 508 hp0 hx0 hpo hp hx cop (by omega)
-  have valid := SkywalkNat.iter_valid 508 (SkywalkNat.init x p) hp0 hpo
-  have term := (SkywalkNat.terminates_511 p x hp0 hx0 hpo hp hx cop).1
-  have split : SkywalkNat.step^[511] (SkywalkNat.init x p) =
-      SkywalkNat.step^[3] (SkywalkNat.step^[508] (SkywalkNat.init x p)) := by
-    rw [← Function.iterate_add_apply]
-  rw [split] at term
-  change (SkywalkNat.step^[508] (SkywalkNat.init x p)).u+
-    (SkywalkNat.step^[508] (SkywalkNat.init x p)).v ≤ 2^(511-508) at sum
-  change SkywalkTrace.next^[508] (SkywalkRails.encode false false (x : Int) (p : Int)) =
-    SkywalkRails.encode G S ((SkywalkNat.step^[508] (SkywalkNat.init x p)).u : Int)
-      ((SkywalkNat.step^[508] (SkywalkNat.init x p)).v : Int) at encoded
-  generalize SkywalkNat.step^[508] (SkywalkNat.init x p) = z at encoded sum valid term
-  have eight : (2:Nat)^(511-508) = 8 := by norm_num
-  rw [eight] at sum
-  have mem := pairs508_of z sum valid.1 valid.2.1 (valid.2.2.trans cop) term
-  rw [encoded, retainedA508] at readA
-  rw [encoded, retainedB508] at readB
-  rw [encoded] at prev
-  have bA := signed5_cases _ _ _ _ _ raw.basis _ readA
-  have bB := signed5_cases _ _ _ _ _ raw.basis _ readB
-  have f8 := future 508 (le_refl _) (by omega)
-  have f9 := future 509 (by omega) (by omega)
-  have f10 := future 510 (by omega) (by omega)
-  have c1540 : raw.basis (base 1540) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1540, by simp, rfl⟩)
-  have c1541 : raw.basis (base 1541) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1541, by simp, rfl⟩)
-  have c1542 : raw.basis (base 1542) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1542, by simp, rfl⟩)
-  have c513 : raw.basis (base 513) = false := cleanA _ releasedA508
-  have prev' : raw.basis (base 507) = G := by
-    have h : skywalkPoolPreviousId 508 = 507 := rfl
-    rw [h] at prev
-    cases G <;> simpa [SkywalkRails.encode] using prev
-  refine ⟨G, S, _, mem, ?_⟩
-  have d8 := W.prefix_disjoint_compactTick base base_pool_nodup
-    (by intro j hj; change 10≤j+16; omega) 508 508 (le_refl _) (by omega)
-  have d9 := W.prefix_disjoint_compactTick base base_pool_nodup
-    (by intro j hj; change 10≤j+16; omega) 508 509 (by omega) (by omega)
-  have d10 := W.prefix_disjoint_compactTick base base_pool_nodup
-    (by intro j hj; change 10≤j+16; omega) 508 510 (by omega) (by omega)
-  have keep8 : ∀ q ∈ sites508, s.basis q = raw.basis q := by
-    intro q hq
-    rw [hbits]
-    apply run_preserves_outside
-    exact fun h => Finset.disjoint_left.mp d8 h (sites508_tick q hq)
-  have keep9 : s.basis 1553 = raw.basis 1553 := by
-    rw [hbits]
-    apply run_preserves_outside
-    exact fun h => Finset.disjoint_left.mp d9 h (sites509_sub 1553 (by simp))
-  have keep10 : s.basis 1554 = raw.basis 1554 := by
-    rw [hbits]
-    apply run_preserves_outside
-    exact fun h => Finset.disjoint_left.mp d10 h (sites510_sub 1554 (by simp))
-  intro q hq
-  simp only [sitesT8, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-    rfl | rfl | rfl | rfl
-  · rw [keep8 _ (by decide)]; exact prev'
-  · rw [keep8 _ (by decide)]; exact bA.1
-  · rw [keep8 _ (by decide)]; exact bA.2.1
-  · rw [keep8 _ (by decide)]; exact bA.2.2.1
-  · rw [keep8 _ (by decide)]; exact bA.2.2.2.1
-  · rw [keep8 _ (by decide)]; exact bA.2.2.2.2
-  · rw [keep8 _ (by decide)]; exact c513
-  · rw [keep8 _ (by decide)]; exact bB.1
-  · rw [keep8 _ (by decide)]; exact bB.2.1
-  · rw [keep8 _ (by decide)]; exact bB.2.2.1
-  · rw [keep8 _ (by decide)]; exact bB.2.2.2.1
-  · rw [keep8 _ (by decide)]; exact bB.2.2.2.2
-  · rw [keep8 _ (by decide)]; exact f8.2
-  · rw [keep9]; exact f9.2
-  · rw [keep10]; exact f10.2
-  · rw [keep8 _ (by decide)]; exact c1540
-  · rw [keep8 _ (by decide)]; exact c1541
-  · rw [keep8 _ (by decide)]; exact c1542
-
-theorem tickMR8_records : measurementCount tickMR8=
-    measurementCount (W.ReverseCarry.compactReceiverTick base 510)+
-      measurementCount (W.ReverseCarry.compactReceiverTick base 509)+
-        measurementCount (W.ReverseCarry.compactReceiverTick base 508) := by
-  obtain ⟨_,c2,_,c4⟩ := tickN_counts
-  rw [tick510ExR_explicit,tick509ExR_explicit,tick508ExR_explicit,←measurementCount_append,
-    ←measurementCount_append]
-  exact c2.trans c4.symm
-
-end ECDSAAdd.Entrant
-end
-
--- End immutable PR359 TickMerged508 proof.
+import ECDSAAdd.Submission.Entrant.NativeKnownH
 
 
 -- ===== ECDSAAdd.Submission.Entrant.FrontierSumCleanup1591Primitive =====
@@ -7631,7 +7109,6 @@ end ECDSAAdd.Entrant
 
 end
 
-
 -- Checked component source: CodexCKTailSemanticsProbe; complete candidate validation remains separate.
 section
 set_option maxHeartbeats 4000000
@@ -11623,6 +11100,62 @@ theorem certificate : Challenge.Certificate entry bounds where
 end ECDSAAdd.Entrant.ControlLoan1589BFFinal
 end -- original module boundary
 
+-- ===== Native first-tick inverse with the swapped known-output receiver =====
+section
+set_option maxRecDepth 4096
+set_option maxHeartbeats 400000
+namespace ECDSAAdd.Entrant.FrontierEntry1591NativeH
+open Arithmetic RecordedQuantum Secp256k1 FrontierEntry1591Native
+attribute [local irreducible] run wires NativeFirstDirect.forward NativeKnownH.inverse
+  NativeFirstKnown.inverse
+
+/-- The hosted native inverse with `NativeKnownH.inverse` in place of `NativeFirstKnown.inverse`. -/
+def inverse (w : Nat → Wire) : Program :=
+  Transport.program (w 1797) (w 511) (NativeKnownH.inverse w)
+
+theorem host_away (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
+    w 511∉wires (NativeKnownH.inverse w) :=
+  fun h => (native_host_away w hn).2 (NativeKnownH.inverse_wires_sub w hn h)
+
+theorem inverse_roundtrip (w : Nat → Wire) (hn : (skywalkSharedWires w).Nodup)
+    (x y : Nat) (hx : x<p) (s : State) (mF mI : List Bool)
+    (hin : SkywalkArithmeticInput w x y s.basis) :
+    run (inverse w) mI (run (FrontierEntry1591Native.forward w) mF s)=s := by
+  have pool := skywalkShared_integer_nodup w hn
+  have before := caller_clean w hn x y s hin
+  have after := forward_clean w hn x y hx s mF hin
+  have ready := NativeFirstDirect.caller_ready w hn x y s.basis hin
+  have pBound : p<2^256 := by norm_num [p]
+  have x256 : x<2^256 := lt_trans hx pBound
+  have round := NativeKnownH.inverse_roundtrip w pool x x256 s mF mI ready.1
+  rw [forward_run_eq w hn x y hx s mF hin]
+  have workOut : (run (NativeKnownH.inverse w) mI (run (NativeFirstDirect.forward w) mF s)).basis (w 1797)=false := by
+    rw [round]; exact before.1
+  rw [inverse,Transport.run_eq _ _ _ _ mI after.1 after.2 workOut (host_away w pool)]
+  exact round
+
+theorem counts (w : Nat → Wire) :
+    toffoliCount (inverse w)=252 ∧ measurementCount (inverse w)=508 := by
+  have i := Transport.counts (w 1797) (w 511) (NativeKnownH.inverse w)
+  rw [(NativeKnownH.inverse_counts w).1,(NativeKnownH.inverse_counts w).2] at i
+  exact i
+
+theorem wires_sub (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
+    wires (inverse w)⊆wires (FrontierEntry1591Native.inverse w) := by
+  rw [inverse,FrontierEntry1591Native.inverse,Transport.support,Transport.support]
+  exact Finset.image_subset_image (NativeKnownH.inverse_wires_sub w hn)
+
+theorem slots_le (w : Nat → Wire) : Challenge.gateSlots (inverse w)≤10000 := by
+  rw [inverse,Transport.slots]
+  exact NativeKnownH.inverse_gateSlots_le w
+
+theorem physical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
+    GatePhysical (inverse w) :=
+  Transport.physical _ _ _ (NativeKnownH.inverse_physical w hn)
+
+end ECDSAAdd.Entrant.FrontierEntry1591NativeH
+end
+
 -- ===== ECDSAAdd.Submission.Entrant.Rolling1588Packets =====
 section
 -- consolidated import: import ECDSAAdd.Submission.Entrant.ControlLoan1589Program
@@ -11871,7 +11404,7 @@ def firstPhase (isA : Bool) : Program :=
   FrontierEntry1591Native.forward base ++ stackForward isA ++ skywalkArithmeticClear base
 
 def lastPhase (isA : Bool) : Program :=
-  skywalkArithmeticClear base ++ stackReverse isA ++ FrontierEntry1591Native.inverse base
+  skywalkArithmeticClear base ++ stackReverse isA ++ FrontierEntry1591NativeH.inverse base
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -26328,10 +25861,17 @@ theorem first_support_eq (isA : Bool) :
   simp only [firstPhase,Rolling1588.firstPhase,FrontierEntry1591Kernel.firstPhase,
     wires_append,Rolling1588.stackForward_support_eq,Finset.union_assoc]
 
-theorem last_support_eq (isA : Bool) :
-    wires (lastPhase isA)=wires FrontierEntry1591Kernel.lastPhase := by
+theorem last_support_sub (isA : Bool) :
+    wires (lastPhase isA)⊆wires FrontierEntry1591Kernel.lastPhase := by
   simp only [lastPhase,Rolling1588.lastPhase,FrontierEntry1591Kernel.lastPhase,
     wires_append,Rolling1588.stackReverse_support_eq,Finset.union_assoc]
+  exact Finset.union_subset_union (Finset.Subset.refl _)
+    (Finset.union_subset_union (Finset.Subset.refl _)
+      (FrontierEntry1591NativeH.wires_sub base base_pool_nodup))
+
+theorem last_free_of_old (isA : Bool) {q : Wire} (h : q∉wires FrontierEntry1591Kernel.lastPhase) :
+    q∉wires (lastPhase isA) :=
+  fun m => h (last_support_sub isA m)
 
 private theorem raw_extra_free (q : Nat) (hq : q=721 ∨ q=722) :
     base q∉wires FrontierEntry1591Kernel.firstPhase ∧
@@ -26357,7 +25897,7 @@ theorem first_hosts_free (isA : Bool) (q : Wire) (hq : q∈phaseHosts) :
 
 theorem last_hosts_free (isA : Bool) (q : Wire) (hq : q∈phaseHosts) :
     q∉wires (lastPhase isA) := by
-  rw [last_support_eq]
+  apply last_free_of_old
   simp only [phaseHosts,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
   rcases hq with rfl|rfl|rfl
   · exact (raw_extra_free 721 (by simp)).2
@@ -26373,7 +25913,7 @@ theorem phase_first_719_free (isA : Bool) :
 theorem phase_last_719_free (isA : Bool) :
     base 719∉wires (renameProgram phaseHost (lastPhase isA)) := by
   apply phase_719_free
-  rw [last_support_eq]
+  apply last_free_of_old
   exact FrontierEntry1591Kernel.last_host_free _ (by simp [FrontierEntry1591Native.hostSites])
 
 /-! R2: the native, integer and clearing passes never touch `base 760`. -/
@@ -26425,7 +25965,7 @@ theorem phase_first_760_free (isA : Bool) :
 theorem phase_last_760_free (isA : Bool) :
     base 760∉wires (renameProgram phaseHost (lastPhase isA)) := by
   apply phase_760_free
-  rw [last_support_eq]
+  apply last_free_of_old
   exact raw_760_free.2
 
 theorem phase_work_free (P : Program) (free : ∀q∈phaseHosts,q∉wires P) :
@@ -26727,9 +26267,8 @@ theorem raw_result_of_roundtrip (a b : Bool) (F : Program) (s : State) (m : List
   have firstPool : wires (firstPhase b)⊆(skywalkPoolWires base).toFinset := by
     rw [first_support_eq]
     exact FrontierEntry1591Kernel.first_pool
-  have lastPool : wires (lastPhase b)⊆(skywalkPoolWires base).toFinset := by
-    rw [last_support_eq]
-    exact FrontierEntry1591Kernel.last_pool
+  have lastPool : wires (lastPhase b)⊆(skywalkPoolWires base).toFinset :=
+    (last_support_sub b).trans FrontierEntry1591Kernel.last_pool
   have all := run_three_states (firstPhase a) F (lastPhase b)
     (fun initial out=>initial=s → out.phase=s.phase ∧
       regValue (wireBlock base 2056 256) out.basis=value ∧
@@ -26853,8 +26392,8 @@ theorem phases_roundtrip (isA : Bool) (hn : (skywalkSharedWires base).Nodup)
   simpa only [firstPhase,lastPhase,Rolling1588.firstPhase,Rolling1588.lastPhase,List.append_assoc] using
     compose_roundtrip (FrontierEntry1591Native.forward base) (Rolling1588.stackForward isA)
       (skywalkArithmeticClear base) (Rolling1588.stackReverse isA)
-      (FrontierEntry1591Native.inverse base) s mp mr clearM twice stack
-      (fun mn mi=>FrontierEntry1591Native.inverse_roundtrip base hn x y hx s mn mi input)
+      (FrontierEntry1591NativeH.inverse base) s mp mr clearM twice stack
+      (fun mn mi=>FrontierEntry1591NativeH.inverse_roundtrip base hn x y hx s mn mi input)
 
 /-- The actual native722 placement needs no additional zero-bit condition.
 Its integer facts are supplied by the matching A/B stack theorems. -/
@@ -28138,9 +27677,9 @@ theorem stackForward_metrics (isA : Bool) :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem stackReverse_metrics (isA : Bool) :
-    toffoliCount (stackReverse isA)+3=toffoliCount NewStackOB5.stackReverseT ∧
+    toffoliCount (stackReverse isA)+4=toffoliCount NewStackOB5.stackReverseT ∧
     measurementCount (stackReverse isA)=measurementCount NewStackOB5.stackReverseT ∧
-    gateSlots (stackReverse isA)=gateSlots NewStackOB5.stackReverseT+101*(if isA then 24 else 12)+124 := by
+    gateSlots (stackReverse isA)=gateSlots NewStackOB5.stackReverseT+101*(if isA then 24 else 12)+31 := by
   have tail := reverse_metrics isA 1 507
   have p510 := unpackAtTick_metrics isA 510
   have count : ordinaryCount 1 507=100 := by decide +kernel
@@ -28149,14 +27688,14 @@ theorem stackReverse_metrics (isA : Bool) :
     ordinaryDue,show History5.packDue 510=true from rfl,if_true,Nat.mul_one] at p510
   have e509 : NewStackOB5.unpackFirst base 509=[] := by decide +kernel
   have e508 : NewStackOB5.unpackFirst base 508=[] := by decide +kernel
-  have tm : toffoliCount tickMR8+3=toffoliCount tick510R+
+  have tm : toffoliCount tickMR8+4=toffoliCount tick510R+
         toffoliCount (W.ReverseCarry.compactReceiverTick base 509)+
         toffoliCount (W.ReverseCarry.compactReceiverTick base 508) ∧
       measurementCount tickMR8=measurementCount tick510R+
         measurementCount (W.ReverseCarry.compactReceiverTick base 509)+
         measurementCount (W.ReverseCarry.compactReceiverTick base 508) ∧
       gateSlots tickMR8=gateSlots tick510R+gateSlots (W.ReverseCarry.compactReceiverTick base 509)+
-        gateSlots (W.ReverseCarry.compactReceiverTick base 508)+124 := by
+        gateSlots (W.ReverseCarry.compactReceiverTick base 508)+31 := by
     rw [tick509ExR_explicit,tick508ExR_explicit]
     decide +kernel
   rw [NewStackOB5.stackReverseT,NewStackOB5.stackReverse510,NewStackOB5.reverse_snoc 1 508,
@@ -28251,10 +27790,13 @@ theorem firstPhase_metrics (isA : Bool) :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem lastPhase_metrics (isA : Bool) :
-    toffoliCount (lastPhase isA)+3=toffoliCount FrontierEntry1591Kernel.lastPhase ∧
+    toffoliCount (lastPhase isA)+8=toffoliCount FrontierEntry1591Kernel.lastPhase ∧
     measurementCount (lastPhase isA)=measurementCount FrontierEntry1591Kernel.lastPhase ∧
-    gateSlots (lastPhase isA)=gateSlots FrontierEntry1591Kernel.lastPhase+101*(if isA then 24 else 12)+124 := by
+    gateSlots (lastPhase isA)≤gateSlots FrontierEntry1591Kernel.lastPhase+101*(if isA then 24 else 12)+31+10000 := by
   have stack := stackReverse_metrics isA
+  have old := FrontierEntry1591Native.counts base
+  have new := FrontierEntry1591NativeH.counts base
+  have sl := FrontierEntry1591NativeH.slots_le base
   simp only [lastPhase,FrontierEntry1591Kernel.lastPhase,toffoliCount_append,
     measurementCount_append,gateSlots_append]
   exact ⟨by omega,by omega,by omega⟩
@@ -28267,7 +27809,7 @@ theorem firstPhase_physical (isA : Bool) : GatePhysical (firstPhase isA) := by
 theorem lastPhase_physical (isA : Bool) : GatePhysical (lastPhase isA) := by
   simpa only [lastPhase,gatePhysical_append] using
     And.intro (And.intro mappedClear_physical (stackReverse_physical isA))
-      (FrontierEntry1591Native.physical base base_pool_nodup).2
+      (FrontierEntry1591NativeH.physical base base_pool_nodup)
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -28352,7 +27894,7 @@ theorem last_hosted_support_subset_old (isA : Bool) :
         {base 721,base 722} := by
   have oldFree : ∀q∈[base 718,base 719],q∉wires (lastPhase isA) := by
     intro q hq
-    rw [last_support_eq]
+    apply last_free_of_old
     exact FrontierEntry1591Kernel.last_host_free q (by
       simp only [FrontierEntry1591Native.hostSites,List.mem_toFinset,List.mem_cons,
         List.not_mem_nil,or_false]
@@ -28362,8 +27904,10 @@ theorem last_hosted_support_subset_old (isA : Bool) :
     fun q hq=>last_hosts_free isA q (by
       simp only [phaseHosts,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq ⊢
       tauto)
-  simpa only [FrontierEntry1591Native.hosted_support,last_support_eq] using
-    phase_support_subset_old (lastPhase isA) oldFree newFree
+  have h := phase_support_subset_old (lastPhase isA) oldFree newFree
+  rw [FrontierEntry1591Native.hosted_support] at h ⊢
+  exact h.trans (Finset.union_subset_union (Finset.image_subset_image (last_support_sub isA))
+    (Finset.Subset.refl _))
 
 private theorem extra_support : ({base 721,base 722} : Finset Wire)⊆OB5Support.logicalSites := by
   have site (i : Nat) (hi : i=721 ∨ i=722) : base i∈OB5Support.logicalSites := by
@@ -28449,9 +27993,9 @@ theorem exitSlotGrowth_eq : exitSlotGrowth=11027 := rfl
 /- The deltas are proved with numerals (`omega` over the symbolic `halfExtra` atom makes the kernel
 recurse too deeply on these two goals) and restated with the named growth constants. -/
 private theorem entryKernel_resource_delta_num :
-    toffoliCount entryKernel+232=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+237=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
-    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(53762+12554) := by
+    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+12554) := by
   have first := firstPhase_metrics true
   have last := lastPhase_metrics false
   have field := entryFieldHosted_resource_delta
@@ -28464,16 +28008,16 @@ private theorem entryKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryKernel_resource_delta :
-    toffoliCount entryKernel+232=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+237=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
-    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(53762+entrySlotGrowth) := by
+    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+entrySlotGrowth) := by
   rw [entrySlotGrowth_eq]
   exact entryKernel_resource_delta_num
 
 private theorem exitKernel_resource_delta_num :
-    toffoliCount exitKernel+232=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+237=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
-    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(54865+11027) := by
+    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+11027) := by
   have first := firstPhase_metrics false
   have last := lastPhase_metrics true
   have field := exitFieldHosted_resource_delta
@@ -28486,9 +28030,9 @@ private theorem exitKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitKernel_resource_delta :
-    toffoliCount exitKernel+232=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+237=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
-    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(54865+exitSlotGrowth) := by
+    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+exitSlotGrowth) := by
   rw [exitSlotGrowth_eq]
   exact exitKernel_resource_delta_num
 
@@ -28566,7 +28110,7 @@ private theorem first_hosted_768_free (isA : Bool) :
 private theorem last_hosted_768_free (isA : Bool) :
     base 768∉wires (renameProgram Rolling1588Lifetime.phaseHost (lastPhase isA)) := by
   apply phase_free_of_raw _ _ (by decide +kernel)
-  rw [Rolling1588Lifetime.last_support_eq]
+  apply Rolling1588Lifetime.last_free_of_old
   exact raw_768_free.2
 
 private theorem first_hosted_718_free (isA : Bool) :
@@ -28578,7 +28122,7 @@ private theorem first_hosted_718_free (isA : Bool) :
 private theorem last_hosted_718_free (isA : Bool) :
     base 718∉wires (renameProgram Rolling1588Lifetime.phaseHost (lastPhase isA)) := by
   apply phase_free_of_raw _ _ (by decide +kernel)
-  rw [Rolling1588Lifetime.last_support_eq]
+  apply Rolling1588Lifetime.last_free_of_old
   exact FrontierEntry1591Kernel.last_host_free _ (by simp [FrontierEntry1591Native.hostSites])
 
 theorem entryKernel_768_free : base 768∉wires entryKernel := by
@@ -31875,23 +31419,23 @@ private def DeltaSub (P Q : Program) (t m slots : Nat) : Prop :=
   toffoliCount P+t=toffoliCount Q ∧ measurementCount P=measurementCount Q+m ∧
     gateSlots P≤gateSlots Q+slots
 
-private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 232 106 (53762+Rolling1588.entrySlotGrowth))
+private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 237 106 (63762+Rolling1588.entrySlotGrowth))
     (L : ControlledPointLayout) (c : Fp) :
-    DeltaSub (division K L c) (division K0 L c) 232 106 (53762+Rolling1588.entrySlotGrowth) := by
+    DeltaSub (division K L c) (division K0 L c) 237 106 (63762+Rolling1588.entrySlotGrowth) := by
   simp only [DeltaSub,division,FrontierEntry1591Callers.entry,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
 
-private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 232 106 (54865+Rolling1588.exitSlotGrowth))
-    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 232 106 (54865+Rolling1588.exitSlotGrowth) := by
+private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 237 106 (64865+Rolling1588.exitSlotGrowth))
+    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 237 106 (64865+Rolling1588.exitSlotGrowth) := by
   simpa only [DeltaSub,exit,renameProgram_counts,rename_gateSlots] using h
 
 private theorem gen_delta_of_shapes (L : ControlledPointLayout)
     (D D0 : Fp→Program) (S S0 P P0 G G0 : Program) (cx cy : Fp)
     (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D0 S0 P0 cx cy)
-    (hd : ∀c,DeltaSub (D c) (D0 c) 232 106 (53762+Rolling1588.entrySlotGrowth))
-    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 232 106 (54865+Rolling1588.exitSlotGrowth)) :
-    DeltaSub G G0 464 212 (108627+Rolling1588.slotGrowth) := by
+    (hd : ∀c,DeltaSub (D c) (D0 c) 237 106 (63762+Rolling1588.entrySlotGrowth))
+    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 237 106 (64865+Rolling1588.exitSlotGrowth)) :
+    DeltaSub G G0 474 212 (128627+Rolling1588.slotGrowth) := by
   subst G G0
   have d:=hd (-cy)
   simp only [Delta,DeltaLe,DeltaSub,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
@@ -31900,7 +31444,7 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 464 212 (108627+Rolling1588.slotGrowth) := by
+    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 474 212 (128627+Rolling1588.slotGrowth) := by
   have squareCounts:=SquareCarryLoan719BF.counts_eq L
   have squareSlots:=SquareCarryLoan719BF.slots_eq L
   exact gen_delta_of_shapes L
@@ -31918,14 +31462,14 @@ private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
       Rolling1588.exitKernel_resource_delta L)
 
 theorem gen_resource_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+464=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+474=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ControlLoan1589BFFinal.gen L cx cy)+212 ∧
-    gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+(108627+Rolling1588.slotGrowth) :=
+    gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+(128627+Rolling1588.slotGrowth) :=
   gen_delta L cx cy
 
 private theorem wrapper_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : DeltaSub P Q 464 212 (108627+Rolling1588.slotGrowth)) :
-    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 464 212 (108627+Rolling1588.slotGrowth) := by
+    (P Q : Program) (h : DeltaSub P Q 474 212 (128627+Rolling1588.slotGrowth)) :
+    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 474 212 (128627+Rolling1588.slotGrowth) := by
   simp only [DeltaSub,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -31968,7 +31512,7 @@ theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
       Rolling1588.exitKernel_physical L hw hn) cx cy
 
 theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen L cx cy)≤49316359+Rolling1588.slotGrowth := by
+    gateSlots (gen L cx cy)≤49336359+Rolling1588.slotGrowth := by
   have diff:=(gen_delta L cx cy).2.2
   have old:=ControlLoan1589BFFinal.gen_slots L hw cx cy
   omega
@@ -32075,7 +31619,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152459 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152449 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -32087,7 +31631,7 @@ theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50119199+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50139199+Rolling1588.slotGrowth := by
   have diff:=(wrapper_delta layout C cy _ _ (gen_delta layout cx cy)).2.2
   have old:=ControlLoan1589BFFinal.wrapper_slots C cx cy
   omega
@@ -32099,7 +31643,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152459,1499965,1588,50119199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152449,1499965,1588,50139199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -32116,7 +31660,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152459 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152449 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -32138,7 +31682,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50119199+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50139199+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program,gateSlots]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -32154,7 +31698,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C))≤1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50119199+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C))≤50139199+Rolling1588.slotGrowth
     rw [normalize_slots];exact program_gateSlots C
 
 end ECDSAAdd.Entrant.Rolling1588BFFinal

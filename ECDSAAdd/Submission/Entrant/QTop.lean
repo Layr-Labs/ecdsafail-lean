@@ -1021,163 +1021,14 @@ end ECDSAAdd.Entrant.Q4
 
 namespace ECDSAAdd.Entrant
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout RecordedQuantum
-namespace QRel
-/-- `P'` refines `P` statically: fewer wires and fewer gate slots. -/
-def Le (P' P : Program) : Prop :=
-  ECDSAAdd.wires P'⊆ECDSAAdd.wires P ∧ Challenge.gateSlots P'≤Challenge.gateSlots P
 
-theorem Le.rfl' (P : Program) : Le P P := ⟨Finset.Subset.refl _,le_rfl⟩
+def accFoldQKTq (L : CuccaroStreamedSquareWideLayout) (a : AccItem) : Program :=
+  OwnDiagAll12Square.fillInK L a++qprogTq L.measuredCore SquareReduction.p++CodexCKAccTail.fillOutTail L a
 
-theorem Le.app {A A' B B' : Program} (h1 : Le A' A) (h2 : Le B' B) : Le (A'++B') (A++B) :=
-  ⟨by rw [wires_append,wires_append]; exact Finset.union_subset_union h1.1 h2.1,
-   by rw [Challenge.gateSlots_append,Challenge.gateSlots_append]; exact Nat.add_le_add h1.2 h2.2⟩
-
-theorem mappedConstant_snoc (c : Option Wire) (n : Nat) : ∀ k : Nat,
-    mappedConstant c (n+1) k=mappedConstant c n k++[mappedConstantBit c (decide ((k/2^n)%2=1))] := by
-  induction n with
-  | zero => intro k; simp [mappedConstant]
-  | succ n ih =>
-    intro k
-    show mappedConstantBit c (decide (k%2=1))::mappedConstant c (n+1) (k/2)=
-      (mappedConstantBit c (decide (k%2=1))::mappedConstant c n (k/2))++_
-    rw [ih (k/2),Nat.div_div_eq_div_mul,← pow_succ']
-    rfl
-
-theorem majority_slots_pos (b : MappedBit) (y c t : Wire) :
-    1≤Challenge.gateSlots (mappedMajority b y c t) := by
-  rcases b with ⟨_|a,_|_⟩ <;>
-    simp [mappedMajority,majority,borrowMajority,Challenge.gateSlots,Challenge.instructionSlots]
-
-theorem mappedAdd_snoc_le (b : MappedBit) (y : Wire) (xs : List MappedBit) : ∀ (ys cs : List Wire) (c : Wire),
-    xs.length=ys.length → 0<xs.length → xs.length≤cs.length →
-    ECDSAAdd.wires (mappedAdd xs ys (cs.take (xs.length-1)) c)⊆ECDSAAdd.wires (mappedAdd (xs++[b]) (ys++[y]) cs c) ∧
-    Challenge.gateSlots (mappedAdd xs ys (cs.take (xs.length-1)) c)+1≤
-      Challenge.gateSlots (mappedAdd (xs++[b]) (ys++[y]) cs c) := by
-  induction xs with
-  | nil => intro ys cs c _ h _; simp at h
-  | cons x0 xs ih =>
-    intro ys cs c hl _ hc
-    rcases ys with _|⟨y0,ys⟩
-    · simp at hl
-    rcases cs with _|⟨d,ds⟩
-    · simp at hc
-    simp only [List.length_cons,Nat.add_right_cancel_iff] at hl hc
-    rcases xs with _|⟨x1,xs⟩
-    · rcases ys with _|⟨y1,ys⟩
-      · have m1 := majority_slots_pos x0 y0 c d
-        simp only [List.cons_append,List.nil_append,mappedAdd,List.length_cons,List.length_nil,
-          Nat.sub_self,List.take_zero,wires_append,Challenge.gateSlots_append]
-        refine ⟨fun q h => ?_,by omega⟩
-        simp only [Finset.mem_union]; tauto
-      · simp at hl
-    · rcases ys with _|⟨y1,ys⟩
-      · simp at hl
-      · have h := ih (y1::ys) ds d (by simpa using hl) (by simp) (by simp at hc ⊢; omega)
-        simp only [List.cons_append,List.length_cons,Nat.add_sub_cancel] at h ⊢
-        simp only [List.take_succ_cons,mappedAdd,wires_append,Challenge.gateSlots_append]
-        refine ⟨Finset.union_subset_union (Finset.union_subset_union (Finset.union_subset_union
-          (Finset.Subset.refl _) h.1) (Finset.Subset.refl _)) (Finset.Subset.refl _),by omega⟩
-
-theorem const_le (K : MeasuredCanonicalModLayout) (n p : Nat) (hw : K.Widths n) (hn : 0<n) :
-    ECDSAAdd.wires (mappedConstAdd (some K.flag) K.out (K.carry.take (K.out.length-1)) K.cin p)⊆
-      ECDSAAdd.wires (mappedConstAdd (some K.flag) K.extended K.carry K.cin p) ∧
-    Challenge.gateSlots (mappedConstAdd (some K.flag) K.out (K.carry.take (K.out.length-1)) K.cin p)+1≤
-      Challenge.gateSlots (mappedConstAdd (some K.flag) K.extended K.carry K.cin p) := by
-  have h := mappedAdd_snoc_le (mappedConstantBit (some K.flag) (decide ((p/2^K.out.length)%2=1))) K.high
-    (mappedConstant (some K.flag) K.out.length p) K.out K.carry K.cin
-    (by simp [mappedConstant_length]) (by simp [mappedConstant_length,hw.out]; omega)
-    (by simp [mappedConstant_length,hw.out,hw.carry])
-  rw [mappedConstant_length] at h
-  have e : mappedConstAdd (some K.flag) K.extended K.carry K.cin p=
-      mappedAdd (mappedConstant (some K.flag) K.out.length p++
-        [mappedConstantBit (some K.flag) (decide ((p/2^K.out.length)%2=1))]) (K.out++[K.high]) K.carry K.cin := by
-    rw [← mappedConstant_snoc]; simp [mappedConstAdd,MeasuredCanonicalModLayout.extended]
-  rw [e]; exact h
-
-theorem le_core (K : MeasuredCanonicalModLayout) (n p : Nat) (hw : K.Widths n) (hn : 0<n) (P1 P3 : Program) :
-    Le (P1++([.CX K.high K.flag,.X K.flag]++
-        (mappedConstAdd (some K.flag) K.out (K.carry.take (K.out.length-1)) K.cin p++([.CX K.flag K.high]++P3))))
-      (P1++([.CX K.high K.flag,.X K.flag]++(mappedConstAdd (some K.flag) K.extended K.carry K.cin p++P3))) := by
-  obtain ⟨hw',hs⟩ := const_le K n p hw hn
-  constructor
-  · intro q hq
-    have hcx : q∈ECDSAAdd.wires [Instr.CX K.flag K.high] →
-        q∈ECDSAAdd.wires [Instr.CX K.high K.flag,Instr.X K.flag] := by
-      intro h; simp [ECDSAAdd.wires,Instr.wires] at h ⊢; tauto
-    have hm : q∈ECDSAAdd.wires (mappedConstAdd (some K.flag) K.out (K.carry.take (K.out.length-1)) K.cin p) →
-        q∈ECDSAAdd.wires (mappedConstAdd (some K.flag) K.extended K.carry K.cin p) := fun h => hw' h
-    simp only [wires_append,Finset.mem_union] at hq ⊢
-    tauto
-  · simp only [Challenge.gateSlots_append]
-    have : Challenge.gateSlots [Instr.CX K.flag K.high]=1 := rfl
-    omega
-
-theorem qprog_le (K : MeasuredCanonicalModLayout) (n p : Nat) (hw : K.Widths n) (hn : 0<n) :
-    Le (qprogTq K p) (qprog K p) := by
-  have g := le_core K n p hw hn (notRegister K.out++K.sum)
-    ([.X K.high,.X K.flag]++eraseLtChain K.out K.src (K.carry.take (K.out.length-1)) K.cin K.flag)
-  simpa only [qprogTq,qprog,List.append_assoc] using g
-
-theorem qprog4_le (K : MeasuredCanonicalModLayout) (n p : Nat) (hw : K.Widths n) (hn : 0<n) :
-    Le (qprog4Tq K p) (qprog4 K p) := by
-  have g := le_core K n p hw hn (notRegister K.out++Skip4.addSkip 4
-      (mappedRead K.src false++[({wire:=none,flip:=false} : MappedBit)]) K.extended K.carry K.cin)
-    ([.X K.high,.X K.flag]++Skip4.eraseSkip 4 K.out K.src (K.carry.take (K.out.length-1)) K.cin K.flag)
-  simpa only [qprog4Tq,qprog4,List.append_assoc] using g
-
-theorem measuredFoldQ_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (f : MeasuredSquareFold) :
-    Le (measuredFoldQTq L f) (measuredFoldQ L f) := by
-  unfold measuredFoldQTq measuredFoldQ
-  exact Le.app (Le.app (Le.rfl' _)
-    (qprog_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide))) (Le.rfl' _)
-
-theorem accFoldQ_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem) :
-    Le (accFoldQTq L a) (accFoldQ L a) := by
-  unfold accFoldQTq accFoldQ
-  exact Le.app (Le.app (Le.rfl' _)
-    (qprog_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide))) (Le.rfl' _)
-
-theorem accFoldQ4_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem) :
-    Le (accFoldQ4Tq L a) (accFoldQ4 L a) := by
-  unfold accFoldQ4Tq accFoldQ4
-  exact Le.app (Le.app (Le.rfl' _)
-    (qprog4_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide))) (Le.rfl' _)
-
-theorem mixProgQ_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (i : MixItem) :
-    Le (mixProgQTq L i) (mixProgQ L i) := by
-  rcases i with f|a
-  · by_cases h : f.canonical
-    · simp only [mixProgQTq,mixProgQ,h,if_true]; exact measuredFoldQ_le L hw f
-    · simp only [mixProgQTq,mixProgQ,h]; exact Le.rfl' _
-  · exact accFoldQ_le L hw a
-
-theorem mixFoldsQ_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (o : Bool) (items : List MixItem) :
-    Le (mixFoldsQTq L o items) (mixFoldsQ L o items) := by
-  induction items generalizing o with
-  | nil => exact Le.rfl' _
-  | cons i is ih =>
-    simp only [mixFoldsQTq,mixFoldsQ]
-    refine Le.app ?_ (ih _)
-    rcases Decidable.em (o=mixNeg i) with h|h
-    · rw [if_pos h,if_pos h]; exact Le.rfl' _
-    · rw [if_neg h,if_neg h]; exact mixProgQ_le L hw i
-
-end QRel
-end ECDSAAdd.Entrant
-
-
--- Top-carry-free forks of the CK accumulator tail.
-namespace ECDSAAdd.Entrant.CodexCKAccTail
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-open ECDSAAdd.Entrant.OwnDiagAll12Square ECDSAAdd.Entrant.Q4
-open Arithmetic.CuccaroStreamedSquareWideLayout
-def accFoldQTailTq (L : CuccaroStreamedSquareWideLayout) (a : AccItem) : Program :=
-  fillInK L a++qprogTq L.measuredCore SquareReduction.p++fillOutTail L a
-
-theorem accFoldQTailTq_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+theorem accFoldQ_frameKTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (base : BasisState) (a : AccItem)
     (hv : AccView L base a) (hc : L.PairClean base) (O : Nat) (hO : O<SquareReduction.p) :
-    Triple (SquareFrame L.core.out base O) (accFoldQTailTq L a)
+    Triple (SquareFrame L.core.out base O) (accFoldQKTq L a)
       (SquareFrame L.core.out base ((Acc.accVal base 0 a.spec+(SquareReduction.p-1-O))%SquareReduction.p)) := by
   intro s m hf
   have lens := acc_lengths L hw
@@ -1203,11 +1054,11 @@ theorem accFoldQTailTq_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
   have hA : A<2^163 := Acc.accVal_lt base 163 a.spec 0 (by norm_num) hv.specValid
   have accZero : regValue (accReg L) b0=0 :=
     (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
-  have hbuild := fillInK_triple L hw hn base a hv b0 agree0 hz hb clean.cin hW0
-  rw [accFoldQTailTq,List.append_assoc,run_append,run_append]
-  let mb := measurementCount (fillInK L a)
+  have hbuild := OwnDiagAll12Square.fillInK_triple L hw hn base a hv b0 agree0 hz hb clean.cin hW0
+  rw [accFoldQKTq,List.append_assoc,run_append,run_append]
+  let mb := measurementCount (OwnDiagAll12Square.fillInK L a)
   let mk := measurementCount (qprogTq L.measuredCore SquareReduction.p)
-  let u := run (fillInK L a) (m.take mb) s
+  let u := run (OwnDiagAll12Square.fillInK L a) (m.take mb) s
   have eu := hbuild s (m.take mb) ⟨accZero,fun _ _ => rfl⟩
   change u.phase=s.phase ∧ SquareFrame (accReg L) b0 A u.basis at eu
   have keepU (q : Wire) (hq : q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
@@ -1272,10 +1123,10 @@ theorem accFoldQTailTq_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
     rw [b2off q ho]; exact hW0 q hq
   have agree2 : ∀q∈L.core.product,base2 q=base q :=
     fun q hq => (b2off q (prodNotOut q hq)).trans (agree0 q hq)
-  have hun := fillOutTail_triple L hw hn base a hv base2 agree2 hz2 hb2 hi2 hW2
+  have hun := CodexCKAccTail.fillOutTail_triple L hw hn base a hv base2 agree2 hz2 hb2 hi2 hW2
   have eo := hun v ((m.drop mb).drop mk) frame2
   refine ⟨eo.1.trans (ek.1.trans eu.1),?_,?_⟩
-  · have e : regValue L.core.out (run (fillOutTail L a) ((m.drop mb).drop mk) v).basis=
+  · have e : regValue L.core.out (run (CodexCKAccTail.fillOutTail L a) ((m.drop mb).drop mk) v).basis=
         regValue L.core.out v.basis := by
       apply regValue_congr; intro q hq
       have na : q∉accReg L := fun h => accOut q h hq
@@ -1288,15 +1139,18 @@ theorem accFoldQTailTq_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
       exact ((regValue_zero _ _).mp hc.work q (accReg_work L q ha)).symm
     · rw [eo.2.2 q ha,b2off q hq]; exact hf.2 q hq
 
-def accFoldQ4TailTq (L : CuccaroStreamedSquareWideLayout) (a : AccItem) : Program :=
-  OwnDiagAll12Square.fillInK L a++qprog4Tq L.measuredCore SquareReduction.p++fillOutTail L a
 
-theorem accFoldQ4TailTq_run (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+
+def accFoldQ4KTq (L : CuccaroStreamedSquareWideLayout) (a : AccItem) : Program :=
+  OwnDiagAll12Square.fillInK L a++qprog4Tq L.measuredCore SquareReduction.p++CodexCKAccTail.fillOutTail L a
+
+namespace Q4
+theorem accFoldQ4_runKTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (base : BasisState) (a : AccItem)
     (hv : AccView L base a) (hc : L.PairClean base) (O : Nat) (hO : O<SquareReduction.p)
     (h16 : Acc.accVal base 0 a.spec%16=0)
     (s : State) (m : List Bool) (hf : SquareFrame L.core.out base O s.basis) :
-    run (accFoldQ4TailTq L a) m s=run (accFoldQTailTq L a) m s := by
+    run (accFoldQ4KTq L a) m s=run (accFoldQKTq L a) m s := by
   have lens := acc_lengths L hw
   have clean := L.squareFrame_clean hn base s.basis O hf hc
   let b0 := s.basis
@@ -1352,68 +1206,269 @@ theorem accFoldQ4TailTq_run (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths
     rw [workU] at t
     have z : regValue (L.core.work.take 4) u.basis=0 := by rw [t]; simpa [A] using h16
     exact (regValue_zero _ _).mp z
-  rw [accFoldQ4TailTq,accFoldQTailTq,List.append_assoc,List.append_assoc,run_append (OwnDiagAll12Square.fillInK L a),run_append (OwnDiagAll12Square.fillInK L a)]
-  have cnt := Q4.q4_countsTq L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by norm_num)
-  exact run_congr_left _ _ _ u cnt.2 (fun m' => Q4.q4_run_eqTq L.measuredCore 256 SquareReduction.c SquareReduction.p
+  rw [accFoldQ4KTq,accFoldQKTq,List.append_assoc,List.append_assoc,run_append (OwnDiagAll12Square.fillInK L a),run_append (OwnDiagAll12Square.fillInK L a)]
+  have cnt := q4_countsTq L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by norm_num)
+  exact run_congr_left _ _ _ u cnt.2 (fun m' => q4_run_eqTq L.measuredCore 256 SquareReduction.c SquareReduction.p
     (L.measuredCore_widths hw) coreNd (by norm_num) hp (by norm_num [SquareReduction.c]) A O hAp hO u m'
     workU outU ((keepU _ (by simp [measuredCore])).trans clean.outHigh)
     ((keepU _ (by simp [measuredCore])).trans clean.modFlag)
     carryU ((keepU _ (by simp [measuredCore])).trans clean.cin) lowU) _
 
 
-theorem accFoldQ4TailTq_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem)
+
+theorem accFoldQ4KTq_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem)
     (ok : ∀f∈a.terms,TermOK f) :
-    toffoliCount (accFoldQ4TailTq L a)≤toffoliCount (accFoldQ4Tq L a) ∧
-    measurementCount (accFoldQ4TailTq L a)=measurementCount (accFoldQ4Tq L a) ∧
-    ECDSAAdd.wires (accFoldQ4TailTq L a)⊆ECDSAAdd.wires (accFoldQ4Tq L a) ∧
-    Challenge.gateSlots (accFoldQ4TailTq L a)≤Challenge.gateSlots (accFoldQ4Tq L a) := by
-  have r := fillTail_rel L hw a ok
-  simp only [accFoldQ4TailTq,accFoldQ4Tq,toffoliCount_append,measurementCount_append,wires_append,
+    toffoliCount (accFoldQ4KTq L a)≤toffoliCount (accFoldQ4Tq L a) ∧
+    measurementCount (accFoldQ4KTq L a)=measurementCount (accFoldQ4Tq L a) ∧
+    ECDSAAdd.wires (accFoldQ4KTq L a)⊆ECDSAAdd.wires (accFoldQ4Tq L a) ∧
+    Challenge.gateSlots (accFoldQ4KTq L a)≤Challenge.gateSlots (accFoldQ4Tq L a) := by
+  have r := CodexCKAccTail.fillTail_rel L hw a ok
+  simp only [accFoldQ4KTq,accFoldQ4Tq,toffoliCount_append,measurementCount_append,wires_append,
     Challenge.gateSlots_append]
   refine ⟨by omega,by omega,?_,by omega⟩
   exact Finset.union_subset_union (Finset.union_subset_union r.1.2.2.1 (Finset.Subset.refl _)) r.2.2.2.1
 
-theorem accFoldQ4TailTq_counts_early (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem)
+theorem accFoldQ4KTq_counts_early (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem)
     (src : List Wire) (hsrc : src.length≤130) (he : a.terms=earlyHTerms src)
     (ok : ∀f∈a.terms,TermOK f) :
-    toffoliCount (accFoldQ4TailTq L a)+31=toffoliCount (accFoldQ4Tq L a) := by
-  have r := fillTail_rel L hw a ok
+    toffoliCount (accFoldQ4KTq L a)+31=toffoliCount (accFoldQ4Tq L a) := by
   have e : a.terms=Acc.earlyTerm src false 4::Acc.earlyTerm src false 10::Acc.earlyTerm src true 6::
       Acc.earlyTerm src false 32::[] := by rw [he]; rfl
-  have c := tail_counts_early (accReg L) (accZ L) (accBank L) L.core.cin src
+  have c := CodexCKAccTail.tail_counts_early (accReg L) (accZ L) (accBank L) L.core.cin src
     (acc_lengths L hw).1 hsrc (Acc.earlyTerm src false 32) []
     (by simp [CKAcc.IsT32,Acc.earlyTerm]) (fun f hf => fitsLen_of L hw f (ok f (by rw [e]; exact hf)))
   rw [← e] at c
-  simp only [accFoldQ4TailTq,accFoldQ4Tq,OwnDiagAll12Square.fillInK,fillIn,fillOutTail,fillOut,
+  simp only [accFoldQ4KTq,accFoldQ4Tq,OwnDiagAll12Square.fillInK,fillIn,CodexCKAccTail.fillOutTail,fillOut,
     toffoliCount_append]
   omega
 
-theorem accFoldQ4TailTq_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+theorem accFoldQ4KTq_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (a : AccItem) (cnt : ∀f∈a.terms,SrcOK L f) (ok : ∀f∈a.terms,TermOK f)
     (cntP : ∀f∈a.pre,∀q,f.src.count q≤L.core.product.count q) (okP : ∀f∈a.pre,TermOK33 f) :
-    GatePhysical (accFoldQ4TailTq L a) := by
+    GatePhysical (accFoldQ4KTq L a) := by
   have old := accFoldQ4_physicalTq L a (accFoldQ_physicalTq L hw hn a cnt ok cntP okP)
-  have k := fillTail_physical L hw hn a cnt ok cntP okP
+  have k := CodexCKAccTail.fillTail_physical L hw hn a cnt ok cntP okP
   simp only [accFoldQ4Tq,gatePhysical_append] at old
-  simp only [accFoldQ4TailTq,gatePhysical_append]
+  simp only [accFoldQ4KTq,gatePhysical_append]
   exact ⟨⟨k.1,old.1.2⟩,k.2⟩
 
+end Q4
+end ECDSAAdd.Entrant
 
-end ECDSAAdd.Entrant.CodexCKAccTail
+namespace ECDSAAdd.Entrant.OwnDiagAll12Square
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+def accFoldQFTq (L : CuccaroStreamedSquareWideLayout) (g : Wire) (a : AccItem) : Program :=
+  fillIn L a++(maskedConstant g (accReg L) cFlipK++(qprogTq L.measuredCore SquareReduction.p++
+    (maskedConstant g (accReg L) cFlipK++fillOut L a)))
 
-namespace ECDSAAdd.Entrant.CodexCKAccTail
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-open ECDSAAdd.Entrant.CKAcc ECDSAAdd.Entrant.OwnDiagAll12Square
-open Arithmetic.CuccaroStreamedSquareWideLayout
 
-def accFoldQFTailTq (L : CuccaroStreamedSquareWideLayout) (g : Wire) (a : AccItem) : Program :=
-  fillInK L a++(maskedConstant g (accReg L) cFlipK++(qprogTq L.measuredCore SquareReduction.p++
-    (maskedConstant g (accReg L) cFlipK++fillOutTail L a)))
-
-theorem accFoldQFTailTq_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+theorem accFoldQF_frameTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (hn : L.wires.Nodup) (g : Wire) (hg : g∉L.wires) (base : BasisState) (a : AccItem)
     (hv : AccView L base a) (hc : L.PairClean base) (O : Nat) (hO : O<SquareReduction.p) :
-    Triple (SquareFrame L.core.out base O) (accFoldQFTailTq L g a)
+    Triple (SquareFrame L.core.out base O) (accFoldQFTq L g a)
+      (SquareFrame L.core.out base (((if base g then cFlipK-Acc.accVal base 0 a.spec else Acc.accVal base 0 a.spec)+
+        (SquareReduction.p-1-O))%SquareReduction.p)) := by
+  intro s m hf
+  have lens := acc_lengths L hw
+  have clean := L.squareFrame_clean hn base s.basis O hf hc
+  let b0 := s.basis
+  have prodOut := L.product_out_disjoint hn
+  have auxAway (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
+      L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉L.core.out :=
+    (L.pairAuxAway hn q hq).2
+  have gAcc : g∉accReg L := fun h => hg (accReg_in L g h)
+  have gOut : g∉L.core.out := fun h => hg (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h])
+  have workZero : ∀q∈L.core.work,b0 q=false := (regValue_zero _ _).mp clean.work
+  have padZero : ∀q∈L.foldPad,b0 q=false := (regValue_zero _ _).mp clean.pad
+  have hz : ∀q∈accZ L,b0 q=false := by
+    intro q hq
+    rcases accZ_mem L q hq with h|h
+    · exact padZero q h
+    · exact workZero q (List.mem_of_mem_drop h)
+  have hb : ∀q∈accBank L,b0 q=false := fun q hq => padZero q (List.mem_of_mem_take hq)
+  have hW0 : ∀q∈wTemp L,b0 q=false := fun q hq => workZero q (wTemp_work L q hq)
+  have prodNotOut (q : Wire) (hq : q∈L.core.product) : q∉L.core.out :=
+    fun ho => List.disjoint_left.mp prodOut hq ho
+  have agree0 : ∀q∈L.core.product,b0 q=base q := fun q hq => hf.2 q (prodNotOut q hq)
+  let A := Acc.accVal base 0 a.spec
+  have hA : A<2^163 := Acc.accVal_lt base 163 a.spec 0 (by norm_num) hv.specValid
+  have hAK : A≤cFlipK := by unfold cFlipK; omega
+  let A' := if base g then cFlipK-A else A
+  have hA' : A'<2^163 := by
+    simp only [A']; split
+    · unfold cFlipK; omega
+    · exact hA
+  have accZero : regValue (accReg L) b0=0 :=
+    (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
+  have hbuild := fillIn_triple L hw hn base a hv b0 agree0 hz hb clean.cin hW0
+  rw [accFoldQFTq,run_append,run_append,run_append,run_append]
+  let mb := measurementCount (fillIn L a)
+  let m1 := m.drop mb
+  let mc := measurementCount (maskedConstant g (accReg L) cFlipK)
+  let m2 := m1.drop mc
+  let mk := measurementCount (qprogTq L.measuredCore SquareReduction.p)
+  let m3 := m2.drop mk
+  let u := run (fillIn L a) (m.take mb) s
+  have eu := hbuild s (m.take mb) ⟨accZero,fun _ _ => rfl⟩
+  change u.phase=s.phase ∧ SquareFrame (accReg L) b0 A u.basis at eu
+  have gU : u.basis g=base g := (eu.2.2 g gAcc).trans (hf.2 g gOut)
+  let u1 := run (maskedConstant g (accReg L) cFlipK) (m1.take mc) u
+  have fl := flip_run L hw hn g gAcc u (m1.take mc)
+  change u1.phase=u.phase ∧ (∀q,q∉accReg L → u1.basis q=u.basis q) ∧
+    regValue (accReg L) u1.basis=(if u.basis g then cFlipK-regValue (accReg L) u.basis else regValue (accReg L) u.basis) at fl
+  rw [gU,eu.2.1] at fl
+  have accU1 : regValue (accReg L) u1.basis=A' := fl.2.2
+  have keepU (q : Wire) (hq : q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
+      L.core.normFlag,L.core.modFlag]++L.core.out++L.core.product++L.core.work.drop 163) : u1.basis q=b0 q :=
+    (fl.2.1 q (accReg_away L hn q hq)).trans (eu.2.2 q (accReg_away L hn q hq))
+  have workU : regValue L.core.work u1.basis=A' := by
+    have sp := regValue_append (L.core.work.take 163) (L.core.work.drop 163) u1.basis
+    rw [List.take_append_drop] at sp
+    have hi : regValue (L.core.work.drop 163) u1.basis=0 :=
+      (regValue_zero _ _).mpr (fun q hq => (keepU q (by simp [hq])).trans (workZero q (List.mem_of_mem_drop hq)))
+    rw [sp,hi]
+    simpa [accReg] using accU1
+  have outU : regValue L.core.out u1.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => keepU q (by simp [hq]))).trans hf.1
+  have coreNd : L.measuredCore.wires.Nodup :=
+    (List.nodup_cons.mp (by simpa using L.measuredFold_interfaces hn [] (by simp))).2
+  have hp : SquareReduction.p+SquareReduction.c=2^256 := by
+    norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
+  have hAp : A'<SquareReduction.p := lt_of_lt_of_le hA' (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have carryU : ∀q∈L.measuredCore.carry,u1.basis q=false := by
+    intro q hq
+    simp only [measuredCore,foldCarry,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
+    rcases hq with hq|rfl|rfl
+    · exact (keepU q (by simp [hq])).trans (padZero q hq)
+    · exact (keepU _ (by simp)).trans clean.productHigh
+    · exact (keepU _ (by simp)).trans clean.workHigh
+  have ek := QCore.qprog_correctTq L.measuredCore 256 SquareReduction.c SquareReduction.p (L.measuredCore_widths hw)
+    coreNd (by decide) hp (by norm_num [SquareReduction.c]) A' O hAp hO u1 (m2.take mk)
+    workU outU ((keepU _ (by simp [measuredCore])).trans clean.outHigh)
+    ((keepU _ (by simp [measuredCore])).trans clean.modFlag)
+    carryU ((keepU _ (by simp [measuredCore])).trans clean.cin)
+  let v := run (qprogTq L.measuredCore SquareReduction.p) (m2.take mk) u1
+  change v.phase=u1.phase ∧ regValue L.core.out v.basis=(A'+(SquareReduction.p-1-O))%SquareReduction.p ∧
+    ∀q,q∉L.core.out → v.basis q=u1.basis q at ek
+  have accOut (q : Wire) (hq : q∈accReg L) : q∉L.core.out := auxAway q (by simp [accReg_work L q hq])
+  have gV : v.basis g=base g := (ek.2.2 g gOut).trans ((fl.2.1 g gAcc).trans gU)
+  have accV : regValue (accReg L) v.basis=A' :=
+    (regValue_congr _ _ _ (fun q hq => ek.2.2 q (accOut q hq))).trans accU1
+  let v1 := run (maskedConstant g (accReg L) cFlipK) (m3.take mc) v
+  have fl2 := flip_run L hw hn g gAcc v (m3.take mc)
+  change v1.phase=v.phase ∧ (∀q,q∉accReg L → v1.basis q=v.basis q) ∧
+    regValue (accReg L) v1.basis=(if v.basis g then cFlipK-regValue (accReg L) v.basis else regValue (accReg L) v.basis) at fl2
+  rw [gV,accV] at fl2
+  have back : (if base g then cFlipK-A' else A')=A := by
+    simp only [A']
+    cases base g
+    · simp
+    · simp only [if_true]; omega
+  rw [back] at fl2
+  let base2 : BasisState := fun q => if q∈L.core.out then v1.basis q else b0 q
+  have b2off (q : Wire) (hq : q∉L.core.out) : base2 q=b0 q := by simp [base2,hq]
+  have frame2 : SquareFrame (accReg L) base2 A v1.basis := by
+    refine ⟨fl2.2.2,?_⟩
+    intro q hq
+    by_cases ho : q∈L.core.out
+    · simp [base2,ho]
+    · rw [b2off q ho,fl2.2.1 q hq,ek.2.2 q ho,fl.2.1 q hq]; exact eu.2.2 q hq
+  have hz2 : ∀q∈accZ L,base2 q=false := by
+    intro q hq
+    have ho : q∉L.core.out := by
+      simp only [accZ,List.mem_append] at hq
+      rcases hq with hq|hq
+      · exact auxAway q (by simp [List.mem_of_mem_drop hq])
+      · exact auxAway q (by simp [List.mem_of_mem_drop hq])
+    rw [b2off q ho]; exact hz q hq
+  have hb2 : ∀q∈accBank L,base2 q=false := by
+    intro q hq
+    have ho : q∉L.core.out := auxAway q (by simp [List.mem_of_mem_take hq])
+    rw [b2off q ho]; exact hb q hq
+  have hi2 : base2 L.core.cin=false := by
+    rw [b2off _ (auxAway _ (by simp))]; exact clean.cin
+  have hW2 : ∀q∈wTemp L,base2 q=false := by
+    intro q hq
+    have ho : q∉L.core.out := auxAway q (by simp [wTemp_work L q hq])
+    rw [b2off q ho]; exact hW0 q hq
+  have agree2 : ∀q∈L.core.product,base2 q=base q :=
+    fun q hq => (b2off q (prodNotOut q hq)).trans (agree0 q hq)
+  have hun := fillOut_triple L hw hn base a hv base2 agree2 hz2 hb2 hi2 hW2
+  have eo := hun v1 (m3.drop mc) frame2
+  refine ⟨eo.1.trans (fl2.1.trans (ek.1.trans (fl.1.trans eu.1))),?_,?_⟩
+  · have e : regValue L.core.out (run (fillOut L a) (m3.drop mc) v1).basis=
+        regValue L.core.out v.basis := by
+      apply regValue_congr; intro q hq
+      have na : q∉accReg L := fun h => accOut q h hq
+      rw [eo.2.2 q na]; simp [base2,hq,fl2.2.1 q na]
+    rw [e,ek.2.1]
+  · intro q hq
+    by_cases ha : q∈accReg L
+    · have z := (regValue_zero _ _).mp eo.2.1 q ha
+      rw [z]
+      exact ((regValue_zero _ _).mp hc.work q (accReg_work L q ha)).symm
+    · rw [eo.2.2 q ha,b2off q hq]; exact hf.2 q hq
+
+
+theorem accFoldQF_countsTq (L : CuccaroStreamedSquareWideLayout) (g : Wire) (a : AccItem) :
+    toffoliCount (accFoldQFTq L g a)=toffoliCount (accFoldQTq L a) ∧
+    measurementCount (accFoldQFTq L g a)=measurementCount (accFoldQTq L a) := by
+  have k := maskedConstant_counts g (accReg L) cFlipK
+  simp only [accFoldQFTq,accFoldQTq,toffoliCount_append,measurementCount_append,k.1,k.2]
+  constructor <;> omega
+
+
+theorem accFoldQF_supportTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (g : Wire) (a : AccItem) (cnt : ∀f∈a.terms,SrcOK L f) (ok : ∀f∈a.terms,TermOK f)
+    (cntP : ∀f∈a.pre,∀q,f.src.count q≤L.core.product.count q) (okP : ∀f∈a.pre,TermOK33 f) :
+    ECDSAAdd.wires (accFoldQFTq L g a)⊆(g::L.wires).toFinset := by
+  have full := accFoldQ_supportTq L hw hn g a cnt ok cntP okP
+  simp only [accFoldQTq,wires_append,Finset.union_subset_iff] at full
+  have mc : ECDSAAdd.wires (maskedConstant g (accReg L) cFlipK)⊆(g::L.wires).toFinset := by
+    refine (maskedConstant_wires_subset _ _ _).trans ?_
+    intro q hq
+    simp only [List.mem_toFinset,List.mem_cons] at hq ⊢
+    rcases hq with h|h
+    · exact Or.inl h
+    · exact Or.inr (accReg_in L q h)
+  simp only [accFoldQFTq,wires_append,Finset.union_subset_iff]
+  exact ⟨full.1.1,mc,full.1.2,mc,full.2⟩
+
+
+theorem accFoldQF_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (g : Wire) (hg : g∉L.wires)
+    (a : AccItem) (cnt : ∀f∈a.terms,SrcOK L f) (ok : ∀f∈a.terms,TermOK f)
+    (cntP : ∀f∈a.pre,∀q,f.src.count q≤L.core.product.count q) (okP : ∀f∈a.pre,TermOK33 f) :
+    GatePhysical (accFoldQFTq L g a) := by
+  have full := accFoldQ_physicalTq L hw hn a cnt ok cntP okP
+  simp only [accFoldQTq,gatePhysical_append] at full
+  have mc := maskedConstant_physical g (accReg L) cFlipK (fun h => hg (accReg_in L g h))
+  simp only [accFoldQFTq,gatePhysical_append]
+  exact ⟨full.1.1,mc,full.1.2,mc,full.2⟩
+
+
+theorem accFoldQF_gateSlotsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) (a : AccItem)
+    (ok : ∀f∈a.terms,TermOK f) (okP : ∀f∈a.pre,TermOK33 f) :
+    Challenge.gateSlots (accFoldQFTq L g a)≤
+      2*(a.terms.length*(14*163))+4*(a.pre.length*(14*33))+(67*256+41)+7000+2*163 := by
+  have full := accFoldQ_gateSlotsTq L hw a ok okP
+  have mc := Baselines.maskedConstant_gateSlots_le g (accReg L) cFlipK
+  rw [(acc_lengths L hw).1] at mc
+  simp only [accFoldQTq,Challenge.gateSlots_append] at full
+  simp only [accFoldQFTq,Challenge.gateSlots_append]
+  omega
+
+
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+def accFoldQFKTq (L : CuccaroStreamedSquareWideLayout) (g : Wire) (a : AccItem) : Program :=
+  fillInK L a++(maskedConstant g (accReg L) cFlipK++(qprogTq L.measuredCore SquareReduction.p++
+    (maskedConstant g (accReg L) cFlipK++CodexCKAccTail.fillOutTail L a)))
+
+
+theorem accFoldQFK_frameTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (g : Wire) (hg : g∉L.wires) (base : BasisState) (a : AccItem)
+    (hv : AccView L base a) (hc : L.PairClean base) (O : Nat) (hO : O<SquareReduction.p) :
+    Triple (SquareFrame L.core.out base O) (accFoldQFKTq L g a)
       (SquareFrame L.core.out base (((if base g then cFlipK-Acc.accVal base 0 a.spec else Acc.accVal base 0 a.spec)+
         (SquareReduction.p-1-O))%SquareReduction.p)) := by
   intro s m hf
@@ -1449,7 +1504,7 @@ theorem accFoldQFTailTq_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
   have accZero : regValue (accReg L) b0=0 :=
     (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
   have hbuild := fillInK_triple L hw hn base a hv b0 agree0 hz hb clean.cin hW0
-  rw [accFoldQFTailTq,run_append,run_append,run_append,run_append]
+  rw [accFoldQFKTq,run_append,run_append,run_append,run_append]
   let mb := measurementCount (fillInK L a)
   let m1 := m.drop mb
   let mc := measurementCount (maskedConstant g (accReg L) cFlipK)
@@ -1541,10 +1596,10 @@ theorem accFoldQFTailTq_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
     rw [b2off q ho]; exact hW0 q hq
   have agree2 : ∀q∈L.core.product,base2 q=base q :=
     fun q hq => (b2off q (prodNotOut q hq)).trans (agree0 q hq)
-  have hun := fillOutTail_triple L hw hn base a hv base2 agree2 hz2 hb2 hi2 hW2
+  have hun := CodexCKAccTail.fillOutTail_triple L hw hn base a hv base2 agree2 hz2 hb2 hi2 hW2
   have eo := hun v1 (m3.drop mc) frame2
   refine ⟨eo.1.trans (fl2.1.trans (ek.1.trans (fl.1.trans eu.1))),?_,?_⟩
-  · have e : regValue L.core.out (run (fillOutTail L a) (m3.drop mc) v1).basis=
+  · have e : regValue L.core.out (run (CodexCKAccTail.fillOutTail L a) (m3.drop mc) v1).basis=
         regValue L.core.out v.basis := by
       apply regValue_congr; intro q hq
       have na : q∉accReg L := fun h => accOut q h hq
@@ -1557,74 +1612,123 @@ theorem accFoldQFTailTq_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
       exact ((regValue_zero _ _).mp hc.work q (accReg_work L q ha)).symm
     · rw [eo.2.2 q ha,b2off q hq]; exact hf.2 q hq
 
-theorem accFoldQFTailTq_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+
+
+theorem accFoldQFK_relTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) (a : AccItem)
+    (ok : ∀f∈a.terms,TermOK f) :
+    toffoliCount (accFoldQFKTq L g a)≤toffoliCount (accFoldQFTq L g a) ∧
+    measurementCount (accFoldQFKTq L g a)=measurementCount (accFoldQFTq L g a) ∧
+    ECDSAAdd.wires (accFoldQFKTq L g a)⊆ECDSAAdd.wires (accFoldQFTq L g a) ∧
+    Challenge.gateSlots (accFoldQFKTq L g a)≤Challenge.gateSlots (accFoldQFTq L g a) := by
+  have r := CodexCKAccTail.fillTail_rel L hw a ok
+  simp only [accFoldQFKTq,accFoldQFTq,toffoliCount_append,measurementCount_append,wires_append,
+    Challenge.gateSlots_append]
+  refine ⟨by omega,by omega,?_,by omega⟩
+  exact Finset.union_subset_union r.1.2.2.1 (Finset.union_subset_union (Finset.Subset.refl _)
+    (Finset.union_subset_union (Finset.Subset.refl _) (Finset.union_subset_union (Finset.Subset.refl _) r.2.2.2.1)))
+
+
+theorem accFoldQFK_countsCTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire)
+    (ok : ∀f∈(accCItem L).terms,TermOK f) :
+    toffoliCount (accFoldQFKTq L g (accCItem L))+31=toffoliCount (accFoldQFTq L g (accCItem L)) ∧
+    measurementCount (accFoldQFKTq L g (accCItem L))=measurementCount (accFoldQFTq L g (accCItem L)) := by
+  have r := CodexCKAccTail.fillTail_rel L hw (accCItem L) ok
+  have hsrc : (L.core.product.drop 128).length≤130 := by simp [hw.core.product]
+  have e : (accCItem L).terms=Acc.earlyTerm (L.core.product.drop 128) false 4::
+      Acc.earlyTerm (L.core.product.drop 128) false 10::Acc.earlyTerm (L.core.product.drop 128) true 6::
+      Acc.earlyTerm (L.core.product.drop 128) false 32::[posTop L] := by
+    simp [accCItem,earlyHTerms]
+  have c := CodexCKAccTail.tail_counts_early (accReg L) (accZ L) (accBank L) L.core.cin (L.core.product.drop 128)
+    (acc_lengths L hw).1 hsrc (Acc.earlyTerm (L.core.product.drop 128) false 32) [posTop L]
+    (by simp [CKAcc.IsT32,Acc.earlyTerm]) (fun f hf => fitsLen_of L hw f (ok f (by rw [e]; exact hf)))
+  rw [← e] at c
+  have r2 := CKAcc.sbuildK_rel (accReg L) (accZ L) (accBank L) L.core.cin 163 (acc_lengths L hw).1 (accCItem L).terms
+    (fun f hf => fitsLen_of L hw f (ok f hf))
+  have r3 := CodexCKAccTail.sunbuildTail_rel (accReg L) (accZ L) (accBank L) L.core.cin 163
+    (acc_lengths L hw).1 (accCItem L).terms (fun f hf => fitsLen_of L hw f (ok f hf))
+  simp only [accFoldQFKTq,accFoldQFTq,fillInK,fillIn,CodexCKAccTail.fillOutTail,fillOut,toffoliCount_append,measurementCount_append]
+  simp only [accFoldQFKTq,accFoldQFTq,toffoliCount_append,measurementCount_append] at r
+  constructor <;> omega
+
+
+theorem accFoldQFK_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (g : Wire) (hg : g∉L.wires)
     (a : AccItem) (cnt : ∀f∈a.terms,SrcOK L f) (ok : ∀f∈a.terms,TermOK f)
     (cntP : ∀f∈a.pre,∀q,f.src.count q≤L.core.product.count q) (okP : ∀f∈a.pre,TermOK33 f) :
-    GatePhysical (accFoldQFTailTq L g a) := by
-  have full := accFoldQ_physicalTq L hw hn a cnt ok cntP okP
-  simp only [accFoldQTq,gatePhysical_append] at full
-  have k := fillTail_physical L hw hn a cnt ok cntP okP
-  have mc := maskedConstant_physical g (accReg L) cFlipK (fun h => hg (accReg_in L g h))
-  simp only [accFoldQFTailTq,gatePhysical_append]
-  exact ⟨k.1,mc,full.1.2,mc,k.2⟩
+    GatePhysical (accFoldQFKTq L g a) := by
+  have old := accFoldQF_physicalTq L hw hn g hg a cnt ok cntP okP
+  have k := CodexCKAccTail.fillTail_physical L hw hn a cnt ok cntP okP
+  simp only [accFoldQFTq,gatePhysical_append] at old
+  simp only [accFoldQFKTq,gatePhysical_append]
+  exact ⟨k.1,old.2.1,old.2.2.1,old.2.2.2.1,k.2⟩
 
-theorem accFoldQFTailTq_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) (a : AccItem) :
-    toffoliCount (accFoldQFTailTq L g a)+1=toffoliCount (accFoldQFTail L g a) ∧
-    measurementCount (accFoldQFTailTq L g a)+1=measurementCount (accFoldQFTail L g a) ∧
-    QRel.Le (accFoldQFTailTq L g a) (accFoldQFTail L g a) := by
-  have c1 := QCore.qprog_countsTq L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide)
-  have c0 := QCore.qprog_counts L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide)
-  refine ⟨?_,?_,?_⟩
-  · simp only [accFoldQFTailTq,accFoldQFTail,toffoliCount_append,c1.1,c0.1]; omega
-  · simp only [accFoldQFTailTq,accFoldQFTail,measurementCount_append,c1.2,c0.2]; omega
-  · unfold accFoldQFTailTq accFoldQFTail
-    exact QRel.Le.app (QRel.Le.rfl' _) (QRel.Le.app (QRel.Le.rfl' _) (QRel.Le.app
-      (QRel.qprog_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide)) (QRel.Le.rfl' _)))
 
-def bodyCTailTq (L : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
-  mixFoldsQTq L false [.inl (negRot L)]++accFoldQFTailTq L g (accCItem L)
 
-theorem bodyCTailTq_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
-    toffoliCount (bodyCTailTq L g)+2=toffoliCount (bodyCTail L g) ∧
-    measurementCount (bodyCTailTq L g)+2=measurementCount (bodyCTail L g) ∧
-    QRel.Le (bodyCTailTq L g) (bodyCTail L g) := by
+
+def bodyCTq (L : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
+  mixFoldsQTq L false [.inl (negRot L)]++accFoldQFTq L g (accCItem L)
+
+
+theorem bodyC_countsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    toffoliCount (bodyCTq L g)=2388 ∧ measurementCount (bodyCTq L g)=2390 := by
   have st := bodyC_static L hw
   have nR : (negRot L).negative=true := rfl
   have cR : (negRot L).canonical=true := rfl
+  have nC : (accCItem L).negative=true := rfl
   have f := mixFoldsQ_countsTq L hw false _ st.1
   have f1 : mixFoldsQTTq false [(.inl (negRot L) : MixItem)]=766 := by simp [mixFoldsQTTq,mixNeg,nR,cR]
   have f2 : mixFoldsQMTq false [(.inl (negRot L) : MixItem)]=767 := by simp [mixFoldsQMTq,mixNeg,nR,cR]
-  have h := mixFoldsQ_counts L hw false _ st.1
-  have h1 : mixFoldsQT false [(.inl (negRot L) : MixItem)]=767 := by simp [mixFoldsQT,mixNeg,nR,cR]
-  have h2 : mixFoldsQM false [(.inl (negRot L) : MixItem)]=768 := by simp [mixFoldsQM,mixNeg,nR,cR]
-  have r := accFoldQFTailTq_rel L hw g (accCItem L)
-  refine ⟨?_,?_,?_⟩
-  · simp only [bodyCTailTq,bodyCTail,toffoliCount_append]; rw [f.1,h.1,f1,h1]; omega
-  · simp only [bodyCTailTq,bodyCTail,measurementCount_append]; rw [f.2,h.2,f2,h2]; omega
-  · unfold bodyCTailTq bodyCTail
-    exact QRel.Le.app (QRel.mixFoldsQ_le L hw _ _) r.2.2
+  have q := accFoldQ_countsTq L hw (accCItem L) st.2.2.1 st.2.2.2.2
+  have qf := accFoldQF_countsTq L g (accCItem L)
+  have pr := (accQ_item_prices L hw).2.2
+  rw [accCMix_eq] at pr
+  simp [mixFoldsQT,mixFoldsQM,mixNeg,nR,cR,nC] at pr
+  have rel : accPriceQTq (accCItem L)+257=accPrice (accCItem L) := by simp only [accPriceQTq,accPrice]; omega
+  rw [bodyCTq]
+  simp only [toffoliCount_append,measurementCount_append]
+  rw [f.1,f.2,qf.1,qf.2,q.1,q.2,f1,f2]
+  constructor <;> omega
 
-theorem bodyCTail_supportTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (g : Wire) :
-    ECDSAAdd.wires (bodyCTailTq L g)⊆(g::L.wires).toFinset :=
-  (bodyCTailTq_rel L hw g).2.2.1.trans (bodyCTail_support L hw hn g)
 
-theorem bodyCTail_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (g : Wire) (hg : g∉L.wires) : GatePhysical (bodyCTailTq L g) := by
+theorem bodyC_supportTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (g : Wire) :
+    ECDSAAdd.wires (bodyCTq L g)⊆(g::L.wires).toFinset := by
   have st := bodyC_static L hw
-  have a := mixFoldsQ_physicalTq L hw hn false _ st.1
-  have b := accFoldQFTailTq_physical L hw hn g hg (accCItem L) st.2.1 st.2.2.1 st.2.2.2.1 st.2.2.2.2
-  simp only [bodyCTailTq,gatePhysical_append]
+  have a := mixFoldsQ_supportTq L hw hn g false _ st.1
+  have b := accFoldQF_supportTq L hw hn g (accCItem L) st.2.1 st.2.2.1 st.2.2.2.1 st.2.2.2.2
+  simp only [bodyCTq,wires_append,Finset.union_subset_iff]
   exact ⟨a,b⟩
 
-theorem accMiddleCFTail_bodyTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+
+theorem bodyC_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (g : Wire) (hg : g∉L.wires) : GatePhysical (bodyCTq L g) := by
+  have st := bodyC_static L hw
+  have a := mixFoldsQ_physicalTq L hw hn false _ st.1
+  have b := accFoldQF_physicalTq L hw hn g hg (accCItem L) st.2.1 st.2.2.1 st.2.2.2.1 st.2.2.2.2
+  simp only [bodyCTq,gatePhysical_append]
+  exact ⟨a,b⟩
+
+
+theorem bodyC_gateSlotsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    Challenge.gateSlots (bodyCTq L g)≤2*(41000+2*(20*(14*163))+(67*256+41)) := by
+  have st := bodyC_static L hw
+  have a := mixFoldsQ_gateSlotsTq L hw false _ st.1 20 (by intro i hi a e; simp at hi; subst hi; cases e)
+  have b := accFoldQF_gateSlotsTq L hw g (accCItem L) st.2.2.1 st.2.2.2.2
+  have lt : (accCItem L).terms.length=5 := by simp [accCItem,earlyHTerms]
+  have lp : (accCItem L).pre.length=0 := rfl
+  rw [lt,lp] at b
+  simp only [List.length_singleton] at a
+  simp only [bodyCTq,Challenge.gateSlots_append]
+  omega
+
+
+theorem accMiddleCF_bodyTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (control : Wire) (hn : (control::L.wires).Nodup) (M O : Nat) (hO : O<SquareReduction.p)
     (t : State) (m : List Bool) (pv : regValue L.core.product t.basis=M^2)
     (hM : t.basis control=false → M=0)
     (clean : L.PairClean t.basis) (outO : regValue L.core.out t.basis=O) :
-    (run (bodyCTailTq L control) m t).phase=t.phase ∧
-    regValue L.core.out (run (bodyCTailTq L control) m t).basis=resCF (t.basis control) (M^2) O ∧
-    ∀q,q∉L.core.out → (run (bodyCTailTq L control) m t).basis q=t.basis q := by
+    (run (bodyCTq L control) m t).phase=t.phase ∧
+    regValue L.core.out (run (bodyCTq L control) m t).basis=resCF (t.basis control) (M^2) O ∧
+    ∀q,q∉L.core.out → (run (bodyCTq L control) m t).basis q=t.basis q := by
   have nd := (List.nodup_cons.mp hn).2
   have gW : control∉L.wires := (List.nodup_cons.mp hn).1
   have views := accC_views L hw t.basis M pv
@@ -1636,8 +1740,8 @@ theorem accMiddleCFTail_bodyTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Wid
   have e1 := mixFoldsQ_frameTq L hw nd t.basis clean false O hO [.inl (negRot L)] v1 t (m.take mm) ⟨outO,fun _ _ => rfl⟩
   let O1 := mixValue t.basis false O [.inl (negRot L)]
   have hO1 : O1<SquareReduction.p := mixValue_lt _ _ _ _ hO
-  have e2 := accFoldQFTailTq_frame L hw nd control gW t.basis (accCItem L) va clean O1 hO1 r1 (m.drop mm) e1.2
-  rw [bodyCTailTq,run_append]
+  have e2 := accFoldQF_frameTq L hw nd control gW t.basis (accCItem L) va clean O1 hO1 r1 (m.drop mm) e1.2
+  rw [bodyCTq,run_append]
   refine ⟨e2.1.trans e1.1,?_,fun q hq => e2.2.2 q hq⟩
   rw [e2.2.1]
   have nR : (negRot L).negative=true := rfl
@@ -1675,8 +1779,111 @@ theorem accMiddleCFTail_bodyTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Wid
   simp only [Bool.false_eq_true,↓reduceIte]
   rw [←target,ZMod.val_natCast]
 
-end ECDSAAdd.Entrant.CodexCKAccTail
 
+
+def bodyCKTq (L : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
+  mixFoldsQTq L false [.inl (negRot L)]++accFoldQFKTq L g (accCItem L)
+
+
+theorem bodyCK_relTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    toffoliCount (bodyCKTq L g)+31=toffoliCount (bodyCTq L g) ∧
+    measurementCount (bodyCKTq L g)=measurementCount (bodyCTq L g) ∧
+    ECDSAAdd.wires (bodyCKTq L g)⊆ECDSAAdd.wires (bodyCTq L g) ∧
+    Challenge.gateSlots (bodyCKTq L g)≤Challenge.gateSlots (bodyCTq L g) := by
+  have st := bodyC_static L hw
+  have qk := accFoldQFK_countsCTq L hw g st.2.2.1
+  have r := accFoldQFK_relTq L hw g (accCItem L) st.2.2.1
+  simp only [bodyCKTq,bodyCTq,toffoliCount_append,measurementCount_append,wires_append,Challenge.gateSlots_append]
+  exact ⟨by omega,by omega,Finset.union_subset_union (Finset.Subset.refl _) r.2.2.1,by omega⟩
+
+
+theorem bodyCK_countsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    toffoliCount (bodyCKTq L g)=2357 ∧ measurementCount (bodyCKTq L g)=2390 := by
+  have r := bodyCK_relTq L hw g
+  have c := bodyC_countsTq L hw g
+  omega
+
+
+theorem bodyCK_supportTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (g : Wire) :
+    ECDSAAdd.wires (bodyCKTq L g)⊆(g::L.wires).toFinset :=
+  (bodyCK_relTq L hw g).2.2.1.trans (bodyC_supportTq L hw hn g)
+
+
+theorem bodyCK_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (g : Wire) (hg : g∉L.wires) : GatePhysical (bodyCKTq L g) := by
+  have st := bodyC_static L hw
+  have a := mixFoldsQ_physicalTq L hw hn false _ st.1
+  have b := accFoldQFK_physicalTq L hw hn g hg (accCItem L) st.2.1 st.2.2.1 st.2.2.2.1 st.2.2.2.2
+  simp only [bodyCKTq,gatePhysical_append]
+  exact ⟨a,b⟩
+
+
+theorem bodyCK_gateSlotsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    Challenge.gateSlots (bodyCKTq L g)≤2*(41000+2*(20*(14*163))+(67*256+41)) :=
+  (bodyCK_relTq L hw g).2.2.2.trans (bodyC_gateSlotsTq L hw g)
+
+
+theorem accMiddleCFK_bodyTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (M O : Nat) (hO : O<SquareReduction.p)
+    (t : State) (m : List Bool) (pv : regValue L.core.product t.basis=M^2)
+    (hM : t.basis control=false → M=0)
+    (clean : L.PairClean t.basis) (outO : regValue L.core.out t.basis=O) :
+    (run (bodyCKTq L control) m t).phase=t.phase ∧
+    regValue L.core.out (run (bodyCKTq L control) m t).basis=resCF (t.basis control) (M^2) O ∧
+    ∀q,q∉L.core.out → (run (bodyCKTq L control) m t).basis q=t.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have gW : control∉L.wires := (List.nodup_cons.mp hn).1
+  have views := accC_views L hw t.basis M pv
+  rw [accCMix_eq] at views
+  have v1 : ∀i∈[(.inl (negRot L) : MixItem)],MixView L t.basis i := fun i hi => views i (by simp at hi ⊢; exact Or.inl hi)
+  have va : AccView L t.basis (accCItem L) := views (.inr (accCItem L)) (by simp)
+  let mm := measurementCount (mixFoldsQTq L false [.inl (negRot L)])
+  let r1 := run (mixFoldsQTq L false [.inl (negRot L)]) (m.take mm) t
+  have e1 := mixFoldsQ_frameTq L hw nd t.basis clean false O hO [.inl (negRot L)] v1 t (m.take mm) ⟨outO,fun _ _ => rfl⟩
+  let O1 := mixValue t.basis false O [.inl (negRot L)]
+  have hO1 : O1<SquareReduction.p := mixValue_lt _ _ _ _ hO
+  have e2 := accFoldQFK_frameTq L hw nd control gW t.basis (accCItem L) va clean O1 hO1 r1 (m.drop mm) e1.2
+  rw [bodyCKTq,run_append]
+  refine ⟨e2.1.trans e1.1,?_,fun q hq => e2.2.2 q hq⟩
+  rw [e2.2.1]
+  have nR : (negRot L).negative=true := rfl
+  have nC : (accCItem L).negative=true := rfl
+  have cast1 := mixValue_cast t.basis false O [.inl (negRot L)] hO
+  have sum := (accC_mixSum L hw t.basis).trans (L.measuredC_sum hw t.basis (M^2) pv)
+  rw [accCMix_eq] at sum
+  simp only [mixFinal,mixNeg,nR,nC,mixSignedSum,mixSignedPayload,mixPayload,↓reduceIte,add_zero] at cast1 sum
+  simp only [measuredOrientationCast,↓reduceIte,Bool.false_eq_true] at cast1
+  have hA : Acc.accVal t.basis 0 (accCItem L).spec<2^163 := Acc.accVal_lt _ 163 _ 0 (by norm_num) va.specValid
+  set A := Acc.accVal t.basis 0 (accCItem L).spec with hAdef
+  set O1 := mixValue t.basis false O [.inl (negRot L)] with hO1def
+  have hO1 : O1<SquareReduction.p := mixValue_lt _ _ _ _ hO
+  have hp1 : ((SquareReduction.p : Nat) : ZMod SquareReduction.p)=0 := ZMod.natCast_self _
+  have e3 : ((SquareReduction.p-1-O1 : Nat) : ZMod SquareReduction.p)=-1-(O1 : ZMod SquareReduction.p) := by
+    rw [Nat.cast_sub (by omega),Nat.cast_sub (by omega),Nat.cast_one,hp1]; ring
+  have target : ((((if t.basis control then cFlipK-A else A)+(SquareReduction.p-1-O1)) : Nat) : ZMod SquareReduction.p)=
+      measuredOrientationCast false O+(-((M^2 : Nat) : ZMod SquareReduction.p)*2^128)+
+        ((if t.basis control then cFlipK else 0 : Nat) : ZMod SquareReduction.p) := by
+    simp only [measuredOrientationCast,Bool.false_eq_true,↓reduceIte]
+    cases hg : t.basis control
+    · have m0 := hM hg
+      have a0 : A=0 := by
+        have pz : regValue L.core.product t.basis=0 := by rw [pv,m0]; rfl
+        exact accC_zero L t.basis pz
+      simp only [Bool.false_eq_true,↓reduceIte]
+      rw [Nat.cast_add,e3,a0,Nat.cast_zero]
+      rw [a0,Nat.cast_zero] at sum
+      linear_combination cast1+sum
+    · have hAK : A≤cFlipK := by unfold cFlipK; omega
+      simp only [↓reduceIte]
+      rw [Nat.cast_add,Nat.cast_sub hAK,e3]
+      linear_combination cast1+sum
+  unfold resCF ofCast
+  simp only [Bool.false_eq_true,↓reduceIte]
+  rw [←target,ZMod.val_natCast]
+
+
+
+end ECDSAAdd.Entrant.OwnDiagAll12Square
 namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 def wCoreTq (L : CuccaroStreamedSquareWideLayout) : Program := qprogTq (rotWCore L) SquareReduction.p
@@ -1685,7 +1892,7 @@ def wFoldTq (L : CuccaroStreamedSquareWideLayout) : Program :=
   wBuild L++(wCoreTq L++(eSub L (b1Src L)++(eAdd L (whiSrc L)++wUnbuild L)))
 
 def eFoldTq (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
-  eFlip L c++(CodexCKAccTail.accFoldQ4TailTq L (eItem L)++eFlip L c)
+  eFlip L c++(accFoldQ4KTq L (eItem L)++eFlip L c)
 
 def bBodyTq (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
   measuredFoldQTq L (negP L)++(measuredFoldQTq L (rot128F L)++(wFoldTq L++(eFoldTq L c++wRestore L)))
@@ -1727,16 +1934,16 @@ theorem wCore_stepTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn :
 
 theorem eCore_stepTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (base : BasisState) (hc : L.PairClean base) (O E : Nat) (hO : O<SquareReduction.p) :
-    Triple (BState L base O E 0) (CodexCKAccTail.accFoldQ4TailTq L (eItem L))
+    Triple (BState L base O E 0) (accFoldQ4KTq L (eItem L))
       (BState L base ((4294968272*E+(SquareReduction.p-1-O))%SquareReduction.p) E 0) := by
-  apply lift_out L hn base O E 0 _ (CodexCKAccTail.accFoldQ4TailTq L (eItem L))
+  apply lift_out L hn base O E 0 _ (accFoldQ4KTq L (eItem L))
   intro s m h
   have e16 : Acc.accVal s.basis 0 (eItem L).spec%16=0 := by
     rw [show (eItem L).spec=earlyHTerms (eReg L) from rfl,accVal_earlyH,h.2.1]
     omega
-  rw [CodexCKAccTail.accFoldQ4TailTq_run L hw hn s.basis (eItem L) (eItem_view L hw s.basis)
+  rw [Q4.accFoldQ4_runKTq L hw hn s.basis (eItem L) (eItem_view L hw s.basis)
     (bstate_clean L hn base hc O E s.basis h) O hO e16 s m ⟨h.1,fun _ _ => rfl⟩]
-  have tr := CodexCKAccTail.accFoldQTailTq_frame L hw hn s.basis (eItem L) (eItem_view L hw s.basis)
+  have tr := accFoldQ_frameKTq L hw hn s.basis (eItem L) (eItem_view L hw s.basis)
     (bstate_clean L hn base hc O E s.basis h) O hO s m ⟨h.1,fun _ _ => rfl⟩
   have e : Acc.accVal s.basis 0 (eItem L).spec=4294968272*E := by
     rw [show (eItem L).spec=earlyHTerms (eReg L) from rfl,accVal_earlyH,h.2.1]
@@ -2193,7 +2400,7 @@ theorem bBody_supportTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (h
     · simp
     · exact wires_in L control q (Or.inr (Or.inl (eReg_product L q (List.mem_of_mem_take h))))
   have st := eItem_static L hw
-  have ac := ((CodexCKAccTail.accFoldQ4TailTq_rel L hw (eItem L) st.2.1).2.2.1.trans (Q4.accFoldQ4_wiresTq L (eItem L))).trans
+  have ac := ((Q4.accFoldQ4KTq_rel L hw (eItem L) st.2.1).2.2.1.trans (Q4.accFoldQ4_wiresTq L (eItem L))).trans
     (accFoldQ_supportTq L hw hn control (eItem L) st.1 st.2.1 st.2.2.1 st.2.2.2)
   simp only [bBodyTq,wFoldTq,eFoldTq,wRestore,wires_append,Finset.union_subset_iff]
   exact ⟨a1,a2,⟨wb.1,wc,es _ (Or.inl rfl),ea _ (Or.inr rfl),wb.2⟩,⟨fl,ac,fl⟩,
@@ -2269,9 +2476,9 @@ theorem bBody_countsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c 
   have ac0 := accFoldQ_countsTq L hw (eItem L) st.2.1 st.2.2.2
   rw [eItem_priceTq L hw] at ac0
   have ac4 := Q4.accFoldQ4_countsTq L hw (eItem L)
-  have k4 := CodexCKAccTail.accFoldQ4TailTq_counts_early L hw (eItem L) (eReg L) (by simp [eReg,hw.core.product]) rfl st.2.1
-  have k4m := (CodexCKAccTail.accFoldQ4TailTq_rel L hw (eItem L) st.2.1).2.1
-  have ac : toffoliCount (CodexCKAccTail.accFoldQ4TailTq L (eItem L))=1515 ∧ measurementCount (CodexCKAccTail.accFoldQ4TailTq L (eItem L))=1555 :=
+  have k4 := Q4.accFoldQ4KTq_counts_early L hw (eItem L) (eReg L) (by simp [eReg,hw.core.product]) rfl st.2.1
+  have k4m := (Q4.accFoldQ4KTq_rel L hw (eItem L) st.2.1).2.1
+  have ac : toffoliCount (accFoldQ4KTq L (eItem L))=1515 ∧ measurementCount (accFoldQ4KTq L (eItem L))=1555 :=
     ⟨by omega,by omega⟩
   simp only [bBodyTq,wFoldTq,eFoldTq,wRestore,toffoliCount_append,measurementCount_append,q1.1,q1.2,q2.1,q2.2,
     wb.1,wb.2,wu.1,wu.2,wc.1,wc.2,s1.1,s1.2,s2.1,s2.2,a1.1,a1.2,a2.1,a2.2,fl.1,fl.2,ac.1,ac.2]
@@ -2319,7 +2526,7 @@ theorem bBody_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (
     simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,this])
   have fl : GatePhysical (eFlip L c) := maskedConstant_physical c ((eReg L).take 129) (2^129-1) hct
   have st := eItem_static L hw
-  have ac := CodexCKAccTail.accFoldQ4TailTq_physical L hw nd (eItem L) st.1 st.2.1 st.2.2.1 st.2.2.2
+  have ac := Q4.accFoldQ4KTq_physical L hw nd (eItem L) st.1 st.2.1 st.2.2.1 st.2.2.2
   simp only [bBodyTq,wFoldTq,eFoldTq,wRestore,gatePhysical_append]
   exact ⟨p1,p2,⟨wb.1,wc,es _ (Or.inl rfl),ea _ (Or.inr rfl),wb.2⟩,⟨fl,ac,fl⟩,
     ⟨wb.1,es _ (Or.inr rfl),ea _ (Or.inl rfl),wb.2⟩⟩
@@ -2344,17 +2551,241 @@ theorem aBody_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (
   simp only [aBodyTq,aFold8Tq,gatePhysical_append]
   exact ⟨p1,p2,wb.1,mc,full.1.2,mc,wb.2⟩
 
+
+theorem bBody_gateSlotsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
+    Challenge.gateSlots (bBodyTq L c)≤300000 := by
+  have q1 := measuredFoldQ_gateSlotsTq L hw (negP L)
+  have q2 := measuredFoldQ_gateSlotsTq L hw (rot128F L)
+  have bs := CodexNarrowTail.build8_gateSlots (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
+    (acc_lengths L hw).1 (by rw [hiReg_length L hw]) (wTerms_okLen L hw)
+  rw [CodexNarrowTail.build8_eq] at bs
+  have wb : Challenge.gateSlots (wBuild L)≤4*(14*163) := bs.1
+  have wu : Challenge.gateSlots (wUnbuild L)≤4*(14*163) := bs.2
+  have wc : Challenge.gateSlots (wCoreTq L)≤67*256+41 :=
+    QCore.qprog_gateSlotsTq (rotWCore L) 256 SquareReduction.p (rotWCore_widths L hw)
+  have el := eReg_length L hw
+  have l1 := eSrc_length L hw (b1Src L) (Or.inl rfl)
+  have l2 := eSrc_length L hw (whiSrc L) (Or.inr rfl)
+  have s1 : Challenge.gateSlots (eSub L (b1Src L))≤12*130+2*130 := by
+    have h := Baselines.subInPlace_gateSlots_le (b1Src L) (eReg L) (eBank L) L.core.cin
+    rw [l1.1,el] at h; exact h
+  have s2 : Challenge.gateSlots (eSub L (whiSrc L))≤12*130+2*130 := by
+    have h := Baselines.subInPlace_gateSlots_le (whiSrc L) (eReg L) (eBank L) L.core.cin
+    rw [l2.1,el] at h; exact h
+  have a1 : Challenge.gateSlots (eAdd L (b1Src L))≤12*130 := by
+    have h := Baselines.addInPlace_gateSlots_le (b1Src L) (eReg L) (eBank L) L.core.cin
+    rw [l1.1,el] at h; exact h
+  have a2 : Challenge.gateSlots (eAdd L (whiSrc L))≤12*130 := by
+    have h := Baselines.addInPlace_gateSlots_le (whiSrc L) (eReg L) (eBank L) L.core.cin
+    rw [l2.1,el] at h; exact h
+  have fl : Challenge.gateSlots (eFlip L c)≤129 := by
+    have h := Baselines.maskedConstant_gateSlots_le c ((eReg L).take 129) (2^129-1)
+    have fll : ((eReg L).take 129).length=129 := by simp [el]
+    rw [fll] at h; exact h
+  have st := eItem_static L hw
+  have ac := ((Q4.accFoldQ4KTq_rel L hw (eItem L) st.2.1).2.2.2.trans (Q4.accFoldQ4_slotsTq L (eItem L))).trans
+    (accFoldQ_gateSlotsTq L hw (eItem L) st.2.1 st.2.2.2)
+  have tl : (eItem L).terms.length=4 := by simp [eItem,earlyHTerms]
+  have pl : (eItem L).pre.length=0 := by simp [eItem]
+  rw [tl,pl] at ac
+  simp only [bBodyTq,wFoldTq,eFoldTq,wRestore,Challenge.gateSlots_append]
+  omega
+
+
+theorem aBody_gateSlotsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
+    Challenge.gateSlots (aBodyTq L c)≤150000 := by
+  have sA := (acc_static L hw).1 (.inr (aAcc L)) (by simp [accAMix,aAcc])
+  have q1 := measuredFoldQ_gateSlotsTq L hw (negP L)
+  have q2 := measuredFoldQ_gateSlotsTq L hw (rot128F L)
+  have bs := CodexNarrowTail.build8_gateSlots (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
+    (acc_lengths L hw).1 (by rw [hiReg_length L hw]) (wTerms_okLen L hw)
+  rw [CodexNarrowTail.build8_eq] at bs
+  have wb : Challenge.gateSlots (wBuild L)≤4*(14*163) := bs.1
+  have wu : Challenge.gateSlots (wUnbuild L)≤4*(14*163) := bs.2
+  have mc := Baselines.maskedConstant_gateSlots_le c (accReg L) OwnDiagAll12Square.cFlipK
+  rw [(acc_lengths L hw).1] at mc
+  have qs := QCore.qprog_gateSlotsTq L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw)
+  simp only [aBodyTq,aFold8Tq,Challenge.gateSlots_append]
+  omega
+
+
 end ECDSAAdd.Entrant.ControlLoan1589BFFold
+
+/-! ### Support and gate-slot refinement: every `Tq` body uses a subset of the wires and no more
+gate slots than the body it replaces. -/
 
 namespace ECDSAAdd.Entrant
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout RecordedQuantum
+
 namespace QRel
 
-theorem accFoldQ4Tail_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem) :
-    Le (CodexCKAccTail.accFoldQ4TailTq L a) (CodexCKAccTail.accFoldQ4Tail L a) := by
-  unfold CodexCKAccTail.accFoldQ4TailTq CodexCKAccTail.accFoldQ4Tail
+/-- `P'` refines `P` statically: fewer wires and fewer gate slots. -/
+def Le (P' P : Program) : Prop :=
+  ECDSAAdd.wires P'⊆ECDSAAdd.wires P ∧ Challenge.gateSlots P'≤Challenge.gateSlots P
+
+theorem Le.rfl' (P : Program) : Le P P := ⟨Finset.Subset.refl _,le_rfl⟩
+
+theorem Le.app {A A' B B' : Program} (h1 : Le A' A) (h2 : Le B' B) : Le (A'++B') (A++B) :=
+  ⟨by rw [wires_append,wires_append]; exact Finset.union_subset_union h1.1 h2.1,
+   by rw [Challenge.gateSlots_append,Challenge.gateSlots_append]; exact Nat.add_le_add h1.2 h2.2⟩
+
+theorem mappedConstant_snoc (c : Option Wire) (n : Nat) : ∀ k : Nat,
+    mappedConstant c (n+1) k=mappedConstant c n k++[mappedConstantBit c (decide ((k/2^n)%2=1))] := by
+  induction n with
+  | zero => intro k; simp [mappedConstant]
+  | succ n ih =>
+    intro k
+    show mappedConstantBit c (decide (k%2=1))::mappedConstant c (n+1) (k/2)=
+      (mappedConstantBit c (decide (k%2=1))::mappedConstant c n (k/2))++_
+    rw [ih (k/2),Nat.div_div_eq_div_mul,← pow_succ']
+    rfl
+
+theorem majority_slots_pos (b : MappedBit) (y c t : Wire) :
+    1≤Challenge.gateSlots (mappedMajority b y c t) := by
+  rcases b with ⟨_|a,_|_⟩ <;>
+    simp [mappedMajority,majority,borrowMajority,Challenge.gateSlots,Challenge.instructionSlots]
+
+theorem mappedAdd_snoc_le (b : MappedBit) (y : Wire) (xs : List MappedBit) : ∀ (ys cs : List Wire) (c : Wire),
+    xs.length=ys.length → 0<xs.length → xs.length≤cs.length →
+    ECDSAAdd.wires (mappedAdd xs ys (cs.take (xs.length-1)) c)⊆ECDSAAdd.wires (mappedAdd (xs++[b]) (ys++[y]) cs c) ∧
+    Challenge.gateSlots (mappedAdd xs ys (cs.take (xs.length-1)) c)+1≤
+      Challenge.gateSlots (mappedAdd (xs++[b]) (ys++[y]) cs c) := by
+  induction xs with
+  | nil => intro ys cs c _ h _; simp at h
+  | cons x0 xs ih =>
+    intro ys cs c hl _ hc
+    rcases ys with _|⟨y0,ys⟩
+    · simp at hl
+    rcases cs with _|⟨d,ds⟩
+    · simp at hc
+    simp only [List.length_cons,Nat.add_right_cancel_iff] at hl hc
+    rcases xs with _|⟨x1,xs⟩
+    · rcases ys with _|⟨y1,ys⟩
+      · have m1 := majority_slots_pos x0 y0 c d
+        simp only [List.cons_append,List.nil_append,mappedAdd,List.length_cons,List.length_nil,
+          Nat.sub_self,List.take_zero,wires_append,Challenge.gateSlots_append]
+        refine ⟨fun q h => ?_,by omega⟩
+        simp only [Finset.mem_union]; tauto
+      · simp at hl
+    · rcases ys with _|⟨y1,ys⟩
+      · simp at hl
+      · have h := ih (y1::ys) ds d (by simpa using hl) (by simp) (by simp at hc ⊢; omega)
+        simp only [List.cons_append,List.length_cons,Nat.add_sub_cancel] at h ⊢
+        simp only [List.take_succ_cons,mappedAdd,wires_append,Challenge.gateSlots_append]
+        refine ⟨Finset.union_subset_union (Finset.union_subset_union (Finset.union_subset_union
+          (Finset.Subset.refl _) h.1) (Finset.Subset.refl _)) (Finset.Subset.refl _),by omega⟩
+
+theorem const_le (K : MeasuredCanonicalModLayout) (n p : Nat) (hw : K.Widths n) (hn : 0<n) :
+    ECDSAAdd.wires (mappedConstAdd (some K.flag) K.out (K.carry.take (K.out.length-1)) K.cin p)⊆
+      ECDSAAdd.wires (mappedConstAdd (some K.flag) K.extended K.carry K.cin p) ∧
+    Challenge.gateSlots (mappedConstAdd (some K.flag) K.out (K.carry.take (K.out.length-1)) K.cin p)+1≤
+      Challenge.gateSlots (mappedConstAdd (some K.flag) K.extended K.carry K.cin p) := by
+  have h := mappedAdd_snoc_le (mappedConstantBit (some K.flag) (decide ((p/2^K.out.length)%2=1))) K.high
+    (mappedConstant (some K.flag) K.out.length p) K.out K.carry K.cin
+    (by simp [mappedConstant_length]) (by simp [mappedConstant_length,hw.out]; omega)
+    (by simp [mappedConstant_length,hw.out,hw.carry])
+  rw [mappedConstant_length] at h
+  have e : mappedConstAdd (some K.flag) K.extended K.carry K.cin p=
+      mappedAdd (mappedConstant (some K.flag) K.out.length p++
+        [mappedConstantBit (some K.flag) (decide ((p/2^K.out.length)%2=1))]) (K.out++[K.high]) K.carry K.cin := by
+    rw [← mappedConstant_snoc]; simp [mappedConstAdd,MeasuredCanonicalModLayout.extended]
+  rw [e]; exact h
+
+theorem le_core (K : MeasuredCanonicalModLayout) (n p : Nat) (hw : K.Widths n) (hn : 0<n) (P1 P3 : Program) :
+    Le (P1++([.CX K.high K.flag,.X K.flag]++
+        (mappedConstAdd (some K.flag) K.out (K.carry.take (K.out.length-1)) K.cin p++([.CX K.flag K.high]++P3))))
+      (P1++([.CX K.high K.flag,.X K.flag]++(mappedConstAdd (some K.flag) K.extended K.carry K.cin p++P3))) := by
+  obtain ⟨hw',hs⟩ := const_le K n p hw hn
+  constructor
+  · intro q hq
+    have hcx : q∈ECDSAAdd.wires [Instr.CX K.flag K.high] →
+        q∈ECDSAAdd.wires [Instr.CX K.high K.flag,Instr.X K.flag] := by
+      intro h; simp [ECDSAAdd.wires,Instr.wires] at h ⊢; tauto
+    have hm : q∈ECDSAAdd.wires (mappedConstAdd (some K.flag) K.out (K.carry.take (K.out.length-1)) K.cin p) →
+        q∈ECDSAAdd.wires (mappedConstAdd (some K.flag) K.extended K.carry K.cin p) := fun h => hw' h
+    simp only [wires_append,Finset.mem_union] at hq ⊢
+    tauto
+  · simp only [Challenge.gateSlots_append]
+    have : Challenge.gateSlots [Instr.CX K.flag K.high]=1 := rfl
+    omega
+
+theorem qprog_le (K : MeasuredCanonicalModLayout) (n p : Nat) (hw : K.Widths n) (hn : 0<n) :
+    Le (qprogTq K p) (qprog K p) := by
+  have g := le_core K n p hw hn (notRegister K.out++K.sum)
+    ([.X K.high,.X K.flag]++eraseLtChain K.out K.src (K.carry.take (K.out.length-1)) K.cin K.flag)
+  simpa only [qprogTq,qprog,List.append_assoc] using g
+
+theorem qprog4_le (K : MeasuredCanonicalModLayout) (n p : Nat) (hw : K.Widths n) (hn : 0<n) :
+    Le (qprog4Tq K p) (qprog4 K p) := by
+  have g := le_core K n p hw hn (notRegister K.out++Skip4.addSkip 4
+      (mappedRead K.src false++[({wire:=none,flip:=false} : MappedBit)]) K.extended K.carry K.cin)
+    ([.X K.high,.X K.flag]++Skip4.eraseSkip 4 K.out K.src (K.carry.take (K.out.length-1)) K.cin K.flag)
+  simpa only [qprog4Tq,qprog4,List.append_assoc] using g
+
+theorem measuredFoldQ_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (f : MeasuredSquareFold) :
+    Le (measuredFoldQTq L f) (measuredFoldQ L f) := by
+  unfold measuredFoldQTq measuredFoldQ
+  exact Le.app (Le.app (Le.rfl' _)
+    (qprog_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide))) (Le.rfl' _)
+
+theorem accFoldQ_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem) :
+    Le (accFoldQTq L a) (accFoldQ L a) := by
+  unfold accFoldQTq accFoldQ
+  exact Le.app (Le.app (Le.rfl' _)
+    (qprog_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide))) (Le.rfl' _)
+
+theorem accFoldQ4_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem) :
+    Le (accFoldQ4Tq L a) (accFoldQ4 L a) := by
+  unfold accFoldQ4Tq accFoldQ4
   exact Le.app (Le.app (Le.rfl' _)
     (qprog4_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide))) (Le.rfl' _)
+
+theorem accFoldQ4K_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem) :
+    Le (accFoldQ4KTq L a) (CodexCKAccTail.accFoldQ4Tail L a) := by
+  unfold accFoldQ4KTq CodexCKAccTail.accFoldQ4Tail
+  exact Le.app (Le.app (Le.rfl' _)
+    (qprog4_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide))) (Le.rfl' _)
+
+theorem mixProgQ_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (i : MixItem) :
+    Le (mixProgQTq L i) (mixProgQ L i) := by
+  rcases i with f|a
+  · by_cases h : f.canonical
+    · simp only [mixProgQTq,mixProgQ,h,if_true]; exact measuredFoldQ_le L hw f
+    · simp only [mixProgQTq,mixProgQ,h]; exact Le.rfl' _
+  · exact accFoldQ_le L hw a
+
+theorem mixFoldsQ_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (o : Bool) (items : List MixItem) :
+    Le (mixFoldsQTq L o items) (mixFoldsQ L o items) := by
+  induction items generalizing o with
+  | nil => exact Le.rfl' _
+  | cons i is ih =>
+    simp only [mixFoldsQTq,mixFoldsQ]
+    refine Le.app ?_ (ih _)
+    rcases Decidable.em (o=mixNeg i) with h|h
+    · rw [if_pos h,if_pos h]; exact Le.rfl' _
+    · rw [if_neg h,if_neg h]; exact mixProgQ_le L hw i
+
+theorem accFoldQF_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) (a : AccItem) :
+    Le (OwnDiagAll12Square.accFoldQFTq L g a) (OwnDiagAll12Square.accFoldQF L g a) := by
+  unfold OwnDiagAll12Square.accFoldQFTq OwnDiagAll12Square.accFoldQF
+  exact Le.app (Le.rfl' _) (Le.app (Le.rfl' _) (Le.app
+    (qprog_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide)) (Le.rfl' _)))
+
+theorem bodyC_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    Le (OwnDiagAll12Square.bodyCTq L g) (OwnDiagAll12Square.bodyC L g) := by
+  unfold OwnDiagAll12Square.bodyCTq OwnDiagAll12Square.bodyC
+  exact Le.app (mixFoldsQ_le L hw _ _) (accFoldQF_le L hw g _)
+
+theorem accFoldQFK_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) (a : AccItem) :
+    Le (OwnDiagAll12Square.accFoldQFKTq L g a) (CodexCKAccTail.accFoldQFTail L g a) := by
+  unfold OwnDiagAll12Square.accFoldQFKTq CodexCKAccTail.accFoldQFTail
+  exact Le.app (Le.rfl' _) (Le.app (Le.rfl' _) (Le.app
+    (qprog_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide)) (Le.rfl' _)))
+
+theorem bodyCK_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    Le (OwnDiagAll12Square.bodyCKTq L g) (CodexCKAccTail.bodyCTail L g) := by
+  unfold OwnDiagAll12Square.bodyCKTq CodexCKAccTail.bodyCTail
+  exact Le.app (mixFoldsQ_le L hw _ _) (accFoldQFK_le L hw g _)
 
 theorem wFold_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
     Le (ControlLoan1589BFFold.wFoldTq L) (ControlLoan1589BFFold.wFold L) := by
@@ -2366,7 +2797,7 @@ theorem wFold_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
 theorem eFold_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
     Le (ControlLoan1589BFFold.eFoldTq L c) (ControlLoan1589BFFold.eFold L c) := by
   unfold ControlLoan1589BFFold.eFoldTq ControlLoan1589BFFold.eFold
-  exact Le.app (Le.rfl' _) (Le.app (accFoldQ4Tail_le L hw _) (Le.rfl' _))
+  exact Le.app (Le.rfl' _) (Le.app (accFoldQ4K_le L hw _) (Le.rfl' _))
 
 theorem bBody_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
     Le (ControlLoan1589BFFold.bBodyTq L c) (ControlLoan1589BFFold.bBody L c) := by
@@ -2382,12 +2813,22 @@ theorem aBody_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire
     (Le.app (Le.rfl' _) (Le.app (Le.rfl' _) (Le.app
       (qprog_le L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide)) (Le.rfl' _)))))
 
+/-- Counts and static refinement of the three square bodies, as used by the square layers. -/
+theorem bodyC_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    toffoliCount (OwnDiagAll12Square.bodyCTq L g)+2=toffoliCount (OwnDiagAll12Square.bodyC L g) ∧
+    measurementCount (OwnDiagAll12Square.bodyCTq L g)+2=measurementCount (OwnDiagAll12Square.bodyC L g) ∧
+    Le (OwnDiagAll12Square.bodyCTq L g) (OwnDiagAll12Square.bodyC L g) := by
+  have a := OwnDiagAll12Square.bodyC_countsTq L hw g
+  have b := OwnDiagAll12Square.bodyC_counts L hw g
+  exact ⟨by omega,by omega,bodyC_le L hw g⟩
 
-theorem bodyCTail_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
-    toffoliCount (CodexCKAccTail.bodyCTailTq L g)+2=toffoliCount (CodexCKAccTail.bodyCTail L g) ∧
-    measurementCount (CodexCKAccTail.bodyCTailTq L g)+2=measurementCount (CodexCKAccTail.bodyCTail L g) ∧
-    Le (CodexCKAccTail.bodyCTailTq L g) (CodexCKAccTail.bodyCTail L g) :=
-  CodexCKAccTail.bodyCTailTq_rel L hw g
+theorem bodyCK_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
+    toffoliCount (OwnDiagAll12Square.bodyCKTq L g)+2=toffoliCount (CodexCKAccTail.bodyCTail L g) ∧
+    measurementCount (OwnDiagAll12Square.bodyCKTq L g)+2=measurementCount (CodexCKAccTail.bodyCTail L g) ∧
+    Le (OwnDiagAll12Square.bodyCKTq L g) (CodexCKAccTail.bodyCTail L g) := by
+  have a := OwnDiagAll12Square.bodyCK_countsTq L hw g
+  have b := CodexCKAccTail.bodyCTail_counts L hw g
+  exact ⟨by omega,by omega,bodyCK_le L hw g⟩
 
 theorem bBody_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
     toffoliCount (ControlLoan1589BFFold.bBodyTq L c)+4=toffoliCount (ControlLoan1589BFFold.bBody L c) ∧
