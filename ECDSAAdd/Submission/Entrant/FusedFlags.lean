@@ -589,44 +589,6 @@ theorem run_write_outside (p : Program) (port : Wire) (hp : port∉wires p)
       · simp only [writeBit,Function.update_of_ne he]
         exact (run_preserves_outside p m s w hw).symm
 
-theorem rename_toggle {n : Nat} (f : Fin n→Wire) (hf : Function.Injective f)
-    (P : Program) (hp : wires P⊆Finset.range n) (target : Fin n) (s : State) (m : List Bool) (z : Bool)
-    (he : run P m ⟨s.phase,fun q=>s.basis (label f q)⟩=
-      ⟨s.phase,writeBit (fun q=>s.basis (label f q)) target.val (s.basis (f target) ^^ z)⟩) :
-    run (renameProgram (label f) P) m s=
-      ⟨s.phase,writeBit s.basis (f target) (s.basis (f target) ^^ z)⟩ := by
-  have pp := run_rename_pool (label f) (Finset.range n) (label_injective f hf) P hp m
-    ⟨s.phase,fun q=>s.basis (label f q)⟩ s rfl (fun _ _=>rfl)
-  rw [he] at pp
-  apply State.extensionality
-  · exact pp.1
-  · funext w
-    by_cases hw : w∈(Finset.range n).image (label f)
-    · obtain ⟨q,hq,rfl⟩ := Finset.mem_image.mp hw
-      have ht : label f target.val=f target := by simp [label,target.isLt]
-      have same : label f q=f target ↔ q=target.val := by
-        constructor
-        · intro e
-          exact label_injective f hf q hq target.val (Finset.mem_range.mpr target.isLt) (e.trans ht.symm)
-        · intro e; subst q; exact ht
-      rw [pp.2 q hq]
-      simp only [writeBit,Function.update_apply]
-      by_cases eq : q=target.val
-      · simp [eq,ht]
-      · simp [eq,show label f q≠f target from fun h=>eq (same.mp h)]
-    · have noP : w∉wires (renameProgram (label f) P) := by
-        rw [renameProgram_support]
-        intro h
-        obtain ⟨q,hq,e⟩ := Finset.mem_image.mp h
-        exact hw (Finset.mem_image.mpr ⟨q,hp hq,e⟩)
-      have ne : w≠f target := by
-        intro e
-        apply hw
-        refine Finset.mem_image.mpr ⟨target.val,Finset.mem_range.mpr target.isLt,?_⟩
-        simpa [label,target.isLt] using e.symm
-      rw [run_preserves_outside _ m s w noP]
-      simp [writeBit,ne]
-
 theorem listPorts_injective (r : List Wire) (hn : r.Nodup) {n : Nat} (hl : r.length=n) :
     Function.Injective (fun q : Fin n => r.getD q.val 0) := by
   intro a b eq
@@ -1373,29 +1335,6 @@ theorem tsq3_counts (xs dst pad carry : List Wire) (cin : Wire)
   simp only [toffoliCount_append,measurementCount_append] at h ⊢
   omega
 
-theorem tsq3_physical (xs dst pad carry : List Wire) (cin : Wire)
-    (hn : (cin :: xs ++ dst ++ pad ++ carry).Nodup) :
-    GatePhysical (tsq3 xs dst pad carry cin) ∧ GatePhysical (tsqc3 xs dst pad carry cin) := by
-  have h := TrimSquare.tsq2_physical xs dst pad carry cin hn
-  rcases tsq3_form xs dst pad carry cin with ⟨e1,e2⟩|⟨A,B,A',B',x,y,cy,c,e1,e2,e3,e4⟩
-  · rw [e1,e2]; exact h
-  · rw [e2,e4] at h; rw [e1,e3]
-    simp only [gatePhysical_append] at h ⊢
-    exact ⟨⟨⟨h.1.1.1,addDrop_physical_gen _ _ _ _ h.1.1.2⟩,h.1.2⟩,
-      ⟨⟨h.2.1.1,addDrop_physical_gen _ _ _ _ h.2.1.2⟩,h.2.2⟩⟩
-
-theorem tsq3_wires_subset (xs dst pad carry : List Wire) (cin : Wire)
-    (hd : dst.length=2*xs.length) (hp : 1≤pad.length) (hc : dst.length-1≤carry.length) :
-    wires (tsq3 xs dst pad carry cin)⊆(xs++dst++pad++carry++[cin]).toFinset ∧
-    wires (tsqc3 xs dst pad carry cin)⊆(xs++dst++pad++carry++[cin]).toFinset := by
-  have h := TrimSquare.tsq2_wires_subset xs dst pad carry cin hd hp hc
-  rcases tsq3_form xs dst pad carry cin with ⟨e1,e2⟩|⟨A,B,A',B',x,y,cy,c,e1,e2,e3,e4⟩
-  · rw [e1,e2]; exact h
-  · rw [e2,e4] at h; rw [e1,e3]
-    simp only [wires_append,Finset.union_subset_iff] at h ⊢
-    exact ⟨⟨⟨h.1.1.1,(addDrop_wires_gen _ _ _ _).trans h.1.1.2⟩,h.1.2⟩,
-      ⟨⟨h.2.1.1,(addDrop_wires_gen _ _ _ _).trans h.2.1.2⟩,h.2.2⟩⟩
-
 theorem tsq3_gateSlots_le (xs dst pad carry : List Wire) (cin : Wire) :
     Challenge.gateSlots (tsq3 xs dst pad carry cin) ≤
       xs.length*(12*(xs.length+1)+6*dst.length)+34*xs.length+2*dst.length+18 ∧
@@ -1535,20 +1474,12 @@ theorem tickMF_wires : wires tickMF ⊆ sitesM.toFinset := by decide +kernel
 theorem tickMR_wires : wires tickMR ⊆ sitesM.toFinset := by decide +kernel
 theorem pairF_wires : wires (tick509ExF ++ tick510ExF) ⊆ sitesM.toFinset := by decide +kernel
 theorem pairR_wires : wires (tick510ExR ++ tick509ExR) ⊆ sitesM.toFinset := by decide +kernel
-theorem tickMF_sub : wires tickMF ⊆ wires (tick509ExF ++ tick510ExF) := by decide +kernel
-theorem sitesM_pool : ∀ q ∈ sitesM, q ∈ skywalkPoolWires base := by decide +kernel
-theorem tickMR_sub : wires tickMR ⊆ wires (tick510ExR ++ tick509ExR) := by decide +kernel
-
 theorem tickM_counts :
     toffoliCount tickMF = 2 ∧ measurementCount tickMF = 5 ∧
     toffoliCount (tick509ExF ++ tick510ExF) = 8 ∧ measurementCount (tick509ExF ++ tick510ExF) = 5 ∧
     toffoliCount tickMR = 5 ∧ measurementCount tickMR = 4 ∧
     toffoliCount (tick510ExR ++ tick509ExR) = 7 ∧ measurementCount (tick510ExR ++ tick509ExR) = 4 := by
   decide +kernel
-
-theorem tickM_slots :
-    Challenge.gateSlots tickMF ≤ Challenge.gateSlots (tick509ExF ++ tick510ExF) ∧
-    Challenge.gateSlots tickMR ≤ Challenge.gateSlots (tick510ExR ++ tick509ExR) := by decide +kernel
 
 theorem tickM_physical : GatePhysical tickMF ∧ GatePhysical tickMR := by
   constructor <;> simp [tickMF, tickMR, GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate]
@@ -1586,8 +1517,6 @@ theorem concMR : ∀ G S : Bool, ∀ uv ∈ pairs509, ∀ c ∈ recsUpTo 4,
   decide +kernel
 
 theorem pack509_nil : History5.packAfter base 509 = [] := by decide +kernel
-theorem decode509_nil : History5.decodeBefore base 509 = [] := by decide +kernel
-
 attribute [local irreducible] run W.compactSkywalkStageVirtual SkywalkTrace.next Nat.iterate
   W.compactSkywalkTick History5.encodePrefix
 
@@ -1632,59 +1561,6 @@ theorem tickMF_forced (x : Nat) (hx0 : 0 < x) (hx : x < p) (t : State)
     (take_recsUpTo 5) pairF_wires tickMF_wires (le_of_eq tickM_counts.2.2.2.1) (le_of_eq tickM_counts.2.1)
     (fun c hc => concMF G S uv huv c hc) t bits m
 
-/-- After ticks `509`, `510` and the pack, decoding and the merged reverse block agree
-with decoding and the original reverse ticks `510`, `509`. -/
-theorem blockM_eq (x : Nat) (hx0 : 0 < x) (hx : x < p) (t : State)
-    (ht : W.CompressedCompactStage5 base x p 509 t.basis) (m1 m2 : List Bool) :
-    run (History5.decodeBefore base 510 ++ tickMR) m2
-        (run ((W.repairedTick base 509 ++ W.repairedTick base 510) ++ History5.packAfter base 510) m1 t) =
-      run (History5.decodeBefore base 510 ++
-          (W.ReverseCarry.compactReceiverTick base 510 ++ W.ReverseCarry.compactReceiverTick base 509)) m2
-        (run ((W.repairedTick base 509 ++ W.repairedTick base 510) ++ History5.packAfter base 510) m1 t) := by
-  obtain ⟨hp0, hpo, hp, cop⟩ := StackOB5.prime_facts x hx0 hx
-  have hpGap : p+2^32 ≤ 2^256 := by norm_num [p]
-  obtain ⟨G, S, uv, huv, bits⟩ := stage509_bitsM x hx0 hx t ht
-  have due : History5.packDue 510 = true := by decide
-  have rep : W.repairedTick base 510 = W.compactSkywalkTick base 510 := by
-    rw [tick510ExF_explicit, tick510ExF_compact]
-  set k := measurementCount (W.repairedTick base 509 ++ W.repairedTick base 510) with hk
-  set k9 := measurementCount (W.repairedTick base 509) with hk9
-  set d := measurementCount (History5.decodeBefore base 510) with hd
-  set b := run (W.repairedTick base 509) ((m1.take k).take k9) t with hb
-  set a := run (W.repairedTick base 509 ++ W.repairedTick base 510) (m1.take k) t with ha
-  have bStage : W.CompressedCompactStage5 base x p 510 b.basis := by
-    have h := (Stack5.step_spec base base_pool_nodup StackOB5.historyAbove x p 509 hp0 hx0 hpo hp hpGap hx
-      cop (by omega) t ((m1.take k).take k9) ht).2
-    rw [pack509_nil, List.append_nil] at h
-    exact h
-  have aSplit : a = run (W.repairedTick base 510) ((m1.take k).drop k9) b := by
-    rw [ha, hb, run_append, ← hk9]
-  have legal := Stack5.tick_pack_legal base base_pool_nodup x p 510 hp0 hx0 hpo hp hpGap hx cop
-    (by omega) b ((m1.take k).drop k9) bStage due
-  rw [← rep, ← aSplit] at legal
-  have dp : run (History5.decodeBefore base 510) (m2.take d)
-      (run (History5.packAfter base 510) (m1.drop k) a) = a := by
-    simpa only [History5.packAfter, History5.decodeBefore, due, if_true, History5.encode,
-      History5.decode] using
-      MeasuredCodec5.roundtripAt (History5.historyMap base (510-5))
-        (History5.historyMap_injective base base_pool_nodup (510-5) (by omega)) a (m1.drop k)
-        (m2.take d) legal
-  have abits : ∀ q ∈ sitesM, a.basis q =
-      (run (tick509ExF ++ tick510ExF) [] ⟨false, pre509 G S uv.1 uv.2⟩).basis q := by
-    intro q hq
-    rw [ha, tick509ExF_explicit, tick510ExF_explicit,
-      site_run (tick509ExF ++ tick510ExF) sitesM pairF_wires t ⟨false, pre509 G S uv.1 uv.2⟩ bits
-        (m1.take k) q hq]
-    exact congrFun (run_basis_records (tick509ExF ++ tick510ExF) _ _ (m1.take k) [] rfl) q
-  rw [run_append (W.repairedTick base 509 ++ W.repairedTick base 510),
-    run_append (History5.decodeBefore base 510) tickMR,
-    run_append (History5.decodeBefore base 510), ← hk, ← hd, ← ha, dp,
-    tick510ExR_explicit, tick509ExR_explicit]
-  symm
-  exact forced_eqN (tick510ExR ++ tick509ExR) tickMR sitesM _ 4 (recsUpTo 4) (take_recsUpTo 4)
-    pairR_wires tickMR_wires (le_of_eq tickM_counts.2.2.2.2.2.2.2) (le_of_eq tickM_counts.2.2.2.2.2.1)
-    (fun c hc => concMR G S uv huv c hc) a abits (m2.drop d)
-
 end ECDSAAdd.Entrant
 end
 
@@ -1697,12 +1573,6 @@ theorem tickMF_records : measurementCount tickMF=
     measurementCount (W.repairedTick base 509)+measurementCount (W.repairedTick base 510) := by
   obtain ⟨_,c2,_,c4,_,_,_,_⟩ := tickM_counts
   rw [tick509ExF_explicit,tick510ExF_explicit,←measurementCount_append,c2,c4]
-
-theorem tickMR_records : measurementCount tickMR=
-    measurementCount (W.ReverseCarry.compactReceiverTick base 510)+
-      measurementCount (W.ReverseCarry.compactReceiverTick base 509) := by
-  obtain ⟨_,_,_,_,_,c6,_,c8⟩ := tickM_counts
-  rw [tick510ExR_explicit,tick509ExR_explicit,←measurementCount_append,c6,c8]
 
 end ECDSAAdd.Entrant
 end
@@ -1729,14 +1599,6 @@ def restoreSuffix (cx cy : Bool) : Program :=
   (MeasuredDH.joint false cx cy).dropLast ++
   [.CX 5 10,.CX 8 10,.CX 3 10,.CX 5 8,.CX 8 5,.CX 4 5,.CX 6 5,
     .measureX 8 [] [.CZ 3 0]]
-
-theorem clear_equivalence : ∀cx cy : Bool, ∀x : Fin 2048,
-    MeasuredDH.clean x.val=true →
-    MeasuredDH.covered (bitRun gen x.val)=true →
-    MeasuredDH.clears true true cx cy (bitRun gen x.val)=true →
-    safe (clearPrefix cx cy) x.val=true ∧
-      bitRun (clearPrefix cx cy) x.val=bitRun (gen++MeasuredDH.original true true cx cy) x.val := by
-  decide +kernel
 
 theorem restore_equivalence : ∀cx cy : Bool, ∀x : Fin 2048,
     MeasuredDH.clean x.val=true → MeasuredDH.covered x.val=true →

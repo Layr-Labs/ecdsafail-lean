@@ -220,7 +220,6 @@ theorem tripF_wires : wires tripF ⊆ sitesT8.toFinset := by decide +kernel
 theorem tripR_wires : wires tripR ⊆ sitesT8.toFinset := by decide +kernel
 theorem tickMR8_wires : wires tickMR8 ⊆ sitesT8.toFinset := by decide +kernel
 theorem sitesT8_pool : ∀ q ∈ sitesT8, q ∈ skywalkPoolWires base := by decide +kernel
-theorem tick508_wires : wires tick508ExF ⊆ sites508.toFinset := by decide +kernel
 theorem sites508_tick : ∀ q ∈ sites508, q ∈ wires (W.compactSkywalkTick base 508) := by
   decide +kernel
 

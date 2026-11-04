@@ -209,16 +209,6 @@ theorem top_zero (a b c A B z : Wire) (nd : [a,b,c,A,B,z].Nodup)
   apply full_state false a b c A B z nd s m n clean
   simpa only [ReadyAt,Bool.false_eq_true,if_false] using zero
 
-/-- Exact copy-top leaf obligation for an arithmetic caller. -/
-theorem top_equals_next (a b c A B z : Wire) (nd : [a,b,c,A,B,z].Nodup)
-    (s : State) (m n : List Bool) (clean : s.basis z = false)
-    (same : ((s.basis A ^^ s.basis B) ^^
-      carryBit (s.basis a) (s.basis b) (s.basis c)) =
-      sumBit (s.basis a) (s.basis b) (s.basis c)) :
-    run (oldLeafAt a b c A B z) m s = run (newLeafAt true a b c A B) n s := by
-  apply full_state true a b c A B z nd s m n clean
-  simpa only [ReadyAt,if_true] using same
-
 private theorem adder_nd (a b c A B z : Wire) (nd : [a,b,c,A,B,z].Nodup) :
     (c :: [a,A] ++ [b,B] ++ [z]).Nodup := by
   apply List.nodup_iff_count.mpr
@@ -226,33 +216,6 @@ private theorem adder_nd (a b c A B z : Wire) (nd : [a,b,c,A,B,z].Nodup) :
   have h := List.nodup_iff_count.mp nd q
   simp only [List.count_cons,List.count_append,List.count_nil] at h ⊢
   omega
-
-/-- The original addInPlace contract supplies the phase, complete non-output
-frame and two-bit modular arithmetic. The replacement inherits it through the
-full-State equality, without replacing the measurement model. -/
-theorem replacement_correct (copy : Bool) (a b c A B z : Wire)
-    (nd : [a,b,c,A,B,z].Nodup) (s : State) (m : List Bool)
-    (clean : s.basis z = false) (ready : ReadyAt copy a b c A B s.basis) :
-    (run (newLeafAt copy a b c A B) m s).phase = s.phase ∧
-    (∀ q, q ∉ [b,B] → (run (newLeafAt copy a b c A B) m s).basis q = s.basis q) ∧
-    regValue [b,B] (run (newLeafAt copy a b c A B) m s).basis =
-      (regValue [a,A] s.basis + regValue [b,B] s.basis + (s.basis c).toNat) % 4 := by
-  have hc : ∀ q ∈ [z], s.basis q = false := by
-    intro q hq
-    simp only [List.mem_singleton] at hq
-    subst q
-    exact clean
-  have old := addInPlace_correct [a,A] [b,B] [z] c (adder_nd _ _ _ _ _ _ nd)
-      (by rfl) (by rfl) s m hc
-  have eqn := full_state copy a b c A B z nd s m m clean ready
-  simpa only [← oldLeafAt_add,eqn] using old
-
-theorem full_state_records (copy : Bool) (a b c A B z : Wire)
-    (nd : [a,b,c,A,B,z].Nodup) (s : State) (m n : List Bool)
-    (clean : s.basis z = false) (ready : ReadyAt copy a b c A B s.basis) :
-    run (newLeafAt copy a b c A B) m s = run (newLeafAt copy a b c A B) n s := by
-  exact (full_state copy a b c A B z nd s [] m clean ready).symm.trans
-    (full_state copy a b c A B z nd s [] n clean ready)
 
 theorem support (copy : Bool) (a b c A B z : Wire) :
     wires (oldLeafAt a b c A B z) = {a,b,c,A,B,z} ∧
@@ -291,42 +254,11 @@ theorem physical (copy : Bool) (a b c A B z : Wire)
     simp_all [oldLeafAt,newLeafAt,majority,eraseCarry,GatePhysical,PhysicalInstr,ProperGate,
       ne_comm]
 
-theorem qubit_counts (copy : Bool) (a b c A B z : Wire)
-    (nd : [a,b,c,A,B,z].Nodup) :
-    qubitCount (oldLeafAt a b c A B z) = 6 ∧
-    qubitCount (newLeafAt copy a b c A B) = 5 := by
-  have nd5 : [a,b,c,A,B].Nodup := by
-    apply List.nodup_iff_count.mpr
-    intro q
-    have h := List.nodup_iff_count.mp nd q
-    simp only [List.count_cons,List.count_nil] at h ⊢
-    omega
-  constructor
-  · rw [qubitCount,(support copy a b c A B z).1]
-    simpa using List.toFinset_card_of_nodup nd
-  · rw [qubitCount,(support copy a b c A B z).2]
-    simpa using List.toFinset_card_of_nodup nd5
-
 /-- A measured/recorded use consumes exactly the same one record ordinal in
 both programs. The arbitrary suffix tape is retained by the original interpreter. -/
 theorem record_count_preserved (copy : Bool) (a b c A B z : Wire) :
     measurementCount (oldLeafAt a b c A B z) =
       measurementCount (newLeafAt copy a b c A B) := by
   exact (counts copy a b c A B z).2.2.1.trans (counts copy a b c A B z).2.2.2.symm
-
-/-- Persistent recorded interpreter equality includes the unchanged tape and exact
-advanced cursor; no deferred correction ordinal or record outcome is rebased. -/
-theorem recorded_full_state (copy : Bool) (a b c A B z : Wire)
-    (nd : [a,b,c,A,B,z].Nodup) (s : State) (ctx : RecordedContext)
-    (clean : s.basis z = false) (ready : ReadyAt copy a b c A B s.basis) :
-    runRecorded (embedRecorded (oldLeafAt a b c A B z)) ctx s =
-      runRecorded (embedRecorded (newLeafAt copy a b c A B)) ctx s := by
-  have stateEq := full_state copy a b c A B z nd s
-    (ctx.tape.drop ctx.cursor) (ctx.tape.drop ctx.cursor) clean ready
-  have countEq : recordedMeasurementCount (embedRecorded (oldLeafAt a b c A B z)) =
-      recordedMeasurementCount (embedRecorded (newLeafAt copy a b c A B)) :=
-    (embedRecorded_counts _).2.trans ((record_count_preserved copy a b c A B z).trans
-      (embedRecorded_counts _).2.symm)
-  simp only [runRecorded,runWithTape_embedRecorded,stateEq,countEq]
 
 end ECDSAAdd.Entrant.HighOutputTailStructuredResearch

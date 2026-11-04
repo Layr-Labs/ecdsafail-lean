@@ -3818,16 +3818,6 @@ theorem wrapper_qubits760 (C : Point) (cx cy : Fp) (P : Program)
       · exact Finset.mem_union_left _ (layout_y_io extra)
   exact (Finset.card_le_card absorb).trans (ReflectionE1TickGapLow48.wrapper_qubits760 C cx cy)
 
-/-- FusedFlags changes surrounding flag gates but its existing support lemma is sufficient. -/
-theorem fused_wrapper_qubits760 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
-    (P : Program)
-    (hP : wires P ⊆ wires (ReflectionE1TickGapLow48.gen layout cx cy) ∪ layout.point.y.toFinset) :
-    qubits (FusedFlags.wrapper layout (.some hc) cy P) ≤ 1587 := by
-  have sub := FusedFlags.wrapper_support layout hc P
-  exact (Finset.card_le_card
-    (Finset.union_subset_union (Finset.Subset.refl ioWires) sub)).trans
-    (wrapper_qubits760 (.some hc) cx cy P hP)
-
 end ECDSAAdd.Entrant.CodexYParitySupport
 end
 

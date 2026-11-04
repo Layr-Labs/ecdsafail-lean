@@ -132,33 +132,6 @@ theorem suffix_support (xs ys cs : List Wire) (cin : Wire) :
           simp only [spinePorts,List.mem_toFinset,List.mem_cons,List.mem_append]
           tauto
 
-theorem prefix_records (xs ys cs : List Wire) (cin : Wire) :
-    measurementCount (adderPrefix xs ys cs cin)=0 := by
-  induction xs generalizing ys cs cin with
-  | nil => rfl
-  | cons a as ih =>
-    cases ys with
-    | nil => rfl
-    | cons b bs =>
-      cases cs with
-      | nil => rfl
-      | cons z zs =>
-        simp [adderPrefix,measurementCount_append,ih,majority,measurementCount]
-
-/-- Clean last carry and immutable flag follow purely from adderPrefix support.
-There is no assumption that a adderPrefix carry value was guessed correctly. -/
-theorem prefix_keeps (xs ys cs : List Wire) (cin q : Wire)
-    (hq : q∉spinePorts xs ys cs cin) (s : State) (m : List Bool) :
-    (run (adderPrefix xs ys cs cin) m s).basis q=s.basis q := by
-  apply run_preserves_outside
-  exact fun h => hq (List.mem_toFinset.mp (prefix_support xs ys cs cin h))
-
-theorem suffix_keeps (xs ys cs : List Wire) (cin q : Wire)
-    (hq : q∉spinePorts xs ys cs cin) (s : State) (m : List Bool) :
-    (run (adderSuffix xs ys cs cin) m s).basis q=s.basis q := by
-  apply run_preserves_outside
-  exact fun h => hq (List.mem_toFinset.mp (suffix_support xs ys cs cin h))
-
 /-- Only the old leaf's high output is exposed; majority_correct restores its
 inputs, and its measured/lower adderSuffix does not touch B. No tape cases occur. -/
 theorem old_high (a b c A B z : Wire) (nd : [a,b,c,A,B,z].Nodup)

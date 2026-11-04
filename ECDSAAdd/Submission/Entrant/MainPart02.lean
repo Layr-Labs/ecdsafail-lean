@@ -89,62 +89,24 @@ theorem dhi_ne (w : R.W) : R.dhi≠[] := by
   have h4 := w.h4; have hh := w.hh; have h5 := w.h5
   intro e; have e' := congrArg List.length e; simp only [List.length_nil] at e'; omega
 
-theorem m7z_counts (w : R.W) : toffoliCount R.m7z+1=toffoliCount R.m7 ∧
-    measurementCount R.m7z=measurementCount R.m7 := by
-  have l := R.t_lens w
-  exact LowZero.subLowNC_counts _ _ _ _ l.1 l.2.1 l.2.2.1
-theorem c7z_counts (w : R.W) : toffoliCount R.c7z+1=toffoliCount R.c7 ∧
-    measurementCount R.c7z=measurementCount R.c7 := by
-  have l := R.t_lens w
-  exact LowZero.addLowNC_counts _ _ _ _ l.1 l.2.1 l.2.2.1
 theorem c8z_counts (w : R.W) : toffoliCount R.c8z+1=toffoliCount R.c8 ∧
     measurementCount R.c8z=measurementCount R.c8 := by
   have l := R.m8z_lens w
   exact LowZero.subLowNC_counts _ _ _ _ l.1 l.2.1 l.2.2
 
-theorem m7z_wires (w : R.W) : wires R.m7z⊆wires R.m7 := by
-  have l := R.t_lens w
-  exact LowZero.subLowNC_wires_sub _ _ _ _ l.1 l.2.1 l.2.2.1
-theorem c7z_wires (w : R.W) : wires R.c7z⊆wires R.c7 := by
-  have l := R.t_lens w
-  exact LowZero.addLowNC_wires_sub _ _ _ _ l.1 l.2.1 l.2.2.1
 theorem c8z_wires (w : R.W) : wires R.c8z⊆wires R.c8 := by
   have l := R.m8z_lens w
   exact LowZero.subLowNC_wires_sub _ _ _ _ l.1 l.2.1 l.2.2
 
-theorem m7z_slots (w : R.W) : Challenge.gateSlots R.m7z≤Challenge.gateSlots R.m7 := by
-  have l := R.t_lens w
-  exact LowZero.subLowNC_slots _ _ _ _ l.1 l.2.1 l.2.2.1
-theorem c7z_slots (w : R.W) : Challenge.gateSlots R.c7z≤Challenge.gateSlots R.c7 := by
-  have l := R.t_lens w
-  exact LowZero.addLowNC_slots _ _ _ _ l.1 l.2.1 l.2.2.1
 theorem c8z_slots (w : R.W) : Challenge.gateSlots R.c8z≤Challenge.gateSlots R.c8 := by
   have l := R.m8z_lens w
   exact LowZero.subLowNC_slots _ _ _ _ l.1 l.2.1 l.2.2
 
-theorem m7z_physical (w : R.W) (hn : R.all.Nodup) : GatePhysical R.m7z := by
-  have l := R.t_lens w
-  exact LowZero.subLowNC_physical _ _ _ _ (knd hn (fun q => by
-    have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega)) l.2.2.2 (by omega)
-theorem c7z_physical (w : R.W) (hn : R.all.Nodup) : GatePhysical R.c7z := by
-  have l := R.t_lens w
-  exact LowZero.addLowNC_physical _ _ _ _ (knd hn (fun q => by
-    have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega)) l.2.2.2 (by omega)
 theorem c8z_physical (w : R.W) (hn : R.all.Nodup) : GatePhysical R.c8z := by
   have l := R.m8z_lens w
   exact LowZero.subLowNC_physical _ _ _ _ (knd hn (fun q => by
     have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega)) (by omega) (by omega)
 
-theorem m7z_correct (w : R.W) (hn : R.all.Nodup) (s : State) (m : List Bool)
-    (hcl : ∀q∈R.carry.take (R.T.length-1),s.basis q=false)
-    (hnc : (s.basis ((R.dhi++R.zB).headD 0) && !s.basis (R.T.headD 0))=false) (hi : s.basis R.cin=false) :
-    (run R.m7z m s).phase=s.phase ∧ (∀q,q∉R.T → (run R.m7z m s).basis q=s.basis q) ∧
-    regValue R.T (run R.m7z m s).basis=
-      (regValue R.T s.basis+2^R.T.length-regValue (R.dhi++R.zB) s.basis-(s.basis R.cin).toNat)%2^R.T.length := by
-  have l := R.t_lens w
-  exact LowZero.subLowNC_correct _ _ _ _ (knd hn (fun q => by
-      have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega))
-    l.1 l.2.1 l.2.2.1 s m hcl hnc hi
 theorem c8z_correct (w : R.W) (hn : R.all.Nodup) (s : State) (m : List Bool)
     (hcl : ∀q∈R.carry.take (R.dmid.length-1),s.basis q=false)
     (hnc : (s.basis ((R.T++R.zM).headD 0) && !s.basis (R.dmid.headD 0))=false) (hi : s.basis R.cin=false) :
@@ -155,18 +117,6 @@ theorem c8z_correct (w : R.W) (hn : R.all.Nodup) (s : State) (m : List Bool)
   exact LowZero.subLowNC_correct _ _ _ _ (knd hn (fun q => by
       have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega))
     l.1 l.2.1 l.2.2 s m hcl hnc hi
-theorem c7z_correct (w : R.W) (hn : R.all.Nodup) (s : State) (m : List Bool)
-    (hcl : ∀q∈R.carry.take (R.T.length-1),s.basis q=false)
-    (hnc : (s.basis ((R.dhi++R.zB).headD 0) && s.basis (R.T.headD 0))=false) (hi : s.basis R.cin=false) :
-    (run R.c7z m s).phase=s.phase ∧ (∀q,q∉R.T → (run R.c7z m s).basis q=s.basis q) ∧
-    regValue R.T (run R.c7z m s).basis=
-      (regValue (R.dhi++R.zB) s.basis+regValue R.T s.basis+(s.basis R.cin).toNat)%2^R.T.length := by
-  have l := R.t_lens w
-  exact LowZero.addLowNC_correct _ _ _ _ (knd hn (fun q => by
-      have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega))
-    l.1 l.2.1 l.2.2.1 s m hcl hnc hi
-
-
 end ECDSAAdd.Entrant.KRegs
 end -- original module boundary
 
@@ -519,25 +469,6 @@ theorem rawT_slots (xs dst pad carry : List Wire) :
     Challenge.gateSlots (rawClearT xs dst pad carry)≤Challenge.gateSlots (rawClear xs dst pad carry) :=
   ⟨(ECDSAAdd.Entrant.TrimMid.P_side xs dst pad carry).1.2.1.trans (ECDSAAdd.Entrant.TrimRow.slots xs dst pad carry).1,
     (ECDSAAdd.Entrant.TrimMid.P_side xs dst pad carry).2.2.1.trans (ECDSAAdd.Entrant.TrimRow.slots xs dst pad carry).2⟩
-
-theorem rawT_wires (xs dst pad carry : List Wire) (X : Finset Wire)
-    (h1 : wires (signedSquareRows xs dst pad carry)⊆X) (h2 : wires (signedSquareTop xs dst)⊆X)
-    (h3 : wires (signedSquareRowsClear xs dst pad carry)⊆X) :
-    wires (rawMakeT xs dst pad carry)⊆X ∧ wires (rawClearT xs dst pad carry)⊆X := by
-  have w := ECDSAAdd.Entrant.TrimRow.wires_sub xs dst pad carry
-  have p := ECDSAAdd.Entrant.TrimMid.P_side xs dst pad carry
-  simp only [wires_append] at w
-  exact ⟨p.1.1.trans (w.1.trans (Finset.union_subset h1 h2)),p.2.1.trans (w.2.trans (Finset.union_subset h2 h3))⟩
-
-theorem rawT_physical (xs dst pad carry : List Wire)
-    (h1 : GatePhysical (signedSquareRows xs dst pad carry)) (h2 : GatePhysical (signedSquareTop xs dst))
-    (h3 : GatePhysical (signedSquareRowsClear xs dst pad carry)) :
-    GatePhysical (rawMakeT xs dst pad carry) ∧ GatePhysical (rawClearT xs dst pad carry) := by
-  have t := ECDSAAdd.Entrant.TrimRow.physical xs dst pad carry
-    (by rw [gatePhysical_append]; exact ⟨h1,h2⟩) (by rw [gatePhysical_append]; exact ⟨h2,h3⟩)
-  have p := ECDSAAdd.Entrant.TrimMid.P_side xs dst pad carry
-  exact ⟨p.1.2.2 t.1,p.2.2.2 t.2⟩
-
 
 def seedsT (R : KRegs) : Program :=
   rawMakeT R.lo R.dlo R.pad R.carry ++ rawMakeT R.hi R.dhi R.pad R.carry ++ R.smk ++
@@ -2012,35 +1943,6 @@ theorem rawValue_even (n x : Nat) (hn : 1≤n) : 2∣rawValue n x := by
   rw [show x^2+(x+(2^(n-1)-1-x%2^(n-1))*2^n)=(x^2+x)+(2^(n-1)-1-x%2^(n-1))*2^n by ring]
   exact dvd_add h1 h2
 
-theorem subloZ_transition (R : KRegs) (w : R.W) (hn : R.all.Nodup) (base : State)
-    (hz0 : regValue R.z base.basis=0) (hc0 : regValue R.carry base.basis=0) (hi0 : base.basis R.cin=false)
-    (A B S : Nat) (T : Int) (hX : A<2^R.dlo.length) (hAe : 2∣A) :
-    Transition R base (vec A B S T) (vec A B S (T-A)) R.m6z := by
-  intro t rec ht
-  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
-  have hSl := w.S; have hTl := w.T; have hcl := w.carry; have h4 := w.h4; have hh := w.hh; have h5 := w.h5
-  have xv := ht.exact 0 A rfl hX
-  change regValue R.dlo t.basis=A at xv
-  have zv := (ht.keep hn R.zA (fun q h => Or.inr (Or.inl (List.mem_of_mem_take h)))).trans
-    (KRegs.xz (r:=R.zA) hz0 (fun q h => List.mem_of_mem_take h))
-  have cv := (ht.keep hn R.carry (by intro q h; simp [h])).trans hc0
-  have x0 : t.basis ((R.dlo++R.zA).headD 0)=false := by
-    obtain ⟨k,hk⟩ := hAe
-    exact LowZero.head_false_of_even R.dlo R.zA t.basis k (by rw [xv,hk]) (R.dlo_ne w)
-  have l := R.lo_lens w
-  have c := R.m6z_correct w hn t rec (fun q h => (regValue_zero _ _).mp cv q (List.mem_of_mem_take h))
-    (by rw [x0]; rfl) ((ht.cin hn).trans hi0)
-  have r : Update R.T (-(regValue (R.dlo++R.zA) t.basis : Int)) t (run R.m6z rec t) := by
-    have vl := regValue_lt (R.dlo++R.zA) t.basis
-    rw [l.1] at vl
-    refine ⟨c.1,c.2.1,?_⟩
-    rw [c.2.2,(ht.cin hn).trans hi0,Bool.toNat_false,Nat.sub_zero]
-    simpa only [sub_eq_add_neg] using sub_congr (regValue R.T t.basis) (2^R.T.length)
-      (regValue (R.dlo++R.zA) t.basis) (by omega)
-  rw [regValue_append,xv,zv,Nat.mul_zero,Nat.add_zero] at r
-  have act := ht.advance hn 3 (-(A : Int)) r
-  simpa only [show (vec A B S T) 3=T from rfl,vec3,sub_eq_add_neg] using act
-
 theorem subhiZ_transition (R : KRegs) (w : R.W) (hn : R.all.Nodup) (base : State)
     (hz0 : regValue R.z base.basis=0) (hc0 : regValue R.carry base.basis=0) (hi0 : base.basis R.cin=false)
     (A B S : Nat) (T : Int) (hX : B<2^R.dhi.length) (hBe : 2∣B) :
@@ -2069,34 +1971,6 @@ theorem subhiZ_transition (R : KRegs) (w : R.W) (hn : R.all.Nodup) (base : State
   rw [regValue_append,xv,zv,Nat.mul_zero,Nat.add_zero] at r
   have act := ht.advance hn 3 (-(B : Int)) r
   simpa only [show (vec A B S T) 3=T from rfl,vec3,sub_eq_add_neg] using act
-
-theorem addloZ_transition (R : KRegs) (w : R.W) (hn : R.all.Nodup) (base : State)
-    (hz0 : regValue R.z base.basis=0) (hc0 : regValue R.carry base.basis=0) (hi0 : base.basis R.cin=false)
-    (A B S : Nat) (T : Int) (hX : A<2^R.dlo.length) (hAe : 2∣A) :
-    Transition R base (vec A B S T) (vec A B S (T+A)) R.c6z := by
-  intro t rec ht
-  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
-  have hSl := w.S; have hTl := w.T; have hcl := w.carry; have h4 := w.h4; have hh := w.hh; have h5 := w.h5
-  have xv := ht.exact 0 A rfl hX
-  change regValue R.dlo t.basis=A at xv
-  have zv := (ht.keep hn R.zA (fun q h => Or.inr (Or.inl (List.mem_of_mem_take h)))).trans
-    (KRegs.xz (r:=R.zA) hz0 (fun q h => List.mem_of_mem_take h))
-  have cv := (ht.keep hn R.carry (by intro q h; simp [h])).trans hc0
-  have x0 : t.basis ((R.dlo++R.zA).headD 0)=false := by
-    obtain ⟨k,hk⟩ := hAe
-    exact LowZero.head_false_of_even R.dlo R.zA t.basis k (by rw [xv,hk]) (R.dlo_ne w)
-  have c := R.c6z_correct w hn t rec (fun q h => (regValue_zero _ _).mp cv q (List.mem_of_mem_take h))
-    (by rw [x0]; rfl) ((ht.cin hn).trans hi0)
-  have r : Update R.T (regValue (R.dlo++R.zA) t.basis : Int) t (run R.c6z rec t) := by
-    refine ⟨c.1,c.2.1,?_⟩
-    rw [c.2.2,(ht.cin hn).trans hi0,Bool.toNat_false,Nat.add_zero]
-    simp only [Int.ModEq,Int.natCast_mod,Int.natCast_add]
-    rw [Int.add_comm]
-    exact Int.emod_emod _ _
-  rw [regValue_append,xv,zv,Nat.mul_zero,Nat.add_zero] at r
-  have act := ht.advance hn 3 ((A : Int)) r
-  simpa only [show (vec A B S T) 3=T from rfl,vec3,sub_eq_add_neg] using act
-
 
 theorem head_eq_of_modEq (r r' : List Wire) (st : BasisState) (T : Int) (hl : 1≤r.length) (hl' : 1≤r'.length)
     (hv : (regValue r st : Int) ≡ T [ZMOD (2^r.length : Nat)]) (hT : (2:Int)∣T-regValue r' st) :
@@ -2827,12 +2701,6 @@ theorem addHead1_run (a a1 y y1 y2 y3 c c1 c2 cin : Wire) (b'' b3 : MappedBit) (
     Ne.symm h10,Ne.symm h11,Ne.symm h12,Ne.symm h13,Ne.symm h14,Ne.symm h15,Ne.symm h16,Ne.symm h17,
     Ne.symm h18,Ne.symm h19,Ne.symm h20,Ne.symm h21] at hcopy ⊢
   try (rw [← hcopy])
-
-theorem diag_cons2 (x x' : Wire) (xs : List Wire) :
-    ∃ b'' bits,mappedDiagonal (x::x'::xs)=⟨some x,false⟩::⟨some x',false⟩::b''::bits := by
-  cases xs with
-  | nil => exact ⟨_,_,rfl⟩
-  | cons x'' xs => exact ⟨_,_,rfl⟩
 
 theorem diag_cons3 (x x' : Wire) (xs : List Wire) :
     ∃ b'' b3 bits,mappedDiagonal (x::x'::xs)=⟨some x,false⟩::⟨some x',false⟩::b''::b3::bits := by
@@ -3649,18 +3517,6 @@ theorem tsqc4_run (cin : Wire) (xs dst pad carry : List Wire)
   unfold tsqc4 TrimSquare3.tsqc3
   rw [List.append_assoc,List.append_assoc]
   exact drop3_prefix_run cin xs dst pad carry _ hn hx hd hc s records hval hc0
-
-theorem tsqc4_correct (cin : Wire) (xs dst pad carry : List Wire)
-    (hn : (cin::xs++dst++pad++carry).Nodup) (hx : 2≤xs.length)
-    (hd : dst.length=2*xs.length) (hp : 1≤pad.length) (hc : dst.length-1≤carry.length)
-    (s : State) (records : List Bool) (hval : regValue dst s.basis=(regValue xs s.basis)^2)
-    (hp0 : regValue pad s.basis=0) (hc0 : regValue carry s.basis=0)
-    (hi0 : s.basis cin=false) :
-    (run (tsqc4 xs dst pad carry cin) records s).phase=s.phase ∧
-    regValue dst (run (tsqc4 xs dst pad carry cin) records s).basis=0 ∧
-    ∀q,q∉dst → (run (tsqc4 xs dst pad carry cin) records s).basis q=s.basis q := by
-  rw [tsqc4_run cin xs dst pad carry hn hx hd hc s records hval hc0]
-  exact TrimSquare3.tsqc3_correct cin xs dst pad carry hn hx hd hp hc s records hval hp0 hc0 hi0
 
 theorem tsqc4_counts (xs dst pad carry : List Wire) (cin : Wire)
     (hx : 2≤xs.length) (hd : dst.length=2*xs.length) (hp : 1≤pad.length)

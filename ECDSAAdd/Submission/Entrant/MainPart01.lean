@@ -2173,9 +2173,6 @@ theorem P_side (xs dst pad carry : List Wire) :
     exact ⟨side_of_form _ _ _ _ _ _ _ _ e1 e2,side_of_form _ _ _ _ _ _ _ _ e1' e2'⟩
   · exact ⟨⟨subset_refl _,le_refl _,id⟩,⟨subset_refl _,le_refl _,id⟩⟩
 
-theorem par_32 : par 32=0 := by decide
-theorem par_33 : par 33=1 := by decide
-theorem par_34 : par 34=0 := by decide
 theorem par_65 : par 65=1 := by decide
 
 end ECDSAAdd.Entrant.TrimMid
@@ -2518,14 +2515,6 @@ theorem sq_mid_make (cin : Wire) (xs dst pad carry z : List Wire)
   intro s m h0 _ hp0 hc0 _ hi0
   have r := ECDSAAdd.Entrant.TrimMid.tsqM_correct cin xs dst pad carry hnd h2 hd hp hc s m h0 hp0 hc0 hi0
   exact ⟨r.1,r.2.1,trivial,fun q h _ => r.2.2 q h⟩
-
-theorem sq_mid_clear (cin : Wire) (xs dst pad carry z : List Wire)
-    (hnd : (cin::xs++dst++pad++carry).Nodup) (h2 : 2≤xs.length) (hd : dst.length=2*xs.length)
-    (hp : 1≤pad.length) (hc : dst.length-1≤carry.length) :
-    SqClear xs dst [] pad carry z cin (ECDSAAdd.Entrant.TrimMid.tsqcM xs dst pad carry cin) (fun _ _ => True) := by
-  intro s m h0 _ hp0 hc0 _ hi0
-  have r := ECDSAAdd.Entrant.TrimMid.tsqcM_correct cin xs dst pad carry hnd h2 hd hp hc s m h0 hp0 hc0 hi0
-  exact ⟨r.1,r.2.1,rfl,fun q h _ => r.2.2 q h⟩
 
 end ECDSAAdd.Entrant
 
