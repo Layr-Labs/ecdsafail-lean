@@ -127,42 +127,6 @@ theorem flag_counts (w : Nat→Wire) :
   simp only [literal_split,flagKAdd,toffoliCount_append,measurementCount_append,gateSlots_append]
   omega
 
-theorem zero_counts (w : Nat→Wire) :
-    toffoliCount (literalKAdd w)=toffoliCount (zeroKAdd w)+1 ∧
-    measurementCount (literalKAdd w)=measurementCount (zeroKAdd w) ∧
-    gateSlots (literalKAdd w)=gateSlots (zeroKAdd w)+7 := by
-  have o:=HighOutputTailStructuredResearch.counts false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
-  have os:=HighOutputTailStructuredResearch.slots false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
-  change gateSlots (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)) = 14 ∧
-    gateSlots (newLeafAt false (w 256) (w 1026) (w 1795) (w 257) (w 1027)) = 7 at os
-  simp only [literal_split,zeroKAdd,toffoliCount_append,measurementCount_append,gateSlots_append]
-  omega
-
-theorem flag_retired (w : Nat→Wire) (hinj : Function.Injective w) : w 1796∉wires (flagKAdd w) := by
-  have hp:=P_avoid w hinj 1796 (Or.inl rfl)
-  have hr:=R_avoid w hinj 1796 (Or.inl rfl)
-  have hl:=HighOutputFlagResearch.retired _ _ _ _ _ _ _ (tail_nd w hinj)
-  simp only [flagKAdd,wires_append,Finset.mem_union]
-  intro h
-  rcases h with hLeft | hR
-  · rcases hLeft with hP | hLeaf
-    · exact hp hP
-    · exact hl hLeaf
-  · exact hr hR
-
-theorem zero_retired (w : Nat→Wire) (hinj : Function.Injective w) : w 1796∉wires (zeroKAdd w) := by
-  have hp:=P_avoid w hinj 1796 (Or.inl rfl)
-  have hr:=R_avoid w hinj 1796 (Or.inl rfl)
-  have hl:=HighOutputTailStructuredResearch.retired false _ _ _ _ _ _ (List.nodup_cons.mp (tail_nd w hinj)).2
-  simp only [zeroKAdd,wires_append,Finset.mem_union]
-  intro h
-  rcases h with hLeft | hR
-  · rcases hLeft with hP | hLeaf
-    · exact hp hP
-    · exact hl hLeaf
-  · exact hr hR
-
-
 /-- Bounded alternative rooted in the actual real-caller pool Nodup premise.
 The old globally injective research theorem above is retained unchanged. -/
 theorem low_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)

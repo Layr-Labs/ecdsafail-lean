@@ -703,24 +703,6 @@ theorem cell_counts :
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
-theorem cell_wires : wires FirstZero.cell⊆wires FirstZero.oldCell := by
-  have k : wires (FirstZero.half base (base 2409))⊆wires (Q6EndpointCell.half true base (base 2409)) :=
-    half_wires base (base 2409)
-  have mono (f : Wire → Wire) (P Q : Program) (h : wires P⊆wires Q) :
-      wires (renameProgram f P)⊆wires (renameProgram f Q) := by
-    rw [renameProgram_support,renameProgram_support]
-    exact Finset.image_subset_image h
-  have rn := mono (Equiv.swap (base 516) (base 1)) _ _
-    (mono (Equiv.swap (base 719) (base 1032)) _ _ k)
-  simp only [cell,oldCell,halfWindow,oldHalfWindow,ControlLoan1589.loanWindow,wires_append]
-  intro q hq
-  simp only [Finset.mem_union] at hq ⊢
-  rcases hq with ((hq|hq)|hq)|hq
-  · exact Or.inl (Or.inl (Or.inl hq))
-  · exact Or.inl (Or.inl (Or.inr (rn hq)))
-  · exact Or.inl (Or.inr hq)
-  · exact Or.inr hq
-
 theorem cell_physical (old : GatePhysical oldCell) : GatePhysical cell := by
   have hn := ports_nodup
   have hw := Q6EndpointCell.ports_widths base (base 2409)
@@ -779,44 +761,9 @@ theorem xorSum_run (a b cin out : Wire) (ha : a≠out) (hb : b≠out) (hc : cin�
     simp [writeBit,Function.update,ha,hb,hc,sumBit,Bool.xor_assoc]
   · simp [writeBit,Function.update,hq]
 
-/-- Decode a supplied sum bit into a clean carry wire using only CNOTs. -/
-theorem extractCarry_run (a b out carry : Wire)
-    (ha : a≠carry) (hb : b≠carry) (ho : out≠carry)
-    (s : State) (m : List Bool) (clean : s.basis carry=false) (C : Bool)
-    (sum : s.basis out=sumBit (s.basis a) (s.basis b) C) :
-    run (xorSum a b out carry) m s=⟨s.phase,writeBit s.basis carry C⟩ := by
-  rw [xorSum_run a b out carry ha hb ho,clean,sum]
-  congr 2
-  cases s.basis a <;> cases s.basis b <;> cases C <;> rfl
-
 def eraseGraphCell (a b cin out carry : Wire) : Program :=
   xorSum a b cin out ++ eraseCarry a b cin carry
 
-/-- A supplied sum/majority graph is erased with zero T, for every measurement tape. -/
-theorem eraseGraphCell_run (a b cin out carry : Wire)
-    (ha : a≠out) (hb : b≠out) (hc : cin≠out)
-    (hak : a≠carry) (hbk : b≠carry) (hck : cin≠carry)
-    (hok : out≠carry) (s : State) (m : List Bool)
-    (sum : s.basis out=sumBit (s.basis a) (s.basis b) (s.basis cin))
-    (maj : s.basis carry=carryBit (s.basis a) (s.basis b) (s.basis cin)) :
-    run (eraseGraphCell a b cin out carry) m s=
-      ⟨s.phase,writeBit (writeBit s.basis out false) carry false⟩ := by
-  have x : run (xorSum a b cin out) m s=⟨s.phase,writeBit s.basis out false⟩ := by
-    rw [xorSum_run a b cin out ha hb hc,sum]
-    simp
-  let t : State:=⟨s.phase,writeBit s.basis out false⟩
-  have tm : t.basis carry=carryBit (t.basis a) (t.basis b) (t.basis cin) := by
-    simpa only [t,writeBit,Function.update_of_ne ha,Function.update_of_ne hb,
-      Function.update_of_ne hc,Function.update_of_ne hok.symm] using maj
-  rw [eraseGraphCell,run_append,run_take,x]
-  simpa only [t] using eraseCarry_correct a b cin carry hak hbk hck t tm
-    (m.drop (measurementCount (xorSum a b cin out)))
-
-theorem graphCell_resources (a b cin out carry : Wire) :
-    toffoliCount (eraseGraphCell a b cin out carry)=0 ∧
-    measurementCount (eraseGraphCell a b cin out carry)=1 := by
-  simp [eraseGraphCell,xorSum,toffoliCount_append,measurementCount_append,
-    toffoliCount,measurementCount,eraseCarry]
 end ECDSAAdd.Entrant.TerminalGraph
 
 
@@ -2327,14 +2274,6 @@ theorem positive_correction (y t h sigma sy : Int)
   rw [constants.1] at eq
   linear_combination -eq
 
-/-- The quotient flag can be copied from the low parity, without a wide comparator. -/
-theorem quotient_low (y t h sigma sy : Int)
-    (hs : sigma=0 ∨ sigma=1) (hh : h=0 ∨ h=1)
-    (eq : t=(3-2*sigma)*y+2*(1-sigma)*sy-h*(p:Int)) :
-    (t-y)%2=h := by
-  rcases hs with rfl|rfl <;> rcases hh with rfl|rfl <;>
-    norm_num [p] at eq ⊢ <;> omega
-
 /-- A paid comparator can clear the quotient after the graph carries are erased. -/
 theorem quotient_threshold (y t h sy : Int)
     (hy : 0≤y) (hs : sy=0 ∨ sy=1) (hh : h=0 ∨ h=1)
@@ -2452,14 +2391,6 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 namespace ECDSAAdd.Entrant.TerminalGraphFp
 open Arithmetic Secp256k1 Arithmetic.BalancedField
-
-theorem normalized_source_bounds (Y : Fp) :
-    0≤(if centerFp Y<0 then -centerFp Y-1 else centerFp Y) ∧
-    (if centerFp Y<0 then -centerFp Y-1 else centerFp Y)≤TerminalGraph.Q := by
-  have h:=centerFp_bounds Y
-  unfold Centered at h
-  have eq : q=TerminalGraph.Q := rfl
-  split_ifs <;> omega
 
 theorem centerWord_msb (Y : Fp) :
     (centerWord Y).testBit 255=decide (centerFp Y<0) := by
@@ -4933,82 +4864,6 @@ namespace ECDSAAdd.Entrant.FirstInverse5
 open Arithmetic BalancedCircuit BalancedField EntryRetained5 Challenge Baselines RecordedQuantum
 attribute [local irreducible] wires
 
-theorem programC_support (L : Layout) (hw : L.Widths) (J B : Wire) :
-    wires (programC L J B)⊆retSites L J B := by
-  have old:=EntryRetained5.program_support L hw J B
-  have parts : ((wires (prepare L J B)⊆retSites L J B ∧ wires (arithmetic L)⊆retSites L J B) ∧
-      wires (eraseScalarsAt L J B)⊆retSites L J B) ∧ wires (clearParity L J)⊆retSites L J B := by
-    simpa only [EntryRetained5.program,prefixProgram,wires_append,Finset.union_subset_iff] using old
-  have r (q : Wire) (hq : q∈L.r) : q∈retSites L J B := by simp [retSites,hq]
-  have y (q : Wire) (hq : q∈L.y) : q∈retSites L J B := by simp [retSites,hq]
-  have y0 : lowY L∈L.y := by rw [y_cons L hw];simp
-  have rh : L.rmsb∈L.r := by simp [BalancedCleanup.Layout.r]
-  have erase : wires (restoreAt L J B)⊆retSites L J B := by
-    intro q hq
-    simp only [restoreAt,restoreScalars,wires,Instr.wires,correctionWires,
-      Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false] at hq
-    have hu:=y (lowY L) y0
-    have hh:=r L.rmsb rh
-    have hp : L.parity∈retSites L J B := by simp [retSites]
-    have ha : L.lower∈retSites L J B := by simp [retSites]
-    have hd : L.one∈retSites L J B := by simp [retSites]
-    have he : L.sign∈retSites L J B := by simp [retSites]
-    have hj : J∈retSites L J B := by simp [retSites]
-    have hb : B∈retSites L J B := by simp [retSites]
-    aesop
-
-  have notr : wires (notRegister L.r)⊆retSites L J B := by
-    rw [notRegister_wires]
-    intro q hq
-    exact r q (List.mem_toFinset.mp hq)
-  have sub : wires (affineSub (sources L) L.r (L.carry.take 255) (lowY L))⊆retSites L J B := by
-    simp only [affineSub,wires_append,Finset.union_subset_iff]
-    exact ⟨⟨notr,parts.1.1.2⟩,notr⟩
-  simp only [programC,wires_append,Finset.union_subset_iff]
-  exact ⟨⟨⟨parts.2,erase⟩,sub⟩,(CleanInverse5.inverse_support _).trans parts.1.1.1⟩
-
-theorem programC_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J B : Wire) (hJ : J∉L.wires) (hB : B∉L.wires) (hJB : [J,B].Nodup) :
-    GatePhysical (programC L J B) := by
-  have old:=EntryRetained5.program_physical L hw hn J B hJ hB hJB
-  have parts : ((GatePhysical (prepare L J B) ∧ GatePhysical (arithmetic L)) ∧
-      GatePhysical (eraseScalarsAt L J B)) ∧ GatePhysical (clearParity L J) := by
-    simpa only [EntryRetained5.program,prefixProgram,gatePhysical_append] using old
-  have n:=erasePorts_nodup L hw hn J B hJ hB hJB
-  have ctr : (lowY L)≠J ∧ L.parity≠L.lower ∧ (lowY L)≠L.one ∧ L.parity≠L.one ∧
-      L.rmsb≠L.lower ∧ L.one≠L.lower ∧ L.lower≠L.sign ∧ (lowY L)≠L.sign ∧ J≠lowY L ∧ B≠lowY L := by
-    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-      not_or,not_false_eq_true,and_true] at n
-    rcases n with ⟨⟨pA,pD,pE,pU,pJ,pB,pH⟩,⟨⟨aD,aE,aU,aJ,aB,aH⟩,
-      ⟨⟨dE,dU,dJ,dB,dH⟩,⟨⟨eU,eJ,eB,eH⟩,⟨⟨uJ,uB,uH⟩,⟨⟨jB,jH⟩,bH⟩⟩⟩⟩⟩⟩
-    exact ⟨uJ,pA,Ne.symm dU,pD,Ne.symm aH,Ne.symm aD,aE,Ne.symm eU,
-      Ne.symm uJ,Ne.symm uB⟩
-  have restore : GatePhysical (restoreAt L J B) := by
-    simp [restoreAt,restoreScalars,GatePhysical,PhysicalInstr,ProperGate,ctr.1,ctr.2.1,
-      ctr.2.2.1,ctr.2.2.2.1,ctr.2.2.2.2.1,ctr.2.2.2.2.2.1,
-      ctr.2.2.2.2.2.2.1,ctr.2.2.2.2.2.2.2.1,ctr.2.2.2.2.2.2.2.2.1,ctr.2.2.2.2.2.2.2.2.2]
-  have sub : GatePhysical (affineSub (sources L) L.r (L.carry.take 255) (lowY L)) := by
-    simp only [affineSub,gatePhysical_append]
-    exact ⟨⟨notRegister_physical _,parts.1.1.2⟩,notRegister_physical _⟩
-  simp only [programC,gatePhysical_append]
-  exact ⟨⟨⟨parts.2,restore⟩,sub⟩,CleanInverse5.inverse_physical _ parts.1.1.1⟩
-
-theorem programC_slots (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J B : Wire) (hJ : J∉L.wires) (hB : B∉L.wires) : gateSlots (programC L J B)≤10000 := by
-  let zero : State:=⟨false,fun _=>false⟩
-  have ready:=prepare_ready L hw hn J B hJ hB zero
-    ((regValue_zero _ _).mpr (by intro q hq;rfl)) (by intro q hq;rfl) rfl
-  have inv:=CleanInverse5.inverse_slots _ (CleanInverse5.ready_proper _ _ ready)
-  have prep:=prepare_slots_le L hw J B
-  have arith:=arithmetic_slots L hw
-  have par:=clearParity_slots_le L hw J
-  have pc:=prepare_counts L hw J B
-  have xr:=notRegister_gateSlots L.r
-  have len:=BalancedCleanup.widths L.toLayout hw
-  have rest : gateSlots (restoreAt L J B)=8 := rfl
-  simp only [programC,affineSub,gateSlots_append,show Affine.add (sources L) L.r
-    (L.carry.take 255) (lowY L)=arithmetic L from rfl,xr,len.2.1,arith,rest]
-  omega
 end ECDSAAdd.Entrant.FirstInverse5
 
 set_option maxRecDepth 8192
@@ -5021,13 +4876,6 @@ open Arithmetic BalancedCircuit BalancedField
 def jointInv (L : BalancedCircuit.Layout) (J G : Wire) : Program :=
   [.X G] ++ programC L J G ++ [.X G]
 
-
-theorem jointInv_counts (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J G : Wire) (hJ : J∉L.wires) (hG : G∉L.wires) :
-    toffoliCount (jointInv L J G)=515 ∧ measurementCount (jointInv L J G)=770 := by
-  have h:=programC_counts L hw hn J G hJ hG
-  simpa only [jointInv,toffoliCount_append,measurementCount_append,
-    toffoliCount,measurementCount,Nat.zero_add,Nat.add_zero] using h
 
 private theorem outside_layout (L : BalancedCircuit.Layout) (q : Wire)
     (hq : q ∉ L.wires) : q ∉ L.r ∧ q ∉ L.y ∧ q ∉ BalancedCircuit.work L := by
@@ -5149,36 +4997,6 @@ theorem work_no_data (L : Layout) (hn : L.wires.Nodup) (q : Wire) (hq : q∈work
     simp only [BalancedCleanup.Layout.r,BalancedCleanup.Layout.y,BalancedCleanup.Layout.low,
       List.count_append,List.count_cons,List.count_nil] at h b
     omega
-
-theorem jointInv_pair (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J G : Wire) (hJ : J∉L.wires) (hG : G∉L.wires) (hJG : [J,G].Nodup)
-    (origin : BasisState) (clean : ∀q∈work L,origin q=false) (sign : origin L.sign=false)
-    (Z : Fp) :
-    Triple (PairFrame L.r L.y origin
-      (centerWord ((if origin J && !origin G then -Z else Z)/2))
-      (centerWord (if origin J then Z else 0))) (jointInv L J G)
-      (PairFrame L.r L.y origin (centerWord Z) 0) := by
-  have outside (q : Wire) (hq : q∉L.wires) : q∉L.r ∧ q∉L.y := by
-    constructor <;> intro bad
-    · exact hq (EntryRetained5.data_member L q (by simp [bad]))
-    · exact hq (EntryRetained5.data_member L q (by simp [bad]))
-  have sf:=flagAway L hn L.sign (by simp)
-  have sa : L.sign∉L.r ∧ L.sign∉L.y :=
-    ⟨fun bad=>sf (by simp [bad]),fun bad=>sf (by simp [bad])⟩
-  intro s m h
-  have hc : ∀q∈work L,s.basis q=false := fun q hq=>
-    (h.2.2 q (work_no_data L hn q hq).1 (work_no_data L hn q hq).2).trans (clean q hq)
-  have rr : regValue L.r s.basis=encodeWord 256
-      (halfResult (signedY (origin J && !origin G) (centerFp Z))) := by
-    rw [unary_half]
-    exact h.1
-  have yy : regValue L.y s.basis=encodeWord 256 (if origin J then centerFp Z else 0) := by
-    rw [source_word]
-    exact h.2.1
-  have out:=jointInv_frame L hw hn J G hJ hG hJG (origin J) (origin G) (centerFp Z)
-    (centerFp_bounds Z) s m rr yy hc ((h.2.2 _ sa.1 sa.2).trans sign)
-    (h.2.2 _ (outside J hJ).1 (outside J hJ).2) (h.2.2 _ (outside G hG).1 (outside G hG).2)
-  exact ⟨out.1,out.2.1,out.2.2.1,fun q qr qy=>(out.2.2.2 q qr qy).trans (h.2.2 q qr qy)⟩
 
 theorem matrix_inverse (J G : Bool) (X Y : Fp)
     (hz : (if J then 2*X+(if G then -Y else Y) else Y)=0) :
@@ -5803,34 +5621,6 @@ theorem clearParity_support (L : Layout) (hw : L.Widths) (J : Wire) :
     · exact hp
   · simp [wires,Instr.wires,Finset.insert_subset_iff,hj]
   · simp [wires,Instr.wires,Finset.insert_subset_iff,hj]
-
-theorem clearParity_scalar_free (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J : Wire) (hJ : J∉L.wires) (q : Wire) (hq : q=L.one ∨ q=L.sign) :
-    q∉wires (clearParity L J) := by
-  intro used
-  have m := List.mem_toFinset.mp (clearParity_support L hw J used)
-  have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
-    rcases hq with rfl|rfl <;> simp
-  have away := flagAway L hn q flag
-  have sc := scalarND L hn
-  have qj : q≠J := by
-    intro e; apply hJ; rw [←e]
-    rcases hq with rfl|rfl <;> simp [Layout.wires,BalancedCleanup.Layout.wires]
-  have qp : q≠L.parity := by
-    have h := List.nodup_iff_count.mp sc L.parity
-    rcases hq with rfl|rfl <;> intro e <;> rw [e] at h <;> simp [List.count_cons] at h <;> omega
-  have ql : q≠L.lower := by
-    have h := List.nodup_iff_count.mp sc L.lower
-    rcases hq with rfl|rfl <;> intro e <;> rw [e] at h <;> simp [List.count_cons] at h <;> omega
-  simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at m
-  rcases m with ((hr|hy)|hc)|rfl|rfl|rfl
-  · exact away (by simp [hr])
-  · exact away (by simp [hy])
-  · exact away (by simp [List.mem_of_mem_take hc])
-  · exact qp rfl
-  · exact ql rfl
-  · exact qj rfl
-
 
 end ECDSAAdd.Entrant.JointInverse1588
 
@@ -8856,12 +8646,6 @@ def arithH (L : Layout) (J B : Wire) : Program :=
 /-- `EntryRetained5.program` with the hosted carries (#4, #254, and #248 retired from its own site). -/
 def programF (L : Layout) (J B : Wire) : Program :=
   prepare L J B++arithH L J B++eraseScalarsAt L J B++clearF L J
-
-theorem pre4_keep (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) (b : State) (q : Wire)
-    (hc : ∀i,i<4 → q≠cAt L i) :
-    (run (pre4 L) [] b).basis q=b.basis q ∧ (run (pre4 L) [] b).phase=b.phase := by
-  have p := pre4_run L hw hn b []
-  exact ⟨p.2 q (hc 0 (by decide)) (hc 1 (by decide)) (hc 2 (by decide)) (hc 3 (by decide)),p.1⟩
 
 /-- The final parity clear with carries #4 and #254 on the cleared `one` and `sign` (and carry #248 on
 `rmsb`) runs as the record's `clearParity` on every state reached by the forward prefix and the scalar

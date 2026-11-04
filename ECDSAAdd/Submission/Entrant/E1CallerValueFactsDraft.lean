@@ -27,17 +27,4 @@ theorem exit_half_bound (Y : Nat) (hY : Y<ECDSAAdd.p) : Y/2<2^255 := by
   norm_num [ECDSAAdd.p] at hY ⊢
   omega
 
-/-- Three final zero output bits justify the optional affine-carry extension.
-A whole-adder prefix/cleanup proof is still required to use these facts. -/
-theorem exit_top3 (Y : Nat) (hY : Y<ECDSAAdd.p) :
-    (Y/2).testBit 255=false ∧ (Y/2).testBit 256=false ∧ (Y/2).testBit 257=false := by
-  have h := exit_half_bound Y hY
-  refine ⟨Nat.testBit_eq_false_of_lt h,?_,?_⟩
-  · apply Nat.testBit_eq_false_of_lt
-    norm_num at h ⊢
-    omega
-  · apply Nat.testBit_eq_false_of_lt
-    norm_num at h ⊢
-    omega
-
 end ECDSAAdd.Entrant.E1CallerValueFactsResearch

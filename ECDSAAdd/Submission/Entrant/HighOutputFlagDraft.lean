@@ -149,20 +149,6 @@ theorem physical (flag a b c A B z : Wire) (nd : [flag,a,b,c,A,B,z].Nodup) :
     not_or,not_false_eq_true,and_true] at nd
   simp_all [newFlagAt,newLeafAt,eraseCarry,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
 
-theorem recorded_top_equals_flag (flag a b c A B z : Wire)
-    (nd : [flag,a,b,c,A,B,z].Nodup) (s : State) (ctx : RecordedContext)
-    (clean : s.basis z=false)
-    (same : ((s.basis A^^s.basis B)^^carryBit (s.basis a) (s.basis b) (s.basis c))=s.basis flag) :
-    runRecorded (embedRecorded (oldLeafAt a b c A B z)) ctx s=
-      runRecorded (embedRecorded (newFlagAt flag a b c A B)) ctx s := by
-  have eqn := top_equals_flag flag a b c A B z nd s
-    (ctx.tape.drop ctx.cursor) (ctx.tape.drop ctx.cursor) clean same
-  have countEq : recordedMeasurementCount (embedRecorded (oldLeafAt a b c A B z))=
-      recordedMeasurementCount (embedRecorded (newFlagAt flag a b c A B)) :=
-    (embedRecorded_counts _).2.trans (((HighOutputTailStructuredResearch.counts false a b c A B z).2.2.1.trans
-      (counts flag a b c A B).2.1.symm).trans (embedRecorded_counts _).2.symm)
-  simp only [runRecorded,runWithTape_embedRecorded,eqn,countEq]
-
 /-- Source-only complete-adder splice. No theorem about callers or this
 recursive whole adder has yet been compiled. The final carry port is omitted. -/
 def addTopFlag (flag : Wire) : List Wire → List Wire → List Wire → Wire → Program

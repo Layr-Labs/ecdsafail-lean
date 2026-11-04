@@ -620,50 +620,6 @@ theorem stepKAddFlag (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
   exact (congrArg (fun t : State => t.phase=s.phase ∧
     E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp t.basis) equal).mp (old s m hs)
 
-/-- Actual-MF zero substitution, including the ExitMerge caller that opens E1Merge. -/
-theorem stepKAddZero (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
-    (hc : ∀q∈E1Merge.aC w,b0 q=false) (hcin : b0 (w 1797)=false)
-    (Y : Nat) (hY : Y<ECDSAAdd.p) (hWord : (H+X)%2^258=Y/2) :
-    Triple (E1Merge.MF w b0 H X T par f gp fp) (KAddCallerBridgeResearch.zeroKAdd w)
-      (E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp) := by
-  intro s m hs
-  have old := E1Merge.stepKAdd w hn b0 H X T par f gp fp hc hcin
-  rw [kAdd_literal] at old
-  have oldEmpty := old s [] hs
-  have postWord : regValue (wireBlock w 770 258) (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis = Y/2 :=
-    oldEmpty.2.2.1.trans hWord
-  have clean := carry_clean w hn b0 H X T par f gp fp hc s.basis hs
-  have equal := KAddCallerBridgeResearch.exit_run_eq_pool w hn s m clean Y hY postWord
-  exact (congrArg (fun t : State => t.phase=s.phase ∧
-    E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp t.basis) equal).mp (old s m hs)
-
-
-
-/-- Actual-MF zero substitution, including the ExitMerge caller that opens E1Merge. -/
-theorem stepKAddZero3 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
-    (hc : ∀q∈E1Merge.aC w,b0 q=false) (hcin : b0 (w 1797)=false)
-    (Y : Nat) (hY : Y<ECDSAAdd.p) (hWord : (H+X)%2^258=Y/2) :
-    Triple (E1Merge.MF w b0 H X T par f gp fp) (Verifier.Leaf3.zero3KAdd w)
-      (E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp) := by
-  intro s m hs
-  have old := E1Merge.stepKAdd w hn b0 H X T par f gp fp hc hcin
-  rw [kAdd_literal] at old
-  have oldEmpty := old s [] hs
-  have postWord : regValue (wireBlock w 770 258) (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis = Y/2 :=
-    oldEmpty.2.2.1.trans hWord
-  have clean6 := carry_clean w hn b0 H X T par f gp fp hc s.basis hs
-  have clean5 := carry_clean5 w hn b0 H X T par f gp fp hc s.basis hs
-  have hlt : Y/2<2^255 := ECDSAAdd.Entrant.E1CallerValueFactsResearch.exit_half_bound Y hY
-  have tops := Verifier.Leaf3.exit_two_zero w
-    (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis (Y/2) hlt postWord
-  have equal := Verifier.Leaf3.exit3_run_eq_pool w hn s m clean5 clean6 tops.1 tops.2
-  exact (congrArg (fun t : State => t.phase=s.phase ∧
-    E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp t.basis) equal).mp (old s m hs)
-
-
-
 theorem stepKAddZero4 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
     (hc : ∀q∈E1Merge.aC w,b0 q=false) (hcin : b0 (w 1797)=false)

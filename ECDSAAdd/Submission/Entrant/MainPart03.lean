@@ -1463,9 +1463,6 @@ theorem m7f_res (w : R.W) : toffoliCount R.m7f+1=toffoliCount R.m7y ∧
       have c := R.counts q; simp only [KRegs.all,List.count_cons,List.count_append] at c ⊢; omega)) hp
 
 
-theorem m7f_counts (w : R.W) : toffoliCount R.m7f+1=toffoliCount R.m7y ∧
-    measurementCount R.m7f=measurementCount R.m7y := ⟨(R.m7f_res w).1,(R.m7f_res w).2.1⟩
-
 theorem kt_arith (x0 t0 xt yt Q : Nat) (hx0 : x0 ≤ t0) (ht0 : t0 ≤ 1)
     (hle : x0 + 2*xt ≤ t0 + 2*yt) (hlt : t0 + 2*yt < x0 + 2*xt + 2*Q) (hyt : yt < 2*Q) :
     Q ≤ (xt + (2*Q - 1 - yt)) % (2*Q) := by
@@ -3156,20 +3153,6 @@ open Arithmetic
 variable (K : KG)
 attribute [local irreducible] toffoliCount measurementCount Challenge.gateSlots wires
 
-theorem make_counts_old (w : K.R.W) :
-    toffoliCount (make K)+6+2*(if K.R.trimOK then 1 else 0)=toffoliCount (FrontierSumCleanup1591KG.make K) ∧
-    measurementCount (make K)+(if K.R.trimOK then 1 else 0)=measurementCount (FrontierSumCleanup1591KG.make K) := by
-  have a := make_counts K w
-  have b := FrontierSumCleanup1591KG.make_counts K w
-  constructor <;> omega
-
-theorem clear_counts_old (w : K.R.W) :
-    toffoliCount (clear K)+5+(if K.R.trimOK then 1 else 0)=toffoliCount (FrontierSumCleanup1591KG.clear K) ∧
-    measurementCount (clear K)+(if K.R.trimOK then 1 else 0)=measurementCount (FrontierSumCleanup1591KG.clear K) := by
-  have a := clear_counts K w
-  have b := FrontierSumCleanup1591KG.clear_counts K w
-  constructor <;> omega
-
 theorem make_support_subset (w : K.R.W) :
     wires (make K)⊆wires (FrontierSumCleanup1591KG.make K) := by
   have a6 := K.R.m6h_wires_smk w
@@ -3188,16 +3171,6 @@ theorem clear_support_subset (w : K.R.W) :
   simp only [clear,FrontierSumCleanup1591KG.clear,wires_append]
   repeat' apply Finset.union_subset_union
   all_goals first | exact K.R.c8z_wires w | exact K.R.c7t_wires | exact K.R.c6h_wires w | exact Finset.Subset.refl _
-
-theorem make_slots_old (w : K.R.W) :
-    Challenge.gateSlots (make K)≤Challenge.gateSlots (FrontierSumCleanup1591KG.make K) := by
-  have a := K.R.m7t_slots
-  have a7 := K.R.m7k_slots w
-  have a8 := (K.R.m7k_res w).2.2.2.1
-  have b := K.R.m8z_slots w
-  have c := (K.R.m6h_slots w).trans (K.R.m6k_slots w)
-  simp only [make,FrontierSumCleanup1591KG.make,Challenge.gateSlots_append]
-  omega
 
 theorem clear_slots_old (w : K.R.W) :
     Challenge.gateSlots (clear K)≤Challenge.gateSlots (FrontierSumCleanup1591KG.clear K) := by

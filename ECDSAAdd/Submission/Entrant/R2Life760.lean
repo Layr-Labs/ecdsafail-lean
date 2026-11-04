@@ -1257,20 +1257,6 @@ def oldCompute (a b c k t : Wire) : Program :=
 def newCompute (a b c t : Wire) : Program :=
   majority a b c t ++ [.X t]
 
-theorem erase_counts (a b c k t : Wire) :
-    toffoliCount (newErase a b c t) = 0 ∧
-    measurementCount (newErase a b c t) = 1 ∧
-    gateSlots (newErase a b c t) = 5 ∧
-    gateSlots (oldErase a b c k t) = 7 := by
-  exact ⟨rfl, rfl, rfl, rfl⟩
-
-theorem compute_counts (a b c k t : Wire) :
-    toffoliCount (newCompute a b c t) = 1 ∧
-    measurementCount (newCompute a b c t) = 0 ∧
-    gateSlots (newCompute a b c t) = 7 ∧
-    gateSlots (oldCompute a b c k t) = 12 := by
-  exact ⟨rfl, rfl, rfl, rfl⟩
-
 theorem erase_state_eq (a b c k t : Wire) (hn : [a,b,c,k,t].Nodup)
     (s : State) (m n : List Bool) (hk : s.basis k = false)
     (ht : s.basis t = !carryBit (s.basis a) (s.basis b) (s.basis c)) :
@@ -1333,22 +1319,6 @@ private theorem compare_triple_run (P Q R : Program) (m : List Bool) (s : State)
     run (P++Q++R) m s=run R (m.drop (measurementCount P+measurementCount Q))
       (run Q (m.drop (measurementCount P)) (run P m s)) := by
   rw [compare_append_run,compare_append_run,measurementCount_append]
-
-theorem compareChain_eq_records (x y carry : List Wire) (cin target : Wire)
-    (nd : (target::cin::(x++y++carry)).Nodup)
-    (hx : x.length=y.length) (hc : carry.length=y.length)
-    (s : State) (m n : List Bool) (clean : ∀q∈carry,s.basis q=false) :
-    run (Arithmetic.compareChain none x y carry cin target) m s=
-      run (Arithmetic.compareChain none x y carry cin target) n s := by
-  have a:=compareChain_correct none x y carry cin target nd (by simp) hx hc s m clean
-  have b:=compareChain_correct none x y carry cin target nd (by simp) hx hc s n clean
-  apply State.extensionality
-  · exact a.1.trans b.1.symm
-  · funext q
-    by_cases eq:q=target
-    · subst q
-      exact a.2.2.trans b.2.2.symm
-    · exact (a.2.1 q eq).trans (b.2.1 q eq).symm
 
 private theorem compare_leaf_eq (forward : Bool) (a b cin last target : Wire)
     (nd : (target::cin::([a]++[b]++[last])).Nodup)
@@ -2354,51 +2324,11 @@ theorem dependentTop_correct (a b cin top : Wire)
       cases ha : s.basis a <;> cases hb : s.basis b <;> cases hc : s.basis cin <;>
       simp_all [run,writeBit,Function.update]
 
-/-- Literal equality with the public two-bit affine-top program.  The old
-carry is initially zero and is untouched by the new program.  The same
-record can be used on both sides; both sides are independently phase exact. -/
-theorem dependentTop_eq_old (a b cin top carry : Wire)
-    (nd : [a,b,cin,top,carry].Nodup) (s : State) (m : List Bool)
-    (hk : s.basis carry=false)
-    (ht : s.basis top =
-      (carryBit (s.basis a) (s.basis b) (s.basis cin) ^^ s.basis b ^^ s.basis cin)) :
-    run (dependentTop a b cin top) m s =
-      run (TopCarry.addInPlaceTop [a,a] [b,top] [carry] cin) m s := by
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-    not_or,not_false_eq_true,and_true] at nd
-  obtain ⟨⟨hab,hac,hat,hak⟩,⟨hbc,hbt,hbk⟩,⟨hct,hck⟩,htk⟩ := nd
-  have hba := Ne.symm hab
-  have hca := Ne.symm hac
-  have hta := Ne.symm hat
-  have hka := Ne.symm hak
-  have hcb := Ne.symm hbc
-  have htb := Ne.symm hbt
-  have hkb := Ne.symm hbk
-  have htc := Ne.symm hct
-  have hkc := Ne.symm hck
-  have hkt := Ne.symm htk
-  apply State.extensionality
-  · cases hm : m.headD false <;>
-      cases ha : s.basis a <;> cases hb : s.basis b <;> cases hc : s.basis cin <;>
-      simp_all [dependentTop,eraseDependentTop,TopCarry.addInPlaceTop,eraseCarry,
-        run,measureAndCorrect,correct,writeBit,Function.update,carryBit]
-  · funext q
-    by_cases qb : q=b <;> by_cases qt : q=top <;> by_cases qk : q=carry <;>
-      cases ha : s.basis a <;> cases hb : s.basis b <;> cases hc : s.basis cin <;>
-      simp_all [dependentTop,eraseDependentTop,TopCarry.addInPlaceTop,eraseCarry,
-        run,measureAndCorrect,correct_basis,writeBit,Function.update,carryBit]
-
 theorem dependentTop_counts (a b cin top : Wire) :
     toffoliCount (dependentTop a b cin top)=0 ∧
     measurementCount (dependentTop a b cin top)=1 ∧
     gateSlots (dependentTop a b cin top)=9 := by
   exact ⟨rfl,rfl,rfl⟩
-
-theorem dependentTop_physical (a b cin top : Wire) (nd : [a,b,cin,top].Nodup) :
-    GatePhysical (dependentTop a b cin top) := by
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-    not_or,not_false_eq_true,and_true] at nd
-  simp_all [dependentTop,eraseDependentTop,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
 
 theorem dependentTop_support (a b cin top : Wire) :
     wires (dependentTop a b cin top) ⊆ [a,b,cin,top].toFinset := by
@@ -3139,37 +3069,6 @@ theorem readonly_add_carry_eq (x y left right : List Wire) (cin : Wire)
     by_cases used:q∈y
     · exact (regValue_eq_iff y _ _).mp (a.2.2.trans b.2.2.symm) q used
     · exact (a.2.1 q used).trans (b.2.1 q used).symm
-
-theorem readonly_sub_carry_eq (x y left right : List Wire) (cin : Wire)
-    (ndL : (cin::(y++left)).Nodup) (ndR : (cin::(y++right)).Nodup)
-    (disL : List.Disjoint x (cin::(y++left)))
-    (disR : List.Disjoint x (cin::(y++right)))
-    (hx : x.length=y.length) (hL : left.length+1=y.length) (hR : right.length+1=y.length)
-    (s : State) (m n : List Bool)
-    (cleanL : ∀q∈left,s.basis q=false) (cleanR : ∀q∈right,s.basis q=false) :
-    run (subInPlace x y left cin) m s=run (subInPlace x y right cin) n s := by
-  have yND:y.Nodup:=(List.nodup_append'.mp (List.nodup_cons.mp ndL).2).1
-  let u:=run (notRegister y) [] s
-  have first:u=⟨s.phase,fun q=>if q∈y then !s.basis q else s.basis q⟩:=
-    notRegister_correct y yND s []
-  have cleanAt(carry:List Wire)(nd:(cin::(y++carry)).Nodup)
-      (clean:∀q∈carry,s.basis q=false):∀q∈carry,u.basis q=false:=by
-    intro q hq
-    have away:q∉y:=fun used=>
-      List.disjoint_left.mp (List.nodup_append'.mp (List.nodup_cons.mp nd).2).2.2 used hq
-    rw [first]
-    simp only [away,if_false]
-    exact clean q hq
-  have equal:=readonly_add_carry_eq x y left right cin ndL ndR disL disR hx hL hR
-    u m n (cleanAt left ndL cleanL) (cleanAt right ndR cleanR)
-  have zero:measurementCount (notRegister y)=0:=(notRegister_counts y).2
-  have execute(carry:List Wire)(records:List Bool):
-      run (subInPlace x y carry cin) records s=
-        run (notRegister y) [] (run (addInPlace x y carry cin) records u):=by
-    simp only [subInPlace,List.append_assoc]
-    rw [TopCarry.run_zero_head _ _ records s zero,run_append,run_take]
-    exact FifthCarry.no_records (notRegister y) zero _ _ []
-  rw [execute left m,execute right n,equal]
 
 end ECDSAAdd.Entrant.Q6LifetimeProof
 end -- original module boundary
@@ -4885,11 +4784,6 @@ theorem half_retired_free (retired : Nat) (hr : retired=719∨retired=720∨reti
     base retired∉wires (half (base retired) divide base (base 2409)) := by
   intro used
   exact (Finset.mem_erase.mp (half_support_erased retired hr divide used)).1 rfl
-
-theorem halfE_retired_free (retired : Nat) (hr : retired=719∨retired=720∨retired=760) (divide : Bool) :
-    base retired∉wires (halfE (base retired) divide base (base 2409)) := by
-  intro used
-  exact (Finset.mem_erase.mp (halfE_support_erased retired hr divide used)).1 rfl
 
 theorem half_support_old (retired : Nat) (hr : retired=719∨retired=720∨retired=760) (divide : Bool) :
     wires (half (base retired) divide base (base 2409))⊆

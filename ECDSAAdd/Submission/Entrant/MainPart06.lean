@@ -1595,13 +1595,7 @@ def forward6 : Program :=
    .measureX 529 [] [.Z 1552, .CZ 1554 525, .CZ 527 1552, .CZ 1552 525],
    .CX 526 786]
 
-theorem forward6_counts :
-    toffoliCount forward6 = 6 ∧ measurementCount forward6 = 9 := by decide +kernel
-
 theorem forward6_wires : wires forward6 ⊆ sitesT8.toFinset := by decide +kernel
-
-theorem forward6_physical : GatePhysical forward6 := by
-  simp (config := {maxSteps := 4000000}) [forward6,GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate]
 
 abbrev previousForward508 : Program := tick508ExF ++ tickMF
 
@@ -3983,10 +3977,6 @@ theorem sqRet_mem_overflow : sqRet L∈L.overflowPad := by
   rw [h,List.getD_eq_getElem _ _ (by rw [hw.overflowPad]; omega)]
   exact List.getElem_mem _
 
-theorem sqRet_mem_wires : sqRet L∈L.wires := by
-  simp only [CuccaroStreamedSquareWideLayout.wires,List.mem_append]
-  exact Or.inr (sqRet_mem_overflow L hw)
-
 end Sites
 
 theorem sqHost_mem (ext : List Wire) (he : 300≤ext.length) : sqHost ext∈ext := by
@@ -5169,10 +5159,6 @@ theorem pi_kR (q : Wire) (hq : q∈wireBlock base 770 258) : pi q=q := by
   simp only [List.mem_range'_1] at hi
   rw [pi_base,piN_kR i (by omega)]
 
-theorem pi_symm_kR (q : Wire) (hq : q∈wireBlock base 770 258) : pi.symm q=q := by
-  have := pi_kR q hq
-  rw [←this,Equiv.symm_apply_apply,this]
-
 theorem pi_fix (i : Nat) (hi : i < 258 ∨ (770 ≤ i ∧ i < 1285) ∨ (1540 ≤ i ∧ i < 1797) ∨ i=2400) :
     pi (base i)=base i := by
   rw [pi_base]; congr 1
@@ -5317,11 +5303,6 @@ theorem num_not_pool (q : Wire) (hq : q∈skywalkPoolWires base) : q∉wireBlock
   obtain ⟨i,hi,rfl⟩ := (mem_pool_iff q).mp hq
   intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
   simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-
-theorem kR_pool (q : Wire) (hq : q∈wireBlock base 770 258) : q∈skywalkPoolWires base := by
-  obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
-  simp only [List.mem_range'_1] at hi
-  exact (mem_pool_iff _).mpr ⟨i,by omega,rfl⟩
 
 theorem rawX (F : Program) (k : Nat) (hk : k < p) (hn : (skywalkSharedWires base).Nodup)
     (hlo : History5.HistoryAbove base) (x y : Nat) (hx0 : 0 < x) (hx : x < p)

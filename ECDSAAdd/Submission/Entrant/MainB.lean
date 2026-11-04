@@ -5806,43 +5806,6 @@ theorem bf_clear32_range (H : Nat) (hH : H<2^130) :
   norm_num at hH ⊢
   omega
 
-theorem bf_clear10_counts (x y carry : List Wire) (cin : Wire)
-    (hy : y.length=131) (hx : x.length=y.length) (hc : carry.length+1=y.length) :
-    toffoliCount (program 124 x y carry cin)=123 ∧
-    measurementCount (program 124 x y carry cin)=130 := by
-  simpa using counts 129 124 x y carry cin hy hx hc
-
-theorem bf_clear32_counts (x y carry : List Wire) (cin : Wire)
-    (hy : y.length=131) (hx : x.length=y.length) (hc : carry.length+1=y.length) :
-    toffoliCount (program 108 x y carry cin)=107 ∧
-    measurementCount (program 108 x y carry cin)=130 := by
-  simpa using counts 129 108 x y carry cin hy hx hc
-
-
-theorem bf_clear10_run (x y carry : List Wire) (cin : Wire)
-    (hy : y.length=131) (hx : x.length=y.length) (hc : carry.length+1=y.length)
-    (hn : (cin::(x++y++carry)).Nodup) (s : State) (m : List Bool)
-    (hclean : ∀q∈carry,s.basis q=false) (hi : s.basis cin=false)
-    (H : Nat) (hH : H<2^130) (hX : regValue x s.basis=H)
-    (hY : regValue y s.basis=1040*H/2^10) :
-    run (program 124 x y carry cin) m s=run (subInPlace x y carry cin) m s := by
-  have h := bf_clear10_range H hH
-  apply run_eq 129 124 x y carry cin hy hx hc hn s m hclean hi
-  · simpa only [hX,hY] using h.1
-  · simpa only [hX,hY] using h.2.2
-
-theorem bf_clear32_run (x y carry : List Wire) (cin : Wire)
-    (hy : y.length=131) (hx : x.length=y.length) (hc : carry.length+1=y.length)
-    (hn : (cin::(x++y++carry)).Nodup) (s : State) (m : List Bool)
-    (hclean : ∀q∈carry,s.basis q=false) (hi : s.basis cin=false)
-    (H : Nat) (hH : H<2^130) (hX : regValue x s.basis=H)
-    (hY : regValue y s.basis=(976*H+H*2^32)/2^32) :
-    run (program 108 x y carry cin) m s=run (subInPlace x y carry cin) m s := by
-  have h := bf_clear32_range H hH
-  apply run_eq 129 108 x y carry cin hy hx hc hn s m hclean hi
-  · simpa only [hX,hY] using h.1
-  · simpa only [hX,hY] using h.2.2
-
 end ECDSAAdd.Entrant.CodexKnownOnesTail
 
 end -- CodexKnownOnesTailCore inline options
@@ -6871,121 +6834,6 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 def accFoldQK (L : CuccaroStreamedSquareWideLayout) (a : AccItem) : Program :=
   fillInK L a++qprog L.measuredCore SquareReduction.p++fillOutK L a
 
-theorem accFoldQK_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (hn : L.wires.Nodup) (base : BasisState) (a : AccItem)
-    (hv : AccView L base a) (hc : L.PairClean base) (O : Nat) (hO : O<SquareReduction.p) :
-    Triple (SquareFrame L.core.out base O) (accFoldQK L a)
-      (SquareFrame L.core.out base ((Acc.accVal base 0 a.spec+(SquareReduction.p-1-O))%SquareReduction.p)) := by
-  intro s m hf
-  have lens := acc_lengths L hw
-  have clean := L.squareFrame_clean hn base s.basis O hf hc
-  let b0 := s.basis
-  have prodOut := L.product_out_disjoint hn
-  have auxAway (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
-      L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉L.core.out :=
-    (L.pairAuxAway hn q hq).2
-  have workZero : ∀q∈L.core.work,b0 q=false := (regValue_zero _ _).mp clean.work
-  have padZero : ∀q∈L.foldPad,b0 q=false := (regValue_zero _ _).mp clean.pad
-  have hz : ∀q∈accZ L,b0 q=false := by
-    intro q hq
-    rcases accZ_mem L q hq with h|h
-    · exact padZero q h
-    · exact workZero q (List.mem_of_mem_drop h)
-  have hb : ∀q∈accBank L,b0 q=false := fun q hq => padZero q (List.mem_of_mem_take hq)
-  have hW0 : ∀q∈wTemp L,b0 q=false := fun q hq => workZero q (wTemp_work L q hq)
-  have prodNotOut (q : Wire) (hq : q∈L.core.product) : q∉L.core.out :=
-    fun ho => List.disjoint_left.mp prodOut hq ho
-  have agree0 : ∀q∈L.core.product,b0 q=base q := fun q hq => hf.2 q (prodNotOut q hq)
-  let A := Acc.accVal base 0 a.spec
-  have hA : A<2^163 := Acc.accVal_lt base 163 a.spec 0 (by norm_num) hv.specValid
-  have accZero : regValue (accReg L) b0=0 :=
-    (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
-  have hbuild := fillInK_triple L hw hn base a hv b0 agree0 hz hb clean.cin hW0
-  rw [accFoldQK,List.append_assoc,run_append,run_append]
-  let mb := measurementCount (fillInK L a)
-  let mk := measurementCount (qprog L.measuredCore SquareReduction.p)
-  let u := run (fillInK L a) (m.take mb) s
-  have eu := hbuild s (m.take mb) ⟨accZero,fun _ _ => rfl⟩
-  change u.phase=s.phase ∧ SquareFrame (accReg L) b0 A u.basis at eu
-  have keepU (q : Wire) (hq : q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
-      L.core.normFlag,L.core.modFlag]++L.core.out++L.core.product++L.core.work.drop 163) : u.basis q=b0 q :=
-    eu.2.2 q (accReg_away L hn q hq)
-  have workU : regValue L.core.work u.basis=A := by
-    have sp := regValue_append (L.core.work.take 163) (L.core.work.drop 163) u.basis
-    rw [List.take_append_drop] at sp
-    have hi : regValue (L.core.work.drop 163) u.basis=0 :=
-      (regValue_zero _ _).mpr (fun q hq => (keepU q (by simp [hq])).trans (workZero q (List.mem_of_mem_drop hq)))
-    rw [sp,hi]
-    simpa [accReg] using eu.2.1
-  have outU : regValue L.core.out u.basis=O :=
-    (regValue_congr _ _ _ (fun q hq => keepU q (by simp [hq]))).trans hf.1
-  have coreNd : L.measuredCore.wires.Nodup :=
-    (List.nodup_cons.mp (by simpa using L.measuredFold_interfaces hn [] (by simp))).2
-  have hp : SquareReduction.p+SquareReduction.c=2^256 := by
-    norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
-  have hAp : A<SquareReduction.p := lt_of_lt_of_le hA (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
-  have carryU : ∀q∈L.measuredCore.carry,u.basis q=false := by
-    intro q hq
-    simp only [measuredCore,foldCarry,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with hq|rfl|rfl
-    · exact (keepU q (by simp [hq])).trans (padZero q hq)
-    · exact (keepU _ (by simp)).trans clean.productHigh
-    · exact (keepU _ (by simp)).trans clean.workHigh
-  have ek := QCore.qprog_correct L.measuredCore 256 SquareReduction.c SquareReduction.p (L.measuredCore_widths hw)
-    coreNd (by decide) hp (by norm_num [SquareReduction.c]) A O hAp hO u ((m.drop mb).take mk)
-    workU outU ((keepU _ (by simp [measuredCore])).trans clean.outHigh)
-    ((keepU _ (by simp [measuredCore])).trans clean.modFlag)
-    carryU ((keepU _ (by simp [measuredCore])).trans clean.cin)
-  let v := run (qprog L.measuredCore SquareReduction.p) ((m.drop mb).take mk) u
-  change v.phase=u.phase ∧ regValue L.core.out v.basis=(A+(SquareReduction.p-1-O))%SquareReduction.p ∧
-    ∀q,q∉L.core.out → v.basis q=u.basis q at ek
-  let base2 : BasisState := fun q => if q∈L.core.out then v.basis q else b0 q
-  have b2off (q : Wire) (hq : q∉L.core.out) : base2 q=b0 q := by simp [base2,hq]
-  have accOut (q : Wire) (hq : q∈accReg L) : q∉L.core.out := auxAway q (by simp [accReg_work L q hq])
-  have frame2 : SquareFrame (accReg L) base2 A v.basis := by
-    refine ⟨?_,?_⟩
-    · exact (regValue_congr _ _ _ (fun q hq => ek.2.2 q (accOut q hq))).trans eu.2.1
-    · intro q hq
-      by_cases ho : q∈L.core.out
-      · simp [base2,ho]
-      · rw [b2off q ho,ek.2.2 q ho]; exact eu.2.2 q hq
-  have hz2 : ∀q∈accZ L,base2 q=false := by
-    intro q hq
-    have ho : q∉L.core.out := by
-      simp only [accZ,List.mem_append] at hq
-      rcases hq with hq|hq
-      · exact auxAway q (by simp [List.mem_of_mem_drop hq])
-      · exact auxAway q (by simp [List.mem_of_mem_drop hq])
-    rw [b2off q ho]; exact hz q hq
-  have hb2 : ∀q∈accBank L,base2 q=false := by
-    intro q hq
-    have ho : q∉L.core.out := auxAway q (by simp [List.mem_of_mem_take hq])
-    rw [b2off q ho]; exact hb q hq
-  have hi2 : base2 L.core.cin=false := by
-    rw [b2off _ (auxAway _ (by simp))]; exact clean.cin
-  have hW2 : ∀q∈wTemp L,base2 q=false := by
-    intro q hq
-    have ho : q∉L.core.out := auxAway q (by simp [wTemp_work L q hq])
-    rw [b2off q ho]; exact hW0 q hq
-  have agree2 : ∀q∈L.core.product,base2 q=base q :=
-    fun q hq => (b2off q (prodNotOut q hq)).trans (agree0 q hq)
-  have hun := fillOutK_triple L hw hn base a hv base2 agree2 hz2 hb2 hi2 hW2
-  have eo := hun v ((m.drop mb).drop mk) frame2
-  refine ⟨eo.1.trans (ek.1.trans eu.1),?_,?_⟩
-  · have e : regValue L.core.out (run (fillOutK L a) ((m.drop mb).drop mk) v).basis=
-        regValue L.core.out v.basis := by
-      apply regValue_congr; intro q hq
-      have na : q∉accReg L := fun h => accOut q h hq
-      rw [eo.2.2 q na]; simp [base2,hq]
-    rw [e,ek.2.1]
-  · intro q hq
-    by_cases ha : q∈accReg L
-    · have z := (regValue_zero _ _).mp eo.2.1 q ha
-      rw [z]
-      exact ((regValue_zero _ _).mp hc.work q (accReg_work L q ha)).symm
-    · rw [eo.2.2 q ha,b2off q hq]; exact hf.2 q hq
-
-
 end ECDSAAdd.Entrant.OwnDiagAll12Square
 
 namespace ECDSAAdd.Entrant
@@ -6996,113 +6844,6 @@ def accFoldQ4K (L : CuccaroStreamedSquareWideLayout) (a : AccItem) : Program :=
 
 namespace Q4
 
-
-theorem accFoldQ4K_run (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (hn : L.wires.Nodup) (base : BasisState) (a : AccItem)
-    (hv : AccView L base a) (hc : L.PairClean base) (O : Nat) (hO : O<SquareReduction.p)
-    (h16 : Acc.accVal base 0 a.spec%16=0)
-    (s : State) (m : List Bool) (hf : SquareFrame L.core.out base O s.basis) :
-    run (accFoldQ4K L a) m s=run (OwnDiagAll12Square.accFoldQK L a) m s := by
-  have lens := acc_lengths L hw
-  have clean := L.squareFrame_clean hn base s.basis O hf hc
-  let b0 := s.basis
-  have prodOut := L.product_out_disjoint hn
-  have workZero : ∀q∈L.core.work,b0 q=false := (regValue_zero _ _).mp clean.work
-  have padZero : ∀q∈L.foldPad,b0 q=false := (regValue_zero _ _).mp clean.pad
-  have hz : ∀q∈accZ L,b0 q=false := by
-    intro q hq
-    rcases accZ_mem L q hq with h|h
-    · exact padZero q h
-    · exact workZero q (List.mem_of_mem_drop h)
-  have hb : ∀q∈accBank L,b0 q=false := fun q hq => padZero q (List.mem_of_mem_take hq)
-  have hW0 : ∀q∈wTemp L,b0 q=false := fun q hq => workZero q (wTemp_work L q hq)
-  have prodNotOut (q : Wire) (hq : q∈L.core.product) : q∉L.core.out :=
-    fun ho => List.disjoint_left.mp prodOut hq ho
-  have agree0 : ∀q∈L.core.product,b0 q=base q := fun q hq => hf.2 q (prodNotOut q hq)
-  let A := Acc.accVal base 0 a.spec
-  have hA : A<2^163 := Acc.accVal_lt base 163 a.spec 0 (by norm_num) hv.specValid
-  have accZero : regValue (accReg L) b0=0 :=
-    (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
-  have hbuild := OwnDiagAll12Square.fillInK_triple L hw hn base a hv b0 agree0 hz hb clean.cin hW0
-  let mb := measurementCount (OwnDiagAll12Square.fillInK L a)
-  let u := run (OwnDiagAll12Square.fillInK L a) (m.take mb) s
-  have eu := hbuild s (m.take mb) ⟨accZero,fun _ _ => rfl⟩
-  change u.phase=s.phase ∧ SquareFrame (accReg L) b0 A u.basis at eu
-  have keepU (q : Wire) (hq : q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
-      L.core.normFlag,L.core.modFlag]++L.core.out++L.core.product++L.core.work.drop 163) : u.basis q=b0 q :=
-    eu.2.2 q (accReg_away L hn q hq)
-  have workU : regValue L.core.work u.basis=A := by
-    have sp := regValue_append (L.core.work.take 163) (L.core.work.drop 163) u.basis
-    rw [List.take_append_drop] at sp
-    have hi : regValue (L.core.work.drop 163) u.basis=0 :=
-      (regValue_zero _ _).mpr (fun q hq => (keepU q (by simp [hq])).trans (workZero q (List.mem_of_mem_drop hq)))
-    rw [sp,hi]
-    simpa [accReg] using eu.2.1
-  have outU : regValue L.core.out u.basis=O :=
-    (regValue_congr _ _ _ (fun q hq => keepU q (by simp [hq]))).trans hf.1
-  have coreNd : L.measuredCore.wires.Nodup :=
-    (List.nodup_cons.mp (by simpa using L.measuredFold_interfaces hn [] (by simp))).2
-  have hp : SquareReduction.p+SquareReduction.c=2^256 := by
-    norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
-  have hAp : A<SquareReduction.p := lt_of_lt_of_le hA (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
-  have carryU : ∀q∈L.measuredCore.carry,u.basis q=false := by
-    intro q hq
-    simp only [measuredCore,foldCarry,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with hq|rfl|rfl
-    · exact (keepU q (by simp [hq])).trans (padZero q hq)
-    · exact (keepU _ (by simp)).trans clean.productHigh
-    · exact (keepU _ (by simp)).trans clean.workHigh
-  have workLen : L.core.work.length=256 := (L.measuredCore_widths hw).src
-  have lowU : ∀q∈L.measuredCore.src.take 4,u.basis q=false := by
-    have t := CuccaroStreamedSquareWideLayout.regValue_take_mod L.core.work 4 (by omega) u.basis
-    rw [workU] at t
-    have z : regValue (L.core.work.take 4) u.basis=0 := by rw [t]; simpa [A] using h16
-    exact (regValue_zero _ _).mp z
-  rw [accFoldQ4K,OwnDiagAll12Square.accFoldQK,List.append_assoc,List.append_assoc,run_append (OwnDiagAll12Square.fillInK L a),run_append (OwnDiagAll12Square.fillInK L a)]
-  have cnt := counts L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by norm_num)
-  exact run_congr_left _ _ _ u cnt.2 (fun m' => run_eq L.measuredCore 256 SquareReduction.c SquareReduction.p
-    (L.measuredCore_widths hw) coreNd (by norm_num) hp (by norm_num [SquareReduction.c]) A O hAp hO u m'
-    workU outU ((keepU _ (by simp [measuredCore])).trans clean.outHigh)
-    ((keepU _ (by simp [measuredCore])).trans clean.modFlag)
-    carryU ((keepU _ (by simp [measuredCore])).trans clean.cin) lowU) _
-
-
-theorem accFoldQ4K_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem)
-    (ok : ∀f∈a.terms,TermOK f) :
-    toffoliCount (accFoldQ4K L a)≤toffoliCount (accFoldQ4 L a) ∧
-    measurementCount (accFoldQ4K L a)=measurementCount (accFoldQ4 L a) ∧
-    ECDSAAdd.wires (accFoldQ4K L a)⊆ECDSAAdd.wires (accFoldQ4 L a) ∧
-    Challenge.gateSlots (accFoldQ4K L a)≤Challenge.gateSlots (accFoldQ4 L a) := by
-  have r := OwnDiagAll12Square.fillK_rel L hw a ok
-  simp only [accFoldQ4K,accFoldQ4,toffoliCount_append,measurementCount_append,wires_append,
-    Challenge.gateSlots_append]
-  refine ⟨by omega,by omega,?_,by omega⟩
-  exact Finset.union_subset_union (Finset.union_subset_union r.1.2.2.1 (Finset.Subset.refl _)) r.2.2.2.1
-
-theorem accFoldQ4K_counts_early (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (a : AccItem)
-    (src : List Wire) (hsrc : src.length≤130) (he : a.terms=earlyHTerms src)
-    (ok : ∀f∈a.terms,TermOK f) :
-    toffoliCount (accFoldQ4K L a)+3=toffoliCount (accFoldQ4 L a) := by
-  have r := OwnDiagAll12Square.fillK_rel L hw a ok
-  have e : a.terms=Acc.earlyTerm src false 4::Acc.earlyTerm src false 10::Acc.earlyTerm src true 6::
-      Acc.earlyTerm src false 32::[] := by rw [he]; rfl
-  have c := CKAcc.sbuildK_counts_early (accReg L) (accZ L) (accBank L) L.core.cin src
-    (acc_lengths L hw).1 hsrc (Acc.earlyTerm src false 32) []
-    (by simp [CKAcc.IsT32,Acc.earlyTerm]) (fun f hf => fitsLen_of L hw f (ok f (by rw [e]; exact hf)))
-  rw [← e] at c
-  simp only [accFoldQ4K,accFoldQ4,OwnDiagAll12Square.fillInK,fillIn,OwnDiagAll12Square.fillOutK,fillOut,
-    toffoliCount_append]
-  omega
-
-theorem accFoldQ4K_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (a : AccItem) (cnt : ∀f∈a.terms,SrcOK L f) (ok : ∀f∈a.terms,TermOK f)
-    (cntP : ∀f∈a.pre,∀q,f.src.count q≤L.core.product.count q) (okP : ∀f∈a.pre,TermOK33 f) :
-    GatePhysical (accFoldQ4K L a) := by
-  have old := accFoldQ4_physical L a (accFoldQ_physical L hw hn a cnt ok cntP okP)
-  have k := OwnDiagAll12Square.fillK_physical L hw hn a cnt ok cntP okP
-  simp only [accFoldQ4,gatePhysical_append] at old
-  simp only [accFoldQ4K,gatePhysical_append]
-  exact ⟨⟨k.1,old.1.2⟩,k.2⟩
 
 end Q4
 end ECDSAAdd.Entrant
@@ -7705,14 +7446,6 @@ theorem bodyCTail_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) 
     ECDSAAdd.wires (bodyCTail L g)⊆(g::L.wires).toFinset :=
   (bodyCTail_rel L hw g).2.2.1.trans (bodyC_support L hw hn g)
 
-theorem bodyCTail_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (g : Wire) (hg : g∉L.wires) : GatePhysical (bodyCTail L g) := by
-  have st := bodyC_static L hw
-  have a := mixFoldsQ_physical L hw hn false _ st.1
-  have b := accFoldQFTail_physical L hw hn g hg (accCItem L) st.2.1 st.2.2.1 st.2.2.2.1 st.2.2.2.2
-  simp only [bodyCTail,gatePhysical_append]
-  exact ⟨a,b⟩
-
 theorem bodyCTail_gateSlots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
     Challenge.gateSlots (bodyCTail L g)≤2*(41000+2*(20*(14*163))+(67*256+41)) :=
   (bodyCTail_rel L hw g).2.2.2.trans (bodyC_gateSlots L hw g)
@@ -7776,45 +7509,6 @@ theorem accMiddleCFTail_body (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
   rw [←target,ZMod.val_natCast]
 
 /-! Explicit state equality, derived from complete frames, not just equal register values. -/
-theorem fillOutTail_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (base : BasisState) (a : AccItem) (hv : AccView L base a)
-    (b : BasisState) (agree : ∀q∈L.core.product,b q=base q)
-    (hz : ∀q∈accZ L,b q=false) (hb : ∀q∈accBank L,b q=false) (hi : b L.core.cin=false)
-    (hW : ∀q∈wTemp L,b q=false) (s : State) (records : List Bool)
-    (hs : SquareFrame (accReg L) b (Acc.accVal base 0 a.spec) s.basis) :
-    run (fillOutTail L a) records s=run (OwnDiagAll12Square.fillOutK L a) records s := by
-  have newer := fillOutTail_triple L hw hn base a hv b agree hz hb hi hW s records hs
-  have older := OwnDiagAll12Square.fillOutK_triple L hw hn base a hv b agree hz hb hi hW s records hs
-  apply State.extensionality
-  · exact newer.1.trans older.1.symm
-  · funext q
-    by_cases hq : q∈accReg L
-    · exact (regValue_eq_iff _ _ _).mp (newer.2.1.trans older.2.1.symm) q hq
-    · exact (newer.2.2 q hq).trans (older.2.2 q hq).symm
-
-theorem bodyCTail_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (control : Wire) (hn : (control::L.wires).Nodup) (M O : Nat) (hO : O<SquareReduction.p)
-    (s : State) (records : List Bool) (pv : regValue L.core.product s.basis=M^2)
-    (hM : s.basis control=false → M=0)
-    (clean : L.PairClean s.basis) (outO : regValue L.core.out s.basis=O) :
-    run (bodyCTail L control) records s=run (OwnDiagAll12Square.bodyCK L control) records s := by
-  have newer := accMiddleCFTail_body L hw control hn M O hO s records pv hM clean outO
-  have older := OwnDiagAll12Square.accMiddleCFK_body L hw control hn M O hO s records pv hM clean outO
-  apply State.extensionality
-  · exact newer.1.trans older.1.symm
-  · funext q
-    by_cases hq : q∈L.core.out
-    · exact (regValue_eq_iff _ _ _).mp (newer.2.1.trans older.2.1.symm) q hq
-    · exact (newer.2.2 q hq).trans (older.2.2 q hq).symm
-
-theorem bodyCTail_selected_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wire) :
-    toffoliCount (bodyCTail L g)+28=toffoliCount (OwnDiagAll12Square.bodyCK L g) ∧
-    measurementCount (bodyCTail L g)=measurementCount (OwnDiagAll12Square.bodyCK L g) := by
-  have new := bodyCTail_counts L hw g
-  have old := OwnDiagAll12Square.bodyCK_counts L hw g
-  omega
-
-
 end ECDSAAdd.Entrant.CodexCKAccTail
 end
 
@@ -8083,9 +7777,6 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 
 /-- Classical offset of the restructured B fold. -/
 def K : Nat := 4294968272*(2^129-1)
-
-theorem K_lt : K<SquareReduction.p := by
-  norm_num [K,SquareReduction.p,SquareReduction.B,SquareReduction.c]
 
 /-- Controlled complement of a register, as a frame transformer. -/
 theorem complement_frame (r : List Wire) (hr : r.Nodup) (c : Wire) (hc : c∉r)
@@ -8593,24 +8284,6 @@ theorem eFlip_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L
   rw [sp,hd,tr.2.1,lo]
   unfold flipE
   cases base c <;> simp <;> omega
-
-theorem eCore_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (base : BasisState) (hc : L.PairClean base) (O E : Nat) (hO : O<SquareReduction.p) :
-    Triple (BState L base O E 0) (accFoldQ4 L (eItem L))
-      (BState L base ((4294968272*E+(SquareReduction.p-1-O))%SquareReduction.p) E 0) := by
-  apply lift_out L hn base O E 0 _ (accFoldQ4 L (eItem L))
-  intro s m h
-  have e16 : Acc.accVal s.basis 0 (eItem L).spec%16=0 := by
-    rw [show (eItem L).spec=earlyHTerms (eReg L) from rfl,accVal_earlyH,h.2.1]
-    omega
-  rw [Q4.accFoldQ4_run L hw hn s.basis (eItem L) (eItem_view L hw s.basis)
-    (bstate_clean L hn base hc O E s.basis h) O hO e16 s m ⟨h.1,fun _ _ => rfl⟩]
-  have tr := accFoldQ_frame L hw hn s.basis (eItem L) (eItem_view L hw s.basis)
-    (bstate_clean L hn base hc O E s.basis h) O hO s m ⟨h.1,fun _ _ => rfl⟩
-  have e : Acc.accVal s.basis 0 (eItem L).spec=4294968272*E := by
-    rw [show (eItem L).spec=earlyHTerms (eReg L) from rfl,accVal_earlyH,h.2.1]
-  rw [e] at tr
-  exact ⟨tr.1,tr.2.1,tr.2.2⟩
 
 theorem eCoreK_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (base : BasisState) (hc : L.PairClean base) (O E : Nat) (hO : O<SquareReduction.p) :
@@ -9327,18 +9000,10 @@ theorem wTerms_okLen (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
   intro f hf
   exact fitsLen_of L hw f (st.2 f hf)
 
-theorem wTerms_price (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : Acc.sbuildT 163 (wTerms L)=394 := by
-  have hl := hiReg_length L hw
-  norm_num [wTerms,earlyHTerms,Acc.earlyTerm,Acc.sbuildT,Acc.EarlyH,Acc.earlyBuildT,Acc.baseBuildT,Acc.buildT,hl]
-
 theorem eItem_price (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : accPriceQ (eItem L)=1555 := by
   have hl := eReg_length L hw
   norm_num [eItem,accPriceQ,earlyHTerms,Acc.earlyTerm,Acc.sbuildT,Acc.EarlyH,Acc.earlyBuildT,Acc.baseBuildT,
     Acc.buildT,hl]
-
-theorem aAcc_price (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : accPriceQ (aAcc L)=1555 := by
-  norm_num [aAcc,accPriceQ,earlyHTerms,Acc.earlyTerm,Acc.sbuildT,Acc.EarlyH,Acc.earlyBuildT,Acc.baseBuildT,
-    Acc.buildT,hw.core.product]
 
 theorem bBody_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
     toffoliCount (bBody L c)=5823 ∧ measurementCount (bBody L c)=5928 := by
@@ -10141,16 +9806,6 @@ private theorem values_unique {L : ControlledPointLayout} {X Y : Fp} {G : Bool}
     · exact (regValue_eq_iff _ _ _).mp (ha.y.trans hb.y.symm) q hy
     · have away : q∉L.point.x++L.point.y := by simpa only [List.mem_append,not_or] using And.intro hx hy
       exact (ha.rest q away).trans (hb.rest q away).symm
-
-theorem independent_records (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m n : List Bool)
-    (v : PointDialogValues L X Y G origin s.basis) :
-    run (program L) m s=run (program L) n s := by
-  have a := correct L hw hn X Y G origin s m v
-  have b := correct L hw hn X Y G origin s n v
-  apply State.extensionality
-  · exact a.1.trans b.1.symm
-  · exact values_unique a.2 b.2
 
 private theorem tRename (f : Wire→Wire) (P : Program) :
     toffoliCount (renameProgram f P)=toffoliCount P := (renameProgram_counts f P).1
@@ -12531,15 +12186,6 @@ theorem borrowed_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have afterB : (run (program L) m s).basis L.lower=false := (r.2.2 _ br).trans (hc _ b)
   exact FieldFrameOB5.rebind_swap_run (last L) L.lower (program L) s m (hc _ a) (hc _ b) afterA afterB
 
-theorem borrowed_retired (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) : last L∉wires (borrowed L) := by
-  intro bad
-  rw [borrowed,renameProgram_support] at bad
-  obtain ⟨a,ha,e⟩:=Finset.mem_image.mp bad
-  have b : borrowSwap L L.lower=last L := by simp [borrowSwap]
-  have eq : a=L.lower := (borrowSwap L).injective (e.trans b.symm)
-  subst a
-  exact lower_free L hw hn ha
-
 theorem borrowed_counts (L : Layout) (hw : L.Widths) :
     toffoliCount (borrowed L)=766 ∧ measurementCount (borrowed L)=765 := by
   simpa only [borrowed,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2] using counts L hw
@@ -12680,14 +12326,6 @@ theorem physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) : GatePhysica
   have x : GatePhysical [.X L.sign] := by simp [GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate]
   exact (gatePhysical_append _ _).mpr ⟨(gatePhysical_append _ _).mpr
     ⟨x,InverseTailC.borrowed_physical L hw hn⟩,x⟩
-
-theorem sites_subset (L : Layout) : sites L⊆L.wires.toFinset := by
-  intro a h
-  have carry : a∈L.carry.take 255 → a∈L.carry := List.mem_of_mem_take
-  simp only [sites,InverseTailC.sites,BalancedCircuit.Layout.wires,BalancedCleanup.Layout.wires,
-    BalancedCleanup.Layout.y,BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,
-    List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at h ⊢
-  tauto
 
 theorem gateSlots_le (L : Layout) (hw : L.Widths) : Challenge.gateSlots (half L)≤25002 := by
   have h:=InverseTailC.borrowed_slots L hw
@@ -14125,84 +13763,15 @@ theorem code_slots (isA : Bool) :
       gateSlots (codeDecode isA)=142+(if isA then 24 else 12) := by
   cases isA <;> decide +kernel
 
-theorem codecPath_support (divide : Bool) :
-    wires (codecPath divide)⊆Finset.range 10 := by
-  have parts (P : Program) (n : Nat) :
-      wires (P.take n)⊆wires P ∧ wires (P.drop n)⊆wires P := by
-    have total : wires (P.take n)∪wires (P.drop n)=wires P := by
-      rw [←wires_append,List.take_append_drop]
-    constructor
-    · intro q used
-      rw [←total]
-      exact Finset.mem_union_left _ used
-    · intro q used
-      rw [←total]
-      exact Finset.mem_union_right _ used
-  have combine {P Q : Program} (left : wires P⊆Finset.range 10)
-      (right : wires Q⊆Finset.range 10) : wires (P++Q)⊆Finset.range 10 := by
-    rw [wires_append]
-    intro q used
-    rcases Finset.mem_union.mp used with used|used
-    · exact left used
-    · exact right used
-  have he3 : wires e3⊆Finset.range 10 :=
-    (parts MeasuredCodec5.encode 112).1.trans MeasuredCodec5.support.1
-  have hd3 : wires d3⊆Finset.range 10 :=
-    (parts MeasuredCodec5.decode 26).2.trans MeasuredCodec5.support.2
-  have hep : wires ep⊆Finset.range 10 :=
-    (parts MeasuredCodec5.encode 112).2.trans MeasuredCodec5.support.1
-  have hdp : wires dp⊆Finset.range 10 :=
-    (parts MeasuredCodec5.decode 26).1.trans MeasuredCodec5.support.2
-  have he3short : wires e3short⊆Finset.range 10 :=
-    combine ((parts e3 15).1.trans he3) ((parts e3 16).2.trans he3)
-  have hd3short : wires d3short⊆Finset.range 10 :=
-    combine ((parts d3 96).1.trans hd3) ((parts d3 97).2.trans hd3)
-  have hmid : wires midPerm⊆Finset.range 10 := by decide +kernel
-  have hinv : wires midInv⊆Finset.range 10 := by decide +kernel
-  have hswap : wires (swapTrit 0 4)⊆Finset.range 10 := by decide +kernel
-  have htwist : wires ParityCodec5New.twist⊆Finset.range 10 := by decide +kernel
-  have huntwist : wires ParityCodec5New.untwist⊆Finset.range 10 := by decide +kernel
-  have hb7 : wires bridge7⊆Finset.range 10 := combine (combine hd3 hmid) he3
-  have hb7inv : wires bridge7inv⊆Finset.range 10 := combine (combine hd3 hinv) he3
-  have hb5 : wires bridge5⊆Finset.range 10 := combine (combine hd3short hswap) he3short
-  cases divide
-  · simpa only [codecPath,Bool.false_eq_true,if_false] using
-      combine (combine (combine (combine hdp huntwist) (combine hb5 hb7inv)) htwist) hep
-  · simpa only [codecPath,if_true] using
-      combine (combine (combine (combine hdp huntwist) (combine hb7 hb5)) htwist) hep
-
 theorem codecPath_counts (divide : Bool) :
     toffoliCount (codecPath divide)=25 ∧
       measurementCount (codecPath divide)=7 ∧ gateSlots (codecPath divide)=533 := by
   cases divide <;> decide +kernel
 
-theorem firstCodec_support (divide : Bool) :
-    wires (firstCodec divide)⊆Finset.range 10 := by
-  have mapped (a b c : Nat) (P : Program) (ha : a<5) (hb : b<5) (hc : c<5) :
-      wires (renameProgram (localTriple a b c) P)⊆Finset.range 10 := by
-    rw [renameProgram_support]
-    intro q used
-    obtain ⟨i,_,rfl⟩ := Finset.mem_image.mp used
-    apply Finset.mem_range.mpr
-    have remainder : i%2<2 := Nat.mod_lt i (by decide)
-    unfold localTriple
-    split_ifs <;> dsimp only <;> omega
-  cases divide <;> simp only [firstCodec,Bool.false_eq_true,if_false,if_true,
-    wires_append,Finset.union_subset_iff]
-  all_goals repeat' apply And.intro
-  all_goals exact mapped _ _ _ _ (by decide) (by decide) (by decide)
-
 theorem firstCodec_counts (divide : Bool) :
     toffoliCount (firstCodec divide)=26 ∧
       measurementCount (firstCodec divide)=4 ∧ gateSlots (firstCodec divide)=898 := by
   cases divide <;> decide +kernel
-
-theorem c3_counts :
-    toffoliCount e3=3 ∧ measurementCount e3=1 ∧ gateSlots e3=113 ∧
-    toffoliCount d3=4 ∧ measurementCount d3=0 ∧ gateSlots d3=112 ∧
-    toffoliCount e3short=2 ∧ measurementCount e3short=1 ∧ gateSlots e3short=112 ∧
-    toffoliCount d3short=3 ∧ measurementCount d3short=0 ∧ gateSlots d3short=111 := by
-  decide +kernel
 
 theorem c3_support :
     wires e3⊆Finset.range 6 ∧ wires d3⊆Finset.range 6 ∧
@@ -15814,27 +15383,6 @@ theorem copied_self_frame (g : Wire) (s : State) (X Y : Nat)
     exact (regValue_congr _ _ _ (fun q hq => same q
       (fun eq => half_flag_away.2 (eq ▸ hq)))).trans yValue
 
-/-- The standard half frame restores carry719. A clean unused history bit
-can therefore carry the half block without any State or record change. -/
-theorem half_rebind_run_eq (divide : Bool) (hole : Wire) (X Y : Fp)
-    (s : State) (m : List Bool) (clean : Q6EndpointCell.Clean base s.basis)
-    (rValue : regValue (balancedSharedPorts base (base 2409)).r s.basis=centerWord X)
-    (yValue : regValue (balancedSharedPorts base (base 2409)).y s.basis=centerWord Y)
-    (holeIn : s.basis hole=false)
-    (holeFree : hole∉wires (Q6EndpointCell.half divide base (base 2409))) :
-    run (renameProgram (Equiv.swap (base 719) hole)
-      (Q6EndpointCell.half divide base (base 2409))) m s=
-        run (Q6EndpointCell.half divide base (base 2409)) m s := by
-  have member : base 719∈Q6EndpointCell.workIds.map base :=
-    List.mem_map.mpr ⟨719,by simp [Q6EndpointCell.workIds,List.mem_range'_1],rfl⟩
-  have away := half_work_away _ member
-  have result := Q6EndpointCell.half_frame divide base (base 2409) half_ports_nodup
-    s.basis clean X Y s m ⟨rValue,yValue,fun _ _ _ => rfl⟩
-  exact NewFieldFrameOB5.rebind_swap_run _ _ _ s m (clean _ member) holeIn
-    ((result.2.2.2 _ (by simpa only [Q6EndpointCell.ports_r] using away.1)
-      (by simpa only [Q6EndpointCell.ports_y] using away.2)).trans (clean _ member))
-    ((run_preserves_outside _ m s _ holeFree).trans holeIn)
-
 end ECDSAAdd.Entrant.Rolling1588Lifetime
 end -- original module boundary
 
@@ -17048,12 +16596,6 @@ theorem allEncodeCut_disjoint (w : Nat→Wire) (cut : Nat)
   rw [allEncodeCut_support_eq,encodeGroup_support_eq]
   exact NewHistory5.allEncode_disjoint w hn n j bound outside jb
 
-theorem otherEncodeCut_disjoint (w : Nat→Wire) (cut : Nat)
-    (hn : (skywalkPoolWires w).Nodup) (n j : Nat) (bound : 5*n≤512) (hj : j<n) :
-    Disjoint (wires (otherEncodeCut w cut j n)) (wires (encodeGroup w (decide (cut≤j)) j)) := by
-  rw [otherEncodeCut_support_eq,encodeGroup_support_eq]
-  exact NewHistory5.otherEncode_disjoint w hn n j bound hj
-
 theorem otherEncodeCut_outside (w : Nat→Wire) (cut n j : Nat) (outside : n≤j) :
     otherEncodeCut w cut j n=allEncodeCut w cut n := by
   induction n with
@@ -17464,21 +17006,6 @@ theorem allGroups_frame (divide : Bool) (origin : BasisState)
     have result := groups_cut_frame true 1 101 (by decide) (by decide)
       origin ctx enabled X Y state records before
     exact ⟨result.1,(cutFrame_end origin _ _ _).mp result.2⟩
-
-theorem placedAllGroups_frame (divide : Bool) (origin : BasisState)
-    (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
-    (X Y : Fp) :
-    StateTriple (Rolling1588Frame.EncodedFieldFrame divide origin X Y)
-      (renameProgram (OB5.sig 511) (groups divide 1 101))
-      (fun state => let V := Replay5.groupsPayload divide origin 1 101 (X,Y)
-        Rolling1588Frame.EncodedFieldFrame (!divide) origin V.1 V.2 state) := by
-  intro state records input
-  have result := allGroups_frame divide origin ctx enabled X Y
-    (pullState (OB5.sig 511) state) records input
-  have renamed := ECDSAAdd.run_rename (OB5.sig 511)
-    (OB5.sig_injective 511 (by decide)) (groups divide 1 101) records state
-  rw [←renamed] at result
-  exact result
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -17891,10 +17418,6 @@ theorem transition_support (divide : Bool) (k : Nat) (hk : k<4) :
 
 theorem stage_neutral (divide : Bool) (k : Nat) (hk : k≤4) :
     MeasuredCodec5.zeroNeutral (stageCode divide k)=true := by
-  cases divide <;> interval_cases k <;> decide +kernel
-
-theorem transition_neutral (divide : Bool) (k : Nat) (hk : k<4) :
-    MeasuredCodec5.zeroNeutral (transition divide k)=true := by
   cases divide <;> interval_cases k <;> decide +kernel
 
 private theorem mapped_pair_free (a b c d : Nat) (da : d≠a) (db : d≠b) (dc : d≠c) :
@@ -18408,30 +17931,6 @@ private theorem payload_eq_rest (divide : Bool) (origin : BasisState)
       mixedTranscriptBit,enabled,g,s,Nat.mul_zero,Nat.zero_add,Nat.add_zero,
       directionalPayload,skywalkPayloadReplay,skywalkPayloadReplayInverse]
 
-theorem firstCells_frame (divide : Bool) (origin : BasisState)
-    (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
-    (X Y : Fp) :
-    Triple (PairFrame rawR rawY origin (centerWord X) (centerWord Y)) (firstCells divide)
-      (PairFrame rawR rawY origin
-        (centerWord (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) Replay5.restLetters) (X,Y)).1)
-        (centerWord (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) Replay5.restLetters) (X,Y)).2)) := by
-  have steps := state_sequence_frame (segment divide)
-    (fun k (V : Fp×Fp) => CodeFrame (stageAt divide k) origin V.1 V.2) (payloadStep divide origin) 4
-    (fun k hk V => segment_frame divide k hk origin ctx enabled V) 0 4 (by decide) (X,Y)
-  have chain := (opening_frame divide origin ctx X Y).seq steps
-  have actual := StateTriple.program_eq (firstCells_shape divide) chain
-  intro state records input
-  have out := actual state records input
-  have payload := payload_eq_rest divide origin enabled (X,Y)
-  rw [payload] at out
-  obtain ⟨raw,_,rawFrame,encoded⟩ := out.2
-  have closed : stageAt divide 4=[] := by simp [stageAt,stageCode,onPacket,renameProgram]
-  have same : run (firstCells divide) records state=raw := by
-    simpa only [closed,run] using encoded
-  refine ⟨out.1,?_⟩
-  rw [same]
-  exact rawFrame
-
 /-! ### S2 first body with the measured joint inverse (`JointInverse1588`) -/
 
 private theorem firstJoint_shape :
@@ -18622,9 +18121,6 @@ theorem firstJoint_frame (origin : BasisState)
   rw [same,final]
   exact rawFrame
 
-
-theorem firstCells_true_shape : firstCells true=triple 2 3 4 e3++(cell true 0 1 4++firstRestZ) := by
-  simp only [firstCells,if_true,firstRestZ,List.append_assoc]
 
 /-! ### S1 first body with the forward joint entry (`JointForward1588`) -/
 
@@ -19075,15 +18571,6 @@ theorem firstBody_g0_free (divide : Bool) : base 0∉wires (firstBody divide) :=
   · simpa only [firstBody,Bool.false_eq_true,if_false] using Rolling1588First.firstJoint_g0_free
   · simpa only [firstBody,if_true] using Rolling1588First.firstCellsJ_g0_free
 
-theorem firstBorrowedBody_readSites_support (divide : Bool) :
-    wires (G0CarryLoan5.program (base 1028) (base 0) (base 768) (firstBody divide))⊆
-      FrontierReplay1591.readSites 0 := by
-  have site (q : Fin 10) : History5.historyMap base 0 q∈FrontierReplay1591.readSites 0 :=
-    Finset.mem_union_right _ (NewHistory5.history_site_mem base 0 q)
-  exact (G0CarryLoan5.support_to _ _ _ _ (FrontierReplay1591.readSites 0)
-    (firstBody_readSites_support divide) (site 1) (site 0)
-    (by decide) (by decide) (firstBody_g0_free divide)).trans (Finset.erase_subset _ _)
-
 theorem firstBorrowedBody_read_support (divide : Bool) :
     wires (G0CarryLoan5.program (base 1028) (base 0) (base 768) (firstBody divide))⊆
       NewHistory5.groupReadSites base (base 2400) (base 2409) (base 2410) 0 ∪ {base 2312} := by
@@ -19279,19 +18766,6 @@ theorem firstPacket_cut_frame (divide : Bool) (cut : Nat) (origin : BasisState)
   apply StateTriple.program_eq _ placed
   simp only [firstPacket,List.append_assoc]
 
-theorem placedFirstPacket_cut_frame (divide : Bool) (cut : Nat) (origin : BasisState)
-    (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
-    (x : Nat) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (X Y : Fp) (hz : FirstZero.FirstHyp divide origin X Y) :
-    StateTriple (fun state => CutFrame cut origin X Y (pullState (OB5.sig 511) state))
-      (placedFirstPacket divide)
-      (fun state => let V := Replay5.firstPayload divide origin (X,Y)
-        CutFrame cut origin V.1 V.2 (pullState (OB5.sig 511) state)) :=
-  Rolling1588First.placed_cut_frame cut origin X Y _ _ _
-    (firstPacket_cut_frame divide cut origin ctx enabled x hx trace X Y hz)
-
 theorem firstPacket_frame (divide isA : Bool) (origin : BasisState)
     (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
     (x : Nat) (hx : x<p)
@@ -19373,30 +18847,6 @@ theorem firstPacket_run_eq (divide isA : Bool) (origin : BasisState)
       ((cutFrame_end origin X Y state).mpr input)
   · exact firstPacket_cut_run_eq divide 1 origin ctx enabled x hx trace X Y hz state mNew mOld
       ((cutFrame_one origin X Y state).mpr input)
-
-theorem placedFirstPacket_run_eq (divide isA : Bool) (origin : BasisState)
-    (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
-    (x : Nat) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (X Y : Fp) (hz : FirstZero.FirstHyp divide origin X Y)
-    (state : State) (mNew mOld : List Bool)
-    (input : Rolling1588Frame.EncodedFieldFrame isA origin X Y state) :
-    run (placedFirstPacket divide) mNew state=run (Prefix1590.placedFirstPacket divide) mOld state := by
-  have same := firstPacket_run_eq divide isA origin ctx enabled x hx trace X Y hz
-    (pullState (OB5.sig 511) state) mNew mOld input
-  rw [←ECDSAAdd.run_rename (OB5.sig 511) (OB5.sig_injective 511 (by decide))
-      (firstPacket divide) mNew state,
-    ←ECDSAAdd.run_rename (OB5.sig 511) (OB5.sig_injective 511 (by decide))
-      (Prefix1590.firstPacket divide) mOld state] at same
-  have phase := congrArg State.phase same
-  change (run (placedFirstPacket divide) mNew state).phase=
-    (run (Prefix1590.placedFirstPacket divide) mOld state).phase at phase
-  apply State.extensionality (run (placedFirstPacket divide) mNew state)
-    (run (Prefix1590.placedFirstPacket divide) mOld state) phase
-  funext q
-  simpa only [pullState,OB5.sig_invol 511 (by decide)] using
-    congrArg (fun output : State => output.basis (OB5.sig 511 q)) same
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -20779,11 +20229,6 @@ theorem endPacket_counts (divide : Bool) :
     (renameProgram_counts _ _).2]
   exact rawEnd_counts divide
 
-theorem endPacket_slots (divide : Bool) :
-    Challenge.gateSlots (endPacket divide)≤Challenge.gateSlots (FrontierSW1591.endPacketS divide)+2+
-      (if divide then 24155 else 25258) := by
-  simpa only [endPacket,FrontierSW1591.endPacketS,Baselines.rename_gateSlots] using rawEnd_slots divide
-
 theorem endPacket_physical (divide : Bool) : GatePhysical (endPacket divide) :=
   gatePhysical_rename _ (shifted Placement5.pi0).injective _
     (ControlLoan1589.loanWindow_physical _ _ _ _ (by decide +kernel)
@@ -21242,17 +20687,10 @@ theorem center760_free : base 760∉wires center760 := swap_free _ _ _ center_77
 /-- The 719/718 retirements survive (host 717/772 differ from both). -/
 theorem endPacket760_719_free (divide : Bool) : base 719∉wires (endPacket760 divide) :=
   swap_other_free _ _ _ _ (by decide) (by decide) (Rolling1588Lifetime.endPacket_719_free divide)
-theorem endPacket760_718_free (divide : Bool) : base 718∉wires (endPacket760 divide) :=
-  swap_other_free _ _ _ _ (by decide) (by decide) (Rolling1588Lifetime.endPacket_718_free divide)
 theorem canon760_719_free : base 719∉wires canon760 :=
   swap_other_free _ _ _ _ (by decide) (by decide) Rolling1588Lifetime.canon_719_free
 theorem center760_719_free : base 719∉wires center760 :=
   swap_other_free _ _ _ _ (by decide) (by decide) Rolling1588Lifetime.center_719_free
-theorem canon760_718_free : base 718∉wires canon760 :=
-  swap_other_free _ _ _ _ (by decide) (by decide) Rolling1588Lifetime.canon_718_free
-theorem center760_718_free : base 718∉wires center760 :=
-  swap_other_free _ _ _ _ (by decide) (by decide) Rolling1588Lifetime.center_718_free
-
 end ECDSAAdd.Entrant.R2SqEp760
 end -- R2 endpoints
 
@@ -23613,23 +23051,6 @@ private theorem payload_xor_of_packets (before after : State)
     TraceParity5.xorRange_group,TraceParity5.xorRange_group]
   exact TraceParity5.xorRange_congr 102 _ _ packets
 
-/-- Different A/B payload words have the same XOR when they encode the same history. -/
-theorem field_payload_xor (isA isB : Bool) (origin : BasisState)
-    (hn : (skywalkSharedWires base).Nodup) (ho : base 2409∉skywalkPoolWires base)
-    (legal : NewHistory5.RawLegal base 102 origin)
-    (X Y A B : Fp) (before after : State)
-    (input : Rolling1588Frame.EncodedFieldFrame isA origin X Y before)
-    (output : Rolling1588Frame.EncodedFieldFrame isB origin A B after) :
-    TraceParity5.parity (FrontierEntry1591Field.controls.map after.basis)=
-      TraceParity5.parity (FrontierEntry1591Field.controls.map before.basis) := by
-  apply payload_xor_of_packets
-  intro j hj
-  have first := encoded_field_packet_parity base (base 2409) isA hn ho origin legal X Y
-    (pullState (OB5.sig 511) before) input j hj
-  have last := encoded_field_packet_parity base (base 2409) isB hn ho origin legal A B
-    (pullState (OB5.sig 511) after) output j hj
-  exact last.trans first.symm
-
 theorem entry_payload_xor (isA isB : Bool) (origin : BasisState)
     (hn : (skywalkSharedWires base).Nodup) (ho : base 2409∉skywalkPoolWires base)
     (legal : NewHistory5.RawLegal base 102 origin)
@@ -25304,57 +24725,6 @@ theorem stackReverse510_shape (isA : Bool) : reverse isA 1 510=
     (renameProgram (sig 510) (decodeBefore base isA 510 ++ W.ReverseCarry.compactReceiverTick base 510) ++
       renameProgram (sig 509) (W.ReverseCarry.compactReceiverTick base 509)) ++ reverse isA 1 508 := by
   rw [reverse_split510,reverse_split509,List.append_assoc]
-
-/-- After ticks `509`, `510` and the pack, decoding and the merged reverse block agree with
-decoding and the original reverse ticks `510`, `509`. -/
-theorem blockM_eq_new (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (t : State)
-    (ht : Stage base isA x p 509 t.basis) (m1 m2 : List Bool) :
-    run (decodeBefore base isA 510 ++ tickMR) m2
-        (run ((W.repairedTick base 509 ++ W.repairedTick base 510) ++ packAfter base isA 510) m1 t)=
-      run (decodeBefore base isA 510 ++
-          (W.ReverseCarry.compactReceiverTick base 510 ++ W.ReverseCarry.compactReceiverTick base 509)) m2
-        (run ((W.repairedTick base 509 ++ W.repairedTick base 510) ++ packAfter base isA 510) m1 t) := by
-  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
-  have hgap : p+2^32 ≤ 2^256 := by norm_num [p]
-  obtain ⟨G,S,uv,huv,bits⟩ := stage509_bitsM_new isA x hx0 hx t ht
-  have due : History5.packDue 510=true := by decide
-  have rep : W.repairedTick base 510=W.compactSkywalkTick base 510 := by
-    rw [tick510ExF_explicit,tick510ExF_compact]
-  set k := measurementCount (W.repairedTick base 509 ++ W.repairedTick base 510) with hk
-  set k9 := measurementCount (W.repairedTick base 509) with hk9
-  set d := measurementCount (decodeBefore base isA 510) with hd
-  set b := run (W.repairedTick base 509) ((m1.take k).take k9) t with hb
-  set a := run (W.repairedTick base 509 ++ W.repairedTick base 510) (m1.take k) t with ha
-  have bStage : Stage base isA x p 510 b.basis := by
-    have h := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 509 hp0 hx0 hpo hp hgap hx
-      cop (by omega) t ((m1.take k).take k9) ht).2
-    simp only [pack509 isA,List.append_nil] at h
-    exact h
-  have aSplit : a=run (W.repairedTick base 510) ((m1.take k).drop k9) b := by
-    rw [ha,hb,run_append,←hk9]
-  have legal := tick_pack_legal base isA base_pool_nodup x p 510 hp0 hx0 hpo hp hgap hx cop
-    (by omega) b ((m1.take k).drop k9) bStage due
-  rw [←rep,←aSplit] at legal
-  have dp : run (decodeBefore base isA 510) (m2.take d)
-      (run (packAfter base isA 510) (m1.drop k) a)=a := by
-    simpa only [packAfter,decodeBefore,due,if_true] using
-      encode_decode_roundtrip base isA base_pool_nodup (510-5) (by omega) a
-        (m1.drop k) (m2.take d) legal
-  have abits : ∀q∈sitesM,a.basis q=
-      (run (tick509ExF ++ tick510ExF) [] ⟨false,pre509 G S uv.1 uv.2⟩).basis q := by
-    intro q hq
-    rw [ha,tick509ExF_explicit,tick510ExF_explicit,
-      site_run (tick509ExF ++ tick510ExF) sitesM pairF_wires t ⟨false,pre509 G S uv.1 uv.2⟩ bits
-        (m1.take k) q hq]
-    exact congrFun (run_basis_records (tick509ExF ++ tick510ExF) _ _ (m1.take k) [] rfl) q
-  rw [run_append (W.repairedTick base 509 ++ W.repairedTick base 510),
-    run_append (decodeBefore base isA 510) tickMR,
-    run_append (decodeBefore base isA 510),←hk,←hd,←ha,dp,
-    tick510ExR_explicit,tick509ExR_explicit]
-  symm
-  exact forced_eqN (tick510ExR ++ tick509ExR) tickMR sitesM _ 4 (recsUpTo 4) (take_recsUpTo 4)
-    pairR_wires tickMR_wires (le_of_eq tickM_counts.2.2.2.2.2.2.2) (le_of_eq tickM_counts.2.2.2.2.2.1)
-    (fun c hc => concMR G S uv huv c hc) a abits (m2.drop d)
 
 theorem decode508 (isA : Bool) : decodeBefore base isA 508=[] := by
   simp only [decodeBefore,show History5.packDue 508=false from by decide,Bool.false_eq_true,if_false]
@@ -27093,14 +26463,6 @@ theorem code_physical (isA : Bool) :
   constructor <;> apply physicalGateCheck_correct
   all_goals cases isA <;> decide +kernel
 
-theorem codecPath_physical (divide : Bool) : GatePhysical (codecPath divide) := by
-  apply physicalGateCheck_correct
-  cases divide <;> decide +kernel
-
-theorem firstCodec_physical (divide : Bool) : GatePhysical (firstCodec divide) := by
-  apply physicalGateCheck_correct
-  cases divide <;> decide +kernel
-
 private theorem selected_resources (source flag : Wire) (P : Program) :
     toffoliCount (SW.selW source flag P)=toffoliCount P ∧
     measurementCount (SW.selW source flag P)=measurementCount P+1 ∧
@@ -28422,48 +27784,6 @@ theorem patchKG_make_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths
     simp only [patchKG,KG.make,tail,List.append_assoc]
   simp only [newShape,oldShape,run_append,(renameProgram_counts _ _).2]
   rw [headEq]
-
-/-- The old complete cleanup proves the final zeros. The exact prefix and
-last-block support facts then prove the zeros at the final Q1c handoff. -/
-theorem patchKG_clear_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (K : KG)
-    (sp : K.Spec) (hn : K.all.Nodup) (targetX1 : target L∈K.X1)
-    (hostS : earlyHost L∈K.R.S) (hostFree : earlyHost L∉wires K.Q1c)
-    (prefixFree : target L∉wires (clearPrefix K))
-    (innerZero : ∀v t,K.I1 v t → t (target L)=false) (s : State) (m : List Bool)
-    (hd0 : regValue K.R.dst s.basis=(regValue K.R.bank s.basis)^2)
-    (hS0 : regValue K.R.S s.basis=0)
-    (hT0 : regValue K.R.T s.basis=2*regValue K.R.lo s.basis*regValue K.R.hi s.basis)
-    (hI1 : K.I1 (regValue K.R.lo s.basis) s.basis)
-    (hI2 : K.I2 (regValue K.R.hi s.basis) s.basis)
-    (hI5 : K.I5 (regValue K.R.lo s.basis+regValue K.R.hi s.basis) s.basis)
-    (hz0 : regValue K.R.z s.basis=0) (hp0 : regValue K.R.pad s.basis=0)
-    (hc0 : regValue K.R.carry s.basis=0) (hi0 : s.basis K.R.cin=false) :
-    run (patchKG L K).clear m s=run K.clear m s := by
-  have old := K.clear_correct sp hn s m hd0 hS0 hT0 hI1 hI2 hI5 hz0 hp0 hc0 hi0
-  let middle := run (clearPrefix K) (m.take (measurementCount (clearPrefix K))) s
-  let records := m.drop (measurementCount (clearPrefix K))
-  have oldShape : K.clear=clearPrefix K++K.Q1c := by
-    simp only [KG.clear,clearPrefix,List.append_assoc]
-  have newShape : (patchKG L K).clear=clearPrefix K++renameProgram (earlyPerm L) K.Q1c := by
-    simp only [patchKG,KG.clear,clearPrefix,List.append_assoc]
-  have oldRun : run K.clear m s=run K.Q1c records middle := by
-    rw [oldShape,run_append]
-  have targetIn : middle.basis (target L)=false :=
-    (run_preserves_outside _ _ s _ prefixFree).trans (innerZero _ _ hI1)
-  have targetOut : (run K.Q1c records middle).basis (target L)=false := by
-    rw [←oldRun]
-    exact (regValue_zero _ _).mp old.2.2.2.2.1 _
-      (by simp only [KG.X,List.mem_append];tauto)
-  have hostOut : (run K.Q1c records middle).basis (earlyHost L)=false := by
-    rw [←oldRun]
-    exact (regValue_zero _ _).mp old.2.2.1 _ hostS
-  have hostIn : middle.basis (earlyHost L)=false :=
-    (run_preserves_outside _ records middle _ hostFree).symm.trans hostOut
-  have lastEq := NewFieldFrameOB5.rebind_swap_run (target L) (earlyHost L) K.Q1c
-    middle records targetIn hostIn targetOut hostOut
-  rw [←earlyPerm_eq L hw] at lastEq
-  rw [newShape,oldShape,run_append,run_append]
-  exact lastEq
 
 theorem cross_lsb_zero (r : List Wire) (s : BasisState) (a b : Nat)
     (nonempty : 0<r.length) (value : regValue r s=2*a*b) :

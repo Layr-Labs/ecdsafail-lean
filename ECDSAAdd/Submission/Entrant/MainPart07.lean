@@ -1189,14 +1189,6 @@ theorem zrep_slots : gateSlots (zrep L) ≤ 258 := by
   omega
 
 include hw in
-theorem clrF_slots : gateSlots (clrF L) ≤ 2261 := by
-  have h := equalConstant_gateSlots_le (probeControl L) L.point.finite
-    (zeroPorts (probeTail L) (L.dialogPool.take 247)) 226156424291633194186662080095093570025917938800079226639565593765455331327
-  rw [ports_length L hw] at h
-  have one : gateSlots [Instr.X L.point.finite] = 1 := rfl
-  simp only [clrF,gateSlots_append,one]
-  omega
-
 def constantSlots : Nat → Nat → Nat
   | 0, _ => 0
   | n+1, k => (if k % 2 = 1 then 1 else 0) + constantSlots n (k/2)
@@ -3817,16 +3809,6 @@ theorem wrapper_qubits760 (C : Point) (cx cy : Fp) (P : Program)
       · exact Finset.mem_union_right _ old
       · exact Finset.mem_union_left _ (layout_y_io extra)
   exact (Finset.card_le_card absorb).trans (ReflectionE1TickGapLow48.wrapper_qubits760 C cx cy)
-
-/-- FusedFlags changes surrounding flag gates but its existing support lemma is sufficient. -/
-theorem fused_wrapper_qubits760 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
-    (P : Program)
-    (hP : wires P ⊆ wires (ReflectionE1TickGapLow48.gen layout cx cy) ∪ layout.point.y.toFinset) :
-    qubits (FusedFlags.wrapper layout (.some hc) cy P) ≤ 1587 := by
-  have sub := FusedFlags.wrapper_support layout hc P
-  exact (Finset.card_le_card
-    (Finset.union_subset_union (Finset.Subset.refl ioWires) sub)).trans
-    (wrapper_qubits760 (.some hc) cx cy P hP)
 
 end ECDSAAdd.Entrant.CodexYParitySupport
 end
