@@ -1,7 +1,5 @@
 import ECDSAAdd.Submission.Entrant.Prelude
 import ECDSAAdd.Submission.Entrant.KAddResourceBridgeDraft
-import ECDSAAdd.Submission.Entrant.AffineCarry3C
-import ECDSAAdd.Submission.Entrant.AffineCarry4C
 import ECDSAAdd.Arithmetic.NativeFirstDirectForwardProof
 import ECDSAAdd.Arithmetic.NativeFirstDirectValues
 import ECDSAAdd.Arithmetic.Compare
@@ -566,41 +564,6 @@ theorem carry_clean (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     omega
   exact (hs.2.2.2.2.2.2.2 _ away).trans (hc _ member)
 
-theorem carry_clean5 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
-    (hc : ∀q∈E1Merge.aC w,b0 q=false) (s : BasisState)
-    (hs : E1Merge.MF w b0 H X T par f gp fp s) : s (w 1795)=false := by
-  have away : w 1795∉E1Merge.mutL w := by
-    simp only [E1Merge.mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-    refine ⟨⟨⟨E1Merge.nb w hn 1795 0 258 (by omega) (by omega) (by omega),
-      E1Merge.nb w hn 1795 770 258 (by omega) (by omega) (by omega)⟩,
-      E1Merge.nb w hn 1795 1029 256 (by omega) (by omega) (by omega)⟩,?_,?_,?_,?_⟩
-    all_goals exact E1Merge.w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have member : w 1795∈E1Merge.aC w := by
-    apply List.mem_map.mpr
-    refine ⟨1795,?_,rfl⟩
-    simp only [List.mem_range'_1]
-    omega
-  exact (hs.2.2.2.2.2.2.2 _ away).trans (hc _ member)
-
-theorem carry_clean4 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
-    (hc : ∀q∈E1Merge.aC w,b0 q=false) (s : BasisState)
-    (hs : E1Merge.MF w b0 H X T par f gp fp s) : s (w 1794)=false := by
-  have away : w 1794∉E1Merge.mutL w := by
-    simp only [E1Merge.mutL,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,not_or]
-    refine ⟨⟨⟨E1Merge.nb w hn 1794 0 258 (by omega) (by omega) (by omega),
-      E1Merge.nb w hn 1794 770 258 (by omega) (by omega) (by omega)⟩,
-      E1Merge.nb w hn 1794 1029 256 (by omega) (by omega) (by omega)⟩,?_,?_,?_,?_⟩
-    all_goals exact E1Merge.w_ne w hn _ _ (by omega) (by omega) (by omega)
-  have member : w 1794∈E1Merge.aC w := by
-    apply List.mem_map.mpr
-    refine ⟨1794,?_,rfl⟩
-    simp only [List.mem_range'_1]
-    omega
-  exact (hs.2.2.2.2.2.2.2 _ away).trans (hc _ member)
-
-
 /-- Actual-MF flag substitution: postWord comes from the original stepKAdd at the empty record. -/
 theorem stepKAddFlag (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
@@ -637,56 +600,6 @@ theorem stepKAddZero (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
   have equal := KAddCallerBridgeResearch.exit_run_eq_pool w hn s m clean Y hY postWord
   exact (congrArg (fun t : State => t.phase=s.phase ∧
     E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp t.basis) equal).mp (old s m hs)
-
-
-
-/-- Actual-MF zero substitution, including the ExitMerge caller that opens E1Merge. -/
-theorem stepKAddZero3 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
-    (hc : ∀q∈E1Merge.aC w,b0 q=false) (hcin : b0 (w 1797)=false)
-    (Y : Nat) (hY : Y<ECDSAAdd.p) (hWord : (H+X)%2^258=Y/2) :
-    Triple (E1Merge.MF w b0 H X T par f gp fp) (Verifier.Leaf3.zero3KAdd w)
-      (E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp) := by
-  intro s m hs
-  have old := E1Merge.stepKAdd w hn b0 H X T par f gp fp hc hcin
-  rw [kAdd_literal] at old
-  have oldEmpty := old s [] hs
-  have postWord : regValue (wireBlock w 770 258) (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis = Y/2 :=
-    oldEmpty.2.2.1.trans hWord
-  have clean6 := carry_clean w hn b0 H X T par f gp fp hc s.basis hs
-  have clean5 := carry_clean5 w hn b0 H X T par f gp fp hc s.basis hs
-  have hlt : Y/2<2^255 := ECDSAAdd.Entrant.E1CallerValueFactsResearch.exit_half_bound Y hY
-  have tops := Verifier.Leaf3.exit_two_zero w
-    (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis (Y/2) hlt postWord
-  have equal := Verifier.Leaf3.exit3_run_eq_pool w hn s m clean5 clean6 tops.1 tops.2
-  exact (congrArg (fun t : State => t.phase=s.phase ∧
-    E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp t.basis) equal).mp (old s m hs)
-
-
-
-theorem stepKAddZero4 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (b0 : BasisState) (H X T : Nat) (par f gp fp : Bool)
-    (hc : ∀q∈E1Merge.aC w,b0 q=false) (hcin : b0 (w 1797)=false)
-    (Y : Nat) (hY : Y<ECDSAAdd.p) (hWord : (H+X)%2^258=Y/2) :
-    Triple (E1Merge.MF w b0 H X T par f gp fp) (Verifier.Leaf4.zero4KAdd w)
-      (E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp) := by
-  intro s m hs
-  have old := E1Merge.stepKAdd w hn b0 H X T par f gp fp hc hcin
-  rw [kAdd_literal] at old
-  have oldEmpty := old s [] hs
-  have postWord : regValue (wireBlock w 770 258) (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis = Y/2 :=
-    oldEmpty.2.2.1.trans hWord
-  have clean6 := carry_clean w hn b0 H X T par f gp fp hc s.basis hs
-  have clean5 := carry_clean5 w hn b0 H X T par f gp fp hc s.basis hs
-  have clean4 := carry_clean4 w hn b0 H X T par f gp fp hc s.basis hs
-  have hlt : Y/2<2^255 := ECDSAAdd.Entrant.E1CallerValueFactsResearch.exit_half_bound Y hY
-  have tops := Verifier.Leaf4.exit_three_zero w
-    (run (KAddCallerBridgeResearch.literalKAdd w) [] s).basis (Y/2) hlt postWord
-  have equal := Verifier.Leaf4.exit4_run_eq_pool w hn s m clean4 clean5 clean6
-    tops.1 tops.2.1 tops.2.2
-  exact (congrArg (fun t : State => t.phase=s.phase ∧
-    E1Merge.MF w b0 H ((H+X)%2^258) T par f gp fp t.basis) equal).mp (old s m hs)
-
 
 
 
@@ -2017,7 +1930,7 @@ def loadKX (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
   maskedConstant (w 722) (hR w) (cfpX k)
 
 def addPart (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  FastConst.maskedNot g (kR w)++loadKX w g k++Verifier.Leaf4.zero4KAdd w++loadKX w g k++
+  FastConst.maskedNot g (kR w)++loadKX w g k++KAddCallerBridgeResearch.zeroKAdd w++loadKX w g k++
   [.measureX (w 722) [] [.CZ (w 514) (w 1028)],.measureX (w 721) [] [.CZ g (w 1028)]]
 
 def parBack (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
@@ -2516,7 +2429,7 @@ theorem program_triple (k : Nat) (hk : k<p) (b0 : BasisState) (X : Nat) (hX : X<
   rw [Nat.zero_xor,show b0 g=G from rfl,lkvX_eq k G f par hfg] at s11
   have kWord : (tkX k G f par+(if G then 2^258-1-K else K))%2^258=Y/2 := by
     rw [Nat.add_comm]; exact a5
-  have s12 := stepKAddZero4 w hn b0 (tkX k G f par) (if G then 2^258-1-K else K) 0 par f (G && par) (f && par)
+  have s12 := stepKAddZero w hn b0 (tkX k G f par) (if G then 2^258-1-K else K) 0 par f (G && par) (f && par)
     hac h1797 Y a6 kWord
   rw [kWord] at s12
   have s13 := stepLoadKX w g hn b0 k (tkX k G f par) (Y/2) 0 par f (G && par) (f && par) hg
@@ -2656,7 +2569,7 @@ end Run
 /-! ### Resources -/
 
 theorem program_counts (w : Nat → Wire) (g : Wire) (k : Nat) :
-    toffoliCount (program w g k)=767 ∧ measurementCount (program w g k)=1027 := by
+    toffoliCount (program w g k)=769 ∧ measurementCount (program w g k)=1027 := by
   have m1 (c : Wire) (r : List Wire) (v : Nat) := maskedConstant_counts c r v
   have x1 (r : List Wire) (v : Nat) := xorConstant_counts r v
   have n1 := notRegister_counts (tR w)
@@ -2681,9 +2594,9 @@ theorem program_counts (w : Nat → Wire) (g : Wire) (k : Nat) :
   rw [lk] at k1
   have kOld : toffoliCount (KAddCallerBridgeResearch.literalKAdd w)=257 ∧
       measurementCount (KAddCallerBridgeResearch.literalKAdd w)=257 := k1
-  have kNew : toffoliCount (Verifier.Leaf4.zero4KAdd w)=254 ∧
-      measurementCount (Verifier.Leaf4.zero4KAdd w)=257 :=
-    Verifier.Leaf4.zero4_counts w kOld
+  have kDelta := KAddCallerBridgeResearch.zero_counts w
+  have kNew : toffoliCount (KAddCallerBridgeResearch.zeroKAdd w)=256 ∧
+      measurementCount (KAddCallerBridgeResearch.zeroKAdd w)=257 := by omega
   rw [lh] at kh
   rw [lx] at e1
   simp only [program,fPart,eraseH,addPart,eraseF,loadTX,loadKX,knownH,kNew.1,kNew.2,FastConst.maskedNot,
@@ -2795,8 +2708,8 @@ theorem program_support (w : Nat → Wire) (g : Wire) (k : Nat) :
     · exact B 770 258 (by omega) q hq
     · exact B 1540 257 (by omega) q hq
     · exact I 1797 (by omega)
-  have hK : wires (Verifier.Leaf4.zero4KAdd w)⊆(mSites w g).toFinset := by
-    apply (Verifier.Leaf4.zero4_support w).trans
+  have hK : wires (KAddCallerBridgeResearch.zeroKAdd w)⊆(mSites w g).toFinset := by
+    apply (KAddResourceBridgeResearch.zero_support w).trans
     simpa only [←kAdd_literal] using hKOld
   have hM : wires ([.measureX (w 722) [] [.CZ (w 514) (w 1028)],.measureX (w 721) [] [.CZ g (w 1028)]] : Program)⊆
       (mSites w g).toFinset := by
@@ -2918,8 +2831,8 @@ theorem program_physical (k : Nat) : GatePhysical (program w g k) := by
       · intro e; exact nb w hn 1797 0 258 (by omega) (by omega) (by omega) (e ▸ hq')
       · exact fun h' => hR_kR w hn _ h' hq'
       · exact fun h' => List.disjoint_left.mp (blk_dis w hn 0 258 1540 257 (by omega) (by omega) (by omega)) hq' h'
-  have kP : GatePhysical (Verifier.Leaf4.zero4KAdd w) :=
-    Verifier.Leaf4.zero4_gatePhysical_pool w hn (by simpa only [←kAdd_literal] using kPOld)
+  have kP : GatePhysical (KAddCallerBridgeResearch.zeroKAdd w) :=
+    KAddResourceBridgeResearch.zero_gatePhysical w hn (by simpa only [←kAdd_literal] using kPOld)
   have eP : GatePhysical (eraseLtChain (tR w) (xR w) (hC3 w) (w 1797) (w 514)) := by
     apply eraseLtChain_physical
     have a1 := blk_dis w hn 1029 256 770 256 (by omega) (by omega) (by omega)
@@ -3034,8 +2947,8 @@ theorem program_slots (w : Nat → Wire) (g : Wire) (k : Nat) : Challenge.gateSl
   rw [lk] at r1
   rw [mappedRead_length,lhR] at k1
   have kOld : Challenge.gateSlots (KAddCallerBridgeResearch.literalKAdd w)≤17*258 := k1
-  have kNew : Challenge.gateSlots (Verifier.Leaf4.zero4KAdd w)+21≤17*258 := by
-    rw [Verifier.Leaf4.zero4_slots w]
+  have kNew : Challenge.gateSlots (KAddCallerBridgeResearch.zeroKAdd w)+7≤17*258 := by
+    rw [←(KAddCallerBridgeResearch.zero_counts w).2.2]
     exact kOld
   rw [dBitsX_length] at h1
   rw [lt] at e1
