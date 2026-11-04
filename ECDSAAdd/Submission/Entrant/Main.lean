@@ -5767,12 +5767,2093 @@ end OutCert
 
 end ECDSAAdd.Entrant.InputSentinel
 
--- ===== merged module ECDSAAdd.Submission.Entrant.Main =====
+
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.MappedCompressed
+namespace ECDSAAdd.Entrant.InverseFour15
+set_option linter.unusedSimpArgs false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 0
+def sites15 : List Wire := MorningFour.sites ++ [530]
+def candidate15 : Program := [
+  .X 527,
+  .CX 526 527,
+  .CX 526 786,
+  .X 1551,
+  .CX 1552 1551,
+  .CX 1553 1551,
+  .CX 1554 1551,
+  .CCX 522 1551 527,
+  .CX 1554 1551,
+  .CX 1553 1551,
+  .CX 1552 1551,
+  .X 1551,
+  .CX 526 525,
+  .X 526,
+  .CX 525 526,
+  .CX 1553 526,
+  .CX 1554 526,
+  .CCX 525 526 528,
+  .CX 1554 526,
+  .CX 1553 526,
+  .CX 525 526,
+  .X 526,
+  .CX 526 525,
+  .CX 525 524,
+  .CX 526 524,
+  .X 528,
+  .CX 524 528,
+  .CX 1552 528,
+  .CX 1554 528,
+  .CCX 524 528 529,
+  .CX 1554 528,
+  .CX 1552 528,
+  .CX 524 528,
+  .X 528,
+  .CX 526 524,
+  .CX 525 524,
+  .CX 526 524,
+  .CX 528 524,
+  .CX 1552 524,
+  .CX 1553 524,
+  .CX 524 528,
+  .CX 1552 528,
+  .CX 1553 528,
+  .CCX 524 528 786,
+  .CX 1553 528,
+  .CX 1552 528,
+  .CX 524 528,
+  .CX 1553 524,
+  .CX 1552 524,
+  .CX 528 524,
+  .CX 526 524,
+  .CX 526 523,
+  .CX 523 524,
+  .CX 526 524,
+  .CX 786 524,
+  .CX 1552 524,
+  .CCX 523 524 787,
+  .CX 1552 524,
+  .CX 786 524,
+  .CX 526 524,
+  .CX 523 524,
+  .CX 526 523,
+  .CX 528 524,
+  .CX 1553 524,
+  .CX 1554 524,
+  .CX 524 525,
+  .CX 526 525,
+  .CX 529 525,
+  .CX 786 525,
+  .CX 1553 525,
+  .CX 1554 525,
+  .CCX 524 525 788,
+  .CX 1554 525,
+  .CX 1553 525,
+  .CX 786 525,
+  .CX 529 525,
+  .CX 526 525,
+  .CX 524 525,
+  .CX 1554 524,
+  .CX 1553 524,
+  .CX 528 524,
+  .measureX 528 [] [.Z 523, .Z 524, .Z 526, .Z 529, .Z 786, .Z 787, .Z 788, .CZ 523 524, .CZ 523 526, .CZ 523 786, .CZ 523 1552, .CZ 524 529, .CZ 524 1553, .CZ 525 529, .CZ 525 786, .CZ 525 1554],
+  .CX 525 524,
+  .CX 788 524,
+  .CCX 523 524 528,
+  .CX 788 524,
+  .CX 525 524,
+  .X 523,
+  .CX 524 523,
+  .CX 525 523,
+  .CX 528 523,
+  .CX 788 523,
+  .CX 1551 523,
+  .CX 1552 523,
+  .CX 1553 523,
+  .CX 1554 523,
+  .CCX 522 523 789,
+  .CX 1554 523,
+  .CX 1553 523,
+  .CX 1552 523,
+  .CX 1551 523,
+  .CX 788 523,
+  .CX 528 523,
+  .CX 525 523,
+  .CX 524 523,
+  .X 523,
+  .CX 524 523,
+  .X 1551,
+  .CX 1552 1551,
+  .CX 1553 1551,
+  .CX 1554 1551,
+  .CCX 523 1551 790,
+  .CX 1554 1551,
+  .CX 1553 1551,
+  .CX 1552 1551,
+  .X 1551,
+  .CX 524 523,
+  .X 526,
+  .CX 529 526,
+  .CX 786 526,
+  .CX 1551 526,
+  .CX 1552 526,
+  .CX 1553 526,
+  .CX 525 523,
+  .CCX 526 523 791,
+  .CX 525 523,
+  .CX 1553 526,
+  .CX 1552 526,
+  .CX 1551 526,
+  .CX 786 526,
+  .CX 529 526,
+  .X 526,
+  .CX 523 522,
+  .X 526,
+  .CX 529 526,
+  .CX 786 526,
+  .CX 790 526,
+  .CX 1554 526,
+  .CCX 522 526 1556,
+  .CX 1554 526,
+  .CX 790 526,
+  .CX 786 526,
+  .CX 529 526,
+  .X 526,
+  .CX 523 522,
+  .CX 523 522,
+  .CX 522 525,
+  .CX 529 525,
+  .CX 788 525,
+  .CX 790 525,
+  .CX 791 525,
+  .CX 1551 525,
+  .CX 1552 525,
+  .CX 1554 525,
+  .CCX 522 525 1557,
+  .CX 1554 525,
+  .CX 1552 525,
+  .CX 1551 525,
+  .CX 791 525,
+  .CX 790 525,
+  .CX 788 525,
+  .CX 529 525,
+  .CX 522 525,
+  .CX 523 522,
+  .CX 524 522,
+  .CX 529 526,
+  .CX 786 526,
+  .CX 790 526,
+  .CX 1551 526,
+  .CX 1552 526,
+  .CX 1553 526,
+  .CCX 522 526 1558,
+  .CX 1553 526,
+  .CX 1552 526,
+  .CX 1551 526,
+  .CX 790 526,
+  .CX 786 526,
+  .CX 529 526,
+  .CX 524 522,
+  .X 525,
+  .CX 526 525,
+  .CX 786 525,
+  .CX 788 525,
+  .CX 1551 525,
+  .CX 1552 525,
+  .CX 527 523,
+  .CX 528 523,
+  .CX 787 523,
+  .CX 788 523,
+  .CX 791 523,
+  .CX 1556 523,
+  .CX 1558 523,
+  .CCX 525 523 530,
+  .CX 1558 523,
+  .CX 1556 523,
+  .CX 791 523,
+  .CX 788 523,
+  .CX 787 523,
+  .CX 528 523,
+  .CX 527 523,
+  .CX 1552 525,
+  .CX 1551 525,
+  .CX 788 525,
+  .CX 786 525,
+  .CX 526 525,
+  .X 525,
+  .CX 1551 529,
+  .CX 1551 787,
+  .CX 1551 790,
+  .CX 1551 1552,
+  .CX 1551 530,
+  .CX 523 522,
+  .X 523,
+  .CX 522 523,
+  .CX 525 523,
+  .CX 526 523,
+  .CX 528 523,
+  .CX 786 523,
+  .CX 788 523,
+  .CX 791 523,
+  .CX 1552 523,
+  .CX 1556 523,
+  .CX 530 523,
+  .CCX 522 523 1551,
+  .CX 530 523,
+  .CX 1556 523,
+  .CX 1552 523,
+  .CX 791 523,
+  .CX 788 523,
+  .CX 786 523,
+  .CX 528 523,
+  .CX 526 523,
+  .CX 525 523,
+  .CX 522 523,
+  .X 523,
+  .CX 523 522,
+  .X 788,
+  .X 787,
+  .X 529,
+  .CX 530 1553,
+  .CX 530 1552,
+  .CX 530 1551,
+  .CX 530 790,
+  .CX 530 788,
+  .CX 530 787,
+  .CX 530 529,
+  .CX 530 528,
+  .CX 1558 1553,
+  .CX 1558 1552,
+  .CX 1558 790,
+  .CX 1558 788,
+  .CX 1558 786,
+  .CX 1558 525,
+  .CX 530 1558,
+  .CX 1558 530,
+  .CX 530 1558,
+  .CX 1557 530,
+  .CX 1557 1552,
+  .CX 1557 791,
+  .CX 1557 789,
+  .CX 1557 787,
+  .CX 1557 786,
+  .CX 1557 526,
+  .CX 1557 525,
+  .CX 1558 1557,
+  .CX 1557 1558,
+  .CX 1558 1557,
+  .CX 1556 1558,
+  .CX 1556 1554,
+  .CX 1556 1553,
+  .CX 1556 1552,
+  .CX 1556 1551,
+  .CX 1556 791,
+  .CX 1556 789,
+  .CX 1556 788,
+  .CX 1556 787,
+  .CX 1556 786,
+  .CX 1556 525,
+  .CX 1556 524,
+  .CX 1554 1552,
+  .CX 1554 786,
+  .CX 1558 1554,
+  .CX 1554 1558,
+  .CX 1558 1554,
+  .CX 1553 1552,
+  .CX 1553 786,
+  .CX 1553 529,
+  .CX 530 1553,
+  .CX 1553 530,
+  .CX 530 1553,
+  .CX 1552 530,
+  .CX 1552 1557,
+  .CX 1552 1554,
+  .CX 1552 1551,
+  .CX 1552 791,
+  .CX 1552 790,
+  .CX 1552 788,
+  .CX 1552 787,
+  .CX 1552 529,
+  .CX 1552 528,
+  .CX 1553 1552,
+  .CX 1552 1553,
+  .CX 1553 1552,
+  .CX 1551 790,
+  .CX 1551 787,
+  .CX 1551 529,
+  .CX 1556 1551,
+  .CX 1551 1556,
+  .CX 1556 1551,
+  .CX 791 530,
+  .CX 791 786,
+  .CX 791 529,
+  .CX 1554 791,
+  .CX 791 1554,
+  .CX 1554 791,
+  .CX 790 1558,
+  .CX 790 1552,
+  .CX 790 529,
+  .CX 1551 790,
+  .CX 790 1551,
+  .CX 1551 790,
+  .CX 789 1553,
+  .CX 789 1552,
+  .CX 789 1551,
+  .CX 789 786,
+  .CX 789 528,
+  .CX 789 526,
+  .CX 791 789,
+  .CX 789 791,
+  .CX 791 789,
+  .CX 788 1557,
+  .CX 788 787,
+  .CX 788 529,
+  .CX 788 528,
+  .CX 788 526,
+  .CX 1553 788,
+  .CX 788 1553,
+  .CX 1553 788,
+  .CX 787 1556,
+  .CX 787 1554,
+  .CX 787 1553,
+  .CX 787 786,
+  .CX 787 526,
+  .CX 786 530,
+  .CX 786 1556,
+  .CX 786 526,
+  .CX 1553 786,
+  .CX 786 1553,
+  .CX 1553 786,
+  .CX 529 530,
+  .CX 529 1556,
+  .CX 529 1553,
+  .CX 529 526,
+  .CX 786 529,
+  .CX 529 786,
+  .CX 786 529,
+  .CX 528 1558,
+  .CX 528 1557,
+  .CX 528 1554,
+  .CX 528 1553,
+  .CX 528 787,
+  .CX 528 529,
+  .CX 527 1553,
+  .CX 527 1552,
+  .CX 527 1551,
+  .CX 527 791,
+  .CX 527 789,
+  .CX 528 527,
+  .CX 527 528,
+  .CX 528 527,
+  .CX 526 530,
+  .CX 526 1556,
+  .CX 526 1553,
+  .CX 526 786,
+  .CX 529 526,
+  .CX 526 529,
+  .CX 529 526,
+  .CX 525 530,
+  .CX 525 1558,
+  .CX 525 1556,
+  .CX 525 527,
+  .CX 525 526,
+  .CX 524 1553,
+  .CX 524 1552,
+  .CX 524 1551,
+  .CX 524 786,
+  .CX 524 529,
+  .CX 524 527,
+  .CX 524 526,
+  .CX 524 525,
+  .CX 523 530,
+  .CX 523 791,
+  .CX 523 529,
+  .CX 523 527,
+  .CX 523 524,
+  .CX 522 1557,
+  .CX 522 1553,
+  .CX 522 789,
+  .CX 522 528,
+  .CX 522 523,
+  .measureX 530 [] [.Z 528, .Z 529, .Z 788, .Z 790, .Z 1554, .Z 1556, .Z 1557, .CZ 522 524, .CZ 522 526, .CZ 522 529, .CZ 522 1552, .CZ 522 1553, .CZ 522 1554, .CZ 522 1556, .CZ 522 1558, .CZ 523 525, .CZ 523 526, .CZ 523 786, .CZ 523 1553, .CZ 523 1554, .CZ 523 1556, .CZ 523 1558, .CZ 524 525, .CZ 524 526, .CZ 524 527, .CZ 524 791, .CZ 524 1551, .CZ 524 1558, .CZ 525 526, .CZ 525 529, .CZ 525 786, .CZ 525 788, .CZ 525 789, .CZ 525 791, .CZ 525 1551, .CZ 525 1552, .CZ 525 1553, .CZ 525 1556, .CZ 526 527, .CZ 526 789, .CZ 526 1551, .CZ 526 1556, .CZ 526 1557, .CZ 526 1558, .CZ 527 529, .CZ 527 786, .CZ 527 787, .CZ 527 1552, .CZ 527 1558, .CZ 528 787, .CZ 529 1551, .CZ 786 1557, .CZ 790 1558],
+  .X 1558,
+  .measureX 1558 [] [.Z 522, .Z 523, .Z 524, .Z 525, .Z 526, .Z 527, .Z 528, .Z 787, .Z 788, .Z 789, .Z 1554, .Z 1557, .CZ 522 791, .CZ 522 1551, .CZ 522 1552, .CZ 523 525, .CZ 523 786, .CZ 523 1551, .CZ 523 1552, .CZ 524 787, .CZ 524 788, .CZ 524 791, .CZ 524 1551, .CZ 524 1552, .CZ 524 1554, .CZ 524 1557, .CZ 525 527, .CZ 525 529, .CZ 525 786, .CZ 525 787, .CZ 525 790, .CZ 525 1551, .CZ 525 1552, .CZ 525 1553, .CZ 525 1554, .CZ 525 1557, .CZ 526 527, .CZ 526 787, .CZ 526 791, .CZ 526 1551, .CZ 526 1552, .CZ 526 1557, .CZ 527 529, .CZ 527 789, .CZ 527 791, .CZ 527 1551, .CZ 527 1552, .CZ 528 786, .CZ 529 787, .CZ 529 788, .CZ 529 1554, .CZ 786 787, .CZ 786 788, .CZ 786 791, .CZ 786 1551, .CZ 786 1552, .CZ 786 1553, .CZ 786 1554, .CZ 787 1551, .CZ 787 1552],
+  .measureX 1557 [] [.CZ 522 525, .CZ 522 526, .CZ 522 791, .CZ 522 1552, .CZ 522 1553, .CZ 522 1556, .CZ 523 527, .CZ 523 786, .CZ 523 787, .CZ 523 1553, .CZ 523 1556, .CZ 524 527, .CZ 527 790],
+  .measureX 1556 [] [.CZ 522 526, .CZ 522 529, .CZ 522 790, .CZ 522 1552, .CZ 522 1553, .CZ 522 1554, .CZ 523 524, .CZ 523 525, .CZ 523 526, .CZ 523 527, .CZ 523 786, .CZ 523 1553, .CZ 523 1554, .CZ 524 786, .CZ 524 787, .CZ 524 788, .CZ 524 789, .CZ 524 791, .CZ 524 1551, .CZ 524 1552, .CZ 524 1554, .CZ 525 526, .CZ 525 527, .CZ 525 529, .CZ 525 786, .CZ 525 787, .CZ 525 788, .CZ 525 1551, .CZ 525 1552, .CZ 525 1553, .CZ 525 1554, .CZ 526 527, .CZ 526 786, .CZ 526 789, .CZ 526 791, .CZ 526 1551, .CZ 526 1552, .CZ 526 1554, .CZ 527 787, .CZ 527 789, .CZ 527 791, .CZ 527 1551, .CZ 527 1552, .CZ 528 529, .CZ 528 786, .CZ 528 787, .CZ 529 787, .CZ 529 788, .CZ 529 1554, .CZ 786 787, .CZ 786 788, .CZ 786 1551, .CZ 786 1552, .CZ 786 1553, .CZ 786 1554, .CZ 787 791, .CZ 787 1552, .CZ 1551 1554],
+  .measureX 1554 [] [.CZ 522 526, .CZ 522 529, .CZ 522 786, .CZ 522 787, .CZ 522 790, .CZ 522 1551, .CZ 522 1553, .CZ 523 524, .CZ 523 525, .CZ 523 527, .CZ 523 1551, .CZ 523 1553, .CZ 524 525, .CZ 524 527, .CZ 524 786, .CZ 524 788, .CZ 524 791, .CZ 524 1551, .CZ 524 1552, .CZ 525 527, .CZ 525 529, .CZ 525 789, .CZ 525 790, .CZ 525 791, .CZ 525 1551, .CZ 525 1552, .CZ 525 1553, .CZ 526 527, .CZ 526 787, .CZ 526 789, .CZ 526 1551, .CZ 526 1552, .CZ 527 787, .CZ 527 789, .CZ 527 791, .CZ 527 1552, .CZ 528 787, .CZ 529 791, .CZ 786 791, .CZ 786 1551, .CZ 786 1552, .CZ 786 1553, .CZ 787 1551, .CZ 787 1552, .CZ 788 1551],
+  .measureX 1553 [] [.CZ 522 529, .CZ 522 786, .CZ 522 790, .CZ 522 791, .CZ 523 524, .CZ 523 527, .CZ 523 786, .CZ 523 1552, .CZ 524 525, .CZ 525 527, .CZ 525 790, .CZ 525 791, .CZ 525 1551, .CZ 525 1552, .CZ 527 1551, .CZ 527 1552, .CZ 529 791, .CZ 791 1551, .CZ 791 1552],
+  .measureX 1552 [] [.CZ 523 525, .CZ 523 526, .CZ 523 786, .CZ 523 787, .CZ 524 527, .CZ 524 788, .CZ 524 791, .CZ 525 790, .CZ 529 791, .CZ 786 790],
+  .measureX 1551 [] [.CZ 523 526, .CZ 523 787, .CZ 524 529],
+  .measureX 791 [] [.CZ 523 525, .CZ 523 527, .CZ 523 786, .CZ 523 788],
+  .measureX 790 [] [.CZ 523 524, .CZ 523 529],
+  .X 791,
+  .CX 791 790,
+  .CX 790 791,
+  .CX 791 790,
+  .CX 791 789,
+  .CX 789 791,
+  .CX 791 789,
+  .CX 790 788,
+  .CX 788 790,
+  .CX 790 788,
+  .CX 789 787,
+  .CX 787 789,
+  .CX 789 787,
+  .CX 788 786,
+  .CX 786 788,
+  .CX 788 786,
+  .CX 787 529,
+  .CX 529 787,
+  .CX 787 529,
+  .CX 523 786
+]
+
+def safe15 : Program → Nat → Bool
+  | [], _ => true
+  | (.measureX t c0 c1)::rest, b =>
+    let b' := flipN_t8 b t (b.testBit t)
+    c0.isEmpty && (corrP_t8 c1 false b' == b.testBit t) && safe15 rest b'
+  | i::rest, b => safe15 rest (runN_t8 [i] [] (false,b)).2
+
+def check15 (uv : Nat × Nat) : Bool :=
+  [false,true].all fun g => [false,true].all fun s =>
+    let pre := MorningFour.pre507 g s uv.1 uv.2
+    let e := encN_t8 pre sites15
+    let b := (runN_t8 (MorningFour.tick507 ++ tripF) [] (false,e)).2
+    safe15 candidate15 b && ((runN_t8 candidate15 [] (false,b)).2 == e)
+
+theorem candidate_case_0 : check15 (0, 1) = true := by decide +kernel
+theorem candidate_case_1 : check15 (1, 1) = true := by decide +kernel
+theorem candidate_case_2 : check15 (2, 1) = true := by decide +kernel
+theorem candidate_case_3 : check15 (3, 1) = true := by decide +kernel
+theorem candidate_case_4 : check15 (4, 1) = true := by decide +kernel
+theorem candidate_case_5 : check15 (5, 1) = true := by decide +kernel
+theorem candidate_case_6 : check15 (6, 1) = true := by decide +kernel
+theorem candidate_case_7 : check15 (7, 1) = true := by decide +kernel
+theorem candidate_case_8 : check15 (8, 1) = true := by decide +kernel
+theorem candidate_case_9 : check15 (9, 1) = true := by decide +kernel
+theorem candidate_case_10 : check15 (10, 1) = true := by decide +kernel
+theorem candidate_case_11 : check15 (11, 1) = true := by decide +kernel
+theorem candidate_case_12 : check15 (12, 1) = true := by decide +kernel
+theorem candidate_case_13 : check15 (13, 1) = true := by decide +kernel
+theorem candidate_case_14 : check15 (14, 1) = true := by decide +kernel
+theorem candidate_case_15 : check15 (15, 1) = true := by decide +kernel
+theorem candidate_case_16 : check15 (1, 3) = true := by decide +kernel
+theorem candidate_case_17 : check15 (2, 3) = true := by decide +kernel
+theorem candidate_case_18 : check15 (4, 3) = true := by decide +kernel
+theorem candidate_case_19 : check15 (5, 3) = true := by decide +kernel
+theorem candidate_case_20 : check15 (7, 3) = true := by decide +kernel
+theorem candidate_case_21 : check15 (10, 3) = true := by decide +kernel
+theorem candidate_case_22 : check15 (13, 3) = true := by decide +kernel
+theorem candidate_case_23 : check15 (1, 5) = true := by decide +kernel
+theorem candidate_case_24 : check15 (2, 5) = true := by decide +kernel
+theorem candidate_case_25 : check15 (3, 5) = true := by decide +kernel
+theorem candidate_case_26 : check15 (6, 5) = true := by decide +kernel
+theorem candidate_case_27 : check15 (7, 5) = true := by decide +kernel
+theorem candidate_case_28 : check15 (11, 5) = true := by decide +kernel
+theorem candidate_case_29 : check15 (1, 7) = true := by decide +kernel
+theorem candidate_case_30 : check15 (2, 7) = true := by decide +kernel
+theorem candidate_case_31 : check15 (3, 7) = true := by decide +kernel
+theorem candidate_case_32 : check15 (5, 7) = true := by decide +kernel
+theorem candidate_case_33 : check15 (9, 7) = true := by decide +kernel
+theorem candidate_case_34 : check15 (1, 9) = true := by decide +kernel
+theorem candidate_case_35 : check15 (7, 9) = true := by decide +kernel
+theorem candidate_case_36 : check15 (1, 11) = true := by decide +kernel
+theorem candidate_case_37 : check15 (5, 11) = true := by decide +kernel
+theorem candidate_case_38 : check15 (1, 13) = true := by decide +kernel
+theorem candidate_case_39 : check15 (3, 13) = true := by decide +kernel
+theorem candidate_case_40 : check15 (1, 15) = true := by decide +kernel
+theorem check15_all : MorningFour.pairs.all check15 = true := by
+  simp only [MorningFour.pairs, List.all_cons, List.all_nil, Bool.and_true, candidate_case_0, candidate_case_1, candidate_case_2, candidate_case_3, candidate_case_4, candidate_case_5, candidate_case_6, candidate_case_7, candidate_case_8, candidate_case_9, candidate_case_10, candidate_case_11, candidate_case_12, candidate_case_13, candidate_case_14, candidate_case_15, candidate_case_16, candidate_case_17, candidate_case_18, candidate_case_19, candidate_case_20, candidate_case_21, candidate_case_22, candidate_case_23, candidate_case_24, candidate_case_25, candidate_case_26, candidate_case_27, candidate_case_28, candidate_case_29, candidate_case_30, candidate_case_31, candidate_case_32, candidate_case_33, candidate_case_34, candidate_case_35, candidate_case_36, candidate_case_37, candidate_case_38, candidate_case_39, candidate_case_40]
+
+theorem corr_add (cs : List Correction) (ph : Bool) (b : Nat) :
+    corrP_t8 cs ph b = (ph ^^ corrP_t8 cs false b) := by
+  induction cs generalizing ph with
+  | nil => cases ph <;> rfl
+  | cons c cs ih =>
+    cases c with
+    | Z t => cases ph <;> cases hb : b.testBit t <;> simp only [corrP_t8, hb, Bool.false_xor, Bool.true_xor, Bool.not_true, Bool.not_false] <;> (first | rfl | (rw [ih true]; cases corrP_t8 cs false b <;> rfl))
+    | CZ x y => cases ph <;> cases hx : b.testBit x <;> cases hy : b.testBit y <;> simp only [corrP_t8, hx, hy, Bool.false_and, Bool.true_and, Bool.false_xor, Bool.true_xor, Bool.not_true, Bool.not_false] <;> (first | rfl | (rw [ih true]; cases corrP_t8 cs false b <;> rfl))
+
+theorem safe_sound (P : Program) (b : Nat) (h : safe15 P b = true) (m : List Bool) (ph : Bool) :
+  runN_t8 P m (ph,b) = (ph, (runN_t8 P [] (false,b)).2) := by
+  induction P generalizing b m ph with
+  | nil => rfl
+  | cons i rest ih =>
+    cases i with
+    | X t => simp only [safe15,runN_t8,Prod.snd] at h ⊢; exact ih _ h _ _
+    | CX c t => simp only [safe15,runN_t8,Prod.snd] at h ⊢; exact ih _ h _ _
+    | CCX a b' t => simp only [safe15,runN_t8,Prod.snd] at h ⊢; exact ih _ h _ _
+    | measureX t c0 c1 =>
+      simp only [safe15,Bool.and_eq_true,beq_iff_eq] at h
+      obtain ⟨⟨hc0,hc1⟩,hr⟩ := h
+      have hz : c0 = [] := by simpa using hc0
+      subst c0
+      cases m with
+      | nil => simpa [runN_t8, corrP_t8] using ih _ hr [] ph
+      | cons z zs =>
+        cases z with
+        | false => simpa [runN_t8, corrP_t8] using ih _ hr zs ph
+        | true =>
+          have eq : corrP_t8 c1 (ph ^^ b.testBit t) (flipN_t8 b t (b.testBit t)) = ph := by
+            rw [corr_add, hc1]
+            cases ph <;> cases b.testBit t <;> rfl
+          simpa [runN_t8, corrP_t8, eq] using ih _ hr zs ph
+
+
+theorem candidate_sample (g s : Bool) (uv : Nat × Nat) (h : uv ∈ MorningFour.pairs)
+    (m : List Bool) (ph : Bool) :
+    let e := encN_t8 (MorningFour.pre507 g s uv.1 uv.2) sites15
+    let b := (runN_t8 (MorningFour.tick507 ++ tripF) [] (false,e)).2
+    runN_t8 candidate15 m (ph,b) = (ph,e) := by
+  have t := check15_all
+  simp only [List.all_eq_true] at t
+  have row := t uv h
+  simp only [check15,List.all_eq_true] at row
+  have z := row g (by cases g <;> simp) s (by cases s <;> simp)
+  simp only [Bool.and_eq_true, beq_iff_eq] at z
+  exact (safe_sound candidate15 _ z.1 m ph).trans (by rw [z.2])
+
+def old15 : Program := tickMR8 ++ W.ReverseCarry.compactReceiverTick base 507
+
+def oldCheck15 (uv : Nat × Nat) : Bool :=
+  [false,true].all fun g => [false,true].all fun s =>
+    let e := encN_t8 (MorningFour.pre507 g s uv.1 uv.2) sites15
+    let b := (runN_t8 (MorningFour.tick507 ++ tripF) [] (false,e)).2
+    phaseClean508 old15 b == some e
+
+theorem old_case_0 : oldCheck15 (0, 1) = true := by decide +kernel
+theorem old_case_1 : oldCheck15 (1, 1) = true := by decide +kernel
+theorem old_case_2 : oldCheck15 (2, 1) = true := by decide +kernel
+theorem old_case_3 : oldCheck15 (3, 1) = true := by decide +kernel
+theorem old_case_4 : oldCheck15 (4, 1) = true := by decide +kernel
+theorem old_case_5 : oldCheck15 (5, 1) = true := by decide +kernel
+theorem old_case_6 : oldCheck15 (6, 1) = true := by decide +kernel
+theorem old_case_7 : oldCheck15 (7, 1) = true := by decide +kernel
+theorem old_case_8 : oldCheck15 (8, 1) = true := by decide +kernel
+theorem old_case_9 : oldCheck15 (9, 1) = true := by decide +kernel
+theorem old_case_10 : oldCheck15 (10, 1) = true := by decide +kernel
+theorem old_case_11 : oldCheck15 (11, 1) = true := by decide +kernel
+theorem old_case_12 : oldCheck15 (12, 1) = true := by decide +kernel
+theorem old_case_13 : oldCheck15 (13, 1) = true := by decide +kernel
+theorem old_case_14 : oldCheck15 (14, 1) = true := by decide +kernel
+theorem old_case_15 : oldCheck15 (15, 1) = true := by decide +kernel
+theorem old_case_16 : oldCheck15 (1, 3) = true := by decide +kernel
+theorem old_case_17 : oldCheck15 (2, 3) = true := by decide +kernel
+theorem old_case_18 : oldCheck15 (4, 3) = true := by decide +kernel
+theorem old_case_19 : oldCheck15 (5, 3) = true := by decide +kernel
+theorem old_case_20 : oldCheck15 (7, 3) = true := by decide +kernel
+theorem old_case_21 : oldCheck15 (10, 3) = true := by decide +kernel
+theorem old_case_22 : oldCheck15 (13, 3) = true := by decide +kernel
+theorem old_case_23 : oldCheck15 (1, 5) = true := by decide +kernel
+theorem old_case_24 : oldCheck15 (2, 5) = true := by decide +kernel
+theorem old_case_25 : oldCheck15 (3, 5) = true := by decide +kernel
+theorem old_case_26 : oldCheck15 (6, 5) = true := by decide +kernel
+theorem old_case_27 : oldCheck15 (7, 5) = true := by decide +kernel
+theorem old_case_28 : oldCheck15 (11, 5) = true := by decide +kernel
+theorem old_case_29 : oldCheck15 (1, 7) = true := by decide +kernel
+theorem old_case_30 : oldCheck15 (2, 7) = true := by decide +kernel
+theorem old_case_31 : oldCheck15 (3, 7) = true := by decide +kernel
+theorem old_case_32 : oldCheck15 (5, 7) = true := by decide +kernel
+theorem old_case_33 : oldCheck15 (9, 7) = true := by decide +kernel
+theorem old_case_34 : oldCheck15 (1, 9) = true := by decide +kernel
+theorem old_case_35 : oldCheck15 (7, 9) = true := by decide +kernel
+theorem old_case_36 : oldCheck15 (1, 11) = true := by decide +kernel
+theorem old_case_37 : oldCheck15 (5, 11) = true := by decide +kernel
+theorem old_case_38 : oldCheck15 (1, 13) = true := by decide +kernel
+theorem old_case_39 : oldCheck15 (3, 13) = true := by decide +kernel
+theorem old_case_40 : oldCheck15 (1, 15) = true := by decide +kernel
+theorem old_all15 : MorningFour.pairs.all oldCheck15 = true := by
+  simp only [MorningFour.pairs, List.all_cons, List.all_nil, Bool.and_true, old_case_0, old_case_1, old_case_2, old_case_3, old_case_4, old_case_5, old_case_6, old_case_7, old_case_8, old_case_9, old_case_10, old_case_11, old_case_12, old_case_13, old_case_14, old_case_15, old_case_16, old_case_17, old_case_18, old_case_19, old_case_20, old_case_21, old_case_22, old_case_23, old_case_24, old_case_25, old_case_26, old_case_27, old_case_28, old_case_29, old_case_30, old_case_31, old_case_32, old_case_33, old_case_34, old_case_35, old_case_36, old_case_37, old_case_38, old_case_39, old_case_40]
+
+theorem candidate_support15 : wires candidate15 ⊆ sites15.toFinset := by decide +kernel
+theorem old_support15 : wires old15 ⊆ sites15.toFinset := by decide +kernel
+
+theorem old_sample15 (g s : Bool) (uv : Nat × Nat) (h : uv ∈ MorningFour.pairs) (m : List Bool) :
+    let e := encN_t8 (MorningFour.pre507 g s uv.1 uv.2) sites15
+    let b := (runN_t8 (MorningFour.tick507 ++ tripF) [] (false,e)).2
+    runN_t8 old15 m (false,b) = (false,e) := by
+  have t := old_all15
+  simp only [List.all_eq_true] at t
+  have row := t uv h
+  simp only [oldCheck15,List.all_eq_true] at row
+  have z := row g (by cases g <;> simp) s (by cases s <;> simp)
+  simp only [beq_iff_eq] at z
+  exact phaseClean508_sound old15 _ _ z m
+
+theorem replace_sample15 (g s : Bool) (uv : Nat × Nat) (h : uv ∈ MorningFour.pairs)
+    (state : State) (m n : List Bool)
+    (agree : ∀ q ∈ sites15,
+      state.basis q = tbN_t8 ((runN_t8 (MorningFour.tick507 ++ tripF) []
+        (false,encN_t8 (MorningFour.pre507 g s uv.1 uv.2) sites15)).2) q) :
+    run candidate15 m state = run old15 n state := by
+  apply Stack5.local_replace candidate15 old15 sites15.toFinset
+    candidate_support15 old_support15 state
+      ⟨false,tbN_t8 ((runN_t8 (MorningFour.tick507 ++ tripF) []
+        (false,encN_t8 (MorningFour.pre507 g s uv.1 uv.2) sites15)).2)⟩ m n
+  · intro q hq
+    exact agree q (List.mem_toFinset.mp hq)
+  · rw [run_sim_t8,run_sim_t8,candidate_sample g s uv h m false, old_sample15 g s uv h n]
+
+theorem resources : toffoliCount candidate15 = 15 ∧ measurementCount candidate15 = 11 ∧ Challenge.gateSlots candidate15 = 714 := by decide +kernel
+theorem physical : GatePhysical candidate15 := by
+  simp (config := {maxSteps := 4000000}) [candidate15, GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate]
+open ECDSAAdd.Secp256k1 ECDSAAdd.Entrant.Rolling1588.Integer ECDSAAdd.Entrant.History5 ECDSAAdd.Entrant.OB5
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
+theorem forward_support : wires (MorningFour.tick507 ++ tripF) ⊆ sites15.toFinset := by decide +kernel
+
+theorem local_stage15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a state : State) (stage : Stage base isA x p 507 a.basis) (m n : List Bool)
+    (agree : ∀ q ∈ sites15,
+      state.basis q = (run (MorningFour.tick507 ++ tripF) [] a).basis q) :
+    run candidate15 m state = run old15 n state := by
+  obtain ⟨raw,hraw,hbits⟩ := stage
+  obtain ⟨g,s,uv,mem,reads⟩ := MorningFour.raw507 x hx0 hx raw hraw
+  have fields := (W.compactSkywalkStage_fields_iff base _ 507 (by omega) base_pool_nodup raw.basis).mp hraw
+  obtain ⟨_,_,_,_,_,_,_,cleanA,_⟩ := fields
+  have free530 : raw.basis 530 = false := cleanA _ (by decide +kernel)
+  have used530 : 530 ∈ (W.compactSkywalkTickLayout base 511).wires.toFinset := by decide +kernel
+  have kept530 : (run (Rolling1588.Integer.encodePrefix base isA 507) [] raw).basis 530 = raw.basis 530 := by
+    apply run_preserves_outside
+    intro used
+    exact Finset.disjoint_left.mp
+      (prefix_disjoint_layout base isA base_pool_nodup 507 511 (by omega) (by omega)) used used530
+  have pre : ∀ q ∈ sites15, a.basis q = MorningFour.pre507 g s uv.1 uv.2 q := by
+    intro q hq
+    have hq' : q ∈ MorningFour.sites ∨ q = 530 := by simpa [sites15] using hq
+    rcases hq' with hq | rfl
+    · rw [hbits, ←reads q hq]
+      apply run_preserves_outside
+      rcases MorningPlacement.layouts q hq with h|h|h|h
+      all_goals
+        exact fun hh => Finset.disjoint_left.mp
+          (prefix_disjoint_layout base isA base_pool_nodup 507 _ (by omega) (by omega)) hh h
+    · rw [hbits,kept530,free530]
+      rfl
+  apply replace_sample15 g s uv mem state m n
+  intro q hq
+  rw [agree q hq]
+  rw [site_run (MorningFour.tick507 ++ tripF) sites15 forward_support a
+    ⟨false,MorningFour.pre507 g s uv.1 uv.2⟩ pre [] q hq]
+  have support : ∀ q, MorningFour.pre507 g s uv.1 uv.2 q = true → q ∈ sites15 := by
+    intro q hq
+    have old : q ∈ MorningFour.sites := by
+      by_contra hn
+      have z := MorningFour.pre_supp g s uv.1 uv.2 q hn
+      rw [z] at hq
+      exact Bool.noConfusion hq
+    change q ∈ MorningFour.sites ++ [530]
+    exact List.mem_append.mpr (Or.inl old)
+  let e := encN_t8 (MorningFour.pre507 g s uv.1 uv.2) sites15
+  have encoded : MorningFour.pre507 g s uv.1 uv.2 = tbN_t8 e := tb_enc_t8 _ _ support
+  calc
+    (run (MorningFour.tick507 ++ tripF) [] ⟨false,MorningFour.pre507 g s uv.1 uv.2⟩).basis q =
+        (run (MorningFour.tick507 ++ tripF) [] ⟨false,tbN_t8 e⟩).basis q := by rw [←encoded]
+    _ = _ := congrArg (fun t : State => t.basis q) (run_sim_t8 _ [] false e)
+
+
+theorem codec_replace15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a t : State) (stage : Stage base isA x p 507 a.basis) (codec : Program) (m : List Bool)
+    (agree : ∀ q ∈ sites15,
+      (run codec (m.take (measurementCount codec)) t).basis q =
+        (run (MorningFour.tick507 ++ tripF) [] a).basis q) :
+    run (codec ++ candidate15) m t = run (codec ++ old15) m t := by
+  rw [run_append,run_append]
+  exact local_stage15 isA x hx0 hx a _ stage _ _ agree
+
+theorem placed_codec_replace15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a t : State) (stage : Stage base isA x p 507 a.basis) (codec : Program) (m : List Bool)
+    (agree : ∀ q ∈ sites15,
+      (run codec (m.take (measurementCount codec)) t).basis q =
+        (run (MorningFour.tick507 ++ tripF) [] a).basis q) :
+    run (renameProgram (sig 510) (codec ++ candidate15)) m (pullState (sig 510) t) =
+    run (renameProgram (sig 510) (codec ++ old15)) m (pullState (sig 510) t) := by
+  rw [OB5.run_rename 510 (by omega), OB5.run_rename 510 (by omega),
+    codec_replace15 isA x hx0 hx a t stage codec m agree]
+theorem same50715 : renameProgram (sig 507) (W.ReverseCarry.compactReceiverTick base 507) =
+    renameProgram (sig 510) (W.ReverseCarry.compactReceiverTick base 507) := by decide +kernel
+
+theorem unpack50715 (isA : Bool) : unpackFirst base isA 507 = [] := by
+  simp only [unpackFirst,show ¬(507:Nat)=5 from by decide,if_false,Rolling1588.Integer.decodeBefore,
+    show History5.packDue 507=false from by decide,Bool.false_eq_true,if_false]
+
+theorem reverse_shape15 (isA : Bool) :
+    Rolling1588.stackReverse isA = renameProgram (sig 511) tickR ++
+      (renameProgram (sig 510) (Rolling1588.unpackAtTick isA 510 ++ old15) ++
+        Rolling1588.reverse isA 1 506) := by
+  have shape := reverse_snoc isA 1 506
+  rw [show (1:Nat)+506=507 by rfl,unpack50715,List.nil_append,
+    reverse_eq_packets,same50715] at shape
+  rw [reverse_eq_packets] at shape
+  rw [Rolling1588.stackReverse,shape]
+  simp only [old15,renameProgram,List.map_append,List.append_assoc]
+
+theorem pack_inverse15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a : State) (stage : Stage base isA x p 507 a.basis) (mE mD : List Bool) :
+    run (Rolling1588.Integer.decodeBefore base isA 510) mD
+      (run (packAfter base isA 510) mE (run (MorningFour.tick507 ++ tripF) [] a)) =
+        run (MorningFour.tick507 ++ tripF) [] a := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  let b8 := run (W.repairedTick base 507) [] a
+  let b9 := run (W.repairedTick base 508) [] b8
+  let b10 := run (W.repairedTick base 509) [] b9
+  let b11 := run (W.repairedTick base 510) [] b10
+  have s8 : Stage base isA x p 508 b8.basis := by
+    have h := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 507 hp0 hx0 hpo hp gap hx cop (by omega) a [] stage).2
+    simpa only [MorningPlacement.pack507,List.append_nil,b8] using h
+  have s9 : Stage base isA x p 509 b9.basis := by
+    have h := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 508 hp0 hx0 hpo hp gap hx cop (by omega) b8 [] s8).2
+    simpa only [pack508,List.append_nil,b9] using h
+  have s10 : Stage base isA x p 510 b10.basis := by
+    have h := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 509 hp0 hx0 hpo hp gap hx cop (by omega) b9 [] s9).2
+    simpa only [pack509,List.append_nil,b10] using h
+  have rep : W.repairedTick base 510=W.compactSkywalkTick base 510 := by
+    rw [tick510ExF_explicit,tick510ExF_compact]
+  have legal := tick_pack_legal base isA base_pool_nodup x p 510 hp0 hx0 hpo hp gap hx cop
+    (by omega) b10 [] s10 (by decide)
+  rw [←rep] at legal
+  have dp : run (Rolling1588.Integer.decodeBefore base isA 510) mD
+      (run (packAfter base isA 510) mE b11)=b11 := by
+    simpa only [Rolling1588.Integer.packAfter,Rolling1588.Integer.decodeBefore,show History5.packDue 510=true from by decide,if_true,b11] using
+      encode_decode_roundtrip base isA base_pool_nodup (510-5) (by omega) b11 mE mD legal
+  have eq : run (MorningFour.tick507 ++ tripF) [] a = b11 := by
+    simp only [tripF,←MorningFour.explicit507,←tick508ExF_explicit,←tick509ExF_explicit,
+      ←tick510ExF_explicit,List.append_assoc,run_append,List.take_nil,List.drop_nil,b8,b9,b10,b11]
+  rw [eq,dp]
+
+theorem decoded_replace15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a : State) (stage : Stage base isA x p 507 a.basis) (mE mD : List Bool) :
+    run (Rolling1588.Integer.decodeBefore base isA 510 ++ candidate15) mD
+      (run (packAfter base isA 510) mE (run (MorningFour.tick507 ++ tripF) [] a)) =
+    run (Rolling1588.Integer.decodeBefore base isA 510 ++ old15) mD
+      (run (packAfter base isA 510) mE (run (MorningFour.tick507 ++ tripF) [] a)) := by
+  rw [run_append (Rolling1588.Integer.decodeBefore base isA 510) candidate15,
+    run_append (Rolling1588.Integer.decodeBefore base isA 510) old15,
+    pack_inverse15 isA x hx0 hx a stage mE]
+  exact local_stage15 isA x hx0 hx a _ stage _ _ (fun _ _ => rfl)
+
+theorem sites_pool15 : sites15.toFinset ⊆ (skywalkPoolWires base).toFinset := by
+  have layout : sites15 = ([506,507,508,509,510,511,512,513,770,771,772,773,774,775,1535,1536,1537,1538,1540,1541,1542,1543,514] : List Nat).map base := by decide +kernel
+  intro q hq
+  have member : q ∈ sites15 := List.mem_toFinset.mp hq
+  rw [layout] at member
+  obtain ⟨i,hi,rfl⟩ := List.mem_map.mp member
+  apply List.mem_toFinset.mpr
+  apply OB5.base_pool i
+  have bound : ∀ i ∈ ([506,507,508,509,510,511,512,513,770,771,772,773,774,775,1535,1536,1537,1538,1540,1541,1542,1543,514] : List Nat), i < 1798 := by decide
+  exact bound i hi
+
+theorem decoded_replace_pool15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a u : State) (stage : Stage base isA x p 507 a.basis) (mE mD : List Bool)
+    (agree : ∀ q ∈ skywalkPoolWires base,
+      u.basis q = (run ((MorningFour.tick507 ++ tripF) ++ packAfter base isA 510) mE a).basis q) :
+    run (Rolling1588.Integer.decodeBefore base isA 510 ++ candidate15) mD u =
+    run (Rolling1588.Integer.decodeBefore base isA 510 ++ old15) mD u := by
+  let f := MorningFour.tick507 ++ tripF
+  let codec := Rolling1588.Integer.decodeBefore base isA 510
+  let ref := run (packAfter base isA 510) mE (run f [] a)
+  have dec : wires codec ⊆ (skywalkPoolWires base).toFinset := by
+    have d := (History5.pack_support5 base 510 (by omega)).2.trans (History5.integerSites5_pool base)
+    rw [←decodeBefore_support_eq base isA 510] at d
+    exact d
+  have supportC : wires (codec ++ candidate15) ⊆ (skywalkPoolWires base).toFinset := by
+    rw [wires_append,Finset.union_subset_iff]
+    exact ⟨dec,candidate_support15.trans sites_pool15⟩
+  have supportO : wires (codec ++ old15) ⊆ (skywalkPoolWires base).toFinset := by
+    rw [wires_append,Finset.union_subset_iff]
+    exact ⟨dec,old_support15.trans sites_pool15⟩
+  apply Stack5.local_replace _ _ _ supportC supportO u ref mD mD
+  · intro q hq
+    have eq1 := congrFun (run_basis_records (f ++ packAfter base isA 510) a a mE [] rfl) q
+    have eq2 := congrFun (run_basis_records (packAfter base isA 510) (run f [] a) (run f [] a) [] mE rfl) q
+    have eq3 : (run (f ++ packAfter base isA 510) [] a).basis q =
+        (run (packAfter base isA 510) [] (run f [] a)).basis q := by
+      rw [run_append]; simp only [List.take_nil,List.drop_nil]
+    exact (agree q (List.mem_toFinset.mp hq)).trans (eq1.trans (eq3.trans eq2))
+  · exact decoded_replace15 isA x hx0 hx a stage mE mD
+
+def reverseTail15 (isA : Bool) : Program :=
+  renameProgram (sig 510) (Rolling1588.unpackAtTick isA 510 ++ candidate15) ++
+    Rolling1588.reverse isA 1 506
+
+theorem unpack51015 (isA : Bool) :
+    Rolling1588.unpackAtTick isA 510 = Rolling1588.Integer.decodeBefore base isA 510 := by
+  have h := unpackFirst_base isA 510
+  simpa only [unpackFirst,show ¬(510:Nat)=5 from by decide,if_false] using h.symm
+
+theorem old_records15 : measurementCount old15 = 11 := by decide +kernel
+
+theorem placed_block15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a u : State) (stage : Stage base isA x p 507 a.basis) (mE mD : List Bool)
+    (agree : ∀ q ∈ skywalkPoolWires base,
+      u.basis q = (run ((MorningFour.tick507 ++ tripF) ++ packAfter base isA 510) mE a).basis q) :
+    run (renameProgram (sig 510) (Rolling1588.unpackAtTick isA 510 ++ candidate15)) mD
+      (pullState (sig 510) u) =
+    run (renameProgram (sig 510) (Rolling1588.unpackAtTick isA 510 ++ old15)) mD
+      (pullState (sig 510) u) := by
+  rw [unpack51015, OB5.run_rename 510 (by omega), OB5.run_rename 510 (by omega),
+    decoded_replace_pool15 isA x hx0 hx a u stage mE mD agree]
+
+theorem tail_replace15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a u : State) (stage : Stage base isA x p 507 a.basis) (mE mD : List Bool)
+    (agree : ∀ q ∈ skywalkPoolWires base,
+      u.basis q = (run ((MorningFour.tick507 ++ tripF) ++ packAfter base isA 510) mE a).basis q) :
+    run (reverseTail15 isA) mD (pullState (sig 510) u) =
+      run (renameProgram (sig 510) (Rolling1588.unpackAtTick isA 510 ++ old15) ++
+        Rolling1588.reverse isA 1 506) mD (pullState (sig 510) u) := by
+  have count : measurementCount (renameProgram (sig 510) (Rolling1588.unpackAtTick isA 510 ++ candidate15)) =
+      measurementCount (renameProgram (sig 510) (Rolling1588.unpackAtTick isA 510 ++ old15)) := by
+    rw [(renameProgram_counts _ _).2,(renameProgram_counts _ _).2,
+      measurementCount_append,measurementCount_append,resources.2.1,old_records15]
+  rw [reverseTail15,run_append,run_append, count,
+    placed_block15 isA x hx0 hx a u stage mE _ agree]
+
+
+theorem tail_actual15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (s1 : State) (mE : List Bool)
+    (first : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s1.basis)
+    (u : State) (hu : ∀ q ∈ skywalkPoolWires base,
+      u.basis q = (run (regularForward base isA 1 510) mE s1).basis q) (mD : List Bool) :
+    run (reverseTail15 isA) mD (pullState (sig 510) u) =
+      run (renameProgram (sig 510) (Rolling1588.unpackAtTick isA 510 ++ old15) ++
+        Rolling1588.reverse isA 1 506) mD (pullState (sig 510) u) := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  let k := measurementCount (regularForward base isA 1 506)
+  have stage0 : Stage base isA x p 507
+      (run (regularForward base isA 1 506)
+        (mE.take (measurementCount (regularForward base isA 1 506))) s1).basis :=
+    ((regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p 1 506
+      hp0 hx0 hpo hp gap hx cop (by omega)) s1 _ (stage_one base isA x p s1 first)).2
+  change Stage base isA x p 507 (run (regularForward base isA 1 506) (mE.take k) s1).basis at stage0
+  obtain ⟨a,ha⟩ : ∃ a : State,run (regularForward base isA 1 506) (mE.take k) s1 = a := ⟨_,rfl⟩
+  rw [ha] at stage0
+  have fwdP : regularForward base isA 1 510 = regularForward base isA 1 506 ++
+      ((MorningFour.tick507 ++ tripF) ++ packAfter base isA 510) := by
+    rw [regularForward_snoc base isA 1 509,show (1:Nat)+509=510 by rfl,
+      regularForward_snoc base isA 1 508,show (1:Nat)+508=509 by rfl,
+      regularForward_snoc base isA 1 507,show (1:Nat)+507=508 by rfl,
+      regularForward_snoc base isA 1 506,show (1:Nat)+506=507 by rfl,
+      MorningPlacement.pack507,pack508,pack509,
+      MorningFour.explicit507,tick508ExF_explicit,tick509ExF_explicit,tick510ExF_explicit]
+    simp only [tripF,List.append_assoc,List.append_nil]
+  have agre : ∀ q ∈ skywalkPoolWires base,
+      u.basis q = (run ((MorningFour.tick507 ++ tripF) ++ packAfter base isA 510) (mE.drop k) a).basis q := by
+    intro q hq
+    rw [hu q hq,fwdP,run_append,←show measurementCount (regularForward base isA 1 506)=k from rfl,ha]
+  exact tail_replace15 isA x hx0 hx a u stage0 (mE.drop k) mD agre
+
+attribute [local irreducible] Stage
+def stackReverse15 (isA : Bool) : Program := renameProgram (sig 511) tickR ++ reverseTail15 isA
+
+theorem reverse_actual15 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (s1 : State) (mE : List Bool)
+    (first : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s1.basis)
+    (t5 : State) (agree : ∀q∈skywalkPoolWires base,
+      t5.basis q=(run (regularForward base isA 1 511) mE s1).basis q) (mD : List Bool) :
+    run (stackReverse15 isA) mD (pullState (sig 511) t5)=
+      run (Rolling1588.stackReverse isA) mD (pullState (sig 511) t5) := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have hgap : p+2^32  ≤  2^256 := by norm_num [p]
+  have aStage : Stage base isA x p 511
+      (run (regularForward base isA 1 510)
+        (mE.take (measurementCount (regularForward base isA 1 510))) s1).basis :=
+    ((regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p 1 510
+      hp0 hx0 hpo hp hgap hx cop (by omega)) s1 _ (stage_one base isA x p s1 first)).2
+  have whole : run (regularForward base isA 1 510)
+      (mE.take (measurementCount (regularForward base isA 1 510))) s1=
+        run (regularForward base isA 1 510) mE s1 := run_take _ mE s1
+  have last : run (regularForward base isA 1 511) mE s1=
+      run (W.repairedTick base 511) (mE.drop (measurementCount (regularForward base isA 1 510)))
+        (run (regularForward base isA 1 510)
+          (mE.take (measurementCount (regularForward base isA 1 510))) s1) := by
+    rw [regularForward_snoc base isA 1 510,show (1:Nat)+510=511 by rfl,regular_pack511,List.append_nil,run_append]
+  rw [last] at agree
+  generalize run (regularForward base isA 1 510)
+    (mE.take (measurementCount (regularForward base isA 1 510))) s1=a at aStage whole agree
+  obtain ⟨G,bits⟩ := stage511_bits isA x hx0 hx a aStage
+  rw [repaired511_forced G a bits] at agree
+  have post : ∀q∈tickSites,t5.basis q=postBits G q := by
+    intro q hq
+    rw [agree q (tickSites_pool q hq)]
+    exact tickF_post G a bits q hq
+  have uAgree : ∀q∈skywalkPoolWires base,(run tickR [] t5).basis q=a.basis q := by
+    intro q hq
+    by_cases ht : q∈tickSites
+    · rw [site_run tickR tickSites tickR_wires t5 ⟨false,postBits G⟩ post [] q ht,tickR_pre G q ht]
+      exact (bits q ht).symm
+    · have hr : q∉wires tickR := fun h => ht (List.mem_toFinset.mp (tickR_wires h))
+      have hf : q∉wires tickF := fun h => ht (List.mem_toFinset.mp (tickF_wires h))
+      rw [run_preserves_outside tickR [] t5 q hr,agree q hq,run_preserves_outside tickF [] a q hf]
+  have z := stage_zero isA x 511 (by omega) a.basis aStage
+  have move : pullState (sig 511) (run tickR [] t5)=pullState (sig 510) (run tickR [] t5) :=
+    (OB5.pull_step 511 (by omega) _
+      ((uAgree _ (StackOB5Base.base_pool _ (by omega))).trans z.1)
+      (fun big => (uAgree _ (StackOB5Base.base_pool _ (by omega))).trans (z.2 big))).symm
+  have cn : measurementCount (renameProgram (sig 511) tickR)=0 :=
+    (renameProgram_counts (sig 511) tickR).2.trans tickR_counts.2
+  rw [stackReverse15,reverse_shape15,run_append,run_append,cn]
+  simp only [List.take_zero,List.drop_zero]
+  rw [OB5.run_rename 511 (by omega),tickR_run,move]
+  exact tail_actual15 isA x hx0 hx s1 mE first _
+    (fun q hq => (uAgree q hq).trans (congrArg (fun st : State => st.basis q) whole)) mD
+
+theorem stack_roundtrip15 (isA : Bool)
+    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
+    (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (mE mD : List Bool)
+    (first : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (stackReverse15 isA) mD (run (Rolling1588TickGap.stackForward isA) mE s)=s := by
+  have fwd : run (Rolling1588TickGap.stackForward isA) mE s =
+      pullState (sig 511) (run (regularForward base isA 1 511) mE s) := by
+    rw [Rolling1588TickGap.stackForward_run_eq isA x hx0 hx s mE first,
+      ←Rolling1588.Integer.stackForward_eq_packets,Rolling1588.Integer.stackForwardT_run isA hn hlo x hx0 hx s mE first,
+      Rolling1588.Integer.forward_run isA x hx0 hx s mE first]
+  rw [fwd, reverse_actual15 isA x hx0 hx s mE first _ (fun _ _ => rfl) mD,←fwd]
+  exact Rolling1588TickGap.stack_roundtrip isA hn hlo x hx0 hx s mE mD first
+
+open ECDSAAdd.Arithmetic.DirectSkywalk
+def lastPhase15 (isA : Bool) : Program :=
+  skywalkArithmeticClear base ++ stackReverse15 isA ++ FrontierEntry1591NativeH.inverse base
+
+private theorem compose_roundtrip15 (N F C R I : Program) (s : State) (mp mr : List Bool)
+    (clearM : measurementCount C=0)
+    (twice : ∀ (t : State) mc,run C [] (run C mc t)=t)
+    (stack : ∀mn mf md,run R md (run F mf (run N mn s))=run N mn s)
+    (native : ∀mn mi,run I mi (run N mn s)=s) :
+    run (C++(R++I)) mr (run (N++(F++C)) mp s)=s := by
+  simp only [run_append,clearM,List.take_zero,List.drop_zero]
+  rw [twice,stack]
+  exact native _ _
+
+theorem phases_roundtrip15 (isA : Bool) (hn : (skywalkSharedWires base).Nodup)
+    (hlo : History5.HistoryAbove base) (x y : Nat) (hx0 : 0<x) (hx : x<p)
+    (s : State) (mp mr : List Bool) (input : SkywalkArithmeticInput base x y s.basis) :
+    run (lastPhase15 isA) mr (run (Rolling1588TickGap.firstPhase isA) mp s)=s := by
+  have clearM : measurementCount (skywalkArithmeticClear base)=0 := by
+    simp [skywalkArithmeticClear,skywalkTerminalClear,measurementCount]
+  have twice (t : State) (mc : List Bool) : run (skywalkArithmeticClear base) []
+      (run (skywalkArithmeticClear base) mc t)=t := by
+    simpa only [skywalkArithmeticClear] using skywalkTerminalClear_twice
+      (base 511) (base 512) (base 770) (arith_clear_gates base hn) t mc []
+  have stack (mn mf md : List Bool) :
+      run (stackReverse15 isA) md (run (Rolling1588TickGap.stackForward isA) mf
+        (run (FrontierEntry1591Native.forward base) mn s))=
+      run (FrontierEntry1591Native.forward base) mn s :=
+    stack_roundtrip15 isA hn hlo x hx0 hx _ mf md
+      (FrontierEntry1591Native.caller_first_stageW base hn x y hx0 hx s mn input)
+  simpa only [Rolling1588TickGap.firstPhase,Rolling1588TickGap.tailPhase,lastPhase15,List.append_assoc] using
+    compose_roundtrip15 (FrontierEntry1591Native.forward base) (Rolling1588TickGap.stackForward isA)
+      (skywalkArithmeticClear base) (stackReverse15 isA)
+      (FrontierEntry1591NativeH.inverse base) s mp mr clearM twice stack
+      (fun mn mi=>FrontierEntry1591NativeH.inverse_roundtrip base hn x y hx s mn mi input)
+
+attribute [local irreducible] Rolling1588.stackReverse Rolling1588.lastPhase stackReverse15 reverseTail15 lastPhase15 candidate15 old15
+theorem cand_extra15 : wires (renameProgram (sig 510) candidate15) ⊆
+    wires (renameProgram (sig 510) old15) ∪ {530} := by
+  have parts : MorningFour.sites.toFinset ⊆ wires old15 ∪ {1559} := by decide +kernel
+  have absent : (1559:Wire) ∉ wires candidate15 := by decide +kernel
+  intro q hq
+  rw [renameProgram_support] at hq
+  obtain ⟨v,hv,rfl⟩ := Finset.mem_image.mp hq
+  have member : v ∈ sites15 := List.mem_toFinset.mp (candidate_support15 hv)
+  have cases : v ∈ MorningFour.sites ∨ v=530 := by simpa [sites15] using member
+  rcases cases with oldsite | extra
+  · have member := parts (List.mem_toFinset.mpr oldsite)
+    rcases Finset.mem_union.mp member with old | extra
+    · apply Finset.mem_union_left
+      rw [renameProgram_support]
+      exact Finset.mem_image.mpr ⟨v,old,rfl⟩
+    · simp only [Finset.mem_singleton] at extra
+      exact False.elim (absent (extra ▸ hv))
+  · subst v
+    apply Finset.mem_union_right
+    simp only [Finset.mem_singleton]
+    decide +kernel
+
+theorem last_extra15 (isA : Bool) : wires (lastPhase15 isA) ⊆
+    wires (Rolling1588.lastPhase isA) ∪ {530} := by
+  have ren (p q : Program) : renameProgram (sig 510) (p ++ q) =
+      renameProgram (sig 510) p ++ renameProgram (sig 510) q := by simp only [renameProgram,List.map_append]
+  have hsub := cand_extra15
+  intro q h
+  simp only [lastPhase15,stackReverse15,reverseTail15,ren,wires_append,
+    Finset.mem_union] at h
+  rw [Rolling1588.lastPhase,reverse_shape15]
+  simp only [ren,wires_append,Finset.mem_union,Finset.mem_singleton] at h ⊢
+  have hh : q ∈ wires (renameProgram (sig 510) candidate15) →
+      q ∈ wires (renameProgram (sig 510) old15) ∨ q=530 := by
+    intro hc
+    have z := hsub hc
+    simpa only [Finset.mem_union,Finset.mem_singleton] using z
+  rcases h with ((hc | ht | (hcodec | hcand) | hrest) | hinv)
+  · exact Or.inl (Or.inl (Or.inl hc))
+  · exact Or.inl (Or.inl (Or.inr (Or.inl ht)))
+  · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inl (Or.inl hcodec)))))
+  · rcases hh hcand with hold | hextra
+    · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inl (Or.inr hold)))))
+    · exact Or.inr hextra
+  · exact Or.inl (Or.inl (Or.inr (Or.inr (Or.inr hrest))))
+  · exact Or.inl (Or.inr hinv)
+
+theorem extra_pool15 : 530 ∈ (skywalkPoolWires base).toFinset := by
+  have h := OB5.base_pool 514 (by decide)
+  exact List.mem_toFinset.mpr (by simpa only [show base 514 = 530 from by decide +kernel] using h)
+
+theorem last_pool15 (isA : Bool) : wires (lastPhase15 isA) ⊆ (skywalkPoolWires base).toFinset := by
+  intro q h
+  rcases Finset.mem_union.mp (last_extra15 isA h) with old | extra
+  · exact ((Rolling1588Lifetime.last_support_sub isA).trans FrontierEntry1591Kernel.last_pool) old
+  · simp only [Finset.mem_singleton] at extra
+    subst q
+    exact extra_pool15
+
+theorem last_hosts_free15 (isA : Bool) (q : Wire) (hq : q ∈ Rolling1588Lifetime.phaseHosts) :
+    q ∉ wires (lastPhase15 isA) := by
+  intro h
+  rcases Finset.mem_union.mp (last_extra15 isA h) with old | extra
+  · exact Rolling1588Lifetime.last_hosts_free isA q hq old
+  · simp only [Finset.mem_singleton] at extra
+    subst q
+    have no : (530:Wire) ∉ Rolling1588Lifetime.phaseHosts := by decide +kernel
+    exact no hq
+
+open ECDSAAdd.Entrant.Rolling1588Lifetime
+private theorem phase_sites_split :
+    phaseSites=FrontierEntry1591Native.workSites∪phaseHosts := by
+  ext q
+  simp only [phaseSites,phaseHosts,FrontierEntry1591Native.workSites,Finset.mem_union,
+    List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false]
+  tauto
+
+private theorem phase_kernel_rebind (P F Q : Program) (s : State) (m : List Bool)
+    (input : ∀q∈phaseSites,s.basis q=false)
+    (firstFree : ∀q∈phaseHosts,q∉wires P)
+    (firstClean : ∀records,∀q∈FrontierEntry1591Native.workSites,
+      (run P records s).basis q=false)
+    (fieldFree : ∀q∈FrontierEntry1591Native.workSites,q∉wires F)
+    (lastFree : ∀q∈phaseHosts,q∉wires Q)
+    (output : ∀q∈phaseSites,
+      (run (FrontierEntry1591Native.kernel P F Q) m s).basis q=false) :
+    run (renameProgram phaseHost P++(F++renameProgram phaseHost Q)) m s=
+      run (FrontierEntry1591Native.kernel P F Q) m s := by
+  let mp := m.take (measurementCount P)
+  let rest := m.drop (measurementCount P)
+  let mf := rest.take (measurementCount F)
+  let mr := rest.drop (measurementCount F)
+  let before := run P mp s
+  let after := run F mf before
+  have finalClean : ∀q∈phaseSites,(run Q mr after).basis q=false := by
+    simpa only [FrontierEntry1591Native.kernel,run_append] using output
+  have lastInput : ∀q∈phaseSites,after.basis q=false := by
+    intro q hq
+    rw [phase_sites_split] at hq
+    rcases Finset.mem_union.mp hq with work|host
+    · exact (run_preserves_outside F mf before q (fieldFree q work)).trans (firstClean mp q work)
+    · exact (run_preserves_outside Q mr after q (lastFree q host)).symm.trans
+        (finalClean q (by rw [phase_sites_split];exact Finset.mem_union_right _ host))
+  have firstOutput : ∀q∈phaseSites,(run P mp s).basis q=false := by
+    intro q hq
+    rw [phase_sites_split] at hq
+    rcases Finset.mem_union.mp hq with work|host
+    · exact firstClean mp q work
+    · exact (run_preserves_outside P mp s q (firstFree q host)).trans
+        (input q (by rw [phase_sites_split];exact Finset.mem_union_right _ host))
+  have first := phase_run_eq P s mp input firstOutput
+  have last := phase_run_eq Q after mr lastInput finalClean
+  simp only [FrontierEntry1591Native.kernel,run_append,(renameProgram_counts _ _).2]
+  rw [first]
+  exact last
+
+
+private theorem phase_numerator_away (q : Wire) (hq : q∈phaseSites) :
+    q∉wireBlock base 2056 256 := by
+  simp only [phaseSites,List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at hq
+  rcases hq with rfl|rfl|rfl|rfl|rfl|rfl <;>
+    exact OwnPlusHost.not_block _ 2056 256 (by omega)
+
+/-- The field changes A into B. Its output is compared with a B encoding
+of the same raw integer history before the B inverse is applied. -/
+theorem raw_result_of_roundtrip (a b : Bool) (F : Program) (s : State) (m : List Bool)
+    (value : Nat)
+    (roundtrip : ∀mp mr,run (lastPhase15 b) mr (run (firstPhase b) mp s)=s)
+    (fieldResult : ∀mp mf,
+      let beforeA := run (firstPhase a) mp s
+      let beforeB := run (firstPhase b) mp s
+      let after := run F mf beforeA
+      after.phase=beforeB.phase ∧ regValue (wireBlock base 2056 256) after.basis=value ∧
+        ∀q,q∉wireBlock base 2056 256 → after.basis q=beforeB.basis q) :
+    let out := run (FrontierEntry1591Native.kernel (firstPhase a) F (lastPhase15 b)) m s
+    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=value ∧
+      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
+  have firstPool : wires (firstPhase b)⊆(skywalkPoolWires base).toFinset := by
+    rw [first_support_eq]
+    exact FrontierEntry1591Kernel.first_pool
+  have lastPool : wires (lastPhase15 b)⊆(skywalkPoolWires base).toFinset :=
+    last_pool15 b
+  have all := run_three_states (firstPhase a) F (lastPhase15 b)
+    (fun initial out=>initial=s → out.phase=s.phase ∧
+      regValue (wireBlock base 2056 256) out.basis=value ∧
+      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q) (by
+      intro initial beforeA after out mp mf mr h1 h2 h3 eq
+      subst initial
+      have result := fieldResult mp mf
+      dsimp only at result
+      rw [h1,h2] at result
+      exact FrontierEntry1591Kernel.sandwich_states (firstPhase b) (lastPhase15 b) firstPool lastPool s
+        (run (firstPhase b) mp s) after out mp mr value rfl h3 (roundtrip mp mr) result) s m
+  simpa only [FrontierEntry1591Native.kernel,List.append_assoc] using all rfl
+
+
+
+theorem kernel_result15 (a b : Bool) (F : Program) (hn : (skywalkSharedWires base).Nodup)
+    (hlo : History5.HistoryAbove base) (x y : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool) (value : Nat)
+    (input : SkywalkArithmeticInput base x y s.basis)
+    (fieldFree : ∀q∈FrontierEntry1591Native.workSites,q∉wires F)
+    (fieldResult : ∀mp mf,
+      let beforeA := run (firstPhase a) mp s
+      let beforeB := run (firstPhase b) mp s
+      let after := run F mf beforeA
+      after.phase=beforeB.phase ∧ regValue (wireBlock base 2056 256) after.basis=value ∧
+        ∀q,q∉wireBlock base 2056 256 → after.basis q=beforeB.basis q) :
+    let out := run (renameProgram phaseHost (firstPhase a)++
+      (F++renameProgram phaseHost (lastPhase15 b))) m s
+    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=value ∧
+      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
+  have rt (mp mr : List Bool) : run (lastPhase15 b) mr (run (firstPhase b) mp s)=s := by
+    rw [←Rolling1588TickGap.first_run_eq b hn x y hx0 hx s mp input]
+    exact phases_roundtrip15 b hn hlo x y hx0 hx s mp mr input
+  have raw := raw_result_of_roundtrip a b F s m value rt fieldResult
+  have clean := caller_phase_clean x y s input
+  have output : ∀q∈phaseSites,
+      (run (FrontierEntry1591Native.kernel (firstPhase a) F (lastPhase15 b)) m s).basis q=false := by
+    intro q hq
+    exact (raw.2.2 q (phase_numerator_away q hq)).trans (clean q hq)
+  have same := phase_kernel_rebind (firstPhase a) F (lastPhase15 b) s m clean
+    (first_hosts_free a) (fun records => Rolling1588Lifetime.first_clean a hn hlo x y hx0 hx s records input)
+    fieldFree (last_hosts_free15 b) output
+  dsimp only
+  rw [same]
+  exact raw
+
+open ECDSAAdd.Entrant.Rolling1588 ECDSAAdd.Entrant.FrontierEntry1591Callers ECDSAAdd.Arithmetic.BalancedField
+def oldKernel15 (a b : Bool) (F : Program) : Program :=
+  renameProgram phaseHost (Rolling1588.firstPhase a) ++
+    (F ++ renameProgram phaseHost (lastPhase15 b))
+def kernel15 (a b : Bool) (F : Program) : Program :=
+  renameProgram phaseHost (Rolling1588TickGap.firstPhase a) ++
+    (F ++ renameProgram phaseHost (lastPhase15 b))
+def entryKernel15 : Program := kernel15 true false entryFieldHosted
+def exitKernel15 : Program := kernel15 false true exitFieldHosted
+
+theorem old_entry_correct15 : EntryCorrect (oldKernel15 true false entryFieldHosted) := by
+  intro hn hlo ho hf x Y hx0 hx s t m input hg hs phase same half
+  obtain ⟨out,outEq⟩ : ∃out : State,run (oldKernel15 true false entryFieldHosted) m t=out := ⟨_,rfl⟩
+  have actualInput := FrontierEntry1591Kernel.paired_input x Y.val s t input same
+  have result := kernel_result15 true false entryFieldHosted hn hlo
+    x _ hx0 hx t m (Y/(x:Fp)).val actualInput entryFieldHosted_work_free
+    (fun mp mf=>entry_boundary hn hlo ho hf x Y hx0 hx s t mp mf input hg hs phase same half)
+  change (run (oldKernel15 true false entryFieldHosted) m t).phase=t.phase ∧
+    regValue (wireBlock base 2056 256) (run (oldKernel15 true false entryFieldHosted) m t).basis=(Y/(x:Fp)).val ∧
+    ∀q,q∉wireBlock base 2056 256 → (run (oldKernel15 true false entryFieldHosted) m t).basis q=t.basis q at result
+  rw [outEq] at result
+  have conclusion : out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(Y/(x:Fp)).val ∧
+      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q :=
+    ⟨result.1.trans phase,result.2.1,fun q hq=>(result.2.2 q hq).trans (same q hq)⟩
+  dsimp only
+  rw [outEq]
+  simpa only [skywalkArithmeticResult,if_true] using conclusion
+
+theorem old_exit_correct15 : ExitCorrect (oldKernel15 false true exitFieldHosted) := by
+  intro hn hlo ho hf x Y hx0 hx s m input hg hs
+  have result := kernel_result15 false true exitFieldHosted hn hlo
+    x Y.val hx0 hx s m (centerWord (Y*(x:Fp)/2)) input exitFieldHosted_work_free
+    (fun mp mf=>exit_boundary hn hlo ho hf x Y hx0 hx s mp mf input hg hs)
+  simpa only [oldKernel15,skywalkArithmeticNumerator] using result
+
+theorem kernel_first_eq15 (a b : Bool) (F : Program)
+    (hn : (skywalkSharedWires base).Nodup) (x y : Nat) (hx0 : 0<x) (hx : x<p)
+    (s : State) (m : List Bool) (input : SkywalkArithmeticInput base x y s.basis) :
+    run (kernel15 a b F) m s = run (oldKernel15 a b F) m s := by
+  have records : measurementCount (renameProgram phaseHost (Rolling1588TickGap.firstPhase a)) =
+      measurementCount (renameProgram phaseHost (Rolling1588.firstPhase a)) := by
+    rw [(renameProgram_counts _ _).2,(renameProgram_counts _ _).2,(Rolling1588TickGap.first_metrics a).2.1]
+  rw [kernel15,oldKernel15,
+    run_append (renameProgram phaseHost (Rolling1588TickGap.firstPhase a)),
+    run_append (renameProgram phaseHost (Rolling1588.firstPhase a)),records,
+    Rolling1588TickGap.first_hosted_run_eq a hn x y hx0 hx s _ input]
+
+theorem entry_correct15 : EntryCorrect entryKernel15 := by
+  intro hn hlo ho hf x Y hx0 hx s t m input hg hs phase same half
+  have actual := FrontierEntry1591Kernel.paired_input x Y.val s t input same
+  rw [entryKernel15,kernel_first_eq15 true false entryFieldHosted hn x _ hx0 hx t m actual]
+  exact old_entry_correct15 hn hlo ho hf x Y hx0 hx s t m input hg hs phase same half
+
+theorem exit_correct15 : ExitCorrect exitKernel15 := by
+  intro hn hlo ho hf x Y hx0 hx s m input hg hs
+  rw [exitKernel15,kernel_first_eq15 false true exitFieldHosted hn x _ hx0 hx s m input]
+  exact old_exit_correct15 hn hlo ho hf x Y hx0 hx s m input hg hs
+
+theorem last_physical15 (isA : Bool) : GatePhysical (lastPhase15 isA) := by
+  have old := Rolling1588.lastPhase_physical isA
+  rw [Rolling1588.lastPhase,reverse_shape15] at old
+  have ren (p q : Program) : renameProgram (sig 510) (p ++ q) =
+      renameProgram (sig 510) p ++ renameProgram (sig 510) q := by simp only [renameProgram,List.map_append]
+  simp only [gatePhysical_append,ren] at old
+  rw [lastPhase15,stackReverse15,reverseTail15,ren]
+  simp only [gatePhysical_append]
+  exact ⟨⟨old.1.1,old.1.2.1,⟨old.1.2.2.1.1,
+    gatePhysical_rename _ (sig_injective 510 (by omega)) _ physical⟩,old.1.2.2.2⟩,old.2⟩
+
+theorem kernel_physical15 (a b : Bool) (F : Program) (field : GatePhysical F) :
+    GatePhysical (kernel15 a b F) := by
+  simpa only [kernel15,gatePhysical_append] using
+    And.intro (Rolling1588Lifetime.phase_physical _ (Rolling1588TickGap.first_physical a))
+      (And.intro field (Rolling1588Lifetime.phase_physical _ (last_physical15 b)))
+
+theorem entry_physical15 : GatePhysical entryKernel15 := by
+  simpa only [entryKernel15] using
+    kernel_physical15 true false Rolling1588.entryFieldHosted Rolling1588.entryFieldHosted_physical
+
+theorem exit_physical15 : GatePhysical exitKernel15 := by
+  simpa only [exitKernel15] using
+    kernel_physical15 false true Rolling1588.exitFieldHosted Rolling1588.exitFieldHosted_physical
+
+theorem hosted_extra530 (b : Bool) :
+    wires (renameProgram phaseHost (lastPhase15 b)) ⊆
+      wires (renameProgram phaseHost (Rolling1588.lastPhase b)) ∪ {530} := by
+  intro q hq
+  rw [renameProgram_support] at hq
+  obtain ⟨v,hv,rfl⟩ := Finset.mem_image.mp hq
+  rcases Finset.mem_union.mp (last_extra15 b hv) with old | extra
+  · apply Finset.mem_union_left
+    rw [renameProgram_support]
+    exact Finset.mem_image.mpr ⟨v,old,rfl⟩
+  · simp only [Finset.mem_singleton] at extra
+    subst v
+    apply Finset.mem_union_right
+    simp only [Finset.mem_singleton]
+    decide +kernel
+
+theorem kernel_extra530 (a b : Bool) (F : Program) :
+    wires (kernel15 a b F) ⊆ wires (Rolling1588TickGap.kernel a b F) ∪ {530} := by
+  have hsub := hosted_extra530 b
+  intro q h
+  simp only [kernel15,wires_append,Finset.mem_union] at h
+  simp only [Rolling1588TickGap.kernel,wires_append,Finset.mem_union,Finset.mem_singleton]
+  rcases h with hfirst | hfield | hlast
+  · exact Or.inl (Or.inl hfirst)
+  · exact Or.inl (Or.inr (Or.inl hfield))
+  · rcases Finset.mem_union.mp (hsub hlast) with hold | hextra
+    · exact Or.inl (Or.inr (Or.inr hold))
+    · exact Or.inr (Finset.mem_singleton.mp hextra)
+
+theorem extra_logical530 : (530:Wire) ∈ OB5Support.logicalSites := by
+  apply List.mem_toFinset.mpr
+  apply List.mem_map.mpr
+  refine ⟨514,?_,by decide +kernel⟩
+  simp [OB5Support.logicalIndices]
+
+theorem entry_support530 : wires entryKernel15 ⊆ OB5Support.logicalSites := by
+  intro q hq
+  have h := kernel_extra530 true false Rolling1588.entryFieldHosted hq
+  rcases Finset.mem_union.mp h with old | extra
+  · exact Rolling1588TickGap.entryKernel_support old
+  · simp only [Finset.mem_singleton] at extra
+    subst q
+    exact extra_logical530
+
+theorem exit_support530 : wires exitKernel15 ⊆ OB5Support.logicalSites := by
+  intro q hq
+  have h := kernel_extra530 false true Rolling1588.exitFieldHosted hq
+  rcases Finset.mem_union.mp h with old | extra
+  · exact Rolling1588TickGap.exitKernel_support old
+  · simp only [Finset.mem_singleton] at extra
+    subst q
+    exact extra_logical530
+
+end ECDSAAdd.Entrant.InverseFour15
+
+namespace ECDSAAdd.Entrant.Entry530
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed
+  CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
+  BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
+  ReflectionE1TickGap OB5 Rolling1588Lifetime
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  InverseFour15.lastPhase15 InverseFour15.stackReverse15 InverseFour15.reverseTail15 Rolling1588TickGap.tailPhase
+
+def restE530 (L : ControlledPointLayout) : Program :=
+  renameProgram (wireFn2 L)
+    (renameProgram phaseHost (Rolling1588TickGap.tailPhase true) ++
+      (Rolling1588.entryFieldHosted ++ renameProgram phaseHost (InverseFour15.lastPhase15 false)))
+
+def entryStage530 (L : ControlledPointLayout) (kx ky : Fp) : Program :=
+  fusedY L ky ++ E1QubitPlacement.entryM L kx ++ restE530 L
+
+theorem entry_split530 (L : ControlledPointLayout) :
+    FrontierEntry1591Callers.entry InverseFour15.entryKernel15 L = E1QubitPlacement.tickF L ++ restE530 L := by
+  have tick := E1QubitPlacement.tick_eq L
+  change renameProgram (wireFn2 L)
+      (renameProgram phaseHost (FrontierEntry1591Native.forward base)) = E1QubitPlacement.tickF L at tick
+  simp only [FrontierEntry1591Callers.entry,InverseFour15.entryKernel15,InverseFour15.kernel15,
+    Rolling1588TickGap.firstPhase,restE530,renameProgram,List.map_append,List.append_assoc] at tick ⊢
+  rw [tick]
+
+theorem entryStage_step530 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (X Y kx ky : Fp) (G : Bool) (origin : BasisState)
+    (hx : X+(if G then kx else 0)≠0) :
+    Triple (PointDialogValues L X Y G origin) (entryStage530 L kx ky)
+      (PointDialogValues L (X+(if G then kx else 0))
+        ((Y+(if G then ky else 0))/(X+(if G then kx else 0))) G origin) := by
+  have config := MappedCompressed.LaneA.laneLogical_config
+  have above : History5.HistoryAbove base := by intro j hj; simp [base]
+  have add := fastStep_addX L hw hn X Y G origin kx
+  have divide := division_step InverseFour15.entryKernel15 InverseFour15.entry_support530
+    InverseFour15.entry_correct15 L hw hn config.1 above config.2.1 config.2.2
+    (X+(if G then kx else 0)) Y ky G origin hx
+  have prior := add.seq divide
+  apply E1QubitPlacement.tri_transfer
+    (A:=fusedY L ky ++ E1QubitPlacement.entryM L kx)
+    (B:=fastConstAdd L L.point.x kx ++ fusedY L ky ++ E1QubitPlacement.tickF L)
+    (R:=restE530 L)
+  · intro s v m1 m2
+    exact E1QubitPlacement.entry1_eq L hw hn kx ky s X.val X.isLt Y G
+      v.x v.y v.generic v.clean m1 m2
+  · simpa only [entryStage530,division,entry_split530,List.append_assoc] using prior
+
+open ReflectionE1TickGapLow48
+
+def generic530 (L : ControlledPointLayout) (cx cy : Fp) : Program :=
+  entryStage530 L (-cx) (-cy) ++ ReflectionE1TickGapLow48.secondStageX L (ReflectionE1.correction cx) cy cx
+
 section
-namespace ECDSAAdd.Entrant
-def program := InputSentinel.program2
-def entry := InputSentinel.entry2
-def bounds := InputSentinel.bounds2
-theorem certificate : Challenge.Certificate entry bounds := InputSentinel.certificate2
-end ECDSAAdd.Entrant
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+theorem generic_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
+    (hd : cx-genericX X Y cx cy≠0) :
+    Triple (PointDialogValues L X Y true origin) (generic530 L cx cy)
+      (PointDialogValues L (genericX X Y cx cy) (genericY X Y cx cy) true origin) := by
+  let a:=genericSlope X Y cx cy
+  let d:=cx-genericX X Y cx cy
+  have hv:=generic_inplace_values X Y cx cy hX
+  have first:=entryStage_step530 L hw hn X Y (-cx) (-cy) true origin
+    (by simpa only [if_true,←sub_eq_add_neg] using sub_ne_zero.mpr hX)
+  have ha : (Y-cy)/(X-cx)=a:=rfl
+  simp only [if_true,←sub_eq_add_neg,ha] at first
+  have hd4 : (X-cx)-a*a+(SquareCarryLoan719BF.K:Nat)+ReflectionE1.correction cx=d := by
+    have e:=hv.2.1
+    change (X-cx)-a*a+3*cx=d at e
+    rw [←e]
+    unfold ReflectionE1.correction
+    ring
+  have second:=secondStageX_step L hw hn (X-cx) a (ReflectionE1.correction cx) cy cx true origin
+    (by simpa only [if_true,hd4] using hd)
+  simp only [if_true,hd4] at second
+  rw [show cx-d=genericX X Y cx cy by dsimp [d];ring,
+    show a*d-cy=genericY X Y cx cy from hv.2.2] at second
+  exact first.seq second
+
+theorem generic_false (X Y cx cy : Fp) (origin : BasisState) (hX : X≠0) :
+    Triple (PointDialogValues L X Y false origin) (generic530 L cx cy)
+      (PointDialogValues L X Y false origin) := by
+  have first:=entryStage_step530 L hw hn X Y (-cx) (-cy) false origin
+    (by simpa only [Bool.false_eq_true,if_false,add_zero] using hX)
+  have second:=secondStageX_step L hw hn X (Y/X) (ReflectionE1.correction cx) cy cx false origin
+    (by simpa only [Bool.false_eq_true,if_false,add_zero,sub_zero] using hX)
+  have back : Y/X*X=Y:=div_mul_cancel₀ Y hX
+  simp only [Bool.false_eq_true,if_false,add_zero,sub_zero] at first second
+  rw [back] at second
+  exact first.seq second
+
+
+
 end
+
+end ECDSAAdd.Entrant.Entry530
+
+
+open ECDSAAdd.Entrant.InverseFour15
+
+set_option Elab.async false
+
+namespace ECDSAAdd.Entrant.InputSentinel530
+open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout
+  InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
+  EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires Entry530.generic530
+
+theorem gen_block_run530 {cx cy : Fp} (X Y X' Y' : Fp) (G : Bool)
+    (hP : ∀ base' : BasisState, Triple (PointDialogValues layout X Y G base')
+      (Entry530.generic530 layout cx cy) (PointDialogValues layout X' Y' G base'))
+    (t : State) (m : List Bool)
+    (hx : regValue layout.point.x t.basis = X.val) (hy : regValue layout.point.y t.basis = Y.val)
+    (hf : t.basis layout.point.finite = false) (hg : t.basis layout.genericSelect = G)
+    (hE : t.basis layout.core.equalNegY = false)
+    (hD : t.basis layout.doubleSelect = false) (hclean : regValue layout.dialogPool t.basis = 0) :
+    (run (renameProgram (swapD layout) (renameProgram (swapE layout) (renameProgram (tauM layout)
+      (renameProgram (Wrapper5.U layout) (renameProgram (swapF layout)
+        (Entry530.generic530 layout cx cy)))))) m t).phase = t.phase ∧
+    regValue layout.point.x (run (renameProgram (swapD layout) (renameProgram (swapE layout)
+      (renameProgram (tauM layout) (renameProgram (Wrapper5.U layout) (renameProgram (swapF layout)
+        (Entry530.generic530 layout cx cy)))))) m t).basis = X'.val ∧
+    regValue layout.point.y (run (renameProgram (swapD layout) (renameProgram (swapE layout)
+      (renameProgram (tauM layout) (renameProgram (Wrapper5.U layout) (renameProgram (swapF layout)
+        (Entry530.generic530 layout cx cy)))))) m t).basis = Y'.val ∧
+    ∀ q, q ∉ layout.point.x ++ layout.point.y →
+      (run (renameProgram (swapD layout) (renameProgram (swapE layout) (renameProgram (tauM layout)
+        (renameProgram (Wrapper5.U layout) (renameProgram (swapF layout)
+          (Entry530.generic530 layout cx cy)))))) m t).basis q = t.basis q := by
+  have hw := layout_widths
+  have hn := layout_nodup
+  have tinv := tauM_invol layout hn
+  have einv := swapE_invol layout hw hn
+  have dinv := swapD_invol layout hw hn
+  have uinv : ∀ q, Wrapper5.U layout (Wrapper5.U layout q) = q := fun q => Equiv.swap_apply_self _ _ _
+  have gflag : layout.core.generic ∈ layout.inPlaceFlags := by simp [ControlledPointLayout.inPlaceFlags]
+  have sflag : layout.genericSelect ∈ layout.inPlaceFlags := by simp [ControlledPointLayout.inPlaceFlags]
+  have eflag : layout.core.equalNegY ∈ layout.inPlaceFlags := by simp [ControlledPointLayout.inPlaceFlags]
+  have dflag : layout.doubleSelect ∈ layout.inPlaceFlags := by simp [ControlledPointLayout.inPlaceFlags]
+  have tauM_def : ∀ q, tauM layout q =
+      if q = layout.core.generic then layout.genericSelect else
+        if q = layout.genericSelect then layout.core.generic else q := fun q => rfl
+  -- tauM fixes everything off the two generic flags
+  have tfix : ∀ q, q ≠ layout.core.generic → q ≠ layout.genericSelect → tauM layout q = q := by
+    intro q h1 h2; rw [tauM_def q, if_neg h1, if_neg h2]
+  have pclean : ∀ q ∈ layout.dialogPool, t.basis q = false :=
+    fun q hq => (regValue_zero _ _).mp hclean q hq
+  have pne (q : Wire) (hq : q ∈ layout.dialogPool) : q ≠ layout.core.generic ∧ q ≠ layout.genericSelect :=
+    ⟨fun e => pool_not_flag q hq (e ▸ gflag), fun e => pool_not_flag q hq (e ▸ sflag)⟩
+  have xyne (q : Wire) (hq : q ∈ layout.point.x ++ layout.point.y) :
+      q ≠ layout.core.generic ∧ q ≠ layout.genericSelect :=
+    ⟨fun e => flags_not_point _ gflag (e ▸ hq), fun e => flags_not_point _ sflag (e ▸ hq)⟩
+  have fne : layout.point.finite ≠ layout.core.generic ∧ layout.point.finite ≠ layout.genericSelect :=
+    ⟨fun e => finite_not_flag.1 (e ▸ gflag), fun e => finite_not_flag.1 (e ▸ sflag)⟩
+  -- the generic block in its own frame
+  generalize ht' : pullState (tauM layout) t = t'
+  have t'def : ∀ q, t'.basis q = t.basis (tauM layout q) := by intro q; rw [← ht']; rfl
+  have t'x : ∀ q ∈ layout.point.x ++ layout.point.y, t'.basis q = t.basis q := by
+    intro q hq; rw [t'def, tfix q (xyne q hq).1 (xyne q hq).2]
+  have v : PointDialogValues layout X Y G t'.basis t'.basis := by
+    refine ⟨?_, ?_, ?_, ?_, fun _ _ => rfl⟩
+    · rw [← hx]; apply regValue_congr; intro q hq; exact t'x q (List.mem_append_left _ hq)
+    · rw [← hy]; apply regValue_congr; intro q hq; exact t'x q (List.mem_append_right _ hq)
+    · rw [t'def, tauM_def, if_pos rfl]; exact hg
+    · apply (regValue_zero _ _).mpr
+      intro q hq
+      rw [t'def, tfix q (pne q hq).1 (pne q hq).2]; exact pclean q hq
+  have hb : t'.basis layout.point.finite = false := by
+    rw [t'def, tfix _ fne.1 fne.2]; exact hf
+  obtain ⟨ph0, v0⟩ := swapF_values layout hw hn (Entry530.generic530 layout cx cy)
+    X Y X' Y' G t'.basis hP hb t' m v
+  generalize hR0 : run (renameProgram (swapF layout) (Entry530.generic530 layout cx cy)) m t' = R0
+    at ph0 v0
+  have R0clean : ∀ q ∈ layout.dialogPool, R0.basis q = false :=
+    fun q hq => (regValue_zero _ _).mp v0.clean q hq
+  -- U swaps two clean pool sites
+  have u684 := Square5Placement.pool_member layout hw 684 (by omega)
+  have u717 := Square5Placement.pool_member layout hw 717 (by omega)
+  have U_def : ∀ q, Wrapper5.U layout q = if q = layout.core.poolWire 684 then layout.core.poolWire 717
+      else if q = layout.core.poolWire 717 then layout.core.poolWire 684 else q := by
+    intro q
+    show (Equiv.swap _ _) q = _
+    rw [Equiv.swap_apply_def]
+  have R1 : run (renameProgram (Wrapper5.U layout) (renameProgram (swapF layout)
+      (Entry530.generic530 layout cx cy))) m t' = R0 := by
+    rw [run_rename_noop _ uinv]
+    · exact hR0
+    · apply swap_sym _ _ _ U_def
+      have a : t'.basis (layout.core.poolWire 684) = false := by
+        rw [t'def, tfix _ (pne _ u684).1 (pne _ u684).2]; exact pclean _ u684
+      have b : t'.basis (layout.core.poolWire 717) = false := by
+        rw [t'def, tfix _ (pne _ u717).1 (pne _ u717).2]; exact pclean _ u717
+      rw [a, b]
+    · rw [hR0]
+      apply swap_sym _ _ _ U_def
+      rw [R0clean _ u684, R0clean _ u717]
+  -- tauM is the real swap between the generic flag and the generic select
+  have R2 : run (renameProgram (tauM layout) (renameProgram (Wrapper5.U layout) (renameProgram (swapF layout)
+      (Entry530.generic530 layout cx cy)))) m t = pullState (tauM layout) R0 := by
+    rw [run_rename_invol _ tinv, ht', R1]
+  -- R0 off the point registers equals the pulled start
+  have R0rest : ∀ q, q ∉ layout.point.x ++ layout.point.y → R0.basis q = t'.basis q := v0.rest
+  have tq_off : ∀ q, q ∉ layout.point.x ++ layout.point.y → tauM layout q ∉ layout.point.x ++ layout.point.y := by
+    intro q hq
+    rw [tauM_def]
+    split_ifs
+    · exact flags_not_point _ sflag
+    · exact flags_not_point _ gflag
+    · exact hq
+  have R2rest : ∀ q, q ∉ layout.point.x ++ layout.point.y → (pullState (tauM layout) R0).basis q = t.basis q := by
+    intro q hq
+    have e1 : (pullState (tauM layout) R0).basis q = R0.basis (tauM layout q) := rfl
+    rw [e1, R0rest _ (tq_off q hq), t'def, tinv]
+  -- swapE and swapD act on clean wires before and after
+  have spE := spare_pool layout hw
+  have spD := spareD_pool layout hw
+  have E_def : ∀ q, swapE layout q = if q = layout.core.equalNegY then spareWire layout
+      else if q = spareWire layout then layout.core.equalNegY else q := fun q => rfl
+  have D_def : ∀ q, swapD layout q = if q = layout.doubleSelect then spareD layout
+      else if q = spareD layout then layout.doubleSelect else q := fun q => rfl
+  have R2E : (pullState (tauM layout) R0).basis layout.core.equalNegY = false := by
+    rw [R2rest _ (flags_not_point _ eflag)]; exact hE
+  have R2Es : (pullState (tauM layout) R0).basis (spareWire layout) = false := by
+    rw [R2rest _ (pool_not_point _ spE)]; exact pclean _ spE
+  have R2D : (pullState (tauM layout) R0).basis layout.doubleSelect = false := by
+    rw [R2rest _ (flags_not_point _ dflag)]; exact hD
+  have R2Ds : (pullState (tauM layout) R0).basis (spareD layout) = false := by
+    rw [R2rest _ (pool_not_point _ spD)]; exact pclean _ spD
+  have R3 : run (renameProgram (swapE layout) (renameProgram (tauM layout)
+      (renameProgram (Wrapper5.U layout) (renameProgram (swapF layout)
+        (Entry530.generic530 layout cx cy))))) m t = pullState (tauM layout) R0 := by
+    rw [run_rename_noop _ einv _ _ _ (swap_sym _ _ _ E_def _ (by rw [hE, pclean _ spE]))
+      (by rw [R2]; exact swap_sym _ _ _ E_def _ (by rw [R2E, R2Es])), R2]
+  have R4 : run (renameProgram (swapD layout) (renameProgram (swapE layout) (renameProgram (tauM layout)
+      (renameProgram (Wrapper5.U layout) (renameProgram (swapF layout)
+        (Entry530.generic530 layout cx cy)))))) m t = pullState (tauM layout) R0 := by
+    rw [run_rename_noop _ dinv _ _ _ (swap_sym _ _ _ D_def _ (by rw [hD, pclean _ spD]))
+      (by rw [R3]; exact swap_sym _ _ _ D_def _ (by rw [R2D, R2Ds])), R3]
+  rw [R4]
+  refine ⟨?_, ?_, ?_, R2rest⟩
+  · have e1 : (pullState (tauM layout) R0).phase = R0.phase := rfl
+    rw [e1, ph0, ← ht']; rfl
+  · rw [← v0.x]; apply regValue_congr; intro q hq
+    have e1 : (pullState (tauM layout) R0).basis q = R0.basis (tauM layout q) := rfl
+    rw [e1, tfix q (xyne q (List.mem_append_left _ hq)).1 (xyne q (List.mem_append_left _ hq)).2]
+  · rw [← v0.y]; apply regValue_congr; intro q hq
+    have e1 : (pullState (tauM layout) R0).basis q = R0.basis (tauM layout q) := rfl
+    rw [e1, tfix q (xyne q (List.mem_append_right _ hq)).1 (xyne q (List.mem_append_right _ hq)).2]
+
+end ECDSAAdd.Entrant.InputSentinel530
+
+namespace ECDSAAdd.Entrant.InputSentinel530
+open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout
+  InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
+  EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
+set_option maxRecDepth 30000
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires Entry530.generic530
+
+def genBlock530 (L : ControlledPointLayout) (cx cy : Fp) : Program :=
+  renameProgram (Wrapper5.U L) (renameProgram (swapF L) (Entry530.generic530 L cx cy))
+def finiteProgram530 (L : ControlledPointLayout) (C : Point) (cx cy : Fp) : Program :=
+  InputSentinel.stage L C ++ renameProgram (swapD L) (renameProgram (swapE L) (renameProgram (tauM L) (genBlock530 L cx cy))) ++ InputSentinel.outStage L C
+def wrapper530 (L : ControlledPointLayout) (C : Point) (cx cy : Fp) : Program :=
+  renameProgram (Wrapper5.U L) (finiteProgram530 L C cx cy)
+
+open Classical in
+theorem finite530_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
+    (s : State) (m : List Bool) (hs : PointDialogBoundary layout R b (fun _ => false) s.basis) :
+    (run (finiteProgram530 layout (.some hc) cx cy) m s).phase = s.phase ∧
+    PointDialogBoundary layout (if b then R + .some hc else R) b (fun _ => false)
+      (run (finiteProgram530 layout (.some hc) cx cy) m s).basis := by
+  have hC : (.some hc : Point) ≠ 0 := WeierstrassCurve.Affine.Point.some_ne_zero hc
+  obtain ⟨m1, m2, m3, m4, m5⟩ := stage_mid layout layout_widths layout_nodup hc b R s m hs
+  have hp := (point_holds _ _ _).mp hs.point
+  unfold finiteProgram530
+  rw [LocalWireModel.run_concat, LocalWireModel.run_concat]
+  generalize ht1 : run (stage layout (.some hc)) m s = t1 at m1 m2 m3 m4 m5 ⊢
+  have gsx := gsel_off
+  have t1off (q : Wire) (hx : q ∉ layout.point.x) (hy : q ∉ layout.point.y) (hf : q ≠ layout.point.finite)
+      (hg : q ≠ layout.genericSelect) : t1.basis q = s.basis q := m5 q hx hf hg
+  have t1y : regValue layout.point.y t1.basis = pointY R := by
+    rw [← hp.2.2]; apply regValue_congr; intro q hq
+    exact m5 q (y_not_x layout layout_nodup q hq)
+      (fun e => finite_not_flag.2 (e ▸ List.mem_append_right _ hq)) (fun e => gsx.2.1 (e ▸ hq))
+  have hE : t1.basis layout.core.equalNegY = false := by
+    obtain ⟨a, b', c, d⟩ := out_off layout.core.equalNegY (by simp)
+    rw [t1off _ a b' c d]; exact hs.flags _ (by simp [flags_list])
+  have hD : t1.basis layout.doubleSelect = false := by
+    obtain ⟨a, b', c, d⟩ := out_off layout.doubleSelect (by simp)
+    rw [t1off _ a b' c d]; exact hs.flags _ (by simp [flags_list])
+  have hclean : regValue layout.dialogPool t1.basis = 0 := by
+    apply (regValue_zero _ _).mpr
+    intro q hq
+    obtain ⟨f1, g1, -, -, -⟩ := out_pool_off q hq
+    rw [t1off q (fun h => pool_not_point q hq (List.mem_append_left _ h))
+      (fun h => pool_not_point q hq (List.mem_append_right _ h)) f1 g1]
+    exact (regValue_zero _ _).mp hs.clean q hq
+  -- the generic block moves the coordinates only
+  suffices key : ∀ mm, (run (renameProgram (swapD layout) (renameProgram (swapE layout) (renameProgram (tauM layout)
+      (genBlock530 layout cx cy)))) mm t1).phase = t1.phase ∧
+      regValue layout.point.x (run (renameProgram (swapD layout) (renameProgram (swapE layout)
+        (renameProgram (tauM layout) (genBlock530 layout cx cy)))) mm t1).basis =
+        codeX (if dialogOrdinary b R (.some hc) then R + .some hc else R) ∧
+      regValue layout.point.y (run (renameProgram (swapD layout) (renameProgram (swapE layout)
+        (renameProgram (tauM layout) (genBlock530 layout cx cy)))) mm t1).basis =
+        pointY (if dialogOrdinary b R (.some hc) then R + .some hc else R) ∧
+      ∀ q, q ∉ layout.point.x ++ layout.point.y →
+        (run (renameProgram (swapD layout) (renameProgram (swapE layout) (renameProgram (tauM layout)
+          (genBlock530 layout cx cy)))) mm t1).basis q = t1.basis q by
+    obtain ⟨k1, k2, k3, k4⟩ := key (List.drop (measurementCount (stage layout (.some hc))) m)
+    generalize run (renameProgram (swapD layout) (renameProgram (swapE layout) (renameProgram (tauM layout)
+      (genBlock530 layout cx cy)))) (List.drop (measurementCount (stage layout (.some hc))) m) t1 = t2 at k1 k2 k3 k4 ⊢
+    have fxy : layout.point.finite ∉ layout.point.x ++ layout.point.y := finite_not_flag.2
+    have gxy : layout.genericSelect ∉ layout.point.x ++ layout.point.y := by
+      simp only [List.mem_append, not_or]; exact ⟨gsx.1, gsx.2.1⟩
+    obtain ⟨o1, o2⟩ := outStage_run hc b R s hs t2
+      (List.drop (measurementCount (stage layout (.some hc) ++ renameProgram (swapD layout)
+        (renameProgram (swapE layout) (renameProgram (tauM layout) (genBlock530 layout cx cy))))) m)
+      k2 k3 (by rw [k4 _ fxy]; exact m3) (by rw [k4 _ gxy]; exact m4)
+      (fun q hx hy hf hg => by
+        rw [k4 q (by simp only [List.mem_append, not_or]; exact ⟨hx, hy⟩)]; exact m5 q hx hf hg)
+    exact ⟨by rw [o1, k1, m1], o2⟩
+  intro mm
+  unfold genBlock530
+  by_cases hG : dialogOrdinary b R (.some hc) = true
+  · obtain ⟨hb, h0, h1, h2, h3⟩ := (dialogOrdinary_true b R _ hC).mp hG
+    cases R with
+    | zero => exact absurd rfl h0
+    | @some x y hr =>
+      have den := dialog_denominators_ne_zero hr hc h1 h2 h3
+      have g := gen_block_run530 x y (genericX x y cx cy) (genericY x y cx cy) true
+        (fun base' => Entry530.generic_true layout layout_widths layout_nodup x y cx cy base'
+          den.1 den.2) t1 mm (by rw [m2]; rfl) (by rw [t1y]; rfl) m3 (by rw [m4, hG]) hE hD hclean
+      rw [hG, if_pos rfl, ← genericAdd_correct hr hc den.1]
+      exact ⟨g.1, g.2.1, g.2.2.1, g.2.2.2⟩
+  · have hG' : dialogOrdinary b R (.some hc) = false := by simpa using hG
+    rw [hG']
+    simp only [Bool.false_eq_true, if_false]
+    cases R with
+    | zero =>
+      have g := gen_block_run530 (FiniteFlagInterval.sentinel : Fp) 0 (FiniteFlagInterval.sentinel : Fp) 0 false
+        (fun base' => Entry530.generic_false layout layout_widths layout_nodup _ 0 cx cy base'
+          FiniteFlagInterval.sentinel_ne_zero) t1 mm
+        (by rw [m2, FiniteFlagInterval.sentinel_val]; rfl) (by rw [t1y]; rfl) m3 (by rw [m4, hG']) hE hD hclean
+      refine ⟨g.1, ?_, ?_, g.2.2.2⟩
+      · rw [g.2.1, FiniteFlagInterval.sentinel_val]; rfl
+      · rw [g.2.2.1]; rfl
+    | @some x y hr =>
+      have g := gen_block_run530 x y x y false
+        (fun base' => Entry530.generic_false layout layout_widths layout_nodup x y cx cy base'
+          (curve_x_ne_zero hr)) t1 mm (by rw [m2]; rfl) (by rw [t1y]; rfl) m3 (by rw [m4, hG']) hE hD hclean
+      exact ⟨g.1, g.2.1, g.2.2.1, g.2.2.2⟩
+
+open Classical in
+theorem wrapper530_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point) :
+    Triple (PointDialogBoundary layout R b (fun _ => false)) (wrapper530 layout (.some hc) cx cy)
+      (PointDialogBoundary layout (if b then R + .some hc else R) b (fun _ => false)) := by
+  intro s m hs
+  have h := finite530_run hc b R s m hs
+  unfold wrapper530
+  rw [Square5Placement.pool_relabel_state_eq layout (Wrapper5.U layout) (Wrapper5.U_pool layout layout_widths)
+    (Wrapper5.U_outside layout layout_widths) _ s m hs.clean h.2.clean]
+  exact h
+
+
+end ECDSAAdd.Entrant.InputSentinel530
+
+namespace ECDSAAdd.Entrant.InputSentinel530
+open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout InputSentinel
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] wires
+
+theorem predec_wire530 (tr : Tri) (yc : Bool) (g c x y z O D H : Wire) :
+    O ∈ wires (predecL tr yc g c x y z O D H) := by
+  have key : (5:Wire) ∈ wires (predecT tr yc) := by
+    unfold predecT
+    split <;> simp only [predec1,predec2,wires_append,Finset.mem_union] <;>
+      simp [wires,Instr.wires]
+  unfold predecL
+  rw [renameProgram_support]
+  apply Finset.mem_image.mpr
+  refine ⟨5,key,?_⟩
+  simp [LocalWireModel.label]
+
+theorem out_wire530 (C : Point) : parkWire layout ∈ wires (InputSentinel.outStage layout C) := by
+  unfold InputSentinel.outStage
+  rw [wires_append,wires_append,wires_append]
+  apply Finset.mem_union_left
+  apply Finset.mem_union_left
+  apply Finset.mem_union_left
+  exact predec_wire530 _ _ _ _ _ _ _ _ _ _
+
+theorem wrapper_wire530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    (4629:Wire) ∈ wires (wrapper2 layout (.some hc) cx cy) := by
+  unfold wrapper2
+  rw [renameProgram_support]
+  apply Finset.mem_image.mpr
+  refine ⟨parkWire layout,?_,?_⟩
+  · unfold finiteProgram2
+    rw [wires_append,wires_append]
+    exact Finset.mem_union_right _ (out_wire530 (.some hc))
+  · decide +kernel
+
+end ECDSAAdd.Entrant.InputSentinel530
+
+namespace ECDSAAdd.Entrant.Entry530
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed
+  CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
+  BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
+  ReflectionE1TickGap ReflectionE1TickGapLow48 OB5 Rolling1588Lifetime
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+  InverseFour15.lastPhase15 Rolling1588.lastPhase Rolling1588TickGap.tailPhase
+
+theorem restE_extra530 (L : ControlledPointLayout) :
+    wires (restE530 L) ⊆ wires (ReflectionE1TickGap.restE L) ∪ {wireFn2 L 530} := by
+  have inner := InverseFour15.hosted_extra530 false
+  unfold restE530 ReflectionE1TickGap.restE
+  rw [renameProgram_support,renameProgram_support]
+  intro q hq
+  obtain ⟨v,hv,rfl⟩ := Finset.mem_image.mp hq
+  simp only [wires_append,Finset.mem_union] at hv
+  rcases hv with first | field | last
+  · apply Finset.mem_union_left
+    apply Finset.mem_image.mpr
+    refine ⟨v,?_,rfl⟩
+    simp only [wires_append,Finset.mem_union]
+    exact Or.inl first
+  · apply Finset.mem_union_left
+    apply Finset.mem_image.mpr
+    refine ⟨v,?_,rfl⟩
+    simp only [wires_append,Finset.mem_union]
+    exact Or.inr (Or.inl field)
+  · rcases Finset.mem_union.mp (inner last) with old | extra
+    · apply Finset.mem_union_left
+      apply Finset.mem_image.mpr
+      refine ⟨v,?_,rfl⟩
+      simp only [wires_append,Finset.mem_union]
+      exact Or.inr (Or.inr old)
+    · simp only [Finset.mem_singleton] at extra
+      subst v
+      exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
+
+theorem generic_extra530 (L : ControlledPointLayout) (cx cy : Fp) :
+    wires (generic530 L cx cy) ⊆
+      wires (ReflectionE1TickGapLow48.generic L cx cy) ∪ {wireFn2 L 530} := by
+  have h := restE_extra530 L
+  intro q hq
+  simp only [generic530,entryStage530,ReflectionE1TickGapLow48.generic,
+    ReflectionE1TickGap.entryStage,wires_append,Finset.mem_union] at hq ⊢
+  rcases hq with (((hy | hm) | he) | hs)
+  · exact Or.inl (Or.inl (Or.inl (Or.inl hy)))
+  · exact Or.inl (Or.inl (Or.inl (Or.inr hm)))
+  · rcases Finset.mem_union.mp (h he) with old | extra
+    · exact Or.inl (Or.inl (Or.inr old))
+    · exact Or.inr extra
+  · exact Or.inl (Or.inr hs)
+end ECDSAAdd.Entrant.Entry530
+
+namespace ECDSAAdd.Entrant.Entry530
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed
+  CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
+  BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
+  ReflectionE1TickGap ReflectionE1TickGapLow48 OB5 Rolling1588Lifetime
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+  Rolling1588.stackReverse Rolling1588.lastPhase InverseFour15.stackReverse15 InverseFour15.reverseTail15 InverseFour15.lastPhase15 candidate15 old15
+
+theorem old_metrics530 : toffoliCount old15 = 16 ∧ measurementCount old15 = 11 ∧ gateSlots old15 = 289 := by decide +kernel
+
+theorem reverse_metrics530 (isA : Bool) :
+    toffoliCount (InverseFour15.stackReverse15 isA) + 1 = toffoliCount (Rolling1588.stackReverse isA) ∧
+    measurementCount (InverseFour15.stackReverse15 isA) = measurementCount (Rolling1588.stackReverse isA) ∧
+    gateSlots (InverseFour15.stackReverse15 isA) = gateSlots (Rolling1588.stackReverse isA) + 425 := by
+  have old := old_metrics530
+  have fresh := InverseFour15.resources
+  rw [InverseFour15.reverse_shape15]
+  simp only [InverseFour15.stackReverse15,InverseFour15.reverseTail15,toffoliCount_append,measurementCount_append,
+    gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots] at *
+  omega
+
+theorem last_metrics530 (isA : Bool) :
+    toffoliCount (InverseFour15.lastPhase15 isA) + 1 = toffoliCount (Rolling1588.lastPhase isA) ∧
+    measurementCount (InverseFour15.lastPhase15 isA) = measurementCount (Rolling1588.lastPhase isA) ∧
+    gateSlots (InverseFour15.lastPhase15 isA) = gateSlots (Rolling1588.lastPhase isA) + 425 := by
+  have h := reverse_metrics530 isA
+  simp only [InverseFour15.lastPhase15,Rolling1588.lastPhase,toffoliCount_append,measurementCount_append,gateSlots_append]
+  omega
+
+theorem restE_metrics530 (L : ControlledPointLayout) :
+    toffoliCount (restE530 L) + 1 = toffoliCount (ReflectionE1TickGap.restE L) ∧
+    measurementCount (restE530 L) = measurementCount (ReflectionE1TickGap.restE L) ∧
+    gateSlots (restE530 L) = gateSlots (ReflectionE1TickGap.restE L) + 425 := by
+  have h := last_metrics530 false
+  simp only [restE530,ReflectionE1TickGap.restE,toffoliCount_append,measurementCount_append,
+    gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
+  omega
+
+theorem generic_metrics530 (L : ControlledPointLayout) (cx cy : Fp) :
+    toffoliCount (generic530 L cx cy) + 1 = toffoliCount (ReflectionE1TickGapLow48.generic L cx cy) ∧
+    measurementCount (generic530 L cx cy) = measurementCount (ReflectionE1TickGapLow48.generic L cx cy) ∧
+    gateSlots (generic530 L cx cy) = gateSlots (ReflectionE1TickGapLow48.generic L cx cy) + 425 := by
+  have h := restE_metrics530 L
+  simp only [generic530,entryStage530,ReflectionE1TickGapLow48.generic,
+    ReflectionE1TickGap.entryStage,toffoliCount_append,measurementCount_append,gateSlots_append]
+  omega
+end ECDSAAdd.Entrant.Entry530
+
+namespace ECDSAAdd.Entrant.Entry530
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed
+  CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
+  BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
+  ReflectionE1TickGap ReflectionE1TickGapLow48 OB5 Rolling1588Lifetime
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+  InverseFour15.lastPhase15 Rolling1588.lastPhase Rolling1588TickGap.tailPhase
+
+theorem restE_physical530 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (restE530 L) := by
+  have p := placed_physical InverseFour15.entryKernel15 InverseFour15.entry_support530 InverseFour15.entry_physical15 L hw hn
+  have entryP : GatePhysical (FrontierEntry1591Callers.entry InverseFour15.entryKernel15 L) := by
+    simpa only [FrontierEntry1591Callers.entry] using p
+  rw [entry_split530,gatePhysical_append] at entryP
+  exact entryP.2
+
+theorem generic_physical530 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (cx cy : Fp) : GatePhysical (generic530 L cx cy) := by
+  have old := ReflectionE1TickGapLow48.generic_physical L hw hn cx cy
+  simp only [ReflectionE1TickGapLow48.generic,ReflectionE1TickGap.entryStage,gatePhysical_append] at old
+  simp only [generic530,entryStage530,gatePhysical_append]
+  exact ⟨⟨⟨old.1.1.1,old.1.1.2⟩,restE_physical530 L hw hn⟩,old.2⟩
+end ECDSAAdd.Entrant.Entry530
+
+namespace ECDSAAdd.Entrant.InputSentinel530
+open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout
+  InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
+  EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  Entry530.generic530 ReflectionE1TickGapLow48.generic
+
+private theorem mapped_extra530 (f : Wire → Wire) (P Q : Program) (e : Wire)
+    (h : wires P ⊆ wires Q ∪ {e}) :
+    wires (renameProgram f P) ⊆ wires (renameProgram f Q) ∪ {f e} := by
+  rw [renameProgram_support,renameProgram_support]
+  intro q hq
+  obtain ⟨v,hv,rfl⟩ := Finset.mem_image.mp hq
+  rcases Finset.mem_union.mp (h hv) with old | extra
+  · exact Finset.mem_union_left _ (Finset.mem_image_of_mem _ old)
+  · simp only [Finset.mem_singleton] at extra
+    subst v
+    exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
+
+private theorem context_extra530 (A P Q B : Program) (e : Wire)
+    (h : wires P ⊆ wires Q ∪ {e}) :
+    wires (A ++ P ++ B) ⊆ wires (A ++ Q ++ B) ∪ {e} := by
+  intro q hq
+  simp only [wires_append,Finset.mem_union] at hq ⊢
+  rcases hq with (ha | hp) | hb
+  · exact Or.inl (Or.inl (Or.inl ha))
+  · rcases Finset.mem_union.mp (h hp) with ho | he
+    · exact Or.inl (Or.inl (Or.inr ho))
+    · exact Or.inr he
+  · exact Or.inl (Or.inr hb)
+
+theorem wrapper_extra530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    wires (wrapper530 layout (.some hc) cx cy) ⊆
+      wires (wrapper2 layout (.some hc) cx cy) ∪ {4629} := by
+  have h0 := Entry530.generic_extra530 layout cx cy
+  have h1 := mapped_extra530 (swapF layout) _ _ _ h0
+  have h2 := mapped_extra530 (Wrapper5.U layout) _ _ _ h1
+  have h3 := mapped_extra530 (tauM layout) _ _ _ h2
+  have h4 := mapped_extra530 (swapE layout) _ _ _ h3
+  have h5 := mapped_extra530 (swapD layout) _ _ _ h4
+  have h6 := context_extra530 (InputSentinel.stage layout (.some hc)) _ _
+    (InputSentinel.outStage layout (.some hc)) _ h5
+  have h7 := mapped_extra530 (Wrapper5.U layout) _ _ _ h6
+  have e : Wrapper5.U layout (swapD layout (swapE layout (tauM layout
+      (Wrapper5.U layout (swapF layout (wireFn2 layout 530)))))) = 4629 := by decide +kernel
+  simpa only [wrapper530,finiteProgram530,genBlock530,wrapper2,finiteProgram2,genBlock,e] using h7
+
+theorem wrapper_support530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    wires (wrapper530 layout (.some hc) cx cy) ⊆ wires (wrapper2 layout (.some hc) cx cy) := by
+  intro q hq
+  rcases Finset.mem_union.mp (wrapper_extra530 hc hq) with old | extra
+  · exact old
+  · simp only [Finset.mem_singleton] at extra
+    subst q
+    exact wrapper_wire530 hc
+
+theorem support_used530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    wires (wrapper530 layout (.some hc) cx cy) ⊆ layout.dialogUsedWires.toFinset :=
+  (wrapper_support530 hc).trans (InputSentinel.support2_used hc)
+end ECDSAAdd.Entrant.InputSentinel530
+
+namespace ECDSAAdd.Entrant.InputSentinel530
+open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout
+  InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
+  EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
+  Entry530 Challenge
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+  Entry530.generic530 ReflectionE1TickGapLow48.generic
+
+theorem wrapper_metrics530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    toffoliCount (wrapper530 layout (.some hc) cx cy) + 1 = toffoliCount (wrapper2 layout (.some hc) cx cy) ∧
+    measurementCount (wrapper530 layout (.some hc) cx cy) = measurementCount (wrapper2 layout (.some hc) cx cy) ∧
+    gateSlots (wrapper530 layout (.some hc) cx cy) = gateSlots (wrapper2 layout (.some hc) cx cy) + 425 := by
+  have h := Entry530.generic_metrics530 layout cx cy
+  simp only [wrapper530,finiteProgram530,genBlock530,wrapper2,finiteProgram2,genBlock,
+    toffoliCount_append,measurementCount_append,gateSlots_append,
+    (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
+  omega
+end ECDSAAdd.Entrant.InputSentinel530
+
+namespace ECDSAAdd.Entrant.InputSentinel530
+open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout
+  InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
+  EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
+  Entry530 Challenge
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+  Entry530.generic530 ReflectionE1TickGapLow48.generic
+
+theorem wrapper_physical530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
+    GatePhysical (wrapper530 layout (.some hc) cx cy) := by
+  have p0 := Entry530.generic_physical530 layout layout_widths layout_nodup cx cy
+  have p1 := gatePhysical_rename (swapF layout) (swapF_injective layout layout_widths layout_nodup) _ p0
+  have p2 := gatePhysical_rename (Wrapper5.U layout) (Wrapper5.U layout).injective _ p1
+  have p3 := gatePhysical_rename (tauM layout) (tauM_injective layout layout_nodup) _ p2
+  have p4 := gatePhysical_rename (swapE layout) (swapE_injective layout layout_widths layout_nodup) _ p3
+  have p5 := gatePhysical_rename (swapD layout) (swapD_injective layout layout_widths layout_nodup) _ p4
+  unfold wrapper530
+  apply gatePhysical_rename _ (Wrapper5.U layout).injective
+  simp only [finiteProgram530,genBlock530,gatePhysical_append]
+  exact ⟨⟨InputSentinel.stage_physical hc,p5⟩,InputSentinel.outStage_physical hc⟩
+end ECDSAAdd.Entrant.InputSentinel530
+
+namespace ECDSAAdd.Entrant.InputSentinel530
+open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout
+  InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
+  EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
+  Entry530 Challenge
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+  Entry530.generic530 ReflectionE1TickGapLow48.generic
+
+open Classical in
+theorem full_spec530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point) :
+    {{ layout.control=b,layout.point=R,layout.work=0 }} wrapper530 layout (.some hc) cx cy
+    {{ layout.control=b,layout.point=(if b then R+.some hc else R),layout.work=0 }} := by
+  intro s m hs
+  have hz : regValue layout.work s.basis=0 := hs.2
+  have clean (q : Wire) (hq : q∈layout.inPlaceFlags++layout.dialogPool) : s.basis q=false :=
+    (regValue_zero _ _).mp hz q (MeasuredDH.boundary_work layout hq)
+  have hi : PointDialogBoundary layout R b (fun _ => false) s.basis := by
+    refine ⟨hs.1.2,hs.1.1,fun q hq => clean q (by simp [hq]),?_⟩
+    exact (regValue_zero _ _).mpr (fun q hq => clean q (by simp [hq]))
+  have c2 := wrapper530_spec hc b R s m hi
+  have a : (run (wrapper' layout (.some hc) (tailGen layout cx cy)) m s).phase = s.phase ∧
+      PointDialogBoundary layout (if b then R + .some hc else R) b (fun _ => false)
+        (run (wrapper' layout (.some hc) (tailGen layout cx cy)) m s).basis := by
+    rw [wrapper'_eq hc b R s m hi]
+    exact FusedFlags.wrapper_spec layout layout_widths layout_nodup R hc b _
+      (CodexYParityProbe.genFFused_ok layout layout_widths layout_nodup hc) s _ hi
+  rw [MeasuredDH.boundary_unique layout _ _ (support_used530 hc) (support_used' hc) s m _ b c2.2 a.2
+    (c2.1.trans a.1.symm)]
+  exact full_spec' hc b R s m hs
+
+
+def program530 (C : Point) : Program :=
+  match C with
+  | .zero => []
+  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ => wrapper530 layout C cx cy
+
+def entry530 : Challenge.Entry := fun C => normalizeProgram (program530 C)
+def bounds530 : Challenge.Bounds := ⟨2150549,1498370,1587,50245837⟩
+
+theorem program_correct530 (C : Point) (control : Bool) (R : Point) :
+    Triple (encodes control R) (program530 C) (encodes control (if control then R+C else R)) := by
+  cases C with
+  | zero =>
+    intro s m hs
+    simpa only [program530,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self]
+      using And.intro (Eq.refl s.phase) hs
+  | @some cx cy hc =>
+    exact fixed_correct _ control R _ (full_spec530 hc control R) (support_used530 hc)
+
+theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤ 2150549 := by
+  cases C with
+  | zero => simp [program530, toffoliCount]
+  | @some cx cy hc =>
+    have old := InputSentinel.program2_toffoli (.some hc)
+    have delta := (wrapper_metrics530 hc).1
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2150550 at old
+    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤ 2150549
+    omega
+
+theorem program_measurements530 (C : Point) : measurementCount (program530 C) ≤ 1498370 := by
+  cases C with
+  | zero => simp [program530, measurementCount]
+  | @some cx cy hc =>
+    have old := InputSentinel.program2_measurements (.some hc)
+    have delta := (wrapper_metrics530 hc).2.1
+    change measurementCount (wrapper2 layout (.some hc) cx cy) ≤ 1498370 at old
+    change measurementCount (wrapper530 layout (.some hc) cx cy) ≤ 1498370
+    omega
+
+theorem program_qubits530 (C : Point) : qubits (program530 C) ≤ 1587 := by
+  cases C with
+  | zero => change qubits [] ≤ 1587; rw [qubits_empty]; decide
+  | @some cx cy hc =>
+    have old := InputSentinel.program2_qubits (.some hc)
+    have sub := wrapper_support530 hc
+    change qubits (wrapper2 layout (.some hc) cx cy) ≤ 1587 at old
+    change qubits (wrapper530 layout (.some hc) cx cy) ≤ 1587
+    refine le_trans (Finset.card_le_card ?_) old
+    exact Finset.union_subset_union (Finset.Subset.refl _) sub
+
+theorem program_physical530 (C : Point) : GatePhysical (program530 C) := by
+  cases C with
+  | zero => simp [program530,GatePhysical]
+  | @some cx cy hc => exact wrapper_physical530 hc
+
+theorem program_slots530 (C : Point) : gateSlots (program530 C) ≤ 50245837 := by
+  cases C with
+  | zero => simp [program530]
+  | @some cx cy hc =>
+    have old := InputSentinel.program2_gateSlots (.some hc)
+    have delta := (wrapper_metrics530 hc).2.2
+    change gateSlots (wrapper2 layout (.some hc) cx cy) ≤ 50245412 at old
+    change gateSlots (wrapper530 layout (.some hc) cx cy) ≤ 50245837
+    omega
+
+theorem certificate530 : Challenge.Certificate entry530 bounds530 where
+  correct C control R := (normalize_triple _ _ _).mpr (program_correct530 C control R)
+  physical C := normalize_physical _ (program_physical530 C)
+  toffoli_le C := (normalize_toffoli _).trans (program_toffoli530 C)
+  measurements_le C := by
+    change measurementCount (normalizeProgram (program530 C)) ≤ 1498370
+    rw [normalize_measurements]; exact program_measurements530 C
+  qubits_le C := by
+    change qubits (normalizeProgram (program530 C)) ≤ 1587
+    rw [normalize_qubits]; exact program_qubits530 C
+  gateSlots_le C := by
+    change gateSlots (normalizeProgram (program530 C)) ≤ 50245837
+    rw [normalize_slots]; exact program_slots530 C
+end ECDSAAdd.Entrant.InputSentinel530
+
+
+
+namespace ECDSAAdd.Entrant
+
+def program := InputSentinel530.program530
+def entry := InputSentinel530.entry530
+def bounds := InputSentinel530.bounds530
+theorem certificate : Challenge.Certificate entry bounds := InputSentinel530.certificate530
+
+end ECDSAAdd.Entrant
