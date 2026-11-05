@@ -13522,46 +13522,161 @@ def V : Program := [
 
 
 def clearV : Program := [
-  .CX 1 6,
-  .CX 1 7,
-  .CCX 1 0 2,
-  .CCX 1 2 5,
-  .X 4,
-  .CCX 5 4 0,
-  .X 4,
-  .X 6,
-  .CCX 5 6 4,
-  .X 6,
-  .measureX 5 [] [.CZ 1 2],
-  .CX 2 4,
-  .CX 3 2,
-  .CX 0 5,
-  .CCX 0 2 5,
-  .X 1,
-  .CX 0 1,
-  .CX 2 1,
-  .CX 3 1,
-  .CX 5 1,
-  .CCX 0 8 9,
-  .CX 2 9,
-  .CX 5 9,
-  .CCX 4 9 10,
-  .CX 5 9,
-  .CX 2 9,
-  .CCX 6 7 11,
-  .CCX 5 11 10,
-  .measureX 1 [] [.CZ 3 10],
-  .measureX 10 [] [.CZ 4 2, .CZ 4 5, .CZ 4 9, .CZ 5 11],
-  .measureX 11 [] [.CZ 6 7],
-  .measureX 9 [] [.CZ 0 8],
-  .measureX 5 [] [.Z 0, .CZ 0 2],
-  .CX 3 2,
-  .CX 2 4,
-  .CX 1 0,
-  .CX 0 1,
-  .CX 1 0]
-
-
+ .CX 1 6,
+ .CX 1 7,
+ .CCX 1 0 2,
+ .CCX 1 2 5,
+ .X 4,
+ .CCX 5 4 0,
+ .X 4,
+ .X 6,
+ .CCX 5 6 4,
+ .X 6,
+ .measureX 5 [] [.CZ 1 2],
+ .CX 6 0,
+ .CX 4 6,
+ .CX 6 4,
+ .CX 4 6,
+ .CX 3 4,
+ .CX 4 3,
+ .CX 3 4,
+ .CX 0 3,
+ .CX 0 2,
+ .CX 2 0,
+ .CX 0 2,
+ .CCX 0 2 5,
+ .CX 0 2,
+ .CX 2 0,
+ .CX 0 2,
+ .CX 0 3,
+ .CX 3 4,
+ .CX 4 3,
+ .CX 3 4,
+ .CX 4 6,
+ .CX 6 4,
+ .CX 4 6,
+ .CX 6 0,
+ .CX 4 2,
+ .CX 2 4,
+ .CX 0 3,
+ .CX 3 0,
+ .CX 0 3,
+ .CCX 0 2 9,
+ .CX 0 3,
+ .CX 3 0,
+ .CX 0 3,
+ .CX 2 4,
+ .CX 4 2,
+ .CX 5 6,
+ .CX 8 5,
+ .CX 5 8,
+ .CX 8 5,
+ .CX 7 4,
+ .CX 6 8,
+ .CX 6 7,
+ .CX 6 4,
+ .CX 4 7,
+ .CX 4 6,
+ .CX 4 2,
+ .CX 3 6,
+ .CX 6 3,
+ .CX 3 6,
+ .CX 2 4,
+ .CX 0 3,
+ .CX 3 0,
+ .CX 0 3,
+ .CCX 0 2 10,
+ .CX 0 3,
+ .CX 3 0,
+ .CX 0 3,
+ .CX 2 4,
+ .CX 3 6,
+ .CX 6 3,
+ .CX 3 6,
+ .CX 4 2,
+ .CX 4 6,
+ .CX 4 7,
+ .CX 6 4,
+ .CX 6 7,
+ .CX 6 8,
+ .CX 7 4,
+ .CX 8 5,
+ .CX 5 8,
+ .CX 8 5,
+ .CX 5 6,
+ .CX 9 0,
+ .CX 5 8,
+ .CX 5 9,
+ .CX 9 5,
+ .CX 5 9,
+ .CX 8 9,
+ .CX 8 4,
+ .CX 8 5,
+ .CX 5 8,
+ .CX 8 5,
+ .CX 7 5,
+ .CX 5 7,
+ .CX 7 5,
+ .CX 6 8,
+ .CX 8 6,
+ .CX 6 8,
+ .CX 4 7,
+ .CX 4 3,
+ .CX 4 6,
+ .CX 6 4,
+ .CX 4 6,
+ .CX 3 6,
+ .CX 3 2,
+ .CX 3 4,
+ .CX 4 3,
+ .CX 3 4,
+ .CX 2 4,
+ .CX 0 3,
+ .CX 0 2,
+ .CX 2 0,
+ .CX 0 2,
+ .CCX 0 2 11,
+ .CX 0 2,
+ .CX 2 0,
+ .CX 0 2,
+ .CX 0 3,
+ .CX 2 4,
+ .CX 3 4,
+ .CX 4 3,
+ .CX 3 4,
+ .CX 3 2,
+ .CX 3 6,
+ .CX 4 6,
+ .CX 6 4,
+ .CX 4 6,
+ .CX 4 3,
+ .CX 4 7,
+ .CX 6 8,
+ .CX 8 6,
+ .CX 6 8,
+ .CX 7 5,
+ .CX 5 7,
+ .CX 7 5,
+ .CX 8 5,
+ .CX 5 8,
+ .CX 8 5,
+ .CX 8 4,
+ .CX 8 9,
+ .CX 5 9,
+ .CX 9 5,
+ .CX 5 9,
+ .CX 5 8,
+ .CX 9 0,
+ .X 1,
+ .measureX 1 [] [.Z 2, .Z 5, .CZ 0 2, .CZ 0 4, .CZ 0 8, .CZ 0 11, .CZ 2 5, .CZ 4 9, .CZ 6 10],
+ .measureX 11 [] [.CZ 0 2, .CZ 0 3, .CZ 0 4, .CZ 0 8, .CZ 0 5, .CZ 2 9, .CZ 3 9, .CZ 4 9, .CZ 8 9, .CZ 5 9],
+ .measureX 10 [] [.Z 4, .Z 7, .CZ 2 4, .CZ 2 7, .CZ 4 6, .CZ 4 5, .CZ 6 7, .CZ 7 5],
+ .measureX 9 [] [.CZ 2 3, .CZ 3 4],
+ .measureX 5 [] [.CZ 0 2, .CZ 2 6],
+ .CX 1 0,
+ .CX 0 1,
+ .CX 1 0
+]
 def invV : Program := [
   .CX 1 0,
   .CX 0 1,
@@ -13708,7 +13823,7 @@ theorem clearV_eq (s : State) (m n : List Bool) (holes : Holes s.basis)
       exact (run_preserves_outside clearV m s q (fun h => off (support.2.1 h))).trans
         (run_preserves_outside V n s q (fun h => off (support.1 h))).symm
 
-theorem counts : toffoliCount V=10 ∧ toffoliCount clearV=9 ∧ toffoliCount invV=10 ∧
+theorem counts : toffoliCount V=10 ∧ toffoliCount clearV=8 ∧ toffoliCount invV=10 ∧
     measurementCount V=5 ∧ measurementCount clearV=6 ∧ measurementCount invV=5 := by
   decide +kernel
 
@@ -13833,7 +13948,7 @@ theorem physical : GatePhysical prefixProgram ∧ GatePhysical clearProgram ∧ 
     gatePhysical_rename_support _ _ (fun a ha b hb eq =>
       label_inj a (support.2.2 ha) b (support.2.2 hb) eq) h.2.2⟩
 
-theorem counts : toffoliCount prefixProgram=10 ∧ toffoliCount clearProgram=9 ∧
+theorem counts : toffoliCount prefixProgram=10 ∧ toffoliCount clearProgram=8 ∧
     toffoliCount unprefix=10 ∧ measurementCount prefixProgram=5 ∧
     measurementCount clearProgram=6 ∧ measurementCount unprefix=5 := by
   simpa only [prefixProgram,clearProgram,unprefix,renameProgram_counts] using FourScratchPrefix.counts
@@ -27423,11 +27538,11 @@ private theorem exitHead_resource_delta :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryField_resource_delta :
-    toffoliCount entryField+228=toffoliCount ControlLoan1589.entryField ∧
+    toffoliCount entryField+229=toffoliCount ControlLoan1589.entryField ∧
     measurementCount entryField=measurementCount ControlLoan1589.entryField+106 ∧
-    gateSlots entryField≤gateSlots ControlLoan1589.entryField+(49993+509*halfExtra true+9500) := by
+    gateSlots entryField≤gateSlots ControlLoan1589.entryField+(50131+509*halfExtra true+9500) := by
   have pc := FourScratchWindow.counts
-  have slots : gateSlots FourScratchWindow.clearProgram=48 ∧ gateSlots FourScratchWindow.unprefix=47 := by
+  have slots : gateSlots FourScratchWindow.clearProgram=186 ∧ gateSlots FourScratchWindow.unprefix=47 := by
     simp only [FourScratchWindow.clearProgram,FourScratchWindow.unprefix,rename_gateSlots]
     decide +kernel
   have ic : toffoliCount Prefix1590.unprefix=11 ∧ measurementCount Prefix1590.unprefix=5 ∧
@@ -27446,11 +27561,11 @@ theorem entryField_resource_delta :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitField_resource_delta :
-    toffoliCount exitField+228=toffoliCount ControlLoan1589.exitField ∧
+    toffoliCount exitField+229=toffoliCount ControlLoan1589.exitField ∧
     measurementCount exitField=measurementCount ControlLoan1589.exitField+106 ∧
-    gateSlots exitField≤gateSlots ControlLoan1589.exitField+(51096+509*halfExtra false+9500) := by
+    gateSlots exitField≤gateSlots ControlLoan1589.exitField+(51234+509*halfExtra false+9500) := by
   have pc := FourScratchWindow.counts
-  have slots : gateSlots FourScratchWindow.clearProgram=48 ∧ gateSlots FourScratchWindow.unprefix=47 := by
+  have slots : gateSlots FourScratchWindow.clearProgram=186 ∧ gateSlots FourScratchWindow.unprefix=47 := by
     simp only [FourScratchWindow.clearProgram,FourScratchWindow.unprefix,rename_gateSlots]
     decide +kernel
   have ic : toffoliCount Prefix1590.unprefix=11 ∧ measurementCount Prefix1590.unprefix=5 ∧
@@ -27561,18 +27676,18 @@ private theorem hosted_resource_sub (P Q HP HQ : Program) (t m sl : Nat)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryFieldHosted_resource_delta :
-    toffoliCount entryFieldHosted+228=toffoliCount ControlLoan1589.entryFieldHosted ∧
+    toffoliCount entryFieldHosted+229=toffoliCount ControlLoan1589.entryFieldHosted ∧
     measurementCount entryFieldHosted=measurementCount ControlLoan1589.entryFieldHosted+106 ∧
-    gateSlots entryFieldHosted≤gateSlots ControlLoan1589.entryFieldHosted+(49993+509*halfExtra true+9500) :=
+    gateSlots entryFieldHosted≤gateSlots ControlLoan1589.entryFieldHosted+(50131+509*halfExtra true+9500) :=
   hosted_resource_sub entryField ControlLoan1589.entryField entryFieldHosted ControlLoan1589.entryFieldHosted
-    228 106 (49993+509*halfExtra true+9500) rfl rfl entryField_resource_delta
+    229 106 (50131+509*halfExtra true+9500) rfl rfl entryField_resource_delta
 
 theorem exitFieldHosted_resource_delta :
-    toffoliCount exitFieldHosted+228=toffoliCount ControlLoan1589.exitFieldHosted ∧
+    toffoliCount exitFieldHosted+229=toffoliCount ControlLoan1589.exitFieldHosted ∧
     measurementCount exitFieldHosted=measurementCount ControlLoan1589.exitFieldHosted+106 ∧
-    gateSlots exitFieldHosted≤gateSlots ControlLoan1589.exitFieldHosted+(51096+509*halfExtra false+9500) :=
+    gateSlots exitFieldHosted≤gateSlots ControlLoan1589.exitFieldHosted+(51234+509*halfExtra false+9500) :=
   hosted_resource_sub exitField ControlLoan1589.exitField exitFieldHosted ControlLoan1589.exitFieldHosted
-    228 106 (51096+509*halfExtra false+9500) rfl rfl exitField_resource_delta
+    229 106 (51234+509*halfExtra false+9500) rfl rfl exitField_resource_delta
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -27983,19 +28098,19 @@ open Arithmetic MappedCompressed DirectSkywalk Secp256k1 Challenge Baselines
 attribute [local irreducible] wires toffoliCount measurementCount gateSlots
 
 /-- R2 syntax-slot growth of the entry (divide) and exit kernels over the record kernels. -/
-def entrySlotGrowth : Nat := 509*halfExtra true+9500
-def exitSlotGrowth : Nat := 509*halfExtra false+9500
+def entrySlotGrowth : Nat := 509*halfExtra true+9500+138
+def exitSlotGrowth : Nat := 509*halfExtra false+9500+138
 def slotGrowth : Nat := entrySlotGrowth+exitSlotGrowth
 
-theorem entrySlotGrowth_eq : entrySlotGrowth=12554 := rfl
-theorem exitSlotGrowth_eq : exitSlotGrowth=11027 := rfl
+theorem entrySlotGrowth_eq : entrySlotGrowth=12692 := rfl
+theorem exitSlotGrowth_eq : exitSlotGrowth=11165 := rfl
 
 /- The deltas are proved with numerals (`omega` over the symbolic `halfExtra` atom makes the kernel
 recurse too deeply on these two goals) and restated with the named growth constants. -/
 private theorem entryKernel_resource_delta_num :
-    toffoliCount entryKernel+238=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+239=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
-    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+12554) := by
+    gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+12692) := by
   have first := firstPhase_metrics true
   have last := lastPhase_metrics false
   have field := entryFieldHosted_resource_delta
@@ -28008,16 +28123,16 @@ private theorem entryKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryKernel_resource_delta :
-    toffoliCount entryKernel+238=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+239=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
     gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+entrySlotGrowth) := by
   rw [entrySlotGrowth_eq]
   exact entryKernel_resource_delta_num
 
 private theorem exitKernel_resource_delta_num :
-    toffoliCount exitKernel+238=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+239=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
-    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+11027) := by
+    gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+11165) := by
   have first := firstPhase_metrics false
   have last := lastPhase_metrics true
   have field := exitFieldHosted_resource_delta
@@ -28030,7 +28145,7 @@ private theorem exitKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitKernel_resource_delta :
-    toffoliCount exitKernel+238=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+239=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
     gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+exitSlotGrowth) := by
   rw [exitSlotGrowth_eq]
@@ -31419,23 +31534,23 @@ private def DeltaSub (P Q : Program) (t m slots : Nat) : Prop :=
   toffoliCount P+t=toffoliCount Q ∧ measurementCount P=measurementCount Q+m ∧
     gateSlots P≤gateSlots Q+slots
 
-private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 238 106 (63762+Rolling1588.entrySlotGrowth))
+private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 239 106 (63762+Rolling1588.entrySlotGrowth))
     (L : ControlledPointLayout) (c : Fp) :
-    DeltaSub (division K L c) (division K0 L c) 238 106 (63762+Rolling1588.entrySlotGrowth) := by
+    DeltaSub (division K L c) (division K0 L c) 239 106 (63762+Rolling1588.entrySlotGrowth) := by
   simp only [DeltaSub,division,FrontierEntry1591Callers.entry,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
 
-private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 238 106 (64865+Rolling1588.exitSlotGrowth))
-    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 238 106 (64865+Rolling1588.exitSlotGrowth) := by
+private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 239 106 (64865+Rolling1588.exitSlotGrowth))
+    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 239 106 (64865+Rolling1588.exitSlotGrowth) := by
   simpa only [DeltaSub,exit,renameProgram_counts,rename_gateSlots] using h
 
 private theorem gen_delta_of_shapes (L : ControlledPointLayout)
     (D D0 : Fp→Program) (S S0 P P0 G G0 : Program) (cx cy : Fp)
     (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D0 S0 P0 cx cy)
-    (hd : ∀c,DeltaSub (D c) (D0 c) 238 106 (63762+Rolling1588.entrySlotGrowth))
-    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 238 106 (64865+Rolling1588.exitSlotGrowth)) :
-    DeltaSub G G0 476 212 (128627+Rolling1588.slotGrowth) := by
+    (hd : ∀c,DeltaSub (D c) (D0 c) 239 106 (63762+Rolling1588.entrySlotGrowth))
+    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 239 106 (64865+Rolling1588.exitSlotGrowth)) :
+    DeltaSub G G0 478 212 (128627+Rolling1588.slotGrowth) := by
   subst G G0
   have d:=hd (-cy)
   simp only [Delta,DeltaLe,DeltaSub,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
@@ -31444,7 +31559,7 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 476 212 (128627+Rolling1588.slotGrowth) := by
+    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 478 212 (128627+Rolling1588.slotGrowth) := by
   have squareCounts:=SquareCarryLoan719BF.counts_eq L
   have squareSlots:=SquareCarryLoan719BF.slots_eq L
   exact gen_delta_of_shapes L
@@ -31462,14 +31577,14 @@ private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
       Rolling1588.exitKernel_resource_delta L)
 
 theorem gen_resource_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+476=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+478=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ControlLoan1589BFFinal.gen L cx cy)+212 ∧
     gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+(128627+Rolling1588.slotGrowth) :=
   gen_delta L cx cy
 
 private theorem wrapper_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : DeltaSub P Q 476 212 (128627+Rolling1588.slotGrowth)) :
-    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 476 212 (128627+Rolling1588.slotGrowth) := by
+    (P Q : Program) (h : DeltaSub P Q 478 212 (128627+Rolling1588.slotGrowth)) :
+    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 478 212 (128627+Rolling1588.slotGrowth) := by
   simp only [DeltaSub,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -31619,7 +31734,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152447 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152445 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -31643,7 +31758,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152447,1499965,1588,50139199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152445,1499965,1588,50139199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -31660,7 +31775,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152447 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152445 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
