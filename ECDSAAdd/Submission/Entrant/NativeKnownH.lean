@@ -1,3 +1,4 @@
+import ECDSAAdd.Submission.Entrant.HAddTopZero
 import ECDSAAdd.Arithmetic.NativeFirstKnownInverse
 import ECDSAAdd.Arithmetic.NativeKnownPhysical
 import ECDSAAdd.Arithmetic.MappedCompressedAllocationSites
@@ -32,7 +33,7 @@ def kReceiver (w : Nat → Wire) : Program :=
     (wireBlock w 1540 256) (w 770))
 
 def inverse (w : Nat → Wire) : Program :=
-  hAdd w true++((kReceiver w++[.X (w 770)])++(inverseUnmiddle w++inverseBack w))
+  HAddTopZero.hAddTop w++((kReceiver w++[.X (w 770)])++(inverseUnmiddle w++inverseBack w))
 
 
 /-! Local copies of the private cancellation helpers of `NativeFirstKnownInverse`. -/
@@ -284,13 +285,13 @@ theorem kReceiver_counts (w : Nat → Wire) :
   simpa only [kReceiver,sealedProgram_eq,wireBlock_length] using h
 
 theorem inverse_counts (w : Nat → Wire) :
-    toffoliCount (inverse w)=252 ∧ measurementCount (inverse w)=508 := by
-  have h := hAdd_counts w true
+    toffoliCount (inverse w)=251 ∧ measurementCount (inverse w)=508 := by
+  have h := HAddTopZero.hAddTop_counts w
   have k := kReceiver_counts w
   have c := lowCopy_counts w
   have r := rotate_counts (wireBlock w 770 258)
   simp [inverse,inverseUnmiddle,inverseBack,toffoliCount_append,measurementCount_append,
-    h.1,h.2,k.1,k.2,c.1,c.2,r.2.2.1,r.2.2.2,toffoliCount,measurementCount]
+    h.1,h.2.1,k.1,k.2,c.1,c.2,r.2.2.1,r.2.2.2,toffoliCount,measurementCount]
 
 
 theorem middle_phase (w : Nat → Wire) (s : State) (m : List Bool) :
@@ -534,8 +535,24 @@ theorem inverse_roundtrip (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     have cm := copy_matches w hn x hx s mF ready
     rw [eu] at cm
     rw [lhs,cm,←tailVal,tail.2.2]
+  have u256 : u.basis (w 256)=false := by
+    rw [←eu]
+    have a0 : regValue (wireBlock w 0 258) s.basis=0 := ready.a
+    exact (run_preserves_outside _ mF s _ (frontAway 256 (by omega) (by omega) (by omega) (by omega)
+      (by omega) (by omega))).trans ((regValue_zero _ _).mp a0 _
+        (List.mem_map.mpr ⟨256,by simp [List.mem_range'_1],rfl⟩))
+  have topAny : (run (hAdd w true) (mI.take 252) t0).basis (w 256)=false := by
+    rw [ht1]
+    exact (t1Hbits _ (List.mem_map.mpr ⟨256,by simp [List.mem_range'_1],rfl⟩)).trans u256
+  have top0 : (run (hAdd w true) [] t0).basis (w 256)=false := by
+    have same := run_basis_records (hAdd w true) t0 t0 [] (mI.take 252) rfl
+    exact (congrFun same (w 256)).trans topAny
+  have clean1791 : t0.basis (w 1791)=false :=
+    t0c _ (List.mem_map.mpr ⟨1791,by simp [List.mem_range'_1],rfl⟩)
+  have hTop := HAddTopZero.hAddTop_run w hn t0 (mI.take 252) clean1791 top0
+  rw [ht1] at hTop
   -- assemble
-  have ir : inverse w=hAdd w true++((kReceiver w++[.X (w 770)])++(inverseUnmiddle w++inverseBack w)) := rfl
+  have ir : inverse w=HAddTopZero.hAddTop w++((kReceiver w++[.X (w 770)])++(inverseUnmiddle w++inverseBack w)) := rfl
   have um : measurementCount (inverseUnmiddle w)=0 := by
     rw [inverseUnmiddle,measurementCount_append,(rotate_counts _).2.2.2]; rfl
   have kAddEq : kAdd w true=kTail w true++[.X (w 770)] := by simp only [kAdd,kTail]
@@ -546,7 +563,7 @@ theorem inverse_roundtrip (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
     omega
   have kxAll (r : List Bool) : run (kReceiver w++[.X (w 770)]) r t1=run (inverseMiddle w) [] u := by
     rw [←M_eq r,kAddEq,run_append,run_append,(kReceiver_counts w).2,mk,kRun]
-  rw [ir,run_append,(hAdd_counts w true).2,ht1,run_append,kxAll,run_append,um,List.drop_zero,
+  rw [ir,run_append,(HAddTopZero.hAddTop_counts w).2.1,hTop,run_append,kxAll,run_append,um,List.drop_zero,
     List.take_zero]
   rw [middle_cancel w u _ _ (block_nodup w hn 770 258 (by omega))
     (index_ne w hn 1028 770 (by omega) (by omega) (by omega))]
@@ -575,7 +592,7 @@ theorem kReceiver_physical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) 
 
 theorem inverse_physical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
     GatePhysical (inverse w) := by
-  have ha := (adds_physical w hn true).1
+  have ha := HAddTopZero.hAddTop_physical w hn (adds_physical w hn true).1
   have kr := kReceiver_physical w hn
   have cp : GatePhysical (lowCopy w) := by
     rw [lowCopy]; exact copyRegister_physical none _ _ (copy_inputs_nd w hn) (by simp)
@@ -698,6 +715,7 @@ theorem inverse_wires_sub (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
   simp only [inverse,inverseUnmiddle,inverseBack,wires_append,Finset.mem_union] at hq
   rcases hq with hq|(hq|hq)|hq|hq
   · -- hAdd w true
+    have hq := HAddTopZero.hAddTop_wires w hq
     have sup := mappedAdd_wires_subset (hBits w true) (wireBlock w 4 253) (wireBlock w 1540 252) (w 1797)
       (by simpa only [hAdd] using hq)
     simp only [List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at sup
@@ -738,17 +756,19 @@ theorem inverse_wires_sub (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup) :
 
 /-- Crude slot bound (no kernel evaluation): the piece-wise slot lemmas of the baselines. -/
 theorem inverse_gateSlots_le (w : Nat → Wire) : Challenge.gateSlots (inverse w)≤10000 := by
+  have ht := (HAddTopZero.hAddTop_counts w).2.2
   have hh := Baselines.mappedAdd_gateSlots_le (hBits w true) (wireBlock w 4 253) (wireBlock w 1540 252) (w 1797)
   have hk := Baselines.knownAdder_gateSlots_le (kBits w true) (desiredK w) (wireBlock w 771 257)
     (wireBlock w 1540 256) (w 770)
   have hr := Baselines.rotate_gateSlots_le (wireBlock w 770 258)
   simp only [hBits_length,kBits_length,wireBlock_length] at hh hk hr
-  rw [ECDSAAdd.Entrant.NativeKnownH.inverse,kReceiver,sealedProgram_eq,hAdd,inverseUnmiddle,
+  rw [ECDSAAdd.Entrant.NativeKnownH.inverse,kReceiver,sealedProgram_eq,inverseUnmiddle,
     inverseBack,lowCopy]
   have e1 : Challenge.gateSlots [Instr.X (w 770)]=1 := rfl
   have e2 : Challenge.gateSlots [Instr.CX (w 1028) (w 770)]=1 := rfl
   have e3 : Challenge.gateSlots [Instr.X (w 0),Instr.CX (w 1028) (w 0),Instr.CX (w 770) (w 1028)]=3 := rfl
   simp only [Challenge.gateSlots_append,Baselines.copyRegister_gateSlots,wireBlock_length,e1,e2,e3]
+  rw [hAdd] at ht
   omega
 
 end ECDSAAdd.Entrant.NativeKnownH
