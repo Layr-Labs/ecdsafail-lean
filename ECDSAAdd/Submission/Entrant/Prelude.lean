@@ -1,3 +1,5 @@
+-- Complete rolling Q1588 plus LowZero18; two approved unused proof cones are omitted.
+-- Original file boundaries are sections; original comments and credits remain below.
 import ECDSAAdd.Arithmetic.BalancedCleanupCircuitViews
 import ECDSAAdd.Baselines.SlotSignedSquare
 import ECDSAAdd.Arithmetic.MappedSquarePhysical
@@ -98,12 +100,6 @@ import ECDSAAdd.Arithmetic.FieldRenameKernels
 import ECDSAAdd.Framework.FiniteUnitary
 import ECDSAAdd.Arithmetic.PhysicalGateCheck
 import ECDSAAdd.Math.SkywalkTerminalLastControls
-
-
--- Consolidated source module: Prelude
-section
--- Complete rolling Q1588 plus LowZero18; two approved unused proof cones are omitted.
--- Original file boundaries are sections; original comments and credits remain below.
 
 
 -- ===== ECDSAAdd.Submission.Entrant.ShortKernel =====
@@ -80913,4 +80909,3 @@ end ECDSAAdd.Entrant.OwnQ6FieldFree
 end -- original EOF section
 end -- original module boundary
 
-end
