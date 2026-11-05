@@ -13178,10 +13178,10 @@ def count (i : Nat) : Nat → Nat
   | 0 => 0
   | n+1 => TickRanges.due i+count (i+1) n
 
-def stackForward (isA : Bool) : Program :=
+def stackForward0 (isA : Bool) : Program :=
   forward isA 1 506 ++ (MorningPlacement.merged ++ ForwardSixPlacement.after isA)
 
-attribute [local irreducible] forward stackForward Rolling1588.forward
+attribute [local irreducible] forward stackForward0 Rolling1588.forward
   Rolling1588.Integer.forward Rolling1588.stackForward
 
 theorem forward_gen (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (n : Nat) :
@@ -13274,17 +13274,17 @@ theorem forward_metrics (isA : Bool) (i n : Nat) (bound : i+n ≤ 512) :
 
 theorem count_508 : count 1 508=62 := by decide +kernel
 
-theorem stackForward_metrics (isA : Bool) :
-    toffoliCount (stackForward isA)+67=toffoliCount (Rolling1588.stackForward isA) ∧
-      measurementCount (stackForward isA)=measurementCount (Rolling1588.stackForward isA) ∧
-      Challenge.gateSlots (stackForward isA) ≤ Challenge.gateSlots (Rolling1588.stackForward isA)+729 := by
+theorem stackForward0_metrics (isA : Bool) :
+    toffoliCount (stackForward0 isA)+67=toffoliCount (Rolling1588.stackForward isA) ∧
+      measurementCount (stackForward0 isA)=measurementCount (Rolling1588.stackForward isA) ∧
+      Challenge.gateSlots (stackForward0 isA) ≤ Challenge.gateSlots (Rolling1588.stackForward isA)+729 := by
   have head := forward_metrics isA 1 506 (by omega)
   have savings := forward_slots_strong isA 1 506 (by omega)
   rw [SlotSavings.saved,Rolling1588.Integer.forward_eq_packets] at savings
   have c : count 1 506=62 := by decide +kernel
   rw [c] at head
   have tail := MorningPlacement.prior_resources
-  rw [stackForward,MorningPlacement.previous_shape]
+  rw [stackForward0,MorningPlacement.previous_shape]
   simp only [toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
   exact ⟨by omega,by omega,by omega⟩
 
@@ -13308,9 +13308,9 @@ theorem forward_support (isA : Bool) (i n : Nat) (bound : i+n ≤ 512) :
   simpa only [Rolling1588.Integer.forward_eq_packets] using
     forward_integer_support isA i n bound
 
-theorem stackForward_support (isA : Bool) :
-    wires (stackForward isA)⊆wires (Rolling1588.stackForward isA) := by
-  rw [stackForward,MorningPlacement.previous_shape]
+theorem stackForward0_support (isA : Bool) :
+    wires (stackForward0 isA)⊆wires (Rolling1588.stackForward isA) := by
+  rw [stackForward0,MorningPlacement.previous_shape]
   simp only [wires_append]
   exact Finset.union_subset_union (forward_support isA 1 506 (by omega))
     (Finset.union_subset_union MorningPlacement.prior_support (Finset.Subset.refl _))
@@ -13321,16 +13321,1522 @@ private theorem append_run_eq (P Q R : Program) (s : State) (m : List Bool)
     run (P++R) m s=run (Q++R) m s := by
   rw [run_append,run_append,records,same]
 
+theorem stackForward0_run_eq (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (s : State) (m : List Bool)
+    (first : W.CompactSkywalkStage base
+      (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (stackForward0 isA) m s=run (Rolling1588.stackForward isA) m s := by
+  rw [stackForward0,MorningPlacement.previous_shape]
+  exact MorningPlacement.replace_at_prefix _ _ _ s m
+    (forward_metrics isA 1 506 (by omega)).2.1
+    (fun r => forward_first_run_eq isA x hx0 hx 506 (by omega) s r first)
+    (MorningPlacement.prior_at_prefix isA x hx0 hx s first)
+
+theorem stackForward0_boundary (isA : Bool)
+    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
+    (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
+    (first : W.CompactSkywalkStage base
+      (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (stackForward0 isA) m s=pullState (sig 511)
+      (run (Rolling1588.allEncode base isA 102) []
+        (run (W.compactSkywalkForward base 1 511) [] s)) := by
+  rw [stackForward0_run_eq isA x hx0 hx s m first]
+  exact Rolling1588.stackForward_boundary isA hn hlo x hx0 hx s m first
+
+theorem stack_roundtrip0 (isA : Bool)
+    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
+    (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (mE mD : List Bool)
+    (first : W.CompactSkywalkStage base
+      (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (Rolling1588.stackReverse isA) mD (run (stackForward0 isA) mE s)=s := by
+  rw [stackForward0_run_eq isA x hx0 hx s mE first]
+  exact Rolling1588.stack_roundtrip isA hn hlo x hx0 hx s mE mD first
+
+end ECDSAAdd.Entrant.Rolling1588TickGap
+end -- original module boundary
+
+
+-- ===== Five506: five-tick forward window (tick 506 + ticks 507..510) =====
+section
+
+/-! Five-tick forward window (tick 506 + ticks 507..510) re-synthesized jointly on the reachable
+stage-506 domain: 20 Toffolis instead of 10 + 11. Ancillas 793..803 are released (clean)
+pool-B wires at stage 506; earlier ticks already use them. -/
+
+set_option maxRecDepth 30000
+set_option maxHeartbeats 0
+namespace ECDSAAdd.Entrant.Five506
+open Arithmetic MappedCompressed Secp256k1 History5
+
+def tick506 : Program := [
+  .CX 787 523,
+  .CX 788 524,
+  .CX 789 525,
+  .CX 790 526,
+  .CX 791 527,
+  .CCX 522 523 787,
+  .CCX 522 524 788,
+  .CCX 522 525 789,
+  .CCX 522 526 790,
+  .CCX 522 527 791,
+  .CX 787 523,
+  .CX 788 524,
+  .CX 789 525,
+  .CX 790 526,
+  .CX 791 527,
+  .CX 528 792,
+  .measureX 528 [] [.CZ 521 792],
+  .CX 792 528,
+  .CX 528 792,
+  .CX 791 792,
+  .CX 791 528,
+  .CX 522 786,
+  .CX 528 529,
+  .X 1550,
+  .CX 528 1550,
+  .CX 791 1550,
+  .CX 1550 523,
+  .CX 1550 524,
+  .CX 1550 525,
+  .CX 1550 526,
+  .CX 1550 527,
+  .CX 1550 528,
+  .CX 523 786,
+  .CX 523 1550,
+  .CCX 786 1550 1556,
+  .CX 523 1556,
+  .CX 523 1550,
+  .CX 523 786,
+  .CX 524 787,
+  .CX 524 1556,
+  .CCX 787 1556 1557,
+  .CX 524 1557,
+  .CX 524 1556,
+  .CX 524 787,
+  .CX 525 788,
+  .CX 525 1557,
+  .CCX 788 1557 1558,
+  .CX 525 1558,
+  .CX 525 1557,
+  .CX 525 788,
+  .CX 526 789,
+  .CX 526 1558,
+  .CCX 789 1558 1559,
+  .CX 526 1559,
+  .CX 526 1558,
+  .CX 526 789,
+  .CX 527 790,
+  .CX 527 1559,
+  .CCX 790 1559 1560,
+  .CX 527 1560,
+  .CX 527 1559,
+  .CX 527 790,
+  .CX 528 791,
+  .CX 1560 791,
+  .measureX 1560 [] [.CZ 527 790, .CZ 527 1559, .CZ 790 1559],
+  .CX 527 790,
+  .CX 1559 790,
+  .measureX 1559 [] [.CZ 526 789, .CZ 526 1558, .CZ 789 1558],
+  .CX 526 789,
+  .CX 1558 789,
+  .measureX 1558 [] [.CZ 525 788, .CZ 525 1557, .CZ 788 1557],
+  .CX 525 788,
+  .CX 1557 788,
+  .measureX 1557 [] [.CZ 524 787, .CZ 524 1556, .CZ 787 1556],
+  .CX 524 787,
+  .CX 1556 787,
+  .measureX 1556 [] [.CZ 523 786, .CZ 523 1550, .CZ 786 1550],
+  .CX 523 786,
+  .CX 1550 786,
+  .CX 1550 523,
+  .CX 1550 524,
+  .CX 1550 525,
+  .CX 1550 526,
+  .CX 1550 527,
+  .CX 1550 528,
+  .X 1550,
+  .CX 528 1550,
+  .CX 791 1550,
+  .CX 1550 792,
+  .CX 521 522,
+  .CX 528 529,
+  .CX 791 792]
+
+def block0 : Program := [
+  .CX 787 523,
+  .CCX 522 523 529,
+  .CX 523 521,
+  .CX 529 521,
+  .CX 787 521,
+  .CX 792 521,
+  .CX 791 528,
+  .CCX 521 528 793,
+  .CX 525 789,
+  .CX 791 786,
+  .CX 792 786,
+  .CX 788 524,
+  .CX 789 524,
+  .CCX 786 524 525,
+  .CX 791 786,
+  .CX 792 786,
+  .CX 527 526,
+  .CX 790 526,
+  .CX 791 526,
+  .CCX 786 526 1550,
+  .CX 529 528,
+  .CX 786 528,
+  .CX 787 528,
+  .CX 791 528,
+  .CX 792 528,
+  .CX 529 523,
+  .CX 786 523,
+  .CX 787 523,
+  .CCX 528 523 1551,
+  .CX 528 1551,
+  .CX 790 1550,
+  .CX 526 524]
+def block1 : Program := [
+  .CX 527 524,
+  .CX 789 524,
+  .CX 791 524,
+  .CCX 786 524 790,
+  .CX 527 522,
+  .CX 528 522,
+  .CX 793 522,
+  .CX 792 522,
+  .CX 529 527,
+  .CX 788 527,
+  .CX 790 527,
+  .CX 792 527,
+  .CX 1550 527,
+  .CX 1551 527,
+  .CCX 522 527 1552,
+  .CX 524 522,
+  .CX 525 522,
+  .CX 526 522,
+  .CX 529 522,
+  .CX 793 522,
+  .CX 787 522,
+  .CX 788 522,
+  .CX 789 522,
+  .CX 526 524,
+  .CX 528 524,
+  .CX 786 524,
+  .CX 787 524,
+  .CX 788 524,
+  .CX 790 524,
+  .CX 1550 524,
+  .CX 1551 524,
+  .CX 1552 524]
+def block2 : Program := [
+  .CCX 522 524 1553,
+  .CX 527 525,
+  .CX 529 525,
+  .CX 788 525,
+  .CX 791 525,
+  .CX 792 525,
+  .CX 1550 525,
+  .CX 1551 525,
+  .CX 529 527,
+  .CX 788 527,
+  .CX 789 527,
+  .CX 790 527,
+  .CX 791 527,
+  .CX 792 527,
+  .CX 1550 527,
+  .CX 1551 527,
+  .CX 1553 527,
+  .CCX 525 527 1554,
+  .CX 522 521,
+  .CX 523 521,
+  .CX 524 521,
+  .CX 525 521,
+  .CX 529 521,
+  .CX 789 521,
+  .CX 791 521,
+  .CX 1550 521,
+  .CX 1551 521,
+  .CX 1552 521,
+  .CX 527 526,
+  .CX 1554 526,
+  .CCX 521 526 1556,
+  .CX 786 523]
+def block3 : Program := [
+  .CX 525 522,
+  .CX 793 522,
+  .CX 787 522,
+  .CX 789 522,
+  .CX 791 522,
+  .CX 792 522,
+  .CX 1550 522,
+  .CX 1551 522,
+  .CX 1552 522,
+  .CCX 523 522 1557,
+  .CX 523 1557,
+  .CX 527 524,
+  .CX 791 524,
+  .CX 792 524,
+  .CCX 523 524 1558,
+  .CX 527 523,
+  .CX 529 523,
+  .CX 788 523,
+  .CX 789 523,
+  .CX 790 523,
+  .CX 791 523,
+  .CX 792 523,
+  .CX 1550 523,
+  .CX 1551 523,
+  .CX 1553 523,
+  .CX 527 526,
+  .CX 528 526,
+  .CX 793 526,
+  .CX 786 526,
+  .CX 789 526,
+  .CX 791 526,
+  .CX 792 526]
+def block4 : Program := [
+  .CX 1553 526,
+  .CCX 523 526 802,
+  .CX 527 526,
+  .CX 529 526,
+  .CX 793 526,
+  .CX 787 526,
+  .CX 789 526,
+  .CX 791 526,
+  .CX 792 526,
+  .CX 1553 526,
+  .CX 525 523,
+  .CX 527 523,
+  .CX 788 523,
+  .CX 790 523,
+  .CX 1553 523,
+  .CX 1557 523,
+  .CX 802 523,
+  .CCX 526 523 803,
+  .CX 527 525,
+  .CX 788 525,
+  .CX 790 525,
+  .CX 1553 525,
+  .CX 1557 525,
+  .CX 802 525,
+  .CX 526 523,
+  .CX 527 523,
+  .CX 529 523,
+  .CX 793 523,
+  .CX 787 523,
+  .CX 789 523,
+  .CX 791 523,
+  .CX 792 523]
+def block5 : Program := [
+  .CX 1553 523,
+  .CX 803 523,
+  .CCX 525 523 794,
+  .CX 525 794,
+  .CX 525 523,
+  .CX 526 523,
+  .CX 528 523,
+  .CX 793 523,
+  .CX 786 523,
+  .CX 791 523,
+  .CX 792 523,
+  .CX 1556 523,
+  .CX 803 523,
+  .CX 527 524,
+  .CX 529 524,
+  .CX 793 524,
+  .CX 787 524,
+  .CX 791 524,
+  .CX 792 524,
+  .CX 803 524,
+  .CX 794 524,
+  .CCX 523 524 795,
+  .CX 523 521,
+  .CX 525 521,
+  .CX 528 521,
+  .CX 786 521,
+  .CX 787 521,
+  .CX 788 521,
+  .CX 790 521,
+  .CX 792 521,
+  .CX 1551 521,
+  .CX 1556 521]
+def block6 : Program := [
+  .CX 525 523,
+  .CX 526 523,
+  .CX 788 523,
+  .CX 789 523,
+  .CX 790 523,
+  .CX 1553 523,
+  .CX 1556 523,
+  .CX 1557 523,
+  .CX 1558 523,
+  .CX 803 523,
+  .CX 794 523,
+  .CX 795 523,
+  .CCX 521 523 796,
+  .CX 521 796,
+  .CX 524 521,
+  .CX 525 521,
+  .CX 527 521,
+  .CX 529 521,
+  .CX 793 521,
+  .CX 787 521,
+  .CX 789 521,
+  .CX 792 521,
+  .CX 1550 521,
+  .CX 1553 521,
+  .CX 802 521,
+  .CX 794 521,
+  .CX 527 524,
+  .CX 529 524,
+  .CX 793 524,
+  .CX 787 524,
+  .CX 788 524,
+  .CX 789 524]
+def block7 : Program := [
+  .CX 790 524,
+  .CX 792 524,
+  .CX 1550 524,
+  .CX 1553 524,
+  .CX 1557 524,
+  .CX 1558 524,
+  .CX 802 524,
+  .CX 803 524,
+  .CX 795 524,
+  .CX 796 524,
+  .CCX 521 524 797,
+  .CX 789 1550,
+  .CX 789 1551,
+  .CX 789 1552,
+  .CX 789 1553,
+  .CX 789 1554,
+  .CX 789 1558,
+  .CX 789 794,
+  .CX 789 796,
+  .CX 525 523,
+  .CX 526 523,
+  .CX 527 523,
+  .CX 528 523,
+  .CX 529 523,
+  .CX 786 523,
+  .CX 787 523,
+  .CX 791 523,
+  .CX 1550 523,
+  .CX 794 523,
+  .CX 795 523,
+  .CX 524 521,
+  .CX 788 521]
+def block8 : Program := [
+  .CX 790 521,
+  .CX 791 521,
+  .CX 1550 521,
+  .CX 1557 521,
+  .CX 1558 521,
+  .CX 802 521,
+  .CX 803 521,
+  .CCX 523 521 789,
+  .CX 525 521,
+  .CX 526 521,
+  .CX 788 521,
+  .CX 790 521,
+  .CX 791 521,
+  .CX 1550 521,
+  .CX 1553 521,
+  .CX 1556 521,
+  .CX 1557 521,
+  .CX 1558 521,
+  .CX 794 521,
+  .CX 795 521,
+  .CX 796 521,
+  .CX 528 527,
+  .CX 529 527,
+  .CX 786 527,
+  .CX 787 527,
+  .CX 789 527,
+  .CX 1553 527,
+  .CX 1556 527,
+  .CX 1558 527,
+  .CX 802 527,
+  .CX 803 527,
+  .CX 795 527]
+def block9 : Program := [
+  .CCX 521 527 798,
+  .CX 521 798,
+  .CX 792 1550,
+  .CX 792 1553,
+  .CX 792 1554,
+  .CX 792 1558,
+  .CX 792 802,
+  .CX 792 798,
+  .measureX 792 [] [.Z 521, .Z 798, .CZ 521 527],
+  .CX 1554 1557,
+  .CX 1554 802,
+  .CX 1554 803,
+  .CX 1554 794,
+  .CX 1554 796,
+  .CX 1554 798,
+  .measureX 1554 [] [.Z 523, .Z 528, .Z 786, .Z 787, .Z 1551, .Z 1558, .Z 803, .CZ 522 523, .CZ 522 528, .CZ 522 786, .CZ 522 787, .CZ 522 1551, .CZ 522 1557, .CZ 522 1558, .CZ 522 803],
+  .CX 1557 802,
+  .CX 1557 803,
+  .CX 1557 794,
+  .CX 1557 796,
+  .CX 1557 798,
+  .measureX 1557 [] [.Z 522, .Z 523, .Z 526, .Z 527, .Z 528, .Z 529, .Z 793, .Z 786, .Z 787, .Z 788, .Z 790, .Z 791, .Z 1550, .Z 1552, .Z 1553, .Z 802, .Z 794, .CZ 521 529, .CZ 521 793, .CZ 521 787, .CZ 521 788, .CZ 521 790, .CZ 521 1550, .CZ 521 1558, .CZ 521 802, .CZ 521 803, .CZ 521 794, .CZ 522 523, .CZ 522 524, .CZ 522 525, .CZ 522 528, .CZ 522 529, .CZ 522 793, .CZ 522 786, .CZ 522 788, .CZ 522 790, .CZ 522 1551, .CZ 522 1558, .CZ 522 803, .CZ 523 526, .CZ 523 793, .CZ 523 787, .CZ 523 788, .CZ 523 790, .CZ 523 791, .CZ 523 1551, .CZ 523 1556, .CZ 523 797, .CZ 524 526, .CZ 524 528, .CZ 524 529, .CZ 524 786, .CZ 524 787, .CZ 524 791, .CZ 524 1553, .CZ 525 526, .CZ 525 787, .CZ 525 789, .CZ 525 791, .CZ 525 1551, .CZ 525 1552, .CZ 526 527, .CZ 526 788, .CZ 526 790, .CZ 527 529, .CZ 527 793, .CZ 527 787, .CZ 527 788, .CZ 527 790, .CZ 527 791, .CZ 527 1550, .CZ 527 802, .CZ 528 793, .CZ 793 791],
+  .CX 793 789,
+  .CX 793 791,
+  .CX 793 1551,
+  .CX 793 1552,
+  .CX 793 1558,
+  .CX 793 794,
+  .CX 793 796,
+  .measureX 793 [] [.Z 521, .Z 523, .Z 524, .Z 525, .Z 526, .Z 527, .Z 528, .Z 786, .Z 789, .Z 791, .Z 1552, .Z 1553, .Z 1556, .Z 803, .Z 794, .Z 795, .CZ 521 522, .CZ 521 528, .CZ 521 529, .CZ 521 786, .CZ 521 788, .CZ 521 789, .CZ 521 790, .CZ 521 791, .CZ 521 1550, .CZ 521 1551, .CZ 521 1552, .CZ 521 1553, .CZ 521 1558, .CZ 521 794, .CZ 522 523, .CZ 522 525, .CZ 522 527, .CZ 522 528, .CZ 522 786, .CZ 522 787, .CZ 522 788, .CZ 522 789, .CZ 522 790, .CZ 522 1551, .CZ 522 1553, .CZ 522 802, .CZ 522 803, .CZ 522 798, .CZ 523 526, .CZ 523 528, .CZ 523 786, .CZ 523 788, .CZ 523 789, .CZ 523 790, .CZ 523 791, .CZ 523 1556, .CZ 523 802, .CZ 523 803, .CZ 523 794, .CZ 524 525, .CZ 524 526, .CZ 524 528, .CZ 524 786, .CZ 524 788, .CZ 524 789, .CZ 524 790, .CZ 524 791, .CZ 524 1553, .CZ 524 1558, .CZ 524 802, .CZ 525 526, .CZ 525 527, .CZ 525 528, .CZ 525 529, .CZ 525 786, .CZ 525 787, .CZ 525 789, .CZ 527 788, .CZ 527 789, .CZ 527 790, .CZ 527 791, .CZ 527 1550, .CZ 527 798],
+  .CX 789 1550,
+  .CX 789 1551]
+def block10 : Program := [
+  .CX 789 1552,
+  .CX 789 1558,
+  .CX 789 794,
+  .CX 789 796,
+  .measureX 789 [] [.Z 522, .Z 523, .Z 524, .Z 525, .Z 526, .Z 786, .Z 787, .Z 791, .Z 1550, .Z 1553, .Z 1556, .Z 802, .Z 794, .Z 798, .CZ 521 523, .CZ 521 526, .CZ 521 527, .CZ 521 791, .CZ 521 1558, .CZ 521 803, .CZ 521 794, .CZ 522 523, .CZ 522 526, .CZ 522 527, .CZ 522 528, .CZ 522 786, .CZ 522 1552, .CZ 522 1558, .CZ 522 803, .CZ 522 798, .CZ 523 524, .CZ 523 528, .CZ 523 788, .CZ 523 790, .CZ 523 791, .CZ 523 1553, .CZ 523 1556, .CZ 523 794, .CZ 523 797, .CZ 524 526, .CZ 524 527, .CZ 524 528, .CZ 524 786, .CZ 525 527, .CZ 525 528, .CZ 525 529, .CZ 525 786, .CZ 525 787, .CZ 526 787, .CZ 526 788, .CZ 526 790, .CZ 526 791, .CZ 526 1551, .CZ 527 528, .CZ 527 786, .CZ 527 788, .CZ 527 790, .CZ 527 791, .CZ 527 1558, .CZ 527 794, .CZ 528 529, .CZ 528 786, .CZ 528 788, .CZ 528 790, .CZ 528 1551, .CZ 528 1558, .CZ 528 803, .CZ 786 788, .CZ 786 790],
+  .CX 526 1550,
+  .CX 526 1551,
+  .CX 526 1552,
+  .CX 526 1556,
+  .CX 526 1558,
+  .CX 526 794,
+  .CX 526 796,
+  .measureX 526 [] [.Z 523, .Z 524, .Z 525, .Z 528, .Z 786, .Z 787, .Z 791, .Z 1550, .Z 1551, .Z 1553, .Z 1558, .Z 802, .Z 798, .CZ 521 522, .CZ 521 524, .CZ 521 525, .CZ 521 528, .CZ 521 786, .CZ 521 1550, .CZ 521 1553, .CZ 521 803, .CZ 521 798, .CZ 522 523, .CZ 522 524, .CZ 522 525, .CZ 522 787, .CZ 522 1550, .CZ 522 1551, .CZ 522 1558, .CZ 522 803, .CZ 522 794, .CZ 523 524, .CZ 523 527, .CZ 523 528, .CZ 523 786, .CZ 523 791, .CZ 523 1553, .CZ 523 802, .CZ 523 803, .CZ 523 794, .CZ 523 798],
+  .CX 521 523,
+  .CX 521 524,
+  .CX 521 1551,
+  .CX 521 1552,
+  .CX 521 1558,
+  .CX 521 794,
+  .CX 521 797,
+  .CX 521 798,
+  .measureX 521 [] [.Z 524, .Z 527, .Z 786, .Z 787, .Z 788, .Z 1550, .Z 1551, .Z 1552, .Z 1558, .Z 802, .Z 803, .Z 795, .Z 798, .CZ 522 527, .CZ 522 528, .CZ 522 786, .CZ 522 791, .CZ 522 1550, .CZ 522 1553, .CZ 522 803, .CZ 522 794, .CZ 522 795, .CZ 523 524, .CZ 523 525, .CZ 523 786, .CZ 523 788, .CZ 523 790, .CZ 523 791, .CZ 523 1550, .CZ 523 802, .CZ 523 803, .CZ 523 794, .CZ 523 795, .CZ 524 527, .CZ 524 787, .CZ 524 1551, .CZ 524 802, .CZ 524 794, .CZ 524 795, .CZ 524 797, .CZ 525 527, .CZ 525 528, .CZ 525 529, .CZ 525 786, .CZ 525 787, .CZ 525 788, .CZ 525 790, .CZ 525 1550, .CZ 525 1553, .CZ 525 1556, .CZ 525 795, .CZ 525 798, .CZ 527 529, .CZ 527 787, .CZ 527 788, .CZ 527 790, .CZ 527 1553, .CZ 527 1556, .CZ 527 1558, .CZ 527 794, .CZ 528 529, .CZ 528 786, .CZ 528 788, .CZ 528 790, .CZ 528 1552, .CZ 528 1558, .CZ 528 803, .CZ 529 794, .CZ 786 788, .CZ 786 791, .CZ 786 1550, .CZ 786 1552, .CZ 787 794, .CZ 787 797, .CZ 791 797, .CZ 1551 797],
+  .CX 524 527,
+  .CX 524 790,
+  .CX 524 1550,
+  .CX 524 1551,
+  .CX 524 1552,
+  .CX 524 794,
+  .CX 524 796,
+  .CX 524 797,
+  .CX 524 798,
+  .measureX 524 [] [.Z 525, .Z 527, .Z 786, .Z 788, .Z 790, .Z 791, .Z 1550, .Z 1553, .Z 802, .Z 794, .Z 798, .CZ 522 523, .CZ 522 525, .CZ 522 528, .CZ 522 788, .CZ 522 790, .CZ 522 791, .CZ 522 1551, .CZ 522 1553, .CZ 522 1556, .CZ 522 802, .CZ 522 803, .CZ 522 794, .CZ 523 527, .CZ 523 529, .CZ 523 787, .CZ 523 788, .CZ 523 1551, .CZ 523 1556, .CZ 523 1558, .CZ 523 795, .CZ 525 527, .CZ 525 528, .CZ 525 529, .CZ 525 786, .CZ 525 791, .CZ 525 1550, .CZ 525 1551, .CZ 525 1558, .CZ 525 802, .CZ 525 803, .CZ 525 795, .CZ 527 529, .CZ 527 787, .CZ 527 788, .CZ 528 787, .CZ 528 790, .CZ 528 1550, .CZ 528 1551, .CZ 528 1552, .CZ 528 1558, .CZ 529 790, .CZ 529 791, .CZ 529 1550, .CZ 529 1558, .CZ 529 803, .CZ 529 794, .CZ 786 788, .CZ 786 790, .CZ 786 1550, .CZ 786 1558, .CZ 787 1551, .CZ 787 1552, .CZ 787 794, .CZ 788 791, .CZ 788 1551, .CZ 788 1553, .CZ 788 802, .CZ 788 795, .CZ 790 791, .CZ 790 1553, .CZ 790 1556]]
+def block11 : Program := [
+  .CX 522 527,
+  .CX 522 790,
+  .CX 522 1550,
+  .CX 522 1552,
+  .CX 522 1553,
+  .CX 522 1558,
+  .CX 522 803,
+  .CX 522 794,
+  .CX 522 795,
+  .measureX 522 [] [.Z 523, .Z 525, .Z 527, .Z 528, .Z 529, .Z 787, .Z 788, .Z 790, .Z 1550, .Z 1551, .Z 1552, .Z 1553, .Z 1556, .Z 1558, .Z 795, .Z 797, .CZ 523 527, .CZ 523 529, .CZ 523 790, .CZ 523 1550, .CZ 523 1552, .CZ 523 802, .CZ 525 528, .CZ 525 786, .CZ 525 791, .CZ 525 1552, .CZ 525 1553, .CZ 525 1556, .CZ 525 1558, .CZ 525 803, .CZ 525 794, .CZ 525 795, .CZ 527 528, .CZ 527 529, .CZ 527 786, .CZ 527 790, .CZ 527 1551, .CZ 527 1552, .CZ 527 1556, .CZ 527 802, .CZ 527 798, .CZ 528 786, .CZ 528 788, .CZ 528 791, .CZ 528 1550, .CZ 528 1552, .CZ 528 1553, .CZ 528 1558, .CZ 528 802, .CZ 528 803, .CZ 529 787, .CZ 529 788, .CZ 529 1550, .CZ 529 1551, .CZ 529 1553, .CZ 529 1558, .CZ 529 803, .CZ 786 787, .CZ 786 788, .CZ 786 1550, .CZ 786 1552, .CZ 786 1553, .CZ 786 1558, .CZ 786 802, .CZ 786 803, .CZ 787 1553, .CZ 788 1550, .CZ 788 1553, .CZ 788 1558, .CZ 788 802, .CZ 788 803, .CZ 790 1550, .CZ 790 1551, .CZ 790 1553, .CZ 790 1556, .CZ 790 1558, .CZ 790 803, .CZ 790 795, .CZ 791 1550, .CZ 791 1551, .CZ 791 1552, .CZ 791 1553, .CZ 791 1558, .CZ 791 795, .CZ 1550 1556, .CZ 1551 1552],
+  .CX 523 527,
+  .CX 523 1553,
+  .CX 523 802,
+  .CX 523 803,
+  .CX 523 794,
+  .CX 523 795,
+  .CX 523 796,
+  .measureX 523 [] [.Z 525, .Z 527, .Z 528, .Z 529, .Z 786, .Z 787, .Z 790, .Z 1550, .Z 1556, .Z 1558, .Z 803, .Z 794, .Z 797, .CZ 525 787, .CZ 525 788, .CZ 525 790, .CZ 525 791, .CZ 525 1551, .CZ 525 1552, .CZ 525 1553, .CZ 525 1558, .CZ 525 803, .CZ 525 794, .CZ 525 798, .CZ 527 786, .CZ 527 787, .CZ 527 1550, .CZ 527 1551, .CZ 527 1552, .CZ 527 1553, .CZ 527 1558, .CZ 527 803, .CZ 527 798, .CZ 528 787, .CZ 528 788, .CZ 528 791, .CZ 528 1551, .CZ 528 1556, .CZ 528 794, .CZ 528 795, .CZ 528 798, .CZ 529 787, .CZ 529 791, .CZ 529 1552, .CZ 529 802, .CZ 529 803, .CZ 529 798, .CZ 786 787, .CZ 786 788, .CZ 786 790, .CZ 786 1550, .CZ 786 1558, .CZ 786 802, .CZ 786 803, .CZ 786 794, .CZ 786 798, .CZ 787 790, .CZ 787 1550, .CZ 787 794, .CZ 788 791, .CZ 788 1552, .CZ 788 1553, .CZ 788 1556, .CZ 788 1558, .CZ 788 802, .CZ 788 803, .CZ 788 794, .CZ 788 795, .CZ 790 791, .CZ 790 1552, .CZ 790 1553, .CZ 790 1556, .CZ 790 1558, .CZ 790 802, .CZ 790 803, .CZ 790 794, .CZ 790 795, .CZ 791 1550, .CZ 791 1552, .CZ 791 1553, .CZ 791 1556, .CZ 791 1558, .CZ 791 803, .CZ 791 794, .CZ 791 798, .CZ 1550 1553, .CZ 1550 1556, .CZ 1550 1558, .CZ 1550 802, .CZ 1550 803, .CZ 1550 794, .CZ 1551 1552, .CZ 1551 1558, .CZ 1551 802, .CZ 1551 794, .CZ 1551 798, .CZ 1552 1556, .CZ 1552 1558, .CZ 1552 803],
+  .CX 527 1558,
+  .CX 527 802,
+  .CX 527 803,
+  .CX 527 794,
+  .CX 527 796,
+  .measureX 527 [] [.Z 525, .Z 528, .Z 529, .Z 786, .Z 787, .Z 788, .Z 791, .Z 1553, .Z 1556, .Z 803, .Z 797, .Z 798, .CZ 525 529, .CZ 525 788, .CZ 525 790, .CZ 525 791, .CZ 525 1550, .CZ 525 1551, .CZ 528 529, .CZ 528 787, .CZ 528 790, .CZ 528 791, .CZ 528 1551, .CZ 528 1552, .CZ 528 1556, .CZ 528 1558, .CZ 528 802, .CZ 528 795, .CZ 528 798, .CZ 529 787, .CZ 529 1551, .CZ 529 1553, .CZ 529 802, .CZ 786 787, .CZ 786 791, .CZ 786 1550, .CZ 786 1552, .CZ 786 803, .CZ 786 798, .CZ 787 790, .CZ 787 1550, .CZ 787 1551, .CZ 787 1553, .CZ 787 798, .CZ 788 1552, .CZ 788 1556, .CZ 788 802, .CZ 788 803, .CZ 788 794, .CZ 790 1552, .CZ 790 1556, .CZ 790 802, .CZ 790 803, .CZ 790 794, .CZ 791 1551, .CZ 791 1552, .CZ 791 798, .CZ 1550 1553, .CZ 1550 1556, .CZ 1550 802, .CZ 1550 798, .CZ 1551 1558, .CZ 1551 802, .CZ 1551 803, .CZ 1551 798, .CZ 1552 1553, .CZ 1552 1556, .CZ 1552 802, .CZ 1552 803, .CZ 1553 1556, .CZ 1553 795],
+  .CX 1558 802,
+  .CX 1558 803,
+  .CX 1558 795,
+  .CX 1558 796,
+  .CX 1558 798,
+  .measureX 1558 [] [.Z 525, .Z 528, .Z 788, .Z 1550, .Z 803, .Z 794, .Z 795, .Z 797, .CZ 525 787, .CZ 525 1551, .CZ 525 1556, .CZ 525 794, .CZ 525 795, .CZ 525 798, .CZ 528 786, .CZ 528 787, .CZ 528 1552, .CZ 528 1553, .CZ 528 802, .CZ 528 794, .CZ 528 795, .CZ 529 787, .CZ 529 1550, .CZ 529 1551, .CZ 529 1552, .CZ 529 1553, .CZ 529 1556, .CZ 529 803, .CZ 529 794, .CZ 786 790, .CZ 786 791, .CZ 786 1550, .CZ 786 1551, .CZ 786 1552, .CZ 786 1553, .CZ 786 1556, .CZ 786 803, .CZ 786 794, .CZ 787 788, .CZ 787 790, .CZ 787 1556, .CZ 787 794, .CZ 788 1550, .CZ 788 1551, .CZ 788 1552, .CZ 788 1556, .CZ 788 802, .CZ 788 803, .CZ 788 798, .CZ 790 1550, .CZ 790 1551, .CZ 790 1552, .CZ 790 1556, .CZ 790 802, .CZ 790 803, .CZ 790 798, .CZ 791 1550, .CZ 791 1552, .CZ 791 803, .CZ 791 794, .CZ 791 795, .CZ 791 798, .CZ 1550 1551, .CZ 1550 1552, .CZ 1550 1553, .CZ 1550 802, .CZ 1550 803, .CZ 1551 1552, .CZ 1551 1553, .CZ 1551 1556, .CZ 1551 802, .CZ 1551 803, .CZ 1551 795, .CZ 1552 803, .CZ 1552 795, .CZ 1552 798, .CZ 1553 794, .CZ 1553 795, .CZ 1553 798],
+  .CX 788 790,
+  .measureX 788 [] [.Z 528, .Z 529, .Z 787, .Z 790, .Z 791, .Z 1550, .Z 1551, .Z 1556, .Z 802, .Z 803, .Z 795, .CZ 525 528, .CZ 525 529, .CZ 525 786, .CZ 525 787, .CZ 528 790, .CZ 528 1550, .CZ 528 1551, .CZ 528 1553, .CZ 528 795, .CZ 529 790, .CZ 529 1550, .CZ 529 1553, .CZ 529 1556, .CZ 529 802, .CZ 786 787, .CZ 786 791, .CZ 786 1551, .CZ 786 1552, .CZ 786 1553, .CZ 786 1556, .CZ 786 802, .CZ 786 803, .CZ 787 790, .CZ 787 1550, .CZ 787 1551, .CZ 787 1553, .CZ 787 795]]
+def block12 : Program := [
+  .CX 1550 1552,
+  .CX 1550 1553,
+  .CX 1550 803,
+  .CX 1550 794,
+  .CX 1550 796,
+  .measureX 1550 [] [.Z 525, .Z 528, .Z 786, .Z 790, .Z 1553, .Z 1556, .Z 803, .CZ 525 528, .CZ 525 786, .CZ 525 791, .CZ 525 1553, .CZ 525 803, .CZ 525 794, .CZ 786 791, .CZ 790 791, .CZ 791 803, .CZ 1553 1556, .CZ 1553 802, .CZ 1553 803],
+  .CX 790 1551,
+  .CX 790 1552,
+  .CX 790 802,
+  .CX 790 803,
+  .CX 790 794,
+  .CX 790 796,
+  .CX 790 798,
+  .measureX 790 [] [.Z 525, .Z 529, .Z 1553, .CZ 525 528, .CZ 525 529, .CZ 525 786, .CZ 525 787, .CZ 525 791, .CZ 525 1556, .CZ 525 802, .CZ 525 803, .CZ 528 787, .CZ 528 1553, .CZ 528 1556, .CZ 528 798, .CZ 529 787, .CZ 529 791, .CZ 529 1553, .CZ 529 1556, .CZ 529 802, .CZ 529 803, .CZ 786 787, .CZ 786 1553, .CZ 786 1556, .CZ 786 798, .CZ 787 1551, .CZ 787 1553, .CZ 787 1556, .CZ 787 795, .CZ 787 798, .CZ 791 1551, .CZ 791 1552, .CZ 791 1553, .CZ 791 797, .CZ 791 798, .CZ 1551 1556, .CZ 1551 803, .CZ 1551 798, .CZ 1552 803, .CZ 1552 798, .CZ 1553 803, .CZ 1553 797, .CZ 1556 803, .CZ 802 794],
+  .CX 529 787,
+  .CX 529 1551,
+  .measureX 529 [] [.Z 528, .Z 1551, .Z 1556, .Z 802, .Z 795, .CZ 528 786, .CZ 786 1551, .CZ 786 1556, .CZ 786 802, .CZ 786 795],
+  .CX 528 787,
+  .CX 528 1552,
+  .CX 528 1553,
+  .CX 528 802,
+  .CX 528 794,
+  .CX 528 795,
+  .CX 528 797,
+  .X 528,
+  .measureX 528 [] [.Z 791, .Z 1553, .Z 1556, .Z 803, .Z 794, .Z 797, .CZ 525 1556, .CZ 525 803, .CZ 525 798, .CZ 786 787, .CZ 786 794, .CZ 786 795, .CZ 787 1556, .CZ 791 1556, .CZ 791 795, .CZ 1551 1556, .CZ 1553 794, .CZ 1553 795, .CZ 1556 802, .CZ 1556 803, .CZ 802 794, .CZ 802 795, .CZ 794 795],
+  .CX 1551 1553,
+  .CX 1551 802,
+  .CX 1551 797,
+  .measureX 1551 [] [.Z 787, .Z 791, .Z 1553, .Z 795, .Z 798, .CZ 525 786, .CZ 525 787, .CZ 525 1556, .CZ 525 803, .CZ 525 798, .CZ 786 787, .CZ 786 791, .CZ 786 1553, .CZ 786 795, .CZ 786 798, .CZ 787 1553, .CZ 787 795, .CZ 791 1556, .CZ 791 794, .CZ 791 795, .CZ 791 798, .CZ 1553 1556, .CZ 1553 803, .CZ 1556 802, .CZ 1556 803, .CZ 1556 798, .CZ 802 803, .CZ 803 794, .CZ 803 795, .CZ 795 798],
+  .measureX 1552 [] [.Z 786, .Z 791, .Z 802, .CZ 525 1556, .CZ 786 787, .CZ 786 803, .CZ 787 803],
+  .CX 791 802]
+def block13 : Program := [
+  .CX 791 803,
+  .CX 791 795,
+  .CX 791 796,
+  .CX 791 797,
+  .measureX 791 [] [.Z 787, .CZ 525 786, .CZ 525 787, .CZ 786 787, .CZ 786 1553, .CZ 786 1556, .CZ 786 802, .CZ 787 1553, .CZ 787 1556, .CZ 787 802],
+  .CX 801 800,
+  .CX 801 799,
+  .CX 801 798,
+  .CX 801 796,
+  .CX 801 794,
+  .CX 801 787,
+  .CX 801 786,
+  .CX 800 801,
+  .CX 800 799,
+  .CX 800 798,
+  .CX 800 796,
+  .CX 800 794,
+  .CX 800 787,
+  .CX 800 786,
+  .CX 801 800,
+  .CX 799 801,
+  .CX 799 798,
+  .CX 799 796,
+  .CX 799 794,
+  .CX 799 787,
+  .CX 799 786,
+  .CX 801 799,
+  .CX 798 801,
+  .CX 798 796,
+  .CX 798 794,
+  .CX 798 787,
+  .CX 798 786]
+def block14 : Program := [
+  .CX 801 798,
+  .CX 797 801,
+  .CX 797 796,
+  .CX 797 795,
+  .CX 797 803,
+  .CX 797 1558,
+  .CX 797 1553,
+  .CX 797 792,
+  .CX 797 789,
+  .CX 797 787,
+  .CX 797 786,
+  .CX 797 529,
+  .CX 797 523,
+  .CX 796 801,
+  .CX 796 797,
+  .CX 796 795,
+  .CX 796 803,
+  .CX 796 1558,
+  .CX 796 1557,
+  .CX 796 1556,
+  .CX 796 1550,
+  .CX 796 792,
+  .CX 796 791,
+  .CX 796 789,
+  .CX 796 788,
+  .CX 796 529,
+  .CX 796 528,
+  .CX 796 523,
+  .CX 796 522,
+  .CX 795 796,
+  .CX 795 794,
+  .CX 795 802]
+def block15 : Program := [
+  .CX 795 1557,
+  .CX 795 1554,
+  .CX 795 1553,
+  .CX 795 1550,
+  .CX 795 791,
+  .CX 795 788,
+  .CX 795 786,
+  .CX 795 528,
+  .CX 795 522,
+  .CX 794 801,
+  .CX 794 797,
+  .CX 794 796,
+  .CX 794 802,
+  .CX 794 1558,
+  .CX 794 1557,
+  .CX 794 1556,
+  .CX 794 1553,
+  .CX 794 1552,
+  .CX 794 1551,
+  .CX 794 1550,
+  .CX 794 792,
+  .CX 794 791,
+  .CX 794 790,
+  .CX 794 789,
+  .CX 794 788,
+  .CX 794 787,
+  .CX 794 786,
+  .CX 794 793,
+  .CX 794 529,
+  .CX 794 528,
+  .CX 794 527,
+  .CX 794 526]
+def block16 : Program := [
+  .CX 794 524,
+  .CX 794 523,
+  .CX 794 522,
+  .CX 794 521,
+  .CX 803 797,
+  .CX 803 796,
+  .CX 803 795,
+  .CX 803 794,
+  .CX 803 802,
+  .CX 803 1558,
+  .CX 803 1557,
+  .CX 803 1556,
+  .CX 803 1554,
+  .CX 803 1552,
+  .CX 803 1550,
+  .CX 803 792,
+  .CX 803 791,
+  .CX 803 789,
+  .CX 803 788,
+  .CX 803 529,
+  .CX 803 528,
+  .CX 803 527,
+  .CX 803 526,
+  .CX 803 525,
+  .CX 803 523,
+  .CX 803 522,
+  .CX 803 521,
+  .CX 794 803,
+  .CX 802 796,
+  .CX 802 1557,
+  .CX 802 1556,
+  .CX 802 791]
+def block17 : Program := [
+  .CX 802 788,
+  .CX 802 786,
+  .CX 802 528,
+  .CX 802 522,
+  .CX 796 802,
+  .CX 1558 797,
+  .CX 797 1558,
+  .CX 1557 796,
+  .CX 796 1557,
+  .CX 1556 801,
+  .CX 1556 795,
+  .CX 1556 794,
+  .CX 1556 803,
+  .CX 1556 1554,
+  .CX 1556 1552,
+  .CX 1556 1551,
+  .CX 1556 787,
+  .CX 1556 527,
+  .CX 1556 526,
+  .CX 1556 525,
+  .CX 1556 521,
+  .CX 803 1556,
+  .CX 1554 795,
+  .CX 795 1554,
+  .CX 1553 801,
+  .CX 1553 794,
+  .CX 1553 803,
+  .CX 1553 802,
+  .CX 1553 1557,
+  .CX 1553 1552,
+  .CX 1553 1551,
+  .CX 1553 1550]
+def block18 : Program := [
+  .CX 1553 791,
+  .CX 1553 788,
+  .CX 1553 786,
+  .CX 1553 528,
+  .CX 1553 527,
+  .CX 1553 526,
+  .CX 1553 525,
+  .CX 1553 522,
+  .CX 1553 521,
+  .CX 1557 1553,
+  .CX 1552 794,
+  .CX 794 1552,
+  .CX 1551 803,
+  .CX 803 1551,
+  .CX 1550 802,
+  .CX 802 1550,
+  .CX 792 1558,
+  .CX 1558 792,
+  .CX 791 1557,
+  .CX 1557 791,
+  .CX 790 1556,
+  .CX 1556 790,
+  .CX 789 792,
+  .CX 792 789,
+  .CX 788 791,
+  .CX 791 788,
+  .CX 787 801,
+  .CX 787 1553,
+  .CX 787 1552,
+  .CX 787 786,
+  .CX 1552 787,
+  .CX 786 801]
+def block19 : Program := [
+  .CX 786 1553,
+  .CX 786 1552,
+  .CX 786 1550,
+  .CX 786 788,
+  .CX 786 787,
+  .CX 786 528,
+  .CX 786 527,
+  .CX 786 522,
+  .CX 786 521,
+  .CX 787 786,
+  .CX 793 790,
+  .CX 790 793,
+  .CX 529 789,
+  .CX 789 529,
+  .CX 528 788,
+  .CX 788 528,
+  .CX 527 787,
+  .CX 787 527,
+  .CX 526 786,
+  .CX 786 526,
+  .CX 525 793,
+  .CX 525 529,
+  .CX 525 528,
+  .CX 525 527,
+  .CX 525 526,
+  .CX 525 524,
+  .CX 525 523,
+  .CX 525 522,
+  .CX 525 521,
+  .CX 526 525,
+  .CX 524 793,
+  .CX 793 524]
+def block20 : Program := [
+  .CX 523 529,
+  .CX 529 523,
+  .CX 522 528,
+  .CX 528 522,
+  .CX 521 527,
+  .CX 527 521,
+  .X 801,
+  .CX 526 527,
+  .X 527,
+  .CX 526 786]
+def cand : Program := block0 ++ block1 ++ block2 ++ block3 ++ block4 ++ block5 ++ block6 ++ block7 ++ block8 ++ block9 ++ block10 ++ block11 ++ block12 ++ block13 ++ block14 ++ block15 ++ block16 ++ block17 ++ block18 ++ block19 ++ block20
+
+def sites : List Wire := [521, 522, 523, 524, 525, 526, 527, 528, 529, 793, 794, 795, 796, 797, 798, 799, 800, 801, 786, 787, 788, 789, 790, 791, 792, 1550, 1551, 1552, 1553, 1554, 1556, 1557, 1558, 1559, 1560, 802, 803]
+
+/-- The sites the new window touches: the old window's scratch carries 1559/1560 are not used. -/
+def candSites : List Wire := sites.filter (fun q => decide (q ≠ 1559 ∧ q ≠ 1560))
+
+def rows0 : List (Bool × Bool × Nat × Nat) := [(false, false, 0, 1), (false, false, 1, 1), (false, false, 2, 1), (false, false, 3, 1), (false, false, 4, 1), (false, false, 5, 1), (false, false, 6, 1), (false, false, 7, 1), (false, false, 8, 1), (false, false, 9, 1), (false, false, 10, 1), (false, false, 11, 1), (false, false, 12, 1), (false, false, 13, 1), (false, false, 14, 1), (false, false, 15, 1), (false, false, 16, 1), (false, false, 17, 1), (false, false, 18, 1), (false, false, 19, 1), (false, false, 20, 1), (false, false, 21, 1), (false, false, 22, 1), (false, false, 23, 1)]
+def rows1 : List (Bool × Bool × Nat × Nat) := [(false, false, 24, 1), (false, false, 25, 1), (false, false, 26, 1), (false, false, 27, 1), (false, false, 28, 1), (false, false, 29, 1), (false, false, 30, 1), (false, false, 31, 1), (false, false, 1, 3), (false, false, 2, 3), (false, false, 4, 3), (false, false, 5, 3), (false, false, 7, 3), (false, false, 8, 3), (false, false, 10, 3), (false, false, 11, 3), (false, false, 13, 3), (false, false, 14, 3), (false, false, 1, 5), (false, false, 2, 5), (false, false, 3, 5), (false, false, 4, 5), (false, false, 6, 5), (false, false, 7, 5)]
+def rows2 : List (Bool × Bool × Nat × Nat) := [(false, false, 1, 7), (false, false, 2, 7), (false, false, 3, 7), (false, false, 4, 7), (false, false, 5, 7), (false, false, 6, 7), (false, false, 1, 9), (false, false, 2, 9), (false, false, 1, 11), (false, false, 2, 11), (false, false, 3, 11), (false, false, 1, 13), (false, false, 2, 13), (false, false, 3, 13), (false, false, 1, 15), (false, false, 2, 15), (false, false, 1, 17), (false, false, 1, 19), (false, false, 1, 21), (false, false, 1, 23), (false, false, 1, 25), (false, false, 1, 27), (false, false, 1, 29), (false, false, 1, 31)]
+def rows3 : List (Bool × Bool × Nat × Nat) := [(false, true, 0, 1), (false, true, 1, 1), (false, true, 2, 1), (false, true, 3, 1), (false, true, 4, 1), (false, true, 5, 1), (false, true, 6, 1), (false, true, 7, 1), (false, true, 8, 1), (false, true, 9, 1), (false, true, 10, 1), (false, true, 11, 1), (false, true, 12, 1), (false, true, 13, 1), (false, true, 14, 1), (false, true, 15, 1), (false, true, 16, 1), (false, true, 17, 1), (false, true, 18, 1), (false, true, 19, 1), (false, true, 20, 1), (false, true, 21, 1), (false, true, 22, 1), (false, true, 23, 1)]
+def rows4 : List (Bool × Bool × Nat × Nat) := [(false, true, 24, 1), (false, true, 25, 1), (false, true, 26, 1), (false, true, 27, 1), (false, true, 28, 1), (false, true, 29, 1), (false, true, 30, 1), (false, true, 31, 1), (false, true, 1, 3), (false, true, 2, 3), (false, true, 4, 3), (false, true, 5, 3), (false, true, 7, 3), (false, true, 8, 3), (false, true, 10, 3), (false, true, 11, 3), (false, true, 13, 3), (false, true, 14, 3), (false, true, 1, 5), (false, true, 2, 5), (false, true, 3, 5), (false, true, 4, 5), (false, true, 6, 5), (false, true, 7, 5)]
+def rows5 : List (Bool × Bool × Nat × Nat) := [(false, true, 1, 7), (false, true, 2, 7), (false, true, 3, 7), (false, true, 4, 7), (false, true, 5, 7), (false, true, 6, 7), (false, true, 1, 9), (false, true, 2, 9), (false, true, 1, 11), (false, true, 2, 11), (false, true, 3, 11), (false, true, 1, 13), (false, true, 2, 13), (false, true, 3, 13), (false, true, 1, 15), (false, true, 2, 15), (false, true, 1, 17), (false, true, 1, 19), (false, true, 1, 21), (false, true, 1, 23), (false, true, 1, 25), (false, true, 1, 27), (false, true, 1, 29), (false, true, 1, 31)]
+def rows6 : List (Bool × Bool × Nat × Nat) := [(true, false, 0, 1), (true, false, 1, 1), (true, false, 2, 1), (true, false, 3, 1), (true, false, 4, 1), (true, false, 5, 1), (true, false, 6, 1), (true, false, 7, 1), (true, false, 8, 1), (true, false, 9, 1), (true, false, 10, 1), (true, false, 11, 1), (true, false, 12, 1), (true, false, 13, 1), (true, false, 14, 1), (true, false, 15, 1), (true, false, 16, 1), (true, false, 17, 1), (true, false, 18, 1), (true, false, 19, 1), (true, false, 20, 1), (true, false, 21, 1), (true, false, 22, 1), (true, false, 23, 1)]
+def rows7 : List (Bool × Bool × Nat × Nat) := [(true, false, 24, 1), (true, false, 25, 1), (true, false, 26, 1), (true, false, 27, 1), (true, false, 28, 1), (true, false, 29, 1), (true, false, 30, 1), (true, false, 31, 1), (true, false, 1, 3), (true, false, 2, 3), (true, false, 4, 3), (true, false, 5, 3), (true, false, 7, 3), (true, false, 8, 3), (true, false, 10, 3), (true, false, 11, 3), (true, false, 13, 3), (true, false, 14, 3), (true, false, 1, 5), (true, false, 2, 5), (true, false, 3, 5), (true, false, 4, 5), (true, false, 6, 5), (true, false, 7, 5)]
+def rows8 : List (Bool × Bool × Nat × Nat) := [(true, false, 1, 7), (true, false, 2, 7), (true, false, 3, 7), (true, false, 4, 7), (true, false, 5, 7), (true, false, 6, 7), (true, false, 1, 9), (true, false, 2, 9), (true, false, 1, 11), (true, false, 2, 11), (true, false, 3, 11), (true, false, 1, 13), (true, false, 2, 13), (true, false, 3, 13), (true, false, 1, 15), (true, false, 2, 15), (true, false, 1, 17), (true, false, 1, 19), (true, false, 1, 21), (true, false, 1, 23), (true, false, 1, 25), (true, false, 1, 27), (true, false, 1, 29), (true, false, 1, 31)]
+def rows9 : List (Bool × Bool × Nat × Nat) := [(true, true, 0, 1), (true, true, 1, 1), (true, true, 2, 1), (true, true, 3, 1), (true, true, 4, 1), (true, true, 5, 1), (true, true, 6, 1), (true, true, 7, 1), (true, true, 8, 1), (true, true, 9, 1), (true, true, 10, 1), (true, true, 11, 1), (true, true, 12, 1), (true, true, 13, 1), (true, true, 14, 1), (true, true, 15, 1), (true, true, 16, 1), (true, true, 17, 1), (true, true, 18, 1), (true, true, 19, 1), (true, true, 20, 1), (true, true, 21, 1), (true, true, 22, 1), (true, true, 23, 1)]
+def rows10 : List (Bool × Bool × Nat × Nat) := [(true, true, 24, 1), (true, true, 25, 1), (true, true, 26, 1), (true, true, 27, 1), (true, true, 28, 1), (true, true, 29, 1), (true, true, 30, 1), (true, true, 31, 1), (true, true, 1, 3), (true, true, 2, 3), (true, true, 4, 3), (true, true, 5, 3), (true, true, 7, 3), (true, true, 8, 3), (true, true, 10, 3), (true, true, 11, 3), (true, true, 13, 3), (true, true, 14, 3), (true, true, 1, 5), (true, true, 2, 5), (true, true, 3, 5), (true, true, 4, 5), (true, true, 6, 5), (true, true, 7, 5)]
+def rows11 : List (Bool × Bool × Nat × Nat) := [(true, true, 1, 7), (true, true, 2, 7), (true, true, 3, 7), (true, true, 4, 7), (true, true, 5, 7), (true, true, 6, 7), (true, true, 1, 9), (true, true, 2, 9), (true, true, 1, 11), (true, true, 2, 11), (true, true, 3, 11), (true, true, 1, 13), (true, true, 2, 13), (true, true, 3, 13), (true, true, 1, 15), (true, true, 2, 15), (true, true, 1, 17), (true, true, 1, 19), (true, true, 1, 21), (true, true, 1, 23), (true, true, 1, 25), (true, true, 1, 27), (true, true, 1, 29), (true, true, 1, 31)]
+def rows : List (Bool × Bool × Nat × Nat) := rows0 ++ rows1 ++ rows2 ++ rows3 ++ rows4 ++ rows5 ++ rows6 ++ rows7 ++ rows8 ++ rows9 ++ rows10 ++ rows11
+
+def pre506 (g s : Bool) (u v : Nat) : BasisState := fun q =>
+  if q = 521 then g
+  else if q = 522 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 1 % 2 = 1)
+  else if q = 523 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 2 % 2 = 1)
+  else if q = 524 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 4 % 2 = 1)
+  else if q = 525 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 8 % 2 = 1)
+  else if q = 526 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 16 % 2 = 1)
+  else if q = 527 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 32 % 2 = 1)
+  else if q = 528 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a < 0)
+  else if q = 786 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 1 % 2 = 1)
+  else if q = 787 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 2 % 2 = 1)
+  else if q = 788 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 4 % 2 = 1)
+  else if q = 789 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 8 % 2 = 1)
+  else if q = 790 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 16 % 2 = 1)
+  else if q = 791 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 32 % 2 = 1)
+  else if q = 792 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b < 0)
+  else false
+
+theorem explicit506 : W.repairedTick base 506 = tick506 := by decide +kernel
+
+def ref : Program := tick506 ++ Forward11Width.candidate
+
+/-- Table reference: tick 506 followed by the base's 13-Toffoli four-tick block, which
+`Forward11Width.on_site` proves equal to `Forward11Width.candidate` on every legal stage-507 state. -/
+def ref2 : Program := tick506 ++ MorningFour.forward13
+
+def enc (r : Bool × Bool × Nat × Nat) : Nat := encN_t8 (pre506 r.1 r.2.1 r.2.2.1 r.2.2.2) sites
+
+def checkRow (r : Bool × Bool × Nat × Nat) : Bool := agree508 cand ref2 (enc r)
+
+theorem table0 : rows0.all checkRow = true := by decide +kernel
+theorem table1 : rows1.all checkRow = true := by decide +kernel
+theorem table2 : rows2.all checkRow = true := by decide +kernel
+theorem table3 : rows3.all checkRow = true := by decide +kernel
+theorem table4 : rows4.all checkRow = true := by decide +kernel
+theorem table5 : rows5.all checkRow = true := by decide +kernel
+theorem table6 : rows6.all checkRow = true := by decide +kernel
+theorem table7 : rows7.all checkRow = true := by decide +kernel
+theorem table8 : rows8.all checkRow = true := by decide +kernel
+theorem table9 : rows9.all checkRow = true := by decide +kernel
+theorem table10 : rows10.all checkRow = true := by decide +kernel
+theorem table11 : rows11.all checkRow = true := by decide +kernel
+
+theorem table : rows.all checkRow = true := by
+  simp only [rows, List.all_append, table0, table1, table2, table3, table4, table5, table6, table7, table8, table9, table10, table11, Bool.and_self]
+
+theorem tick_counts : toffoliCount tick506 = 10 ∧ measurementCount tick506 = 6 ∧
+    Challenge.gateSlots tick506 = 108 := by decide +kernel
+
+theorem cand_counts : toffoliCount cand = 20 ∧ measurementCount cand = 20 ∧
+    Challenge.gateSlots cand = 1595 := by
+  simp only [cand, toffoliCount_append, measurementCount_append, Challenge.gateSlots_append]
+  decide +kernel
+
+theorem resources : toffoliCount cand = 20 ∧ toffoliCount ref = 21 ∧
+    measurementCount cand = 20 ∧ measurementCount ref = 20 := by
+  have c := cand_counts
+  have t := tick_counts
+  have f := Forward11Width.resources
+  simp only [ref, toffoliCount_append, measurementCount_append]
+  omega
+
+theorem bsupport0 : wires block0 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical0 : GatePhysical block0 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport1 : wires block1 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical1 : GatePhysical block1 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport2 : wires block2 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical2 : GatePhysical block2 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport3 : wires block3 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical3 : GatePhysical block3 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport4 : wires block4 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical4 : GatePhysical block4 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport5 : wires block5 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical5 : GatePhysical block5 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport6 : wires block6 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical6 : GatePhysical block6 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport7 : wires block7 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical7 : GatePhysical block7 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport8 : wires block8 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical8 : GatePhysical block8 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport9 : wires block9 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical9 : GatePhysical block9 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport10 : wires block10 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical10 : GatePhysical block10 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport11 : wires block11 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical11 : GatePhysical block11 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport12 : wires block12 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical12 : GatePhysical block12 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport13 : wires block13 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical13 : GatePhysical block13 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport14 : wires block14 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical14 : GatePhysical block14 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport15 : wires block15 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical15 : GatePhysical block15 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport16 : wires block16 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical16 : GatePhysical block16 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport17 : wires block17 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical17 : GatePhysical block17 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport18 : wires block18 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical18 : GatePhysical block18 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport19 : wires block19 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical19 : GatePhysical block19 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport20 : wires block20 ⊆ candSites.toFinset := by decide +kernel
+theorem bphysical20 : GatePhysical block20 := Forward11Width.physical_of_all _ (by decide +kernel)
+
+theorem tick_support0 : wires tick506 ⊆ sites.toFinset := by decide +kernel
+theorem morning_sub0 : MorningFour.sites.toFinset ⊆ sites.toFinset := by decide +kernel
+
+theorem csupport : wires cand ⊆ candSites.toFinset := by
+  simp only [cand, wires_append, Finset.union_subset_iff, bsupport0, bsupport1, bsupport2, bsupport3, bsupport4, bsupport5, bsupport6, bsupport7, bsupport8, bsupport9, bsupport10, bsupport11, bsupport12, bsupport13, bsupport14, bsupport15, bsupport16, bsupport17, bsupport18, bsupport19, bsupport20, and_self]
+
+theorem cand_sub : candSites.toFinset ⊆ sites.toFinset := by
+  intro q hq
+  exact List.mem_toFinset.mpr (List.mem_of_mem_filter (List.mem_toFinset.mp hq))
+
+theorem support : wires cand ⊆ sites.toFinset ∧ wires ref ⊆ sites.toFinset := by
+  constructor
+  · exact csupport.trans cand_sub
+  · simp only [ref, wires_append, Finset.union_subset_iff]
+    exact ⟨tick_support0, Forward11Width.support_all.trans morning_sub0⟩
+
+theorem support2 : wires ref2 ⊆ sites.toFinset := by
+  simp only [ref2, wires_append, Finset.union_subset_iff]
+  exact ⟨tick_support0, MorningFour.support.1.trans morning_sub0⟩
+
+theorem physical : GatePhysical cand := by
+  simp only [cand, gatePhysical_append, bphysical0, bphysical1, bphysical2, bphysical3, bphysical4, bphysical5, bphysical6, bphysical7, bphysical8, bphysical9, bphysical10, bphysical11, bphysical12, bphysical13, bphysical14, bphysical15, bphysical16, bphysical17, bphysical18, bphysical19, bphysical20, and_self]
+
+theorem pre_supp (g s : Bool) (u v : Nat) : ∀ q, pre506 g s u v q = true → q ∈ sites := by
+  intro q h
+  by_contra hn
+  simp only [sites,List.mem_cons,List.not_mem_nil,or_false,not_or] at hn
+  simp_all [pre506]
+
+theorem sample (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows) (m n : List Bool) :
+    run cand m ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ = run ref2 n ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ := by
+  have ht := table
+  rw [List.all_eq_true] at ht
+  have h := ht r hr
+  unfold checkRow agree508 at h
+  rw [tb_enc_t8 (pre506 r.1 r.2.1 r.2.2.1 r.2.2.2) sites (pre_supp _ _ _ _)]
+  change run cand m ⟨false,tbN_t8 (enc r)⟩ = run ref2 n ⟨false,tbN_t8 (enc r)⟩
+  cases hq : phaseClean508 ref2 (enc r) with
+  | none => simp [hq] at h
+  | some v =>
+    simp only [hq,decide_eq_true_eq] at h
+    rw [CompactCertificates.checked_run cand _ v h m,CompactCertificates.checked_run ref2 _ v hq n]
+
+theorem on_site (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows) (st : State)
+    (bits : ∀ q ∈ sites, st.basis q = pre506 r.1 r.2.1 r.2.2.1 r.2.2.2 q) (m n : List Bool) :
+    run cand m st = run ref2 n st :=
+  Stack5.local_replace cand ref2 sites.toFinset support.1 support2 st
+    ⟨false,pre506 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ m n (fun q hq => bits q (List.mem_toFinset.mp hq)) (sample r hr m n)
+
+end ECDSAAdd.Entrant.Five506
+namespace ECDSAAdd.Entrant.Five506
+open Arithmetic MappedCompressed Secp256k1 History5
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+
+theorem signed7_cases (a b c d e f g : Wire) (s : BasisState) (v : Int)
+    (h : signedRegValue [a,b,c,d,e,f,g] s = v) :
+    s a = decide (v % 2 = 1) ∧ s b = decide (v / 2 % 2 = 1) ∧ s c = decide (v / 4 % 2 = 1) ∧
+      s d = decide (v / 8 % 2 = 1) ∧ s e = decide (v / 16 % 2 = 1) ∧ s f = decide (v / 32 % 2 = 1) ∧
+      s g = decide (v < 0) := by
+  unfold signedRegValue signedDecode at h
+  simp only [regValue,List.length] at h
+  cases ha : s a <;> cases hb : s b <;> cases hc : s c <;> cases hd : s d <;> cases he : s e <;>
+    cases hf : s f <;> cases hg : s g <;>
+    simp [ha,hb,hc,hd,he,hf,hg] at h <;> subst h <;> decide
+
+theorem retainedA506 : (W.compactSkywalkSignPoolA base 506).retained =
+    [base 506,base 507,base 508,base 509,base 510,base 511,base 512] := by decide +kernel
+theorem retainedB506 : (W.compactSkywalkSignPoolB base 506).retained =
+    [base 770,base 771,base 772,base 773,base 774,base 775,base 776] := by decide +kernel
+theorem releasedA506 : ∀ q ∈ [base 513, base 514, base 515, base 516, base 517, base 518, base 519, base 520, base 521, base 522], q ∈ (W.compactSkywalkSignPoolA base 506).released := by decide +kernel
+theorem releasedB506 : ∀ q ∈ ([793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803] : List Wire), q ∈ (W.compactSkywalkSignPoolB base 506).released := by decide +kernel
+
+theorem raw506 (x : Nat) (hx0 : 0<x) (hx : x<p) (raw : State)
+    (hraw : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 506 raw.basis) :
+    ∃ G S : Bool, ∃ u v : Nat, u+v ≤ 32 ∧ 0 < v ∧ v%2=1 ∧ u.gcd v = 1 ∧
+      ∀ q∈sites, raw.basis q = pre506 G S u v q := by
+  have hp0 : 0<p := by norm_num [p]
+  have hpo : p%2=1 := by norm_num [p]
+  have hp : p<2^256 := by norm_num [p]
+  have cop := (StackOB5.prime_facts x hx0 hx).2.2.2
+  have fields := (W.compactSkywalkStage_fields_iff base _ 506 (by omega) base_pool_nodup raw.basis).mp hraw
+  obtain ⟨readA, readB, prev, -, future, carry, -, cleanA, cleanB⟩ := fields
+  obtain ⟨G, S, encoded⟩ := SkywalkTrace.iter_encoded 506 false false (SkywalkNat.init x p) hp0 hpo
+  have sum := W.iter_sum_width x p 506 hp0 hx0 hpo hp hx cop (by omega)
+  have valid := SkywalkNat.iter_valid 506 (SkywalkNat.init x p) hp0 hpo
+  change (SkywalkNat.step^[506] (SkywalkNat.init x p)).u+
+    (SkywalkNat.step^[506] (SkywalkNat.init x p)).v ≤ 2^(511-506) at sum
+  change SkywalkTrace.next^[506] (SkywalkRails.encode false false (x : Int) (p : Int)) =
+    SkywalkRails.encode G S ((SkywalkNat.step^[506] (SkywalkNat.init x p)).u : Int)
+      ((SkywalkNat.step^[506] (SkywalkNat.init x p)).v : Int) at encoded
+  generalize SkywalkNat.step^[506] (SkywalkNat.init x p) = z at encoded sum valid
+  have thirtytwo : (2:Nat)^(511-506) = 32 := by norm_num
+  rw [thirtytwo] at sum
+  rw [encoded, retainedA506] at readA
+  rw [encoded, retainedB506] at readB
+  rw [encoded] at prev
+  have bA := signed7_cases _ _ _ _ _ _ _ raw.basis _ readA
+  have bB := signed7_cases _ _ _ _ _ _ _ raw.basis _ readB
+  have cK : ∀ k, k < 257 → raw.basis (base (1540+k)) = false := fun k hk =>
+    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1540+k, by simp; omega, rfl⟩)
+  have rel : ∀ q ∈ [base 513, base 514, base 515, base 516, base 517, base 518, base 519, base 520, base 521, base 522], raw.basis q = false := fun q hq => cleanA q (releasedA506 q hq)
+  have relB : ∀ q ∈ ([793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803] : List Wire), raw.basis q = false := fun q hq => cleanB q (releasedB506 q hq)
+  have prev' : raw.basis (base 505) = G := by
+    have h : skywalkPoolPreviousId 506 = 505 := rfl
+    rw [h] at prev
+    cases G <;> simpa [SkywalkRails.encode] using prev
+  refine ⟨G,S,z.u,z.v,sum,valid.1,valid.2.1,valid.2.2.trans cop,?_⟩
+  intro q hq
+  simp only [sites,List.mem_cons,List.not_mem_nil,or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact prev'
+  · simpa [pre506] using bA.1
+  · exact bA.2.1
+  · exact bA.2.2.1
+  · exact bA.2.2.2.1
+  · exact bA.2.2.2.2.1
+  · exact bA.2.2.2.2.2.1
+  · exact bA.2.2.2.2.2.2
+  · exact rel (base 513) (by decide)
+  · exact relB 793 (by decide)
+  · exact relB 794 (by decide)
+  · exact relB 795 (by decide)
+  · exact relB 796 (by decide)
+  · exact relB 797 (by decide)
+  · exact relB 798 (by decide)
+  · exact relB 799 (by decide)
+  · exact relB 800 (by decide)
+  · exact relB 801 (by decide)
+  · simpa [pre506] using bB.1
+  · exact bB.2.1
+  · exact bB.2.2.1
+  · exact bB.2.2.2.1
+  · exact bB.2.2.2.2.1
+  · exact bB.2.2.2.2.2.1
+  · exact bB.2.2.2.2.2.2
+  · exact (future 506 (by omega) (by omega)).2
+  · exact (future 507 (by omega) (by omega)).2
+  · exact (future 508 (by omega) (by omega)).2
+  · exact (future 509 (by omega) (by omega)).2
+  · exact (future 510 (by omega) (by omega)).2
+  · exact cK 0 (by omega)
+  · exact cK 1 (by omega)
+  · exact cK 2 (by omega)
+  · exact cK 3 (by omega)
+  · exact cK 4 (by omega)
+  · exact relB 802 (by decide)
+  · exact relB 803 (by decide)
+
+end ECDSAAdd.Entrant.Five506
+
+namespace ECDSAAdd.Entrant.Five506
+open Arithmetic MappedCompressed Secp256k1 History5 OB5 Rolling1588.Integer
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
+  Rolling1588TickGap.forward tick506 cand MorningPlacement.merged Forward11Width.candidate
+
+theorem encN_congr (f g : BasisState) (l : List Wire) (h : ∀ q ∈ l, f q = g q) :
+    encN_t8 f l = encN_t8 g l := by
+  apply Nat.eq_of_testBit_eq
+  intro q
+  simp only [encN_t8, foldl_tb_t8, Nat.zero_testBit, Bool.false_or]
+  by_cases hq : q ∈ l
+  · simp [hq, h q hq]
+  · simp [hq]
+
+def legalCodes : List Nat := [27459190640522438859927603196325572869077741200573221637577853836742172733590624208490238562645818219909185245565923432148487951998866575250296113164460228608, 406983302788077043095694079023514269845261128071039316430435657456301100941017596219917109865196132279654253838655162593429242965695252692757689614514762183867716890353291000549678697629232525681989817904613609417521679593703338900717568, 406983302788077043095694079023514269845261128071039316430435657456301100941017637408703070648854422171059048327014466210041043825527709059538444727773862569804029625711134969277008561407100874567138040636541607717384555037873085591060480, 406983302788077043095694079023514269845261128071039316430435657456301100941017692327084351693732142026265440978160204365523444971970984215246118212119329751052446606188260260913448379777592006414002337612445605450535055630099414511517696, 406983302788077043095694079023514269845261128071039316430435657456301100941017747245465632738609861881471833629305942521005846118414259370953791696464796932300863586665385552549888198148083138260866634588349603183685556222325743431974912, 813966605576154086191388158047028539690522256142078632860871314912602201882035206169429539991611694523110105840096759725729086218001324174442297600115891163047538025825863324008467349851087834325695710053203218268330984335463260031549440, 813966605576154086191388158047028539690522256142078632860871314912602201882035247358215500775269984414514900328456063342340887077833780541223052713374991548983850761183707292735797213628956183210843932785131216568193859779633006721892352, 813966605576154086191388158047028539690522256142078632860871314912602201882035302276596781820147704269721292979601801497823288224277055696930726197720458730232267741660832584372237031999447315057708229761035214301344360371859335642349568, 813966605576154086191388158047028539690522256142078632860871314912602201882036908639249252382821010034508278025614642545683521757742854001380175614825373781748464420616747364738101719336312921578488916306227147995996502694479456565723136, 1220949908364231129287082237070542809535783384213117949291306972368903302823052816118941970118027256766565957841538356858028929470307395656126905585717020142227359161298435647467256002072943142969401602201792827119140289077223181162381312, 1220949908364231129287082237070542809535783384213117949291306972368903302823052857307727930901685546657970752329897660474640730330139852022907660698976120528163671896656279616194585865850811491854549824933720825419003164521392927852724224, 1220949908364231129287082237070542809535783384213117949291306972368903302823054463670380401464358852422757737375910501522500963863605650327357110116081035579679868575612194396560450553187677098375330511478912759113655306844013048776097792, 1627933211152308172382776316094057079381044512284157265721742629825204403764070371150073119199565099154815417191834215834846371576170191982103840086972681940158763316293882679289604835924307319766243197374478438236799093226756773372755968, 1627933211152308172382776316094057079381044512284157265721742629825204403764070426068454400244442819010021809842979953990328772722613467137811513571318149121407180296771007970926044654294798451613107494350382435969949593818983102293213184, 1627933211152308172382776316094057079381044512284157265721742629825204403764070467257240361028101108901426604331339257606940573582445923504592268684577249507343493032128851939653374518072666800498255717082310434269812469263152848983556096, 1627933211152308172382776316094057079381044512284157265721742629825204403764070522175621642072978828756632996982484995762422974728889198660299942168922716688591910012605977231289814336443157932345120014058214432002962969855379177904013312, 1627933211152308172382776316094057079381044512284157265721742629825204403764072018701511550545896694811007196726206360499318405969468446653334044617336697377611272730607641428382799387039041275172172106651598370231314110993546640986472448, 1627933211152308172382776316094057079381044512284157265721742629825204403764072073619892831590774414666213589377352098654800807115911721809041718101682164558859689711084766720019239205409532407019036403627502367964464611585772969906929664, 2034916513940385215478470395117571349226305640355196582152178287281505504705087981099585549325980661398271269193275812967146214828476263463788448072573810919338584451766455002748393488146162628409949089523068047087608397968516694503587840, 2034916513940385215478470395117571349226305640355196582152178287281505504705088036017966830370858381253477661844421551122628615974919538619496121556919278100587001432243580294384833306516653760256813386498972044820758898560743023424045056, 2034916513940385215478470395117571349226305640355196582152178287281505504705088077206752791154516671144882456332780854739240416834751994986276876670178378486523314167601424263112163170294522109141961609230900043120621774004912770114387968, 2034916513940385215478470395117571349226305640355196582152178287281505504705088132125134072199394391000088848983926592894722817981195270141984550154523845667771731148078549554748602988665013240988825906206804040853772274597139099034845184, 2034916513940385215478470395117571349226305640355196582152178287281505504705089573732642699627434537199256656076502219476135848075331242979310979118592359175542676885603088460205148220890405451969013701824283981348972915143080233196847104, 2034916513940385215478470395117571349226305640355196582152178287281505504705089628651023980672312257054463048727647957631618249221774518135018652602937826356791093866080213751841588039260896583815877998800187979082123415735306562117304320, 2441899816728462258574164474141085619071566768426235898582613944737806605646105536130716698407518503786520728543571671943963656934339059789765382573829472717269988606761902034570742321997526805206790684695753658205267202118050286713962496, 2441899816728462258574164474141085619071566768426235898582613944737806605646105645967479260497273943496933513845863148254928459227225610101180729542520407079766822567716152617843621958738509068900519278647561653671568203302502944554876928, 2441899816728462258574164474141085619071566768426235898582613944737806605646105687156265221280932233388338308334222451871540260087058066467961484655779507465703135303073996586570951822516377417785667501379489651971431078746672691245219840, 2441899816728462258574164474141085619071566768426235898582613944737806605646107128763773848708972379587506115426798078452953290181194039305287913619848020973474081040598535492027497054741769628765855296996969592466631719292613825407221760, 2441899816728462258574164474141085619071566768426235898582613944737806605646107238600536410798727819297918900729089554763918092474080589616703260588538955335970915001552786075300376691482751892459583890948777587932932720477066483248136192, 2848883119516539301669858553164599888916827896497275215013049602194107706587123146080229128533934066029976580545013269076263500186645131271449990559430601696449809742234474358029530974219382113850496576844343267056076506859810207844794368, 2848883119516539301669858553164599888916827896497275215013049602194107706587123200998610409578811785885182973196159007231745901333088406427157664043776068877698226722711599649665970792589873245697360873820247264789227007452036536765251584, 2848883119516539301669858553164599888916827896497275215013049602194107706587123255916991690623689505740389365847304745387228302479531681582865337528121536058946643703188724941302410610960364377544225170796151262522377508044262865685708800, 2848883119516539301669858553164599888916827896497275215013049602194107706587123297105777651407347795631794160335664049003840103339364137949646092641380636444882956438546568910029740474738232726429373393528079260822240383488432612376051712, 2848883119516539301669858553164599888916827896497275215013049602194107706587124683794904997790510221975755574777093937429770732287056835631264848121103682771405485195593982523849845888593133805562696892169655203584290523442147417617596416, 2848883119516539301669858553164599888916827896497275215013049602194107706587124738713286278835387941830961967428239675585253133433500110786972521605449149952653902176071107815486285706963624937409561189145559201317441024034373746538053632, 2848883119516539301669858553164599888916827896497275215013049602194107706587124793631667559880265661686168360079385413740735534579943385942680195089794617133902319156548233107122725525334116069256425486121463199050591524626600075458510848, 3255866422304616344765552632188114158762089024568314531443485259650408807528140701111360277615471908418226039895309128053080942292507927597426925060686263494381213897229921389851879808070746290647338172017028878173735311009343800055169024, 3255866422304616344765552632188114158762089024568314531443485259650408807528140756029741558660349628273432432546454866208563343438951202753134598545031730675629630877707046681488319626441237422494202468992932875906885811601570128975626240, 3255866422304616344765552632188114158762089024568314531443485259650408807528140810948122839705227348128638825197600604364045744585394477908842272029377197856878047858184171973124759444811728554341066765968836873640036312193796457896083456, 3255866422304616344765552632188114158762089024568314531443485259650408807528140865866504120750105067983845217848746342519528145731837753064549945513722665038126464838661297264761199263182219686187931062944740871373186812786022786816540672, 3255866422304616344765552632188114158762089024568314531443485259650408807528140907055290081533763357875250012337105646136139946591670209431330700626981765424062777574019141233488529126960088035073079285676668869673049688230192533506883584, 3255866422304616344765552632188114158762089024568314531443485259650408807528142238826036146872048064364005034127389796406588174392919631957241782622359344569336889350589429555672194722444497982359538487342340814701949327591681009827971072, 3255866422304616344765552632188114158762089024568314531443485259650408807528142293744417427916925784219211426778535534562070575539362907112949456106704811750585306331066554847308634540814989114206402784318244812435099828183907338748428288, 3255866422304616344765552632188114158762089024568314531443485259650408807528142348662798708961803504074417819429681272717552976685806182268657129591050278931833723311543680138945074359185480246053267081294148810168250328776133667668885504, 3255866422304616344765552632188114158762089024568314531443485259650408807528142403581179990006681223929624212080827010873035377832249457424364803075395746113082140292020805430581514177555971377900131378270052807901400829368359996589342720, 3662849725092693387861246711211628428607350152639353847873920917106709908469158311060872707741887470661681891896750725185380785544813999079111533046287392473561035032702493713310668460292601599291044064165618487024544615751103721186000896, 3662849725092693387861246711211628428607350152639353847873920917106709908469158475816016550876520630227301069850187939651827988984143824546234553499323794017306285974133869588219987915404074994831636955093330480223996117527782707947372544, 3662849725092693387861246711211628428607350152639353847873920917106709908469158517004802511660178920118705864338547243268439789843976280913015308612582894403242598709491713556947317779181943343716785177825258478523858992971952454637715456, 3662849725092693387861246711211628428607350152639353847873920917106709908469159793857167295953585906752254493477685655383405616498782428283218717123615006367268293505584876587494543556295862159156380082515026425819608131741214602038345728, 3662849725092693387861246711211628428607350152639353847873920917106709908469159958612311139088219066317873671431122869849852819938112253750341737576651407911013544447016252462403863011407335554696972973442738419019059633517893588799717376, 4069833027880770430956940790235142698452611280710393164304356574563011009410175866092003856823425313049931351247046584162198227650676795405088467547543054271492439187697940745133017294143965776087885659338304098142203419900637313396375552, 4069833027880770430956940790235142698452611280710393164304356574563011009410175921010385137868303032905137743898192322317680628797120070560796141031888521452740856168175066036769457112514456907934749956314208095875353920492863642316832768, 4069833027880770430956940790235142698452611280710393164304356574563011009410176030847147699958058472615550529200483798628645431090006620872211488000579455815237690129129316620042336749255439171628478550266016091341654921677316300157747200, 4069833027880770430956940790235142698452611280710393164304356574563011009410176085765528981002936192470756921851629536784127832236449896027919161484924922996486107109606441911678776567625930303475342847241920089074805422269542629078204416, 4069833027880770430956940790235142698452611280710393164304356574563011009410176126954314941786594482362161716339988840400739633096282352394699916598184023382422419844964285880406106431403798652360491069973848087374668297713712375768547328, 4069833027880770430956940790235142698452611280710393164304356574563011009410177348888298445035123749140503952827981514360223058604645224609195651624870668165199697660580323619316892390147226335953221677687712036937266935890748194248720384, 4069833027880770430956940790235142698452611280710393164304356574563011009410177403806679726080001468995710345479127252515705459751088499764903325109216135346448114641057448910953332208517717467800085974663616034670417436482974523169177600, 4069833027880770430956940790235142698452611280710393164304356574563011009410177513643442288169756908706123130781418728826670262043975050076318672077907069708944948602011699494226211845258699731493814568615424030136718437667427181010092032, 4069833027880770430956940790235142698452611280710393164304356574563011009410177568561823569214634628561329523432564466982152663190418325232026345562252536890193365582488824785862651663629190863340678865591328027869868938259653509930549248, 4476816330668847474052634869258656968297872408781432480734792232019312110351193695715041411129351754714212773853071133916427675488755967509603769470526051975665928245079014235137565219847785612119048739390509697925614727011302550209036288, 4476816330668847474052634869258656968297872408781432480734792232019312110351193736903827371913010044605617568341430437533039476348588423876384524583785152361602240980436858203864895083625653961004196962122437696225477602455472296899379200, 4476816330668847474052634869258656968297872408781432480734792232019312110351194903919429594116661591528753412178277373337040500710508020935172586126126329963131101815575770651139241223998590512750063272860397648054925740040281786459095040, 4883799633456924517148328948282171238143133536852471797165227889475613211292211031072647436031378717681636662598784040271315513008845663212750010034399845048603664478165960100414154780217185261528433146659579318110671528791930826737582080, 4883799633456924517148328948282171238143133536852471797165227889475613211292211305664553841255767316957668625854512731048727518741062038991288377456127180954845749380551586558596353872069640920762754631539099306776424031753062471339868160, 4883799633456924517148328948282171238143133536852471797165227889475613211292211346853339802039425606849073420342872034665339319600894495358069132569386281340782062115909430527323683735847509269647902854271027305076286907197232218030211072, 4883799633456924517148328948282171238143133536852471797165227889475613211292212458950560743198199433917002871528573232313857942816370817261149520627381991761062505970571217682961590057849954689546904868033083259172584544189815378669469696, 4883799633456924517148328948282171238143133536852471797165227889475613211292212733542467148422588033193034834784301923091269948548587193039687888049109327667304590872956844141143789149702410348781226352912603247838337047150947023271755776, 5290782936245001560244023027305685507988394664923511113595663546931914312233228915614066271382182879201124477855954328181027361993368110472972985441728309934025570516024158882055142524291496229406460523687688915627233336494822392470700032, 5290782936245001560244023027305685507988394664923511113595663546931914312233228956802852232165841169092529272344313631797639162853200566839753740554987410319961883251382002850782472388069364578291608746419616913927096211938992139161042944, 5290782936245001560244023027305685507988394664923511113595663546931914312233230013981691892279737276305252330878869091290675384922233613587126455128637653558993910125566664714783938891701318866343746463205768870290243348339348970879844352, 5697766239033078603339717106329199777833655792994550430026099204388215413174246196053291015239332122313341973950521496380432798367014531020411552521256635825714889768633979455695292266290404746968980633980854538079139637683224340078788608, 5697766239033078603339717106329199777833655792994550430026099204388215413174246525563578701508598441444580329857395925313327205245674181954657593427329438913205391651496731205513931176513351538050166415836278524478042641236582313601531904, 5697766239033078603339717106329199777833655792994550430026099204388215413174246566752364662292256731335985124345755228929939006105506638321438348540588539299141704386854575174241261040291219886935314638568206522777905516680752060291874816, 5697766239033078603339717106329199777833655792994550430026099204388215413174247569012823041361275118693501790229164950267492827028096409913103389629893315356925314280562111746606287725552683043140588058378454481407902152488882563090219008, 5697766239033078603339717106329199777833655792994550430026099204388215413174247898523110727630541437824740146136039379200387233906756060847349430535966118444415816163424863496424926635775629834221773840233878467806805156042240536612962304, 6104749541821155646435411185352714047678916921065589746456534861844516514115264135513091131635014003688036181858837522445627048497980253436342201412930567892385212786969303528972719828735206846693872307984868133328851945978342234732363776, 6104749541821155646435411185352714047678916921065589746456534861844516514115264176701877092418672293579440976347196826062238849357812709803122956526189668278321525522327147497700049692513075195579020530716796131628714821422511981422706688, 6104749541821155646435411185352714047678916921065589746456534861844516514115265124043954190442812961081751249579460809244310269133959206239080324131148977154856718435557558778428636559404047219937429653551140092525560956638416155300593664, 6511732844609232689531105264376228317524178049136629062886970519300817615056281361033934594447285526945047285302258952489550083725183398828073095008113426602826115059101998810976429752363624232409528121302129758047607746574517853419995136, 6511732844609232689531105264376228317524178049136629062886970519300817615056281745462603561761429565931492033860279119577926891750286324918026809398531696871565033922441875852431508480957062155337578200133457742179661250720102155863195648, 6511732844609232689531105264376228317524178049136629062886970519300817615056282679075085339524350803470000708929756668221127711239822002565057258632404638952788122590553005810250985393255411396734271248723825703643219760787949747510968320, 6511732844609232689531105264376228317524178049136629062886970519300817615056283063503754306838494842456445457487776835309504519264924928655010973022822909221527041453892882851706064121848849319662321327555153687775273264933534049954168832, 19942181836615775111689009872152199222417795275480926505091347215358753946109861981372817938953880172318431269326733579917232700446683462533369178802755111489212355460283476537479386955757806448068327815178474871092672672574501708223217664, 20349165139403852154784703951175713492263056403551965821521782872815055047050879536403949088035418014706680728677029438894050142552546258859346113304010773287143759615278923569301735789609170624865169410351160482210331476724035300433592320, 20756148442191929197880398030199227762108317531623005137952218530271356147991897091435080237116955857094930188027325297870867584658409055185323047805266435085075163770274370601124084623460534801662011005523846093327990280873568892643966976, 21163131744980006240976092109222742031953578659694044454382654187727657248932914646466211386198493699483179647377621156847685026764271851511299982306522096883006567925269817632946433457311898978458852600696531704445649085023102484854341632, 21570115047768083284071786188246256301798839787765083770813089845183958349873932201497342535280031541871429106727917015824502468870134647837276916807777758680937972080265264664768782291163263155255694195869217315563307889172636077064716288, 21977098350556160327167480267269770571644100915836123087243525502640259450814949756528473684361569384259678566078212874801319910975997444163253851309033420478869376235260711696591131125014627332052535791041902926680966693322169669275090944, 22384081653344237370263174346293284841489362043907162403673961160096560551755967311559604833443107226647928025428508733778137353081860240489230785810289082276800780390256158728413479958865991508849377386214588537798625497471703261485465600, 22791064956132314413358868425316799111334623171978201720104396817552861652696984866590735982524645069036177484778804592754954795187723036815207720311544744074732184545251605760235828792717355685646218981387274148916284301621236853695840256, 23198048258920391456454562504340313381179884300049241036534832475009162753638002421621867131606182911424426944129100451731772237293585833141184654812800405872663588700247052792058177626568719862443060576559959760033943105770770445906214912, 23605031561708468499550256583363827651025145428120280352965268132465463854579019976652998280687720753812676403479396310708589679399448629467161589314056067670594992855242499823880526460420084039239902171732645371151601909920304038116589568, 24012014864496545542645950662387341920870406556191319669395703789921764955520037531684129429769258596200925862829692169685407121505311425793138523815311729468526397010237946855702875294271448216036743766905330982269260714069837630326964224, 24012014864496545542645950662387341920870406556191319669395703789921764955520037586602510710814136316056132255480837907840889522651754700948846197299657196649774813990715072147339315112641939347883608063881234980002411214662063959247421440, 24418998167284622585741644741410856190715667684262358985826139447378066056461055086715260578850796438589175322179988028662224563611174222119115458316567391266457801165233393887525224128122812392833585362078016593386919518219371222537338880, 24418998167284622585741644741410856190715667684262358985826139447378066056461055141633641859895674158444381714831133766817706964757617497274823131800912858447706218145710519179161663946493303524680449659053920591120070018811597551457796096, 24825981470072699628837338820434370460560928812333398302256575104834367157402072641746391727932334280977424781530283887639042005717037018445092392817823053064389205320228840919347572961974176569630426957250702204504578322368904814747713536, 25232964772860776671933032899457884730406189940404437618687010762290668258343090196777522877013872123365674240880579746615859447822899814771069327319078714862320609475224287951169921795825540746427268552423387815622237126518438406958088192, 25232964772860776671933032899457884730406189940404437618687010762290668258343090251695904158058749843220880633531725484771341848969343089926777000803424182043569026455701413242806361614196031878274132849399291813355387627110664735878545408, 25639948075648853715028726978481399000251451068475476935117446419746969359284107751808654026095409965753923700230875605592676889928762611097046261820334376660252013630219734982992270629676904923224110147596073426739895930667971999168462848, 25639948075648853715028726978481399000251451068475476935117446419746969359284107806727035307140287685609130092882021343748159291075205886252753935304679843841500430610696860274628710448047396055070974444571977424473046431260198328088920064, 25639948075648853715028726978481399000251451068475476935117446419746969359284107861645416588185165405464336485533167081903641692221649161408461608789025311022748847591173985566265150266417887186917838741547881422206196931852424657009377280]
+
+theorem legal_codes_spec : ∀ g s : Bool, ∀ uv ∈ MorningFour.pairs, Forward11Width.legal uv g = true →
+    encN_t8 (MorningFour.pre507 g s uv.1 uv.2) MorningFour.sites ∈ legalCodes := by decide +kernel
+
+def goodRow (r : Bool × Bool × Nat × Nat) : Bool :=
+  decide (encN_t8 (tbN_t8 (runN_t8 tick506 [] (false, enc r)).2) MorningFour.sites ∈ legalCodes)
+
+def cv (v : Nat) : Bool :=
+  (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || decide ((g,s,u,v) ∈ rows)
+
+theorem cv0 : cv 0 = true := by decide +kernel
+theorem cv1 : cv 1 = true := by decide +kernel
+theorem cv2 : cv 2 = true := by decide +kernel
+theorem cv3 : cv 3 = true := by decide +kernel
+theorem cv4 : cv 4 = true := by decide +kernel
+theorem cv5 : cv 5 = true := by decide +kernel
+theorem cv6 : cv 6 = true := by decide +kernel
+theorem cv7 : cv 7 = true := by decide +kernel
+theorem cv8 : cv 8 = true := by decide +kernel
+theorem cv9 : cv 9 = true := by decide +kernel
+theorem cv10 : cv 10 = true := by decide +kernel
+theorem cv11 : cv 11 = true := by decide +kernel
+theorem cv12 : cv 12 = true := by decide +kernel
+theorem cv13 : cv 13 = true := by decide +kernel
+theorem cv14 : cv 14 = true := by decide +kernel
+theorem cv15 : cv 15 = true := by decide +kernel
+theorem cv16 : cv 16 = true := by decide +kernel
+theorem cv17 : cv 17 = true := by decide +kernel
+theorem cv18 : cv 18 = true := by decide +kernel
+theorem cv19 : cv 19 = true := by decide +kernel
+theorem cv20 : cv 20 = true := by decide +kernel
+theorem cv21 : cv 21 = true := by decide +kernel
+theorem cv22 : cv 22 = true := by decide +kernel
+theorem cv23 : cv 23 = true := by decide +kernel
+theorem cv24 : cv 24 = true := by decide +kernel
+theorem cv25 : cv 25 = true := by decide +kernel
+theorem cv26 : cv 26 = true := by decide +kernel
+theorem cv27 : cv 27 = true := by decide +kernel
+theorem cv28 : cv 28 = true := by decide +kernel
+theorem cv29 : cv 29 = true := by decide +kernel
+theorem cv30 : cv 30 = true := by decide +kernel
+theorem cv31 : cv 31 = true := by decide +kernel
+theorem cv32 : cv 32 = true := by decide +kernel
+
+theorem rows_complete : ∀ v, v < 33 → ∀ u, u < 33 → ∀ g s : Bool,
+    (u+v ≤ 32 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by
+  intro v hv u hu g s h
+  have c1 : cv v = true := by
+    interval_cases v <;> simp only [cv0, cv1, cv2, cv3, cv4, cv5, cv6, cv7, cv8, cv9, cv10, cv11, cv12, cv13, cv14, cv15, cv16, cv17, cv18, cv19, cv20, cv21, cv22, cv23, cv24, cv25, cv26, cv27, cv28, cv29, cv30, cv31, cv32]
+  simp only [cv, List.all_eq_true, List.mem_range] at c1
+  have c2 := c1 u hu g (by cases g <;> simp) s (by cases s <;> simp)
+  obtain ⟨h1, h2, h3, h4⟩ := h
+  simpa [h1, h2, h3, h4] using c2
+
+theorem tick_support : wires tick506 ⊆ sites.toFinset := by decide +kernel
+theorem morning_sub : ∀ q ∈ MorningFour.sites, q ∈ sites := by decide +kernel
+
+theorem pack506 (isA : Bool) : Rolling1588.Integer.packAfter base isA 506 = [] := by
+  simp only [Rolling1588.Integer.packAfter, show History5.packDue 506 = false from by decide, Bool.false_eq_true, if_false]
+
+theorem prefix_avoids (isA : Bool) : ∀ n, n ≤ 506 → ∀ q ∈ sites, q ∉ wires (encodePrefix base isA n) := by
+  intro n hn q hq hw
+  rw [prefix_support_eq] at hw
+  induction n with
+  | zero => simp [History5.encodePrefix, wires] at hw
+  | succ n ih =>
+    simp only [History5.encodePrefix, wires_append, Finset.mem_union] at hw
+    rcases hw with hw | hw
+    · exact ih (by omega) hw
+    · cases due : History5.packDue n
+      · simp [History5.packAfter, due, wires] at hw
+      · simp only [History5.packAfter, due, if_true] at hw
+        obtain ⟨j, rfl⟩ := History5.history_gate_mem base (n-5) _ (Or.inl rfl) _ hw
+        have b := History5.packDue_true n due
+        simp only [sites, List.mem_cons, List.not_mem_nil, or_false] at hq
+        fin_cases j <;> simp [History5.historyMap, History5.historyId, base] at hq <;> omega
+
+theorem post507 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (a : State)
+    (hs : Stage base isA x p 506 a.basis) (m : List Bool) :
+    ∃ g' s' : Bool, ∃ uv' : Nat × Nat, uv' ∈ MorningFour.pairs ∧ Forward11Width.legal uv' g' = true ∧
+      ∀ q ∈ MorningFour.sites, (run tick506 m a).basis q = MorningFour.pre507 g' s' uv'.1 uv'.2 q := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have next := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 506
+    hp0 hx0 hpo hp gap hx cop (by omega) a m hs).2
+  rw [explicit506, pack506 isA, List.append_nil] at next
+  obtain ⟨raw7,hraw7,hbits7⟩ := next
+  obtain ⟨g',s',uv',mem',width,oriented,reads7⟩ := MorningWidth.raw507 x hx0 hx raw7 hraw7
+  refine ⟨g', s', uv', (List.mem_filter.mp mem').1, Forward11Width.legal_of uv' g' width oriented, ?_⟩
+  intro q hq
+  rw [hbits7, ←reads7 q hq]
+  apply run_preserves_outside
+  rcases MorningPlacement.layouts q hq with h|h|h|h
+  all_goals
+    exact fun hh => Finset.disjoint_left.mp
+      (prefix_disjoint_layout base isA base_pool_nodup 507 _ (by omega) (by omega)) hh h
+
+theorem at_stage5 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (a : State)
+    (hs : Stage base isA x p 506 a.basis) (r : List Bool) :
+    run cand r a = run ref r a := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have hs0 := hs
+  obtain ⟨raw,hraw,hbits⟩ := hs
+  obtain ⟨G,S,u,v,hsum,hv0,hvo,hg,reads⟩ := raw506 x hx0 hx raw hraw
+  have bits : ∀ q ∈ sites, a.basis q = pre506 G S u v q := by
+    intro q hq
+    rw [hbits, ←reads q hq]
+    exact run_preserves_outside _ _ _ q (prefix_avoids isA 506 (le_refl _) q hq)
+  have mem : (G,S,u,v) ∈ rows := by
+    have next := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 506
+      hp0 hx0 hpo hp gap hx cop (by omega) a [] hs0).2
+    rw [explicit506, pack506 isA, List.append_nil] at next
+    obtain ⟨raw7,hraw7,hbits7⟩ := next
+    obtain ⟨g',s',uv',mem',width,oriented,reads7⟩ := MorningWidth.raw507 x hx0 hx raw7 hraw7
+    have hl := Forward11Width.legal_of uv' g' width oriented
+    have oldmem : uv' ∈ MorningFour.pairs := (List.mem_filter.mp mem').1
+    have b7 : ∀ q ∈ MorningFour.sites, (run tick506 [] a).basis q = MorningFour.pre507 g' s' uv'.1 uv'.2 q := by
+      intro q hq
+      rw [hbits7, ←reads7 q hq]
+      apply run_preserves_outside
+      rcases MorningPlacement.layouts q hq with h|h|h|h
+      all_goals
+        exact fun hh => Finset.disjoint_left.mp
+          (prefix_disjoint_layout base isA base_pool_nodup 507 _ (by omega) (by omega)) hh h
+    have s7 : ∀ q ∈ MorningFour.sites, (run tick506 [] a).basis q =
+        (run tick506 [] ⟨false, pre506 G S u v⟩).basis q := fun q hq =>
+      site_run tick506 sites tick_support a ⟨false, pre506 G S u v⟩ bits [] q (morning_sub q hq)
+    have good : goodRow (G,S,u,v) = true := by
+      unfold goodRow
+      rw [decide_eq_true_eq]
+      have e1 : tbN_t8 (runN_t8 tick506 [] (false, enc (G,S,u,v))).2 =
+          (run tick506 [] ⟨false, pre506 G S u v⟩).basis := by
+        rw [tb_enc_t8 (pre506 G S u v) sites (pre_supp G S u v), run_sim_t8]
+        rfl
+      rw [e1, encN_congr _ (MorningFour.pre507 g' s' uv'.1 uv'.2) _
+        (fun q hq => (s7 q hq).symm.trans (b7 q hq))]
+      exact legal_codes_spec g' s' uv' oldmem hl
+    exact rows_complete v (by omega) u (by omega) G S ⟨hsum, hvo, hg, good⟩
+  rw [on_site (G,S,u,v) mem a bits r r, ref2, ref, run_append, run_append]
+  obtain ⟨g',s',uv',om,hl',b7'⟩ := post507 isA x hx0 hx a hs0 (r.take (measurementCount tick506))
+  rw [Forward11Width.on_site g' s' uv' om hl' _ b7' (r.drop (measurementCount tick506))
+    (r.drop (measurementCount tick506))]
+
+end ECDSAAdd.Entrant.Five506
+
+namespace ECDSAAdd.Entrant.Five506
+open Arithmetic MappedCompressed Secp256k1 History5 OB5 Rolling1588.Integer
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
+  Rolling1588TickGap.forward tick506 cand MorningPlacement.merged Forward11Width.candidate
+
+def merged5 : Program := renameProgram (sig 510) cand
+def prior5 : Program := renameProgram (sig 506) tick506 ++ MorningPlacement.merged
+
+theorem tick_ranges506 : TickRanges.tick base 506 = tick506 := by
+  rw [← explicit506]
+  unfold TickRanges.tick TickGap.tick
+  simp only [show ¬(225 ≤ (506:Nat) ∧ (506:Nat) ≤ 254) from by decide,
+    show ¬(255 ≤ (506:Nat) ∧ (506:Nat) ≤ 286) from by decide, if_false]
+
+theorem packFirst506 (isA : Bool) : packFirst base isA 506 = [] := by
+  simp only [packFirst, show ¬(506:Nat) = 5 from by decide, if_false, pack506 isA]
+
+theorem forward_snoc (isA : Bool) (i n : Nat) :
+    Rolling1588TickGap.forward isA i (n+1) = Rolling1588TickGap.forward isA i n ++
+      renameProgram (sig (i+n)) (TickRanges.tick base (i+n) ++ packFirst base isA (i+n)) := by
+  induction n generalizing i with
+  | zero => simp [Rolling1588TickGap.forward]
+  | succ n ih =>
+    rw [Rolling1588TickGap.forward, ih (i+1), Rolling1588TickGap.forward]
+    simp only [List.append_assoc, show i+1+n = i+(n+1) by omega]
+
+theorem shape (isA : Bool) : Rolling1588TickGap.stackForward0 isA =
+    Rolling1588TickGap.forward isA 1 505 ++ (prior5 ++ ForwardSixPlacement.after isA) := by
+  rw [Rolling1588TickGap.stackForward0, show (506:Nat) = 505+1 from rfl, forward_snoc]
+  simp only [show (1:Nat)+505 = 506 from rfl, tick_ranges506, packFirst506, List.append_nil,
+    prior5, List.append_assoc]
+
+theorem place5 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (a : State) (stage : Stage base isA x p 506 a.basis) (r : List Bool) :
+    run merged5 r (pullState (sig 505) a) = run prior5 r (pullState (sig 505) a) := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have z6 := stage_zero_gen isA x 506 506 (le_refl _) (by omega) a.basis stage
+  have p6 : pullState (sig 505) a = pullState (sig 506) a := OB5.pull_step 506 (by omega) a z6.1 z6.2
+  have align (v : State) (i : Nat) (hi : i ≤ 507) (h : Stage base isA x p i v.basis) :
+      pullState (sig 506) v = pullState (sig 510) v := by
+    have z7 := stage_zero_gen isA x i 507 hi (by omega) v.basis h
+    have z8 := stage_zero_gen isA x i 508 (by omega) (by omega) v.basis h
+    have z9 := stage_zero_gen isA x i 509 (by omega) (by omega) v.basis h
+    have z10 := stage_zero_gen isA x i 510 (by omega) (by omega) v.basis h
+    exact (OB5.pull_step 507 (by omega) v z7.1 z7.2).trans
+      ((OB5.pull_step 508 (by omega) v z8.1 z8.2).trans
+        ((OB5.pull_step 509 (by omega) v z9.1 z9.2).trans (OB5.pull_step 510 (by omega) v z10.1 z10.2)))
+  let k := measurementCount tick506
+  let b := run tick506 (r.take k) a
+  have s7 : Stage base isA x p 507 b.basis := by
+    have next := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 506
+      hp0 hx0 hpo hp gap hx cop (by omega) a (r.take k) stage).2
+    simpa only [explicit506, pack506 isA, List.append_nil, b] using next
+  rw [p6, prior5, run_append, (renameProgram_counts _ _).2, OB5.run_rename 506 (by omega)]
+  change run merged5 r (pullState (sig 506) a) = run MorningPlacement.merged (r.drop k) (pullState (sig 506) b)
+  rw [align b 507 (le_refl _) s7, align a 506 (by omega) stage, merged5, MorningPlacement.merged,
+    OB5.run_rename 510 (by omega), OB5.run_rename 510 (by omega), at_stage5 isA x hx0 hx a stage r,
+    ref, run_append]
+
+def stackForward5 (isA : Bool) : Program :=
+  Rolling1588TickGap.forward isA 1 505 ++ (merged5 ++ ForwardSixPlacement.after isA)
+
+theorem counts5 : measurementCount merged5 = measurementCount prior5 ∧
+    toffoliCount merged5 + 1 = toffoliCount prior5 := by
+  have r := resources
+  have mp := MorningPlacement.prior_resources
+  have f := Forward11Width.resources
+  simp only [merged5, prior5, MorningPlacement.merged, toffoliCount_append, measurementCount_append,
+    (renameProgram_counts _ _).1, (renameProgram_counts _ _).2]
+  have t := tick_counts
+  simp only [ref, toffoliCount_append, measurementCount_append] at r
+  omega
+
+theorem stackForward5_run_eq (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (s : State) (m : List Bool)
+    (first : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (stackForward5 isA) m s = run (Rolling1588TickGap.stackForward0 isA) m s := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  rw [shape, stackForward5]
+  simp only [run_append (Rolling1588TickGap.forward isA 1 505), run_append merged5, run_append prior5,
+    counts5.1]
+  generalize hK : measurementCount (Rolling1588TickGap.forward isA 1 505) = K
+  have init := stage_one base isA x p s first
+  have st := ((regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p
+    1 505 hp0 hx0 hpo hp gap hx cop (by omega)) s (m.take K) init).2
+  have start : pullState (sig (1-1)) s = s := by
+    apply State.extensionality
+    · rfl
+    · funext q
+      change s.basis (sig 0 q) = s.basis q
+      rw [sig_zero]
+  have pre := Rolling1588TickGap.forward_gen isA x hx0 hx 505 1 (le_refl _) (by omega) s (m.take K) init
+  rw [start] at pre
+  rw [pre]
+  rw [place5 isA x hx0 hx _ st]
+
+end ECDSAAdd.Entrant.Five506
+
+namespace ECDSAAdd.Entrant.Five506
+open Arithmetic MappedCompressed Secp256k1 History5 OB5 Rolling1588.Integer
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+
+theorem slotsC : Challenge.gateSlots cand = 1595 ∧ Challenge.gateSlots tick506 = 108 :=
+  ⟨cand_counts.2.2, tick_counts.2.2⟩
+
+theorem slots5 : Challenge.gateSlots merged5 = Challenge.gateSlots prior5 + 276 := by
+  have f := Forward11Width.resources
+  have s := slotsC
+  simp only [merged5, prior5, MorningPlacement.merged, Challenge.gateSlots_append,
+    Baselines.rename_gateSlots]
+  omega
+
+/-- Non-ancilla sites whose placed image the old tick 506 already touches. -/
+def t506Sites : List Wire :=
+  candSites.filter (fun q : Wire =>
+    decide ((((q : Nat) < 793) ∨ (803 < (q : Nat))) ∧ (q : Nat) ≠ 1551 ∧ (q : Nat) ≠ 1552))
+
+theorem t506_used : ∀ q ∈ t506Sites, sig 510 q ∈ wires (renameProgram (sig 506) tick506) := by
+  decide +kernel
+
+theorem f11_used (w : Nat) (h : w = 1551 ∨ w = 1552) : sig 510 w ∈ wires MorningPlacement.merged := by
+  have b : 1551 ∈ wires Forward11Width.block9 ∧ 1552 ∈ wires Forward11Width.block9 := by
+    decide +kernel
+  have c : wires Forward11Width.block9 ⊆ wires Forward11Width.candidate := by
+    unfold Forward11Width.candidate
+    simp only [wires_append]
+    intro q hq
+    simp only [Finset.mem_union, hq, true_or, or_true]
+  rw [MorningPlacement.merged, renameProgram_support]
+  apply Finset.mem_image.mpr
+  rcases h with rfl | rfl
+  · exact ⟨1551, c b.1, rfl⟩
+  · exact ⟨1552, c b.2, rfl⟩
+
+theorem tick_in_forward (isA : Bool) (i n k : Nat) (hk : i ≤ k) (hkn : k < i + n) :
+    wires (renameProgram (sig k) (TickRanges.tick base k ++ packFirst base isA k)) ⊆
+      wires (Rolling1588TickGap.forward isA i n) := by
+  induction n generalizing i with
+  | zero => omega
+  | succ n ih =>
+    rw [Rolling1588TickGap.forward, wires_append]
+    by_cases e : k = i
+    · subst e
+      exact Finset.subset_union_left
+    · exact (ih (i+1) (by omega) (by omega)).trans Finset.subset_union_right
+
+theorem cleanup_in_tick (k : Nat) (hk : 287 ≤ k ∧ k ≤ 509) :
+    wires (W.compactSkywalkTickCleanup base k) ⊆ wires (TickRanges.tick base k) := by
+  unfold TickRanges.tick TickGap.tick
+  simp only [show ¬(225 ≤ k ∧ k ≤ 254) from by omega, show ¬(255 ≤ k ∧ k ≤ 286) from by omega, if_false]
+  unfold W.repairedTick W.repairedTick0
+  simp only [show ¬ W.fwdTrim k from by unfold W.fwdTrim; omega,
+    show (k = 224 ∨ (255 ≤ k ∧ k ≤ 509)) from Or.inr ⟨by omega, hk.2⟩, if_false, if_true, wires_append]
+  exact Finset.subset_union_right
+
+/-- Pool-B wire `793 + j` is released by the cleanup of tick `505 - j`. -/
+theorem cleanup_uses : ∀ j, j < 11 → 793 + j ∈ wires (W.compactSkywalkTickCleanup base (505 - j)) := by
+  decide +kernel
+
+theorem sig_low (i : Nat) (w : Nat) (hi : i ≤ 600) (h : w < 1301) : sig i w = w := by
+  rw [OB5.sig_nat]
+  unfold OB5.sigNat
+  split_ifs with hc
+  · omega
+  · rfl
+
+theorem anc_used (isA : Bool) (w : Nat) (h : 793 ≤ w ∧ w ≤ 803) :
+    sig 510 w ∈ wires (Rolling1588TickGap.forward isA 1 505 ++ (prior5 ++ ForwardSixPlacement.after isA)) := by
+  rw [wires_append]
+  apply Finset.mem_union_left
+  have hj := cleanup_uses (w - 793) (by omega)
+  rw [show 793 + (w - 793) = w by omega] at hj
+  apply tick_in_forward isA 1 505 (505 - (w - 793)) (by omega) (by omega)
+  rw [renameProgram_support, wires_append]
+  apply Finset.mem_image.mpr
+  refine ⟨w, Finset.mem_union_left _ (cleanup_in_tick _ ⟨by omega, by omega⟩ hj), ?_⟩
+  rw [sig_low _ w (by omega) (by omega), sig_low 510 w (by omega) (by omega)]
+
+theorem site_used (isA : Bool) (n : Nat) (hn : n ∈ candSites) :
+    sig 510 n ∈ wires (Rolling1588TickGap.forward isA 1 505 ++ (prior5 ++ ForwardSixPlacement.after isA)) := by
+  by_cases ha : 793 ≤ n ∧ n ≤ 803
+  · exact anc_used isA n ha
+  rw [wires_append, wires_append]
+  apply Finset.mem_union_right
+  apply Finset.mem_union_left
+  rw [prior5, wires_append]
+  by_cases hf : n = 1551 ∨ n = 1552
+  · exact Finset.mem_union_right _ (f11_used n hf)
+  · apply Finset.mem_union_left
+    apply t506_used n
+    simp only [t506Sites, List.mem_filter, decide_eq_true_eq]
+    refine ⟨hn, ?_⟩
+    show ((n < 793) ∨ (803 < n)) ∧ n ≠ 1551 ∧ n ≠ 1552
+    omega
+
+theorem merged_in (isA : Bool) : ∀ q ∈ wires merged5,
+    q ∈ wires (Rolling1588TickGap.forward isA 1 505 ++ (prior5 ++ ForwardSixPlacement.after isA)) := by
+  intro q hq
+  rw [merged5, renameProgram_support] at hq
+  obtain ⟨w, hw, rfl⟩ := Finset.mem_image.mp hq
+  exact site_used isA w (List.mem_toFinset.mp (csupport hw))
+
+theorem support5 (isA : Bool) :
+    wires (stackForward5 isA) ⊆ wires (Rolling1588TickGap.stackForward0 isA) := by
+  rw [shape]
+  intro q hq
+  rw [stackForward5, wires_append, wires_append] at hq
+  rcases Finset.mem_union.mp hq with h | h
+  · rw [wires_append]
+    exact Finset.mem_union_left _ h
+  · rcases Finset.mem_union.mp h with h | h
+    · exact merged_in isA q h
+    · rw [wires_append, wires_append]
+      exact Finset.mem_union_right _ (Finset.mem_union_right _ h)
+
+end ECDSAAdd.Entrant.Five506
+
+end -- Five506
+
+-- ===== Five-tick forward window: the TickGap forward stack now uses Five506 =====
+section
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+
+namespace ECDSAAdd.Entrant.Rolling1588TickGap
+open Arithmetic MappedCompressed Secp256k1 OB5
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  forward stackForward0 Rolling1588.forward Rolling1588.stackForward
+
+/-- The forward stack: ticks 1..505, then the jointly re-synthesized five-tick window
+(tick 506 and ticks 507..510), then the unchanged tail. -/
+def stackForward (isA : Bool) : Program := Five506.stackForward5 isA
+
+theorem stackForward_metrics (isA : Bool) :
+    toffoliCount (stackForward isA)+68=toffoliCount (Rolling1588.stackForward isA) ∧
+      measurementCount (stackForward isA)=measurementCount (Rolling1588.stackForward isA) ∧
+      Challenge.gateSlots (stackForward isA) ≤ Challenge.gateSlots (Rolling1588.stackForward isA)+1005 := by
+  have old := stackForward0_metrics isA
+  have c := Five506.counts5
+  have sl := Five506.slots5
+  rw [Five506.shape] at old
+  rw [stackForward, Five506.stackForward5]
+  simp only [toffoliCount_append, measurementCount_append, Challenge.gateSlots_append] at old ⊢
+  exact ⟨by omega, by omega, by omega⟩
+
+theorem stackForward_support (isA : Bool) :
+    wires (stackForward isA)⊆wires (Rolling1588.stackForward isA) :=
+  (Five506.support5 isA).trans (stackForward0_support isA)
+
 theorem stackForward_run_eq (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
     (s : State) (m : List Bool)
     (first : W.CompactSkywalkStage base
       (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
     run (stackForward isA) m s=run (Rolling1588.stackForward isA) m s := by
-  rw [stackForward,MorningPlacement.previous_shape]
-  exact MorningPlacement.replace_at_prefix _ _ _ s m
-    (forward_metrics isA 1 506 (by omega)).2.1
-    (fun r => forward_first_run_eq isA x hx0 hx 506 (by omega) s r first)
-    (MorningPlacement.prior_at_prefix isA x hx0 hx s first)
+  rw [stackForward, Five506.stackForward5_run_eq isA x hx0 hx s m first]
+  exact stackForward0_run_eq isA x hx0 hx s m first
 
 theorem stackForward_boundary (isA : Bool)
     (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
@@ -13353,7 +14859,7 @@ theorem stack_roundtrip (isA : Bool)
   exact Rolling1588.stack_roundtrip isA hn hlo x hx0 hx s mE mD first
 
 end ECDSAAdd.Entrant.Rolling1588TickGap
-end -- original module boundary
+end -- five-tick bridge
 
 -- ===== ECDSAAdd.Submission.Entrant.Rolling1588TickGapPhases =====
 section
@@ -13459,9 +14965,9 @@ theorem phases_roundtrip (isA : Bool) (hn : (skywalkSharedWires base).Nodup)
   exact Rolling1588Lifetime.phases_roundtrip isA hn hlo x y hx0 hx s mE mD input
 
 theorem first_metrics (isA : Bool) :
-    toffoliCount (firstPhase isA)+67=toffoliCount (Rolling1588.firstPhase isA) ∧
+    toffoliCount (firstPhase isA)+68=toffoliCount (Rolling1588.firstPhase isA) ∧
       measurementCount (firstPhase isA)=measurementCount (Rolling1588.firstPhase isA) ∧
-      gateSlots (firstPhase isA) ≤ gateSlots (Rolling1588.firstPhase isA)+729 := by
+      gateSlots (firstPhase isA) ≤ gateSlots (Rolling1588.firstPhase isA)+1005 := by
   have stack := stackForward_metrics isA
   simp only [firstPhase,tailPhase,Rolling1588.firstPhase,toffoliCount_append,
     measurementCount_append,gateSlots_append]
@@ -13514,10 +15020,10 @@ theorem stackForward_physical (isA : Bool) : GatePhysical (stackForward isA) := 
   have old := Rolling1588.stackForward_physical isA
   rw [MorningPlacement.previous_shape] at old
   simp only [gatePhysical_append] at old
-  rw [stackForward]
+  rw [stackForward, Five506.stackForward5, Five506.merged5]
   simp only [gatePhysical_append]
-  exact ⟨forward_physical isA 1 506 (by omega),
-    gatePhysical_rename _ (sig_injective 510 (by omega)) _ Forward11Width.physical,old.2.2⟩
+  exact ⟨forward_physical isA 1 505 (by omega),
+    gatePhysical_rename _ (sig_injective 510 (by omega)) _ Five506.physical,old.2.2⟩
 
 theorem first_physical (isA : Bool) : GatePhysical (firstPhase isA) := by
   have old := Rolling1588.firstPhase_physical isA
@@ -13565,9 +15071,9 @@ theorem kernel_run_eq (a b : Bool) (F : Program)
     (fun r=>first_hosted_run_eq a hn x y hx0 hx s r input)
 
 theorem kernel_metrics (a b : Bool) (F : Program) :
-    toffoliCount (kernel a b F)+67=toffoliCount (oldKernel a b F) ∧
+    toffoliCount (kernel a b F)+68=toffoliCount (oldKernel a b F) ∧
       measurementCount (kernel a b F)=measurementCount (oldKernel a b F) ∧
-      gateSlots (kernel a b F) ≤ gateSlots (oldKernel a b F)+729 := by
+      gateSlots (kernel a b F) ≤ gateSlots (oldKernel a b F)+1005 := by
   have first := first_metrics a
   simp only [kernel,oldKernel,toffoliCount_append,measurementCount_append,gateSlots_append,
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
@@ -13619,18 +15125,18 @@ theorem exit_correct : ExitCorrect exitKernel := by
 
 private theorem metrics_of_shapes (P Q A B : Program)
     (left : P=A) (right : Q=B)
-    (metrics : toffoliCount A+67=toffoliCount B ∧
-      measurementCount A=measurementCount B ∧ gateSlots A ≤ gateSlots B+729) :
-    toffoliCount P+67=toffoliCount Q ∧
-      measurementCount P=measurementCount Q ∧ gateSlots P ≤ gateSlots Q+729 := by
+    (metrics : toffoliCount A+68=toffoliCount B ∧
+      measurementCount A=measurementCount B ∧ gateSlots A ≤ gateSlots B+1005) :
+    toffoliCount P+68=toffoliCount Q ∧
+      measurementCount P=measurementCount Q ∧ gateSlots P ≤ gateSlots Q+1005 := by
   cases left
   cases right
   exact metrics
 
 theorem entryKernel_metrics :
-    toffoliCount entryKernel+67=toffoliCount Rolling1588.entryKernel ∧
+    toffoliCount entryKernel+68=toffoliCount Rolling1588.entryKernel ∧
       measurementCount entryKernel=measurementCount Rolling1588.entryKernel ∧
-      gateSlots entryKernel ≤ gateSlots Rolling1588.entryKernel+729 := by
+      gateSlots entryKernel ≤ gateSlots Rolling1588.entryKernel+1005 := by
   have left : entryKernel=kernel true false Rolling1588.entryFieldHosted := by
     unfold entryKernel
     rfl
@@ -13643,9 +15149,9 @@ theorem entryKernel_metrics :
     (kernel_metrics true false Rolling1588.entryFieldHosted)
 
 theorem exitKernel_metrics :
-    toffoliCount exitKernel+67=toffoliCount Rolling1588.exitKernel ∧
+    toffoliCount exitKernel+68=toffoliCount Rolling1588.exitKernel ∧
       measurementCount exitKernel=measurementCount Rolling1588.exitKernel ∧
-      gateSlots exitKernel ≤ gateSlots Rolling1588.exitKernel+729 := by
+      gateSlots exitKernel ≤ gateSlots Rolling1588.exitKernel+1005 := by
   have left : exitKernel=kernel false true Rolling1588.exitFieldHosted := by
     unfold exitKernel
     rfl
@@ -13979,14 +15485,14 @@ private def Facts (n g : Nat) (P Q : Program) : Prop :=
     gateSlots P ≤ gateSlots Q+g ∧ wires P⊆wires Q
 
 private theorem append_facts (P Q C : Program)
-    (count : toffoliCount P+67=toffoliCount Q ∧ measurementCount P=measurementCount Q ∧
-      gateSlots P ≤ gateSlots Q+729) (sub : wires P⊆wires Q) : Facts 67 729 (P++C) (Q++C) := by
+    (count : toffoliCount P+68=toffoliCount Q ∧ measurementCount P=measurementCount Q ∧
+      gateSlots P ≤ gateSlots Q+1005) (sub : wires P⊆wires Q) : Facts 68 1005 (P++C) (Q++C) := by
   simp only [Facts,toffoliCount_append,measurementCount_append,gateSlots_append,wires_append]
   exact ⟨by omega,by omega,by omega,Finset.union_subset_union sub (Finset.Subset.refl _)⟩
 
 private theorem tail_facts (a : Bool) :
-    Facts 67 729 (Rolling1588TickGap.tailPhase a) (ReflectionE1.tailP a) := by
-  apply relation_of_shapes (Facts 67 729) _ _
+    Facts 68 1005 (Rolling1588TickGap.tailPhase a) (ReflectionE1.tailP a) := by
+  apply relation_of_shapes (Facts 68 1005) _ _
     (Rolling1588TickGap.stackForward a++skywalkArithmeticClear base)
     (Rolling1588.stackForward a++skywalkArithmeticClear base)
   · unfold Rolling1588TickGap.tailPhase
@@ -13999,8 +15505,8 @@ private theorem tail_facts (a : Bool) :
 private def restContext (f g : Wire→Wire) (P R : Program) : Program :=
   renameProgram f (renameProgram g P++R)
 
-private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 67 729 P Q) :
-    Facts 67 729 (restContext f g P R) (restContext f g Q R) := by
+private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 68 1005 P Q) :
+    Facts 68 1005 (restContext f g P R) (restContext f g Q R) := by
   rcases h with ⟨ht,hm,hs,hw⟩
   have sub : wires (restContext f g P R)⊆wires (restContext f g Q R) := by
     simp only [restContext,renameProgram_support,wires_append]
@@ -14011,8 +15517,8 @@ private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 67 7
   exact ⟨by omega,by omega,by omega,sub⟩
 
 private theorem restE_facts (L : ControlledPointLayout) :
-    Facts 67 729 (restE L) (ReflectionE1.restE L) := by
-  apply relation_of_shapes (Facts 67 729) _ _
+    Facts 68 1005 (restE L) (ReflectionE1.restE L) := by
+  apply relation_of_shapes (Facts 68 1005) _ _
     (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase true)
       (Rolling1588.entryFieldHosted++
         renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase false)))
@@ -14026,8 +15532,8 @@ private theorem restE_facts (L : ControlledPointLayout) :
   · exact rest_facts _ _ _ _ _ (tail_facts true)
 
 private theorem restX_facts (L : ControlledPointLayout) :
-    Facts 67 729 (restX L) (ReflectionE1.restX L) := by
-  apply relation_of_shapes (Facts 67 729) _ _
+    Facts 68 1005 (restX L) (ReflectionE1.restX L) := by
+  apply relation_of_shapes (Facts 68 1005) _ _
     (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase false)
       (Rolling1588.exitFieldHosted++
         renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase true)))
@@ -14044,8 +15550,8 @@ private def stagesContext (Y M E S X EY N : Program) : Program :=
   (Y++M++E)++(S++X++EY)++N
 
 private theorem stages_facts (Y M E E0 S X X0 EY N : Program)
-    (entry : Facts 67 729 E E0) (exit : Facts 67 729 X X0) :
-    Facts 134 1458 (stagesContext Y M E S X EY N) (stagesContext Y M E0 S X0 EY N) := by
+    (entry : Facts 68 1005 E E0) (exit : Facts 68 1005 X X0) :
+    Facts 136 2010 (stagesContext Y M E S X EY N) (stagesContext Y M E0 S X0 EY N) := by
   rcases entry with ⟨et,em,es,ew⟩
   rcases exit with ⟨xt,xm,xs,xw⟩
   have sub : wires (stagesContext Y M E S X EY N)⊆
@@ -14075,8 +15581,8 @@ private theorem old_generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
   rfl
 
 private theorem generic_facts (L : ControlledPointLayout) (cx cy : Fp) :
-    Facts 134 1458 (generic L cx cy) (ReflectionE1.generic L cx cy) := by
-  exact relation_of_shapes (Facts 134 1458) _ _ _ _
+    Facts 136 2010 (generic L cx cy) (ReflectionE1.generic L cx cy) := by
+  exact relation_of_shapes (Facts 136 2010) _ _ _ _
     (generic_shape L cx cy) (old_generic_shape L cx cy)
     (stages_facts (fusedY L (-cy)) (E1QubitPlacement.entryM L (-cx))
       (restE L) (ReflectionE1.restE L) (ReflectionE1.squareEntry L (ReflectionE1.correction cx))
@@ -14140,7 +15646,7 @@ private def wrapContext (Z C : Program) (f : Wire→Wire) (P : Program) : Progra
   Z++(C++renameProgram f P++C)++Z
 
 private theorem wrap_facts (Z C : Program) (f : Wire→Wire) (P Q : Program)
-    (h : Facts 134 1458 P Q) : Facts 134 1458 (wrapContext Z C f P) (wrapContext Z C f Q) := by
+    (h : Facts 136 2010 P Q) : Facts 136 2010 (wrapContext Z C f P) (wrapContext Z C f Q) := by
   rcases h with ⟨ht,hm,hs,hw⟩
   have sub : wires (wrapContext Z C f P)⊆wires (wrapContext Z C f Q) := by
     simp only [wrapContext,wires_append,renameProgram_support]
@@ -14154,8 +15660,8 @@ private theorem wrap_facts (Z C : Program) (f : Wire→Wire) (P Q : Program)
   exact ⟨by omega,by omega,by omega,sub⟩
 
 private theorem gen_facts (L : ControlledPointLayout) (cx cy : Fp) :
-    Facts 134 1458 (gen L cx cy) (ReflectionE1.gen L cx cy) := by
-  apply relation_of_shapes (Facts 134 1458) _ _
+    Facts 136 2010 (gen L cx cy) (ReflectionE1.gen L cx cy) := by
+  apply relation_of_shapes (Facts 136 2010) _ _
     (wrapContext (zrep L) (clrF L) (swapF L) (generic L cx cy))
     (wrapContext (zrep L) (clrF L) (swapF L) (ReflectionE1.generic L cx cy))
   · unfold gen mid wrapContext
@@ -14165,9 +15671,9 @@ private theorem gen_facts (L : ControlledPointLayout) (cx cy : Fp) :
   · exact wrap_facts _ _ _ _ _ (generic_facts L cx cy)
 
 theorem gen_metrics (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+134=toffoliCount (ReflectionE1.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+136=toffoliCount (ReflectionE1.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ReflectionE1.gen L cx cy) ∧
-    gateSlots (gen L cx cy) ≤ gateSlots (ReflectionE1.gen L cx cy)+1458 :=
+    gateSlots (gen L cx cy) ≤ gateSlots (ReflectionE1.gen L cx cy)+2010 :=
   ⟨(gen_facts L cx cy).1,(gen_facts L cx cy).2.1,(gen_facts L cx cy).2.2.1⟩
 
 theorem gen_support_subset (L : ControlledPointLayout) (cx cy : Fp) :
@@ -14197,17 +15703,17 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
   tauto
 
 private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : Facts 134 1458 P Q) :
-    toffoliCount (Edges.wrapper L C cy P)+134=toffoliCount (Edges.wrapper L C cy Q) ∧
+    (P Q : Program) (h : Facts 136 2010 P Q) :
+    toffoliCount (Edges.wrapper L C cy P)+136=toffoliCount (Edges.wrapper L C cy Q) ∧
     measurementCount (Edges.wrapper L C cy P)=measurementCount (Edges.wrapper L C cy Q) ∧
-    gateSlots (Edges.wrapper L C cy P) ≤ gateSlots (Edges.wrapper L C cy Q)+1458 := by
+    gateSlots (Edges.wrapper L C cy P) ≤ gateSlots (Edges.wrapper L C cy Q)+2010 := by
   rcases h with ⟨ht,hm,hs,_⟩
   simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,measurementCount_append,
     gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151552 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151550 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout cx cy)).1
   have entryDelta := (ReflectionE1.gen_counts_delta layout layout_widths cx cy).1
   have baseline := Rolling1588BFFinal.wrapper_toffoli cx cy hc
@@ -14226,7 +15732,7 @@ theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50190657+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50191209+Rolling1588.slotGrowth := by
   have diff:=(wrapper_facts layout C cy _ _ (gen_facts layout cx cy)).2.2
   have old:=ReflectionE1.wrapper_slots C cx cy
   omega
@@ -14251,7 +15757,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151552,1499214,1588,50190657+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151550,1499214,1588,50191209+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -14268,7 +15774,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151552 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151550 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -14290,7 +15796,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50190657+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50191209+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -14306,7 +15812,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C)) ≤ 1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50190657+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C)) ≤ 50191209+Rolling1588.slotGrowth
     rw [normalize_slots];exact program_gateSlots C
 
 
@@ -21624,7 +23130,7 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151057 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151055 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
   have old:=ReflectionE1TickGap.wrapper_toffoli cx cy hc
   omega
@@ -21636,7 +23142,7 @@ theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50213741+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50214293+Rolling1588.slotGrowth := by
   have diff:=(wrapper_facts layout C cy _ _ (gen_facts layout layout_widths cx cy)).2.2
   have old:=ReflectionE1TickGap.wrapper_slots C cx cy
   omega
@@ -21802,7 +23308,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151057,1498883,1588,50213741+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151055,1498883,1588,50214293+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -21819,7 +23325,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151057 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151055 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -21841,7 +23347,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50213741+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50214293+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -21857,7 +23363,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C)) ≤ 1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50213741+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C)) ≤ 50214293+Rolling1588.slotGrowth
     rw [normalize_slots];exact program_gateSlots C
 
 
@@ -22662,7 +24168,7 @@ theorem wrapper_qubits760 (C : Point) (cx cy : Fp) :
   exact card.trans (ReflectionE1TickGapLow48.wrapper_qubits760 C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151040 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151038 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
   omega
@@ -22674,7 +24180,7 @@ theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy
   omega
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50215103+Rolling1588.slotGrowth := by
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50215655+Rolling1588.slotGrowth := by
   have h := (wrapper_counts layout layout_widths C cx cy).2.2
   have old := ReflectionE1TickGapLow48.wrapper_slots C cx cy
   omega
@@ -22686,7 +24192,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151040,1498867,1588,50215103+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151038,1498867,1588,50215655+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -22703,7 +24209,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151040 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151038 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -22725,7 +24231,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50215103+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50215655+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
@@ -22741,7 +24247,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C)) ≤ 1588
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C)) ≤ 50215103+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C)) ≤ 50215655+Rolling1588.slotGrowth
     rw [normalize_slots];exact program_gateSlots C
 
 end ECDSAAdd.Entrant.FiniteFlagInterval
@@ -22763,7 +24269,7 @@ def program (C : Point) : Program :=
       MeasuredDH.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151077,1498894,1588,50215092+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151075,1498894,1588,50215644+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -22781,13 +24287,13 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151077 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151075 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151077
+    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151075
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1498894 := by
@@ -22814,13 +24320,13 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact MeasuredDH.wrapper_physical layout layout_widths layout_nodup _ cy _
       (FiniteFlagInterval.gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50215092+Rolling1588.slotGrowth := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50215644+Rolling1588.slotGrowth := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).2.2
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
-    change gateSlots (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤50215092+Rolling1588.slotGrowth
+    change gateSlots (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤50215644+Rolling1588.slotGrowth
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -22834,7 +24340,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C))≤1588
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50215092+Rolling1588.slotGrowth
+    change gateSlots (normalizeProgram (program C))≤50215644+Rolling1588.slotGrowth
     rw [normalize_slots]; exact program_gateSlots C
 end ECDSAAdd.Entrant.MeasuredDHFinal
 end
@@ -22856,7 +24362,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151037,1498865,1587,50238950⟩
+def bounds : Challenge.Bounds := ⟨2151035,1498865,1587,50239502⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -22874,13 +24380,13 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
         (FiniteFlagInterval.genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151037 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151035 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151037
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2151035
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1498865 := by
@@ -22907,7 +24413,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact FusedFlags.wrapper_physical layout layout_widths layout_nodup _ cy _
       (FiniteFlagInterval.gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50238950 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50239502 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -22915,7 +24421,7 @@ theorem program_gateSlots (C : Point) : gateSlots (program C)≤50238950 := by
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
     have growth : Rolling1588.slotGrowth=23857 := rfl
     rw [growth] at old
-    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤50238950
+    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤50239502
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -22929,7 +24435,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C))≤1587
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50238950
+    change gateSlots (normalizeProgram (program C))≤50239502
     rw [normalize_slots]; exact program_gateSlots C
 
 end ECDSAAdd.Entrant.FusedBoundaryFinal
@@ -23689,7 +25195,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151035,1498863,1587,50238950⟩
+def bounds : Challenge.Bounds := ⟨2151033,1498863,1587,50239502⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -23707,14 +25213,14 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
         (genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151035 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151033 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151035
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151033
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1498863 := by
@@ -23742,7 +25248,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact FusedFlags.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50238950 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50239502 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -23751,7 +25257,7 @@ theorem program_gateSlots (C : Point) : gateSlots (program C)≤50238950 := by
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
     have growth : Rolling1588.slotGrowth=23857 := rfl
     rw [growth] at old
-    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50238950
+    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50239502
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -23765,7 +25271,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C))≤1587
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50238950
+    change gateSlots (normalizeProgram (program C))≤50239502
     rw [normalize_slots]; exact program_gateSlots C
 
 end ECDSAAdd.Entrant.CodexAffineProbe
@@ -25256,7 +26762,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151028,1498861,1587,50238950⟩
+def bounds : Challenge.Bounds := ⟨2151026,1498861,1587,50239502⟩
 
 theorem program_correct (C : Point) (control : Bool) (R : Point) :
     Triple (encodes control R) (program C) (encodes control (if control then R+C else R)) := by
@@ -25274,14 +26780,14 @@ theorem program_correct (C : Point) (control : Bool) (R : Point) :
         (genFFused_ok layout layout_widths layout_nodup hc) sites)
       (support.trans (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151028 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151026 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151028
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2151026
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1498861 := by
@@ -25309,7 +26815,7 @@ theorem program_physical (C : Point) : GatePhysical (program C) := by
     exact FusedFlags.wrapper_physical layout layout_widths layout_nodup _ cy _
       (gen_physical layout layout_widths layout_nodup cx cy)
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50238950 := by
+theorem program_gateSlots (C : Point) : gateSlots (program C)≤50239502 := by
   cases C with
   | zero => simp [program]
   | @some cx cy hc =>
@@ -25318,7 +26824,7 @@ theorem program_gateSlots (C : Point) : gateSlots (program C)≤50238950 := by
     have old := FiniteFlagInterval.wrapper_slots (.some hc) cx cy
     have growth : Rolling1588.slotGrowth=23857 := rfl
     rw [growth] at old
-    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50238950
+    change gateSlots (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤50239502
     omega
 
 theorem certificate : Challenge.Certificate entry bounds where
@@ -25332,7 +26838,7 @@ theorem certificate : Challenge.Certificate entry bounds where
     change qubits (normalizeProgram (program C))≤1587
     rw [normalize_qubits]; exact program_qubits C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50238950
+    change gateSlots (normalizeProgram (program C))≤50239502
     rw [normalize_slots]; exact program_gateSlots C
 
 end ECDSAAdd.Entrant.CodexYParityProbe
