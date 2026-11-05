@@ -1,8 +1,8 @@
 import ECDSAAdd.Submission.Entrant.TerminalGraph
-import ECDSAAdd.Submission.Entrant.FusedFlags
-import ECDSAAdd.Submission.Entrant.TickMerged508
-import ECDSAAdd.Submission.Entrant.R2Life760
-import ECDSAAdd.Submission.Entrant.NativeKnownH
+
+
+-- Consolidated source module: MainB
+section
 
 
 -- ===== ECDSAAdd.Submission.Entrant.FrontierSumCleanup1591Primitive =====
@@ -31819,3 +31819,4 @@ theorem certificate : Challenge.Certificate entry bounds where
 end ECDSAAdd.Entrant.Rolling1588BFFinal
 end -- original module boundary
 
+end

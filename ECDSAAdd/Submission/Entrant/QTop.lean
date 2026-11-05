@@ -1,5 +1,9 @@
 import ECDSAAdd.Submission.Entrant.MainB
 
+
+-- Consolidated source module: QTop
+section
+
 /-!
 Output-only `+flag·p` correction for the measured canonical modular fold `qprog`.
 
@@ -2849,4 +2853,5 @@ theorem aBody_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wir
 end QRel
 end ECDSAAdd.Entrant
 
+end
 end

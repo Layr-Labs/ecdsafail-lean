@@ -8,7 +8,11 @@ import ECDSAAdd.Arithmetic.PointFixedPrimitivesPhysical
 import ECDSAAdd.Submission.Entrant.MainB
 import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.ExitMerge
-import ECDSAAdd.Submission.Entrant.FusedFlags
+import ECDSAAdd.Submission.Entrant.TerminalGraph
+
+
+-- Consolidated source module: MainPart04
+section
 
 set_option Elab.async false
 
@@ -13144,4 +13148,5 @@ end -- original module boundary
 
 
 -- Synthetic: close inherited anonymous MainC section at this file boundary.
+end
 end

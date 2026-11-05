@@ -7,6 +7,10 @@ import ECDSAAdd.Baselines.SlotNativeFirst
 import ECDSAAdd.Baselines.SlotSignedInteger
 import ECDSAAdd.Arithmetic.KnownOutputAdderPhysical
 
+
+-- Consolidated source module: MainA
+section
+
 -- ===== ECDSAAdd.Submission.Entrant.MainBasis =====
 section
 -- consolidated import: import ECDSAAdd.Submission.Entrant.MainPre
@@ -44308,3 +44312,4 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
 
 end ECDSAAdd.Entrant.ControlLoan1589Actual
 end -- original module boundary
+end

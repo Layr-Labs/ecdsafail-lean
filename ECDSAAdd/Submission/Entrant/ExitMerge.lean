@@ -1,8 +1,10 @@
+import ECDSAAdd.Submission.Entrant.TerminalGraph
+import ECDSAAdd.Arithmetic.PoolLayout
+import ECDSAAdd.Arithmetic.SkywalkPool
+import ECDSAAdd.Arithmetic.NativeFirstDirectProgram
+import Mathlib.Tactic
+import ECDSAAdd.Arithmetic.DisjointPrograms
 import ECDSAAdd.Submission.Entrant.Prelude
-import ECDSAAdd.Submission.Entrant.KAddResourceBridgeDraft
-import ECDSAAdd.Submission.Entrant.AffineCarry3C
-import ECDSAAdd.Submission.Entrant.AffineCarry4C
-import ECDSAAdd.Submission.Entrant.MappedTopZero
 import ECDSAAdd.Arithmetic.NativeFirstDirectForwardProof
 import ECDSAAdd.Arithmetic.NativeFirstDirectValues
 import ECDSAAdd.Arithmetic.Compare
@@ -21,6 +23,2105 @@ import ECDSAAdd.Arithmetic.KnownOutputAdderPhysical
 import ECDSAAdd.Baselines.SlotAlgebra
 import ECDSAAdd.Baselines.SlotMapped
 import ECDSAAdd.Baselines.SlotNativeFirst
+
+
+-- Consolidated source module: KAddCallerStructureDraft
+section
+
+/-! Private structural decomposition/support/cost module. No real MF caller premise is discharged. -/
+set_option Elab.async false
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 20000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.KAddCallerBridgeResearch
+open Arithmetic RecordedQuantum Challenge HighOutputTailStructuredResearch AdderSpineBridgeResearch
+
+-- Keep support/cost proof elaboration from eagerly expanding whole program wire sets.
+attribute [local irreducible] ECDSAAdd.wires
+
+/-- This is literally both E1Merge.kAddM and E1Reflected.kAddM. -/
+def literalKAdd (w : Nat→Wire) : Program :=
+  mappedAdd (mappedRead (wireBlock w 0 258) false) (wireBlock w 770 258)
+    (wireBlock w 1540 257) (w 1797)
+
+def P (w : Nat→Wire) : Program :=
+  adderPrefix (wireBlock w 0 256) (wireBlock w 770 256) (wireBlock w 1540 256) (w 1797)
+
+def R (w : Nat→Wire) : Program :=
+  adderSuffix (wireBlock w 0 256) (wireBlock w 770 256) (wireBlock w 1540 256) (w 1797)
+
+def lowPorts (w : Nat→Wire) : List Wire :=
+  spinePorts (wireBlock w 0 256) (wireBlock w 770 256) (wireBlock w 1540 256) (w 1797)
+
+def flagKAdd (w : Nat→Wire) : Program :=
+  P w++HighOutputFlagResearch.newFlagAt (w 1028) (w 256) (w 1026) (w 1795) (w 257) (w 1027)++R w
+
+def zeroKAdd (w : Nat→Wire) : Program :=
+  P w++newLeafAt false (w 256) (w 1026) (w 1795) (w 257) (w 1027)++R w
+
+private theorem lastCarry_cat (xs ys : List Wire) (cin : Wire) :
+    lastCarry (xs ++ ys) cin = lastCarry ys (lastCarry xs cin) := by
+  induction xs generalizing cin with
+  | nil => rfl
+  | cons x xs ih => exact ih x
+
+/-- Split the final carry by one list append instead of reducing 256 entries. -/
+theorem literal_split (w : Nat→Wire) :
+    literalKAdd w=P w++oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)++R w := by
+  have hx : wireBlock w 0 258=wireBlock w 0 256++[w 256,w 257] := by
+    rw [←wireBlock_append w 0 256 2]
+    rfl
+  have hy : wireBlock w 770 258=wireBlock w 770 256++[w 1026,w 1027] := by
+    rw [←wireBlock_append w 770 256 2]
+    rfl
+  have hc : wireBlock w 1540 257=wireBlock w 1540 256++[w 1796] := by
+    rw [←wireBlock_append w 1540 256 1]
+    rfl
+  have lastBlock : wireBlock w 1540 256 = wireBlock w 1540 255 ++ [w 1795] := by
+    rw [←wireBlock_append w 1540 255 1]
+    rfl
+  have last : lastCarry (wireBlock w 1540 256) (w 1797)=w 1795 := by
+    rw [lastBlock,lastCarry_cat]
+    rfl
+  rw [literalKAdd,read_add,hx,hy,hc]
+  simpa only [P,R,last] using add_split
+    (wireBlock w 0 256) (wireBlock w 770 256) (wireBlock w 1540 256)
+    (w 1797) (w 256) (w 257) (w 1026) (w 1027) (w 1796)
+    (by simp [wireBlock_length]) (by simp [wireBlock_length])
+
+theorem low_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1796 ∨ i=1028 ∨ i=1027) : w i∉lowPorts w := by
+  intro h
+  simp only [lowPorts,spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
+  rcases h with h|h|h|h
+  · have e:=hinj h
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji
+    subst j
+    simp only [List.mem_range'_1] at hj
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji
+    subst j
+    simp only [List.mem_range'_1] at hj
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji
+    subst j
+    simp only [List.mem_range'_1] at hj
+    omega
+
+theorem P_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1796 ∨ i=1028 ∨ i=1027) : w i∉wires (P w) := by
+  intro h
+  exact low_avoid w hinj i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
+
+section RSupportWireOpaque
+
+theorem R_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1796 ∨ i=1028 ∨ i=1027) : w i∉wires (R w) := by
+  intro h
+  have support := suffix_support (wireBlock w 0 256) (wireBlock w 770 256)
+    (wireBlock w 1540 256) (w 1797)
+  exact low_avoid w hinj i hi (List.mem_toFinset.mp (support h))
+end RSupportWireOpaque
+
+theorem tail_nd (w : Nat→Wire) (hinj : Function.Injective w) :
+    [w 1028,w 256,w 1026,w 1795,w 257,w 1027,w 1796].Nodup := by
+  exact List.Nodup.map hinj (by decide : [1028,256,1026,1795,257,1027,1796].Nodup)
+
+/-- A post-word value/division fact gives its actual high physical bit.
+The original MF supplies postWord, not an unrelated abstract integer bound. -/
+theorem top_from_div (w : Nat→Wire) (s : BasisState) (W : Nat) (flag : Bool)
+    (postWord : regValue (wireBlock w 770 258) s=W) (hdiv : W/2^257=flag.toNat) :
+    s (w 1027)=flag := by
+  have h:=regValue_bit (wireBlock w 770 258) 257 0 s (by simp [wireBlock_length])
+  have port : (wireBlock w 770 258).getD 257 0=w 1027 := by rfl
+  rw [port,postWord,hdiv] at h
+  cases hs : s (w 1027) <;> cases flag <;> simp [hs] at h ⊢
+
+theorem flag_counts (w : Nat→Wire) :
+    toffoliCount (literalKAdd w)=toffoliCount (flagKAdd w)+1 ∧
+    measurementCount (literalKAdd w)=measurementCount (flagKAdd w) ∧
+    gateSlots (literalKAdd w)=gateSlots (flagKAdd w)+5 := by
+  have o:=HighOutputTailStructuredResearch.counts false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
+  have n:=HighOutputFlagResearch.counts (w 1028) (w 256) (w 1026) (w 1795) (w 257) (w 1027)
+  have os:=HighOutputTailStructuredResearch.slots false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
+  simp only [literal_split,flagKAdd,toffoliCount_append,measurementCount_append,gateSlots_append]
+  omega
+
+theorem zero_counts (w : Nat→Wire) :
+    toffoliCount (literalKAdd w)=toffoliCount (zeroKAdd w)+1 ∧
+    measurementCount (literalKAdd w)=measurementCount (zeroKAdd w) ∧
+    gateSlots (literalKAdd w)=gateSlots (zeroKAdd w)+7 := by
+  have o:=HighOutputTailStructuredResearch.counts false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
+  have os:=HighOutputTailStructuredResearch.slots false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
+  change gateSlots (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)) = 14 ∧
+    gateSlots (newLeafAt false (w 256) (w 1026) (w 1795) (w 257) (w 1027)) = 7 at os
+  simp only [literal_split,zeroKAdd,toffoliCount_append,measurementCount_append,gateSlots_append]
+  omega
+
+theorem flag_retired (w : Nat→Wire) (hinj : Function.Injective w) : w 1796∉wires (flagKAdd w) := by
+  have hp:=P_avoid w hinj 1796 (Or.inl rfl)
+  have hr:=R_avoid w hinj 1796 (Or.inl rfl)
+  have hl:=HighOutputFlagResearch.retired _ _ _ _ _ _ _ (tail_nd w hinj)
+  simp only [flagKAdd,wires_append,Finset.mem_union]
+  intro h
+  rcases h with hLeft | hR
+  · rcases hLeft with hP | hLeaf
+    · exact hp hP
+    · exact hl hLeaf
+  · exact hr hR
+
+theorem zero_retired (w : Nat→Wire) (hinj : Function.Injective w) : w 1796∉wires (zeroKAdd w) := by
+  have hp:=P_avoid w hinj 1796 (Or.inl rfl)
+  have hr:=R_avoid w hinj 1796 (Or.inl rfl)
+  have hl:=HighOutputTailStructuredResearch.retired false _ _ _ _ _ _ (List.nodup_cons.mp (tail_nd w hinj)).2
+  simp only [zeroKAdd,wires_append,Finset.mem_union]
+  intro h
+  rcases h with hLeft | hR
+  · rcases hLeft with hP | hLeaf
+    · exact hp hP
+    · exact hl hLeaf
+  · exact hr hR
+
+
+/-- Bounded alternative rooted in the actual real-caller pool Nodup premise.
+The old globally injective research theorem above is retained unchanged. -/
+theorem low_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1796 ∨ i=1028 ∨ i=1027) : w i∉lowPorts w := by
+  have ir : i<1798 := by omega
+  intro h
+  simp only [lowPorts,spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
+  rcases h with h|h|h|h
+  · have e := skywalkPool_index_inj w hn i 1797 ir (by decide) h
+    omega
+  all_goals
+    obtain ⟨j,hj,hji⟩ := List.mem_map.mp h
+    simp only [List.mem_range'_1] at hj
+    have jr : j<1798 := by omega
+    have e := skywalkPool_index_inj w hn j i jr ir hji
+    omega
+
+theorem P_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1796 ∨ i=1028 ∨ i=1027) : w i∉wires (P w) := by
+  intro h
+  exact low_avoid_pool w hn i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
+
+section RPoolSupportWireOpaque
+
+theorem R_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1796 ∨ i=1028 ∨ i=1027) : w i∉wires (R w) := by
+  intro h
+  have support := suffix_support (wireBlock w 0 256) (wireBlock w 770 256)
+    (wireBlock w 1540 256) (w 1797)
+  exact low_avoid_pool w hn i hi (List.mem_toFinset.mp (support h))
+end RPoolSupportWireOpaque
+
+theorem tail_nd_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) :
+    [w 1028,w 256,w 1026,w 1795,w 257,w 1027,w 1796].Nodup := by
+  have neq (i j : Nat) (hi : i<1798) (hj : j<1798) (hne : i≠j) : w i≠w j := by
+    intro he
+    exact hne (skywalkPool_index_inj w hn i j hi hj he)
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true]
+  repeat' constructor
+  all_goals exact neq _ _ (by decide) (by decide) (by decide)
+
+end ECDSAAdd.Entrant.KAddCallerBridgeResearch
+end
+
+
+-- Consolidated source module: E1CallerValueFactsDraft
+section
+
+/-! Source-only numerical caller facts. These do not assert the MF-to-tail
+prefix bridge, any program equivalence, or a full candidate certificate. -/
+set_option Elab.async false
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 20000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.E1CallerValueFactsResearch
+open Arithmetic NativeFirstDirect
+
+def Kword (D : Nat) (par : Bool) : Nat := (D/2+kConstant false par)%2^258
+
+/-- Both forward selected callers have this identical numerical K output.
+The parity premise excludes D=p-1 in the true branch, where a naive bound
+without the actual caller condition would wrap exactly to zero. -/
+theorem Kword_high_div (D : Nat) (hD : D<ECDSAAdd.p) (par : Bool)
+    (hp : par=decide (D%2=1)) :
+    Kword D par<2^258 ∧ (Kword D par)/2^257=par.toNat ∧
+      (par=true → (Kword D par)/2^256=3) := by
+  cases par <;> norm_num [Kword,kConstant,ECDSAAdd.p] at * <;> omega
+
+/-- The exit's literal mapped-adder output is Y/2, not an unbounded MF word. -/
+theorem exit_half_bound (Y : Nat) (hY : Y<ECDSAAdd.p) : Y/2<2^255 := by
+  norm_num [ECDSAAdd.p] at hY ⊢
+  omega
+
+/-- Three final zero output bits justify the optional affine-carry extension.
+A whole-adder prefix/cleanup proof is still required to use these facts. -/
+theorem exit_top3 (Y : Nat) (hY : Y<ECDSAAdd.p) :
+    (Y/2).testBit 255=false ∧ (Y/2).testBit 256=false ∧ (Y/2).testBit 257=false := by
+  have h := exit_half_bound Y hY
+  refine ⟨Nat.testBit_eq_false_of_lt h,?_,?_⟩
+  · apply Nat.testBit_eq_false_of_lt
+    norm_num at h ⊢
+    omega
+  · apply Nat.testBit_eq_false_of_lt
+    norm_num at h ⊢
+    omega
+
+end ECDSAAdd.Entrant.E1CallerValueFactsResearch
+end
+
+
+-- Consolidated source module: KAddCallerBridgeDraft
+section
+
+/-! Private whole-adder substitutions. The actual real-MF postWord premise
+remains explicit; no three-call program gain or full candidate is established. -/
+set_option Elab.async false
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 20000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.KAddCallerBridgeResearch
+open Arithmetic RecordedQuantum Challenge HighOutputTailStructuredResearch AdderSpineBridgeResearch
+
+/-- The two forward s6 callers instantiate D=dx, par=dx%2, and the existing
+MF output Kword. Their loadK/tk derivations remain the original verified ones. -/
+theorem forward_run_eq (w : Nat→Wire) (hinj : Function.Injective w) (s : State) (m : List Bool)
+    (clean : s.basis (w 1796)=false) (D : Nat) (hD : D<ECDSAAdd.p) (par : Bool)
+    (hp : par=decide (D%2=1)) (flagIn : s.basis (w 1028)=par)
+    (postWord : regValue (wireBlock w 770 258) (run (literalKAdd w) [] s).basis=
+      E1CallerValueFactsResearch.Kword D par) :
+    run (literalKAdd w) m s=run (flagKAdd w) m s := by
+  have facts:=E1CallerValueFactsResearch.Kword_high_div D hD par hp
+  have top:=top_from_div w (run (literalKAdd w) [] s).basis _ par postWord facts.2.1
+  rw [literal_split] at top ⊢
+  unfold flagKAdd
+  apply whole_flag (P w) (R w) (w 1028) (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
+    (tail_nd w hinj) s m clean (P_avoid w hinj 1796 (Or.inl rfl))
+    (P_avoid w hinj 1028 (Or.inr (Or.inl rfl))) (R_avoid w hinj 1027 (Or.inr (Or.inr rfl)))
+  exact top.trans flagIn.symm
+
+/-- Exit s12 supplies the actual canonical Y/2 MF result, including G=false. -/
+theorem exit_run_eq (w : Nat→Wire) (hinj : Function.Injective w) (s : State) (m : List Bool)
+    (clean : s.basis (w 1796)=false) (Y : Nat) (hY : Y<ECDSAAdd.p)
+    (postWord : regValue (wireBlock w 770 258) (run (literalKAdd w) [] s).basis=Y/2) :
+    run (literalKAdd w) m s=run (zeroKAdd w) m s := by
+  have hlt : Y/2<2^257 := lt_trans (E1CallerValueFactsResearch.exit_half_bound Y hY)
+    (pow_lt_pow_right₀ (a := (2 : Nat)) (m := 255) (n := 257) (by decide) (by decide))
+  have hdiv : (Y/2)/2^257=Bool.toNat false := Nat.div_eq_of_lt hlt
+  have top:=top_from_div w (run (literalKAdd w) [] s).basis _ false postWord hdiv
+  rw [literal_split] at top ⊢
+  unfold zeroKAdd
+  exact whole_zero (P w) (R w) (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
+    (List.nodup_cons.mp (tail_nd w hinj)).2 s m clean
+    (P_avoid w hinj 1796 (Or.inl rfl)) (R_avoid w hinj 1027 (Or.inr (Or.inr rfl))) top
+
+
+/-- Pool-Nodup variant; the real MF postWord premise is still not discharged. -/
+theorem forward_run_eq_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
+    (clean : s.basis (w 1796)=false) (D : Nat) (hD : D<ECDSAAdd.p) (par : Bool)
+    (hp : par=decide (D%2=1)) (flagIn : s.basis (w 1028)=par)
+    (postWord : regValue (wireBlock w 770 258) (run (literalKAdd w) [] s).basis=
+      E1CallerValueFactsResearch.Kword D par) :
+    run (literalKAdd w) m s=run (flagKAdd w) m s := by
+  have facts:=E1CallerValueFactsResearch.Kword_high_div D hD par hp
+  have top:=top_from_div w (run (literalKAdd w) [] s).basis _ par postWord facts.2.1
+  rw [literal_split] at top ⊢
+  unfold flagKAdd
+  apply whole_flag (P w) (R w) (w 1028) (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
+    (tail_nd_pool w hn) s m clean (P_avoid_pool w hn 1796 (Or.inl rfl))
+    (P_avoid_pool w hn 1028 (Or.inr (Or.inl rfl))) (R_avoid_pool w hn 1027 (Or.inr (Or.inr rfl)))
+  exact top.trans flagIn.symm
+
+/-- Pool-Nodup variant; the real MF postWord premise is still not discharged. -/
+theorem exit_run_eq_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
+    (clean : s.basis (w 1796)=false) (Y : Nat) (hY : Y<ECDSAAdd.p)
+    (postWord : regValue (wireBlock w 770 258) (run (literalKAdd w) [] s).basis=Y/2) :
+    run (literalKAdd w) m s=run (zeroKAdd w) m s := by
+  have hlt : Y/2<2^257 := lt_trans (E1CallerValueFactsResearch.exit_half_bound Y hY)
+    (pow_lt_pow_right₀ (a := (2 : Nat)) (m := 255) (n := 257) (by decide) (by decide))
+  have hdiv : (Y/2)/2^257=Bool.toNat false := Nat.div_eq_of_lt hlt
+  have top:=top_from_div w (run (literalKAdd w) [] s).basis _ false postWord hdiv
+  rw [literal_split] at top ⊢
+  unfold zeroKAdd
+  exact whole_zero (P w) (R w) (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
+    (List.nodup_cons.mp (tail_nd_pool w hn)).2 s m clean
+    (P_avoid_pool w hn 1796 (Or.inl rfl)) (R_avoid_pool w hn 1027 (Or.inr (Or.inr rfl))) top
+
+end ECDSAAdd.Entrant.KAddCallerBridgeResearch
+end
+
+
+-- Consolidated source module: KAddResourceBridgeDraft
+section
+
+/-! Private generic full-adder support and conditional validity transport.
+No actual caller, certificate, aggregate resource count or retirement claim. -/
+set_option Elab.async false
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 20000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.KAddResourceBridgeResearch
+open Arithmetic RecordedQuantum Challenge KAddCallerBridgeResearch HighOutputTailStructuredResearch
+attribute [local irreducible] ECDSAAdd.wires
+
+/-- Splice a finite leaf while keeping the arbitrary prefix/suffix opaque. -/
+private theorem splice_support (p old new r : Program) (extra : Finset Wire)
+    (hn : wires new ⊆ wires old ∪ extra) :
+    wires (p++new++r) ⊆ wires (p++old++r) ∪ extra := by
+  simp only [wires_append]
+  intro q h
+  rcases Finset.mem_union.mp h with hLeft | hR
+  · rcases Finset.mem_union.mp hLeft with hP | hNew
+    · exact Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_union_left _ hP))
+    · rcases Finset.mem_union.mp (hn hNew) with hOld | hExtra
+      · exact Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_union_right _ hOld))
+      · exact Finset.mem_union_right _ hExtra
+  · exact Finset.mem_union_left _ (Finset.mem_union_right _ hR)
+
+private theorem zero_leaf_support (a b c A B z : Wire) :
+    wires (newLeafAt false a b c A B) ⊆ wires (oldLeafAt a b c A B z) := by
+  rw [(HighOutputTailStructuredResearch.support false a b c A B z).2,
+    (HighOutputTailStructuredResearch.support false a b c A B z).1]
+  intro q h
+  simp only [Finset.mem_insert,Finset.mem_singleton] at h
+  rcases h with rfl | rfl | rfl | rfl | rfl <;> simp
+
+private theorem flag_leaf_support (flag a b c A B z : Wire) :
+    wires (HighOutputFlagResearch.newFlagAt flag a b c A B) ⊆
+      wires (oldLeafAt a b c A B z) ∪ {flag} := by
+  rw [HighOutputFlagResearch.support,
+    (HighOutputTailStructuredResearch.support false a b c A B z).1]
+  intro q h
+  simp only [Finset.mem_insert,Finset.mem_singleton] at h
+  rcases h with rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+
+/-- The support bound is structural and needs no injectivity premise. -/
+theorem flag_support (w : Nat → Wire) :
+    wires (flagKAdd w) ⊆ wires (literalKAdd w) ∪ {w 1028} := by
+  have h := splice_support (P w)
+    (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796))
+    (HighOutputFlagResearch.newFlagAt (w 1028) (w 256) (w 1026) (w 1795) (w 257) (w 1027))
+    (R w) {w 1028} (flag_leaf_support _ _ _ _ _ _ _)
+  exact (congrArg (fun s : Finset Wire => wires (flagKAdd w) ⊆ s ∪ {w 1028})
+    (congrArg ECDSAAdd.wires (literal_split w))).mpr h
+
+theorem zero_support (w : Nat → Wire) :
+    wires (zeroKAdd w) ⊆ wires (literalKAdd w) := by
+  have h := splice_support (P w)
+    (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796))
+    (newLeafAt false (w 256) (w 1026) (w 1795) (w 257) (w 1027)) (R w) ∅
+    (by simpa only [Finset.union_empty] using zero_leaf_support (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796))
+  have hs : wires (zeroKAdd w) ⊆ wires (P w++oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)++R w) := by
+    simpa only [Finset.union_empty] using h
+  exact (congrArg (fun s : Finset Wire => wires (zeroKAdd w) ⊆ s)
+    (congrArg ECDSAAdd.wires (literal_split w))).mpr hs
+
+/-- Pointwise properties of unchanged P/R inherit from the old whole program. -/
+private theorem splice_valid (V : Instr → Prop) (p old new r : Program)
+    (ho : ∀i∈p++old++r,V i) (hn : ∀i∈new,V i) : ∀i∈p++new++r,V i := by
+  intro i hi
+  rcases List.mem_append.mp hi with hLeft | hR
+  · rcases List.mem_append.mp hLeft with hP | hNew
+    · exact ho i (List.mem_append_left r (List.mem_append_left old hP))
+    · exact hn i hNew
+  · exact ho i (List.mem_append_right (p++old) hR)
+
+/-- Weak recorded-gate physicality is transported as exactly that property. -/
+theorem flag_gatePhysical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (ho : GatePhysical (literalKAdd w)) : GatePhysical (flagKAdd w) := by
+  have old := (congrArg GatePhysical (literal_split w)).mp ho
+  exact splice_valid (fun i => PhysicalInstr (.gate i)) (P w)
+    (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796))
+    (HighOutputFlagResearch.newFlagAt (w 1028) (w 256) (w 1026) (w 1795) (w 257) (w 1027)) (R w) old
+    (HighOutputFlagResearch.physical _ _ _ _ _ _ _ (tail_nd_pool w hn))
+
+theorem zero_gatePhysical (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (ho : GatePhysical (literalKAdd w)) : GatePhysical (zeroKAdd w) := by
+  have old := (congrArg GatePhysical (literal_split w)).mp ho
+  exact splice_valid (fun i => PhysicalInstr (.gate i)) (P w)
+    (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796))
+    (newLeafAt false (w 256) (w 1026) (w 1795) (w 257) (w 1027)) (R w) old
+    (HighOutputTailStructuredResearch.physical false _ _ _ _ _ _
+      (List.nodup_cons.mp (tail_nd_pool w hn)).2).2
+
+/-- Contract validity also checks distinct CCX controls and both CZ correction branches.
+This stronger leaf proof unfolds only the finite leaf, never the full adder. -/
+private theorem zero_leaf_contract_valid (a b c A B z : Wire)
+    (nd : [a,b,c,A,B,z].Nodup) : ∀i∈newLeafAt false a b c A B,instructionValid i := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  simp_all [newLeafAt,eraseCarry,instructionValid,correctionValid,ne_comm]
+
+private theorem flag_leaf_contract_valid (flag a b c A B z : Wire)
+    (nd : [flag,a,b,c,A,B,z].Nodup) :
+    ∀i∈HighOutputFlagResearch.newFlagAt flag a b c A B,instructionValid i := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  simp_all [HighOutputFlagResearch.newFlagAt,newLeafAt,eraseCarry,instructionValid,correctionValid,ne_comm]
+
+/-- Strong Contract validity is inherited only from an old strong-Contract premise. -/
+theorem flag_contract_valid (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (ho : ∀i∈literalKAdd w,instructionValid i) : ∀i∈flagKAdd w,instructionValid i := by
+  have old := (congrArg (fun p : Program => ∀i∈p,instructionValid i) (literal_split w)).mp ho
+  exact splice_valid instructionValid (P w)
+    (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796))
+    (HighOutputFlagResearch.newFlagAt (w 1028) (w 256) (w 1026) (w 1795) (w 257) (w 1027)) (R w) old
+    (flag_leaf_contract_valid _ _ _ _ _ _ _ (tail_nd_pool w hn))
+
+theorem zero_contract_valid (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (ho : ∀i∈literalKAdd w,instructionValid i) : ∀i∈zeroKAdd w,instructionValid i := by
+  have old := (congrArg (fun p : Program => ∀i∈p,instructionValid i) (literal_split w)).mp ho
+  exact splice_valid instructionValid (P w)
+    (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796))
+    (newLeafAt false (w 256) (w 1026) (w 1795) (w 257) (w 1027)) (R w) old
+    (zero_leaf_contract_valid _ _ _ _ _ _ (List.nodup_cons.mp (tail_nd_pool w hn)).2)
+
+#check flag_support
+#print axioms flag_support
+#check zero_support
+#print axioms zero_support
+#check flag_gatePhysical
+#print axioms flag_gatePhysical
+#check zero_gatePhysical
+#print axioms zero_gatePhysical
+#check flag_contract_valid
+#print axioms flag_contract_valid
+#check zero_contract_valid
+#print axioms zero_contract_valid
+end ECDSAAdd.Entrant.KAddResourceBridgeResearch
+end
+
+
+-- Consolidated source module: AffineCarry3A
+section
+
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 20000
+set_option Elab.async false
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+set_option exponentiation.threshold 400
+
+namespace Verifier.Leaf3
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Challenge
+
+/-- The three-bit terminal suffix: two retired clean carries `z`, `z'`. -/
+def oldLeaf3At (a b c A B A' B' z z' : Wire) : Program :=
+  addInPlace [a,A,A'] [b,B,B'] [z,z'] c
+
+/-- Mirror of the two-bit leaf, for the nesting check. -/
+def oldLeafAt (a b c A B z : Wire) : Program :=
+  majority a b c z ++ [.CX A B,.CX z B] ++ eraseCarry a b c z ++ [.CX a b,.CX c b]
+
+/-- Zero-Toffoli replacement. Order is load-bearing: B' is measured while B is live. -/
+def newLeaf3At (a b c A B A' B' : Wire) : Program :=
+  [.measureX B' [] [.Z A, .Z B, .Z A', .CZ A B],
+   .measureX B  [] [.Z A, .CZ a b, .CZ a c, .CZ b c],
+   .CX a b, .CX c b]
+
+/-- Output bits 256 and 257 of the sum are zero. Bit 255 is not needed. -/
+def Ready3 (a b c A B A' B' : Wire) (s : BasisState) : Prop :=
+  ((s A ^^ s B) ^^ carryBit (s a) (s b) (s c)) = false ∧
+  ((s A' ^^ s B') ^^
+     carryBit (s A) (s B) (carryBit (s a) (s b) (s c))) = false
+
+-- structural checks
+theorem old3_unfold (a b c A B A' B' z z' : Wire) :
+    oldLeaf3At a b c A B A' B' z z'
+      = majority a b c z ++ oldLeafAt A B z A' B' z'
+        ++ eraseCarry a b c z ++ [.CX a b,.CX c b] := by rfl
+
+theorem old3_counts (a b c A B A' B' z z' : Wire) :
+    toffoliCount (oldLeaf3At a b c A B A' B' z z') = 2 ∧
+    measurementCount (oldLeaf3At a b c A B A' B' z z') = 2 := by
+  exact ⟨rfl, rfl⟩
+
+theorem new3_counts (a b c A B A' B' : Wire) :
+    toffoliCount (newLeaf3At a b c A B A' B') = 0 ∧
+    measurementCount (newLeaf3At a b c A B A' B') = 2 := by
+  exact ⟨rfl, rfl⟩
+
+
+/-- Common final state: `b` holds the low sum, both high outputs are zeroed,
+phase is untouched. -/
+private def post3 (a b c B B' : Wire) (s : State) : State :=
+  ⟨s.phase,
+   writeBit (writeBit (writeBit s.basis B' false) B false) b
+     (sumBit (s.basis a) (s.basis b) (s.basis c))⟩
+
+/-- Boolean value a correction list contributes to the phase. -/
+def cval : List Correction → BasisState → Bool
+  | [], _ => false
+  | .Z t :: cs, f => f t ^^ cval cs f
+  | .CZ x y :: cs, f => (f x && f y) ^^ cval cs f
+
+private theorem correct_eq (cs : List Correction) (s : State) :
+    correct cs s = ⟨s.phase ^^ cval cs s.basis, s.basis⟩ := by
+  induction cs generalizing s with
+  | nil => simp [correct,cval]
+  | cons d cs ih =>
+    cases d <;>
+      simp [correct,cval,ih,Bool.xor_assoc,Bool.xor_comm,Bool.xor_left_comm]
+
+/-- A measurement whose correction list reproduces the measured value on the
+post-zeroing basis leaves the phase untouched, for either outcome. -/
+private theorem meas_clean (t : Wire) (cs : List Correction) (s : State) (m : List Bool)
+    (h : s.basis t = cval cs (writeBit s.basis t false)) :
+    run [.measureX t [] cs] m s = ⟨s.phase, writeBit s.basis t false⟩ := by
+  simp only [run,measureAndCorrect]
+  cases hm : m.headD false
+  · simp [correct,cval]
+  · simp only [Bool.true_and,if_true,correct_eq,←h]
+    simp [Bool.xor_assoc]
+
+private theorem st_eq {p q : Bool} {f g : BasisState}
+    (hp : p = q) (hf : ∀ w, f w = g w) : (⟨p,f⟩ : State) = ⟨q,g⟩ := by
+  subst hp; exact congrArg _ (funext hf)
+
+private theorem run_cat (p q : Program) (m : List Bool) (s : State) :
+    run (p++q) m s = run q (m.drop (measurementCount p)) (run p m s) := by
+  rw [run_append,run_take]
+
+private theorem cx2 (x y t : Wire) (hx : x≠t) (hy : y≠t) (s : State) (m : List Bool) :
+    run [.CX x t,.CX y t] m s =
+      ⟨s.phase,writeBit s.basis t ((s.basis t ^^ s.basis x) ^^ s.basis y)⟩ := by
+  simp only [run]
+  apply congrArg (State.mk s.phase)
+  funext q
+  by_cases hq : q=t <;> simp_all [writeBit,Function.update]
+
+theorem new3_run (a b c A B A' B' : Wire) (nd : [a,b,c,A,B,A',B'].Nodup)
+    (s : State) (m : List Bool) (ready : Ready3 a b c A B A' B' s.basis) :
+    run (newLeaf3At a b c A B A' B') m s = post3 a b c B B' s := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  obtain ⟨⟨hab,hac,haA,haB,haA',haB'⟩,⟨hbc,hbA,hbB,hbA',hbB'⟩,
+    ⟨hcA,hcB,hcA',hcB'⟩,⟨hAB,hAA',hAB'⟩,⟨hBA',hBB'⟩,hA'B'⟩ := nd
+  obtain ⟨r1,r2⟩ := ready
+  have h1 : s.basis B' = cval [.Z A,.Z B,.Z A',.CZ A B] (writeBit s.basis B' false) := by
+    simp only [cval,writeBit,Function.update_of_ne hAB',Function.update_of_ne hBB',
+      Function.update_of_ne hA'B',Bool.xor_false]
+    revert r1 r2
+    simp only [carryBit]
+    cases s.basis a <;> cases s.basis b <;> cases s.basis c <;>
+      cases s.basis A <;> cases s.basis B <;> cases s.basis A' <;>
+      cases s.basis B' <;> decide
+  have e1 := meas_clean B' [.Z A,.Z B,.Z A',.CZ A B] s m h1
+  have h2 : (⟨s.phase,writeBit s.basis B' false⟩ : State).basis B
+      = cval [.Z A,.CZ a b,.CZ a c,.CZ b c]
+          (writeBit (⟨s.phase,writeBit s.basis B' false⟩ : State).basis B false) := by
+    simp only [cval,writeBit,Function.update_of_ne hAB,Function.update_of_ne hAB',
+      Function.update_of_ne haB,Function.update_of_ne haB',
+      Function.update_of_ne hbB,Function.update_of_ne hbB',
+      Function.update_of_ne hcB,Function.update_of_ne hcB',
+      Function.update_of_ne hBB',Bool.xor_false]
+    revert r1
+    simp only [carryBit]
+    cases s.basis a <;> cases s.basis b <;> cases s.basis c <;>
+      cases s.basis A <;> cases s.basis B <;> decide
+  have e2 := meas_clean B [.Z A,.CZ a b,.CZ a c,.CZ b c] ⟨s.phase,writeBit s.basis B' false⟩
+    (m.drop (measurementCount [Instr.measureX B' [] [.Z A,.Z B,.Z A',.CZ A B]])) h2
+  show run ([Instr.measureX B' [] [.Z A,.Z B,.Z A',.CZ A B]]
+      ++ ([Instr.measureX B [] [.Z A,.CZ a b,.CZ a c,.CZ b c]] ++ [.CX a b,.CX c b])) m s
+    = post3 a b c B B' s
+  rw [run_cat,e1,run_cat,e2,cx2 a c b hab (Ne.symm hbc)]
+  refine st_eq rfl (fun w => ?_)
+  simp only [post3,writeBit,
+    Function.update_of_ne haB,Function.update_of_ne haB',
+    Function.update_of_ne hbB,Function.update_of_ne hbB',
+    Function.update_of_ne hcB,Function.update_of_ne hcB',sumBit]
+  by_cases hw : w = b
+  · subst w
+    simp only [Function.update_self]
+    exact Bool.xor_comm _ _ ▸ (by
+      cases s.basis a <;> cases s.basis b <;> cases s.basis c <;> decide)
+  · simp only [Function.update_of_ne hw]
+
+theorem old3_run (a b c A B A' B' z z' : Wire)
+    (nd : [a,b,c,A,B,A',B',z,z'].Nodup)
+    (s : State) (m : List Bool)
+    (cz : s.basis z = false) (cz' : s.basis z' = false) :
+    run (oldLeaf3At a b c A B A' B' z z') m s =
+      ⟨s.phase,
+       writeBit (writeBit (writeBit (writeBit (writeBit s.basis
+         z' (carryBit (s.basis A) (s.basis B)
+               (carryBit (s.basis a) (s.basis b) (s.basis c))))
+         B' ((s.basis B' ^^ s.basis A') ^^
+               carryBit (s.basis A) (s.basis B)
+                 (carryBit (s.basis a) (s.basis b) (s.basis c))))
+         z' false)
+         B ((s.basis B ^^ s.basis A) ^^
+               carryBit (s.basis a) (s.basis b) (s.basis c)))
+         b (sumBit (s.basis a) (s.basis b) (s.basis c))⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  obtain ⟨⟨hab,hac,haA,haB,haA',haB',haz,haz'⟩,
+          ⟨hbc,hbA,hbB,hbA',hbB',hbz,hbz'⟩,
+          ⟨hcA,hcB,hcA',hcB',hcz,hcz'⟩,
+          ⟨hAB,hAA',hAB',hAz,hAz'⟩,
+          ⟨hBA',hBB',hBz,hBz'⟩,
+          ⟨hA'B',hA'z,hA'z'⟩,
+          ⟨hB'z,hB'z'⟩,hzz'⟩ := nd
+  set K := carryBit (s.basis a) (s.basis b) (s.basis c) with hK
+  set K' := carryBit (s.basis A) (s.basis B) K with hK'
+  show run (majority a b c z ++ (majority A B z z' ++ ([Instr.CX A' B',.CX z' B'] ++
+      (eraseCarry A B z z' ++ ([Instr.CX A B,.CX z B] ++
+      (eraseCarry a b c z ++ [Instr.CX a b,.CX c b])))))) m s = _
+  have n1 : [a,b,c,z].Nodup := by
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true]; exact ⟨⟨hab,hac,haz⟩,⟨hbc,hbz⟩,hcz⟩
+  have n2 : [A,B,z,z'].Nodup := by
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true]; exact ⟨⟨hAB,hAz,hAz'⟩,⟨hBz,hBz'⟩,hzz'⟩
+  rw [run_cat,majority_correct a b c z n1]
+  simp only [cz,Bool.false_xor,←hK]
+  rw [run_cat,majority_correct A B z z' n2]
+  simp only [writeBit,Function.update_of_ne hAz,Function.update_of_ne hBz,
+    Function.update_self,Function.update_of_ne (Ne.symm hzz'),cz',Bool.false_xor,←hK']
+  rw [run_cat,cx2 A' z' B' hA'B' (Ne.symm hB'z')]
+  simp only [writeBit,Function.update_of_ne hA'z,Function.update_of_ne (Ne.symm hA'z'),
+    Function.update_self,Function.update_of_ne hB'z,Function.update_of_ne hB'z']
+  rw [run_cat,eraseCarry_correct A B z z' hAz' hBz' hzz' _ (by
+    simp only [writeBit,
+      Function.update_of_ne (Ne.symm hB'z'),Function.update_self,
+      Function.update_of_ne hAB',Function.update_of_ne hAz',Function.update_of_ne hAz,
+      Function.update_of_ne hBB',Function.update_of_ne hBz',Function.update_of_ne hBz,
+      Function.update_of_ne (Ne.symm hB'z),Function.update_of_ne hzz',←hK'])]
+  rw [run_cat,cx2 A z B hAB (Ne.symm hBz)]
+  rw [run_cat,eraseCarry_correct a b c z haz hbz hcz _ (by
+    simp only [writeBit,
+      Function.update_of_ne (Ne.symm hBz),Function.update_of_ne hzz',
+      Function.update_of_ne (Ne.symm hB'z),Function.update_self,
+      Function.update_of_ne haB,Function.update_of_ne haz',Function.update_of_ne haB',
+      Function.update_of_ne haz,
+      Function.update_of_ne hbB,Function.update_of_ne hbz',Function.update_of_ne hbB',
+      Function.update_of_ne hbz,
+      Function.update_of_ne hcB,Function.update_of_ne hcz',Function.update_of_ne hcB',
+      Function.update_of_ne hcz,←hK])]
+  rw [cx2 a c b hab (Ne.symm hbc)]
+  have q1 := Ne.symm hB'z; have q2 := Ne.symm hBz; have q3 := Ne.symm hzz'
+  have q4 := Ne.symm hbz; have q5 := Ne.symm hB'z'; have q6 := Ne.symm hBz'
+  have q7 := Ne.symm hbz'; have q8 := Ne.symm hbB; have q9 := Ne.symm hbB'
+  have q10 := Ne.symm hA'z; have q11 := Ne.symm hA'z'; have q12 := Ne.symm hAz
+  have q13 := Ne.symm hAz'; have q14 := Ne.symm haz; have q15 := Ne.symm haz'
+  have q16 := Ne.symm hcz; have q17 := Ne.symm hcz'; have q18 := Ne.symm haB
+  have q19 := Ne.symm haB'; have q20 := Ne.symm hcB; have q21 := Ne.symm hcB'
+  have q22 := Ne.symm hAB'; have q23 := Ne.symm hA'B'; have q24 := Ne.symm hBA'
+  have q25 := Ne.symm hAA'; have q26 := Ne.symm hAB; have q27 := Ne.symm hBB'
+  refine st_eq rfl (fun w => ?_)
+  by_cases hwz : w = z <;> by_cases hwb : w = b <;>
+    by_cases hwB : w = B <;> by_cases hwB' : w = B' <;> by_cases hwz' : w = z' <;>
+    subst_vars <;>
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+
+/-- **Main result.** On the restriction that output bits 256 and 257 are zero,
+the two-Toffoli three-bit leaf and the zero-Toffoli replacement agree as complete
+States — phase included — for arbitrary and independent measurement records. -/
+theorem full_state3 (a b c A B A' B' z z' : Wire)
+    (nd : [a,b,c,A,B,A',B',z,z'].Nodup) (s : State) (m n : List Bool)
+    (cz : s.basis z = false) (cz' : s.basis z' = false)
+    (ready : Ready3 a b c A B A' B' s.basis) :
+    run (oldLeaf3At a b c A B A' B' z z') m s
+      = run (newLeaf3At a b c A B A' B') n s := by
+  have nd7 : [a,b,c,A,B,A',B'].Nodup := by
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true] at nd ⊢
+    tauto
+  rw [old3_run a b c A B A' B' z z' nd s m cz cz',
+      new3_run a b c A B A' B' nd7 s n ready]
+  obtain ⟨r1,r2⟩ := ready
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  obtain ⟨⟨hab,hac,haA,haB,haA',haB',haz,haz'⟩,
+          ⟨hbc,hbA,hbB,hbA',hbB',hbz,hbz'⟩,
+          ⟨hcA,hcB,hcA',hcB',hcz,hcz'⟩,
+          ⟨hAB,hAA',hAB',hAz,hAz'⟩,
+          ⟨hBA',hBB',hBz,hBz'⟩,
+          ⟨hA'B',hA'z,hA'z'⟩,
+          ⟨hB'z,hB'z'⟩,hzz'⟩ := nd
+  have v2 : (s.basis B ^^ s.basis A) ^^
+      carryBit (s.basis a) (s.basis b) (s.basis c) = false := by
+    simpa [Bool.xor_comm] using r1
+  have v1 : (s.basis B' ^^ s.basis A') ^^
+      carryBit (s.basis A) (s.basis B)
+        (carryBit (s.basis a) (s.basis b) (s.basis c)) = false := by
+    simpa [Bool.xor_comm] using r2
+  have q5 := Ne.symm hB'z'; have q7 := Ne.symm hbz'; have q6 := Ne.symm hBz'
+  have q8 := Ne.symm hbB; have q9 := Ne.symm hbB'; have q27 := Ne.symm hBB'
+  refine st_eq rfl (fun w => ?_)
+  by_cases hwz' : w = z' <;> by_cases hwb : w = b <;>
+    by_cases hwB : w = B <;> by_cases hwB' : w = B' <;>
+    subst_vars <;>
+    simp_all [writeBit,Function.update,post3,v1,v2]
+
+/-! ### Wrapper: substitution inside a surrounding program. -/
+
+/-- The two high output bits of the whole program determine `Ready3` at the leaf boundary. -/
+theorem prefix_leaf3_high (P R : Program) (a b c A B A' B' z z' : Wire)
+    (nd : [a,b,c,A,B,A',B',z,z'].Nodup) (s : State) (m : List Bool)
+    (cz : s.basis z=false) (cz' : s.basis z'=false)
+    (hzP : z∉wires P) (hz'P : z'∉wires P) (hBR : B∉wires R) (hB'R : B'∉wires R)
+    (topB  : (run (P++oldLeaf3At a b c A B A' B' z z'++R) [] s).basis B = false)
+    (topB' : (run (P++oldLeaf3At a b c A B A' B' z z'++R) [] s).basis B' = false) :
+    Ready3 a b c A B A' B' (run P m s).basis := by
+  have nd' := nd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd'
+  obtain ⟨⟨hab,hac,haA,haB,haA',haB',haz,haz'⟩,
+          ⟨hbc,hbA,hbB,hbA',hbB',hbz,hbz'⟩,
+          ⟨hcA,hcB,hcA',hcB',hcz,hcz'⟩,
+          ⟨hAB,hAA',hAB',hAz,hAz'⟩,
+          ⟨hBA',hBB',hBz,hBz'⟩,
+          ⟨hA'B',hA'z,hA'z'⟩,
+          ⟨hB'z,hB'z'⟩,hzz'⟩ := nd'
+  have tz  : (run P [] s).basis z  = false := (run_preserves_outside P [] s z hzP).trans cz
+  have tz' : (run P [] s).basis z' = false := (run_preserves_outside P [] s z' hz'P).trans cz'
+  have hB0 : (run (oldLeaf3At a b c A B A' B' z z') [] (run P [] s)).basis B = false := by
+    have h := topB
+    simp only [run_cat, List.drop_nil] at h
+    rw [run_preserves_outside R [] _ B hBR] at h
+    exact h
+  have hB'0 : (run (oldLeaf3At a b c A B A' B' z z') [] (run P [] s)).basis B' = false := by
+    have h := topB'
+    simp only [run_cat, List.drop_nil] at h
+    rw [run_preserves_outside R [] _ B' hB'R] at h
+    exact h
+  rw [old3_run a b c A B A' B' z z' nd (run P [] s) [] tz tz'] at hB0 hB'0
+  simp only [writeBit, Function.update] at hB0 hB'0
+  simp only [hbB, hBz', hBB', hbB', hB'z', eq_self_iff_true, if_true, if_false,
+    Ne.symm hbB, Ne.symm hBz', Ne.symm hBB', Ne.symm hbB', Ne.symm hB'z'] at hB0 hB'0
+  have pb : (run P m s).basis = (run P [] s).basis := run_basis_records P s s m [] rfl
+  constructor
+  · rw [pb]; rw [Bool.xor_comm ((run P [] s).basis A) ((run P [] s).basis B)]; exact hB0
+  · rw [pb]; rw [Bool.xor_comm ((run P [] s).basis A') ((run P [] s).basis B')]; exact hB'0
+
+/-- Whole-program zero-top replacement for the THREE-bit leaf: two Toffolis removed. -/
+theorem whole_zero3 (P R : Program) (a b c A B A' B' z z' : Wire)
+    (nd : [a,b,c,A,B,A',B',z,z'].Nodup) (s : State) (m : List Bool)
+    (cz : s.basis z=false) (cz' : s.basis z'=false)
+    (hzP : z∉wires P) (hz'P : z'∉wires P) (hBR : B∉wires R) (hB'R : B'∉wires R)
+    (topB  : (run (P++oldLeaf3At a b c A B A' B' z z'++R) [] s).basis B = false)
+    (topB' : (run (P++oldLeaf3At a b c A B A' B' z z'++R) [] s).basis B' = false) :
+    run (P++oldLeaf3At a b c A B A' B' z z'++R) m s
+      = run (P++newLeaf3At a b c A B A' B'++R) m s := by
+  have tz  : (run P m s).basis z  = false := (run_preserves_outside P m s z hzP).trans cz
+  have tz' : (run P m s).basis z' = false := (run_preserves_outside P m s z' hz'P).trans cz'
+  have ready := prefix_leaf3_high P R a b c A B A' B' z z' nd s m cz cz' hzP hz'P hBR hB'R topB topB'
+  have eqn := full_state3 a b c A B A' B' z z' nd (run P m s)
+    (m.drop (measurementCount P)) (m.drop (measurementCount P)) tz tz' ready
+  simpa only [run_cat, measurementCount_append,
+    (old3_counts a b c A B A' B' z z').2, (new3_counts a b c A B A' B').2,
+    List.drop_drop, Nat.add_comm] using
+    congrArg (run R ((m.drop (measurementCount P)).drop 2)) eqn
+
+#print axioms prefix_leaf3_high
+#print axioms whole_zero3
+
+/-! ### Instantiation at the KAdd indices -/
+open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridgeResearch
+
+/-- Mirror of `add_split`, peeling THREE bits. -/
+theorem add_split3 (xs ys cs : List Wire) (cin a A A' b B B' z z' : Wire)
+    (hy : xs.length=ys.length) (hc : xs.length=cs.length) :
+    addInPlace (xs++[a,A,A']) (ys++[b,B,B']) (cs++[z,z']) cin=
+      adderPrefix xs ys cs cin
+        ++ oldLeaf3At a b (lastCarry cs cin) A B A' B' z z'
+        ++ adderSuffix xs ys cs cin := by
+  induction xs generalizing ys cs cin with
+  | nil =>
+    have ey : ys=[] := List.eq_nil_of_length_eq_zero (by simpa using hy.symm)
+    have ec : cs=[] := List.eq_nil_of_length_eq_zero (by simpa using hc.symm)
+    subst ys; subst cs; rfl
+  | cons x xs ih =>
+    cases ys with
+    | nil => simp at hy
+    | cons y ys =>
+      cases cs with
+      | nil => simp at hc
+      | cons c cs =>
+        have hy' : xs.length=ys.length := by simpa using hy
+        have hc' : xs.length=cs.length := by simpa using hc
+        have step : addInPlace ((x::xs)++[a,A,A']) ((y::ys)++[b,B,B']) ((c::cs)++[z,z']) cin=
+            majority x y cin c++addInPlace (xs++[a,A,A']) (ys++[b,B,B']) (cs++[z,z']) c++
+              eraseCarry x y cin c++[.CX x y,.CX cin y] := by
+          cases xs <;> cases ys <;> rfl
+        rw [step,ih ys cs c hy' hc']
+        simp only [adderPrefix,adderSuffix,lastCarry,List.append_assoc]
+
+def P3 (w : Nat→Wire) : Program :=
+  adderPrefix (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255) (w 1797)
+def R3 (w : Nat→Wire) : Program :=
+  adderSuffix (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255) (w 1797)
+
+private theorem lastCarry_cat3 (xs ys : List Wire) (cin : Wire) :
+    lastCarry (xs ++ ys) cin = lastCarry ys (lastCarry xs cin) := by
+  induction xs generalizing cin with
+  | nil => rfl
+  | cons x xs ih => exact ih x
+
+/-- Peel the top THREE bits of the real KAdd adder. -/
+theorem literal_split3 (w : Nat→Wire) :
+    literalKAdd w = P3 w
+      ++ oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796)
+      ++ R3 w := by
+  have hx : wireBlock w 0 258=wireBlock w 0 255++[w 255,w 256,w 257] := by
+    rw [←wireBlock_append w 0 255 3]; rfl
+  have hy : wireBlock w 770 258=wireBlock w 770 255++[w 1025,w 1026,w 1027] := by
+    rw [←wireBlock_append w 770 255 3]; rfl
+  have hc : wireBlock w 1540 257=wireBlock w 1540 255++[w 1795,w 1796] := by
+    rw [←wireBlock_append w 1540 255 2]; rfl
+  have lastBlock : wireBlock w 1540 255 = wireBlock w 1540 254 ++ [w 1794] := by
+    rw [←wireBlock_append w 1540 254 1]; rfl
+  have last : lastCarry (wireBlock w 1540 255) (w 1797)=w 1794 := by
+    rw [lastBlock,lastCarry_cat3]; rfl
+  rw [literalKAdd,read_add,hx,hy,hc]
+  simpa only [P3,R3,last] using add_split3
+    (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255)
+    (w 1797) (w 255) (w 256) (w 257) (w 1025) (w 1026) (w 1027) (w 1795) (w 1796)
+    (by simp [wireBlock_length]) (by simp [wireBlock_length])
+
+/-- The three-bit zero replacement of the whole KAdd adder: 255 Toffolis. -/
+def zero3KAdd (w : Nat→Wire) : Program :=
+  P3 w ++ newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) ++ R3 w
+
+
+/-- Counts: the three-bit zero replacement costs 255 Toffolis, two fewer than the literal. -/
+theorem zero3_counts (w : Nat→Wire)
+    (hlit : toffoliCount (literalKAdd w)=257 ∧ measurementCount (literalKAdd w)=257) :
+    toffoliCount (zero3KAdd w)=255 ∧ measurementCount (zero3KAdd w)=257 := by
+  have hs := literal_split3 w
+  have ho := old3_counts (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796)
+  have hn := new3_counts (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
+  rw [hs] at hlit
+  simp only [toffoliCount_append, measurementCount_append, ho.1, ho.2] at hlit
+  simp only [zero3KAdd, toffoliCount_append, measurementCount_append, hn.1, hn.2]
+  omega
+
+#print axioms zero3_counts
+
+
+/-! ### Side conditions for `whole_zero3` at the KAdd indices -/
+
+theorem low_avoid3 (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) :
+    w i ∉ spinePorts (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255) (w 1797) := by
+  intro h
+  simp only [spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
+  rcases h with h|h|h|h
+  · have e:=hinj h; omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji; subst j
+    simp only [List.mem_range'_1] at hj; omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji; subst j
+    simp only [List.mem_range'_1] at hj; omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji; subst j
+    simp only [List.mem_range'_1] at hj; omega
+
+attribute [local irreducible] ECDSAAdd.wires in
+theorem P3_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) : w i∉wires (P3 w) := by
+  intro h
+  exact low_avoid3 w hinj i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
+
+section R3SupportOpaque
+attribute [local irreducible] ECDSAAdd.wires
+theorem R3_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) : w i∉wires (R3 w) := by
+  intro h
+  have support := suffix_support (wireBlock w 0 255) (wireBlock w 770 255)
+    (wireBlock w 1540 255) (w 1797)
+  exact low_avoid3 w hinj i hi (List.mem_toFinset.mp (support h))
+end R3SupportOpaque
+
+theorem tail3_nd (w : Nat→Wire) (hinj : Function.Injective w) :
+    [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027,w 1795,w 1796].Nodup :=
+  List.Nodup.map hinj (by decide : [255,1025,1794,256,1026,257,1027,1795,1796].Nodup)
+
+#print axioms P3_avoid
+#print axioms R3_avoid
+#print axioms tail3_nd
+
+
+/-! ### Extracting the two zero output bits from the word value (mirrors `top_from_div`) -/
+
+theorem bit256_from_div (w : Nat→Wire) (s : BasisState) (W : Nat) (flag : Bool)
+    (postWord : regValue (wireBlock w 770 258) s=W) (hdiv : W/2^256%2=flag.toNat) :
+    s (w 1026)=flag := by
+  have h:=regValue_bit (wireBlock w 770 258) 256 0 s (by simp [wireBlock_length])
+  have port : (wireBlock w 770 258).getD 256 0=w 1026 := by rfl
+  rw [port,postWord,hdiv] at h
+  cases hs : s (w 1026) <;> cases flag <;> simp [hs] at h ⊢
+
+theorem bit257_from_div (w : Nat→Wire) (s : BasisState) (W : Nat) (flag : Bool)
+    (postWord : regValue (wireBlock w 770 258) s=W) (hdiv : W/2^257%2=flag.toNat) :
+    s (w 1027)=flag := by
+  have h:=regValue_bit (wireBlock w 770 258) 257 0 s (by simp [wireBlock_length])
+  have port : (wireBlock w 770 258).getD 257 0=w 1027 := by rfl
+  rw [port,postWord,hdiv] at h
+  cases hs : s (w 1027) <;> cases flag <;> simp [hs] at h ⊢
+
+/-- For the exit caller the word is `Y/2 < 2^255`, so BOTH high bits vanish. -/
+theorem exit_two_zero (w : Nat→Wire) (s : BasisState) (W : Nat) (hW : W<2^255)
+    (postWord : regValue (wireBlock w 770 258) s=W) :
+    s (w 1026)=false ∧ s (w 1027)=false := by
+  have l6 : (2:Nat)^255 ≤ 2^256 := Nat.pow_le_pow_right (by norm_num) (by norm_num)
+  have l7 : (2:Nat)^255 ≤ 2^257 := Nat.pow_le_pow_right (by norm_num) (by norm_num)
+  have d6 : W/2^256=0 := Nat.div_eq_of_lt (lt_of_lt_of_le hW l6)
+  have d7 : W/2^257=0 := Nat.div_eq_of_lt (lt_of_lt_of_le hW l7)
+  have h256 : W/2^256%2=(false : Bool).toNat := by rw [d6]; rfl
+  have h257 : W/2^257%2=(false : Bool).toNat := by rw [d7]; rfl
+  exact ⟨bit256_from_div w s W false postWord h256, bit257_from_div w s W false postWord h257⟩
+
+#print axioms bit256_from_div
+#print axioms bit257_from_div
+#print axioms exit_two_zero
+
+
+end Verifier.Leaf3
+end
+
+
+-- Consolidated source module: AffineCarry3B
+section
+
+set_option maxHeartbeats 16000000
+set_option maxRecDepth 20000
+set_option Elab.async false
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+set_option exponentiation.threshold 400
+
+namespace Verifier.Leaf3
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Challenge
+open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridgeResearch
+
+section Exit3Opaque
+attribute [local irreducible] ECDSAAdd.wires
+set_option maxHeartbeats 16000000 in
+theorem exit3_run_eq_split (w : Nat→Wire) (hinj : Function.Injective w) (s : State) (m : List Bool)
+    (clean5 : s.basis (w 1795)=false) (clean6 : s.basis (w 1796)=false)
+    (topB  : (run (P3 w++oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
+                (w 1795) (w 1796)++R3 w) [] s).basis (w 1026)=false)
+    (topB' : (run (P3 w++oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
+                (w 1795) (w 1796)++R3 w) [] s).basis (w 1027)=false) :
+    run (P3 w++oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
+          (w 1795) (w 1796)++R3 w) m s
+      = run (P3 w++newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)++R3 w) m s := by
+  exact whole_zero3 (P3 w) (R3 w) (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
+    (w 1795) (w 1796) (tail3_nd w hinj) s m clean5 clean6
+    (P3_avoid w hinj 1795 (Or.inl rfl)) (P3_avoid w hinj 1796 (Or.inr (Or.inl rfl)))
+    (R3_avoid w hinj 1026 (Or.inr (Or.inr (Or.inl rfl))))
+    (R3_avoid w hinj 1027 (Or.inr (Or.inr (Or.inr rfl)))) topB topB'
+end Exit3Opaque
+
+/-- Same bridge, stated on the literal adder. The module boundary keeps `P3`/`R3` opaque. -/
+theorem exit3_run_eq (w : Nat→Wire) (hinj : Function.Injective w) (s : State) (m : List Bool)
+    (clean5 : s.basis (w 1795)=false) (clean6 : s.basis (w 1796)=false)
+    (topB  : (run (literalKAdd w) [] s).basis (w 1026)=false)
+    (topB' : (run (literalKAdd w) [] s).basis (w 1027)=false) :
+    run (literalKAdd w) m s=run (zero3KAdd w) m s := by
+  rw [literal_split3] at topB topB'
+  rw [literal_split3, zero3KAdd]
+  exact exit3_run_eq_split w hinj s m clean5 clean6 topB topB'
+
+#print axioms exit3_run_eq
+end Verifier.Leaf3
+end
+
+
+-- Consolidated source module: AffineCarry3C
+section
+
+set_option maxHeartbeats 8000000
+set_option maxRecDepth 20000
+set_option Elab.async false
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+set_option exponentiation.threshold 400
+
+namespace Verifier.Leaf3
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Challenge RecordedQuantum
+open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridgeResearch
+
+-- Keep support proof elaboration from eagerly expanding whole-program wire sets.
+attribute [local irreducible] ECDSAAdd.wires
+
+/-- Unchanged prefix/suffix inherit pointwise properties. -/
+private theorem splice_valid3 (V : Instr → Prop) (p old new r : Program)
+    (ho : ∀i∈p++old++r,V i) (hn : ∀i∈new,V i) : ∀i∈p++new++r,V i := by
+  intro i hi
+  simp only [List.mem_append] at hi ⊢
+  rcases hi with (hp|hnw)|hr
+  · exact ho i (by simp [hp])
+  · exact hn i hnw
+  · exact ho i (by simp [hr])
+
+private theorem splice_support3 (p old new r : Program)
+    (hleaf : wires new ⊆ wires old) : wires (p++new++r) ⊆ wires (p++old++r) := by
+  simp only [wires_append]
+  intro q hq
+  simp only [Finset.mem_union] at hq ⊢
+  rcases hq with (hp|hn)|hr
+  · exact Or.inl (Or.inl hp)
+  · exact Or.inl (Or.inr (hleaf hn))
+  · exact Or.inr hr
+
+/-- Explicit wire sets, mirroring `HighOutputTailStructuredResearch.support`. -/
+theorem support3 (a b c A B A' B' z z' : Wire) :
+    wires (oldLeaf3At a b c A B A' B' z z') = {a,b,c,A,B,A',B',z,z'} ∧
+    wires (newLeaf3At a b c A B A' B') = {a,b,c,A,B,A',B'} := by
+  constructor
+  · rw [old3_unfold]
+    ext q
+    (simp [oldLeafAt,majority,eraseCarry,wires,Instr.wires,correctionWires]; tauto)
+  · ext q
+    (simp [newLeaf3At,wires,Instr.wires,correctionWires]; tauto)
+
+theorem leaf3_support (a b c A B A' B' z z' : Wire) :
+    wires (newLeaf3At a b c A B A' B') ⊆ wires (oldLeaf3At a b c A B A' B' z z') := by
+  rw [(support3 a b c A B A' B' z z').1, (support3 a b c A B A' B' z z').2]
+  intro q h
+  simp only [Finset.mem_insert,Finset.mem_singleton] at h
+  rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> simp
+
+theorem zero3_support (w : Nat → Wire) :
+    wires (zero3KAdd w) ⊆ wires (literalKAdd w) := by
+  have h := splice_support3 (P3 w)
+    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
+    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w)
+    (leaf3_support _ _ _ _ _ _ _ _ _)
+  exact (congrArg (fun s : Finset Wire => wires (zero3KAdd w) ⊆ s)
+    (congrArg ECDSAAdd.wires (literal_split3 w))).mpr h
+
+
+theorem nd7 (w : Nat→Wire) (hinj : Function.Injective w) :
+    [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027].Nodup :=
+  List.Nodup.map hinj (by decide : [255,1025,1794,256,1026,257,1027].Nodup)
+
+private theorem leaf3_physical (a b c A B A' B' : Wire)
+    (nd : [a,b,c,A,B,A',B'].Nodup) : GatePhysical (newLeaf3At a b c A B A' B') := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  simp_all [newLeaf3At,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
+
+private theorem leaf3_contract_valid (a b c A B A' B' : Wire)
+    (nd : [a,b,c,A,B,A',B'].Nodup) : ∀i∈newLeaf3At a b c A B A' B',instructionValid i := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  simp_all [newLeaf3At,instructionValid,correctionValid,ne_comm]
+
+theorem zero3_gatePhysical (w : Nat → Wire) (hinj : Function.Injective w)
+    (ho : GatePhysical (literalKAdd w)) : GatePhysical (zero3KAdd w) := by
+  have old := (congrArg GatePhysical (literal_split3 w)).mp ho
+  exact splice_valid3 (fun i => PhysicalInstr (.gate i)) (P3 w)
+    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
+    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w) old
+    (leaf3_physical _ _ _ _ _ _ _ (nd7 w hinj))
+
+theorem zero3_contract_valid (w : Nat → Wire) (hinj : Function.Injective w)
+    (ho : ∀i∈literalKAdd w,instructionValid i) : ∀i∈zero3KAdd w,instructionValid i := by
+  have old := (congrArg (fun p : Program => ∀i∈p,instructionValid i) (literal_split3 w)).mp ho
+  exact splice_valid3 instructionValid (P3 w)
+    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
+    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w) old
+    (leaf3_contract_valid _ _ _ _ _ _ _ (nd7 w hinj))
+
+#print axioms zero3_gatePhysical
+#print axioms zero3_contract_valid
+
+
+/-! ### Pool-Nodup variants, matching the ExitMerge call sites -/
+
+theorem nd7_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) :
+    [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027].Nodup := by
+  have neq (i j : Nat) (hi : i<1798) (hj : j<1798) (hne : i≠j) : w i≠w j := by
+    intro he
+    exact hne (skywalkPool_index_inj w hn i j hi hj he)
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true]
+  repeat' constructor
+  all_goals exact neq _ _ (by decide) (by decide) (by decide)
+
+theorem tail3_nd_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) :
+    [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027,w 1795,w 1796].Nodup := by
+  have neq (i j : Nat) (hi : i<1798) (hj : j<1798) (hne : i≠j) : w i≠w j := by
+    intro he
+    exact hne (skywalkPool_index_inj w hn i j hi hj he)
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true]
+  repeat' constructor
+  all_goals exact neq _ _ (by decide) (by decide) (by decide)
+
+theorem low_avoid3_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) :
+    w i ∉ spinePorts (wireBlock w 0 255) (wireBlock w 770 255) (wireBlock w 1540 255) (w 1797) := by
+  have ir : i<1798 := by omega
+  intro h
+  simp only [spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
+  rcases h with h|h|h|h
+  · have e := skywalkPool_index_inj w hn i 1797 ir (by decide) h
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    simp only [List.mem_range'_1] at hj
+    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    simp only [List.mem_range'_1] at hj
+    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    simp only [List.mem_range'_1] at hj
+    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
+    omega
+
+theorem P3_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) : w i∉wires (P3 w) := by
+  intro h
+  exact low_avoid3_pool w hn i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
+
+section R3PoolOpaque
+theorem R3_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1795 ∨ i=1796 ∨ i=1026 ∨ i=1027) : w i∉wires (R3 w) := by
+  intro h
+  have support := suffix_support (wireBlock w 0 255) (wireBlock w 770 255)
+    (wireBlock w 1540 255) (w 1797)
+  exact low_avoid3_pool w hn i hi (List.mem_toFinset.mp (support h))
+end R3PoolOpaque
+
+
+set_option maxHeartbeats 16000000 in
+theorem exit3_run_eq_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s : State) (m : List Bool)
+    (clean5 : s.basis (w 1795)=false) (clean6 : s.basis (w 1796)=false)
+    (topB  : (run (literalKAdd w) [] s).basis (w 1026)=false)
+    (topB' : (run (literalKAdd w) [] s).basis (w 1027)=false) :
+    run (literalKAdd w) m s=run (zero3KAdd w) m s := by
+  rw [literal_split3] at topB topB'
+  rw [literal_split3, zero3KAdd]
+  exact whole_zero3 (P3 w) (R3 w) (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)
+    (w 1795) (w 1796) (tail3_nd_pool w hn) s m clean5 clean6
+    (P3_avoid_pool w hn 1795 (Or.inl rfl)) (P3_avoid_pool w hn 1796 (Or.inr (Or.inl rfl)))
+    (R3_avoid_pool w hn 1026 (Or.inr (Or.inr (Or.inl rfl))))
+    (R3_avoid_pool w hn 1027 (Or.inr (Or.inr (Or.inr rfl)))) topB topB'
+
+theorem zero3_gatePhysical_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (ho : GatePhysical (literalKAdd w)) : GatePhysical (zero3KAdd w) := by
+  have old := (congrArg GatePhysical (literal_split3 w)).mp ho
+  exact splice_valid3 (fun i => PhysicalInstr (.gate i)) (P3 w)
+    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
+    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w) old
+    (leaf3_physical _ _ _ _ _ _ _ (nd7_pool w hn))
+
+theorem zero3_contract_valid_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (ho : ∀i∈literalKAdd w,instructionValid i) : ∀i∈zero3KAdd w,instructionValid i := by
+  have old := (congrArg (fun p : Program => ∀i∈p,instructionValid i) (literal_split3 w)).mp ho
+  exact splice_valid3 instructionValid (P3 w)
+    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
+    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w) old
+    (leaf3_contract_valid _ _ _ _ _ _ _ (nd7_pool w hn))
+
+#print axioms exit3_run_eq_pool
+#print axioms zero3_gatePhysical_pool
+#print axioms zero3_contract_valid_pool
+
+#print axioms nd7_pool
+#print axioms P3_avoid_pool
+#print axioms R3_avoid_pool
+
+
+theorem leaf3_slots (a b c A B A' B' z z' : Wire) :
+    Challenge.gateSlots (oldLeaf3At a b c A B A' B' z z') = 26 ∧
+    Challenge.gateSlots (newLeaf3At a b c A B A' B') = 12 := by
+  constructor <;> rfl
+
+#print axioms leaf3_slots
+
+
+theorem zero3_slots (w : Nat → Wire) :
+    Challenge.gateSlots (zero3KAdd w) + 14 = Challenge.gateSlots (literalKAdd w) := by
+  have hl := leaf3_slots (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796)
+  rw [literal_split3 w]
+  simp only [zero3KAdd, Challenge.gateSlots_append, hl.1, hl.2]
+  omega
+
+#print axioms zero3_slots
+
+#print axioms zero3_support
+end Verifier.Leaf3
+end
+
+
+-- Consolidated source module: AffineCarry4A
+section
+
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 20000
+set_option Elab.async false
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+set_option exponentiation.threshold 400
+
+namespace Verifier.Leaf4
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Challenge
+open Verifier.Leaf3 (cval oldLeaf3At old3_run old3_counts)
+
+/-- The four-bit terminal suffix: three retired clean carries `z`, `z'`, `z''`. -/
+def oldLeaf4At (a b c A B A' B' A'' B'' z z' z'' : Wire) : Program :=
+  addInPlace [a,A,A',A''] [b,B,B',B''] [z,z',z''] c
+
+/-- Zero-Toffoli replacement. `B''`, `B'`, `B` are measured strictly top-down:
+each correction list names a wire that is still live. -/
+def newLeaf4At (a b c A B A' B' A'' B'' : Wire) : Program :=
+  [.measureX B'' [] [.Z A', .Z B', .Z A'', .CZ A' B'],
+   .measureX B'  [] [.Z A,  .Z B,  .Z A',  .CZ A  B],
+   .measureX B   [] [.Z A, .CZ a b, .CZ a c, .CZ b c],
+   .CX a b, .CX c b]
+
+/-- Output bits 255, 256 and 257 of the sum are zero. -/
+def Ready4 (a b c A B A' B' A'' B'' : Wire) (s : BasisState) : Prop :=
+  ((s A ^^ s B) ^^ carryBit (s a) (s b) (s c)) = false ∧
+  ((s A' ^^ s B') ^^ carryBit (s A) (s B) (carryBit (s a) (s b) (s c))) = false ∧
+  ((s A'' ^^ s B'') ^^
+     carryBit (s A') (s B') (carryBit (s A) (s B) (carryBit (s a) (s b) (s c)))) = false
+
+/-! ### Structural checks -/
+
+theorem old4_unfold (a b c A B A' B' A'' B'' z z' z'' : Wire) :
+    oldLeaf4At a b c A B A' B' A'' B'' z z' z''
+      = majority a b c z ++ oldLeaf3At A B z A' B' A'' B'' z' z''
+          ++ eraseCarry a b c z ++ [.CX a b, .CX c b] := rfl
+
+theorem old4_counts (a b c A B A' B' A'' B'' z z' z'' : Wire) :
+    toffoliCount (oldLeaf4At a b c A B A' B' A'' B'' z z' z'')=3
+      ∧ measurementCount (oldLeaf4At a b c A B A' B' A'' B'' z z' z'')=3 := by
+  constructor <;> rfl
+
+theorem new4_counts (a b c A B A' B' A'' B'' : Wire) :
+    toffoliCount (newLeaf4At a b c A B A' B' A'' B'')=0
+      ∧ measurementCount (newLeaf4At a b c A B A' B' A'' B'')=3 := by
+  constructor <;> rfl
+
+/-! ### Boolean content of the three correction lists.
+
+Each is a pure `Bool` identity on the nine leaf values, closed by `decide`
+over the 512-point cube.  The point of the construction is that all three stay
+degree two: on the restricted domain the degree-three majority collapses. -/
+
+private theorem corr_top : ∀ (va vb vc vA vB vA' vB' vA'' vB'' : Bool),
+    ((vA' ^^ vB') ^^ carryBit vA vB (carryBit va vb vc)) = false →
+    ((vA'' ^^ vB'') ^^
+      carryBit vA' vB' (carryBit vA vB (carryBit va vb vc))) = false →
+    vB'' = (vA' ^^ (vB' ^^ (vA'' ^^ (vA' && vB')))) := by decide
+
+private theorem corr_mid : ∀ (va vb vc vA vB vA' vB' : Bool),
+    ((vA ^^ vB) ^^ carryBit va vb vc) = false →
+    ((vA' ^^ vB') ^^ carryBit vA vB (carryBit va vb vc)) = false →
+    vB' = (vA ^^ (vB ^^ (vA' ^^ (vA && vB)))) := by decide
+
+private theorem corr_low : ∀ (va vb vc vA vB : Bool),
+    ((vA ^^ vB) ^^ carryBit va vb vc) = false →
+    vB = (vA ^^ ((va && vb) ^^ ((va && vc) ^^ (vb && vc)))) := by decide
+
+/-! ### Reusable run-level helpers (mirrors of the three-bit module's privates). -/
+
+private theorem correct_eq (cs : List Correction) (s : State) :
+    correct cs s = ⟨s.phase ^^ cval cs s.basis, s.basis⟩ := by
+  induction cs generalizing s with
+  | nil => simp [correct,cval]
+  | cons d cs ih =>
+    cases d <;>
+      simp [correct,cval,ih,Bool.xor_assoc,Bool.xor_comm,Bool.xor_left_comm]
+
+private theorem meas_clean (t : Wire) (cs : List Correction) (s : State) (m : List Bool)
+    (h : s.basis t = cval cs (writeBit s.basis t false)) :
+    run [.measureX t [] cs] m s = ⟨s.phase, writeBit s.basis t false⟩ := by
+  simp only [run,measureAndCorrect]
+  cases hm : m.headD false
+  · simp [correct,cval]
+  · simp only [Bool.true_and,if_true,correct_eq,←h]
+    simp [Bool.xor_assoc]
+
+private theorem st_eq {p q : Bool} {f g : BasisState}
+    (hp : p = q) (hf : ∀ w, f w = g w) : (⟨p,f⟩ : State) = ⟨q,g⟩ := by
+  subst hp; exact congrArg _ (funext hf)
+
+private theorem run_cat (p q : Program) (m : List Bool) (s : State) :
+    run (p++q) m s = run q (m.drop (measurementCount p)) (run p m s) := by
+  rw [run_append,run_take]
+
+private theorem cx2 (x y t : Wire) (hx : x≠t) (hy : y≠t) (s : State) (m : List Bool) :
+    run [.CX x t,.CX y t] m s =
+      ⟨s.phase,writeBit s.basis t ((s.basis t ^^ s.basis x) ^^ s.basis y)⟩ := by
+  simp only [run]
+  apply congrArg (State.mk s.phase)
+  funext q
+  by_cases hq : q=t <;> simp_all [writeBit,Function.update]
+
+/-- Common final state: `b` holds the low sum, all three high outputs are zeroed,
+phase is untouched. -/
+private def post4 (a b c B B' B'' : Wire) (s : State) : State :=
+  ⟨s.phase,
+   writeBit (writeBit (writeBit (writeBit s.basis B'' false) B' false) B false) b
+     (sumBit (s.basis a) (s.basis b) (s.basis c))⟩
+
+theorem new4_run (a b c A B A' B' A'' B'' : Wire)
+    (nd : [a,b,c,A,B,A',B',A'',B''].Nodup)
+    (s : State) (m : List Bool) (ready : Ready4 a b c A B A' B' A'' B'' s.basis) :
+    run (newLeaf4At a b c A B A' B' A'' B'') m s = post4 a b c B B' B'' s := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  obtain ⟨⟨hab,hac,haA,haB,haA',haB',haA'',haB''⟩,
+          ⟨hbc,hbA,hbB,hbA',hbB',hbA'',hbB''⟩,
+          ⟨hcA,hcB,hcA',hcB',hcA'',hcB''⟩,
+          ⟨hAB,hAA',hAB',hAA'',hAB''⟩,
+          ⟨hBA',hBB',hBA'',hBB''⟩,
+          ⟨hA'B',hA'A'',hA'B''⟩,
+          ⟨hB'A'',hB'B''⟩,hA''B''⟩ := nd
+  obtain ⟨r1,r2,r3⟩ := ready
+  -- top measurement: B''
+  have h1 : s.basis B''
+      = cval [.Z A',.Z B',.Z A'',.CZ A' B'] (writeBit s.basis B'' false) := by
+    simp only [cval,writeBit,Function.update_of_ne hA'B'',Function.update_of_ne hB'B'',
+      Function.update_of_ne hA''B'',Bool.xor_false]
+    exact corr_top _ _ _ _ _ _ _ _ _ r2 r3
+  have e1 := meas_clean B'' [.Z A',.Z B',.Z A'',.CZ A' B'] s m h1
+  -- middle measurement: B'
+  have h2 : (⟨s.phase,writeBit s.basis B'' false⟩ : State).basis B'
+      = cval [.Z A,.Z B,.Z A',.CZ A B]
+          (writeBit (⟨s.phase,writeBit s.basis B'' false⟩ : State).basis B' false) := by
+    simp only [cval,writeBit,
+      Function.update_of_ne hAB',Function.update_of_ne hAB'',
+      Function.update_of_ne hBB',Function.update_of_ne hBB'',
+      Function.update_of_ne hA'B',Function.update_of_ne hA'B'',
+      Function.update_of_ne hB'B'',Bool.xor_false]
+    exact corr_mid _ _ _ _ _ _ _ r1 r2
+  have e2 := meas_clean B' [.Z A,.Z B,.Z A',.CZ A B]
+    ⟨s.phase,writeBit s.basis B'' false⟩
+    (m.drop (measurementCount [Instr.measureX B'' [] [.Z A',.Z B',.Z A'',.CZ A' B']])) h2
+  -- low measurement: B
+  have h3 : (⟨s.phase,writeBit (writeBit s.basis B'' false) B' false⟩ : State).basis B
+      = cval [.Z A,.CZ a b,.CZ a c,.CZ b c]
+          (writeBit (⟨s.phase,writeBit (writeBit s.basis B'' false) B' false⟩ : State).basis
+            B false) := by
+    simp only [cval,writeBit,
+      Function.update_of_ne hAB,Function.update_of_ne hAB',Function.update_of_ne hAB'',
+      Function.update_of_ne haB,Function.update_of_ne haB',Function.update_of_ne haB'',
+      Function.update_of_ne hbB,Function.update_of_ne hbB',Function.update_of_ne hbB'',
+      Function.update_of_ne hcB,Function.update_of_ne hcB',Function.update_of_ne hcB'',
+      Function.update_of_ne hBB',Function.update_of_ne hBB'',Bool.xor_false]
+    exact corr_low _ _ _ _ _ r1
+  have e3 := meas_clean B [.Z A,.CZ a b,.CZ a c,.CZ b c]
+    ⟨s.phase,writeBit (writeBit s.basis B'' false) B' false⟩
+    ((m.drop (measurementCount [Instr.measureX B'' [] [.Z A',.Z B',.Z A'',.CZ A' B']])).drop
+      (measurementCount [Instr.measureX B' [] [.Z A,.Z B,.Z A',.CZ A B]])) h3
+  show run ([Instr.measureX B'' [] [.Z A',.Z B',.Z A'',.CZ A' B']]
+      ++ ([Instr.measureX B' [] [.Z A,.Z B,.Z A',.CZ A B]]
+      ++ ([Instr.measureX B [] [.Z A,.CZ a b,.CZ a c,.CZ b c]]
+      ++ [.CX a b,.CX c b]))) m s = post4 a b c B B' B'' s
+  rw [run_cat,e1,run_cat,e2,run_cat,e3,cx2 a c b hab (Ne.symm hbc)]
+  refine st_eq rfl (fun w => ?_)
+  simp only [post4,writeBit,
+    Function.update_of_ne haB,Function.update_of_ne haB',Function.update_of_ne haB'',
+    Function.update_of_ne hbB,Function.update_of_ne hbB',Function.update_of_ne hbB'',
+    Function.update_of_ne hcB,Function.update_of_ne hcB',Function.update_of_ne hcB'',sumBit]
+  by_cases hw : w = b
+  · subst w
+    simp only [Function.update_self]
+    exact Bool.xor_comm _ _ ▸ (by
+      cases s.basis a <;> cases s.basis b <;> cases s.basis c <;> decide)
+  · simp only [Function.update_of_ne hw]
+
+#print axioms new4_run
+
+/-- Closed form of the four-bit in-place adder leaf, reusing the three-bit result
+for the inner suffix.  `z` is written and erased invisibly. -/
+theorem old4_run (a b c A B A' B' A'' B'' z z' z'' : Wire)
+    (nd : [a,b,c,A,B,A',B',A'',B'',z,z',z''].Nodup)
+    (s : State) (m : List Bool)
+    (cz : s.basis z = false) (cz' : s.basis z' = false) (cz'' : s.basis z'' = false) :
+    run (oldLeaf4At a b c A B A' B' A'' B'' z z' z'') m s =
+      ⟨s.phase,
+       writeBit (writeBit (writeBit (writeBit (writeBit (writeBit s.basis
+         z'' (carryBit (s.basis A') (s.basis B')
+               (carryBit (s.basis A) (s.basis B)
+                 (carryBit (s.basis a) (s.basis b) (s.basis c)))))
+         B'' ((s.basis B'' ^^ s.basis A'') ^^
+               carryBit (s.basis A') (s.basis B')
+                 (carryBit (s.basis A) (s.basis B)
+                   (carryBit (s.basis a) (s.basis b) (s.basis c)))))
+         z'' false)
+         B' ((s.basis B' ^^ s.basis A') ^^
+               carryBit (s.basis A) (s.basis B)
+                 (carryBit (s.basis a) (s.basis b) (s.basis c))))
+         B (sumBit (s.basis A) (s.basis B)
+               (carryBit (s.basis a) (s.basis b) (s.basis c))))
+         b (sumBit (s.basis a) (s.basis b) (s.basis c))⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  obtain ⟨⟨hab,hac,haA,haB,haA',haB',haA'',haB'',haz,haz',haz''⟩,
+          ⟨hbc,hbA,hbB,hbA',hbB',hbA'',hbB'',hbz,hbz',hbz''⟩,
+          ⟨hcA,hcB,hcA',hcB',hcA'',hcB'',hcz,hcz',hcz''⟩,
+          ⟨hAB,hAA',hAB',hAA'',hAB'',hAz,hAz',hAz''⟩,
+          ⟨hBA',hBB',hBA'',hBB'',hBz,hBz',hBz''⟩,
+          ⟨hA'B',hA'A'',hA'B'',hA'z,hA'z',hA'z''⟩,
+          ⟨hB'A'',hB'B'',hB'z,hB'z',hB'z''⟩,
+          ⟨hA''B'',hA''z,hA''z',hA''z''⟩,
+          ⟨hB''z,hB''z',hB''z''⟩,
+          ⟨hzz',hzz''⟩,
+          hz'z''⟩ := nd
+  set K1 := carryBit (s.basis a) (s.basis b) (s.basis c) with hK1
+  set K2 := carryBit (s.basis A) (s.basis B) K1 with hK2
+  set K3 := carryBit (s.basis A') (s.basis B') K2 with hK3
+  have n1 : [a,b,c,z].Nodup := by
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true]; exact ⟨⟨hab,hac,haz⟩,⟨hbc,hbz⟩,hcz⟩
+  have nd9 : [A,B,z,A',B',A'',B'',z',z''].Nodup := by
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true]
+    exact ⟨⟨hAB,hAz,hAA',hAB',hAA'',hAB'',hAz',hAz''⟩,
+           ⟨hBz,hBA',hBB',hBA'',hBB'',hBz',hBz''⟩,
+           ⟨Ne.symm hA'z,Ne.symm hB'z,Ne.symm hA''z,Ne.symm hB''z,hzz',hzz''⟩,
+           ⟨hA'B',hA'A'',hA'B'',hA'z',hA'z''⟩,
+           ⟨hB'A'',hB'B'',hB'z',hB'z''⟩,
+           ⟨hA''B'',hA''z',hA''z''⟩,
+           ⟨hB''z',hB''z''⟩,hz'z''⟩
+  have pz' : (⟨s.phase,writeBit s.basis z K1⟩ : State).basis z' = false := by
+    simp only [writeBit,Function.update_of_ne (Ne.symm hzz')]; exact cz'
+  have pz'' : (⟨s.phase,writeBit s.basis z K1⟩ : State).basis z'' = false := by
+    simp only [writeBit,Function.update_of_ne (Ne.symm hzz'')]; exact cz''
+  show run (majority a b c z ++ (oldLeaf3At A B z A' B' A'' B'' z' z''
+      ++ (eraseCarry a b c z ++ [Instr.CX a b,.CX c b]))) m s = _
+  rw [run_cat,majority_correct a b c z n1]
+  simp only [cz,Bool.false_xor,←hK1]
+  rw [run_cat,old3_run A B z A' B' A'' B'' z' z'' nd9 ⟨s.phase,writeBit s.basis z K1⟩ _ pz' pz'']
+  simp only [writeBit,
+    Function.update_of_ne (Ne.symm hAz),Function.update_of_ne (Ne.symm hBz),
+    Function.update_of_ne (Ne.symm hA'z),Function.update_of_ne (Ne.symm hB'z),
+    Function.update_of_ne (Ne.symm hA''z),Function.update_of_ne (Ne.symm hB''z),
+    Function.update_self,←hK2,←hK3]
+  rw [run_cat,eraseCarry_correct a b c z haz hbz hcz _ (by
+    simp only [writeBit,
+      Function.update_of_ne (Ne.symm hBz),Function.update_of_ne (Ne.symm hB'z),
+      Function.update_of_ne (Ne.symm hB''z),Function.update_of_ne hzz'',
+      Function.update_self,
+      Function.update_of_ne haB,Function.update_of_ne haB',Function.update_of_ne haB'',
+      Function.update_of_ne haz'',Function.update_of_ne haz,
+      Function.update_of_ne hbB,Function.update_of_ne hbB',Function.update_of_ne hbB'',
+      Function.update_of_ne hbz'',Function.update_of_ne hbz,
+      Function.update_of_ne hcB,Function.update_of_ne hcB',Function.update_of_ne hcB'',
+      Function.update_of_ne hcz'',Function.update_of_ne hcz,←hK1])]
+  rw [cx2 a c b hab (Ne.symm hbc)]
+  have q1 := Ne.symm hzz'; have q2 := Ne.symm hzz''; have q3 := Ne.symm hz'z''
+  have q4 := Ne.symm hbz; have q5 := Ne.symm hbz'; have q6 := Ne.symm hbz''
+  have q7 := Ne.symm hbB; have q8 := Ne.symm hbB'; have q9 := Ne.symm hbB''
+  have q10 := Ne.symm hBz; have q11 := Ne.symm hBz'; have q12 := Ne.symm hBz''
+  have q13 := Ne.symm hB'z; have q14 := Ne.symm hB'z'; have q15 := Ne.symm hB'z''
+  have q16 := Ne.symm hB''z; have q17 := Ne.symm hB''z'; have q18 := Ne.symm hB''z''
+  have q19 := Ne.symm hAz; have q20 := Ne.symm hAz'; have q21 := Ne.symm hAz''
+  have q22 := Ne.symm hA'z; have q23 := Ne.symm hA'z'; have q24 := Ne.symm hA'z''
+  have q25 := Ne.symm hA''z; have q26 := Ne.symm hA''z'; have q27 := Ne.symm hA''z''
+  have q28 := Ne.symm haz; have q29 := Ne.symm hcz; have q30 := Ne.symm haB
+  have q31 := Ne.symm haB'; have q32 := Ne.symm haB''; have q33 := Ne.symm hcB
+  have q34 := Ne.symm hcB'; have q35 := Ne.symm hcB''; have q36 := Ne.symm hAB
+  have q37 := Ne.symm hAB'; have q38 := Ne.symm hAB''; have q39 := Ne.symm hA'B'
+  have q40 := Ne.symm hA'B''; have q41 := Ne.symm hA''B''; have q42 := Ne.symm hBB'
+  have q43 := Ne.symm hBB''; have q44 := Ne.symm hB'B''; have q45 := Ne.symm hBA'
+  have q46 := Ne.symm hBA''; have q47 := Ne.symm hB'A''; have q48 := Ne.symm hAA'
+  have q49 := Ne.symm hAA''; have q50 := Ne.symm hA'A''
+  refine st_eq rfl (fun w => ?_)
+  by_cases hwz : w = z <;> by_cases hwz'' : w = z'' <;>
+    by_cases hwb : w = b <;> by_cases hwB : w = B <;>
+    by_cases hwB' : w = B' <;> by_cases hwB'' : w = B'' <;>
+    subst_vars <;>
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+
+#print axioms old4_run
+
+/-- Erasing a scratch wire that was clean on entry leaves no trace, even across an
+intervening write to a different wire. -/
+private theorem drop_scratch (f : BasisState) (u v : Wire) (huv : u ≠ v) {k x : Bool}
+    (hf : f u = false) :
+    writeBit (writeBit (writeBit f u k) v x) u false = writeBit f v x := by
+  funext w
+  by_cases h1 : w = u <;> by_cases h2 : w = v <;>
+    simp_all [writeBit,Function.update]
+
+/-- **Main result.** On the restriction that output bits 255, 256 and 257 are zero,
+the three-Toffoli four-bit leaf and the zero-Toffoli replacement agree as complete
+States -- phase included -- for arbitrary and independent measurement records. -/
+theorem full_state4 (a b c A B A' B' A'' B'' z z' z'' : Wire)
+    (nd : [a,b,c,A,B,A',B',A'',B'',z,z',z''].Nodup) (s : State) (m n : List Bool)
+    (cz : s.basis z = false) (cz' : s.basis z' = false) (cz'' : s.basis z'' = false)
+    (ready : Ready4 a b c A B A' B' A'' B'' s.basis) :
+    run (oldLeaf4At a b c A B A' B' A'' B'' z z' z'') m s
+      = run (newLeaf4At a b c A B A' B' A'' B'') n s := by
+  have nd' := nd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd'
+  obtain ⟨⟨hab,hac,haA,haB,haA',haB',haA'',haB'',haz,haz',haz''⟩,
+          ⟨hbc,hbA,hbB,hbA',hbB',hbA'',hbB'',hbz,hbz',hbz''⟩,
+          ⟨hcA,hcB,hcA',hcB',hcA'',hcB'',hcz,hcz',hcz''⟩,
+          ⟨hAB,hAA',hAB',hAA'',hAB'',hAz,hAz',hAz''⟩,
+          ⟨hBA',hBB',hBA'',hBB'',hBz,hBz',hBz''⟩,
+          ⟨hA'B',hA'A'',hA'B'',hA'z,hA'z',hA'z''⟩,
+          ⟨hB'A'',hB'B'',hB'z,hB'z',hB'z''⟩,
+          ⟨hA''B'',hA''z,hA''z',hA''z''⟩,
+          ⟨hB''z,hB''z',hB''z''⟩,
+          ⟨hzz',hzz''⟩,
+          hz'z''⟩ := nd'
+  have nd9 : [a,b,c,A,B,A',B',A'',B''].Nodup := by
+    simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+      not_or,not_false_eq_true,and_true]
+    exact ⟨⟨hab,hac,haA,haB,haA',haB',haA'',haB''⟩,
+           ⟨hbc,hbA,hbB,hbA',hbB',hbA'',hbB''⟩,
+           ⟨hcA,hcB,hcA',hcB',hcA'',hcB''⟩,
+           ⟨hAB,hAA',hAB',hAA'',hAB''⟩,
+           ⟨hBA',hBB',hBA'',hBB''⟩,
+           ⟨hA'B',hA'A'',hA'B''⟩,
+           ⟨hB'A'',hB'B''⟩,hA''B''⟩
+  obtain ⟨r1,r2,r3⟩ := ready
+  have v1 : (s.basis B'' ^^ s.basis A'' ^^
+      carryBit (s.basis A') (s.basis B')
+        (carryBit (s.basis A) (s.basis B)
+          (carryBit (s.basis a) (s.basis b) (s.basis c)))) = false := by
+    simpa [Bool.xor_comm] using r3
+  have v2 : (s.basis B' ^^ s.basis A' ^^
+      carryBit (s.basis A) (s.basis B)
+        (carryBit (s.basis a) (s.basis b) (s.basis c))) = false := by
+    simpa [Bool.xor_comm] using r2
+  have v3 : sumBit (s.basis A) (s.basis B)
+      (carryBit (s.basis a) (s.basis b) (s.basis c)) = false := r1
+  rw [old4_run a b c A B A' B' A'' B'' z z' z'' nd s m cz cz' cz'',
+      new4_run a b c A B A' B' A'' B'' nd9 s n ⟨r1,r2,r3⟩]
+  simp only [post4]
+  rw [v1]
+  rw [v2]
+  rw [v3]
+  rw [drop_scratch s.basis z'' B'' (Ne.symm hB''z'') cz'']
+
+#print axioms full_state4
+
+/-! ### Wrapper: substitution inside a surrounding program. -/
+
+/-- The three high output bits of the whole program determine `Ready4` at the leaf boundary. -/
+theorem prefix_leaf4_high (P R : Program) (a b c A B A' B' A'' B'' z z' z'' : Wire)
+    (nd : [a,b,c,A,B,A',B',A'',B'',z,z',z''].Nodup) (s : State) (m : List Bool)
+    (cz : s.basis z=false) (cz' : s.basis z'=false) (cz'' : s.basis z''=false)
+    (hzP : z∉wires P) (hz'P : z'∉wires P) (hz''P : z''∉wires P)
+    (hBR : B∉wires R) (hB'R : B'∉wires R) (hB''R : B''∉wires R)
+    (topB   : (run (P++oldLeaf4At a b c A B A' B' A'' B'' z z' z''++R) [] s).basis B = false)
+    (topB'  : (run (P++oldLeaf4At a b c A B A' B' A'' B'' z z' z''++R) [] s).basis B' = false)
+    (topB'' : (run (P++oldLeaf4At a b c A B A' B' A'' B'' z z' z''++R) [] s).basis B'' = false) :
+    Ready4 a b c A B A' B' A'' B'' (run P m s).basis := by
+  have nd' := nd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd'
+  obtain ⟨⟨hab,hac,haA,haB,haA',haB',haA'',haB'',haz,haz',haz''⟩,
+          ⟨hbc,hbA,hbB,hbA',hbB',hbA'',hbB'',hbz,hbz',hbz''⟩,
+          ⟨hcA,hcB,hcA',hcB',hcA'',hcB'',hcz,hcz',hcz''⟩,
+          ⟨hAB,hAA',hAB',hAA'',hAB'',hAz,hAz',hAz''⟩,
+          ⟨hBA',hBB',hBA'',hBB'',hBz,hBz',hBz''⟩,
+          ⟨hA'B',hA'A'',hA'B'',hA'z,hA'z',hA'z''⟩,
+          ⟨hB'A'',hB'B'',hB'z,hB'z',hB'z''⟩,
+          ⟨hA''B'',hA''z,hA''z',hA''z''⟩,
+          ⟨hB''z,hB''z',hB''z''⟩,
+          ⟨hzz',hzz''⟩,
+          hz'z''⟩ := nd'
+  have tz   : (run P [] s).basis z   = false := (run_preserves_outside P [] s z hzP).trans cz
+  have tz'  : (run P [] s).basis z'  = false := (run_preserves_outside P [] s z' hz'P).trans cz'
+  have tz'' : (run P [] s).basis z'' = false := (run_preserves_outside P [] s z'' hz''P).trans cz''
+  have hB0 : (run (oldLeaf4At a b c A B A' B' A'' B'' z z' z'') []
+      (run P [] s)).basis B = false := by
+    have h := topB
+    simp only [run_cat, List.drop_nil] at h
+    rw [run_preserves_outside R [] _ B hBR] at h
+    exact h
+  have hB'0 : (run (oldLeaf4At a b c A B A' B' A'' B'' z z' z'') []
+      (run P [] s)).basis B' = false := by
+    have h := topB'
+    simp only [run_cat, List.drop_nil] at h
+    rw [run_preserves_outside R [] _ B' hB'R] at h
+    exact h
+  have hB''0 : (run (oldLeaf4At a b c A B A' B' A'' B'' z z' z'') []
+      (run P [] s)).basis B'' = false := by
+    have h := topB''
+    simp only [run_cat, List.drop_nil] at h
+    rw [run_preserves_outside R [] _ B'' hB''R] at h
+    exact h
+  rw [old4_run a b c A B A' B' A'' B'' z z' z'' nd (run P [] s) [] tz tz' tz''] at hB0 hB'0 hB''0
+  simp only [writeBit, Function.update] at hB0 hB'0 hB''0
+  simp only [hbB, hBz'', hBB', hBB'', hbB', hbB'', hB'z'', hB''z'', hB'B'',
+    eq_self_iff_true, if_true, if_false,
+    Ne.symm hbB, Ne.symm hBz'', Ne.symm hBB', Ne.symm hBB'', Ne.symm hbB',
+    Ne.symm hbB'', Ne.symm hB'z'', Ne.symm hB''z'', Ne.symm hB'B''] at hB0 hB'0 hB''0
+  have pb : (run P m s).basis = (run P [] s).basis := run_basis_records P s s m [] rfl
+  refine ⟨?_,?_,?_⟩
+  · rw [pb]
+    simpa only [sumBit] using hB0
+  · rw [pb]; rw [Bool.xor_comm ((run P [] s).basis A') ((run P [] s).basis B')]; exact hB'0
+  · rw [pb]; rw [Bool.xor_comm ((run P [] s).basis A'') ((run P [] s).basis B'')]; exact hB''0
+
+/-- Whole-program zero-top replacement for the FOUR-bit leaf: three Toffolis removed. -/
+theorem whole_zero4 (P R : Program) (a b c A B A' B' A'' B'' z z' z'' : Wire)
+    (nd : [a,b,c,A,B,A',B',A'',B'',z,z',z''].Nodup) (s : State) (m : List Bool)
+    (cz : s.basis z=false) (cz' : s.basis z'=false) (cz'' : s.basis z''=false)
+    (hzP : z∉wires P) (hz'P : z'∉wires P) (hz''P : z''∉wires P)
+    (hBR : B∉wires R) (hB'R : B'∉wires R) (hB''R : B''∉wires R)
+    (topB   : (run (P++oldLeaf4At a b c A B A' B' A'' B'' z z' z''++R) [] s).basis B = false)
+    (topB'  : (run (P++oldLeaf4At a b c A B A' B' A'' B'' z z' z''++R) [] s).basis B' = false)
+    (topB'' : (run (P++oldLeaf4At a b c A B A' B' A'' B'' z z' z''++R) [] s).basis B'' = false) :
+    run (P++oldLeaf4At a b c A B A' B' A'' B'' z z' z''++R) m s
+      = run (P++newLeaf4At a b c A B A' B' A'' B''++R) m s := by
+  have tz   : (run P m s).basis z   = false := (run_preserves_outside P m s z hzP).trans cz
+  have tz'  : (run P m s).basis z'  = false := (run_preserves_outside P m s z' hz'P).trans cz'
+  have tz'' : (run P m s).basis z'' = false := (run_preserves_outside P m s z'' hz''P).trans cz''
+  have ready := prefix_leaf4_high P R a b c A B A' B' A'' B'' z z' z'' nd s m
+    cz cz' cz'' hzP hz'P hz''P hBR hB'R hB''R topB topB' topB''
+  have eqn := full_state4 a b c A B A' B' A'' B'' z z' z'' nd (run P m s)
+    (m.drop (measurementCount P)) (m.drop (measurementCount P)) tz tz' tz'' ready
+  simpa only [run_cat, measurementCount_append,
+    (old4_counts a b c A B A' B' A'' B'' z z' z'').2, (new4_counts a b c A B A' B' A'' B'').2,
+    List.drop_drop, Nat.add_comm] using
+    congrArg (run R ((m.drop (measurementCount P)).drop 3)) eqn
+
+#print axioms prefix_leaf4_high
+#print axioms whole_zero4
+
+/-! ### Instantiation at the KAdd indices -/
+open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridgeResearch
+
+/-- Mirror of `add_split`, peeling FOUR bits. -/
+theorem add_split4 (xs ys cs : List Wire) (cin a A A' A'' b B B' B'' z z' z'' : Wire)
+    (hy : xs.length=ys.length) (hc : xs.length=cs.length) :
+    addInPlace (xs++[a,A,A',A'']) (ys++[b,B,B',B'']) (cs++[z,z',z'']) cin=
+      adderPrefix xs ys cs cin
+        ++ oldLeaf4At a b (lastCarry cs cin) A B A' B' A'' B'' z z' z''
+        ++ adderSuffix xs ys cs cin := by
+  induction xs generalizing ys cs cin with
+  | nil =>
+    have ey : ys=[] := List.eq_nil_of_length_eq_zero (by simpa using hy.symm)
+    have ec : cs=[] := List.eq_nil_of_length_eq_zero (by simpa using hc.symm)
+    subst ys; subst cs; rfl
+  | cons x xs ih =>
+    cases ys with
+    | nil => simp at hy
+    | cons y ys =>
+      cases cs with
+      | nil => simp at hc
+      | cons c cs =>
+        have hy' : xs.length=ys.length := by simpa using hy
+        have hc' : xs.length=cs.length := by simpa using hc
+        have step : addInPlace ((x::xs)++[a,A,A',A'']) ((y::ys)++[b,B,B',B''])
+            ((c::cs)++[z,z',z'']) cin=
+            majority x y cin c++addInPlace (xs++[a,A,A',A'']) (ys++[b,B,B',B'']) (cs++[z,z',z'']) c++
+              eraseCarry x y cin c++[.CX x y,.CX cin y] := by
+          cases xs <;> cases ys <;> rfl
+        rw [step,ih ys cs c hy' hc']
+        simp only [adderPrefix,adderSuffix,lastCarry,List.append_assoc]
+
+def P4 (w : Nat→Wire) : Program :=
+  adderPrefix (wireBlock w 0 254) (wireBlock w 770 254) (wireBlock w 1540 254) (w 1797)
+def R4 (w : Nat→Wire) : Program :=
+  adderSuffix (wireBlock w 0 254) (wireBlock w 770 254) (wireBlock w 1540 254) (w 1797)
+
+private theorem lastCarry_cat4 (xs ys : List Wire) (cin : Wire) :
+    lastCarry (xs ++ ys) cin = lastCarry ys (lastCarry xs cin) := by
+  induction xs generalizing cin with
+  | nil => rfl
+  | cons x xs ih => simpa only [List.cons_append,lastCarry] using ih x
+
+theorem literal_split4 (w : Nat→Wire) :
+    literalKAdd w = P4 w
+      ++ oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+           (w 257) (w 1027) (w 1794) (w 1795) (w 1796)
+      ++ R4 w := by
+  have hx : wireBlock w 0 258=wireBlock w 0 254++[w 254,w 255,w 256,w 257] := by
+    rw [←wireBlock_append w 0 254 4]; rfl
+  have hy : wireBlock w 770 258=wireBlock w 770 254++[w 1024,w 1025,w 1026,w 1027] := by
+    rw [←wireBlock_append w 770 254 4]; rfl
+  have hc : wireBlock w 1540 257=wireBlock w 1540 254++[w 1794,w 1795,w 1796] := by
+    rw [←wireBlock_append w 1540 254 3]; rfl
+  have lastBlock : wireBlock w 1540 254 = wireBlock w 1540 253 ++ [w 1793] := by
+    rw [←wireBlock_append w 1540 253 1]; rfl
+  have last : lastCarry (wireBlock w 1540 254) (w 1797)=w 1793 := by
+    rw [lastBlock,lastCarry_cat4]; rfl
+  rw [literalKAdd,read_add,hx,hy,hc]
+  simpa only [P4,R4,last] using add_split4
+    (wireBlock w 0 254) (wireBlock w 770 254) (wireBlock w 1540 254)
+    (w 1797) (w 254) (w 255) (w 256) (w 257) (w 1024) (w 1025) (w 1026) (w 1027)
+    (w 1794) (w 1795) (w 1796)
+    (by simp [wireBlock_length]) (by simp [wireBlock_length])
+
+def zero4KAdd (w : Nat→Wire) : Program :=
+  P4 w ++ newLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027)
+    ++ R4 w
+
+/-- Counts: the four-bit zero replacement costs 254 Toffolis, three fewer than the literal. -/
+theorem zero4_counts (w : Nat→Wire)
+    (hlit : toffoliCount (literalKAdd w)=257 ∧ measurementCount (literalKAdd w)=257) :
+    toffoliCount (zero4KAdd w)=254 ∧ measurementCount (zero4KAdd w)=257 := by
+  have hs := literal_split4 w
+  have ho := old4_counts (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+    (w 257) (w 1027) (w 1794) (w 1795) (w 1796)
+  have hn := new4_counts (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027)
+  rw [hs] at hlit
+  simp only [toffoliCount_append, measurementCount_append, ho.1, ho.2] at hlit
+  simp only [zero4KAdd, toffoliCount_append, measurementCount_append, hn.1, hn.2]
+  omega
+
+#print axioms zero4_counts
+
+/-! ### Side conditions for `whole_zero4` at the KAdd indices -/
+
+theorem low_avoid4 (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) :
+    w i ∉ spinePorts (wireBlock w 0 254) (wireBlock w 770 254) (wireBlock w 1540 254) (w 1797) := by
+  intro h
+  simp only [spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
+  rcases h with h|h|h|h
+  · have e:=hinj h; omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji; subst j
+    simp only [List.mem_range'_1] at hj; omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji; subst j
+    simp only [List.mem_range'_1] at hj; omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    have e:=hinj hji; subst j
+    simp only [List.mem_range'_1] at hj; omega
+
+attribute [local irreducible] ECDSAAdd.wires in
+theorem P4_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) : w i∉wires (P4 w) := by
+  intro h
+  exact low_avoid4 w hinj i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
+
+section R4SupportOpaque
+attribute [local irreducible] ECDSAAdd.wires
+theorem R4_avoid (w : Nat→Wire) (hinj : Function.Injective w) (i : Nat)
+    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) : w i∉wires (R4 w) := by
+  intro h
+  have support := suffix_support (wireBlock w 0 254) (wireBlock w 770 254)
+    (wireBlock w 1540 254) (w 1797)
+  exact low_avoid4 w hinj i hi (List.mem_toFinset.mp (support h))
+end R4SupportOpaque
+
+theorem tail4_nd (w : Nat→Wire) (hinj : Function.Injective w) :
+    [w 254,w 1024,w 1793,w 255,w 1025,w 256,w 1026,w 257,w 1027,w 1794,w 1795,w 1796].Nodup :=
+  List.Nodup.map hinj
+    (by decide : [254,1024,1793,255,1025,256,1026,257,1027,1794,1795,1796].Nodup)
+
+#print axioms P4_avoid
+#print axioms R4_avoid
+#print axioms tail4_nd
+
+/-! ### Extracting the three zero output bits from the word value -/
+
+theorem bit255_from_div (w : Nat→Wire) (s : BasisState) (W : Nat) (flag : Bool)
+    (postWord : regValue (wireBlock w 770 258) s=W) (hdiv : W/2^255%2=flag.toNat) :
+    s (w 1025)=flag := by
+  have h:=regValue_bit (wireBlock w 770 258) 255 0 s (by simp [wireBlock_length])
+  have port : (wireBlock w 770 258).getD 255 0=w 1025 := by rfl
+  rw [port,postWord,hdiv] at h
+  cases hs : s (w 1025) <;> cases flag <;> simp [hs] at h ⊢
+
+/-- For the exit caller the word is `Y/2 < 2^255`, so ALL THREE high bits vanish. -/
+theorem exit_three_zero (w : Nat→Wire) (s : BasisState) (W : Nat) (hW : W<2^255)
+    (postWord : regValue (wireBlock w 770 258) s=W) :
+    s (w 1025)=false ∧ s (w 1026)=false ∧ s (w 1027)=false := by
+  have d5 : W/2^255=0 := Nat.div_eq_of_lt hW
+  have h255 : W/2^255%2=(false : Bool).toNat := by rw [d5]; rfl
+  exact ⟨bit255_from_div w s W false postWord h255,
+    (Verifier.Leaf3.exit_two_zero w s W hW postWord).1,
+    (Verifier.Leaf3.exit_two_zero w s W hW postWord).2⟩
+
+#print axioms bit255_from_div
+#print axioms exit_three_zero
+
+end Verifier.Leaf4
+end
+
+
+-- Consolidated source module: AffineCarry4B
+section
+
+set_option maxHeartbeats 16000000
+set_option maxRecDepth 20000
+set_option Elab.async false
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+set_option exponentiation.threshold 400
+
+namespace Verifier.Leaf4
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Challenge
+open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridgeResearch
+
+section Exit4Opaque
+attribute [local irreducible] ECDSAAdd.wires
+set_option maxHeartbeats 16000000 in
+theorem exit4_run_eq_split (w : Nat→Wire) (hinj : Function.Injective w) (s : State) (m : List Bool)
+    (clean4 : s.basis (w 1794)=false) (clean5 : s.basis (w 1795)=false)
+    (clean6 : s.basis (w 1796)=false)
+    (topB   : (run (P4 w++oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+                (w 257) (w 1027) (w 1794) (w 1795) (w 1796)++R4 w) [] s).basis (w 1025)=false)
+    (topB'  : (run (P4 w++oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+                (w 257) (w 1027) (w 1794) (w 1795) (w 1796)++R4 w) [] s).basis (w 1026)=false)
+    (topB'' : (run (P4 w++oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+                (w 257) (w 1027) (w 1794) (w 1795) (w 1796)++R4 w) [] s).basis (w 1027)=false) :
+    run (P4 w++oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+          (w 257) (w 1027) (w 1794) (w 1795) (w 1796)++R4 w) m s
+      = run (P4 w++newLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+          (w 257) (w 1027)++R4 w) m s := by
+  exact whole_zero4 (P4 w) (R4 w) (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+    (w 257) (w 1027) (w 1794) (w 1795) (w 1796) (tail4_nd w hinj) s m clean4 clean5 clean6
+    (P4_avoid w hinj 1794 (Or.inl rfl))
+    (P4_avoid w hinj 1795 (Or.inr (Or.inl rfl)))
+    (P4_avoid w hinj 1796 (Or.inr (Or.inr (Or.inl rfl))))
+    (R4_avoid w hinj 1025 (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
+    (R4_avoid w hinj 1026 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))
+    (R4_avoid w hinj 1027 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))))
+    topB topB' topB''
+end Exit4Opaque
+
+/-- Same bridge, stated on the literal adder. The module boundary keeps `P4`/`R4` opaque. -/
+theorem exit4_run_eq (w : Nat→Wire) (hinj : Function.Injective w) (s : State) (m : List Bool)
+    (clean4 : s.basis (w 1794)=false) (clean5 : s.basis (w 1795)=false)
+    (clean6 : s.basis (w 1796)=false)
+    (topB   : (run (literalKAdd w) [] s).basis (w 1025)=false)
+    (topB'  : (run (literalKAdd w) [] s).basis (w 1026)=false)
+    (topB'' : (run (literalKAdd w) [] s).basis (w 1027)=false) :
+    run (literalKAdd w) m s=run (zero4KAdd w) m s := by
+  rw [literal_split4] at topB topB' topB''
+  rw [literal_split4, zero4KAdd]
+  exact exit4_run_eq_split w hinj s m clean4 clean5 clean6 topB topB' topB''
+
+#print axioms exit4_run_eq
+end Verifier.Leaf4
+end
+
+
+-- Consolidated source module: AffineCarry4C
+section
+
+set_option maxHeartbeats 8000000
+set_option maxRecDepth 20000
+set_option Elab.async false
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+set_option exponentiation.threshold 400
+
+namespace Verifier.Leaf4
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Challenge RecordedQuantum
+open ECDSAAdd.Entrant.AdderSpineBridgeResearch ECDSAAdd.Entrant.KAddCallerBridgeResearch
+
+-- Keep support proof elaboration from eagerly expanding whole-program wire sets.
+attribute [local irreducible] ECDSAAdd.wires
+
+private theorem splice_valid4 (V : Instr → Prop) (p old new r : Program)
+    (ho : ∀i∈p++old++r,V i) (hn : ∀i∈new,V i) : ∀i∈p++new++r,V i := by
+  intro i hi
+  simp only [List.mem_append] at hi ⊢
+  rcases hi with (hp|hnw)|hr
+  · exact ho i (by simp [hp])
+  · exact hn i hnw
+  · exact ho i (by simp [hr])
+
+private theorem splice_support4 (p old new r : Program)
+    (hleaf : wires new ⊆ wires old) : wires (p++new++r) ⊆ wires (p++old++r) := by
+  simp only [wires_append]
+  intro q hq
+  simp only [Finset.mem_union] at hq ⊢
+  rcases hq with (hp|hn)|hr
+  · exact Or.inl (Or.inl hp)
+  · exact Or.inl (Or.inr (hleaf hn))
+  · exact Or.inr hr
+
+theorem new4_support (a b c A B A' B' A'' B'' : Wire) :
+    wires (newLeaf4At a b c A B A' B' A'' B'') = {a,b,c,A,B,A',B',A'',B''} := by
+  ext q
+  (simp [newLeaf4At,wires,Instr.wires,correctionWires]; tauto)
+
+theorem leaf4_support (a b c A B A' B' A'' B'' z z' z'' : Wire) :
+    wires (newLeaf4At a b c A B A' B' A'' B'')
+      ⊆ wires (oldLeaf4At a b c A B A' B' A'' B'' z z' z'') := by
+  rw [new4_support, old4_unfold, wires_append, wires_append, wires_append,
+      (Verifier.Leaf3.support3 A B z A' B' A'' B'' z' z'').1]
+  intro q h
+  simp only [Finset.mem_insert,Finset.mem_singleton] at h
+  rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
+    simp [majority,eraseCarry,wires,Instr.wires,correctionWires]
+
+theorem zero4_support (w : Nat → Wire) :
+    wires (zero4KAdd w) ⊆ wires (literalKAdd w) := by
+  have h := splice_support4 (P4 w)
+    (oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027)
+      (w 1794) (w 1795) (w 1796))
+    (newLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027))
+    (R4 w) (leaf4_support _ _ _ _ _ _ _ _ _ _ _ _)
+  exact (congrArg (fun s : Finset Wire => wires (zero4KAdd w) ⊆ s)
+    (congrArg ECDSAAdd.wires (literal_split4 w))).mpr h
+
+theorem nd9 (w : Nat→Wire) (hinj : Function.Injective w) :
+    [w 254,w 1024,w 1793,w 255,w 1025,w 256,w 1026,w 257,w 1027].Nodup :=
+  List.Nodup.map hinj (by decide : [254,1024,1793,255,1025,256,1026,257,1027].Nodup)
+
+private theorem leaf4_physical (a b c A B A' B' A'' B'' : Wire)
+    (nd : [a,b,c,A,B,A',B',A'',B''].Nodup) :
+    GatePhysical (newLeaf4At a b c A B A' B' A'' B'') := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  simp_all [newLeaf4At,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
+
+private theorem leaf4_contract_valid (a b c A B A' B' A'' B'' : Wire)
+    (nd : [a,b,c,A,B,A',B',A'',B''].Nodup) :
+    ∀i∈newLeaf4At a b c A B A' B' A'' B'',instructionValid i := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true] at nd
+  simp_all [newLeaf4At,instructionValid,correctionValid,ne_comm]
+
+/-! ### Pool-Nodup variants, matching the ExitMerge call sites -/
+
+theorem nd9_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) :
+    [w 254,w 1024,w 1793,w 255,w 1025,w 256,w 1026,w 257,w 1027].Nodup := by
+  have neq (i j : Nat) (hi : i<1798) (hj : j<1798) (hne : i≠j) : w i≠w j := by
+    intro he
+    exact hne (skywalkPool_index_inj w hn i j hi hj he)
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true]
+  repeat' constructor
+  all_goals exact neq _ _ (by decide) (by decide) (by decide)
+
+theorem tail4_nd_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) :
+    [w 254,w 1024,w 1793,w 255,w 1025,w 256,w 1026,w 257,w 1027,
+      w 1794,w 1795,w 1796].Nodup := by
+  have neq (i j : Nat) (hi : i<1798) (hj : j<1798) (hne : i≠j) : w i≠w j := by
+    intro he
+    exact hne (skywalkPool_index_inj w hn i j hi hj he)
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
+    not_or,not_false_eq_true,and_true]
+  repeat' constructor
+  all_goals exact neq _ _ (by decide) (by decide) (by decide)
+
+theorem low_avoid4_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) :
+    w i ∉ spinePorts (wireBlock w 0 254) (wireBlock w 770 254) (wireBlock w 1540 254) (w 1797) := by
+  have ir : i<1798 := by omega
+  intro h
+  simp only [spinePorts,List.mem_cons,List.mem_append,or_assoc] at h
+  rcases h with h|h|h|h
+  · have e := skywalkPool_index_inj w hn i 1797 ir (by decide) h
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    simp only [List.mem_range'_1] at hj
+    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    simp only [List.mem_range'_1] at hj
+    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
+    omega
+  · obtain ⟨j,hj,hji⟩:=List.mem_map.mp h
+    simp only [List.mem_range'_1] at hj
+    have e := skywalkPool_index_inj w hn i j ir (by omega) hji.symm
+    omega
+
+theorem P4_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) : w i∉wires (P4 w) := by
+  intro h
+  exact low_avoid4_pool w hn i hi (List.mem_toFinset.mp (prefix_support _ _ _ _ h))
+
+section R4PoolOpaque
+theorem R4_avoid_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (i : Nat)
+    (hi : i=1794 ∨ i=1795 ∨ i=1796 ∨ i=1025 ∨ i=1026 ∨ i=1027) : w i∉wires (R4 w) := by
+  intro h
+  have support := suffix_support (wireBlock w 0 254) (wireBlock w 770 254)
+    (wireBlock w 1540 254) (w 1797)
+  exact low_avoid4_pool w hn i hi (List.mem_toFinset.mp (support h))
+end R4PoolOpaque
+
+set_option maxHeartbeats 16000000 in
+theorem exit4_run_eq_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup)
+    (s : State) (m : List Bool)
+    (clean4 : s.basis (w 1794)=false) (clean5 : s.basis (w 1795)=false)
+    (clean6 : s.basis (w 1796)=false)
+    (topB   : (run (literalKAdd w) [] s).basis (w 1025)=false)
+    (topB'  : (run (literalKAdd w) [] s).basis (w 1026)=false)
+    (topB'' : (run (literalKAdd w) [] s).basis (w 1027)=false) :
+    run (literalKAdd w) m s=run (zero4KAdd w) m s := by
+  rw [literal_split4] at topB topB' topB''
+  rw [literal_split4, zero4KAdd]
+  exact whole_zero4 (P4 w) (R4 w) (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+    (w 257) (w 1027) (w 1794) (w 1795) (w 1796) (tail4_nd_pool w hn) s m clean4 clean5 clean6
+    (P4_avoid_pool w hn 1794 (Or.inl rfl))
+    (P4_avoid_pool w hn 1795 (Or.inr (Or.inl rfl)))
+    (P4_avoid_pool w hn 1796 (Or.inr (Or.inr (Or.inl rfl))))
+    (R4_avoid_pool w hn 1025 (Or.inr (Or.inr (Or.inr (Or.inl rfl)))))
+    (R4_avoid_pool w hn 1026 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl rfl))))))
+    (R4_avoid_pool w hn 1027 (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr rfl))))))
+    topB topB' topB''
+
+theorem zero4_gatePhysical_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (ho : GatePhysical (literalKAdd w)) : GatePhysical (zero4KAdd w) := by
+  have old := (congrArg GatePhysical (literal_split4 w)).mp ho
+  exact splice_valid4 (fun i => PhysicalInstr (.gate i)) (P4 w)
+    (oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027)
+      (w 1794) (w 1795) (w 1796))
+    (newLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027))
+    (R4 w) old (leaf4_physical _ _ _ _ _ _ _ _ _ (nd9_pool w hn))
+
+theorem zero4_contract_valid_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
+    (ho : ∀i∈literalKAdd w,instructionValid i) : ∀i∈zero4KAdd w,instructionValid i := by
+  have old := (congrArg (fun p : Program => ∀i∈p,instructionValid i) (literal_split4 w)).mp ho
+  exact splice_valid4 instructionValid (P4 w)
+    (oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027)
+      (w 1794) (w 1795) (w 1796))
+    (newLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027))
+    (R4 w) old (leaf4_contract_valid _ _ _ _ _ _ _ _ _ (nd9_pool w hn))
+
+theorem leaf4_slots (a b c A B A' B' A'' B'' z z' z'' : Wire) :
+    Challenge.gateSlots (oldLeaf4At a b c A B A' B' A'' B'' z z' z'') = 38 ∧
+    Challenge.gateSlots (newLeaf4At a b c A B A' B' A'' B'') = 17 := by
+  refine ⟨?_, by rfl⟩
+  rw [old4_unfold, Challenge.gateSlots_append, Challenge.gateSlots_append,
+      Challenge.gateSlots_append,
+      (Verifier.Leaf3.leaf3_slots A B z A' B' A'' B'' z' z'').1]
+  rfl
+
+theorem zero4_slots (w : Nat → Wire) :
+    Challenge.gateSlots (zero4KAdd w) + 21 = Challenge.gateSlots (literalKAdd w) := by
+  have hl := leaf4_slots (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026)
+    (w 257) (w 1027) (w 1794) (w 1795) (w 1796)
+  rw [literal_split4 w]
+  simp only [zero4KAdd, Challenge.gateSlots_append, hl.1, hl.2]
+  omega
+
+#print axioms zero4_support
+#print axioms exit4_run_eq_pool
+#print axioms zero4_gatePhysical_pool
+#print axioms zero4_contract_valid_pool
+#print axioms zero4_slots
+end Verifier.Leaf4
+end
+
+
+-- Consolidated source module: ExitMerge
+section
 
 -- ===== ECDSAAdd.Submission.Entrant.E1Merge =====
 section
@@ -3130,3 +5231,4 @@ theorem program_slots (w : Nat → Wire) (g : Wire) (k : Nat) : Challenge.gateSl
   omega
 
 end ECDSAAdd.Entrant.ExitMerge
+end
