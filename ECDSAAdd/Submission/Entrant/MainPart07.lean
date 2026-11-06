@@ -14800,6 +14800,3236 @@ end ECDSAAdd.Entrant.Five506
 
 end -- Five506
 
+-- ===== Six505: six-tick forward window (tick 505 + ticks 506..510) =====
+section
+
+/-! Six-tick forward window (tick 505 + the Five506 window) re-synthesized jointly on the reachable
+stage-505 domain: 31 Toffolis instead of 12 + 20. The history pack due after tick 505 moves after the
+block: it only shares wire 520 with tick 505 and is disjoint from ticks 506..510. Scratch wires are
+released pool-B wires 794..799, so no new wire is used. -/
+
+set_option maxRecDepth 30000
+set_option maxHeartbeats 0
+namespace ECDSAAdd.Entrant.Six505
+set_option linter.unusedSimpArgs false
+open Arithmetic MappedCompressed Secp256k1 History5
+
+def tick505 : Program := [
+  .CX 787 522,
+  .CX 788 523,
+  .CX 789 524,
+  .CX 790 525,
+  .CX 791 526,
+  .CX 792 527,
+  .CCX 521 522 787,
+  .CCX 521 523 788,
+  .CCX 521 524 789,
+  .CCX 521 525 790,
+  .CCX 521 526 791,
+  .CCX 521 527 792,
+  .CX 787 522,
+  .CX 788 523,
+  .CX 789 524,
+  .CX 790 525,
+  .CX 791 526,
+  .CX 792 527,
+  .CX 528 793,
+  .measureX 528 [] [.CZ 520 793],
+  .CX 793 528,
+  .CX 528 793,
+  .CX 792 793,
+  .CX 792 528,
+  .CX 521 786,
+  .CX 528 529,
+  .X 1549,
+  .CX 528 1549,
+  .CX 792 1549,
+  .CX 1549 522,
+  .CX 1549 523,
+  .CX 1549 524,
+  .CX 1549 525,
+  .CX 1549 526,
+  .CX 1549 527,
+  .CX 1549 528,
+  .CX 522 786,
+  .CX 522 1549,
+  .CCX 786 1549 1556,
+  .CX 522 1556,
+  .CX 522 1549,
+  .CX 522 786,
+  .CX 523 787,
+  .CX 523 1556,
+  .CCX 787 1556 1557,
+  .CX 523 1557,
+  .CX 523 1556,
+  .CX 523 787,
+  .CX 524 788,
+  .CX 524 1557,
+  .CCX 788 1557 1558,
+  .CX 524 1558,
+  .CX 524 1557,
+  .CX 524 788,
+  .CX 525 789,
+  .CX 525 1558,
+  .CCX 789 1558 1559,
+  .CX 525 1559,
+  .CX 525 1558,
+  .CX 525 789,
+  .CX 526 790,
+  .CX 526 1559,
+  .CCX 790 1559 1560,
+  .CX 526 1560,
+  .CX 526 1559,
+  .CX 526 790,
+  .CX 527 791,
+  .CX 527 1560,
+  .CCX 791 1560 1561,
+  .CX 527 1561,
+  .CX 527 1560,
+  .CX 527 791,
+  .CX 528 792,
+  .CX 1561 792,
+  .measureX 1561 [] [.CZ 527 791, .CZ 527 1560, .CZ 791 1560],
+  .CX 527 791,
+  .CX 1560 791,
+  .measureX 1560 [] [.CZ 526 790, .CZ 526 1559, .CZ 790 1559],
+  .CX 526 790,
+  .CX 1559 790,
+  .measureX 1559 [] [.CZ 525 789, .CZ 525 1558, .CZ 789 1558],
+  .CX 525 789,
+  .CX 1558 789,
+  .measureX 1558 [] [.CZ 524 788, .CZ 524 1557, .CZ 788 1557],
+  .CX 524 788,
+  .CX 1557 788,
+  .measureX 1557 [] [.CZ 523 787, .CZ 523 1556, .CZ 787 1556],
+  .CX 523 787,
+  .CX 1556 787,
+  .measureX 1556 [] [.CZ 522 786, .CZ 522 1549, .CZ 786 1549],
+  .CX 522 786,
+  .CX 1549 786,
+  .CX 1549 522,
+  .CX 1549 523,
+  .CX 1549 524,
+  .CX 1549 525,
+  .CX 1549 526,
+  .CX 1549 527,
+  .CX 1549 528,
+  .X 1549,
+  .CX 528 1549,
+  .CX 792 1549,
+  .CX 1549 793,
+  .CX 520 521,
+  .CX 528 529,
+  .CX 792 793]
+
+def block0 : Program := [
+  .CX 787 522,
+  .CCX 521 522 529,
+  .CX 523 524,
+  .CX 523 525,
+  .CX 523 526,
+  .CX 523 527,
+  .CX 523 528,
+  .CX 523 529,
+  .CX 523 787,
+  .CX 523 788,
+  .CX 523 789,
+  .CX 523 790,
+  .CX 523 791,
+  .CX 523 792,
+  .CX 523 793,
+  .measureX 523 [] [.Z 528, .Z 792, .Z 793, .CZ 520 527, .CZ 520 792],
+  .CX 524 789,
+  .CX 789 788,
+  .CCX 786 788 524,
+  .CX 788 525,
+  .CX 789 525,
+  .CX 790 525,
+  .CCX 786 525 523,
+  .CX 523 790,
+  .measureX 523 [] [.Z 525, .CZ 521 525],
+  .CX 788 526,
+  .CX 789 526,
+  .CX 791 526,
+  .CCX 786 526 523,
+  .CX 523 791,
+  .measureX 523 [] [.Z 526, .CZ 521 526],
+  .CX 792 528]
+
+def block1 : Program := [
+  .CX 529 522,
+  .CX 787 522,
+  .CCX 528 522 523,
+  .CX 788 527,
+  .CX 789 527,
+  .CX 792 527,
+  .CCX 786 527 1549,
+  .CX 529 787,
+  .CX 529 792,
+  .CX 529 793,
+  .CX 529 1549,
+  .measureX 529 [] [.Z 527, .Z 1549, .CZ 521 527],
+  .CX 792 793,
+  .CX 792 1549,
+  .CX 527 522,
+  .CX 787 522,
+  .CX 788 522,
+  .CX 789 522,
+  .CX 527 521,
+  .CX 787 521,
+  .CX 788 521,
+  .CX 789 521,
+  .CCX 522 521 792,
+  .CX 522 792,
+  .CX 521 522,
+  .CX 521 523,
+  .CX 521 787,
+  .measureX 521 [] [.Z 523, .Z 528, .CZ 522 528, .CZ 528 786],
+  .CX 786 523,
+  .CX 792 527,
+  .CX 1549 527,
+  .CCX 523 527 521]
+
+def block2 : Program := [
+  .CX 527 524,
+  .CX 528 524,
+  .CX 786 524,
+  .CX 787 524,
+  .CX 788 524,
+  .CX 792 524,
+  .CX 793 524,
+  .CX 1549 524,
+  .CX 527 521,
+  .CX 528 521,
+  .CX 788 521,
+  .CX 789 521,
+  .CX 793 521,
+  .CCX 524 521 529,
+  .CX 528 524,
+  .CX 786 524,
+  .CX 787 524,
+  .CX 789 524,
+  .CX 790 524,
+  .CX 529 527,
+  .CX 788 527,
+  .CX 792 527,
+  .CX 793 527,
+  .CX 1549 527,
+  .CCX 524 527 1550,
+  .CX 527 525,
+  .CX 529 525,
+  .CX 788 525,
+  .CX 790 525,
+  .CX 791 525,
+  .CX 793 525,
+  .CX 790 527]
+
+def block3 : Program := [
+  .CX 791 527,
+  .CX 1550 527,
+  .CCX 525 527 526,
+  .CX 525 526,
+  .CX 525 527,
+  .CX 525 1550,
+  .measureX 525 [] [.Z 521, .Z 527, .Z 528, .Z 529, .Z 789, .Z 790, .Z 791, .Z 793, .CZ 521 528, .CZ 521 786, .CZ 521 787, .CZ 521 793, .CZ 524 528, .CZ 524 529, .CZ 524 789],
+  .CX 524 529,
+  .CX 524 788,
+  .CX 524 789,
+  .measureX 524 [] [.Z 529, .CZ 521 528, .CZ 521 786, .CZ 521 787, .CZ 521 789, .CZ 521 790],
+  .CX 526 788,
+  .CX 526 790,
+  .CX 526 791,
+  .CX 526 1549,
+  .measureX 526 [] [.Z 521, .Z 527, .Z 792, .Z 793, .Z 1549, .CZ 523 528, .CZ 523 788, .CZ 523 789, .CZ 523 792, .CZ 523 1549, .CZ 527 528, .CZ 527 786, .CZ 527 787],
+  .CX 527 520,
+  .CX 529 520,
+  .CX 787 520,
+  .CX 789 520,
+  .CX 790 520,
+  .CX 791 520,
+  .CX 793 520,
+  .CX 1550 520,
+  .CX 788 529,
+  .CX 790 529,
+  .CX 791 529,
+  .CX 1550 529,
+  .CCX 520 529 524,
+  .CX 787 522,
+  .CX 788 522,
+  .CX 789 522]
+
+def block4 : Program := [
+  .CX 792 522,
+  .CX 1549 522,
+  .CX 788 527,
+  .CX 789 527,
+  .CX 793 527,
+  .CCX 522 527 525,
+  .CX 527 528,
+  .CX 527 529,
+  .CX 527 788,
+  .CX 527 789,
+  .CX 527 793,
+  .CX 527 1550,
+  .measureX 527 [] [.Z 528, .Z 529, .CZ 528 786, .CZ 529 786, .CZ 786 793],
+  .CX 788 789,
+  .CX 788 790,
+  .CX 788 1550,
+  .CX 524 522,
+  .CX 786 522,
+  .CX 787 522,
+  .CX 789 522,
+  .CX 792 522,
+  .CX 1549 522,
+  .CX 528 521,
+  .CX 529 521,
+  .CX 789 521,
+  .CX 790 521,
+  .CX 791 521,
+  .CX 793 521,
+  .CX 1550 521,
+  .CCX 522 521 788,
+  .CX 790 791,
+  .CX 524 522]
+
+def block5 : Program := [
+  .CX 789 529,
+  .CCX 522 529 790,
+  .CX 790 792,
+  .CX 790 1549,
+  .CX 524 523,
+  .CX 528 523,
+  .CX 529 523,
+  .CX 792 523,
+  .CX 1549 523,
+  .CX 787 786,
+  .CX 789 786,
+  .CX 792 786,
+  .CX 1549 786,
+  .CCX 523 786 790,
+  .CX 523 525,
+  .CX 523 790,
+  .measureX 523 [] [.Z 525, .CZ 522 528, .CZ 522 529, .CZ 522 789, .CZ 528 786, .CZ 529 786, .CZ 786 789],
+  .CX 790 791,
+  .CX 790 792,
+  .CX 790 1549,
+  .CX 790 1550,
+  .CX 791 521,
+  .CX 793 521,
+  .CX 1550 521,
+  .CCX 522 521 790,
+  .CX 524 522,
+  .CX 525 522,
+  .CX 528 522,
+  .CX 786 522,
+  .CX 789 522,
+  .CX 792 522,
+  .CX 793 522]
+
+def block6 : Program := [
+  .CX 1549 522,
+  .CX 525 521,
+  .CX 528 521,
+  .CX 790 521,
+  .CX 792 521,
+  .CX 1549 521,
+  .CCX 522 521 523,
+  .CX 522 523,
+  .CX 786 528,
+  .CX 788 528,
+  .CX 789 528,
+  .CX 791 528,
+  .CX 792 528,
+  .CX 793 528,
+  .CX 1549 528,
+  .CX 1550 528,
+  .CX 523 522,
+  .CX 525 522,
+  .CX 789 522,
+  .CX 790 522,
+  .CX 792 522,
+  .CX 793 522,
+  .CX 1549 522,
+  .CCX 528 522 526,
+  .CX 522 524,
+  .CX 522 528,
+  .CX 522 787,
+  .CX 522 789,
+  .measureX 522 [] [.Z 520, .Z 524, .CZ 520 524, .CZ 520 528, .CZ 520 788, .CZ 520 791, .CZ 520 1550],
+  .CX 523 528,
+  .CX 523 788,
+  .CX 523 790]
+
+def block7 : Program := [
+  .measureX 523 [] [.Z 520, .Z 524, .Z 528, .Z 529, .Z 786, .Z 788, .Z 789, .Z 790, .Z 791, .Z 793, .Z 1550, .CZ 520 524, .CZ 520 528, .CZ 520 788, .CZ 520 791, .CZ 520 1550, .CZ 521 524, .CZ 521 525, .CZ 521 528, .CZ 521 529, .CZ 521 786, .CZ 521 788, .CZ 521 789, .CZ 521 790, .CZ 521 791, .CZ 521 793, .CZ 521 1550, .CZ 524 525, .CZ 525 528, .CZ 525 788, .CZ 525 791, .CZ 525 1550],
+  .CX 788 529,
+  .CX 790 529,
+  .CX 791 529,
+  .CX 788 526,
+  .CX 790 526,
+  .CX 793 526,
+  .CX 1550 526,
+  .CCX 529 526 522,
+  .CX 524 520,
+  .CX 528 520,
+  .CX 529 520,
+  .CX 786 520,
+  .CX 789 520,
+  .CX 793 520,
+  .CX 1550 520,
+  .CX 526 522,
+  .CX 529 522,
+  .CX 788 522,
+  .CX 790 522,
+  .CX 791 522,
+  .CCX 520 522 523,
+  .CX 528 524,
+  .CX 786 524,
+  .CX 788 524,
+  .CX 789 524,
+  .CX 790 524,
+  .CX 791 524,
+  .CX 792 524,
+  .CX 793 524,
+  .CX 1549 524,
+  .CX 1550 524]
+
+def block8 : Program := [
+  .CX 528 525,
+  .CX 529 525,
+  .CX 786 525,
+  .CX 789 525,
+  .CX 793 525,
+  .CX 1550 525,
+  .CCX 524 525 527,
+  .CX 528 526,
+  .CX 529 526,
+  .CX 786 526,
+  .CX 788 526,
+  .CX 789 526,
+  .CX 790 526,
+  .CX 791 526,
+  .CX 792 526,
+  .CX 793 526,
+  .CX 1549 526,
+  .CX 1550 526,
+  .CCX 524 526 1551,
+  .CX 524 1551,
+  .CX 524 521,
+  .CX 525 521,
+  .CX 528 521,
+  .CX 529 521,
+  .CX 786 521,
+  .CX 790 521,
+  .CX 792 521,
+  .CX 1549 521,
+  .CX 1550 521,
+  .CX 525 522,
+  .CX 528 522,
+  .CX 788 522]
+
+def block9 : Program := [
+  .CX 791 522,
+  .CX 1550 522,
+  .CCX 521 522 1552,
+  .CX 524 522,
+  .CX 525 522,
+  .CX 528 522,
+  .CX 529 522,
+  .CX 789 522,
+  .CX 1550 522,
+  .CX 528 527,
+  .CX 529 527,
+  .CX 786 527,
+  .CX 788 527,
+  .CX 790 527,
+  .CX 791 527,
+  .CX 792 527,
+  .CX 1549 527,
+  .CX 1552 527,
+  .CCX 522 527 1553,
+  .CX 527 521,
+  .CX 524 522,
+  .CX 525 522,
+  .CX 527 522,
+  .CX 528 522,
+  .CX 529 522,
+  .CX 789 522,
+  .CX 1550 522,
+  .CX 1553 522,
+  .CCX 521 522 1554,
+  .CX 521 1554,
+  .CX 523 521,
+  .CX 524 521]
+
+def block10 : Program := [
+  .CX 527 521,
+  .CX 529 521,
+  .CX 788 521,
+  .CX 789 521,
+  .CX 791 521,
+  .CX 793 521,
+  .CX 529 525,
+  .CX 786 525,
+  .CX 788 525,
+  .CX 790 525,
+  .CX 791 525,
+  .CX 792 525,
+  .CX 1549 525,
+  .CX 1553 525,
+  .CX 1554 525,
+  .CCX 521 525 794,
+  .CX 521 520,
+  .CX 523 520,
+  .CX 527 520,
+  .CX 789 520,
+  .CX 790 520,
+  .CX 791 520,
+  .CX 793 520,
+  .CX 1549 520,
+  .CX 522 521,
+  .CX 523 521,
+  .CX 524 521,
+  .CX 525 521,
+  .CX 526 521,
+  .CX 527 521,
+  .CX 788 521,
+  .CX 790 521]
+
+def block11 : Program := [
+  .CX 793 521,
+  .CX 1550 521,
+  .CX 1551 521,
+  .CX 1552 521,
+  .CX 1553 521,
+  .CX 794 521,
+  .CCX 520 521 795,
+  .CX 521 528,
+  .CX 521 529,
+  .CX 521 788,
+  .CX 521 789,
+  .CX 521 791,
+  .CX 521 792,
+  .CX 521 793,
+  .CX 521 1550,
+  .CX 521 1551,
+  .measureX 521 [] [.Z 524, .Z 529, .Z 788, .Z 789, .Z 791, .Z 793, .Z 795, .CZ 520 524, .CZ 520 529, .CZ 520 788, .CZ 520 789, .CZ 520 791, .CZ 520 793],
+  .CX 788 789,
+  .CX 788 1549,
+  .CX 788 1550,
+  .measureX 788 [] [.Z 520, .Z 523, .Z 524, .Z 525, .Z 527, .Z 529, .Z 790, .Z 1550, .Z 1552, .Z 794, .CZ 520 522, .CZ 520 523, .CZ 520 526, .CZ 520 528, .CZ 520 790, .CZ 520 793, .CZ 520 1550, .CZ 520 1552, .CZ 520 1553, .CZ 522 524, .CZ 522 789, .CZ 522 791, .CZ 522 793, .CZ 522 1551, .CZ 522 795, .CZ 524 528, .CZ 524 786, .CZ 524 789, .CZ 524 792, .CZ 524 793, .CZ 524 1553, .CZ 524 795, .CZ 525 528, .CZ 525 786, .CZ 525 789, .CZ 525 790, .CZ 525 792, .CZ 525 1550, .CZ 525 1551, .CZ 526 528, .CZ 526 529, .CZ 527 528, .CZ 528 529, .CZ 529 790, .CZ 529 793, .CZ 529 1550, .CZ 786 789, .CZ 786 790, .CZ 789 791, .CZ 789 792, .CZ 790 791, .CZ 790 792],
+  .CX 529 789,
+  .CX 529 1549,
+  .measureX 529 [] [.Z 522, .Z 527, .Z 791, .Z 793, .Z 1551, .Z 1552, .Z 1553, .Z 795, .CZ 520 522, .CZ 520 524, .CZ 520 525, .CZ 520 526, .CZ 520 789, .CZ 520 790, .CZ 520 1552, .CZ 520 1553, .CZ 520 1554, .CZ 522 524, .CZ 522 790, .CZ 522 791, .CZ 522 793, .CZ 522 1552, .CZ 522 1553, .CZ 524 527, .CZ 524 789, .CZ 524 791, .CZ 524 793, .CZ 525 526, .CZ 525 791, .CZ 525 1550, .CZ 525 1551, .CZ 526 528, .CZ 527 789, .CZ 527 790, .CZ 528 789, .CZ 528 790, .CZ 789 790, .CZ 789 791, .CZ 789 793, .CZ 789 1551, .CZ 789 1554, .CZ 789 795, .CZ 790 791, .CZ 790 793, .CZ 790 1551, .CZ 790 1554, .CZ 790 795],
+  .CX 528 789,
+  .CX 528 791,
+  .CX 528 792,
+  .measureX 528 [] [.Z 520, .Z 522, .Z 527, .Z 789, .Z 791, .Z 793, .Z 1551, .Z 1553, .Z 1554, .CZ 520 522, .CZ 520 524, .CZ 520 525, .CZ 520 789, .CZ 520 791, .CZ 520 793, .CZ 520 1552, .CZ 520 1553, .CZ 520 1554, .CZ 522 524, .CZ 522 525, .CZ 522 789, .CZ 522 791, .CZ 522 793, .CZ 522 1552, .CZ 522 1553, .CZ 524 525, .CZ 524 790, .CZ 524 793, .CZ 524 1550, .CZ 524 1553, .CZ 524 1554, .CZ 525 526, .CZ 525 789, .CZ 525 790, .CZ 525 791, .CZ 525 1550, .CZ 525 1551, .CZ 526 790, .CZ 526 793, .CZ 526 1550],
+  .CX 525 789,
+  .CX 525 791,
+  .CX 525 792,
+  .CX 525 1550]
+
+def block12 : Program := [
+  .CX 525 1551,
+  .CX 525 1554,
+  .CX 525 794,
+  .measureX 525 [] [.Z 526, .Z 789, .Z 790, .Z 791, .Z 1550, .Z 1551, .Z 1552, .Z 1553, .Z 1554, .Z 794, .CZ 522 526, .CZ 522 789, .CZ 522 790, .CZ 522 791, .CZ 522 1550, .CZ 522 1551, .CZ 522 1552, .CZ 522 1553, .CZ 522 794],
+  .CX 522 520,
+  .CX 524 520,
+  .CX 526 520,
+  .CX 786 520,
+  .CX 790 520,
+  .CX 792 520,
+  .CX 1551 520,
+  .CX 794 520,
+  .CX 793 790,
+  .CX 1550 790,
+  .CX 1551 790,
+  .CX 1552 790,
+  .CX 1553 790,
+  .CX 1554 790,
+  .CX 794 790,
+  .CX 795 790,
+  .CCX 520 790 521,
+  .CX 520 521,
+  .CX 793 527,
+  .CX 1549 527,
+  .CX 1550 527,
+  .CX 1551 527,
+  .CX 1552 527,
+  .CX 1553 527,
+  .CX 526 522,
+  .CX 789 522,
+  .CX 791 522,
+  .CX 1549 522]
+
+def block13 : Program := [
+  .CX 1550 522,
+  .CX 1551 522,
+  .CX 1553 522,
+  .CX 1554 522,
+  .CX 795 522,
+  .CCX 527 522 525,
+  .CX 522 520,
+  .CX 523 520,
+  .CX 527 520,
+  .CX 786 520,
+  .CX 790 520,
+  .CX 792 520,
+  .CX 793 520,
+  .CX 1550 520,
+  .CX 1552 520,
+  .CX 1554 520,
+  .CX 794 520,
+  .CX 524 523,
+  .CX 525 523,
+  .CX 789 523,
+  .CX 791 523,
+  .CX 793 523,
+  .CX 1551 523,
+  .CX 1552 523,
+  .CX 1553 523,
+  .CX 794 523,
+  .CCX 520 523 528,
+  .CX 527 528,
+  .CX 527 787,
+  .CX 527 792,
+  .CX 527 793,
+  .CX 527 1550]
+
+def block14 : Program := [
+  .CX 527 1551,
+  .CX 527 1552,
+  .CX 527 1553,
+  .CX 527 794,
+  .CX 527 795,
+  .measureX 527 [] [.Z 528, .CZ 520 523],
+  .CX 520 521,
+  .CX 520 522,
+  .CX 520 523,
+  .CX 520 526,
+  .CX 520 1552,
+  .CX 520 1553,
+  .CX 520 794,
+  .CX 520 795,
+  .measureX 520 [] [.Z 521, .Z 524, .Z 525, .Z 526, .Z 528, .Z 786, .Z 790, .Z 791, .Z 792, .Z 1552, .Z 1553, .Z 1554, .Z 794, .CZ 521 522, .CZ 521 523, .CZ 521 525, .CZ 521 786, .CZ 521 790, .CZ 521 791, .CZ 521 792, .CZ 521 793, .CZ 521 1549, .CZ 521 1550, .CZ 521 1553, .CZ 521 1554, .CZ 522 523, .CZ 522 525, .CZ 522 528, .CZ 522 793, .CZ 522 1549, .CZ 522 1550, .CZ 522 1553, .CZ 522 794, .CZ 523 524, .CZ 523 786, .CZ 523 789, .CZ 523 790, .CZ 523 792, .CZ 523 793, .CZ 523 1552, .CZ 523 1554, .CZ 523 794, .CZ 524 525, .CZ 524 526, .CZ 524 528, .CZ 524 790, .CZ 524 793, .CZ 524 1549, .CZ 524 1550, .CZ 524 1551, .CZ 524 1552, .CZ 524 1553, .CZ 525 526, .CZ 525 528, .CZ 525 793, .CZ 525 1549, .CZ 525 1550, .CZ 526 528, .CZ 526 790],
+  .CX 521 526,
+  .CX 521 787,
+  .CX 521 789,
+  .CX 521 791,
+  .CX 521 792,
+  .CX 521 793,
+  .CX 521 1549,
+  .measureX 521 [] [.Z 522, .Z 525, .Z 528, .Z 1554, .CZ 522 523, .CZ 522 789, .CZ 522 790, .CZ 522 1550, .CZ 522 1551, .CZ 522 1552, .CZ 522 1553, .CZ 522 794, .CZ 523 524, .CZ 523 528, .CZ 523 790, .CZ 523 1552, .CZ 523 794, .CZ 524 525, .CZ 524 526, .CZ 524 528, .CZ 524 786, .CZ 524 789, .CZ 524 790, .CZ 524 792, .CZ 524 1549, .CZ 524 1550, .CZ 524 1551, .CZ 525 791, .CZ 525 793, .CZ 525 1550, .CZ 526 528, .CZ 526 789, .CZ 526 791, .CZ 526 793, .CZ 526 1551, .CZ 526 1552, .CZ 526 1554, .CZ 526 794, .CZ 528 790, .CZ 528 1552],
+  .CX 523 528,
+  .CX 523 789,
+  .CX 523 791,
+  .CX 523 792,
+  .CX 523 1550,
+  .CX 523 1551,
+  .measureX 523 [] [.Z 524, .Z 528, .Z 786, .Z 1551, .Z 1552, .Z 1554, .Z 794, .CZ 522 525, .CZ 522 793, .CZ 522 1549, .CZ 522 1551, .CZ 522 1554, .CZ 522 794, .CZ 524 526, .CZ 524 786, .CZ 524 789, .CZ 524 791, .CZ 524 1549, .CZ 524 1550, .CZ 524 1551, .CZ 524 1554, .CZ 524 794, .CZ 525 789, .CZ 525 791, .CZ 525 1549, .CZ 526 528, .CZ 526 786, .CZ 526 791, .CZ 526 792, .CZ 526 1553, .CZ 528 789, .CZ 528 790, .CZ 528 791, .CZ 528 1549, .CZ 528 1550, .CZ 528 1552, .CZ 528 1554, .CZ 786 789, .CZ 786 792, .CZ 786 1549, .CZ 786 1550, .CZ 789 791, .CZ 789 792, .CZ 789 1551, .CZ 789 1552, .CZ 789 1554, .CZ 790 791, .CZ 790 793],
+  .CX 525 793,
+  .CX 525 1551]
+
+def block15 : Program := [
+  .measureX 525 [] [.Z 528, .Z 789, .Z 790, .Z 791, .Z 793, .Z 1549, .Z 1551, .Z 1553, .CZ 522 526, .CZ 522 786, .CZ 522 789, .CZ 522 790, .CZ 522 792, .CZ 522 793, .CZ 522 1551, .CZ 522 1553, .CZ 522 1554, .CZ 524 526, .CZ 524 528, .CZ 524 786, .CZ 524 789, .CZ 524 790, .CZ 524 792, .CZ 524 793, .CZ 524 1551, .CZ 524 1552, .CZ 524 1553, .CZ 524 1554, .CZ 524 794, .CZ 526 528, .CZ 526 789, .CZ 526 791, .CZ 526 793, .CZ 526 1551, .CZ 526 1552, .CZ 526 1553, .CZ 526 1554, .CZ 526 794, .CZ 528 786, .CZ 528 790, .CZ 528 791, .CZ 528 792, .CZ 528 793, .CZ 528 1549, .CZ 528 1550, .CZ 528 1553, .CZ 528 1554, .CZ 528 794, .CZ 786 789, .CZ 786 790, .CZ 786 791, .CZ 786 793, .CZ 789 790, .CZ 789 791, .CZ 789 792, .CZ 790 791, .CZ 790 792, .CZ 790 793, .CZ 790 1549, .CZ 790 1552, .CZ 790 1553, .CZ 791 792, .CZ 791 793, .CZ 792 793],
+  .CX 522 526,
+  .CX 522 528,
+  .CX 522 787,
+  .CX 522 792,
+  .CX 522 1550,
+  .CX 522 1551,
+  .CX 522 1552,
+  .CX 522 1553,
+  .CX 522 795,
+  .measureX 522 [] [.Z 786, .Z 789, .Z 790, .Z 791, .Z 792, .Z 793, .Z 1550, .Z 1554, .Z 794, .CZ 524 526, .CZ 524 786, .CZ 524 790, .CZ 524 792, .CZ 524 1550, .CZ 524 1551, .CZ 524 1553, .CZ 524 1554, .CZ 526 793, .CZ 526 1549, .CZ 526 1550, .CZ 526 1553, .CZ 526 1554, .CZ 528 793, .CZ 528 1549, .CZ 528 1550, .CZ 528 1551, .CZ 528 1553, .CZ 528 1554, .CZ 528 794, .CZ 786 1549, .CZ 786 1550, .CZ 786 1551, .CZ 786 1554, .CZ 789 1551, .CZ 789 1552, .CZ 789 1554, .CZ 790 791, .CZ 790 793, .CZ 790 1549, .CZ 790 1554, .CZ 791 1549, .CZ 791 1550, .CZ 791 1552, .CZ 792 1549, .CZ 792 1550, .CZ 792 1551, .CZ 792 1554],
+  .CX 526 528,
+  .CX 526 789,
+  .CX 526 791,
+  .CX 526 792,
+  .CX 526 793,
+  .CX 526 1550,
+  .CX 526 1551,
+  .CX 526 1553,
+  .CX 526 1554,
+  .CX 526 795,
+  .measureX 526 [] [.Z 524, .Z 528, .Z 793, .Z 1551, .Z 1552, .CZ 524 790, .CZ 524 791, .CZ 524 1550, .CZ 524 1551, .CZ 524 1552, .CZ 524 1553, .CZ 524 1554, .CZ 524 794, .CZ 528 786, .CZ 528 792, .CZ 528 1549, .CZ 528 1553, .CZ 528 794, .CZ 786 790, .CZ 786 793, .CZ 786 1552, .CZ 786 1554, .CZ 789 790, .CZ 789 791, .CZ 789 1549, .CZ 789 1552, .CZ 789 1554, .CZ 789 794, .CZ 790 791, .CZ 790 792, .CZ 790 793, .CZ 790 1550, .CZ 790 1551, .CZ 790 1552, .CZ 790 1553, .CZ 791 793, .CZ 791 1550, .CZ 791 1552, .CZ 791 1554, .CZ 791 794, .CZ 792 793, .CZ 792 1552, .CZ 792 1554, .CZ 793 1553, .CZ 793 794, .CZ 1549 1550, .CZ 1549 1551, .CZ 1549 1552, .CZ 1549 1553, .CZ 1549 1554, .CZ 1550 1551, .CZ 1550 1553],
+  .CX 789 791,
+  .CX 789 793,
+  .CX 789 1549,
+  .CX 789 1550,
+  .CX 789 1551,
+  .CX 789 794,
+  .measureX 789 [] [.Z 524, .Z 528, .Z 786, .Z 791, .Z 793, .Z 1549, .Z 1553, .Z 1554, .CZ 524 786, .CZ 524 790, .CZ 524 791, .CZ 524 1550, .CZ 524 1552, .CZ 524 1553, .CZ 528 786, .CZ 528 792, .CZ 528 1549, .CZ 528 1550, .CZ 528 1551, .CZ 528 1552, .CZ 528 1554, .CZ 786 792, .CZ 786 793, .CZ 786 1549, .CZ 786 1550, .CZ 786 1553, .CZ 786 1554, .CZ 790 791, .CZ 790 1551, .CZ 790 1553, .CZ 791 793, .CZ 791 1551, .CZ 791 794, .CZ 792 793, .CZ 792 1553, .CZ 792 1554, .CZ 793 1550, .CZ 793 1551, .CZ 793 1552, .CZ 793 1553, .CZ 1549 1550, .CZ 1549 1551, .CZ 1549 794, .CZ 1550 1552, .CZ 1550 1553, .CZ 1550 794],
+  .CX 528 787,
+  .CX 528 793,
+  .CX 528 1549]
+
+def block16 : Program := [
+  .CX 528 1550,
+  .CX 528 1553,
+  .CX 528 794,
+  .CX 528 795,
+  .measureX 528 [] [.Z 524, .Z 786, .Z 790, .Z 791, .Z 792, .Z 793, .Z 1550, .Z 1553, .Z 1554, .CZ 524 791, .CZ 524 793, .CZ 524 1549, .CZ 524 1551, .CZ 786 790, .CZ 786 791, .CZ 786 1552, .CZ 790 791, .CZ 790 792, .CZ 790 1549, .CZ 790 1551, .CZ 790 1552, .CZ 790 1553, .CZ 790 1554, .CZ 791 792, .CZ 791 793, .CZ 791 1549, .CZ 791 1550, .CZ 791 1553, .CZ 791 1554, .CZ 792 1552, .CZ 793 1549, .CZ 793 1550, .CZ 1549 1551, .CZ 1549 1553, .CZ 1550 1551, .CZ 1550 1553, .CZ 1552 1554, .CZ 1552 794],
+  .CX 787 1549,
+  .CX 787 1550,
+  .CX 787 1551,
+  .CX 787 1553,
+  .CX 787 1554,
+  .CX 787 794,
+  .measureX 787 [] [.Z 524, .Z 792, .Z 793, .Z 1549, .Z 1551, .Z 1553, .CZ 524 786, .CZ 524 793, .CZ 524 1549, .CZ 524 1550, .CZ 524 1551, .CZ 524 1552, .CZ 524 1553, .CZ 786 790, .CZ 786 791, .CZ 786 792, .CZ 786 793, .CZ 786 1549, .CZ 786 1551, .CZ 786 1553, .CZ 786 794, .CZ 790 792, .CZ 790 793, .CZ 790 1550, .CZ 790 1551, .CZ 790 1553, .CZ 790 1554, .CZ 791 792, .CZ 791 793, .CZ 791 1550, .CZ 791 1552, .CZ 791 1553, .CZ 791 1554, .CZ 791 794, .CZ 792 793, .CZ 792 1550, .CZ 792 1551, .CZ 792 1553, .CZ 792 794, .CZ 793 1551, .CZ 793 1552, .CZ 793 1553, .CZ 1549 1553, .CZ 1549 1554, .CZ 1550 1551, .CZ 1550 1552, .CZ 1550 1553, .CZ 1551 794, .CZ 1552 1554, .CZ 1554 794],
+  .CX 799 798,
+  .CX 799 797,
+  .CX 799 796,
+  .CX 799 795,
+  .CX 799 794,
+  .CX 799 1551,
+  .CX 799 793,
+  .CX 799 790,
+  .CX 799 789,
+  .CX 799 787,
+  .CX 799 527,
+  .CX 799 525,
+  .CX 799 524,
+  .CX 799 523,
+  .CX 799 520,
+  .CX 798 799,
+  .CX 798 797,
+  .CX 798 796,
+  .CX 798 795,
+  .CX 798 794]
+
+def block17 : Program := [
+  .CX 798 1551,
+  .CX 798 793,
+  .CX 798 790,
+  .CX 798 789,
+  .CX 798 787,
+  .CX 798 527,
+  .CX 798 525,
+  .CX 798 524,
+  .CX 798 523,
+  .CX 798 520,
+  .CX 799 798,
+  .CX 797 799,
+  .CX 797 796,
+  .CX 797 795,
+  .CX 797 794,
+  .CX 797 1551,
+  .CX 797 793,
+  .CX 797 790,
+  .CX 797 789,
+  .CX 797 787,
+  .CX 797 527,
+  .CX 797 525,
+  .CX 797 524,
+  .CX 797 523,
+  .CX 797 520,
+  .CX 799 797,
+  .CX 796 799,
+  .CX 796 795,
+  .CX 796 794,
+  .CX 796 1551,
+  .CX 796 793,
+  .CX 796 790]
+
+def block18 : Program := [
+  .CX 796 789,
+  .CX 796 787,
+  .CX 796 527,
+  .CX 796 525,
+  .CX 796 524,
+  .CX 796 523,
+  .CX 796 520,
+  .CX 799 796,
+  .CX 795 799,
+  .CX 795 794,
+  .CX 795 1551,
+  .CX 795 793,
+  .CX 795 790,
+  .CX 795 789,
+  .CX 795 787,
+  .CX 795 527,
+  .CX 795 525,
+  .CX 795 524,
+  .CX 795 523,
+  .CX 795 520,
+  .CX 799 795,
+  .CX 794 799,
+  .CX 794 1551,
+  .CX 794 1550,
+  .CX 794 1549,
+  .CX 794 793,
+  .CX 794 792,
+  .CX 794 786,
+  .CX 799 794,
+  .CX 1554 799,
+  .CX 1554 794,
+  .CX 1554 1553]
+
+def block19 : Program := [
+  .CX 1554 793,
+  .CX 1554 792,
+  .CX 1554 789,
+  .CX 1554 786,
+  .CX 1554 527,
+  .CX 1554 520,
+  .CX 794 1554,
+  .CX 1553 1554,
+  .CX 1553 1549,
+  .CX 1553 792,
+  .CX 1553 791,
+  .CX 1554 1553,
+  .CX 1552 794,
+  .CX 1552 1554,
+  .CX 1552 1553,
+  .CX 1552 1551,
+  .CX 1552 1550,
+  .CX 1552 789,
+  .CX 1552 786,
+  .CX 1552 527,
+  .CX 1552 524,
+  .CX 1552 523,
+  .CX 1552 520,
+  .CX 1553 1552,
+  .CX 1551 1554,
+  .CX 1551 1553,
+  .CX 1551 1552,
+  .CX 1551 793,
+  .CX 1551 792,
+  .CX 1551 791,
+  .CX 1551 790,
+  .CX 1551 787]
+
+def block20 : Program := [
+  .CX 1551 786,
+  .CX 1551 525,
+  .CX 1551 524,
+  .CX 1551 523,
+  .CX 1552 1551,
+  .CX 1550 794,
+  .CX 1550 1553,
+  .CX 1550 793,
+  .CX 1550 792,
+  .CX 1550 791,
+  .CX 1550 789,
+  .CX 1550 527,
+  .CX 1550 520,
+  .CX 1553 1550,
+  .CX 1549 1550,
+  .CX 1549 793,
+  .CX 1549 792,
+  .CX 1549 791,
+  .CX 1550 1549,
+  .CX 793 799,
+  .CX 793 794,
+  .CX 793 1554,
+  .CX 793 1550,
+  .CX 793 1549,
+  .CX 793 791,
+  .CX 793 790,
+  .CX 793 789,
+  .CX 793 788,
+  .CX 793 527,
+  .CX 793 526,
+  .CX 793 524,
+  .CX 793 523]
+
+def block21 : Program := [
+  .CX 793 520,
+  .CX 792 799,
+  .CX 792 794,
+  .CX 792 1554,
+  .CX 792 1553,
+  .CX 792 1552,
+  .CX 792 791,
+  .CX 792 789,
+  .CX 792 786,
+  .CX 792 527,
+  .CX 792 520,
+  .CX 1552 792,
+  .CX 791 799,
+  .CX 791 1554,
+  .CX 791 1553,
+  .CX 791 1552,
+  .CX 791 1550,
+  .CX 791 793,
+  .CX 791 790,
+  .CX 791 788,
+  .CX 791 786,
+  .CX 791 529,
+  .CX 791 526,
+  .CX 791 524,
+  .CX 791 522,
+  .CX 790 1550,
+  .CX 790 793,
+  .CX 790 791,
+  .CX 790 788,
+  .CX 790 786,
+  .CX 790 529,
+  .CX 790 528]
+
+def block22 : Program := [
+  .CX 790 526,
+  .CX 790 524,
+  .CX 790 522,
+  .CX 790 521,
+  .CX 789 794,
+  .CX 794 789,
+  .CX 788 793,
+  .CX 793 788,
+  .CX 787 792,
+  .CX 792 787,
+  .CX 786 799,
+  .CX 786 1553,
+  .CX 786 1550,
+  .CX 786 1549,
+  .CX 1549 786,
+  .CX 529 791,
+  .CX 791 529,
+  .CX 528 790,
+  .CX 790 528,
+  .CX 527 789,
+  .CX 789 527,
+  .CX 526 788,
+  .CX 788 526,
+  .CX 525 787,
+  .CX 787 525,
+  .CX 524 1554,
+  .CX 524 1553,
+  .CX 524 1550,
+  .CX 524 1549,
+  .CX 524 529,
+  .CX 524 522,
+  .CX 529 524]
+
+def block23 : Program := [
+  .CX 523 786,
+  .CX 786 523,
+  .CX 522 529,
+  .CX 529 522,
+  .CX 521 528,
+  .CX 528 521,
+  .CX 520 527,
+  .CX 527 520,
+  .X 799,
+  .CX 526 527,
+  .X 527,
+  .CX 526 786]
+
+def cand6 : Program := block0 ++ block1 ++ block2 ++ block3 ++ block4 ++ block5 ++ block6 ++ block7 ++ block8 ++ block9 ++ block10 ++ block11 ++ block12 ++ block13 ++ block14 ++ block15 ++ block16 ++ block17 ++ block18 ++ block19 ++ block20 ++ block21 ++ block22 ++ block23
+
+def sites : List Wire := [520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 786, 787, 788, 789, 790, 791, 792, 793, 794, 795, 796, 797, 798, 799, 800, 801, 802, 803, 1549, 1550, 1551, 1552, 1553, 1554, 1556, 1557, 1558, 1559, 1560, 1561]
+
+def rows0 : List (Bool × Bool × Nat × Nat) := [(false, false, 0, 1), (false, false, 1, 1), (false, false, 2, 1), (false, false, 3, 1), (false, false, 4, 1), (false, false, 5, 1), (false, false, 6, 1), (false, false, 7, 1), (false, false, 8, 1), (false, false, 9, 1), (false, false, 10, 1), (false, false, 11, 1), (false, false, 12, 1), (false, false, 13, 1), (false, false, 14, 1), (false, false, 15, 1), (false, false, 16, 1), (false, false, 17, 1), (false, false, 18, 1), (false, false, 19, 1), (false, false, 20, 1), (false, false, 21, 1), (false, false, 22, 1), (false, false, 23, 1), (false, false, 24, 1), (false, false, 25, 1), (false, false, 26, 1), (false, false, 27, 1), (false, false, 28, 1), (false, false, 29, 1), (false, false, 30, 1), (false, false, 31, 1), (false, false, 32, 1), (false, false, 33, 1), (false, false, 34, 1), (false, false, 35, 1), (false, false, 36, 1), (false, false, 37, 1), (false, false, 38, 1), (false, false, 39, 1)]
+def rows1 : List (Bool × Bool × Nat × Nat) := [(false, false, 40, 1), (false, false, 41, 1), (false, false, 42, 1), (false, false, 43, 1), (false, false, 44, 1), (false, false, 45, 1), (false, false, 46, 1), (false, false, 47, 1), (false, false, 48, 1), (false, false, 49, 1), (false, false, 50, 1), (false, false, 51, 1), (false, false, 52, 1), (false, false, 53, 1), (false, false, 54, 1), (false, false, 55, 1), (false, false, 56, 1), (false, false, 57, 1), (false, false, 58, 1), (false, false, 59, 1), (false, false, 60, 1), (false, false, 61, 1), (false, false, 62, 1), (false, false, 63, 1), (false, false, 1, 3), (false, false, 2, 3), (false, false, 4, 3), (false, false, 5, 3), (false, false, 7, 3), (false, false, 8, 3), (false, false, 10, 3), (false, false, 11, 3), (false, false, 13, 3), (false, false, 14, 3), (false, false, 16, 3), (false, false, 17, 3), (false, false, 19, 3), (false, false, 20, 3), (false, false, 22, 3), (false, false, 23, 3)]
+def rows2 : List (Bool × Bool × Nat × Nat) := [(false, false, 25, 3), (false, false, 26, 3), (false, false, 28, 3), (false, false, 29, 3), (false, false, 31, 3), (false, false, 1, 5), (false, false, 2, 5), (false, false, 3, 5), (false, false, 4, 5), (false, false, 6, 5), (false, false, 7, 5), (false, false, 8, 5), (false, false, 9, 5), (false, false, 11, 5), (false, false, 12, 5), (false, false, 13, 5), (false, false, 14, 5), (false, false, 17, 5), (false, false, 19, 5), (false, false, 1, 7), (false, false, 2, 7), (false, false, 3, 7), (false, false, 4, 7), (false, false, 5, 7), (false, false, 6, 7), (false, false, 8, 7), (false, false, 9, 7), (false, false, 10, 7), (false, false, 11, 7), (false, false, 12, 7), (false, false, 13, 7), (false, false, 15, 7), (false, false, 17, 7), (false, false, 19, 7), (false, false, 1, 9), (false, false, 2, 9), (false, false, 4, 9), (false, false, 5, 9), (false, false, 7, 9), (false, false, 11, 9)]
+def rows3 : List (Bool × Bool × Nat × Nat) := [(false, false, 13, 9), (false, false, 1, 11), (false, false, 2, 11), (false, false, 3, 11), (false, false, 4, 11), (false, false, 5, 11), (false, false, 6, 11), (false, false, 7, 11), (false, false, 9, 11), (false, false, 13, 11), (false, false, 15, 11), (false, false, 17, 11), (false, false, 1, 13), (false, false, 2, 13), (false, false, 3, 13), (false, false, 4, 13), (false, false, 5, 13), (false, false, 6, 13), (false, false, 7, 13), (false, false, 9, 13), (false, false, 11, 13), (false, false, 15, 13), (false, false, 17, 13), (false, false, 19, 13), (false, false, 1, 15), (false, false, 2, 15), (false, false, 4, 15), (false, false, 7, 15), (false, false, 11, 15), (false, false, 13, 15), (false, false, 17, 15), (false, false, 19, 15), (false, false, 1, 17), (false, false, 2, 17), (false, false, 3, 17), (false, false, 5, 17), (false, false, 7, 17), (false, false, 11, 17), (false, false, 13, 17), (false, false, 15, 17)]
+def rows4 : List (Bool × Bool × Nat × Nat) := [(false, false, 19, 17), (false, false, 1, 19), (false, false, 2, 19), (false, false, 3, 19), (false, false, 5, 19), (false, false, 7, 19), (false, false, 13, 19), (false, false, 15, 19), (false, false, 17, 19), (false, false, 21, 19), (false, false, 1, 21), (false, false, 2, 21), (false, false, 19, 21), (false, false, 23, 21), (false, false, 1, 23), (false, false, 2, 23), (false, false, 3, 23), (false, false, 21, 23), (false, false, 25, 23), (false, false, 1, 25), (false, false, 2, 25), (false, false, 3, 25), (false, false, 23, 25), (false, false, 27, 25), (false, false, 1, 27), (false, false, 2, 27), (false, false, 25, 27), (false, false, 29, 27), (false, false, 1, 29), (false, false, 2, 29), (false, false, 3, 29), (false, false, 27, 29), (false, false, 31, 29), (false, false, 1, 31), (false, false, 2, 31), (false, false, 3, 31), (false, false, 29, 31), (false, false, 33, 31), (false, false, 1, 33), (false, false, 31, 33)]
+def rows5 : List (Bool × Bool × Nat × Nat) := [(false, false, 1, 35), (false, false, 1, 37), (false, false, 1, 39), (false, false, 1, 41), (false, false, 1, 43), (false, false, 1, 45), (false, false, 1, 47), (false, false, 1, 49), (false, false, 1, 51), (false, false, 1, 53), (false, false, 1, 55), (false, false, 1, 57), (false, false, 1, 59), (false, false, 1, 61), (false, false, 1, 63), (false, true, 0, 1), (false, true, 1, 1), (false, true, 2, 1), (false, true, 3, 1), (false, true, 4, 1), (false, true, 5, 1), (false, true, 6, 1), (false, true, 7, 1), (false, true, 8, 1), (false, true, 9, 1), (false, true, 10, 1), (false, true, 11, 1), (false, true, 12, 1), (false, true, 13, 1), (false, true, 14, 1), (false, true, 15, 1), (false, true, 16, 1), (false, true, 17, 1), (false, true, 18, 1), (false, true, 19, 1), (false, true, 20, 1), (false, true, 21, 1), (false, true, 22, 1), (false, true, 23, 1), (false, true, 24, 1)]
+def rows6 : List (Bool × Bool × Nat × Nat) := [(false, true, 25, 1), (false, true, 26, 1), (false, true, 27, 1), (false, true, 28, 1), (false, true, 29, 1), (false, true, 30, 1), (false, true, 31, 1), (false, true, 32, 1), (false, true, 33, 1), (false, true, 34, 1), (false, true, 35, 1), (false, true, 36, 1), (false, true, 37, 1), (false, true, 38, 1), (false, true, 39, 1), (false, true, 40, 1), (false, true, 41, 1), (false, true, 42, 1), (false, true, 43, 1), (false, true, 44, 1), (false, true, 45, 1), (false, true, 46, 1), (false, true, 47, 1), (false, true, 48, 1), (false, true, 49, 1), (false, true, 50, 1), (false, true, 51, 1), (false, true, 52, 1), (false, true, 53, 1), (false, true, 54, 1), (false, true, 55, 1), (false, true, 56, 1), (false, true, 57, 1), (false, true, 58, 1), (false, true, 59, 1), (false, true, 60, 1), (false, true, 61, 1), (false, true, 62, 1), (false, true, 63, 1), (false, true, 1, 3)]
+def rows7 : List (Bool × Bool × Nat × Nat) := [(false, true, 2, 3), (false, true, 4, 3), (false, true, 5, 3), (false, true, 7, 3), (false, true, 8, 3), (false, true, 10, 3), (false, true, 11, 3), (false, true, 13, 3), (false, true, 14, 3), (false, true, 16, 3), (false, true, 17, 3), (false, true, 19, 3), (false, true, 20, 3), (false, true, 22, 3), (false, true, 23, 3), (false, true, 25, 3), (false, true, 26, 3), (false, true, 28, 3), (false, true, 29, 3), (false, true, 31, 3), (false, true, 1, 5), (false, true, 2, 5), (false, true, 3, 5), (false, true, 4, 5), (false, true, 6, 5), (false, true, 7, 5), (false, true, 8, 5), (false, true, 9, 5), (false, true, 11, 5), (false, true, 12, 5), (false, true, 13, 5), (false, true, 14, 5), (false, true, 17, 5), (false, true, 19, 5), (false, true, 1, 7), (false, true, 2, 7), (false, true, 3, 7), (false, true, 4, 7), (false, true, 5, 7), (false, true, 6, 7)]
+def rows8 : List (Bool × Bool × Nat × Nat) := [(false, true, 8, 7), (false, true, 9, 7), (false, true, 10, 7), (false, true, 11, 7), (false, true, 12, 7), (false, true, 13, 7), (false, true, 15, 7), (false, true, 17, 7), (false, true, 19, 7), (false, true, 1, 9), (false, true, 2, 9), (false, true, 4, 9), (false, true, 5, 9), (false, true, 7, 9), (false, true, 11, 9), (false, true, 13, 9), (false, true, 1, 11), (false, true, 2, 11), (false, true, 3, 11), (false, true, 4, 11), (false, true, 5, 11), (false, true, 6, 11), (false, true, 7, 11), (false, true, 9, 11), (false, true, 13, 11), (false, true, 15, 11), (false, true, 17, 11), (false, true, 1, 13), (false, true, 2, 13), (false, true, 3, 13), (false, true, 4, 13), (false, true, 5, 13), (false, true, 6, 13), (false, true, 7, 13), (false, true, 9, 13), (false, true, 11, 13), (false, true, 15, 13), (false, true, 17, 13), (false, true, 19, 13), (false, true, 1, 15)]
+def rows9 : List (Bool × Bool × Nat × Nat) := [(false, true, 2, 15), (false, true, 4, 15), (false, true, 7, 15), (false, true, 11, 15), (false, true, 13, 15), (false, true, 17, 15), (false, true, 19, 15), (false, true, 1, 17), (false, true, 2, 17), (false, true, 3, 17), (false, true, 5, 17), (false, true, 7, 17), (false, true, 11, 17), (false, true, 13, 17), (false, true, 15, 17), (false, true, 19, 17), (false, true, 1, 19), (false, true, 2, 19), (false, true, 3, 19), (false, true, 5, 19), (false, true, 7, 19), (false, true, 13, 19), (false, true, 15, 19), (false, true, 17, 19), (false, true, 21, 19), (false, true, 1, 21), (false, true, 2, 21), (false, true, 19, 21), (false, true, 23, 21), (false, true, 1, 23), (false, true, 2, 23), (false, true, 3, 23), (false, true, 21, 23), (false, true, 25, 23), (false, true, 1, 25), (false, true, 2, 25), (false, true, 3, 25), (false, true, 23, 25), (false, true, 27, 25), (false, true, 1, 27)]
+def rows10 : List (Bool × Bool × Nat × Nat) := [(false, true, 2, 27), (false, true, 25, 27), (false, true, 29, 27), (false, true, 1, 29), (false, true, 2, 29), (false, true, 3, 29), (false, true, 27, 29), (false, true, 31, 29), (false, true, 1, 31), (false, true, 2, 31), (false, true, 3, 31), (false, true, 29, 31), (false, true, 33, 31), (false, true, 1, 33), (false, true, 31, 33), (false, true, 1, 35), (false, true, 1, 37), (false, true, 1, 39), (false, true, 1, 41), (false, true, 1, 43), (false, true, 1, 45), (false, true, 1, 47), (false, true, 1, 49), (false, true, 1, 51), (false, true, 1, 53), (false, true, 1, 55), (false, true, 1, 57), (false, true, 1, 59), (false, true, 1, 61), (false, true, 1, 63), (true, false, 0, 1), (true, false, 1, 1), (true, false, 2, 1), (true, false, 3, 1), (true, false, 4, 1), (true, false, 5, 1), (true, false, 6, 1), (true, false, 7, 1), (true, false, 8, 1), (true, false, 9, 1)]
+def rows11 : List (Bool × Bool × Nat × Nat) := [(true, false, 10, 1), (true, false, 11, 1), (true, false, 12, 1), (true, false, 13, 1), (true, false, 14, 1), (true, false, 15, 1), (true, false, 16, 1), (true, false, 17, 1), (true, false, 18, 1), (true, false, 19, 1), (true, false, 20, 1), (true, false, 21, 1), (true, false, 22, 1), (true, false, 23, 1), (true, false, 24, 1), (true, false, 25, 1), (true, false, 26, 1), (true, false, 27, 1), (true, false, 28, 1), (true, false, 29, 1), (true, false, 30, 1), (true, false, 31, 1), (true, false, 32, 1), (true, false, 33, 1), (true, false, 34, 1), (true, false, 35, 1), (true, false, 36, 1), (true, false, 37, 1), (true, false, 38, 1), (true, false, 39, 1), (true, false, 40, 1), (true, false, 41, 1), (true, false, 42, 1), (true, false, 43, 1), (true, false, 44, 1), (true, false, 45, 1), (true, false, 46, 1), (true, false, 47, 1), (true, false, 48, 1), (true, false, 49, 1)]
+def rows12 : List (Bool × Bool × Nat × Nat) := [(true, false, 50, 1), (true, false, 51, 1), (true, false, 52, 1), (true, false, 53, 1), (true, false, 54, 1), (true, false, 55, 1), (true, false, 56, 1), (true, false, 57, 1), (true, false, 58, 1), (true, false, 59, 1), (true, false, 60, 1), (true, false, 61, 1), (true, false, 62, 1), (true, false, 63, 1), (true, false, 1, 3), (true, false, 2, 3), (true, false, 4, 3), (true, false, 5, 3), (true, false, 7, 3), (true, false, 8, 3), (true, false, 10, 3), (true, false, 11, 3), (true, false, 13, 3), (true, false, 14, 3), (true, false, 16, 3), (true, false, 17, 3), (true, false, 19, 3), (true, false, 20, 3), (true, false, 22, 3), (true, false, 23, 3), (true, false, 25, 3), (true, false, 26, 3), (true, false, 28, 3), (true, false, 29, 3), (true, false, 31, 3), (true, false, 1, 5), (true, false, 2, 5), (true, false, 3, 5), (true, false, 4, 5), (true, false, 6, 5)]
+def rows13 : List (Bool × Bool × Nat × Nat) := [(true, false, 7, 5), (true, false, 8, 5), (true, false, 9, 5), (true, false, 11, 5), (true, false, 12, 5), (true, false, 13, 5), (true, false, 14, 5), (true, false, 17, 5), (true, false, 19, 5), (true, false, 1, 7), (true, false, 2, 7), (true, false, 3, 7), (true, false, 4, 7), (true, false, 5, 7), (true, false, 6, 7), (true, false, 8, 7), (true, false, 9, 7), (true, false, 10, 7), (true, false, 11, 7), (true, false, 12, 7), (true, false, 13, 7), (true, false, 15, 7), (true, false, 17, 7), (true, false, 19, 7), (true, false, 1, 9), (true, false, 2, 9), (true, false, 4, 9), (true, false, 5, 9), (true, false, 7, 9), (true, false, 11, 9), (true, false, 13, 9), (true, false, 1, 11), (true, false, 2, 11), (true, false, 3, 11), (true, false, 4, 11), (true, false, 5, 11), (true, false, 6, 11), (true, false, 7, 11), (true, false, 9, 11), (true, false, 13, 11)]
+def rows14 : List (Bool × Bool × Nat × Nat) := [(true, false, 15, 11), (true, false, 17, 11), (true, false, 1, 13), (true, false, 2, 13), (true, false, 3, 13), (true, false, 4, 13), (true, false, 5, 13), (true, false, 6, 13), (true, false, 7, 13), (true, false, 9, 13), (true, false, 11, 13), (true, false, 15, 13), (true, false, 17, 13), (true, false, 19, 13), (true, false, 1, 15), (true, false, 2, 15), (true, false, 4, 15), (true, false, 7, 15), (true, false, 11, 15), (true, false, 13, 15), (true, false, 17, 15), (true, false, 19, 15), (true, false, 1, 17), (true, false, 2, 17), (true, false, 3, 17), (true, false, 5, 17), (true, false, 7, 17), (true, false, 11, 17), (true, false, 13, 17), (true, false, 15, 17), (true, false, 19, 17), (true, false, 1, 19), (true, false, 2, 19), (true, false, 3, 19), (true, false, 5, 19), (true, false, 7, 19), (true, false, 13, 19), (true, false, 15, 19), (true, false, 17, 19), (true, false, 21, 19)]
+def rows15 : List (Bool × Bool × Nat × Nat) := [(true, false, 1, 21), (true, false, 2, 21), (true, false, 19, 21), (true, false, 23, 21), (true, false, 1, 23), (true, false, 2, 23), (true, false, 3, 23), (true, false, 21, 23), (true, false, 25, 23), (true, false, 1, 25), (true, false, 2, 25), (true, false, 3, 25), (true, false, 23, 25), (true, false, 27, 25), (true, false, 1, 27), (true, false, 2, 27), (true, false, 25, 27), (true, false, 29, 27), (true, false, 1, 29), (true, false, 2, 29), (true, false, 3, 29), (true, false, 27, 29), (true, false, 31, 29), (true, false, 1, 31), (true, false, 2, 31), (true, false, 3, 31), (true, false, 29, 31), (true, false, 33, 31), (true, false, 1, 33), (true, false, 31, 33), (true, false, 1, 35), (true, false, 1, 37), (true, false, 1, 39), (true, false, 1, 41), (true, false, 1, 43), (true, false, 1, 45), (true, false, 1, 47), (true, false, 1, 49), (true, false, 1, 51), (true, false, 1, 53)]
+def rows16 : List (Bool × Bool × Nat × Nat) := [(true, false, 1, 55), (true, false, 1, 57), (true, false, 1, 59), (true, false, 1, 61), (true, false, 1, 63), (true, true, 0, 1), (true, true, 1, 1), (true, true, 2, 1), (true, true, 3, 1), (true, true, 4, 1), (true, true, 5, 1), (true, true, 6, 1), (true, true, 7, 1), (true, true, 8, 1), (true, true, 9, 1), (true, true, 10, 1), (true, true, 11, 1), (true, true, 12, 1), (true, true, 13, 1), (true, true, 14, 1), (true, true, 15, 1), (true, true, 16, 1), (true, true, 17, 1), (true, true, 18, 1), (true, true, 19, 1), (true, true, 20, 1), (true, true, 21, 1), (true, true, 22, 1), (true, true, 23, 1), (true, true, 24, 1), (true, true, 25, 1), (true, true, 26, 1), (true, true, 27, 1), (true, true, 28, 1), (true, true, 29, 1), (true, true, 30, 1), (true, true, 31, 1), (true, true, 32, 1), (true, true, 33, 1), (true, true, 34, 1)]
+def rows17 : List (Bool × Bool × Nat × Nat) := [(true, true, 35, 1), (true, true, 36, 1), (true, true, 37, 1), (true, true, 38, 1), (true, true, 39, 1), (true, true, 40, 1), (true, true, 41, 1), (true, true, 42, 1), (true, true, 43, 1), (true, true, 44, 1), (true, true, 45, 1), (true, true, 46, 1), (true, true, 47, 1), (true, true, 48, 1), (true, true, 49, 1), (true, true, 50, 1), (true, true, 51, 1), (true, true, 52, 1), (true, true, 53, 1), (true, true, 54, 1), (true, true, 55, 1), (true, true, 56, 1), (true, true, 57, 1), (true, true, 58, 1), (true, true, 59, 1), (true, true, 60, 1), (true, true, 61, 1), (true, true, 62, 1), (true, true, 63, 1), (true, true, 1, 3), (true, true, 2, 3), (true, true, 4, 3), (true, true, 5, 3), (true, true, 7, 3), (true, true, 8, 3), (true, true, 10, 3), (true, true, 11, 3), (true, true, 13, 3), (true, true, 14, 3), (true, true, 16, 3)]
+def rows18 : List (Bool × Bool × Nat × Nat) := [(true, true, 17, 3), (true, true, 19, 3), (true, true, 20, 3), (true, true, 22, 3), (true, true, 23, 3), (true, true, 25, 3), (true, true, 26, 3), (true, true, 28, 3), (true, true, 29, 3), (true, true, 31, 3), (true, true, 1, 5), (true, true, 2, 5), (true, true, 3, 5), (true, true, 4, 5), (true, true, 6, 5), (true, true, 7, 5), (true, true, 8, 5), (true, true, 9, 5), (true, true, 11, 5), (true, true, 12, 5), (true, true, 13, 5), (true, true, 14, 5), (true, true, 17, 5), (true, true, 19, 5), (true, true, 1, 7), (true, true, 2, 7), (true, true, 3, 7), (true, true, 4, 7), (true, true, 5, 7), (true, true, 6, 7), (true, true, 8, 7), (true, true, 9, 7), (true, true, 10, 7), (true, true, 11, 7), (true, true, 12, 7), (true, true, 13, 7), (true, true, 15, 7), (true, true, 17, 7), (true, true, 19, 7), (true, true, 1, 9)]
+def rows19 : List (Bool × Bool × Nat × Nat) := [(true, true, 2, 9), (true, true, 4, 9), (true, true, 5, 9), (true, true, 7, 9), (true, true, 11, 9), (true, true, 13, 9), (true, true, 1, 11), (true, true, 2, 11), (true, true, 3, 11), (true, true, 4, 11), (true, true, 5, 11), (true, true, 6, 11), (true, true, 7, 11), (true, true, 9, 11), (true, true, 13, 11), (true, true, 15, 11), (true, true, 17, 11), (true, true, 1, 13), (true, true, 2, 13), (true, true, 3, 13), (true, true, 4, 13), (true, true, 5, 13), (true, true, 6, 13), (true, true, 7, 13), (true, true, 9, 13), (true, true, 11, 13), (true, true, 15, 13), (true, true, 17, 13), (true, true, 19, 13), (true, true, 1, 15), (true, true, 2, 15), (true, true, 4, 15), (true, true, 7, 15), (true, true, 11, 15), (true, true, 13, 15), (true, true, 17, 15), (true, true, 19, 15), (true, true, 1, 17), (true, true, 2, 17), (true, true, 3, 17)]
+def rows20 : List (Bool × Bool × Nat × Nat) := [(true, true, 5, 17), (true, true, 7, 17), (true, true, 11, 17), (true, true, 13, 17), (true, true, 15, 17), (true, true, 19, 17), (true, true, 1, 19), (true, true, 2, 19), (true, true, 3, 19), (true, true, 5, 19), (true, true, 7, 19), (true, true, 13, 19), (true, true, 15, 19), (true, true, 17, 19), (true, true, 21, 19), (true, true, 1, 21), (true, true, 2, 21), (true, true, 19, 21), (true, true, 23, 21), (true, true, 1, 23), (true, true, 2, 23), (true, true, 3, 23), (true, true, 21, 23), (true, true, 25, 23), (true, true, 1, 25), (true, true, 2, 25), (true, true, 3, 25), (true, true, 23, 25), (true, true, 27, 25), (true, true, 1, 27), (true, true, 2, 27), (true, true, 25, 27), (true, true, 29, 27), (true, true, 1, 29), (true, true, 2, 29), (true, true, 3, 29), (true, true, 27, 29), (true, true, 31, 29), (true, true, 1, 31), (true, true, 2, 31)]
+def rows21 : List (Bool × Bool × Nat × Nat) := [(true, true, 3, 31), (true, true, 29, 31), (true, true, 33, 31), (true, true, 1, 33), (true, true, 31, 33), (true, true, 1, 35), (true, true, 1, 37), (true, true, 1, 39), (true, true, 1, 41), (true, true, 1, 43), (true, true, 1, 45), (true, true, 1, 47), (true, true, 1, 49), (true, true, 1, 51), (true, true, 1, 53), (true, true, 1, 55), (true, true, 1, 57), (true, true, 1, 59), (true, true, 1, 61), (true, true, 1, 63)]
+def rows : List (Bool × Bool × Nat × Nat) := rows0 ++ rows1 ++ rows2 ++ rows3 ++ rows4 ++ rows5 ++ rows6 ++ rows7 ++ rows8 ++ rows9 ++ rows10 ++ rows11 ++ rows12 ++ rows13 ++ rows14 ++ rows15 ++ rows16 ++ rows17 ++ rows18 ++ rows19 ++ rows20 ++ rows21
+
+def pre505 (g s : Bool) (u v : Nat) : BasisState := fun q =>
+  if q = 520 then g
+  else if q = 521 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 1 % 2 = 1)
+  else if q = 522 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 2 % 2 = 1)
+  else if q = 523 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 4 % 2 = 1)
+  else if q = 524 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 8 % 2 = 1)
+  else if q = 525 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 16 % 2 = 1)
+  else if q = 526 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 32 % 2 = 1)
+  else if q = 527 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a / 64 % 2 = 1)
+  else if q = 528 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).a < 0)
+  else if q = 786 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 1 % 2 = 1)
+  else if q = 787 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 2 % 2 = 1)
+  else if q = 788 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 4 % 2 = 1)
+  else if q = 789 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 8 % 2 = 1)
+  else if q = 790 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 16 % 2 = 1)
+  else if q = 791 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 32 % 2 = 1)
+  else if q = 792 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b / 64 % 2 = 1)
+  else if q = 793 then decide ((SkywalkRails.encode g s (u : Int) (v : Int)).b < 0)
+  else false
+
+theorem explicit505 : W.repairedTick base 505 = tick505 := by decide +kernel
+
+def ref : Program := tick505 ++ Five506.cand
+def enc (r : Bool × Bool × Nat × Nat) : Nat := encN_t8 (pre505 r.1 r.2.1 r.2.2.1 r.2.2.2) sites
+theorem tick_counts : toffoliCount tick505 = 12 ∧ measurementCount tick505 = 7 := by decide +kernel
+
+theorem cand_counts : toffoliCount cand6 = 31 ∧ measurementCount cand6 = 27 := by
+  simp only [cand6, toffoliCount_append, measurementCount_append]
+  decide +kernel
+
+def used : List Wire := sites.filter (fun q => decide (q ≠ 1559 ∧ q ≠ 1560 ∧ q ≠ 1561))
+
+theorem bsupport0 : wires block0 ⊆ used.toFinset := by decide +kernel
+theorem bphysical0 : GatePhysical block0 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport1 : wires block1 ⊆ used.toFinset := by decide +kernel
+theorem bphysical1 : GatePhysical block1 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport2 : wires block2 ⊆ used.toFinset := by decide +kernel
+theorem bphysical2 : GatePhysical block2 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport3 : wires block3 ⊆ used.toFinset := by decide +kernel
+theorem bphysical3 : GatePhysical block3 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport4 : wires block4 ⊆ used.toFinset := by decide +kernel
+theorem bphysical4 : GatePhysical block4 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport5 : wires block5 ⊆ used.toFinset := by decide +kernel
+theorem bphysical5 : GatePhysical block5 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport6 : wires block6 ⊆ used.toFinset := by decide +kernel
+theorem bphysical6 : GatePhysical block6 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport7 : wires block7 ⊆ used.toFinset := by decide +kernel
+theorem bphysical7 : GatePhysical block7 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport8 : wires block8 ⊆ used.toFinset := by decide +kernel
+theorem bphysical8 : GatePhysical block8 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport9 : wires block9 ⊆ used.toFinset := by decide +kernel
+theorem bphysical9 : GatePhysical block9 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport10 : wires block10 ⊆ used.toFinset := by decide +kernel
+theorem bphysical10 : GatePhysical block10 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport11 : wires block11 ⊆ used.toFinset := by decide +kernel
+theorem bphysical11 : GatePhysical block11 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport12 : wires block12 ⊆ used.toFinset := by decide +kernel
+theorem bphysical12 : GatePhysical block12 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport13 : wires block13 ⊆ used.toFinset := by decide +kernel
+theorem bphysical13 : GatePhysical block13 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport14 : wires block14 ⊆ used.toFinset := by decide +kernel
+theorem bphysical14 : GatePhysical block14 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport15 : wires block15 ⊆ used.toFinset := by decide +kernel
+theorem bphysical15 : GatePhysical block15 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport16 : wires block16 ⊆ used.toFinset := by decide +kernel
+theorem bphysical16 : GatePhysical block16 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport17 : wires block17 ⊆ used.toFinset := by decide +kernel
+theorem bphysical17 : GatePhysical block17 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport18 : wires block18 ⊆ used.toFinset := by decide +kernel
+theorem bphysical18 : GatePhysical block18 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport19 : wires block19 ⊆ used.toFinset := by decide +kernel
+theorem bphysical19 : GatePhysical block19 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport20 : wires block20 ⊆ used.toFinset := by decide +kernel
+theorem bphysical20 : GatePhysical block20 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport21 : wires block21 ⊆ used.toFinset := by decide +kernel
+theorem bphysical21 : GatePhysical block21 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport22 : wires block22 ⊆ used.toFinset := by decide +kernel
+theorem bphysical22 : GatePhysical block22 := Forward11Width.physical_of_all _ (by decide +kernel)
+theorem bsupport23 : wires block23 ⊆ used.toFinset := by decide +kernel
+theorem bphysical23 : GatePhysical block23 := Forward11Width.physical_of_all _ (by decide +kernel)
+
+theorem tick_support : wires tick505 ⊆ sites.toFinset := by decide +kernel
+theorem five_sub : Five506.candSites.toFinset ⊆ sites.toFinset := by decide +kernel
+theorem used_sub : used.toFinset ⊆ sites.toFinset := by decide +kernel
+theorem cused : wires cand6 ⊆ used.toFinset := by
+  simp only [cand6, wires_append, Finset.union_subset_iff, bsupport0, bsupport1, bsupport2, bsupport3, bsupport4, bsupport5, bsupport6, bsupport7, bsupport8, bsupport9, bsupport10, bsupport11, bsupport12, bsupport13, bsupport14, bsupport15, bsupport16, bsupport17, bsupport18, bsupport19, bsupport20, bsupport21, bsupport22, bsupport23, and_self]
+theorem csupport : wires cand6 ⊆ sites.toFinset := cused.trans used_sub
+theorem support2 : wires ref ⊆ sites.toFinset := by
+  simp only [ref, wires_append, Finset.union_subset_iff]
+  exact ⟨tick_support, Five506.csupport.trans five_sub⟩
+theorem physical : GatePhysical cand6 := by
+  simp only [cand6, gatePhysical_append, bphysical0, bphysical1, bphysical2, bphysical3, bphysical4, bphysical5, bphysical6, bphysical7, bphysical8, bphysical9, bphysical10, bphysical11, bphysical12, bphysical13, bphysical14, bphysical15, bphysical16, bphysical17, bphysical18, bphysical19, bphysical20, bphysical21, bphysical22, bphysical23, and_self]
+
+theorem pre_supp (g s : Bool) (u v : Nat) : ∀ q, pre505 g s u v q = true → q ∈ sites := by
+  intro q h
+  by_contra hn
+  simp only [sites,List.mem_cons,List.not_mem_nil,or_false,not_or] at hn
+  simp_all [pre505]
+
+def packedCand : Program := [
+  .CX 11 2,
+  .CCX 1 2 9,
+  .CX 3 4,
+  .CX 3 5,
+  .CX 3 6,
+  .CX 3 7,
+  .CX 3 8,
+  .CX 3 9,
+  .CX 3 11,
+  .CX 3 12,
+  .CX 3 13,
+  .CX 3 14,
+  .CX 3 15,
+  .CX 3 16,
+  .CX 3 17,
+  .measureX 3 [] [.Z 8, .Z 16, .Z 17, .CZ 0 7, .CZ 0 16],
+  .CX 4 13,
+  .CX 13 12,
+  .CCX 10 12 4,
+  .CX 12 5,
+  .CX 13 5,
+  .CX 14 5,
+  .CCX 10 5 3,
+  .CX 3 14,
+  .measureX 3 [] [.Z 5, .CZ 1 5],
+  .CX 12 6,
+  .CX 13 6,
+  .CX 15 6,
+  .CCX 10 6 3,
+  .CX 3 15,
+  .measureX 3 [] [.Z 6, .CZ 1 6],
+  .CX 16 8,
+  .CX 9 2,
+  .CX 11 2,
+  .CCX 8 2 3,
+  .CX 12 7,
+  .CX 13 7,
+  .CX 16 7,
+  .CCX 10 7 28,
+  .CX 9 11,
+  .CX 9 16,
+  .CX 9 17,
+  .CX 9 28,
+  .measureX 9 [] [.Z 7, .Z 28, .CZ 1 7],
+  .CX 16 17,
+  .CX 16 28,
+  .CX 7 2,
+  .CX 11 2,
+  .CX 12 2,
+  .CX 13 2,
+  .CX 7 1,
+  .CX 11 1,
+  .CX 12 1,
+  .CX 13 1,
+  .CCX 2 1 16,
+  .CX 2 16,
+  .CX 1 2,
+  .CX 1 3,
+  .CX 1 11,
+  .measureX 1 [] [.Z 3, .Z 8, .CZ 2 8, .CZ 8 10],
+  .CX 10 3,
+  .CX 16 7,
+  .CX 28 7,
+  .CCX 3 7 1,
+  .CX 7 4,
+  .CX 8 4,
+  .CX 10 4,
+  .CX 11 4,
+  .CX 12 4,
+  .CX 16 4,
+  .CX 17 4,
+  .CX 28 4,
+  .CX 7 1,
+  .CX 8 1,
+  .CX 12 1,
+  .CX 13 1,
+  .CX 17 1,
+  .CCX 4 1 9,
+  .CX 8 4,
+  .CX 10 4,
+  .CX 11 4,
+  .CX 13 4,
+  .CX 14 4,
+  .CX 9 7,
+  .CX 12 7,
+  .CX 16 7,
+  .CX 17 7,
+  .CX 28 7,
+  .CCX 4 7 29,
+  .CX 7 5,
+  .CX 9 5,
+  .CX 12 5,
+  .CX 14 5,
+  .CX 15 5,
+  .CX 17 5,
+  .CX 14 7,
+  .CX 15 7,
+  .CX 29 7,
+  .CCX 5 7 6,
+  .CX 5 6,
+  .CX 5 7,
+  .CX 5 29,
+  .measureX 5 [] [.Z 1, .Z 7, .Z 8, .Z 9, .Z 13, .Z 14, .Z 15, .Z 17, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 17, .CZ 4 8, .CZ 4 9, .CZ 4 13],
+  .CX 4 9,
+  .CX 4 12,
+  .CX 4 13,
+  .measureX 4 [] [.Z 9, .CZ 1 8, .CZ 1 10, .CZ 1 11, .CZ 1 13, .CZ 1 14],
+  .CX 6 12,
+  .CX 6 14,
+  .CX 6 15,
+  .CX 6 28,
+  .measureX 6 [] [.Z 1, .Z 7, .Z 16, .Z 17, .Z 28, .CZ 3 8, .CZ 3 12, .CZ 3 13, .CZ 3 16, .CZ 3 28, .CZ 7 8, .CZ 7 10, .CZ 7 11],
+  .CX 7 0,
+  .CX 9 0,
+  .CX 11 0,
+  .CX 13 0,
+  .CX 14 0,
+  .CX 15 0,
+  .CX 17 0,
+  .CX 29 0,
+  .CX 12 9,
+  .CX 14 9,
+  .CX 15 9,
+  .CX 29 9,
+  .CCX 0 9 4,
+  .CX 11 2,
+  .CX 12 2,
+  .CX 13 2,
+  .CX 16 2,
+  .CX 28 2,
+  .CX 12 7,
+  .CX 13 7,
+  .CX 17 7,
+  .CCX 2 7 5,
+  .CX 7 8,
+  .CX 7 9,
+  .CX 7 12,
+  .CX 7 13,
+  .CX 7 17,
+  .CX 7 29,
+  .measureX 7 [] [.Z 8, .Z 9, .CZ 8 10, .CZ 9 10, .CZ 10 17],
+  .CX 12 13,
+  .CX 12 14,
+  .CX 12 29,
+  .CX 4 2,
+  .CX 10 2,
+  .CX 11 2,
+  .CX 13 2,
+  .CX 16 2,
+  .CX 28 2,
+  .CX 8 1,
+  .CX 9 1,
+  .CX 13 1,
+  .CX 14 1,
+  .CX 15 1,
+  .CX 17 1,
+  .CX 29 1,
+  .CCX 2 1 12,
+  .CX 14 15,
+  .CX 4 2,
+  .CX 13 9,
+  .CCX 2 9 14,
+  .CX 14 16,
+  .CX 14 28,
+  .CX 4 3,
+  .CX 8 3,
+  .CX 9 3,
+  .CX 16 3,
+  .CX 28 3,
+  .CX 11 10,
+  .CX 13 10,
+  .CX 16 10,
+  .CX 28 10,
+  .CCX 3 10 14,
+  .CX 3 5,
+  .CX 3 14,
+  .measureX 3 [] [.Z 5, .CZ 2 8, .CZ 2 9, .CZ 2 13, .CZ 8 10, .CZ 9 10, .CZ 10 13],
+  .CX 14 15,
+  .CX 14 16,
+  .CX 14 28,
+  .CX 14 29,
+  .CX 15 1,
+  .CX 17 1,
+  .CX 29 1,
+  .CCX 2 1 14,
+  .CX 4 2,
+  .CX 5 2,
+  .CX 8 2,
+  .CX 10 2,
+  .CX 13 2,
+  .CX 16 2,
+  .CX 17 2,
+  .CX 28 2,
+  .CX 5 1,
+  .CX 8 1,
+  .CX 14 1,
+  .CX 16 1,
+  .CX 28 1,
+  .CCX 2 1 3,
+  .CX 2 3,
+  .CX 10 8,
+  .CX 12 8,
+  .CX 13 8,
+  .CX 15 8,
+  .CX 16 8,
+  .CX 17 8,
+  .CX 28 8,
+  .CX 29 8,
+  .CX 3 2,
+  .CX 5 2,
+  .CX 13 2,
+  .CX 14 2,
+  .CX 16 2,
+  .CX 17 2,
+  .CX 28 2,
+  .CCX 8 2 6,
+  .CX 2 4,
+  .CX 2 8,
+  .CX 2 11,
+  .CX 2 13,
+  .measureX 2 [] [.Z 0, .Z 4, .CZ 0 4, .CZ 0 8, .CZ 0 12, .CZ 0 15, .CZ 0 29],
+  .CX 3 8,
+  .CX 3 12,
+  .CX 3 14,
+  .measureX 3 [] [.Z 0, .Z 4, .Z 8, .Z 9, .Z 10, .Z 12, .Z 13, .Z 14, .Z 15, .Z 17, .Z 29, .CZ 0 4, .CZ 0 8, .CZ 0 12, .CZ 0 15, .CZ 0 29, .CZ 1 4, .CZ 1 5, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 17, .CZ 1 29, .CZ 4 5, .CZ 5 8, .CZ 5 12, .CZ 5 15, .CZ 5 29],
+  .CX 12 9,
+  .CX 14 9,
+  .CX 15 9,
+  .CX 12 6,
+  .CX 14 6,
+  .CX 17 6,
+  .CX 29 6,
+  .CCX 9 6 2,
+  .CX 4 0,
+  .CX 8 0,
+  .CX 9 0,
+  .CX 10 0,
+  .CX 13 0,
+  .CX 17 0,
+  .CX 29 0,
+  .CX 6 2,
+  .CX 9 2,
+  .CX 12 2,
+  .CX 14 2,
+  .CX 15 2,
+  .CCX 0 2 3,
+  .CX 8 4,
+  .CX 10 4,
+  .CX 12 4,
+  .CX 13 4,
+  .CX 14 4,
+  .CX 15 4,
+  .CX 16 4,
+  .CX 17 4,
+  .CX 28 4,
+  .CX 29 4,
+  .CX 8 5,
+  .CX 9 5,
+  .CX 10 5,
+  .CX 13 5,
+  .CX 17 5,
+  .CX 29 5,
+  .CCX 4 5 7,
+  .CX 8 6,
+  .CX 9 6,
+  .CX 10 6,
+  .CX 12 6,
+  .CX 13 6,
+  .CX 14 6,
+  .CX 15 6,
+  .CX 16 6,
+  .CX 17 6,
+  .CX 28 6,
+  .CX 29 6,
+  .CCX 4 6 30,
+  .CX 4 30,
+  .CX 4 1,
+  .CX 5 1,
+  .CX 8 1,
+  .CX 9 1,
+  .CX 10 1,
+  .CX 14 1,
+  .CX 16 1,
+  .CX 28 1,
+  .CX 29 1,
+  .CX 5 2,
+  .CX 8 2,
+  .CX 12 2,
+  .CX 15 2,
+  .CX 29 2,
+  .CCX 1 2 31,
+  .CX 4 2,
+  .CX 5 2,
+  .CX 8 2,
+  .CX 9 2,
+  .CX 13 2,
+  .CX 29 2,
+  .CX 8 7,
+  .CX 9 7,
+  .CX 10 7,
+  .CX 12 7,
+  .CX 14 7,
+  .CX 15 7,
+  .CX 16 7,
+  .CX 28 7,
+  .CX 31 7,
+  .CCX 2 7 32,
+  .CX 7 1,
+  .CX 4 2,
+  .CX 5 2,
+  .CX 7 2,
+  .CX 8 2,
+  .CX 9 2,
+  .CX 13 2,
+  .CX 29 2,
+  .CX 32 2,
+  .CCX 1 2 33,
+  .CX 1 33,
+  .CX 3 1,
+  .CX 4 1,
+  .CX 7 1,
+  .CX 9 1,
+  .CX 12 1,
+  .CX 13 1,
+  .CX 15 1,
+  .CX 17 1,
+  .CX 9 5,
+  .CX 10 5,
+  .CX 12 5,
+  .CX 14 5,
+  .CX 15 5,
+  .CX 16 5,
+  .CX 28 5,
+  .CX 32 5,
+  .CX 33 5,
+  .CCX 1 5 18,
+  .CX 1 0,
+  .CX 3 0,
+  .CX 7 0,
+  .CX 13 0,
+  .CX 14 0,
+  .CX 15 0,
+  .CX 17 0,
+  .CX 28 0,
+  .CX 2 1,
+  .CX 3 1,
+  .CX 4 1,
+  .CX 5 1,
+  .CX 6 1,
+  .CX 7 1,
+  .CX 12 1,
+  .CX 14 1,
+  .CX 17 1,
+  .CX 29 1,
+  .CX 30 1,
+  .CX 31 1,
+  .CX 32 1,
+  .CX 18 1,
+  .CCX 0 1 19,
+  .CX 1 8,
+  .CX 1 9,
+  .CX 1 12,
+  .CX 1 13,
+  .CX 1 15,
+  .CX 1 16,
+  .CX 1 17,
+  .CX 1 29,
+  .CX 1 30,
+  .measureX 1 [] [.Z 4, .Z 9, .Z 12, .Z 13, .Z 15, .Z 17, .Z 19, .CZ 0 4, .CZ 0 9, .CZ 0 12, .CZ 0 13, .CZ 0 15, .CZ 0 17],
+  .CX 12 13,
+  .CX 12 28,
+  .CX 12 29,
+  .measureX 12 [] [.Z 0, .Z 3, .Z 4, .Z 5, .Z 7, .Z 9, .Z 14, .Z 29, .Z 31, .Z 18, .CZ 0 2, .CZ 0 3, .CZ 0 6, .CZ 0 8, .CZ 0 14, .CZ 0 17, .CZ 0 29, .CZ 0 31, .CZ 0 32, .CZ 2 4, .CZ 2 13, .CZ 2 15, .CZ 2 17, .CZ 2 30, .CZ 2 19, .CZ 4 8, .CZ 4 10, .CZ 4 13, .CZ 4 16, .CZ 4 17, .CZ 4 32, .CZ 4 19, .CZ 5 8, .CZ 5 10, .CZ 5 13, .CZ 5 14, .CZ 5 16, .CZ 5 29, .CZ 5 30, .CZ 6 8, .CZ 6 9, .CZ 7 8, .CZ 8 9, .CZ 9 14, .CZ 9 17, .CZ 9 29, .CZ 10 13, .CZ 10 14, .CZ 13 15, .CZ 13 16, .CZ 14 15, .CZ 14 16],
+  .CX 9 13,
+  .CX 9 28,
+  .measureX 9 [] [.Z 2, .Z 7, .Z 15, .Z 17, .Z 30, .Z 31, .Z 32, .Z 19, .CZ 0 2, .CZ 0 4, .CZ 0 5, .CZ 0 6, .CZ 0 13, .CZ 0 14, .CZ 0 31, .CZ 0 32, .CZ 0 33, .CZ 2 4, .CZ 2 14, .CZ 2 15, .CZ 2 17, .CZ 2 31, .CZ 2 32, .CZ 4 7, .CZ 4 13, .CZ 4 15, .CZ 4 17, .CZ 5 6, .CZ 5 15, .CZ 5 29, .CZ 5 30, .CZ 6 8, .CZ 7 13, .CZ 7 14, .CZ 8 13, .CZ 8 14, .CZ 13 14, .CZ 13 15, .CZ 13 17, .CZ 13 30, .CZ 13 33, .CZ 13 19, .CZ 14 15, .CZ 14 17, .CZ 14 30, .CZ 14 33, .CZ 14 19],
+  .CX 8 13,
+  .CX 8 15,
+  .CX 8 16,
+  .measureX 8 [] [.Z 0, .Z 2, .Z 7, .Z 13, .Z 15, .Z 17, .Z 30, .Z 32, .Z 33, .CZ 0 2, .CZ 0 4, .CZ 0 5, .CZ 0 13, .CZ 0 15, .CZ 0 17, .CZ 0 31, .CZ 0 32, .CZ 0 33, .CZ 2 4, .CZ 2 5, .CZ 2 13, .CZ 2 15, .CZ 2 17, .CZ 2 31, .CZ 2 32, .CZ 4 5, .CZ 4 14, .CZ 4 17, .CZ 4 29, .CZ 4 32, .CZ 4 33, .CZ 5 6, .CZ 5 13, .CZ 5 14, .CZ 5 15, .CZ 5 29, .CZ 5 30, .CZ 6 14, .CZ 6 17, .CZ 6 29],
+  .CX 5 13,
+  .CX 5 15,
+  .CX 5 16,
+  .CX 5 29,
+  .CX 5 30,
+  .CX 5 33,
+  .CX 5 18,
+  .measureX 5 [] [.Z 6, .Z 13, .Z 14, .Z 15, .Z 29, .Z 30, .Z 31, .Z 32, .Z 33, .Z 18, .CZ 2 6, .CZ 2 13, .CZ 2 14, .CZ 2 15, .CZ 2 29, .CZ 2 30, .CZ 2 31, .CZ 2 32, .CZ 2 18],
+  .CX 2 0,
+  .CX 4 0,
+  .CX 6 0,
+  .CX 10 0,
+  .CX 14 0,
+  .CX 16 0,
+  .CX 30 0,
+  .CX 18 0,
+  .CX 17 14,
+  .CX 29 14,
+  .CX 30 14,
+  .CX 31 14,
+  .CX 32 14,
+  .CX 33 14,
+  .CX 18 14,
+  .CX 19 14,
+  .CCX 0 14 1,
+  .CX 0 1,
+  .CX 17 7,
+  .CX 28 7,
+  .CX 29 7,
+  .CX 30 7,
+  .CX 31 7,
+  .CX 32 7,
+  .CX 6 2,
+  .CX 13 2,
+  .CX 15 2,
+  .CX 28 2,
+  .CX 29 2,
+  .CX 30 2,
+  .CX 32 2,
+  .CX 33 2,
+  .CX 19 2,
+  .CCX 7 2 5,
+  .CX 2 0,
+  .CX 3 0,
+  .CX 7 0,
+  .CX 10 0,
+  .CX 14 0,
+  .CX 16 0,
+  .CX 17 0,
+  .CX 29 0,
+  .CX 31 0,
+  .CX 33 0,
+  .CX 18 0,
+  .CX 4 3,
+  .CX 5 3,
+  .CX 13 3,
+  .CX 15 3,
+  .CX 17 3,
+  .CX 30 3,
+  .CX 31 3,
+  .CX 32 3,
+  .CX 18 3,
+  .CCX 0 3 8,
+  .CX 7 8,
+  .CX 7 11,
+  .CX 7 16,
+  .CX 7 17,
+  .CX 7 29,
+  .CX 7 30,
+  .CX 7 31,
+  .CX 7 32,
+  .CX 7 18,
+  .CX 7 19,
+  .measureX 7 [] [.Z 8, .CZ 0 3],
+  .CX 0 1,
+  .CX 0 2,
+  .CX 0 3,
+  .CX 0 6,
+  .CX 0 31,
+  .CX 0 32,
+  .CX 0 18,
+  .CX 0 19,
+  .measureX 0 [] [.Z 1, .Z 4, .Z 5, .Z 6, .Z 8, .Z 10, .Z 14, .Z 15, .Z 16, .Z 31, .Z 32, .Z 33, .Z 18, .CZ 1 2, .CZ 1 3, .CZ 1 5, .CZ 1 10, .CZ 1 14, .CZ 1 15, .CZ 1 16, .CZ 1 17, .CZ 1 28, .CZ 1 29, .CZ 1 32, .CZ 1 33, .CZ 2 3, .CZ 2 5, .CZ 2 8, .CZ 2 17, .CZ 2 28, .CZ 2 29, .CZ 2 32, .CZ 2 18, .CZ 3 4, .CZ 3 10, .CZ 3 13, .CZ 3 14, .CZ 3 16, .CZ 3 17, .CZ 3 31, .CZ 3 33, .CZ 3 18, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 14, .CZ 4 17, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 5 6, .CZ 5 8, .CZ 5 17, .CZ 5 28, .CZ 5 29, .CZ 6 8, .CZ 6 14],
+  .CX 1 6,
+  .CX 1 11,
+  .CX 1 13,
+  .CX 1 15,
+  .CX 1 16,
+  .CX 1 17,
+  .CX 1 28,
+  .measureX 1 [] [.Z 2, .Z 5, .Z 8, .Z 33, .CZ 2 3, .CZ 2 13, .CZ 2 14, .CZ 2 29, .CZ 2 30, .CZ 2 31, .CZ 2 32, .CZ 2 18, .CZ 3 4, .CZ 3 8, .CZ 3 14, .CZ 3 31, .CZ 3 18, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 10, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 5 15, .CZ 5 17, .CZ 5 29, .CZ 6 8, .CZ 6 13, .CZ 6 15, .CZ 6 17, .CZ 6 30, .CZ 6 31, .CZ 6 33, .CZ 6 18, .CZ 8 14, .CZ 8 31],
+  .CX 3 8,
+  .CX 3 13,
+  .CX 3 15,
+  .CX 3 16,
+  .CX 3 29,
+  .CX 3 30,
+  .measureX 3 [] [.Z 4, .Z 8, .Z 10, .Z 30, .Z 31, .Z 33, .Z 18, .CZ 2 5, .CZ 2 17, .CZ 2 28, .CZ 2 30, .CZ 2 33, .CZ 2 18, .CZ 4 6, .CZ 4 10, .CZ 4 13, .CZ 4 15, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 33, .CZ 4 18, .CZ 5 13, .CZ 5 15, .CZ 5 28, .CZ 6 8, .CZ 6 10, .CZ 6 15, .CZ 6 16, .CZ 6 32, .CZ 8 13, .CZ 8 14, .CZ 8 15, .CZ 8 28, .CZ 8 29, .CZ 8 31, .CZ 8 33, .CZ 10 13, .CZ 10 16, .CZ 10 28, .CZ 10 29, .CZ 13 15, .CZ 13 16, .CZ 13 30, .CZ 13 31, .CZ 13 33, .CZ 14 15, .CZ 14 17],
+  .CX 5 17,
+  .CX 5 30,
+  .measureX 5 [] [.Z 8, .Z 13, .Z 14, .Z 15, .Z 17, .Z 28, .Z 30, .Z 32, .CZ 2 6, .CZ 2 10, .CZ 2 13, .CZ 2 14, .CZ 2 16, .CZ 2 17, .CZ 2 30, .CZ 2 32, .CZ 2 33, .CZ 4 6, .CZ 4 8, .CZ 4 10, .CZ 4 13, .CZ 4 14, .CZ 4 16, .CZ 4 17, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 18, .CZ 6 8, .CZ 6 13, .CZ 6 15, .CZ 6 17, .CZ 6 30, .CZ 6 31, .CZ 6 32, .CZ 6 33, .CZ 6 18, .CZ 8 10, .CZ 8 14, .CZ 8 15, .CZ 8 16, .CZ 8 17, .CZ 8 28, .CZ 8 29, .CZ 8 32, .CZ 8 33, .CZ 8 18, .CZ 10 13, .CZ 10 14, .CZ 10 15, .CZ 10 17, .CZ 13 14, .CZ 13 15, .CZ 13 16, .CZ 14 15, .CZ 14 16, .CZ 14 17, .CZ 14 28, .CZ 14 31, .CZ 14 32, .CZ 15 16, .CZ 15 17, .CZ 16 17],
+  .CX 2 6,
+  .CX 2 8,
+  .CX 2 11,
+  .CX 2 16,
+  .CX 2 29,
+  .CX 2 30,
+  .CX 2 31,
+  .CX 2 32,
+  .CX 2 19,
+  .measureX 2 [] [.Z 10, .Z 13, .Z 14, .Z 15, .Z 16, .Z 17, .Z 29, .Z 33, .Z 18, .CZ 4 6, .CZ 4 10, .CZ 4 14, .CZ 4 16, .CZ 4 29, .CZ 4 30, .CZ 4 32, .CZ 4 33, .CZ 6 17, .CZ 6 28, .CZ 6 29, .CZ 6 32, .CZ 6 33, .CZ 8 17, .CZ 8 28, .CZ 8 29, .CZ 8 30, .CZ 8 32, .CZ 8 33, .CZ 8 18, .CZ 10 28, .CZ 10 29, .CZ 10 30, .CZ 10 33, .CZ 13 30, .CZ 13 31, .CZ 13 33, .CZ 14 15, .CZ 14 17, .CZ 14 28, .CZ 14 33, .CZ 15 28, .CZ 15 29, .CZ 15 31, .CZ 16 28, .CZ 16 29, .CZ 16 30, .CZ 16 33],
+  .CX 6 8,
+  .CX 6 13,
+  .CX 6 15,
+  .CX 6 16,
+  .CX 6 17,
+  .CX 6 29,
+  .CX 6 30,
+  .CX 6 32,
+  .CX 6 33,
+  .CX 6 19,
+  .measureX 6 [] [.Z 4, .Z 8, .Z 17, .Z 30, .Z 31, .CZ 4 14, .CZ 4 15, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 4 33, .CZ 4 18, .CZ 8 10, .CZ 8 16, .CZ 8 28, .CZ 8 32, .CZ 8 18, .CZ 10 14, .CZ 10 17, .CZ 10 31, .CZ 10 33, .CZ 13 14, .CZ 13 15, .CZ 13 28, .CZ 13 31, .CZ 13 33, .CZ 13 18, .CZ 14 15, .CZ 14 16, .CZ 14 17, .CZ 14 29, .CZ 14 30, .CZ 14 31, .CZ 14 32, .CZ 15 17, .CZ 15 29, .CZ 15 31, .CZ 15 33, .CZ 15 18, .CZ 16 17, .CZ 16 31, .CZ 16 33, .CZ 17 32, .CZ 17 18, .CZ 28 29, .CZ 28 30, .CZ 28 31, .CZ 28 32, .CZ 28 33, .CZ 29 30, .CZ 29 32],
+  .CX 13 15,
+  .CX 13 17,
+  .CX 13 28,
+  .CX 13 29,
+  .CX 13 30,
+  .CX 13 18,
+  .measureX 13 [] [.Z 4, .Z 8, .Z 10, .Z 15, .Z 17, .Z 28, .Z 32, .Z 33, .CZ 4 10, .CZ 4 14, .CZ 4 15, .CZ 4 29, .CZ 4 31, .CZ 4 32, .CZ 8 10, .CZ 8 16, .CZ 8 28, .CZ 8 29, .CZ 8 30, .CZ 8 31, .CZ 8 33, .CZ 10 16, .CZ 10 17, .CZ 10 28, .CZ 10 29, .CZ 10 32, .CZ 10 33, .CZ 14 15, .CZ 14 30, .CZ 14 32, .CZ 15 17, .CZ 15 30, .CZ 15 18, .CZ 16 17, .CZ 16 32, .CZ 16 33, .CZ 17 29, .CZ 17 30, .CZ 17 31, .CZ 17 32, .CZ 28 29, .CZ 28 30, .CZ 28 18, .CZ 29 31, .CZ 29 32, .CZ 29 18],
+  .CX 8 11,
+  .CX 8 17,
+  .CX 8 28,
+  .CX 8 29,
+  .CX 8 32,
+  .CX 8 18,
+  .CX 8 19,
+  .measureX 8 [] [.Z 4, .Z 10, .Z 14, .Z 15, .Z 16, .Z 17, .Z 29, .Z 32, .Z 33, .CZ 4 15, .CZ 4 17, .CZ 4 28, .CZ 4 30, .CZ 10 14, .CZ 10 15, .CZ 10 31, .CZ 14 15, .CZ 14 16, .CZ 14 28, .CZ 14 30, .CZ 14 31, .CZ 14 32, .CZ 14 33, .CZ 15 16, .CZ 15 17, .CZ 15 28, .CZ 15 29, .CZ 15 32, .CZ 15 33, .CZ 16 31, .CZ 17 28, .CZ 17 29, .CZ 28 30, .CZ 28 32, .CZ 29 30, .CZ 29 32, .CZ 31 33, .CZ 31 18],
+  .CX 11 28,
+  .CX 11 29,
+  .CX 11 30,
+  .CX 11 32,
+  .CX 11 33,
+  .CX 11 18,
+  .measureX 11 [] [.Z 4, .Z 16, .Z 17, .Z 28, .Z 30, .Z 32, .CZ 4 10, .CZ 4 17, .CZ 4 28, .CZ 4 29, .CZ 4 30, .CZ 4 31, .CZ 4 32, .CZ 10 14, .CZ 10 15, .CZ 10 16, .CZ 10 17, .CZ 10 28, .CZ 10 30, .CZ 10 32, .CZ 10 18, .CZ 14 16, .CZ 14 17, .CZ 14 29, .CZ 14 30, .CZ 14 32, .CZ 14 33, .CZ 15 16, .CZ 15 17, .CZ 15 29, .CZ 15 31, .CZ 15 32, .CZ 15 33, .CZ 15 18, .CZ 16 17, .CZ 16 29, .CZ 16 30, .CZ 16 32, .CZ 16 18, .CZ 17 30, .CZ 17 31, .CZ 17 32, .CZ 28 32, .CZ 28 33, .CZ 29 30, .CZ 29 31, .CZ 29 32, .CZ 30 18, .CZ 31 33, .CZ 33 18],
+  .CX 23 22,
+  .CX 23 21,
+  .CX 23 20,
+  .CX 23 19,
+  .CX 23 18,
+  .CX 23 30,
+  .CX 23 17,
+  .CX 23 14,
+  .CX 23 13,
+  .CX 23 11,
+  .CX 23 7,
+  .CX 23 5,
+  .CX 23 4,
+  .CX 23 3,
+  .CX 23 0,
+  .CX 22 23,
+  .CX 22 21,
+  .CX 22 20,
+  .CX 22 19,
+  .CX 22 18,
+  .CX 22 30,
+  .CX 22 17,
+  .CX 22 14,
+  .CX 22 13,
+  .CX 22 11,
+  .CX 22 7,
+  .CX 22 5,
+  .CX 22 4,
+  .CX 22 3,
+  .CX 22 0,
+  .CX 23 22,
+  .CX 21 23,
+  .CX 21 20,
+  .CX 21 19,
+  .CX 21 18,
+  .CX 21 30,
+  .CX 21 17,
+  .CX 21 14,
+  .CX 21 13,
+  .CX 21 11,
+  .CX 21 7,
+  .CX 21 5,
+  .CX 21 4,
+  .CX 21 3,
+  .CX 21 0,
+  .CX 23 21,
+  .CX 20 23,
+  .CX 20 19,
+  .CX 20 18,
+  .CX 20 30,
+  .CX 20 17,
+  .CX 20 14,
+  .CX 20 13,
+  .CX 20 11,
+  .CX 20 7,
+  .CX 20 5,
+  .CX 20 4,
+  .CX 20 3,
+  .CX 20 0,
+  .CX 23 20,
+  .CX 19 23,
+  .CX 19 18,
+  .CX 19 30,
+  .CX 19 17,
+  .CX 19 14,
+  .CX 19 13,
+  .CX 19 11,
+  .CX 19 7,
+  .CX 19 5,
+  .CX 19 4,
+  .CX 19 3,
+  .CX 19 0,
+  .CX 23 19,
+  .CX 18 23,
+  .CX 18 30,
+  .CX 18 29,
+  .CX 18 28,
+  .CX 18 17,
+  .CX 18 16,
+  .CX 18 10,
+  .CX 23 18,
+  .CX 33 23,
+  .CX 33 18,
+  .CX 33 32,
+  .CX 33 17,
+  .CX 33 16,
+  .CX 33 13,
+  .CX 33 10,
+  .CX 33 7,
+  .CX 33 0,
+  .CX 18 33,
+  .CX 32 33,
+  .CX 32 28,
+  .CX 32 16,
+  .CX 32 15,
+  .CX 33 32,
+  .CX 31 18,
+  .CX 31 33,
+  .CX 31 32,
+  .CX 31 30,
+  .CX 31 29,
+  .CX 31 13,
+  .CX 31 10,
+  .CX 31 7,
+  .CX 31 4,
+  .CX 31 3,
+  .CX 31 0,
+  .CX 32 31,
+  .CX 30 33,
+  .CX 30 32,
+  .CX 30 31,
+  .CX 30 17,
+  .CX 30 16,
+  .CX 30 15,
+  .CX 30 14,
+  .CX 30 11,
+  .CX 30 10,
+  .CX 30 5,
+  .CX 30 4,
+  .CX 30 3,
+  .CX 31 30,
+  .CX 29 18,
+  .CX 29 32,
+  .CX 29 17,
+  .CX 29 16,
+  .CX 29 15,
+  .CX 29 13,
+  .CX 29 7,
+  .CX 29 0,
+  .CX 32 29,
+  .CX 28 29,
+  .CX 28 17,
+  .CX 28 16,
+  .CX 28 15,
+  .CX 29 28,
+  .CX 17 23,
+  .CX 17 18,
+  .CX 17 33,
+  .CX 17 29,
+  .CX 17 28,
+  .CX 17 15,
+  .CX 17 14,
+  .CX 17 13,
+  .CX 17 12,
+  .CX 17 7,
+  .CX 17 6,
+  .CX 17 4,
+  .CX 17 3,
+  .CX 17 0,
+  .CX 16 23,
+  .CX 16 18,
+  .CX 16 33,
+  .CX 16 32,
+  .CX 16 31,
+  .CX 16 15,
+  .CX 16 13,
+  .CX 16 10,
+  .CX 16 7,
+  .CX 16 0,
+  .CX 31 16,
+  .CX 15 23,
+  .CX 15 33,
+  .CX 15 32,
+  .CX 15 31,
+  .CX 15 29,
+  .CX 15 17,
+  .CX 15 14,
+  .CX 15 12,
+  .CX 15 10,
+  .CX 15 9,
+  .CX 15 6,
+  .CX 15 4,
+  .CX 15 2,
+  .CX 14 29,
+  .CX 14 17,
+  .CX 14 15,
+  .CX 14 12,
+  .CX 14 10,
+  .CX 14 9,
+  .CX 14 8,
+  .CX 14 6,
+  .CX 14 4,
+  .CX 14 2,
+  .CX 14 1,
+  .CX 13 18,
+  .CX 18 13,
+  .CX 12 17,
+  .CX 17 12,
+  .CX 11 16,
+  .CX 16 11,
+  .CX 10 23,
+  .CX 10 32,
+  .CX 10 29,
+  .CX 10 28,
+  .CX 28 10,
+  .CX 9 15,
+  .CX 15 9,
+  .CX 8 14,
+  .CX 14 8,
+  .CX 7 13,
+  .CX 13 7,
+  .CX 6 12,
+  .CX 12 6,
+  .CX 5 11,
+  .CX 11 5,
+  .CX 4 33,
+  .CX 4 32,
+  .CX 4 29,
+  .CX 4 28,
+  .CX 4 9,
+  .CX 4 2,
+  .CX 9 4,
+  .CX 3 10,
+  .CX 10 3,
+  .CX 2 9,
+  .CX 9 2,
+  .CX 1 8,
+  .CX 8 1,
+  .CX 0 7,
+  .CX 7 0,
+  .X 23,
+  .CX 6 7,
+  .X 7,
+  .CX 6 10
+]
+def packedRef : Program := [
+  .CX 11 2,
+  .CX 12 3,
+  .CX 13 4,
+  .CX 14 5,
+  .CX 15 6,
+  .CX 16 7,
+  .CCX 1 2 11,
+  .CCX 1 3 12,
+  .CCX 1 4 13,
+  .CCX 1 5 14,
+  .CCX 1 6 15,
+  .CCX 1 7 16,
+  .CX 11 2,
+  .CX 12 3,
+  .CX 13 4,
+  .CX 14 5,
+  .CX 15 6,
+  .CX 16 7,
+  .CX 8 17,
+  .measureX 8 [] [.CZ 0 17],
+  .CX 17 8,
+  .CX 8 17,
+  .CX 16 17,
+  .CX 16 8,
+  .CX 1 10,
+  .CX 8 9,
+  .X 28,
+  .CX 8 28,
+  .CX 16 28,
+  .CX 28 2,
+  .CX 28 3,
+  .CX 28 4,
+  .CX 28 5,
+  .CX 28 6,
+  .CX 28 7,
+  .CX 28 8,
+  .CX 2 10,
+  .CX 2 28,
+  .CCX 10 28 34,
+  .CX 2 34,
+  .CX 2 28,
+  .CX 2 10,
+  .CX 3 11,
+  .CX 3 34,
+  .CCX 11 34 35,
+  .CX 3 35,
+  .CX 3 34,
+  .CX 3 11,
+  .CX 4 12,
+  .CX 4 35,
+  .CCX 12 35 36,
+  .CX 4 36,
+  .CX 4 35,
+  .CX 4 12,
+  .CX 5 13,
+  .CX 5 36,
+  .CCX 13 36 37,
+  .CX 5 37,
+  .CX 5 36,
+  .CX 5 13,
+  .CX 6 14,
+  .CX 6 37,
+  .CCX 14 37 38,
+  .CX 6 38,
+  .CX 6 37,
+  .CX 6 14,
+  .CX 7 15,
+  .CX 7 38,
+  .CCX 15 38 39,
+  .CX 7 39,
+  .CX 7 38,
+  .CX 7 15,
+  .CX 8 16,
+  .CX 39 16,
+  .measureX 39 [] [.CZ 7 15, .CZ 7 38, .CZ 15 38],
+  .CX 7 15,
+  .CX 38 15,
+  .measureX 38 [] [.CZ 6 14, .CZ 6 37, .CZ 14 37],
+  .CX 6 14,
+  .CX 37 14,
+  .measureX 37 [] [.CZ 5 13, .CZ 5 36, .CZ 13 36],
+  .CX 5 13,
+  .CX 36 13,
+  .measureX 36 [] [.CZ 4 12, .CZ 4 35, .CZ 12 35],
+  .CX 4 12,
+  .CX 35 12,
+  .measureX 35 [] [.CZ 3 11, .CZ 3 34, .CZ 11 34],
+  .CX 3 11,
+  .CX 34 11,
+  .measureX 34 [] [.CZ 2 10, .CZ 2 28, .CZ 10 28],
+  .CX 2 10,
+  .CX 28 10,
+  .CX 28 2,
+  .CX 28 3,
+  .CX 28 4,
+  .CX 28 5,
+  .CX 28 6,
+  .CX 28 7,
+  .CX 28 8,
+  .X 28,
+  .CX 8 28,
+  .CX 16 28,
+  .CX 28 17,
+  .CX 0 1,
+  .CX 8 9,
+  .CX 16 17,
+  .CX 11 3,
+  .CCX 2 3 9,
+  .CX 3 1,
+  .CX 9 1,
+  .CX 11 1,
+  .CX 16 1,
+  .CX 15 8,
+  .CCX 1 8 17,
+  .CX 5 13,
+  .CX 15 10,
+  .CX 16 10,
+  .CX 12 4,
+  .CX 13 4,
+  .CCX 10 4 5,
+  .CX 15 10,
+  .CX 16 10,
+  .CX 7 6,
+  .CX 14 6,
+  .CX 15 6,
+  .CCX 10 6 29,
+  .CX 9 8,
+  .CX 10 8,
+  .CX 11 8,
+  .CX 15 8,
+  .CX 16 8,
+  .CX 9 3,
+  .CX 10 3,
+  .CX 11 3,
+  .CCX 8 3 30,
+  .CX 8 30,
+  .CX 14 29,
+  .CX 6 4,
+  .CX 7 4,
+  .CX 13 4,
+  .CX 15 4,
+  .CCX 10 4 14,
+  .CX 7 2,
+  .CX 8 2,
+  .CX 17 2,
+  .CX 16 2,
+  .CX 9 7,
+  .CX 12 7,
+  .CX 14 7,
+  .CX 16 7,
+  .CX 29 7,
+  .CX 30 7,
+  .CCX 2 7 31,
+  .CX 4 2,
+  .CX 5 2,
+  .CX 6 2,
+  .CX 9 2,
+  .CX 17 2,
+  .CX 11 2,
+  .CX 12 2,
+  .CX 13 2,
+  .CX 6 4,
+  .CX 8 4,
+  .CX 10 4,
+  .CX 11 4,
+  .CX 12 4,
+  .CX 14 4,
+  .CX 29 4,
+  .CX 30 4,
+  .CX 31 4,
+  .CCX 2 4 32,
+  .CX 7 5,
+  .CX 9 5,
+  .CX 12 5,
+  .CX 15 5,
+  .CX 16 5,
+  .CX 29 5,
+  .CX 30 5,
+  .CX 9 7,
+  .CX 12 7,
+  .CX 13 7,
+  .CX 14 7,
+  .CX 15 7,
+  .CX 16 7,
+  .CX 29 7,
+  .CX 30 7,
+  .CX 32 7,
+  .CCX 5 7 33,
+  .CX 2 1,
+  .CX 3 1,
+  .CX 4 1,
+  .CX 5 1,
+  .CX 9 1,
+  .CX 13 1,
+  .CX 15 1,
+  .CX 29 1,
+  .CX 30 1,
+  .CX 31 1,
+  .CX 7 6,
+  .CX 33 6,
+  .CCX 1 6 34,
+  .CX 10 3,
+  .CX 5 2,
+  .CX 17 2,
+  .CX 11 2,
+  .CX 13 2,
+  .CX 15 2,
+  .CX 16 2,
+  .CX 29 2,
+  .CX 30 2,
+  .CX 31 2,
+  .CCX 3 2 35,
+  .CX 3 35,
+  .CX 7 4,
+  .CX 15 4,
+  .CX 16 4,
+  .CCX 3 4 36,
+  .CX 7 3,
+  .CX 9 3,
+  .CX 12 3,
+  .CX 13 3,
+  .CX 14 3,
+  .CX 15 3,
+  .CX 16 3,
+  .CX 29 3,
+  .CX 30 3,
+  .CX 32 3,
+  .CX 7 6,
+  .CX 8 6,
+  .CX 17 6,
+  .CX 10 6,
+  .CX 13 6,
+  .CX 15 6,
+  .CX 16 6,
+  .CX 32 6,
+  .CCX 3 6 26,
+  .CX 7 6,
+  .CX 9 6,
+  .CX 17 6,
+  .CX 11 6,
+  .CX 13 6,
+  .CX 15 6,
+  .CX 16 6,
+  .CX 32 6,
+  .CX 5 3,
+  .CX 7 3,
+  .CX 12 3,
+  .CX 14 3,
+  .CX 32 3,
+  .CX 35 3,
+  .CX 26 3,
+  .CCX 6 3 27,
+  .CX 7 5,
+  .CX 12 5,
+  .CX 14 5,
+  .CX 32 5,
+  .CX 35 5,
+  .CX 26 5,
+  .CX 6 3,
+  .CX 7 3,
+  .CX 9 3,
+  .CX 17 3,
+  .CX 11 3,
+  .CX 13 3,
+  .CX 15 3,
+  .CX 16 3,
+  .CX 32 3,
+  .CX 27 3,
+  .CCX 5 3 18,
+  .CX 5 18,
+  .CX 5 3,
+  .CX 6 3,
+  .CX 8 3,
+  .CX 17 3,
+  .CX 10 3,
+  .CX 15 3,
+  .CX 16 3,
+  .CX 34 3,
+  .CX 27 3,
+  .CX 7 4,
+  .CX 9 4,
+  .CX 17 4,
+  .CX 11 4,
+  .CX 15 4,
+  .CX 16 4,
+  .CX 27 4,
+  .CX 18 4,
+  .CCX 3 4 19,
+  .CX 3 1,
+  .CX 5 1,
+  .CX 8 1,
+  .CX 10 1,
+  .CX 11 1,
+  .CX 12 1,
+  .CX 14 1,
+  .CX 16 1,
+  .CX 30 1,
+  .CX 34 1,
+  .CX 5 3,
+  .CX 6 3,
+  .CX 12 3,
+  .CX 13 3,
+  .CX 14 3,
+  .CX 32 3,
+  .CX 34 3,
+  .CX 35 3,
+  .CX 36 3,
+  .CX 27 3,
+  .CX 18 3,
+  .CX 19 3,
+  .CCX 1 3 20,
+  .CX 1 20,
+  .CX 4 1,
+  .CX 5 1,
+  .CX 7 1,
+  .CX 9 1,
+  .CX 17 1,
+  .CX 11 1,
+  .CX 13 1,
+  .CX 16 1,
+  .CX 29 1,
+  .CX 32 1,
+  .CX 26 1,
+  .CX 18 1,
+  .CX 7 4,
+  .CX 9 4,
+  .CX 17 4,
+  .CX 11 4,
+  .CX 12 4,
+  .CX 13 4,
+  .CX 14 4,
+  .CX 16 4,
+  .CX 29 4,
+  .CX 32 4,
+  .CX 35 4,
+  .CX 36 4,
+  .CX 26 4,
+  .CX 27 4,
+  .CX 19 4,
+  .CX 20 4,
+  .CCX 1 4 21,
+  .CX 13 29,
+  .CX 13 30,
+  .CX 13 31,
+  .CX 13 32,
+  .CX 13 33,
+  .CX 13 36,
+  .CX 13 18,
+  .CX 13 20,
+  .CX 5 3,
+  .CX 6 3,
+  .CX 7 3,
+  .CX 8 3,
+  .CX 9 3,
+  .CX 10 3,
+  .CX 11 3,
+  .CX 15 3,
+  .CX 29 3,
+  .CX 18 3,
+  .CX 19 3,
+  .CX 4 1,
+  .CX 12 1,
+  .CX 14 1,
+  .CX 15 1,
+  .CX 29 1,
+  .CX 35 1,
+  .CX 36 1,
+  .CX 26 1,
+  .CX 27 1,
+  .CCX 3 1 13,
+  .CX 5 1,
+  .CX 6 1,
+  .CX 12 1,
+  .CX 14 1,
+  .CX 15 1,
+  .CX 29 1,
+  .CX 32 1,
+  .CX 34 1,
+  .CX 35 1,
+  .CX 36 1,
+  .CX 18 1,
+  .CX 19 1,
+  .CX 20 1,
+  .CX 8 7,
+  .CX 9 7,
+  .CX 10 7,
+  .CX 11 7,
+  .CX 13 7,
+  .CX 32 7,
+  .CX 34 7,
+  .CX 36 7,
+  .CX 26 7,
+  .CX 27 7,
+  .CX 19 7,
+  .CCX 1 7 22,
+  .CX 1 22,
+  .CX 16 29,
+  .CX 16 32,
+  .CX 16 33,
+  .CX 16 36,
+  .CX 16 26,
+  .CX 16 22,
+  .measureX 16 [] [.Z 1, .Z 22, .CZ 1 7],
+  .CX 33 35,
+  .CX 33 26,
+  .CX 33 27,
+  .CX 33 18,
+  .CX 33 20,
+  .CX 33 22,
+  .measureX 33 [] [.Z 3, .Z 8, .Z 10, .Z 11, .Z 30, .Z 36, .Z 27, .CZ 2 3, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 30, .CZ 2 35, .CZ 2 36, .CZ 2 27],
+  .CX 35 26,
+  .CX 35 27,
+  .CX 35 18,
+  .CX 35 20,
+  .CX 35 22,
+  .measureX 35 [] [.Z 2, .Z 3, .Z 6, .Z 7, .Z 8, .Z 9, .Z 17, .Z 10, .Z 11, .Z 12, .Z 14, .Z 15, .Z 29, .Z 31, .Z 32, .Z 26, .Z 18, .CZ 1 9, .CZ 1 17, .CZ 1 11, .CZ 1 12, .CZ 1 14, .CZ 1 29, .CZ 1 36, .CZ 1 26, .CZ 1 27, .CZ 1 18, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 8, .CZ 2 9, .CZ 2 17, .CZ 2 10, .CZ 2 12, .CZ 2 14, .CZ 2 30, .CZ 2 36, .CZ 2 27, .CZ 3 6, .CZ 3 17, .CZ 3 11, .CZ 3 12, .CZ 3 14, .CZ 3 15, .CZ 3 30, .CZ 3 34, .CZ 3 21, .CZ 4 6, .CZ 4 8, .CZ 4 9, .CZ 4 10, .CZ 4 11, .CZ 4 15, .CZ 4 32, .CZ 5 6, .CZ 5 11, .CZ 5 13, .CZ 5 15, .CZ 5 30, .CZ 5 31, .CZ 6 7, .CZ 6 12, .CZ 6 14, .CZ 7 9, .CZ 7 17, .CZ 7 11, .CZ 7 12, .CZ 7 14, .CZ 7 15, .CZ 7 29, .CZ 7 26, .CZ 8 17, .CZ 17 15],
+  .CX 17 13,
+  .CX 17 15,
+  .CX 17 30,
+  .CX 17 31,
+  .CX 17 36,
+  .CX 17 18,
+  .CX 17 20,
+  .measureX 17 [] [.Z 1, .Z 3, .Z 4, .Z 5, .Z 6, .Z 7, .Z 8, .Z 10, .Z 13, .Z 15, .Z 31, .Z 32, .Z 34, .Z 27, .Z 18, .Z 19, .CZ 1 2, .CZ 1 8, .CZ 1 9, .CZ 1 10, .CZ 1 12, .CZ 1 13, .CZ 1 14, .CZ 1 15, .CZ 1 29, .CZ 1 30, .CZ 1 31, .CZ 1 32, .CZ 1 36, .CZ 1 18, .CZ 2 3, .CZ 2 5, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 11, .CZ 2 12, .CZ 2 13, .CZ 2 14, .CZ 2 30, .CZ 2 32, .CZ 2 26, .CZ 2 27, .CZ 2 22, .CZ 3 6, .CZ 3 8, .CZ 3 10, .CZ 3 12, .CZ 3 13, .CZ 3 14, .CZ 3 15, .CZ 3 34, .CZ 3 26, .CZ 3 27, .CZ 3 18, .CZ 4 5, .CZ 4 6, .CZ 4 8, .CZ 4 10, .CZ 4 12, .CZ 4 13, .CZ 4 14, .CZ 4 15, .CZ 4 32, .CZ 4 36, .CZ 4 26, .CZ 5 6, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 13, .CZ 7 12, .CZ 7 13, .CZ 7 14, .CZ 7 15, .CZ 7 29, .CZ 7 22],
+  .CX 13 29,
+  .CX 13 30,
+  .CX 13 31,
+  .CX 13 36,
+  .CX 13 18,
+  .CX 13 20,
+  .measureX 13 [] [.Z 2, .Z 3, .Z 4, .Z 5, .Z 6, .Z 10, .Z 11, .Z 15, .Z 29, .Z 32, .Z 34, .Z 26, .Z 18, .Z 22, .CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 15, .CZ 1 36, .CZ 1 27, .CZ 1 18, .CZ 2 3, .CZ 2 6, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 31, .CZ 2 36, .CZ 2 27, .CZ 2 22, .CZ 3 4, .CZ 3 8, .CZ 3 12, .CZ 3 14, .CZ 3 15, .CZ 3 32, .CZ 3 34, .CZ 3 18, .CZ 3 21, .CZ 4 6, .CZ 4 7, .CZ 4 8, .CZ 4 10, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 6 11, .CZ 6 12, .CZ 6 14, .CZ 6 15, .CZ 6 30, .CZ 7 8, .CZ 7 10, .CZ 7 12, .CZ 7 14, .CZ 7 15, .CZ 7 36, .CZ 7 18, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 14, .CZ 8 30, .CZ 8 36, .CZ 8 27, .CZ 10 12, .CZ 10 14],
+  .CX 6 29,
+  .CX 6 30,
+  .CX 6 31,
+  .CX 6 34,
+  .CX 6 36,
+  .CX 6 18,
+  .CX 6 20,
+  .measureX 6 [] [.Z 3, .Z 4, .Z 5, .Z 8, .Z 10, .Z 11, .Z 15, .Z 29, .Z 30, .Z 32, .Z 36, .Z 26, .Z 22, .CZ 1 2, .CZ 1 4, .CZ 1 5, .CZ 1 8, .CZ 1 10, .CZ 1 29, .CZ 1 32, .CZ 1 27, .CZ 1 22, .CZ 2 3, .CZ 2 4, .CZ 2 5, .CZ 2 11, .CZ 2 29, .CZ 2 30, .CZ 2 36, .CZ 2 27, .CZ 2 18, .CZ 3 4, .CZ 3 7, .CZ 3 8, .CZ 3 10, .CZ 3 15, .CZ 3 32, .CZ 3 26, .CZ 3 27, .CZ 3 18, .CZ 3 22],
+  .CX 1 3,
+  .CX 1 4,
+  .CX 1 30,
+  .CX 1 31,
+  .CX 1 36,
+  .CX 1 18,
+  .CX 1 21,
+  .CX 1 22,
+  .measureX 1 [] [.Z 4, .Z 7, .Z 10, .Z 11, .Z 12, .Z 29, .Z 30, .Z 31, .Z 36, .Z 26, .Z 27, .Z 19, .Z 22, .CZ 2 7, .CZ 2 8, .CZ 2 10, .CZ 2 15, .CZ 2 29, .CZ 2 32, .CZ 2 27, .CZ 2 18, .CZ 2 19, .CZ 3 4, .CZ 3 5, .CZ 3 10, .CZ 3 12, .CZ 3 14, .CZ 3 15, .CZ 3 29, .CZ 3 26, .CZ 3 27, .CZ 3 18, .CZ 3 19, .CZ 4 7, .CZ 4 11, .CZ 4 30, .CZ 4 26, .CZ 4 18, .CZ 4 19, .CZ 4 21, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 12, .CZ 5 14, .CZ 5 29, .CZ 5 32, .CZ 5 34, .CZ 5 19, .CZ 5 22, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 7 14, .CZ 7 32, .CZ 7 34, .CZ 7 36, .CZ 7 18, .CZ 8 9, .CZ 8 10, .CZ 8 12, .CZ 8 14, .CZ 8 31, .CZ 8 36, .CZ 8 27, .CZ 9 18, .CZ 10 12, .CZ 10 15, .CZ 10 29, .CZ 10 31, .CZ 11 18, .CZ 11 21, .CZ 15 21, .CZ 30 21],
+  .CX 4 7,
+  .CX 4 14,
+  .CX 4 29,
+  .CX 4 30,
+  .CX 4 31,
+  .CX 4 18,
+  .CX 4 20,
+  .CX 4 21,
+  .CX 4 22,
+  .measureX 4 [] [.Z 5, .Z 7, .Z 10, .Z 12, .Z 14, .Z 15, .Z 29, .Z 32, .Z 26, .Z 18, .Z 22, .CZ 2 3, .CZ 2 5, .CZ 2 8, .CZ 2 12, .CZ 2 14, .CZ 2 15, .CZ 2 30, .CZ 2 32, .CZ 2 34, .CZ 2 26, .CZ 2 27, .CZ 2 18, .CZ 3 7, .CZ 3 9, .CZ 3 11, .CZ 3 12, .CZ 3 30, .CZ 3 34, .CZ 3 36, .CZ 3 19, .CZ 5 7, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 15, .CZ 5 29, .CZ 5 30, .CZ 5 36, .CZ 5 26, .CZ 5 27, .CZ 5 19, .CZ 7 9, .CZ 7 11, .CZ 7 12, .CZ 8 11, .CZ 8 14, .CZ 8 29, .CZ 8 30, .CZ 8 31, .CZ 8 36, .CZ 9 14, .CZ 9 15, .CZ 9 29, .CZ 9 36, .CZ 9 27, .CZ 9 18, .CZ 10 12, .CZ 10 14, .CZ 10 29, .CZ 10 36, .CZ 11 30, .CZ 11 31, .CZ 11 18, .CZ 12 15, .CZ 12 30, .CZ 12 32, .CZ 12 26, .CZ 12 19, .CZ 14 15, .CZ 14 32, .CZ 14 34],
+  .CX 2 7,
+  .CX 2 14,
+  .CX 2 29,
+  .CX 2 31,
+  .CX 2 32,
+  .CX 2 36,
+  .CX 2 27,
+  .CX 2 18,
+  .CX 2 19,
+  .measureX 2 [] [.Z 3, .Z 5, .Z 7, .Z 8, .Z 9, .Z 11, .Z 12, .Z 14, .Z 29, .Z 30, .Z 31, .Z 32, .Z 34, .Z 36, .Z 19, .Z 21, .CZ 3 7, .CZ 3 9, .CZ 3 14, .CZ 3 29, .CZ 3 31, .CZ 3 26, .CZ 5 8, .CZ 5 10, .CZ 5 15, .CZ 5 31, .CZ 5 32, .CZ 5 34, .CZ 5 36, .CZ 5 27, .CZ 5 18, .CZ 5 19, .CZ 7 8, .CZ 7 9, .CZ 7 10, .CZ 7 14, .CZ 7 30, .CZ 7 31, .CZ 7 34, .CZ 7 26, .CZ 7 22, .CZ 8 10, .CZ 8 12, .CZ 8 15, .CZ 8 29, .CZ 8 31, .CZ 8 32, .CZ 8 36, .CZ 8 26, .CZ 8 27, .CZ 9 11, .CZ 9 12, .CZ 9 29, .CZ 9 30, .CZ 9 32, .CZ 9 36, .CZ 9 27, .CZ 10 11, .CZ 10 12, .CZ 10 29, .CZ 10 31, .CZ 10 32, .CZ 10 36, .CZ 10 26, .CZ 10 27, .CZ 11 32, .CZ 12 29, .CZ 12 32, .CZ 12 36, .CZ 12 26, .CZ 12 27, .CZ 14 29, .CZ 14 30, .CZ 14 32, .CZ 14 34, .CZ 14 36, .CZ 14 27, .CZ 14 19, .CZ 15 29, .CZ 15 30, .CZ 15 31, .CZ 15 32, .CZ 15 36, .CZ 15 19, .CZ 29 34, .CZ 30 31],
+  .CX 3 7,
+  .CX 3 32,
+  .CX 3 26,
+  .CX 3 27,
+  .CX 3 18,
+  .CX 3 19,
+  .CX 3 20,
+  .measureX 3 [] [.Z 5, .Z 7, .Z 8, .Z 9, .Z 10, .Z 11, .Z 14, .Z 29, .Z 34, .Z 36, .Z 27, .Z 18, .Z 21, .CZ 5 11, .CZ 5 12, .CZ 5 14, .CZ 5 15, .CZ 5 30, .CZ 5 31, .CZ 5 32, .CZ 5 36, .CZ 5 27, .CZ 5 18, .CZ 5 22, .CZ 7 10, .CZ 7 11, .CZ 7 29, .CZ 7 30, .CZ 7 31, .CZ 7 32, .CZ 7 36, .CZ 7 27, .CZ 7 22, .CZ 8 11, .CZ 8 12, .CZ 8 15, .CZ 8 30, .CZ 8 34, .CZ 8 18, .CZ 8 19, .CZ 8 22, .CZ 9 11, .CZ 9 15, .CZ 9 31, .CZ 9 26, .CZ 9 27, .CZ 9 22, .CZ 10 11, .CZ 10 12, .CZ 10 14, .CZ 10 29, .CZ 10 36, .CZ 10 26, .CZ 10 27, .CZ 10 18, .CZ 10 22, .CZ 11 14, .CZ 11 29, .CZ 11 18, .CZ 12 15, .CZ 12 31, .CZ 12 32, .CZ 12 34, .CZ 12 36, .CZ 12 26, .CZ 12 27, .CZ 12 18, .CZ 12 19, .CZ 14 15, .CZ 14 31, .CZ 14 32, .CZ 14 34, .CZ 14 36, .CZ 14 26, .CZ 14 27, .CZ 14 18, .CZ 14 19, .CZ 15 29, .CZ 15 31, .CZ 15 32, .CZ 15 34, .CZ 15 36, .CZ 15 27, .CZ 15 18, .CZ 15 22, .CZ 29 32, .CZ 29 34, .CZ 29 36, .CZ 29 26, .CZ 29 27, .CZ 29 18, .CZ 30 31, .CZ 30 36, .CZ 30 26, .CZ 30 18, .CZ 30 22, .CZ 31 34, .CZ 31 36, .CZ 31 27],
+  .CX 7 36,
+  .CX 7 26,
+  .CX 7 27,
+  .CX 7 18,
+  .CX 7 20,
+  .measureX 7 [] [.Z 5, .Z 8, .Z 9, .Z 10, .Z 11, .Z 12, .Z 15, .Z 32, .Z 34, .Z 27, .Z 21, .Z 22, .CZ 5 9, .CZ 5 12, .CZ 5 14, .CZ 5 15, .CZ 5 29, .CZ 5 30, .CZ 8 9, .CZ 8 11, .CZ 8 14, .CZ 8 15, .CZ 8 30, .CZ 8 31, .CZ 8 34, .CZ 8 36, .CZ 8 26, .CZ 8 19, .CZ 8 22, .CZ 9 11, .CZ 9 30, .CZ 9 32, .CZ 9 26, .CZ 10 11, .CZ 10 15, .CZ 10 29, .CZ 10 31, .CZ 10 27, .CZ 10 22, .CZ 11 14, .CZ 11 29, .CZ 11 30, .CZ 11 32, .CZ 11 22, .CZ 12 31, .CZ 12 34, .CZ 12 26, .CZ 12 27, .CZ 12 18, .CZ 14 31, .CZ 14 34, .CZ 14 26, .CZ 14 27, .CZ 14 18, .CZ 15 30, .CZ 15 31, .CZ 15 22, .CZ 29 32, .CZ 29 34, .CZ 29 26, .CZ 29 22, .CZ 30 36, .CZ 30 26, .CZ 30 27, .CZ 30 22, .CZ 31 32, .CZ 31 34, .CZ 31 26, .CZ 31 27, .CZ 32 34, .CZ 32 19],
+  .CX 36 26,
+  .CX 36 27,
+  .CX 36 19,
+  .CX 36 20,
+  .CX 36 22,
+  .measureX 36 [] [.Z 5, .Z 8, .Z 12, .Z 29, .Z 27, .Z 18, .Z 19, .Z 21, .CZ 5 11, .CZ 5 30, .CZ 5 34, .CZ 5 18, .CZ 5 19, .CZ 5 22, .CZ 8 10, .CZ 8 11, .CZ 8 31, .CZ 8 32, .CZ 8 26, .CZ 8 18, .CZ 8 19, .CZ 9 11, .CZ 9 29, .CZ 9 30, .CZ 9 31, .CZ 9 32, .CZ 9 34, .CZ 9 27, .CZ 9 18, .CZ 10 14, .CZ 10 15, .CZ 10 29, .CZ 10 30, .CZ 10 31, .CZ 10 32, .CZ 10 34, .CZ 10 27, .CZ 10 18, .CZ 11 12, .CZ 11 14, .CZ 11 34, .CZ 11 18, .CZ 12 29, .CZ 12 30, .CZ 12 31, .CZ 12 34, .CZ 12 26, .CZ 12 27, .CZ 12 22, .CZ 14 29, .CZ 14 30, .CZ 14 31, .CZ 14 34, .CZ 14 26, .CZ 14 27, .CZ 14 22, .CZ 15 29, .CZ 15 31, .CZ 15 27, .CZ 15 18, .CZ 15 19, .CZ 15 22, .CZ 29 30, .CZ 29 31, .CZ 29 32, .CZ 29 26, .CZ 29 27, .CZ 30 31, .CZ 30 32, .CZ 30 34, .CZ 30 26, .CZ 30 27, .CZ 30 19, .CZ 31 27, .CZ 31 19, .CZ 31 22, .CZ 32 18, .CZ 32 19, .CZ 32 22],
+  .CX 12 14,
+  .measureX 12 [] [.Z 8, .Z 9, .Z 11, .Z 14, .Z 15, .Z 29, .Z 30, .Z 34, .Z 26, .Z 27, .Z 19, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 8 14, .CZ 8 29, .CZ 8 30, .CZ 8 32, .CZ 8 19, .CZ 9 14, .CZ 9 29, .CZ 9 32, .CZ 9 34, .CZ 9 26, .CZ 10 11, .CZ 10 15, .CZ 10 30, .CZ 10 31, .CZ 10 32, .CZ 10 34, .CZ 10 26, .CZ 10 27, .CZ 11 14, .CZ 11 29, .CZ 11 30, .CZ 11 32, .CZ 11 19],
+  .CX 29 31,
+  .CX 29 32,
+  .CX 29 27,
+  .CX 29 18,
+  .CX 29 20,
+  .measureX 29 [] [.Z 5, .Z 8, .Z 10, .Z 14, .Z 32, .Z 34, .Z 27, .CZ 5 8, .CZ 5 10, .CZ 5 15, .CZ 5 32, .CZ 5 27, .CZ 5 18, .CZ 10 15, .CZ 14 15, .CZ 15 27, .CZ 32 34, .CZ 32 26, .CZ 32 27],
+  .CX 14 30,
+  .CX 14 31,
+  .CX 14 26,
+  .CX 14 27,
+  .CX 14 18,
+  .CX 14 20,
+  .CX 14 22,
+  .measureX 14 [] [.Z 5, .Z 9, .Z 32, .CZ 5 8, .CZ 5 9, .CZ 5 10, .CZ 5 11, .CZ 5 15, .CZ 5 34, .CZ 5 26, .CZ 5 27, .CZ 8 11, .CZ 8 32, .CZ 8 34, .CZ 8 22, .CZ 9 11, .CZ 9 15, .CZ 9 32, .CZ 9 34, .CZ 9 26, .CZ 9 27, .CZ 10 11, .CZ 10 32, .CZ 10 34, .CZ 10 22, .CZ 11 30, .CZ 11 32, .CZ 11 34, .CZ 11 19, .CZ 11 22, .CZ 15 30, .CZ 15 31, .CZ 15 32, .CZ 15 21, .CZ 15 22, .CZ 30 34, .CZ 30 27, .CZ 30 22, .CZ 31 27, .CZ 31 22, .CZ 32 27, .CZ 32 21, .CZ 34 27, .CZ 26 18],
+  .CX 9 11,
+  .CX 9 30,
+  .measureX 9 [] [.Z 8, .Z 30, .Z 34, .Z 26, .Z 19, .CZ 8 10, .CZ 10 30, .CZ 10 34, .CZ 10 26, .CZ 10 19],
+  .CX 8 11,
+  .CX 8 31,
+  .CX 8 32,
+  .CX 8 26,
+  .CX 8 18,
+  .CX 8 19,
+  .CX 8 21,
+  .X 8,
+  .measureX 8 [] [.Z 15, .Z 32, .Z 34, .Z 27, .Z 18, .Z 21, .CZ 5 34, .CZ 5 27, .CZ 5 22, .CZ 10 11, .CZ 10 18, .CZ 10 19, .CZ 11 34, .CZ 15 34, .CZ 15 19, .CZ 30 34, .CZ 32 18, .CZ 32 19, .CZ 34 26, .CZ 34 27, .CZ 26 18, .CZ 26 19, .CZ 18 19],
+  .CX 30 32,
+  .CX 30 26,
+  .CX 30 21,
+  .measureX 30 [] [.Z 11, .Z 15, .Z 32, .Z 19, .Z 22, .CZ 5 10, .CZ 5 11, .CZ 5 34, .CZ 5 27, .CZ 5 22, .CZ 10 11, .CZ 10 15, .CZ 10 32, .CZ 10 19, .CZ 10 22, .CZ 11 32, .CZ 11 19, .CZ 15 34, .CZ 15 18, .CZ 15 19, .CZ 15 22, .CZ 32 34, .CZ 32 27, .CZ 34 26, .CZ 34 27, .CZ 34 22, .CZ 26 27, .CZ 27 18, .CZ 27 19, .CZ 19 22],
+  .measureX 31 [] [.Z 10, .Z 15, .Z 26, .CZ 5 34, .CZ 10 11, .CZ 10 27, .CZ 11 27],
+  .CX 15 26,
+  .CX 15 27,
+  .CX 15 19,
+  .CX 15 20,
+  .CX 15 21,
+  .measureX 15 [] [.Z 11, .CZ 5 10, .CZ 5 11, .CZ 10 11, .CZ 10 32, .CZ 10 34, .CZ 10 26, .CZ 11 32, .CZ 11 34, .CZ 11 26],
+  .CX 25 24,
+  .CX 25 23,
+  .CX 25 22,
+  .CX 25 20,
+  .CX 25 18,
+  .CX 25 11,
+  .CX 25 10,
+  .CX 24 25,
+  .CX 24 23,
+  .CX 24 22,
+  .CX 24 20,
+  .CX 24 18,
+  .CX 24 11,
+  .CX 24 10,
+  .CX 25 24,
+  .CX 23 25,
+  .CX 23 22,
+  .CX 23 20,
+  .CX 23 18,
+  .CX 23 11,
+  .CX 23 10,
+  .CX 25 23,
+  .CX 22 25,
+  .CX 22 20,
+  .CX 22 18,
+  .CX 22 11,
+  .CX 22 10,
+  .CX 25 22,
+  .CX 21 25,
+  .CX 21 20,
+  .CX 21 19,
+  .CX 21 27,
+  .CX 21 36,
+  .CX 21 32,
+  .CX 21 16,
+  .CX 21 13,
+  .CX 21 11,
+  .CX 21 10,
+  .CX 21 9,
+  .CX 21 3,
+  .CX 20 25,
+  .CX 20 21,
+  .CX 20 19,
+  .CX 20 27,
+  .CX 20 36,
+  .CX 20 35,
+  .CX 20 34,
+  .CX 20 29,
+  .CX 20 16,
+  .CX 20 15,
+  .CX 20 13,
+  .CX 20 12,
+  .CX 20 9,
+  .CX 20 8,
+  .CX 20 3,
+  .CX 20 2,
+  .CX 19 20,
+  .CX 19 18,
+  .CX 19 26,
+  .CX 19 35,
+  .CX 19 33,
+  .CX 19 32,
+  .CX 19 29,
+  .CX 19 15,
+  .CX 19 12,
+  .CX 19 10,
+  .CX 19 8,
+  .CX 19 2,
+  .CX 18 25,
+  .CX 18 21,
+  .CX 18 20,
+  .CX 18 26,
+  .CX 18 36,
+  .CX 18 35,
+  .CX 18 34,
+  .CX 18 32,
+  .CX 18 31,
+  .CX 18 30,
+  .CX 18 29,
+  .CX 18 16,
+  .CX 18 15,
+  .CX 18 14,
+  .CX 18 13,
+  .CX 18 12,
+  .CX 18 11,
+  .CX 18 10,
+  .CX 18 17,
+  .CX 18 9,
+  .CX 18 8,
+  .CX 18 7,
+  .CX 18 6,
+  .CX 18 4,
+  .CX 18 3,
+  .CX 18 2,
+  .CX 18 1,
+  .CX 27 21,
+  .CX 27 20,
+  .CX 27 19,
+  .CX 27 18,
+  .CX 27 26,
+  .CX 27 36,
+  .CX 27 35,
+  .CX 27 34,
+  .CX 27 33,
+  .CX 27 31,
+  .CX 27 29,
+  .CX 27 16,
+  .CX 27 15,
+  .CX 27 13,
+  .CX 27 12,
+  .CX 27 9,
+  .CX 27 8,
+  .CX 27 7,
+  .CX 27 6,
+  .CX 27 5,
+  .CX 27 3,
+  .CX 27 2,
+  .CX 27 1,
+  .CX 18 27,
+  .CX 26 20,
+  .CX 26 35,
+  .CX 26 34,
+  .CX 26 15,
+  .CX 26 12,
+  .CX 26 10,
+  .CX 26 8,
+  .CX 26 2,
+  .CX 20 26,
+  .CX 36 21,
+  .CX 21 36,
+  .CX 35 20,
+  .CX 20 35,
+  .CX 34 25,
+  .CX 34 19,
+  .CX 34 18,
+  .CX 34 27,
+  .CX 34 33,
+  .CX 34 31,
+  .CX 34 30,
+  .CX 34 11,
+  .CX 34 7,
+  .CX 34 6,
+  .CX 34 5,
+  .CX 34 1,
+  .CX 27 34,
+  .CX 33 19,
+  .CX 19 33,
+  .CX 32 25,
+  .CX 32 18,
+  .CX 32 27,
+  .CX 32 26,
+  .CX 32 35,
+  .CX 32 31,
+  .CX 32 30,
+  .CX 32 29,
+  .CX 32 15,
+  .CX 32 12,
+  .CX 32 10,
+  .CX 32 8,
+  .CX 32 7,
+  .CX 32 6,
+  .CX 32 5,
+  .CX 32 2,
+  .CX 32 1,
+  .CX 35 32,
+  .CX 31 18,
+  .CX 18 31,
+  .CX 30 27,
+  .CX 27 30,
+  .CX 29 26,
+  .CX 26 29,
+  .CX 16 36,
+  .CX 36 16,
+  .CX 15 35,
+  .CX 35 15,
+  .CX 14 34,
+  .CX 34 14,
+  .CX 13 16,
+  .CX 16 13,
+  .CX 12 15,
+  .CX 15 12,
+  .CX 11 25,
+  .CX 11 32,
+  .CX 11 31,
+  .CX 11 10,
+  .CX 31 11,
+  .CX 10 25,
+  .CX 10 32,
+  .CX 10 31,
+  .CX 10 29,
+  .CX 10 12,
+  .CX 10 11,
+  .CX 10 8,
+  .CX 10 7,
+  .CX 10 2,
+  .CX 10 1,
+  .CX 11 10,
+  .CX 17 14,
+  .CX 14 17,
+  .CX 9 13,
+  .CX 13 9,
+  .CX 8 12,
+  .CX 12 8,
+  .CX 7 11,
+  .CX 11 7,
+  .CX 6 10,
+  .CX 10 6,
+  .CX 5 17,
+  .CX 5 9,
+  .CX 5 8,
+  .CX 5 7,
+  .CX 5 6,
+  .CX 5 4,
+  .CX 5 3,
+  .CX 5 2,
+  .CX 5 1,
+  .CX 6 5,
+  .CX 4 17,
+  .CX 17 4,
+  .CX 3 9,
+  .CX 9 3,
+  .CX 2 8,
+  .CX 8 2,
+  .CX 1 7,
+  .CX 7 1,
+  .X 25,
+  .CX 6 7,
+  .X 7,
+  .CX 6 10
+]
+def packedRows : List Nat := [2, 1028, 2054, 3080, 4106, 5132, 6158, 7184, 8210, 9236, 10262, 11288, 12314, 13340, 14366, 15392, 16418, 17444, 18470, 19496, 20522, 21548, 22574, 23600, 24626, 25652, 26678, 27704, 28730, 29756, 30782, 31808, 32834, 33860, 34886, 35912, 36938, 37964, 38990, 40016, 41042, 42068, 43094, 44120, 45146, 46172, 47198, 48224, 49250, 50276, 51302, 52328, 53354, 54380, 55406, 56432, 57458, 58484, 59510, 60536, 61562, 62588, 63614, 64640, 1032, 2058, 4110, 5136, 7188, 8214, 10266, 11292, 13344, 14370, 16422, 17448, 19500, 20526, 22578, 23604, 25656, 26682, 28734, 29760, 31812, 1036, 2062, 3088, 4114, 6166, 7192, 8218, 9244, 11296, 12322, 13348, 14374, 17452, 19504, 1040, 2066, 3092, 4118, 5144, 6170, 8222, 9248, 10274, 11300, 12326, 13352, 15404, 17456, 19508, 1044, 2070, 4122, 5148, 7200, 11304, 13356, 1048, 2074, 3100, 4126, 5152, 6178, 7204, 9256, 13360, 15412, 17464, 1052, 2078, 3104, 4130, 5156, 6182, 7208, 9260, 11312, 15416, 17468, 19520, 1056, 2082, 4134, 7212, 11316, 13368, 17472, 19524, 1060, 2086, 3112, 5164, 7216, 11320, 13372, 15424, 19528, 1064, 2090, 3116, 5168, 7220, 13376, 15428, 17480, 21584, 1068, 2094, 19536, 23640, 1072, 2098, 3124, 21592, 25696, 1076, 2102, 3128, 23648, 27752, 1080, 2106, 25704, 29808, 1084, 2110, 3136, 27760, 31864, 1088, 2114, 3140, 29816, 33920, 1092, 31872, 1096, 1100, 1104, 1108, 1112, 1116, 1120, 1124, 1128, 1132, 1136, 1140, 1144, 1148, 1152, 2, 261124, 260102, 259080, 258058, 257036, 256014, 254992, 253970, 252948, 251926, 250904, 249882, 248860, 247838, 246816, 245794, 244772, 243750, 242728, 241706, 240684, 239662, 238640, 237618, 236596, 235574, 234552, 233530, 232508, 231486, 230464, 229442, 228420, 227398, 226376, 225354, 224332, 223310, 222288, 221266, 220244, 219222, 218200, 217178, 216156, 215134, 214112, 213090, 212068, 211046, 210024, 209002, 207980, 206958, 205936, 204914, 203892, 202870, 201848, 200826, 199804, 198782, 197760, 261128, 260106, 258062, 257040, 254996, 253974, 251930, 250908, 248864, 247842, 245798, 244776, 242732, 241710, 239666, 238644, 236600, 235578, 233534, 232512, 230468, 261132, 260110, 259088, 258066, 256022, 255000, 253978, 252956, 250912, 249890, 248868, 247846, 244780, 242736, 261136, 260114, 259092, 258070, 257048, 256026, 253982, 252960, 251938, 250916, 249894, 248872, 246828, 244784, 242740, 261140, 260118, 258074, 257052, 255008, 250920, 248876, 261144, 260122, 259100, 258078, 257056, 256034, 255012, 252968, 248880, 246836, 244792, 261148, 260126, 259104, 258082, 257060, 256038, 255016, 252972, 250928, 246840, 244796, 242752, 261152, 260130, 258086, 255020, 250932, 248888, 244800, 242756, 261156, 260134, 259112, 257068, 255024, 250936, 248892, 246848, 242760, 261160, 260138, 259116, 257072, 255028, 248896, 246852, 244808, 240720, 261164, 260142, 242768, 238680, 261168, 260146, 259124, 240728, 236640, 261172, 260150, 259128, 238688, 234600, 261176, 260154, 236648, 232560, 261180, 260158, 259136, 234608, 230520, 261184, 260162, 259140, 232568, 228480, 261188, 230528, 261192, 261196, 261200, 261204, 261208, 261212, 261216, 261220, 261224, 261228, 261232, 261236, 261240, 261244, 261248, 1025, 2051, 3077, 4103, 5129, 6155, 7181, 8207, 9233, 10259, 11285, 12311, 13337, 14363, 15389, 16415, 17441, 18467, 19493, 20519, 21545, 22571, 23597, 24623, 25649, 26675, 27701, 28727, 29753, 30779, 31805, 32831, 33857, 34883, 35909, 36935, 37961, 38987, 40013, 41039, 42065, 43091, 44117, 45143, 46169, 47195, 48221, 49247, 50273, 51299, 52325, 53351, 54377, 55403, 56429, 57455, 58481, 59507, 60533, 61559, 62585, 63611, 64637, 65663, 4099, 5125, 7177, 8203, 10255, 11281, 13333, 14359, 16411, 17437, 19489, 20515, 22567, 23593, 25645, 26671, 28723, 29749, 31801, 32827, 34879, 6147, 7173, 8199, 9225, 11277, 12303, 13329, 14355, 16407, 17433, 18459, 19485, 22563, 24615, 8195, 9221, 10247, 11273, 12299, 13325, 15377, 16403, 17429, 18455, 19481, 20507, 22559, 24611, 26663, 10243, 11269, 13321, 14347, 16399, 20503, 22555, 12291, 13317, 14343, 15369, 16395, 17421, 18447, 20499, 24603, 26655, 28707, 14339, 15365, 16391, 17417, 18443, 19469, 20495, 22547, 24599, 28703, 30755, 32807, 16387, 17413, 19465, 22543, 26647, 28699, 32803, 34855, 18435, 19461, 20487, 22539, 24591, 28695, 30747, 32799, 36903, 20483, 21509, 22535, 24587, 26639, 32795, 34847, 36899, 41003, 22531, 23557, 40999, 45103, 24579, 25605, 26631, 45099, 49203, 26627, 27653, 28679, 49199, 53303, 28675, 29701, 53299, 57403, 30723, 31749, 32775, 57399, 61503, 32771, 33797, 34823, 61499, 65603, 34819, 65599, 36867, 38915, 40963, 43011, 45059, 47107, 49155, 51203, 53251, 55299, 57347, 59395, 61443, 63491, 65539, 1025, 2559, 3581, 4603, 5625, 6647, 7669, 8691, 9713, 10735, 11757, 12779, 13801, 14823, 15845, 16867, 17889, 18911, 19933, 20955, 21977, 22999, 24021, 25043, 26065, 27087, 28109, 29131, 30153, 31175, 32197, 33219, 34241, 35263, 36285, 37307, 38329, 39351, 40373, 41395, 42417, 43439, 44461, 45483, 46505, 47527, 48549, 49571, 50593, 51615, 52637, 53659, 54681, 55703, 56725, 57747, 58769, 59791, 60813, 61835, 62857, 63879, 64901, 65923, 4607, 5629, 7673, 8695, 10739, 11761, 13805, 14827, 16871, 17893, 19937, 20959, 23003, 24025, 26069, 27091, 29135, 30157, 32201, 33223, 35267, 6655, 7677, 8699, 9721, 11765, 12787, 13809, 14831, 16875, 17897, 18919, 19941, 23007, 25051, 8703, 9725, 10747, 11769, 12791, 13813, 15857, 16879, 17901, 18923, 19945, 20967, 23011, 25055, 27099, 10751, 11773, 13817, 14839, 16883, 20971, 23015, 12799, 13821, 14843, 15865, 16887, 17909, 18931, 20975, 25063, 27107, 29151, 14847, 15869, 16891, 17913, 18935, 19957, 20979, 23023, 25067, 29155, 31199, 33243, 16895, 17917, 19961, 23027, 27115, 29159, 33247, 35291, 18943, 19965, 20987, 23031, 25075, 29163, 31207, 33251, 37339, 20991, 22013, 23035, 25079, 27123, 33255, 35299, 37343, 41431, 23039, 24061, 41435, 45523, 25087, 26109, 27131, 45527, 49615, 27135, 28157, 29179, 49619, 53707, 29183, 30205, 53711, 57799, 31231, 32253, 33275, 57803, 61891, 33279, 34301, 35323, 61895, 65983, 35327, 65987, 37375, 39423, 41471, 43519, 45567, 47615, 49663, 51711, 53759, 55807, 57855, 59903, 61951, 63999, 66047]
+def inputCols : CodecBitSliceVerify.Cols := [7687697232696013035490465480201479025983241823794691621558168976140934720122093268938148043346259333988919315645138393722043075239520827405922921108820848699737596665296647163816890855116005321601037974542306666142059861077617469832735753659129776181086257152, 7687693444969798610225496304158821400708122504356994246980073964815325161122547994963453903686419572156266242316155632044893319270650594152013676455409665369284014353948719836278436196598767349558260011127447564076499449696980932221760431985646535725922211157, 7687570989258518260848503419482384060892570186258236921537857733078060865979460122305646562430345564690692890957731022735801617519845131398343767129053081556091044886656106855883903757608657520005498534800008974590319464627359369218329919711974682975684421222, 7687564318618085346893361155983968470840702082542828120351972706243520859993519543409479851814405092427351393623521902213472796425810131612535484983690821266781441552039493228518433746721910635786954383589876554349398075053395232858025509914993015967654115448, 7687563845155104729096125524269777101194669702261881560883682148729693808007580113746667686208031269839622601100956829044149790003904517006453324832863491559485916422083889125254268048482832209418189708642477445829693758314596404740617793743953183992082104192, 7687563844229426400087998931319142450322735007812069512944884169228649357566823494905712458764146858388571015333834246530484725596723843960642318145831451773221772707408320916826540832685066061970518941258910009437930750020522231981702737642365386167347544064, 7687667906458400517130192155366730942948627322040589738471325719625336754827307075402676926256222079025717486028236377843628622611013872699693109608377023408939648161348312699491851879903799206168904423175957973793127504681346074600356323082581164247662723072, 7687697232696013035490465480201479025983241823794691621558168975848938520594272774945113060581440689195752691181230558164974754098126274130226293881697966204865095256301381237030878015541622630014758410785170366351469207732794556661856873263851022886685900800, 7687697232696013035490465480201479025983241823794691621558168975848938520594272774945113060581440689195752691181230558164974754096739886398688383232020842959568910782899976426482665362402407800047631250459761964719812559133629388771070007815229399706277773312, 0, 3787726214425264969176042657625275119319437697374578095011325609558999545273974694139659839761832653073328982761677149755971642902948030059512989597514596666014784364402914271233687717552657399271220484725105534817484776115708366532634886812284138203818, 2562475493849743322258892205756881238440584416097480280624262648208194110254684494465049183924325191393643873308194485240904198041169633721519549563137515725085778739745633342100320321150899346085544043680704660343638998736013523881086824759232733358660046028, 3075047749822264710590014924108783748365819663208989839638716514134456934352795695657918033866520241036147153651205792621437216639312525786172065127833369752007126320739733155311046795807439812455786156045419836515498944643554375484760030678932091600054055152, 3617700921716651650625838055609890982863552438764501905270582984329976160679735076708896726144158471853286210883173920811193482893521682168145803119297452203018931823557974725539871587219197428860499329300269705280157748735596174128910340635811641888476299008, 3828849849557027999397302021314396687460832022256993153521997923249744699269492304076510815774163002927893964445235590945668516478638328403956149983210792760246515106921336005516620117843370172268992205093477327086457709127921104230603898872303647664763764736, 3843701801778695869095367431450915297023044404544162786053369364238857060987013524116617848837676361317516036440051371107275385926239474904361890044742244049754772082941849559873941964721013288653806434909047851571784042737764443389975708941910246693565104128, 3843995247536069109546599364274479928164693408548502115316418846219638437300781882389401982410724228128310277247567221354226201544494863060514412462212551730001967037866149177501520338734683961116786926398314151518586328436938787081741617562018009544287846400, 2772669694120814859578414184143083703436437075375816575170479580509309016137068436342056378420469145778496115560854460574663180288, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+def outputCols : CodecBitSliceVerify.Cols := [7687697232696013035490465480201479025983241823794691621558168976140934720122093268938148043346259333988919315645138393722043075239520827405922921108820848699737596665296647163816890855116005321601037974542306666142059861077617469832735753659129776181086257152, 3787726214425264969176042657625275119319437697374578095011325609558999545273974694139659839761832653073328982761677149755968870235986096365576456528592490358314413691559715073397792973254940689280197417291142204868139723463983890548824767841650318071125, 2562475379069949214835064264207773896962803688383632587508547447152974826291826935438782076658977072708863352152867529710933342736066704425720623274013553174462029352752890335523243108125923982754834863414413175669482413818848678662517044702596720355007738675, 1537473047695786011670247299889035839281143534222174422488643893962967089820644872979295200826270762518217936907849670017981437485694597457796976464409586241125792108235722998485341566678243613439141091896627975586959207517591497908709168346245190623565909775, 452159773875677425837995475602948011241842609114596135107012979647208303090106687193819446808091306123905368481993888860266099740141846211703570286601185331115093758764783268579647323961228193573571270829429160407701385605624811689169876687645235438950482175, 29854110878628303620811957956447673958283980034045254391293504491813955369424552499952445160061578578810443857094721118763481818205657996175599658432212982310691326694353132834487533552052790312428828348307653915468042081471922450662435868906160255339134975, 2122988339600694213629561524451996868501141075398141919378041968317382356550971290563466847986993344520802573397886513394952528992336956766782995036141703281230107643176309916918455175882632798377223365625131530583311450164962339089237505136273209163775, 7687695109707673434796251850639954573986373322653616223416249598098966402739736717966857479879411346995574794842564995835529680289764504763086969185404226742177399138625441062882790511831309019582860905124566664050503683870306882967787875383028211736851251200, 0, 0, 2122988339600694213629561524451996868501141075398141919378041968317382356550971290563466847986993344520802573397886513394952528992336956766782995036141703281230107643176309916918455175882632798377223365625131530583311450164962339089237505136273209163775, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7687663171800632485342647805394953972207039817867101594660147251534277793796824967687216579840828832772346226680410861158492218450378710138072705763590786623854811147996460025721953624975319633307977830579617664311328023680764869318844365999005142094341734400, 166502430427381491839643253754178512045097167952723471475237712977068831153404460269371726801257550645031440439445689885827217239212770138896266936605268203132300986365230420037267186035727533276104357312805084799667944582156465384946643926519433186508800, 37628088238455731791089847097710972123813866072501031758119659511842754403865037531076676856059851076033281491607998552613127966515699899639362113517505945078179085858620774606421978422851407787242439336819698437750316202498611144517761787494400, 229125228853726979748107942067859208021997814411898649091599527051495066682254917781266092280843557357918698406924898065059494472649040825474873939350950434765457312711609953385517116203804046924973612814126249883059864578936279845611662082576482304000, 7561132113276802076755062193325797259486331150999087205527998897800659827136347952246763334720003089852321409016501296505279008257685628648928668793560811635830785764913895581798804936574568306893545889215309940464566027513308493995276419553299739443200, 139773541948104817721280879176655722841652011402522371653371923656123311886727432317723723710824003553854987400772740545947098608632326983947297001783744678119353947116050971593519058255594555888987839280693183998139065675740513416110461801640958623744000, 0, 0, 0, 0, 0, 0]
+def packedMask : Nat := 7687697232696013035490465480201479025983241823794691621558168976140934720122093268938148043346259333988919315645138393722043075242293497100043735968399262883880680368733084239192707430286484902215659282347932289182034267181757047930126964620533348010060414975
+
+def place (q : Wire) : Wire := (sites[q]?).getD 0
+
+def packedEnc (r : Bool × Bool × Nat × Nat) : Nat :=
+  CodecBitSliceVerify.packBits ((List.range 40).map
+    (fun q => pre505 r.1 r.2.1 r.2.2.1 r.2.2.2 (place q)))
+
+private theorem row_codes : rows.map packedEnc = packedRows := by decide +kernel
+private theorem input_columns : inputCols = (List.range 40).map
+    (fun q => CodecBitSliceVerify.packBits (packedRows.map (fun x => x.testBit q))) := by
+  decide +kernel
+private theorem rows_length : rows.length = 860 := by decide +kernel
+private theorem packed_mask (r : Fin 860) : packedMask.testBit r.val = true := by
+  revert r
+  decide +kernel
+private theorem cand_check : CodecBitSliceVerify.eval packedMask packedCand inputCols =
+    (true, outputCols) := by decide +kernel
+private theorem ref_check : CodecBitSliceVerify.eval packedMask packedRef inputCols =
+    (true, outputCols) := by decide +kernel
+private theorem cand_bound : ∀ i ∈ packedCand, CodecBitSliceVerify.target i < inputCols.length := by
+  decide +kernel
+private theorem ref_bound : ∀ i ∈ packedRef, CodecBitSliceVerify.target i < inputCols.length := by
+  decide +kernel
+private theorem packedCand_eq : renameProgram place packedCand = cand6 := by decide +kernel
+private theorem packedRef_eq : renameProgram place packedRef = ref := by decide +kernel
+private theorem place_inj : ∀ a : Fin 40, ∀ b : Fin 40, place a.val = place b.val → a = b := by
+  decide +kernel
+private theorem packedCand_support : wires packedCand ⊆ Finset.range 40 :=
+  CodecBitSliceVerify.support_of_check _ _ (by decide +kernel)
+private theorem packedRef_support : wires packedRef ⊆ Finset.range 40 :=
+  CodecBitSliceVerify.support_of_check _ _ (by decide +kernel)
+
+private theorem packedEnc_bit (r : Bool × Bool × Nat × Nat) (q : Nat) (hq : q < 40) :
+    (packedEnc r).testBit q = pre505 r.1 r.2.1 r.2.2.1 r.2.2.2 (place q) := by
+  simp only [packedEnc, CodecBitSliceVerify.pack_testBit, List.getElem?_map,
+    List.getElem?_range hq, Option.map_some, Option.getD_some]
+
+private theorem input_rel (r : Bool × Bool × Nat × Nat) (i : Nat)
+    (hi : rows[i]? = some r) : CodecBitSliceVerify.Rel inputCols (packedEnc r) i := by
+  intro q
+  have row_eq : (packedRows[i]?).getD 0 = packedEnc r := by
+    rw [← row_codes, List.getElem?_map, hi]
+    rfl
+  rw [input_columns]
+  simp only [CodecBitSliceVerify.get, List.getElem?_map]
+  by_cases hq : q < 40
+  · rw [List.getElem?_range hq]
+    change (packedEnc r).testBit q =
+      (CodecBitSliceVerify.packBits (packedRows.map (fun x => x.testBit q))).testBit i
+    rw [CodecBitSliceVerify.pack_rows, row_eq]
+  · have high : (List.range 40).length ≤ q := by simpa using Nat.le_of_not_gt hq
+    rw [List.getElem?_eq_none high]
+    simp only [Option.map_none, Option.getD_none, Nat.zero_testBit]
+    simp only [packedEnc, CodecBitSliceVerify.pack_testBit, List.getElem?_map,
+      List.getElem?_eq_none high, Option.map_none, Option.getD_none]
+
+private theorem packed_pair (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows) :
+    MeasuredCodec5.safe packedCand (packedEnc r) = true ∧
+    MeasuredCodec5.safe packedRef (packedEnc r) = true ∧
+    MeasuredCodec5.bitRun packedCand (packedEnc r) = MeasuredCodec5.bitRun packedRef (packedEnc r) := by
+  obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hr
+  have ilt : i < rows.length := (List.getElem?_eq_some_iff.mp hi).1
+  have ib : i < 860 := by simpa only [rows_length] using ilt
+  have rel := input_rel r i hi
+  have c := CodecBitSliceVerify.eval_sound packedMask i (packed_mask ⟨i,ib⟩)
+    packedCand inputCols (packedEnc r) cand_bound rel (congrArg Prod.fst cand_check)
+  have f := CodecBitSliceVerify.eval_sound packedMask i (packed_mask ⟨i,ib⟩)
+    packedRef inputCols (packedEnc r) ref_bound rel (congrArg Prod.fst ref_check)
+  refine ⟨c.1, f.1, Nat.eq_of_testBit_eq ?_⟩
+  intro q
+  have cbit := c.2 q
+  have fbit := f.2 q
+  rw [cand_check] at cbit
+  rw [ref_check] at fbit
+  exact cbit.trans fbit.symm
+
+private theorem packed_run (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows)
+    (m n : List Bool) (ph : Bool) :
+    run packedCand m ⟨ph, MeasuredCodec5.bitsOf (packedEnc r)⟩ =
+    run packedRef n ⟨ph, MeasuredCodec5.bitsOf (packedEnc r)⟩ := by
+  have h := packed_pair r hr
+  rw [MeasuredCodec5.run_sim, MeasuredCodec5.sim_safe _ _ h.1,
+    MeasuredCodec5.run_sim, MeasuredCodec5.sim_safe _ _ h.2.1, h.2.2]
+
+private theorem packed_transport (P Q : Program) (hP : wires P ⊆ Finset.range 40)
+    (hQ : wires Q ⊆ Finset.range 40) (m n : List Bool) (t s : State)
+    (phase : t.phase = s.phase)
+    (basis : ∀ q ∈ Finset.range 40, t.basis q = s.basis (place q))
+    (same : run P m t = run Q n t) :
+    run (renameProgram place P) m s = run (renameProgram place Q) n s := by
+  have inj : ∀ a ∈ Finset.range 40, ∀ b ∈ Finset.range 40, place a = place b → a = b := by
+    intro a ha b hb eq
+    exact congrArg Fin.val (place_inj ⟨a,Finset.mem_range.mp ha⟩ ⟨b,Finset.mem_range.mp hb⟩ eq)
+  have old := run_rename_pool place (Finset.range 40) inj P hP m t s phase basis
+  have fresh := run_rename_pool place (Finset.range 40) inj Q hQ n t s phase basis
+  apply State.extensionality
+  · exact old.1.trans ((congrArg State.phase same).trans fresh.1.symm)
+  · funext q
+    by_cases image : q ∈ (Finset.range 40).image place
+    · obtain ⟨a,ha,rfl⟩ := Finset.mem_image.mp image
+      exact (old.2 a ha).trans ((congrArg (fun v : State => v.basis a) same).trans (fresh.2 a ha).symm)
+    · exact (run_rename_pool_outside place (Finset.range 40) P hP m s q image).trans
+        (run_rename_pool_outside place (Finset.range 40) Q hQ n s q image).symm
+
+theorem sample (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows) (m n : List Bool) :
+    run cand6 m ⟨false,pre505 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ =
+    run ref n ⟨false,pre505 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ := by
+  rw [← packedCand_eq, ← packedRef_eq]
+  exact packed_transport packedCand packedRef packedCand_support packedRef_support m n
+    ⟨false, MeasuredCodec5.bitsOf (packedEnc r)⟩ _ rfl
+    (fun q hq => packedEnc_bit r q (Finset.mem_range.mp hq)) (packed_run r hr m n false)
+
+theorem on_site (r : Bool × Bool × Nat × Nat) (hr : r ∈ rows) (st : State)
+    (bits : ∀ q ∈ sites, st.basis q = pre505 r.1 r.2.1 r.2.2.1 r.2.2.2 q) (m n : List Bool) :
+    run cand6 m st = run ref n st :=
+  Stack5.local_replace cand6 ref sites.toFinset csupport support2 st
+    ⟨false,pre505 r.1 r.2.1 r.2.2.1 r.2.2.2⟩ m n (fun q hq => bits q (List.mem_toFinset.mp hq)) (sample r hr m n)
+
+
+theorem signed8_cases (a b c d e f g h : Wire) (s : BasisState) (v : Int)
+    (hh : signedRegValue [a,b,c,d,e,f,g,h] s = v) :
+    s a = decide (v % 2 = 1) ∧ s b = decide (v / 2 % 2 = 1) ∧ s c = decide (v / 4 % 2 = 1) ∧
+      s d = decide (v / 8 % 2 = 1) ∧ s e = decide (v / 16 % 2 = 1) ∧ s f = decide (v / 32 % 2 = 1) ∧
+      s g = decide (v / 64 % 2 = 1) ∧ s h = decide (v < 0) := by
+  unfold signedRegValue signedDecode at hh
+  simp only [regValue,List.length] at hh
+  cases ha : s a <;> cases hb : s b <;> cases hc : s c <;> cases hd : s d <;> cases he : s e <;>
+    cases hf : s f <;> cases hg : s g <;> cases hi : s h <;>
+    simp [ha,hb,hc,hd,he,hf,hg,hi] at hh <;> subst hh <;> decide
+
+theorem retainedA505 : (W.compactSkywalkSignPoolA base 505).retained =
+    [base 505,base 506,base 507,base 508,base 509,base 510,base 511,base 512] := by decide +kernel
+theorem retainedB505 : (W.compactSkywalkSignPoolB base 505).retained =
+    [base 770,base 771,base 772,base 773,base 774,base 775,base 776,base 777] := by decide +kernel
+theorem releasedA505 : ∀ q ∈ [base 513], q ∈ (W.compactSkywalkSignPoolA base 505).released := by decide +kernel
+theorem releasedB505 : ∀ q ∈ ([794, 795, 796, 797, 798, 799, 800, 801, 802, 803] : List Wire), q ∈ (W.compactSkywalkSignPoolB base 505).released := by decide +kernel
+
+theorem raw505 (x : Nat) (hx0 : 0<x) (hx : x<p) (raw : State)
+    (hraw : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 505 raw.basis) :
+    ∃ G S : Bool, ∃ u v : Nat, u+v ≤ 64 ∧ 0 < v ∧ v%2=1 ∧ u.gcd v = 1 ∧
+      ∀ q∈sites, raw.basis q = pre505 G S u v q := by
+  have hp0 : 0<p := by norm_num [p]
+  have hpo : p%2=1 := by norm_num [p]
+  have hp : p<2^256 := by norm_num [p]
+  have cop := (StackOB5.prime_facts x hx0 hx).2.2.2
+  have fields := (W.compactSkywalkStage_fields_iff base _ 505 (by omega) base_pool_nodup raw.basis).mp hraw
+  obtain ⟨readA, readB, prev, -, future, carry, -, cleanA, cleanB⟩ := fields
+  obtain ⟨G, S, encoded⟩ := SkywalkTrace.iter_encoded 505 false false (SkywalkNat.init x p) hp0 hpo
+  have sum := W.iter_sum_width x p 505 hp0 hx0 hpo hp hx cop (by omega)
+  have valid := SkywalkNat.iter_valid 505 (SkywalkNat.init x p) hp0 hpo
+  change (SkywalkNat.step^[505] (SkywalkNat.init x p)).u+
+    (SkywalkNat.step^[505] (SkywalkNat.init x p)).v ≤ 2^(511-505) at sum
+  change SkywalkTrace.next^[505] (SkywalkRails.encode false false (x : Int) (p : Int)) =
+    SkywalkRails.encode G S ((SkywalkNat.step^[505] (SkywalkNat.init x p)).u : Int)
+      ((SkywalkNat.step^[505] (SkywalkNat.init x p)).v : Int) at encoded
+  generalize SkywalkNat.step^[505] (SkywalkNat.init x p) = z at encoded sum valid
+  have sixtyfour : (2:Nat)^(511-505) = 64 := by norm_num
+  rw [sixtyfour] at sum
+  rw [encoded, retainedA505] at readA
+  rw [encoded, retainedB505] at readB
+  rw [encoded] at prev
+  have bA := signed8_cases _ _ _ _ _ _ _ _ raw.basis _ readA
+  have bB := signed8_cases _ _ _ _ _ _ _ _ raw.basis _ readB
+  have cK : ∀ k, k < 257 → raw.basis (base (1540+k)) = false := fun k hk =>
+    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1540+k, by simp; omega, rfl⟩)
+  have rel : ∀ q ∈ [base 513], raw.basis q = false := fun q hq => cleanA q (releasedA505 q hq)
+  have relB : ∀ q ∈ ([794, 795, 796, 797, 798, 799, 800, 801, 802, 803] : List Wire), raw.basis q = false := fun q hq => cleanB q (releasedB505 q hq)
+  have prev' : raw.basis (base 504) = G := by
+    have h : skywalkPoolPreviousId 505 = 504 := rfl
+    rw [h] at prev
+    cases G <;> simpa [SkywalkRails.encode] using prev
+  refine ⟨G,S,z.u,z.v,sum,valid.1,valid.2.1,valid.2.2.trans cop,?_⟩
+  intro q hq
+  simp only [sites,List.mem_cons,List.not_mem_nil,or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact prev'
+  · simpa [pre505] using bA.1
+  · exact bA.2.1
+  · exact bA.2.2.1
+  · exact bA.2.2.2.1
+  · exact bA.2.2.2.2.1
+  · exact bA.2.2.2.2.2.1
+  · exact bA.2.2.2.2.2.2.1
+  · exact bA.2.2.2.2.2.2.2
+  · exact rel (base 513) (by decide)
+  · simpa [pre505] using bB.1
+  · exact bB.2.1
+  · exact bB.2.2.1
+  · exact bB.2.2.2.1
+  · exact bB.2.2.2.2.1
+  · exact bB.2.2.2.2.2.1
+  · exact bB.2.2.2.2.2.2.1
+  · exact bB.2.2.2.2.2.2.2
+  · exact relB 794 (by decide)
+  · exact relB 795 (by decide)
+  · exact relB 796 (by decide)
+  · exact relB 797 (by decide)
+  · exact relB 798 (by decide)
+  · exact relB 799 (by decide)
+  · exact relB 800 (by decide)
+  · exact relB 801 (by decide)
+  · exact relB 802 (by decide)
+  · exact relB 803 (by decide)
+  · exact (future 505 (by omega) (by omega)).2
+  · exact (future 506 (by omega) (by omega)).2
+  · exact (future 507 (by omega) (by omega)).2
+  · exact (future 508 (by omega) (by omega)).2
+  · exact (future 509 (by omega) (by omega)).2
+  · exact (future 510 (by omega) (by omega)).2
+  · exact cK 0 (by omega)
+  · exact cK 1 (by omega)
+  · exact cK 2 (by omega)
+  · exact cK 3 (by omega)
+  · exact cK 4 (by omega)
+  · exact cK 5 (by omega)
+
+
+end ECDSAAdd.Entrant.Six505
+
+namespace ECDSAAdd.Entrant.Five506
+open Arithmetic MappedCompressed Secp256k1 History5 OB5 Rolling1588.Integer
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
+  Rolling1588TickGap.forward tick506 cand MorningPlacement.merged Forward11Width.candidate
+
+theorem stage_row (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (a : State)
+    (hs : Stage base isA x p 506 a.basis) :
+    ∃ G S : Bool, ∃ u v : Nat, (G,S,u,v) ∈ rows ∧ ∀ q ∈ sites, a.basis q = pre506 G S u v q := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have hs0 := hs
+  obtain ⟨raw,hraw,hbits⟩ := hs
+  obtain ⟨G,S,u,v,hsum,hv0,hvo,hg,reads⟩ := raw506 x hx0 hx raw hraw
+  have bits : ∀ q ∈ sites, a.basis q = pre506 G S u v q := by
+    intro q hq
+    rw [hbits, ←reads q hq]
+    exact run_preserves_outside _ _ _ q (prefix_avoids isA 506 (le_refl _) q hq)
+  refine ⟨G,S,u,v,?_,bits⟩
+  have next := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 506
+    hp0 hx0 hpo hp gap hx cop (by omega) a [] hs0).2
+  rw [explicit506, pack506 isA, List.append_nil] at next
+  obtain ⟨raw7,hraw7,hbits7⟩ := next
+  obtain ⟨g',s',uv',mem',width,oriented,reads7⟩ := MorningWidth.raw507 x hx0 hx raw7 hraw7
+  have hl := Forward11Width.legal_of uv' g' width oriented
+  have oldmem : uv' ∈ MorningFour.pairs := (List.mem_filter.mp mem').1
+  have b7 : ∀ q ∈ MorningFour.sites, (run tick506 [] a).basis q = MorningFour.pre507 g' s' uv'.1 uv'.2 q := by
+    intro q hq
+    rw [hbits7, ←reads7 q hq]
+    apply run_preserves_outside
+    rcases MorningPlacement.layouts q hq with h|h|h|h
+    all_goals
+      exact fun hh => Finset.disjoint_left.mp
+        (prefix_disjoint_layout base isA base_pool_nodup 507 _ (by omega) (by omega)) hh h
+  have s7 : ∀ q ∈ MorningFour.sites, (run tick506 [] a).basis q =
+      (run tick506 [] ⟨false, pre506 G S u v⟩).basis q := fun q hq =>
+    site_run tick506 sites tick_support a ⟨false, pre506 G S u v⟩ bits [] q (morning_sub q hq)
+  have good : goodRow (G,S,u,v) = true := by
+    unfold goodRow
+    rw [decide_eq_true_eq]
+    have e1 : tbN_t8 (runN_t8 tick506 [] (false, enc (G,S,u,v))).2 =
+        (run tick506 [] ⟨false, pre506 G S u v⟩).basis := by
+      rw [tb_enc_t8 (pre506 G S u v) sites (pre_supp G S u v), run_sim_t8]
+      rfl
+    rw [e1, encN_congr _ (MorningFour.pre507 g' s' uv'.1 uv'.2) _
+      (fun q hq => (s7 q hq).symm.trans (b7 q hq))]
+    exact legal_codes_spec g' s' uv' oldmem hl
+  exact rows_complete v (by omega) u (by omega) G S ⟨hsum, hvo, hg, good⟩
+
+end ECDSAAdd.Entrant.Five506
+
+namespace ECDSAAdd.Entrant.Six505
+open Arithmetic MappedCompressed Secp256k1 History5 OB5 Rolling1588.Integer
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  Rolling1588.forward Rolling1588.Integer.forward Rolling1588.Integer.regularForward
+  Rolling1588TickGap.forward Five506.tick506 Five506.cand
+
+def legalCodes : List Nat := [13729595320261219429963801598162786434538870600286610818788926918371086366795312104245119281322909109954592622782961716074243975999433287625148056582230114304, 406983302788077043095694079023514269845261128071039316430435657456301100941017589355119449734586417297753454757261945323993942822389843298294230428971578786211664767793650339095123720332921134201131780782625609700877867019675047785660416, 406983302788077043095694079023514269845261128071039316430435657456301100941017609949512430126415562243455852001441597132299843252306071481684607985601128979179821135472572323458788652221855308643705892148589608850809304741759921130831872, 406983302788077043095694079023514269845261128071039316430435657456301100941017637408703070648854422171059048327014466210041043825527709059538444727773862569804029625711134969277008561407100874567138040636541607717384555037873085591060480, 406983302788077043095694079023514269845261128071039316430435657456301100941017664867893711171293282098662244652587335287782244398749346637392281469946596160428238115949697615095228470592346440490570189124493606583959805333986250051289088, 406983302788077043095694079023514269845261128071039316430435657456301100941017692327084351693732142026265440978160204365523444971970984215246118212119329751052446606188260260913448379777592006414002337612445605450535055630099414511517696, 406983302788077043095694079023514269845261128071039316430435657456301100941017719786274992216171001953868637303733073443264645545192621793099954954292063341676655096426822906731668288962837572337434486100397604317110305926212578971746304, 406983302788077043095694079023514269845261128071039316430435657456301100941017747245465632738609861881471833629305942521005846118414259370953791696464796932300863586665385552549888198148083138260866634588349603183685556222325743431974912, 406983302788077043095694079023514269845261128071039316430435657456301100941017774704656273261048721809075029954878811598747046691635896948807628438637530522925072076903948198368108107333328704184298783076301602050260806518438907892203520, 406983302788077043095694079023514269845261128071039316430435657456301100941017802163846913783487581736678226280451680676488247264857534526661465180810264113549280567142510844186328016518574270107730931564253600916836056814552072352432128, 406983302788077043095694079023514269845261128071039316430435657456301100941017829623037554305926441664281422606024549754229447838079172104515301922982997704173489057381073490004547925703819836031163080052205599783411307110665236812660736, 406983302788077043095694079023514269845261128071039316430435657456301100941017857082228194828365301591884618931597418831970648411300809682369138665155731294797697547619636135822767834889065401954595228540157598649986557406778401272889344, 406983302788077043095694079023514269845261128071039316430435657456301100941017884541418835350804161519487815257170287909711848984522447260222975407328464885421906037858198781640987744074310967878027377028109597516561807702891565733117952, 406983302788077043095694079023514269845261128071039316430435657456301100941017912000609475873243021447091011582743156987453049557744084838076812149501198476046114528096761427459207653259556533801459525516061596383137057999004730193346560, 406983302788077043095694079023514269845261128071039316430435657456301100941017939459800116395681881374694207908316026065194250130965722415930648891673932066670323018335324073277427562444802099724891674004013595249712308295117894653575168, 406983302788077043095694079023514269845261128071039316430435657456301100941017966918990756918120741302297404233888895142935450704187359993784485633846665657294531508573886719095647471630047665648323822491965594116287558591231059113803776, 406983302788077043095694079023514269845261128071039316430435657456301100941017994378181397440559601229900600559461764220676651277408997571638322376019399247918739998812449364913867380815293231571755970979917592982862808887344223574032384, 406983302788077043095694079023514269845261128071039316430435657456301100941018021837372037962998461157503796885034633298417851850630635149492159118192132838542948489051012010732087290000538797495188119467869591849438059183457388034260992, 813966605576154086191388158047028539690522256142078632860871314912602201882035185575036559599782549577407708595917107917423185788085095991051920043486340970079381658146941339644802417962153659883121598687239219118399546613378386686377984, 813966605576154086191388158047028539690522256142078632860871314912602201882035206169429539991611694523110105840096759725729086218001324174442297600115891163047538025825863324008467349851087834325695710053203218268330984335463260031549440, 813966605576154086191388158047028539690522256142078632860871314912602201882035233628620180514050554450713302165669628803470286791222961752296134342288624753671746516064425969826687259036333400249127858541155217134906234631576424491778048, 813966605576154086191388158047028539690522256142078632860871314912602201882035261087810821036489414378316498491242497881211487364444599330149971084461358344295955006302988615644907168221578966172560007029107216001481484927689588952006656, 813966605576154086191388158047028539690522256142078632860871314912602201882035288547001461558928274305919694816815366958952687937666236908003807826634091934920163496541551261463127077406824532095992155517059214868056735223802753412235264, 813966605576154086191388158047028539690522256142078632860871314912602201882035316006192102081367134233522891142388236036693888510887874485857644568806825525544371986780113907281346986592070098019424304005011213734631985519915917872463872, 813966605576154086191388158047028539690522256142078632860871314912602201882035343465382742603805994161126087467961105114435089084109512063711481310979559116168580477018676553099566895777315663942856452492963212601207235816029082332692480, 813966605576154086191388158047028539690522256142078632860871314912602201882035370924573383126244854088729283793533974192176289657331149641565318053152292706792788967257239198917786804962561229866288600980915211467782486112142246792921088, 813966605576154086191388158047028539690522256142078632860871314912602201882035398383764023648683714016332480119106843269917490230552787219419154795325026297416997457495801844736006714147806795789720749468867210334357736408255411253149696, 813966605576154086191388158047028539690522256142078632860871314912602201882036915504046912513430725016409077107007859815118821901048263395843634800368557179404516543176388026192656696632624313059346953428215147712640315268507747680780288, 1220949908364231129287082237070542809535783384213117949291306972368903302823052781794953669464978681857061962434572270510852428753780348683809609658001103153947098548500232340194481115591386185565111416591852828535921226207081725587095552, 1220949908364231129287082237070542809535783384213117949291306972368903302823052802389346649856807826802764359678751922319158329183696576867199987214630653346915254916179154324558146047480320360007685527957816827685852663929166598932267008, 1220949908364231129287082237070542809535783384213117949291306972368903302823052857307727930901685546657970752329897660474640730330139852022907660698976120528163671896656279616194585865850811491854549824933720825419003164521392927852724224, 1220949908364231129287082237070542809535783384213117949291306972368903302823052884766918571424124406585573948655470529552381930903361489600761497441148854118787880386894842262012805775036057057777981973421672824285578414817506092312952832, 1220949908364231129287082237070542809535783384213117949291306972368903302823052939685299852469002126440780341306616267707864332049804764756469170925494321300036297367371967553649245593406548189624846270397576822018728915409732421233410048, 1220949908364231129287082237070542809535783384213117949291306972368903302823052967144490492991440986368383537632189136785605532623026402334323007667667054890660505857610530199467465502591793755548278418885528820885304165705845585693638656, 1220949908364231129287082237070542809535783384213117949291306972368903302823054484264773381856187997368460134620090153330806864293521878510747487672710585772648024943291116380924115485076611272817904622844876758263586744566097922121269248, 1627933211152308172382776316094057079381044512284157265721742629825204403764070350555680138807735954209113019947654564026540471146253963798713462530343131747190606948614960694925939904035373145323669086008514439086867655504671900027584512, 1627933211152308172382776316094057079381044512284157265721742629825204403764070378014870779330174814136716216273227433104281671719475601376567299272515865337814815438853523340744159813220618711247101234496466437953442905800785064487813120, 1627933211152308172382776316094057079381044512284157265721742629825204403764070398609263759722003959082418613517407084912587572149391829559957676829145415530782971806532445325107824745109552885689675345862430437103374343522869937832984576, 1627933211152308172382776316094057079381044512284157265721742629825204403764070426068454400244442819010021809842979953990328772722613467137811513571318149121407180296771007970926044654294798451613107494350382435969949593818983102293213184, 1627933211152308172382776316094057079381044512284157265721742629825204403764070453527645040766881678937625006168552823068069973295835104715665350313490882712031388787009570616744264563480044017536539642838334434836524844115096266753441792, 1627933211152308172382776316094057079381044512284157265721742629825204403764070480986835681289320538865228202494125692145811173869056742293519187055663616302655597277248133262562484472665289583459971791326286433703100094411209431213670400, 1627933211152308172382776316094057079381044512284157265721742629825204403764072053025499851198945269720511192133172446846494906685995493625651340545052614365891533343405844735655574273520598232576462292261538368814533173863688096561758208, 1627933211152308172382776316094057079381044512284157265721742629825204403764072080484690491721384129648114388458745315924236107259217131203505177287225347956515741833644407381473794182705843798499894440749490367681108424159801261021986816, 2034916513940385215478470395117571349226305640355196582152178287281505504705087946775597248672932086488767273786309726619969714111949216491471152144857893931058323838968251695475618601664605671005658903913128048504389335098375238928302080, 2034916513940385215478470395117571349226305640355196582152178287281505504705087974234787889195370946416370470111882595697710914685170854069324988887030627521682532329206814341293838510849851236929091052401080047370964585394488403388530688, 2034916513940385215478470395117571349226305640355196582152178287281505504705087994829180869587200091362072867356062247506016815115087082252715366443660177714650688696885736325657503442738785411371665163767044046520896023116573276733702144, 2034916513940385215478470395117571349226305640355196582152178287281505504705088022288371510109638951289676063681635116583758015688308719830569203185832911305274897187124298971475723351924030977295097312254996045387471273412686441193930752, 2034916513940385215478470395117571349226305640355196582152178287281505504705088077206752791154516671144882456332780854739240416834751994986276876670178378486523314167601424263112163170294522109141961609230900043120621774004912770114387968, 2034916513940385215478470395117571349226305640355196582152178287281505504705089621786226320541702542072562249646254740362182949078469108740555193417394642959135041743520573090387033061964585192335019961678199979365479603161278271002247168, 2034916513940385215478470395117571349226305640355196582152178287281505504705089649245416961064141402000165445971827609439924149651690746318409030159567376549759250233759135736205252971149830758258452110166151978232054853457391435462475776, 2441899816728462258574164474141085619071566768426235898582613944737806605646105515536323718015689358840818331299392020135657756504422831606375005017199922524301832239082980050207077390108592630764216573329789659055335764395965413368791040, 2441899816728462258574164474141085619071566768426235898582613944737806605646105570454704999060567078696024723950537758291140157650866106762082678501545389705550249219560105341843517208479083762611080870305693656788486264988191742289248256, 2441899816728462258574164474141085619071566768426235898582613944737806605646105591049097979452396223641727121194717410099446058080782334945473056058174939898518405587239027326207182140368017937053654981671657655938417702710276615634419712, 2441899816728462258574164474141085619071566768426235898582613944737806605646105645967479260497273943496933513845863148254928459227225610101180729542520407079766822567716152617843621958738509068900519278647561653671568203302502944554876928, 2441899816728462258574164474141085619071566768426235898582613944737806605646105673426669901019712803424536710171436017332669659800447247679034566284693140670391031057954715263661841867923754634823951427135513652538143453598616109015105536, 2441899816728462258574164474141085619071566768426235898582613944737806605646107190546952789884459814424613307159337033877870991470942723855459046289736671552378550143635301445118491850408572152093577631094861589916426032458868445442736128, 2441899816728462258574164474141085619071566768426235898582613944737806605646107245465334070929337534279819699810482772033353392617385999011166719774082138733626967124112426736754931668779063283940441928070765587649576533051094774363193344, 2848883119516539301669858553164599888916827896497275215013049602194107706587123111756240827880885491120472585138047182729086999470118084299132694631714684708169549129436271050756756087737825156446206391234403268472857443989668752269508608, 2848883119516539301669858553164599888916827896497275215013049602194107706587123139215431468403324351048075781463620051806828200043339721876986531373887418298793757619674833696574975996923070722369638539722355267339432694285781916729737216, 2848883119516539301669858553164599888916827896497275215013049602194107706587123166674622108925763210975678977789192920884569400616561359454840368116060151889417966109913396342393195906108316288293070688210307266206007944581895081189965824, 2848883119516539301669858553164599888916827896497275215013049602194107706587123187269015089317592355921381375033372572692875301046477587638230745672689702082386122477592318326756860837997250462735644799576271265355939382303979954535137280, 2848883119516539301669858553164599888916827896497275215013049602194107706587123214728205729840031215848984571358945441770616501619699225216084582414862435673010330967830880972575080747182496028659076948064223264222514632600093118995365888, 2848883119516539301669858553164599888916827896497275215013049602194107706587123242187396370362470075776587767684518310848357702192920862793938419157035169263634539458069443618393300656367741594582509096552175263089089882896206283455594496, 2848883119516539301669858553164599888916827896497275215013049602194107706587124759307679259227217086776664364672419327393559033863416338970362899162078700145622058543750029799849950638852559111852135300511523200467372461756458619883225088, 2848883119516539301669858553164599888916827896497275215013049602194107706587124786766869899749655946704267560997992196471300234436637976548216735904251433736246267033988592445668170548037804677775567448999475199333947712052571784343453696, 2848883119516539301669858553164599888916827896497275215013049602194107706587124814226060540272094806631870757323565065549041435009859614126070572646424167326870475524227155091486390457223050243698999597487427198200522962348684948803682304, 3255866422304616344765552632188114158762089024568314531443485259650408807528140680516967297223642763472523642651129476244775041862591699414036547504056713301413057529550999405488214876181812116204764060651064879023803873287258926709997568, 3255866422304616344765552632188114158762089024568314531443485259650408807528140707976157937746081623400126838976702345322516242435813336991890384246229446892037266019789562051306434785367057682128196209139016877890379123583372091170226176, 3255866422304616344765552632188114158762089024568314531443485259650408807528140735435348578268520483327730035302275214400257443009034974569744220988402180482661474510028124697124654694552303248051628357626968876756954373879485255630454784, 3255866422304616344765552632188114158762089024568314531443485259650408807528140762894539218790959343255333231627848083477998643582256612147598057730574914073285683000266687342942874603737548813975060506114920875623529624175598420090683392, 3255866422304616344765552632188114158762089024568314531443485259650408807528140783488932199182788488201035628872027735286304544012172840330988435287204464266253839367945609327306539535626482988417634617480884874773461061897683293435854848, 3255866422304616344765552632188114158762089024568314531443485259650408807528140810948122839705227348128638825197600604364045744585394477908842272029377197856878047858184171973124759444811728554341066765968836873640036312193796457896083456, 3255866422304616344765552632188114158762089024568314531443485259650408807528142328068405728569974359128715422185501620909247076255889954085266752034420728738865566943864758154581409427296546071610692969928184811018318891054048794323714048, 3255866422304616344765552632188114158762089024568314531443485259650408807528142355527596369092413219056318618511074489986988276829111591663120588776593462329489775434103320800399629336481791637534125118416136809884894141350161958783942656, 3255866422304616344765552632188114158762089024568314531443485259650408807528142382986787009614852078983921814836647359064729477402333229240974425518766195920113983924341883446217849245667037203457557266904088808751469391646275123244171264, 3255866422304616344765552632188114158762089024568314531443485259650408807528142410445977650137290938911525011162220228142470677975554866818828262260938929510738192414580446092036069154852282769380989415392040807618044641942388287704399872, 3662849725092693387861246711211628428607350152639353847873920917106709908469158276736884407088838895752177896489784638838204284828286952106794237118571475485280774419904290406037893573811044641886753878555678488441325552880962265610715136, 3662849725092693387861246711211628428607350152639353847873920917106709908469158304196075047611277755679781092815357507915945485401508589684648073860744209075904982910142853051856113482996290207810186027043630487307900803177075430070943744, 3662849725092693387861246711211628428607350152639353847873920917106709908469158359114456328656155475534987485466503246071427886547951864840355747345089676257153399890619978343492553301366781339657050324019534485041051303769301758991400960, 3662849725092693387861246711211628428607350152639353847873920917106709908469158379708849309047984620480689882710682897879733786977868093023746124901719226450121556258298900327856218233255715514099624435385498484190982741491386632336572416, 3662849725092693387861246711211628428607350152639353847873920917106709908469159896829132197912731631480766479698583914424935118648363569200170604906762757332109075343979486509312868215740533031369250639344846421569265320351638968764203008, 3662849725092693387861246711211628428607350152639353847873920917106709908469159951747513478957609351335972872349729652580417519794806844355878278391108224513357492324456611800949308034111024163216114936320750419302415820943865297684660224, 3662849725092693387861246711211628428607350152639353847873920917106709908469159979206704119480048211263576068675302521658158720368028481933732115133280958103981700814695174446767527943296269729139547084808702418168991071239978462144888832, 4069833027880770430956940790235142698452611280710393164304356574563011009410175845497610876431596168104228954002866932353892327220760567221698089990913504078524282820019018760769352362255031601645311547972340098992271982178552440051204096, 4069833027880770430956940790235142698452611280710393164304356574563011009410175872956801516954035028031832150328439801431633527793982204799551926733086237669148491310257581406587572271440277167568743696460292097858847232474665604511432704, 4069833027880770430956940790235142698452611280710393164304356574563011009410175927875182797998912747887038542979585539587115928940425479955259600217431704850396908290734706698224012089810768299415607993436196095591997733066891933431889920, 4069833027880770430956940790235142698452611280710393164304356574563011009410175955334373438521351607814641739305158408664857129513647117533113436959604438441021116780973269344042231998996013865339040141924148094458572983363005097892118528, 4069833027880770430956940790235142698452611280710393164304356574563011009410175975928766418913180752760344136549338060473163029943563345716503814516233988633989273148652191328405896930884948039781614253290112093608504421085089971237289984, 4069833027880770430956940790235142698452611280710393164304356574563011009410176003387957059435619612687947332874910929550904230516784983294357651258406722224613481638890753974224116840070193605705046401778064092475079671381203135697518592, 4069833027880770430956940790235142698452611280710393164304356574563011009410177465589858667255488903832817537211666207940623161040837184315074457779104785925352583744094214864044327004184519991127808308761508032120211749649229143204691968, 4069833027880770430956940790235142698452611280710393164304356574563011009410177493049049307777927763760420733537239077018364361614058821892928294521277519515976792234332777509862546913369765557051240457249460030986786999945342307664920576, 4069833027880770430956940790235142698452611280710393164304356574563011009410177547967430588822805483615627126188384815173846762760502097048635968005622986697225209214809902801498986731740256688898104754225364028719937500537568636585377792, 4069833027880770430956940790235142698452611280710393164304356574563011009410177575426621229345244343543230322513957684251587963333723734626489804747795720287849417705048465447317206640925502254821536902713316027586512750833681801045606400, 4476816330668847474052634869258656968297872408781432480734792232019312110351193441717527986296792300383883207841522094947321570186455819914455779605428266262391999710372309761319031059884264127327301365876953708409793661772255778951921664, 4476816330668847474052634869258656968297872408781432480734792232019312110351193469176718626819231160311486404167094964025062770759677457492309616347600999853016208200610872407137250969069509693250733514364905707276368912068368943412150272, 4476816330668847474052634869258656968297872408781432480734792232019312110351193496635909267341670020239089600492667833102803971332899095070163453089773733443640416690849435052955470878254755259174165662852857706142944162364482107872378880, 4476816330668847474052634869258656968297872408781432480734792232019312110351193524095099907864108880166692796818240702180545171906120732648017289831946467034264625181087997698773690787440000825097597811340809705009519412660595272332607488, 4476816330668847474052634869258656968297872408781432480734792232019312110351193551554290548386547740094295993143813571258286372479342370225871126574119200624888833671326560344591910696625246391021029959828761703876094662956708436792836096, 4476816330668847474052634869258656968297872408781432480734792232019312110351193572148683528778376885039998390387993223066592272909258598409261504130748750817856990039005482328955575628514180565463604071194725703026026100678793310138007552, 4476816330668847474052634869258656968297872408781432480734792232019312110351193599607874169300815744967601586713566092144333473482480235987115340872921484408481198529244044974773795537699426131387036219682677701892601350974906474598236160, 4476816330668847474052634869258656968297872408781432480734792232019312110351195034350585136598246176184868594724748501456311203433310799429978310651446814518596092144208943218775785792628506950886365978178169642671158178946819317645180928, 4476816330668847474052634869258656968297872408781432480734792232019312110351195061809775777120685036112471791050321370534052404006532437007832147393619548109220300634447505864594005701813752516809798126666121641537733429242932482105409536, 4476816330668847474052634869258656968297872408781432480734792232019312110351195089268966417643123896040074987375894239611793604579754074585685984135792281699844509124686068510412225610998998082733230275154073640404308679539045646565638144, 4476816330668847474052634869258656968297872408781432480734792232019312110351195116728157058165562755967678183701467108689534805152975712163539820877965015290468717614924631156230445520184243648656662423642025639270883929835158811025866752, 4476816330668847474052634869258656968297872408781432480734792232019312110351195144187347698688001615895281380027039977767276005726197349741393657620137748881092926105163193802048665429369489214580094572129977638137459180131271975486095360, 4883799633456924517148328948282171238143133536852471797165227889475613211292211010478254455639549572735934265354604388463009612578929435029359632477770294855635508110487038116050489848328251087085859035293615318960740091069845953392410624, 4883799633456924517148328948282171238143133536852471797165227889475613211292211065396635736684427292591140658005750126618492013725372710185067305962115762036883925090964163407686929666698742218932723332269519316693890591662072282312867840, 4883799633456924517148328948282171238143133536852471797165227889475613211292211092855826377206866152518743854331322995696233214298594347762921142704288495627508133581202726053505149575883987784856155480757471315560465841958185446773096448, 4883799633456924517148328948282171238143133536852471797165227889475613211292211147774207658251743872373950246982468733851715615445037622918628816188633962808756550561679851345141589394254478916703019777733375313293616342550411775693553664, 4883799633456924517148328948282171238143133536852471797165227889475613211292211168368600638643573017319652644226648385660021515874953851102019193745263513001724706929358773329505254326143413091145593889099339312443547780272496649038725120, 4883799633456924517148328948282171238143133536852471797165227889475613211292212603111311605941003448536919652237830794971999245825784414544882163523788843111839600544323671573507244581072493910644923647594831253222104608244409492085669888, 4883799633456924517148328948282171238143133536852471797165227889475613211292212658029692886985881168392126044888976533127481646972227689700589837008134310293088017524800796865143684399442985042491787944570735250955255108836635821006127104, 4883799633456924517148328948282171238143133536852471797165227889475613211292212685488883527508320028319729241214549402205222847545449327278443673750307043883712226015039359510961904308628230608415220093058687249821830359132748985466355712, 4883799633456924517148328948282171238143133536852471797165227889475613211292212740407264808553197748174935633865695140360705248691892602434151347234652511064960642995516484802598344126998721740262084390034591247554980859724975314386812928, 5290782936245001560244023027305685507988394664923511113595663546931914312233228606698171565504745705015588519193259551056438855544624687722117322092285057039503225000840329116600168545957483612767848853198228928378261770663549292293128192, 5290782936245001560244023027305685507988394664923511113595663546931914312233228661616552846549623424870794911844405289211921256691067962877824995576630524220751641981317454408236608364327974744614713150174132926111412271255775621213585408, 5290782936245001560244023027305685507988394664923511113595663546931914312233228716534934127594501144726001304495551027367403657837511238033532669060975991402000058961794579699873048182698465876461577447150036923844562771848001950134042624, 5290782936245001560244023027305685507988394664923511113595663546931914312233228743994124768116940004653604500821123896445144858410732875611386505803148724992624267452033142345691268091883711442385009595637988922711138022144115114594271232, 5290782936245001560244023027305685507988394664923511113595663546931914312233228764588517748508769149599306898065303548253450758840649103794776883359778275185592423819712064330054933023772645616827583707003952921861069459866199987939442688, 5290782936245001560244023027305685507988394664923511113595663546931914312233228792047708389031208009526910094390876417331191959413870741372630720101951008776216632309950626975873152932957891182751015855491904920727644710162313152399671296, 5290782936245001560244023027305685507988394664923511113595663546931914312233230171872038075283760720888970709750913088487687288218258029659786016396130871705083108944438399928238703369516480870403481317011492863773051037541999666526158848, 5290782936245001560244023027305685507988394664923511113595663546931914312233230199331228715806199580816573906076485957565428488791479667237639853138303605295707317434676962574056923278701726436326913465499444862639626287838112830986387456, 5290782936245001560244023027305685507988394664923511113595663546931914312233230254249609996851077300671780298727631695720910889937922942393347526622649072476955734415154087865693363097072217568173777762475348860372776788430339159906844672, 5290782936245001560244023027305685507988394664923511113595663546931914312233230309167991277895955020526986691378777433876393291084366217549055200106994539658204151395631213157329802915442708700020642059451252858105927289022565488827301888, 5697766239033078603339717106329199777833655792994550430026099204388215413174246175458898034847502977367639576706341844572126897937098302837021174964627085632746733400955057471331627334401470572526406522614890538929208199961139466733617152, 5697766239033078603339717106329199777833655792994550430026099204388215413174246202918088675369941837295242773031914713649868098510319940414875011706799819223370941891193620117149847243586716138449838671102842537795783450257252631193845760, 5697766239033078603339717106329199777833655792994550430026099204388215413174246312754851237459697277005655558334206189960832900803206490726290358675490753585867775852147870700422726880327698402143567265054650533262084451441705289034760192, 5697766239033078603339717106329199777833655792994550430026099204388215413174246340214041877982136136933258754659779059038574101376428128304144195417663487176491984342386433346240946789512943968066999413542602532128659701737818453494988800, 5697766239033078603339717106329199777833655792994550430026099204388215413174246360808434858373965281878961151903958710846880001806344356487534572974293037369460140710065355330604611721401878142509573524908566531278591139459903326840160256, 5697766239033078603339717106329199777833655792994550430026099204388215413174246388267625498896404141806564348229531579924621202379565994065388409716465770960084349200303917976422831630587123708433005673396518530145166389756016491300388864, 5697766239033078603339717106329199777833655792994550430026099204388215413174247740632764544626517993241021767263995382003375330610731644774689869268472900298326617344553128282970162157960467830162038986428154474323997466839589840966647808, 5697766239033078603339717106329199777833655792994550430026099204388215413174247768091955185148956853168624963589568251081116531183953282352543706010645633888950825834791690928788382067145713396085471134916106473190572717135703005426876416, 5697766239033078603339717106329199777833655792994550430026099204388215413174247877928717747238712292879037748891859727392081333476839832663959052979336568251447659795745941512061261703886695659779199728867914468656873718320155663267790848, 5697766239033078603339717106329199777833655792994550430026099204388215413174247905387908387761151152806640945217432596469822534050061470241812889721509301842071868285984504157879481613071941225702631877355866467523448968616268827728019456, 6104749541821155646435411185352714047678916921065589746456534861844516514115263771678815144712699109647293830544997007165556140902793555529778864579141847816614450291308348471881306032030703098208396340519504148346729879554842805634334720, 6104749541821155646435411185352714047678916921065589746456534861844516514115263936433958987847332269212913008498434221632003344342123380996901885032178249360359701232739724346790625487142176493748989231447216141546181381331521792395706368, 6104749541821155646435411185352714047678916921065589746456534861844516514115263957028351968239161414158615405742613873440309244772039609180292262588807799553327857600418646331154290419031110668191563342813180140696112819053606665740877824, 6104749541821155646435411185352714047678916921065589746456534861844516514115265309393491013969275265593072824777077675519063373003205259889593722140814928891570125744667856637701620946404454789920596655844816084874943896137180015407136768, 6104749541821155646435411185352714047678916921065589746456534861844516514115265474148634857103908425158692002730514889985510576442535085356716742593851330435315376686099232512610940401515928185461189546772528078074395397913859002168508416, 6511732844609232689531105264376228317524178049136629062886970519300817615056281340439541614055456381999344888058079300681244183295267170644682717451483876409857958691423076826612764820474690057966954009936165758897676308852432980074823680, 6511732844609232689531105264376228317524178049136629062886970519300817615056281367898732254577895241926948084383652169758985383868488808222536554193656610000482167181661639472430984729659935623890386158424117757764251559148546144535052288, 6511732844609232689531105264376228317524178049136629062886970519300817615056281505194685457190089541564964066011516515147691386734596996111805737904520277953603209632854452701522084275586163453507546900863877752097127810629111966836195328, 6511732844609232689531105264376228317524178049136629062886970519300817615056281532653876097712528401492567262337089384225432587307818633689659574646693011544227418123093015347340304184771409019430979049351829750963703060925225131296423936, 6511732844609232689531105264376228317524178049136629062886970519300817615056281553248269078104357546438269659581269036033738487737734861873049952203322561737195574490771937331703969116660343193873553160717793750113634498647310004641595392, 6511732844609232689531105264376228317524178049136629062886970519300817615056282878154217483312032537945123882290159969034751415395678875004497575013156957484813634144782584992433079734848441749679154325261477695425890325434770189847625728, 6511732844609232689531105264376228317524178049136629062886970519300817615056282905613408123834471397872727078615732838112492615968900512582351411755329691075437842635021147638251299644033687315602586473749429694292465575730883354307854336, 6511732844609232689531105264376228317524178049136629062886970519300817615056283042909361326446665697510743060243597183501198618835008700471620595466193359028558885086213960867342399189959915145219747216189189688625341827211449176608997376, 6511732844609232689531105264376228317524178049136629062886970519300817615056283070368551966969104557438346256569170052578939819408230338049474432208366092619183093576452523513160619099145160711143179364677141687491917077507562341069225984, 6918716147397309732626799343399742587369439177207668379317406176757118715997298936659458723920652514278999141896734463274673426260962423337440407065998638593725675581776367827162443518103922583648943827840779368315197988446136318975541248, 6918716147397309732626799343399742587369439177207668379317406176757118715997299101414602567055285673844618319850171677741120629700292248804563427519035040137470926523207743702071762973215395979189536718768491361514649490222815305736912896, 6918716147397309732626799343399742587369439177207668379317406176757118715997299128873793207577724533772221516175744546818861830273513886382417264261207773728095135013446306347889982882400641545112968867256443360381224740518928470197141504, 6918716147397309732626799343399742587369439177207668379317406176757118715997299149468186187969553678717923913419924198627167730703430114565807641817837323921063291381125228332253647814289575719555542978622407359531156178241013343542312960, 6918716147397309732626799343399742587369439177207668379317406176757118715997300446914943952654789810297174939803242262550439457788152490119401427885498986078057142544897313347164538523292428709437711994678139305976836754732360364288114688, 6918716147397309732626799343399742587369439177207668379317406176757118715997300474374134593177228670224778136128815131628180658361374127697255264627671719668681351035135875992982758432477674275361144143166091304843412005028473528748343296, 6918716147397309732626799343399742587369439177207668379317406176757118715997300639129278436311861829790397314082252346094627861800703953164378285080708121212426601976567251867892077887589147670901737034093803298042863506805152515509714944, 7325699450185386775722493422423256857214700305278707695747841834213419816938316505420185193263409786631050199409816756790361468653436038452344259938340667186969183981891096181893902306547909543407501497257440978866144417743726493416030208, 7325699450185386775722493422423256857214700305278707695747841834213419816938316725093710317442920666051875770014399709412291073239209139075174953875722535911962851903799597348439661580029874070794958685161056969798746420112631809097859072, 7325699450185386775722493422423256857214700305278707695747841834213419816938316745688103297834749810997578167258579361220596973669125367258565331432352086104931008271478519332803326511918808245237532796527020968948677857834716682443030528, 7325699450185386775722493422423256857214700305278707695747841834213419816938318015675670421997547082649225997316324556066127500180626105234305280757841014671300650945012041701895997311736415669196269664094800916527783184029950538728603648, 7325699450185386775722493422423256857214700305278707695747841834213419816938318235349195546177057962070051567920907508688057104766399205857135974695222883396294318866920542868441756585218380196583726851998416907460385186398855854410432512, 7732682752973463818818187501446771127059961433349747012178277491669720917879334321313627427308116798331530023853054872005720316204904391767932643490237298095830568794152888348989340277659106596476948503065670579216268099706335147998576640, 7732682752973463818818187501446771127059961433349747012178277491669720917879334341908020407699945943277232421097234523814026216634820619951323021046866848288798725161831810333353005209548040770919522614431634578366199537428420021343748096, 7732682752973463818818187501446771127059961433349747012178277491669720917879335584436396891340304355001277054829406849581815542573099720349209133630183043264544159345126770056627456100180402628954827333511462527078729613327540713169092608, 8139666055761540861913881580470285396905222561420786328608713149126022018820351670400828772471363191262755510761554212899478754011604906260005802425197457964080409272359115537175039792621129028848048984578716198834612526635020006757236736, 8139666055761540861913881580470285396905222561420786328608713149126022018820351917533544537173312930611184277691710034599149559170599644460690333104752060279698285684506179349539018975288339122158938320970284188633789779300038486899294208, 8139666055761540861913881580470285396905222561420786328608713149126022018820351938127937517565142075556886674935889686407455459600515872644080710661381610472666442052185101333902683907177273296601512432336248187783721217022123360244465664, 8139666055761540861913881580470285396905222561420786328608713149126022018820353153197123360683061627353328112342489143097503584965573335464112986502525071857787667745241498411358914888624389588713385002928124137629676042625130887609581568, 8139666055761540861913881580470285396905222561420786328608713149126022018820353400329839125385011366701756879272644964797174390124568073664797517182079674173405544157388562223722894071291599682024274339319692127428853295290149367751639040, 8546649358549617905009575659493799666750483689491825645039148806582323119761369513753461647038509062890838531530365197192578802136294897153448022719266822463566002574859470350088697672917571647840928138874897798051311458893741825800011776, 8546649358549617905009575659493799666750483689491825645039148806582323119761369534347854627430338207836540928774544849000884702566211125336838400275896372656534158942538392334452362604806505822283502250240861797201242896615826699145183232, 8546649358549617905009575659493799666750483689491825645039148806582323119761370721957849830025818899705379169855571436613191627358046950579016839374867100451031176145356226766090373677068376548471942672344785748180622471922721062050070528, 8953632661337694948105269738517313936595744817562864961469584464038624220702386835381472351679316595894460822113291669008596039369773774067667344912054248741191634562827134892456177278694348514288596471899991418803080635526313520098443264, 8953632661337694948105269738517313936595744817562864961469584464038624220702387109973378756903705195170492785369020359786008045101990149846205712333781584647433719465212761350638376370546804173522917956779511407468833138487445164700729344, 8953632661337694948105269738517313936595744817562864961469584464038624220702387130567771737295534340116195182613200011594313945531906378029596089890411134840401875832891683335002041302435738347965492068145475406618764576209530038045900800, 8953632661337694948105269738517313936595744817562864961469584464038624220702388290718576299368576172057430227368653730128879669750520565693920692247209129044274684545470955120821832465512363508230500341761447358731568901220311236490559488, 8953632661337694948105269738517313936595744817562864961469584464038624220702388565310482704592964771333462190624382420906291675482736941472459059668936464950516769447856581579004031557364819167464821826640967347397321404181442881092845568, 9360615964125771991200963817540828206441005945633904277900020121494925321643404706193295866768901327450147039207675522379437288067685402538963401948296346831301436355566052351188055068176036699204907774684125016886354818081148503601446912, 9360615964125771991200963817540828206441005945633904277900020121494925321643404726787688847160730472395849436451855174187743188497601630722353779504925897024269592723244974335551720000064970873647481886050089016036286255803233376946618368, 9360615964125771991200963817540828206441005945633904277900020121494925321643405859479302768711333444409481284881736023644567712142994180808824545119551157637518192945585683475553291253956350467989058011178108969282515330517901410931048448, 9767599266913849034296657896564342476286267073704943594330455778951226422584422000362115930887270000526166133465029125117713324727942641875328887398911039518302859853295154247737314764767567999729143959221266638771548744417607033439649792, 9767599266913849034296657896564342476286267073704943594330455778951226422584422302413212976634097459729801293046330684972866531033380655231721091562811109015169153245919343351737733765805269224886897592588738626303876497674851842502164480, 9767599266913849034296657896564342476286267073704943594330455778951226422584422323007605957025926604675503690290510336781172431463296883415111469119440659208137309613598265336101398697694203399329471703954702625453807935396936715847335936, 9767599266913849034296657896564342476286267073704943594330455778951226422584423428240029238054090716761532342394818317160255754535467795923728397991893186230761701345700411830284750042400337427747615680594770579833461759815491585371537408, 9767599266913849034296657896564342476286267073704943594330455778951226422584423730291126283800918175965167501976119877015408960840905809280120602155793255727627994738324600934285169043438038652905369313962242567365789513072736394434052096, 10174582569701926077392351975587856746131528201775982910760891436407527523525439898633130086499293592009455546884985847566295773999075907924478781177325871199036870136272634352287412463434501750568887410493352235721398177268555181402882048, 10174582569701926077392351975587856746131528201775982910760891436407527523525439919227523066891122736955157944129165499374601674428992136107869158733955421392005026503951556336651077395323435925011461521859316234871329614990640054748053504, 10174582569701926077392351975587856746131528201775982910760891436407527523525440997000755707396847989113583399907900610675943796927941411038632250864235214824005209745815140185016208830844324387506173350011432190384408189113081759812026368, 10581565872490003120488046054611371015976789329847022227191327093863828624466457165342759510095223405157871444816766581226830610086111509682990429885767830295414085143763173603018452250840787485169691446542541858740016853308900546780856320, 10581565872490003120488046054611371015976789329847022227191327093863828624466457494853047196364489724289109800723641010159725016964771160617236470791840633382904587026625925352837091161063734276250877228397965845138919856862258520303599616, 10581565872490003120488046054611371015976789329847022227191327093863828624466457515447440176756318869234812197967820661968030917394687388800626848348470183575872743394304847337200756092952668450693451339763929844288851294584343393648771072, 10581565872490003120488046054611371015976789329847022227191327093863828624466458565761482176739605261465634457420982904191631839320415026153536103736577243417248718145929868539747667619288311347264731019428093800935354618410671934252515328, 10581565872490003120488046054611371015976789329847022227191327093863828624466458895271769863008871580596872813327857333124526246199074677087782144642650046504739220028792620289566306529511258138345916801283517787334257621964029907775258624, 10988549175278080163583740133634885285822050457918061543621762751320129725407475091072964306229685856568764054562296172753154259930466413309994160406355395566772303916979216353386769858692966801932867046302579454556441536455961859204317184, 10988549175278080163583740133634885285822050457918061543621762751320129725407475111667357286621515001514466451806475824561460160360382641493384537962984945759740460284658138337750434790581900976375441157668543453706372974178046732549488640, 10988549175278080163583740133634885285822050457918061543621762751320129725407476134522208646082362533817685514934065197707319881712888641268439956608919272010492226546044596894479126407732298307023288688844755411486301047708262108693004288, 11395532478066157206679434212658399555667311585989100860052198408776430826348492330323403089303176809789576756168504037335947895444280377490651972372624621072525310434231192958299589736914006970610238933863817078708484962200194060122062848, 11395532478066157206679434212658399555667311585989100860052198408776430826348492687292881416094881988848418308400951335346583502896161666002751850020870157750640020807332507353936448556322199327614856864207193063973963216049665198105034752, 11395532478066157206679434212658399555667311585989100860052198408776430826348492707887274396486711133794120705645130987154889403326077894186142227577499707943608177175011429338300113488211133502057430975573157063123894653771750071450206208, 11395532478066157206679434212658399555667311585989100860052198408776430826348493703282935115425119806169736572447147491223007924105362256383343809481261300603735734946159325249210585196176285266781846358261417022037247477005852283133493248, 11395532478066157206679434212658399555667311585989100860052198408776430826348494060252413442216824985228578124679594789233643531557243544895443687129506837281850445319260639644847444015584477623786464288604793007302725730855323421116465152, 11802515780854234249775128291681913825512572714060140176482634066232731927289510283512798525960078121128072562239606497940012745861856918695509539635384919934507737697685798354486127253951431853296846682111806673391484895643368537005752320, 11802515780854234249775128291681913825512572714060140176482634066232731927289510304107191506351907266073774959483786149748318646291773146878899917192014470127475894065364720338849792185840366027739420793477770672541416333365453410350923776, 11802515780854234249775128291681913825512572714060140176482634066232731927289511272043661584767877078521787629960229784738695966497835871498247662353603329196979243346274053603942043984620272226540404027678078632588193906303442457573982208, 12209499083642311292870822370705428095357833842131179492913069723689033028230527495304046668511130214421282067520241493445065180802449245298313514859481411849636535724699212313580727222987226456050786421185092298676953071091487573463269376, 12209499083642311292870822370705428095357833842131179492913069723689033028230527879732715635825274253407726816078261660533441988827552171388267229249899682118375454588039089355035805951580664378978836500016420282809006575237071875906469888, 12209499083642311292870822370705428095357833842131179492913069723689033028230527900327108616217103398353429213322441312341747889257468399571657606806529232311343610955718011339399470883469598553421410611382384281958938012959156749251641344, 12209499083642311292870822370705428095357833842131179492913069723689033028230528840804388054110634350873838687473312078254384008890309486613151515225945357790222751746388781958673502773064259186298961697094740243139140335601032632014471168, 12209499083642311292870822370705428095357833842131179492913069723689033028230529225233057021424778389860283436031332245342760816915412412703105229616363628058961670609728659000128581501657697109227011775926068227271193839746616934457671680, 12616482386430388335966516449728942365203094970202218809343505381145334129171545475952632745690470385687381069916916823126871231793247424081024918864414444302243171478392380355585484649209896904660826317921033892226528254830775214807187456, 12616482386430388335966516449728942365203094970202218809343505381145334129171545496547025726082299530633083467161096474935177132223163652264415296421043994495211327846071302339949149581098831079103400429286997891376459692552860088152358912, 12616482386430388335966516449728942365203094970202218809343505381145334129171546409565114523453391623225889744986394371770072051282783101728055368098287386383466260146503510313404961561508246146057519366511401853690086764898622806454960128, 13023465689218465379062210528752456635048356098273258125773941038601635230112562660284690247719083619052987378871978949554182466160618113105975057346338202626747761015167231668861864709060445941491333908506367518645421179982781086804475904, 13023465689218465379062210528752456635048356098273258125773941038601635230112563072172549855555666517967035323755571985720300474758942676773782608478929206486110888368745671356135163346839129430342816135825647501644049934424478553707905024, 13023465689218465379062210528752456635048356098273258125773941038601635230112563978325840992796148895577940802499476665285760093675256716842959220970629414976709768546618238668136420349952233105816077035928063464241033194196212980895449088, 13023465689218465379062210528752456635048356098273258125773941038601635230112564390213700600632731794491988747383069701451878102273581280510766772103220418836072895900196678355409718987730916594667559263247343447239661948637910447798878208, 39477380370443473180282325665280884174990329422890813693752258773261206791278705940908263839944761883479358741768432526536047549042736289917246198487318090139881762431515941064226686621515074098641467510889080150335907285965546028412174336, 39884363673231550223378019744304398444835590550961853010182694430717507892219723509668990309287519155831409799281514820051735591435209905032150051359660118733125270831630669418958145409959061058400025180305741760886853715263136202852663296, 40291346976019627266473713823327912714680851679032892326613130088173808993160741078429716778630276428183460856794597113567423633827683520147053904232002147326368779231745397773689604198403048018158582849722403371437800144560726377293152256, 40698330278807704309569407902351426984526112807103931643043565745630110094101758647190443247973033700535511914307679407083111676220157135261957757104344175919612287631860126128421062986847034977917140519139064981988746573858316551733641216, 41105313581595781352665101981374941254371373935174970959474001403086411195042776215951169717315790972887562971820761700598799718612630750376861609976686204512855796031974854483152521775291021937675698188555726592539693003155906726174130176, 41512296884383858395760796060398455524216635063246010275904437060542712295983793784711896186658548245239614029333843994114487761005104365491765462849028233106099304432089582837883980563735008897434255857972388203090639432453496900614619136, 41919280187171935438856490139421969794061896191317049592334872717999013396924811353472622656001305517591665086846926287630175803397577980606669315721370261699342812832204311192615439352178995857192813527389049813641585861751087075055108096, 42326263489960012481952184218445484063907157319388088908765308375455314497865828922233349125344062789943716144360008581145863845790051595721573168593712290292586321232319039547346898140622982816951371196805711424192532291048677249495597056, 42733246792748089525047878297468998333752418447459128225195744032911615598806846490994075594686820062295767201873090874661551888182525210836477021466054318885829829632433767902078356929066969776709928866222373034743478720346267423936086016, 43140230095536166568143572376492512603597679575530167541626179690367916699747864059754802064029577334647818259386173168177239930574998825951380874338396347479073338032548496256809815717510956736468486535639034645294425149643857598376574976, 43547213398324243611239266455516026873442940703601206858056615347824217800688881628515528533372334606999869316899255461692927972967472441066284727210738376072316846432663224611541274505954943696227044205055696255845371578941447772817063936, 43954196701112320654334960534539541143288201831672246174487051005280518901629899197276255002715091879351920374412337755208616015359946056181188580083080404665560354832777952966272733294398930655985601874472357866396318008239037947257552896, 44361180003900397697430654613563055413133462959743285490917486662736820002570916766036981472057849151703971431925420048724304057752419671296092432955422433258803863232892681321004192082842917615744159543889019476947264437536628121698041856, 44768163306688474740526348692586569682978724087814324807347922320193121103511934334797707941400606424056022489438502342239992100144893286410996285827764461852047371633007409675735650871286904575502717213305681087498210866834218296138530816, 45175146609476551783622042771610083952823985215885364123778357977649422204452951903558434410743363696408073546951584635755680142537366901525900138700106490445290880033122138030467109659730891535261274882722342698049157296131808470579019776, 45582129912264628826717736850633598222669246343956403440208793635105723305393969472319160880086120968760124604464666929271368184929840516640803991572448519038534388433236866385198568448174878495019832552139004308600103725429398645019508736, 45989113215052705869813430929657112492514507472027442756639229292562024406334987041079887349428878241112175661977749222787056227322314131755707844444790547631777896833351594739930027236618865454778390221555665919151050154726988819459997696, 46396096517840782912909125008680626762359768600098482073069664950018325507276004609840613818771635513464226719490831516302744269714787746870611697317132576225021405233466323094661486025062852414536947890972327529701996584024578993900486656, 46396096517840782912909125008680626762359768600098482073069664950018325507276004637299804459294074373391829915816404385380485470288009384448465534059305309815645613723704885740479705934248097980460380039460279528568571834320692158360715264, 46803079820628859956004819087704141032205029728169521389500100607474626608217022178601340288114392785816277777003913809818432312107261361985515550189474604818264913633581051449392944813506839374295505560388989140252943013322169168340975616, 46803079820628859956004819087704141032205029728169521389500100607474626608217022206060530928636831645743880973329486678896173512680482999563369386931647338408889122123819614095211164722692084940218937708876941139119518263618282332801204224, 47210063123416936999100513166727655302050290856240560705930536264930927709158039747362066757457150058168328834516996103334120354499734977100419403061816633411508422033695779804124403601950826334054063229805650750803889442619759342781464576, 47617046426205014042196207245751169571895551984311600022360971922387228810099057316122793226799907330520379892030078396849808396892208592215323255934158662004751930433810508158855862390394813293812620899222312361354835871917349517221953536, 47617046426205014042196207245751169571895551984311600022360971922387228810099057343581983867322346190447983088355651265927549597465430229793177092676331395595376138924049070804674082299580058859736053047710264360221411122213462681682182144, 48024029728993091085291901324774683841740813112382639338791407579843529911040074884883519696142664602872430949543160690365496439284682207330227108806500690597995438833925236513587321178838800253571178568638973971905782301214939691662442496, 48024029728993091085291901324774683841740813112382639338791407579843529911040074912342710336665103462800034145868733559443237639857903844908080945548673424188619647324163799159405541088024045819494610717126925970772357551511052856122671104, 48431013031781168128387595403798198111586074240453678655221843237299831011981092453644246165485421875224482007056242983881184481677155822445130961678842719191238947234039964868318779967282787213329736238055635582456728730512529866102931456, 48837996334569245171483289482821712381431335368524717971652278894756132112922110022404972634828179147576533064569325277396872524069629437560034814551184747784482455634154693223050238755726774173088293907472297193007675159810120040543420416, 48837996334569245171483289482821712381431335368524717971652278894756132112922110049864163275350618007504136260894898146474613724642851075137888651293357481375106664124393255868868458664912019739011726055960249191874250410106233205003649024, 49244979637357322214578983561845226651276596496595757288082714552212433213863127591165699104170936419928584122082407570912560566462103052674938667423526776377725964034269421577781697544170761132846851576888958803558621589107710214983909376, 49244979637357322214578983561845226651276596496595757288082714552212433213863127618624889744693375279856187318407980439990301767035324690252792504165699509968350172524507984223599917453356006698770283725376910802425196839403823379444137984, 49244979637357322214578983561845226651276596496595757288082714552212433213863127646084080385215814139783790514733553309068042967608546327830646340907872243558974381014746546869418137362541252264693715873864862801291772089699936543904366592, 49651962940145399257674677640868740921121857624666796604513150209668734314804145159926425573513693692280635179595489864428248608854576667789842520295868804970969472434384149932513156332614748092605409246305620414109568018405300389424398336, 49651962940145399257674677640868740921121857624666796604513150209668734314804145214844806854558571412135841572246635602583731010001019942945550193780214272152217889414861275224149596150985239224452273543281524411842718518997526718344855552, 49651962940145399257674677640868740921121857624666796604513150209668734314804145242303997495081010272063444768572208471661472210574241580523404030522387005742842097905099837869967816060170484790375705691769476410709293769293639882805084160, 50058946242933476300770371719892255190967118752737835920943585867125035415745162728687152042856450964632686237108572157943936651247050282904746373168210833564212980834498878287244615121058735052363966915722282024660514447702890563864887296, 50058946242933476300770371719892255190967118752737835920943585867125035415745162756146342683378889824560289433434145027021677851820271920482600209910383567154837189324737440933062835030243980618287399064210234023527089697999003728325115904, 50058946242933476300770371719892255190967118752737835920943585867125035415745162811064723964423767544415495826085290765177160252966715195638307883394729034336085606305214566224699274848614471750134263361186138021260240198591230057245573120, 50465929545721553343866065798915769460812379880808875237374021524581336516686180297447878512199208236984737294621654451459624693639523898019650226040552862157456489234613606641976073909502722012122524585138943635211460877000480738305376256, 50465929545721553343866065798915769460812379880808875237374021524581336516686180324907069152721647096912340490947227320537365894212745535597504062782725595748080697724852169287794293818687967578045956733626895634078036127296593902765604864, 50465929545721553343866065798915769460812379880808875237374021524581336516686180352366259793244085956839943687272800189615107094785967173175357899524898329338704906215090731933612513727873213143969388882114847632944611377592707067225833472, 50465929545721553343866065798915769460812379880808875237374021524581336516686180379825450433766524816767546883598373058692848295359188810753211736267071062929329114705329294579430733637058458709892821030602799631811186627888820231686062080, 50872912848509630386961759877939283730657641008879914553804457182037637617627197866208604981541965509336788352134736744975312736031997513134554078912894890750699997634728334996707532697946708971881082254555605245762407306298070912745865216, 50872912848509630386961759877939283730657641008879914553804457182037637617627197921126986262586843229191994744785882483130795137178440788290261752397240357931948414615205460288343972516317200103727946551531509243495557806890297241666322432, 50872912848509630386961759877939283730657641008879914553804457182037637617627197948586176903109282089119597941111455352208536337751662425868115589139413091522572623105444022934162192425502445669651378700019461242362133057186410406126551040, 50872912848509630386961759877939283730657641008879914553804457182037637617627198003504558184154159808974804333762601090364018738898105701023823262623758558703821040085921148225798632243872936801498242996995365240095283557778636735047008256, 50872912848509630386961759877939283730657641008879914553804457182037637617627198030963748824676598668902407530088173959441759939471327338601677099365931292294445248576159710871616852153058182367421675145483317238961858808074749899507236864, 51279896151297707430057453956962798000502902136950953870234892839493938718568215434969331450884722781688839409647819038491000778424471128249457931785236919343943506034843063351438991486390695931639639923972266856313353735595661087186354176, 51279896151297707430057453956962798000502902136950953870234892839493938718568215462428522091407161641616442605973391907568741978997692765827311768527409652934567714525081625997257211395575941497563072072460218855179928985891774251646582784, 51279896151297707430057453956962798000502902136950953870234892839493938718568215489887712731929600501544045802298964776646483179570914403405165605269582386525191923015320188643075431304761187063486504220948170854046504236187887416106811392, 51279896151297707430057453956962798000502902136950953870234892839493938718568215517346903372452039361471648998624537645724224380144136040983019442011755120115816131505558751288893651213946432629409936369436122852913079486484000580567040000, 51279896151297707430057453956962798000502902136950953870234892839493938718568215544806094012974478221399252194950110514801965580717357678560873278753927853706440339995797313934711871123131678195333368517924074851779654736780113745027268608, 51279896151297707430057453956962798000502902136950953870234892839493938718568215572265284653496917081326855391275683383879706781290579316138727115496100587297064548486035876580530091032316923761256800666412026850646229987076226909487497216, 51279896151297707430057453956962798000502902136950953870234892839493938718568215599724475294019355941254458587601256252957447981863800953716580952238273320887688756976274439226348310941502169327180232814899978849512805237372340073947725824, 51279896151297707430057453956962798000502902136950953870234892839493938718568215627183665934541794801182061783926829122035189182437022591294434788980446054478312965466513001872166530850687414893103664963387930848379380487668453238407954432, 51686879454085784473153148035986312270348163265021993186665328496950239819509233003730057920227480054040890467160901332006688820816944743364361784657578947937187014434957791706170450274834682891398197593388928466864300164893251261626843136, 51686879454085784473153148035986312270348163265021993186665328496950239819509233031189248560749918913968493663486474201084430021390166380942215621399751681527811222925196354351988670184019928457321629741876880465730875415189364426087071744, 51686879454085784473153148035986312270348163265021993186665328496950239819509233058648439201272357773896096859812047070162171221963388018520069458141924415118435431415434916997806890093205174023245061890364832464597450665485477590547300352, 51686879454085784473153148035986312270348163265021993186665328496950239819509233086107629841794796633823700056137619939239912422536609656097923294884097148709059639905673479643625110002390419589168494038852784463464025915781590755007528960, 51686879454085784473153148035986312270348163265021993186665328496950239819509233113566820482317235493751303252463192808317653623109831293675777131626269882299683848395912042289443329911575665155091926187340736462330601166077703919467757568, 51686879454085784473153148035986312270348163265021993186665328496950239819509233141026011122839674353678906448788765677395394823683052931253630968368442615890308056886150604935261549820760910721015358335828688461197176416373817083927986176, 51686879454085784473153148035986312270348163265021993186665328496950239819509233168485201763362113213606509645114338546473136024256274568831484805110615349480932265376389167581079769729946156286938790484316640460063751666669930248388214784, 51686879454085784473153148035986312270348163265021993186665328496950239819509233195944392403884552073534112841439911415550877224829496206409338641852788083071556473866627730226897989639131401852862222632804592458930326916966043412848443392, 51686879454085784473153148035986312270348163265021993186665328496950239819509233223403583044406990933461716037765484284628618425402717843987192478594960816662180682356866292872716209548316647418785654781292544457796902167262156577308672000, 51686879454085784473153148035986312270348163265021993186665328496950239819509233250862773684929429793389319234091057153706359625975939481565046315337133550252804890847104855518534429457501892984709086929780496456663477417558269741768900608, 51686879454085784473153148035986312270348163265021993186665328496950239819509233278321964325451868653316922430416630022784100826549161119142900152079306283843429099337343418164352649366687138550632519078268448455530052667854382906229129216, 51686879454085784473153148035986312270348163265021993186665328496950239819509233305781154965974307513244525626742202891861842027122382756720753988821479017434053307827581980810170869275872384116555951226756400454396627918150496070689357824, 51686879454085784473153148035986312270348163265021993186665328496950239819509233333240345606496746373172128823067775760939583227695604394298607825563651751024677516317820543455989089185057629682479383375244352453263203168446609235149586432, 51686879454085784473153148035986312270348163265021993186665328496950239819509233360699536247019185233099732019393348630017324428268826031876461662305824484615301724808059106101807309094242875248402815523732304452129778418742722399609815040, 51686879454085784473153148035986312270348163265021993186665328496950239819509233388158726887541624093027335215718921499095065628842047669454315499047997218205925933298297668747625529003428120814326247672220256450996353669038835564070043648, 51686879454085784473153148035986312270348163265021993186665328496950239819509233415617917528064062952954938412044494368172806829415269307032169335790169951796550141788536231393443748912613366380249679820708208449862928919334948728530272256]
+
+theorem legal_codes_spec : ∀ r ∈ Five506.rows,
+    encN_t8 (Five506.pre506 r.1 r.2.1 r.2.2.1 r.2.2.2) Five506.sites ∈ legalCodes := by decide +kernel
+
+def goodRow (r : Bool × Bool × Nat × Nat) : Bool :=
+  decide (encN_t8 (tbN_t8 (runN_t8 tick505 [] (false, enc r)).2) Five506.sites ∈ legalCodes)
+
+def cv (v : Nat) : Bool :=
+  (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || decide ((g,s,u,v) ∈ rows)
+
+theorem cv0 : cv 0 = true := by decide +kernel
+theorem cv1 : cv 1 = true := by decide +kernel
+theorem cv2 : cv 2 = true := by decide +kernel
+theorem cv3 : cv 3 = true := by decide +kernel
+theorem cv4 : cv 4 = true := by decide +kernel
+theorem cv5 : cv 5 = true := by decide +kernel
+theorem cv6 : cv 6 = true := by decide +kernel
+theorem cv7 : cv 7 = true := by decide +kernel
+theorem cv8 : cv 8 = true := by decide +kernel
+theorem cv9 : cv 9 = true := by decide +kernel
+theorem cv10 : cv 10 = true := by decide +kernel
+theorem cv11 : cv 11 = true := by decide +kernel
+theorem cv12 : cv 12 = true := by decide +kernel
+theorem cv13 : cv 13 = true := by decide +kernel
+theorem cv14 : cv 14 = true := by decide +kernel
+theorem cv15 : cv 15 = true := by decide +kernel
+theorem cv16 : cv 16 = true := by decide +kernel
+theorem cv17 : cv 17 = true := by decide +kernel
+theorem cv18 : cv 18 = true := by decide +kernel
+theorem cv19 : cv 19 = true := by decide +kernel
+theorem cv20 : cv 20 = true := by decide +kernel
+theorem cv21 : cv 21 = true := by decide +kernel
+theorem cv22 : cv 22 = true := by decide +kernel
+theorem cv23 : cv 23 = true := by decide +kernel
+theorem cv24 : cv 24 = true := by decide +kernel
+theorem cv25 : cv 25 = true := by decide +kernel
+theorem cv26 : cv 26 = true := by decide +kernel
+theorem cv27 : cv 27 = true := by decide +kernel
+theorem cv28 : cv 28 = true := by decide +kernel
+theorem cv29 : cv 29 = true := by decide +kernel
+theorem cv30 : cv 30 = true := by decide +kernel
+theorem cv31 : cv 31 = true := by decide +kernel
+theorem cv32 : cv 32 = true := by decide +kernel
+theorem cv33 : cv 33 = true := by decide +kernel
+theorem cv34 : cv 34 = true := by decide +kernel
+theorem cv35 : cv 35 = true := by decide +kernel
+theorem cv36 : cv 36 = true := by decide +kernel
+theorem cv37 : cv 37 = true := by decide +kernel
+theorem cv38 : cv 38 = true := by decide +kernel
+theorem cv39 : cv 39 = true := by decide +kernel
+theorem cv40 : cv 40 = true := by decide +kernel
+theorem cv41 : cv 41 = true := by decide +kernel
+theorem cv42 : cv 42 = true := by decide +kernel
+theorem cv43 : cv 43 = true := by decide +kernel
+theorem cv44 : cv 44 = true := by decide +kernel
+theorem cv45 : cv 45 = true := by decide +kernel
+theorem cv46 : cv 46 = true := by decide +kernel
+theorem cv47 : cv 47 = true := by decide +kernel
+theorem cv48 : cv 48 = true := by decide +kernel
+theorem cv49 : cv 49 = true := by decide +kernel
+theorem cv50 : cv 50 = true := by decide +kernel
+theorem cv51 : cv 51 = true := by decide +kernel
+theorem cv52 : cv 52 = true := by decide +kernel
+theorem cv53 : cv 53 = true := by decide +kernel
+theorem cv54 : cv 54 = true := by decide +kernel
+theorem cv55 : cv 55 = true := by decide +kernel
+theorem cv56 : cv 56 = true := by decide +kernel
+theorem cv57 : cv 57 = true := by decide +kernel
+theorem cv58 : cv 58 = true := by decide +kernel
+theorem cv59 : cv 59 = true := by decide +kernel
+theorem cv60 : cv 60 = true := by decide +kernel
+theorem cv61 : cv 61 = true := by decide +kernel
+theorem cv62 : cv 62 = true := by decide +kernel
+theorem cv63 : cv 63 = true := by decide +kernel
+theorem cv64 : cv 64 = true := by decide +kernel
+
+theorem rows_complete : ∀ v, v < 65 → ∀ u, u < 65 → ∀ g s : Bool,
+    (u+v ≤ 64 ∧ v%2=1 ∧ u.gcd v = 1 ∧ goodRow (g,s,u,v) = true) → (g,s,u,v) ∈ rows := by
+  intro v hv u hu g s h
+  have c1 : cv v = true := by
+    interval_cases v <;> simp only [cv0, cv1, cv2, cv3, cv4, cv5, cv6, cv7, cv8, cv9, cv10, cv11, cv12, cv13, cv14, cv15, cv16, cv17, cv18, cv19, cv20, cv21, cv22, cv23, cv24, cv25, cv26, cv27, cv28, cv29, cv30, cv31, cv32, cv33, cv34, cv35, cv36, cv37, cv38, cv39, cv40, cv41, cv42, cv43, cv44, cv45, cv46, cv47, cv48, cv49, cv50, cv51, cv52, cv53, cv54, cv55, cv56, cv57, cv58, cv59, cv60, cv61, cv62, cv63, cv64]
+  simp only [cv, List.all_eq_true, List.mem_range] at c1
+  have c2 := c1 u hu g (by cases g <;> simp) s (by cases s <;> simp)
+  obtain ⟨h1, h2, h3, h4⟩ := h
+  simpa [h1, h2, h3, h4] using c2
+
+theorem five_in : ∀ q ∈ Five506.sites, q ∈ sites := by decide +kernel
+theorem pack_wires (isA : Bool) : wires (packAfter base isA 505) ⊆
+    ([516, 517, 518, 519, 520, 1544, 1545, 1546, 1547, 1548] : List Wire).toFinset := by
+  cases isA <;> decide +kernel
+theorem pack_list_off : ∀ q ∈ Five506.sites,
+    q ∉ ([516, 517, 518, 519, 520, 1544, 1545, 1546, 1547, 1548] : List Wire) := by decide +kernel
+theorem pack_off (isA : Bool) : ∀ q ∈ Five506.sites, q ∉ wires (packAfter base isA 505) :=
+  fun q hq hw => pack_list_off q hq (List.mem_toFinset.mp (pack_wires isA hw))
+
+theorem prefix_avoids (isA : Bool) : ∀ n, n ≤ 505 → ∀ q ∈ sites, q ∉ wires (encodePrefix base isA n) := by
+  intro n hn q hq hw
+  rw [prefix_support_eq] at hw
+  induction n with
+  | zero => simp [History5.encodePrefix, wires] at hw
+  | succ n ih =>
+    simp only [History5.encodePrefix, wires_append, Finset.mem_union] at hw
+    rcases hw with hw | hw
+    · exact ih (by omega) hw
+    · cases due : History5.packDue n
+      · simp [History5.packAfter, due, wires] at hw
+      · simp only [History5.packAfter, due, if_true] at hw
+        obtain ⟨j, rfl⟩ := History5.history_gate_mem base (n-5) _ (Or.inl rfl) _ hw
+        have b := History5.packDue_true n due
+        simp only [sites, List.mem_cons, List.not_mem_nil, or_false] at hq
+        fin_cases j <;> simp [History5.historyMap, History5.historyId, base] at hq <;> omega
+
+theorem at_stage6 (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (a : State)
+    (hs : Stage base isA x p 505 a.basis) (m n : List Bool) :
+    run cand6 m a = run ref n a := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have hs0 := hs
+  obtain ⟨raw,hraw,hbits⟩ := hs
+  obtain ⟨G,S,u,v,hsum,hv0,hvo,hg,reads⟩ := raw505 x hx0 hx raw hraw
+  have bits : ∀ q ∈ sites, a.basis q = pre505 G S u v q := by
+    intro q hq
+    rw [hbits, ←reads q hq]
+    exact run_preserves_outside _ _ _ q (prefix_avoids isA 505 (le_refl _) q hq)
+  have mem : (G,S,u,v) ∈ rows := by
+    have next := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 505
+      hp0 hx0 hpo hp gap hx cop (by omega) a [] hs0).2
+    rw [explicit505] at next
+    obtain ⟨G',S',u',v',memr,b6⟩ := Five506.stage_row isA x hx0 hx _ next
+    have b5 : ∀ q ∈ Five506.sites, (run tick505 [] a).basis q = Five506.pre506 G' S' u' v' q := by
+      intro q hq
+      rw [←b6 q hq, run_append, List.take_nil, List.drop_nil]
+      exact (run_preserves_outside _ _ _ q (pack_off isA q hq)).symm
+    have s5 : ∀ q ∈ Five506.sites, (run tick505 [] a).basis q =
+        (run tick505 [] ⟨false, pre505 G S u v⟩).basis q := fun q hq =>
+      site_run tick505 sites tick_support a ⟨false, pre505 G S u v⟩ bits [] q (five_in q hq)
+    have good : goodRow (G,S,u,v) = true := by
+      unfold goodRow
+      rw [decide_eq_true_eq]
+      have e1 : tbN_t8 (runN_t8 tick505 [] (false, enc (G,S,u,v))).2 =
+          (run tick505 [] ⟨false, pre505 G S u v⟩).basis := by
+        rw [tb_enc_t8 (pre505 G S u v) sites (pre_supp G S u v), run_sim_t8]
+        rfl
+      rw [e1, Five506.encN_congr _ (Five506.pre506 G' S' u' v') _
+        (fun q hq => (s5 q hq).symm.trans (b5 q hq))]
+      exact legal_codes_spec (G',S',u',v') memr
+    exact rows_complete v (by omega) u (by omega) G S ⟨hsum, hvo, hg, good⟩
+  exact on_site (G,S,u,v) mem a bits m n
+
+end ECDSAAdd.Entrant.Six505
+
+namespace ECDSAAdd.Entrant.Six505
+open Arithmetic MappedCompressed Secp256k1 History5 OB5 Rolling1588.Integer
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+attribute [local irreducible] wires toffoliCount measurementCount Challenge.gateSlots
+  Rolling1588.forward Rolling1588.Integer.forward
+  Rolling1588TickGap.forward Five506.tick506 Five506.cand
+
+theorem shared_nodup : (skywalkSharedWires base).Nodup := by
+  apply List.Nodup.map_on
+  · intro a _ b _ eq; exact base_injective eq
+  · exact List.nodup_range'
+
+theorem tick_ranges505 : TickRanges.tick base 505 = tick505 := by
+  rw [← explicit505]
+  unfold TickRanges.tick TickGap.tick
+  simp only [show ¬(225 ≤ (505:Nat) ∧ (505:Nat) ≤ 254) from by decide,
+    show ¬(255 ≤ (505:Nat) ∧ (505:Nat) ≤ 286) from by decide, if_false]
+
+theorem packFirst505 (isA : Bool) : packFirst base isA 505 = packAfter base isA 505 := by
+  simp only [packFirst, show ¬(505:Nat) = 5 from by decide, if_false]
+
+def merged6 : Program := renameProgram (sig 510) cand6
+def tickP : Program := renameProgram (sig 505) tick505
+def packP (isA : Bool) : Program := renameProgram (sig 505) (packAfter base isA 505)
+
+def stackForward6 (isA : Bool) : Program :=
+  Rolling1588TickGap.forward isA 1 504 ++
+    (merged6 ++ (packP isA ++ ForwardSixPlacement.after isA))
+
+theorem rename_append (f : Wire → Wire) (a b : Program) :
+    renameProgram f (a ++ b) = renameProgram f a ++ renameProgram f b := by
+  simp [renameProgram, List.map_append]
+
+theorem shape6 (isA : Bool) : Five506.stackForward5 isA =
+    Rolling1588TickGap.forward isA 1 504 ++
+      (tickP ++ (packP isA ++ (Five506.merged5 ++ ForwardSixPlacement.after isA))) := by
+  rw [Five506.stackForward5, show (505:Nat) = 504+1 from rfl, Five506.forward_snoc]
+  simp only [show (1:Nat)+504 = 505 from rfl, tick_ranges505, packFirst505, rename_append,
+    tickP, packP, List.append_assoc]
+
+theorem forward_split (isA : Bool) : Rolling1588TickGap.forward isA 1 505 =
+    Rolling1588TickGap.forward isA 1 504 ++ (tickP ++ packP isA) := by
+  rw [show (505:Nat) = 504+1 from rfl, Five506.forward_snoc]
+  simp only [show (1:Nat)+504 = 505 from rfl, tick_ranges505, packFirst505, rename_append, tickP, packP]
+
+theorem packP_eq (isA : Bool) : packP isA = renameProgram (sig 510) (packAfter base isA 505) := by
+  cases isA <;> decide +kernel
+
+theorem pack_count (isA : Bool) : measurementCount (packAfter base isA 505) = 4 := by
+  cases isA <;> decide +kernel
+
+theorem pack_cand_disjoint (isA : Bool) : Disjoint (wires Five506.cand) (wires (packAfter base isA 505)) := by
+  rw [Finset.disjoint_left]
+  intro q hq hw
+  have h1 := Five506.cand_sub (Five506.csupport hq)
+  exact pack_off isA q (List.mem_toFinset.mp h1) hw
+
+theorem align5 (isA : Bool) (x : Nat) (v : State) (i : Nat) (hi : i ≤ 506)
+    (h : Stage base isA x p i v.basis) : pullState (sig 505) v = pullState (sig 510) v := by
+  have z6 := stage_zero_gen isA x i 506 hi (by omega) v.basis h
+  have z7 := stage_zero_gen isA x i 507 (by omega) (by omega) v.basis h
+  have z8 := stage_zero_gen isA x i 508 (by omega) (by omega) v.basis h
+  have z9 := stage_zero_gen isA x i 509 (by omega) (by omega) v.basis h
+  have z10 := stage_zero_gen isA x i 510 (by omega) (by omega) v.basis h
+  exact (OB5.pull_step 506 (by omega) v z6.1 z6.2).trans
+    ((OB5.pull_step 507 (by omega) v z7.1 z7.2).trans
+      ((OB5.pull_step 508 (by omega) v z8.1 z8.2).trans
+        ((OB5.pull_step 509 (by omega) v z9.1 z9.2).trans (OB5.pull_step 510 (by omega) v z10.1 z10.2))))
+
+theorem run_split (P Q : Program) (a b : List Bool) (h : a.length = measurementCount P) (s : State) :
+    run (P ++ Q) (a ++ b) s = run Q b (run P a s) := by
+  rw [run_append, ← h, List.take_left', List.drop_left'] <;> rfl
+
+theorem pack_indep (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (a : State)
+    (stage : Stage base isA x p 505 a.basis) (q1 r2 q2 : List Bool) (hq : q1.length = 7) :
+    run (packAfter base isA 505) r2 (run tick505 q1 a) =
+      run (packAfter base isA 505) q2 (run tick505 q1 a) := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have e1 := step_eq base isA base_pool_nodup x p 505 hp0 hx0 hpo hp gap hx cop (by omega) a (q1 ++ r2) [] stage
+  have e2 := step_eq base isA base_pool_nodup x p 505 hp0 hx0 hpo hp gap hx cop (by omega) a (q1 ++ q2) [] stage
+  rw [explicit505, run_split _ _ _ _ (hq.trans tick_counts.2.symm)] at e1 e2
+  exact e1.trans e2.symm
+
+theorem core (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) (a : State)
+    (stage : Stage base isA x p 505 a.basis) (q1 q2 r r1 r2 : List Bool) (hq : q1.length = 7) :
+    run (packP isA) r2 (run merged6 r1 (pullState (sig 505) a)) =
+      run Five506.merged5 r (run (packP isA) q2 (run tickP q1 (pullState (sig 505) a))) := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  let P := packAfter base isA 505
+  let t := run tick505 q1 a
+  have hb : Stage base isA x p 506 (run P q2 t).basis := by
+    have next := (step_spec base isA base_pool_nodup StackOB5.historyAbove x p 505
+      hp0 hx0 hpo hp gap hx cop (by omega) a (q1 ++ q2) stage).2
+    rw [explicit505, run_split _ _ _ _ (hq.trans tick_counts.2.symm)] at next
+    exact next
+  have rhs : run Five506.merged5 r (run (packP isA) q2 (run tickP q1 (pullState (sig 505) a))) =
+      pullState (sig 510) (run Five506.cand r (run P q2 t)) := by
+    rw [tickP, OB5.run_rename 505 (by omega), packP, OB5.run_rename 505 (by omega),
+      align5 isA x _ 506 (le_refl _) hb, Five506.merged5, OB5.run_rename 510 (by omega)]
+  have lhs : run (packP isA) r2 (run merged6 r1 (pullState (sig 505) a)) =
+      pullState (sig 510) (run P r2 (run cand6 r1 a)) := by
+    rw [align5 isA x a 505 (by omega) stage, merged6, OB5.run_rename 510 (by omega), packP_eq,
+      OB5.run_rename 510 (by omega)]
+  rw [lhs, rhs, at_stage6 isA x hx0 hx a stage r1 (q1 ++ r), ref,
+    run_split _ _ _ _ (hq.trans tick_counts.2.symm),
+    ← run_disjoint_commute Five506.cand P (pack_cand_disjoint isA) r r2 t]
+  exact congrArg (fun y => pullState (sig 510) (run Five506.cand r y))
+    (pack_indep isA x hx0 hx a stage q1 r2 q2 hq)
+
+theorem regular_indep (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p) :
+    ∀ n i, i+n ≤ 512 → ∀ (s : State) (m m' : List Bool), Stage base isA x p i s.basis →
+      run (regularForward base isA i n) m s = run (regularForward base isA i n) m' s := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  intro n
+  induction n with
+  | zero =>
+    intro i _ s m m' _
+    simp [regularForward, run]
+  | succ n ih =>
+    intro i hi s m m' hs
+    simp only [regularForward]
+    rw [run_append (W.repairedTick base i ++ packAfter base isA i),
+      run_append (W.repairedTick base i ++ packAfter base isA i)]
+    generalize measurementCount (W.repairedTick base i ++ packAfter base isA i) = c
+    have e1 := step_eq base isA base_pool_nodup x p i hp0 hx0 hpo hp gap hx cop (by omega) s (m.take c) [] hs
+    have e2 := step_eq base isA base_pool_nodup x p i hp0 hx0 hpo hp gap hx cop (by omega) s (m'.take c) [] hs
+    rw [e1, ← e2]
+    exact ih (i+1) (by omega) _ _ _ ((step_spec base isA base_pool_nodup StackOB5.historyAbove x p i
+      hp0 hx0 hpo hp gap hx cop (by omega) s (m'.take c) hs).2)
+
+theorem merged6_count : measurementCount merged6 = 27 := by
+  rw [merged6, (renameProgram_counts _ _).2]; exact cand_counts.2
+theorem tickP_count : measurementCount tickP = 7 := by
+  rw [tickP, (renameProgram_counts _ _).2]; exact tick_counts.2
+theorem packP_count (isA : Bool) : measurementCount (packP isA) = 4 := by
+  rw [packP, (renameProgram_counts _ _).2]; exact pack_count isA
+theorem merged5_count : measurementCount Five506.merged5 = 20 := by
+  rw [Five506.merged5, (renameProgram_counts _ _).2]; exact Five506.cand_counts.2.1
+
+theorem stackForward6_run_eq (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (s : State) (m : List Bool)
+    (first : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (stackForward6 isA) m s = run (Rolling1588TickGap.stackForward0 isA) m s := by
+  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
+  have gap : p+2^32 ≤ 2^256 := by norm_num [p]
+  have indep : ∀ m1 m2, run (Rolling1588TickGap.stackForward0 isA) m1 s =
+      run (Rolling1588TickGap.stackForward0 isA) m2 s := by
+    intro m1 m2
+    rw [Rolling1588TickGap.stackForward0_run_eq isA x hx0 hx s m1 first,
+      Rolling1588TickGap.stackForward0_run_eq isA x hx0 hx s m2 first,
+      Rolling1588.stackForward_boundary isA shared_nodup StackOB5.historyAbove x hx0 hx s m1 first,
+      Rolling1588.stackForward_boundary isA shared_nodup StackOB5.historyAbove x hx0 hx s m2 first]
+  generalize hK : measurementCount (Rolling1588TickGap.forward isA 1 504) = K
+  have hm0 : (List.replicate (K+31) false ++ m.drop (K+31)).drop K =
+      List.replicate 31 false ++ m.drop (K+31) := by
+    rw [← List.replicate_append_replicate, List.append_assoc, List.drop_left' (by simp)]
+  rw [indep m (List.replicate (K+31) false ++ m.drop (K+31)),
+    ← Five506.stackForward5_run_eq isA x hx0 hx s _ first, shape6, stackForward6]
+  simp only [run_append (Rolling1588TickGap.forward isA 1 504), run_append merged6,
+    run_append (packP isA), run_append tickP, run_append Five506.merged5,
+    merged6_count, tickP_count, packP_count, merged5_count, hK, hm0]
+  have init := stage_one base isA x p s first
+  have st := ((regularForward_spec base isA base_pool_nodup StackOB5.historyAbove x p
+    1 504 hp0 hx0 hpo hp gap hx cop (by omega)) s [] init).2
+  have start : pullState (sig (1-1)) s = s := by
+    apply State.extensionality
+    · rfl
+    · funext q
+      change s.basis (sig 0 q) = s.basis q
+      rw [sig_zero]
+  have hc : ∀ ml, run (Rolling1588TickGap.forward isA 1 504) ml s =
+      pullState (sig 505) (run (regularForward base isA 1 504) [] s) := by
+    intro ml
+    have pre := Rolling1588TickGap.forward_gen isA x hx0 hx 504 1 (le_refl _) (by omega) s ml init
+    rw [start] at pre
+    rw [pre, regular_indep isA x hx0 hx 504 1 (by omega) s ml [] init]
+    have z5 := stage_zero_gen isA x 505 505 (le_refl _) (by omega) _ st
+    exact OB5.pull_step 505 (by omega) _ z5.1 z5.2
+  rw [hc, hc]
+  have hq : ((List.replicate 31 false ++ m.drop (K+31)).take 7).length = 7 := by simp
+  rw [← core isA x hx0 hx _ st _ _ _ ((m.drop K).take 27) (((m.drop K).drop 27).take 4) hq]
+  have tail1 : (((List.replicate 31 false ++ m.drop (K+31)).drop 7).drop 4).drop 20 = m.drop (K+31) := by
+    simp only [List.drop_drop]
+    exact List.drop_left' (by simp)
+  have tail2 : ((m.drop K).drop 27).drop 4 = m.drop (K+31) := by
+    simp only [List.drop_drop]
+  rw [tail1, tail2]
+
+theorem counts6 :
+    toffoliCount merged6 + 1 = toffoliCount tickP + toffoliCount Five506.merged5 ∧
+      measurementCount merged6 = measurementCount tickP + measurementCount Five506.merged5 := by
+  have a := cand_counts
+  have b := tick_counts
+  have c := Five506.cand_counts
+  simp only [merged6, tickP, Five506.merged5, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2]
+  omega
+
+theorem slots6 : Challenge.gateSlots merged6 ≤
+    Challenge.gateSlots tickP + Challenge.gateSlots Five506.merged5 := by decide +kernel
+
+theorem site_split : ∀ w ∈ used, w ∈ Five506.candSites ∨ sig 510 w ∈ wires tickP := by decide +kernel
+
+theorem support6 (isA : Bool) :
+    wires (stackForward6 isA) ⊆ wires (Rolling1588TickGap.stackForward0 isA) := by
+  rw [Five506.shape, stackForward6]
+  intro q hq
+  have head : ∀ r, r ∈ wires (Rolling1588TickGap.forward isA 1 505) →
+      r ∈ wires (Rolling1588TickGap.forward isA 1 505 ++
+        (Five506.prior5 ++ ForwardSixPlacement.after isA)) := by
+    intro r h
+    rw [wires_append]
+    exact Finset.mem_union_left _ h
+  simp only [wires_append, Finset.mem_union] at hq
+  rcases hq with h | h | h | h
+  · apply head
+    rw [forward_split, wires_append]
+    exact Finset.mem_union_left _ h
+  · rw [merged6, renameProgram_support] at h
+    obtain ⟨w, hw, rfl⟩ := Finset.mem_image.mp h
+    rcases site_split w (List.mem_toFinset.mp (cused hw)) with g | g
+    · exact Five506.site_used isA w g
+    · apply head
+      rw [forward_split]
+      simp only [wires_append, Finset.mem_union]
+      exact Or.inr (Or.inl g)
+  · apply head
+    rw [forward_split]
+    simp only [wires_append, Finset.mem_union]
+    exact Or.inr (Or.inr h)
+  · rw [wires_append, wires_append]
+    exact Finset.mem_union_right _ (Finset.mem_union_right _ h)
+
+end ECDSAAdd.Entrant.Six505
+
+end -- Six505
+
 -- ===== Five-tick forward window: the TickGap forward stack now uses Five506 =====
 section
 set_option maxRecDepth 20000
@@ -14810,32 +18040,34 @@ open Arithmetic MappedCompressed Secp256k1 OB5
 attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
   forward stackForward0 Rolling1588.forward Rolling1588.stackForward
 
-/-- The forward stack: ticks 1..505, then the jointly re-synthesized five-tick window
-(tick 506 and ticks 507..510), then the unchanged tail. -/
-def stackForward (isA : Bool) : Program := Five506.stackForward5 isA
+/-- The forward stack uses ticks 1..504, the joint six-tick window 505..510,
+the deferred stage-505 history pack, and the unchanged tail. -/
+def stackForward (isA : Bool) : Program := Six505.stackForward6 isA
 
 theorem stackForward_metrics (isA : Bool) :
-    toffoliCount (stackForward isA)+68=toffoliCount (Rolling1588.stackForward isA) ∧
+    toffoliCount (stackForward isA)+69=toffoliCount (Rolling1588.stackForward isA) ∧
       measurementCount (stackForward isA)=measurementCount (Rolling1588.stackForward isA) ∧
       Challenge.gateSlots (stackForward isA) ≤ Challenge.gateSlots (Rolling1588.stackForward isA)+1005 := by
   have old := stackForward0_metrics isA
   have c := Five506.counts5
   have sl := Five506.slots5
-  rw [Five506.shape] at old
-  rw [stackForward, Five506.stackForward5]
+  have c6 := Six505.counts6
+  have s6 := Six505.slots6
+  rw [Five506.shape, Six505.forward_split] at old
+  rw [stackForward, Six505.stackForward6]
   simp only [toffoliCount_append, measurementCount_append, Challenge.gateSlots_append] at old ⊢
   exact ⟨by omega, by omega, by omega⟩
 
 theorem stackForward_support (isA : Bool) :
     wires (stackForward isA)⊆wires (Rolling1588.stackForward isA) :=
-  (Five506.support5 isA).trans (stackForward0_support isA)
+  (Six505.support6 isA).trans (stackForward0_support isA)
 
 theorem stackForward_run_eq (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
     (s : State) (m : List Bool)
     (first : W.CompactSkywalkStage base
       (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
     run (stackForward isA) m s=run (Rolling1588.stackForward isA) m s := by
-  rw [stackForward, Five506.stackForward5_run_eq isA x hx0 hx s m first]
+  rw [stackForward, Six505.stackForward6_run_eq isA x hx0 hx s m first]
   exact stackForward0_run_eq isA x hx0 hx s m first
 
 
@@ -14965,7 +18197,7 @@ theorem first_run_eq (isA : Bool) (hn : (skywalkSharedWires base).Nodup)
 
 
 theorem first_metrics (isA : Bool) :
-    toffoliCount (firstPhase isA)+68=toffoliCount (Rolling1588.firstPhase isA) ∧
+    toffoliCount (firstPhase isA)+69=toffoliCount (Rolling1588.firstPhase isA) ∧
       measurementCount (firstPhase isA)=measurementCount (Rolling1588.firstPhase isA) ∧
       gateSlots (firstPhase isA) ≤ gateSlots (Rolling1588.firstPhase isA)+1005 := by
   have stack := stackForward_metrics isA
@@ -15020,10 +18252,12 @@ theorem stackForward_physical (isA : Bool) : GatePhysical (stackForward isA) := 
   have old := Rolling1588.stackForward_physical isA
   rw [MorningPlacement.previous_shape] at old
   simp only [gatePhysical_append] at old
-  rw [stackForward, Five506.stackForward5, Five506.merged5]
+  have h5 := forward_physical isA 1 505 (by omega)
+  rw [Six505.forward_split] at h5
+  simp only [gatePhysical_append] at h5
+  rw [stackForward, Six505.stackForward6, Six505.merged6]
   simp only [gatePhysical_append]
-  exact ⟨forward_physical isA 1 505 (by omega),
-    gatePhysical_rename _ (sig_injective 510 (by omega)) _ Five506.physical,old.2.2⟩
+  exact ⟨h5.1, gatePhysical_rename _ (sig_injective 510 (by omega)) _ Six505.physical,h5.2.2,old.2.2⟩
 
 theorem first_physical (isA : Bool) : GatePhysical (firstPhase isA) := by
   have old := Rolling1588.firstPhase_physical isA
@@ -15485,14 +18719,14 @@ private def Facts (n g : Nat) (P Q : Program) : Prop :=
     gateSlots P ≤ gateSlots Q+g ∧ wires P⊆wires Q
 
 private theorem append_facts (P Q C : Program)
-    (count : toffoliCount P+68=toffoliCount Q ∧ measurementCount P=measurementCount Q ∧
-      gateSlots P ≤ gateSlots Q+1005) (sub : wires P⊆wires Q) : Facts 68 1005 (P++C) (Q++C) := by
+    (count : toffoliCount P+69=toffoliCount Q ∧ measurementCount P=measurementCount Q ∧
+      gateSlots P ≤ gateSlots Q+1005) (sub : wires P⊆wires Q) : Facts 69 1005 (P++C) (Q++C) := by
   simp only [Facts,toffoliCount_append,measurementCount_append,gateSlots_append,wires_append]
   exact ⟨by omega,by omega,by omega,Finset.union_subset_union sub (Finset.Subset.refl _)⟩
 
 private theorem tail_facts (a : Bool) :
-    Facts 68 1005 (Rolling1588TickGap.tailPhase a) (ReflectionE1.tailP a) := by
-  apply relation_of_shapes (Facts 68 1005) _ _
+    Facts 69 1005 (Rolling1588TickGap.tailPhase a) (ReflectionE1.tailP a) := by
+  apply relation_of_shapes (Facts 69 1005) _ _
     (Rolling1588TickGap.stackForward a++skywalkArithmeticClear base)
     (Rolling1588.stackForward a++skywalkArithmeticClear base)
   · unfold Rolling1588TickGap.tailPhase
@@ -15505,8 +18739,8 @@ private theorem tail_facts (a : Bool) :
 private def restContext (f g : Wire→Wire) (P R : Program) : Program :=
   renameProgram f (renameProgram g P++R)
 
-private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 68 1005 P Q) :
-    Facts 68 1005 (restContext f g P R) (restContext f g Q R) := by
+private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 69 1005 P Q) :
+    Facts 69 1005 (restContext f g P R) (restContext f g Q R) := by
   rcases h with ⟨ht,hm,hs,hw⟩
   have sub : wires (restContext f g P R)⊆wires (restContext f g Q R) := by
     simp only [restContext,renameProgram_support,wires_append]
@@ -15517,8 +18751,8 @@ private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 68 1
   exact ⟨by omega,by omega,by omega,sub⟩
 
 private theorem restE_facts (L : ControlledPointLayout) :
-    Facts 68 1005 (restE L) (ReflectionE1.restE L) := by
-  apply relation_of_shapes (Facts 68 1005) _ _
+    Facts 69 1005 (restE L) (ReflectionE1.restE L) := by
+  apply relation_of_shapes (Facts 69 1005) _ _
     (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase true)
       (Rolling1588.entryFieldHosted++
         renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase false)))
@@ -15532,8 +18766,8 @@ private theorem restE_facts (L : ControlledPointLayout) :
   · exact rest_facts _ _ _ _ _ (tail_facts true)
 
 private theorem restX_facts (L : ControlledPointLayout) :
-    Facts 68 1005 (restX L) (ReflectionE1.restX L) := by
-  apply relation_of_shapes (Facts 68 1005) _ _
+    Facts 69 1005 (restX L) (ReflectionE1.restX L) := by
+  apply relation_of_shapes (Facts 69 1005) _ _
     (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase false)
       (Rolling1588.exitFieldHosted++
         renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase true)))
@@ -15550,8 +18784,8 @@ private def stagesContext (Y M E S X EY N : Program) : Program :=
   (Y++M++E)++(S++X++EY)++N
 
 private theorem stages_facts (Y M E E0 S X X0 EY N : Program)
-    (entry : Facts 68 1005 E E0) (exit : Facts 68 1005 X X0) :
-    Facts 136 2010 (stagesContext Y M E S X EY N) (stagesContext Y M E0 S X0 EY N) := by
+    (entry : Facts 69 1005 E E0) (exit : Facts 69 1005 X X0) :
+    Facts 138 2010 (stagesContext Y M E S X EY N) (stagesContext Y M E0 S X0 EY N) := by
   rcases entry with ⟨et,em,es,ew⟩
   rcases exit with ⟨xt,xm,xs,xw⟩
   have sub : wires (stagesContext Y M E S X EY N)⊆
@@ -15581,8 +18815,8 @@ private theorem old_generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
   rfl
 
 private theorem generic_facts (L : ControlledPointLayout) (cx cy : Fp) :
-    Facts 136 2010 (generic L cx cy) (ReflectionE1.generic L cx cy) := by
-  exact relation_of_shapes (Facts 136 2010) _ _ _ _
+    Facts 138 2010 (generic L cx cy) (ReflectionE1.generic L cx cy) := by
+  exact relation_of_shapes (Facts 138 2010) _ _ _ _
     (generic_shape L cx cy) (old_generic_shape L cx cy)
     (stages_facts (fusedY L (-cy)) (E1QubitPlacement.entryM L (-cx))
       (restE L) (ReflectionE1.restE L) (ReflectionE1.squareEntry L (ReflectionE1.correction cx))
@@ -15646,7 +18880,7 @@ private def wrapContext (Z C : Program) (f : Wire→Wire) (P : Program) : Progra
   Z++(C++renameProgram f P++C)++Z
 
 private theorem wrap_facts (Z C : Program) (f : Wire→Wire) (P Q : Program)
-    (h : Facts 136 2010 P Q) : Facts 136 2010 (wrapContext Z C f P) (wrapContext Z C f Q) := by
+    (h : Facts 138 2010 P Q) : Facts 138 2010 (wrapContext Z C f P) (wrapContext Z C f Q) := by
   rcases h with ⟨ht,hm,hs,hw⟩
   have sub : wires (wrapContext Z C f P)⊆wires (wrapContext Z C f Q) := by
     simp only [wrapContext,wires_append,renameProgram_support]
@@ -15660,8 +18894,8 @@ private theorem wrap_facts (Z C : Program) (f : Wire→Wire) (P Q : Program)
   exact ⟨by omega,by omega,by omega,sub⟩
 
 private theorem gen_facts (L : ControlledPointLayout) (cx cy : Fp) :
-    Facts 136 2010 (gen L cx cy) (ReflectionE1.gen L cx cy) := by
-  apply relation_of_shapes (Facts 136 2010) _ _
+    Facts 138 2010 (gen L cx cy) (ReflectionE1.gen L cx cy) := by
+  apply relation_of_shapes (Facts 138 2010) _ _
     (wrapContext (zrep L) (clrF L) (swapF L) (generic L cx cy))
     (wrapContext (zrep L) (clrF L) (swapF L) (ReflectionE1.generic L cx cy))
   · unfold gen mid wrapContext
@@ -15703,8 +18937,8 @@ private theorem gen_facts (L : ControlledPointLayout) (cx cy : Fp) :
 
 
 private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : Facts 136 2010 P Q) :
-    toffoliCount (Edges.wrapper L C cy P)+136=toffoliCount (Edges.wrapper L C cy Q) ∧
+    (P Q : Program) (h : Facts 138 2010 P Q) :
+    toffoliCount (Edges.wrapper L C cy P)+138=toffoliCount (Edges.wrapper L C cy Q) ∧
     measurementCount (Edges.wrapper L C cy P)=measurementCount (Edges.wrapper L C cy Q) ∧
     gateSlots (Edges.wrapper L C cy P) ≤ gateSlots (Edges.wrapper L C cy Q)+2010 := by
   rcases h with ⟨ht,hm,hs,_⟩
@@ -15713,7 +18947,7 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151434 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151432 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout cx cy)).1
   have entryDelta := (ReflectionE1.gen_counts_delta layout layout_widths cx cy).1
   have baseline := Rolling1588BFFinal.wrapper_toffoli cx cy hc
@@ -15757,7 +18991,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151434,1499214,1588,50191209+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2151432,1499214,1588,50191209+Rolling1588.slotGrowth⟩
 
 
 
@@ -15774,7 +19008,7 @@ def bounds : Challenge.Bounds := ⟨2151434,1499214,1588,50191209+Rolling1588.sl
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151434 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2151432 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -23130,7 +26364,7 @@ private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2150939 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2150937 := by
   have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
   have old:=ReflectionE1TickGap.wrapper_toffoli cx cy hc
   omega
@@ -23308,7 +26542,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2150939,1498883,1588,50214293+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2150937,1498883,1588,50214293+Rolling1588.slotGrowth⟩
 
 
 
@@ -23325,7 +26559,7 @@ def bounds : Challenge.Bounds := ⟨2150939,1498883,1588,50214293+Rolling1588.sl
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2150939 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2150937 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -24168,7 +27402,7 @@ theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (
 
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2150922 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2150920 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
   omega
@@ -24192,7 +27426,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2150922,1498867,1588,50215655+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2150920,1498867,1588,50215655+Rolling1588.slotGrowth⟩
 
 
 
@@ -24209,7 +27443,7 @@ def bounds : Challenge.Bounds := ⟨2150922,1498867,1588,50215655+Rolling1588.sl
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2150922 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2150920 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -24269,7 +27503,7 @@ def program (C : Point) : Program :=
       MeasuredDH.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2150959,1498894,1588,50215644+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2150957,1498894,1588,50215644+Rolling1588.slotGrowth⟩
 
 
 
@@ -24287,13 +27521,13 @@ def bounds : Challenge.Bounds := ⟨2150959,1498894,1588,50215644+Rolling1588.sl
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2150959 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2150957 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have h := (MeasuredDH.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2150959
+    change toffoliCount (MeasuredDH.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2150957
     omega
 
 
@@ -24362,7 +27596,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (FiniteFlagInterval.gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2150919,1498865,1587,50240570⟩
+def bounds : Challenge.Bounds := ⟨2150917,1498865,1587,50240570⟩
 
 
 
@@ -24380,13 +27614,13 @@ def bounds : Challenge.Bounds := ⟨2150919,1498865,1587,50240570⟩
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2150919 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2150917 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (FiniteFlagInterval.gen layout cx cy) hc).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2150919
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (FiniteFlagInterval.gen layout cx cy))≤2150917
     omega
 
 
@@ -25195,7 +28429,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2150917,1498863,1587,50240570⟩
+def bounds : Challenge.Bounds := ⟨2150915,1498863,1587,50240570⟩
 
 
 
@@ -25213,14 +28447,14 @@ def bounds : Challenge.Bounds := ⟨2150917,1498863,1587,50240570⟩
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2150917 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2150915 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2150917
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2150915
     omega
 
 
@@ -26762,7 +29996,7 @@ def program (C : Point) : Program :=
       FusedFlags.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2150910,1498861,1587,50240570⟩
+def bounds : Challenge.Bounds := ⟨2150908,1498861,1587,50240570⟩
 
 
 
@@ -26780,14 +30014,14 @@ def bounds : Challenge.Bounds := ⟨2150910,1498861,1587,50240570⟩
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2150910 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2150908 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2150910
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2150908
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1498861 := by
