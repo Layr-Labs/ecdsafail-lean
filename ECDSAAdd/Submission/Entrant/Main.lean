@@ -1783,7 +1783,7 @@ def programOpt (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperOpt layout C cx cy
 
 def entryOpt : Challenge.Entry := fun C=>normalizeProgram (programOpt C)
-def boundsOpt : Challenge.Bounds := ⟨2150516,1498370,1587,50251236⟩
+def boundsOpt : Challenge.Bounds := ⟨2150417,1498370,1587,50251236⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programOpt C) (encodes b (if b then R+C else R)) := by
@@ -1794,14 +1794,14 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec hc b R) (support_used hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2150516 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2150417 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2150522 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2150516
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2150423 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2150417
     omega
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498370 := by
@@ -2062,7 +2062,7 @@ def programOpt (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperOpt layout C cx cy
 
 def entryOpt : Challenge.Entry := fun C=>normalizeProgram (programOpt C)
-def boundsOpt : Challenge.Bounds := ⟨2150515,1498370,1587,50251248⟩
+def boundsOpt : Challenge.Bounds := ⟨2150416,1498370,1587,50251248⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programOpt C) (encodes b (if b then R+C else R)) := by
@@ -2073,14 +2073,14 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec hc b R) (support_used hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2150515 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2150416 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2150522 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2150515
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2150423 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2150416
     omega
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498370 := by

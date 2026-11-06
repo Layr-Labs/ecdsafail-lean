@@ -1,3 +1,5 @@
+import ECDSAAdd.Arithmetic.PhysicalSupportRename
+import ECDSAAdd.Framework.MeasuredLocality
 import ECDSAAdd.Submission.Entrant.MainA
 import ECDSAAdd.Arithmetic.BalancedFieldCircuitProof
 import ECDSAAdd.Arithmetic.BalancedInverseComposeProof
@@ -443,40 +445,40 @@ theorem forward_slots (L : BalancedCircuit.Layout) (hw : L.Widths) :
     Challenge.instructionSlots]
   omega
 
-theorem forward_wires (L : BalancedCircuit.Layout) (hw : L.Widths) :
-    wires (forward L)⊆wires (Q6StructuralCell.forward L) := by
-  have w := BalancedCleanup.widths L.toLayout hw
-  have split : L.low=(L.r0::L.rtail.take 253)++[L.rtail.getD 253 0] := by
-    rw [show L.low=L.r0::L.rtail from rfl]
-    conv_lhs => rw [rtail_split L.rtail hw.1]
-    rfl
-  have rmem : L.rtail.getD 253 0∈wires (BalancedCleanup.prepareSign L.toLayout) := by
-    have inR : L.rtail.getD 253 0∈L.r := by
-      rw [show L.r=L.low++[L.rmsb] from rfl,split]; simp
-    simp only [BalancedCleanup.prepareSign,wires_append,Finset.mem_union]
-    exact Or.inr (FifthCarry2.signComplement_mem _ _ _ inR)
-  have pmem : L.parity∈wires (Q6StructuralCell.forwardPrefix L) := by
-    simp [Q6StructuralCell.forwardPrefix,GuardCompression.seed,wires_append,wires,Instr.wires]
-  have rp := (rep_facts 257 L.one).2.2.2.1
-  have omem : L.one∈wires [Instr.measureX L.one [] []] := by simp [wires,Instr.wires]
-  intro q hq
-  simp only [forward,tail,wires_append,wires_reverse,Finset.mem_union] at hq
-  simp only [Q6StructuralCell.forward,Q6StructuralCell.cleanup,FifthCarry2.cleanupRest,
-    wires_append,wires_reverse,Finset.mem_union]
-  rcases hq with hq|(hq|hq|hq|hq)
-  · exact Or.inl (Or.inl hq)
-  · have h2 : q=L.rtail.getD 253 0 ∨ q=L.parity := by
-      simp only [eraseParity,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
-        Finset.mem_singleton,Finset.notMem_empty,or_false] at hq
-      tauto
-    rcases h2 with h2|h2 <;> subst q
-    · exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr rmem))))
-    · exact Or.inl (Or.inl pmem)
-  · exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inl hq))))
-  · exact Or.inl (Or.inr (Or.inr (Or.inr (Or.inr hq))))
-  · have e := Finset.mem_singleton.mp (rp hq)
-    subst q
-    exact Or.inr omem
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem forward_physical (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (old : GatePhysical (Q6StructuralCell.forward L)) : GatePhysical (forward L) := by
@@ -573,17 +575,17 @@ theorem half_slots (w : Nat → Wire) (sign : Wire) :
   simp only [half,Challenge.gateSlots_append]
   omega
 
-theorem half_wires (w : Nat → Wire) (sign : Wire) :
-    wires (FirstZero.half w sign)⊆wires (Q6EndpointCell.half true w sign) := by
-  intro q hq
-  have hw : (Q6EndpointCell.ports w sign).Widths := Q6EndpointCell.ports_widths w sign
-  rw [Q6EndpointCell.half_true]
-  unfold FirstZero.half at hq
-  simp only [wires_append,Finset.mem_union] at hq ⊢
-  rcases hq with (hq|hq)|hq
-  · exact Or.inl (Or.inl hq)
-  · exact Or.inl (Or.inr (forward_wires (Q6EndpointCell.ports w sign) hw hq))
-  · exact Or.inr hq
+
+
+
+
+
+
+
+
+
+
+
 
 /-! ### The loaned, rebound window and the first cell -/
 
@@ -721,23 +723,23 @@ theorem cell_counts :
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
-theorem cell_wires : wires FirstZero.cell⊆wires FirstZero.oldCell := by
-  have k : wires (FirstZero.half base (base 2409))⊆wires (Q6EndpointCell.half true base (base 2409)) :=
-    half_wires base (base 2409)
-  have mono (f : Wire → Wire) (P Q : Program) (h : wires P⊆wires Q) :
-      wires (renameProgram f P)⊆wires (renameProgram f Q) := by
-    rw [renameProgram_support,renameProgram_support]
-    exact Finset.image_subset_image h
-  have rn := mono (Equiv.swap (base 516) (base 1)) _ _
-    (mono (Equiv.swap (base 719) (base 1032)) _ _ k)
-  simp only [cell,oldCell,halfWindow,oldHalfWindow,ControlLoan1589.loanWindow,wires_append]
-  intro q hq
-  simp only [Finset.mem_union] at hq ⊢
-  rcases hq with ((hq|hq)|hq)|hq
-  · exact Or.inl (Or.inl (Or.inl hq))
-  · exact Or.inl (Or.inl (Or.inr (rn hq)))
-  · exact Or.inl (Or.inr hq)
-  · exact Or.inr hq
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem cell_physical (old : GatePhysical oldCell) : GatePhysical cell := by
   have hn := ports_nodup
@@ -830,11 +832,11 @@ theorem eraseGraphCell_run (a b cin out carry : Wire)
   simpa only [t] using eraseCarry_correct a b cin carry hak hbk hck t tm
     (m.drop (measurementCount (xorSum a b cin out)))
 
-theorem graphCell_resources (a b cin out carry : Wire) :
-    toffoliCount (eraseGraphCell a b cin out carry)=0 ∧
-    measurementCount (eraseGraphCell a b cin out carry)=1 := by
-  simp [eraseGraphCell,xorSum,toffoliCount_append,measurementCount_append,
-    toffoliCount,measurementCount,eraseCarry]
+
+
+
+
+
 end ECDSAAdd.Entrant.TerminalGraph
 
 
@@ -2626,13 +2628,13 @@ set_option linter.unusedVariables false
 namespace ECDSAAdd.Entrant.TerminalGraphFp
 open Arithmetic Secp256k1 Arithmetic.BalancedField
 
-theorem normalized_source_bounds (Y : Fp) :
-    0≤(if centerFp Y<0 then -centerFp Y-1 else centerFp Y) ∧
-    (if centerFp Y<0 then -centerFp Y-1 else centerFp Y)≤TerminalGraph.Q := by
-  have h:=centerFp_bounds Y
-  unfold Centered at h
-  have eq : q=TerminalGraph.Q := rfl
-  split_ifs <;> omega
+
+
+
+
+
+
+
 
 theorem centerWord_msb (Y : Fp) :
     (centerWord Y).testBit 255=decide (centerFp Y<0) := by
@@ -4011,65 +4013,65 @@ private abbrev footprint (s q : Nat) : Prop :=
  (base 770≤q ∧ q<base 1026) ∨ (base 2056≤q ∧ q<base 2312) ∨
  (base 512≤q ∧ q<base 765)
 
-private theorem block_mem (q start n : Nat) :
- q∈wireBlock base start n ↔ base start≤q ∧ q<base (start+n) := by
- simp only [wireBlock,List.mem_map,List.mem_range'_1]
- constructor
- · rintro ⟨a,⟨ha,hb⟩,he⟩
-   change a+16=q at he
-   constructor
-   · change start+16≤q
-     rw [←he]
-     exact Nat.add_le_add_right ha 16
-   · change q<start+n+16
-     rw [←he]
-     exact Nat.add_lt_add_right hb 16
- · rintro ⟨hlo,hhi⟩
-   change start+16≤q at hlo
-   change q<start+n+16 at hhi
-   have hq : 16≤q := le_trans (Nat.le_add_left 16 start) hlo
-   have eq : q-16+16=q := Nat.sub_add_cancel hq
-   refine ⟨q-16,⟨?_,?_⟩,?_⟩
-   · have hh : start+16≤q-16+16 := by rw [eq]; exact hlo
-     exact (show start+16≤q-16+16 ↔ start≤q-16 from Nat.add_le_add_iff_right).mp hh
-   · have hh : q-16+16<start+n+16 := by rw [eq]; exact hhi
-     exact (show q-16+16<start+n+16 ↔ q-16<start+n from Nat.add_lt_add_iff_right).mp hh
-   · exact eq
 
-private theorem actual_carry (s : Nat) :
- (actualLayout s).carry=wireBlock base 512 253++[base 1540,base 1797] := by
- simp only [actualLayout,ofBalanced,Q6EndpointCell.ports,List.take_append,
-   show (wireBlock base 512 253).length=253 from by simp [wireBlock],
-   show (wireBlock base 512 253).take 254=wireBlock base 512 253 from
-     List.take_of_length_le (by simp [wireBlock]),Nat.reduceSub,List.take_succ_cons,
-   List.take_zero,List.nil_append,List.append_assoc,List.singleton_append]
 
-private theorem actual_y (s : Nat) :
- (actualLayout s).y=wireBlock base 770 256 := by rfl
-private theorem actual_r (s : Nat) :
- (actualLayout s).r=wireBlock base 2056 256 := by rfl
 
-private theorem actual_sites (s q : Nat) :
- q∈(actualLayout s).wires.toFinset ↔ footprint s q := by
- simp only [List.mem_toFinset,DecoderLayout.wires,List.mem_append,
-   List.mem_cons,List.not_mem_nil,or_false,actual_carry,actual_y,actual_r,block_mem]
- simp only [actualLayout,ofBalanced,Q6EndpointCell.ports,footprint]
- tauto
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 private def correctionCheck (s : Nat) : List Correction→Bool
  | []=>true
  | .Z t::cs=>decide (footprint s t) && correctionCheck s cs
  | .CZ a b::cs=>decide (footprint s a) && decide (footprint s b) && correctionCheck s cs
 
-private theorem correctionCheck_iff (s : Nat) (cs : List Correction) :
- correctionCheck s cs=true ↔ correctionWires cs⊆(actualLayout s).wires.toFinset := by
- induction cs with
- | nil=>simp [correctionCheck,correctionWires]
- | cons c cs ih=>
-   cases c <;>
-     simp only [correctionCheck,correctionWires,Bool.and_eq_true,decide_eq_true_eq,
-       Finset.union_subset_iff,Finset.singleton_subset_iff,Finset.insert_subset_iff,
-       Finset.empty_subset,and_true,ih,actual_sites]
+
+
+
+
+
+
+
+
+
 
 private def instructionCheck (s : Nat) : Instr→Bool
  | .X t=>decide (footprint s t)
@@ -4077,28 +4079,28 @@ private def instructionCheck (s : Nat) : Instr→Bool
  | .CCX a b t=>decide (footprint s a) && decide (footprint s b) && decide (footprint s t)
  | .measureX t c d=>decide (footprint s t) && correctionCheck s c && correctionCheck s d
 
-private theorem instructionCheck_iff (s : Nat) (i : Instr) :
- instructionCheck s i=true ↔ i.wires⊆(actualLayout s).wires.toFinset := by
- cases i <;>
-   simp only [instructionCheck,Instr.wires,Bool.and_eq_true,decide_eq_true_eq,
-     Finset.union_subset_iff,Finset.singleton_subset_iff,Finset.insert_subset_iff,
-     Finset.empty_subset,and_true,actual_sites,correctionCheck_iff,and_assoc]
+
+
+
+
+
+
 
 private def supportCheck (s : Nat) (P : Program) : Bool := P.all (instructionCheck s)
-private theorem supportCheck_correct (s : Nat) (P : Program)
- (h : supportCheck s P=true) : wires P⊆(actualLayout s).wires.toFinset := by
- induction P with
- | nil=>simp [wires]
- | cons i P ih=>
-   have hh : instructionCheck s i=true ∧ supportCheck s P=true := by
-     simpa only [supportCheck,List.all_cons,Bool.and_eq_true] using h
-   simp only [wires,Finset.union_subset_iff]
-   exact ⟨(instructionCheck_iff s i).mp hh.1,ih hh.2⟩
 
-theorem actual_decoder_support :
-    wires (actualDecoder 2409)⊆(ofBalanced (Q6EndpointCell.ports base (base 2409))).wires.toFinset ∧
-    wires (actualDecoder 2410)⊆(ofBalanced (Q6EndpointCell.ports base (base 2410))).wires.toFinset := by
-  constructor <;> apply supportCheck_correct <;> decide +kernel
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.TerminalGraphSupportOnly
 
@@ -4192,11 +4194,11 @@ def actualDecoder (sign : Nat) : Program :=
  TerminalGraph.decoder (TerminalGraph.ofBalanced (Q6EndpointCell.ports base (base sign)))
 attribute [local irreducible] GatePhysical actualDecoder TerminalGraph.decoder
 
-theorem physical : GatePhysical (actualDecoder 2409) :=
- physicalGateCheck_correct _ (by decide +kernel)
 
-theorem slots : Challenge.gateSlots (actualDecoder 2409)≤23901 := by
- decide +kernel
+
+
+
+
 end ECDSAAdd.Entrant.TerminalGraphPhysicalOnly
 end
 
@@ -4847,22 +4849,22 @@ def programC (L : Layout) (J B : Wire) : Program :=
   clearParity L J ++ restoreAt L J B ++ affineSub (sources L) L.r (L.carry.take 255) (lowY L) ++
     CleanInverse5.inverse (prepare L J B)
 
-theorem programC_counts (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J B : Wire) (hJ : J∉L.wires) (hB : B∉L.wires) :
-    toffoliCount (programC L J B)=515 ∧ measurementCount (programC L J B)=770 := by
-  let zero : State:=⟨false,fun _=>false⟩
-  have ready:=prepare_ready L hw hn J B hJ hB zero
-    ((regValue_zero _ _).mpr (by intro q hq;rfl)) (by intro q hq;rfl) rfl
-  have k:=CleanInverse5.counts (prepare L J B) (ready_proper _ _ ready)
-  have c:=clearParity_counts L hw J
-  have r:=restoreScalars_counts L.parity L.lower L.one L.sign (lowY L) J B L.rmsb
-  have a:=arithmetic_counts L hw
-  have p:=prepare_counts L hw J B
-  unfold arithmetic at a
-  simp only [programC,restoreAt,affineSub,toffoliCount_append,measurementCount_append,
-    k.1,k.2,c.1,c.2,r.1,r.2,a.1,a.2,p.1,
-    (notRegister_counts L.r).1,(notRegister_counts L.r).2]
-  decide
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem inverse_forward (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (J B : Wire) (hJ : J∉L.wires) (hB : B∉L.wires) (hJB : [J,B].Nodup)
@@ -5166,22 +5168,22 @@ theorem programC_physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   simp only [programC,gatePhysical_append]
   exact ⟨⟨⟨parts.2,restore⟩,sub⟩,CleanInverse5.inverse_physical _ parts.1.1.1⟩
 
-theorem programC_slots (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J B : Wire) (hJ : J∉L.wires) (hB : B∉L.wires) : gateSlots (programC L J B)≤10000 := by
-  let zero : State:=⟨false,fun _=>false⟩
-  have ready:=prepare_ready L hw hn J B hJ hB zero
-    ((regValue_zero _ _).mpr (by intro q hq;rfl)) (by intro q hq;rfl) rfl
-  have inv:=CleanInverse5.inverse_slots _ (CleanInverse5.ready_proper _ _ ready)
-  have prep:=prepare_slots_le L hw J B
-  have arith:=arithmetic_slots L hw
-  have par:=clearParity_slots_le L hw J
-  have pc:=prepare_counts L hw J B
-  have xr:=notRegister_gateSlots L.r
-  have len:=BalancedCleanup.widths L.toLayout hw
-  have rest : gateSlots (restoreAt L J B)=8 := rfl
-  simp only [programC,affineSub,gateSlots_append,show Affine.add (sources L) L.r
-    (L.carry.take 255) (lowY L)=arithmetic L from rfl,xr,len.2.1,arith,rest]
-  omega
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.FirstInverse5
 
 set_option maxRecDepth 8192
@@ -5195,12 +5197,12 @@ def jointInv (L : BalancedCircuit.Layout) (J G : Wire) : Program :=
   [.X G] ++ programC L J G ++ [.X G]
 
 
-theorem jointInv_counts (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J G : Wire) (hJ : J∉L.wires) (hG : G∉L.wires) :
-    toffoliCount (jointInv L J G)=515 ∧ measurementCount (jointInv L J G)=770 := by
-  have h:=programC_counts L hw hn J G hJ hG
-  simpa only [jointInv,toffoliCount_append,measurementCount_append,
-    toffoliCount,measurementCount,Nat.zero_add,Nat.add_zero] using h
+
+
+
+
+
+
 
 private theorem outside_layout (L : BalancedCircuit.Layout) (q : Wire)
     (hq : q ∉ L.wires) : q ∉ L.r ∧ q ∉ L.y ∧ q ∉ BalancedCircuit.work L := by
@@ -5323,35 +5325,35 @@ theorem work_no_data (L : Layout) (hn : L.wires.Nodup) (q : Wire) (hq : q∈work
       List.count_append,List.count_cons,List.count_nil] at h b
     omega
 
-theorem jointInv_pair (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J G : Wire) (hJ : J∉L.wires) (hG : G∉L.wires) (hJG : [J,G].Nodup)
-    (origin : BasisState) (clean : ∀q∈work L,origin q=false) (sign : origin L.sign=false)
-    (Z : Fp) :
-    Triple (PairFrame L.r L.y origin
-      (centerWord ((if origin J && !origin G then -Z else Z)/2))
-      (centerWord (if origin J then Z else 0))) (jointInv L J G)
-      (PairFrame L.r L.y origin (centerWord Z) 0) := by
-  have outside (q : Wire) (hq : q∉L.wires) : q∉L.r ∧ q∉L.y := by
-    constructor <;> intro bad
-    · exact hq (EntryRetained5.data_member L q (by simp [bad]))
-    · exact hq (EntryRetained5.data_member L q (by simp [bad]))
-  have sf:=flagAway L hn L.sign (by simp)
-  have sa : L.sign∉L.r ∧ L.sign∉L.y :=
-    ⟨fun bad=>sf (by simp [bad]),fun bad=>sf (by simp [bad])⟩
-  intro s m h
-  have hc : ∀q∈work L,s.basis q=false := fun q hq=>
-    (h.2.2 q (work_no_data L hn q hq).1 (work_no_data L hn q hq).2).trans (clean q hq)
-  have rr : regValue L.r s.basis=encodeWord 256
-      (halfResult (signedY (origin J && !origin G) (centerFp Z))) := by
-    rw [unary_half]
-    exact h.1
-  have yy : regValue L.y s.basis=encodeWord 256 (if origin J then centerFp Z else 0) := by
-    rw [source_word]
-    exact h.2.1
-  have out:=jointInv_frame L hw hn J G hJ hG hJG (origin J) (origin G) (centerFp Z)
-    (centerFp_bounds Z) s m rr yy hc ((h.2.2 _ sa.1 sa.2).trans sign)
-    (h.2.2 _ (outside J hJ).1 (outside J hJ).2) (h.2.2 _ (outside G hG).1 (outside G hG).2)
-  exact ⟨out.1,out.2.1,out.2.2.1,fun q qr qy=>(out.2.2.2 q qr qy).trans (h.2.2 q qr qy)⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem matrix_inverse (J G : Bool) (X Y : Fp)
     (hz : (if J then 2*X+(if G then -Y else Y) else Y)=0) :
@@ -5977,32 +5979,32 @@ theorem clearParity_support (L : Layout) (hw : L.Widths) (J : Wire) :
   · simp [wires,Instr.wires,Finset.insert_subset_iff,hj]
   · simp [wires,Instr.wires,Finset.insert_subset_iff,hj]
 
-theorem clearParity_scalar_free (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J : Wire) (hJ : J∉L.wires) (q : Wire) (hq : q=L.one ∨ q=L.sign) :
-    q∉wires (clearParity L J) := by
-  intro used
-  have m := List.mem_toFinset.mp (clearParity_support L hw J used)
-  have flag : q∈[L.sourceGuard,L.cout,L.minus,L.plus,L.parity,L.sign,L.lower,L.one] := by
-    rcases hq with rfl|rfl <;> simp
-  have away := flagAway L hn q flag
-  have sc := scalarND L hn
-  have qj : q≠J := by
-    intro e; apply hJ; rw [←e]
-    rcases hq with rfl|rfl <;> simp [Layout.wires,BalancedCleanup.Layout.wires]
-  have qp : q≠L.parity := by
-    have h := List.nodup_iff_count.mp sc L.parity
-    rcases hq with rfl|rfl <;> intro e <;> rw [e] at h <;> simp [List.count_cons] at h <;> omega
-  have ql : q≠L.lower := by
-    have h := List.nodup_iff_count.mp sc L.lower
-    rcases hq with rfl|rfl <;> intro e <;> rw [e] at h <;> simp [List.count_cons] at h <;> omega
-  simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at m
-  rcases m with ((hr|hy)|hc)|rfl|rfl|rfl
-  · exact away (by simp [hr])
-  · exact away (by simp [hy])
-  · exact away (by simp [List.mem_of_mem_take hc])
-  · exact qp rfl
-  · exact ql rfl
-  · exact qj rfl
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.JointInverse1588
@@ -9030,11 +9032,11 @@ def arithH (L : Layout) (J B : Wire) : Program :=
 def programF (L : Layout) (J B : Wire) : Program :=
   prepare L J B++arithH L J B++eraseScalarsAt L J B++clearF L J
 
-theorem pre4_keep (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) (b : State) (q : Wire)
-    (hc : ∀i,i<4 → q≠cAt L i) :
-    (run (pre4 L) [] b).basis q=b.basis q ∧ (run (pre4 L) [] b).phase=b.phase := by
-  have p := pre4_run L hw hn b []
-  exact ⟨p.2 q (hc 0 (by decide)) (hc 1 (by decide)) (hc 2 (by decide)) (hc 3 (by decide)),p.1⟩
+
+
+
+
+
 
 /-- The final parity clear with carries #4 and #254 on the cleared `one` and `sign` (and carry #248 on
 `rmsb`) runs as the record's `clearParity` on every state reached by the forward prefix and the scalar
@@ -10447,43 +10449,43 @@ theorem run_write_outside (p : Program) (port : Wire) (hp : port∉wires p)
       · simp only [writeBit,Function.update_of_ne he]
         exact (run_preserves_outside p m s w hw).symm
 
-theorem rename_toggle {n : Nat} (f : Fin n→Wire) (hf : Function.Injective f)
-    (P : Program) (hp : wires P⊆Finset.range n) (target : Fin n) (s : State) (m : List Bool) (z : Bool)
-    (he : run P m ⟨s.phase,fun q=>s.basis (label f q)⟩=
-      ⟨s.phase,writeBit (fun q=>s.basis (label f q)) target.val (s.basis (f target) ^^ z)⟩) :
-    run (renameProgram (label f) P) m s=
-      ⟨s.phase,writeBit s.basis (f target) (s.basis (f target) ^^ z)⟩ := by
-  have pp := run_rename_pool (label f) (Finset.range n) (label_injective f hf) P hp m
-    ⟨s.phase,fun q=>s.basis (label f q)⟩ s rfl (fun _ _=>rfl)
-  rw [he] at pp
-  apply State.extensionality
-  · exact pp.1
-  · funext w
-    by_cases hw : w∈(Finset.range n).image (label f)
-    · obtain ⟨q,hq,rfl⟩ := Finset.mem_image.mp hw
-      have ht : label f target.val=f target := by simp [label,target.isLt]
-      have same : label f q=f target ↔ q=target.val := by
-        constructor
-        · intro e
-          exact label_injective f hf q hq target.val (Finset.mem_range.mpr target.isLt) (e.trans ht.symm)
-        · intro e; subst q; exact ht
-      rw [pp.2 q hq]
-      simp only [writeBit,Function.update_apply]
-      by_cases eq : q=target.val
-      · simp [eq,ht]
-      · simp [eq,show label f q≠f target from fun h=>eq (same.mp h)]
-    · have noP : w∉wires (renameProgram (label f) P) := by
-        rw [renameProgram_support]
-        intro h
-        obtain ⟨q,hq,e⟩ := Finset.mem_image.mp h
-        exact hw (Finset.mem_image.mpr ⟨q,hp hq,e⟩)
-      have ne : w≠f target := by
-        intro e
-        apply hw
-        refine Finset.mem_image.mpr ⟨target.val,Finset.mem_range.mpr target.isLt,?_⟩
-        simpa [label,target.isLt] using e.symm
-      rw [run_preserves_outside _ m s w noP]
-      simp [writeBit,ne]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem listPorts_injective (r : List Wire) (hn : r.Nodup) {n : Nat} (hl : r.length=n) :
     Function.Injective (fun q : Fin n => r.getD q.val 0) := by
@@ -11231,28 +11233,28 @@ theorem tsq3_counts (xs dst pad carry : List Wire) (cin : Wire)
   simp only [toffoliCount_append,measurementCount_append] at h ⊢
   omega
 
-theorem tsq3_physical (xs dst pad carry : List Wire) (cin : Wire)
-    (hn : (cin :: xs ++ dst ++ pad ++ carry).Nodup) :
-    GatePhysical (tsq3 xs dst pad carry cin) ∧ GatePhysical (tsqc3 xs dst pad carry cin) := by
-  have h := TrimSquare.tsq2_physical xs dst pad carry cin hn
-  rcases tsq3_form xs dst pad carry cin with ⟨e1,e2⟩|⟨A,B,A',B',x,y,cy,c,e1,e2,e3,e4⟩
-  · rw [e1,e2]; exact h
-  · rw [e2,e4] at h; rw [e1,e3]
-    simp only [gatePhysical_append] at h ⊢
-    exact ⟨⟨⟨h.1.1.1,addDrop_physical_gen _ _ _ _ h.1.1.2⟩,h.1.2⟩,
-      ⟨⟨h.2.1.1,addDrop_physical_gen _ _ _ _ h.2.1.2⟩,h.2.2⟩⟩
 
-theorem tsq3_wires_subset (xs dst pad carry : List Wire) (cin : Wire)
-    (hd : dst.length=2*xs.length) (hp : 1≤pad.length) (hc : dst.length-1≤carry.length) :
-    wires (tsq3 xs dst pad carry cin)⊆(xs++dst++pad++carry++[cin]).toFinset ∧
-    wires (tsqc3 xs dst pad carry cin)⊆(xs++dst++pad++carry++[cin]).toFinset := by
-  have h := TrimSquare.tsq2_wires_subset xs dst pad carry cin hd hp hc
-  rcases tsq3_form xs dst pad carry cin with ⟨e1,e2⟩|⟨A,B,A',B',x,y,cy,c,e1,e2,e3,e4⟩
-  · rw [e1,e2]; exact h
-  · rw [e2,e4] at h; rw [e1,e3]
-    simp only [wires_append,Finset.union_subset_iff] at h ⊢
-    exact ⟨⟨⟨h.1.1.1,(addDrop_wires_gen _ _ _ _).trans h.1.1.2⟩,h.1.2⟩,
-      ⟨⟨h.2.1.1,(addDrop_wires_gen _ _ _ _).trans h.2.1.2⟩,h.2.2⟩⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem tsq3_gateSlots_le (xs dst pad carry : List Wire) (cin : Wire) :
     Challenge.gateSlots (tsq3 xs dst pad carry cin) ≤
@@ -11393,9 +11395,9 @@ theorem tickMF_wires : wires tickMF ⊆ sitesM.toFinset := by decide +kernel
 theorem tickMR_wires : wires tickMR ⊆ sitesM.toFinset := by decide +kernel
 theorem pairF_wires : wires (tick509ExF ++ tick510ExF) ⊆ sitesM.toFinset := by decide +kernel
 theorem pairR_wires : wires (tick510ExR ++ tick509ExR) ⊆ sitesM.toFinset := by decide +kernel
-theorem tickMF_sub : wires tickMF ⊆ wires (tick509ExF ++ tick510ExF) := by decide +kernel
-theorem sitesM_pool : ∀ q ∈ sitesM, q ∈ skywalkPoolWires base := by decide +kernel
-theorem tickMR_sub : wires tickMR ⊆ wires (tick510ExR ++ tick509ExR) := by decide +kernel
+
+
+
 
 theorem tickM_counts :
     toffoliCount tickMF = 2 ∧ measurementCount tickMF = 5 ∧
@@ -11404,9 +11406,9 @@ theorem tickM_counts :
     toffoliCount (tick510ExR ++ tick509ExR) = 7 ∧ measurementCount (tick510ExR ++ tick509ExR) = 4 := by
   decide +kernel
 
-theorem tickM_slots :
-    Challenge.gateSlots tickMF ≤ Challenge.gateSlots (tick509ExF ++ tick510ExF) ∧
-    Challenge.gateSlots tickMR ≤ Challenge.gateSlots (tick510ExR ++ tick509ExR) := by decide +kernel
+
+
+
 
 theorem tickM_physical : GatePhysical tickMF ∧ GatePhysical tickMR := by
   constructor <;> simp [tickMF, tickMR, GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate]
@@ -11425,13 +11427,170 @@ theorem take_recsUpTo (n : Nat) (m : List Bool) : m.take n ∈ recsUpTo n := by
     · have h := ih m
       cases b <;> simp [recsUpTo, h]
 
+set_option maxRecDepth 30000
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+namespace FastTickReplay
+open Arithmetic
+def tbN_t8 (b : Nat) : BasisState := fun q => b.testBit q
+
+def corrP_t8 : List Correction → Bool → Nat → Bool
+  | [], ph, _ => ph
+  | .Z t :: cs, ph, b => corrP_t8 cs (ph ^^ b.testBit t) b
+  | .CZ x y :: cs, ph, b => corrP_t8 cs (ph ^^ (b.testBit x && b.testBit y)) b
+
+def flipN_t8 (b t : Nat) (c : Bool) : Nat := if c then b ^^^ 2^t else b
+
+def runN_t8 : Program → List Bool → Bool × Nat → Bool × Nat
+  | [], _, s => s
+  | .X t :: p, m, s => runN_t8 p m (s.1, s.2 ^^^ 2^t)
+  | .CX c t :: p, m, s => runN_t8 p m (s.1, flipN_t8 s.2 t (s.2.testBit c))
+  | .CCX a b t :: p, m, s => runN_t8 p m (s.1, flipN_t8 s.2 t (s.2.testBit a && s.2.testBit b))
+  | .measureX t c₀ c₁ :: p, m, s =>
+      runN_t8 p m.tail
+        (corrP_t8 (if m.headD false then c₁ else c₀) (s.1 ^^ (m.headD false && s.2.testBit t))
+          (flipN_t8 s.2 t (s.2.testBit t)),
+         flipN_t8 s.2 t (s.2.testBit t))
+
+theorem testBit_flipN_t8 (b t q : Nat) (c : Bool) :
+    (flipN_t8 b t c).testBit q = (b.testBit q ^^ (c && decide (t = q))) := by
+  cases c <;> simp [flipN_t8, Nat.testBit_xor, Nat.testBit_two_pow]
+
+theorem writeBit_tbN_t8 (b t : Nat) (c : Bool) :
+    writeBit (tbN_t8 b) t (tbN_t8 b t ^^ c) = tbN_t8 (flipN_t8 b t c) := by
+  funext q
+  by_cases h : q = t
+  · subst h; simp [writeBit, tbN_t8, testBit_flipN_t8]
+  · have h' : ¬ (t = q) := fun e => h e.symm
+    simp [writeBit, tbN_t8, testBit_flipN_t8, Function.update, h, h']
+
+theorem corr_sim_t8 (cs : List Correction) (ph : Bool) (b : Nat) :
+    correct cs ⟨ph, tbN_t8 b⟩ = ⟨corrP_t8 cs ph b, tbN_t8 b⟩ := by
+  induction cs generalizing ph with
+  | nil => rfl
+  | cons c cs ih => cases c <;> simp [correct, corrP_t8, ih, tbN_t8]
+
+theorem run_sim_t8 (P : Program) (m : List Bool) (ph : Bool) (b : Nat) :
+    run P m ⟨ph, tbN_t8 b⟩ = ⟨(runN_t8 P m (ph, b)).1, tbN_t8 (runN_t8 P m (ph, b)).2⟩ := by
+  induction P generalizing m ph b with
+  | nil => rfl
+  | cons i P ih =>
+    cases i with
+    | X t =>
+      have e : writeBit (tbN_t8 b) t (!tbN_t8 b t) = tbN_t8 (b ^^^ 2^t) := by
+        funext q
+        by_cases h : q = t
+        · subst h; simp [writeBit, tbN_t8, Nat.testBit_xor, Nat.testBit_two_pow]
+        · have h' : ¬ (t = q) := fun e => h e.symm
+          simp [writeBit, tbN_t8, Nat.testBit_xor, Nat.testBit_two_pow, Function.update, h, h']
+      simp only [run, runN_t8, e]; exact ih _ _ _
+    | CX c t =>
+      have e := writeBit_tbN_t8 b t (tbN_t8 b c)
+      simp only [run, runN_t8]
+      have e2 : writeBit (tbN_t8 b) t (tbN_t8 b t ^^ tbN_t8 b c) = tbN_t8 (flipN_t8 b t (b.testBit c)) := e
+      simp only [e2]; exact ih _ _ _
+    | CCX x y t =>
+      have e := writeBit_tbN_t8 b t (tbN_t8 b x && tbN_t8 b y)
+      simp only [run, runN_t8]
+      have e2 : writeBit (tbN_t8 b) t (tbN_t8 b t ^^ (tbN_t8 b x && tbN_t8 b y)) =
+          tbN_t8 (flipN_t8 b t (b.testBit x && b.testBit y)) := e
+      simp only [e2]; exact ih _ _ _
+    | measureX t c₀ c₁ =>
+      have e2 : writeBit (tbN_t8 b) t false = tbN_t8 (flipN_t8 b t (b.testBit t)) := by
+        funext q
+        by_cases h : q = t
+        · subst h; simp [writeBit, tbN_t8, testBit_flipN_t8]
+        · have h' : ¬ (t = q) := fun e => h e.symm
+          simp [writeBit, tbN_t8, testBit_flipN_t8, Function.update, h, h']
+      simp only [run, runN_t8, measureAndCorrect, e2, corr_sim_t8]
+      generalize m.headD false = mm
+      cases mm <;> exact ih _ _ _
+
+def encN_t8 (f : BasisState) (l : List Wire) : Nat :=
+  l.foldl (fun a w => if f w then a ||| 2^w else a) 0
+
+theorem foldl_tb_t8 (f : BasisState) (l : List Wire) (a q : Nat) :
+    (l.foldl (fun a w => if f w then a ||| 2^w else a) a).testBit q =
+      (a.testBit q || (decide (q ∈ l) && f q)) := by
+  induction l generalizing a with
+  | nil => simp
+  | cons w l ih =>
+    simp only [List.foldl, ih]
+    by_cases hf : f w = true
+    · by_cases hq : q = w
+      · subst hq; simp [hf, Nat.testBit_or, Nat.testBit_two_pow]
+      · have hq' : ¬ (w = q) := fun e => hq e.symm
+        simp [hf, Nat.testBit_or, Nat.testBit_two_pow, hq, hq']
+    · simp [hf]
+      by_cases hq : q = w
+      · subst hq; simp [hf]
+      · simp [hq]
+
+theorem tb_enc_t8 (f : BasisState) (l : List Wire) (h : ∀ q, f q = true → q ∈ l) :
+    f = tbN_t8 (encN_t8 f l) := by
+  funext q
+  simp only [tbN_t8, encN_t8, foldl_tb_t8, Nat.zero_testBit, Bool.false_or]
+  cases hf : f q
+  · simp
+  · simp [h q hf]
+
+
+theorem pre509_supp (G S : Bool) (u v : Nat) : ∀q, pre509 G S u v q=true → q∈sitesM := by
+ intro q h
+ unfold pre509 at h
+ split_ifs at h <;> (subst_vars; simp [sitesM])
+
+def input509 (G S : Bool) (uv : Nat × Nat) : Nat := encN_t8 (pre509 G S uv.1 uv.2) sitesM
+
+theorem checkMF : ∀G S : Bool, ∀uv∈pairs509, ∀c∈recsUpTo 5,
+ runN_t8 (tick509ExF++tick510ExF) c (false,input509 G S uv)=runN_t8 tickMF c (false,input509 G S uv) := by
+ decide +kernel
+
+theorem checkMR : ∀G S : Bool, ∀uv∈pairs509, ∀c∈recsUpTo 4,
+ runN_t8 (tick510ExR++tick509ExR) c (false,(runN_t8 (tick509ExF++tick510ExF) [] (false,input509 G S uv)).2)=
+ runN_t8 tickMR c (false,(runN_t8 (tick509ExF++tick510ExF) [] (false,input509 G S uv)).2) := by
+ decide +kernel
+
+theorem concMF_fast : ∀ G S : Bool, ∀ uv ∈ pairs509, ∀ c ∈ recsUpTo 5,
+    (run (tick509ExF ++ tick510ExF) c ⟨false, pre509 G S uv.1 uv.2⟩).phase =
+      (run tickMF c ⟨false, pre509 G S uv.1 uv.2⟩).phase ∧
+    ∀ q ∈ sitesM,
+      (run (tick509ExF ++ tick510ExF) c ⟨false, pre509 G S uv.1 uv.2⟩).basis q =
+        (run tickMF c ⟨false, pre509 G S uv.1 uv.2⟩).basis q := by
+ intro G S uv huv c hc
+ have h:=checkMF G S uv huv c hc
+ rw [tb_enc_t8 (pre509 G S uv.1 uv.2) sitesM (pre509_supp G S uv.1 uv.2)]
+ simp only [run_sim_t8]
+ simp only [input509] at h
+ rw [h]
+ exact ⟨rfl,fun _ _=>rfl⟩
+
+theorem concMR_fast : ∀ G S : Bool, ∀ uv ∈ pairs509, ∀ c ∈ recsUpTo 4,
+    (run (tick510ExR ++ tick509ExR) c
+        ⟨false, (run (tick509ExF ++ tick510ExF) [] ⟨false, pre509 G S uv.1 uv.2⟩).basis⟩).phase =
+      (run tickMR c ⟨false, (run (tick509ExF ++ tick510ExF) [] ⟨false, pre509 G S uv.1 uv.2⟩).basis⟩).phase ∧
+    ∀ q ∈ sitesM,
+      (run (tick510ExR ++ tick509ExR) c
+          ⟨false, (run (tick509ExF ++ tick510ExF) [] ⟨false, pre509 G S uv.1 uv.2⟩).basis⟩).basis q =
+        (run tickMR c ⟨false, (run (tick509ExF ++ tick510ExF) [] ⟨false, pre509 G S uv.1 uv.2⟩).basis⟩).basis q := by
+ intro G S uv huv c hc
+ have h:=checkMR G S uv huv c hc
+ rw [tb_enc_t8 (pre509 G S uv.1 uv.2) sitesM (pre509_supp G S uv.1 uv.2)]
+ rw [run_sim_t8 (tick509ExF++tick510ExF) [] false]
+ simp only [run_sim_t8]
+ simp only [input509] at h
+ rw [h]
+ exact ⟨rfl,fun _ _=>rfl⟩
+end FastTickReplay
+
+
 theorem concMF : ∀ G S : Bool, ∀ uv ∈ pairs509, ∀ c ∈ recsUpTo 5,
     (run (tick509ExF ++ tick510ExF) c ⟨false, pre509 G S uv.1 uv.2⟩).phase =
       (run tickMF c ⟨false, pre509 G S uv.1 uv.2⟩).phase ∧
     ∀ q ∈ sitesM,
       (run (tick509ExF ++ tick510ExF) c ⟨false, pre509 G S uv.1 uv.2⟩).basis q =
         (run tickMF c ⟨false, pre509 G S uv.1 uv.2⟩).basis q := by
-  decide +kernel
+  exact FastTickReplay.concMF_fast
 
 theorem concMR : ∀ G S : Bool, ∀ uv ∈ pairs509, ∀ c ∈ recsUpTo 4,
     (run (tick510ExR ++ tick509ExR) c
@@ -11441,10 +11600,10 @@ theorem concMR : ∀ G S : Bool, ∀ uv ∈ pairs509, ∀ c ∈ recsUpTo 4,
       (run (tick510ExR ++ tick509ExR) c
           ⟨false, (run (tick509ExF ++ tick510ExF) [] ⟨false, pre509 G S uv.1 uv.2⟩).basis⟩).basis q =
         (run tickMR c ⟨false, (run (tick509ExF ++ tick510ExF) [] ⟨false, pre509 G S uv.1 uv.2⟩).basis⟩).basis q := by
-  decide +kernel
+  exact FastTickReplay.concMR_fast
 
 theorem pack509_nil : History5.packAfter base 509 = [] := by decide +kernel
-theorem decode509_nil : History5.decodeBefore base 509 = [] := by decide +kernel
+
 
 attribute [local irreducible] run W.compactSkywalkStageVirtual SkywalkTrace.next Nat.iterate
   W.compactSkywalkTick History5.encodePrefix
@@ -11556,11 +11715,11 @@ theorem tickMF_records : measurementCount tickMF=
   obtain ⟨_,c2,_,c4,_,_,_,_⟩ := tickM_counts
   rw [tick509ExF_explicit,tick510ExF_explicit,←measurementCount_append,c2,c4]
 
-theorem tickMR_records : measurementCount tickMR=
-    measurementCount (W.ReverseCarry.compactReceiverTick base 510)+
-      measurementCount (W.ReverseCarry.compactReceiverTick base 509) := by
-  obtain ⟨_,_,_,_,_,c6,_,c8⟩ := tickM_counts
-  rw [tick510ExR_explicit,tick509ExR_explicit,←measurementCount_append,c6,c8]
+
+
+
+
+
 
 end ECDSAAdd.Entrant
 end
@@ -11588,13 +11747,13 @@ def restoreSuffix (cx cy : Bool) : Program :=
   [.CX 5 10,.CX 8 10,.CX 3 10,.CX 5 8,.CX 8 5,.CX 4 5,.CX 6 5,
     .measureX 8 [] [.CZ 3 0]]
 
-theorem clear_equivalence : ∀cx cy : Bool, ∀x : Fin 2048,
-    MeasuredDH.clean x.val=true →
-    MeasuredDH.covered (bitRun gen x.val)=true →
-    MeasuredDH.clears true true cx cy (bitRun gen x.val)=true →
-    safe (clearPrefix cx cy) x.val=true ∧
-      bitRun (clearPrefix cx cy) x.val=bitRun (gen++MeasuredDH.original true true cx cy) x.val := by
-  decide +kernel
+
+
+
+
+
+
+
 
 theorem restore_equivalence : ∀cx cy : Bool, ∀x : Fin 2048,
     MeasuredDH.clean x.val=true → MeasuredDH.covered x.val=true →
@@ -12276,7 +12435,7 @@ theorem tripF_wires : wires tripF ⊆ sitesT8.toFinset := by decide +kernel
 theorem tripR_wires : wires tripR ⊆ sitesT8.toFinset := by decide +kernel
 theorem tickMR8_wires : wires tickMR8 ⊆ sitesT8.toFinset := by decide +kernel
 theorem sitesT8_pool : ∀ q ∈ sitesT8, q ∈ skywalkPoolWires base := by decide +kernel
-theorem tick508_wires : wires tick508ExF ⊆ sites508.toFinset := by decide +kernel
+
 theorem sites508_tick : ∀ q ∈ sites508, q ∈ wires (W.compactSkywalkTick base 508) := by
   decide +kernel
 
@@ -13933,19 +14092,19 @@ def oldCompute (a b c k t : Wire) : Program :=
 def newCompute (a b c t : Wire) : Program :=
   majority a b c t ++ [.X t]
 
-theorem erase_counts (a b c k t : Wire) :
-    toffoliCount (newErase a b c t) = 0 ∧
-    measurementCount (newErase a b c t) = 1 ∧
-    gateSlots (newErase a b c t) = 5 ∧
-    gateSlots (oldErase a b c k t) = 7 := by
-  exact ⟨rfl, rfl, rfl, rfl⟩
 
-theorem compute_counts (a b c k t : Wire) :
-    toffoliCount (newCompute a b c t) = 1 ∧
-    measurementCount (newCompute a b c t) = 0 ∧
-    gateSlots (newCompute a b c t) = 7 ∧
-    gateSlots (oldCompute a b c k t) = 12 := by
-  exact ⟨rfl, rfl, rfl, rfl⟩
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem erase_state_eq (a b c k t : Wire) (hn : [a,b,c,k,t].Nodup)
     (s : State) (m n : List Bool) (hk : s.basis k = false)
@@ -14010,21 +14169,21 @@ private theorem compare_triple_run (P Q R : Program) (m : List Bool) (s : State)
       (run Q (m.drop (measurementCount P)) (run P m s)) := by
   rw [compare_append_run,compare_append_run,measurementCount_append]
 
-theorem compareChain_eq_records (x y carry : List Wire) (cin target : Wire)
-    (nd : (target::cin::(x++y++carry)).Nodup)
-    (hx : x.length=y.length) (hc : carry.length=y.length)
-    (s : State) (m n : List Bool) (clean : ∀q∈carry,s.basis q=false) :
-    run (Arithmetic.compareChain none x y carry cin target) m s=
-      run (Arithmetic.compareChain none x y carry cin target) n s := by
-  have a:=compareChain_correct none x y carry cin target nd (by simp) hx hc s m clean
-  have b:=compareChain_correct none x y carry cin target nd (by simp) hx hc s n clean
-  apply State.extensionality
-  · exact a.1.trans b.1.symm
-  · funext q
-    by_cases eq:q=target
-    · subst q
-      exact a.2.2.trans b.2.2.symm
-    · exact (a.2.1 q eq).trans (b.2.1 q eq).symm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 private theorem compare_leaf_eq (forward : Bool) (a b cin last target : Wire)
     (nd : (target::cin::([a]++[b]++[last])).Nodup)
@@ -15070,11 +15229,11 @@ theorem dependentTop_counts (a b cin top : Wire) :
     gateSlots (dependentTop a b cin top)=9 := by
   exact ⟨rfl,rfl,rfl⟩
 
-theorem dependentTop_physical (a b cin top : Wire) (nd : [a,b,cin,top].Nodup) :
-    GatePhysical (dependentTop a b cin top) := by
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-    not_or,not_false_eq_true,and_true] at nd
-  simp_all [dependentTop,eraseDependentTop,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
+
+
+
+
+
 
 theorem dependentTop_support (a b cin top : Wire) :
     wires (dependentTop a b cin top) ⊆ [a,b,cin,top].toFinset := by
@@ -15816,36 +15975,36 @@ theorem readonly_add_carry_eq (x y left right : List Wire) (cin : Wire)
     · exact (regValue_eq_iff y _ _).mp (a.2.2.trans b.2.2.symm) q used
     · exact (a.2.1 q used).trans (b.2.1 q used).symm
 
-theorem readonly_sub_carry_eq (x y left right : List Wire) (cin : Wire)
-    (ndL : (cin::(y++left)).Nodup) (ndR : (cin::(y++right)).Nodup)
-    (disL : List.Disjoint x (cin::(y++left)))
-    (disR : List.Disjoint x (cin::(y++right)))
-    (hx : x.length=y.length) (hL : left.length+1=y.length) (hR : right.length+1=y.length)
-    (s : State) (m n : List Bool)
-    (cleanL : ∀q∈left,s.basis q=false) (cleanR : ∀q∈right,s.basis q=false) :
-    run (subInPlace x y left cin) m s=run (subInPlace x y right cin) n s := by
-  have yND:y.Nodup:=(List.nodup_append'.mp (List.nodup_cons.mp ndL).2).1
-  let u:=run (notRegister y) [] s
-  have first:u=⟨s.phase,fun q=>if q∈y then !s.basis q else s.basis q⟩:=
-    notRegister_correct y yND s []
-  have cleanAt(carry:List Wire)(nd:(cin::(y++carry)).Nodup)
-      (clean:∀q∈carry,s.basis q=false):∀q∈carry,u.basis q=false:=by
-    intro q hq
-    have away:q∉y:=fun used=>
-      List.disjoint_left.mp (List.nodup_append'.mp (List.nodup_cons.mp nd).2).2.2 used hq
-    rw [first]
-    simp only [away,if_false]
-    exact clean q hq
-  have equal:=readonly_add_carry_eq x y left right cin ndL ndR disL disR hx hL hR
-    u m n (cleanAt left ndL cleanL) (cleanAt right ndR cleanR)
-  have zero:measurementCount (notRegister y)=0:=(notRegister_counts y).2
-  have execute(carry:List Wire)(records:List Bool):
-      run (subInPlace x y carry cin) records s=
-        run (notRegister y) [] (run (addInPlace x y carry cin) records u):=by
-    simp only [subInPlace,List.append_assoc]
-    rw [TopCarry.run_zero_head _ _ records s zero,run_append,run_take]
-    exact FifthCarry.no_records (notRegister y) zero _ _ []
-  rw [execute left m,execute right n,equal]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.Q6LifetimeProof
 end -- original module boundary
@@ -16824,23 +16983,23 @@ private theorem footprint_old_half (divide : Bool) :
         Q6StructuralCell.forwardPrefix,Q6StructuralCell.cleanup,wires_append,Finset.mem_union]
       tauto
 
-private theorem footprint_old_halfE (divide : Bool) :
-    footprint⊆wires (Q6EndpointCell.halfE divide base (base 2409)) := by
-  cases divide
-  · exact footprint_old_half false
-  · have cmp := footprint_comparator true
-    intro q used
-    simp only [footprint,List.mem_toFinset,List.mem_cons] at used
-    rcases used with sign|rest
-    · subst q
-      rw [Q6EndpointCell.halfE_true,wires_append,wires_append]
-      exact Finset.mem_union_left _ (Finset.mem_union_left _ (by simp [wires,Instr.wires,layout_sign]))
-    · have part : q∈wires (Q6Structural.compareForward L) :=
-        cmp.symm ▸ (by simpa only [List.mem_toFinset,List.mem_cons] using rest)
-      simp only [Q6EndpointCell.halfE_true,Q6EndpointStructural.forwardE,
-        Q6StructuralCell.forwardPrefix,Q6EndpointStructural.cleanupE,
-        wires_append,Finset.mem_union]
-      tauto
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 private abbrev dataSites : Finset Wire :=
   (L.sign::L.parity::L.one::L.lower::(L.y++L.r)).toFinset
@@ -17548,24 +17707,24 @@ private theorem half_support_erased (retired : Nat) (hr : retired=719∨retired=
   · simpa only [half,if_true,wires_append,Finset.union_subset_iff] using
       And.intro (And.intro edge (forward_support_erased retired hr false)) edge
 
-private theorem halfE_support_erased (retired : Nat) (hr : retired=719∨retired=720∨retired=760)
-    (divide : Bool) : wires (halfE (base retired) divide base (base 2409))⊆
-      footprint.erase (base retired) := by
-  cases divide
-  · exact half_support_erased retired hr false
-  · have edge := small_support retired hr _ (show smallPieces[15]!∈smallPieces by decide +kernel)
-    simpa only [halfE,if_true,wires_append,Finset.union_subset_iff] using
-      And.intro (And.intro edge (forward_support_erased retired hr true)) edge
+
+
+
+
+
+
+
+
 
 theorem half_retired_free (retired : Nat) (hr : retired=719∨retired=720∨retired=760) (divide : Bool) :
     base retired∉wires (half (base retired) divide base (base 2409)) := by
   intro used
   exact (Finset.mem_erase.mp (half_support_erased retired hr divide used)).1 rfl
 
-theorem halfE_retired_free (retired : Nat) (hr : retired=719∨retired=720∨retired=760) (divide : Bool) :
-    base retired∉wires (halfE (base retired) divide base (base 2409)) := by
-  intro used
-  exact (Finset.mem_erase.mp (halfE_support_erased retired hr divide used)).1 rfl
+
+
+
+
 
 theorem half_support_old (retired : Nat) (hr : retired=719∨retired=720∨retired=760) (divide : Bool) :
     wires (half (base retired) divide base (base 2409))⊆
@@ -17573,11 +17732,11 @@ theorem half_support_old (retired : Nat) (hr : retired=719∨retired=720∨retir
   (half_support_erased retired hr divide).trans
     (Finset.erase_subset _ _ |>.trans (footprint_old_half divide))
 
-theorem halfE_support_old (retired : Nat) (hr : retired=719∨retired=720∨retired=760) (divide : Bool) :
-    wires (halfE (base retired) divide base (base 2409))⊆
-      wires (Q6EndpointCell.halfE divide base (base 2409)) :=
-  (halfE_support_erased retired hr divide).trans
-    (Finset.erase_subset _ _ |>.trans (footprint_old_halfE divide))
+
+
+
+
+
 
 private theorem addTop_physical (xs ys cs : List Wire) (cin : Wire)
     (nd : (cin::(ys++cs)).Nodup) (apart : List.Disjoint xs (cin::(ys++cs))) :
@@ -18391,17 +18550,17 @@ theorem half760_run_eq (divide : Bool)
   · rw [half760_true]
     exact core m
 
-theorem half760_frame (divide : Bool)
-    (hn : (Q6EndpointCell.ports base (base 2409)).wires.Nodup)
-    (origin : BasisState) (hc : Q6EndpointCell.Clean base origin) (X Y : Fp) :
-    Triple (PairFrame (Q6EndpointCell.ports base (base 2409)).r (Q6EndpointCell.ports base (base 2409)).y
-      origin (centerWord X) (centerWord Y)) (half760 divide)
-      (PairFrame (Q6EndpointCell.ports base (base 2409)).r (Q6EndpointCell.ports base (base 2409)).y origin
-        (centerWord (if divide then (X+(if origin (base 2409) then Y else -Y))/2
-          else 2*X+(if origin (base 2409) then -Y else Y))) (centerWord Y)) := by
-  intro s m input
-  rw [half760_run_eq divide hn origin hc X Y s m m input]
-  exact Q6EndpointCell.half_frame divide base (base 2409) hn origin hc X Y s m input
+
+
+
+
+
+
+
+
+
+
+
 
 /-! ### Counts and slots -/
 
@@ -18473,13 +18632,13 @@ theorem half760_free (divide : Bool) : base 760∉wires (half760 divide) := fun 
 end ECDSAAdd.Entrant.R2Life760
 end
 
-#print axioms ECDSAAdd.Entrant.R2Life760.half760_run_eq
-#print axioms ECDSAAdd.Entrant.R2Life760.half760_frame
-#print axioms ECDSAAdd.Entrant.R2Life760.half760_counts
-#print axioms ECDSAAdd.Entrant.R2Life760.half760_slots
-#print axioms ECDSAAdd.Entrant.R2Life760.half760_support
-#print axioms ECDSAAdd.Entrant.R2Life760.half760_physical
-#print axioms ECDSAAdd.Entrant.R2Life760.half760_free
+
+
+
+
+
+
+
 
 -- Seal the program for downstream modules (MainB/MainC use only the interface above).
 attribute [irreducible] ECDSAAdd.Entrant.R2Life760.half760
@@ -18733,12 +18892,12 @@ theorem replacement_correct (copy : Bool) (a b c A B z : Wire)
   have eqn := full_state copy a b c A B z nd s m m clean ready
   simpa only [← oldLeafAt_add,eqn] using old
 
-theorem full_state_records (copy : Bool) (a b c A B z : Wire)
-    (nd : [a,b,c,A,B,z].Nodup) (s : State) (m n : List Bool)
-    (clean : s.basis z = false) (ready : ReadyAt copy a b c A B s.basis) :
-    run (newLeafAt copy a b c A B) m s = run (newLeafAt copy a b c A B) n s := by
-  exact (full_state copy a b c A B z nd s [] m clean ready).symm.trans
-    (full_state copy a b c A B z nd s [] n clean ready)
+
+
+
+
+
+
 
 theorem support (copy : Bool) (a b c A B z : Wire) :
     wires (oldLeafAt a b c A B z) = {a,b,c,A,B,z} ∧
@@ -18777,21 +18936,21 @@ theorem physical (copy : Bool) (a b c A B z : Wire)
     simp_all [oldLeafAt,newLeafAt,majority,eraseCarry,GatePhysical,PhysicalInstr,ProperGate,
       ne_comm]
 
-theorem qubit_counts (copy : Bool) (a b c A B z : Wire)
-    (nd : [a,b,c,A,B,z].Nodup) :
-    qubitCount (oldLeafAt a b c A B z) = 6 ∧
-    qubitCount (newLeafAt copy a b c A B) = 5 := by
-  have nd5 : [a,b,c,A,B].Nodup := by
-    apply List.nodup_iff_count.mpr
-    intro q
-    have h := List.nodup_iff_count.mp nd q
-    simp only [List.count_cons,List.count_nil] at h ⊢
-    omega
-  constructor
-  · rw [qubitCount,(support copy a b c A B z).1]
-    simpa using List.toFinset_card_of_nodup nd
-  · rw [qubitCount,(support copy a b c A B z).2]
-    simpa using List.toFinset_card_of_nodup nd5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /-- A measured/recorded use consumes exactly the same one record ordinal in
 both programs. The arbitrary suffix tape is retained by the original interpreter. -/
@@ -18970,19 +19129,19 @@ theorem physical (flag a b c A B z : Wire) (nd : [flag,a,b,c,A,B,z].Nodup) :
     not_or,not_false_eq_true,and_true] at nd
   simp_all [newFlagAt,newLeafAt,eraseCarry,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
 
-theorem recorded_top_equals_flag (flag a b c A B z : Wire)
-    (nd : [flag,a,b,c,A,B,z].Nodup) (s : State) (ctx : RecordedContext)
-    (clean : s.basis z=false)
-    (same : ((s.basis A^^s.basis B)^^carryBit (s.basis a) (s.basis b) (s.basis c))=s.basis flag) :
-    runRecorded (embedRecorded (oldLeafAt a b c A B z)) ctx s=
-      runRecorded (embedRecorded (newFlagAt flag a b c A B)) ctx s := by
-  have eqn := top_equals_flag flag a b c A B z nd s
-    (ctx.tape.drop ctx.cursor) (ctx.tape.drop ctx.cursor) clean same
-  have countEq : recordedMeasurementCount (embedRecorded (oldLeafAt a b c A B z))=
-      recordedMeasurementCount (embedRecorded (newFlagAt flag a b c A B)) :=
-    (embedRecorded_counts _).2.trans (((HighOutputTailStructuredResearch.counts false a b c A B z).2.2.1.trans
-      (counts flag a b c A B).2.1.symm).trans (embedRecorded_counts _).2.symm)
-  simp only [runRecorded,runWithTape_embedRecorded,eqn,countEq]
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /-- Source-only complete-adder splice. No theorem about callers or this
 recursive whole adder has yet been compiled. The final carry port is omitted. -/
@@ -19185,11 +19344,11 @@ theorem prefix_keeps (xs ys cs : List Wire) (cin q : Wire)
   apply run_preserves_outside
   exact fun h => hq (List.mem_toFinset.mp (prefix_support xs ys cs cin h))
 
-theorem suffix_keeps (xs ys cs : List Wire) (cin q : Wire)
-    (hq : q∉spinePorts xs ys cs cin) (s : State) (m : List Bool) :
-    (run (adderSuffix xs ys cs cin) m s).basis q=s.basis q := by
-  apply run_preserves_outside
-  exact fun h => hq (List.mem_toFinset.mp (suffix_support xs ys cs cin h))
+
+
+
+
+
 
 /-- Only the old leaf's high output is exposed; majority_correct restores its
 inputs, and its measured/lower adderSuffix does not touch B. No tape cases occur. -/
@@ -19756,12 +19915,12 @@ theorem topT_run (D : List MappedBit) (w : Nat → Wire) (p : Wire)
 
 end ECDSAAdd.Entrant.MappedTopZero
 
-#print axioms ECDSAAdd.Entrant.MappedTopZero.madd_split
-#print axioms ECDSAAdd.Entrant.MappedTopZero.top_replace
 
-#print axioms ECDSAAdd.Entrant.MappedTopZero.topT_run
-#print axioms ECDSAAdd.Entrant.MappedTopZero.topT_counts
-#print axioms ECDSAAdd.Entrant.MappedTopZero.topT_physical
+
+
+
+
+
 end
 
 
@@ -20800,3 +20959,4668 @@ theorem inverse_gateSlots_le (w : Nat → Wire) : Challenge.gateSlots (inverse w
 
 end ECDSAAdd.Entrant.NativeKnownH
 end
+
+
+-- Verified bias-reuse development: Program
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph MappedCompressed
+
+def carryCorrections (L : DecoderLayout) : List Correction :=
+  [.Z (L.Y 0),.Z (L.Y 1),.Z L.sigma,.Z (L.A 0),.Z (L.Y 255),
+   .CZ L.bias (L.Y 0),.CZ L.bias (L.Y 1),.CZ L.bias L.sigma,
+   .CZ L.bias (L.A 0),.CZ L.bias (L.Y 255),
+   .CZ (L.Y 255) (L.Y 0),.CZ (L.Y 255) (L.Y 1),.CZ (L.Y 255) (L.A 0)]
+def copyCorrections (L : DecoderLayout) : List Correction :=
+  [.Z (L.Y 0),.Z (L.Y 1),.Z (L.Y 255),.CZ L.sigma (L.Y 0),
+   .CZ L.sigma (L.Y 255),.CZ (L.Y 0) L.h]
+def lowPrefix (L : DecoderLayout) : Program :=
+  [.CX (L.R 1) L.bias] ++ xorList (bSources L 0) (L.R 0) ++
+  [.CX L.bias (L.R 1)] ++ streamCarry L 2
+
+def middleProgram (L : DecoderLayout) : Program :=
+  (List.range' 3 253).flatMap (streamCarry L) ++
+  (List.range' 3 253).reverse.flatMap (eraseCorrectionCarry L)
+
+def bBlockFast (L : DecoderLayout) : Program := lowPrefix L ++ middleProgram L ++
+  [.measureX (L.R 1) [] (carryCorrections L)]
+def frontFast (L : DecoderLayout) : Program := normalize L ++
+  [.CX (L.R 0) L.h,.CX (L.Y 0) L.h]
+def decoderFast (L : DecoderLayout) : Program :=
+  frontFast L ++ aProgram L ++ bBlockFast L ++ eraseAProgram L ++
+  [.measureX L.bias [] (copyCorrections L)] ++ clearQuotient L ++ back L
+
+def actualFast : Program := decoderFast
+  (ofBalanced (Q6EndpointCell.ports base (base 2409)))
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Scratch
+
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+theorem run_write_outside (P : Program) (q : Wire) (hq : q ∉ wires P)
+    (v : Bool) (s : State) (m : List Bool) :
+    run P m ⟨s.phase, writeBit s.basis q v⟩ =
+      ⟨(run P m s).phase, writeBit (run P m s).basis q v⟩ := by
+  have loc := run_measured_locality P (wires P) (Finset.Subset.refl _)
+    ⟨s.phase,writeBit s.basis q v⟩ s m rfl (by
+      intro w hw
+      have ne : w ≠ q := fun e => hq (e ▸ hw)
+      simp [writeBit,ne])
+  apply State.extensionality
+  · exact loc.1
+  · funext w
+    by_cases eq : w=q
+    · subst w
+      rw [run_preserves_outside _ _ _ _ hq]
+      simp [writeBit]
+    · by_cases hw : w∈wires P
+      · simpa [writeBit,eq] using loc.2 w hw
+      · rw [run_preserves_outside _ _ _ _ hw]
+        change writeBit s.basis q v w = writeBit (run P m s).basis q v w
+        simp only [writeBit,Function.update_of_ne eq]
+        exact (run_preserves_outside P m s w hw).symm
+
+theorem erase_polynomial (q : Wire) (cs : List Correction)
+    (away : q∉correctionWires cs) (s : State) (m : List Bool)
+    (known : s.basis q=(correct cs ⟨false,s.basis⟩).phase) :
+    run [.measureX q [] cs] m s=⟨s.phase,writeBit s.basis q false⟩ := by
+  have loc : (correct cs ⟨false,writeBit s.basis q false⟩).phase=
+      (correct cs ⟨false,s.basis⟩).phase :=
+    correct_phase_locality cs (correctionWires cs) (Finset.Subset.refl _) _ _ rfl (by
+      intro w hw
+      have ne : w≠q := fun e=>away (e ▸ hw)
+      simp [writeBit,ne])
+  have one (b : Bool) : measureAndCorrect q [] cs b s=⟨s.phase,writeBit s.basis q false⟩ := by
+    cases b
+    · simp [measureAndCorrect,correct]
+    · apply State.extensionality
+      · change (correct cs ⟨s.phase ^^ s.basis q,writeBit s.basis q false⟩).phase=s.phase
+        rw [RecordedMeasurement.correct_phase,loc,←known]
+        simp
+      · simp [measureAndCorrect]
+  simpa only [run] using one (m.headD false)
+
+def lift (L : DecoderLayout) (origin s : State) : State :=
+  ⟨s.phase,writeBit (writeBit s.basis L.bias (origin.basis L.bias)) (L.R 0)
+    (bExpected L origin.basis 1)⟩
+
+theorem run_lift (L : DecoderLayout) (origin s : State) (P : Program) (m : List Bool)
+    (hb : L.bias∉wires P) (hr : L.R 0∉wires P) :
+    run P m (lift L origin s)=lift L origin (run P m s) := by
+  simp only [lift]
+  rw [run_write_outside P (L.R 0) hr (bExpected L origin.basis 1)
+    ⟨s.phase,writeBit s.basis L.bias (origin.basis L.bias)⟩ m]
+  rw [run_write_outside P L.bias hb (origin.basis L.bias) s m]
+
+def carryCorrection (y0 y1 sigma a0 sy q0 : Bool) : Bool :=
+  y0 ^^ y1 ^^ sigma ^^ a0 ^^ sy ^^
+    (q0 && y0) ^^ (q0 && y1) ^^ (q0 && sigma) ^^ (q0 && a0) ^^ (q0 && sy) ^^
+    (sy && y0) ^^ (sy && y1) ^^ (sy && a0)
+
+def copyCorrection (y0 y1 sigma sy h : Bool) : Bool :=
+  y0 ^^ y1 ^^ sy ^^ (sigma && y0) ^^ (sigma && sy) ^^ (y0 && h)
+
+theorem carry_identity : ∀ y0 y1 sigma h sy a0 q0 : Bool,
+    (sigma && h)=false →
+    q0=((y0 ^^ y1 ^^ sigma ^^ a0) ^^ (sy && !sigma) ^^ (y0 && h)) →
+    carryBit (sy && !sigma) (y0 ^^ y1 ^^ sigma ^^ a0) (y0 && h)=
+      carryCorrection y0 y1 sigma a0 sy q0 := by
+  decide +kernel
+
+theorem copy_identity : ∀ y0 y1 sigma h sy a0 q0 : Bool,
+    a0=(sigma && !y0) →
+    q0=((y0 ^^ y1 ^^ sigma ^^ a0) ^^ (sy && !sigma) ^^ (y0 && h)) →
+    q0=copyCorrection y0 y1 sigma sy h := by
+  decide +kernel
+
+theorem stream_from (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (origin : State) (k n : Nat) (bound : k+n≤255) (s : State)
+    (f : StreamFrame L origin k s) (m : List Bool) :
+    StreamFrame L origin (k+n)
+      (run ((List.range' (k+1) n).flatMap (streamCarry L)) m s) := by
+  induction n generalizing k s m with
+  | zero => simpa [run] using f
+  | succ n ih =>
+    rw [List.range'_succ,List.flatMap_cons,run_append,run_take]
+    have next := stream_frame_step L hw hn origin s k (by omega) f m
+    have result := ih (k+1) (by omega) _ next (m.drop (measurementCount (streamCarry L (k+1))))
+    simpa only [Nat.add_assoc,Nat.add_comm 1 n] using result
+
+theorem erase_from (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (origin : State) (graph : BGraph L origin.basis) (k n : Nat)
+    (bound : k+n≤255) (s : State) (f : EraseBFrame L origin (k+n) s) (m : List Bool) :
+    EraseBFrame L origin k
+      (run ((List.range' (k+1) n).reverse.flatMap (eraseCorrectionCarry L)) m s) := by
+  induction n generalizing s m with
+  | zero => simpa [run] using f
+  | succ n ih =>
+    rw [List.range'_concat,List.reverse_append,List.reverse_cons,List.reverse_nil,List.nil_append,
+      List.flatMap_append,List.flatMap_cons,List.flatMap_nil,List.append_nil,run_append,run_take]
+    simp only [Nat.one_mul]
+    have next := eraseBFrame_step L hw hn origin s (k+1+n) (by omega) (by omega) graph
+      (by simpa only [Nat.add_assoc,Nat.add_comm 1 n] using f) m
+    apply ih (by omega)
+    simpa only [Nat.add_assoc,Nat.add_comm 1 n,Nat.add_sub_cancel] using next
+
+def fixedLayout : DecoderLayout := ofBalanced
+  (Q6EndpointCell.ports MappedCompressed.base (MappedCompressed.base 2409))
+def middle : Program := (List.range' 3 253).flatMap (streamCarry fixedLayout) ++
+  (List.range' 3 253).reverse.flatMap (eraseCorrectionCarry fixedLayout)
+
+def avoids (q : Wire) (P : Program) : Bool := P.all (fun i=>decide (q∉i.wires))
+
+theorem avoids_sound (q : Wire) (P : Program) (h : avoids q P=true) : q∉wires P := by
+  induction P with
+  | nil => simp [wires]
+  | cons i P ih =>
+    have parts : (q∉i.wires) ∧ avoids q P=true := by
+      simpa only [avoids,List.all_cons,Bool.and_eq_true,decide_eq_true_eq] using h
+    simpa only [wires,Finset.mem_union,not_or] using And.intro parts.1 (ih parts.2)
+
+theorem middle_away : fixedLayout.bias∉wires middle ∧ fixedLayout.R 0∉wires middle := by
+  constructor <;> apply avoids_sound <;> decide +kernel
+
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Proof
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+theorem fixed_widths : fixedLayout.Widths :=
+  ofBalanced_widths _ (Q6EndpointCell.ports_widths _ _)
+theorem fixed_nodup : fixedLayout.wires.Nodup :=
+  ofBalanced_nodup _ Rolling1588Lifetime.half_ports_nodup760
+
+theorem middle_frame (origin s : State) (graph : BGraph fixedLayout origin.basis)
+    (f : StreamFrame fixedLayout origin 2 (lift fixedLayout origin s)) (m : List Bool) :
+    EraseBFrame fixedLayout origin 2 (lift fixedLayout origin (run middle m s)) := by
+  rw [←run_lift fixedLayout origin s middle m middle_away.1 middle_away.2]
+  rw [middle,run_append,run_take]
+  apply erase_from fixedLayout fixed_widths fixed_nodup origin graph 2 253 (by decide)
+  apply stream_to_erase
+  exact stream_from fixedLayout fixed_widths fixed_nodup origin 2 253 (by decide) _ f _
+
+theorem carryCorrections_value (L : DecoderLayout) (b : BasisState) :
+    (correct (carryCorrections L) ⟨false,b⟩).phase=
+      carryCorrection (b (L.Y 0)) (b (L.Y 1)) (b L.sigma) (b (L.A 0))
+        (b (L.Y 255)) (b L.bias) := by
+  simp [carryCorrections,correct,carryCorrection,Bool.xor_assoc]
+
+theorem copyCorrections_value (L : DecoderLayout) (b : BasisState) :
+    (correct (copyCorrections L) ⟨false,b⟩).phase=
+      copyCorrection (b (L.Y 0)) (b (L.Y 1)) (b L.sigma) (b (L.Y 255)) (b L.h) := by
+  simp [copyCorrections,correct,copyCorrection,Bool.xor_assoc]
+
+theorem erase_carry (s : State) (m : List Bool)
+    (known : s.basis (fixedLayout.R 1)=
+      carryCorrection (s.basis (fixedLayout.Y 0)) (s.basis (fixedLayout.Y 1))
+        (s.basis fixedLayout.sigma) (s.basis (fixedLayout.A 0))
+        (s.basis (fixedLayout.Y 255)) (s.basis fixedLayout.bias)) :
+    run [.measureX (fixedLayout.R 1) [] (carryCorrections fixedLayout)] m s=
+      ⟨s.phase,writeBit s.basis (fixedLayout.R 1) false⟩ := by
+  apply erase_polynomial _ _ (by decide +kernel)
+  rw [carryCorrections_value]
+  exact known
+
+theorem erase_copy (s : State) (m : List Bool)
+    (known : s.basis fixedLayout.bias=
+      copyCorrection (s.basis (fixedLayout.Y 0)) (s.basis (fixedLayout.Y 1))
+        (s.basis fixedLayout.sigma) (s.basis (fixedLayout.Y 255)) (s.basis fixedLayout.h)) :
+    run [.measureX fixedLayout.bias [] (copyCorrections fixedLayout)] m s=
+      ⟨s.phase,writeBit s.basis fixedLayout.bias false⟩ := by
+  apply erase_polynomial _ _ (by decide +kernel)
+  rw [copyCorrections_value]
+  exact known
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Low
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+def newLow : Program := [.CX (fixedLayout.R 1) fixedLayout.bias] ++
+  xorList (bSources fixedLayout 0) (fixedLayout.R 0) ++
+  [.CX fixedLayout.bias (fixedLayout.R 1)]
+def oldLow : Program := xorList (bSources fixedLayout 0) (fixedLayout.R 0) ++
+  streamCarry fixedLayout 1
+
+theorem b0_sources : bSources fixedLayout 0=[786,1043] := by decide +kernel
+theorem b1_sources : bSources fixedLayout 1=[786,787,2425,528,784] := by decide +kernel
+
+theorem newLow_run (s : State) (m : List Bool)
+    (low : s.basis 2072=(s.basis 786 ^^ s.basis 1043)) :
+    run newLow m ⟨s.phase,writeBit s.basis 784 false⟩=
+      ⟨s.phase,writeBit (writeBit (writeBit s.basis 784 (s.basis 2073)) 2072 false) 2073 false⟩ := by
+  have program : newLow=[.CX 2073 784,.CX 786 2072,.CX 1043 2072,.CX 784 2073] := by
+    decide +kernel
+  rw [program]
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases h0:q=2072
+    · subst q
+      cases hy:s.basis 786 <;> cases hh:s.basis 1043 <;> simp [run,writeBit,low,hy,hh,Bool.xor_assoc]
+    · by_cases h1:q=2073
+      · subst q;simp [run,writeBit,low,Bool.xor_assoc]
+      · by_cases hb:q=784
+        · subst q;simp [run,writeBit,low,Bool.xor_assoc]
+        · simp [run,writeBit,h0,h1,hb]
+
+theorem oldLow_run (s : State) (m : List Bool)
+    (low : s.basis 2072=(s.basis 786 ^^ s.basis 1043)) :
+    run oldLow m s=
+      ⟨s.phase,writeBit (writeBit s.basis 2072 (bExpected fixedLayout s.basis 1)) 2073 false⟩ := by
+  have program : oldLow=[.CX 786 2072,.CX 1043 2072,.CX 2073 2072,
+    .CX 786 2072,.CX 787 2072,.CX 2425 2072,.CX 528 2072,.CX 784 2072,
+    .CX 786 2073,.CX 787 2073,.CX 2425 2073,.CX 528 2073,.CX 784 2073,.CX 2072 2073] := by
+    decide +kernel
+  rw [program]
+  have expected : bExpected fixedLayout s.basis 1=
+      (s.basis 2073 ^^ parity [786,787,2425,528,784] s.basis) := by
+    rw [bExpected,b1_sources]
+    rfl
+  rw [expected]
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases h0:q=2072
+    · subst q;simp [run,writeBit,low,parity,Bool.xor_assoc,Bool.xor_left_comm,Bool.xor_comm]
+    · by_cases h1:q=2073
+      · subst q;simp [run,writeBit,low,parity,Bool.xor_assoc,Bool.xor_left_comm,Bool.xor_comm]
+      · simp [run,writeBit,h0,h1]
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: View
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+theorem low_view (s : State) (m : List Bool)
+    (low : s.basis 2072=(s.basis 786 ^^ s.basis 1043)) :
+    lift fixedLayout s (run newLow m ⟨s.phase,writeBit s.basis 784 false⟩)=
+      run oldLow m s := by
+  rw [newLow_run s m low,oldLow_run s m low]
+  have hb : fixedLayout.bias=784 := rfl
+  have hr : fixedLayout.R 0=2072 := rfl
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases h0:q=2072
+    · subst q;simp [lift,hb,hr,writeBit]
+    · by_cases h1:q=2073
+      · subst q;simp [lift,hb,hr,writeBit]
+      · by_cases hq:q=784
+        · subst q;simp [lift,hb,hr,writeBit]
+        · simp [lift,hb,hr,writeBit,h0,h1,hq]
+
+theorem oldLow_frame (s : State) (m : List Bool)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis) :
+    StreamFrame fixedLayout s 1 (run oldLow m s) := by
+  rw [oldLow,run_append,run_take]
+  apply stream_frame_step fixedLayout fixed_widths fixed_nodup s _ 0 (by decide)
+  exact stream_initial fixedLayout fixed_widths fixed_nodup s _ low
+
+theorem lowPrefix_frame (s : State) (m : List Bool)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis) :
+    StreamFrame fixedLayout s 2
+      (lift fixedLayout s (run (lowPrefix fixedLayout) m
+        ⟨s.phase,writeBit s.basis 784 false⟩)) := by
+  have literal : s.basis 2072=(s.basis 786 ^^ s.basis 1043) := by
+    simpa only [b0_sources,parity,List.foldr_cons,List.foldr_nil,Bool.xor_false] using low
+  have program : lowPrefix fixedLayout=newLow++streamCarry fixedLayout 2 := by
+    simp only [lowPrefix,newLow,List.append_assoc]
+  have count : measurementCount newLow=0 := by decide +kernel
+  have away : fixedLayout.bias∉wires (streamCarry fixedLayout 2) ∧
+      fixedLayout.R 0∉wires (streamCarry fixedLayout 2) := by
+    constructor <;> apply avoids_sound <;> decide +kernel
+  rw [program,run_append,run_take,count,List.drop_zero]
+  rw [←run_lift fixedLayout s _ (streamCarry fixedLayout 2) m away.1 away.2]
+  rw [low_view s m literal]
+  exact stream_frame_step fixedLayout fixed_widths fixed_nodup s _ 1 (by decide)
+    (oldLow_frame s m low) m
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Arithmetic
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+def rawOne (b : BasisState) : Bool := b 786 ^^ b 787 ^^ b 2425 ^^ b 528
+
+theorem expected_one (b : BasisState) : bExpected fixedLayout b 1=
+    (b 2073 ^^ (rawOne b ^^ b 784)) := by
+  rw [bExpected,b1_sources]
+  simp [rawOne,parity,Bool.xor_assoc,show fixedLayout.R 1=2073 from rfl]
+
+theorem raw_zero (b : BasisState) : parity (rawSources fixedLayout 0) b=b 786 := by
+  have hs : rawSources fixedLayout 0=[786] := by decide +kernel
+  simp [hs,parity]
+
+theorem raw_one (b : BasisState) : parity (rawSources fixedLayout 1) b=rawOne b := by
+  have hs : rawSources fixedLayout 1=[786,787,2425,528] := by decide +kernel
+  simp [hs,parity,rawOne,Bool.xor_assoc]
+
+theorem correction_zero (b : BasisState) : (correction fixedLayout 0).value b=b 1043 := by
+  change (MappedBit.value ⟨some 1043,false⟩ b)=b 1043
+  simp [MappedBit.value]
+
+theorem correction_one (b : BasisState) : (correction fixedLayout 1).value b=b 784 := by
+  change (MappedBit.value ⟨some 784,false⟩ b)=b 784
+  simp [MappedBit.value]
+
+theorem first_sum : ∀ r raw bias b0 : Bool,
+    (r ^^ (raw ^^ bias))=b0 → r=((raw ^^ bias) ^^ b0) := by decide +kernel
+
+theorem sum_relation (b : BasisState) (graph : BGraph fixedLayout b) :
+    b 2073=((rawOne b ^^ b 784) ^^ (b 786 && b 1043)) := by
+  have g := graph 1 (by decide) (by decide)
+  rw [expected_one,correction_zero,raw_zero] at g
+  simp only [ite_true] at g
+  have lowcarry : carryBit (b 1043) (b 786) false=(b 786 && b 1043) := by
+    cases b 1043 <;> cases b 786 <;> rfl
+  rw [lowcarry] at g
+  exact first_sum _ _ _ _ g
+
+theorem second_carry (b : BasisState) (graph : BGraph fixedLayout b) :
+    bExpected fixedLayout b 2=carryBit (b 784) (rawOne b) (b 786 && b 1043) := by
+  have g := graph 2 (by decide) (by decide)
+  rw [correction_one,raw_one] at g
+  simp only [show ¬(2:Nat)=1 by decide,ite_false] at g
+  have g0 := graph 1 (by decide) (by decide)
+  rw [correction_zero,raw_zero] at g0
+  simp only [ite_true] at g0
+  have lowcarry : carryBit (b 1043) (b 786) false=(b 786 && b 1043) := by
+    cases b 1043 <;> cases b 786 <;> rfl
+  rw [lowcarry] at g0
+  rw [g0] at g
+  exact g
+
+theorem carry_with_copy (b : BasisState) (graph : BGraph fixedLayout b)
+    (bias : b 784=(b 1041 && !b 2425)) (exclusive : (b 2425 && b 1043)=false) :
+    bExpected fixedLayout b 2=carryCorrection (b 786) (b 787) (b 2425) (b 528) (b 1041) (b 2073) := by
+  rw [second_carry b graph,bias]
+  apply carry_identity _ _ _ _ _ _ _ exclusive
+  simpa only [rawOne,bias] using sum_relation b graph
+
+theorem copy_from_sum (b : BasisState) (graph : BGraph fixedLayout b)
+    (bias : b 784=(b 1041 && !b 2425)) (a0 : b 528=(b 2425 && !b 786)) :
+    b 2073=copyCorrection (b 786) (b 787) (b 2425) (b 1041) (b 1043) := by
+  apply copy_identity _ _ _ _ _ _ _ a0
+  simpa only [rawOne,bias] using sum_relation b graph
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: BBlock
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+def withoutBias (s : State) : State := ⟨s.phase,writeBit s.basis 784 false⟩
+def beforeCarry : Program := lowPrefix fixedLayout ++ middle
+
+theorem lowPrefix_values (s : State) (m : List Bool)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis) :
+    (run (lowPrefix fixedLayout) m (withoutBias s)).basis fixedLayout.bias=s.basis 2073 ∧
+    (run (lowPrefix fixedLayout) m (withoutBias s)).basis (fixedLayout.R 0)=false := by
+  have literal : s.basis 2072=(s.basis 786 ^^ s.basis 1043) := by
+    simpa only [b0_sources,parity,List.foldr_cons,List.foldr_nil,Bool.xor_false] using low
+  have program : lowPrefix fixedLayout=newLow++streamCarry fixedLayout 2 := by
+    simp only [lowPrefix,newLow,List.append_assoc]
+  have count : measurementCount newLow=0 := by decide +kernel
+  have away : fixedLayout.bias∉wires (streamCarry fixedLayout 2) ∧
+      fixedLayout.R 0∉wires (streamCarry fixedLayout 2) := by
+    constructor <;> apply avoids_sound <;> decide +kernel
+  rw [program,run_append,run_take,count,List.drop_zero]
+  constructor
+  · rw [run_preserves_outside _ _ _ _ away.1]
+    change (run newLow m ⟨s.phase,writeBit s.basis 784 false⟩).basis 784=s.basis 2073
+    rw [newLow_run s m literal]
+    simp [writeBit]
+  · rw [run_preserves_outside _ _ _ _ away.2]
+    change (run newLow m ⟨s.phase,writeBit s.basis 784 false⟩).basis 2072=false
+    rw [newLow_run s m literal]
+    simp [writeBit]
+
+theorem beforeCarry_frame (s : State) (graph : BGraph fixedLayout s.basis)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis) (m : List Bool) :
+    EraseBFrame fixedLayout s 2 (lift fixedLayout s (run beforeCarry m (withoutBias s))) := by
+  rw [beforeCarry,run_append,run_take]
+  apply middle_frame s _ graph
+  exact lowPrefix_frame s _ low
+
+theorem beforeCarry_values (s : State)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis) (m : List Bool) :
+    (run beforeCarry m (withoutBias s)).basis fixedLayout.bias=s.basis 2073 ∧
+    (run beforeCarry m (withoutBias s)).basis (fixedLayout.R 0)=false := by
+  rw [beforeCarry,run_append,run_take]
+  rw [run_preserves_outside _ _ _ _ middle_away.1,
+    run_preserves_outside _ _ _ _ middle_away.2]
+  exact lowPrefix_values s m low
+
+theorem scalar_away (q : Wire) (hq : q∈([786,787,2425,528,1041,1043] : List Wire)) :
+    q∉fixedLayout.r ∧ q≠fixedLayout.bias := by
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
+  rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
+  all_goals decide +kernel
+
+theorem beforeCarry_outside (s : State) (graph : BGraph fixedLayout s.basis)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis) (m : List Bool)
+    (q : Wire) (hr : q∉fixedLayout.r) (hb : q≠fixedLayout.bias) :
+    (run beforeCarry m (withoutBias s)).basis q=s.basis q := by
+  have f := (beforeCarry_frame s graph low m).outside q hr
+  have nr : q≠fixedLayout.R 0 := fun eq=>hr (eq ▸ r_mem fixedLayout fixed_widths 0 (by decide))
+  simpa only [lift,writeBit,Function.update_of_ne nr,Function.update_of_ne hb] using f
+
+theorem beforeCarry_stored (s : State) (graph : BGraph fixedLayout s.basis)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis) (m : List Bool) :
+    (run beforeCarry m (withoutBias s)).basis (fixedLayout.R 1)=bExpected fixedLayout s.basis 2 := by
+  have f := (beforeCarry_frame s graph low m).live 1 (by decide)
+  have nr : fixedLayout.R 1≠fixedLayout.R 0 := by decide +kernel
+  have nb : fixedLayout.R 1≠fixedLayout.bias := by decide +kernel
+  simpa only [lift,writeBit,Function.update_of_ne nr,Function.update_of_ne nb] using f
+
+theorem beforeCarry_clean (s : State) (graph : BGraph fixedLayout s.basis)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis) (m : List Bool)
+    (i : Nat) (hi : 2 ≤ i) (bound : i < 256) :
+    (run beforeCarry m (withoutBias s)).basis (fixedLayout.R i)=false := by
+  have f := (beforeCarry_frame s graph low m).clean i hi bound
+  have nr : fixedLayout.R i≠fixedLayout.R 0 :=
+    r_ne_r fixedLayout fixed_widths fixed_nodup i 0 bound (by decide) (by omega)
+  have nb : fixedLayout.R i≠fixedLayout.bias := by
+    intro eq
+    have free := source_r_away fixedLayout fixed_nodup fixedLayout.bias
+      (Or.inr (Or.inr (Or.inr (Or.inr rfl))))
+    exact free (eq ▸ r_mem fixedLayout fixed_widths i bound)
+  simpa only [lift,writeBit,Function.update_of_ne nr,Function.update_of_ne nb] using f
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: BBlockCorrect
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+structure FastBResult (origin s : State) : Prop where
+  phase : s.phase=origin.phase
+  outside : ∀q,q∉fixedLayout.r → q≠fixedLayout.bias → s.basis q=origin.basis q
+  clean : ∀i,i<256 → s.basis (fixedLayout.R i)=false
+  copy : s.basis fixedLayout.bias=origin.basis 2073
+
+theorem bBlockFast_correct (s : State) (graph : BGraph fixedLayout s.basis)
+    (low : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis)
+    (bias : s.basis 784=(s.basis 1041 && !s.basis 2425))
+    (exclusive : (s.basis 2425 && s.basis 1043)=false) (m : List Bool) :
+    FastBResult s (run (bBlockFast fixedLayout) m (withoutBias s)) := by
+  let n := run beforeCarry m (withoutBias s)
+  have frame := beforeCarry_frame s graph low m
+  have values := beforeCarry_values s low m
+  have agrees (q : Wire) (hq : q∈([786,787,2425,528,1041,1043] : List Wire)) : n.basis q=s.basis q :=
+    beforeCarry_outside s graph low m q (scalar_away q hq).1 (scalar_away q hq).2
+  have known : n.basis (fixedLayout.R 1)=
+      carryCorrection (n.basis (fixedLayout.Y 0)) (n.basis (fixedLayout.Y 1))
+        (n.basis fixedLayout.sigma) (n.basis (fixedLayout.A 0))
+        (n.basis (fixedLayout.Y 255)) (n.basis fixedLayout.bias) := by
+    change n.basis 2073=carryCorrection (n.basis 786) (n.basis 787)
+      (n.basis 2425) (n.basis 528) (n.basis 1041) (n.basis 784)
+    calc
+      n.basis 2073=bExpected fixedLayout s.basis 2 := beforeCarry_stored s graph low m
+      _=carryCorrection (s.basis 786) (s.basis 787) (s.basis 2425)
+        (s.basis 528) (s.basis 1041) (s.basis 2073) := carry_with_copy s.basis graph bias exclusive
+      _=carryCorrection (n.basis 786) (n.basis 787) (n.basis 2425)
+        (n.basis 528) (n.basis 1041) (n.basis 784) := by
+        rw [agrees 786 (by simp),agrees 787 (by simp),agrees 2425 (by simp),
+          agrees 528 (by simp),agrees 1041 (by simp)]
+        exact congrArg (carryCorrection (s.basis 786) (s.basis 787) (s.basis 2425)
+          (s.basis 528) (s.basis 1041)) values.1.symm
+  have program : bBlockFast fixedLayout=beforeCarry++
+      [.measureX (fixedLayout.R 1) [] (carryCorrections fixedLayout)] := by
+    simp only [bBlockFast,beforeCarry,middleProgram,middle,List.append_assoc]
+  rw [program,run_append,run_take]
+  change FastBResult s (run [.measureX (fixedLayout.R 1) [] (carryCorrections fixedLayout)]
+    (m.drop (measurementCount beforeCarry)) n)
+  rw [erase_carry n _ known]
+  refine ⟨frame.phase,?_,?_,?_⟩
+  · intro q hr hb
+    have nr : q≠fixedLayout.R 1 := fun eq=>hr (eq ▸ r_mem fixedLayout fixed_widths 1 (by decide))
+    simp only [writeBit,Function.update_of_ne nr]
+    exact beforeCarry_outside s graph low m q hr hb
+  · intro i bound
+    by_cases h0:i=0
+    · subst i
+      have nr : fixedLayout.R 0≠fixedLayout.R 1 := by decide +kernel
+      simpa only [writeBit,Function.update_of_ne nr] using values.2
+    · by_cases h1:i=1
+      · subst i;simp [writeBit]
+      · have nr := r_ne_r fixedLayout fixed_widths fixed_nodup i 1 bound (by decide) h1
+        simp only [writeBit,Function.update_of_ne nr]
+        exact beforeCarry_clean s graph low m i (by omega) bound
+  · have nb : fixedLayout.bias≠fixedLayout.R 1 := by decide +kernel
+    simpa only [writeBit,Function.update_of_ne nb] using values.1
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Front
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem front_away : fixedLayout.bias∉wires (frontFast fixedLayout) := by
+  apply avoids_sound
+  decide +kernel
+
+theorem aProgram_away : fixedLayout.bias∉wires (aProgram fixedLayout) := by
+  apply avoids_sound
+  decide +kernel
+
+theorem frontFast_view (s : State) (m : List Bool) (clean : s.basis 784=false) :
+    run (frontFast fixedLayout) m s=withoutBias (run (front fixedLayout) m s) := by
+  have program : front fixedLayout=frontFast fixedLayout++biasCompute fixedLayout := by
+    simp only [front,frontFast,List.append_assoc]
+  have count : measurementCount (frontFast fixedLayout)=0 := by decide +kernel
+  let u := run (frontFast fixedLayout) m s
+  have uc : u.basis fixedLayout.bias=false :=
+    (run_preserves_outside _ _ _ _ front_away).trans clean
+  rw [program,run_append,run_take,count,List.drop_zero,biasCompute_run fixedLayout fixed_widths fixed_nodup]
+  change u=withoutBias ⟨u.phase,writeBit u.basis fixedLayout.bias
+    (u.basis fixedLayout.bias ^^ (u.basis (fixedLayout.Y 255) && !u.basis fixedLayout.sigma))⟩
+  have hb : fixedLayout.bias=784 := rfl
+  rw [hb] at uc ⊢
+  apply State.extensionality
+  · rfl
+  · funext q
+    by_cases hq:q=784
+    · subst q;simp [withoutBias,writeBit,uc]
+    · simp [withoutBias,writeBit,hq]
+
+theorem aProgram_view (s : State) (m : List Bool) :
+    run (aProgram fixedLayout) m (withoutBias s)=
+      withoutBias (run (aProgram fixedLayout) m s) := by
+  simpa only [withoutBias,show fixedLayout.bias=784 from rfl] using
+    run_write_outside (aProgram fixedLayout) fixedLayout.bias aProgram_away false s m
+
+def oldPrefix : Program := front fixedLayout ++ aProgram fixedLayout
+def fastPrefix : Program := frontFast fixedLayout ++ aProgram fixedLayout
+
+theorem prefix_view (s : State) (m : List Bool) (clean : s.basis 784=false) :
+    run fastPrefix m s=withoutBias (run oldPrefix m s) := by
+  have ca : measurementCount (frontFast fixedLayout)=0 := by decide +kernel
+  have cb : measurementCount (front fixedLayout)=0 := by decide +kernel
+  rw [fastPrefix,oldPrefix,run_append,run_append,run_take,run_take,ca,cb,List.drop_zero]
+  rw [frontFast_view s m clean,aProgram_view]
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: AFrame
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem first_add_identity : ∀y sigma : Bool,
+    carryBit false sigma (y ^^ sigma)=(sigma && !y) := by decide +kernel
+
+theorem first_add_value (f s : State) (af : AddFrame fixedLayout f 255 s) :
+    s.basis 528=(s.basis 2425 && !s.basis 786) := by
+  have v := af.computed 0 (by decide)
+  change s.basis 528=carryBit false (f.basis 2425) (f.basis 786 ^^ f.basis 2425) at v
+  rw [first_add_identity] at v
+  have hs : s.basis 2425=f.basis 2425 := af.sigma
+  have hy : s.basis 786=f.basis 786 := af.source 0 (by decide)
+  rw [hs,hy]
+  exact v
+
+theorem fastB_addFrame (f s t : State) (af : AddFrame fixedLayout f 255 s)
+    (bf : FastBResult s t) : AddFrame fixedLayout f 255 t := by
+  refine ⟨bf.phase.trans af.phase,?_,?_,?_,?_⟩
+  · have away := source_r_away fixedLayout fixed_nodup fixedLayout.sigma
+      (Or.inr (Or.inr (Or.inl rfl)))
+    exact (bf.outside _ away (by decide +kernel)).trans af.sigma
+  · intro i bound
+    have away := source_r_away fixedLayout fixed_nodup (fixedLayout.Y i)
+      (Or.inl (y_mem fixedLayout fixed_widths i bound))
+    have ne : fixedLayout.Y i≠fixedLayout.bias := by
+      intro eq
+      exact flag_y_away fixedLayout fixed_nodup fixedLayout.bias (by simp)
+        (eq ▸ y_mem fixedLayout fixed_widths i bound)
+    exact (bf.outside _ away ne).trans (af.source i bound)
+  · intro i bound
+    have away := source_r_away fixedLayout fixed_nodup (fixedLayout.A i)
+      (Or.inr (Or.inl (a_mem fixedLayout fixed_widths i bound)))
+    have ne : fixedLayout.A i≠fixedLayout.bias := by
+      intro eq
+      have free := carry_source_away fixedLayout fixed_nodup fixedLayout.bias
+        (Or.inr (Or.inr (Or.inr rfl)))
+      exact free (eq ▸ a_mem fixedLayout fixed_widths i bound)
+    exact (bf.outside _ away ne).trans (af.computed i bound)
+  · intro i done bound;omega
+
+theorem aProgram_outside (s : State) (m : List Bool) (q : Wire) (hq : q∉fixedLayout.carry) :
+    (run (aProgram fixedLayout) m s).basis q=s.basis q := by
+  simpa only [aProgram] using add_forward_outside fixedLayout fixed_widths fixed_nodup
+    255 (le_refl _) s m q hq
+
+theorem eraseA_outside (f s : State) (af : AddFrame fixedLayout f 255 s)
+    (m : List Bool) (q : Wire) (hq : q∉fixedLayout.carry) :
+    (run (eraseAProgram fixedLayout) m s).basis q=s.basis q := by
+  simpa only [eraseAProgram] using add_reverse_outside fixedLayout fixed_widths fixed_nodup
+    f 255 (le_refl _) s af m q hq
+
+theorem scalar_not_carry (q : Wire) (hq : q∈([786,787,2425,1041,1043,784] : List Wire)) :
+    q∉fixedLayout.carry := by
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
+  rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
+  all_goals decide +kernel
+
+theorem r_not_carry (i : Nat) (bound : i<256) : fixedLayout.R i∉fixedLayout.carry := by
+  intro member
+  exact source_r_away fixedLayout fixed_nodup (fixedLayout.R i)
+    (Or.inr (Or.inl member)) (r_mem fixedLayout fixed_widths i bound)
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Cleanup
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+structure FastCoreResult (origin s : State) : Prop where
+  phase : s.phase=origin.phase
+  outside : ∀q,q∉fixedLayout.carry → q∉fixedLayout.r → q≠fixedLayout.bias → s.basis q=origin.basis q
+  carry : ∀i,i<255 → s.basis (fixedLayout.A i)=false
+  result : ∀i,i<256 → s.basis (fixedLayout.R i)=false
+  bias : s.basis fixedLayout.bias=false
+
+def finishProgram : Program := eraseAProgram fixedLayout ++
+  [.measureX fixedLayout.bias [] (copyCorrections fixedLayout)]
+
+theorem finish_correct (f s t : State) (af : AddFrame fixedLayout f 255 s)
+    (outside : ∀q,q∉fixedLayout.carry → s.basis q=f.basis q)
+    (graph : BGraph fixedLayout s.basis)
+    (bias : s.basis 784=(s.basis 1041 && !s.basis 2425))
+    (bf : FastBResult s t) (m : List Bool) :
+    FastCoreResult f (run finishProgram m t) := by
+  have tf := fastB_addFrame f s t af bf
+  let u := run (eraseAProgram fixedLayout) m t
+  have uf := eraseAProgram_frame fixedLayout fixed_widths fixed_nodup f t tf m
+  have agrees (q : Wire) (hq : q∈([786,787,2425,1041,1043] : List Wire)) : u.basis q=s.basis q := by
+    have hs : q∈([786,787,2425,528,1041,1043] : List Wire) := by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢
+      tauto
+    have hc : q∈([786,787,2425,1041,1043,784] : List Wire) :=
+      List.mem_append_left [784] hq
+    exact (eraseA_outside f t tf m q (scalar_not_carry q hc)).trans
+      (bf.outside q (scalar_away q hs).1 (scalar_away q hs).2)
+  have copied : u.basis fixedLayout.bias=s.basis 2073 :=
+    (eraseA_outside f t tf m fixedLayout.bias (scalar_not_carry 784 (by simp))).trans bf.copy
+  have known : u.basis fixedLayout.bias=
+      copyCorrection (u.basis (fixedLayout.Y 0)) (u.basis (fixedLayout.Y 1))
+        (u.basis fixedLayout.sigma) (u.basis (fixedLayout.Y 255)) (u.basis fixedLayout.h) := by
+    change u.basis 784=copyCorrection (u.basis 786) (u.basis 787)
+      (u.basis 2425) (u.basis 1041) (u.basis 1043)
+    calc
+      u.basis 784=s.basis 2073 := copied
+      _=copyCorrection (s.basis 786) (s.basis 787) (s.basis 2425)
+        (s.basis 1041) (s.basis 1043) :=
+          copy_from_sum s.basis graph bias (first_add_value f s af)
+      _=copyCorrection (u.basis 786) (u.basis 787) (u.basis 2425)
+        (u.basis 1041) (u.basis 1043) := by
+          rw [agrees 786 (by simp),agrees 787 (by simp),agrees 2425 (by simp),
+            agrees 1041 (by simp),agrees 1043 (by simp)]
+  rw [finishProgram,run_append,run_take]
+  change FastCoreResult f (run [.measureX fixedLayout.bias [] (copyCorrections fixedLayout)]
+    (m.drop (measurementCount (eraseAProgram fixedLayout))) u)
+  rw [erase_copy u _ known]
+  refine ⟨uf.phase,?_,?_,?_,?_⟩
+  · intro q hc hr hb
+    simp only [writeBit,Function.update_of_ne hb]
+    exact (eraseA_outside f t tf m q hc).trans ((bf.outside q hr hb).trans (outside q hc))
+  · intro i bound
+    have nb : fixedLayout.A i≠fixedLayout.bias := by
+      intro eq
+      have free := carry_source_away fixedLayout fixed_nodup fixedLayout.bias
+        (Or.inr (Or.inr (Or.inr rfl)))
+      exact free (eq ▸ a_mem fixedLayout fixed_widths i bound)
+    simpa only [writeBit,Function.update_of_ne nb] using uf.clean i (by omega) bound
+  · intro i bound
+    have nb : fixedLayout.R i≠fixedLayout.bias := by
+      intro eq
+      have free := source_r_away fixedLayout fixed_nodup fixedLayout.bias
+        (Or.inr (Or.inr (Or.inr (Or.inr rfl))))
+      exact free (eq ▸ r_mem fixedLayout fixed_widths i bound)
+    simp only [writeBit,Function.update_of_ne nb]
+    exact (eraseA_outside f t tf m _ (r_not_carry i bound)).trans (bf.clean i bound)
+  · simp [writeBit]
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Core
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+def coreWithoutQuotient : Program := aProgram fixedLayout ++
+  (bBlockFast fixedLayout ++ finishProgram)
+
+theorem core_without_quotient_correct (f : State)
+    (clean : ∀i,i<255 → f.basis (fixedLayout.A i)=false)
+    (graph : ∀m,BGraph fixedLayout (run (aProgram fixedLayout) m f).basis)
+    (low : ∀m,let s:=run (aProgram fixedLayout) m f
+      s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis)
+    (bias : f.basis 784=(f.basis 1041 && !f.basis 2425))
+    (exclusive : (f.basis 2425 && f.basis 1043)=false) (m : List Bool) :
+    FastCoreResult f (run coreWithoutQuotient m (withoutBias f)) := by
+  have result := run_three_states (aProgram fixedLayout) (bBlockFast fixedLayout) finishProgram
+    (fun a d=>a=withoutBias f → FastCoreResult f d) (by
+      intro a b c d m1 m2 m3 hab hbc hcd eq
+      subst a
+      let s := run (aProgram fixedLayout) m1 f
+      rw [aProgram_view] at hab
+      subst b
+      have af : AddFrame fixedLayout f 255 s :=
+        aProgram_frame fixedLayout fixed_widths fixed_nodup f clean m1
+      have g : BGraph fixedLayout s.basis := graph m1
+      have l : s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis := low m1
+      have agrees (q : Wire) (hq : q∈([786,787,2425,1041,1043,784] : List Wire)) :
+          s.basis q=f.basis q := aProgram_outside f m1 q (scalar_not_carry q hq)
+      have sb : s.basis 784=(s.basis 1041 && !s.basis 2425) := by
+        rw [agrees 784 (by simp),agrees 1041 (by simp),agrees 2425 (by simp)]
+        exact bias
+      have se : (s.basis 2425 && s.basis 1043)=false := by
+        rw [agrees 2425 (by simp),agrees 1043 (by simp)]
+        exact exclusive
+      have bf := bBlockFast_correct s g l sb se m2
+      rw [hbc] at bf
+      have done := finish_correct f s c af (aProgram_outside f m1) g sb bf m3
+      rw [hcd] at done
+      exact done) (withoutBias f) m
+  exact result rfl
+
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Restore
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem core_source_agree (f u : State) (result : FastCoreResult f u) (q : Wire)
+    (hq : q∈fixedLayout.y ∨ q=fixedLayout.sigma ∨ q=fixedLayout.h) : u.basis q=f.basis q := by
+  rcases hq with hy|rfl|rfl
+  · have hc := carry_source_away fixedLayout fixed_nodup q (Or.inl hy)
+    have hr := source_r_away fixedLayout fixed_nodup q (Or.inl hy)
+    have nb : q≠fixedLayout.bias := by
+      intro eq
+      exact flag_y_away fixedLayout fixed_nodup fixedLayout.bias (by simp) (eq ▸ hy)
+    exact result.outside q hc hr nb
+  · exact result.outside _ (scalar_not_carry 2425 (by simp))
+      (scalar_away 2425 (by simp)).1 (by decide +kernel)
+  · exact result.outside _ (scalar_not_carry 1043 (by simp))
+      (scalar_away 1043 (by simp)).1 (by decide +kernel)
+
+theorem restore_old_core (f u : State) (result : FastCoreResult f u) :
+    ∃t,CoreResult fixedLayout f t ∧
+      u=⟨f.phase,writeBit t.basis fixedLayout.bias false⟩ := by
+  let t : State := ⟨u.phase,writeBit u.basis fixedLayout.bias (f.basis fixedLayout.bias)⟩
+  have old : CoreResult fixedLayout f t := by
+    refine ⟨result.phase,?_,?_,?_⟩
+    · intro q hc hr
+      by_cases eq:q=fixedLayout.bias
+      · subst q;simp [t,writeBit]
+      · simpa only [t,writeBit,Function.update_of_ne eq] using result.outside q hc hr eq
+    · intro i bound
+      have nb : fixedLayout.A i≠fixedLayout.bias := by
+        intro eq
+        have free := carry_source_away fixedLayout fixed_nodup fixedLayout.bias
+          (Or.inr (Or.inr (Or.inr rfl)))
+        exact free (eq ▸ a_mem fixedLayout fixed_widths i bound)
+      simpa only [t,writeBit,Function.update_of_ne nb] using result.carry i bound
+    · intro i bound
+      have nb : fixedLayout.R i≠fixedLayout.bias := by
+        intro eq
+        have free := source_r_away fixedLayout fixed_nodup fixedLayout.bias
+          (Or.inr (Or.inr (Or.inr (Or.inr rfl))))
+        exact free (eq ▸ r_mem fixedLayout fixed_widths i bound)
+      simpa only [t,writeBit,Function.update_of_ne nb] using result.result i bound
+  refine ⟨t,old,?_⟩
+  apply State.extensionality
+  · exact result.phase
+  · funext q
+    by_cases eq:q=fixedLayout.bias
+    · subst q;simp [t,writeBit,result.bias]
+    · simp [t,writeBit,eq]
+
+theorem clean_carry_members (f u : State) (result : FastCoreResult f u) :
+    ∀q∈fixedLayout.carry,u.basis q=false := by
+  intro q hq
+  obtain ⟨i,hi,eq⟩ := List.getElem_of_mem hq
+  have bound : i<255 := by have len:=fixed_widths.2.2;omega
+  have get : fixedLayout.A i=q := by
+    simpa only [DecoderLayout.A,List.getD_eq_getElem?_getD,List.getElem?_eq_getElem hi,
+      Option.getD_some] using eq
+  rw [←get]
+  exact result.carry i bound
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Quotient
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph Secp256k1
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+def cleanedFast : Program := coreWithoutQuotient ++ clearQuotient fixedLayout
+
+theorem cleanedFast_correct (f : State)
+    (clean : ∀i,i<255 → f.basis (fixedLayout.A i)=false)
+    (graph : ∀m,BGraph fixedLayout (run (aProgram fixedLayout) m f).basis)
+    (low : ∀m,let s:=run (aProgram fixedLayout) m f
+      s.basis (fixedLayout.R 0)=parity (bSources fixedLayout 0) s.basis)
+    (bias : f.basis 784=(f.basis 1041 && !f.basis 2425))
+    (quotient : f.basis fixedLayout.h=(!f.basis fixedLayout.sigma &&
+      !(decide (regValue (fixedLayout.y.take 255) f.basis <
+        ((p-1)/2)/3+(!f.basis (fixedLayout.Y 255)).toNat)))) (m : List Bool) :
+    ∃t,CoreResult fixedLayout f t ∧ run cleanedFast m (withoutBias f)=
+      ⟨f.phase,writeBit (writeBit t.basis fixedLayout.bias false) fixedLayout.h false⟩ := by
+  have exclusive : (f.basis 2425 && f.basis 1043)=false := by
+    change (f.basis fixedLayout.sigma && f.basis fixedLayout.h)=false
+    rw [quotient]
+    cases f.basis fixedLayout.sigma <;> simp
+  let u := run coreWithoutQuotient m (withoutBias f)
+  have fu : FastCoreResult f u := core_without_quotient_correct f clean graph low bias exclusive m
+  obtain ⟨t,old,ueq⟩ := restore_old_core f u fu
+  have values : regValue (fixedLayout.y.take 255) u.basis=
+      regValue (fixedLayout.y.take 255) f.basis := by
+    apply regValue_congr
+    intro q hq
+    exact core_source_agree f u fu q (Or.inl (List.mem_of_mem_take hq))
+  have quotient_u : u.basis fixedLayout.h=(!u.basis fixedLayout.sigma &&
+      !(decide (regValue (fixedLayout.y.take 255) u.basis <
+        ((p-1)/2)/3+(!u.basis (fixedLayout.Y 255)).toNat))) := by
+    rw [core_source_agree f u fu fixedLayout.h (Or.inr (Or.inr rfl)),
+      core_source_agree f u fu fixedLayout.sigma (Or.inr (Or.inl rfl)),
+      core_source_agree f u fu (fixedLayout.Y 255)
+        (Or.inl (y_mem fixedLayout fixed_widths 255 (by decide))),values]
+    exact quotient
+  have erase := clearQuotient_correct fixedLayout fixed_widths fixed_nodup u
+    (m.drop (measurementCount coreWithoutQuotient)) (clean_carry_members f u fu) quotient_u
+  refine ⟨t,old,?_⟩
+  rw [cleanedFast,run_append,run_take]
+  change run (clearQuotient fixedLayout) (m.drop (measurementCount coreWithoutQuotient)) u=_
+  rw [erase,ueq]
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Correct
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph Secp256k1 BalancedField
+set_option maxRecDepth 8192
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem decoderFast_parts : decoderFast fixedLayout=
+    frontFast fixedLayout ++ (cleanedFast ++ back fixedLayout) := by
+  simp only [decoderFast,cleanedFast,coreWithoutQuotient,finishProgram,List.append_assoc]
+
+theorem decoderFast_correct (Y : Fp) (sigma : Bool) (s : State) (m : List Bool)
+    (ys : regValue fixedLayout.y s.basis=centerWord Y)
+    (rs : regValue fixedLayout.r s.basis=centerWord ((if sigma then 1 else 3)*Y))
+    (sig : s.basis fixedLayout.sigma=sigma)
+    (hc : s.basis fixedLayout.h=false) (bc : s.basis fixedLayout.bias=false)
+    (cc : ∀q∈fixedLayout.carry,s.basis q=false) :
+    (run (decoderFast fixedLayout) m s).phase=s.phase ∧
+    (∀q,q∉fixedLayout.r → (run (decoderFast fixedLayout) m s).basis q=s.basis q) ∧
+    regValue fixedLayout.r (run (decoderFast fixedLayout) m s).basis=centerWord Y := by
+  have result := run_three_states (frontFast fixedLayout) cleanedFast (back fixedLayout)
+    (fun a d=>a=s → d.phase=s.phase ∧
+      (∀q,q∉fixedLayout.r → d.basis q=s.basis q) ∧ regValue fixedLayout.r d.basis=centerWord Y) (by
+      intro a n u d m1 m2 m3 han hnu hud eq
+      subst a
+      let f : State := ⟨s.phase,frontBasis fixedLayout s.basis⟩
+      have neq : n=withoutBias f := by
+        rw [←han,frontFast_view s m1 bc,front_run fixedLayout fixed_widths fixed_nodup]
+      rw [neq] at hnu
+      have scalar := actual_front_scalar fixedLayout fixed_widths fixed_nodup
+        s.basis Y sigma ys rs sig hc bc
+      have nc : ∀i,i<255 → f.basis (fixedLayout.A i)=false := by
+        intro i hi
+        exact front_carry_clean fixedLayout fixed_nodup s.basis cc
+          (fixedLayout.A i) (a_mem fixedLayout fixed_widths i hi)
+      have bb : f.basis 784=(f.basis 1041 && !f.basis 2425) := by
+        have facts := actual_front_values fixedLayout fixed_widths fixed_nodup
+          s.basis Y sigma ys rs sig hc bc
+        change frontBasis fixedLayout s.basis fixedLayout.bias=
+          (frontBasis fixedLayout s.basis (fixedLayout.Y 255) &&
+            !frontBasis fixedLayout s.basis fixedLayout.sigma)
+        rw [facts.2.2.2.1,facts.2.2.2.2.1,facts.2.2.2.2.2]
+      have cg := cleanedFast_correct f nc
+        (fun r=>(aProgram_graph fixedLayout fixed_widths fixed_nodup f nc scalar.1 r).1)
+        (fun r=>(aProgram_graph fixedLayout fixed_widths fixed_nodup f nc scalar.1 r).2)
+        bb scalar.2 m2
+      obtain ⟨t,tf,ut⟩ := cg
+      rw [hnu] at ut
+      have cleanbasis := cleaned_front_basis fixedLayout fixed_widths fixed_nodup
+        s.basis s.phase t tf hc bc cc
+      have uz : u=⟨s.phase,zeroR fixedLayout s.basis⟩ := by
+        rw [ut,cleanbasis]
+      have done := back_correct fixedLayout fixed_widths fixed_nodup s.basis s.phase m3
+      rw [uz] at hud
+      rw [hud] at done
+      exact ⟨done.1,done.2.1,done.2.2.trans ys⟩) s m
+  rw [decoderFast_parts]
+  exact result rfl
+
+theorem decoderFast_frame (origin : BasisState)
+    (clean : ∀q∈work fixedLayout,origin q=false) (X Y : Fp)
+    (hend : (X+(if origin fixedLayout.sigma then Y else -Y))/2=Y) :
+    Triple (PairFrame fixedLayout.r fixedLayout.y origin (centerWord X) (centerWord Y))
+      (decoderFast fixedLayout)
+      (PairFrame fixedLayout.r fixedLayout.y origin (centerWord Y) (centerWord Y)) := by
+  intro s m input
+  have cleanS (q : Wire) (hq:q∈work fixedLayout) : s.basis q=false :=
+    (input.2.2 q (work_away fixedLayout fixed_nodup q hq).1
+      (work_away fixedLayout fixed_nodup q hq).2).trans (clean q hq)
+  have sig : s.basis fixedLayout.sigma=origin fixedLayout.sigma := input.2.2 fixedLayout.sigma
+    (source_r_away fixedLayout fixed_nodup _ (by tauto))
+    (flag_y_away fixedLayout fixed_nodup _ (by simp))
+  have rel := terminal_relation X Y (origin fixedLayout.sigma) hend
+  have rword : regValue fixedLayout.r s.basis=
+      centerWord ((if origin fixedLayout.sigma then 1 else 3)*Y) := by
+    rw [input.1,rel]
+  have c := decoderFast_correct Y (origin fixedLayout.sigma) s m input.2.1 rword sig
+    (cleanS fixedLayout.h (by simp [work])) (cleanS fixedLayout.bias (by simp [work]))
+    (fun q hq=>cleanS q (by simp [work,hq]))
+  refine ⟨c.1,c.2.2,?_,?_⟩
+  · exact (regValue_congr fixedLayout.y _ _ (fun q hq=>c.2.1 q
+      (source_r_away fixedLayout fixed_nodup q (Or.inl hq)))).trans input.2.1
+  · intro q qr qy
+    exact (c.2.1 q qr).trans (input.2.2 q qr qy)
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Resources
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph Challenge
+set_option maxRecDepth 16384
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+-- Verified bias-reuse development: Support
+namespace ECDSAAdd.Entrant.DecoderBiasReuse
+open Arithmetic TerminalGraph
+set_option maxRecDepth 16384
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+
+abbrev footprint (q : Wire) : Prop :=
+  q=2425 ∨ q=1043 ∨ q=784 ∨ q=1813 ∨ q=1556 ∨
+    (786≤q ∧ q<1042) ∨ (2072≤q ∧ q<2328) ∨ (528≤q ∧ q<781)
+
+theorem fixed_wires : fixedLayout.wires=
+    [2425,1043,784]++List.range' 786 256++List.range' 2072 256++
+      List.range' 528 253++[1556,1813] := by decide +kernel
+
+theorem pool_iff (q : Wire) : q∈fixedLayout.wires.toFinset ↔
+    footprint q := by
+  simp only [List.mem_toFinset,fixed_wires,List.mem_append,List.mem_cons,List.not_mem_nil,
+    or_false,List.mem_range'_1,footprint,MappedCompressed.base,Nat.reduceAdd]
+  tauto
+
+def correctionCheck : List Correction → Bool
+  | []=>true
+  | .Z q::cs=>decide (footprint q) && correctionCheck cs
+  | .CZ a b::cs=>decide (footprint a) &&
+      decide (footprint b) && correctionCheck cs
+
+theorem correctionCheck_iff (cs : List Correction) : correctionCheck cs=true ↔
+    correctionWires cs⊆fixedLayout.wires.toFinset := by
+  induction cs with
+  | nil=>simp [correctionCheck,correctionWires]
+  | cons c cs ih=>
+    cases c <;> simp only [correctionCheck,correctionWires,Bool.and_eq_true,decide_eq_true_eq,
+      Finset.union_subset_iff,Finset.singleton_subset_iff,Finset.insert_subset_iff,
+      Finset.empty_subset,and_true,ih,pool_iff]
+
+def instructionCheck : Instr → Bool
+  | .X q=>decide (footprint q)
+  | .CX a q=>decide (footprint a) &&
+      decide (footprint q)
+  | .CCX a b q=>decide (footprint a) &&
+      decide (footprint b) &&
+      decide (footprint q)
+  | .measureX q c0 c1=>decide (footprint q) &&
+      correctionCheck c0 && correctionCheck c1
+
+theorem instructionCheck_iff (i : Instr) : instructionCheck i=true ↔
+    i.wires⊆fixedLayout.wires.toFinset := by
+  cases i <;> simp only [instructionCheck,Instr.wires,Bool.and_eq_true,decide_eq_true_eq,
+    Finset.union_subset_iff,Finset.singleton_subset_iff,Finset.insert_subset_iff,
+    Finset.empty_subset,and_true,pool_iff,correctionCheck_iff,and_assoc]
+
+def supportCheck (P : Program) : Bool := P.all instructionCheck
+
+theorem supportCheck_sound (P : Program) (h : supportCheck P=true) :
+    wires P⊆fixedLayout.wires.toFinset := by
+  induction P with
+  | nil=>simp [wires]
+  | cons i P ih=>
+    have parts : instructionCheck i=true ∧ supportCheck P=true := by
+      simpa only [supportCheck,List.all_cons,Bool.and_eq_true] using h
+    simp only [wires,Finset.union_subset_iff]
+    exact ⟨(instructionCheck_iff i).mp parts.1,ih parts.2⟩
+
+
+
+
+end ECDSAAdd.Entrant.DecoderBiasReuse
+
+
+section
+-- Coupled-carry proof component: DecoderCellsVerify
+
+-- Exact generic checker inherited from the integrated parent, originally attributed to 5502f192.
+namespace ECDSAAdd.Entrant.CodecBitSliceVerify
+open ECDSAAdd Arithmetic
+open MeasuredCodec5 (bitsOf bitRun corrSim)
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySimpa false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 400000
+abbrev Cols := List Nat
+def get (s : Cols) (q : Wire) : Nat := (s[q]?).getD 0
+def step (mask : Nat) (i : Instr) (s : Cols) : Cols :=
+  match i with
+  | .X t => s.set t (get s t ^^^ mask)
+  | .CX c t => s.set t (get s t ^^^ get s c)
+  | .CCX a b t => s.set t (get s t ^^^ (get s a &&& get s b))
+  | .measureX t _ _ => s.set t 0
+def corr : List Correction → Cols → Nat
+  | [], _ => 0
+  | .Z t::cs, s => get s t ^^^ corr cs s
+  | .CZ a b::cs, s => (get s a &&& get s b) ^^^ corr cs s
+def safeStep (i : Instr) (s : Cols) : Bool :=
+  match i with
+  | .measureX t c0 c1 =>
+      let z := s.set t 0
+      (corr c0 z == 0) && (corr c1 z == get s t)
+  | _ => true
+def eval (mask : Nat) : Program → Cols → Bool × Cols
+  | [], s => (true,s)
+  | i::p,s => let rest:=eval mask p (step mask i s); (safeStep i s && rest.1, rest.2)
+
+
+def Rel (s : Cols) (x row : Nat) : Prop := ∀ q : Wire, x.testBit q=(get s q).testBit row
+
+theorem get_set (s : Cols) (t v : Nat) (ht : t<s.length) (q : Nat) :
+    get (s.set t v) q=if q=t then v else get s q := by
+  simp only [get,List.getElem?_set]
+  by_cases h:q=t
+  · subst q; simp [ht]
+  · simp [h,Ne.symm h]
+
+theorem flip_bit (x t q : Nat) :
+    (x ^^^ 2^t).testBit q=if q=t then !x.testBit q else x.testBit q := by
+  have h:=congrFun (MeasuredCodec5.bitsOf_flip x t) q
+  by_cases hq:q=t
+  · subst q; simpa [MeasuredCodec5.bitsOf,writeBit] using h
+  · simpa [MeasuredCodec5.bitsOf,writeBit,Function.update_of_ne hq,hq] using h
+
+theorem clear_bit (x t q : Nat) :
+    (MeasuredCodec5.clear x t).testBit q=if q=t then false else x.testBit q := by
+  have h:=congrFun (MeasuredCodec5.bitsOf_clear x t) q
+  by_cases hq:q=t
+  · subst q; simpa [MeasuredCodec5.bitsOf,writeBit] using h
+  · simpa [MeasuredCodec5.bitsOf,writeBit,Function.update_of_ne hq,hq] using h
+
+theorem rel_xor (s : Cols) (x row t v : Nat) (ht:t<s.length) (hr:Rel s x row) :
+    Rel (s.set t (get s t ^^^ v)) (if v.testBit row then x ^^^ 2^t else x) row := by
+  intro q
+  rw [get_set s t _ ht q]
+  by_cases hq:q=t
+  · subst q
+    cases hv:v.testBit row <;> simp [hv,Nat.testBit_xor,flip_bit,hr t]
+  · cases hv:v.testBit row <;> simp [hv,hq,Ne.symm hq,flip_bit,hr q]
+
+theorem rel_clear (s : Cols) (x row t : Nat) (ht:t<s.length) (hr:Rel s x row) :
+    Rel (s.set t 0) (MeasuredCodec5.clear x t) row := by
+  intro q
+  rw [get_set s t _ ht q,clear_bit]
+  by_cases hq:q=t <;> simp [hq,hr q]
+
+def target : Instr→Nat
+  | .X t => t
+  | .CX _ t => t
+  | .CCX _ _ t => t
+  | .measureX t _ _ => t
+
+theorem length_step (mask : Nat) (i : Instr) (s : Cols) : (step mask i s).length=s.length := by
+  cases i <;> simp [step]
+
+theorem step_rel (mask row : Nat) (hm:mask.testBit row=true) (i : Instr)
+    (s : Cols) (x : Nat) (ht:target i<s.length) (hr:Rel s x row) :
+    Rel (step mask i s) (MeasuredCodec5.bitStep i x) row := by
+  cases i with
+  | X t => simpa only [step,MeasuredCodec5.bitStep,hm,if_true] using rel_xor s x row t mask ht hr
+  | CX a t =>
+    simpa only [step,MeasuredCodec5.bitStep,hr a] using rel_xor s x row t (get s a) ht hr
+  | CCX a b t =>
+    simpa only [step,MeasuredCodec5.bitStep,Nat.testBit_and,hr a,hr b] using
+      rel_xor s x row t (get s a &&& get s b) ht hr
+  | measureX t c0 c1 => exact rel_clear s x row t ht hr
+
+
+
+theorem corr_rel (cs : List Correction) (s : Cols) (x row : Nat) (hr:Rel s x row) :
+    (corr cs s).testBit row=corrSim cs false x := by
+  induction cs with
+  | nil => simp [corr,MeasuredCodec5.corrSim]
+  | cons i cs ih =>
+    cases i with
+    | Z t =>
+      change (get s t ^^^ corr cs s).testBit row=corrSim cs (false ^^ x.testBit t) x
+      rw [Nat.testBit_xor,MeasuredCodec5.corrSim_xor]
+      simp only [Bool.false_xor,←hr t,ih]
+    | CZ a b =>
+      change ((get s a &&& get s b) ^^^ corr cs s).testBit row=
+        corrSim cs (false ^^ (x.testBit a && x.testBit b)) x
+      rw [Nat.testBit_xor,MeasuredCodec5.corrSim_xor,Nat.testBit_and]
+      simp only [Bool.false_xor,←hr a,←hr b,ih]
+
+theorem safeStep_sound (i : Instr) (s : Cols) (x row : Nat) (ht:target i<s.length)
+    (hr:Rel s x row) (hs:safeStep i s=true) : MeasuredCodec5.safeStep i x=true := by
+  cases i with
+  | X t => rfl
+  | CX a t => rfl
+  | CCX a b t => rfl
+  | measureX t c0 c1 =>
+    have hc:=rel_clear s x row t ht hr
+    have h0:=corr_rel c0 (s.set t 0) (MeasuredCodec5.clear x t) row hc
+    have h1:=corr_rel c1 (s.set t 0) (MeasuredCodec5.clear x t) row hc
+    have parts: corr c0 (s.set t 0)=0 ∧ corr c1 (s.set t 0)=get s t := by
+      simpa only [safeStep,Bool.and_eq_true,beq_iff_eq] using hs
+    rw [parts.1] at h0
+    rw [parts.2] at h1
+    simp only [MeasuredCodec5.safeStep,←h0,←h1,←hr t,Nat.zero_testBit,BEq.rfl,Bool.and_self]
+
+theorem eval_sound (mask row : Nat) (hm:mask.testBit row=true) (P : Program)
+    (s : Cols) (x : Nat) (bound:∀i∈P,target i<s.length) (hr:Rel s x row)
+    (hs:(eval mask P s).1=true) :
+    MeasuredCodec5.safe P x=true ∧ Rel (eval mask P s).2 (bitRun P x) row := by
+  induction P generalizing s x with
+  | nil => exact ⟨rfl,hr⟩
+  | cons i P ih =>
+    have parts:safeStep i s=true ∧ (eval mask P (step mask i s)).1=true := by
+      simpa only [eval,Bool.and_eq_true] using hs
+    have hi:=bound i (by simp)
+    have hr':=step_rel mask row hm i s x hi hr
+    have hb:∀j∈P,target j<(step mask i s).length := by
+      intro j hj
+      rw [length_step]
+      exact bound j (by simp [hj])
+    have rest:=ih (step mask i s) (MeasuredCodec5.bitStep i x) hb hr' parts.2
+    refine ⟨?_,rest.2⟩
+    simp only [MeasuredCodec5.safe,Bool.and_eq_true]
+    exact ⟨safeStep_sound i s x row hi hr parts.1,rest.1⟩
+
+
+
+def packBits : List Bool→Nat
+  | [] => 0
+  | b::bs => Nat.bit b (packBits bs)
+
+theorem pack_testBit (bs : List Bool) (r : Nat) :
+    (packBits bs).testBit r=(bs[r]?).getD false := by
+  induction bs generalizing r with
+  | nil => simp [packBits]
+  | cons b bs ih =>
+    cases r with
+    | zero => cases b <;> simp [packBits,Nat.bit,Nat.testBit_zero]
+    | succ r => simpa only [packBits,Nat.testBit_bit_succ,List.getElem?_cons_succ] using ih r
+
+theorem pack_rows (xs : List Nat) (q r : Nat) :
+    (packBits (xs.map (fun x=>x.testBit q))).testBit r=((xs[r]?).getD 0).testBit q := by
+  rw [pack_testBit,List.getElem?_map]
+  cases h:xs[r]? <;> simp
+
+
+
+def physicalCheck : Instr→Bool
+  | .X _ => true
+  | .CX c t => decide (c≠t)
+  | .CCX a b t => decide (a≠t ∧ b≠t)
+  | .measureX _ _ _ => true
+
+theorem physicalCheck_sound (i : Instr) (h:physicalCheck i=true) :
+    RecordedQuantum.PhysicalInstr (.gate i) := by
+  cases i <;> simp_all [physicalCheck,RecordedQuantum.PhysicalInstr,ProperGate]
+
+theorem physical_of_check (P : Program) (h:P.all physicalCheck=true) : GatePhysical P := by
+  intro i hi
+  exact physicalCheck_sound i ((List.all_eq_true.mp h) i hi)
+
+theorem wires_of_instructions (P : Program) (S : Finset Wire)
+    (h:∀i∈P,i.wires⊆S) : wires P⊆S := by
+  induction P with
+  | nil => simp [wires]
+  | cons i P ih =>
+    rw [wires]
+    exact Finset.union_subset (h i (by simp)) (ih (fun j hj=>h j (by simp [hj])))
+
+def boundCheck (n : Nat) (i : Instr) : Bool := decide (i.wires⊆Finset.range n)
+
+theorem support_of_check (P : Program) (n : Nat) (h:P.all (boundCheck n)=true) :
+    wires P⊆Finset.range n := by
+  apply wires_of_instructions
+  intro i hi
+  have z:boundCheck n i=true := (List.all_eq_true.mp h) i hi
+  exact of_decide_eq_true z
+
+end ECDSAAdd.Entrant.CodecBitSliceVerify
+end
+
+
+section
+-- Coupled-carry proof component: DecoderFiveRows
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.DecoderCells5
+set_option linter.unusedSimpArgs false
+
+def colRow21 (cs : CodecBitSliceVerify.Cols) (r : Nat) : Nat :=
+  CodecBitSliceVerify.packBits ((List.range 21).map (fun q=>(CodecBitSliceVerify.get cs q).testBit r))
+
+theorem colRow21_rel (cs : CodecBitSliceVerify.Cols) (len : cs.length=21) (r : Nat) :
+    CodecBitSliceVerify.Rel cs (colRow21 cs r) r := by
+  intro q
+  change Nat at q
+  simp only [colRow21,CodecBitSliceVerify.pack_testBit,List.getElem?_map]
+  by_cases hq:q<21
+  · rw [List.getElem?_range hq]
+    rfl
+  · have qb:cs.length≤q:=by rw [len];omega
+    have z:CodecBitSliceVerify.get cs q=0:=by
+      simp only [CodecBitSliceVerify.get,List.getElem?_eq_none qb,Option.getD_none]
+    have qrange:(List.range 21).length≤q:=by simpa using (Nat.le_of_not_gt hq)
+    rw [List.getElem?_eq_none qrange]
+    simp only [Option.map_none,Option.getD_none,z,Nat.zero_testBit]
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCells5
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5
+set_option maxRecDepth 30000
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem packed_rel {n : Nat} (rows : List Nat) (cs : CodecBitSliceVerify.Cols)
+    (len : cs.length=21)
+    (correct : ∀q : Fin 21,CodecBitSliceVerify.get cs q.val=
+      CodecBitSliceVerify.packBits (rows.map (fun x=>x.testBit q.val)))
+    (bounds : ∀r : Fin n,(rows[r.val]?).getD 0<2^21) (r : Fin n) :
+    CodecBitSliceVerify.Rel cs ((rows[r.val]?).getD 0) r.val := by
+  intro q
+  by_cases hq:q<21
+  · rw [correct ⟨q,hq⟩,CodecBitSliceVerify.pack_rows]
+  · have q21 : 21≤q := Nat.le_of_not_gt hq
+    have qb : cs.length≤q := by rw [len];exact q21
+    have z : CodecBitSliceVerify.get cs q=0 := by
+      simp only [CodecBitSliceVerify.get,List.getElem?_eq_none qb,Option.getD_none]
+    rw [z,Nat.zero_testBit]
+    exact Nat.testBit_lt_two_pow (lt_of_lt_of_le (bounds r)
+      (Nat.pow_le_pow_right (by decide) (Nat.le_of_not_gt hq)))
+end ECDSAAdd.Entrant.DecoderCells5
+
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic
+def firstPrefix : Program := [
+  .CX 0 9,
+  .CX 7 9,
+  .CX 14 13,
+  .CX 13 14,
+  .CX 13 5,
+  .CX 13 12,
+  .CX 12 13,
+  .CX 13 12,
+  .CX 12 11,
+  .CX 11 12,
+  .CX 12 11,
+  .CX 11 10,
+  .CX 10 11,
+  .CX 11 10,
+  .CX 10 8,
+  .CX 8 10,
+  .CX 10 8,
+  .CX 7 4,
+  .CX 8 7,
+  .CX 7 8,
+  .CX 8 7,
+  .CX 8 6,
+  .CX 6 8,
+  .CX 8 6,
+  .CX 5 7,
+  .CX 4 6,
+  .CX 5 3,
+  .CX 3 5,
+  .CX 5 3,
+  .CX 4 2,
+  .CX 2 4,
+  .CX 4 2,
+  .CX 3 1,
+  .CX 1 3,
+  .CX 3 1,
+  .CX 2 0,
+  .CX 0 2,
+  .CX 2 0,
+  .CCX 0 1 15,
+  .CX 12 13,
+  .CX 13 12,
+  .CX 12 13,
+  .CX 0 10,
+  .CX 10 0,
+  .CX 0 10,
+  .CX 11 12,
+  .CX 12 11,
+  .CX 11 12,
+  .CX 1 11,
+  .CX 14 11,
+  .CX 1 14,
+  .CX 15 1,
+  .CX 1 15,
+  .CX 14 15,
+  .CX 14 1,
+  .CX 11 14,
+  .CX 0 11,
+  .CX 11 0,
+  .CX 0 11,
+  .CX 10 1,
+  .CX 6 10,
+  .CX 6 1,
+  .CX 2 1,
+  .CX 2 0,
+  .CX 3 1,
+  .CX 5 1,
+  .CX 5 0,
+  .CX 8 1,
+  .CX 8 0,
+  .CCX 0 1 16,
+  .CX 1 0,
+  .CX 14 0,
+  .CX 16 1,
+  .CX 1 16,
+  .CX 16 1,
+  .CX 0 16,
+  .CX 10 1,
+  .CX 10 0,
+  .CX 7 16,
+  .CX 6 1,
+  .CX 6 0,
+  .CX 3 0,
+  .CX 8 16,
+  .CX 15 0,
+  .CX 5 16,
+  .CX 5 1,
+  .CX 4 1,
+  .CX 2 16,
+  .CCX 0 1 17,
+  .CX 4 1,
+  .CX 5 1,
+  .CX 6 1,
+  .CX 10 1,
+  .CX 15 18,
+  .CX 18 15,
+  .CX 15 18,
+  .CX 15 14,
+  .CX 14 15,
+  .CX 15 14,
+  .CX 7 5,
+  .CX 5 7,
+  .CX 7 5,
+  .CX 3 10,
+  .CX 10 3,
+  .CX 3 10,
+  .CX 3 7,
+  .CX 7 3,
+  .CX 3 7,
+  .CX 12 15,
+  .CX 15 12,
+  .CX 12 15,
+  .CX 6 8,
+  .CX 16 8,
+  .CX 17 8,
+  .CX 16 6,
+  .CX 17 6,
+  .CX 12 17,
+  .CX 17 12,
+  .CX 12 17,
+  .CX 0 12,
+  .CX 16 0,
+  .CX 16 13,
+  .CX 13 16,
+  .CX 16 13,
+  .CX 0 13,
+  .CX 12 13,
+  .CX 12 0,
+  .CX 6 12,
+  .CX 6 0,
+  .CX 8 6,
+  .CX 11 8,
+  .CX 8 11,
+  .CX 11 8,
+  .CX 2 0,
+  .CX 0 2,
+  .CX 2 0,
+  .CX 7 13,
+  .CX 7 11,
+  .CX 9 12,
+  .CX 12 9,
+  .CX 9 12,
+  .CX 4 2,
+  .CX 2 4,
+  .CX 4 2,
+  .CX 5 11,
+  .CX 5 9,
+  .CX 19 11,
+  .CX 11 19,
+  .CX 19 11,
+  .CX 1 10,
+  .CX 10 1,
+  .CX 1 10
+]
+def firstCleanup : Program := [
+  .CX 16 10,
+  .CX 10 16,
+  .CX 16 10,
+  .CX 16 18,
+  .CX 18 16,
+  .CX 16 18,
+  .CX 16 15,
+  .CX 15 16,
+  .CX 16 15,
+  .CX 9 13,
+  .CX 13 9,
+  .CX 9 13,
+  .CX 19 9,
+  .CX 9 19,
+  .CX 16 9,
+  .CX 9 16,
+  .CX 16 9,
+  .CX 17 13,
+  .CX 13 17,
+  .CX 17 13,
+  .CX 12 11,
+  .CX 11 12,
+  .CX 12 11,
+  .CX 5 16,
+  .CX 6 16,
+  .CX 4 16,
+  .CX 7 19,
+  .measureX 19 [] [.Z 3, .Z 5, .Z 15, .Z 16, .CZ 1 18, .CZ 2 5, .CZ 2 7, .CZ 2 15, .CZ 2 16, .CZ 2 17, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 16, .CZ 3 17, .CZ 4 6, .CZ 4 18, .CZ 7 18, .CZ 13 18, .CZ 15 18],
+  .measureX 18 [] [.Z 0, .Z 2, .Z 5, .Z 6, .Z 7, .Z 16, .CZ 0 1, .CZ 0 5, .CZ 0 7, .CZ 0 13, .CZ 0 15, .CZ 0 16, .CZ 0 17, .CZ 1 3, .CZ 1 5, .CZ 1 6, .CZ 1 13, .CZ 1 16, .CZ 2 3, .CZ 2 4, .CZ 2 6, .CZ 2 7, .CZ 2 13, .CZ 2 15, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 16, .CZ 3 17, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 13, .CZ 4 16, .CZ 5 15, .CZ 13 17, .CZ 15 16, .CZ 15 17],
+  .measureX 17 [] [.Z 3, .Z 4, .Z 5, .Z 15, .Z 16, .CZ 2 4, .CZ 2 7, .CZ 2 15, .CZ 3 6, .CZ 4 5, .CZ 4 6, .CZ 4 7, .CZ 4 16, .CZ 5 7, .CZ 7 16],
+  .measureX 16 [] [.Z 3, .Z 4, .Z 5, .Z 15, .CZ 2 4, .CZ 2 7, .CZ 2 15, .CZ 3 6, .CZ 4 6, .CZ 4 7, .CZ 4 15, .CZ 7 15],
+  .measureX 15 [] [.Z 2, .Z 3, .Z 4, .Z 7, .Z 13, .CZ 1 3, .CZ 1 13, .CZ 2 6, .CZ 3 6, .CZ 3 13],
+  .measureX 13 [] [.Z 1, .Z 2, .Z 3, .Z 10, .CZ 0 2, .CZ 0 10, .CZ 1 6, .CZ 2 6, .CZ 2 10],
+  .measureX 10 [] [.Z 0, .Z 1, .Z 2, .Z 9, .CZ 0 6, .CZ 1 6, .CZ 1 8, .CZ 1 9, .CZ 8 9],
+  .measureX 9 [] [.Z 0, .Z 1, .Z 8, .CZ 0 6, .CZ 0 7, .CZ 6 8]
+]
+end ECDSAAdd.Entrant.DecoderCells5
+
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5
+def firstInputCols : CodecBitSliceVerify.Cols := [26268004130929652808186026733429075870053159513643631111965528936163814514331473740942844169923277093871085326871210, 31521604957115583369823232080114891044063791416372357334358634723396577417197768489131413003907932512645302392245452, 37084241126018333376262625976605754169486813431026302746304276145172444020232668810742838828126979426641532226171120, 39248690997186718592776008815707257331130012658518110299590517943528812348261812904755066775293923751153683912523520, 39401404978667143593022554770633563854459401450008750977778344393863735325340512910716776069703187992064073301688320, 39402006187220484750454741089123917069972418660503712826493750038499509104992308520305931882993593122342079215697920, 2135987035920910082279229616932235919179133537347964862094111905523500100204627893878407015956480, 39402006196394479210143053064222703722684717564295894553351865983624455682313664510648333257056914071620698169671680, 39402006196394479212279040100143613805079739270465446667942016302510335090733374821991058588468813285362163955793920, 13134002065464826404805009045354841295824920325544999594181573608288995953560252237393399750904305736664185936980650, 7880401239278895843737400241581268810429802459947357363267822617608475770849780247927698506920689033764783547377254, 13906590422256875017354947703533575509070415794471386397814385604240113869981990489052071095538428306820235422643380, 15331519920776061951599680885673242620071420757627820790665433333614429161730083666636396498466743871310161119856440, 20297711692577841719236822876960121206971390610970872113948618323409452875473326284482342870601086562054862926710720, 615356026792617796076059107093797352807158635078771026780366654756407662974535006656042246628160953443747771709440, 0, 0, 0, 0, 0, 0]
+def firstInterfaceCols : CodecBitSliceVerify.Cols := [26268004130929652808186026733429075870053159513643631111965528936163814514331473740942844169923277093871085326871210, 31521604957115583369823232080114891044063791416372357334358634723396577417197768489131413003907932512645302392245452, 37084241126018333376262625976605754169486813431026302746304276145172444020232668810742838828126979426641532226171120, 39248690997186718592776008815707257331130012658518110299590517943528812348261812904755066775293923751153683912523520, 39401404978667143593022554770633563854459401450008750977778344393863735325340512910716776069703187992064073301688320, 39402006187220484750454741089123917069972418660503712826493750038499509104992308520305931882993593122342079215697920, 2135987035920910082279229616932235919179133537347964862094111905523500100204627893878407015956480, 39402006196394479210143053064222703722684717564295894553351865983624455682313664510648333257056914071620698169671680, 39402006196394479212279040100143613805079739270465446667942016302510335090733374821991058588468813285362163955793920, 9384996338818623317702412722244838017785305007276094513817068891975557242001730511927221260950203481435668480, 29580385416243006528193296612574568439536694620403585709986512954191746379468949412390257048819464359795265918012034, 0, 0, 38824546261613770345032710278802960250788267570524954794999474414222883481994726970086965194675808834394762587930624, 0, 7880401239278895843737400241581268810429802459947357363267822617608475770849780247927698506920689033764783547377254, 13906590422256875017354947703533575509070415794471386397814385604240113869981990489052071095538428306820235422643380, 15331519920776061951599680885673242620071420757627820790665433333614429161730083666636396498466743871310161119856440, 20297711692577841719236822876960121206971390610970872113948618323409452875473326284482342870601086562054862926710720, 39364110122444011733850359409652491673948003078632385075339156839924949853644021354509666596711667931735821010401280, 0]
+def firstOutputCols : CodecBitSliceVerify.Cols := [26268004130929652808186026733429075870053159513643631111965528936163814514331473740942844169923277093871085326871210, 31521604957115583369823232080114891044063791416372357334358634723396577417197768489131413003907932512645302392245452, 37084241126018333376262625976605754169486813431026302746304276145172444020232668810742838828126979426641532226171120, 39248690997186718592776008815707257331130012658518110299590517943528812348261812904755066775293923751153683912523520, 39401404978667143593022554770633563854459401450008750977778344393863735325340512910716776069703187992064073301688320, 39402006187220484750454741089123917069972418660503712826493750038499509104992308520305931882993593122342079215697920, 2135987035920910082279229616932235919179133537347964862094111905523500100204627893878407015956480, 39402006196394479210143053064222703722684717564295894553351865983624455682313664510648333257056914071620698169671680, 39402006196394479212279040100143613805079739270465446667942016302510335090733374821991058588468813285362163955793920, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+def firstInput (r : Fin 384) : Nat := colRow21 firstInputCols r.val
+private theorem firstInput_rel (r : Fin 384) :
+    CodecBitSliceVerify.Rel firstInputCols (firstInput r) r.val :=
+  colRow21_rel firstInputCols (by decide +kernel) r.val
+def firstInterface (r : Fin 384) : Nat := colRow21 firstInterfaceCols r.val
+private theorem firstInterface_rel (r : Fin 384) :
+    CodecBitSliceVerify.Rel firstInterfaceCols (firstInterface r) r.val :=
+  colRow21_rel firstInterfaceCols (by decide +kernel) r.val
+def firstOutput (r : Fin 384) : Nat := colRow21 firstOutputCols r.val
+private theorem firstOutput_rel (r : Fin 384) :
+    CodecBitSliceVerify.Rel firstOutputCols (firstOutput r) r.val :=
+  colRow21_rel firstOutputCols (by decide +kernel) r.val
+private theorem firstMask : ∀r : Fin 384,(39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306815:Nat).testBit r.val=true := by decide +kernel
+private theorem firstPrefix_check : CodecBitSliceVerify.eval 39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306815 firstPrefix firstInputCols=
+    (true,firstInterfaceCols) := by decide +kernel
+private theorem firstCleanup_check : CodecBitSliceVerify.eval 39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306815 firstCleanup firstInterfaceCols=
+    (true,firstOutputCols) := by decide +kernel
+theorem firstPrefix_row (r : Fin 384) :
+    safe firstPrefix (firstInput r)=true ∧
+      bitRun firstPrefix (firstInput r)=firstInterface r := by
+  have h := CodecBitSliceVerify.eval_sound 39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306815 r.val (firstMask r) firstPrefix
+    firstInputCols (firstInput r) (by decide +kernel)
+    (firstInput_rel r) (congrArg Prod.fst firstPrefix_check)
+  refine ⟨h.1,?_⟩
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have z := h.2 q
+  rw [firstPrefix_check] at z
+  exact z.trans (firstInterface_rel r q).symm
+
+theorem firstPrefix_run (r : Fin 384) (m : List Bool) (ph : Bool) :
+    run firstPrefix m ⟨ph,bitsOf (firstInput r)⟩=
+      ⟨ph,bitsOf (firstInterface r)⟩ := by
+  rw [run_sim,sim_safe _ _ (firstPrefix_row r).1,(firstPrefix_row r).2]
+
+theorem firstPrefix_physical : GatePhysical firstPrefix :=
+  CodecBitSliceVerify.physical_of_check _ (by decide +kernel)
+theorem firstPrefix_support : wires firstPrefix⊆Finset.range 21 :=
+  CodecBitSliceVerify.support_of_check _ _ (by decide +kernel)
+theorem firstCleanup_row (r : Fin 384) :
+    safe firstCleanup (firstInterface r)=true ∧
+      bitRun firstCleanup (firstInterface r)=firstOutput r := by
+  have h := CodecBitSliceVerify.eval_sound 39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306815 r.val (firstMask r) firstCleanup
+    firstInterfaceCols (firstInterface r) (by decide +kernel)
+    (firstInterface_rel r) (congrArg Prod.fst firstCleanup_check)
+  refine ⟨h.1,?_⟩
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have z := h.2 q
+  rw [firstCleanup_check] at z
+  exact z.trans (firstOutput_rel r q).symm
+
+theorem firstCleanup_run (r : Fin 384) (m : List Bool) (ph : Bool) :
+    run firstCleanup m ⟨ph,bitsOf (firstInterface r)⟩=
+      ⟨ph,bitsOf (firstOutput r)⟩ := by
+  rw [run_sim,sim_safe _ _ (firstCleanup_row r).1,(firstCleanup_row r).2]
+
+theorem firstCleanup_physical : GatePhysical firstCleanup :=
+  CodecBitSliceVerify.physical_of_check _ (by decide +kernel)
+theorem firstCleanup_support : wires firstCleanup⊆Finset.range 21 :=
+  CodecBitSliceVerify.support_of_check _ _ (by decide +kernel)
+theorem firstCounts : toffoliCount firstPrefix=3 ∧ measurementCount firstPrefix=0 ∧
+    toffoliCount firstCleanup=0 ∧ measurementCount firstCleanup=8 ∧
+    Challenge.gateSlots firstPrefix=152 ∧
+    Challenge.gateSlots firstCleanup=154 := by decide +kernel
+end ECDSAAdd.Entrant.DecoderCells5
+
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic
+def zeroPrefix : Program := [
+  .CX 11 13,
+  .CX 13 11,
+  .CX 11 13,
+  .CX 9 12,
+  .CX 12 9,
+  .CX 9 12,
+  .CX 6 8,
+  .CX 8 6,
+  .CX 6 8,
+  .CX 1 3,
+  .CX 3 1,
+  .CX 1 3,
+  .CX 7 1,
+  .CX 14 1,
+  .CX 0 4,
+  .CX 4 0,
+  .CX 0 4,
+  .CX 6 0,
+  .CX 11 0,
+  .CX 11 6,
+  .CX 5 7,
+  .CX 7 5,
+  .CX 5 7,
+  .CX 14 5,
+  .CX 14 9,
+  .CX 9 14,
+  .CX 14 9,
+  .CX 5 9,
+  .CX 6 11,
+  .CX 0 6,
+  .CX 1 5,
+  .CX 3 0,
+  .CX 8 1,
+  .CX 2 4,
+  .CX 4 2,
+  .CX 2 4,
+  .CX 13 1,
+  .CCX 0 1 16,
+  .CX 1 0,
+  .CX 6 0,
+  .CX 8 0,
+  .CX 15 1,
+  .CX 16 1,
+  .CX 16 15,
+  .CX 15 16,
+  .CX 1 15,
+  .CX 8 15,
+  .CX 0 15,
+  .CX 0 1,
+  .CX 3 15,
+  .CX 4 0,
+  .CX 11 15,
+  .CX 11 1,
+  .CX 7 1,
+  .CX 9 1,
+  .CX 14 0,
+  .CX 13 1,
+  .CX 13 0,
+  .CX 2 0,
+  .CCX 0 1 17,
+  .CX 1 16,
+  .CX 17 1,
+  .CX 1 17,
+  .CX 16 17,
+  .CX 16 1,
+  .CX 0 16,
+  .CX 16 0,
+  .CX 0 16,
+  .CX 6 1,
+  .CX 6 0,
+  .CX 2 16,
+  .CX 15 16,
+  .CX 15 1,
+  .CX 5 16,
+  .CX 5 1,
+  .CX 4 16,
+  .CX 4 1,
+  .CX 11 16,
+  .CX 11 1,
+  .CX 11 0,
+  .CX 13 1,
+  .CX 13 0,
+  .CX 9 16,
+  .CX 9 0,
+  .CX 8 1,
+  .CX 8 0,
+  .CX 14 16,
+  .CX 7 1,
+  .CX 7 0,
+  .CX 3 16,
+  .CX 3 1,
+  .CCX 0 1 18,
+  .CX 16 19,
+  .CX 19 16,
+  .CX 16 19,
+  .CX 3 1,
+  .CX 4 1,
+  .CX 5 1,
+  .CX 6 1,
+  .CX 7 1,
+  .CX 8 1,
+  .CX 11 1,
+  .CX 13 1,
+  .CX 15 1,
+  .CX 17 1,
+  .CX 7 5,
+  .CX 5 7,
+  .CX 7 5,
+  .CX 6 4,
+  .CX 4 6,
+  .CX 6 4,
+  .CX 14 17,
+  .CX 17 14,
+  .CX 14 17,
+  .CX 10 12,
+  .CX 12 10,
+  .CX 10 12,
+  .CX 15 18,
+  .CX 18 15,
+  .CX 15 18,
+  .CX 9 3,
+  .CX 3 9,
+  .CX 9 3,
+  .CX 0 9,
+  .CX 11 9,
+  .CX 0 11,
+  .CX 6 0,
+  .CX 0 6,
+  .CX 6 0,
+  .CX 15 14,
+  .CX 14 15,
+  .CX 15 14,
+  .CX 15 20,
+  .CX 20 15,
+  .CX 15 20,
+  .CX 14 20,
+  .CX 6 20,
+  .CX 6 14,
+  .CX 8 6,
+  .CX 6 8,
+  .CX 8 6,
+  .CX 11 8,
+  .CX 9 11,
+  .CX 10 9,
+  .CX 9 10,
+  .CX 10 9,
+  .CX 3 20,
+  .CX 18 10,
+  .CX 7 3,
+  .CX 3 7,
+  .CX 7 3,
+  .CX 2 0,
+  .CX 0 2,
+  .CX 2 0,
+  .CX 16 13,
+  .CX 13 16,
+  .CX 16 13,
+  .CX 4 20,
+  .CX 4 10,
+  .CX 5 20,
+  .CX 1 11,
+  .CX 11 1,
+  .CX 1 11
+]
+def zeroCleanup : Program := [
+  .CX 17 11,
+  .CX 11 17,
+  .CX 17 11,
+  .CX 19 16,
+  .CX 16 19,
+  .CX 19 16,
+  .CX 13 15,
+  .CX 15 13,
+  .CX 13 15,
+  .CX 14 20,
+  .CX 19 10,
+  .CX 10 19,
+  .CX 19 10,
+  .CX 14 19,
+  .CX 18 19,
+  .CX 14 18,
+  .CX 18 14,
+  .CX 19 18,
+  .CX 20 19,
+  .CX 19 20,
+  .CX 20 19,
+  .CX 17 19,
+  .CX 19 17,
+  .CX 17 19,
+  .CX 12 13,
+  .CX 13 12,
+  .CX 12 13,
+  .CX 5 17,
+  .CX 4 20,
+  .CX 4 17,
+  .CX 8 20,
+  .CX 1 20,
+  .CX 7 17,
+  .measureX 20 [] [.Z 1, .Z 4, .Z 8, .Z 14, .Z 18, .CZ 1 2, .CZ 1 5, .CZ 1 16, .CZ 1 17, .CZ 1 19, .CZ 2 4, .CZ 2 8, .CZ 2 14, .CZ 2 18, .CZ 4 5, .CZ 4 16, .CZ 4 17, .CZ 4 19, .CZ 5 8, .CZ 5 14, .CZ 5 18, .CZ 8 16, .CZ 8 17, .CZ 8 19, .CZ 14 16, .CZ 14 17, .CZ 14 19, .CZ 16 18, .CZ 17 18, .CZ 18 19],
+  .measureX 19 [] [.Z 10, .Z 14, .Z 18, .CZ 0 5, .CZ 0 6, .CZ 0 7, .CZ 0 14, .CZ 0 17, .CZ 0 18, .CZ 1 5, .CZ 1 6, .CZ 1 8, .CZ 1 17, .CZ 2 5, .CZ 2 6, .CZ 2 14, .CZ 2 17, .CZ 2 18, .CZ 3 4, .CZ 3 5, .CZ 3 6, .CZ 3 8, .CZ 3 10, .CZ 3 17, .CZ 4 6, .CZ 4 10, .CZ 4 16, .CZ 4 18, .CZ 5 8, .CZ 5 11, .CZ 5 14, .CZ 5 16, .CZ 6 10, .CZ 6 11, .CZ 6 16, .CZ 6 18, .CZ 7 8, .CZ 8 14, .CZ 8 16, .CZ 8 17, .CZ 10 16, .CZ 10 18, .CZ 11 14, .CZ 11 17, .CZ 11 18, .CZ 14 17, .CZ 16 17],
+  .measureX 18 [] [.CZ 1 3, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 1 16, .CZ 3 4, .CZ 3 7, .CZ 3 8, .CZ 3 14, .CZ 4 6, .CZ 4 7, .CZ 4 10, .CZ 4 16, .CZ 6 8, .CZ 6 14, .CZ 7 8, .CZ 8 10, .CZ 8 16, .CZ 10 14, .CZ 14 16],
+  .measureX 17 [] [.Z 3, .Z 4, .Z 5, .Z 16, .CZ 2 4, .CZ 2 16, .CZ 3 7, .CZ 4 7, .CZ 4 16],
+  .measureX 16 [] [.Z 2, .Z 3, .Z 4, .Z 14, .CZ 1 3, .CZ 1 14, .CZ 2 7, .CZ 3 7, .CZ 3 14],
+  .measureX 14 [] [.Z 1, .Z 2, .Z 3, .Z 11, .CZ 0 2, .CZ 0 11, .CZ 1 7, .CZ 2 7, .CZ 2 11],
+  .measureX 11 [] [.Z 0, .Z 1, .Z 2, .Z 10, .CZ 0 7, .CZ 1 6, .CZ 1 7, .CZ 1 10, .CZ 6 10],
+  .measureX 10 [] [.Z 0, .Z 1, .CZ 0 6, .CZ 0 8, .CZ 0 9, .CZ 6 8, .CZ 6 9, .CZ 8 9]
+]
+end ECDSAAdd.Entrant.DecoderCells5
+
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5
+def zeroInputCols : CodecBitSliceVerify.Cols := [164886934315403022707001680679764793356754232734141226609375370728598150071021244780210934040828696659731780950677426226234243356204500806645030770067928778611071181432466090, 197864321178483627248402016815717752028105079280969471931250444874317780085225493736253120848994435991678137140812911471481092027445400967974036924081514534333285417718959308, 232781554327627796762825902136138531797770681507022908154412288087432682453206463219121318645875807049033102518603425260565990620524001138792984616566487687450924020845834480, 246368026370096345212018075412566850774294262139728525361868258209267274814288552512066142691354939756175112393230084322466729372694662683858723018311613427963623866420494080, 247326627568264930408610299793148881488966051157316006845110951738775234517626263742219748538224578428037185018774031581301113247300414228549263848219443530411565091773153280, 247330401415518437503757415246493145686735652798630342260063144876794883712406643146164333770120106071154250041893392798677032319043851960398067719567359188646148739621191680, 247330401473104534060502521019647190034404510376916233023513732285009220572180361796665003911043834020033964373821926826664257335135845251819363420323784256857787609802342400, 39402006196394479210143053064222703722684717564295894553351865983624455682313664510648333257056914071620698169671680, 247330401473104534047094713089704592935557324103005993786623092278501226208020584766694780644974577752066262574517177927963843511210998533935783330878415411255535287098408960, 247330401473104534060502521019647190035131349101211839914023654086700830627319588130216257447437965250327205979348191045947119312535253999356131888847008252275800144158392320, 0, 49466080294620906817463627375906476847001247564383827811914222308394003279266099086282265254317869982553025414908832996904054367306278621122531972634062253176701095082616422, 87293082872860423792369269973966112764968996452690316526014845878102873317578501846791309778210935892890115888233841146727930556589388145761692601345363124030837879452513460, 96237510300818884855122379443569538646931974571162314098392246605859199800156622710490944885073384393347101099007917870125381091666644134747241619759011451642402135780935480, 119919600183245642533925494883328015202319775353275827235892220524013738587566015830511118393402351729299110559491502700563882247309604282175960334029367466503422154177972160, 123544492878355921753508541745985083144260924768567856176469590721938924976686402983268822660997609172984996339384796460202902394049946447495720230721196735797873386274682880, 0, 0, 0, 0, 0]
+def zeroInterfaceCols : CodecBitSliceVerify.Cols := [164886934315403022707001680679764793356754232734141226609375370728598150071021244780210934040828696659731780950677426226234243356204500806645030770067928778611071181432466090, 197864321178483627248402016815717752028105079280969471931250444874317780085225493736253120848994435991678137140812911471481092027445400967974036924081514534333285417718959308, 232781554327627796762825902136138531797770681507022908154412288087432682453206463219121318645875807049033102518603425260565990620524001138792984616566487687450924020845834480, 246368026370096345212018075412566850774294262139728525361868258209267274814288552512066142691354939756175112393230084322466729372694662683858723018311613427963623866420494080, 247326627568264930408610299793148881488966051157316006845110951738775234517626263742219748538224578428037185018774031581301113247300414228549263848219443530411565091773153280, 247330401415518437503757415246493145686735652798630342260063144876794883712406643146164333770120106071154250041893392798677032319043851960398067719567359188646148739621191680, 247330401473104534060502521019647190034404510376916233023513732285009220572180361796665003911043834020033964373821926826664257335135845251819363420323784256857787609802342400, 39402006196394479210143053064222703722684717564295894553351865983624455682313664510648333257056914071620698169671680, 247330401473104534047094713089704592935557324103005993786623092278501226208020584766694780644974577752066262574517177927963843511210998533935783330878415411255535287098408960, 247330401473104534060502521019647190035131349101211839914023654086700830627319588130216257447437965250327205979348191045947119312535253999356131888847008252275800144158392320, 14794171115184778919481924984432802607252807421258950663665619134892381235835036210224734530548573689477594214047191126160122210818836091170840359851681358681256019570002596, 186041428641807511576722756131544608290658050849307470335388979042864311215466170525873612852391030232774471331670409499903211427808338758149935460087155296203496058677107986, 0, 0, 123665200765345315315327720556481557734615211962549930841171795680265028789168449885371769940396999754817092482707294941569284300140786588797441995801503389205173892701749248, 0, 49466080294620906817463627375906476847001247564383827811914222308394003279266099086282265254317869982553025414908832996904054367306278621122531972634062253176701095082616422, 87293082872860423792369269973966112764968996452690316526014845878102873317578501846791309778210935892890115888233841146727930556589388145761692601345363124030837879452513460, 96237510300818884855122379443569538646931974571162314098392246605859199800156622710490944885073384393347101099007917870125381091666644134747241619759011451642402135780935480, 119919600183245642533925494883328015202319775353275827235892220524013738587566015830511118393402351729299110559491502700563882247309604282175960334029367466503422154177972160, 247213349727331021778843058578171678192863229198009720123158266436279183234109961497977213627123351156363761580488788691946938628927487050996550023826660842469003258985773056]
+def zeroOutputCols : CodecBitSliceVerify.Cols := [164886934315403022707001680679764793356754232734141226609375370728598150071021244780210934040828696659731780950677426226234243356204500806645030770067928778611071181432466090, 197864321178483627248402016815717752028105079280969471931250444874317780085225493736253120848994435991678137140812911471481092027445400967974036924081514534333285417718959308, 232781554327627796762825902136138531797770681507022908154412288087432682453206463219121318645875807049033102518603425260565990620524001138792984616566487687450924020845834480, 246368026370096345212018075412566850774294262139728525361868258209267274814288552512066142691354939756175112393230084322466729372694662683858723018311613427963623866420494080, 247326627568264930408610299793148881488966051157316006845110951738775234517626263742219748538224578428037185018774031581301113247300414228549263848219443530411565091773153280, 247330401415518437503757415246493145686735652798630342260063144876794883712406643146164333770120106071154250041893392798677032319043851960398067719567359188646148739621191680, 247330401473104534060502521019647190034404510376916233023513732285009220572180361796665003911043834020033964373821926826664257335135845251819363420323784256857787609802342400, 39402006196394479210143053064222703722684717564295894553351865983624455682313664510648333257056914071620698169671680, 247330401473104534047094713089704592935557324103005993786623092278501226208020584766694780644974577752066262574517177927963843511210998533935783330878415411255535287098408960, 247330401473104534060502521019647190035131349101211839914023654086700830627319588130216257447437965250327205979348191045947119312535253999356131888847008252275800144158392320, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+def zeroInput (r : Fin 576) : Nat := colRow21 zeroInputCols r.val
+private theorem zeroInput_rel (r : Fin 576) :
+    CodecBitSliceVerify.Rel zeroInputCols (zeroInput r) r.val :=
+  colRow21_rel zeroInputCols (by decide +kernel) r.val
+def zeroInterface (r : Fin 576) : Nat := colRow21 zeroInterfaceCols r.val
+private theorem zeroInterface_rel (r : Fin 576) :
+    CodecBitSliceVerify.Rel zeroInterfaceCols (zeroInterface r) r.val :=
+  colRow21_rel zeroInterfaceCols (by decide +kernel) r.val
+def zeroOutput (r : Fin 576) : Nat := colRow21 zeroOutputCols r.val
+private theorem zeroOutput_rel (r : Fin 576) :
+    CodecBitSliceVerify.Rel zeroOutputCols (zeroOutput r) r.val :=
+  colRow21_rel zeroOutputCols (by decide +kernel) r.val
+private theorem zeroMask : ∀r : Fin 576,(247330401473104534060502521019647190035131349101211839914063056092897225106531867170316401061243044989597671426016139339351365034306751209967546155101893167916606772148699135:Nat).testBit r.val=true := by decide +kernel
+private theorem zeroPrefix_check : CodecBitSliceVerify.eval 247330401473104534060502521019647190035131349101211839914063056092897225106531867170316401061243044989597671426016139339351365034306751209967546155101893167916606772148699135 zeroPrefix zeroInputCols=
+    (true,zeroInterfaceCols) := by decide +kernel
+private theorem zeroCleanup_check : CodecBitSliceVerify.eval 247330401473104534060502521019647190035131349101211839914063056092897225106531867170316401061243044989597671426016139339351365034306751209967546155101893167916606772148699135 zeroCleanup zeroInterfaceCols=
+    (true,zeroOutputCols) := by decide +kernel
+theorem zeroPrefix_row (r : Fin 576) :
+    safe zeroPrefix (zeroInput r)=true ∧
+      bitRun zeroPrefix (zeroInput r)=zeroInterface r := by
+  have h := CodecBitSliceVerify.eval_sound 247330401473104534060502521019647190035131349101211839914063056092897225106531867170316401061243044989597671426016139339351365034306751209967546155101893167916606772148699135 r.val (zeroMask r) zeroPrefix
+    zeroInputCols (zeroInput r) (by decide +kernel)
+    (zeroInput_rel r) (congrArg Prod.fst zeroPrefix_check)
+  refine ⟨h.1,?_⟩
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have z := h.2 q
+  rw [zeroPrefix_check] at z
+  exact z.trans (zeroInterface_rel r q).symm
+
+theorem zeroPrefix_run (r : Fin 576) (m : List Bool) (ph : Bool) :
+    run zeroPrefix m ⟨ph,bitsOf (zeroInput r)⟩=
+      ⟨ph,bitsOf (zeroInterface r)⟩ := by
+  rw [run_sim,sim_safe _ _ (zeroPrefix_row r).1,(zeroPrefix_row r).2]
+
+theorem zeroPrefix_physical : GatePhysical zeroPrefix :=
+  CodecBitSliceVerify.physical_of_check _ (by decide +kernel)
+theorem zeroPrefix_support : wires zeroPrefix⊆Finset.range 21 :=
+  CodecBitSliceVerify.support_of_check _ _ (by decide +kernel)
+theorem zeroCleanup_row (r : Fin 576) :
+    safe zeroCleanup (zeroInterface r)=true ∧
+      bitRun zeroCleanup (zeroInterface r)=zeroOutput r := by
+  have h := CodecBitSliceVerify.eval_sound 247330401473104534060502521019647190035131349101211839914063056092897225106531867170316401061243044989597671426016139339351365034306751209967546155101893167916606772148699135 r.val (zeroMask r) zeroCleanup
+    zeroInterfaceCols (zeroInterface r) (by decide +kernel)
+    (zeroInterface_rel r) (congrArg Prod.fst zeroCleanup_check)
+  refine ⟨h.1,?_⟩
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have z := h.2 q
+  rw [zeroCleanup_check] at z
+  exact z.trans (zeroOutput_rel r q).symm
+
+theorem zeroCleanup_run (r : Fin 576) (m : List Bool) (ph : Bool) :
+    run zeroCleanup m ⟨ph,bitsOf (zeroInterface r)⟩=
+      ⟨ph,bitsOf (zeroOutput r)⟩ := by
+  rw [run_sim,sim_safe _ _ (zeroCleanup_row r).1,(zeroCleanup_row r).2]
+
+theorem zeroCleanup_physical : GatePhysical zeroCleanup :=
+  CodecBitSliceVerify.physical_of_check _ (by decide +kernel)
+theorem zeroCleanup_support : wires zeroCleanup⊆Finset.range 21 :=
+  CodecBitSliceVerify.support_of_check _ _ (by decide +kernel)
+theorem zeroCounts : toffoliCount zeroPrefix=3 ∧ measurementCount zeroPrefix=0 ∧
+    toffoliCount zeroCleanup=0 ∧ measurementCount zeroCleanup=8 ∧
+    Challenge.gateSlots zeroPrefix=163 ∧
+    Challenge.gateSlots zeroCleanup=182 := by decide +kernel
+end ECDSAAdd.Entrant.DecoderCells5
+
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsTransport
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5
+set_option maxHeartbeats 4000000
+attribute [local irreducible] run
+
+def Placed (f : Wire → Wire) (x : Nat) (s : State) : Prop :=
+  ∀q,q<21 → s.basis (f q)=bitsOf x q
+
+theorem placed_run (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (P : Program) (hp : wires P⊆Finset.range 21)
+    (x y : Nat) (s : State) (hx : Placed f x s)
+    (h : ∀m ph,run P m ⟨ph,bitsOf x⟩=⟨ph,bitsOf y⟩) (m : List Bool) :
+    (run (renameProgram f P) m s).phase=s.phase ∧
+      Placed f y (run (renameProgram f P) m s) := by
+  have pr:=run_rename_pool f (Finset.range 21) hf P hp m ⟨s.phase,bitsOf x⟩ s rfl
+    (by intro q hq;exact (hx q (Finset.mem_range.mp hq)).symm)
+  rw [h m s.phase] at pr
+  exact ⟨pr.1,fun q hq=>pr.2 q (Finset.mem_range.mpr hq)⟩
+
+theorem firstPrefix_placed (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (r : Fin 384) (s : State) (hx : Placed f (firstInput r) s) (m : List Bool) :
+    (run (renameProgram f firstPrefix) m s).phase=s.phase ∧
+      Placed f (firstInterface r) (run (renameProgram f firstPrefix) m s) :=
+  placed_run f hf firstPrefix firstPrefix_support _ _ s hx (firstPrefix_run r) m
+
+theorem firstCleanup_placed (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (r : Fin 384) (s : State) (hx : Placed f (firstInterface r) s) (m : List Bool) :
+    (run (renameProgram f firstCleanup) m s).phase=s.phase ∧
+      Placed f (firstOutput r) (run (renameProgram f firstCleanup) m s) :=
+  placed_run f hf firstCleanup firstCleanup_support _ _ s hx (firstCleanup_run r) m
+
+theorem zeroPrefix_placed (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (r : Fin 576) (s : State) (hx : Placed f (zeroInput r) s) (m : List Bool) :
+    (run (renameProgram f zeroPrefix) m s).phase=s.phase ∧
+      Placed f (zeroInterface r) (run (renameProgram f zeroPrefix) m s) :=
+  placed_run f hf zeroPrefix zeroPrefix_support _ _ s hx (zeroPrefix_run r) m
+
+theorem zeroCleanup_placed (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (r : Fin 576) (s : State) (hx : Placed f (zeroInterface r) s) (m : List Bool) :
+    (run (renameProgram f zeroCleanup) m s).phase=s.phase ∧
+      Placed f (zeroOutput r) (run (renameProgram f zeroCleanup) m s) :=
+  placed_run f hf zeroCleanup zeroCleanup_support _ _ s hx (zeroCleanup_run r) m
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsPlacement
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+def zeroPos (i q : Nat) : Nat :=
+  if q<6 then 3+i+q else if q=6 then i+2 else if q=7 then 0
+  else if q=8 then i+514 else if q=9 then i+258
+  else if q<16 then i+q+249 else i+q+499
+
+def firstPos (q : Nat) : Nat :=
+  if q<6 then 3+q else if q=6 then 0 else if q=7 then 1
+  else if q=8 then 258 else if q<15 then q+250
+  else if q<20 then q+500 else 2
+
+theorem zeroPos_bound (i q : Nat) (hlo : 11 ≤ i) (hhi : i≤249) (hq : q<21) :
+    zeroPos i q<770 := by
+  unfold zeroPos
+  split_ifs <;> omega
+
+theorem zeroPos_inj (i : Nat) (hlo : 11 ≤ i) (hhi : i≤249)
+    (a b : Nat) (ha : a<21) (hb : b<21) (h : zeroPos i a=zeroPos i b) : a=b := by
+  unfold zeroPos at h
+  split_ifs at h <;> omega
+
+theorem firstPos_bound (q : Nat) (hq : q<21) : firstPos q<770 := by
+  unfold firstPos
+  split_ifs <;> omega
+
+theorem firstPos_inj (a b : Nat) (ha : a<21) (hb : b<21)
+    (h : firstPos a=firstPos b) : a=b := by
+  unfold firstPos at h
+  split_ifs at h <;> omega
+
+def firstLabel (L : DecoderLayout) (q : Wire) : Wire := L.wires.getD (firstPos q) 0
+def zeroLabel (L : DecoderLayout) (i : Nat) (q : Wire) : Wire := L.wires.getD (zeroPos i q) 0
+
+theorem wires_length (L : DecoderLayout) (hw : L.Widths) : L.wires.length=770 := by
+  simp [DecoderLayout.wires,hw.1,hw.2.1,hw.2.2]
+
+theorem firstLabel_inj (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    ∀a∈Finset.range 21,∀b∈Finset.range 21,firstLabel L a=firstLabel L b → a=b := by
+  intro a ha b hb h
+  have ha':a<21:=Finset.mem_range.mp ha
+  have hb':b<21:=Finset.mem_range.mp hb
+  apply firstPos_inj a b ha' hb'
+  exact getD_inj L.wires hn _ _ (by rw [wires_length L hw];exact firstPos_bound a ha')
+    (by rw [wires_length L hw];exact firstPos_bound b hb') h
+
+theorem zeroLabel_inj (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11 ≤ i) (hhi : i≤249) :
+    ∀a∈Finset.range 21,∀b∈Finset.range 21,zeroLabel L i a=zeroLabel L i b → a=b := by
+  intro a ha b hb h
+  have ha':a<21:=Finset.mem_range.mp ha
+  have hb':b<21:=Finset.mem_range.mp hb
+  apply zeroPos_inj i hlo hhi a b ha' hb'
+  exact getD_inj L.wires hn _ _ (by rw [wires_length L hw];exact zeroPos_bound i a hlo hhi ha')
+    (by rw [wires_length L hw];exact zeroPos_bound i b hlo hhi hb') h
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsLabels
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+theorem pos_y (L : DecoderLayout) (hw : L.Widths) (i : Nat) (hi : i<256) :
+    L.wires.getD (3+i) 0=L.Y i := by
+  unfold DecoderLayout.wires
+  rw [List.getD_append _ _ _ _ (by simp [hw.1,hw.2.1];omega)]
+  rw [List.getD_append _ _ _ _ (by simp [hw.1];omega)]
+  rw [List.getD_append_right _ _ _ _ (by simp)]
+  simp [DecoderLayout.Y]
+
+theorem pos_r (L : DecoderLayout) (hw : L.Widths) (i : Nat) (hi : i<256) :
+    L.wires.getD (259+i) 0=L.R i := by
+  unfold DecoderLayout.wires
+  rw [List.getD_append _ _ _ _ (by simp [hw.1,hw.2.1];omega)]
+  rw [List.getD_append_right _ _ _ _ (by simp [hw.1])]
+  simp [hw.1,DecoderLayout.R]
+
+theorem pos_a (L : DecoderLayout) (hw : L.Widths) (i : Nat) (_hi : i<255) :
+    L.wires.getD (515+i) 0=L.A i := by
+  unfold DecoderLayout.wires
+  rw [List.getD_append_right _ _ _ _ (by simp [hw.1,hw.2.1])]
+  simp [hw.1,hw.2.1,DecoderLayout.A]
+
+theorem pos_flag (L : DecoderLayout) (hw : L.Widths) (q : Nat) (hq : q<3) :
+    L.wires.getD q 0=([L.sigma,L.h,L.bias] : List Wire).getD q 0 := by
+  unfold DecoderLayout.wires
+  rw [List.getD_append _ _ _ _ (by simp [hw.1,hw.2.1];omega)]
+  rw [List.getD_append _ _ _ _ (by simp [hw.1];omega)]
+  exact List.getD_append _ _ _ _ (by simpa using hq)
+
+theorem firstLabel_eq (L : DecoderLayout) (hw : L.Widths) (q : Nat) (hq : q<21) :
+    firstLabel L q=
+      (if q<6 then L.Y q else if q=6 then L.sigma else if q=7 then L.h
+      else if q=8 then L.Y 255 else if q<15 then L.R (q-9)
+      else if q<20 then L.A (q-15) else L.bias) := by
+  unfold firstLabel firstPos
+  split_ifs with h0 h1 h2 h3 h4 h5
+  · exact pos_y L hw q (by omega)
+  · subst q;simpa using pos_flag L hw 0 (by decide)
+  · subst q;simpa using pos_flag L hw 1 (by decide)
+  · subst q;exact pos_y L hw 255 (by decide)
+  · rw [show q+250=259+(q-9) by omega];exact pos_r L hw (q-9) (by omega)
+  · rw [show q+500=515+(q-15) by omega];exact pos_a L hw (q-15) (by omega)
+  · simpa using pos_flag L hw 2 (by decide)
+
+theorem zeroLabel_eq (L : DecoderLayout) (hw : L.Widths) (i q : Nat)
+    (hlo : 11 ≤ i) (hhi : i≤249) (hq : q<21) :
+    zeroLabel L i q=
+      (if q<6 then L.Y (i+q) else if q=6 then L.Y (i-1) else if q=7 then L.sigma
+      else if q=8 then L.A (i-1) else if q=9 then L.R (i-1)
+      else if q<16 then L.R (i+q-10) else L.A (i+q-16)) := by
+  unfold zeroLabel zeroPos
+  split_ifs with h0 h1 h2 h3 h4 h5
+  · rw [show 3+i+q=3+(i+q) by omega];exact pos_y L hw _ (by omega)
+  · rw [show i+2=3+(i-1) by omega];exact pos_y L hw _ (by omega)
+  · simpa using pos_flag L hw 0 (by decide)
+  · rw [show i+514=515+(i-1) by omega];exact pos_a L hw _ (by omega)
+  · rw [show i+258=259+(i-1) by omega];exact pos_r L hw _ (by omega)
+  · rw [show i+q+249=259+(i+q-10) by omega];exact pos_r L hw _ (by omega)
+  · rw [show i+q+499=515+(i+q-16) by omega];exact pos_a L hw _ (by omega)
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellCarryMath
+namespace ECDSAAdd.Entrant.DecoderCellCarryMath
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 4000000
+
+def seedValid (prev sigma a c : Bool) : Prop :=
+  (sigma=true → a= !prev ∧ c=false) ∧ (c && a && !prev)=false
+
+theorem zero_step (prev y sigma a c : Bool) (h : seedValid prev sigma a c) :
+    seedValid y sigma (carryBit prev (y ^^ sigma) a)
+      ((prev ^^ y ^^ sigma ^^ a) && c) := by
+  cases prev <;> cases y <;> cases sigma <;> cases a <;> cases c <;>
+    simp_all [seedValid,carryBit]
+
+theorem add_sigma (L : DecoderLayout) (b : BasisState) (hs : b L.sigma=true) (i : Nat) :
+    aExpected L b i= !b (L.Y i) := by
+  induction i with
+  | zero=>simp only [aExpected,hs];generalize b (L.Y 0)=y;cases y <;> rfl
+  | succ i ih=>
+    simp only [aExpected,hs,ih]
+    generalize b (L.Y i)=u,b (L.Y (i+1))=v
+    cases u <;> cases v <;> rfl
+
+theorem carry_zero_correction (raw c : Bool) : carryBit false raw c=(raw && c) := by
+  cases raw <;> cases c <;> rfl
+
+theorem zero_triple (prev y a c : Bool) :
+    (((prev ^^ y ^^ a) && c) && carryBit prev y a && !y)=false := by
+  cases prev <;> cases y <;> cases a <;> cases c <;> rfl
+
+end ECDSAAdd.Entrant.DecoderCellCarryMath
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellGraphMath
+namespace ECDSAAdd.Entrant.DecoderCellCarryMath
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+theorem correction_zero (L : DecoderLayout) (b : BasisState)
+    (hh : b L.h=false) (hb : b L.bias=false) (i : Nat) :
+    (correction L i).value b=false := by
+  unfold correction
+  split_ifs <;> simp [MappedBit.value,hh,hb]
+
+theorem b_sigma_zero (L : DecoderLayout) (b : BasisState)
+    (g : BGraph L b) (hh : b L.h=false) (hb : b L.bias=false)
+    (i : Nat) (hi : i < 255) : bExpected L b (i+1)=false := by
+  induction i with
+  | zero=>
+    have h:=g 1 (by omega) (by omega)
+    rw [correction_zero L b hh hb] at h
+    simpa [carryBit] using h
+  | succ i ih=>
+    have h:=g (i+2) (by omega) (by omega)
+    rw [correction_zero L b hh hb] at h
+    have prev:=ih (by omega)
+    simp only [show ¬i+2=1 by omega,ite_false,show i+2-1=i+1 by omega] at h
+    rw [prev] at h
+    simpa [carryBit] using h
+
+theorem raw_middle (L : DecoderLayout) (b : BasisState) (i : Nat)
+    (hlo : 1 ≤ i) (hi : i < 255) : parity (rawSources L i) b=
+    (b (L.Y (i-1)) ^^ b (L.Y i) ^^ b L.sigma ^^ b (L.A (i-1))) := by
+  simp only [rawSources,show ¬i=0 by omega,ite_false,hi,ite_true,parity,List.foldr_cons,List.foldr_nil]
+  simp only [Bool.xor_false,Bool.xor_assoc]
+
+theorem graph_zero_step (L : DecoderLayout) (b : BasisState)
+    (g : BGraph L b) (i : Nat) (hlo : 1 ≤ i) (hi : i < 255)
+    (corr : (correction L i).value b=false) :
+    bExpected L b (i+1)=
+      ((b (L.Y (i-1)) ^^ b (L.Y i) ^^ b L.sigma ^^ b (L.A (i-1))) && bExpected L b i) := by
+  have h:=g (i+1) (by omega) (by omega)
+  simp only [Nat.add_sub_cancel,show ¬i+1=1 by omega,ite_false,show i+2-1=i+1 by omega] at h
+  rw [corr,raw_middle L b i hlo hi,carry_zero_correction] at h
+  exact h
+
+end ECDSAAdd.Entrant.DecoderCellCarryMath
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellGraphSeed
+namespace ECDSAAdd.Entrant.DecoderCellCarryMath
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+theorem seed_graph (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (hh : (b L.sigma && b L.h)=false) (hb : (b L.sigma && b L.bias)=false)
+    (j : Nat) (hlo : 1 ≤ j) (hhi : j<255)
+    (corr : (correction L j).value b=false) :
+    seedValid (b (L.Y j)) (b L.sigma) (b (L.A j)) (bExpected L b (j+1)) := by
+  by_cases hs:b L.sigma=true
+  · have hzero:b L.h=false := by simpa [hs] using hh
+    have bzero:b L.bias=false := by simpa [hs] using hb
+    have cz:=b_sigma_zero L b g hzero bzero j hhi
+    have az: b (L.A j)= !b (L.Y j) := (adds j hhi).trans (add_sigma L b hs j)
+    simp [seedValid,hs,cz,az]
+  · have hs':b L.sigma=false:=Bool.eq_false_iff.mpr hs
+    have cz:=graph_zero_step L b g j hlo hhi corr
+    obtain ⟨k,rfl⟩:∃k,j=k+1:=⟨j-1,by omega⟩
+    have az:=adds (k+1) hhi
+    simp only [aExpected,←adds k (by omega),hs',Bool.xor_false] at az
+    rw [hs',Bool.xor_false] at cz
+    simp only [Nat.add_sub_cancel] at cz
+    unfold seedValid
+    constructor
+    · simp [hs']
+    · rw [cz,az]
+      exact zero_triple _ _ _ _
+
+end ECDSAAdd.Entrant.DecoderCellCarryMath
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCells5Model
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5
+set_option maxRecDepth 30000
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+
+
+def firstIndex (x : Nat) : Nat :=
+  x%64+64*(if (x/64)%4<3 then (x/64)%4 else 0)+192*((x/256)%2)
+theorem firstIndex_bound : ∀x : Fin 512,firstIndex x.val<384 := by
+  intro x
+  have lo:=Nat.mod_lt x.val (show 0<64 by decide)
+  have mid:=Nat.mod_lt (x.val/64) (show 0<4 by decide)
+  have high:=Nat.mod_lt (x.val/256) (show 0<2 by decide)
+  unfold firstIndex
+  split_ifs <;> omega
+
+def firstR (x : Nat) : Nat :=
+  ((if x.testBit 6 then x%64 else 3*(x%64))+
+    2*((x.testBit 8) && !(x.testBit 6)).toNat+17*(x.testBit 7).toNat)%64
+def firstExpectedInput (x : Nat) : Nat := x%512+512*firstR x
+
+theorem firstInput_model : ∀x : Fin 512,
+    (x.val.testBit 6 && x.val.testBit 7)=false →
+    firstInput ⟨firstIndex x.val,firstIndex_bound x⟩=firstExpectedInput x.val := by
+  decide +kernel
+
+def addLast : List Bool → Bool → Bool → Bool → Bool
+  | [],_,_,a=>a
+  | y::ys,prev,sigma,a=>addLast ys y sigma (carryBit prev (y ^^ sigma) a)
+def firstCarryA (x : Nat) : Bool := addLast
+  ((List.range 5).map x.testBit) false (x.testBit 6) (x.testBit 6)
+def firstCarryC (x : Nat) : Bool :=
+  (firstR x).testBit 5 ^^ x.testBit 4 ^^ x.testBit 5 ^^ x.testBit 6 ^^ firstCarryA x
+
+theorem firstInterface_model : ∀x : Fin 512,
+    (x.val.testBit 6 && x.val.testBit 7)=false →
+    let row:=firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩
+    row%512=x.val ∧ row.testBit 19=firstCarryA x.val ∧ row.testBit 13=firstCarryC x.val ∧
+      row.testBit 11=false ∧ row.testBit 12=false ∧ row.testBit 14=false ∧ row.testBit 20=false := by
+  decide +kernel
+
+theorem firstOutput_model : ∀x : Fin 512,
+    (x.val.testBit 6 && x.val.testBit 7)=false →
+    firstOutput ⟨firstIndex x.val,firstIndex_bound x⟩=x.val := by decide +kernel
+
+def zeroSeedIndex (s : Nat) : Nat :=
+  match s with
+  | 0=>0 | 1=>1 | 3=>2 | 4=>3 | 5=>4 | 6=>5 | 8=>6 | 9=>7 | 13=>8 | _=>0
+def zeroIndex (x : Nat) : Nat := x%64+64*zeroSeedIndex ((x/64)%16)
+private theorem zeroSeedIndex_bound : ∀s : Fin 16,zeroSeedIndex s.val<9 := by decide +kernel
+ theorem zeroIndex_bound : ∀x : Fin 1024,zeroIndex x.val<576 := by
+  intro x
+  have lo:=Nat.mod_lt x.val (show 0<64 by decide)
+  have mid:=Nat.mod_lt (x.val/64) (show 0<16 by decide)
+  have seed:=zeroSeedIndex_bound ⟨(x.val/64)%16,mid⟩
+  change zeroSeedIndex ((x.val/64)%16)<9 at seed
+  unfold zeroIndex
+  omega
+
+def zeroValid (x : Nat) : Bool :=
+  (!(x.testBit 7) || (((x.testBit 8)==!(x.testBit 6)) && !(x.testBit 9))) &&
+    !(x.testBit 9 && x.testBit 8 && !(x.testBit 6))
+
+def zeroRBits : List Bool → Bool → Bool → Bool → Bool → List Bool
+  | [],_,_,_,_=>[]
+  | y::ys,prev,sigma,a,c=>
+      let raw:=prev ^^ y ^^ sigma ^^ a
+      (raw ^^ c)::zeroRBits ys y sigma (carryBit prev (y ^^ sigma) a) (raw && c)
+def zeroBits (x : Nat) : List Bool := zeroRBits
+  ((List.range 6).map x.testBit) (x.testBit 6) (x.testBit 7) (x.testBit 8) (x.testBit 9)
+def zeroExpectedInput (x : Nat) : Nat :=
+  x%1024+2048*CodecBitSliceVerify.packBits (zeroBits x).tail
+
+theorem zeroInput_model : ∀x : Fin 1024,zeroValid x.val=true →
+    zeroInput ⟨zeroIndex x.val,zeroIndex_bound x⟩=zeroExpectedInput x.val := by decide +kernel
+
+def zeroCarryA (x : Nat) : Bool := addLast
+  ((List.range 5).map x.testBit) (x.testBit 6) (x.testBit 7) (x.testBit 8)
+def zeroCarryC (x : Nat) : Bool :=
+  ((zeroBits x)[5]?).getD false ^^ x.testBit 4 ^^ x.testBit 5 ^^ x.testBit 7 ^^ zeroCarryA x
+
+theorem zeroInterface_model : ∀x : Fin 1024,zeroValid x.val=true →
+    let row:=zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩
+    row%1024=x.val ∧ row.testBit 20=zeroCarryA x.val ∧ row.testBit 14=zeroCarryC x.val ∧
+      row.testBit 12=false ∧ row.testBit 13=false ∧ row.testBit 15=false := by decide +kernel
+
+theorem zeroOutput_model : ∀x : Fin 1024,zeroValid x.val=true →
+    zeroOutput ⟨zeroIndex x.val,zeroIndex_bound x⟩=x.val := by decide +kernel
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellWindowMath
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph DecoderCellCarryMath
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+theorem result_zero_bit (L : DecoderLayout) (b : BasisState) (i : Nat)
+    (hlo : 1 ≤ i) (hhi : i<255) (corr : (correction L i).value b=false) :
+    b (L.R i)=(b (L.Y (i-1)) ^^ b (L.Y i) ^^ b L.sigma ^^ b (L.A (i-1)) ^^ bExpected L b i) := by
+  have h : bExpected L b i=(b (L.R i) ^^ parity (rawSources L i) b) := by
+    simp only [bExpected,bSources,parity_cat,correctionSources_parity,corr,Bool.xor_false]
+  rw [raw_middle L b i hlo hhi] at h
+  rw [h]
+  generalize b (L.R i)=r,b (L.Y (i-1))=u,b (L.Y i)=v,b L.sigma=s,b (L.A (i-1))=a
+  cases r <;> cases u <;> cases v <;> cases s <;> cases a <;> rfl
+
+theorem add_next_ref (L : DecoderLayout) (b : BasisState)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (i : Nat) (hlo : 1 ≤ i) (hhi : i<255) :
+    b (L.A i)=carryBit (b (L.Y (i-1))) (b (L.Y i) ^^ b L.sigma) (b (L.A (i-1))) := by
+  obtain ⟨k,rfl⟩:∃k,i=k+1:=⟨i-1,by omega⟩
+  rw [adds (k+1) hhi]
+  simp only [aExpected,Nat.add_sub_cancel,←adds k (by omega)]
+
+theorem zero_window (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (n i : Nat) (hlo : 1 ≤ i) (hhi : i+n ≤ 255)
+    (corr : ∀j,i ≤ j → j < i+n → (correction L j).value b=false) :
+    zeroRBits ((List.range' i n).map (fun j=>b (L.Y j)))
+      (b (L.Y (i-1))) (b L.sigma) (b (L.A (i-1))) (bExpected L b i)=
+      (List.range' i n).map (fun j=>b (L.R j)) := by
+  induction n generalizing i with
+  | zero=>rfl
+  | succ n ih=>
+    have hi:i<255:=by omega
+    have hz:=corr i (le_refl _) (by omega)
+    simp only [List.range'_succ,List.map_cons,zeroRBits]
+    rw [←result_zero_bit L b i hlo hi hz]
+    rw [←add_next_ref L b adds i hlo hi,←graph_zero_step L b g i hlo hi hz]
+    have next:=ih (i+1) (by omega) (by omega) (by
+      intro j hj hbound;exact corr j (by omega) (by omega))
+    simpa only [Nat.add_sub_cancel] using congrArg (List.cons (b (L.R i))) next
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsCorrection
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+def zeroRegion (j : Nat) : Prop := (10 ≤ j ∧ j ≤ 31) ∨ (33 ≤ j ∧ j ≤ 254)
+
+theorem zeroRegion_bits : ∀j : Fin 256,zeroRegion j.val →
+    (2^32+977 : Nat).testBit j.val=false := by
+  unfold zeroRegion
+  decide +kernel
+
+theorem region_correction (L : DecoderLayout) (j : Nat) (hj : zeroRegion j) :
+    correction L j=⟨none,false⟩ := by
+  have hb:j<256:=by rcases hj with h|h <;> omega
+  have hbit:=zeroRegion_bits ⟨j,hb⟩ hj
+  have hn:¬j=1:=by rcases hj with h|h <;> omega
+  simp only [correction,hn,ite_false,hbit,Bool.false_eq_true]
+
+theorem region_correction_value (L : DecoderLayout) (b : BasisState) (j : Nat)
+    (hj : zeroRegion j) : (correction L j).value b=false := by
+  rw [region_correction L j hj]
+  rfl
+
+def zeroStart (i : Nat) : Prop := (11 ≤ i ∧ i ≤ 26) ∨ (34 ≤ i ∧ i ≤ 249)
+
+theorem zeroStart_prev (i : Nat) (hi : zeroStart i) : zeroRegion (i-1) := by
+  rcases hi with h|h
+  · exact Or.inl ⟨by omega,by omega⟩
+  · exact Or.inr ⟨by omega,by omega⟩
+
+theorem zeroStart_window (i j : Nat) (hi : zeroStart i) (hlo : i ≤ j) (hhi : j < i+6) :
+    zeroRegion j := by
+  rcases hi with h|h
+  · exact Or.inl ⟨by omega,by omega⟩
+  · exact Or.inr ⟨by omega,by omega⟩
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsInterfaceMath
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 DecoderCellCarryMath
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+theorem root_bits (n x y q : Nat) (hm : x%2^n=y) (hq : q<n) :
+    x.testBit q=y.testBit q := by
+  have h:=congrArg (fun v : Nat=>v.testBit q) hm
+  simpa only [Nat.testBit_mod_two_pow,decide_eq_true_eq.mpr hq,Bool.true_and] using h
+
+theorem firstInterface_roots (x : Fin 512)
+    (valid : (x.val.testBit 6 && x.val.testBit 7)=false) (q : Nat) (hq : q<9) :
+    (firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩).testBit q=x.val.testBit q :=
+  root_bits 9 _ _ q (firstInterface_model x valid).1 hq
+
+theorem zeroInterface_roots (x : Fin 1024)
+    (valid : zeroValid x.val=true) (q : Nat) (hq : q<10) :
+    (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩).testBit q=x.val.testBit q :=
+  root_bits 10 _ _ q (zeroInterface_model x valid).1 hq
+
+theorem zeroValid_iff (x : Nat) : zeroValid x=true ↔
+    seedValid (x.testBit 6) (x.testBit 7) (x.testBit 8) (x.testBit 9) := by
+  unfold zeroValid seedValid
+  generalize x.testBit 6=p,x.testBit 7=s,x.testBit 8=a,x.testBit 9=c
+  cases p <;> cases s <;> cases a <;> cases c <;> decide
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFrames
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph DecoderCellCarryMath
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+def tailWork (L : DecoderLayout) (i : Nat) : List Wire := L.r.drop i++L.carry.drop i
+
+structure TailInput (L : DecoderLayout) (ref : BasisState) (i : Nat) (s : State) : Prop where
+  source : ∀j,j<256 → s.basis (L.Y j)=ref (L.Y j)
+  sigma : s.basis L.sigma=ref L.sigma
+  h : s.basis L.h=ref L.h
+  seedA : s.basis (L.A (i-1))=ref (L.A (i-1))
+  seedC : s.basis (L.R (i-1))=bExpected L ref i
+  current : s.basis (L.R i)=false
+  pending : ∀j,i<j → j<256 → s.basis (L.R j)=ref (L.R j)
+  clean : ∀j,i ≤ j → j<255 → s.basis (L.A j)=false
+
+structure TailResult (L : DecoderLayout) (i : Nat) (s t : State) : Prop where
+  phase : t.phase=s.phase
+  outside : ∀q,q∉tailWork L i → t.basis q=s.basis q
+  result : ∀j,i ≤ j → j<256 → t.basis (L.R j)=false
+  carry : ∀j,i ≤ j → j<255 → t.basis (L.A j)=false
+
+theorem pack_bound (bs : List Bool) : CodecBitSliceVerify.packBits bs<2^bs.length := by
+  induction bs with
+  | nil=>decide
+  | cons b bs ih=>
+    cases b <;> simp [CodecBitSliceVerify.packBits,Nat.bit,Nat.pow_succ] <;> omega
+
+def zeroRoots (L : DecoderLayout) (b : BasisState) (i : Nat) : List Bool :=
+  ((List.range 6).map (fun q=>b (L.Y (i+q))))++
+    [b (L.Y (i-1)),b L.sigma,b (L.A (i-1)),bExpected L b i]
+def zeroRoot (L : DecoderLayout) (b : BasisState) (i : Nat) : Nat :=
+  CodecBitSliceVerify.packBits (zeroRoots L b i)
+
+theorem zeroRoots_length (L : DecoderLayout) (b : BasisState) (i : Nat) :
+    (zeroRoots L b i).length=10 := by simp [zeroRoots]
+
+theorem zeroRoot_bound (L : DecoderLayout) (b : BasisState) (i : Nat) : zeroRoot L b i<1024 := by
+  have h:=pack_bound (zeroRoots L b i)
+  rw [zeroRoots_length] at h
+  exact h
+
+theorem zeroRoot_bits (L : DecoderLayout) (b : BasisState) (i : Nat) (q : Nat) (hq : q<10) :
+    (zeroRoot L b i).testBit q=
+      (if q<6 then b (L.Y (i+q)) else if q=6 then b (L.Y (i-1))
+      else if q=7 then b L.sigma else if q=8 then b (L.A (i-1)) else bExpected L b i) := by
+  simp only [zeroRoot,CodecBitSliceVerify.pack_testBit,zeroRoots]
+  interval_cases q <;> simp
+
+theorem zeroRoot_valid (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (hh : (b L.sigma && b L.h)=false) (hb : (b L.sigma && b L.bias)=false)
+    (i : Nat) (hi : zeroStart i) : zeroValid (zeroRoot L b i)=true := by
+  apply (zeroValid_iff _).mpr
+  have hlo:11  ≤  i:=by rcases hi with h|h <;> omega
+  have hhi:i ≤ 249:=by rcases hi with h|h <;> omega
+  have h:=seed_graph L b g adds hh hb (i-1) (by omega) (by omega)
+    (region_correction_value L b (i-1) (zeroStart_prev i hi))
+  simp only [show i-1+1=i by omega] at h
+  simpa only [zeroRoot_bits L b i 6 (by decide),zeroRoot_bits L b i 7 (by decide),
+    zeroRoot_bits L b i 8 (by decide),zeroRoot_bits L b i 9 (by decide),
+    Nat.reduceLT,ite_false,ite_true,reduceCtorEq] using h
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFirstRoot
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+
+def firstPorts (L : DecoderLayout) : List Wire := L.y.take 6++[L.sigma,L.h,L.Y 255]
+def firstRoot (L : DecoderLayout) (b : BasisState) : Nat := regValue (firstPorts L) b
+
+theorem firstPorts_length (L : DecoderLayout) (hw : L.Widths) : (firstPorts L).length=9 := by
+  simp [firstPorts,hw.1]
+
+theorem firstRoot_bound (L : DecoderLayout) (hw : L.Widths) (b : BasisState) : firstRoot L b<512 := by
+  have h:=regValue_lt (firstPorts L) b
+  rw [firstPorts_length L hw] at h
+  exact h
+
+theorem firstRoot_bits (L : DecoderLayout) (hw : L.Widths) (b : BasisState)
+    (q : Nat) (hq : q<9) : (firstRoot L b).testBit q=
+      (if q<6 then b (L.Y q) else if q=6 then b L.sigma else if q=7 then b L.h else b (L.Y 255)) := by
+  unfold firstRoot
+  rw [←getD_testBit (firstPorts L) q b (by rw [firstPorts_length L hw];omega)]
+  unfold firstPorts
+  by_cases h6:q<6
+  · rw [if_pos h6,List.getD_append _ _ _ _ (by simp [hw.1];omega)]
+    congr 1
+    rw [List.getD_eq_getElem _ _ (by simp [hw.1];omega)]
+    simp only [DecoderLayout.Y,List.getElem_take,
+      List.getD_eq_getElem L.y 0 (n:=q) (by rw [hw.1];omega)]
+  · rw [if_neg h6,List.getD_append_right _ _ _ _ (by simp [hw.1];omega)]
+    simp only [List.length_take,hw.1,show min 6 256=6 from rfl]
+    interval_cases q <;> simp_all
+
+theorem firstRoot_low (L : DecoderLayout) (hw : L.Widths) (b : BasisState) :
+    firstRoot L b%64=regValue (L.y.take 255) b%64 := by
+  have a:=CuccaroStreamedSquareWideLayout.regValue_take_mod (firstPorts L) 6
+    (by rw [firstPorts_length L hw];omega) b
+  have c:=CuccaroStreamedSquareWideLayout.regValue_take_mod (L.y.take 255) 6
+    (by simp [hw.1]) b
+  have same:(firstPorts L).take 6=(L.y.take 255).take 6 := by
+    simp [firstPorts,List.take_append,hw.1,List.take_take]
+  rw [same] at a
+  exact a.symm.trans c
+
+theorem firstR_scalar (L : DecoderLayout) (hw : L.Widths) (b : BasisState)
+    (bias : b L.bias=(b (L.Y 255) && !b L.sigma))
+    (scalar : regValue L.r b=
+      ((if b L.sigma then regValue (L.y.take 255) b else 3*regValue (L.y.take 255) b)+
+        2*(b L.bias).toNat+(b L.h).toNat*(2^32+977))%2^256) :
+    firstR (firstRoot L b)=regValue L.r b%64 := by
+  unfold firstR
+  rw [firstRoot_bits L hw b 6 (by decide),firstRoot_bits L hw b 7 (by decide),
+    firstRoot_bits L hw b 8 (by decide),firstRoot_low L hw b]
+  simp only [Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+  rw [scalar,Nat.mod_mod_of_dvd _ (show 64 ∣ 2^256 from by norm_num),bias]
+  cases hs:b L.sigma <;> cases hh:b L.h <;> cases hz:b (L.Y 255) <;>
+    simp [hs,hh,hz,Nat.add_mod,Nat.mul_mod]
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFirstBoundary
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph DecoderCellCarryMath
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+
+theorem firstCarryA_root (L : DecoderLayout) (hw : L.Widths) (b : BasisState) :
+    firstCarryA (firstRoot L b)=aExpected L b 4 := by
+  have ys:((List.range 5).map (firstRoot L b).testBit)=
+      (List.range 5).map (fun q=>b (L.Y q)) := by
+    apply List.map_congr_left
+    intro q hq
+    have hq':q<5:=List.mem_range.mp hq
+    simpa only [show q<6 by omega,ite_true] using firstRoot_bits L hw b q (by omega)
+  unfold firstCarryA
+  rw [ys,firstRoot_bits L hw b 6 (by decide)]
+  simp only [Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+  change addLast [b (L.Y 0),b (L.Y 1),b (L.Y 2),b (L.Y 3),b (L.Y 4)] false
+    (b L.sigma) (b L.sigma)=aExpected L b 4
+  have seed:carryBit false (b (L.Y 0) ^^ b L.sigma) (b L.sigma)=
+      carryBit false (b L.sigma) (b (L.Y 0) ^^ b L.sigma) := by
+    cases b (L.Y 0) <;> cases b L.sigma <;> rfl
+  simp only [addLast,aExpected,seed]
+
+theorem firstR_bit (L : DecoderLayout) (hw : L.Widths) (b : BasisState)
+    (bias : b L.bias=(b (L.Y 255) && !b L.sigma))
+    (scalar : regValue L.r b=
+      ((if b L.sigma then regValue (L.y.take 255) b else 3*regValue (L.y.take 255) b)+
+        2*(b L.bias).toNat+(b L.h).toNat*(2^32+977))%2^256)
+    (j : Nat) (hj : j<6) : (firstR (firstRoot L b)).testBit j=b (L.R j) := by
+  rw [firstR_scalar L hw b bias scalar]
+  change (regValue L.r b%2^6).testBit j=b (L.R j)
+  rw [Nat.testBit_mod_two_pow]
+  simp only [decide_eq_true_eq.mpr hj,Bool.true_and]
+  exact (getD_testBit L.r j b (by rw [hw.2.1];omega)).symm
+
+theorem firstCarryC_root (L : DecoderLayout) (hw : L.Widths) (b : BasisState)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (bias : b L.bias=(b (L.Y 255) && !b L.sigma))
+    (scalar : regValue L.r b=
+      ((if b L.sigma then regValue (L.y.take 255) b else 3*regValue (L.y.take 255) b)+
+        2*(b L.bias).toNat+(b L.h).toNat*(2^32+977))%2^256) :
+    firstCarryC (firstRoot L b)=bExpected L b 5 := by
+  unfold firstCarryC
+  rw [firstR_bit L hw b bias scalar 5 (by decide),firstCarryA_root L hw b,
+    firstRoot_bits L hw b 4 (by decide),firstRoot_bits L hw b 5 (by decide),firstRoot_bits L hw b 6 (by decide)]
+  simp only [Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+  rw [←adds 4 (by decide)]
+  have corr:correction L 5=⟨none,false⟩ := by rfl
+  simp only [bExpected,bSources,parity_cat,correctionSources_parity,corr,MappedBit.value,
+    Option.map_none,Option.getD_none,Bool.xor_false]
+  rw [raw_middle L b 5 (by decide) (by decide)]
+  simp only [Nat.reduceSub,Bool.xor_assoc]
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFirstInputMath
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxRecDepth 30000
+set_option maxHeartbeats 20000000
+set_option linter.unusedSimpArgs false
+
+structure GraphInput (L : DecoderLayout) (ref : BasisState) (s : State) : Prop where
+  source : ∀j,j<256 → s.basis (L.Y j)=ref (L.Y j)
+  sigma : s.basis L.sigma=ref L.sigma
+  h : s.basis L.h=ref L.h
+  bias : s.basis L.bias=false
+  result : ∀j,j<256 → s.basis (L.R j)=ref (L.R j)
+  carry : ∀j,j<255 → s.basis (L.A j)=false
+
+theorem firstExpectedInput_bits : ∀x : Fin 512,∀q : Fin 21,
+    (firstExpectedInput x.val).testBit q.val=
+      (if q.val<9 then x.val.testBit q.val else if q.val<15 then (firstR x.val).testBit (q.val-9) else false) := by
+  decide +kernel
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFirstInput
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+
+theorem first_input_placed (L : DecoderLayout) (hw : L.Widths)
+    (ref : BasisState) (bias : ref L.bias=(ref (L.Y 255) && !ref L.sigma))
+    (scalar : regValue L.r ref=
+      ((if ref L.sigma then regValue (L.y.take 255) ref else 3*regValue (L.y.take 255) ref)+
+        2*(ref L.bias).toNat+(ref L.h).toNat*(2^32+977))%2^256)
+    (s : State) (f : GraphInput L ref s) :
+    Placed (firstLabel L) (firstExpectedInput (firstRoot L ref)) s := by
+  let x:Fin 512:=⟨firstRoot L ref,firstRoot_bound L hw ref⟩
+  intro q hq
+  change Nat at q
+  change q<21 at hq
+  change s.basis (firstLabel L q)=(firstExpectedInput x.val).testBit q
+  rw [firstLabel_eq L hw q hq,firstExpectedInput_bits x ⟨q,hq⟩]
+  by_cases hr:q<9
+  · simp only [hr,ite_true]
+    change s.basis _=(firstRoot L ref).testBit q
+    rw [firstRoot_bits L hw ref q hr]
+    by_cases hy:q<6
+    · simp only [hy,ite_true];exact f.source q (by omega)
+    · simp only [hy,ite_false]
+      by_cases h6:q=6
+      · subst q;simp only [ite_true];exact f.sigma
+      · simp only [h6,ite_false]
+        by_cases h7:q=7
+        · subst q;simp only [ite_true];exact f.h
+        · have h8:q=8:=by omega
+          subst q;simp only [ite_true];exact f.source 255 (by decide)
+  · simp only [hr,ite_false]
+    have n6:¬q<6:=by omega
+    have h6:¬q=6:=by omega
+    have h7:¬q=7:=by omega
+    have h8:¬q=8:=by omega
+    simp only [n6,h6,h7,h8,ite_false]
+    by_cases h15:q<15
+    · simp only [h15,ite_true]
+      change s.basis (L.R (q-9))=(firstR (firstRoot L ref)).testBit (q-9)
+      rw [firstR_bit L hw ref bias scalar (q-9) (by omega)]
+      exact f.result (q-9) (by omega)
+    · simp only [h15,ite_false]
+      by_cases h20:q<20
+      · simp only [h20,ite_true];exact f.carry (q-15) (by omega)
+      · simp only [h20,ite_false];exact f.bias
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsSandwich
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem placed_sandwich (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (P Q body : Program) (hp : wires P⊆Finset.range 21) (hq : wires Q⊆Finset.range 21)
+    (x y z : Nat)
+    (pre : ∀m ph,run P m ⟨ph,bitsOf x⟩=⟨ph,bitsOf y⟩)
+    (post : ∀m ph,run Q m ⟨ph,bitsOf y⟩=⟨ph,bitsOf z⟩)
+    (middle : ∀t r,Placed f y t →
+      (run body r t).phase=t.phase ∧ Placed f y (run body r t))
+    (s : State) (hx : Placed f x s) (m : List Bool) :
+    (run (renameProgram f P++body++renameProgram f Q) m s).phase=s.phase ∧
+      Placed f z (run (renameProgram f P++body++renameProgram f Q) m s) := by
+  have p:=placed_run f hf P hp x y s hx pre m
+  let t:=run (renameProgram f P) m s
+  let r:=m.drop (measurementCount (renameProgram f P))
+  have b:=middle t r p.2
+  have q:=placed_run f hf Q hq y z (run body r t) b.2 post
+    (r.drop (measurementCount body))
+  have eq:run (renameProgram f P++body++renameProgram f Q) m s=
+      run (renameProgram f Q) (r.drop (measurementCount body)) (run body r t) := by
+    simp only [List.append_assoc,run_append,run_take]
+    rfl
+  rw [eq]
+  exact ⟨q.1.trans (b.1.trans p.1),q.2⟩
+
+theorem first_sandwich (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (body : Program) (x : Fin 512) (valid : (x.val.testBit 6 && x.val.testBit 7)=false)
+    (middle : ∀t r,Placed f (firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩) t →
+      (run body r t).phase=t.phase ∧
+        Placed f (firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩) (run body r t))
+    (s : State) (hx : Placed f (firstExpectedInput x.val) s) (m : List Bool) :
+    (run (renameProgram f firstPrefix++body++renameProgram f firstCleanup) m s).phase=s.phase ∧
+      Placed f x.val (run (renameProgram f firstPrefix++body++renameProgram f firstCleanup) m s) := by
+  have h:=placed_sandwich f hf firstPrefix firstCleanup body firstPrefix_support firstCleanup_support
+    _ _ _ (firstPrefix_run ⟨firstIndex x.val,firstIndex_bound x⟩)
+    (firstCleanup_run ⟨firstIndex x.val,firstIndex_bound x⟩) middle s
+    (by rwa [firstInput_model x valid]) m
+  rwa [firstOutput_model x valid] at h
+
+theorem zero_sandwich (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (body : Program) (x : Fin 1024) (valid : zeroValid x.val=true)
+    (middle : ∀t r,Placed f (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩) t →
+      (run body r t).phase=t.phase ∧
+        Placed f (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩) (run body r t))
+    (s : State) (hx : Placed f (zeroExpectedInput x.val) s) (m : List Bool) :
+    (run (renameProgram f zeroPrefix++body++renameProgram f zeroCleanup) m s).phase=s.phase ∧
+      Placed f x.val (run (renameProgram f zeroPrefix++body++renameProgram f zeroCleanup) m s) := by
+  have h:=placed_sandwich f hf zeroPrefix zeroCleanup body zeroPrefix_support zeroCleanup_support
+    _ _ _ (zeroPrefix_run ⟨zeroIndex x.val,zeroIndex_bound x⟩)
+    (zeroCleanup_run ⟨zeroIndex x.val,zeroIndex_bound x⟩) middle s
+    (by rwa [zeroInput_model x valid]) m
+  rwa [zeroOutput_model x valid] at h
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsZeroInputMath
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxRecDepth 30000
+set_option maxHeartbeats 20000000
+set_option linter.unusedSimpArgs false
+
+theorem zeroBits_reference (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (i : Nat) (hi : zeroStart i) : zeroBits (zeroRoot L b i)=
+      (List.range 6).map (fun q=>b (L.R (i+q))) := by
+  have hlo:11  ≤  i:=by rcases hi with h|h <;> omega
+  have hhi:i ≤ 249:=by rcases hi with h|h <;> omega
+  have ys:((List.range 6).map (zeroRoot L b i).testBit)=
+      (List.range 6).map (fun q=>b (L.Y (i+q))) := by
+    apply List.map_congr_left
+    intro q hq
+    have hq':q<6:=List.mem_range.mp hq
+    simpa only [hq',ite_true] using zeroRoot_bits L b i q (by omega)
+  unfold zeroBits
+  rw [ys]
+  simp only [zeroRoot_bits L b i 6 (by decide),zeroRoot_bits L b i 7 (by decide),
+    zeroRoot_bits L b i 8 (by decide),zeroRoot_bits L b i 9 (by decide),
+    Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+  have h:=zero_window L b g adds 6 i (by omega) (by omega) (by
+    intro j hj hbound
+    exact region_correction_value L b j (zeroStart_window i j hi hj hbound))
+  simpa only [List.range'_eq_map_range,List.map_map,Function.comp_def] using h
+
+theorem zeroExpectedInput_bits : ∀x : Fin 1024,∀q : Fin 21,
+    (zeroExpectedInput x.val).testBit q.val=
+      (if q.val<10 then x.val.testBit q.val else if q.val=10 then false
+      else if q.val<16 then ((zeroBits x.val)[q.val-10]?).getD false else false) := by
+  decide +kernel
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsZeroInput
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+
+theorem zero_input_placed (L : DecoderLayout) (hw : L.Widths)
+    (ref : BasisState) (g : BGraph L ref)
+    (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (i : Nat) (hi : zeroStart i) (s : State) (f : TailInput L ref i s) :
+    Placed (zeroLabel L i) (zeroExpectedInput (zeroRoot L ref i)) s := by
+  have hlo:11  ≤  i:=by rcases hi with h|h <;> omega
+  have hhi:i ≤ 249:=by rcases hi with h|h <;> omega
+  let x:Fin 1024:=⟨zeroRoot L ref i,zeroRoot_bound L ref i⟩
+  intro q hq
+  change Nat at q
+  change q<21 at hq
+  change s.basis (zeroLabel L i q)=(zeroExpectedInput x.val).testBit q
+  rw [zeroLabel_eq L hw i q hlo hhi hq,zeroExpectedInput_bits x ⟨q,hq⟩]
+  by_cases hr:q<10
+  · rw [if_pos hr]
+    change s.basis _=(zeroRoot L ref i).testBit q
+    rw [zeroRoot_bits L ref i q hr]
+    by_cases hy:q<6
+    · simp only [hy,ite_true]
+      exact f.source (i+q) (by omega)
+    · simp only [hy,ite_false]
+      by_cases h6:q=6
+      · subst q;simp only [ite_true];exact f.source (i-1) (by omega)
+      · simp only [h6,ite_false]
+        by_cases h7:q=7
+        · subst q;simp only [ite_true];exact f.sigma
+        · simp only [h7,ite_false]
+          by_cases h8:q=8
+          · subst q;simp only [ite_true];exact f.seedA
+          · have h9:q=9:=by omega
+            subst q;simp only [ite_true];exact f.seedC
+  · rw [if_neg hr]
+    have hy:¬q<6:=by omega
+    have n6:¬q=6:=by omega
+    have n7:¬q=7:=by omega
+    have n8:¬q=8:=by omega
+    have n9:¬q=9:=by omega
+    simp only [hy,n6,n7,n8,n9,ite_false]
+    by_cases h10:q=10
+    · subst q;simp only [ite_true,show 10<16 from by decide,ite_true]
+      simpa using f.current
+    · rw [if_neg h10]
+      by_cases h16:q<16
+      · simp only [h16,ite_true]
+        change s.basis (L.R (i+q-10))=((zeroBits (zeroRoot L ref i))[q-10]?).getD false
+        rw [zeroBits_reference L ref g adds i hi,List.getElem?_map]
+        have qb:q-10<6:=by omega
+        rw [List.getElem?_eq_getElem (by simpa using qb)]
+        simp only [List.getElem_range,Option.map_some,Option.getD_some]
+        rw [show i+q-10=i+(q-10) by omega]
+        exact f.pending _ (by omega) (by omega)
+      · simp only [h16,ite_false]
+        exact f.clean (i+q-16) (by omega) (by omega)
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsZeroBoundary
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph DecoderCellCarryMath
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+
+theorem addLast_window (L : DecoderLayout) (b : BasisState)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (n i : Nat) (hlo : 1  ≤  i) (hhi : i+n ≤ 255) :
+    addLast ((List.range' i n).map (fun j=>b (L.Y j))) (b (L.Y (i-1))) (b L.sigma)
+      (b (L.A (i-1)))=b (L.A (i+n-1)) := by
+  induction n generalizing i with
+  | zero=>rfl
+  | succ n ih=>
+    simp only [List.range'_succ,List.map_cons,addLast]
+    rw [←add_next_ref L b adds i hlo (by omega)]
+    have h:=ih (i+1) (by omega) (by omega)
+    simpa only [Nat.add_sub_cancel,show i+1+n-1=i+(n+1)-1 by omega] using h
+
+theorem zeroCarryA_root (L : DecoderLayout) (b : BasisState)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (i : Nat) (hi : zeroStart i) : zeroCarryA (zeroRoot L b i)=b (L.A (i+4)) := by
+  have hlo:11  ≤  i:=by rcases hi with h|h <;> omega
+  have hhi:i ≤ 249:=by rcases hi with h|h <;> omega
+  have ys:((List.range 5).map (zeroRoot L b i).testBit)=
+      (List.range 5).map (fun q=>b (L.Y (i+q))) := by
+    apply List.map_congr_left
+    intro q hq
+    have hq':q<5:=List.mem_range.mp hq
+    simpa only [show q<6 by omega,ite_true] using zeroRoot_bits L b i q (by omega)
+  unfold zeroCarryA
+  rw [ys]
+  simp only [zeroRoot_bits L b i 6 (by decide),zeroRoot_bits L b i 7 (by decide),
+    zeroRoot_bits L b i 8 (by decide),Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+  have h:=addLast_window L b adds 5 i (by omega) (by omega)
+  simpa only [List.range'_eq_map_range,List.map_map,Function.comp_def,
+    show i+5-1=i+4 by omega] using h
+
+theorem zeroCarryC_root (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+    (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+    (i : Nat) (hi : zeroStart i) : zeroCarryC (zeroRoot L b i)=bExpected L b (i+5) := by
+  have hlo:11  ≤  i:=by rcases hi with h|h <;> omega
+  have hhi:i ≤ 249:=by rcases hi with h|h <;> omega
+  unfold zeroCarryC
+  rw [zeroBits_reference L b g adds i hi,zeroCarryA_root L b adds i hi]
+  simp only [zeroRoot_bits L b i 4 (by decide),zeroRoot_bits L b i 5 (by decide),
+    zeroRoot_bits L b i 7 (by decide),Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+  have corr:=region_correction_value L b (i+5) (zeroStart_window i (i+5) hi (by omega) (by omega))
+  simp only [List.getElem?_map,List.getElem?_range,show 5<6 from by decide,ite_true,
+    Option.map_some,Option.getD_some]
+  simp only [bExpected,bSources,parity_cat,correctionSources_parity,corr,Bool.xor_false]
+  rw [raw_middle L b (i+5) (by omega) (by omega)]
+  simp only [show i+5-1=i+4 by omega,Bool.xor_assoc,show ¬7=6 by decide,ite_false]
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsPlainMath
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+theorem bSources_local (L : DecoderLayout) (a b : BasisState) (i : Nat)
+    (hlo : 2 ≤ i) (hhi : i<256)
+    (ys : ∀j,j<256 → a (L.Y j)=b (L.Y j))
+    (hs : a L.sigma=b L.sigma) (hh : a L.h=b L.h)
+    (ha : a (L.A (i-1))=b (L.A (i-1))) :
+    parity (bSources L i) a=parity (bSources L i) b := by
+  have raw:parity (rawSources L i) a=parity (rawSources L i) b := by
+    unfold rawSources
+    simp only [show ¬i=0 by omega,ite_false]
+    by_cases hi:i<255
+    · rw [if_pos hi]
+      simp only [parity,List.foldr_cons,List.foldr_nil,Bool.xor_false]
+      rw [ys (i-1) (by omega),ys i hhi,hs,ha]
+    · rw [if_neg hi]
+      have ei:i=255:=by omega
+      subst i
+      simp only [parity,List.foldr_cons,List.foldr_nil,Bool.xor_false]
+      rw [ys 254 (by decide),hs,ha]
+  have correction_eq:(correction L i).value a=(correction L i).value b := by
+    unfold correction
+    simp only [show ¬i=1 by omega,ite_false]
+    split_ifs <;> simp [MappedBit.value,hh]
+  simp only [bSources,parity_cat,correctionSources_parity,raw,correction_eq]
+
+theorem plain_add_value (L : DecoderLayout) (ref : BasisState)
+    (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (i : Nat) (hlo : 1 ≤ i) (hhi : i<255) (s : State) (f : TailInput L ref i s) :
+    aStepValue L s.basis i=ref (L.A i) := by
+  simp only [aStepValue,show ¬i=0 by omega,ite_false]
+  rw [f.source (i-1) (by omega),f.source i (by omega),f.sigma,f.seedA]
+  exact (add_next_ref L ref adds i hlo hhi).symm
+
+theorem plain_add_run (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (i : Nat) (hlo : 1 ≤ i) (hhi : i<255) (s : State) (f : TailInput L ref i s)
+    (m : List Bool) : run (addCarry L i) m s=
+      ⟨s.phase,writeBit s.basis (L.A i) (ref (L.A i))⟩ := by
+  rw [addCarry_run L hw hn i hhi s m,f.clean i (le_refl _) hhi,
+    plain_add_value L ref adds i hlo hhi s f,Bool.false_xor]
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsProgram
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph DecoderBiasReuse
+set_option maxRecDepth 100000
+set_option maxHeartbeats 24000000
+set_option linter.unusedSimpArgs false
+
+inductive Cell where
+  | first
+  | plain (i : Nat)
+  | zero5 (i : Nat)
+
+def cellPrefix (L : DecoderLayout) : Cell → Program
+  | .first=>renameProgram (firstLabel L) firstPrefix
+  | .plain i=>addCarry L i++streamCarry L (i+1)
+  | .zero5 i=>renameProgram (zeroLabel L i) zeroPrefix
+
+def cellCleanup (L : DecoderLayout) : Cell → Program
+  | .first=>renameProgram (firstLabel L) firstCleanup
+  | .plain i=>eraseCorrectionCarry L (i+1)++eraseAddCarry L i
+  | .zero5 i=>renameProgram (zeroLabel L i) zeroCleanup
+
+def cells : List Cell := [.first]++(List.range' 5 6).map .plain++
+  ([11,16,21,26] : List Nat).map .zero5++(List.range' 31 3).map .plain++
+  (List.range 44).map (fun j=>Cell.zero5 (34+5*j))++[.plain 254]
+
+def cellGraph (L : DecoderLayout) (cs : List Cell) : Program :=
+  cs.foldr (fun c body=>cellPrefix L c++body++cellCleanup L c) []
+
+def actualCellGraph : Program := cellGraph fixedLayout cells
+
+def cellDecoder : Program := DecoderBiasReuse.frontFast fixedLayout++actualCellGraph++
+  clearQuotient fixedLayout++restoreSource fixedLayout++copySource fixedLayout
+
+def cellT : Cell → Nat
+  | .first=>3 | .plain _=>1 | .zero5 _=>3
+
+def cellM : Cell → Nat
+  | .first=>8 | .plain _=>2 | .zero5 _=>8
+
+theorem cell_counts (L : DecoderLayout) (c : Cell) :
+    toffoliCount (cellPrefix L c)+toffoliCount (cellCleanup L c)=cellT c ∧
+    measurementCount (cellPrefix L c)+measurementCount (cellCleanup L c)=cellM c := by
+  cases c with
+  | first=>
+    simp only [cellPrefix,cellCleanup,cellT,cellM,
+      (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,
+      firstCounts.1,firstCounts.2.1,firstCounts.2.2.1,firstCounts.2.2.2.1]
+    constructor <;> trivial
+  | zero5 i=>
+    simp only [cellPrefix,cellCleanup,cellT,cellM,
+      (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,
+      zeroCounts.1,zeroCounts.2.1,zeroCounts.2.2.1,zeroCounts.2.2.2.1]
+    constructor <;> trivial
+  | plain i=>
+    have a:=local_counts L i
+    have b:=local_counts L (i+1)
+    simp only [cellPrefix,cellCleanup,cellT,cellM,toffoliCount_append,measurementCount_append,
+      a.1.1,a.1.2,a.2.1.1,a.2.1.2,b.2.2.1.1,b.2.2.1.2,b.2.2.2.1,b.2.2.2.2]
+    constructor <;> trivial
+
+theorem cellGraph_counts (L : DecoderLayout) (cs : List Cell) :
+    toffoliCount (cellGraph L cs)=(cs.map cellT).sum ∧
+    measurementCount (cellGraph L cs)=(cs.map cellM).sum := by
+  induction cs with
+  | nil=>constructor <;> trivial
+  | cons c cs ih=>
+    have cc:=cell_counts L c
+    simp only [cellGraph,List.foldr_cons,toffoliCount_append,measurementCount_append,
+      List.map_cons,List.sum_cons] at *
+    constructor <;> omega
+
+theorem graph_counts : toffoliCount actualCellGraph=157 ∧
+    measurementCount actualCellGraph=412 := by
+  have h:=cellGraph_counts fixedLayout cells
+  have t:(cells.map cellT).sum=157:=by decide +kernel
+  have m:(cells.map cellM).sum=412:=by decide +kernel
+  exact ⟨h.1.trans t,h.2.trans m⟩
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsPlainPrefix
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+def plainFrontState (L : DecoderLayout) (ref : BasisState) (i : Nat) (s : State) : State :=
+  ⟨s.phase,writeBit (writeBit (writeBit s.basis (L.A i) (ref (L.A i)))
+    (L.R i) (bExpected L ref (i+1))) (L.R (i+1)) false⟩
+
+theorem r_ne_a (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (j i : Nat) (hj : j<256) (hi : i<255) : L.R j≠L.A i := by
+  intro e
+  exact source_r_away L hn (L.A i) (Or.inr (Or.inl (a_mem L hw i hi)))
+    (e ▸ r_mem L hw j hj)
+
+theorem h_ne_a (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hi : i<255) : L.h≠L.A i := by
+  intro e
+  exact carry_source_away L hn L.h (Or.inr (Or.inr (Or.inl rfl))) (e ▸ a_mem L hw i hi)
+
+theorem plain_prefix_run (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (i : Nat) (hlo : 1 ≤ i) (hhi : i<255) (s : State) (f : TailInput L ref i s)
+    (m : List Bool) : run (cellPrefix L (.plain i)) m s=plainFrontState L ref i s := by
+  let t:State:=⟨s.phase,writeBit s.basis (L.A i) (ref (L.A i))⟩
+  have par:parity (bSources L (i+1)) t.basis=parity (bSources L (i+1)) ref := by
+    apply bSources_local L t.basis ref (i+1) (by omega) (by omega)
+    · intro j hj
+      simpa only [t,writeBit,Function.update_of_ne (y_ne_a L hw hn j i hj hhi)] using f.source j hj
+    · simpa only [t,writeBit,Function.update_of_ne (sigma_ne_a L hw hn i hhi)] using f.sigma
+    · simpa only [t,writeBit,Function.update_of_ne (h_ne_a L hw hn i hhi)] using f.h
+    · simp [t,writeBit]
+  have current:t.basis (L.R i)=false := by
+    simpa only [t,writeBit,Function.update_of_ne (r_ne_a L hw hn i i (by omega) hhi)] using f.current
+  have pending:t.basis (L.R (i+1))=ref (L.R (i+1)) := by
+    simpa only [t,writeBit,Function.update_of_ne (r_ne_a L hw hn (i+1) i (by omega) hhi)]
+      using f.pending (i+1) (by omega) (by omega)
+  have free (j : Nat) (hj : j<256) : L.R j∉bSources L (i+1) := by
+    intro h
+    exact bSources_r_away L hw hn (i+1) (by omega) _ h (r_mem L hw j hj)
+  rw [cellPrefix,run_append,run_take,plain_add_run L hw hn ref adds i hlo hhi s f]
+  change run (streamStage (bSources L (i+1)) (L.R i) (L.R (i+1))) _ t=_
+  rw [streamStage_run _ _ _ (r_ne_r L hw hn i (i+1) (by omega) (by omega) (by omega))
+    (free i (by omega)) (free (i+1) (by omega)) t _ current,pending,par]
+  rfl
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsPlainFrame
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+
+theorem y_ne_r (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (j i : Nat) (hj : j<256) (hi : i<256) : L.Y j≠L.R i := by
+  intro e
+  exact source_r_away L hn (L.Y j) (Or.inl (y_mem L hw j hj)) (e.symm ▸ r_mem L hw i hi)
+
+theorem flag_ne_r (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (q : Wire) (hq : q=L.sigma ∨ q=L.h ∨ q=L.bias) (i : Nat) (hi : i<256) : q≠L.R i := by
+  intro e
+  exact source_r_away L hn q (Or.inr (Or.inr hq)) (e.symm ▸ r_mem L hw i hi)
+
+structure TailOutput (L : DecoderLayout) (i : Nat) (s t : State) : Prop where
+  phase : t.phase=s.phase
+  outside : ∀q,(∀j,i ≤ j → j<256 → q≠L.R j) →
+    (∀j,i ≤ j → j<255 → q≠L.A j) → t.basis q=s.basis q
+  result : ∀j,i ≤ j → j<256 → t.basis (L.R j)=false
+  carry : ∀j,i ≤ j → j<255 → t.basis (L.A j)=false
+
+theorem plain_next_input (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (i : Nat) (hlo : 1  ≤  i) (hhi : i<255)
+    (s : State) (f : TailInput L ref i s) :
+    TailInput L ref (i+1) (plainFrontState L ref i s) := by
+  refine ⟨?_,?_,?_,?_,?_,?_,?_,?_⟩
+  · intro j hj
+    simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (y_ne_r L hw hn j (i+1) hj (by omega)),
+      Function.update_of_ne (y_ne_r L hw hn j i hj (by omega)),
+      Function.update_of_ne (y_ne_a L hw hn j i hj hhi)] using f.source j hj
+  · simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (flag_ne_r L hw hn L.sigma (by tauto) (i+1) (by omega)),
+      Function.update_of_ne (flag_ne_r L hw hn L.sigma (by tauto) i (by omega)),
+      Function.update_of_ne (sigma_ne_a L hw hn i hhi)] using f.sigma
+  · simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (flag_ne_r L hw hn L.h (by tauto) (i+1) (by omega)),
+      Function.update_of_ne (flag_ne_r L hw hn L.h (by tauto) i (by omega)),
+      Function.update_of_ne (h_ne_a L hw hn i hhi)] using f.h
+  · simp only [Nat.add_sub_cancel,plainFrontState,writeBit,
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn (i+1) i (by omega) hhi)),
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn i i (by omega) hhi)),Function.update_self]
+  · simp only [Nat.add_sub_cancel,plainFrontState,writeBit,
+      Function.update_of_ne (r_ne_r L hw hn i (i+1) (by omega) (by omega) (by omega)),Function.update_self]
+  · simp [plainFrontState,writeBit]
+  · intro j hj hb
+    simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (r_ne_r L hw hn j (i+1) hb (by omega) (by omega)),
+      Function.update_of_ne (r_ne_r L hw hn j i hb (by omega) (by omega)),
+      Function.update_of_ne (r_ne_a L hw hn j i hb hhi)] using f.pending j (by omega) hb
+  · intro j hj hb
+    simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn (i+1) j (by omega) hb)),
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn i j (by omega) hb)),
+      Function.update_of_ne (carry_ne_carry L hw hn j i hb hhi (by omega))] using f.clean j (by omega) hb
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsTailLocality
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+
+theorem TailOutput.keep_y {L : DecoderLayout} (hw : L.Widths) (hn : L.wires.Nodup)
+    {n : Nat} {s t : State} (f : TailOutput L n s t) (j : Nat) (hj : j<256) :
+    t.basis (L.Y j)=s.basis (L.Y j) :=
+  f.outside _ (fun k _hk hb=>y_ne_r L hw hn j k hj hb)
+    (fun k _hk hb=>y_ne_a L hw hn j k hj hb)
+
+theorem TailOutput.keep_sigma {L : DecoderLayout} (hw : L.Widths) (hn : L.wires.Nodup)
+    {n : Nat} {s t : State} (f : TailOutput L n s t) : t.basis L.sigma=s.basis L.sigma :=
+  f.outside _ (fun k hk hb=>flag_ne_r L hw hn _ (by tauto) k hb)
+    (fun k hk hb=>sigma_ne_a L hw hn k hb)
+
+theorem TailOutput.keep_h {L : DecoderLayout} (hw : L.Widths) (hn : L.wires.Nodup)
+    {n : Nat} {s t : State} (f : TailOutput L n s t) : t.basis L.h=s.basis L.h :=
+  f.outside _ (fun k hk hb=>flag_ne_r L hw hn _ (by tauto) k hb)
+    (fun k hk hb=>h_ne_a L hw hn k hb)
+
+theorem TailOutput.keep_r {L : DecoderLayout} (hw : L.Widths) (hn : L.wires.Nodup)
+    {n : Nat} {s t : State} (f : TailOutput L n s t) (j : Nat) (hj : j<n) (hb : j<256) :
+    t.basis (L.R j)=s.basis (L.R j) :=
+  f.outside _ (fun k hk hbound=>r_ne_r L hw hn j k hb hbound (by omega))
+    (fun k hk hbound=>r_ne_a L hw hn j k hb hbound)
+
+theorem TailOutput.keep_a {L : DecoderLayout} (hw : L.Widths) (hn : L.wires.Nodup)
+    {n : Nat} {s t : State} (f : TailOutput L n s t) (j : Nat) (hj : j<n) (hb : j<255) :
+    t.basis (L.A j)=s.basis (L.A j) :=
+  f.outside _ (fun k hk hbound=>Ne.symm (r_ne_a L hw hn k j hbound hb))
+    (fun k hk hbound=>carry_ne_carry L hw hn j k hb hbound (by omega))
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsLocality
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem placed_locality (f : Wire → Wire) (P : Program) (hp : wires P⊆Finset.range 21)
+    (k a b : Nat) (s : State) (m : List Bool)
+    (hx : Placed f a s) (hy : Placed f b (run (renameProgram f P) m s))
+    (roots : ∀q,q<k → a.testBit q=b.testBit q)
+    (w : Wire) (away : ∀q,k ≤ q → q<21 → w≠f q) :
+    (run (renameProgram f P) m s).basis w=s.basis w := by
+  by_cases hw:w∈(Finset.range 21).image f
+  · obtain ⟨q,hq,e⟩:=Finset.mem_image.mp hw
+    change Nat at q
+    have hq':q<21:=Finset.mem_range.mp hq
+    have hk:q<k := by
+      by_contra h
+      exact away q (Nat.le_of_not_gt h) hq' e.symm
+    rw [←e,hy q hq',hx q hq']
+    exact (roots q hk).symm
+  · exact run_rename_pool_outside f (Finset.range 21) P hp m s w hw
+
+theorem zero_prefix_locality (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11  ≤  i) (hhi : i ≤ 249) (x : Fin 1024) (valid : zeroValid x.val=true)
+    (s : State) (hx : Placed (zeroLabel L i) (zeroExpectedInput x.val) s)
+    (m : List Bool) (w : Wire)
+    (away : ∀q,10 ≤ q → q<21 → w≠zeroLabel L i q) :
+    (run (renameProgram (zeroLabel L i) zeroPrefix) m s).basis w=s.basis w := by
+  have r:=zeroPrefix_placed (zeroLabel L i) (zeroLabel_inj L hw hn i hlo hhi)
+    ⟨zeroIndex x.val,zeroIndex_bound x⟩ s (by rwa [zeroInput_model x valid]) m
+  apply placed_locality (zeroLabel L i) zeroPrefix zeroPrefix_support 10 (zeroExpectedInput x.val)
+    (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩) s m hx r.2 _ w away
+  intro q hq
+  have hq21:q<21:=by omega
+  rw [zeroExpectedInput_bits x ⟨q,hq21⟩]
+  simp only [hq,ite_true]
+  exact (zeroInterface_roots x valid q hq).symm
+
+theorem zero_cleanup_locality (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11  ≤  i) (hhi : i ≤ 249) (x : Fin 1024) (valid : zeroValid x.val=true)
+    (s : State) (hx : Placed (zeroLabel L i) (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩) s)
+    (m : List Bool) (w : Wire)
+    (away : ∀q,10 ≤ q → q<21 → w≠zeroLabel L i q) :
+    (run (renameProgram (zeroLabel L i) zeroCleanup) m s).basis w=s.basis w := by
+  have r:=zeroCleanup_placed (zeroLabel L i) (zeroLabel_inj L hw hn i hlo hhi)
+    ⟨zeroIndex x.val,zeroIndex_bound x⟩ s hx m
+  rw [zeroOutput_model x valid] at r
+  apply placed_locality (zeroLabel L i) zeroCleanup zeroCleanup_support 10
+    (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩) x.val s m hx r.2 _ w away
+  intro q hq
+  exact zeroInterface_roots x valid q hq
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFirstLocality
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+
+def FirstAway (L : DecoderLayout) (w : Wire) : Prop := ∀q,9 ≤ q → q < 21 → w≠firstLabel L q
+
+theorem first_prefix_locality (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (x : Fin 512) (valid : (x.val.testBit 6 && x.val.testBit 7)=false)
+    (s : State) (hx : Placed (firstLabel L) (firstExpectedInput x.val) s)
+    (m : List Bool) (w : Wire) (away : FirstAway L w) :
+    (run (renameProgram (firstLabel L) firstPrefix) m s).basis w=s.basis w := by
+  have r:=firstPrefix_placed (firstLabel L) (firstLabel_inj L hw hn)
+    ⟨firstIndex x.val,firstIndex_bound x⟩ s (by rwa [firstInput_model x valid]) m
+  apply placed_locality (firstLabel L) firstPrefix firstPrefix_support 9 (firstExpectedInput x.val)
+    (firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩) s m hx r.2 _ w away
+  intro q hq
+  rw [firstExpectedInput_bits x ⟨q,by omega⟩]
+  simp only [hq,ite_true]
+  exact (firstInterface_roots x valid q hq).symm
+
+theorem first_cleanup_locality (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (x : Fin 512) (valid : (x.val.testBit 6 && x.val.testBit 7)=false)
+    (s : State) (hx : Placed (firstLabel L) (firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩) s)
+    (m : List Bool) (w : Wire) (away : FirstAway L w) :
+    (run (renameProgram (firstLabel L) firstCleanup) m s).basis w=s.basis w := by
+  have r:=firstCleanup_placed (firstLabel L) (firstLabel_inj L hw hn)
+    ⟨firstIndex x.val,firstIndex_bound x⟩ s hx m
+  rw [firstOutput_model x valid] at r
+  apply placed_locality (firstLabel L) firstCleanup firstCleanup_support 9
+    (firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩) x.val s m hx r.2 _ w away
+  intro q hq
+  exact firstInterface_roots x valid q hq
+
+theorem firstAway_of (L : DecoderLayout) (hw : L.Widths) (w : Wire)
+    (hr : ∀j,j < 6 → w≠L.R j) (ha : ∀j,j < 5 → w≠L.A j) (hb : w≠L.bias) : FirstAway L w := by
+  intro q hq hbound
+  change Nat at q
+  change 9 ≤ q at hq
+  change q < 21 at hbound
+  rw [firstLabel_eq L hw q hbound]
+  simp only [show ¬q<6 by omega,show ¬q=6 by omega,show ¬q=7 by omega,
+    show ¬q=8 by omega,ite_false]
+  split_ifs with h15 h20
+  · exact hr _ (by omega)
+  · exact ha _ (by omega)
+  · exact hb
+
+theorem y_ne_bias (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (j : Nat) (hj : j < 256) : L.Y j≠L.bias := by
+  intro e
+  exact flag_y_away L hn L.bias (by simp) (e ▸ y_mem L hw j hj)
+
+theorem flag_ne_bias (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (q : Wire) (hq : q=L.sigma ∨ q=L.h) : q≠L.bias := by
+  have eq6:firstLabel L 6=L.sigma:=by simp [firstLabel_eq L hw 6 (by decide)]
+  have eq7:firstLabel L 7=L.h:=by simp [firstLabel_eq L hw 7 (by decide)]
+  have eq20:firstLabel L 20=L.bias:=by simp [firstLabel_eq L hw 20 (by decide)]
+  rcases hq with rfl|rfl
+  · intro e
+    have h:=firstLabel_inj L hw hn 6 (by decide) 20 (by decide) (eq6.trans (e.trans eq20.symm))
+    omega
+  · intro e
+    have h:=firstLabel_inj L hw hn 7 (by decide) 20 (by decide) (eq7.trans (e.trans eq20.symm))
+    omega
+
+theorem firstAway_y (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (j : Nat) (hj : j < 256) : FirstAway L (L.Y j) :=
+  firstAway_of L hw _ (fun k hk=>y_ne_r L hw hn j k hj (by omega))
+    (fun k hk=>y_ne_a L hw hn j k hj (by omega)) (y_ne_bias L hw hn j hj)
+
+theorem firstAway_sigma (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup) : FirstAway L L.sigma :=
+  firstAway_of L hw _ (fun k hk=>flag_ne_r L hw hn _ (by tauto) k (by omega))
+    (fun k hk=>sigma_ne_a L hw hn k (by omega)) (flag_ne_bias L hw hn _ (by tauto))
+
+theorem firstAway_h (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup) : FirstAway L L.h :=
+  firstAway_of L hw _ (fun k hk=>flag_ne_r L hw hn _ (by tauto) k (by omega))
+    (fun k hk=>h_ne_a L hw hn k (by omega)) (flag_ne_bias L hw hn _ (by tauto))
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFirstNext
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+structure Reference (L : DecoderLayout) (b : BasisState) : Prop where
+  graph : BGraph L b
+  adds : ∀j,j<255 → b (L.A j)=aExpected L b j
+  exclusive : (b L.sigma && b L.h)=false
+  exclusiveBias : (b L.sigma && b L.bias)=false
+  bias : b L.bias=(b (L.Y 255) && !b L.sigma)
+  scalar : regValue L.r b=
+    ((if b L.sigma then regValue (L.y.take 255) b else 3*regValue (L.y.take 255) b)+
+      2*(b L.bias).toNat+(b L.h).toNat*(2^32+977))%2^256
+
+theorem firstAway_r_above (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (j : Nat) (hlo : 5 < j) (hhi : j < 256) : FirstAway L (L.R j) :=
+  firstAway_of L hw _ (fun k hk=>r_ne_r L hw hn j k hhi (by omega) (by omega))
+    (fun k hk=>r_ne_a L hw hn j k hhi (by omega))
+    (Ne.symm (flag_ne_r L hw hn L.bias (by tauto) j hhi))
+
+theorem firstAway_a_above (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (j : Nat) (hlo : 5 ≤ j) (hhi : j < 255) : FirstAway L (L.A j) := by
+  apply firstAway_of L hw _
+  · intro k hk;exact Ne.symm (r_ne_a L hw hn k j (by omega) hhi)
+  · intro k hk;exact carry_ne_carry L hw hn j k hhi (by omega) (by omega)
+  · intro e
+    exact carry_source_away L hn L.bias (Or.inr (Or.inr (Or.inr rfl)))
+      (e ▸ a_mem L hw j hhi)
+
+theorem firstRoot_valid (L : DecoderLayout) (hw : L.Widths) (ref : BasisState)
+    (r : Reference L ref) :
+    ((firstRoot L ref).testBit 6 && (firstRoot L ref).testBit 7)=false := by
+  simpa [firstRoot_bits L hw ref 6 (by decide),firstRoot_bits L hw ref 7 (by decide)] using r.exclusive
+
+theorem first_next_input (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (r : Reference L ref) (s : State) (f : GraphInput L ref s) (m : List Bool) :
+    TailInput L ref 5 (run (renameProgram (firstLabel L) firstPrefix) m s) := by
+  let x:Fin 512:=⟨firstRoot L ref,firstRoot_bound L hw ref⟩
+  have valid:(x.val.testBit 6 && x.val.testBit 7)=false:=firstRoot_valid L hw ref r
+  have hx:Placed (firstLabel L) (firstExpectedInput x.val) s:=first_input_placed L hw ref r.bias r.scalar s f
+  have pr:=firstPrefix_placed (firstLabel L) (firstLabel_inj L hw hn)
+    ⟨firstIndex x.val,firstIndex_bound x⟩ s (by rwa [firstInput_model x valid]) m
+  have model:=firstInterface_model x valid
+  have loc (w : Wire) (away : FirstAway L w) :
+      (run (renameProgram (firstLabel L) firstPrefix) m s).basis w=s.basis w :=
+    first_prefix_locality L hw hn x valid s hx m w away
+  have l19:firstLabel L 19=L.A 4:=by simp [firstLabel_eq L hw 19 (by decide)]
+  have l13:firstLabel L 13=L.R 4:=by simp [firstLabel_eq L hw 13 (by decide)]
+  have l14:firstLabel L 14=L.R 5:=by simp [firstLabel_eq L hw 14 (by decide)]
+  refine ⟨?_,?_,?_,?_,?_,?_,?_,?_⟩
+  · intro j hj;rw [loc _ (firstAway_y L hw hn j hj)];exact f.source j hj
+  · rw [loc _ (firstAway_sigma L hw hn)];exact f.sigma
+  · rw [loc _ (firstAway_h L hw hn)];exact f.h
+  · have a:=pr.2 19 (by decide)
+    change _=(firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩).testBit 19 at a
+    rw [l19,model.2.1] at a
+    change _=firstCarryA (firstRoot L ref) at a
+    rw [firstCarryA_root L hw ref,←r.adds 4 (by decide)] at a
+    exact a
+  · have c:=pr.2 13 (by decide)
+    change _=(firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩).testBit 13 at c
+    rw [l13,model.2.2.1] at c
+    change _=firstCarryC (firstRoot L ref) at c
+    rw [firstCarryC_root L hw ref r.adds r.bias r.scalar] at c
+    exact c
+  · have z:=pr.2 14 (by decide)
+    change _=(firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩).testBit 14 at z
+    rwa [l14,model.2.2.2.2.2.1] at z
+  · intro j hj hbound
+    rw [loc _ (firstAway_r_above L hw hn j hj hbound)]
+    exact f.result j hbound
+  · intro j hj hbound
+    rw [loc _ (firstAway_a_above L hw hn j hj hbound)]
+    exact f.carry j hbound
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFirstRestore
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+
+theorem TailOutput.keep_bias {L : DecoderLayout} (hw : L.Widths) (hn : L.wires.Nodup)
+    {n : Nat} {s t : State} (f : TailOutput L n s t) : t.basis L.bias=s.basis L.bias := by
+  apply f.outside
+  · intro j hj hb;exact flag_ne_r L hw hn L.bias (by tauto) j hb
+  · intro j hj hb e
+    exact carry_source_away L hn L.bias (Or.inr (Or.inr (Or.inr rfl))) (e ▸ a_mem L hw j hb)
+
+theorem first_interface_restored (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (x : Fin 512) (valid : (x.val.testBit 6 && x.val.testBit 7)=false) (t u : State)
+    (placed : Placed (firstLabel L) (firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩) t)
+    (out : TailOutput L 5 t u) :
+    Placed (firstLabel L) (firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩) u := by
+  intro q hq
+  change Nat at q
+  change q < 21 at hq
+  by_cases h14:q=14
+  · subst q
+    change u.basis (firstLabel L 14)=(firstInterface ⟨firstIndex x.val,firstIndex_bound x⟩).testBit 14
+    rw [(firstInterface_model x valid).2.2.2.2.2.1]
+    have lab:firstLabel L 14=L.R 5:=by simp [firstLabel_eq L hw 14 (by decide)]
+    rw [lab];exact out.result 5 (le_refl _) (by decide)
+  · have same:u.basis (firstLabel L q)=t.basis (firstLabel L q) := by
+      rw [firstLabel_eq L hw q hq]
+      split_ifs with hy h6 h7 h8 h15 h20
+      · exact out.keep_y hw hn q (by omega)
+      · exact out.keep_sigma hw hn
+      · exact out.keep_h hw hn
+      · exact out.keep_y hw hn 255 (by decide)
+      · exact out.keep_r hw hn (q-9) (by omega) (by omega)
+      · exact out.keep_a hw hn (q-15) (by omega) (by omega)
+      · exact out.keep_bias hw hn
+    exact same.trans (placed q hq)
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsFirstOutput
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+
+theorem first_output_clear (L : DecoderLayout) (hw : L.Widths) (x : Fin 512) (s : State)
+    (placed : Placed (firstLabel L) x.val s) :
+    (∀j,j < 6 → s.basis (L.R j)=false) ∧
+    (∀j,j < 5 → s.basis (L.A j)=false) ∧ s.basis L.bias=false := by
+  have zero (q : Nat) (hq : 9 ≤ q) : x.val.testBit q=false :=
+    Nat.testBit_lt_two_pow (lt_of_lt_of_le x.isLt
+      (show (2:Nat)^9 ≤ 2^q from Nat.pow_le_pow_right (by decide) hq))
+  refine ⟨?_,?_,?_⟩
+  · intro j hj
+    have bound:j+9<21:=by omega
+    have h:=placed (j+9) bound
+    have lab:firstLabel L (j+9)=L.R j := by
+      rw [firstLabel_eq L hw (j+9) (by omega)]
+      simp only [show ¬j+9<6 by omega,show ¬j+9=6 by omega,show ¬j+9=7 by omega,
+        show ¬j+9=8 by omega,show j+9<15 by omega,ite_false,ite_true,Nat.add_sub_cancel]
+    rw [lab] at h
+    exact h.trans (zero (j+9) (by omega))
+  · intro j hj
+    have bound:j+15<21:=by omega
+    have h:=placed (j+15) bound
+    have lab:firstLabel L (j+15)=L.A j := by
+      rw [firstLabel_eq L hw (j+15) (by omega)]
+      simp only [show ¬j+15<6 by omega,show ¬j+15=6 by omega,show ¬j+15=7 by omega,
+        show ¬j+15=8 by omega,show ¬j+15<15 by omega,show j+15<20 by omega,
+        ite_false,ite_true,Nat.add_sub_cancel]
+    rw [lab] at h
+    exact h.trans (zero (j+15) (by omega))
+  · have h:=placed 20 (by decide)
+    have lab:firstLabel L 20=L.bias:=by simp [firstLabel_eq L hw 20 (by decide)]
+    rw [lab] at h
+    exact h.trans (zero 20 (by decide))
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsEraseLocal
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem erase_correction_local (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 1 ≤ i) (hhi : i<255) (s : State) (m : List Bool)
+    (clean : s.basis (L.R 255)=false)
+    (known : s.basis (L.R i)=carryBit ((correction L i).value s.basis)
+      (parity (rawSources L i) s.basis) (s.basis (L.R (i-1)))) :
+    run (eraseCorrectionCarry L (i+1)) m s=⟨s.phase,writeBit s.basis (L.R i) false⟩ := by
+  let tmp:=L.R 255
+  let cin:=L.R (i-1)
+  let target:=L.R i
+  have tc:tmp≠cin:=r_ne_r L hw hn 255 (i-1) (by omega) (by omega) (by omega)
+  have tt:tmp≠target:=r_ne_r L hw hn 255 i (by omega) (by omega) (by omega)
+  have ct:cin≠target:=r_ne_r L hw hn (i-1) i (by omega) (by omega) (by omega)
+  have nd:[tmp,cin,target].Nodup:=by simp [tc,tt,ct]
+  have optAway:∀q∈(correction L i).wire,q∉[tmp,cin,target] := by
+    intro q hq bad
+    have away:=correction_option_r_away L hn i q hq
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at bad
+    rcases bad with rfl|rfl|rfl
+    · exact away (r_mem L hw 255 (by omega))
+    · exact away (r_mem L hw (i-1) (by omega))
+    · exact away (r_mem L hw i (by omega))
+  have awayTemp:tmp∉rawSources L i := by
+    intro q;exact raw_source_r_away L hw hn i (by omega) tmp q (r_mem L hw 255 (by omega))
+  have aq:target∉rawSources L i := by
+    intro q;exact raw_source_r_away L hw hn i (by omega) target q (r_mem L hw i (by omega))
+  rw [eraseCorrectionCarry,if_neg (show ¬i+1=1 by omega)]
+  simp only [Nat.add_sub_cancel,show i+1-2=i-1 by omega]
+  change run (xorWindow (rawSources L i) tmp (mappedEraseCarry (correction L i) tmp cin target)) m s=_
+  apply xorWindow_write _ tmp target _ awayTemp aq tt
+  intro r
+  apply mappedEraseCarry_correct (correction L i) tmp cin target nd optAway
+  have bm:(correction L i).value
+      (writeBit s.basis tmp (s.basis tmp ^^ parity (rawSources L i) s.basis))=
+      (correction L i).value s.basis := by
+    apply correction_value_same L hn i
+    intro q hq
+    have nq:q≠tmp:=fun e=>hq (e ▸ r_mem L hw 255 (by omega))
+    simp [writeBit,nq]
+  rw [bm]
+  simpa only [writeBit,Function.update_of_ne (Ne.symm tt),Function.update_of_ne (Ne.symm tc),
+    Function.update_self,show s.basis tmp=false from clean,Bool.false_xor] using known
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsPlainCleanup
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+structure PlainBoundary (L : DecoderLayout) (ref : BasisState) (i : Nat) (s : State) : Prop where
+  source : ∀j,j<256 → s.basis (L.Y j)=ref (L.Y j)
+  sigma : s.basis L.sigma=ref L.sigma
+  h : s.basis L.h=ref L.h
+  prevA : s.basis (L.A (i-1))=ref (L.A (i-1))
+  prevC : s.basis (L.R (i-1))=bExpected L ref i
+  a : s.basis (L.A i)=ref (L.A i)
+  c : s.basis (L.R i)=bExpected L ref (i+1)
+
+theorem correction_local_h (L : DecoderLayout) (a b : BasisState) (i : Nat)
+    (hi : i≠1) (hh : a L.h=b L.h) : (correction L i).value a=(correction L i).value b := by
+  unfold correction
+  simp only [hi,ite_false]
+  split_ifs <;> simp [MappedBit.value,hh]
+
+theorem plain_cleanup_run (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (g : BGraph L ref)
+    (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (i : Nat) (hlo : 2 ≤ i) (hhi : i<255) (s : State) (f : PlainBoundary L ref i s)
+    (clean : s.basis (L.R 255)=false) (m : List Bool) :
+    run (cellCleanup L (.plain i)) m s=
+      ⟨s.phase,writeBit (writeBit s.basis (L.R i) false) (L.A i) false⟩ := by
+  have raw:parity (rawSources L i) s.basis=parity (rawSources L i) ref := by
+    rw [DecoderCellCarryMath.raw_middle L s.basis i (by omega) hhi,
+      DecoderCellCarryMath.raw_middle L ref i (by omega) hhi]
+    rw [f.source (i-1) (by omega),f.source i (by omega),f.sigma,f.prevA]
+  have cor:=correction_local_h L s.basis ref i (by omega) f.h
+  have known:s.basis (L.R i)=carryBit ((correction L i).value s.basis)
+      (parity (rawSources L i) s.basis) (s.basis (L.R (i-1))) := by
+    rw [raw,cor,f.prevC,f.c]
+    have h:=g (i+1) (by omega) (by omega)
+    simpa only [Nat.add_sub_cancel,show ¬i+1=1 by omega,ite_false] using h
+  have er:=erase_correction_local L hw hn i (by omega) hhi s m clean known
+  let t:State:=⟨s.phase,writeBit s.basis (L.R i) false⟩
+  have aknown:t.basis (L.A i)=aStepValue L t.basis i := by
+    simp only [t,writeBit,Function.update_of_ne (Ne.symm (r_ne_a L hw hn i i (by omega) hhi))]
+    rw [f.a]
+    simp only [aStepValue,show ¬i=0 by omega,ite_false,t,writeBit,
+      Function.update_of_ne (y_ne_r L hw hn (i-1) i (by omega) (by omega)),
+      Function.update_of_ne (y_ne_r L hw hn i i (by omega) (by omega)),
+      Function.update_of_ne (flag_ne_r L hw hn L.sigma (by tauto) i (by omega)),
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn i (i-1) (by omega) (by omega)))]
+    rw [f.source (i-1) (by omega),f.source i (by omega),f.sigma,f.prevA]
+    exact add_next_ref L ref adds i (by omega) hhi
+  rw [cellCleanup,run_append,run_take,er]
+  exact eraseAddCarry_run L hw hn i hhi t _ aknown
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsPlainBoundary
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+
+theorem plain_boundary_after (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (i : Nat) (hlo : 2 ≤ i) (hhi : i<255) (s u : State)
+    (f : TailInput L ref i s) (out : TailOutput L (i+1) (plainFrontState L ref i s) u) :
+    PlainBoundary L ref i u := by
+  refine ⟨?_,?_,?_,?_,?_,?_,?_⟩
+  · intro j hj
+    rw [out.keep_y hw hn j hj]
+    simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (y_ne_r L hw hn j (i+1) hj (by omega)),
+      Function.update_of_ne (y_ne_r L hw hn j i hj (by omega)),
+      Function.update_of_ne (y_ne_a L hw hn j i hj hhi)] using f.source j hj
+  · rw [out.keep_sigma hw hn]
+    simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (flag_ne_r L hw hn L.sigma (by tauto) (i+1) (by omega)),
+      Function.update_of_ne (flag_ne_r L hw hn L.sigma (by tauto) i (by omega)),
+      Function.update_of_ne (sigma_ne_a L hw hn i hhi)] using f.sigma
+  · rw [out.keep_h hw hn]
+    simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (flag_ne_r L hw hn L.h (by tauto) (i+1) (by omega)),
+      Function.update_of_ne (flag_ne_r L hw hn L.h (by tauto) i (by omega)),
+      Function.update_of_ne (h_ne_a L hw hn i hhi)] using f.h
+  · rw [out.keep_a hw hn (i-1) (by omega) (by omega)]
+    simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn (i+1) (i-1) (by omega) (by omega))),
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn i (i-1) (by omega) (by omega))),
+      Function.update_of_ne (carry_ne_carry L hw hn (i-1) i (by omega) hhi (by omega))] using f.seedA
+  · rw [out.keep_r hw hn (i-1) (by omega) (by omega)]
+    simpa only [plainFrontState,writeBit,
+      Function.update_of_ne (r_ne_r L hw hn (i-1) (i+1) (by omega) (by omega) (by omega)),
+      Function.update_of_ne (r_ne_r L hw hn (i-1) i (by omega) (by omega) (by omega)),
+      Function.update_of_ne (r_ne_a L hw hn (i-1) i (by omega) hhi)] using f.seedC
+  · rw [out.keep_a hw hn i (by omega) hhi]
+    simp only [plainFrontState,writeBit,
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn (i+1) i (by omega) hhi)),
+      Function.update_of_ne (Ne.symm (r_ne_a L hw hn i i (by omega) hhi)),Function.update_self]
+  · rw [out.keep_r hw hn i (by omega) (by omega)]
+    simp only [plainFrontState,writeBit,
+      Function.update_of_ne (r_ne_r L hw hn i (i+1) (by omega) (by omega) (by omega)),Function.update_self]
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsPlainTail
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem plain_tail (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (g : BGraph L ref)
+    (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (i : Nat) (hlo : 2 ≤ i) (hhi : i<255) (body : Program)
+    (bodyCorrect : ∀t r,TailInput L ref (i+1) t → TailOutput L (i+1) t (run body r t))
+    (s : State) (f : TailInput L ref i s) (m : List Bool) :
+    TailOutput L i s (run (cellPrefix L (.plain i)++body++cellCleanup L (.plain i)) m s) := by
+  let p:=plainFrontState L ref i s
+  have np:TailInput L ref (i+1) p:=plain_next_input L hw hn ref i (by omega) hhi s f
+  have count:measurementCount (cellPrefix L (.plain i))=0 := by
+    simp only [cellPrefix,measurementCount_append,(local_counts L i).1.2,(local_counts L (i+1)).2.2.1.2]
+  let u:=run body m p
+  have out:TailOutput L (i+1) p u:=bodyCorrect p m np
+  have pb:=plain_boundary_after L hw hn ref i hlo hhi s u f out
+  have cc:=plain_cleanup_run L hw hn ref g adds i hlo hhi u pb
+    (out.result 255 (by omega) (by decide)) (m.drop (measurementCount body))
+  have eq:run (cellPrefix L (.plain i)++body++cellCleanup L (.plain i)) m s=
+      ⟨u.phase,writeBit (writeBit u.basis (L.R i) false) (L.A i) false⟩ := by
+    rw [List.append_assoc,run_append,run_take,count,List.drop_zero,
+      plain_prefix_run L hw hn ref adds i (by omega) hhi s f]
+    rw [run_append,run_take]
+    exact cc
+  rw [eq]
+  refine ⟨out.phase,?_,?_,?_⟩
+  · intro q qr qa
+    have nqR:=qr i (le_refl _) (by omega)
+    have nqA:=qa i (le_refl _) hhi
+    simp only [writeBit,Function.update_of_ne nqA,Function.update_of_ne nqR]
+    rw [out.outside q (fun j hj hb=>qr j (by omega) hb) (fun j hj hb=>qa j (by omega) hb)]
+    change (plainFrontState L ref i s).basis q=s.basis q
+    simp only [plainFrontState,writeBit,Function.update_of_ne nqA,Function.update_of_ne nqR,
+      Function.update_of_ne (qr (i+1) (by omega) (by omega))]
+  · intro j hj hb
+    by_cases hji:j=i
+    · subst j
+      simp only [writeBit,Function.update_of_ne (r_ne_a L hw hn i i hb hhi),Function.update_self]
+    · simpa only [writeBit,Function.update_of_ne (r_ne_a L hw hn j i hb hhi),
+        Function.update_of_ne (r_ne_r L hw hn j i hb (by omega) hji)] using out.result j (by omega) hb
+  · intro j hj hb
+    by_cases hji:j=i
+    · subst j;simp only [writeBit,Function.update_self]
+    · simpa only [writeBit,Function.update_of_ne (carry_ne_carry L hw hn j i hb hhi hji),
+        Function.update_of_ne (Ne.symm (r_ne_a L hw hn i j (by omega) hb))] using out.carry j (by omega) hb
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsZeroAway
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+def ZeroAway (L : DecoderLayout) (i : Nat) (w : Wire) : Prop :=
+  ∀q,10 ≤ q → q < 21 → w≠zeroLabel L i q
+
+theorem zeroAway_of (L : DecoderLayout) (hw : L.Widths) (i : Nat)
+    (hlo : 11  ≤  i) (hhi : i ≤ 249) (w : Wire)
+    (hr : ∀j,i ≤ j → j ≤ i+5 → w≠L.R j)
+    (ha : ∀j,i ≤ j → j < i+5 → w≠L.A j) : ZeroAway L i w := by
+  intro q hq hb
+  change Nat at q
+  change 10 ≤ q at hq
+  change q < 21 at hb
+  rw [zeroLabel_eq L hw i q hlo hhi hb]
+  simp only [show ¬q < 6 by omega,show ¬q=6 by omega,show ¬q=7 by omega,
+    show ¬q=8 by omega,show ¬q=9 by omega,ite_false]
+  split_ifs with h16
+  · exact hr _ (by omega) (by omega)
+  · exact ha _ (by omega) (by omega)
+
+theorem zeroAway_y (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11  ≤  i) (hhi : i ≤ 249) (j : Nat) (hj : j < 256) : ZeroAway L i (L.Y j) :=
+  zeroAway_of L hw i hlo hhi _ (fun k hk hb=>y_ne_r L hw hn j k hj (by omega))
+    (fun k hk hb=>y_ne_a L hw hn j k hj (by omega))
+
+theorem zeroAway_sigma (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11  ≤  i) (hhi : i ≤ 249) : ZeroAway L i L.sigma :=
+  zeroAway_of L hw i hlo hhi _ (fun k hk hb=>flag_ne_r L hw hn _ (by tauto) k (by omega))
+    (fun k hk hb=>sigma_ne_a L hw hn k (by omega))
+
+theorem zeroAway_h (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11  ≤  i) (hhi : i ≤ 249) : ZeroAway L i L.h :=
+  zeroAway_of L hw i hlo hhi _ (fun k hk hb=>flag_ne_r L hw hn _ (by tauto) k (by omega))
+    (fun k hk hb=>h_ne_a L hw hn k (by omega))
+
+theorem zeroAway_r (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11  ≤  i) (hhi : i ≤ 249) (j : Nat) (hj : j < 256)
+    (apart : j < i ∨ i+5 < j) : ZeroAway L i (L.R j) :=
+  zeroAway_of L hw i hlo hhi _ (fun k hk hb=>r_ne_r L hw hn j k hj (by omega) (by rcases apart with h|h  <;> omega))
+    (fun k hk hb=>r_ne_a L hw hn j k hj (by omega))
+
+theorem zeroAway_a (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11  ≤  i) (hhi : i ≤ 249) (j : Nat) (hj : j < 255)
+    (apart : j < i ∨ i+5 ≤ j) : ZeroAway L i (L.A j) :=
+  zeroAway_of L hw i hlo hhi _ (fun k hk hb=>Ne.symm (r_ne_a L hw hn k j (by omega) hj))
+    (fun k hk hb=>carry_ne_carry L hw hn j k hj (by omega) (by rcases apart with h|h  <;> omega))
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsZeroNext
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem zero_next_input (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (g : BGraph L ref)
+    (adds : ∀j,j < 255 → ref (L.A j)=aExpected L ref j)
+    (hh : (ref L.sigma && ref L.h)=false) (hb : (ref L.sigma && ref L.bias)=false)
+    (i : Nat) (hi : zeroStart i) (s : State) (f : TailInput L ref i s) (m : List Bool) :
+    TailInput L ref (i+5) (run (renameProgram (zeroLabel L i) zeroPrefix) m s) := by
+  have hlo:11  ≤  i:=by rcases hi with h|h  <;> omega
+  have hhi:i ≤ 249:=by rcases hi with h|h  <;> omega
+  let x:Fin 1024:=⟨zeroRoot L ref i,zeroRoot_bound L ref i⟩
+  have valid:zeroValid x.val=true:=zeroRoot_valid L ref g adds hh hb i hi
+  have hx:Placed (zeroLabel L i) (zeroExpectedInput x.val) s:=zero_input_placed L hw ref g adds i hi s f
+  have pr:=zeroPrefix_placed (zeroLabel L i) (zeroLabel_inj L hw hn i hlo hhi)
+    ⟨zeroIndex x.val,zeroIndex_bound x⟩ s (by rwa [zeroInput_model x valid]) m
+  have model:=zeroInterface_model x valid
+  have loc (w : Wire) (away : ZeroAway L i w) :
+      (run (renameProgram (zeroLabel L i) zeroPrefix) m s).basis w=s.basis w :=
+    zero_prefix_locality L hw hn i hlo hhi x valid s hx m w away
+  have l20:zeroLabel L i 20=L.A (i+4) := by
+    rw [zeroLabel_eq L hw i 20 hlo hhi (by decide)]
+    simp only [Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+    congr 1
+  have l14:zeroLabel L i 14=L.R (i+4) := by
+    rw [zeroLabel_eq L hw i 14 hlo hhi (by decide)]
+    simp only [Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+    congr 1
+  have l15:zeroLabel L i 15=L.R (i+5) := by
+    rw [zeroLabel_eq L hw i 15 hlo hhi (by decide)]
+    simp only [Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+    congr 1
+  refine ⟨?_,?_,?_,?_,?_,?_,?_,?_⟩
+  · intro j hj
+    rw [loc _ (zeroAway_y L hw hn i hlo hhi j hj)]
+    exact f.source j hj
+  · rw [loc _ (zeroAway_sigma L hw hn i hlo hhi)]
+    exact f.sigma
+  · rw [loc _ (zeroAway_h L hw hn i hlo hhi)]
+    exact f.h
+  · have a:=pr.2 20 (by decide)
+    change (run (renameProgram (zeroLabel L i) zeroPrefix) m s).basis (zeroLabel L i 20)=
+      (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩).testBit 20 at a
+    rw [l20,model.2.1] at a
+    change _=zeroCarryA (zeroRoot L ref i) at a
+    rw [zeroCarryA_root L ref adds i hi] at a
+    simpa only [show i+5-1=i+4 by omega] using a
+  · have c:=pr.2 14 (by decide)
+    change (run (renameProgram (zeroLabel L i) zeroPrefix) m s).basis (zeroLabel L i 14)=
+      (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩).testBit 14 at c
+    rw [l14,model.2.2.1] at c
+    change _=zeroCarryC (zeroRoot L ref i) at c
+    rw [zeroCarryC_root L ref g adds i hi] at c
+    simpa only [show i+5-1=i+4 by omega] using c
+  · have z:=pr.2 15 (by decide)
+    change (run (renameProgram (zeroLabel L i) zeroPrefix) m s).basis (zeroLabel L i 15)=
+      (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩).testBit 15 at z
+    rwa [l15,model.2.2.2.2.2] at z
+  · intro j hj hbound
+    rw [loc _ (zeroAway_r L hw hn i hlo hhi j hbound (Or.inr hj))]
+    exact f.pending j (by omega) hbound
+  · intro j hj hbound
+    rw [loc _ (zeroAway_a L hw hn i hlo hhi j hbound (Or.inr hj))]
+    exact f.clean j (by omega) hbound
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsZeroRestore
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+
+theorem zero_interface_restored (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11 ≤ i) (hhi : i ≤ 249) (x : Fin 1024) (valid : zeroValid x.val=true)
+    (t u : State)
+    (placed : Placed (zeroLabel L i) (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩) t)
+    (out : TailOutput L (i+5) t u) :
+    Placed (zeroLabel L i) (zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩) u := by
+  intro q hq
+  change Nat at q
+  change q < 21 at hq
+  by_cases h15:q=15
+  · subst q
+    change u.basis (zeroLabel L i 15)=(zeroInterface ⟨zeroIndex x.val,zeroIndex_bound x⟩).testBit 15
+    rw [(zeroInterface_model x valid).2.2.2.2.2,zeroLabel_eq L hw i 15 hlo hhi (by decide)]
+    simp only [Nat.reduceLT,ite_false,ite_true,reduceCtorEq]
+    rw [show i+15-10=i+5 by omega]
+    exact out.result (i+5) (le_refl _) (by omega)
+  · have same:u.basis (zeroLabel L i q)=t.basis (zeroLabel L i q) := by
+      rw [zeroLabel_eq L hw i q hlo hhi hq]
+      split_ifs with hy h6 h7 h8 h9 h16
+      · exact out.keep_y hw hn (i+q) (by omega)
+      · exact out.keep_y hw hn (i-1) (by omega)
+      · exact out.keep_sigma hw hn
+      · exact out.keep_a hw hn (i-1) (by omega) (by omega)
+      · exact out.keep_r hw hn (i-1) (by omega) (by omega)
+      · exact out.keep_r hw hn (i+q-10) (by omega) (by omega)
+      · exact out.keep_a hw hn (i+q-16) (by omega) (by omega)
+    exact same.trans (placed q hq)
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsZeroOutput
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+
+theorem zero_output_clear (L : DecoderLayout) (hw : L.Widths) (i : Nat)
+    (hlo : 11 ≤ i) (hhi : i ≤ 249) (x : Fin 1024) (s : State)
+    (placed : Placed (zeroLabel L i) x.val s) :
+    (∀j,i ≤ j → j ≤ i+5 → s.basis (L.R j)=false) ∧
+    (∀j,i ≤ j → j < i+5 → s.basis (L.A j)=false) := by
+  constructor
+  · intro j hj hb
+    let q:=j-i+10
+    have qlo:10 ≤ q:=by dsimp [q];omega
+    have qhi:q < 16:=by dsimp [q];omega
+    have qb:q < 21:=lt_trans qhi (by decide)
+    have h:=placed q qb
+    have lab:zeroLabel L i q=L.R j := by
+      rw [zeroLabel_eq L hw i q hlo hhi (by omega)]
+      simp only [show ¬q<6 by omega,show ¬q=6 by omega,show ¬q=7 by omega,
+        show ¬q=8 by omega,show ¬q=9 by omega,ite_false,qhi,ite_true]
+      congr 1; dsimp [q]; omega
+    rw [lab] at h
+    exact h.trans (Nat.testBit_lt_two_pow (lt_of_lt_of_le x.isLt
+      (show (2:Nat)^10 ≤ 2^q from Nat.pow_le_pow_right (by decide) qlo)))
+  · intro j hj hb
+    let q:=j-i+16
+    have qlo:16 ≤ q:=by dsimp [q];omega
+    have qhi:q < 21:=by dsimp [q];omega
+    have h:=placed q qhi
+    have lab:zeroLabel L i q=L.A j := by
+      rw [zeroLabel_eq L hw i q hlo hhi qhi]
+      simp only [show ¬q<6 by omega,show ¬q=6 by omega,show ¬q=7 by omega,
+        show ¬q=8 by omega,show ¬q=9 by omega,show ¬q<16 by omega,ite_false]
+      congr 1; dsimp [q]; omega
+    rw [lab] at h
+    exact h.trans (Nat.testBit_lt_two_pow (lt_of_lt_of_le x.isLt
+      (show (2:Nat)^10 ≤ 2^q from Nat.pow_le_pow_right (by decide) (by omega : 10 ≤ q))))
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsZeroTail
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem zero_tail (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (g : BGraph L ref)
+    (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (hh : (ref L.sigma && ref L.h)=false) (hb : (ref L.sigma && ref L.bias)=false)
+    (i : Nat) (hi : zeroStart i) (body : Program)
+    (bodyCorrect : ∀t r,TailInput L ref (i+5) t → TailOutput L (i+5) t (run body r t))
+    (s : State) (f : TailInput L ref i s) (m : List Bool) :
+    TailOutput L i s (run (cellPrefix L (.zero5 i)++body++cellCleanup L (.zero5 i)) m s) := by
+  have hlo:11 ≤ i:=by rcases hi with h|h <;> omega
+  have hhi:i ≤ 249:=by rcases hi with h|h <;> omega
+  let x:Fin 1024:=⟨zeroRoot L ref i,zeroRoot_bound L ref i⟩
+  have valid:zeroValid x.val=true:=zeroRoot_valid L ref g adds hh hb i hi
+  have hx:Placed (zeroLabel L i) (zeroExpectedInput x.val) s:=zero_input_placed L hw ref g adds i hi s f
+  let pre:=renameProgram (zeroLabel L i) zeroPrefix
+  let post:=renameProgram (zeroLabel L i) zeroCleanup
+  let p:=run pre m s
+  let u:=run body m p
+  let v:=run post (m.drop (measurementCount body)) u
+  have count:measurementCount pre=0 := by
+    rw [show pre=renameProgram (zeroLabel L i) zeroPrefix from rfl,(renameProgram_counts _ _).2,zeroCounts.2.1]
+  have pr:=zeroPrefix_placed (zeroLabel L i) (zeroLabel_inj L hw hn i hlo hhi)
+    ⟨zeroIndex x.val,zeroIndex_bound x⟩ s (by rwa [zeroInput_model x valid]) m
+  have next:TailInput L ref (i+5) p:=zero_next_input L hw hn ref g adds hh hb i hi s f m
+  have out:TailOutput L (i+5) p u:=bodyCorrect p m next
+  have restored:=zero_interface_restored L hw hn i hlo hhi x valid p u pr.2 out
+  have qr:=zeroCleanup_placed (zeroLabel L i) (zeroLabel_inj L hw hn i hlo hhi)
+    ⟨zeroIndex x.val,zeroIndex_bound x⟩ u restored (m.drop (measurementCount body))
+  rw [zeroOutput_model x valid] at qr
+  have clear:=zero_output_clear L hw i hlo hhi x v qr.2
+  have locP (w : Wire) (away : ZeroAway L i w) : p.basis w=s.basis w :=
+    zero_prefix_locality L hw hn i hlo hhi x valid s hx m w away
+  have locQ (w : Wire) (away : ZeroAway L i w) : v.basis w=u.basis w :=
+    zero_cleanup_locality L hw hn i hlo hhi x valid u restored (m.drop (measurementCount body)) w away
+  have eq:run (cellPrefix L (.zero5 i)++body++cellCleanup L (.zero5 i)) m s=v := by
+    change run (pre++body++post) m s=v
+    dsimp [v,u,p]
+    simp only [List.append_assoc,run_append,run_take]
+    simp only [count,List.drop_zero]
+  rw [eq]
+  refine ⟨qr.1.trans (out.phase.trans pr.1),?_,?_,?_⟩
+  · intro w wr wa
+    have away:ZeroAway L i w:=zeroAway_of L hw i hlo hhi w
+      (fun j hj hb=>wr j hj (by omega)) (fun j hj hb=>wa j hj (by omega))
+    exact (locQ w away).trans ((out.outside w (fun j hj hb=>wr j (by omega) hb)
+      (fun j hj hb=>wa j (by omega) hb)).trans (locP w away))
+  · intro j hj hb
+    by_cases hlocal:j ≤ i+5
+    · exact clear.1 j hj hlocal
+    · rw [locQ _ (zeroAway_r L hw hn i hlo hhi j hb (Or.inr (by omega)))]
+      exact out.result j (by omega) hb
+  · intro j hj hb
+    by_cases hlocal:j < i+5
+    · exact clear.2 j hj hlocal
+    · rw [locQ _ (zeroAway_a L hw hn i hlo hhi j hb (Or.inr (by omega)))]
+      exact out.carry j (by omega) hb
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsTailSchedule
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxRecDepth 30000
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+private instance zeroStartDecidable (i : Nat) : Decidable (zeroStart i) := by
+  unfold zeroStart
+  infer_instance
+
+def tailCheck : List Cell → Nat → Bool
+  | [],i=>decide (i=255)
+  | .first::_,_=>false
+  | .plain j::cs,i=>decide (i=j ∧ 2 ≤ j ∧ j<255) && tailCheck cs (j+1)
+  | .zero5 j::cs,i=>decide (i=j ∧ zeroStart j) && tailCheck cs (j+5)
+
+theorem tail_schedule_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (g : BGraph L ref)
+    (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (hh : (ref L.sigma && ref L.h)=false) (hb : (ref L.sigma && ref L.bias)=false)
+    (cs : List Cell) (i : Nat) (legal : tailCheck cs i=true)
+    (s : State) (f : TailInput L ref i s) (m : List Bool) :
+    TailOutput L i s (run (cellGraph L cs) m s) := by
+  induction cs generalizing i s m with
+  | nil=>
+    have hi:i=255:=of_decide_eq_true legal
+    subst i
+    simp only [cellGraph,List.foldr_nil,run]
+    refine ⟨rfl,fun _ _ _=>rfl,?_,?_⟩
+    · intro j hj hb
+      have e:j=255:=by omega
+      subst j;exact f.current
+    · intro j hj hb;omega
+  | cons c cs ih=>
+    cases c with
+    | first=>simp [tailCheck] at legal
+    | plain j=>
+      have h:(i=j ∧ 2 ≤ j ∧ j<255) ∧ tailCheck cs (j+1)=true := by
+        simpa only [tailCheck,Bool.and_eq_true,decide_eq_true_eq] using legal
+      have ei:i=j:=h.1.1
+      subst i
+      exact plain_tail L hw hn ref g adds j h.1.2.1 h.1.2.2 (cellGraph L cs)
+        (fun t r hf=>ih (j+1) h.2 t hf r) s f m
+    | zero5 j=>
+      have h:(i=j ∧ zeroStart j) ∧ tailCheck cs (j+5)=true := by
+        simpa only [tailCheck,Bool.and_eq_true,decide_eq_true_eq] using legal
+      have ei:i=j:=h.1.1
+      subst i
+      exact zero_tail L hw hn ref g adds hh hb j h.1.2 (cellGraph L cs)
+        (fun t r hf=>ih (j+5) h.2 t hf r) s f m
+
+theorem selected_tail_check : tailCheck cells.tail 5=true := by decide +kernel
+
+theorem selected_tail_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (g : BGraph L ref)
+    (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
+    (hh : (ref L.sigma && ref L.h)=false) (hb : (ref L.sigma && ref L.bias)=false)
+    (s : State) (f : TailInput L ref 5 s) (m : List Bool) :
+    TailOutput L 5 s (run (cellGraph L cells.tail) m s) :=
+  tail_schedule_correct L hw hn ref g adds hh hb cells.tail 5 selected_tail_check s f m
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsGraphCorrect
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic MeasuredCodec5 TerminalGraph
+set_option maxRecDepth 100000
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+structure GraphOutput (L : DecoderLayout) (s t : State) : Prop where
+  phase : t.phase=s.phase
+  outside : ∀q,q∉L.carry → q∉L.r → q≠L.bias → t.basis q=s.basis q
+  carry : ∀j,j<255 → t.basis (L.A j)=false
+  result : ∀j,j<256 → t.basis (L.R j)=false
+  bias : t.basis L.bias=false
+
+theorem first_graph_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (r : Reference L ref) (tail : List Cell)
+    (bodyCorrect : ∀t m,TailInput L ref 5 t → TailOutput L 5 t (run (cellGraph L tail) m t))
+    (s : State) (f : GraphInput L ref s) (m : List Bool) :
+    GraphOutput L s (run (renameProgram (firstLabel L) firstPrefix++cellGraph L tail++
+      renameProgram (firstLabel L) firstCleanup) m s) := by
+  let x:Fin 512:=⟨firstRoot L ref,firstRoot_bound L hw ref⟩
+  have valid:(x.val.testBit 6 && x.val.testBit 7)=false:=firstRoot_valid L hw ref r
+  have hx:Placed (firstLabel L) (firstExpectedInput x.val) s:=first_input_placed L hw ref r.bias r.scalar s f
+  let pre:=renameProgram (firstLabel L) firstPrefix
+  let post:=renameProgram (firstLabel L) firstCleanup
+  let body:=cellGraph L tail
+  let p:=run pre m s
+  let u:=run body m p
+  let v:=run post (m.drop (measurementCount body)) u
+  have count:measurementCount pre=0 := by
+    rw [show pre=renameProgram (firstLabel L) firstPrefix from rfl,(renameProgram_counts _ _).2,firstCounts.2.1]
+  have pr:=firstPrefix_placed (firstLabel L) (firstLabel_inj L hw hn)
+    ⟨firstIndex x.val,firstIndex_bound x⟩ s (by rwa [firstInput_model x valid]) m
+  have next:TailInput L ref 5 p:=first_next_input L hw hn ref r s f m
+  have out:TailOutput L 5 p u:=bodyCorrect p m next
+  have restored:=first_interface_restored L hw hn x valid p u pr.2 out
+  have qr:=firstCleanup_placed (firstLabel L) (firstLabel_inj L hw hn)
+    ⟨firstIndex x.val,firstIndex_bound x⟩ u restored (m.drop (measurementCount body))
+  rw [firstOutput_model x valid] at qr
+  have clear:=first_output_clear L hw x v qr.2
+  have locP (w : Wire) (away : FirstAway L w) : p.basis w=s.basis w :=
+    first_prefix_locality L hw hn x valid s hx m w away
+  have locQ (w : Wire) (away : FirstAway L w) : v.basis w=u.basis w :=
+    first_cleanup_locality L hw hn x valid u restored (m.drop (measurementCount body)) w away
+  have parts:renameProgram (firstLabel L) firstPrefix++cellGraph L tail++
+      renameProgram (firstLabel L) firstCleanup=pre++body++post:=by rfl
+  have eq:run (renameProgram (firstLabel L) firstPrefix++cellGraph L tail++
+      renameProgram (firstLabel L) firstCleanup) m s=v := by
+    rw [parts]
+    dsimp [v,u,p]
+    simp only [List.append_assoc,run_append,run_take]
+    simp only [count,List.drop_zero]
+  rw [eq]
+  refine ⟨qr.1.trans (out.phase.trans pr.1),?_,?_,?_,clear.2.2⟩
+  · intro w wa wr wb
+    have noR (j : Nat) (hb : j<256) : w≠L.R j := fun e=>wr (e ▸ r_mem L hw j hb)
+    have noA (j : Nat) (hb : j<255) : w≠L.A j := fun e=>wa (e ▸ a_mem L hw j hb)
+    have away:FirstAway L w:=firstAway_of L hw w (fun j hj=>noR j (by omega))
+      (fun j hj=>noA j (by omega)) wb
+    exact (locQ w away).trans ((out.outside w (fun j hj hb=>noR j hb)
+      (fun j hj hb=>noA j hb)).trans (locP w away))
+  · intro j hj
+    by_cases hlocal:j<5
+    · exact clear.2.1 j hlocal
+    · rw [locQ _ (firstAway_a_above L hw hn j (by omega) hj)]
+      exact out.carry j (by omega) hj
+  · intro j hj
+    by_cases hlocal:j<6
+    · exact clear.1 j hlocal
+    · rw [locQ _ (firstAway_r_above L hw hn j (by omega) hj)]
+      exact out.result j (by omega) hj
+
+theorem cellGraph_cons (L : DecoderLayout) (c : Cell) (cs : List Cell) :
+    cellGraph L (c::cs)=cellPrefix L c++cellGraph L cs++cellCleanup L c := by rfl
+
+theorem cells_head : cells=Cell.first::cells.tail := by rfl
+
+theorem graph_parts (L : DecoderLayout) : cellGraph L cells=
+    renameProgram (firstLabel L) firstPrefix++cellGraph L cells.tail++
+      renameProgram (firstLabel L) firstCleanup := by
+  calc
+    cellGraph L cells=cellGraph L (Cell.first::cells.tail):=congrArg (cellGraph L) cells_head
+    _=renameProgram (firstLabel L) firstPrefix++cellGraph L cells.tail++
+      renameProgram (firstLabel L) firstCleanup:=cellGraph_cons L .first cells.tail
+
+theorem graph_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (ref : BasisState) (r : Reference L ref) (s : State) (f : GraphInput L ref s) (m : List Bool) :
+    GraphOutput L s (run (cellGraph L cells) m s) := by
+  rw [graph_parts]
+  exact first_graph_correct L hw hn ref r cells.tail
+    (fun t m ht=>selected_tail_correct L hw hn ref r.graph r.adds r.exclusive r.exclusiveBias t ht m) s f m
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsReference
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph DecoderBiasReuse
+set_option maxRecDepth 30000
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+def clearBias (L : DecoderLayout) (f : State) : State := ⟨f.phase,writeBit f.basis L.bias false⟩
+
+theorem reference_after_add_general (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup) (f : State)
+    (clean : ∀i,i<255 → f.basis (L.A i)=false)
+    (scalar : regValue L.r f.basis=
+      ((if f.basis L.sigma then regValue (L.y.take 255) f.basis
+        else 3*regValue (L.y.take 255) f.basis)+
+        2*(f.basis L.bias).toNat+(f.basis L.h).toNat*(2^32+977))%2^256)
+    (bias : f.basis L.bias=(f.basis (L.Y 255) && !f.basis L.sigma))
+    (exclusive : (f.basis L.sigma && f.basis L.h)=false) :
+    let ref:=run (aProgram L) [] f
+    Reference L ref.basis ∧ GraphInput L ref.basis (clearBias L f) := by
+  let ref:=run (aProgram L) [] f
+  change Reference L ref.basis ∧ GraphInput L ref.basis (clearBias L f)
+  have af:AddFrame L f 255 ref:=aProgram_frame L hw hn f clean []
+  have out (q : Wire) (hq : q∉L.carry) : ref.basis q=f.basis q := by
+    simpa only [ref,aProgram] using add_forward_outside L hw hn 255 (le_refl _) f [] q hq
+  have flag (q : Wire) (hq : q=L.sigma ∨ q=L.h ∨ q=L.bias) :
+      ref.basis q=f.basis q := by
+    apply out
+    exact carry_source_away L hn q (Or.inr hq)
+  have sigma:=flag L.sigma (by tauto)
+  have h:=flag L.h (by tauto)
+  have b:=flag L.bias (by tauto)
+  have ys (j : Nat) (hj : j<256) : ref.basis (L.Y j)=f.basis (L.Y j):=af.source j hj
+  have rs (j : Nat) (hj : j<256) : ref.basis (L.R j)=f.basis (L.R j) :=
+    out _ (by
+      intro ha
+      exact source_r_away L hn (L.R j) (Or.inr (Or.inl ha)) (r_mem L hw j hj))
+  have rv:regValue L.r ref.basis=regValue L.r f.basis := by
+    apply regValue_congr
+    intro q hq
+    apply out
+    intro ha
+    exact source_r_away L hn q (Or.inr (Or.inl ha)) hq
+  have yv:regValue (L.y.take 255) ref.basis=regValue (L.y.take 255) f.basis := by
+    apply regValue_congr
+    intro q hq
+    exact out q (carry_source_away L hn q (Or.inl (List.mem_of_mem_take hq)))
+  refine ⟨?_,?_⟩
+  · refine ⟨(aProgram_graph L hw hn f clean scalar []).1,?_,?_,?_,?_,?_⟩
+    · intro i hi
+      exact (af.computed i hi).trans (aExpected_congr L f.basis ref.basis sigma.symm
+        (fun j hj=>(ys j hj).symm) i hi)
+    · rw [sigma,h];exact exclusive
+    · rw [sigma,b,bias];cases f.basis L.sigma <;> simp
+    · rw [b,ys 255 (by decide),sigma];exact bias
+    · rw [rv,yv,sigma,b,h];exact scalar
+  · change GraphInput L ref.basis ⟨f.phase,writeBit f.basis L.bias false⟩
+    refine ⟨?_,?_,?_,?_,?_,?_⟩
+    · intro j hj
+      simpa only [clearBias,writeBit,
+        Function.update_of_ne (y_ne_bias L hw hn j hj)] using (ys j hj).symm
+    · simpa only [clearBias,writeBit,
+        Function.update_of_ne (flag_ne_bias L hw hn L.sigma (by tauto))] using sigma.symm
+    · simpa only [clearBias,writeBit,
+        Function.update_of_ne (flag_ne_bias L hw hn L.h (by tauto))] using h.symm
+    · simp [clearBias,writeBit]
+    · intro j hj
+      simpa only [clearBias,writeBit,
+        Function.update_of_ne (Ne.symm (flag_ne_r L hw hn L.bias (by tauto) j hj))]
+        using (rs j hj).symm
+    · intro j hj
+      have ne:L.A j≠L.bias := by
+        intro e
+        exact carry_source_away L hn L.bias (Or.inr (Or.inr (Or.inr rfl)))
+          (e ▸ a_mem L hw j hj)
+      simpa only [clearBias,writeBit,Function.update_of_ne ne] using clean j hj
+
+theorem reference_after_add (f : State)
+    (clean : ∀i,i<255 → f.basis (fixedLayout.A i)=false)
+    (scalar : regValue fixedLayout.r f.basis=
+      ((if f.basis fixedLayout.sigma then regValue (fixedLayout.y.take 255) f.basis
+        else 3*regValue (fixedLayout.y.take 255) f.basis)+
+        2*(f.basis fixedLayout.bias).toNat+(f.basis fixedLayout.h).toNat*(2^32+977))%2^256)
+    (bias : f.basis fixedLayout.bias=(f.basis (fixedLayout.Y 255) && !f.basis fixedLayout.sigma))
+    (exclusive : (f.basis fixedLayout.sigma && f.basis fixedLayout.h)=false) :
+    let ref:=run (aProgram fixedLayout) [] f
+    Reference fixedLayout ref.basis ∧ GraphInput fixedLayout ref.basis (withoutBias f) := by
+  exact reference_after_add_general fixedLayout fixed_widths fixed_nodup f clean scalar bias exclusive
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsCore
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph DecoderBiasReuse
+set_option maxRecDepth 30000
+set_option maxHeartbeats 12000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem cell_core_correct (f : State)
+    (clean : ∀i,i<255 → f.basis (fixedLayout.A i)=false)
+    (scalar : regValue fixedLayout.r f.basis=
+      ((if f.basis fixedLayout.sigma then regValue (fixedLayout.y.take 255) f.basis
+        else 3*regValue (fixedLayout.y.take 255) f.basis)+
+        2*(f.basis fixedLayout.bias).toNat+(f.basis fixedLayout.h).toNat*(2^32+977))%2^256)
+    (bias : f.basis fixedLayout.bias=(f.basis (fixedLayout.Y 255) && !f.basis fixedLayout.sigma))
+    (exclusive : (f.basis fixedLayout.sigma && f.basis fixedLayout.h)=false) (m : List Bool) :
+    FastCoreResult f (run actualCellGraph m (withoutBias f)) := by
+  let ref:=run (aProgram fixedLayout) [] f
+  have good:=reference_after_add f clean scalar bias exclusive
+  have cg:=graph_correct fixedLayout fixed_widths fixed_nodup ref.basis good.1 (withoutBias f) good.2 m
+  refine ⟨cg.phase,?_,cg.carry,cg.result,cg.bias⟩
+  intro q ha hr hb
+  apply (cg.outside q ha hr hb).trans
+  change writeBit f.basis fixedLayout.bias false q=f.basis q
+  simp [writeBit,hb]
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsQuotient
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph Secp256k1 DecoderBiasReuse
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+def cleanedCells : Program := actualCellGraph ++ clearQuotient fixedLayout
+
+theorem cleanedCells_correct (f : State)
+    (clean : ∀i,i<255 → f.basis (fixedLayout.A i)=false)
+    (scalar : regValue fixedLayout.r f.basis=
+      ((if f.basis fixedLayout.sigma then regValue (fixedLayout.y.take 255) f.basis
+        else 3*regValue (fixedLayout.y.take 255) f.basis)+
+        2*(f.basis fixedLayout.bias).toNat+(f.basis fixedLayout.h).toNat*(2^32+977))%2^256)
+    (bias : f.basis 784=(f.basis 1041 && !f.basis 2425))
+    (quotient : f.basis fixedLayout.h=(!f.basis fixedLayout.sigma &&
+      !(decide (regValue (fixedLayout.y.take 255) f.basis <
+        ((p-1)/2)/3+(!f.basis (fixedLayout.Y 255)).toNat)))) (m : List Bool) :
+    ∃t,CoreResult fixedLayout f t ∧ run cleanedCells m (withoutBias f)=
+      ⟨f.phase,writeBit (writeBit t.basis fixedLayout.bias false) fixedLayout.h false⟩ := by
+  have exclusive : (f.basis 2425 && f.basis 1043)=false := by
+    change (f.basis fixedLayout.sigma && f.basis fixedLayout.h)=false
+    rw [quotient]
+    cases f.basis fixedLayout.sigma <;> simp
+  let u := run actualCellGraph m (withoutBias f)
+  have fu : FastCoreResult f u := cell_core_correct f clean scalar bias exclusive m
+  obtain ⟨t,old,ueq⟩ := restore_old_core f u fu
+  have values : regValue (fixedLayout.y.take 255) u.basis=
+      regValue (fixedLayout.y.take 255) f.basis := by
+    apply regValue_congr
+    intro q hq
+    exact core_source_agree f u fu q (Or.inl (List.mem_of_mem_take hq))
+  have quotient_u : u.basis fixedLayout.h=(!u.basis fixedLayout.sigma &&
+      !(decide (regValue (fixedLayout.y.take 255) u.basis <
+        ((p-1)/2)/3+(!u.basis (fixedLayout.Y 255)).toNat))) := by
+    rw [core_source_agree f u fu fixedLayout.h (Or.inr (Or.inr rfl)),
+      core_source_agree f u fu fixedLayout.sigma (Or.inr (Or.inl rfl)),
+      core_source_agree f u fu (fixedLayout.Y 255)
+        (Or.inl (y_mem fixedLayout fixed_widths 255 (by decide))),values]
+    exact quotient
+  have erase := clearQuotient_correct fixedLayout fixed_widths fixed_nodup u
+    (m.drop (measurementCount actualCellGraph)) (clean_carry_members f u fu) quotient_u
+  refine ⟨t,old,?_⟩
+  rw [cleanedCells,run_append,run_take]
+  change run (clearQuotient fixedLayout) (m.drop (measurementCount actualCellGraph)) u=_
+  rw [erase,ueq]
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsCorrect
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph Secp256k1 BalancedField DecoderBiasReuse
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] run
+
+theorem cellDecoder_parts : cellDecoder=
+    frontFast fixedLayout ++ (cleanedCells ++ back fixedLayout) := by
+  simp only [cellDecoder,cleanedCells,back,List.append_assoc]
+
+theorem cellDecoder_correct (Y : Fp) (sigma : Bool) (s : State) (m : List Bool)
+    (ys : regValue fixedLayout.y s.basis=centerWord Y)
+    (rs : regValue fixedLayout.r s.basis=centerWord ((if sigma then 1 else 3)*Y))
+    (sig : s.basis fixedLayout.sigma=sigma)
+    (hc : s.basis fixedLayout.h=false) (bc : s.basis fixedLayout.bias=false)
+    (cc : ∀q∈fixedLayout.carry,s.basis q=false) :
+    (run (cellDecoder) m s).phase=s.phase ∧
+    (∀q,q∉fixedLayout.r → (run (cellDecoder) m s).basis q=s.basis q) ∧
+    regValue fixedLayout.r (run (cellDecoder) m s).basis=centerWord Y := by
+  have result := run_three_states (frontFast fixedLayout) cleanedCells (back fixedLayout)
+    (fun a d=>a=s → d.phase=s.phase ∧
+      (∀q,q∉fixedLayout.r → d.basis q=s.basis q) ∧ regValue fixedLayout.r d.basis=centerWord Y) (by
+      intro a n u d m1 m2 m3 han hnu hud eq
+      subst a
+      let f : State := ⟨s.phase,frontBasis fixedLayout s.basis⟩
+      have neq : n=withoutBias f := by
+        rw [←han,frontFast_view s m1 bc,front_run fixedLayout fixed_widths fixed_nodup]
+      rw [neq] at hnu
+      have scalar := actual_front_scalar fixedLayout fixed_widths fixed_nodup
+        s.basis Y sigma ys rs sig hc bc
+      have nc : ∀i,i<255 → f.basis (fixedLayout.A i)=false := by
+        intro i hi
+        exact front_carry_clean fixedLayout fixed_nodup s.basis cc
+          (fixedLayout.A i) (a_mem fixedLayout fixed_widths i hi)
+      have bb : f.basis 784=(f.basis 1041 && !f.basis 2425) := by
+        have facts := actual_front_values fixedLayout fixed_widths fixed_nodup
+          s.basis Y sigma ys rs sig hc bc
+        change frontBasis fixedLayout s.basis fixedLayout.bias=
+          (frontBasis fixedLayout s.basis (fixedLayout.Y 255) &&
+            !frontBasis fixedLayout s.basis fixedLayout.sigma)
+        rw [facts.2.2.2.1,facts.2.2.2.2.1,facts.2.2.2.2.2]
+      have cg := cleanedCells_correct f nc scalar.1
+        bb scalar.2 m2
+      obtain ⟨t,tf,ut⟩ := cg
+      rw [hnu] at ut
+      have cleanbasis := cleaned_front_basis fixedLayout fixed_widths fixed_nodup
+        s.basis s.phase t tf hc bc cc
+      have uz : u=⟨s.phase,zeroR fixedLayout s.basis⟩ := by
+        rw [ut,cleanbasis]
+      have done := back_correct fixedLayout fixed_widths fixed_nodup s.basis s.phase m3
+      rw [uz] at hud
+      rw [hud] at done
+      exact ⟨done.1,done.2.1,done.2.2.trans ys⟩) s m
+  rw [cellDecoder_parts]
+  exact result rfl
+
+theorem cellDecoder_frame (origin : BasisState)
+    (clean : ∀q∈work fixedLayout,origin q=false) (X Y : Fp)
+    (hend : (X+(if origin fixedLayout.sigma then Y else -Y))/2=Y) :
+    Triple (PairFrame fixedLayout.r fixedLayout.y origin (centerWord X) (centerWord Y))
+      (cellDecoder)
+      (PairFrame fixedLayout.r fixedLayout.y origin (centerWord Y) (centerWord Y)) := by
+  intro s m input
+  have cleanS (q : Wire) (hq:q∈work fixedLayout) : s.basis q=false :=
+    (input.2.2 q (work_away fixedLayout fixed_nodup q hq).1
+      (work_away fixedLayout fixed_nodup q hq).2).trans (clean q hq)
+  have sig : s.basis fixedLayout.sigma=origin fixedLayout.sigma := input.2.2 fixedLayout.sigma
+    (source_r_away fixedLayout fixed_nodup _ (by tauto))
+    (flag_y_away fixedLayout fixed_nodup _ (by simp))
+  have rel := terminal_relation X Y (origin fixedLayout.sigma) hend
+  have rword : regValue fixedLayout.r s.basis=
+      centerWord ((if origin fixedLayout.sigma then 1 else 3)*Y) := by
+    rw [input.1,rel]
+  have c := cellDecoder_correct Y (origin fixedLayout.sigma) s m input.2.1 rword sig
+    (cleanS fixedLayout.h (by simp [work])) (cleanS fixedLayout.bias (by simp [work]))
+    (fun q hq=>cleanS q (by simp [work,hq]))
+  refine ⟨c.1,c.2.2,?_,?_⟩
+  · exact (regValue_congr fixedLayout.y _ _ (fun q hq=>c.2.1 q
+      (source_r_away fixedLayout fixed_nodup q (Or.inl hq)))).trans input.2.1
+  · intro q qr qy
+    exact (c.2.1 q qr).trans (input.2.2 q qr qy)
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsPlacedResources
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+
+theorem firstLabel_mem (L : DecoderLayout) (hw : L.Widths) (q : Nat) (hq : q<21) :
+    firstLabel L q∈L.wires :=
+  getD_mem L.wires _ (by rw [wires_length L hw];exact firstPos_bound q hq)
+
+theorem zeroLabel_mem (L : DecoderLayout) (hw : L.Widths) (i q : Nat)
+    (hlo : 11 ≤ i) (hhi : i≤249) (hq : q<21) : zeroLabel L i q∈L.wires :=
+  getD_mem L.wires _ (by rw [wires_length L hw];exact zeroPos_bound i q hlo hhi hq)
+
+theorem placed_support (L : DecoderLayout) (f : Wire → Wire)
+    (mem : ∀q,q<21 → f q∈L.wires) (P : Program) (hp : wires P⊆Finset.range 21) :
+    wires (renameProgram f P)⊆L.wires.toFinset := by
+  rw [renameProgram_support]
+  intro q hq
+  obtain ⟨r,hr,rfl⟩:=Finset.mem_image.mp hq
+  exact List.mem_toFinset.mpr (mem r (Finset.mem_range.mp (hp hr)))
+
+theorem placed_physical (f : Wire → Wire)
+    (hf : ∀a∈Finset.range 21,∀b∈Finset.range 21,f a=f b → a=b)
+    (P : Program) (hp : wires P⊆Finset.range 21) (physical : GatePhysical P) :
+    GatePhysical (renameProgram f P) :=
+  gatePhysical_rename_support f P (fun a ha b hb eq=>hf a (hp ha) b (hp hb) eq) physical
+
+theorem first_placed_resources (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (renameProgram (firstLabel L) firstPrefix) ∧
+    GatePhysical (renameProgram (firstLabel L) firstCleanup) ∧
+    wires (renameProgram (firstLabel L) firstPrefix)⊆L.wires.toFinset ∧
+    wires (renameProgram (firstLabel L) firstCleanup)⊆L.wires.toFinset :=
+  ⟨placed_physical _ (firstLabel_inj L hw hn) _ firstPrefix_support firstPrefix_physical,
+   placed_physical _ (firstLabel_inj L hw hn) _ firstCleanup_support firstCleanup_physical,
+   placed_support L _ (firstLabel_mem L hw) _ firstPrefix_support,
+   placed_support L _ (firstLabel_mem L hw) _ firstCleanup_support⟩
+
+theorem zero_placed_resources (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hlo : 11 ≤ i) (hhi : i≤249) :
+    GatePhysical (renameProgram (zeroLabel L i) zeroPrefix) ∧
+    GatePhysical (renameProgram (zeroLabel L i) zeroCleanup) ∧
+    wires (renameProgram (zeroLabel L i) zeroPrefix)⊆L.wires.toFinset ∧
+    wires (renameProgram (zeroLabel L i) zeroCleanup)⊆L.wires.toFinset :=
+  ⟨placed_physical _ (zeroLabel_inj L hw hn i hlo hhi) _ zeroPrefix_support zeroPrefix_physical,
+   placed_physical _ (zeroLabel_inj L hw hn i hlo hhi) _ zeroCleanup_support zeroCleanup_physical,
+   placed_support L _ (fun q hq=>zeroLabel_mem L hw i q hlo hhi hq) _ zeroPrefix_support,
+   placed_support L _ (fun q hq=>zeroLabel_mem L hw i q hlo hhi hq) _ zeroCleanup_support⟩
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsGraphResources
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph DecoderBiasReuse
+set_option maxRecDepth 30000
+set_option maxHeartbeats 16000000
+set_option linter.unusedSimpArgs false
+
+def plainIndices : List Nat := [5,6,7,8,9,10,31,32,33,254]
+
+theorem plain_checks : ∀i : Fin 255,i.val∈plainIndices →
+    (cellPrefix fixedLayout (.plain i.val)).all physicalGateCheck=true ∧
+    (cellCleanup fixedLayout (.plain i.val)).all physicalGateCheck=true ∧
+    supportCheck (cellPrefix fixedLayout (.plain i.val))=true ∧
+    supportCheck (cellCleanup fixedLayout (.plain i.val))=true := by
+  decide +kernel
+
+def goodCell : Cell → Bool
+  | .first=>true
+  | .plain i=>decide (i<255 ∧ i∈plainIndices)
+  | .zero5 i=>decide (11  ≤  i ∧ i ≤ 249)
+
+theorem cells_good : cells.all goodCell=true := by decide +kernel
+
+theorem cell_resources (c : Cell) (hc : goodCell c=true) :
+    GatePhysical (cellPrefix fixedLayout c) ∧ GatePhysical (cellCleanup fixedLayout c) ∧
+    wires (cellPrefix fixedLayout c)⊆fixedLayout.wires.toFinset ∧
+    wires (cellCleanup fixedLayout c)⊆fixedLayout.wires.toFinset := by
+  cases c with
+  | first=>exact first_placed_resources fixedLayout fixed_widths fixed_nodup
+  | zero5 i=>
+    have h:11  ≤  i ∧ i ≤ 249:=of_decide_eq_true hc
+    exact zero_placed_resources fixedLayout fixed_widths fixed_nodup i h.1 h.2
+  | plain i=>
+    have h:i<255 ∧ i∈plainIndices:=of_decide_eq_true hc
+    have check:=plain_checks ⟨i,h.1⟩ h.2
+    exact ⟨physicalGateCheck_correct _ check.1,physicalGateCheck_correct _ check.2.1,
+      supportCheck_sound _ check.2.2.1,supportCheck_sound _ check.2.2.2⟩
+
+theorem graph_resources (cs : List Cell) (hc : cs.all goodCell=true) :
+    GatePhysical (cellGraph fixedLayout cs) ∧
+    wires (cellGraph fixedLayout cs)⊆fixedLayout.wires.toFinset := by
+  induction cs with
+  | nil=>simp [cellGraph,GatePhysical,wires]
+  | cons c cs ih=>
+    have h:goodCell c=true ∧ cs.all goodCell=true:=by simpa only [List.all_cons,Bool.and_eq_true] using hc
+    have cr:=cell_resources c h.1
+    have rest:=ih h.2
+    change GatePhysical (cellPrefix fixedLayout c++cellGraph fixedLayout cs++cellCleanup fixedLayout c) ∧ _
+    constructor
+    · exact (gatePhysical_append _ _).mpr ⟨(gatePhysical_append _ _).mpr ⟨cr.1,rest.1⟩,cr.2.1⟩
+    · change wires (cellPrefix fixedLayout c++cellGraph fixedLayout cs++cellCleanup fixedLayout c)⊆_
+      simp only [wires_append,Finset.union_subset_iff]
+      exact ⟨⟨cr.2.2.1,rest.2⟩,cr.2.2.2⟩
+
+theorem actual_graph_resources : GatePhysical actualCellGraph ∧
+    wires actualCellGraph⊆fixedLayout.wires.toFinset := graph_resources cells cells_good
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
+
+section
+-- Coupled-carry proof component: DecoderCellsResources
+namespace ECDSAAdd.Entrant.DecoderCells5
+open Arithmetic TerminalGraph DecoderBiasReuse Challenge Baselines
+set_option maxRecDepth 30000
+set_option maxHeartbeats 20000000
+set_option linter.unusedSimpArgs false
+
+-- The side program excludes the carry graph and is used only for resource accounting.
+def sideProgram : Program := frontFast fixedLayout++clearQuotient fixedLayout++
+  restoreSource fixedLayout++copySource fixedLayout
+
+theorem side_counts : toffoliCount sideProgram=255 ∧ measurementCount sideProgram=256 := by decide +kernel
+
+theorem side_slots : gateSlots sideProgram=3372 := by decide +kernel
+
+def cellS : Cell → Nat
+  | .first=>306
+  | .zero5 _=>345
+  | .plain i=>gateSlots (cellPrefix fixedLayout (.plain i))+gateSlots (cellCleanup fixedLayout (.plain i))
+
+theorem cell_slots (c : Cell) :
+    gateSlots (cellPrefix fixedLayout c)+gateSlots (cellCleanup fixedLayout c)=cellS c := by
+  cases c with
+  | first=>
+    simp only [cellPrefix,cellCleanup,cellS,rename_gateSlots,firstCounts.2.2.2.2.1,firstCounts.2.2.2.2.2]
+  | zero5 i=>
+    simp only [cellPrefix,cellCleanup,cellS,rename_gateSlots,zeroCounts.2.2.2.2.1,zeroCounts.2.2.2.2.2]
+  | plain i=>rfl
+
+theorem cellGraph_slots (cs : List Cell) : gateSlots (cellGraph fixedLayout cs)=(cs.map cellS).sum := by
+  induction cs with
+  | nil=>rfl
+  | cons c cs ih=>
+    have h:=cell_slots c
+    simp only [cellGraph,List.foldr_cons,gateSlots_append,List.map_cons,List.sum_cons] at *
+    omega
+
+theorem graph_slots : gateSlots actualCellGraph=17224 := by
+  have h:=cellGraph_slots cells
+  have total:(cells.map cellS).sum=17224:=by decide +kernel
+  exact h.trans total
+
+theorem raw_counts : toffoliCount cellDecoder=412 ∧ measurementCount cellDecoder=668 := by
+  have s:=side_counts
+  have g:=graph_counts
+  simp only [cellDecoder,sideProgram,toffoliCount_append,measurementCount_append] at *
+  constructor <;> omega
+
+theorem raw_slots : gateSlots cellDecoder=20596 := by
+  have s:=side_slots
+  have g:=graph_slots
+  simp only [cellDecoder,sideProgram,gateSlots_append] at *
+  omega
+
+theorem side_physical : GatePhysical sideProgram := physicalGateCheck_correct _ (by decide +kernel)
+theorem side_support : wires sideProgram⊆fixedLayout.wires.toFinset := supportCheck_sound _ (by decide +kernel)
+
+theorem physical : GatePhysical cellDecoder := by
+  have s:=side_physical
+  have g:=actual_graph_resources.1
+  simp only [sideProgram,gatePhysical_append] at s
+  simp only [cellDecoder,gatePhysical_append]
+  exact ⟨⟨⟨⟨s.1.1.1,g⟩,s.1.1.2⟩,s.1.2⟩,s.2⟩
+
+theorem support : wires cellDecoder⊆fixedLayout.wires.toFinset := by
+  have s:=side_support
+  have g:=actual_graph_resources.2
+  simp only [sideProgram,wires_append,Finset.union_subset_iff] at s
+  simp only [cellDecoder,wires_append,Finset.union_subset_iff]
+  exact ⟨⟨⟨⟨s.1.1.1,g⟩,s.1.1.2⟩,s.1.2⟩,s.2⟩
+
+end ECDSAAdd.Entrant.DecoderCells5
+end
+
