@@ -13163,9 +13163,10 @@ def center : Program := renameProgram endpointBorrow OwnQ5Endpoint.centerT
 
 /-- Endpoint halves. The multiplication endpoint sees equal inputs, so the inverse kernel is
 replaced by the direct `2Y ± Y` tail of submission baaabf50 (`InverseEndpointC.half`), padded with
-256 empty-correction erasures of the clean carry `base 512` to keep the kernel's record length. -/
+256 empty-correction erasures of the clean carry `base 512` to keep the kernel's record length.
+The division decoder uses one of its former padding records to erase the controlled quotient. -/
 def endHalf (divide : Bool) : Program :=
-  if divide then TerminalGraphPhysicalOnly.actualDecoder 2409 ++ List.replicate 255 (Instr.measureX (base 512) [] [])
+  if divide then TerminalGraphPhysicalOnly.actualDecoder 2409 ++ List.replicate 254 (Instr.measureX (base 512) [] [])
   else InverseEndpointWires.padded (Q6EndpointCell.ports base (base 2409)) (base 512)
 
 def rawEnd (divide : Bool) : Program :=
@@ -13197,31 +13198,31 @@ theorem endHalf_false : endHalf false=
     InverseEndpointWires.padded (Q6EndpointCell.ports base (base 2409)) (base 512) := rfl
 
 theorem endHalf_true : endHalf true=
-    TerminalGraphPhysicalOnly.actualDecoder 2409 ++ List.replicate 255 (Instr.measureX (base 512) [] []) := rfl
+    TerminalGraphPhysicalOnly.actualDecoder 2409 ++ List.replicate 254 (Instr.measureX (base 512) [] []) := rfl
 
 theorem decoder_counts_actual :
-    toffoliCount (TerminalGraphPhysicalOnly.actualDecoder 2409)=512 ∧
-    measurementCount (TerminalGraphPhysicalOnly.actualDecoder 2409)=766 :=
+    toffoliCount (TerminalGraphPhysicalOnly.actualDecoder 2409)=511 ∧
+    measurementCount (TerminalGraphPhysicalOnly.actualDecoder 2409)=767 :=
   TerminalGraph.decoder_counts _ (TerminalGraph.ofBalanced_widths _ (Q6EndpointCell.ports_widths base (base 2409)))
 
 
 theorem endHalf_true_slots : Challenge.gateSlots (endHalf true)≤24155 := by
   have d := TerminalGraphPhysicalOnly.slots
-  rw [endHalf_true,Challenge.gateSlots_append,(InverseEndpointWires.pad_facts 255 (base 512)).2.2.1]
+  rw [endHalf_true,Challenge.gateSlots_append,(InverseEndpointWires.pad_facts 254 (base 512)).2.2.1]
   omega
 
 theorem halfE_false_eq : Q6EndpointCell.halfE false base (base 2409)=
     OwnQ6Core5.half false (Q6EndpointCell.ports base (base 2409)) := rfl
 
 theorem endHalf_counts (divide : Bool) :
-    toffoliCount (endHalf divide)+254=
+    toffoliCount (endHalf divide)+(if divide then 255 else 254)=
       toffoliCount (Q6EndpointCell.halfE divide base (base 2409)) ∧
     measurementCount (endHalf divide)=measurementCount (Q6EndpointCell.halfE divide base (base 2409)) := by
   cases divide
   · rw [endHalf_false,halfE_false_eq]
     exact InverseEndpointWires.padded_counts _ (Q6EndpointCell.ports_widths base (base 2409)) _
   · have h := Q6EndpointCell.halfE_counts true base (base 2409)
-    have p := InverseEndpointWires.pad_facts 255 (base 512)
+    have p := InverseEndpointWires.pad_facts 254 (base 512)
     rw [endHalf_true,toffoliCount_append,measurementCount_append,decoder_counts_actual.1,
       decoder_counts_actual.2,p.1,p.2.1,h.1,h.2]
     exact ⟨rfl,rfl⟩
@@ -13268,7 +13269,7 @@ theorem endHalf_wires (divide : Bool) :
         rw [List.take_succ_cons]
         exact List.mem_cons_self
       exact List.mem_toFinset.mpr (List.mem_append_right _ (List.mem_append_left _ head))
-    have p := (InverseEndpointWires.pad_facts 255 (base 512)).2.2.2.1
+    have p := (InverseEndpointWires.pad_facts 254 (base 512)).2.2.2.1
     rw [endHalf_true,wires_append]
     intro q hq
     rcases Finset.mem_union.mp hq with hq|hq
@@ -13282,7 +13283,7 @@ theorem endHalf_physical (divide : Bool) : GatePhysical (endHalf divide) := by
   · rw [endHalf_false]
     exact InverseEndpointWires.padded_physical _ (Q6EndpointCell.ports_widths base (base 2409)) ports_nodup _
   · rw [endHalf_true,gatePhysical_append]
-    exact ⟨TerminalGraphPhysicalOnly.physical,(InverseEndpointWires.pad_facts 255 (base 512)).2.2.2.2⟩
+    exact ⟨TerminalGraphPhysicalOnly.physical,(InverseEndpointWires.pad_facts 254 (base 512)).2.2.2.2⟩
 
 /-- On the endpoint's equal-input frame the new half runs exactly as the old kernel. -/
 theorem endHalf_run_eq (divide : Bool) (X Y : Fp) (t : State) (m : List Bool)
@@ -13311,19 +13312,19 @@ theorem endHalf_run_eq (divide : Bool) (X Y : Fp) (t : State) (m : List Bool)
       t.basis (Q6EndpointCell.clean_work base (base 2409) t.basis clean) X (base 512) t m self zero
   · have old := Q6EndpointCell.halfE_frame true base (base 2409) ports_nodup t.basis clean X Y
       hend t m self
-    have k : measurementCount (TerminalGraphPhysicalOnly.actualDecoder 2409)=766 := decoder_counts_actual.2
+    have k : measurementCount (TerminalGraphPhysicalOnly.actualDecoder 2409)=767 := decoder_counts_actual.2
     have dec := TerminalGraphEndpoint.half_frame true base (base 2409) ports_nodup t.basis clean X Y
-      hend t (m.take 766) self
-    change (run (TerminalGraphPhysicalOnly.actualDecoder 2409) (m.take 766) t).phase=t.phase ∧ _ at dec
+      hend t (m.take 767) self
+    change (run (TerminalGraphPhysicalOnly.actualDecoder 2409) (m.take 767) t).phase=t.phase ∧ _ at dec
     have m512 : base 512∈Q6EndpointCell.workIds.map base :=
       List.mem_map.mpr ⟨512,by simp [Q6EndpointCell.workIds,List.mem_range'_1],rfl⟩
     have away : base 512∉(Q6EndpointCell.ports base (base 2409)).r ∧
         base 512∉(Q6EndpointCell.ports base (base 2409)).y := by
       rw [Q6EndpointCell.ports_r,Q6EndpointCell.ports_y]
       exact ⟨OwnPlusHost.not_block 512 2056 256 (by omega),OwnPlusHost.not_block 512 770 256 (by omega)⟩
-    have z512 : (run (TerminalGraphPhysicalOnly.actualDecoder 2409) (m.take 766) t).basis (base 512)=false :=
+    have z512 : (run (TerminalGraphPhysicalOnly.actualDecoder 2409) (m.take 767) t).basis (base 512)=false :=
       (dec.2.2.2 _ away.1 away.2).trans (clean _ m512)
-    rw [endHalf_true,run_append,k,InverseEndpointWires.pad_run 255 (base 512) _ _ z512]
+    rw [endHalf_true,run_append,k,InverseEndpointWires.pad_run 254 (base 512) _ _ z512]
     apply State.extensionality
     · exact dec.1.trans old.1.symm
     · funext q
@@ -13442,7 +13443,7 @@ theorem selW_counts (src flag : Wire) (P : Program) :
   constructor <;> simp [toffoliCount,measurementCount]
 
 theorem rawEnd_counts (divide : Bool) :
-    toffoliCount (rawEnd divide)+254=toffoliCount (FrontierSW1591.rawEndS divide) ∧
+    toffoliCount (rawEnd divide)+(if divide then 255 else 254)=toffoliCount (FrontierSW1591.rawEndS divide) ∧
     measurementCount (rawEnd divide)=measurementCount (FrontierSW1591.rawEndS divide) := by
   have l:=ControlLoan1589.loanWindow_counts (base 510) (base 2409) (base 719) (endHalf divide)
   have e:=endHalf_counts divide
@@ -20949,7 +20950,7 @@ theorem endPacket_718_free (divide : Bool) : base 718∉wires (endPacket divide)
   exact raw ((shifted Placement5.pi0).injective (eq.trans image.symm) ▸ hq)
 
 theorem endPacket_counts (divide : Bool) :
-    toffoliCount (endPacket divide)+254=toffoliCount (FrontierSW1591.endPacketS divide) ∧
+    toffoliCount (endPacket divide)+(if divide then 255 else 254)=toffoliCount (FrontierSW1591.endPacketS divide) ∧
     measurementCount (endPacket divide)=measurementCount (FrontierSW1591.endPacketS divide) := by
   simp only [endPacket,FrontierSW1591.endPacketS,(renameProgram_counts _ _).1,
     (renameProgram_counts _ _).2]
@@ -27546,7 +27547,7 @@ private theorem endpoint_resources :
     ControlLoan1589.center,renameProgram_counts,rename_gateSlots,and_self]
 
 theorem endPacket_resource_delta (divide : Bool) :
-    toffoliCount (Rolling1588Lifetime.endPacket divide)+254=
+    toffoliCount (Rolling1588Lifetime.endPacket divide)+(if divide then 255 else 254)=
       toffoliCount (FrontierSW1591.endPacketS divide) ∧
     measurementCount (Rolling1588Lifetime.endPacket divide)=measurementCount (FrontierSW1591.endPacketS divide) ∧
     gateSlots (Rolling1588Lifetime.endPacket divide)≤gateSlots (FrontierSW1591.endPacketS divide)+2+
@@ -27557,7 +27558,7 @@ theorem endPacket_resource_delta (divide : Bool) :
       (And.intro (Rolling1588Lifetime.rawEnd_counts divide).2 (Rolling1588Lifetime.rawEnd_slots divide))
 
 theorem endPacket_resource_true :
-    toffoliCount (Rolling1588Lifetime.endPacket true)+254=toffoliCount (FrontierSW1591.endPacketS true) ∧
+    toffoliCount (Rolling1588Lifetime.endPacket true)+255=toffoliCount (FrontierSW1591.endPacketS true) ∧
     measurementCount (Rolling1588Lifetime.endPacket true)=measurementCount (FrontierSW1591.endPacketS true) ∧
     gateSlots (Rolling1588Lifetime.endPacket true)≤gateSlots (FrontierSW1591.endPacketS true)+2+24155 := by
   have c:=Rolling1588Lifetime.rawEnd_counts true
@@ -27568,7 +27569,7 @@ theorem endPacket_resource_true :
   exact ⟨c.1,c.2,Rolling1588Lifetime.rawEnd_slots_true⟩
 
 private theorem entryTail_resource_delta :
-    toffoliCount entryTail=toffoliCount ControlLoan1589.entryTail+251 ∧
+    toffoliCount entryTail=toffoliCount ControlLoan1589.entryTail+250 ∧
     measurementCount entryTail=measurementCount ControlLoan1589.entryTail+101 ∧
     gateSlots entryTail≤gateSlots ControlLoan1589.entryTail+(49104+505*halfExtra true) := by
   have groups := groups_resource_delta true 1 101
@@ -27599,7 +27600,7 @@ private theorem exitHead_resource_delta :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryField_resource_delta :
-    toffoliCount entryField+230=toffoliCount ControlLoan1589.entryField ∧
+    toffoliCount entryField+231=toffoliCount ControlLoan1589.entryField ∧
     measurementCount entryField=measurementCount ControlLoan1589.entryField+106 ∧
     gateSlots entryField≤gateSlots ControlLoan1589.entryField+(50196+509*halfExtra true+9500) := by
   have pc := FourScratchWindow.counts
@@ -27737,11 +27738,11 @@ private theorem hosted_resource_sub (P Q HP HQ : Program) (t m sl : Nat)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryFieldHosted_resource_delta :
-    toffoliCount entryFieldHosted+230=toffoliCount ControlLoan1589.entryFieldHosted ∧
+    toffoliCount entryFieldHosted+231=toffoliCount ControlLoan1589.entryFieldHosted ∧
     measurementCount entryFieldHosted=measurementCount ControlLoan1589.entryFieldHosted+106 ∧
     gateSlots entryFieldHosted≤gateSlots ControlLoan1589.entryFieldHosted+(50196+509*halfExtra true+9500) :=
   hosted_resource_sub entryField ControlLoan1589.entryField entryFieldHosted ControlLoan1589.entryFieldHosted
-    230 106 (50196+509*halfExtra true+9500) rfl rfl entryField_resource_delta
+    231 106 (50196+509*halfExtra true+9500) rfl rfl entryField_resource_delta
 
 theorem exitFieldHosted_resource_delta :
     toffoliCount exitFieldHosted+230=toffoliCount ControlLoan1589.exitFieldHosted ∧
@@ -28169,7 +28170,7 @@ theorem exitSlotGrowth_eq : exitSlotGrowth=11230 := rfl
 /- The deltas are proved with numerals (`omega` over the symbolic `halfExtra` atom makes the kernel
 recurse too deeply on these two goals) and restated with the named growth constants. -/
 private theorem entryKernel_resource_delta_num :
-    toffoliCount entryKernel+240=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+241=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
     gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+12757) := by
   have first := firstPhase_metrics true
@@ -28184,7 +28185,7 @@ private theorem entryKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryKernel_resource_delta :
-    toffoliCount entryKernel+240=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+241=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
     gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+entrySlotGrowth) := by
   rw [entrySlotGrowth_eq]
@@ -31595,9 +31596,9 @@ private def DeltaSub (P Q : Program) (t m slots : Nat) : Prop :=
   toffoliCount P+t=toffoliCount Q ∧ measurementCount P=measurementCount Q+m ∧
     gateSlots P≤gateSlots Q+slots
 
-private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 240 106 (63762+Rolling1588.entrySlotGrowth))
+private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 241 106 (63762+Rolling1588.entrySlotGrowth))
     (L : ControlledPointLayout) (c : Fp) :
-    DeltaSub (division K L c) (division K0 L c) 240 106 (63762+Rolling1588.entrySlotGrowth) := by
+    DeltaSub (division K L c) (division K0 L c) 241 106 (63762+Rolling1588.entrySlotGrowth) := by
   simp only [DeltaSub,division,FrontierEntry1591Callers.entry,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -31609,9 +31610,9 @@ private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 240 106 (64865+Ro
 private theorem gen_delta_of_shapes (L : ControlledPointLayout)
     (D D0 : Fp→Program) (S S0 P P0 G G0 : Program) (cx cy : Fp)
     (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D0 S0 P0 cx cy)
-    (hd : ∀c,DeltaSub (D c) (D0 c) 240 106 (63762+Rolling1588.entrySlotGrowth))
+    (hd : ∀c,DeltaSub (D c) (D0 c) 241 106 (63762+Rolling1588.entrySlotGrowth))
     (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 240 106 (64865+Rolling1588.exitSlotGrowth)) :
-    DeltaSub G G0 480 212 (128627+Rolling1588.slotGrowth) := by
+    DeltaSub G G0 481 212 (128627+Rolling1588.slotGrowth) := by
   subst G G0
   have d:=hd (-cy)
   simp only [Delta,DeltaLe,DeltaSub,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
@@ -31620,7 +31621,7 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 480 212 (128627+Rolling1588.slotGrowth) := by
+    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 481 212 (128627+Rolling1588.slotGrowth) := by
   have squareCounts:=SquareCarryLoan719BF.counts_eq L
   have squareSlots:=SquareCarryLoan719BF.slots_eq L
   exact gen_delta_of_shapes L
@@ -31638,14 +31639,14 @@ private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
       Rolling1588.exitKernel_resource_delta L)
 
 theorem gen_resource_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+480=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+481=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ControlLoan1589BFFinal.gen L cx cy)+212 ∧
     gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+(128627+Rolling1588.slotGrowth) :=
   gen_delta L cx cy
 
 private theorem wrapper_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : DeltaSub P Q 480 212 (128627+Rolling1588.slotGrowth)) :
-    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 480 212 (128627+Rolling1588.slotGrowth) := by
+    (P Q : Program) (h : DeltaSub P Q 481 212 (128627+Rolling1588.slotGrowth)) :
+    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 481 212 (128627+Rolling1588.slotGrowth) := by
   simp only [DeltaSub,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -31795,7 +31796,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152443 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152442 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -31819,7 +31820,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152443,1499965,1588,50139199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152442,1499965,1588,50139199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -31836,7 +31837,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152443 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152442 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
