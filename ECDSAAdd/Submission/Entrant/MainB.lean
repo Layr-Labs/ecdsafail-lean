@@ -13476,6 +13476,207 @@ section
 set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
+
+/- Packed finite checker adapted from public submission 5502f192. -/
+section
+namespace ECDSAAdd.Entrant.CodecBitSliceVerify
+open ECDSAAdd Arithmetic
+open MeasuredCodec5 (bitsOf bitRun corrSim)
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySimpa false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 400000
+abbrev Cols := List Nat
+def get (s : Cols) (q : Wire) : Nat := (s[q]?).getD 0
+def step (mask : Nat) (i : Instr) (s : Cols) : Cols :=
+  match i with
+  | .X t => s.set t (get s t ^^^ mask)
+  | .CX c t => s.set t (get s t ^^^ get s c)
+  | .CCX a b t => s.set t (get s t ^^^ (get s a &&& get s b))
+  | .measureX t _ _ => s.set t 0
+def corr : List Correction → Cols → Nat
+  | [], _ => 0
+  | .Z t::cs, s => get s t ^^^ corr cs s
+  | .CZ a b::cs, s => (get s a &&& get s b) ^^^ corr cs s
+def safeStep (i : Instr) (s : Cols) : Bool :=
+  match i with
+  | .measureX t c0 c1 =>
+      let z := s.set t 0
+      (corr c0 z == 0) && (corr c1 z == get s t)
+  | _ => true
+def eval (mask : Nat) : Program → Cols → Bool × Cols
+  | [], s => (true,s)
+  | i::p,s => let rest:=eval mask p (step mask i s); (safeStep i s && rest.1, rest.2)
+
+
+def Rel (s : Cols) (x row : Nat) : Prop := ∀ q : Wire, x.testBit q=(get s q).testBit row
+
+theorem get_set (s : Cols) (t v : Nat) (ht : t<s.length) (q : Nat) :
+    get (s.set t v) q=if q=t then v else get s q := by
+  simp only [get,List.getElem?_set]
+  by_cases h:q=t
+  · subst q; simp [ht]
+  · simp [h,Ne.symm h]
+
+theorem flip_bit (x t q : Nat) :
+    (x ^^^ 2^t).testBit q=if q=t then !x.testBit q else x.testBit q := by
+  have h:=congrFun (MeasuredCodec5.bitsOf_flip x t) q
+  by_cases hq:q=t
+  · subst q; simpa [MeasuredCodec5.bitsOf,writeBit] using h
+  · simpa [MeasuredCodec5.bitsOf,writeBit,Function.update_of_ne hq,hq] using h
+
+theorem clear_bit (x t q : Nat) :
+    (MeasuredCodec5.clear x t).testBit q=if q=t then false else x.testBit q := by
+  have h:=congrFun (MeasuredCodec5.bitsOf_clear x t) q
+  by_cases hq:q=t
+  · subst q; simpa [MeasuredCodec5.bitsOf,writeBit] using h
+  · simpa [MeasuredCodec5.bitsOf,writeBit,Function.update_of_ne hq,hq] using h
+
+theorem rel_xor (s : Cols) (x row t v : Nat) (ht:t<s.length) (hr:Rel s x row) :
+    Rel (s.set t (get s t ^^^ v)) (if v.testBit row then x ^^^ 2^t else x) row := by
+  intro q
+  rw [get_set s t _ ht q]
+  by_cases hq:q=t
+  · subst q
+    cases hv:v.testBit row <;> simp [hv,Nat.testBit_xor,flip_bit,hr t]
+  · cases hv:v.testBit row <;> simp [hv,hq,Ne.symm hq,flip_bit,hr q]
+
+theorem rel_clear (s : Cols) (x row t : Nat) (ht:t<s.length) (hr:Rel s x row) :
+    Rel (s.set t 0) (MeasuredCodec5.clear x t) row := by
+  intro q
+  rw [get_set s t _ ht q,clear_bit]
+  by_cases hq:q=t <;> simp [hq,hr q]
+
+def target : Instr→Nat
+  | .X t => t
+  | .CX _ t => t
+  | .CCX _ _ t => t
+  | .measureX t _ _ => t
+
+theorem length_step (mask : Nat) (i : Instr) (s : Cols) : (step mask i s).length=s.length := by
+  cases i <;> simp [step]
+
+theorem step_rel (mask row : Nat) (hm:mask.testBit row=true) (i : Instr)
+    (s : Cols) (x : Nat) (ht:target i<s.length) (hr:Rel s x row) :
+    Rel (step mask i s) (MeasuredCodec5.bitStep i x) row := by
+  cases i with
+  | X t => simpa only [step,MeasuredCodec5.bitStep,hm,if_true] using rel_xor s x row t mask ht hr
+  | CX a t =>
+    simpa only [step,MeasuredCodec5.bitStep,hr a] using rel_xor s x row t (get s a) ht hr
+  | CCX a b t =>
+    simpa only [step,MeasuredCodec5.bitStep,Nat.testBit_and,hr a,hr b] using
+      rel_xor s x row t (get s a &&& get s b) ht hr
+  | measureX t c0 c1 => exact rel_clear s x row t ht hr
+
+
+
+theorem corr_rel (cs : List Correction) (s : Cols) (x row : Nat) (hr:Rel s x row) :
+    (corr cs s).testBit row=corrSim cs false x := by
+  induction cs with
+  | nil => simp [corr,MeasuredCodec5.corrSim]
+  | cons i cs ih =>
+    cases i with
+    | Z t =>
+      change (get s t ^^^ corr cs s).testBit row=corrSim cs (false ^^ x.testBit t) x
+      rw [Nat.testBit_xor,MeasuredCodec5.corrSim_xor]
+      simp only [Bool.false_xor,←hr t,ih]
+    | CZ a b =>
+      change ((get s a &&& get s b) ^^^ corr cs s).testBit row=
+        corrSim cs (false ^^ (x.testBit a && x.testBit b)) x
+      rw [Nat.testBit_xor,MeasuredCodec5.corrSim_xor,Nat.testBit_and]
+      simp only [Bool.false_xor,←hr a,←hr b,ih]
+
+theorem safeStep_sound (i : Instr) (s : Cols) (x row : Nat) (ht:target i<s.length)
+    (hr:Rel s x row) (hs:safeStep i s=true) : MeasuredCodec5.safeStep i x=true := by
+  cases i with
+  | X t => rfl
+  | CX a t => rfl
+  | CCX a b t => rfl
+  | measureX t c0 c1 =>
+    have hc:=rel_clear s x row t ht hr
+    have h0:=corr_rel c0 (s.set t 0) (MeasuredCodec5.clear x t) row hc
+    have h1:=corr_rel c1 (s.set t 0) (MeasuredCodec5.clear x t) row hc
+    have parts: corr c0 (s.set t 0)=0 ∧ corr c1 (s.set t 0)=get s t := by
+      simpa only [safeStep,Bool.and_eq_true,beq_iff_eq] using hs
+    rw [parts.1] at h0
+    rw [parts.2] at h1
+    simp only [MeasuredCodec5.safeStep,←h0,←h1,←hr t,Nat.zero_testBit,BEq.rfl,Bool.and_self]
+
+theorem eval_sound (mask row : Nat) (hm:mask.testBit row=true) (P : Program)
+    (s : Cols) (x : Nat) (bound:∀i∈P,target i<s.length) (hr:Rel s x row)
+    (hs:(eval mask P s).1=true) :
+    MeasuredCodec5.safe P x=true ∧ Rel (eval mask P s).2 (bitRun P x) row := by
+  induction P generalizing s x with
+  | nil => exact ⟨rfl,hr⟩
+  | cons i P ih =>
+    have parts:safeStep i s=true ∧ (eval mask P (step mask i s)).1=true := by
+      simpa only [eval,Bool.and_eq_true] using hs
+    have hi:=bound i (by simp)
+    have hr':=step_rel mask row hm i s x hi hr
+    have hb:∀j∈P,target j<(step mask i s).length := by
+      intro j hj
+      rw [length_step]
+      exact bound j (by simp [hj])
+    have rest:=ih (step mask i s) (MeasuredCodec5.bitStep i x) hb hr' parts.2
+    refine ⟨?_,rest.2⟩
+    simp only [MeasuredCodec5.safe,Bool.and_eq_true]
+    exact ⟨safeStep_sound i s x row hi hr parts.1,rest.1⟩
+
+
+
+def packBits : List Bool→Nat
+  | [] => 0
+  | b::bs => Nat.bit b (packBits bs)
+
+theorem pack_testBit (bs : List Bool) (r : Nat) :
+    (packBits bs).testBit r=(bs[r]?).getD false := by
+  induction bs generalizing r with
+  | nil => simp [packBits]
+  | cons b bs ih =>
+    cases r with
+    | zero => cases b <;> simp [packBits,Nat.bit,Nat.testBit_zero]
+    | succ r => simpa only [packBits,Nat.testBit_bit_succ,List.getElem?_cons_succ] using ih r
+
+theorem pack_rows (xs : List Nat) (q r : Nat) :
+    (packBits (xs.map (fun x=>x.testBit q))).testBit r=((xs[r]?).getD 0).testBit q := by
+  rw [pack_testBit,List.getElem?_map]
+  cases h:xs[r]? <;> simp
+
+
+
+def physicalCheck : Instr→Bool
+  | .X _ => true
+  | .CX c t => decide (c≠t)
+  | .CCX a b t => decide (a≠t ∧ b≠t)
+  | .measureX _ _ _ => true
+
+theorem physicalCheck_sound (i : Instr) (h:physicalCheck i=true) :
+    RecordedQuantum.PhysicalInstr (.gate i) := by
+  cases i <;> simp_all [physicalCheck,RecordedQuantum.PhysicalInstr,ProperGate]
+
+theorem physical_of_check (P : Program) (h:P.all physicalCheck=true) : GatePhysical P := by
+  intro i hi
+  exact physicalCheck_sound i ((List.all_eq_true.mp h) i hi)
+
+theorem wires_of_instructions (P : Program) (S : Finset Wire)
+    (h:∀i∈P,i.wires⊆S) : wires P⊆S := by
+  induction P with
+  | nil => simp [wires]
+  | cons i P ih =>
+    rw [wires]
+    exact Finset.union_subset (h i (by simp)) (ih (fun j hj=>h j (by simp [hj])))
+
+def boundCheck (n : Nat) (i : Instr) : Bool := decide (i.wires⊆Finset.range n)
+
+theorem support_of_check (P : Program) (n : Nat) (h:P.all (boundCheck n)=true) :
+    wires P⊆Finset.range n := by
+  apply wires_of_instructions
+  intro i hi
+  have z:boundCheck n i=true := (List.all_eq_true.mp h) i hi
+  exact of_decide_eq_true z
+
+end ECDSAAdd.Entrant.CodecBitSliceVerify
+end
 namespace ECDSAAdd.Entrant.FourScratchPrefix
 open Arithmetic Challenge RecordedQuantum Baselines MappedCompressed
 open MeasuredCodec5 (bitsOf bitRun safe run_sim sim_safe)
@@ -14500,21 +14701,120 @@ private theorem input_bits (s : State) (holes : Holes s.basis) :
     · exact holes.2.2.1.trans (Nat.testBit_lt_two_pow (by change rawCodeOf s.basis<1024; exact bound)).symm
     · exact holes.2.2.2.trans (Nat.testBit_lt_two_pow (by change rawCodeOf s.basis<2048; omega)).symm
 
-private theorem finite_strong : ∀x : Fin 1024,x.val.testBit 5=false → x.val.testBit 9=false →
-    safe V x.val=true ∧ Holes (bitsOf (bitRun V x.val)) ∧
-    (codeOf (bitsOf x.val)∈canonicalCodes → (bitRun V x.val).testBit 0=false) := by
+
+set_option linter.unnecessarySimpa false
+private def packedInputs : List Nat := [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 384, 385, 386, 387, 388, 389, 390, 391, 392, 393, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 448, 449, 450, 451, 452, 453, 454, 455, 456, 457, 458, 459, 460, 461, 462, 463, 464, 465, 466, 467, 468, 469, 470, 471, 472, 473, 474, 475, 476, 477, 478, 479]
+private def packedOutputs : List Nat := [1, 3, 0, 147, 4, 7, 148, 464, 479, 476, 478, 155, 12, 15, 331, 473, 17, 341, 342, 340, 338, 449, 133, 134, 24, 139, 137, 138, 346, 30, 141, 142, 65, 67, 64, 211, 68, 71, 212, 400, 415, 412, 414, 219, 76, 79, 267, 409, 81, 277, 278, 276, 274, 385, 197, 198, 88, 203, 201, 202, 282, 94, 205, 207, 129, 131, 128, 19, 132, 135, 21, 336, 351, 348, 350, 27, 140, 143, 459, 345, 145, 469, 470, 468, 466, 321, 5, 6, 152, 11, 8, 10, 474, 159, 13, 14, 193, 194, 192, 83, 196, 199, 85, 272, 287, 284, 286, 91, 204, 206, 395, 281, 209, 405, 406, 404, 402, 257, 69, 70, 216, 75, 73, 74, 410, 223, 77, 78, 215, 213, 214, 403, 260, 263, 66, 208, 265, 266, 264, 411, 268, 270, 413, 217, 273, 387, 384, 386, 82, 279, 389, 390, 280, 93, 95, 92, 90, 200, 397, 399, 151, 149, 150, 467, 324, 327, 2, 144, 329, 330, 328, 475, 332, 334, 477, 153, 337, 451, 448, 450, 18, 343, 453, 454, 344, 28, 31, 29, 26, 136, 461, 463, 87, 84, 86, 275, 388, 391, 195, 80, 393, 394, 392, 283, 396, 398, 285, 89, 401, 259, 256, 258, 210, 407, 261, 262, 408, 220, 222, 221, 218, 72, 269, 271, 23, 20, 22, 339, 452, 455, 130, 16, 457, 458, 456, 347, 460, 462, 349, 25, 465, 323, 320, 322, 146, 471, 325, 326, 472, 156, 158, 157, 154, 9, 333, 335]
+private def packedCanonical : List Nat := [2, 4, 6, 7, 9, 10, 12, 18, 20, 23, 24, 27, 28, 29, 31, 66, 68, 70, 71, 73, 74, 76, 82, 84, 87, 88, 91, 92, 93, 130, 132, 135, 137, 138, 140, 146, 147, 148, 151, 152, 156, 159, 194, 196, 199, 201, 202, 204, 205, 210, 211, 212, 215, 216, 219, 220, 223, 258, 260, 262, 263, 265, 266, 268, 274, 276, 279, 280, 283, 284, 285, 322, 324, 326, 327, 329, 330, 332, 333, 338, 339, 340, 343, 344, 345, 348, 349, 386, 388, 391, 393, 394, 396, 397, 402, 403, 404, 407, 408, 409, 412, 413, 450, 452, 454, 455, 457, 458, 460, 466, 468, 471, 472, 476]
+private def packedInputCols : CodecBitSliceVerify.Cols := [77194726158210796949047323339125271902179989777093709359638389338608753093290, 92633671389852956338856788006950326282615987732512451231566067206330503711948, 108980789870415242751596221184647442685430573802955824978313020242741769072880, 115341536360906404779899502576747487978354537254490211650198994186870666100480, 115790322417210952336529717160220497262186272106556906860092653394915770695680, 0, 115792089210356248762697446947946071893095522863849111501270640965525260206080, 115792089237316195417293883273301227089774477609353836086800156426807153786880, 115792089237316195423570985008687907852929702298719625575994209400481361428480, 0, 0, 0]
+private def packedOutputCols : CodecBitSliceVerify.Cols := [105112887108207888637896796074297502132052085437705397731186239260267678787883, 67271227972015760195763907244379945970756659812637042064093044165065242340650, 93572995050837801997467739716002149066254803970566184644214138601368128993136, 115341536360906404779899502576747487978354537254490211650198994186870666100480, 14109658020082291145573351745910169109912721957044236139382372130126982778824, 0, 87719534263131653616506830107750507638606860195018697330062118372052335249280, 14108656431103426636295152564849561744999090671288273333202867105401292230600, 87719534277019298199594886383495134747702715031283796901093312286534747998080, 0, 0, 0]
+private def packedCanonicalCols : CodecBitSliceVerify.Cols := [2721221947345700883515840173730328, 3473583778420605128065998787103405, 14678379892064442194143672504120142, 16149570448998187015951149444922480, 20125201276323126292996444932571008, 0, 20764116986478541468057888610025472, 20769187279396805747564638493474816, 20769187434139310370006797241024512, 0, 0, 0]
+private def packedInput (r : Fin 256) := (packedInputs[r.val]?).getD 0
+private def packedOutput (r : Fin 256) := (packedOutputs[r.val]?).getD 0
+private def packedCanon (r : Fin 114) := (packedCanonical[r.val]?).getD 0
+
+private theorem packed_rel {n : Nat} (rows : List Nat) (cs : CodecBitSliceVerify.Cols)
+    (len : cs.length=12)
+    (correct : ∀q : Fin 12,CodecBitSliceVerify.get cs q.val=CodecBitSliceVerify.packBits (rows.map (fun x=>x.testBit q.val)))
+    (bounds : ∀r : Fin n,(rows[r.val]?).getD 0<2^12) (r : Fin n) :
+    CodecBitSliceVerify.Rel cs ((rows[r.val]?).getD 0) r.val := by
+  intro q
+  by_cases hq:q<12
+  · rw [correct ⟨q,hq⟩,CodecBitSliceVerify.pack_rows]
+  · have q12:12≤q:=Nat.le_of_not_gt hq
+    have qb:cs.length≤q:=by rw [len];exact q12
+    have z:CodecBitSliceVerify.get cs q=0:=by simp only [CodecBitSliceVerify.get,List.getElem?_eq_none qb,Option.getD_none]
+    rw [z,Nat.zero_testBit]
+    exact Nat.testBit_lt_two_pow (lt_of_lt_of_le (bounds r) (Nat.pow_le_pow_right (by decide) q12))
+
+private theorem packed_input_rel (r : Fin 256) : CodecBitSliceVerify.Rel packedInputCols (packedInput r) r.val :=
+  packed_rel packedInputs packedInputCols (by decide +kernel) (by decide +kernel) (by decide +kernel) r
+private theorem packed_output_rel (r : Fin 256) : CodecBitSliceVerify.Rel packedOutputCols (packedOutput r) r.val :=
+  packed_rel packedOutputs packedOutputCols (by decide +kernel) (by decide +kernel) (by decide +kernel) r
+private theorem packed_canon_rel (r : Fin 114) : CodecBitSliceVerify.Rel packedCanonicalCols (packedCanon r) r.val :=
+  packed_rel packedCanonical packedCanonicalCols (by decide +kernel) (by decide +kernel) (by decide +kernel) r
+
+private theorem packed_v_check : CodecBitSliceVerify.eval (2^256-1) V packedInputCols=(true,packedOutputCols) := by decide +kernel
+private theorem packed_i_check : CodecBitSliceVerify.eval (2^256-1) invV packedOutputCols=(true,packedInputCols) := by decide +kernel
+private theorem packed_c_check :
+    (CodecBitSliceVerify.eval (2^114-1) V packedCanonicalCols).1=true ∧
+    (CodecBitSliceVerify.eval (2^114-1) clearV packedCanonicalCols).1=true ∧
+    (CodecBitSliceVerify.eval (2^114-1) V packedCanonicalCols).2=(CodecBitSliceVerify.eval (2^114-1) clearV packedCanonicalCols).2 := by decide +kernel
+
+private theorem packed_mask256 : ∀r : Fin 256,(2^256-1).testBit r.val=true := by decide +kernel
+private theorem packed_mask114 : ∀r : Fin 114,(2^114-1).testBit r.val=true := by decide +kernel
+
+private theorem packed_v_row (r : Fin 256) : safe V (packedInput r)=true ∧ bitRun V (packedInput r)=packedOutput r := by
+  have h:=CodecBitSliceVerify.eval_sound (2^256-1) r.val (packed_mask256 r) V packedInputCols (packedInput r)
+    (by decide +kernel) (packed_input_rel r) (congrArg Prod.fst packed_v_check)
+  refine ⟨h.1,?_⟩
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have z:=h.2 q
+  rw [packed_v_check] at z
+  exact z.trans (packed_output_rel r q).symm
+private theorem packed_i_row (r : Fin 256) : safe invV (packedOutput r)=true ∧ bitRun invV (packedOutput r)=packedInput r := by
+  have h:=CodecBitSliceVerify.eval_sound (2^256-1) r.val (packed_mask256 r) invV packedOutputCols (packedOutput r)
+    (by decide +kernel) (packed_output_rel r) (congrArg Prod.fst packed_i_check)
+  refine ⟨h.1,?_⟩
+  apply Nat.eq_of_testBit_eq
+  intro q
+  have z:=h.2 q
+  rw [packed_i_check] at z
+  exact z.trans (packed_input_rel r q).symm
+private theorem packed_c_row (r : Fin 114) : safe clearV (packedCanon r)=true ∧ bitRun clearV (packedCanon r)=bitRun V (packedCanon r) := by
+  have hm : (2^114-1).testBit r.val=true := packed_mask114 r
+  have a:=CodecBitSliceVerify.eval_sound (2^114-1) r.val hm V packedCanonicalCols (packedCanon r) (by decide +kernel) (packed_canon_rel r) packed_c_check.1
+  have b:=CodecBitSliceVerify.eval_sound (2^114-1) r.val hm clearV packedCanonicalCols (packedCanon r) (by decide +kernel) (packed_canon_rel r) packed_c_check.2.1
+  refine ⟨b.1,?_⟩
+  apply Nat.eq_of_testBit_eq
+  intro q
+  exact (b.2 q).trans ((congrArg (fun cs : CodecBitSliceVerify.Cols=>(CodecBitSliceVerify.get cs q).testBit r.val) packed_c_check.2.2).symm.trans (a.2 q).symm)
+
+private theorem packed_code_lt : ∀x : Fin 1024,codeOf (bitsOf x.val)<256 := by decide +kernel
+private theorem packed_index_eq : ∀x : Fin 1024,x.val.testBit 5=false → x.val.testBit 9=false →
+    packedInput ⟨codeOf (bitsOf x.val),packed_code_lt x⟩=x.val := by decide +kernel
+private theorem packed_index (x : Fin 1024) (h5:x.val.testBit 5=false) (h9:x.val.testBit 9=false) :
+    ∃r : Fin 256,packedInput r=x.val :=
+  ⟨⟨codeOf (bitsOf x.val),packed_code_lt x⟩,packed_index_eq x h5 h9⟩
+private theorem packed_canon_eq : ∀x : Fin 1024,x.val.testBit 5=false → x.val.testBit 9=false → codeOf (bitsOf x.val)∈canonicalCodes →
+    (packedCanonical[canonicalCodes.idxOf (codeOf (bitsOf x.val))]?).getD 0=x.val := by decide +kernel
+private theorem packed_canon_index (x : Fin 1024) (h5:x.val.testBit 5=false) (h9:x.val.testBit 9=false)
+    (member:codeOf (bitsOf x.val)∈canonicalCodes) : ∃r : Fin 114,packedCanon r=x.val := by
+  have hk:=List.idxOf_lt_length_of_mem member
+  have len:canonicalCodes.length=114:=by decide +kernel
+  let r : Fin 114:=⟨_,by simpa only [len] using hk⟩
+  exact ⟨r,packed_canon_eq x h5 h9 member⟩
+private theorem packed_output_properties : ∀r : Fin 256,Holes (bitsOf (packedOutput r)) ∧ (codeOf (bitsOf (packedInput r))∈canonicalCodes → (packedOutput r).testBit 0=false) := by
   unfold Holes
   decide +kernel
 
+private theorem finite_strong : ∀x : Fin 1024,x.val.testBit 5=false → x.val.testBit 9=false →
+    safe V x.val=true ∧ Holes (bitsOf (bitRun V x.val)) ∧
+    (codeOf (bitsOf x.val)∈canonicalCodes → (bitRun V x.val).testBit 0=false) := by
+  intro x h5 h9
+  obtain ⟨r,hr⟩:=packed_index x h5 h9
+  have hv:=packed_v_row r
+  have hp:=packed_output_properties r
+  rw [hr] at hv hp
+  refine ⟨hv.1,?_,?_⟩
+  · simpa only [hv.2] using hp.1
+  · simpa only [hv.2] using hp.2
 private theorem finite_inverse : ∀x : Fin 1024,x.val.testBit 5=false → x.val.testBit 9=false →
     codeOf (bitsOf x.val)∈canonicalCodes →
     safe invV (bitRun V x.val)=true ∧ bitRun invV (bitRun V x.val)=x.val := by
-  decide +kernel
-
+  intro x h5 h9 _
+  obtain ⟨r,hr⟩:=packed_index x h5 h9
+  have hv:=packed_v_row r
+  have hi:=packed_i_row r
+  rw [hr] at hv hi
+  simpa only [hv.2] using hi
 private theorem finite_clear : ∀x : Fin 1024,x.val.testBit 5=false → x.val.testBit 9=false →
     codeOf (bitsOf x.val)∈canonicalCodes →
     safe clearV x.val=true ∧ bitRun clearV x.val=bitRun V x.val := by
-  decide +kernel
+  intro x h5 h9 member
+  obtain ⟨r,hr⟩:=packed_canon_index x h5 h9 member
+  simpa only [hr] using packed_c_row r
 
 private theorem codes_congr (s : State) (holes : Holes s.basis) :
     codeOf (bitsOf (rawCodeOf s.basis))=codeOf s.basis := by
