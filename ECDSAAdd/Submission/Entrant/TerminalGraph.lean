@@ -1159,6 +1159,162 @@ theorem compareSelected_correct (xs carry : List Wire) (cin control target : Wir
             apply decide_eq_decide.mpr
             simpa only [regValue,List.foldr_cons,Bool.toNat,Bool.cond_eq_ite,K] using thr
           rw [pred]
+
+/-- Compute the literal borrow chain, or erase its carries from high to low. -/
+def borrowPath (erase : Bool) : List Wire → List Wire → Wire → Nat → Program
+  | x::xs,c::cs,cin,k =>
+    if erase then
+      borrowPath true xs cs c (k/2) ++ constantBorrowErase (decide (k%2=1)) x cin c
+    else
+      constantBorrow (decide (k%2=1)) x cin c ++ borrowPath false xs cs c (k/2)
+  | _,_,_,_ => []
+
+theorem compareSelected_split (xs carry : List Wire) (cin control target : Wire) (k : Nat)
+    (hpos : 0<xs.length) (hc : carry.length=xs.length) :
+    compareSelected xs carry cin control target k =
+      borrowPath false xs carry cin k ++
+        ([.CCX control (carry.getLastD cin) target] ++ borrowPath true xs carry cin k) := by
+  induction xs generalizing carry cin k with
+  | nil => simp at hpos
+  | cons x xs ih =>
+    cases carry with
+    | nil => simp at hc
+    | cons c cs =>
+      cases xs with
+      | nil =>
+        have hcs : cs=[] := List.eq_nil_of_length_eq_zero (by simpa using hc)
+        subst cs
+        simp [compareSelected,selectedBorrow,borrowPath]
+      | cons x' xs =>
+        have hcs : cs≠[] := by intro h; simp [h] at hc
+        have step := ih cs c (k/2) (by simp) (by simpa using hc)
+        cases cs with
+        | nil => exact False.elim (hcs rfl)
+        | cons d ds =>
+          simp only [compareSelected,step,borrowPath,Bool.false_eq_true,if_false,if_true,
+            List.getLastD_cons,List.append_assoc]
+
+theorem borrowPath_zero (xs carry : List Wire) (cin : Wire) (k : Nat) :
+    measurementCount (borrowPath false xs carry cin k)=0 := by
+  induction xs generalizing carry cin k with
+  | nil => rfl
+  | cons x xs ih =>
+    cases carry with
+    | nil => rfl
+    | cons c cs =>
+      simp only [borrowPath,Bool.false_eq_true,if_false,measurementCount_append,
+        (constantBorrow_counts _ x cin c).2.1,ih,Nat.zero_add]
+
+theorem borrowPath_wires (erase : Bool) (xs carry : List Wire) (cin : Wire) (k : Nat) :
+    wires (borrowPath erase xs carry cin k)⊆(cin::(xs++carry)).toFinset := by
+  induction xs generalizing carry cin k with
+  | nil => simp [borrowPath,wires]
+  | cons x xs ih =>
+    cases carry with
+    | nil => simp [borrowPath,wires]
+    | cons c cs =>
+      have a := constantBorrow_wires_subset (decide (k%2=1)) x cin c
+      have b := ih cs c (k/2)
+      intro q hq
+      cases erase
+      · simp only [borrowPath,Bool.false_eq_true,if_false,wires_append,Finset.mem_union] at hq
+        rcases hq with hq|hq
+        · have h := a.1 hq
+          simp only [List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at h ⊢
+          tauto
+        · have h := b hq
+          simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
+          tauto
+      · simp only [borrowPath,if_true,wires_append,Finset.mem_union] at hq
+        rcases hq with hq|hq
+        · have h := b hq
+          simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
+          tauto
+        · have h := a.2 hq
+          simp only [List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at h ⊢
+          tauto
+
+def eraseSelected (xs carry : List Wire) (cin control target : Wire) (k : Nat) : Program :=
+  borrowPath false xs carry cin k ++
+    ([.measureX target [] [.CZ control (carry.getLastD cin)]] ++ borrowPath true xs carry cin k)
+
+theorem eraseSelected_counts (xs carry : List Wire) (cin control target : Wire) (k : Nat)
+    (hpos : 0<xs.length) (hc : carry.length=xs.length) :
+    toffoliCount (eraseSelected xs carry cin control target k)=xs.length ∧
+    measurementCount (eraseSelected xs carry cin control target k)=xs.length+1 := by
+  have old := compareSelected_counts xs carry cin control target k hpos hc
+  rw [compareSelected_split xs carry cin control target k hpos hc] at old
+  simp only [eraseSelected,toffoliCount_append,measurementCount_append,toffoliCount,
+    measurementCount,Nat.add_zero,Nat.zero_add] at old ⊢
+  exact ⟨by omega, by omega⟩
+
+theorem eraseSelected_correct (xs carry : List Wire) (cin control target : Wire) (k : Nat)
+    (hn : (control::target::cin::(xs++carry)).Nodup) (hpos : 0<xs.length)
+    (hc : carry.length=xs.length) (hk : k<2^xs.length)
+    (s : State) (m : List Bool) (hclean : ∀q∈carry,s.basis q=false)
+    (known : s.basis target=(s.basis control &&
+      decide (regValue xs s.basis<k+(s.basis cin).toNat))) :
+    run (eraseSelected xs carry cin control target k) m s =
+      ⟨s.phase,writeBit s.basis target false⟩ := by
+  let c := carry.getLastD cin
+  let t := run (borrowPath false xs carry cin k) [] s
+  let u := run [.CCX control c target] [] t
+  let r := m.drop 1
+  have ht : target ∉ cin::(xs++carry) :=
+    (List.nodup_cons.mp (List.nodup_cons.mp hn).2).1
+  have hctl : control ≠ target := fun e => (List.nodup_cons.mp hn).1 (by simp [e])
+  have hcpos : carry ≠ [] := by
+    intro e
+    rw [e] at hc
+    simp only [List.length_nil] at hc
+    omega
+  have cm : c∈carry := by
+    cases carry with
+    | nil => exact (hcpos rfl).elim
+    | cons d ds => exact List.getLast_mem (List.cons_ne_nil d ds)
+  have hct : c≠target := by
+    intro e
+    apply ht
+    simp [←e,cm]
+  have free : target ∉ wires (borrowPath true xs carry cin k) := fun h =>
+    ht (List.mem_toFinset.mp (borrowPath_wires true xs carry cin k h))
+  have old := compareSelected_correct xs carry cin control target k hn hpos hc hk s r hclean
+  have eq : run (compareSelected xs carry cin control target k) r s =
+      run (borrowPath true xs carry cin k) r u := by
+    rw [compareSelected_split xs carry cin control target k hpos hc,run_append,borrowPath_zero,
+      List.take_zero,List.drop_zero,run_append]
+    rfl
+  have zero : u.basis target=false := by
+    have z := old.2.2
+    rw [←known, Bool.xor_self,eq,run_preserves_outside _ _ _ _ free] at z
+    exact z
+  have prod : t.basis target=(t.basis control && t.basis c) := by
+    change (writeBit t.basis target (t.basis target ^^ (t.basis control && t.basis c))) target =
+      false at zero
+    rw [writeBit,Function.update_self] at zero
+    exact (show ∀ a b : Bool, (a ^^ b) = false → a=b from by decide) _ _ zero
+  have mid (record : List Bool) : run [.measureX target [] [.CZ control c]] record t=u := by
+    have ueq : u=⟨t.phase,writeBit t.basis target false⟩ := by
+      simp [u,run,prod]
+    rw [ueq]
+    cases record with
+    | nil => simp [run,measureAndCorrect,correct]
+    | cons b bs => cases b <;> simp [run,measureAndCorrect,correct,writeBit,hctl,hct,prod]
+  have new_eq : run (eraseSelected xs carry cin control target k) m s =
+      run (compareSelected xs carry cin control target k) r s := by
+    rw [eraseSelected,run_append,borrowPath_zero,List.take_zero,List.drop_zero,run_append,eq]
+    change run (borrowPath true xs carry cin k) r
+      (run [.measureX target [] [.CZ control c]] (m.take 1) t) = _
+    rw [mid]
+  rw [new_eq]
+  apply State.extensionality
+  · exact old.1
+  · funext q
+    by_cases hq : q=target
+    · subst q
+      simp [writeBit,old.2.2,known]
+    · simpa [writeBit,hq] using old.2.1 q hq
+
 end ECDSAAdd.Entrant.TerminalGraph
 
 
@@ -1224,9 +1380,9 @@ def restoreSource (L : DecoderLayout) : Program:=(L.y.take 255).map (fun q=>.CX 
 def copySource (L : DecoderLayout) : Program:=(L.y.zip L.r).map (fun q=>.CX q.1 q.2)
 
 def clearQuotient (L : DecoderLayout) : Program:=
- [.X (L.Y 255),.X L.sigma]++
-   compareSelected (L.y.take 255) L.carry (L.Y 255) L.sigma L.h (((ECDSAAdd.p-1)/2)/3)++
-     [.CX L.sigma L.h,.X L.sigma,.X (L.Y 255)]
+ [.X (L.Y 255),.X L.sigma,.CX L.sigma L.h]++
+   eraseSelected (L.y.take 255) L.carry (L.Y 255) L.sigma L.h (((ECDSAAdd.p-1)/2)/3)++
+     [.X L.sigma,.X (L.Y 255)]
 
 def decoder (L : DecoderLayout) : Program:=
  normalize L++[.CX (L.R 0) L.h,.CX (L.Y 0) L.h]++biasCompute L++
@@ -1313,15 +1469,15 @@ theorem simple_counts (L : DecoderLayout) :
 
 
 theorem clearQuotient_counts (L : DecoderLayout) (hw : L.Widths) :
- toffoliCount (clearQuotient L)=256 ∧ measurementCount (clearQuotient L)=255 := by
+ toffoliCount (clearQuotient L)=255 ∧ measurementCount (clearQuotient L)=256 := by
  have yl : (L.y.take 255).length=255:=by simp [hw.1]
- have c:=compareSelected_counts (L.y.take 255) L.carry (L.Y 255) L.sigma L.h (((ECDSAAdd.p-1)/2)/3)
+ have c:=eraseSelected_counts (L.y.take 255) L.carry (L.Y 255) L.sigma L.h (((ECDSAAdd.p-1)/2)/3)
    (by omega) (by rw [hw.2.2,yl])
  simp only [clearQuotient,toffoliCount_append,measurementCount_append,c.1,c.2,yl]
  simp [toffoliCount,measurementCount]
 
 theorem decoder_counts (L : DecoderLayout) (hw : L.Widths) :
- toffoliCount (decoder L)=512 ∧ measurementCount (decoder L)=766 := by
+ toffoliCount (decoder L)=511 ∧ measurementCount (decoder L)=767 := by
  have a:=flat_counts (List.range 255) (addCarry L) 1 0 (fun i _=>(local_counts L i).1)
  have b:=flat_counts (List.range' 1 255) (streamCarry L) 0 0 (fun i _=>(local_counts L i).2.2.1)
  have c:=flat_counts (List.range' 1 255).reverse (eraseCorrectionCarry L) 0 1 (fun i _=>(local_counts L i).2.2.2)
@@ -1591,67 +1747,66 @@ theorem clearQuotient_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.
  have yz:=sigma_ne_y L hw hn 255 (by omega)
  have hs : L.h≠L.sigma := by
    intro e
-   have h:=List.nodup_iff_count.mp nd L.h
-   simp only [List.count_cons,List.count_append,List.count_nil] at h
-   simp only [e,beq_self_eq_true,if_true] at h
-   omega
+   exact (List.nodup_cons.mp nd).1 (by simp [e])
  have hy : L.h≠L.Y 255 := by
    intro e
-   have h:=List.nodup_iff_count.mp nd L.h
-   simp only [List.count_cons,List.count_append,List.count_nil] at h
-   simp only [e,beq_self_eq_true,if_true] at h
-   omega
- let t : State:=⟨s.phase,writeBit (writeBit s.basis (L.Y 255) (!s.basis (L.Y 255))) L.sigma (!s.basis L.sigma)⟩
- have pre (r : List Bool) : run [.X (L.Y 255),.X L.sigma] r s=t := by
-   simp [run,t,writeBit,yz]
- have tclean : ∀q∈L.carry,t.basis q=false := by
+   exact (List.nodup_cons.mp (List.nodup_cons.mp nd).2).1 (by simp [e])
+ let t : State := ⟨s.phase,writeBit (writeBit s.basis (L.Y 255) (!s.basis (L.Y 255)))
+   L.sigma (!s.basis L.sigma)⟩
+ let u : State := ⟨s.phase,writeBit t.basis L.h (t.basis L.h ^^ t.basis L.sigma)⟩
+ have pre (r : List Bool) : run [.X (L.Y 255),.X L.sigma,.CX L.sigma L.h] r s=u := by
+   simp [run,u,t,writeBit,yz]
+ have uclean : ∀q∈L.carry,u.basis q=false := by
    intro q hq
    have qy:q≠L.Y 255:=fun e=>carry_source_away L hn _ (Or.inl (y_mem L hw 255 (by omega))) (e ▸ hq)
    have qs:q≠L.sigma:=fun e=>carry_source_away L hn _ (Or.inr (Or.inl rfl)) (e ▸ hq)
-   simpa only [t,writeBit,Function.update_of_ne qs,Function.update_of_ne qy] using clean q hq
- have tv : regValue (L.y.take 255) t.basis=regValue (L.y.take 255) s.basis := by
+   have qh:q≠L.h:=fun e=>carry_source_away L hn _ (Or.inr (Or.inr (Or.inl rfl))) (e ▸ hq)
+   simpa only [u,t,writeBit,Function.update_of_ne qh,Function.update_of_ne qs,
+     Function.update_of_ne qy] using clean q hq
+ have uv : regValue (L.y.take 255) u.basis=regValue (L.y.take 255) s.basis := by
    apply regValue_congr
    intro q hq
    have qs:q≠L.sigma := fun e => (List.nodup_cons.mp nd).1 (by simp [←e,hq])
+   have qh:q≠L.h := fun e => (List.nodup_cons.mp (List.nodup_cons.mp nd).2).1 (by simp [←e,hq])
    have qy:q≠L.Y 255 := fun e =>
      (List.nodup_cons.mp (List.nodup_cons.mp (List.nodup_cons.mp nd).2).2).1 (by simp [←e,hq])
-   simp [t,writeBit,qs,qy]
+   simp [u,t,writeBit,qh,qs,qy]
  let k:=((p-1)/2)/3
- let v : State:=⟨s.phase,writeBit t.basis L.h
-   (s.basis L.h ^^ (!s.basis L.sigma && decide (regValue (L.y.take 255) s.basis < k+(!s.basis (L.Y 255)).toNat)))⟩
+ have uh : u.basis L.h = (s.basis L.h ^^ !s.basis L.sigma) := by
+   simp [u,t,writeBit,hs,hy]
+ have us : u.basis L.sigma = !s.basis L.sigma := by
+   simp [u,t,writeBit,Ne.symm hs]
+ have uy : u.basis (L.Y 255) = !s.basis (L.Y 255) := by
+   simp [u,t,writeBit,Ne.symm hy,Ne.symm yz]
+ have known : u.basis L.h = (u.basis L.sigma &&
+     decide (regValue (L.y.take 255) u.basis<k+(u.basis (L.Y 255)).toNat)) := by
+   have q : s.basis L.h = (!s.basis L.sigma &&
+     !(decide (regValue (L.y.take 255) s.basis < k+(!s.basis (L.Y 255)).toNat))) := quotient
+   rw [uh,us,uy,uv,q]
+   exact (show ∀ a b : Bool, ((a && !b) ^^ a) = (a && b) from by decide) _ _
+ let v : State := ⟨s.phase,writeBit u.basis L.h false⟩
  have mid (r : List Bool) :
-   run (compareSelected (L.y.take 255) L.carry (L.Y 255) L.sigma L.h k) r t=v := by
-   have c:=compareSelected_correct (L.y.take 255) L.carry (L.Y 255) L.sigma L.h k nd
-     (by simp [hw.1]) (by simp [hw.1,hw.2.2]) (by norm_num [k,p,hw.1]) t r tclean
-   rw [tv] at c
-   apply state_ext
-   · exact c.1
-   · intro q
-     by_cases eq:q=L.h
-     · subst q
-       simpa [v,t,writeBit,hs,hy,Ne.symm yz,tv] using c.2.2
-     · simpa [v,writeBit,eq] using c.2.1 q eq
- have post (r : List Bool) : run [.CX L.sigma L.h,.X L.sigma,.X (L.Y 255)] r v=
+   run (eraseSelected (L.y.take 255) L.carry (L.Y 255) L.sigma L.h k) r u=v :=
+   eraseSelected_correct _ _ _ _ _ _ nd (by simp [hw.1]) (by simp [hw.1,hw.2.2])
+     (by norm_num [k,p,hw.1]) u r uclean known
+ have post (r : List Bool) : run [.X L.sigma,.X (L.Y 255)] r v=
    ⟨s.phase,writeBit s.basis L.h false⟩ := by
    apply state_ext
-   · simp [run,v,t]
+   · simp [run,v]
    · intro q
      by_cases qh:q=L.h
      · subst q
-       simp only [run,v,t,writeBit,Function.update_apply]
-       simp only [hs,hy,Ne.symm hs,Ne.symm hy,yz,Ne.symm yz,if_false,if_true]
-       rw [quotient]
-       cases s.basis L.sigma <;>
-         cases decide (regValue (L.y.take 255) s.basis < k+(!s.basis (L.Y 255)).toNat) <;>
-         simp_all [k]
+       simp [run,v,u,t,writeBit,hs,hy,yz,Ne.symm hs,Ne.symm hy,Ne.symm yz]
      · by_cases qs:q=L.sigma
-       · subst q;simp [run,v,t,writeBit,hs,Ne.symm hs,yz,Ne.symm yz]
+       · subst q
+         simp [run,v,u,t,writeBit,hs,hy,yz,Ne.symm hs,Ne.symm hy,Ne.symm yz]
        · by_cases qy:q=L.Y 255
-         · subst q;simp [run,v,t,writeBit,hy,Ne.symm hy,yz,Ne.symm yz]
-         · simp [run,v,t,writeBit,qh,qs,qy]
- have result:=run_three_states [.X (L.Y 255),.X L.sigma]
-   (compareSelected (L.y.take 255) L.carry (L.Y 255) L.sigma L.h k)
-   [.CX L.sigma L.h,.X L.sigma,.X (L.Y 255)]
+         · subst q
+           simp [run,v,u,t,writeBit,hs,hy,yz,Ne.symm hs,Ne.symm hy,Ne.symm yz]
+         · simp [run,v,u,t,writeBit,qh,qs,qy]
+ have result:=run_three_states [.X (L.Y 255),.X L.sigma,.CX L.sigma L.h]
+   (eraseSelected (L.y.take 255) L.carry (L.Y 255) L.sigma L.h k)
+   [.X L.sigma,.X (L.Y 255)]
    (fun a d => a=s → d=⟨s.phase,writeBit s.basis L.h false⟩) (by
      intro a b c d m1 m2 m3 hab hbc hcd eq
      subst a
@@ -3832,8 +3987,8 @@ theorem endpoint_frame (divide : Bool) (w : Nat → Wire) (b g sign : Wire) (ig 
  exact transcriptSelectWindow_pairFrame b g sign ig _ _ nd hb hg hs origin hz _ _ _ _ _ body
 
 theorem half_counts (divide : Bool) (w : Nat→Wire) (sign : Wire) :
- toffoliCount (half divide w sign)=(if divide then 512 else 1020) ∧
- measurementCount (half divide w sign)=(if divide then 766 else 1021) := by
+ toffoliCount (half divide w sign)=(if divide then 511 else 1020) ∧
+ measurementCount (half divide w sign)=(if divide then 767 else 1021) := by
  cases divide
  · exact Q6EndpointCell.half_counts false w sign
  · exact decoder_counts _ (ofBalanced_widths _ (Q6EndpointCell.ports_widths w sign))
@@ -4040,7 +4195,7 @@ attribute [local irreducible] GatePhysical actualDecoder TerminalGraph.decoder
 theorem physical : GatePhysical (actualDecoder 2409) :=
  physicalGateCheck_correct _ (by decide +kernel)
 
-theorem slots : Challenge.gateSlots (actualDecoder 2409)≤23900 := by
+theorem slots : Challenge.gateSlots (actualDecoder 2409)≤23901 := by
  decide +kernel
 end ECDSAAdd.Entrant.TerminalGraphPhysicalOnly
 end
