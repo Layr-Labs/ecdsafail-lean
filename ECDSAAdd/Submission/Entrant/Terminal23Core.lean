@@ -5051,8 +5051,14 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 attribute [local irreducible] run wires
 
+def liveCheck (i : Instr) : Bool :=
+  decide (i.wires ⊆ ((Finset.range 40).erase 38).erase 39)
+
 theorem program_live : wires TerminalInverse23.program ⊆ ((Finset.range 40).erase 38).erase 39 := by
-  decide +kernel
+  apply CodecBitSliceVerify.wires_of_instructions
+  intro i hi
+  have checked : TerminalInverse23.program.all liveCheck = true := by decide +kernel
+  exact of_decide_eq_true ((List.all_eq_true.mp checked) i hi)
 
 def leftIndices : List Nat := [0, 21, 18, 15, 12, 1, 0, 61, 107, 877, 2, 209, 262, 376, 449, 527, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 5, 3, 3, 611, 698, 784, 0, 0]
 def rightIndices : List Nat := [2, 2, 13, 14, 15, 16, 17, 1, 1, 0, 7, 8, 9, 10, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 39, 21, 27, 33, 0, 0]
