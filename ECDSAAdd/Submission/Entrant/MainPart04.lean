@@ -11,7 +11,7 @@ set_option linter.unusedVariables false
 set_option linter.unusedTactic false
 set_option linter.unreachableTactic false
 set_option linter.unnecessarySeqFocus false
-attribute [local irreducible] ECDSAAdd.Entrant.Z5Diagonal.clear
+attribute [local irreducible] ECDSAAdd.Entrant.Z5Diagonal.clear ECDSAAdd.Entrant.RawClearSquare.clear
   ECDSAAdd.Entrant.KnownAllRowsRaw.rawClearSafe
   ECDSAAdd.Entrant.LowZero18KG.make ECDSAAdd.Entrant.LowZero18KG.clear
   ECDSAAdd.Entrant.TrimMid.tsqM ECDSAAdd.Entrant.TrimSquare4.tsqcM4
@@ -41,7 +41,7 @@ theorem oregs_lens (h : 128≤src.length) (h2 : src.length≤129) :
 include hw h128 hsmax hlen he in
 theorem kgH_counts (h : src.length=128) :
     toffoliCount (LowZero18KG.make (kgH L ext src dst))=6565 ∧ measurementCount (LowZero18KG.make (kgH L ext src dst))=6681 ∧
-    toffoliCount (LowZero18KG.clear (kgH L ext src dst))=6167 ∧ measurementCount (LowZero18KG.clear (kgH L ext src dst))=6683 := by
+    toffoliCount (LowZero18KG.clear (kgH L ext src dst))=6165 ∧ measurementCount (LowZero18KG.clear (kgH L ext src dst))=6683 := by
   have w := oregs_W L hw ext src dst h128 hsmax hlen he
   have wi := iregs_W L hw ext src dst h128 hsmax hlen he
   have wj := jregsH_W L hw ext src dst h hlen he
@@ -80,7 +80,7 @@ theorem kgH_counts (h : src.length=128) :
   rw [il,ih] at i1 i2 ip ip0
   rw [jl,jh] at j1 j2
   have t1 : toffoliCount (kgH L ext src dst).Q1=(raw_kcost 64 32-30)-11-1 ∧ measurementCount (kgH L ext src dst).Q1=(raw_kcost 64 32-30)-4-1+32 ∧
-      toffoliCount (kgH L ext src dst).Q1c=(raw_kcost 64 32-30)-13-182 ∧ measurementCount (kgH L ext src dst).Q1c=32+((raw_kcost 64 32-30)-4) := by
+      toffoliCount (kgH L ext src dst).Q1c=(raw_kcost 64 32-30)-14-182 ∧ measurementCount (kgH L ext src dst).Q1c=32+((raw_kcost 64 32-30)-4) := by
     refine ⟨?_,?_,?_,?_⟩
     · show toffoliCount ((LowZero18Diagonal.make (iregs L ext src dst))++(iregs L ext src dst).scl1591)=_; rw [toffoliCount_append,ip0.1]; have := i1.1; omega
     · show measurementCount ((LowZero18Diagonal.make (iregs L ext src dst))++(iregs L ext src dst).scl1591)=_; rw [measurementCount_append,ip0.2]; have := i1.2; omega
@@ -90,11 +90,11 @@ theorem kgH_counts (h : src.length=128) :
       rw [toffoliCount_append,i2.1]
       norm_num [raw_kcost,raw_ksq,signedSquareRowsCount] at hk ⊢
       omega
-    · show measurementCount ((iregs L ext src dst).smkT++(Z5Diagonal.clear (iregs L ext src dst)))=_
+    · show measurementCount ((iregs L ext src dst).smkT++(RawClearSquare.clear (iregs L ext src dst)))=_
       rw [measurementCount_append,((iregs L ext src dst).smkT_counts wi).2,ip.2.1]; have := i2.2; omega
   have t2 : toffoliCount (kgH L ext src dst).Q2=(raw_kcost 64 32-30)-11-1 ∧ measurementCount (kgH L ext src dst).Q2=(raw_kcost 64 32-30)-4-1 ∧
-      toffoliCount (kgH L ext src dst).Q2c=(raw_kcost 64 32-30)-32-12-182 ∧ measurementCount (kgH L ext src dst).Q2c=(raw_kcost 64 32-30)-4 :=
-    ⟨j1.1,j1.2,j2.1,by show measurementCount (Z5Diagonal.clear (jregsH L ext src dst))=_; have := j2.2; omega⟩
+      toffoliCount (kgH L ext src dst).Q2c=(raw_kcost 64 32-30)-32-13-182 ∧ measurementCount (kgH L ext src dst).Q2c=(raw_kcost 64 32-30)-4 :=
+    ⟨j1.1,j1.2,j2.1,by show measurementCount (RawClearSquare.clear (jregsH L ext src dst))=_; have := j2.2; omega⟩
   have rb : (kgH L ext src dst).R.bank.length=src.length := ol.2
   have rh : (kgH L ext src dst).R.h=64 := rfl
   have tk : ¬(kgH L ext src dst).R.trimOK := by
@@ -110,7 +110,7 @@ theorem kgH_counts (h : src.length=128) :
 include hw h128 hsmax hlen he in
 theorem kgS_counts (h : src.length=129) :
     toffoliCount (LowZero18KG.make (kgS L ext src dst))=6679 ∧ measurementCount (LowZero18KG.make (kgS L ext src dst))=6797 ∧
-    toffoliCount (LowZero18KG.clear (kgS L ext src dst))=6276 ∧ measurementCount (LowZero18KG.clear (kgS L ext src dst))=6800 := by
+    toffoliCount (LowZero18KG.clear (kgS L ext src dst))=6274 ∧ measurementCount (LowZero18KG.clear (kgS L ext src dst))=6800 := by
   have w := oregs_W L hw ext src dst h128 hsmax hlen he
   have wi := iregs_W L hw ext src dst h128 hsmax hlen he
   have wj := jregsS_W L hw ext src dst h hlen he
@@ -149,7 +149,7 @@ theorem kgS_counts (h : src.length=129) :
   rw [il,ih] at i1 i2 ip ip0
   rw [jl,jh] at j1 j2
   have t1 : toffoliCount (kgS L ext src dst).Q1=(raw_kcost 64 32-30)-11-1 ∧ measurementCount (kgS L ext src dst).Q1=(raw_kcost 64 32-30)-4-1+32 ∧
-      toffoliCount (kgS L ext src dst).Q1c=(raw_kcost 64 32-30)-13-182 ∧ measurementCount (kgS L ext src dst).Q1c=32+((raw_kcost 64 32-30)-4) := by
+      toffoliCount (kgS L ext src dst).Q1c=(raw_kcost 64 32-30)-14-182 ∧ measurementCount (kgS L ext src dst).Q1c=32+((raw_kcost 64 32-30)-4) := by
     refine ⟨?_,?_,?_,?_⟩
     · show toffoliCount ((LowZero18Diagonal.make (iregs L ext src dst))++(iregs L ext src dst).scl1591)=_; rw [toffoliCount_append,ip0.1]; have := i1.1; omega
     · show measurementCount ((LowZero18Diagonal.make (iregs L ext src dst))++(iregs L ext src dst).scl1591)=_; rw [measurementCount_append,ip0.2]; have := i1.2; omega
@@ -159,11 +159,11 @@ theorem kgS_counts (h : src.length=129) :
       rw [toffoliCount_append,i2.1]
       norm_num [raw_kcost,raw_ksq,signedSquareRowsCount] at hk ⊢
       omega
-    · show measurementCount ((iregs L ext src dst).smkT++(Z5Diagonal.clear (iregs L ext src dst)))=_
+    · show measurementCount ((iregs L ext src dst).smkT++(RawClearSquare.clear (iregs L ext src dst)))=_
       rw [measurementCount_append,((iregs L ext src dst).smkT_counts wi).2,ip.2.1]; have := i2.2; omega
   have t5 : toffoliCount (kgS L ext src dst).Q5=(raw_kcost 66 33-31)-11-2 ∧ measurementCount (kgS L ext src dst).Q5=(raw_kcost 66 33-31)-4-2 ∧
-      toffoliCount (kgS L ext src dst).Q5c=(raw_kcost 66 33-31)-33-12-188 ∧ measurementCount (kgS L ext src dst).Q5c=(raw_kcost 66 33-31)-4 :=
-    ⟨j1.1,j1.2,j2.1,by show measurementCount (Z5Diagonal.clear (jregsS L ext src dst))=_; have := j2.2; omega⟩
+      toffoliCount (kgS L ext src dst).Q5c=(raw_kcost 66 33-31)-33-13-188 ∧ measurementCount (kgS L ext src dst).Q5c=(raw_kcost 66 33-31)-4 :=
+    ⟨j1.1,j1.2,j2.1,by show measurementCount (RawClearSquare.clear (jregsS L ext src dst))=_; have := j2.2; omega⟩
   have rb : (kgS L ext src dst).R.bank.length=src.length := ol.2
   have rh : (kgS L ext src dst).R.h=64 := rfl
   have tk : (kgS L ext src dst).R.trimOK := by
@@ -235,7 +235,7 @@ theorem kg_spec (hall : (kg L ext src dst).all.Nodup) : (kg L ext src dst).Spec 
 
 def lowkcost2 (n : Nat) : Nat := if n=128 then 6681 else 6797
 def lowkcostTMake (n : Nat) : Nat := if n=128 then 6565 else 6679
-def lowkcostTClear (n : Nat) : Nat := if n=128 then 6167 else 6276
+def lowkcostTClear (n : Nat) : Nat := if n=128 then 6165 else 6274
 def lowkcostMClear (n : Nat) : Nat := if n=128 then 6683 else 6800
 def lowkcostTPair (n : Nat) : Nat := lowkcostTMake n+lowkcostTClear n
 
@@ -345,7 +345,7 @@ theorem kg_slots :
     simp only [LowZero18Diagonal.clear] at jt
     have st := LowZero18KG.steps_slots2 (kgH L ext src dst) w
     have sk := (iregs L ext src dst).smkT_slots
-    simp only [kgH,LowZero18Diagonal.makeC,LowZero18Diagonal.clearC,LowZero18Diagonal.clear,Z5Diagonal.clearC,KRegs.m5,KRegs.c5,Challenge.gateSlots_append] at st ad ⊢
+    simp only [kgH,LowZero18Diagonal.makeC,LowZero18Diagonal.clearC,LowZero18Diagonal.clear,RawClearSquare.clearC,KRegs.m5,KRegs.c5,Challenge.gateSlots_append] at st ad ⊢
     omega
   · rw [kg,if_neg h]
     have wj := jregsS_W L hw ext src dst (by omega) hlen he
@@ -355,7 +355,7 @@ theorem kg_slots :
     simp only [LowZero18Diagonal.clear] at jt
     have st := LowZero18KG.steps_slots2 (kgS L ext src dst) w
     have sk := (iregs L ext src dst).smkT_slots
-    simp only [kgS,LowZero18Diagonal.makeC,LowZero18Diagonal.clearC,LowZero18Diagonal.clear,Z5Diagonal.clearC,KRegs.m2,KRegs.c2,Challenge.gateSlots_append] at st ad ⊢
+    simp only [kgS,LowZero18Diagonal.makeC,LowZero18Diagonal.clearC,LowZero18Diagonal.clear,RawClearSquare.clearC,KRegs.m2,KRegs.c2,Challenge.gateSlots_append] at st ad ⊢
     omega
 
 end Inst4
@@ -400,7 +400,7 @@ theorem kg_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ex
       toffoliCount (FrontierSumCleanup1591KG.make (FrontierSumCleanup1591LowK.kg L ext src dst)) ∧
     measurementCount (LowZero18KG.make (kg L ext src dst))+12+2*(if src.length=128 then 0 else 1)=
       measurementCount (FrontierSumCleanup1591KG.make (FrontierSumCleanup1591LowK.kg L ext src dst)) ∧
-    toffoliCount (LowZero18KG.clear (kg L ext src dst))+398+7*(if src.length=128 then 0 else 1)=
+    toffoliCount (LowZero18KG.clear (kg L ext src dst))+400+7*(if src.length=128 then 0 else 1)=
       toffoliCount (FrontierSumCleanup1591KG.clear (FrontierSumCleanup1591LowK.kg L ext src dst)) ∧
     measurementCount (LowZero18KG.clear (kg L ext src dst))+10+1*(if src.length=128 then 0 else 1)=
       measurementCount (FrontierSumCleanup1591KG.clear (FrontierSumCleanup1591LowK.kg L ext src dst)) := by
@@ -495,16 +495,16 @@ theorem loan_clear_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.
   have ipc := OneFlagReplay.rename_subset (SquareCarryLoan719.earlyPerm L) _ _
     (LowZero18Diagonal.clearC_support_subset (iregs L ext src dst)
       (iregs_W L hw ext src dst h128 h129 hd he))
-  have jhc := LowZero18Diagonal.clear_support_subset (jregsH L ext src dst)
-  have jsc := LowZero18Diagonal.clear_support_subset (jregsS L ext src dst)
   by_cases h : src.length=128
-  · simp only [kg,FrontierSumCleanup1591LowK.kg,h,ite_true,LowZero18KG.clear,
+  · have jhc := LowZero18Diagonal.clear_support_subset (jregsH L ext src dst) (jregsH_W L hw ext src dst h hd he)
+    simp only [kg,FrontierSumCleanup1591LowK.kg,h,ite_true,LowZero18KG.clear,
       SquareCarryLoan719BF.clear,FrontierSumCleanup1591KG.clear,SquareCarryLoan719.patchKG,
       kgH,FrontierSumCleanup1591LowK.kgH,KRegs.c5,wires_append]
     repeat' first | exact LowZero18KG.smkT_c8z (oregs L ext src dst) w | apply Finset.union_subset_union
     all_goals first | exact ipc | exact jhc | exact (TrimMid.tsqM_wires_le _ _ _ _ _).2 | exact (TrimSquare4.tsqcM4_wires_le _ _ _ _ _).trans (TrimMid.tsqM_wires_le _ _ _ _ _).2 | exact (oregs L ext src dst).c8z_wires w |
       exact (oregs L ext src dst).c7t_wires | exact (oregs L ext src dst).c6h_wires w | exact Finset.Subset.refl _
-  · simp only [kg,FrontierSumCleanup1591LowK.kg,h,ite_false,LowZero18KG.clear,
+  · have jsc := LowZero18Diagonal.clear_support_subset (jregsS L ext src dst) (jregsS_W L hw ext src dst (by omega) hd he)
+    simp only [kg,FrontierSumCleanup1591LowK.kg,h,ite_false,LowZero18KG.clear,
       SquareCarryLoan719BF.clear,FrontierSumCleanup1591KG.clear,SquareCarryLoan719.patchKG,
       kgS,FrontierSumCleanup1591LowK.kgS,KRegs.c2,wires_append]
     repeat' first | exact LowZero18KG.smkT_c8z (oregs L ext src dst) w | apply Finset.union_subset_union
@@ -733,7 +733,8 @@ theorem target_clearPrefix_free :
       LowZero18LowK.kgH,LowZero18LowK.kgS,FrontierSumCleanup1591LowK.kgH,FrontierSumCleanup1591LowK.kgS,
       KRegs.c5,KRegs.c2,wires_append]
     all_goals repeat' first | exact LowZero18KG.smkT_c8z (LowZero18LowK.oregs L ext src dst) w | apply Finset.union_subset_union
-    all_goals first | exact (TrimMid.tsqM_wires_le _ _ _ _ _).2 | exact (TrimSquare4.tsqcM4_wires_le _ _ _ _ _).trans (TrimMid.tsqM_wires_le _ _ _ _ _).2 | exact LowZero18Diagonal.clear_support_subset _ |
+    all_goals first | exact (TrimMid.tsqM_wires_le _ _ _ _ _).2 | exact (TrimSquare4.tsqcM4_wires_le _ _ _ _ _).trans (TrimMid.tsqM_wires_le _ _ _ _ _).2 | exact LowZero18Diagonal.clear_support_subset _ (LowZero18LowK.jregsH_W L hw ext src dst (by omega) hlen he) |
+      exact LowZero18Diagonal.clear_support_subset _ (LowZero18LowK.jregsS_W L hw ext src dst (by omega) hlen he) |
       exact (LowZero18LowK.oregs L ext src dst).c8z_wires w |
       exact (LowZero18LowK.oregs L ext src dst).c7t_wires | exact (LowZero18LowK.oregs L ext src dst).c6h_wires w |
       exact Finset.Subset.refl _
@@ -1792,7 +1793,7 @@ theorem withLowK2_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
     (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
     (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
     (he : 300≤ext.length) :
-    toffoliCount (withLowK2 L ext control src dst body)+430+10*(if src.length=128 then 0 else 1)=
+    toffoliCount (withLowK2 L ext control src dst body)+432+10*(if src.length=128 then 0 else 1)=
       toffoliCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) ∧
     measurementCount (withLowK2 L ext control src dst body)+22+3*(if src.length=128 then 0 else 1)=
       measurementCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) := by
@@ -1850,7 +1851,7 @@ theorem withLowK2_body_rel (L : CuccaroStreamedSquareWideLayout) (ext : List Wir
 
 theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (raw L ext control)+1815=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
+    toffoliCount (raw L ext control)+1821=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
     measurementCount (raw L ext control)+78=measurementCount (SquareCarryLoan719BF.raw L ext control) := by
   have low := L.core.low_length hw.core
   have high := L.core.high_length hw.core
@@ -1939,7 +1940,7 @@ private theorem mRename (f : Wire→Wire) (P : Program) :
     measurementCount (renameProgram f P)=measurementCount P := (renameProgram_counts f P).2
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+1815=toffoliCount (SquareCarryLoan719BF.program L) ∧
+    toffoliCount (program L)+1821=toffoliCount (SquareCarryLoan719BF.program L) ∧
     measurementCount (program L)+78=measurementCount (SquareCarryLoan719BF.program L) := by
   have h := raw_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
@@ -1947,7 +1948,7 @@ theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
     fastCandidate,SquareCarryLoan719BF.fastCandidate,tRename,mRename] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=50444 ∧ measurementCount (program L)=52997 := by
+    toffoliCount (program L)=50438 ∧ measurementCount (program L)=52997 := by
   have a := counts_diff L hw
   have b := SquareCarryLoan719BF.counts L hw
   constructor <;> omega
@@ -2122,7 +2123,7 @@ def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
     (exit Rolling1588.exitKernel L) cx cy
 
 private def Metrics (P Q : Program) : Prop :=
-  toffoliCount P+1815=toffoliCount Q ∧ measurementCount P+78=measurementCount Q ∧
+  toffoliCount P+1821=toffoliCount Q ∧ measurementCount P+78=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private theorem gen_metrics_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
@@ -2144,7 +2145,7 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
     ⟨counts.1,counts.2,LowZero18Square.slots_le L hw⟩
 
 theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+1815=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+1821=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)+78=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
   ⟨(gen_metrics L hw cx cy).1,(gen_metrics L hw cx cy).2.1⟩
 
