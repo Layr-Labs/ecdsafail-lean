@@ -16567,7 +16567,7 @@ theorem withLowK2_body_rel (L : CuccaroStreamedSquareWideLayout) (ext : List Wir
 
 theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (raw L ext control)+2291=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
+    toffoliCount (raw L ext control)+2304=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
     measurementCount (raw L ext control)+75=measurementCount (SquareCarryLoan719BF.raw L ext control) := by
   have low := L.core.low_length hw.core
   have high := L.core.high_length hw.core
@@ -16582,7 +16582,7 @@ theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 2 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 571 4
+  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 584 4
     (QRel.bBody_rel L hw control).1 (QRel.bBody_rel L hw control).2.1 (QRel.bBody_rel L hw control).2.2
   obtain ⟨a1,a2,a3,a4⟩ := withLowK2_body_rel L ext control L.core.low (L.core.product.take 256) _ _ 3 3
     (QRel.aBody_rel L hw control).1 (QRel.aBody_rel L hw control).2.1 (QRel.aBody_rel L hw control).2.2
@@ -16611,7 +16611,7 @@ theorem raw_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 2 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 571 4
+  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 584 4
     (QRel.bBody_rel L hw control).1 (QRel.bBody_rel L hw control).2.1 (QRel.bBody_rel L hw control).2.2
   obtain ⟨a1,a2,a3,a4⟩ := withLowK2_body_rel L ext control L.core.low (L.core.product.take 256) _ _ 3 3
     (QRel.aBody_rel L hw control).1 (QRel.aBody_rel L hw control).2.1 (QRel.aBody_rel L hw control).2.2
@@ -16640,7 +16640,7 @@ theorem raw_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 2 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 571 4
+  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 584 4
     (QRel.bBody_rel L hw control).1 (QRel.bBody_rel L hw control).2.1 (QRel.bBody_rel L hw control).2.2
   obtain ⟨a1,a2,a3,a4⟩ := withLowK2_body_rel L ext control L.core.low (L.core.product.take 256) _ _ 3 3
     (QRel.aBody_rel L hw control).1 (QRel.aBody_rel L hw control).2.1 (QRel.aBody_rel L hw control).2.2
@@ -16656,7 +16656,7 @@ private theorem mRename (f : Wire→Wire) (P : Program) :
     measurementCount (renameProgram f P)=measurementCount P := (renameProgram_counts f P).2
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+2291=toffoliCount (SquareCarryLoan719BF.program L) ∧
+    toffoliCount (program L)+2304=toffoliCount (SquareCarryLoan719BF.program L) ∧
     measurementCount (program L)+75=measurementCount (SquareCarryLoan719BF.program L) := by
   have h := raw_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
@@ -16664,7 +16664,7 @@ theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
     fastCandidate,SquareCarryLoan719BF.fastCandidate,tRename,mRename] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=49968 ∧ measurementCount (program L)=53000 := by
+    toffoliCount (program L)=49955 ∧ measurementCount (program L)=53000 := by
   have a := counts_diff L hw
   have b := SquareCarryLoan719BF.counts L hw
   constructor <;> omega
@@ -16853,7 +16853,7 @@ def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
     (exit Rolling1588.exitKernel L) cx cy
 
 private def Metrics (P Q : Program) : Prop :=
-  toffoliCount P+2291=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
+  toffoliCount P+2304=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private theorem gen_metrics_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
@@ -16875,7 +16875,7 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
     ⟨counts.1,counts.2,LowZero18Square.slots_le L hw⟩
 
 theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+2291=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+2304=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)+75=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
   ⟨(gen_metrics L hw cx cy).1,(gen_metrics L hw cx cy).2.1⟩
 
@@ -16946,7 +16946,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
     (Rolling1588BFFinal.wrapper_qubits C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2149944 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2149931 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -16969,7 +16969,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2149944,1499945,1588,50139199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2149931,1499945,1588,50139199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -16986,7 +16986,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2149944 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2149931 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
