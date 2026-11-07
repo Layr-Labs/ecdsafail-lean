@@ -1,5 +1,1569 @@
-import ECDSAAdd.Submission.Entrant.DirectDecoder
-import ECDSAAdd.Submission.Entrant.CompareDecoder.Certificates
+import ECDSAAdd.Submission.Entrant.ExitMerge
+import Mathlib.Data.Nat.Bitwise
+
+section
+set_option autoImplicit false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 0
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph
+
+abbrev Polynomial := List (List Nat)
+
+def evalPoly (p : Polynomial) (v : List Bool) : Bool :=
+ p.foldr (fun t z => (t.foldr (fun i z => v.getD i false && z) true) ^^ z) false
+
+def chunk : List Bool → List Bool → Bool → Bool → Bool → Bool → List Bool
+ | [],_,_,_,_,_=>[]
+ | y::ys,d::ds,prev,sigma,a,c=>
+   let raw:=prev ^^ y ^^ sigma ^^ a
+   (raw ^^ d ^^ c)::chunk ys ds y sigma (carryBit prev (y ^^ sigma) a) (carryBit d raw c)
+ | _::_,[],_,_,_,_=>[]
+
+def seedOK (p s a c : Bool) : Bool :=
+ (!s || ((a == !p) && !c)) && !(c && a && !p)
+
+def lowPolys : List Polynomial := [[[1], [15]], [[1], [2], [16], [1, 14], [1, 15], [14, 16]], [[1], [2], [3], [21], [1, 14], [2, 14], [2, 16], [2, 21], [16, 21]], [[2], [3], [4], [22], [1, 3], [1, 22], [2, 14], [3, 14], [3, 22]], [[3], [4], [5], [15], [23], [2, 4], [2, 23], [3, 14], [4, 14], [4, 23]], [[4], [5], [6], [17], [24], [3, 5], [3, 15], [3, 24], [4, 14], [5, 14], [5, 24], [15, 24]], [[5], [6], [7], [15], [25], [4, 6], [4, 15], [4, 17], [4, 25], [5, 14], [6, 14], [6, 15], [6, 17], [6, 25], [15, 25], [17, 25]], [[6], [8], [18], [6, 14], [6, 15], [6, 17], [6, 26], [7, 14], [7, 15], [7, 17], [7, 26], [15, 26], [17, 26]], [[7], [8], [9], [27], [6, 8], [6, 27], [7, 14], [8, 14], [8, 18], [8, 27], [18, 27]], [[8], [9], [10], [28], [7, 9], [7, 28], [8, 14], [9, 14], [9, 28]], [[9], [10], [11], [15], [29], [8, 10], [8, 29], [9, 14], [10, 14], [10, 29]], [[10], [11], [12], [19], [30], [9, 11], [9, 30], [10, 14], [11, 14], [11, 15], [11, 30], [15, 30]], [[11], [12], [13], [31], [10, 12], [10, 19], [10, 31], [11, 14], [12, 14], [12, 19], [12, 31], [19, 31]]]
+
+def highPolys : List Polynomial := [[[1], [5], [6], [8], [12], [5, 7], [5, 8], [5, 11], [6, 11], [7, 8]], [[1], [2], [5], [14], [15], [1, 6], [1, 11], [1, 15], [5, 11], [6, 12], [6, 15], [12, 15]], [[1], [2], [3], [16], [1, 11], [2, 5], [2, 11], [2, 12], [2, 14], [2, 16], [5, 12], [5, 14], [5, 16], [12, 16], [14, 16]], [[2], [4], [14], [2, 3], [2, 11], [2, 14], [2, 17], [3, 11], [3, 14], [3, 17], [14, 17]]]
+
+def lowYs (x : Nat) : List Bool := [false,false,false]++(List.range 10).map x.testBit
+
+def lowRs (x : Nat) : List Bool := [false,false,false,false]++
+ chunk ((List.range 9).map (fun j=>x.testBit (j+1)))
+   ((List.range 9).map (fun j=>x.testBit 11 && (977:Nat).testBit (j+4)))
+   (x.testBit 0) (x.testBit 10) (x.testBit 12) (x.testBit 13)
+
+def lowVars (x : Nat) : List Bool := [true]++lowYs x++[x.testBit 10,x.testBit 11,false]++
+ [x.testBit 1 && x.testBit 11,x.testBit 2 && x.testBit 3,x.testBit 5 && x.testBit 11]++lowRs x
+
+def lowValid (x : Nat) : Bool :=
+ !(x.testBit 10 && x.testBit 11) && seedOK (x.testBit 0) (x.testBit 10) (x.testBit 12) (x.testBit 13) &&
+ !(x.testBit 12 && x.testBit 13 && !(x.testBit 11))
+
+def highRs (x : Nat) : List Bool := chunk ((List.range 6).map (fun j=>x.testBit (j+1)))
+ [false,false,x.testBit 8,false,false,false] (x.testBit 0) (x.testBit 7) (x.testBit 9) (x.testBit 10)
+
+def highVars (x : Nat) : List Bool :=
+ [true,x.testBit 3,x.testBit 4,x.testBit 5,x.testBit 6,x.testBit 2,x.testBit 1,x.testBit 0,
+ (highRs x).getD 1 false,(highRs x).getD 0 false,false,x.testBit 7,x.testBit 8,false,
+ x.testBit 3 && x.testBit 8]++(highRs x).drop 2
+
+def highValid (x : Nat) : Bool :=
+ !(x.testBit 7 && x.testBit 8) && seedOK (x.testBit 0) (x.testBit 7) (x.testBit 9) (x.testBit 10) &&
+ !(x.testBit 9 && x.testBit 10 && !(x.testBit 8))
+
+def initialRs (x : Nat) : List Bool := chunk ((List.range 6).map x.testBit)
+ [x.testBit 7,x.testBit 8 && !(x.testBit 6),false,false,x.testBit 7,false]
+ false (x.testBit 6) (x.testBit 6) false
+
+def initialVars (x : Nat) : List Bool := [true]++((List.range 13).map (fun j=>if j<6 then x.testBit j else false))++
+ [x.testBit 6,x.testBit 7,x.testBit 8,x.testBit 4 && x.testBit 7,false,false]++initialRs x
+
+end ECDSAAdd.Entrant.DirectDecoder
+
+end
+
+section
+set_option autoImplicit false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 0
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph
+
+theorem high_local_checked : ∀x : Fin 2048,highValid x.val=true → ∀i : Fin 4,
+ evalPoly (highPolys.getD i.val []) (highVars x.val)=(highRs x.val).getD (i.val+2) false := by decide +kernel
+
+end ECDSAAdd.Entrant.DirectDecoder
+
+end
+
+section
+set_option autoImplicit false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 0
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph
+
+theorem initial_local_checked : ∀x : Fin 512,(x.val.testBit 6 && x.val.testBit 7)=false → ∀i : Fin 6,
+ evalPoly (lowPolys.getD i.val []) (initialVars x.val)=(initialRs x.val).getD i.val false := by decide +kernel
+
+end ECDSAAdd.Entrant.DirectDecoder
+
+end
+
+section
+
+/-! Reference arithmetic, certified initial/high polynomials, and generic phase-correct
+triangular erasure helpers for CompareDecoder. Unused four-product runtime proofs and
+low enumeration modules have been removed. -/
+set_option autoImplicit false
+
+-- Proof component: NoDoubleCarry
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCellCarryMath DecoderCells5 DecoderMeasuredTail
+
+theorem no_double_step (p y a c : Bool) (h : (a && c)=false) :
+ (carryBit p y a && ((p ^^ y ^^ a) && c))=false := by
+ cases p <;> cases y <;> cases a <;> cases c <;> simp_all [carryBit]
+
+theorem no_double_h0 (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+ (hs : b L.sigma=false) (hh : b L.h=false)
+ (j : Nat) (hj : j<255) : (b (L.A j) && bExpected L b (j+1))=false := by
+ induction j with
+ | zero => rw [adds 0 (by decide)]; simp [aExpected,hs,carryBit]
+ | succ n ih =>
+   have hn : n<255 := by omega
+   have aa := add_step L b adds (n+1) (by omega) hj
+   simp only [Nat.add_sub_cancel,hs,Bool.xor_false] at aa
+   rw [aa]
+   by_cases first : n=0
+   · subst n
+     have a0 : b (L.A 0)=false := by rw [adds 0 (by decide)]; simp [aExpected,hs,carryBit]
+     have c1 := g 1 (by decide) (by decide)
+     have c2 := g 2 (by decide) (by decide)
+     simp [correction,MappedBit.value,rawSources,parity,hh,carryBit] at c1
+     simp only [Nat.reduceSub,show ¬2=1 by decide,ite_false] at c2
+     rw [c1,raw_middle L b 1 (by decide) (by decide),a0,hs] at c2
+     simp [correction,MappedBit.value] at c2
+     rw [c2,a0]
+     generalize b (L.Y 0)=p,b (L.Y 1)=y,b L.bias=d
+     cases p <;> cases y <;> cases d <;> decide
+   · have corr : (correction L (n+1)).value b=false := by
+       simp only [correction,show ¬n+1=1 by omega,ite_false]
+       split <;> simp [MappedBit.value,hh]
+     rw [graph_zero_step L b g (n+1) (by omega) hj corr]
+     simp only [Nat.add_sub_cancel,hs,Bool.xor_false]
+     exact no_double_step _ _ _ _ (ih hn)
+
+theorem no_double_invariant (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+ (_hh : (b L.sigma && b L.h)=false) (hb : (b L.sigma && b L.bias)=false)
+ (j : Nat) (hj : j<255) : (b (L.A j) && bExpected L b (j+1) && !b L.h)=false := by
+ cases he : b L.h
+ · simp only [he,Bool.not_false,Bool.and_true]
+   cases se : b L.sigma
+   · exact no_double_h0 L b g adds se he j hj
+   · have bz : b L.bias=false := by simpa [se] using hb
+     have cz:=b_sigma_zero L b g he bz j hj
+     rw [cz]
+     simp
+ · simp [he]
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: ReferenceChunk
+-- This recurrence is kept independent of the experimental finite certificates.
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCellCarryMath DecoderCells5 DecoderMeasuredTail
+
+def referenceSteps : List Bool → List Bool → Bool → Bool → Bool → Bool → List Bool
+ | [],_,_,_,_,_=>[]
+ | y::ys,d::ds,prev,sigma,a,c=>
+   let raw:=prev ^^ y ^^ sigma ^^ a
+   (raw ^^ d ^^ c)::referenceSteps ys ds y sigma (carryBit prev (y ^^ sigma) a) (carryBit d raw c)
+ | _::_,[],_,_,_,_=>[]
+
+theorem ref_r_middle (L : DecoderLayout) (b : BasisState) (j : Nat) (lo : 1≤j) (hi : j<255) :
+ b (L.R j)=((b (L.Y (j-1)) ^^ b (L.Y j) ^^ b L.sigma ^^ b (L.A (j-1))) ^^
+  (correction L j).value b ^^ bExpected L b j) := by
+ rw [bExpected]
+ have r:=raw_middle L b j lo hi
+ simp only [bSources,parity_cat,correctionSources_parity,r]
+ generalize b (L.R j)=v,b (L.Y (j-1))=p,b (L.Y j)=y,b L.sigma=s,b (L.A (j-1))=a,
+   (correction L j).value b=d
+ cases v <;> cases p <;> cases y <;> cases s <;> cases a <;> cases d <;> rfl
+
+theorem reference_chunk (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+ (n i : Nat) (lo : 1 ≤ i) (hi : i + n ≤ 255) :
+ referenceSteps ((List.range' i n).map (fun j=>b (L.Y j)))
+   ((List.range' i n).map (fun j=>(correction L j).value b))
+   (b (L.Y (i-1))) (b L.sigma) (b (L.A (i-1))) (bExpected L b i)=
+ (List.range' i n).map (fun j=>b (L.R j)) := by
+ induction n generalizing i with
+ | zero=>rfl
+ | succ n ih=>
+   have il : i<255 := by omega
+   simp only [List.range'_succ,List.map_cons,referenceSteps]
+   rw [←ref_r_middle L b i lo il]
+   have aa:=add_step L b adds i lo il
+   have cc:=g (i+1) (by omega) (by omega)
+   simp only [Nat.add_sub_cancel,show ¬i+1=1 by omega,ite_false] at cc
+   rw [raw_middle L b i lo il] at cc
+   rw [←aa,←cc]
+   have done:=ih (i+1) (by omega) (by omega)
+   simpa only [Nat.add_sub_cancel] using congrArg (List.cons (b (L.R i))) done
+
+theorem ref_r_zero (L : DecoderLayout) (b : BasisState) (j : Nat) (lo : 1 ≤ j) (hi : j<255)
+ (corr : (correction L j).value b=false) :
+ b (L.R j)=(b (L.Y (j-1)) ^^ b (L.Y j) ^^ b L.sigma ^^ b (L.A (j-1)) ^^ bExpected L b j) := by
+ rw [ref_r_middle L b j lo hi,corr,Bool.xor_false]
+
+theorem reference_zero_pair (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+ (hh : (b L.sigma && b L.h)=false) (hb : (b L.sigma && b L.bias)=false)
+ (j : Nat) (lo : 4 ≤ j) (hi : j<255)
+ (corr : ∀k,j-3 ≤ k → k ≤ j → (correction L k).value b=false) :
+ b (L.R j)=poly (b (L.Y (j-3))) (b (L.Y (j-2))) (b (L.Y (j-1)))
+  (b (L.Y j)) (b L.sigma) (b (L.R (j-1))) := by
+ have seed:=seed_graph L b g adds hh hb (j-3) (by omega) (by omega) (corr _ (by omega) (by omega))
+ have ca:=add_step L b adds (j-2) (by omega) (by omega)
+ have cb:=add_step L b adds (j-1) (by omega) (by omega)
+ have qa:=graph_zero_step L b g (j-2) (by omega) (by omega) (corr _ (by omega) (by omega))
+ have qb:=graph_zero_step L b g (j-1) (by omega) (by omega) (corr _ (by omega) (by omega))
+ have rr:=ref_r_zero L b (j-1) (by omega) (by omega) (corr _ (by omega) (by omega))
+ have rz:=ref_r_zero L b j (by omega) hi (corr _ (by omega) (by omega))
+ have e1:j-3+1=j-2:=by omega
+ have e2:j-2-1=j-3:=by omega
+ have e3:j-1-1=j-2:=by omega
+ have e4:j-2+1=j-1:=by omega
+ have e5:j-1+1=j:=by omega
+ rw [e1] at seed
+ rw [e2] at ca qa
+ rw [e3] at cb qb rr
+ rw [e4] at qa
+ rw [e5] at qb
+ rw [rz,rr,cb,qb,ca,qa]
+ exact pair_identity _ _ _ _ _ _ _ seed
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: PolynomialErasure
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+
+def phaseValue : List Correction → BasisState → Bool
+ | [],_=>false
+ | .Z q::cs,b=>b q ^^ phaseValue cs b
+ | .CZ a c::cs,b=>(b a && b c) ^^ phaseValue cs b
+
+theorem correct_value (cs : List Correction) (s : State) :
+ correct cs s=⟨s.phase ^^ phaseValue cs s.basis,s.basis⟩ := by
+ induction cs generalizing s with
+ | nil=>simp [correct,phaseValue]
+ | cons c cs ih=>cases c <;> simp [correct,ih,phaseValue,Bool.xor_assoc]
+
+theorem measure_poly (t : Wire) (cs : List Correction) (s : State) (m : List Bool)
+ (known : s.basis t=phaseValue cs (writeBit s.basis t false)) :
+ run [.measureX t [] cs] m s=⟨s.phase,writeBit s.basis t false⟩ := by
+ simp only [run,measureAndCorrect]
+ cases hm:m.headD false
+ · simp [hm,correct]
+ · simp only [hm,ite_true,Bool.true_and,correct_value]
+   rw [known]
+   simp [Bool.xor_assoc]
+
+theorem phaseValue_congr (cs : List Correction) (b c : BasisState)
+ (h : ∀q∈correctionWires cs,b q=c q) : phaseValue cs b=phaseValue cs c := by
+ induction cs with
+ | nil=>rfl
+ | cons op cs ih=>
+   cases op <;> simp only [phaseValue]
+   all_goals
+     rw [ih (fun q hq=>h q (by simp [correctionWires,hq]))]
+   · rw [h _ (by simp [correctionWires])]
+   · rw [h _ (by simp [correctionWires]),h _ (by simp [correctionWires])]
+
+theorem phaseValue_update (cs : List Correction) (b : BasisState) (t : Wire)
+ (ht : t∉correctionWires cs) : phaseValue cs (writeBit b t false)=phaseValue cs b := by
+ apply phaseValue_congr
+ intro q hq
+ have ne : q≠t := by intro e;subst q;exact ht hq
+ exact Function.update_of_ne ne _ _
+
+theorem measure_poly_away (t : Wire) (cs : List Correction) (s : State) (m : List Bool)
+ (away : t∉correctionWires cs) (known : s.basis t=phaseValue cs s.basis) :
+ run [.measureX t [] cs] m s=⟨s.phase,writeBit s.basis t false⟩ := by
+ apply measure_poly
+ rw [phaseValue_update cs s.basis t away]
+ exact known
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: TriangularErasure
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+
+def eraseRange (target : Nat → Wire) (cs : Nat → List Correction) : Nat → Program
+ | 0=>[]
+ | n+1=>[.measureX (target n) [] (cs n)]++eraseRange target cs n
+
+
+
+
+
+
+
+structure ErasedRange (target : Nat → Wire) (n : Nat) (s t : State) : Prop where
+ phase:t.phase=s.phase
+ outside:∀q,(∀i,i<n → q≠target i) → t.basis q=s.basis q
+ cleared:∀i,i<n → t.basis (target i)=false
+
+theorem eraseRange_correct (target : Nat → Wire) (cs : Nat → List Correction)
+ (n : Nat)
+ (inj : ∀i,i<n → ∀j,j<n → target i=target j → i=j)
+ (away : ∀i,i<n → target i∉correctionWires (cs i))
+ (tri : ∀i,i<n → ∀j,i<j → j<n → target j∉correctionWires (cs i))
+ (s : State) (known : ∀i,i<n → s.basis (target i)=phaseValue (cs i) s.basis) (m : List Bool) :
+ ErasedRange target n s (run (eraseRange target cs n) m s) := by
+ induction n generalizing s m with
+ | zero=>exact ⟨rfl,fun _ _=>rfl,fun _ h=>by omega⟩
+ | succ n ih=>
+   have er:=measure_poly_away (target n) (cs n) s m (away n (by omega)) (known n (by omega))
+   let u:State:=⟨s.phase,writeBit s.basis (target n) false⟩
+   have nk : ∀i,i<n → u.basis (target i)=phaseValue (cs i) u.basis := by
+     intro i hi
+     have ne : target i≠target n := by intro eq;have z:=inj i (by omega) n (by omega) eq;omega
+     change writeBit s.basis (target n) false (target i)=phaseValue (cs i) (writeBit s.basis (target n) false)
+     rw [phaseValue_update (cs i) s.basis (target n) (tri i (by omega) n hi (by omega))]
+     exact (Function.update_of_ne ne _ _).trans (known i (by omega))
+   have done:=ih (fun i hi j hj=>inj i (by omega) j (by omega))
+     (fun i hi=>away i (by omega)) (fun i hi j hij hj=>tri i (by omega) j hij (by omega))
+     u nk (m.drop 1)
+   simp only [eraseRange,run_append,run_take]
+   rw [er]
+   change ErasedRange target (n+1) s (run (eraseRange target cs n) (m.drop 1) u)
+   refine ⟨done.phase,?_,?_⟩
+   · intro q hq
+     exact (done.outside q (fun i hi=>hq i (by omega))).trans
+       (Function.update_of_ne (hq n (by omega)) _ _)
+   · intro i hi
+     by_cases hn:i<n
+     · exact done.cleared i hn
+     · have eq:i=n:=by omega
+       subst i
+       rw [done.outside (target n) (by
+         intro j hj e
+         have z:=inj n (by omega) j (by omega) e
+         omega)]
+       exact Function.update_self _ _ _
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: AndWrapper
+set_option maxRecDepth 30000
+set_option maxHeartbeats 200000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+
+def prepared (s : State) (a b t : Wire) : State :=
+ ⟨s.phase,writeBit s.basis t (s.basis a && s.basis b)⟩
+def andWrap (a b t : Wire) (P : Program) : Program :=
+ [.CCX a b t]++P++[.measureX t [] [.CZ a b]]
+
+theorem andWrap_erased (target : Nat→Wire) (n : Nat) (a b t : Wire) (P : Program)
+ (ha : a≠t) (hb : b≠t)
+ (aa : ∀i,i<n → a≠target i) (ba : ∀i,i<n → b≠target i) (ta : ∀i,i<n → t≠target i)
+ (s : State) (clean : s.basis t=false) (m : List Bool)
+ (body : ErasedRange target n (prepared s a b t) (run P m (prepared s a b t))) :
+ ErasedRange target n s (run (andWrap a b t P) m s) := by
+ let u:=prepared s a b t
+ let v:=run P m u
+ have av : v.basis a=s.basis a :=
+  (body.outside a aa).trans (Function.update_of_ne ha _ _)
+ have bv : v.basis b=s.basis b :=
+  (body.outside b ba).trans (Function.update_of_ne hb _ _)
+ have tv : v.basis t=(s.basis a && s.basis b) :=
+  (body.outside t ta).trans (Function.update_self _ _ _)
+ have known : v.basis t=(v.basis a && v.basis b) := by rw [av,bv];exact tv
+ have er : run [.measureX t [] [.CZ a b]] (m.drop (measurementCount P)) v=
+   ⟨v.phase,writeBit v.basis t false⟩ := by
+  simp only [run]
+  exact DHGadget.measure_erase t a b _ v ha hb known
+ have cc : ∀mm : List Bool,run [.CCX a b t] mm s=u := by intro mm;simp [run,u,prepared,clean]
+ have parts : run (andWrap a b t P) m s=⟨v.phase,writeBit v.basis t false⟩ := by
+  simp only [andWrap,run_append,run_take,measurementCount_append,measurementCount,List.drop_zero,Nat.zero_add]
+  rw [cc]
+  exact er
+ rw [parts]
+ refine ⟨body.phase,?_,?_⟩
+ · intro q hq
+   by_cases qt:q=t
+   · subst q
+     simp [writeBit,clean]
+   · exact (Function.update_of_ne qt _ _).trans
+       ((body.outside q hq).trans (Function.update_of_ne qt _ _))
+ · intro i hi
+   exact (Function.update_of_ne (Ne.symm (ta i hi)) _ _).trans (body.cleared i hi)
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: DirectDecoderProgram2
+set_option maxRecDepth 30000
+set_option maxHeartbeats 200000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCells5 DecoderMeasuredTail DecoderBiasReuse
+
+def correctionsFor (ws : List Wire) (p : Polynomial) : List Correction := p.filterMap fun term=>
+ match term with
+ | [i]=>some (.Z (ws.getD i 0))
+ | [i,j]=>some (.CZ (ws.getD i 0) (ws.getD j 0))
+ | _=>none
+
+def lowWires (L : DecoderLayout) : List Wire := [L.bias]++
+ (List.range 13).map L.Y++[L.sigma,L.h,L.Y 255,L.A 0,L.A 1,L.A 2]++(List.range 13).map L.R
+
+
+
+
+def lowCorrections (L : DecoderLayout) (j : Nat) : List Correction :=
+ correctionsFor (lowWires L) (lowPolys.getD j [])
+
+
+
+
+
+def highWires (L : DecoderLayout) : List Wire :=
+ [L.bias,L.Y 32,L.Y 33,L.Y 34,L.Y 35,L.Y 31,L.Y 30,L.Y 29,
+ L.R 31,L.R 30,L.bias,L.sigma,L.h,L.bias,L.A 0]++(List.range' 32 4).map L.R
+def highPhysical (L : DecoderLayout) (b : BasisState) : List Bool :=
+ [true,b (L.Y 32),b (L.Y 33),b (L.Y 34),b (L.Y 35),b (L.Y 31),b (L.Y 30),b (L.Y 29),
+ b (L.R 31),b (L.R 30),false,b L.sigma,b L.h,false,b (L.A 0)]++
+ (List.range' 32 4).map (fun j=>b (L.R j))
+def highCorrections (L : DecoderLayout) (j : Nat) : List Correction :=
+ correctionsFor (highWires L) (highPolys.getD j [])
+
+theorem high_correction_value (L : DecoderLayout) (b : BasisState) (j : Fin 4) :
+ phaseValue (highCorrections L j.val) b=evalPoly (highPolys.getD j.val []) (highPhysical L b) := by
+ fin_cases j <;> simp [highCorrections,correctionsFor,highWires,highPolys,phaseValue,evalPoly,highPhysical,List.range'_succ]
+
+def upper (L : DecoderLayout) : Program := eraseRange (fun i=>L.R (36+i))
+ (fun i=>polyCorrections (L.Y (36+i-3)) (L.Y (36+i-2)) (L.Y (36+i-1))
+  (L.Y (36+i)) L.sigma (L.R (36+i-1)) (decide (36+i<255))) 220
+
+def highErase (L : DecoderLayout) : Program := eraseRange (fun i=>L.R (32+i)) (highCorrections L) 4
+
+def middle (L : DecoderLayout) : Program := eraseRange (fun i=>L.R (13+i))
+ (fun i=>polyCorrections (L.Y (13+i-3)) (L.Y (13+i-2)) (L.Y (13+i-1))
+  (L.Y (13+i)) L.sigma (L.R (13+i-1)) true) 19
+
+
+def lowErase (L : DecoderLayout) : Program := eraseRange L.R (lowCorrections L) 13
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: DirectDecoderMath
+set_option maxRecDepth 30000
+set_option maxHeartbeats 200000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCellCarryMath DecoderCells5 DecoderMeasuredTail CodecBitSliceVerify
+
+theorem chunk_eq_reference : chunk=referenceSteps := by
+ funext ys ds p sig a c
+ induction ys generalizing ds p a c with
+ | nil=>rfl
+ | cons y ys ih=>
+   cases ds with
+   | nil=>rfl
+   | cons d ds=>simp only [chunk,referenceSteps];rw [ih]
+
+theorem seedOK_iff (p s a c : Bool) : seedOK p s a c=true ↔ seedValid p s a c := by
+ cases p <;> cases s <;> cases a <;> cases c <;> simp [seedOK,seedValid]
+
+def lowRoot (L : DecoderLayout) (b : BasisState) : Nat := packBits
+ [b (L.Y 3),b (L.Y 4),b (L.Y 5),b (L.Y 6),b (L.Y 7),b (L.Y 8),b (L.Y 9),
+ b (L.Y 10),b (L.Y 11),b (L.Y 12),b L.sigma,b L.h,b (L.A 3),bExpected L b 4]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+theorem cb4 : (4294968273:Nat).testBit 4=true := by decide +kernel
+theorem cb5 : (4294968273:Nat).testBit 5=false := by decide +kernel
+theorem cb6 : (4294968273:Nat).testBit 6=true := by decide +kernel
+theorem cb7 : (4294968273:Nat).testBit 7=true := by decide +kernel
+theorem cb8 : (4294968273:Nat).testBit 8=true := by decide +kernel
+theorem cb9 : (4294968273:Nat).testBit 9=true := by decide +kernel
+theorem cb10 : (4294968273:Nat).testBit 10=false := by decide +kernel
+theorem cb11 : (4294968273:Nat).testBit 11=false := by decide +kernel
+theorem cb12 : (4294968273:Nat).testBit 12=false := by decide +kernel
+theorem cb30 : (4294968273:Nat).testBit 30=false := by decide +kernel
+theorem cb31 : (4294968273:Nat).testBit 31=false := by decide +kernel
+theorem cb32 : (4294968273:Nat).testBit 32=true := by decide +kernel
+theorem cb33 : (4294968273:Nat).testBit 33=false := by decide +kernel
+theorem cb34 : (4294968273:Nat).testBit 34=false := by decide +kernel
+theorem cb35 : (4294968273:Nat).testBit 35=false := by decide +kernel
+theorem lb4 : (977:Nat).testBit 4=true := by decide +kernel
+theorem lb5 : (977:Nat).testBit 5=false := by decide +kernel
+theorem lb6 : (977:Nat).testBit 6=true := by decide +kernel
+theorem lb7 : (977:Nat).testBit 7=true := by decide +kernel
+theorem lb8 : (977:Nat).testBit 8=true := by decide +kernel
+theorem lb9 : (977:Nat).testBit 9=true := by decide +kernel
+theorem lb10 : (977:Nat).testBit 10=false := by decide +kernel
+theorem lb11 : (977:Nat).testBit 11=false := by decide +kernel
+theorem lb12 : (977:Nat).testBit 12=false := by decide +kernel
+
+theorem lowRoot_results (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j) :
+ lowRs (lowRoot L b)=[false,false,false,false]++(List.range' 4 9).map (fun j=>b (L.R j)) := by
+ simp only [lowRs,lowRoot,pack_testBit,chunk_eq_reference]
+ simpa [List.range_succ,List.range'_succ,correction,MappedBit.value,cb4,cb5,cb6,cb7,cb8,cb9,cb10,cb11,cb12,cb30,cb31,cb32,cb33,cb34,cb35,lb4,lb5,lb6,lb7,lb8,lb9,lb10,lb11,lb12] using
+  congrArg (fun xs=>[false,false,false,false]++xs)
+   (reference_chunk L b g adds 9 4 (by decide) (by decide))
+
+def lowExpected (L : DecoderLayout) (b : BasisState) : List Bool :=
+ [true]++(List.range 13).map (fun j=>b (L.Y j))++[b L.sigma,b L.h,b (L.Y 255)]++
+ [b (L.Y 4) && b L.h,b (L.Y 5) && b (L.Y 6),b (L.Y 8) && b L.h]++
+ (List.range 13).map (fun j=>b (L.R j))
+def lowCanonical (L : DecoderLayout) (b : BasisState) : List Bool :=
+ [true,false,false,false]++(List.range' 3 10).map (fun j=>b (L.Y j))++[b L.sigma,b L.h,false]++
+ [b (L.Y 4) && b L.h,b (L.Y 5) && b (L.Y 6),b (L.Y 8) && b L.h]++
+ [false,false,false,false]++(List.range' 4 9).map (fun j=>b (L.R j))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def highRoot (L : DecoderLayout) (b : BasisState) : Nat := packBits
+ [b (L.Y 29),b (L.Y 30),b (L.Y 31),b (L.Y 32),b (L.Y 33),b (L.Y 34),b (L.Y 35),
+ b L.sigma,b L.h,b (L.A 29),bExpected L b 30]
+theorem highRoot_bound (L : DecoderLayout) (b : BasisState) : highRoot L b<2048 := by
+ have h:=pack_bound [b (L.Y 29),b (L.Y 30),b (L.Y 31),b (L.Y 32),b (L.Y 33),b (L.Y 34),b (L.Y 35),
+ b L.sigma,b L.h,b (L.A 29),bExpected L b 30]
+ norm_num only [List.length_cons,List.length_nil] at h
+ exact h
+
+theorem highRoot_valid (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+ (hh : (b L.sigma && b L.h)=false) (hb : (b L.sigma && b L.bias)=false) :
+ highValid (highRoot L b)=true := by
+ have seed:=seed_graph L b g adds hh hb 29 (by decide) (by decide) (by rfl)
+ have nd:=no_double_invariant L b g adds hh hb 29 (by decide)
+ simp only [highValid,highRoot,pack_testBit]
+ change (!(b L.sigma && b L.h) && seedOK (b (L.Y 29)) (b L.sigma) (b (L.A 29)) (bExpected L b 30) &&
+  !(b (L.A 29) && bExpected L b 30 && !b L.h))=true
+ simp only [Bool.and_eq_true,Bool.not_eq_true',hh,nd,seedOK_iff]
+ exact ⟨⟨trivial,seed⟩,trivial⟩
+
+theorem highRoot_results (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j) :
+ highRs (highRoot L b)=(List.range' 30 6).map (fun j=>b (L.R j)) := by
+ simp only [highRs,highRoot,pack_testBit,chunk_eq_reference]
+ simpa [List.range_succ,List.range'_succ,correction,MappedBit.value,cb4,cb5,cb6,cb7,cb8,cb9,cb10,cb11,cb12,cb30,cb31,cb32,cb33,cb34,cb35,lb4,lb5,lb6,lb7,lb8,lb9,lb10,lb11,lb12] using
+  reference_chunk L b g adds 6 30 (by decide) (by decide)
+
+def highExpected (L : DecoderLayout) (b : BasisState) : List Bool :=
+ [true,b (L.Y 32),b (L.Y 33),b (L.Y 34),b (L.Y 35),b (L.Y 31),b (L.Y 30),b (L.Y 29),
+ b (L.R 31),b (L.R 30),false,b L.sigma,b L.h,false,b (L.Y 32) && b L.h]++
+ (List.range' 32 4).map (fun j=>b (L.R j))
+
+theorem highRoot_vars (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j) :
+ highVars (highRoot L b)=highExpected L b := by
+ unfold highVars
+ rw [highRoot_results L b g adds]
+ simp only [highRoot,highExpected,List.range'_succ,List.map_cons,List.map_nil,List.cons_append,List.nil_append]
+ simp only [pack_testBit]
+ simp
+
+theorem high_math (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
+ (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
+ (hh : (b L.sigma && b L.h)=false) (hb : (b L.sigma && b L.bias)=false) (i : Fin 4) :
+ evalPoly (highPolys.getD i.val []) (highExpected L b)=b (L.R (i.val+32)) := by
+ have result:=high_local_checked ⟨highRoot L b,highRoot_bound L b⟩ (highRoot_valid L b g adds hh hb) i
+ rw [highRoot_vars L b g adds,highRoot_results L b g adds] at result
+ rw [result]
+ fin_cases i <;> simp [List.range_succ,List.range'_succ]
+
+theorem initialRs_word : ∀x : Fin 512, initialRs x.val=
+ [(firstR x.val).testBit 0,(firstR x.val).testBit 1,(firstR x.val).testBit 2,
+ (firstR x.val).testBit 3,(firstR x.val).testBit 4,(firstR x.val).testBit 5] := by decide +kernel
+
+theorem initialRs_ref (L : DecoderLayout) (hw : L.Widths) (b : BasisState)
+ (bias : b L.bias=(b (L.Y 255) && !b L.sigma))
+ (scalar : regValue L.r b=
+      ((if b L.sigma then regValue (L.y.take 255) b else 3*regValue (L.y.take 255) b)+
+        2*(b L.bias).toNat+(b L.h).toNat*(2^32+977))%2^256) :
+ initialRs (firstRoot L b)=(List.range 6).map (fun j=>b (L.R j)) := by
+ rw [initialRs_word ⟨firstRoot L b,firstRoot_bound L hw b⟩]
+ simp only [firstR_bit L hw b bias scalar 0 (by decide),firstR_bit L hw b bias scalar 1 (by decide),
+ firstR_bit L hw b bias scalar 2 (by decide),firstR_bit L hw b bias scalar 3 (by decide),
+ firstR_bit L hw b bias scalar 4 (by decide),firstR_bit L hw b bias scalar 5 (by decide)]
+ rfl
+
+def initialCanonical (L : DecoderLayout) (b : BasisState) : List Bool :=
+ [true]++(List.range 6).map (fun j=>b (L.Y j))++List.replicate 7 false++
+ [b L.sigma,b L.h,b (L.Y 255),b (L.Y 4) && b L.h,false,false]++
+ (List.range 6).map (fun j=>b (L.R j))
+
+theorem initialRoot_vars (L : DecoderLayout) (hw : L.Widths) (b : BasisState)
+ (bias : b L.bias=(b (L.Y 255) && !b L.sigma))
+ (scalar : regValue L.r b=
+      ((if b L.sigma then regValue (L.y.take 255) b else 3*regValue (L.y.take 255) b)+
+        2*(b L.bias).toNat+(b L.h).toNat*(2^32+977))%2^256) :
+ initialVars (firstRoot L b)=initialCanonical L b := by
+ unfold initialVars
+ rw [initialRs_ref L hw b bias scalar]
+ simp [initialCanonical,firstRoot_bits L hw b,List.range_succ]
+
+theorem initial_math (L : DecoderLayout) (hw : L.Widths) (b : BasisState)
+ (bias : b L.bias=(b (L.Y 255) && !b L.sigma))
+ (scalar : regValue L.r b=
+      ((if b L.sigma then regValue (L.y.take 255) b else 3*regValue (L.y.take 255) b)+
+        2*(b L.bias).toNat+(b L.h).toNat*(2^32+977))%2^256)
+ (hh : (b L.sigma && b L.h)=false) (i : Fin 6) :
+ evalPoly (lowPolys.getD i.val []) (lowExpected L b)=b (L.R i.val) := by
+ have valid : ((firstRoot L b).testBit 6 && (firstRoot L b).testBit 7)=false := by
+   simpa [firstRoot_bits L hw b] using hh
+ have result:=initial_local_checked ⟨firstRoot L b,firstRoot_bound L hw b⟩ valid i
+ rw [initialRoot_vars L hw b bias scalar,initialRs_ref L hw b bias scalar] at result
+ have pe : evalPoly (lowPolys.getD i.val []) (lowExpected L b)=
+   evalPoly (lowPolys.getD i.val []) (initialCanonical L b) := by
+   fin_cases i <;> simp [lowPolys,evalPoly,lowExpected,lowCanonical,initialCanonical,List.range_succ,List.range'_succ]
+ rw [pe,result]
+ fin_cases i <;> simp [List.range_succ,List.range'_succ]
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: DirectDecoderTriangularFacts
+set_option maxRecDepth 30000
+set_option maxHeartbeats 200000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCells5 DecoderMeasuredTail DecoderBiasReuse
+
+
+
+theorem high_away : ∀i : Fin 4,fixedLayout.R (32+i.val)∉correctionWires (highCorrections fixedLayout i.val) := by decide +kernel
+theorem high_tri : ∀i j : Fin 4,i.val<j.val → fixedLayout.R (32+j.val)∉correctionWires (highCorrections fixedLayout i.val) := by decide +kernel
+
+theorem result_inj (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (i j : Nat) (hi : i<256) (hj : j<256) (eq : L.R i=L.R j) : i=j :=
+ getD_inj L.r (register_nodup L hn).2.1 i j (by rw [hw.2.1];exact hi) (by rw [hw.2.1];exact hj) eq
+
+theorem poly_r_away (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (i j : Nat) (lo : 3 ≤ i) (hi : i<256) (hj : j<256) (ne : j≠i-1) (enabled : Bool) :
+ L.R j∉correctionWires (polyCorrections (L.Y (i-3)) (L.Y (i-2)) (L.Y (i-1))
+  (L.Y i) L.sigma (L.R (i-1)) enabled) := by
+ have p: L.R j≠L.Y (i-3):=(y_ne_r L hw hn _ _ (by omega) hj).symm
+ have x: L.R j≠L.Y (i-2):=(y_ne_r L hw hn _ _ (by omega) hj).symm
+ have y: L.R j≠L.Y (i-1):=(y_ne_r L hw hn _ _ (by omega) hj).symm
+ have z: L.R j≠L.Y i:=(y_ne_r L hw hn _ _ hi hj).symm
+ have sig: L.R j≠L.sigma:=(flag_ne_r L hw hn _ (by tauto) j hj).symm
+ have r: L.R j≠L.R (i-1):=r_ne_r L hw hn _ _ hj (by omega) ne
+ cases enabled <;> simp [polyCorrections,correctionWires,p,x,y,z,sig,r]
+
+theorem poly_correction_value (p x y z sig r : Wire) (enabled : Bool) (b : BasisState) :
+ phaseValue (polyCorrections p x y z sig r enabled) b=
+ poly (b p) (b x) (b y) (if enabled then b z else false) (b sig) (b r) := by
+ cases enabled <;> simp [polyCorrections,phaseValue,poly,Bool.xor_assoc]
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: DirectDecoderStages
+set_option maxRecDepth 30000
+set_option maxHeartbeats 200000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCells5 DecoderMeasuredTail DecoderBiasReuse
+
+structure SourceData (L : DecoderLayout) (ref : BasisState) (s : State) : Prop where
+ source : ∀j,j<256 → s.basis (L.Y j)=ref (L.Y j)
+ sigma : s.basis L.sigma=ref L.sigma
+ h : s.basis L.h=ref L.h
+
+def Pending (L : DecoderLayout) (ref : BasisState) (n : Nat) (s : State) : Prop :=
+ ∀j,j<n → s.basis (L.R j)=ref (L.R j)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+theorem highPhysical_eq (L : DecoderLayout) (ref : BasisState) (s : State)
+ (src : SourceData L ref s) (rs : Pending L ref 36 s)
+ (a0 : s.basis (L.A 0)=(ref (L.Y 32) && ref L.h)) :
+ highPhysical L s.basis=highExpected L ref := by
+ have rr : (List.range' 32 4).map (fun j=>s.basis (L.R j))=(List.range' 32 4).map (fun j=>ref (L.R j)) := by
+   apply List.map_congr_left
+   intro j hj
+   exact rs j (by have z:=List.mem_range'.mp hj;omega)
+ unfold highPhysical highExpected
+ rw [rr,src.source 32 (by decide),src.source 33 (by decide),src.source 34 (by decide),
+   src.source 35 (by decide),src.source 31 (by decide),src.source 30 (by decide),src.source 29 (by decide),
+   rs 31 (by decide),rs 30 (by decide),src.sigma,src.h,a0]
+
+theorem high_known (L : DecoderLayout) (ref : BasisState) (r : Reference L ref)
+ (s : State) (src : SourceData L ref s) (rs : Pending L ref 36 s)
+ (a0 : s.basis (L.A 0)=(ref (L.Y 32) && ref L.h)) (j : Fin 4) :
+ s.basis (L.R (32+j.val))=phaseValue (highCorrections L j.val) s.basis := by
+ rw [rs (32+j.val) (by have h:=j.isLt;omega),high_correction_value L s.basis j,
+  highPhysical_eq L ref s src rs a0]
+ symm
+ simpa only [Nat.add_comm] using high_math L ref r.graph r.adds r.exclusive r.exclusiveBias j
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+theorem high_correct (ref : BasisState) (r : Reference fixedLayout ref)
+ (s : State) (src : SourceData fixedLayout ref s) (rs : Pending fixedLayout ref 36 s)
+ (a0 : s.basis (fixedLayout.A 0)=(ref (fixedLayout.Y 32) && ref fixedLayout.h)) (m : List Bool) :
+ ErasedRange (fun i=>fixedLayout.R (32+i)) 4 s (run (highErase fixedLayout) m s) := by
+ apply eraseRange_correct
+ · intro i hi j hj eq
+   have z:=result_inj _ fixed_widths fixed_nodup (32+i) (32+j) (by omega) (by omega) eq
+   omega
+ · intro i hi;exact high_away ⟨i,hi⟩
+ · intro i hi j hij hj;exact high_tri ⟨i,hi⟩ ⟨j,hj⟩ hij
+ · intro i hi;exact high_known _ ref r s src rs a0 ⟨i,hi⟩
+
+theorem upper_known (L : DecoderLayout) (ref : BasisState) (r : Reference L ref)
+ (s : State) (src : SourceData L ref s) (rs : Pending L ref 256 s) (i : Nat) (hi : i<220) :
+ s.basis (L.R (36+i))=phaseValue
+ (polyCorrections (L.Y (36+i-3)) (L.Y (36+i-2)) (L.Y (36+i-1))
+  (L.Y (36+i)) L.sigma (L.R (36+i-1)) (decide (36+i<255))) s.basis := by
+ rw [rs _ (by omega),poly_correction_value,
+  src.source (36+i-3) (by omega),src.source (36+i-2) (by omega),
+  src.source (36+i-1) (by omega),src.source (36+i) (by omega),src.sigma,rs _ (by omega)]
+ have h:=reference_pair L ref r.graph r.adds r.exclusive r.exclusiveBias (34+i) (by omega) (by omega)
+ have a:34+i+2=36+i:=by omega
+ have b:34+i-1=36+i-3:=by omega
+ have c:34+i=36+i-2:=by omega
+ have d:34+i+1=36+i-1:=by omega
+ rw [a,b,d,c] at h
+ simpa only [sourceAt,decide_eq_true_eq] using h
+
+theorem middle_known (L : DecoderLayout) (ref : BasisState) (r : Reference L ref)
+ (s : State) (src : SourceData L ref s) (rs : Pending L ref 32 s) (i : Nat) (hi : i<19) :
+ s.basis (L.R (13+i))=phaseValue
+ (polyCorrections (L.Y (13+i-3)) (L.Y (13+i-2)) (L.Y (13+i-1))
+  (L.Y (13+i)) L.sigma (L.R (13+i-1)) true) s.basis := by
+ rw [rs _ (by omega),poly_correction_value,
+  src.source (13+i-3) (by omega),src.source (13+i-2) (by omega),
+  src.source (13+i-1) (by omega),src.source (13+i) (by omega),src.sigma,rs _ (by omega)]
+ exact reference_zero_pair L ref r.graph r.adds r.exclusive r.exclusiveBias (13+i) (by omega) (by omega)
+  (fun k lo hi=>region_correction_value L ref k (Or.inl ⟨by omega,by omega⟩))
+
+theorem upper_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (ref : BasisState) (r : Reference L ref) (s : State) (src : SourceData L ref s)
+ (rs : Pending L ref 256 s) (m : List Bool) :
+ ErasedRange (fun i=>L.R (36+i)) 220 s (run (upper L) m s) := by
+ apply eraseRange_correct
+ · intro i hi j hj eq
+   have z:=result_inj L hw hn (36+i) (36+j) (by omega) (by omega) eq
+   omega
+ · intro i hi
+   exact poly_r_away L hw hn (36+i) (36+i) (by omega) (by omega) (by omega) (by omega) _
+ · intro i hi j hij hj
+   exact poly_r_away L hw hn (36+i) (36+j) (by omega) (by omega) (by omega) (by omega) _
+ · intro i hi
+   exact upper_known L ref r s src rs i hi
+
+theorem middle_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (ref : BasisState) (r : Reference L ref) (s : State) (src : SourceData L ref s)
+ (rs : Pending L ref 32 s) (m : List Bool) :
+ ErasedRange (fun i=>L.R (13+i)) 19 s (run (middle L) m s) := by
+ apply eraseRange_correct
+ · intro i hi j hj eq
+   have z:=result_inj L hw hn (13+i) (13+j) (by omega) (by omega) eq
+   omega
+ · intro i hi
+   exact poly_r_away L hw hn (13+i) (13+i) (by omega) (by omega) (by omega) (by omega) _
+ · intro i hi j hij hj
+   exact poly_r_away L hw hn (13+i) (13+j) (by omega) (by omega) (by omega) (by omega) _
+ · intro i hi
+   exact middle_known L ref r s src rs i hi
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: ErasedFrames
+set_option maxRecDepth 30000
+set_option maxHeartbeats 200000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCells5 DecoderMeasuredTail DecoderBiasReuse
+
+theorem range_source (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (off n : Nat) (bound : off+n≤256) (ref : BasisState) (s t : State)
+ (e : ErasedRange (fun i=>L.R (off+i)) n s t) (src : SourceData L ref s) : SourceData L ref t := by
+ refine ⟨?_,?_,?_⟩
+ · intro j hj
+   exact (e.outside (L.Y j) (fun i hi=>y_ne_r L hw hn j (off+i) hj (by omega))).trans (src.source j hj)
+ · exact (e.outside L.sigma (fun i hi=>flag_ne_r L hw hn L.sigma (by tauto) (off+i) (by omega))).trans src.sigma
+ · exact (e.outside L.h (fun i hi=>flag_ne_r L hw hn L.h (by tauto) (off+i) (by omega))).trans src.h
+
+theorem range_pending (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (off n : Nat) (bound : off+n≤256) (ref : BasisState) (s t : State)
+ (e : ErasedRange (fun i=>L.R (off+i)) n s t) (rs : Pending L ref off s) : Pending L ref off t := by
+ intro j hj
+ exact (e.outside (L.R j) (fun i hi=>r_ne_r L hw hn j (off+i) (by omega) (by omega) (by omega))).trans (rs j hj)
+
+theorem range_carry (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (off n : Nat) (bound : off+n≤256) (s t : State)
+ (e : ErasedRange (fun i=>L.R (off+i)) n s t) (k : Nat) (hk : k<255) : t.basis (L.A k)=s.basis (L.A k) :=
+ e.outside (L.A k) (fun i hi=>(r_ne_a L hw hn (off+i) k (by omega) hk).symm)
+
+theorem range_above (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (off n : Nat) (bound : off+n≤256) (s t : State)
+ (e : ErasedRange (fun i=>L.R (off+i)) n s t) (j : Nat) (lo : off+n≤j) (hi : j<256) :
+ t.basis (L.R j)=s.basis (L.R j) :=
+ e.outside (L.R j) (fun i ih=>r_ne_r L hw hn j (off+i) hi (by omega) (by omega))
+
+theorem range_outside (L : DecoderLayout) (hw : L.Widths)
+ (off n : Nat) (bound : off+n≤256) (s t : State)
+ (e : ErasedRange (fun i=>L.R (off+i)) n s t) (q : Wire) (hr : q∉L.r) : t.basis q=s.basis q := by
+ apply e.outside
+ intro i hi eq
+ exact hr (eq.symm ▸ r_mem L hw (off+i) (by omega))
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: DirectDecoderBlocks
+set_option maxRecDepth 30000
+set_option maxHeartbeats 200000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCells5 DecoderMeasuredTail DecoderBiasReuse
+
+def highBlock (L : DecoderLayout) : Program := andWrap (L.Y 32) L.h (L.A 0) (highErase L)
+def lowBlock (L : DecoderLayout) : Program := andWrap (L.Y 4) L.h (L.A 0)
+ (andWrap (L.Y 5) (L.Y 6) (L.A 1) (andWrap (L.Y 8) L.h (L.A 2) (lowErase L)))
+def directGraph3 (L : DecoderLayout) : Program := upper L++(highBlock L++(middle L++lowBlock L))
+
+theorem prepared_source (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (ref : BasisState) (s : State) (src : SourceData L ref s) (a b : Wire) (k : Nat) (hk : k<255) :
+ SourceData L ref (prepared s a b (L.A k)) := by
+ refine ⟨?_,?_,?_⟩
+ · intro j hj
+   exact (Function.update_of_ne (y_ne_a L hw hn j k hj hk) _ _).trans (src.source j hj)
+ · exact (Function.update_of_ne (sigma_ne_a L hw hn k hk) _ _).trans src.sigma
+ · exact (Function.update_of_ne (h_ne_a L hw hn k hk) _ _).trans src.h
+
+theorem prepared_pending (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (ref : BasisState) (s : State) (n : Nat) (hnn : n≤256) (rs : Pending L ref n s)
+ (a b : Wire) (k : Nat) (hk : k<255) : Pending L ref n (prepared s a b (L.A k)) := by
+ intro j hj
+ exact (Function.update_of_ne (r_ne_a L hw hn j k (by omega) hk) _ _).trans (rs j hj)
+
+theorem highBlock_correct (ref : BasisState) (r : Reference fixedLayout ref)
+ (s : State) (src : SourceData fixedLayout ref s) (rs : Pending fixedLayout ref 36 s)
+ (clean : s.basis (fixedLayout.A 0)=false) (m : List Bool) :
+ ErasedRange (fun i=>fixedLayout.R (32+i)) 4 s (run (highBlock fixedLayout) m s) := by
+ let L:=fixedLayout
+ let u:=prepared s (L.Y 32) L.h (L.A 0)
+ have us : SourceData L ref u:=prepared_source L fixed_widths fixed_nodup ref s src _ _ 0 (by decide)
+ have ur : Pending L ref 36 u:=prepared_pending L fixed_widths fixed_nodup ref s 36 (by decide) rs _ _ 0 (by decide)
+ have ua : u.basis (L.A 0)=(ref (L.Y 32) && ref L.h) := by
+   change writeBit s.basis (L.A 0) (s.basis (L.Y 32) && s.basis L.h) (L.A 0)=_
+   simp only [writeBit]
+   rw [Function.update_self,src.source 32 (by decide),src.h]
+ apply andWrap_erased
+ · exact y_ne_a L fixed_widths fixed_nodup 32 0 (by decide) (by decide)
+ · exact h_ne_a L fixed_widths fixed_nodup 0 (by decide)
+ · intro i hi;exact y_ne_r L fixed_widths fixed_nodup 32 (32+i) (by decide) (by omega)
+ · intro i hi;exact flag_ne_r L fixed_widths fixed_nodup L.h (by tauto) (32+i) (by omega)
+ · intro i hi;exact (r_ne_a L fixed_widths fixed_nodup (32+i) 0 (by omega) (by decide)).symm
+ · exact clean
+ · exact high_correct ref r u us ur ua m
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: DirectGraphCorrect
+set_option maxRecDepth 30000
+set_option maxHeartbeats 2000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCells5 DecoderMeasuredTail DecoderBiasReuse
+attribute [local irreducible] run
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end ECDSAAdd.Entrant.DirectDecoder
+
+
+-- Proof component: DirectDecoderFinal
+set_option maxRecDepth 30000
+set_option maxHeartbeats 2000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.DirectDecoder
+open Arithmetic TerminalGraph DecoderCells5 DecoderMeasuredTail DecoderBiasReuse Secp256k1 BalancedField Challenge Baselines
+attribute [local irreducible] run
+
+def cellDecoder : Program := frontFast fixedLayout++directGraph3 fixedLayout++
+ clearQuotient fixedLayout++restoreSource fixedLayout++copySource fixedLayout
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end ECDSAAdd.Entrant.DirectDecoder
+
+end
+
+section
+set_option autoImplicit false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 0
+namespace ECDSAAdd.Entrant.CompareDecoder
+open Arithmetic TerminalGraph DirectDecoder
+def comparePolys : List Polynomial := [[[2], [3], [4], [12], [25], [1, 3], [1, 12], [1, 13], [1, 25], [2, 11], [3, 11], [3, 12], [3, 13], [3, 25], [12, 25], [13, 25]], [[3], [5], [3, 4], [3, 11], [3, 12], [3, 13], [3, 26], [4, 11], [4, 12], [4, 13], [4, 26], [12, 26], [13, 26]], [[4], [6], [17], [18], [27], [4, 11], [5, 11], [5, 16], [5, 27], [16, 27], [17, 27]], [[5], [6], [7], [28], [4, 6], [4, 28], [5, 11], [6, 11], [6, 28]], [[6], [7], [8], [12], [29], [5, 7], [5, 29], [6, 11], [7, 11], [7, 29]], [[7], [8], [9], [30], [6, 8], [6, 12], [6, 30], [7, 11], [8, 11], [8, 12], [8, 30], [12, 30]], [[8], [9], [10], [20], [21], [31], [7, 9], [7, 31], [8, 11], [9, 11], [9, 19], [9, 31], [11, 20], [11, 21], [12, 21], [19, 31]]]
+def cmpSteps : List Bool → List Bool → Bool → List Bool
+ | [],_,_=>[]
+ | y::ys,k::ks,t=>let v:=if k then y && t else y || t;v::cmpSteps ys ks v
+ | _,[],_=>[]
+def seedIndex (x : Nat) : Nat :=
+ (x.testBit 0).toNat+2*(x.testBit 10).toNat+4*(x.testBit 11).toNat+
+ 8*(x.testBit 12).toNat+16*(x.testBit 13).toNat+32*(x.testBit 14).toNat
+def valid (x : Nat) : Bool := (2305880426972133179:Nat).testBit (seedIndex x)
+def compareVars (x : Nat) : List Bool :=
+ [true]++((List.range 10).map x.testBit)++
+ [x.testBit 10,x.testBit 11,x.testBit 1 && x.testBit 11]++
+ [x.testBit 14]++cmpSteps ((List.range 9).map (fun i=>x.testBit (i+1)))
+ [true,false,true,false,true,true,true,true,true] (x.testBit 14)++(lowRs x).drop 4
+end ECDSAAdd.Entrant.CompareDecoder
+
+end
+
+section
+set_option autoImplicit false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.CertificateBits
+open Arithmetic DirectDecoder
+
+def mask (w : Nat) : Nat := 2^(2^w)-1
+
+def input : Nat → Nat → Nat
+ | 0,_=>0
+ | w+1,k=>
+   if k=w then (2^(2^w)-1) <<< (2^w)
+   else if k<w then input w k ||| (input w k <<< (2^w)) else 0
+
+theorem input_bound (w k : Nat) : input w k<2^(2^w) := by
+ induction w with
+ | zero=>simp [input]
+ | succ w ih=>
+  simp only [input]
+  split
+  · have h:(2^(2^w):Nat)-1<2^(2^w):=Nat.sub_lt (Nat.two_pow_pos _) (by decide)
+    have sh:=Nat.shiftLeft_lt (m:=2^w) h
+    simpa only [Nat.pow_succ,Nat.mul_two] using sh
+  · split
+    · have left:input w k<2^(2^w+2^w):=
+       lt_of_lt_of_le (ih) (Nat.pow_le_pow_right (by decide) (Nat.le_add_right _ _))
+      have right:=Nat.shiftLeft_lt (m:=2^w) ih
+      simpa only [Nat.pow_succ,Nat.mul_two] using Nat.or_lt_two_pow left right
+    · exact Nat.two_pow_pos _
+
+theorem input_bit (w k r : Nat) (bound : r<2^w) : (input w k).testBit r=r.testBit k := by
+ induction w generalizing k r with
+ | zero=>
+  have eq:r=0:=by simpa using bound
+  subst r
+  simp [input]
+ | succ w ih=>
+  have lim:r<2^w+2^w:=by simpa only [Nat.pow_succ,Nat.mul_two] using bound
+  simp only [input]
+  by_cases top:k=w
+  · rw [if_pos top]
+    subst k
+    by_cases low:r<2^w
+    · simp only [Nat.testBit_shiftLeft,Nat.testBit_two_pow_sub_one,
+       show ¬r≥2^w by omega,decide_false,Bool.false_and,Nat.testBit_lt_two_pow low]
+    · have ge:r≥2^w:=by omega
+      have sub:r-2^w<2^w:=by omega
+      have bit:r.testBit w=true:=Nat.testBit_of_two_pow_le_and_two_pow_add_one_gt ge bound
+      simp only [Nat.testBit_shiftLeft,Nat.testBit_two_pow_sub_one,ge,decide_true,sub,Bool.true_and,bit]
+  · rw [if_neg top]
+    by_cases small:k<w
+    · rw [if_pos small,Nat.testBit_or,Nat.testBit_shiftLeft]
+      by_cases low:r<2^w
+      · simp only [show ¬r≥2^w by omega,decide_false,Bool.false_and,Bool.or_false]
+        exact ih k r low
+      · have ge:r≥2^w:=by omega
+        have sub:r-2^w<2^w:=by omega
+        have off:(input w k).testBit r=false:=Nat.testBit_lt_two_pow
+          (lt_of_lt_of_le (input_bound w k) (Nat.pow_le_pow_right (by decide) ge))
+        rw [off]
+        simp only [ge,decide_true,Bool.true_and,Bool.false_or]
+        rw [ih k (r-2^w) sub]
+        have eq:r=2^w+(r-2^w):=by omega
+        conv_rhs=>rw [eq,Nat.testBit_two_pow_add_gt small]
+    · rw [if_neg small]
+      have le:w+1≤k:=by omega
+      have bit:r.testBit k=false:=Nat.testBit_lt_two_pow
+       (lt_of_lt_of_le bound (Nat.pow_le_pow_right (by decide) le))
+      simp only [Nat.zero_testBit,bit]
+
+theorem mask_bit (w r : Nat) (bound : r<2^w) : (mask w).testBit r=true := by
+ simp only [mask,Nat.testBit_two_pow_sub_one,bound,decide_true]
+
+def carry (a b c : Nat) : Nat := ((a &&& b) ^^^ (a &&& c)) ^^^ (b &&& c)
+
+theorem carry_bit (a b c r : Nat) : (carry a b c).testBit r=carryBit (a.testBit r) (b.testBit r) (c.testBit r) := by
+ simp only [carry,carryBit,Nat.testBit_xor,Nat.testBit_and]
+
+def poly (w : Nat) (p : Polynomial) (cols : List Nat) : Nat :=
+ p.foldr (fun term acc=>(term.foldr (fun i v=>(cols.getD i 0) &&& v) (mask w)) ^^^ acc) 0
+
+theorem get_bit (cs : List Nat) (i r : Nat) :
+ ((cs.map (fun v=>v.testBit r)).getD i false)=(cs.getD i 0).testBit r := by
+ simp only [List.getD,List.getElem?_map]
+ cases cs[i]? <;> simp
+
+theorem term_bit (w r : Nat) (bound : r<2^w) (term : List Nat) (cols : List Nat) :
+ (term.foldr (fun i v=>(cols.getD i 0) &&& v) (mask w)).testBit r=
+ term.foldr (fun i v=>((cols.map (fun n=>n.testBit r)).getD i false) && v) true := by
+ induction term with
+ | nil=>exact mask_bit w r bound
+ | cons i t ih=>simp only [List.foldr_cons,Nat.testBit_and,ih,get_bit]
+
+theorem poly_bit (w r : Nat) (bound : r<2^w) (p : Polynomial) (cols : List Nat) :
+ (poly w p cols).testBit r=evalPoly p (cols.map (fun n=>n.testBit r)) := by
+ induction p with
+ | nil=>simp [poly,evalPoly]
+ | cons t p ih=>simp only [poly,List.foldr_cons,Nat.testBit_xor,term_bit w r bound,evalPoly] at *;rw [ih]
+
+end ECDSAAdd.Entrant.CertificateBits
+set_option autoImplicit false
+set_option linter.unusedSimpArgs false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 2000000
+namespace ECDSAAdd.Entrant.CertificateBits
+open Arithmetic DirectDecoder CompareDecoder
+
+def chunkCols : List Nat → List Nat → Nat → Nat → Nat → Nat → List Nat
+ | [],_,_,_,_,_=>[]
+ | y::ys,d::ds,prev,sigma,a,c=>
+   let raw:=prev ^^^ y ^^^ sigma ^^^ a
+   (raw ^^^ d ^^^ c)::chunkCols ys ds y sigma (carry prev (y ^^^ sigma) a) (carry d raw c)
+ | _::_,[],_,_,_,_=>[]
+
+theorem chunkCols_bit (ys ds : List Nat) (p s a c r : Nat) :
+ (chunkCols ys ds p s a c).map (fun n=>n.testBit r)=
+ chunk (ys.map (fun n=>n.testBit r)) (ds.map (fun n=>n.testBit r))
+ (p.testBit r) (s.testBit r) (a.testBit r) (c.testBit r) := by
+ induction ys generalizing ds p a c with
+ | nil=>simp [chunkCols,chunk]
+ | cons y ys ih=>
+  cases ds with
+  | nil=>simp [chunkCols,chunk]
+  | cons d ds=>simp only [chunkCols,chunk,List.map_cons,Nat.testBit_xor,carry_bit,ih]
+
+def lowRsCols : List Nat := [0,0,0,0]++chunkCols
+ ((List.range 9).map (fun j=>input 15 (j+1)))
+ ((List.range 9).map (fun j=>if (977:Nat).testBit (j+4) then input 15 11 else 0))
+ (input 15 0) (input 15 10) (input 15 12) (input 15 13)
+
+theorem lowRsCols_bit (r : Nat) (hr:r<32768) : lowRsCols.map (fun n=>n.testBit r)=lowRs r := by
+ have h:r<2^15:=hr
+ simp only [lowRsCols,lowRs,List.map_append,List.map_cons,List.map_nil,Nat.zero_testBit,
+ chunkCols_bit,List.map_map,Function.comp_def,input_bit 15 _ _ h]
+ congr 2
+ apply List.map_congr_left
+ intro j hj
+ split <;> simp_all [input_bit 15 _ r hr]
+
+def cmpCols : List Nat → List Bool → Nat → List Nat
+ | [],_,_=>[]
+ | y::ys,k::ks,t=>let v:=if k then y &&& t else y ||| t;v::cmpCols ys ks v
+ | _,[],_=>[]
+
+theorem cmpCols_bit (ys : List Nat) (ks : List Bool) (t r : Nat) :
+ (cmpCols ys ks t).map (fun n=>n.testBit r)=cmpSteps (ys.map (fun n=>n.testBit r)) ks (t.testBit r) := by
+ induction ys generalizing ks t with
+ | nil=>simp [cmpCols,cmpSteps]
+ | cons y ys ih=>
+  cases ks with
+  | nil=>simp [cmpCols,cmpSteps]
+  | cons k ks=>cases k <;> simp [cmpCols,cmpSteps,Nat.testBit_and,Nat.testBit_or,ih]
+
+def varsCols : List Nat := [mask 15]++(List.range 10).map (input 15)++
+ [input 15 10,input 15 11,input 15 1 &&& input 15 11]++[input 15 14]++
+ cmpCols ((List.range 9).map (fun i=>input 15 (i+1)))
+ [true,false,true,false,true,true,true,true,true] (input 15 14)++lowRsCols.drop 4
+
+theorem varsCols_bit (r : Nat) (hr:r<32768) : varsCols.map (fun n=>n.testBit r)=compareVars r := by
+ have h:r<2^15:=hr
+ simp only [varsCols,compareVars,List.map_append,List.map_cons,List.map_nil,
+ mask_bit 15 r h,List.map_map,Function.comp_def,input_bit 15 _ _ h,Nat.testBit_and,
+ cmpCols_bit,List.map_drop,lowRsCols_bit r hr]
+
+-- Each cube is one of the eighteen reachable seed states.
+def states : List Nat := [0,1,3,4,5,8,9,10,12,13,16,17,20,21,35,41,45,61]
+def seedVars : List Nat := [0,10,11,12,13,14]
+def cube (s : Nat) : Nat := (List.range 6).foldr
+ (fun j v=>(if s.testBit j then input 15 (seedVars.getD j 0) else mask 15 ^^^ input 15 (seedVars.getD j 0)) &&& v) (mask 15)
+def validCols : Nat := states.foldr (fun s v=>cube s ||| v) 0
+
+def cubeBool (s : Nat) (bs : List Bool) : Bool :=
+ (List.range 6).foldr (fun j v=>((bs.getD j false == s.testBit j) && v)) true
+
+theorem cube_bit (s r : Nat) (hr:r<32768) :
+ (cube s).testBit r=cubeBool s (seedVars.map r.testBit) := by
+ have bit (j : Nat) :
+  (if s.testBit j then input 15 (seedVars.getD j 0) else mask 15 ^^^ input 15 (seedVars.getD j 0)).testBit r=
+  (r.testBit (seedVars.getD j 0) == s.testBit j) := by
+   cases h:s.testBit j <;> simp [h,Nat.testBit_xor,mask_bit 15 r hr,input_bit 15 _ r hr]
+ simp only [cube,cubeBool,List.range_succ,List.range_zero,List.foldr_append,List.foldr_cons,List.foldr_nil,
+ Nat.testBit_and,bit,mask_bit 15 r hr]
+ simp [seedVars]
+
+theorem validBool (p s h a c t : Bool) :
+ (2305880426972133179:Nat).testBit
+ (p.toNat+2*s.toNat+4*h.toNat+8*a.toNat+16*c.toNat+32*t.toNat)=
+ states.foldr (fun n v=>cubeBool n [p,s,h,a,c,t] || v) false := by
+ cases p <;> cases s <;> cases h <;> cases a <;> cases c <;> cases t <;> decide +kernel
+
+theorem validCols_bit (r : Nat) (hr:r<32768) : (validCols).testBit r=valid r := by
+ rw [valid,seedIndex,validBool]
+ unfold validCols
+ generalize states=ss
+ induction ss with
+ | nil=>simp
+ | cons n ns ih=>
+  simp only [List.foldr_cons,Nat.testBit_or,cube_bit n r hr,ih]
+  simp [seedVars]
+
+ theorem columns_checked (i : Fin 7) :
+ validCols &&& poly 15 (comparePolys.getD i.val []) varsCols=
+ validCols &&& lowRsCols.getD (i.val+6) 0 := by
+  revert i
+  decide +kernel
+
+ theorem low_checked (x : Nat) (bound : x<32768) (hv:valid x=true) (i : Fin 7) :
+ evalPoly (comparePolys.getD i.val []) (compareVars x)=(lowRs x).getD (i.val+6) false := by
+ have h:=congrArg (fun n:Nat=>n.testBit x) (columns_checked i)
+ simp only [Nat.testBit_and,validCols_bit x bound,hv,Bool.true_and,
+ poly_bit 15 x bound,varsCols_bit x bound] at h
+ rw [←get_bit,lowRsCols_bit x bound] at h
+ exact h
+end ECDSAAdd.Entrant.CertificateBits
+
+end
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.CompareDecoder
+open DirectDecoder
+theorem low_checked (x : Nat) (bound : x<32768) (h : valid x=true) (i : Fin 7) :
+ evalPoly (comparePolys.getD i.val []) (compareVars x)=(lowRs x).getD (i.val+6) false :=
+ CertificateBits.low_checked x bound h i
+#print axioms low_checked
+end ECDSAAdd.Entrant.CompareDecoder
+
+end
+
+section
 set_option autoImplicit false
 /-! Comparator carries supply two previously separate helper products. Full all-record frame proof follows below. -/
 
@@ -1343,3 +2907,5 @@ end ECDSAAdd.Entrant.CompareDecoder
 
 #print axioms ECDSAAdd.Entrant.CompareDecoder.cellDecoderNext_frame
 #print axioms ECDSAAdd.Entrant.CompareDecoder.counts
+
+end
