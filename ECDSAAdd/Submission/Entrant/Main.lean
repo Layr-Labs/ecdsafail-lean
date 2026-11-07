@@ -1783,7 +1783,7 @@ def programOpt (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperOpt layout C cx cy
 
 def entryOpt : Challenge.Entry := fun C=>normalizeProgram (programOpt C)
-def boundsOpt : Challenge.Bounds := ⟨2150282,1498370,1587,50251236⟩
+def boundsOpt : Challenge.Bounds := ⟨2150284,1498370,1587,50251236⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programOpt C) (encodes b (if b then R+C else R)) := by
@@ -1794,14 +1794,14 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec hc b R) (support_used hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2150282 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2150284 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2150288 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2150282
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2150290 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2150284
     omega
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498370 := by
@@ -2062,7 +2062,7 @@ def programOpt (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperOpt layout C cx cy
 
 def entryOpt : Challenge.Entry := fun C=>normalizeProgram (programOpt C)
-def boundsOpt : Challenge.Bounds := ⟨2150281,1498370,1587,50251248⟩
+def boundsOpt : Challenge.Bounds := ⟨2150283,1498370,1587,50251248⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programOpt C) (encodes b (if b then R+C else R)) := by
@@ -2073,14 +2073,14 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec hc b R) (support_used hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2150281 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2150283 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2150288 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2150281
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2150290 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2150283
     omega
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498370 := by
@@ -2749,43 +2749,43 @@ theorem run_xorAcc (a : Nat) (acc : Wire) (T : List (Nat × Wire × Wire))
     · simp only [xorAcc, accVal, hb, if_true, List.nil_append, Bool.false_xor]
       exact hr s
 
-def litAnd (aL : Bool) (x u v : Wire) : Program :=
-  if aL then [.CCX x u v] else [.X x, .CCX x u v, .X x]
+/-- `v ^= (x == aL) & u ^ e & x & !aL`. When `aL` is false the two products form a
+multiplexer on `x`, which is `u ^ x & (u ^ e)`, so one Toffoli covers both. -/
+def muxAnd (aL : Bool) (e x u v : Wire) : Program :=
+  if aL then [.CCX x u v] else [.CX e u, .CCX x u v, .CX e u, .CX u v]
 
-theorem run_litAnd (aL : Bool) (x u v : Wire) (hxu : x ≠ u) (hxv : x ≠ v) (huv : u ≠ v)
-    (s : State) (m : List Bool) :
-    run (litAnd aL x u v) m s = xw s v ((s.basis x == aL) && s.basis u) := by
+theorem mux_value (x u e : Bool) :
+    ((x && (u ^^ e)) ^^ u) = (((x == false) && u) ^^ (e && (x && !false))) := by
+  cases x <;> cases u <;> cases e <;> rfl
+
+theorem run_muxAnd (aL : Bool) (e x u v : Wire) (heu : e ≠ u) (hxu : x ≠ u) (hxv : x ≠ v)
+    (huv : u ≠ v) (hev : e ≠ v) (s : State) (m : List Bool) :
+    run (muxAnd aL e x u v) m s =
+      xw s v (((s.basis x == aL) && s.basis u) ^^ (s.basis e && (s.basis x && !aL))) := by
   cases aL
-  · simp only [litAnd, run, xw, Bool.false_eq_true, if_false]
+  · simp only [muxAnd, run, xw, Bool.false_eq_true, if_false]
     apply State.extensionality
     · rfl
     · funext q
-      by_cases e : q = v
-      · subst e; simp [writeBit, Function.update_apply, hxv.symm, hxu.symm, huv.symm, hxv]
-      · by_cases e2 : q = x
-        · subst e2; simp [writeBit, hxv]
-        · simp [writeBit, e, e2]
-  · simp only [litAnd, run, xw, if_true]
+      by_cases e1 : q = v
+      · subst e1
+        rw [← mux_value]
+        simp [writeBit, Function.update_apply, hxv.symm, huv.symm, hev.symm, hxu, heu, huv, hxv, hev,
+          Bool.xor_assoc]
+      · by_cases e2 : q = u
+        · subst e2
+          simp [writeBit, Function.update_apply, e1, heu, hxu, Ne.symm heu, hev, Bool.xor_assoc]
+        · simp [writeBit, Function.update_apply, e1, e2]
+  · simp only [muxAnd, run, xw, if_true]
     apply State.extensionality
     · rfl
     · funext q; simp
 
-def condAnd (aL : Bool) (e x v : Wire) : Program :=
-  if aL then [] else [.CCX e x v]
-
-theorem run_condAnd (aL : Bool) (e x v : Wire) (s : State) (m : List Bool) :
-    run (condAnd aL e x v) m s = xw s v (s.basis e && (s.basis x && !aL)) := by
-  cases aL
-  · simp [condAnd, run, xw]
-  · simp only [condAnd, if_true, run, xw]
-    apply State.extensionality <;> simp [writeBit]
-
-
 /-- The extraction body, before the single Toffoli into the parked wire. -/
 def pre (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     (top mid low : List (Nat × Wire × Wire)) : Program :=
-  [.X one] ++ (xorAcc a U low ++ (litAnd aL xlo U V ++ (xorAcc a V mid ++
-    (condAnd aL el xlo V ++ (litAnd aH xhi V F ++ (xorAcc a F top ++ condAnd aH eh xhi F))))))
+  [.X one] ++ (xorAcc a U low ++ (muxAnd aL el xlo U V ++ (xorAcc a V mid ++
+    (muxAnd aH eh xhi V F ++ xorAcc a F top))))
 
 theorem run_cat (p q : Program) (hp : measurementCount p = 0) (m : List Bool) (s : State) :
     run (p ++ q) m s = run q m (run p [] s) := by
@@ -2801,11 +2801,12 @@ theorem xorAcc_mc (a : Nat) (acc : Wire) (T : List (Nat × Wire × Wire)) :
     simp only [xorAcc, measurementCount_append, ih]
     cases a.testBit i <;> simp [measurementCount]
 
-theorem litAnd_mc (aL : Bool) (x u v : Wire) : measurementCount (litAnd aL x u v) = 0 := by
-  cases aL <;> simp [litAnd, measurementCount]
+theorem muxAnd_mc (aL : Bool) (e x u v : Wire) : measurementCount (muxAnd aL e x u v) = 0 := by
+  cases aL <;> simp [muxAnd, measurementCount]
 
-theorem condAnd_mc (aL : Bool) (e x v : Wire) : measurementCount (condAnd aL e x v) = 0 := by
-  cases aL <;> simp [condAnd, measurementCount]
+theorem pre_bool (A L C M E T : Bool) :
+    (((A && ((L ^^ C) ^^ M)) ^^ E) ^^ T) = ((A && (L ^^ M ^^ C)) ^^ T ^^ E) := by
+  cases A <;> cases L <;> cases C <;> cases M <;> cases E <;> cases T <;> rfl
 
 /-- Value of `F` after `pre`, read off the state with `one` set. -/
 theorem pre_F (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
@@ -2832,19 +2833,16 @@ theorem pre_F (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
   have tt : ∀ x ∈ top, (x.2.1 ≠ U ∧ x.2.2 ≠ U) ∧ (x.2.1 ≠ V ∧ x.2.2 ≠ V) ∧ (x.2.1 ≠ F ∧ x.2.2 ≠ F) :=
     fun x hx => hT x (by simp [hx])
   simp only [pre]
-  rw [run_cat _ _ rfl, run_cat _ _ (xorAcc_mc ..), run_cat _ _ (litAnd_mc ..),
-    run_cat _ _ (xorAcc_mc ..), run_cat _ _ (condAnd_mc ..), run_cat _ _ (litAnd_mc ..),
-    run_cat _ _ (xorAcc_mc ..)]
+  rw [run_cat _ _ rfl, run_cat _ _ (xorAcc_mc ..), run_cat _ _ (muxAnd_mc ..),
+    run_cat _ _ (xorAcc_mc ..), run_cat _ _ (muxAnd_mc ..)]
   have h1 : run [Instr.X one] [] s = ⟨s.phase, st⟩ := rfl
   rw [h1]
   clear_value st
   rw [run_xorAcc a U low (fun x hx => (tl x hx).1)]
-  rw [run_litAnd aL xlo U V hlU hlV hUV]
+  rw [run_muxAnd aL el xlo U V heU hlU hlV hUV heV]
   rw [run_xorAcc a V mid (fun x hx => (tm x hx).2.1)]
-  rw [run_condAnd]
-  rw [run_litAnd aH xhi V F hhV hhF hVF]
+  rw [run_muxAnd aH eh xhi V F hEV hhV hhF hVF hEF]
   rw [run_xorAcc a F top (fun x hx => (tt x hx).2.2)]
-  rw [run_condAnd]
   have aMU : ∀ (b : BasisState) (v : Bool), accVal a (writeBit b U v) mid = accVal a b mid :=
     fun b v => accVal_write a b U v mid (fun x hx => (tm x hx).1)
   have aMV : ∀ (b : BasisState) (v : Bool), accVal a (writeBit b V v) mid = accVal a b mid :=
@@ -2861,6 +2859,7 @@ theorem pre_F (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     Function.update_of_ne hEV, Function.update_of_ne hEU]
   simp only [Function.update_apply, hhU, hhV, hlU, hlV, heU, heV, hEU, hEV, hEF, hUV.symm, hVF.symm,
     hUF.symm, if_false, if_true, sU, sV, sF, Bool.false_xor, Bool.xor_false]
+  exact pre_bool _ _ _ _ _ _
 
 
 /-- Pair positions with their chain wires, each entry holding the prefix before and after it. -/
@@ -3271,24 +3270,20 @@ theorem xorAcc_proper (a : Nat) (acc : Wire) (T : List (Nat × Wire × Wire))
 
 theorem pre_proper (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     (top mid low : List (Nat × Wire × Wire))
-    (hlV : xlo ≠ V) (hUV : U ≠ V) (hhF : xhi ≠ F) (hVF : V ≠ F) (heV : el ≠ V) (hEF : eh ≠ F)
+    (hlV : xlo ≠ V) (hUV : U ≠ V) (hhF : xhi ≠ F) (hVF : V ≠ F) (heU : el ≠ U) (hEV : eh ≠ V)
     (hT : ∀ x ∈ top ++ mid ++ low, (x.2.1 ≠ U ∧ x.2.2 ≠ U) ∧ (x.2.1 ≠ V ∧ x.2.2 ≠ V) ∧
       (x.2.1 ≠ F ∧ x.2.2 ≠ F)) :
     ProperProgram (pre a aL aH one U V F xlo xhi el eh top mid low) := by
   have mt : ∀ x ∈ top, x ∈ top ++ mid ++ low := fun x h => by simp [h]
   have mm : ∀ x ∈ mid, x ∈ top ++ mid ++ low := fun x h => by simp [h]
   have ml : ∀ x ∈ low, x ∈ top ++ mid ++ low := fun x h => by simp [h]
-  have lit : ∀ (b : Bool) (x u v : Wire), x ≠ v → u ≠ v → ProperProgram (litAnd b x u v) := by
-    intro b x u v h1 h2
-    cases b <;> simp [litAnd, ProperProgram, ProperGate, h1, h2]
-  have cnd : ∀ (b : Bool) (e x v : Wire), e ≠ v → x ≠ v → ProperProgram (condAnd b e x v) := by
-    intro b e x v h1 h2
-    cases b <;> simp [condAnd, ProperProgram, ProperGate, h1, h2]
+  have mux : ∀ (b : Bool) (e x u v : Wire), e ≠ u → x ≠ v → u ≠ v → ProperProgram (muxAnd b e x u v) := by
+    intro b e x u v h1 h2 h3
+    cases b <;> simp [muxAnd, ProperProgram, ProperGate, h1, h2, h3]
   simp only [pre, properProgram_append]
   refine ⟨by simp [ProperProgram, ProperGate], xorAcc_proper _ _ _ (fun x h => (hT x (ml x h)).1),
-    lit _ _ _ _ hlV hUV, xorAcc_proper _ _ _ (fun x h => (hT x (mm x h)).2.1),
-    cnd _ _ _ _ heV hlV, lit _ _ _ _ hhF hVF, xorAcc_proper _ _ _ (fun x h => (hT x (mt x h)).2.2),
-    cnd _ _ _ _ hEF hhF⟩
+    mux _ _ _ _ _ heU hlV hUV, xorAcc_proper _ _ _ (fun x h => (hT x (mm x h)).2.1),
+    mux _ _ _ _ _ hEV hhF hVF, xorAcc_proper _ _ _ (fun x h => (hT x (mt x h)).2.2)⟩
 
 theorem pre_not (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     (top mid low : List (Nat × Wire × Wire)) (q : Wire)
@@ -3299,16 +3294,13 @@ theorem pre_not (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
   have mt : ∀ x ∈ top, q ≠ x.2.1 ∧ q ≠ x.2.2 := fun x hx => hT x (by simp [hx])
   have mm : ∀ x ∈ mid, q ≠ x.2.1 ∧ q ≠ x.2.2 := fun x hx => hT x (by simp [hx])
   have ml : ∀ x ∈ low, q ≠ x.2.1 ∧ q ≠ x.2.2 := fun x hx => hT x (by simp [hx])
-  have lit : ∀ (b : Bool) (x u v : Wire), q ≠ x → q ≠ u → q ≠ v → q ∉ wires (litAnd b x u v) := by
-    intro b x u v a1 a2 a3
-    cases b <;> simp [litAnd, wires, Instr.wires, a1, a2, a3]
-  have cnd : ∀ (b : Bool) (e x v : Wire), q ≠ e → q ≠ x → q ≠ v → q ∉ wires (condAnd b e x v) := by
-    intro b e x v a1 a2 a3
-    cases b <;> simp [condAnd, wires, Instr.wires, a1, a2, a3]
+  have mux : ∀ (b : Bool) (e x u v : Wire), q ≠ e → q ≠ x → q ≠ u → q ≠ v →
+      q ∉ wires (muxAnd b e x u v) := by
+    intro b e x u v a1 a2 a3 a4
+    cases b <;> simp [muxAnd, wires, Instr.wires, a1, a2, a3, a4]
   simp only [pre, wires_append, Finset.mem_union, not_or]
-  exact ⟨by simp [wires, Instr.wires, h1], xorAcc_not _ _ _ _ h2 ml, lit _ _ _ _ h5 h2 h3,
-    xorAcc_not _ _ _ _ h3 mm, cnd _ _ _ _ h7 h5 h3, lit _ _ _ _ h6 h3 h4, xorAcc_not _ _ _ _ h4 mt,
-    cnd _ _ _ _ h8 h6 h4⟩
+  exact ⟨by simp [wires, Instr.wires, h1], xorAcc_not _ _ _ _ h2 ml, mux _ _ _ _ _ h7 h5 h2 h3,
+    xorAcc_not _ _ _ _ h3 mm, mux _ _ _ _ _ h8 h6 h3 h4, xorAcc_not _ _ _ _ h4 mt⟩
 
 theorem tri_fst (c : Wire) (l : List Nat) (bs : List ZeroBit) (h : l.length = bs.length) :
     (tri c l bs).map (·.1) = l := by
@@ -3631,7 +3623,7 @@ theorem classifierF_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wi
       (y.2.1 ≠ F ∧ y.2.2 ≠ F) := fun y hy =>
     ⟨offT U mU y (memT y hy), offT V mV y (memT y hy), offT F mF y (memT y hy)⟩
   have Pp : ProperProgram (preOf tr xs work one U V F) :=
-    pre_proper _ _ _ _ _ _ _ _ _ _ _ _ _ _ (nx V mV _ h1l) UV (nx F mF _ h1h) VF (eM V mV) (eO F mF) hTall
+    pre_proper _ _ _ _ _ _ _ _ _ _ _ _ _ _ (nx V mV _ h1l) UV (nx F mF _ h1h) VF (eM U mU) (eO V mV) hTall
   have pkNot : pk ∉ wires (preOf tr xs work one U V F) := by
     apply pre_not
     · exact ⟨tmp1 pk mP, Ne.symm UP, Ne.symm VP, Ne.symm FP, (nx pk mP _ h1l).symm, (nx pk mP _ h1h).symm,
@@ -3812,40 +3804,31 @@ theorem xorAcc_slots (a : Nat) (acc : Wire) (T : List (Nat × Wire × Wire)) :
 
 theorem pre_counts (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     (top mid low : List (Nat × Wire × Wire)) :
-    toffoliCount (pre a aL aH one U V F xlo xhi el eh top mid low) ≤ 4 ∧
+    toffoliCount (pre a aL aH one U V F xlo xhi el eh top mid low) ≤ 2 ∧
     measurementCount (pre a aL aH one U V F xlo xhi el eh top mid low) = 0 ∧
     Challenge.gateSlots (pre a aL aH one U V F xlo xhi el eh top mid low) ≤
       2 * (top.length + mid.length + low.length) + 9 := by
-  have lt : ∀ (b : Bool) (x u v : Wire), toffoliCount (litAnd b x u v) = 1 := by
-    intro b x u v; cases b <;> simp [litAnd, toffoliCount]
-  have ct : ∀ (b : Bool) (e x v : Wire), toffoliCount (condAnd b e x v) ≤ 1 := by
-    intro b e x v; cases b <;> simp [condAnd, toffoliCount]
-  have ls : ∀ (b : Bool) (x u v : Wire), Challenge.gateSlots (litAnd b x u v) ≤ 3 := by
-    intro b x u v
-    cases b <;> simp [litAnd, Challenge.gateSlots, Challenge.instructionSlots]
-  have cs : ∀ (b : Bool) (e x v : Wire), Challenge.gateSlots (condAnd b e x v) ≤ 1 := by
-    intro b e x v
-    cases b <;> simp [condAnd, Challenge.gateSlots, Challenge.instructionSlots]
+  have mt : ∀ (b : Bool) (e x u v : Wire), toffoliCount (muxAnd b e x u v) = 1 := by
+    intro b e x u v; cases b <;> simp [muxAnd, toffoliCount]
+  have ms : ∀ (b : Bool) (e x u v : Wire), Challenge.gateSlots (muxAnd b e x u v) ≤ 4 := by
+    intro b e x u v
+    cases b <;> simp [muxAnd, Challenge.gateSlots, Challenge.instructionSlots]
   have s1 := xorAcc_slots a U low
   have s2 := xorAcc_slots a V mid
   have s3 := xorAcc_slots a F top
-  have l1 := ls aL xlo U V
-  have l2 := ls aH xhi V F
-  have c1 := cs aL el xlo V
-  have c2 := cs aH eh xhi F
-  have t1 := lt aL xlo U V
-  have t2 := lt aH xhi V F
-  have t3 := ct aL el xlo V
-  have t4 := ct aH eh xhi F
+  have l1 := ms aL el xlo U V
+  have l2 := ms aH eh xhi V F
+  have t1 := mt aL el xlo U V
+  have t2 := mt aH eh xhi V F
   refine ⟨?_, ?_, ?_⟩
   · simp only [pre, toffoliCount_append, xorAcc_tc]
     simp only [toffoliCount]
     omega
-  · simp only [pre, measurementCount_append, xorAcc_mc, litAnd_mc, condAnd_mc]
+  · simp only [pre, measurementCount_append, xorAcc_mc, muxAnd_mc]
     rfl
   · simp only [pre, Challenge.gateSlots_append]
     simp only [Challenge.gateSlots, Challenge.instructionSlots, List.map_cons, List.map_nil,
-      List.sum_cons, List.sum_nil] at s1 s2 s3 l1 l2 c1 c2 ⊢
+      List.sum_cons, List.sum_nil] at s1 s2 s3 l1 l2 ⊢
     omega
 
 theorem triples_length (xs work : List Wire) (one : Wire) (l : List Nat) :
@@ -3869,7 +3852,7 @@ theorem triples_length (xs work : List Wire) (one : Wire) (l : List Nat) :
     omega
 
 theorem extract_counts (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F pk g : Wire) :
-    toffoliCount (extract tr xs work one U V F pk g) ≤ 9 ∧
+    toffoliCount (extract tr xs work one U V F pk g) ≤ 5 ∧
     measurementCount (extract tr xs work one U V F pk g) = 0 ∧
     Challenge.gateSlots (extract tr xs work one U V F pk g) ≤ 1037 := by
   have ix := Tri.idx_facts v
@@ -3888,7 +3871,7 @@ theorem extract_counts (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V 
       ((triples xs work one tr.idx).drop (tr.topL.length + tr.midL.length)).length ≤ 254 := by
     simp only [List.length_take, List.length_drop]
     omega
-  change toffoliCount (preOf tr xs work one U V F) ≤ 4 ∧ measurementCount (preOf tr xs work one U V F) = 0 ∧
+  change toffoliCount (preOf tr xs work one U V F) ≤ 2 ∧ measurementCount (preOf tr xs work one U V F) = 0 ∧
     Challenge.gateSlots (preOf tr xs work one U V F) ≤ _ at pc
   unfold extract
   refine ⟨?_, ?_, ?_⟩
@@ -3910,7 +3893,7 @@ theorem extract_counts (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V 
 
 theorem classifierF_counts (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wire)
     (y0 c f g g1 wB t one U V F pk : Wire) (hwl : work.length = 253) :
-    toffoliCount (classifierF tr yb xs work y0 c f g g1 wB t one U V F pk) ≤ 265 ∧
+    toffoliCount (classifierF tr yb xs work y0 c f g g1 wB t one U V F pk) ≤ 261 ∧
     measurementCount (classifierF tr yb xs work y0 c f g g1 wB t one U V F pk) = 257 ∧
     Challenge.gateSlots (classifierF tr yb xs work y0 c f g g1 wB t one U V F pk) ≤ 3361 + 1037 := by
   obtain ⟨i0, it, hidx, hitl⟩ := InputSentinel.idx_split tr v
@@ -4031,7 +4014,7 @@ theorem preOf_proper (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F 
     · exact List.mem_of_mem_take h
     · exact List.mem_of_mem_drop (List.mem_of_mem_take h)
     · exact List.mem_of_mem_drop h
-  exact pre_proper _ _ _ _ _ _ _ _ _ _ _ _ _ _ (Ne.symm v4) UV (Ne.symm f5) VF (Ne.symm v3) (Ne.symm f2)
+  exact pre_proper _ _ _ _ _ _ _ _ _ _ _ _ _ _ (Ne.symm v4) UV (Ne.symm f5) VF (Ne.symm u3) (Ne.symm v2)
     (fun y hy => ⟨⟨Ne.symm (u1 y (memT y hy)).1, Ne.symm (u1 y (memT y hy)).2⟩,
       ⟨Ne.symm (v1 y (memT y hy)).1, Ne.symm (v1 y (memT y hy)).2⟩,
       ⟨Ne.symm (f1 y (memT y hy)).1, Ne.symm (f1 y (memT y hy)).2⟩⟩)
@@ -5069,7 +5052,7 @@ theorem flag_eq [DecidableEq Point] {cx cy : Fp} (hc : curve.toAffine.Nonsingula
     simp
 
 theorem stageNew_counts {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (pk : Wire) :
-    toffoliCount (stageNew layout (.some hc) pk) ≤ 265 ∧
+    toffoliCount (stageNew layout (.some hc) pk) ≤ 261 ∧
     measurementCount (stageNew layout (.some hc) pk) = 257 ∧
     Challenge.gateSlots (stageNew layout (.some hc) pk) ≤ 3619 + 1037 := by
   have c := classifierF_counts (triOf (.some hc)) (triOf_valid hc) (yBit (dialogExceptionPoint (.some hc)))
@@ -5510,7 +5493,7 @@ theorem genericNew_counts (L : ControlledPointLayout) (cx cy : Fp) :
   omega
 
 theorem wrapperNew_metrics {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (wrapperNew layout (.some hc) cx cy) + 246 ≤
+    toffoliCount (wrapperNew layout (.some hc) cx cy) + 250 ≤
       toffoliCount (wrapperOpt layout (.some hc) cx cy) ∧
     measurementCount (wrapperNew layout (.some hc) cx cy) ≤
       measurementCount (wrapperOpt layout (.some hc) cx cy) ∧
@@ -5547,7 +5530,7 @@ def programNew (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperNew layout C cx cy
 
 def entryNew : Challenge.Entry := fun C=>normalizeProgram (programNew C)
-def boundsNew : Challenge.Bounds := ⟨2150035,1498370,1587,50255906⟩
+def boundsNew : Challenge.Bounds := ⟨2150033,1498370,1587,50255906⟩
 
 theorem program_correct_new (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programNew C) (encodes b (if b then R+C else R)) := by
@@ -5558,14 +5541,14 @@ theorem program_correct_new (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_new hc b R) (support_used_new hc)
 
-theorem program_toffoli_new (C : Point) : toffoliCount (programNew C)≤2150035 := by
+theorem program_toffoli_new (C : Point) : toffoliCount (programNew C)≤2150033 := by
   cases C with
   | zero=>simp [programNew,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperNew_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperNew layout (.some hc) cx cy)≤2150035
+    change toffoliCount (wrapperNew layout (.some hc) cx cy)≤2150033
     omega
 
 theorem program_measurements_new (C : Point) : measurementCount (programNew C)≤1498370 := by
@@ -7204,7 +7187,7 @@ theorem oclassifierF_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : 
       (y.2.1 ≠ F ∧ y.2.2 ≠ F) := fun y hy =>
     ⟨offT U mU y (memT y hy), offT V mV y (memT y hy), offT F mF y (memT y hy)⟩
   have Pp : ProperProgram (preOf tr xs work one U V F) :=
-    pre_proper _ _ _ _ _ _ _ _ _ _ _ _ _ _ (nx V mV _ h1l) UV (nx F mF _ h1h) VF (eM V mV) (eO F mF) hTall
+    pre_proper _ _ _ _ _ _ _ _ _ _ _ _ _ _ (nx V mV _ h1l) UV (nx F mF _ h1h) VF (eM U mU) (eO V mV) hTall
   have pkNot : pk ∉ wires (preOf tr xs work one U V F) := by
     apply pre_not
     · exact ⟨tmp1 pk mP, Ne.symm UP, Ne.symm VP, Ne.symm FP, (nx pk mP _ h1l).symm, (nx pk mP _ h1h).symm,
@@ -7693,7 +7676,7 @@ def outNew (L : ControlledPointLayout) (C : Point) : Program :=
 theorem oclassifierF_counts (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : List Wire)
     (y0 c f g O D H t1 t2 u W one U V F pk : Wire) (hwl : work.length = 253) :
     toffoliCount (oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk) ≤
-      toffoliCount (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) + 9 ∧
+      toffoliCount (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) + 5 ∧
     measurementCount (oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk) =
       measurementCount (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) := by
   obtain ⟨i0, it, hidx, hitl⟩ := idx_split tr v
@@ -8299,7 +8282,7 @@ theorem predecL_mem (tr : Tri) (yc : Bool) (g c xr1 xr2 y0 O D H : Wire) :
   exact ⟨key 0 (by simp), key 1 (by simp), key 5 (by simp), key 6 (by simp), key 7 (by simp)⟩
 
 theorem outNew_counts {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (outNew layout (.some hc)) ≤ toffoliCount (OutputOpt.outStage layout (.some hc)) + 9 ∧
+    toffoliCount (outNew layout (.some hc)) ≤ toffoliCount (OutputOpt.outStage layout (.some hc)) + 5 ∧
     measurementCount (outNew layout (.some hc)) = measurementCount (OutputOpt.outStage layout (.some hc)) ∧
     Challenge.gateSlots (outNew layout (.some hc)) ≤
       Challenge.gateSlots (OutputOpt.outStage layout (.some hc)) + 1047 := by
@@ -8557,7 +8540,7 @@ theorem wrapper_physical_N {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) 
     outNew_physical hc⟩
 
 theorem wrapperN_metrics {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (wrapperN layout (.some hc) cx cy) + 491 ≤
+    toffoliCount (wrapperN layout (.some hc) cx cy) + 499 ≤
       toffoliCount (wrapperOpt layout (.some hc) cx cy) ∧
     measurementCount (wrapperN layout (.some hc) cx cy) ≤
       measurementCount (wrapperOpt layout (.some hc) cx cy) ∧
@@ -8596,7 +8579,7 @@ def programB (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperN layout C cx cy
 
 def entryB : Challenge.Entry := fun C=>normalizeProgram (programB C)
-def boundsB : Challenge.Bounds := ⟨2149790,1498370,1587,50256955⟩
+def boundsB : Challenge.Bounds := ⟨2149784,1498370,1587,50256955⟩
 
 theorem program_correct_B (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programB C) (encodes b (if b then R+C else R)) := by
@@ -8607,14 +8590,14 @@ theorem program_correct_B (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_N hc b R) (support_used_N hc)
 
-theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2149790 := by
+theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2149784 := by
   cases C with
   | zero=>simp [programB,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperN_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2149790
+    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2149784
     omega
 
 theorem program_measurements_B (C : Point) : measurementCount (programB C)≤1498370 := by
