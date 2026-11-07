@@ -3931,16 +3931,6 @@ def tFwd (R S Z cs U : List Wire) (cin : Wire) : Program :=
   (copyRegister none ((R.drop 32).take 10) S ++
   addInPlace (U ++ Z.take 10) ((R.drop 0).take 42) (cs.take 41) cin))))))
 
-/-- The inverse of `tFwd`. -/
-def tInv (R S Z cs U : List Wire) (cin : Wire) : Program :=
-  subInPlace (U ++ Z.take 10) ((R.drop 0).take 42) (cs.take 41) cin ++
-  (copyRegister none ((R.drop 32).take 10) S ++
-  (copyRegister none S ((R.drop 32).take 10) ++
-  (subInPlace (S ++ Z.take 6) ((R.drop 4).take 16) (cs.take 15) cin ++
-  (addInPlace (S ++ Z.take 4) ((R.drop 6).take 14) (cs.take 13) cin ++
-  (copyRegister none S ((R.drop 10).take 10) ++
-  (copyRegister none ((R.drop 0).take 10) S ++
-  addInPlace (U ++ Z.take 3) ((R.drop 0).take 35) (cs.take 34) cin))))))
 
 theorem fitA (V k n X : Nat) (h : V / 2^k + X < 2^n) : (V / 2^k) % 2^n + X < 2^n :=
   lt_of_le_of_lt (Nat.add_le_add_right (Nat.mod_le _ _) _) h
@@ -4006,11 +3996,394 @@ theorem tFwd_spec (h35 : u + d < 2^35) :
     (seqv s4 (PS_val (by omega)) (seqv s5 (PS_val (by omega)) (seqv s6 (PS_val a4) (seqv s7 (PS_dval a5)
     (Triple.conseq (fun s h => h) s8 (PS_val (by omega)))))))))
 
+end Spec
+
+section InvHead
+open ECDSAAdd ECDSAAdd.Arithmetic Instr ECDSAAdd.Entrant.IncMask
+
+
+theorem one_win (l : List Wire) (k : Nat) (h : k < l.length) : (l.drop k).take 1 = [(l.drop k).headD 0] := by
+  have := take_succ_head (l.drop k) 0 (by simp; omega)
+  simpa using this
+
+theorem headD_drop_mem (l : List Wire) (k : Nat) (h : k < l.length) : (l.drop k).headD 0 ∈ l := by
+  have hm : (l.drop k).headD 0 ∈ (l.drop k).take 1 := by rw [one_win l k h]; simp
+  exact List.mem_of_mem_drop (List.mem_of_mem_take hm)
+
+theorem rv_one (w : Wire) (b : BasisState) : regValue [w] b = if b w then 1 else 0 := by
+  simp [regValue]
+
+theorem win1_mem (R : List Wire) (k : Nat) (rw : Wire) (hrw : (R.drop k).take 1 = [rw]) : rw ∈ R := by
+  have : rw ∈ (R.drop k).take 1 := by rw [hrw]; simp
+  exact List.mem_of_mem_drop (List.mem_of_mem_take this)
+
+/-- Toggle bit 31 of `R` (the wire `rw`) by the wire `uw` (one CX). -/
+theorem tstep_cx1 (R S : List Wire) (t : BasisState) (V D : Nat) (hR : R.Nodup) (hl : R.length = 43)
+    (rw : Wire) (hrw : (R.drop 31).take 1 = [rw])
+    (uw : Wire) (hSR : ∀ q ∈ S, q ∉ R) (ub : Nat)
+    (hub : ∀ s, PS R S t V D s → (if s uw then 1 else 0) = ub) :
+    Triple (PS R S t V D) [Instr.CX uw rw]
+      (PS R S t (V % 2^31 + 2^31 * (((V / 2^31) % 2 + ub) % 2 + 2 * (V / 2^32))) D) := by
+  intro s m h
+  have rwR : rw ∈ R := win1_mem R 31 rw hrw
+  have hrun : run [Instr.CX uw rw] m s = ⟨s.phase, writeBit s.basis rw (s.basis rw ^^ s.basis uw)⟩ := rfl
+  rw [hrun]
+  have hsame : ∀ w, w ∉ (R.drop 31).take 1 → writeBit s.basis rw (s.basis rw ^^ s.basis uw) w = s.basis w := by
+    intro w hw
+    rw [hrw] at hw
+    simp only [List.mem_singleton] at hw
+    exact Function.update_of_ne hw _ _
+  have w0 : regValue [rw] s.basis = (V / 2^31) % 2 := by
+    rw [← hrw, win_mid R 31 1 (by omega) s.basis, h.1, pow_one]
+  have hb := hub s.basis h
+  have hy : regValue ((R.drop 31).take 1) (writeBit s.basis rw (s.basis rw ^^ s.basis uw)) =
+      ((V / 2^31) % 2 + ub) % 2 := by
+    rw [hrw, rv_one]
+    rw [rv_one] at w0
+    have e1 : writeBit s.basis rw (s.basis rw ^^ s.basis uw) rw = (s.basis rw ^^ s.basis uw) := by simp [writeBit]
+    rw [e1]
+    have hm : (V / 2^31) % 2 < 2 := Nat.mod_lt _ (by norm_num)
+    revert w0 hb
+    cases s.basis rw <;> cases s.basis uw <;> intro w0 hb <;>
+      simp only [Bool.true_xor, Bool.false_xor, Bool.not_true, Bool.not_false, Bool.false_eq_true,
+        if_true, if_false] at w0 hb ⊢ <;> omega
+  refine ⟨rfl, ?_, ?_, ?_⟩
+  · show regValue R (writeBit s.basis _ _) = _
+    rw [win_recombine R hR 31 1 (by omega) s.basis _ hsame _ hy, regValue_take_mod _ _ (by omega),
+      drop_div _ _ (by omega), h.1]
+    simp only [pow_one, Nat.reduceAdd]
+  · exact (regValue_congr _ _ _ (fun w hw => by
+      simp only [writeBit]; exact Function.update_of_ne (fun e => hSR w hw (by rw [e]; exact rwR)) _ _)).trans h.2.1
+  · intro q h1 h2
+    simp only [writeBit]
+    rw [Function.update_of_ne (fun e => h1 (by rw [e]; exact rwR))]
+    exact h.2.2 q h1 h2
+
+/-- Carry transfer: `z := rw && uw`, subtract `z` from `R[32..42)`, erase `z` by measurement. -/
+def cOut (R Z cs : List Wire) (cin rw uw z : Wire) : Program :=
+  [Instr.CCX rw uw z] ++
+  (subInPlace (z :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin ++
+  [Instr.measureX z [] [.CZ rw uw]])
+
+theorem tstep_cout (R S Z cs : List Wire) (cin rw uw z : Wire) (t : BasisState) (V D : Nat) (cb : Bool)
+    (hR : R.Nodup) (hl : R.length = 43) (hrw : (R.drop 31).take 1 = [rw])
+    (hnd : (cin :: ((z :: Z.take 9) ++ (R.drop 32).take 10 ++ cs.take 9)).Nodup)
+    (hzl : (Z.take 9).length = 9) (hcl : (cs.take 9).length = 9)
+    (hzR : z ∉ R) (hzS : z ∉ S) (huR : uw ∉ R) (hzu : z ≠ uw)
+    (hSR : ∀ q ∈ S, q ∉ R) (hcinR : cin ∉ R) (hcinS : cin ∉ S)
+    (hcsR : ∀ q ∈ cs.take 9, q ∉ R) (hcsS : ∀ q ∈ cs.take 9, q ∉ S)
+    (ht : t cin = false) (htc : ∀ q ∈ cs.take 9, t q = false) (htz : t z = false)
+    (hZR : ∀ q ∈ Z.take 9, q ∉ R) (hZS : ∀ q ∈ Z.take 9, q ∉ S) (htZ : ∀ q ∈ Z.take 9, t q = false)
+    (hc : ∀ s, PS R S t V D s → (s rw && s uw) = cb)
+    (fit : (if cb then 1 else 0) ≤ (V / 2^32) % 2^10) :
+    Triple (PS R S t V D) (cOut R Z cs cin rw uw z) (PS R S t (V - 2^32 * (if cb then 1 else 0)) D) := by
+  intro s m h
+  have rwR : rw ∈ R := win1_mem R 31 rw hrw
+  have rwz : rw ≠ z := fun e => hzR (by rw [← e]; exact rwR)
+  have rwnw : rw ∉ (R.drop 32).take 10 := by
+    apply win_away R hR 32 10
+    left
+    rw [show (32:Nat) = 31 + 1 from rfl, List.take_add, hrw]
+    simp
+  have unw : uw ∉ (R.drop 32).take 10 := fun h => huR (mem_win h)
+  have znw : z ∉ (R.drop 32).take 10 := fun h => hzR (mem_win h)
+  have hnd' := List.nodup_cons.mp hnd
+  have hz' : z ∉ Z.take 9 ++ (R.drop 32).take 10 ++ cs.take 9 := by
+    have := hnd'.2; simp only [List.cons_append] at this; exact (List.nodup_cons.mp this).1
+  have zZ : z ∉ Z.take 9 := fun h => hz' (List.mem_append_left _ (List.mem_append_left _ h))
+  have zC : z ∉ cs.take 9 := fun h => hz' (List.mem_append_right _ h)
+  have hcinz : cin ≠ z := fun e => hnd'.1 (by rw [e]; simp)
+  have sz : s.basis z = false := (h.2.2 z hzR hzS).trans htz
+  have hcb := hc s.basis h
+  let s1 : State := ⟨s.phase, writeBit s.basis z (s.basis z ^^ (s.basis rw && s.basis uw))⟩
+  have s1o : ∀ w, w ≠ z → s1.basis w = s.basis w := fun w hw => Function.update_of_ne hw _ _
+  have s1z : s1.basis z = cb := by
+    show writeBit s.basis z (s.basis z ^^ (s.basis rw && s.basis uw)) z = cb
+    simp [writeBit, sz, hcb]
+  have hR1 : regValue R s1.basis = V :=
+    (regValue_congr _ _ _ (fun w hw => s1o w (fun e => hzR (by rw [← e]; exact hw)))).trans h.1
+  have hx1 : regValue (z :: Z.take 9) s1.basis = (if cb then 1 else 0) := by
+    rw [rv_cons, s1z, rv_zero _ _ (fun q hq => by
+      rw [s1o q (fun e => zZ (by rw [← e]; exact hq))]
+      exact (h.2.2 q (hZR q hq) (hZS q hq)).trans (htZ q hq))]
+    cases cb <;> rfl
+  have c1 : s1.basis cin = false := by rw [s1o cin hcinz]; exact (h.2.2 cin hcinR hcinS).trans ht
+  have k1 : ∀ q ∈ cs.take 9, s1.basis q = false := fun q hq => by
+    rw [s1o q (fun e => zC (by rw [← e]; exact hq))]
+    exact (h.2.2 q (hcsR q hq) (hcsS q hq)).trans (htc q hq)
+  obtain ⟨hp, hsame, hv⟩ := win_sub R (z :: Z.take 9) (cs.take 9) cin 32 10 hR (by omega) hnd
+    (by simp [hzl]) (by simp [hcl]) s1 (m.take (measurementCount
+      (subInPlace (z :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin))) c1 k1 (by rw [hx1, hR1]; exact fit)
+  set s2 := run (subInPlace (z :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin)
+    (m.take (measurementCount (subInPlace (z :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin))) s1 with hs2
+  have s2z : s2.basis z = cb := (hsame z znw).trans s1z
+  have s2r : s2.basis rw = s.basis rw := (hsame _ rwnw).trans (s1o _ rwz)
+  have s2u : s2.basis uw = s.basis uw := (hsame _ unw).trans (s1o _ hzu.symm)
+  have hand : s2.basis z = (s2.basis rw && s2.basis uw) := by rw [s2z, s2r, s2u, hcb]
+  have hrun : run (cOut R Z cs cin rw uw z) m s =
+      run [Instr.measureX z [] [.CZ rw uw]]
+        (m.drop (measurementCount (subInPlace (z :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin))) s2 := by
+    simp only [cOut, List.singleton_append]
+    rw [show run (Instr.CCX rw uw z :: (subInPlace (z :: Z.take 9) ((R.drop 32).take 10)
+        (cs.take 9) cin ++ [Instr.measureX z [] [.CZ rw uw]])) m s =
+        run (subInPlace (z :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin ++
+          [Instr.measureX z [] [.CZ rw uw]]) m s1 from rfl, run_append]
+  have fin : run [Instr.measureX z [] [.CZ rw uw]]
+      (m.drop (measurementCount (subInPlace (z :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin))) s2 =
+      ⟨s2.phase, writeBit s2.basis z false⟩ := by
+    simp only [run]
+    cases (m.drop (measurementCount (subInPlace (z :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin))).headD false <;>
+      simp [measureAndCorrect, correct, writeBit, Function.update, hand, rwz, hzu.symm]
+  rw [hrun, fin]
+  have hR2 : regValue R s2.basis = V - 2^32 * (if cb then 1 else 0) := by
+    rw [hR1, hx1] at hv; omega
+  refine ⟨by simp [hp, s1], ?_, ?_, ?_⟩
+  · exact (regValue_congr _ _ _ (fun w hw => by
+      simp only [writeBit]; exact Function.update_of_ne (fun e => hzR (by rw [← e]; exact hw)) _ _)).trans hR2
+  · refine (regValue_congr _ _ _ (fun w hw => ?_)).trans h.2.1
+    have wz : w ≠ z := fun e => hzS (by rw [← e]; exact hw)
+    simp only [writeBit]
+    rw [Function.update_of_ne wz, hsame w (fun hy => hSR w hw (mem_win hy)), s1o w wz]
+  · intro q h1 h2
+    by_cases qz : q = z
+    · subst qz; simp [writeBit, htz]
+    · simp only [writeBit]
+      rw [Function.update_of_ne qz, hsame q (fun hy => h1 (mem_win hy)), s1o q qz]
+      exact h.2.2 q h1 h2
+
+/-- Clear the window `[k, k+n]` of `R` when it holds `(u / 2^k) % 2^n + c` (`n+1` wires, top included). -/
+theorem tstep_inc (R S U : List Wire) (t : BasisState) (V D : Nat) (k n : Nat) (hR : R.Nodup)
+    (hk : k + n < R.length) (hU : k + n ≤ U.length)
+    (hnd : (((R.drop (k+n)).headD 0) :: ((U.drop k).take n ++ (R.drop k).take n)).Nodup)
+    (hSR : ∀ q ∈ S, q ∉ R) (hUR : ∀ q ∈ U, q ∉ R) (hUS : ∀ q ∈ U, q ∉ S)
+    (u : Nat) (hu : regValue U t = u) (c : Bool)
+    (hval : (V / 2^k) % 2^(n+1) = (u / 2^k) % 2^n + (if c then 1 else 0)) :
+    Triple (PS R S t V D) (incClr ((U.drop k).take n) ((R.drop k).take n) ((R.drop (k+n)).headD 0))
+      (PS R S t (V % 2^k + 2^k * ((if c then 1 else 0) + 2^(n+1) * (V / 2^(k+n+1)))) D) := by
+  intro s m h
+  have topR : (R.drop (k+n)).headD 0 ∈ R := headD_drop_mem R (k+n) hk
+  have wsp : (R.drop k).take (n+1) = (R.drop k).take n ++ [(R.drop (k+n)).headD 0] := by
+    rw [take_succ_head _ n (by simp; omega), List.drop_drop]
+  have hl : ((U.drop k).take n).length = ((R.drop k).take n).length := by simp; omega
+  have uv : regValue ((U.drop k).take n) s.basis = (u / 2^k) % 2^n := by
+    rw [win_mid U k n hU s.basis,
+      (regValue_congr U s.basis t (fun q hq => h.2.2 q (hUR q hq) (hUS q hq))).trans hu]
+  have wv : regValue ((R.drop k).take n ++ [(R.drop (k+n)).headD 0]) s.basis = (V / 2^k) % 2^(n+1) := by
+    rw [← wsp, win_mid R k (n+1) (by omega) s.basis, h.1]
+  obtain ⟨hp, hfr, hv⟩ := incClr_run ((U.drop k).take n) ((R.drop k).take n) ((R.drop (k+n)).headD 0) hl hnd
+    c s m (by rw [wv, uv, hval])
+  rw [← wsp] at hv
+  have hsame : ∀ w, w ∉ (R.drop k).take (n+1) →
+      (run (incClr ((U.drop k).take n) ((R.drop k).take n) ((R.drop (k+n)).headD 0)) m s).basis w = s.basis w :=
+    fun w hw => hfr w (fun h1 => hw (by rw [wsp]; exact List.mem_append_left _ h1))
+      (fun h2 => hw (by rw [wsp, h2]; simp))
+  refine ⟨hp, ?_, ?_, ?_⟩
+  · rw [win_recombine R hR k (n+1) (by omega) s.basis _ hsame _ hv,
+      regValue_take_mod _ _ (by omega), drop_div _ _ (by omega), h.1, Nat.add_assoc]
+  · exact (regValue_congr _ _ _ (fun w hw => hfr w (fun h1 => hSR w hw (mem_win h1))
+      (fun h2 => hSR w hw (h2 ▸ topR)))).trans h.2.1
+  · intro q h1 h2
+    exact (hfr q (fun hy => h1 (mem_win hy)) (fun e => h1 (e ▸ topR))).trans (h.2.2 q h1 h2)
+
+
+def V1f (u d : Nat) : Nat :=
+  (u + 4294968273*d) % 2^31 + 2^31 * ((((u + 4294968273*d) / 2^31) % 2 + (u / 2^31) % 2) % 2 +
+    2 * ((u + 4294968273*d) / 2^32))
+def cbf (u d : Nat) : Nat := if decide (2^32 ≤ u + 977*d) then 1 else 0
+def ccf (u d : Nat) : Nat := if decide (2^20 ≤ u % 2^20 + 977*d) then 1 else 0
+def V2f (u d : Nat) : Nat := V1f u d - 2^32 * cbf u d
+def V3f (u d : Nat) : Nat := V2f u d % 2^20 + 2^20 * (ccf u d + 2^(11+1) * (V2f u d / 2^(20+11+1)))
+
+theorem inv1_split (a b c d : Nat) (ha : a < 2^20) (hb : b < 2^11) (hd : d ≤ 976) :
+    ∃ y m0 m1 c20, y < 2^20 ∧ m0 < 2^11 ∧ m1 ≤ 1 ∧ c20 ≤ 1 ∧
+      a + 977*d = y + 2^20*c20 ∧ b + c20 = m0 + 2^11*m1 ∧
+      a + 2^20*b + 2^31*c + 4294968273*d = y + 2^20*m0 + 2^31*(m1 + c) + 2^32*d := by
+  refine ⟨(a + 977*d) % 2^20, (b + (a + 977*d) / 2^20) % 2^11, (b + (a + 977*d) / 2^20) / 2^11,
+    (a + 977*d) / 2^20, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> omega
+
+theorem inv1_arith (u d : Nat) (hu : u < 2^32) (hd : d ≤ 976) :
+    ((V1f u d / 2^31) % 2 = 1 ∧ (u / 2^31) % 2 = 1 ↔ 2^32 ≤ u + 977*d) ∧
+    cbf u d ≤ (V1f u d / 2^32) % 2^10 ∧
+    (V2f u d / 2^20) % 2^(11+1) = (u / 2^20) % 2^11 + ccf u d ∧
+    u % 2^20 ≤ (V3f u d / 2^0) % 2^21 ∧
+    V3f u d = u % 2^20 + 977*d + 2^32*d := by
+  unfold V3f V2f V1f cbf ccf
+  obtain ⟨a, b, c, ha, hb, hc, rfl⟩ : ∃ a b c, a < 2^20 ∧ b < 2^11 ∧ c ≤ 1 ∧ u = a + 2^20*b + 2^31*c :=
+    ⟨u % 2^20, (u / 2^20) % 2^11, u / 2^31, by omega, by omega, by omega, by omega⟩
+  obtain ⟨y, m0, m1, c20, hy, hm0, hm1, hc20, e1, e2, e3⟩ := inv1_split a b c d ha hb hd
+  rw [e3]
+  have q1 : (y + 2^20*m0 + 2^31*(m1 + c) + 2^32*d) % 2^31 = y + 2^20*m0 := by omega
+  have q2 : (y + 2^20*m0 + 2^31*(m1 + c) + 2^32*d) / 2^31 = m1 + c + 2*d := by omega
+  have q3 : (y + 2^20*m0 + 2^31*(m1 + c) + 2^32*d) / 2^32 = d + (m1 + c) / 2 := by omega
+  have q4 : (a + 2^20*b + 2^31*c) / 2^31 = c := by omega
+  have q5 : (a + 2^20*b + 2^31*c) % 2^20 = a := by omega
+  have q6 : (a + 2^20*b + 2^31*c) / 2^20 % 2^11 = b := by omega
+  rw [q1, q2, q3, q4, q5, q6]
+  have hcb : (2^32 ≤ a + 2^20*b + 2^31*c + 977*d) ↔ (m1 = 1 ∧ c = 1) := by omega
+  have hcc : (2^20 ≤ a + 977*d) ↔ c20 = 1 := by omega
+  simp only [hcc, hcb]
+  rcases (by omega : c = 0 ∨ c = 1) with rfl|rfl <;> rcases (by omega : m1 = 0 ∨ m1 = 1) with rfl|rfl <;>
+    rcases (by omega : c20 = 0 ∨ c20 = 1) with rfl|rfl <;>
+    simp <;> omega
+
+
+/-- First step of the inverse transform: `R = u + c*d ↦ c*d` with 30 Toffoli. -/
+def tInv1 (R Z cs U : List Wire) (cin : Wire) : Program :=
+  [Instr.CX ((U.drop 31).headD 0) ((R.drop 31).headD 0)] ++
+  (cOut R Z cs cin ((R.drop 31).headD 0) ((U.drop 31).headD 0) ((Z.drop 10).headD 0) ++
+  (incClr ((U.drop 20).take 11) ((R.drop 20).take 11) ((R.drop 31).headD 0) ++
+  subInPlace (U.take 20 ++ Z.take 1) ((R.drop 0).take 21) (cs.take 20) cin))
+
+theorem sl_z (Z : List Wire) : List.Sublist (Z.take 9 ++ (Z.drop 10).take 1) Z := by
+  have e : Z.drop 10 = (Z.drop 9).drop 1 := by rw [List.drop_drop]
+  conv_rhs => rw [← List.take_append_drop 9 Z]
+  refine (List.Sublist.refl _).append ?_
+  rw [e]
+  exact (List.take_sublist _ _).trans (List.drop_sublist _ _)
+
+theorem win12 (R : List Wire) : (R.drop 20).take 11 ++ (R.drop 31).take 1 = (R.drop 20).take 12 := by
+  rw [show (12:Nat) = 11 + 1 from rfl, List.take_add, List.drop_drop]
+
+namespace Geo
+variable {R S Z cs U : List Wire} {cin : Wire} (g : Geo R S Z cs U cin)
+include g
+
+theorem ndCout (zw : Wire) (hz : (Z.drop 10).take 1 = [zw]) :
+    (cin :: ((zw :: Z.take 9) ++ (R.drop 32).take 10 ++ cs.take 9)).Nodup := by
+  apply List.nodup_iff_count_le_one.mpr; intro q
+  have h := g.cnt q
+  have a := (sl_z Z).count_le q
+  have b := cW R 32 10 q
+  have c := cT cs 9 q
+  rw [hz] at a
+  simp only [List.count_cons, List.count_append, List.count_nil] at h a ⊢; omega
+
+theorem ndInc (rw : Wire) (hr : (R.drop 31).take 1 = [rw]) :
+    (rw :: ((U.drop 20).take 11 ++ (R.drop 20).take 11)).Nodup := by
+  apply List.nodup_iff_count_le_one.mpr; intro q
+  have h := g.cnt q
+  have a := cW U 20 11 q
+  have b := cW R 20 12 q
+  rw [← win12, hr] at b
+  simp only [List.count_cons, List.count_append, List.count_nil] at h a b ⊢; omega
+
+theorem neZU (zw uw : Wire) (hz : zw ∈ Z) (hu : uw ∈ U) : zw ≠ uw := by
+  rintro rfl
+  have h := g.cnt zw
+  have a := List.count_pos_iff.mpr hz
+  have b := List.count_pos_iff.mpr hu
+  simp only [List.count_cons, List.count_append] at h; omega
+
+theorem neUR (uw rw : Wire) (hu : uw ∈ U) (hr : rw ∈ R) : uw ≠ rw := by
+  rintro rfl
+  have h := g.cnt uw
+  have a := List.count_pos_iff.mpr hu
+  have b := List.count_pos_iff.mpr hr
+  simp only [List.count_cons, List.count_append] at h; omega
+
+theorem neZR (zw rw : Wire) (hz : zw ∈ Z) (hr : rw ∈ R) : zw ≠ rw := by
+  rintro rfl
+  have h := g.cnt zw
+  have a := List.count_pos_iff.mpr hz
+  have b := List.count_pos_iff.mpr hr
+  simp only [List.count_cons, List.count_append] at h; omega
+
+end Geo
+
+section InvSpec
+variable {R S Z cs U : List Wire} {cin : Wire} (g : Geo R S Z cs U cin) {t : BasisState}
+  (cl : Clean Z cs cin t) (u d : Nat) (hu : regValue U t = u) (hu32 : u < 2^32) (hd : d ≤ 976)
+include g cl hu hu32 hd
+set_option linter.unusedSectionVars false
+
+theorem tInv1_spec :
+    Triple (PS R S t (u + 4294968273*d) 0) (tInv1 R Z cs U cin) (PS R S t (977*d + 2^32*d) 0) := by
+  have hrw := one_win R 31 (by rw [g.r]; omega)
+  have hu1 := one_win U 31 (by rw [g.u]; omega)
+  have hz1 := one_win Z 10 (by rw [g.z]; omega)
+  have uU := win1_mem U 31 _ hu1
+  have zZ := win1_mem Z 10 _ hz1
+  have rR := win1_mem R 31 _ hrw
+  have Uval : ∀ V D s, PS R S t V D s → regValue U s = u := fun V D s h =>
+    (regValue_congr U s t (fun q hq => h.2.2 q (g.UR q hq) (g.US q hq))).trans hu
+  have ubv : ∀ V D s, PS R S t V D s → (if s ((U.drop 31).headD 0) then 1 else 0) = (u / 2^31) % 2 := by
+    intro V D s h
+    have := win_mid U 31 1 (by rw [g.u]) s
+    rw [hu1, rv_one, Uval V D s h, pow_one] at this
+    exact this
+  have rbv : ∀ V D s, PS R S t V D s → (if s ((R.drop 31).headD 0) then 1 else 0) = (V / 2^31) % 2 := by
+    intro V D s h
+    have := win_mid R 31 1 (by rw [g.r]; omega) s
+    rw [hrw, rv_one, h.1, pow_one] at this
+    exact this
+  -- step 1: toggle bit 31
+  have s1 := tstep_cx1 R S t (u + 4294968273*d) 0 g.rnd g.r _ hrw _ g.SR ((u / 2^31) % 2)
+    (ubv (u + 4294968273*d) 0)
+  have AR := inv1_arith u d hu32 hd
+  -- step 2: move the carry into bit 32 out of the d part
+  have s2 := tstep_cout R S Z cs cin _ _ _ t (V1f u d) 0 (decide (2^32 ≤ u + 977*d))
+    g.rnd g.r hrw (g.ndCout _ hz1) (by simp [g.z]) (by simp [g.c]) (g.ZR _ zZ) (g.ZS _ zZ) (g.UR _ uU)
+    (g.neZU _ _ zZ uU) g.SR g.cinR g.cinS (g.csR 9) (g.csS 9) cl.cin
+    (fun q h => cl.c q (List.mem_of_mem_take h)) (cl.z _ zZ)
+    (fun q h => g.ZR q (List.mem_of_mem_take h)) (fun q h => g.ZS q (List.mem_of_mem_take h))
+    (fun q h => cl.z q (List.mem_of_mem_take h))
+    (by
+      intro s h
+      have a := rbv _ _ s h
+      have b := ubv _ _ s h
+      have A := AR.1
+      revert a b
+      cases s ((R.drop 31).headD 0) <;> cases s ((U.drop 31).headD 0) <;> intro a b <;>
+        simp only [Bool.false_and, Bool.true_and, Bool.and_false, Bool.and_true, Bool.false_eq_true,
+          if_true, if_false] at a b ⊢
+      · exact (decide_eq_false (fun hP => absurd (A.mpr hP).1 (by omega))).symm
+      · exact (decide_eq_false (fun hP => absurd (A.mpr hP).1 (by omega))).symm
+      · exact (decide_eq_false (fun hP => absurd (A.mpr hP).2 (by omega))).symm
+      · exact (decide_eq_true (A.mp ⟨by omega, by omega⟩)).symm)
+    AR.2.1
+  -- step 3: clear bits 20..31
+  have s3 := tstep_inc R S U t (V2f u d) 0 20 11
+    g.rnd (by rw [g.r]; omega) (by rw [g.u]; omega) (g.ndInc _ hrw) g.SR g.UR g.US u hu
+    (decide (2^20 ≤ u % 2^20 + 977*d)) AR.2.2.1
+  -- step 4: subtract the low 20 bits of u
+  have hndB : (cin :: ((U.take 20 ++ Z.take 1) ++ (R.drop 0).take 21 ++ cs.take 20)).Nodup :=
+    (g.ndU 1 0 21 20).sublist (List.Sublist.cons₂ _ ((((List.take_sublist _ _).append
+      (List.Sublist.refl _)).append (List.Sublist.refl _)).append (List.Sublist.refl _)))
+  have vB : ∀ V s, PS R S t V 0 s → regValue (U.take 20 ++ Z.take 1) s = u % 2^20 := by
+    intro V s h
+    rw [regValue_append, regValue_take_mod _ _ (by rw [g.u]; omega), Uval V 0 s h,
+      (regValue_zero _ _).mpr (fun q hq => (h.2.2 q (g.ZR q (List.mem_of_mem_take hq))
+        (g.ZS q (List.mem_of_mem_take hq))).trans (cl.z q (List.mem_of_mem_take hq)))]
+    simp
+  have s4 := tstep_sub R S (U.take 20 ++ Z.take 1) (cs.take 20) cin 0 21 t (V3f u d) 0 (u % 2^20)
+    g.rnd (by rw [g.r]; omega) hndB (by simp [g.u, g.z]) (by simp [g.c]) g.SR g.cinR g.cinS
+    (g.csR 20) (g.csS 20) cl.cin (fun q h => cl.c q (List.mem_of_mem_take h)) (vB _) AR.2.2.2.1
+  unfold tInv1
+  exact seqv s1 (fun s h => h) (seqv s2 (fun s h => h) (seqv s3 (fun s h => h)
+    (Triple.conseq (fun s h => h) s4 (PS_val (by have := AR.2.2.2.2; omega)))))
+
+end InvSpec
+
+/-- The inverse of `tFwd`. -/
+def tInv (R S Z cs U : List Wire) (cin : Wire) : Program :=
+  tInv1 R Z cs U cin ++
+  (copyRegister none ((R.drop 32).take 10) S ++
+  (copyRegister none S ((R.drop 32).take 10) ++
+  (subInPlace (S ++ Z.take 6) ((R.drop 4).take 16) (cs.take 15) cin ++
+  (addInPlace (S ++ Z.take 4) ((R.drop 6).take 14) (cs.take 13) cin ++
+  (copyRegister none S ((R.drop 10).take 10) ++
+  (copyRegister none ((R.drop 0).take 10) S ++
+  addInPlace (U ++ Z.take 1) ((R.drop 0).take 33) (cs.take 32) cin))))))
+
+section InvSpec2
+variable {R S Z cs U : List Wire} {cin : Wire} (g : Geo R S Z cs U cin) {t : BasisState}
+  (cl : Clean Z cs cin t) (u d : Nat) (hu : regValue U t = u) (hu32 : u < 2^32) (hd : d ≤ 976)
+include g cl hu hu32 hd
+set_option linter.unusedSectionVars false
+
 theorem tInv_spec (h35 : u + d < 2^35) :
     Triple (PS R S t (u + 4294968273*d) 0) (tInv R S Z cs U cin) (PS R S t (u+d) 0) := by
-  have s1 := tstep_sub R S (U ++ Z.take 10) (cs.take 41) cin 0 42 t (u + 4294968273*d) 0 u g.rnd (by rw [g.r]; omega)
-    (g.ndU 10 0 42 41) (by simp [g.u, g.z]) (by simp [g.c]) g.SR g.cinR g.cinS (g.csR 41) (g.csS 41) cl.cin
-    (fun q h => cl.c q (List.mem_of_mem_take h)) (valUZ g cl u hu 10 _ _) (fitS _ _ _ _ (by norm_num <;> omega) (by norm_num <;> omega))
+  have s1 := tInv1_spec g cl u d hu hu32 hd
   have s2 := tcopy_in R S 32 t (977*d + 2^32*d) 0 (by rw [g.r]; omega) g.s (g.ndIn 32) g.SR
   have s3 := tcopy_out R S 32 t (977*d + 2^32*d) d g.rnd (by rw [g.r]; omega) g.s (g.ndOut 32) g.SR
   have s4 := subS g cl u d hu hu32 hd 6 4 16 15 (977*d) (by omega) (by omega) (by omega) (by omega) (by omega)
@@ -4019,9 +4392,9 @@ theorem tInv_spec (h35 : u + d < 2^35) :
     (fitA _ _ _ _ (by norm_num <;> omega))
   have s6 := tcopy_out R S 10 t (1025*d) d g.rnd (by rw [g.r]; omega) g.s (g.ndOut 10) g.SR
   have s7 := tcopy_in R S 0 t d d (by rw [g.r]; omega) g.s (g.ndIn 0) g.SR
-  have s8 := tstep_add R S (U ++ Z.take 3) (cs.take 34) cin 0 35 t d 0 u g.rnd (by rw [g.r]; omega)
-    (g.ndU 3 0 35 34) (by simp [g.u, g.z]) (by simp [g.c]) g.SR g.cinR g.cinS (g.csR 34) (g.csS 34) cl.cin
-    (fun q h => cl.c q (List.mem_of_mem_take h)) (valUZ g cl u hu 3 _ _) (by norm_num at h35 ⊢; omega)
+  have s8 := tstep_add R S (U ++ Z.take 1) (cs.take 32) cin 0 33 t d 0 u g.rnd (by rw [g.r]; omega)
+    (g.ndU 1 0 33 32) (by simp [g.u, g.z]) (by simp [g.c]) g.SR g.cinR g.cinS (g.csR 32) (g.csS 32) cl.cin
+    (fun q h => cl.c q (List.mem_of_mem_take h)) (valUZ g cl u hu 1 _ _) (by norm_num at h35 ⊢; omega)
   have a : ((977*d + 2^32*d) / 2^32) % 2^10 = d := by
     rw [Nat.add_mul_div_left _ _ (by positivity), Nat.div_eq_of_lt (by omega), Nat.zero_add,
       Nat.mod_eq_of_lt (by omega)]
@@ -4044,7 +4417,8 @@ theorem tInv_spec (h35 : u + d < 2^35) :
     (seqv s4 (PS_val (by omega)) (seqv s5 (PS_val (by omega)) (seqv s6 (PS_val a6) (seqv s7 (PS_dval a5)
     (Triple.conseq (fun s h => h) s8 (PS_val (by omega)))))))))
 
-end Spec
+end InvSpec2
+end InvHead
 
 end ECDSAAdd.Entrant.WinArith
 
@@ -4591,6 +4965,17 @@ theorem tHead_counts (R Z cs U : List Wire) (cin : Wire) (hR : R.length = 43) (h
   simp only [tHead, toffoliCount_append, measurementCount_append, a.1, a.2, b.1, b.2]
   simp [hU, hR]
 
+theorem tInv1_counts (R Z cs U : List Wire) (cin : Wire) (hR : R.length = 43) (hU : U.length = 32)
+    (hZ : Z.length = 11) (hc : cs.length = 42) :
+    toffoliCount (tInv1 R Z cs U cin) = 30 ∧ measurementCount (tInv1 R Z cs U cin) = 41 := by
+  have a := IncMask.incClr_count ((U.drop 20).take 11) ((R.drop 20).take 11) ((R.drop 31).headD 0)
+  have b := subC (U.take 20 ++ Z.take 1) ((R.drop 0).take 21) (cs.take 20) cin 21 (by simp [hR])
+    (by simp [hU, hZ]) (by simp [hc])
+  have c := subC ((Z.drop 10).headD 0 :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin 10 (by simp [hR])
+    (by simp [hZ]) (by simp [hc])
+  simp only [tInv1, cOut, toffoliCount_append, measurementCount_append, a.1, a.2, b.1, b.2, c.1, c.2]
+  simp [toffoliCount, measurementCount, hU, hR]
+
 section Counts
 variable {R S Z cs U : List Wire} {cin : Wire} (g : Lens R S Z cs U)
 include g
@@ -4618,9 +5003,8 @@ theorem tFwd_counts :
   exact ⟨trivial, trivial⟩
 
 theorem tInv_counts :
-    toffoliCount (tInv R S Z cs U cin) = 103 ∧ measurementCount (tInv R S Z cs U cin) = 103 := by
-  have h0 := subC (U ++ Z.take 10) ((R.drop 0).take 42) (cs.take 41) cin 42 (g.lens 0 42 10 41 (by omega) (by omega) (by omega)).1
-    (g.lens 0 42 10 41 (by omega) (by omega) (by omega)).2.2.2.2.1 (by rw [(g.lens 0 42 10 41 (by omega) (by omega) (by omega)).2.2.1])
+    toffoliCount (tInv R S Z cs U cin) = 90 ∧ measurementCount (tInv R S Z cs U cin) = 101 := by
+  have h0 := tInv1_counts R Z cs U cin g.r g.u g.z g.c
   have h1 := cpC ((R.drop 32).take 10) S (by rw [(g.lens 32 10 0 0 (by omega) (by omega) (by omega)).1, g.s])
   have h2 := cpC S ((R.drop 32).take 10) (by rw [(g.lens 32 10 0 0 (by omega) (by omega) (by omega)).1, g.s])
   have h3 := subC (S ++ Z.take 6) ((R.drop 4).take 16) (cs.take 15) cin 16 (g.lens 4 16 6 15 (by omega) (by omega) (by omega)).1
@@ -4629,8 +5013,8 @@ theorem tInv_counts :
     (by rw [(g.lens 6 14 4 13 (by omega) (by omega) (by omega)).2.2.2.1]) (by rw [(g.lens 6 14 4 13 (by omega) (by omega) (by omega)).2.2.1])
   have h5 := cpC S ((R.drop 10).take 10) (by rw [(g.lens 10 10 0 0 (by omega) (by omega) (by omega)).1, g.s])
   have h6 := cpC ((R.drop 0).take 10) S (by rw [(g.lens 0 10 0 0 (by omega) (by omega) (by omega)).1, g.s])
-  have h7 := addC (U ++ Z.take 3) ((R.drop 0).take 35) (cs.take 34) cin 35 (g.lens 0 35 3 34 (by omega) (by omega) (by omega)).1
-    (g.lens 0 35 3 34 (by omega) (by omega) (by omega)).2.2.2.2.1 (by rw [(g.lens 0 35 3 34 (by omega) (by omega) (by omega)).2.2.1])
+  have h7 := addC (U ++ Z.take 1) ((R.drop 0).take 33) (cs.take 32) cin 33 (g.lens 0 33 1 32 (by omega) (by omega) (by omega)).1
+    (g.lens 0 33 1 32 (by omega) (by omega) (by omega)).2.2.2.2.1 (by rw [(g.lens 0 33 1 32 (by omega) (by omega) (by omega)).2.2.1])
   simp only [tInv, toffoliCount_append, measurementCount_append, h0.1, h0.2, h1.1, h1.2, h2.1, h2.2, h3.1, h3.2, h4.1, h4.2, h5.1, h5.2, h6.1, h6.2, h7.1, h7.2]
   exact ⟨trivial, trivial⟩
 
@@ -4671,7 +5055,7 @@ theorem eSubU_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
 theorem wFwd_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
     toffoliCount (wFwd L)=79 ∧ measurementCount (wFwd L)=101 := WinArith.tFwd_counts (mLens L hw)
 theorem wInv_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
-    toffoliCount (wInv L)=103 ∧ measurementCount (wInv L)=103 := WinArith.tInv_counts (mLens L hw)
+    toffoliCount (wInv L)=90 ∧ measurementCount (wInv L)=101 := WinArith.tInv_counts (mLens L hw)
 
 end ECDSAAdd.Entrant.ControlLoan1589BFFold
 
@@ -4688,6 +5072,26 @@ theorem tHead_slots (R Z cs U : List Wire) (cin : Wire) (hU : U.length = 32) (hZ
   rw [bl1] at b
   have bl2 : ((R.drop 0).take 11).length ≤ 11 := by simp
   simp only [tHead, Challenge.gateSlots_append]
+  omega
+
+theorem tInv1_slots (R Z cs U : List Wire) (cin : Wire) (hU : U.length = 32) (hZ : Z.length = 11) :
+    Challenge.gateSlots (tInv1 R Z cs U cin) ≤ 471 := by
+  have a := IncMask.incClr_slots ((U.drop 20).take 11) ((R.drop 20).take 11) ((R.drop 31).headD 0)
+  have al : ((U.drop 20).take 11).length = 11 := by simp [hU]
+  rw [al] at a
+  have b := Baselines.subInPlace_gateSlots_le (U.take 20 ++ Z.take 1) ((R.drop 0).take 21) (cs.take 20) cin
+  have bl1 : (U.take 20 ++ Z.take 1).length = 21 := by simp [hU, hZ]
+  have bl2 : ((R.drop 0).take 21).length ≤ 21 := by simp
+  rw [bl1] at b
+  have c := Baselines.subInPlace_gateSlots_le ((Z.drop 10).headD 0 :: Z.take 9) ((R.drop 32).take 10) (cs.take 9) cin
+  have cl1 : ((Z.drop 10).headD 0 :: Z.take 9).length = 10 := by simp [hZ]
+  have cl2 : ((R.drop 32).take 10).length ≤ 10 := by simp
+  rw [cl1] at c
+  have e1 : Challenge.gateSlots [Instr.CX ((U.drop 31).headD 0) ((R.drop 31).headD 0)] = 1 := rfl
+  have e2 : Challenge.gateSlots [Instr.CCX ((R.drop 31).headD 0) ((U.drop 31).headD 0) ((Z.drop 10).headD 0)] = 1 := rfl
+  have e3 : Challenge.gateSlots [Instr.measureX ((Z.drop 10).headD 0) []
+      [.CZ ((R.drop 31).headD 0) ((U.drop 31).headD 0)]] = 2 := rfl
+  simp only [tInv1, cOut, Challenge.gateSlots_append]
   omega
 
 section Static
@@ -4792,14 +5196,46 @@ theorem tFwd_mem : ∀ q ∈ wires (tFwd R S Z cs U cin), Mem R S Z cs U cin q :
       (by rw [(L1 0 42 10 41 (by omega) (by omega) (by omega)).1, (L1 0 42 10 41 (by omega) (by omega) (by omega)).2.2.1])
       (tri g _ _ _ (mU' g 10) (mR' g 0 42) (mC' g 41)) q h
 
+theorem tInv1_mem : ∀ q ∈ wires (tInv1 R Z cs U cin), Mem R S Z cs U cin q := by
+  have rR : (R.drop 31).headD 0 ∈ R := headD_drop_mem R 31 (by rw [g.r]; omega)
+  have uU : (U.drop 31).headD 0 ∈ U := headD_drop_mem U 31 (by rw [g.u]; omega)
+  have zZ : (Z.drop 10).headD 0 ∈ Z := headD_drop_mem Z 10 (by rw [g.z]; omega)
+  have mR1 : Mem R S Z cs U cin ((R.drop 31).headD 0) := Or.inr (Or.inr (Or.inl rR))
+  have mU1 : Mem R S Z cs U cin ((U.drop 31).headD 0) := Or.inr (Or.inl uU)
+  have mZ1 : Mem R S Z cs U cin ((Z.drop 10).headD 0) := Or.inr (Or.inr (Or.inr (Or.inr (Or.inl zZ))))
+  intro q hq
+  simp only [tInv1, cOut, wires_append, Finset.mem_union] at hq
+  rcases hq with h|(h|h|h)|h|h
+  · simp only [wires, Instr.wires, Finset.union_empty, Finset.mem_insert, Finset.mem_singleton] at h
+    rcases h with h|h <;> (subst h; assumption)
+  · simp only [wires, Instr.wires, Finset.union_empty, Finset.mem_insert, Finset.mem_singleton] at h
+    rcases h with h|h|h <;> (subst h; assumption)
+  · exact pieceSub g _ _ _ (by simp [g.z, g.r]) (by simp [g.c, g.r])
+      (tri g _ _ _ (fun q h => by
+        rcases List.mem_cons.mp h with h|h
+        · exact h ▸ mZ1
+        · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (List.mem_of_mem_take h))))))
+        (mR' g 32 10) (mC' g 9)) q h
+  · simp only [wires, Instr.wires, correctionWires, Finset.union_empty, Finset.mem_union, Finset.mem_insert,
+      Finset.mem_singleton] at h
+    rcases h with h|h|h <;> (subst h; assumption)
+  · rcases IncMask.incClr_wires _ _ _ q h with h|h|h
+    · exact Or.inr (Or.inl (mem_win h))
+    · exact Or.inr (Or.inr (Or.inl (mem_win h)))
+    · exact h ▸ mR1
+  · exact pieceSub g _ _ _ (by simp [g.u, g.z, g.r]) (by simp [g.c, g.r])
+      (tri g _ _ _ (fun q h => by
+        rcases List.mem_append.mp h with h|h
+        · exact Or.inr (Or.inl (List.mem_of_mem_take h))
+        · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl (List.mem_of_mem_take h))))))
+        (mR' g 0 21) (mC' g 20)) q h
+
 theorem tInv_mem : ∀ q ∈ wires (tInv R S Z cs U cin), Mem R S Z cs U cin q := by
   have L1 := g.lens
   intro q hq
   simp only [tInv, wires_append, Finset.mem_union] at hq
   rcases hq with h|h|h|h|h|h|h|h
-  · exact pieceSub g _ _ _ (by rw [(L1 0 42 10 41 (by omega) (by omega) (by omega)).1, (L1 0 42 10 41 (by omega) (by omega) (by omega)).2.2.2.2.1])
-      (by rw [(L1 0 42 10 41 (by omega) (by omega) (by omega)).1, (L1 0 42 10 41 (by omega) (by omega) (by omega)).2.2.1])
-      (tri g _ _ _ (mU' g 10) (mR' g 0 42) (mC' g 41)) q h
+  · exact tInv1_mem g q h
   · exact pieceCp g _ _ (duo g _ _ (mR' g 32 10) (mSS g)) q h
   · exact pieceCp g _ _ (duo g _ _ (mSS g) (mR' g 32 10)) q h
   · exact pieceSub g _ _ _ (by rw [(L1 4 16 6 15 (by omega) (by omega) (by omega)).1, (L1 4 16 6 15 (by omega) (by omega) (by omega)).2.2.2.1])
@@ -4810,9 +5246,9 @@ theorem tInv_mem : ∀ q ∈ wires (tInv R S Z cs U cin), Mem R S Z cs U cin q :
       (tri g _ _ _ (mS' g 4) (mR' g 6 14) (mC' g 13)) q h
   · exact pieceCp g _ _ (duo g _ _ (mSS g) (mR' g 10 10)) q h
   · exact pieceCp g _ _ (duo g _ _ (mR' g 0 10) (mSS g)) q h
-  · exact pieceAdd g _ _ _ (by rw [(L1 0 35 3 34 (by omega) (by omega) (by omega)).1, (L1 0 35 3 34 (by omega) (by omega) (by omega)).2.2.2.2.1])
-      (by rw [(L1 0 35 3 34 (by omega) (by omega) (by omega)).1, (L1 0 35 3 34 (by omega) (by omega) (by omega)).2.2.1])
-      (tri g _ _ _ (mU' g 3) (mR' g 0 35) (mC' g 34)) q h
+  · exact pieceAdd g _ _ _ (by rw [(L1 0 33 1 32 (by omega) (by omega) (by omega)).1, (L1 0 33 1 32 (by omega) (by omega) (by omega)).2.2.2.2.1])
+      (by rw [(L1 0 33 1 32 (by omega) (by omega) (by omega)).1, (L1 0 33 1 32 (by omega) (by omega) (by omega)).2.2.1])
+      (tri g _ _ _ (mU' g 1) (mR' g 0 33) (mC' g 32)) q h
 
 theorem tFwd_slots : Challenge.gateSlots (tFwd R S Z cs U cin) ≤ 1174 := by
   have L1 := g.lens
@@ -4827,16 +5263,15 @@ theorem tFwd_slots : Challenge.gateSlots (tFwd R S Z cs U cin) ≤ 1174 := by
     (L1 0 10 0 0 (by omega) (by omega) (by omega)).1, (L1 10 10 0 0 (by omega) (by omega) (by omega)).1, (L1 32 10 0 0 (by omega) (by omega) (by omega)).1, g.s]
   omega
 
-theorem tInv_slots : Challenge.gateSlots (tInv R S Z cs U cin) ≤ 1440 := by
+theorem tInv_slots : Challenge.gateSlots (tInv R S Z cs U cin) ≤ 1323 := by
   have L1 := g.lens
-  have a0 := Baselines.subInPlace_gateSlots_le (U ++ Z.take 10) ((R.drop 0).take 42) (cs.take 41) cin
+  have a0 := tInv1_slots R Z cs U cin g.u g.z
   have a3 := Baselines.subInPlace_gateSlots_le (S ++ Z.take 6) ((R.drop 4).take 16) (cs.take 15) cin
   have a4 := Baselines.addInPlace_gateSlots_le (S ++ Z.take 4) ((R.drop 6).take 14) (cs.take 13) cin
-  have a7 := Baselines.addInPlace_gateSlots_le (U ++ Z.take 3) ((R.drop 0).take 35) (cs.take 34) cin
-  rw [(L1 0 42 10 41 (by omega) (by omega) (by omega)).2.2.2.2.1, (L1 0 42 10 41 (by omega) (by omega) (by omega)).1] at a0
+  have a7 := Baselines.addInPlace_gateSlots_le (U ++ Z.take 1) ((R.drop 0).take 33) (cs.take 32) cin
   rw [(L1 4 16 6 15 (by omega) (by omega) (by omega)).2.2.2.1, (L1 4 16 6 15 (by omega) (by omega) (by omega)).1] at a3
   rw [(L1 6 14 4 13 (by omega) (by omega) (by omega)).2.2.2.1] at a4
-  rw [(L1 0 35 3 34 (by omega) (by omega) (by omega)).2.2.2.2.1] at a7
+  rw [(L1 0 33 1 32 (by omega) (by omega) (by omega)).2.2.2.2.1] at a7
   simp only [tInv, Challenge.gateSlots_append, Baselines.copyRegister_gateSlots,
     (L1 0 10 0 0 (by omega) (by omega) (by omega)).1, (L1 10 10 0 0 (by omega) (by omega) (by omega)).1, (L1 32 10 0 0 (by omega) (by omega) (by omega)).1, g.s]
   omega
@@ -4865,6 +5300,27 @@ theorem tHead_physical : GatePhysical (tHead R Z cs U cin) := by
       ((List.drop_sublist _ _).append (List.Sublist.refl _))) (by simp [g.u, g.r]),
     subInPlace_physical _ _ _ _ (by simpa only [List.cons_append, List.append_assoc] using hndB)⟩
 
+theorem tInv1_physical : GatePhysical (tInv1 R Z cs U cin) := by
+  have hrw := one_win R 31 (by rw [g.r]; omega)
+  have hz1 := one_win Z 10 (by rw [g.z]; omega)
+  have rR : (R.drop 31).headD 0 ∈ R := headD_drop_mem R 31 (by rw [g.r]; omega)
+  have uU : (U.drop 31).headD 0 ∈ U := headD_drop_mem U 31 (by rw [g.u]; omega)
+  have zZ : (Z.drop 10).headD 0 ∈ Z := headD_drop_mem Z 10 (by rw [g.z]; omega)
+  have n1 : (U.drop 31).headD 0 ≠ (R.drop 31).headD 0 := g.neUR _ _ uU rR
+  have n2 : (R.drop 31).headD 0 ≠ (Z.drop 10).headD 0 := fun e => g.neZR _ _ zZ rR e.symm
+  have n3 : (U.drop 31).headD 0 ≠ (Z.drop 10).headD 0 := fun e => g.neZU _ _ zZ uU e.symm
+  have hndB : (cin :: ((U.take 20 ++ Z.take 1) ++ (R.drop 0).take 21 ++ cs.take 20)).Nodup :=
+    (g.ndU 1 0 21 20).sublist (List.Sublist.cons₂ _ ((((List.take_sublist _ _).append
+      (List.Sublist.refl _)).append (List.Sublist.refl _)).append (List.Sublist.refl _)))
+  simp only [tInv1, cOut, gatePhysical_append]
+  refine ⟨?_, ⟨?_, subInPlace_physical _ _ _ _
+      (by simpa only [List.cons_append, List.append_assoc] using g.ndCout _ hz1), ?_⟩,
+    IncMask.incClr_physical _ _ _ (List.nodup_cons.mp (g.ndInc _ hrw)).2 (by simp [g.u, g.r]),
+    subInPlace_physical _ _ _ _ (by simpa only [List.cons_append, List.append_assoc] using hndB)⟩
+  · intro i hi; simp only [List.mem_singleton] at hi; subst hi; exact n1
+  · intro i hi; simp only [List.mem_singleton] at hi; subst hi; exact ⟨n2, n3⟩
+  · intro i hi; simp only [List.mem_singleton] at hi; subst hi; trivial
+
 theorem tFwd_physical : GatePhysical (tFwd R S Z cs U cin) := by
   simp only [tFwd, gatePhysical_append]
   exact ⟨tHead_physical g,
@@ -4878,14 +5334,14 @@ theorem tFwd_physical : GatePhysical (tFwd R S Z cs U cin) := by
 
 theorem tInv_physical : GatePhysical (tInv R S Z cs U cin) := by
   simp only [tInv, gatePhysical_append]
-  exact ⟨subInPlace_physical _ _ _ _ (g.ndB 10 0 42 41),
+  exact ⟨tInv1_physical g,
     copyRegister_physical _ _ _ (g.ndIn 32) (by simp),
     copyRegister_physical _ _ _ (g.ndOut 32) (by simp),
     subInPlace_physical _ _ _ _ (g.ndA 6 4 16 15),
     addInPlace_physical _ _ _ _ (g.ndA 4 6 14 13),
     copyRegister_physical _ _ _ (g.ndOut 10) (by simp),
     copyRegister_physical _ _ _ (g.ndIn 0) (by simp),
-    addInPlace_physical _ _ _ _ (g.ndB 3 0 35 34)⟩
+    addInPlace_physical _ _ _ _ (g.ndB 1 0 33 32)⟩
 
 end Phys
 end ECDSAAdd.Entrant.WinArith
@@ -5092,9 +5548,9 @@ def wFoldTq (L : CuccaroStreamedSquareWideLayout) : Program :=
   wBuild L++((wFwd L++(wCoreTq L++wInv L))++(wUnbuild L++(eSubK L++eAddU L)))
 
 /-- The restore: `+b1` (the sum `b0+u` is below `2^129`), then `-u` (the result `b0` is below `2^128`).
-No rebuild of `W`; 572 no-op measurements keep the measurement count of the B body. -/
+No rebuild of `W`; 574 no-op measurements keep the measurement count of the B body. -/
 def wRestoreT (L : CuccaroStreamedSquareWideLayout) : Program :=
-  eAddB L++(eSubU L++padM L 572)
+  eAddB L++(eSubU L++padM L 574)
 
 def eFoldTq (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
   eFlip L c++(accFoldQ4KTq L (eItem L)++eFlip L c)
@@ -5248,7 +5704,7 @@ theorem bBody_frameTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn 
   have r2 := eAddB_step L hw hn base hc O4 E1 0 b1 hb1 back.1
   have r3 := eSubU_step L hw hn base hc O4 ((E1+b1)%2^130) u (by rw [hb1]) back.1 back.2.1 back.2.2.1
   rw [back.2.2.2] at r3
-  have rp := padM_step L hw hn base hc O4 b0 0 572
+  have rp := padM_step L hw hn base hc O4 b0 0 574
   have tr : Triple (BState L base O4 E1 0) (wRestoreT L) (BState L base O4 b0 0) :=
     r2.seq (r3.seq rp)
   have conv2 : ∀s,BState L base O4 b0 0 s → SquareFrame L.core.out base O4 s := by
@@ -5574,7 +6030,7 @@ theorem aAcc_priceTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : acc
 
 
 theorem bBody_countsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
-    toffoliCount (bBodyTq L c)=5252 ∧ measurementCount (bBodyTq L c)=5924 := by
+    toffoliCount (bBodyTq L c)=5239 ∧ measurementCount (bBodyTq L c)=5924 := by
   have q1 := measuredFoldQ_countsTq L hw (negP L)
   have q2 := measuredFoldQ_countsTq L hw (rot128F L)
   have bc := CodexNarrowTail.build8_counts (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
@@ -5611,7 +6067,7 @@ theorem bBody_countsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c 
   have iv := wInv_counts L hw
   have au := eAddU_counts L hw
   have su := eSubU_counts L hw
-  have pd := padM_counts L 572
+  have pd := padM_counts L 574
   simp only [bBodyTq,wFoldTq,eFoldTq,wRestoreT,toffoliCount_append,measurementCount_append,q1.1,q1.2,q2.1,q2.2,
     wb.1,wb.2,wu.1,wu.2,wc.1,wc.2,s1k.1,s1k.2,a1b.1,a1b.2,fl.1,fl.2,ac.1,ac.2,fw.1,fw.2,iv.1,iv.2,au.1,au.2,
     su.1,su.2,pd.1,pd.2]
@@ -5663,7 +6119,7 @@ theorem bBody_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (
   have g := mGeo L hw nd
   simp only [bBodyTq,wFoldTq,eFoldTq,wRestoreT,gatePhysical_append]
   exact ⟨p1,p2,⟨wb.1,⟨WinArith.tFwd_physical g,wc,WinArith.tInv_physical g⟩,wb.2,eSubK_physical L hw nd,
-    eAddU_physical L nd⟩,⟨fl,ac,fl⟩,⟨eAddB_physical L hw nd,eSubU_physical L hw nd,padM_physical L 572⟩⟩
+    eAddU_physical L nd⟩,⟨fl,ac,fl⟩,⟨eAddB_physical L hw nd,eSubU_physical L hw nd,padM_physical L 574⟩⟩
 
 
 theorem aBody_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire)
@@ -5900,7 +6356,7 @@ theorem bBody_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire
     have f2 := wInv_oldE L hw
     have f3 := eAddU_oldE L hw
     have f4 := eSubU_oldE L hw
-    have f5 := padM_oldE L hw 572
+    have f5 := padM_oldE L hw 574
     have ml {A B : Program} {q : Wire} (h : q ∈ wires A) : q ∈ wires (A ++ B) := by
       rw [wires_append]; exact Finset.mem_union_left _ h
     have mr {A B : Program} {q : Wire} (h : q ∈ wires B) : q ∈ wires (A ++ B) := by
@@ -5931,7 +6387,7 @@ theorem bBody_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire
     have f2 := WinArith.tInv_slots (cin := L.core.cin) (mLens L hw)
     have f3 := eAddU_slots L hw
     have f4 := eSubU_slots L hw
-    have f5 := padM_slots L 572
+    have f5 := padM_slots L 574
     have g1 := wBuild_slots_ge L hw
     have g2 := wUnbuild_slots_ge L hw
     simp only [wFoldTq, wRestoreT, wFold, wRestore, wFwd, wInv, wCoreTq, wCore, Challenge.gateSlots_append] at *
@@ -5963,7 +6419,7 @@ theorem bodyCK_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wi
   exact ⟨by omega,by omega,bodyCK_le L hw g⟩
 
 theorem bBody_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
-    toffoliCount (ControlLoan1589BFFold.bBodyTq L c)+571=toffoliCount (ControlLoan1589BFFold.bBody L c) ∧
+    toffoliCount (ControlLoan1589BFFold.bBodyTq L c)+584=toffoliCount (ControlLoan1589BFFold.bBody L c) ∧
     measurementCount (ControlLoan1589BFFold.bBodyTq L c)+4=measurementCount (ControlLoan1589BFFold.bBody L c) ∧
     Le (ControlLoan1589BFFold.bBodyTq L c) (ControlLoan1589BFFold.bBody L c) := by
   have a := ControlLoan1589BFFold.bBody_countsTq L hw c
