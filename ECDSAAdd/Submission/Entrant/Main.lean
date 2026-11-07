@@ -1368,6 +1368,161 @@ theorem classifierFast_researchast_wires_research (tr : Tri) (v : tr.Valid) (yb 
   exact ⟨hc.1, hc.2.1, (zeroWith_app_wires _ _ _ _).trans (Finset.union_subset hc.2.2.1 E), hc.2.2.2⟩
 
 
+/-- The extraction with the copy into `pk` replaced by an X measurement of `pk`.
+It is only for a `pk` that already holds `g & F`: the copy would clear it, and so does the
+measurement, whose outcome-1 phase `pk` the correction `CZ g F` cancels. -/
+def fastClear (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
+    (top mid low : List (Nat × Wire × Wire)) : Program :=
+  pre a aL aH one U V F xlo xhi el eh top mid low ++
+    ([Instr.measureX pk [] [Correction.CZ g F]] ++ clearFV a aL aH U V F xlo xhi el eh top mid ++
+      finishUOne a one U low)
+
+def extractClear_research (tr : Tri) (xs work : List Wire) (one U V F pk g : Wire) : Program :=
+  let T := triples xs work one tr.idx
+  let Tt := T.take tr.topL.length
+  let Tm := (T.drop tr.topL.length).take tr.midL.length
+  let Tl := T.drop (tr.topL.length + tr.midL.length)
+  fastClear tr.A (tr.A.testBit tr.lo) (tr.A.testBit tr.hi) one U V F
+    (xs.getD tr.lo 0) (xs.getD tr.hi 0) (endW (endW one Tt) Tm) (endW one Tt) g pk Tt Tm Tl
+
+theorem xor_false_eq {a b : Bool} (h : (a ^^ b) = false) : a = b := by
+  revert h; cases a <;> cases b <;> decide
+
+theorem clear_swap (P C D : Program) (g F pk : Wire) (hp : measurementCount P = 0)
+    (hg : g ≠ pk) (hF : F ≠ pk) (s : State) (m : List Bool)
+    (hv : (run P [] s).basis pk = ((run P [] s).basis g && (run P [] s).basis F)) :
+    run (P ++ (([Instr.measureX pk [] [Correction.CZ g F]] ++ C) ++ D)) m s =
+      run (P ++ (([Instr.CCX g F pk] ++ C) ++ D)) (m.drop 1) s := by
+  obtain ⟨r, hr⟩ : ∃ r, r = run P [] s := ⟨_, rfl⟩
+  rw [← hr] at hv
+  have e1 := eraseOneProductLinear g F pk [] hg hF (by simp) r (m.take 1)
+    (by simpa [ECDSAAdd.parityAt] using hv)
+  simp only [List.map_nil, List.append_nil] at e1
+  have e2 : run [Instr.CCX g F pk] [] r = ⟨r.phase, writeBit r.basis pk false⟩ := by
+    simp only [run]
+    rw [hv]
+    simp
+  have c1 : measurementCount ([Instr.measureX pk [] [Correction.CZ g F]] : Program) = 1 := rfl
+  have c2 : measurementCount ([Instr.CCX g F pk] : Program) = 0 := rfl
+  rw [run_append P _ m s, run_append P _ (m.drop 1) s]
+  simp only [hp, List.take_zero, List.drop_zero, ← hr]
+  rw [List.append_assoc, List.append_assoc, run_append _ (C ++ D) m r,
+    run_append _ (C ++ D) (m.drop 1) r, c1, c2]
+  simp only [List.take_zero, List.drop_zero]
+  rw [e1, e2]
+
+theorem fastClear_run (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
+    (top mid low : List (Nat × Wire × Wire)) (s : State) (m : List Bool)
+    (hg : g ≠ pk) (hF : F ≠ pk)
+    (hv : (run (pre a aL aH one U V F xlo xhi el eh top mid low) [] s).basis pk =
+      ((run (pre a aL aH one U V F xlo xhi el eh top mid low) [] s).basis g &&
+        (run (pre a aL aH one U V F xlo xhi el eh top mid low) [] s).basis F)) :
+    run (fastClear a aL aH one U V F xlo xhi el eh g pk top mid low) m s =
+      run (fastExtract a aL aH one U V F xlo xhi el eh g pk top mid low) (m.drop 1) s := by
+  unfold fastClear fastExtract
+  exact clear_swap _ _ _ g F pk (pre_counts a aL aH one U V F xlo xhi el eh top mid low).2.1
+    hg hF s m hv
+
+theorem fastClear_counts (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
+    (top mid low : List (Nat × Wire × Wire)) :
+    toffoliCount (fastClear a aL aH one U V F xlo xhi el eh g pk top mid low) + 1 =
+      toffoliCount (fastExtract a aL aH one U V F xlo xhi el eh g pk top mid low) ∧
+    measurementCount (fastClear a aL aH one U V F xlo xhi el eh g pk top mid low) =
+      measurementCount (fastExtract a aL aH one U V F xlo xhi el eh g pk top mid low) + 1 ∧
+    Challenge.gateSlots (fastClear a aL aH one U V F xlo xhi el eh g pk top mid low) =
+      Challenge.gateSlots (fastExtract a aL aH one U V F xlo xhi el eh g pk top mid low) + 1 := by
+  have t1 : toffoliCount ([Instr.measureX pk [] [Correction.CZ g F]] : Program) = 0 := rfl
+  have t2 : toffoliCount ([Instr.CCX g F pk] : Program) = 1 := rfl
+  have m1 : measurementCount ([Instr.measureX pk [] [Correction.CZ g F]] : Program) = 1 := rfl
+  have m2 : measurementCount ([Instr.CCX g F pk] : Program) = 0 := rfl
+  have s1 : Challenge.gateSlots ([Instr.measureX pk [] [Correction.CZ g F]] : Program) = 2 := by
+    simp [Challenge.gateSlots, Challenge.instructionSlots]
+  have s2 : Challenge.gateSlots ([Instr.CCX g F pk] : Program) = 1 := by
+    simp [Challenge.gateSlots, Challenge.instructionSlots]
+  simp only [fastClear, fastExtract, toffoliCount_append, measurementCount_append,
+    Challenge.gateSlots_append, t1, t2, m1, m2, s1, s2]
+  omega
+
+theorem fastClear_physical (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
+    (top mid low : List (Nat × Wire × Wire))
+    (h : Arithmetic.GatePhysical (fastExtract a aL aH one U V F xlo xhi el eh g pk top mid low)) :
+    Arithmetic.GatePhysical (fastClear a aL aH one U V F xlo xhi el eh g pk top mid low) := by
+  simp only [fastExtract, Arithmetic.gatePhysical_append] at h
+  simp only [fastClear, Arithmetic.gatePhysical_append]
+  exact ⟨h.1, ⟨by simp [Arithmetic.GatePhysical, RecordedQuantum.PhysicalInstr], h.2.1.2⟩, h.2.2⟩
+
+theorem fastClear_wires (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
+    (top mid low : List (Nat × Wire × Wire)) :
+    wires (fastClear a aL aH one U V F xlo xhi el eh g pk top mid low) =
+      wires (fastExtract a aL aH one U V F xlo xhi el eh g pk top mid low) := by
+  have e : wires ([Instr.measureX pk [] [Correction.CZ g F]] : Program) =
+      wires ([Instr.CCX g F pk] : Program) := by
+    ext q
+    simp [wires, Instr.wires, ECDSAAdd.correctionWires]; tauto
+  simp only [fastClear, fastExtract, wires_append, e]
+
+theorem extractClear_run_research (tr : Tri) (xs work : List Wire) (one U V F pk g : Wire)
+    (s : State) (m : List Bool) (hg : g ≠ pk) (hF : F ≠ pk)
+    (hv : (run (preOf tr xs work one U V F) [] s).basis pk =
+      ((run (preOf tr xs work one U V F) [] s).basis g &&
+        (run (preOf tr xs work one U V F) [] s).basis F)) :
+    run (extractClear_research tr xs work one U V F pk g) m s =
+      run (extractFast_research tr xs work one U V F pk g) (m.drop 1) s := by
+  let T := triples xs work one tr.idx
+  let Tt := T.take tr.topL.length
+  let Tm := (T.drop tr.topL.length).take tr.midL.length
+  let Tl := T.drop (tr.topL.length + tr.midL.length)
+  exact fastClear_run tr.A (tr.A.testBit tr.lo) (tr.A.testBit tr.hi) one U V F
+    (xs.getD tr.lo 0) (xs.getD tr.hi 0) (endW (endW one Tt) Tm) (endW one Tt) g pk Tt Tm Tl s m hg hF hv
+
+theorem extractClear_counts_research (tr : Tri) (v : tr.Valid) (xs work : List Wire)
+    (one U V F pk g : Wire) :
+    toffoliCount (extractClear_research tr xs work one U V F pk g) ≤ 2 ∧
+    measurementCount (extractClear_research tr xs work one U V F pk g) = 3 ∧
+    Challenge.gateSlots (extractClear_research tr xs work one U V F pk g) ≤ 1036 := by
+  let T := triples xs work one tr.idx
+  let Tt := T.take tr.topL.length
+  let Tm := (T.drop tr.topL.length).take tr.midL.length
+  let Tl := T.drop (tr.topL.length + tr.midL.length)
+  have h := extractFast_counts_research tr v xs work one U V F pk g
+  have c : toffoliCount (extractClear_research tr xs work one U V F pk g) + 1 =
+        toffoliCount (extractFast_research tr xs work one U V F pk g) ∧
+      measurementCount (extractClear_research tr xs work one U V F pk g) =
+        measurementCount (extractFast_research tr xs work one U V F pk g) + 1 ∧
+      Challenge.gateSlots (extractClear_research tr xs work one U V F pk g) =
+        Challenge.gateSlots (extractFast_research tr xs work one U V F pk g) + 1 :=
+    fastClear_counts tr.A (tr.A.testBit tr.lo) (tr.A.testBit tr.hi) one U V F
+      (xs.getD tr.lo 0) (xs.getD tr.hi 0) (endW (endW one Tt) Tm) (endW one Tt) g pk Tt Tm Tl
+  omega
+
+theorem extractClear_physical_research (tr : Tri) (v : tr.Valid) (xs work : List Wire)
+    (one U V F pk g : Wire) (hlen : xs.length = 256)
+    (hU : U ∉ xs ∧ U ∉ work ∧ U ≠ one) (hV : V ∉ xs ∧ V ∉ work ∧ V ≠ one)
+    (hF : F ∉ xs ∧ F ∉ work ∧ F ≠ one) (UV : U ≠ V) (VF : V ≠ F) (Fp : F ≠ pk) (gp : g ≠ pk) :
+    GatePhysical (extractClear_research tr xs work one U V F pk g) := by
+  let T := triples xs work one tr.idx
+  let Tt := T.take tr.topL.length
+  let Tm := (T.drop tr.topL.length).take tr.midL.length
+  let Tl := T.drop (tr.topL.length + tr.midL.length)
+  exact fastClear_physical tr.A (tr.A.testBit tr.lo) (tr.A.testBit tr.hi) one U V F
+    (xs.getD tr.lo 0) (xs.getD tr.hi 0) (endW (endW one Tt) Tm) (endW one Tt) g pk Tt Tm Tl
+    (extractFast_physical_research tr v xs work one U V F pk g hlen hU hV hF UV VF Fp gp)
+
+theorem extractClear_sub_research (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F pk g : Wire)
+    (hlen : xs.length = 256) (W : Finset Wire) (hx : ∀ q ∈ xs, q ∈ W) (hw : ∀ q ∈ work, q ∈ W)
+    (h1 : one ∈ W) (h2 : U ∈ W) (h3 : V ∈ W) (h4 : F ∈ W) (h5 : pk ∈ W) (h6 : g ∈ W) :
+    wires (extractClear_research tr xs work one U V F pk g) ⊆ W := by
+  let T := triples xs work one tr.idx
+  let Tt := T.take tr.topL.length
+  let Tm := (T.drop tr.topL.length).take tr.midL.length
+  let Tl := T.drop (tr.topL.length + tr.midL.length)
+  have e : wires (extractClear_research tr xs work one U V F pk g) =
+      wires (extractFast_research tr xs work one U V F pk g) :=
+    fastClear_wires tr.A (tr.A.testBit tr.lo) (tr.A.testBit tr.hi) one U V F
+      (xs.getD tr.lo 0) (xs.getD tr.hi 0) (endW (endW one Tt) Tm) (endW one Tt) g pk Tt Tm Tl
+  rw [e]
+  exact extractFast_sub_research tr v xs work one U V F pk g hlen W hx hw h1 h2 h3 h4 h5 h6
+
 end Shape
 
 end ECDSAAdd.Entrant.ZeroFill
@@ -4259,7 +4414,7 @@ def oclassifierF (tr : Tri) (yc y2c e : Bool) (xs work : List Wire)
     (y0 c f g O D H t1 t2 u W one U V F pk : Wire) : Program :=
   tr.remapList (xs.getD tr.r1 0) (xs.getD tr.r2 0) (fun i => xs.getD i 0) tr.idx ++
   ([Instr.X ((tr.idx.map (fun i => xs.getD i 0)).headD 0)] ++
-  (zeroWith (fun h => (Gc c g O D H W ++ (extractFast_research tr xs work one U V F pk W ++ Gc c g O D H W)) ++
+  (zeroWith (fun h => (Gc c g O D H W ++ (extractClear_research tr xs work one U V F pk W ++ Gc c g O D H W)) ++
         OutputOpt.otailL tr yc y2c e (xs.getD tr.r1 0) (xs.getD tr.r2 0) y0 c f g O D H t1 t2 u h)
       ((tr.idx.map (fun i => xs.getD i 0)).headD 0)
       (zeroPorts (tr.idx.map (fun i => xs.getD i 0)).tail work) ++
@@ -4284,7 +4439,9 @@ theorem oclassifierFast_run_research (tr : Tri) (v : tr.Valid) (yc y2c e : Bool)
       s.basis D = (s.basis c && oX tr tr.B xs s.basis && (s.basis y0 == y2c)) ∧
       s.basis H = (e && s.basis c && oX tr tr.A xs s.basis && (s.basis y0 != yc)))
     (hto : ∀ q ∈ [one, U, V, F], s.basis q = false) (hW0 : s.basis W = false)
-    (x : Nat) (hx : x < 2^256) (xbit : ∀ i, i < 256 → s.basis (xs.getD i 0) = x.testBit i) :
+    (x : Nat) (hx : x < 2^256) (xbit : ∀ i, i < 256 → s.basis (xs.getD i 0) = x.testBit i)
+    (hpkv : s.basis pk = ((s.basis c ^^ s.basis g ^^ s.basis O ^^ s.basis D ^^ s.basis H) &&
+      decide (tr.A < x))) :
     run (oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk) m s =
       put (run (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) m s) pk
         (s.basis pk ^^ ((s.basis c ^^ s.basis g ^^ s.basis O ^^ s.basis D ^^ s.basis H) &&
@@ -4631,15 +4788,26 @@ theorem oclassifierFast_run_research (tr : Tri) (v : tr.Valid) (yc y2c e : Bool)
   have Opk : O ≠ pk := fun e => hpkE (by simp [e])
   have Dpk : D ≠ pk := fun e => hpkE (by simp [e])
   have Hpk : H ≠ pk := fun e => hpkE (by simp [e])
+  have bpk0 : B.basis pk = s.basis pk := by rw [← Pf, hBd]; simp [put, writeBit, pkW]
+  have hE2 : ∀ m', run (extractClear_research tr xs work one U V F pk W) m' B =
+      put B pk (B.basis pk ^^ (Gv && decide (tr.A < x))) := by
+    intro m'
+    have hv0 : (run (preOf tr xs work one U V F) [] B).basis pk =
+        ((run (preOf tr xs work one U V F) [] B).basis W &&
+          (run (preOf tr xs work one U V F) [] B).basis F) := by
+      rw [FVe, hRW, run_preserves_outside _ [] B pk pkNot, bpk0]
+      exact hpkv
+    rw [extractClear_run_research tr xs work one U V F pk W B m' gpk FP hv0]
+    exact hE _
   set val := (s.basis pk ^^ (Gv && decide (tr.A < x))) with hval
-  have hEf : ∀ m', run (Gc c g O D H W ++ (extractFast_research tr xs work one U V F pk W ++ Gc c g O D H W)) m' F0 =
+  have hEf : ∀ m', run (Gc c g O D H W ++ (extractClear_research tr xs work one U V F pk W ++ Gc c g O D H W)) m' F0 =
       put F0 pk val := by
     intro m'
     rw [run_append, Gc_run c g O D H W eC eG eO eD eH, run_append]
     have e1 : (put F0 W (F0.basis W ^^ (F0.basis c ^^ F0.basis g ^^ F0.basis O ^^ F0.basis D ^^ F0.basis H))) = B := by
       rw [Wf, rq c (by simp), rq g (by simp), rq O (by simp), rq D (by simp), rq H (by simp),
         Bool.false_xor, hBd]
-    rw [e1, hE, Gc_run c g O D H W eC eG eO eD eH]
+    rw [e1, hE2, Gc_run c g O D H W eC eG eO eD eH]
     have bpk : B.basis pk = s.basis pk := by rw [← Pf, hBd]; simp [put, writeBit, pkW]
     rw [bpk]
     apply State.extensionality
@@ -4691,7 +4859,7 @@ theorem oclassifierFast_run_research (tr : Tri) (v : tr.Valid) (yc y2c e : Bool)
     simp only [OutputOpt.oclassifier, hidx, List.map_cons, List.headD_cons, List.tail_cons]; rfl
   have hprogF : oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk =
       tr.remapList xr1 xr2 w (i0 :: it) ++ ([Instr.X (w i0)] ++
-      (zeroWith (fun h => (Gc c g O D H W ++ (extractFast_research tr xs work one U V F pk W ++ Gc c g O D H W)) ++
+      (zeroWith (fun h => (Gc c g O D H W ++ (extractClear_research tr xs work one U V F pk W ++ Gc c g O D H W)) ++
           OutputOpt.otailL tr yc y2c e xr1 xr2 y0 c f g O D H t1 t2 u h)
         (w i0) (zeroPorts (it.map w) work) ++
       ([Instr.X (w i0)] ++ tr.remapList xr1 xr2 w (i0 :: it)))) := by
@@ -4996,9 +5164,9 @@ def outNew (L : ControlledPointLayout) (C : Point) : Program :=
 theorem oclassifierFast_researchast_counts_research (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : List Wire)
     (y0 c f g O D H t1 t2 u W one U V F pk : Wire) (hwl : work.length = 253) :
     toffoliCount (oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk) ≤
-      toffoliCount (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) + 3 ∧
+      toffoliCount (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) + 2 ∧
     measurementCount (oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk) =
-      measurementCount (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) + 2 := by
+      measurementCount (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) + 3 := by
   obtain ⟨i0, it, hidx, hitl⟩ := idx_split tr v
   have zp := zeroPorts_maps (it.map (fun i => xs.getD i 0)) work (by simp [hitl, hwl])
   have hbl : (zeroPorts (tr.idx.map (fun i => xs.getD i 0)).tail work).length = 253 := by
@@ -5007,7 +5175,7 @@ theorem oclassifierFast_researchast_counts_research (tr : Tri) (v : tr.Valid) (y
     rw [hPt]
     have := congrArg List.length zp.2
     simpa [hwl] using this
-  have ec := extractFast_counts_research tr v xs work one U V F pk W
+  have ec := extractClear_counts_research tr v xs work one U V F pk W
   have gt : toffoliCount (Gc c g O D H W) = 0 := by simp [Gc, toffoliCount]
   have gm : measurementCount (Gc c g O D H W) = 0 := by simp [Gc, measurementCount]
   have zo := zeroWith_counts_general
@@ -5015,9 +5183,9 @@ theorem oclassifierFast_researchast_counts_research (tr : Tri) (v : tr.Valid) (y
     (fun h => OutputOpt.otailL_counts tr yc y2c e _ _ y0 c f g O D H t1 t2 u h)
     ((tr.idx.map (fun i => xs.getD i 0)).headD 0) (zeroPorts (tr.idx.map (fun i => xs.getD i 0)).tail work)
   have zc := zeroWith_counts_general
-    (fun h => (Gc c g O D H W ++ (extractFast_research tr xs work one U V F pk W ++ Gc c g O D H W)) ++
+    (fun h => (Gc c g O D H W ++ (extractClear_research tr xs work one U V F pk W ++ Gc c g O D H W)) ++
       OutputOpt.otailL tr yc y2c e (xs.getD tr.r1 0) (xs.getD tr.r2 0) y0 c f g O D H t1 t2 u h)
-    (toffoliCount (extractFast_research tr xs work one U V F pk W) + (if e then 3 else 5)) 10
+    (toffoliCount (extractClear_research tr xs work one U V F pk W) + (if e then 3 else 5)) 11
     (fun h => by
       have tc := OutputOpt.otailL_counts tr yc y2c e (xs.getD tr.r1 0) (xs.getD tr.r2 0) y0 c f g O D H t1 t2 u h
       simp only [toffoliCount_append, measurementCount_append, ec.2.1, gt, gm]
@@ -5142,6 +5310,21 @@ theorem out_pad {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) 
     fun e => w5 (e ▸ hq)
   have oxe (K : Nat) := oX_congr (triOf (.some hc)) tv K layout.point.x hxl _ _ sameX
   have hfl' := ufl
+  have vx : (v ^^ (dialogOrdinary b R (.some hc) &&
+      decide ((triOf (.some hc)).A < codeX (if b then R + .some hc else R)))) = false := by
+    rw [hv]
+    by_cases hG : dialogOrdinary b R (.some hc) = true
+    · have hb := ((dialogOrdinary_true b R _ hC).mp hG).1
+      rw [hG, hb]; simp
+    · have hG' : dialogOrdinary b R (.some hc) = false := by simpa using hG
+      rw [hG']; simp
+  have ge : ((put u pk v).basis layout.control ^^ (put u pk v).basis layout.genericSelect ^^
+      (put u pk v).basis (parkWire layout) ^^ (put u pk v).basis layout.doubleSelect ^^
+      (put u pk v).basis layout.core.equalNegY) = dialogOrdinary b R (.some hc) := by
+    rw [same _ (ne _ (by simp)), same _ (ne _ (by simp)), same _ (ne _ (by simp)),
+      same _ (ne _ (by simp)), same _ (ne _ (by simp))]
+    exact uG.symm
+  have pv0 : (put u pk v).basis pk = v := by simp [put, writeBit]
   have run1 := fun mm => oclassifierFast_run_research (triOf (.some hc)) tv (yBit (.some hc)) (yBit ((.some hc : Point) + .some hc))
     (exceptionBit (.some hc)) layout.point.x (layout.dialogPool.take 253) (yLow layout) layout.control
     layout.point.finite layout.genericSelect (parkWire layout) layout.doubleSelect layout.core.equalNegY
@@ -5176,21 +5359,7 @@ theorem out_pad {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) 
     (fun i hi => by
       rw [sameX _ (by rw [List.getD_eq_getElem _ _ (by omega)]; exact List.getElem_mem _)]
       exact xbit i hi)
-  have vx : (v ^^ (dialogOrdinary b R (.some hc) &&
-      decide ((triOf (.some hc)).A < codeX (if b then R + .some hc else R)))) = false := by
-    rw [hv]
-    by_cases hG : dialogOrdinary b R (.some hc) = true
-    · have hb := ((dialogOrdinary_true b R _ hC).mp hG).1
-      rw [hG, hb]; simp
-    · have hG' : dialogOrdinary b R (.some hc) = false := by simpa using hG
-      rw [hG']; simp
-  have ge : ((put u pk v).basis layout.control ^^ (put u pk v).basis layout.genericSelect ^^
-      (put u pk v).basis (parkWire layout) ^^ (put u pk v).basis layout.doubleSelect ^^
-      (put u pk v).basis layout.core.equalNegY) = dialogOrdinary b R (.some hc) := by
-    rw [same _ (ne _ (by simp)), same _ (ne _ (by simp)), same _ (ne _ (by simp)),
-      same _ (ne _ (by simp)), same _ (ne _ (by simp))]
-    exact uG.symm
-  have pv0 : (put u pk v).basis pk = v := by simp [put, writeBit]
+    (by rw [ge, pv0]; exact ECDSAAdd.Entrant.ZeroFill.xor_false_eq vx)
   have upk : u.basis pk = false := upool pk w6 w8
   have clr : ∀ (o : State), o.basis pk = false → put (put o pk v) pk false = o := by
     intro o ho
@@ -5504,9 +5673,9 @@ theorem oclassifierFast_researchast_physical_research (tr : Tri) (v : tr.Valid) 
     (h1 : c ≠ W) (h2 : g ≠ W) (h3 : O ≠ W) (h4 : D ≠ W) (h5 : H ≠ W)
     (old : GatePhysical (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u)) :
     GatePhysical (oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk) := by
-  have hE := extractFast_physical_research tr v xs work one U V F pk W hlen hU hV hF UV VF Fp gp
+  have hE := extractClear_physical_research tr v xs work one U V F pk W hlen hU hV hF UV VF Fp gp
   have hG := Gc_physical c g O D H W h1 h2 h3 h4 h5
-  have hE3 : GatePhysical (Gc c g O D H W ++ (extractFast_research tr xs work one U V F pk W ++ Gc c g O D H W)) := by
+  have hE3 : GatePhysical (Gc c g O D H W ++ (extractClear_research tr xs work one U V F pk W ++ Gc c g O D H W)) := by
     simp only [gatePhysical_append]
     exact ⟨hG, hE, hG⟩
   unfold OutputOpt.oclassifier at old
@@ -5522,10 +5691,10 @@ theorem oclassifierFast_researchast_wires_research (tr : Tri) (v : tr.Valid) (yc
     (h1 : one ∈ Wf) (h2 : U ∈ Wf) (h3 : V ∈ Wf) (h4 : F ∈ Wf) (h5 : pk ∈ Wf) (h6 : W ∈ Wf)
     (m1 : c ∈ Wf) (m2 : g ∈ Wf) (m3 : O ∈ Wf) (m4 : D ∈ Wf) (m5 : H ∈ Wf) :
     wires (oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk) ⊆ Wf := by
-  have E := extractFast_sub_research tr v xs work one U V F pk W hlen Wf hx hw h1 h2 h3 h4 h5 h6
+  have E := extractClear_sub_research tr v xs work one U V F pk W hlen Wf hx hw h1 h2 h3 h4 h5 h6
   have G : wires (Gc c g O D H W) ⊆ Wf := by
     simp [Gc, wires, Instr.wires, Finset.insert_subset_iff, m1, m2, m3, m4, m5, h6]
-  have E3 : wires (Gc c g O D H W ++ (extractFast_research tr xs work one U V F pk W ++ Gc c g O D H W)) ⊆ Wf := by
+  have E3 : wires (Gc c g O D H W ++ (extractClear_research tr xs work one U V F pk W ++ Gc c g O D H W)) ⊆ Wf := by
     simp only [wires_append, Finset.union_subset_iff]
     exact ⟨G, E, G⟩
   unfold OutputOpt.oclassifier at hc
@@ -5537,8 +5706,8 @@ theorem oclassifierFast_researchast_wires_research (tr : Tri) (v : tr.Valid) (yc
 theorem oclassifierF_slots (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : List Wire)
     (y0 c f g O D H t1 t2 u W one U V F pk : Wire) :
     Challenge.gateSlots (oclassifierF tr yc y2c e xs work y0 c f g O D H t1 t2 u W one U V F pk) ≤
-      Challenge.gateSlots (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) + 1045 := by
-  have ec := extractFast_counts_research tr v xs work one U V F pk W
+      Challenge.gateSlots (OutputOpt.oclassifier tr yc y2c e xs work y0 c f g O D H t1 t2 u) + 1046 := by
+  have ec := extractClear_counts_research tr v xs work one U V F pk W
   have gs : Challenge.gateSlots (Gc c g O D H W) = 5 := by
     simp [Gc, Challenge.gateSlots, Challenge.instructionSlots]
   have zo := InputSentinel.zeroWith_slots
@@ -5547,9 +5716,9 @@ theorem oclassifierF_slots (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work 
     (fun h => OutputOpt.otailL_slots tr yc y2c e _ _ y0 c f g O D H t1 t2 u h)
     ((tr.idx.map (fun i => xs.getD i 0)).headD 0) (zeroPorts (tr.idx.map (fun i => xs.getD i 0)).tail work)
   have zc := InputSentinel.zeroWith_slots
-    (fun h => (Gc c g O D H W ++ (extractFast_research tr xs work one U V F pk W ++ Gc c g O D H W)) ++
+    (fun h => (Gc c g O D H W ++ (extractClear_research tr xs work one U V F pk W ++ Gc c g O D H W)) ++
       OutputOpt.otailL tr yc y2c e (xs.getD tr.r1 0) (xs.getD tr.r2 0) y0 c f g O D H t1 t2 u h)
-    (5 + (Challenge.gateSlots (extractFast_research tr xs work one U V F pk W) + 5) +
+    (5 + (Challenge.gateSlots (extractClear_research tr xs work one U V F pk W) + 5) +
       Challenge.gateSlots (OutputOpt.otail tr yc y2c e))
     (fun h => by
       simp only [Challenge.gateSlots_append, gs]
@@ -5583,10 +5752,10 @@ theorem predecL_mem (tr : Tri) (yc : Bool) (g c xr1 xr2 y0 O D H : Wire) :
   exact ⟨key 0 (by simp), key 1 (by simp), key 5 (by simp), key 6 (by simp), key 7 (by simp)⟩
 
 theorem outNew_counts {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (outNew layout (.some hc)) ≤ toffoliCount (OutputOpt.outStage layout (.some hc)) + 3 ∧
-    measurementCount (outNew layout (.some hc)) = measurementCount (OutputOpt.outStage layout (.some hc)) + 2 ∧
+    toffoliCount (outNew layout (.some hc)) ≤ toffoliCount (OutputOpt.outStage layout (.some hc)) + 2 ∧
+    measurementCount (outNew layout (.some hc)) = measurementCount (OutputOpt.outStage layout (.some hc)) + 3 ∧
     Challenge.gateSlots (outNew layout (.some hc)) ≤
-      Challenge.gateSlots (OutputOpt.outStage layout (.some hc)) + 1045 := by
+      Challenge.gateSlots (OutputOpt.outStage layout (.some hc)) + 1046 := by
   obtain ⟨hxn, hxl, hwl, hwn, hdisj, -, -⟩ := stage_layout layout layout_widths layout_nodup
   have c := oclassifierFast_researchast_counts_research (triOf (.some hc)) (triOf_valid hc) (yBit (.some hc))
     (yBit ((.some hc : Point) + .some hc)) (exceptionBit (.some hc)) layout.point.x
@@ -5841,10 +6010,10 @@ theorem wrapper_physical_N {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) 
     outNew_physical hc⟩
 
 theorem wrapperN_metrics {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (wrapperN layout (.some hc) cx cy) + 503 ≤
+    toffoliCount (wrapperN layout (.some hc) cx cy) + 504 ≤
       toffoliCount (wrapperOpt layout (.some hc) cx cy) ∧
     measurementCount (wrapperN layout (.some hc) cx cy) ≤
-      measurementCount (wrapperOpt layout (.some hc) cx cy) + 4 ∧
+      measurementCount (wrapperOpt layout (.some hc) cx cy) + 5 ∧
     Challenge.gateSlots (wrapperN layout (.some hc) cx cy) ≤
       Challenge.gateSlots (wrapperOpt layout (.some hc) cx cy) + 5707 := by
   have gN := genericN_counts layout cx cy
@@ -5880,7 +6049,7 @@ def programB (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperN layout C cx cy
 
 def entryB : Challenge.Entry := fun C=>normalizeProgram (programB C)
-def boundsB : Challenge.Bounds := ⟨2149778,1498374,1587,50256955⟩
+def boundsB : Challenge.Bounds := ⟨2149777,1498375,1587,50256955⟩
 
 theorem program_correct_B (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programB C) (encodes b (if b then R+C else R)) := by
@@ -5891,24 +6060,24 @@ theorem program_correct_B (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_N hc b R) (support_used_N hc)
 
-theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2149778 := by
+theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2149777 := by
   cases C with
   | zero=>simp [programB,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperN_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2149778
+    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2149777
     omega
 
-theorem program_measurements_B (C : Point) : measurementCount (programB C)≤1498374 := by
+theorem program_measurements_B (C : Point) : measurementCount (programB C)≤1498375 := by
   cases C with
   | zero=>simp [programB,measurementCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_measurements (.some hc)
     have delta:=(wrapperN_metrics hc).2.1
     change measurementCount (wrapperOpt layout (.some hc) cx cy)≤1498370 at old
-    change measurementCount (wrapperN layout (.some hc) cx cy)≤1498374
+    change measurementCount (wrapperN layout (.some hc) cx cy)≤1498375
     omega
 
 theorem program_qubits_B (C : Point) : qubits (programB C)≤1587 := by
@@ -5946,7 +6115,7 @@ theorem certificateB : Challenge.Certificate entryB boundsB where
   physical C:=normalize_physical _ (by simpa only [GatePhysical] using program_physical_B C)
   toffoli_le C:=(normalize_toffoli _).trans (program_toffoli_B C)
   measurements_le C:=by
-    change measurementCount (normalizeProgram (programB C))≤1498374
+    change measurementCount (normalizeProgram (programB C))≤1498375
     rw [normalize_measurements];exact program_measurements_B C
   qubits_le C:=by
     change qubits (normalizeProgram (programB C))≤1587
