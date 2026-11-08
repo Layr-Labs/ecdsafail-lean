@@ -1876,7 +1876,7 @@ def programOpt (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperOpt layout C cx cy
 
 def entryOpt : Challenge.Entry := fun C=>normalizeProgram (programOpt C)
-def boundsOpt : Challenge.Bounds := ⟨2147456,1498380,1587,50251264⟩
+def boundsOpt : Challenge.Bounds := ⟨2147452,1498380,1587,50251270⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programOpt C) (encodes b (if b then R+C else R)) := by
@@ -1887,14 +1887,14 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec hc b R) (support_used hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147456 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147452 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147462 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147456
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147458 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147452
     omega
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498380 := by
@@ -1922,14 +1922,14 @@ theorem program_physical (C : Point) : GatePhysical (programOpt C) := by
   | zero=>simp [programOpt,GatePhysical]
   | @some cx cy hc=>exact wrapper_physical hc
 
-theorem program_slots (C : Point) : gateSlots (programOpt C)≤50251264 := by
+theorem program_slots (C : Point) : gateSlots (programOpt C)≤50251270 := by
   cases C with
   | zero=>simp [programOpt]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_slots530 (.some hc)
     have delta:=(wrapper_metrics hc).2.2
-    change gateSlots (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤50250962 at old
-    change gateSlots (wrapperOpt layout (.some hc) cx cy)≤50251264
+    change gateSlots (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤50250968 at old
+    change gateSlots (wrapperOpt layout (.some hc) cx cy)≤50251270
     omega
 
 theorem certificateOpt : Challenge.Certificate entryOpt boundsOpt where
@@ -1943,7 +1943,7 @@ theorem certificateOpt : Challenge.Certificate entryOpt boundsOpt where
     change qubits (normalizeProgram (programOpt C))≤1587
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C:=by
-    change gateSlots (normalizeProgram (programOpt C))≤50251264
+    change gateSlots (normalizeProgram (programOpt C))≤50251270
     rw [normalize_slots];exact program_slots C
 
 end ECDSAAdd.Entrant.ParityFinalBothInverse23XY
@@ -2155,7 +2155,7 @@ def programOpt (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperOpt layout C cx cy
 
 def entryOpt : Challenge.Entry := fun C=>normalizeProgram (programOpt C)
-def boundsOpt : Challenge.Bounds := ⟨2147455,1498380,1587,50251276⟩
+def boundsOpt : Challenge.Bounds := ⟨2147451,1498380,1587,50251282⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programOpt C) (encodes b (if b then R+C else R)) := by
@@ -2166,14 +2166,14 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec hc b R) (support_used hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147455 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147451 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147462 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147455
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147458 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147451
     omega
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498380 := by
@@ -2201,14 +2201,14 @@ theorem program_physical (C : Point) : GatePhysical (programOpt C) := by
   | zero=>simp [programOpt,GatePhysical]
   | @some cx cy hc=>exact wrapper_physical hc
 
-theorem program_slots (C : Point) : gateSlots (programOpt C)≤50251276 := by
+theorem program_slots (C : Point) : gateSlots (programOpt C)≤50251282 := by
   cases C with
   | zero=>simp [programOpt]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_slots530 (.some hc)
     have delta:=(wrapper_metrics hc).2.2
-    change gateSlots (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤50250962 at old
-    change gateSlots (wrapperOpt layout (.some hc) cx cy)≤50251276
+    change gateSlots (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤50250968 at old
+    change gateSlots (wrapperOpt layout (.some hc) cx cy)≤50251282
     omega
 
 theorem certificateOpt : Challenge.Certificate entryOpt boundsOpt where
@@ -2222,7 +2222,7 @@ theorem certificateOpt : Challenge.Certificate entryOpt boundsOpt where
     change qubits (normalizeProgram (programOpt C))≤1587
     rw [normalize_qubits];exact program_qubits C
   gateSlots_le C:=by
-    change gateSlots (normalizeProgram (programOpt C))≤50251276
+    change gateSlots (normalizeProgram (programOpt C))≤50251282
     rw [normalize_slots];exact program_slots C
 
 end ECDSAAdd.Entrant.ParityFinalBothInverse23Out
@@ -6929,7 +6929,7 @@ def programNew (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperNew layout C cx cy
 
 def entryNew : Challenge.Entry := fun C=>normalizeProgram (programNew C)
-def boundsNew : Challenge.Bounds := ⟨2147203,1498382,1587,50255934⟩
+def boundsNew : Challenge.Bounds := ⟨2147199,1498382,1587,50255940⟩
 
 theorem program_correct_new (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programNew C) (encodes b (if b then R+C else R)) := by
@@ -6940,14 +6940,14 @@ theorem program_correct_new (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_new hc b R) (support_used_new hc)
 
-theorem program_toffoli_new (C : Point) : toffoliCount (programNew C)≤2147203 := by
+theorem program_toffoli_new (C : Point) : toffoliCount (programNew C)≤2147199 := by
   cases C with
   | zero=>simp [programNew,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperNew_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperNew layout (.some hc) cx cy)≤2147203
+    change toffoliCount (wrapperNew layout (.some hc) cx cy)≤2147199
     omega
 
 theorem program_measurements_new (C : Point) : measurementCount (programNew C)≤1498382 := by
@@ -6980,14 +6980,14 @@ theorem program_physical_new (C : Point) : GatePhysical (programNew C) := by
   | zero=>simp [programNew,GatePhysical]
   | @some cx cy hc=>exact wrapper_physical_new hc
 
-theorem program_slots_new (C : Point) : Challenge.gateSlots (programNew C)≤50255934 := by
+theorem program_slots_new (C : Point) : Challenge.gateSlots (programNew C)≤50255940 := by
   cases C with
   | zero=>simp [programNew]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_slots (.some hc)
     have delta:=(wrapperNew_metrics hc).2.2
-    change Challenge.gateSlots (wrapperOpt layout (.some hc) cx cy)≤50251276 at old
-    change Challenge.gateSlots (wrapperNew layout (.some hc) cx cy)≤50255934
+    change Challenge.gateSlots (wrapperOpt layout (.some hc) cx cy)≤50251282 at old
+    change Challenge.gateSlots (wrapperNew layout (.some hc) cx cy)≤50255940
     omega
 
 theorem certificateNew : Challenge.Certificate entryNew boundsNew where
@@ -7001,7 +7001,7 @@ theorem certificateNew : Challenge.Certificate entryNew boundsNew where
     change qubits (normalizeProgram (programNew C))≤1587
     rw [normalize_qubits];exact program_qubits_new C
   gateSlots_le C:=by
-    change Challenge.gateSlots (normalizeProgram (programNew C))≤50255934
+    change Challenge.gateSlots (normalizeProgram (programNew C))≤50255940
     rw [normalize_slots];exact program_slots_new C
 
 end ECDSAAdd.Entrant.FlagTop
@@ -10037,7 +10037,7 @@ def programB (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperN layout C cx cy
 
 def entryB : Challenge.Entry := fun C=>normalizeProgram (programB C)
-def boundsB : Challenge.Bounds := ⟨2146951,1498385,1587,50256984⟩
+def boundsB : Challenge.Bounds := ⟨2146947,1498385,1587,50256990⟩
 
 theorem program_correct_B (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programB C) (encodes b (if b then R+C else R)) := by
@@ -10048,14 +10048,14 @@ theorem program_correct_B (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_N hc b R) (support_used_N hc)
 
-theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2146951 := by
+theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2146947 := by
   cases C with
   | zero=>simp [programB,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperN_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146951
+    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146947
     omega
 
 theorem program_measurements_B (C : Point) : measurementCount (programB C)≤1498385 := by
@@ -10088,14 +10088,14 @@ theorem program_physical_B (C : Point) : GatePhysical (programB C) := by
   | zero=>simp [programB,GatePhysical]
   | @some cx cy hc=>exact wrapper_physical_N hc
 
-theorem program_slots_B (C : Point) : Challenge.gateSlots (programB C)≤50256984 := by
+theorem program_slots_B (C : Point) : Challenge.gateSlots (programB C)≤50256990 := by
   cases C with
   | zero=>simp [programB]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_slots (.some hc)
     have delta:=(wrapperN_metrics hc).2.2
-    change Challenge.gateSlots (wrapperOpt layout (.some hc) cx cy)≤50251276 at old
-    change Challenge.gateSlots (wrapperN layout (.some hc) cx cy)≤50256984
+    change Challenge.gateSlots (wrapperOpt layout (.some hc) cx cy)≤50251282 at old
+    change Challenge.gateSlots (wrapperN layout (.some hc) cx cy)≤50256990
     omega
 
 theorem certificateB : Challenge.Certificate entryB boundsB where
@@ -10109,7 +10109,7 @@ theorem certificateB : Challenge.Certificate entryB boundsB where
     change qubits (normalizeProgram (programB C))≤1587
     rw [normalize_qubits];exact program_qubits_B C
   gateSlots_le C:=by
-    change Challenge.gateSlots (normalizeProgram (programB C))≤50256984
+    change Challenge.gateSlots (normalizeProgram (programB C))≤50256990
     rw [normalize_slots];exact program_slots_B C
 
 end ECDSAAdd.Entrant.FlagTop2
@@ -14348,7 +14348,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147480,1498902,1586,50264800⟩
+ def boundsQ : Challenge.Bounds :=⟨2147476,1498902,1586,50264806⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -14357,14 +14357,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147480 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147476 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146951 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147480
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146947 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147476
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498902 := by
  cases C with
@@ -14383,14 +14383,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264800 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264806 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
-  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256984 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264800
+  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256990 at h
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264806
   omega
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
@@ -14403,7 +14403,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change qubits (normalizeProgram (programQ C))≤1586
   rw [normalize_qubits];exact program_qubits_Q C
  gateSlots_le C:=by
-  change gateSlots (normalizeProgram (programQ C))≤50264800
+  change gateSlots (normalizeProgram (programQ C))≤50264806
   rw [Baselines.normalize_slots];exact program_slots_Q C
 
 #print axioms certificateQ
@@ -15372,7 +15372,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147476,1498902,1586,50264800⟩
+ def boundsQ : Challenge.Bounds :=⟨2147472,1498902,1586,50264806⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -15381,14 +15381,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147476 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147472 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146951 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147476
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146947 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147472
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498902 := by
  cases C with
@@ -15407,14 +15407,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264800 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264806 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
-  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256984 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264800
+  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256990 at h
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264806
   omega
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
@@ -15427,7 +15427,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change qubits (normalizeProgram (programQ C))≤1586
   rw [normalize_qubits];exact program_qubits_Q C
  gateSlots_le C:=by
-  change gateSlots (normalizeProgram (programQ C))≤50264800
+  change gateSlots (normalizeProgram (programQ C))≤50264806
   rw [Baselines.normalize_slots];exact program_slots_Q C
 
 #print axioms certificateQ
@@ -16164,7 +16164,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147474,1498900,1586,50264786⟩
+ def boundsQ : Challenge.Bounds :=⟨2147470,1498900,1586,50264792⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -16173,14 +16173,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147474 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147470 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146951 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147474
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146947 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147470
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498900 := by
  cases C with
@@ -16199,14 +16199,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264786 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264792 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
-  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256984 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264786
+  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256990 at h
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264792
   omega
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
@@ -16219,7 +16219,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change qubits (normalizeProgram (programQ C))≤1586
   rw [normalize_qubits];exact program_qubits_Q C
  gateSlots_le C:=by
-  change gateSlots (normalizeProgram (programQ C))≤50264786
+  change gateSlots (normalizeProgram (programQ C))≤50264792
   rw [Baselines.normalize_slots];exact program_slots_Q C
 
 #print axioms certificateQ
@@ -17391,7 +17391,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147463,1498889,1586,50264786⟩
+ def boundsQ : Challenge.Bounds :=⟨2147459,1498889,1586,50264792⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -17400,14 +17400,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147463 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147459 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146951 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147463
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146947 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147459
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498889 := by
  cases C with
@@ -17426,14 +17426,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264786 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264792 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
-  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256984 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264786
+  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256990 at h
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264792
   omega
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
@@ -17446,7 +17446,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change qubits (normalizeProgram (programQ C))≤1586
   rw [normalize_qubits];exact program_qubits_Q C
  gateSlots_le C:=by
-  change gateSlots (normalizeProgram (programQ C))≤50264786
+  change gateSlots (normalizeProgram (programQ C))≤50264792
   rw [Baselines.normalize_slots];exact program_slots_Q C
 
 #print axioms certificateQ
@@ -18303,7 +18303,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147462,1498888,1586,50264786⟩
+ def boundsQ : Challenge.Bounds :=⟨2147458,1498888,1586,50264792⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -18312,14 +18312,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147462 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147458 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146951 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147462
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146947 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147458
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498888 := by
  cases C with
@@ -18338,14 +18338,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264786 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264792 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
-  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256984 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264786
+  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256990 at h
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264792
   omega
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
@@ -18358,7 +18358,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change qubits (normalizeProgram (programQ C))≤1586
   rw [normalize_qubits];exact program_qubits_Q C
  gateSlots_le C:=by
-  change gateSlots (normalizeProgram (programQ C))≤50264786
+  change gateSlots (normalizeProgram (programQ C))≤50264792
   rw [Baselines.normalize_slots];exact program_slots_Q C
 
 #print axioms certificateQ
@@ -19387,7 +19387,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147460,1498886,1586,50264786⟩
+ def boundsQ : Challenge.Bounds :=⟨2147456,1498886,1586,50264792⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -19396,14 +19396,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147460 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147456 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146951 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147460
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146947 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147456
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498886 := by
  cases C with
@@ -19422,14 +19422,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264786 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50264792 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
-  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256984 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264786
+  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256990 at h
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50264792
   omega
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
@@ -19442,7 +19442,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change qubits (normalizeProgram (programQ C))≤1586
   rw [normalize_qubits];exact program_qubits_Q C
  gateSlots_le C:=by
-  change gateSlots (normalizeProgram (programQ C))≤50264786
+  change gateSlots (normalizeProgram (programQ C))≤50264792
   rw [Baselines.normalize_slots];exact program_slots_Q C
 
 #print axioms certificateQ
@@ -19454,7 +19454,7 @@ end ECDSAAdd.Entrant.BucketAffinePointDevelop
 section
 set_option autoImplicit false
 set_option Elab.async false
-set_option maxHeartbeats 50000012
+set_option maxHeartbeats 50000018
 set_option maxRecDepth 30000
 namespace ECDSAAdd.Entrant.CurveAffineBucket8Develop
 open Arithmetic Secp256k1
@@ -19589,7 +19589,7 @@ end
 section
 set_option autoImplicit false
 set_option Elab.async false
-set_option maxHeartbeats 50000012
+set_option maxHeartbeats 50000018
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.AffineYProjection8Develop
@@ -20849,7 +20849,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147456,1498882,1586,50265818⟩
+ def boundsQ : Challenge.Bounds :=⟨2147452,1498882,1586,50265824⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -20858,14 +20858,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147456 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147452 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146951 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147456
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146947 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147452
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498882 := by
  cases C with
@@ -20884,14 +20884,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50265818 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50265824 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
-  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256984 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50265818
+  change gateSlots (wrapperN layout (.some hc) cx cy)≤50256990 at h
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50265824
   omega
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
@@ -20904,7 +20904,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change qubits (normalizeProgram (programQ C))≤1586
   rw [normalize_qubits];exact program_qubits_Q C
  gateSlots_le C:=by
-  change gateSlots (normalizeProgram (programQ C))≤50265818
+  change gateSlots (normalizeProgram (programQ C))≤50265824
   rw [Baselines.normalize_slots];exact program_slots_Q C
 
 #print axioms certificateQ
