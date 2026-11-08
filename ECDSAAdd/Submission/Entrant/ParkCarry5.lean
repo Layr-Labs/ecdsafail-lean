@@ -19,10 +19,219 @@ abbrev host_eq:=@ParkCarryDevelop.host_eq
 abbrev ExtraLe:=ParkCarryDevelop.ExtraLe
 
 def fold (L:CuccaroStreamedSquareWideLayout):Program:=
- eAddLo L++(wBuild L++(wMidFullCC L++(wUnbuildKnown L++(program (eU L) L.core.sumCarry++eSubK L))))
+ eAddLo L++(InverseCarryDevelop.buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry++
+  (wMidFullCC L++(InverseCarryDevelop.unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry++
+  (program (eU L) L.core.sumCarry++eSubK L))))
 def rebuild (L:CuccaroStreamedSquareWideLayout):Program:=eAddB L++(restore L++padM L 748)
 def body (L:CuccaroStreamedSquareWideLayout) (c:Wire):Program:=
  measuredFoldQTq L (negP L)++(measuredFoldQTq L (rot128F L)++(fold L++(eFoldTq L c++rebuild L)))
+theorem middle_delta (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths):
+ toffoliCount (wMidFullCC L)+5=toffoliCount (wFwdK L++(wCoreK L++wInvK L)) ∧
+ measurementCount (wMidFullCC L)=measurementCount (wFwdK L++(wCoreK L++wInvK L))+3 ∧
+ Challenge.gateSlots (wMidFullCC L)+13=Challenge.gateSlots (wFwdK L++(wCoreK L++wInvK L)):=by
+ have a:=SecondCarryLoan.midCC_counts L hw
+ have b:=CarryWindowCache.mid_counts L hw
+ exact ⟨by omega,by omega,by omega⟩
+
+theorem cached_loop_counts (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths):
+ toffoliCount (InverseCarryDevelop.buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)=
+   toffoliCount (wBuild L) ∧
+ measurementCount (InverseCarryDevelop.buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)=
+   measurementCount (wBuild L) ∧
+ Challenge.gateSlots (InverseCarryDevelop.buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)=
+   Challenge.gateSlots (wBuild L)+1 ∧
+ toffoliCount (InverseCarryDevelop.unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)+1=
+   toffoliCount (wUnbuildKnown L) ∧
+ measurementCount (InverseCarryDevelop.unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)=
+   measurementCount (wUnbuildKnown L) ∧
+ Challenge.gateSlots (InverseCarryDevelop.unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)+4=
+   Challenge.gateSlots (wUnbuildKnown L):=by
+ have lens:=acc_lengths L hw
+ have wb:=InverseCarryDevelop.buildCached_counts (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+   lens.1 (hiReg_length L hw) (by omega) (by omega)
+ have wu:=InverseCarryDevelop.unbuildConsumed_counts (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+   lens.1 (hiReg_length L hw) (by omega)
+ exact ⟨wb.1,wb.2.1,wb.2.2,wu.1,wu.2.1,wu.2.2⟩
+
+theorem body_counts (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire):
+ toffoliCount (body L c)=4765 ∧ measurementCount (body L c)=5924:=by
+ have base:=ParkCarryDevelop.body_counts L hw c
+ have mid:=middle_delta L hw
+ have p:=padM_counts L 748
+ have q:=padM_counts L 751
+ have lc:=cached_loop_counts L hw
+ simp only[toffoliCount_append,measurementCount_append]at mid
+ simp only[body,fold,rebuild,ParkCarryDevelop.body,ParkCarryDevelop.fold,ParkCarryDevelop.rebuild,
+  toffoliCount_append,measurementCount_append]at base ⊢
+ exact ⟨by omega,by omega⟩
+
+theorem body_slots (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire):
+ Challenge.gateSlots (body L c)+19=Challenge.gateSlots (ParkCarryDevelop.body L c):=by
+ have lc:=cached_loop_counts L hw
+ have m:=(middle_delta L hw).2.2
+ have p:=padM_slots L 748
+ have q:=padM_slots L 751
+ simp only[Challenge.gateSlots_append]at m
+ simp only[body,fold,rebuild,ParkCarryDevelop.body,ParkCarryDevelop.fold,ParkCarryDevelop.rebuild,
+  Challenge.gateSlots_append]
+ omega
+
+theorem body_physical (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire)
+ (hn:(c::L.wires).Nodup):GatePhysical (body L c):=by
+ have h:=ParkCarryDevelop.body_physical L hw c hn
+ have nd:=(List.nodup_cons.mp hn).2
+ have hcw:=(List.nodup_cons.mp hn).1
+ have off:=b_wloop_sumCarry_free L hw nd c hcw
+ have lens:=acc_lengths L hw
+ simp only[ParkCarryDevelop.body,ParkCarryDevelop.fold,ParkCarryDevelop.rebuild,gatePhysical_append]at h
+ have wbNew:=InverseCarryDevelop.buildCached_physical (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+   lens.1 (hiReg_length L hw) (by omega) (by omega) off.1 h.2.2.1.2.1
+ have wuNew:=InverseCarryDevelop.unbuildConsumed_physical (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+   lens.1 (hiReg_length L hw) (by omega) off.2.2 (wUnbuildKnown_physical L hw nd)
+ simp only[body,fold,rebuild,gatePhysical_append]
+ exact ⟨h.1,h.2.1,⟨h.2.2.1.1,wbNew,SecondCarryLoan.midCC_physical L hw nd,
+  wuNew,h.2.2.1.2.2.2.2⟩,h.2.2.2.1,⟨h.2.2.2.2.1,h.2.2.2.2.2.1,padM_physical L 748⟩⟩
+theorem body_le_extra (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
+    ExtraLe L.core.sumCarry (body L c) (bBody L c) := by
+  have tailWires : wires (fold L ++ (eFoldTq L c ++ rebuild L)) ⊆
+      insert L.core.sumCarry (wires (wFold L ++ (eFold L c ++ wRestore L))) := by
+    have wc := (QRel.qprog_le (rotWCore L) 256 SquareReduction.p (rotWCore_widths L hw) (by decide)).1
+    have ef := (QRel.eFold_le L hw c).1
+    have sk := eSubK_wires L hw
+    have ab := eAddB_wires L hw
+    have ml {A B : Program} {q : Wire} (h : q ∈ wires A) : q ∈ wires (A ++ B) := by
+      rw [wires_append]; exact Finset.mem_union_left _ h
+    have mr {A B : Program} {q : Wire} (h : q ∈ wires B) : q ∈ wires (A ++ B) := by
+      rw [wires_append]; exact Finset.mem_union_right _ h
+    have hOE {q : Wire} (h : q ∈ oldE L) : q ∈ wires (wFold L ++ (eFold L c ++ wRestore L)) := by
+      rcases Finset.mem_union.mp h with h|h
+      · exact ml (mr (mr (ml h)))
+      · exact ml (mr (mr (mr (ml h))))
+    have lens:=acc_lengths L hw
+    have wbSupport:=InverseCarryDevelop.buildCached_support (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+      lens.1 (hiReg_length L hw) (by omega) (by omega)
+    have wuSupport:=InverseCarryDevelop.unbuildConsumed_support (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+      lens.1 (hiReg_length L hw) (by omega)
+    change wires (InverseCarryDevelop.buildCached _ _ _ _ _ _)⊆insert L.core.sumCarry (wires (wBuild L)) at wbSupport
+    change wires (InverseCarryDevelop.unbuildConsumed _ _ _ _ _ _)⊆insert L.core.sumCarry (wires (wUnbuildKnown L)) at wuSupport
+    intro q hq
+    by_cases spare:q=L.core.sumCarry
+    · exact Finset.mem_insert.mpr (Or.inl spare)
+    apply Finset.mem_insert_of_mem
+    simp only [fold, wMidFullCC, wCoreK, rebuild, wires_append, Finset.mem_union] at hq
+    rcases hq with (h | h | (h | ((h | (h | h | h) | h) | h)) | h | h | h) | h | h | h | h
+    · exact hOE (eAddLo_oldE L hw h)
+    · have hh:=Finset.mem_insert.mp (wbSupport h)
+      rcases hh with hh|hh
+      · exact False.elim (spare hh)
+      · exact ml (ml hh)
+    · exact hOE ((endsCC_oldE L hw).1 h)
+    · exact hOE ((armsCC_oldE L hw).1 h)
+    · exact hOE (kw_oldE L hw h)
+    · exact ml (mr (ml (wc h)))
+    · exact hOE (kw_oldE L hw h)
+    · exact hOE ((armsCC_oldE L hw).2 h)
+    · exact hOE ((endsCC_oldE L hw).2 h)
+    · have hh:=Finset.mem_insert.mp (wuSupport h)
+      rcases hh with hh|hh
+      · exact False.elim (spare hh)
+      · exact ml (mr (mr (mr (mr (wUnbuildKnown_wires L hw hh)))))
+    · have hh:q=eU L ∨ q=L.core.sumCarry := by simpa [ParkCarryDevelop.program,wires,Instr.wires,or_comm] using h
+      rcases hh with hh|hh
+      · apply hOE
+        exact oldE_mem L hw q (Or.inr (Or.inr (Or.inr (Or.inl (hh ▸ (eK_mem L hw).2.1)))))
+      · exact False.elim (spare hh)
+    · exact ml (mr (mr (ml (sk h))))
+    · exact mr (ml (ef h))
+    · exact mr (mr (mr (mr (ml (ab h)))))
+    · have hh:=(restore_resources L hw).2.2.1 h
+      rcases Finset.mem_insert.mp hh with hh|hh
+      · exact False.elim (spare hh)
+      · exact hOE hh
+    · exact hOE (padM_oldE L hw 748 h)
+  refine ⟨?_, ?_⟩
+  · have a := (QRel.measuredFoldQ_le L hw (negP L)).1
+    have b := (QRel.measuredFoldQ_le L hw (rot128F L)).1
+    intro q hq
+    change q ∈ wires (measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++ (fold L ++ (eFoldTq L c ++ rebuild L)))) at hq
+    rw [wires_append] at hq
+    rcases Finset.mem_union.mp hq with h|h
+    · apply Finset.mem_insert_of_mem
+      change q ∈ wires (measuredFoldQ L (negP L) ++ (measuredFoldQ L (rot128F L) ++ (wFold L ++ (eFold L c ++ wRestore L))))
+      rw [wires_append];exact Finset.mem_union_left _ (a h)
+    · rw [wires_append] at h
+      rcases Finset.mem_union.mp h with h|h
+      · apply Finset.mem_insert_of_mem
+        change q ∈ wires (measuredFoldQ L (negP L) ++ (measuredFoldQ L (rot128F L) ++ (wFold L ++ (eFold L c ++ wRestore L))))
+        rw [wires_append];apply Finset.mem_union_right
+        rw [wires_append];exact Finset.mem_union_left _ (b h)
+      · have t := tailWires h
+        rcases Finset.mem_insert.mp t with t|t
+        · exact Finset.mem_insert.mpr (Or.inl t)
+        · apply Finset.mem_insert_of_mem
+          change q ∈ wires (measuredFoldQ L (negP L) ++ (measuredFoldQ L (rot128F L) ++ (wFold L ++ (eFold L c ++ wRestore L))))
+          rw [wires_append];apply Finset.mem_union_right
+          rw [wires_append];exact Finset.mem_union_right _ t
+  · have delta:=body_slots L hw c
+    have old:=(ParkCarryDevelop.body_le_extra L hw c).2
+    omega
+
+theorem body_support (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
+    (hn:L.wires.Nodup) (c : Wire) : wires (body L c)⊆(c::L.wires).toFinset := by
+  intro q hq
+  have h:=(body_le_extra L hw c).1 hq
+  rcases Finset.mem_insert.mp h with h|h
+  · simp only [List.mem_toFinset,List.mem_cons]
+    right
+    rw [h]
+    simp [Arithmetic.CuccaroStreamedSquareWideLayout.wires,Arithmetic.CuccaroStreamedSquareLayout.wires]
+  · exact (bBody_support L hw hn c) h
+
+theorem mid_replace (L : CuccaroStreamedSquareWideLayout) (q : Wire) :
+    wMidFullCC {L with core:={L.core with sumCarry:=q} }=wMidFullCC L := by rfl
+
+theorem mid_sumCarry_free (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn:L.wires.Nodup) (c : Wire) (hc:c∉L.wires) : L.core.sumCarry∉wires (wMidFullCC L) := by
+  let N:CuccaroStreamedSquareWideLayout:={L with core:={L.core with sumCarry:=c} }
+  have zm:L.core.sumCarry∈L.wires := by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires]
+  have cz:c≠L.core.sumCarry := by intro h;apply hc;simpa [h] using zm
+  have cw:(L.wires).count c=0 := List.count_eq_zero.mpr hc
+  have nd:N.wires.Nodup := by
+    apply List.nodup_iff_count_le_one.mpr
+    intro q
+    have old:=List.nodup_iff_count_le_one.mp hn q
+    simp only [N,CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,List.count_cons,List.count_nil,beq_iff_eq] at cw old ⊢
+    by_cases h:q=c
+    · subst q
+      simp only [if_true] at cw ⊢
+      omega
+    · simp only [if_neg (Ne.symm h)]
+      omega
+  have nw: L.core.sumCarry∉N.wires := by
+    intro hm
+    have pos:=List.count_pos_iff.mpr hm
+    have old:=List.nodup_iff_count_le_one.mp hn L.core.sumCarry
+    simp only [N,CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,List.count_cons,List.count_nil,beq_iff_eq] at pos old
+    simp only [if_true,if_neg cz] at pos old
+    omega
+  have wn:N.Widths := ⟨⟨hw.core.y,hw.core.out,hw.core.product,hw.core.pad,hw.core.work⟩,hw.overflowPad⟩
+  have support:=body_support N wn nd c
+  intro hm
+  rw [←mid_replace L c] at hm
+  have hb:L.core.sumCarry∈wires (body N c) := by
+    show L.core.sumCarry∈wires (measuredFoldQTq N (negP N)++(measuredFoldQTq N (rot128F N)++(fold N++(eFoldTq N c++rebuild N))))
+    rw [wires_append];apply Finset.mem_union_right
+    rw [wires_append];apply Finset.mem_union_right
+    rw [wires_append];apply Finset.mem_union_left
+    unfold ParkCarry5Develop.fold
+    rw [wires_append];apply Finset.mem_union_right
+    rw [wires_append];apply Finset.mem_union_right
+    rw [wires_append];apply Finset.mem_union_left
+    exact hm
+  have h:=support hb
+  simp only [List.mem_toFinset,List.mem_cons] at h
+  exact h.elim (fun h=>cz h.symm) nw
+
 theorem body_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (c : Wire) (hcw : c∉L.wires) (base : BasisState) (M : Nat) (hM : M<2^128)
     (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hsum:base L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
@@ -126,8 +335,6 @@ theorem body_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L
   -- Park the completed low-window carry instead of recomputing it.
   have k1 := eAddLo_step L hw hn base hc O2 0 b0 hb0
   rw [hb1] at k1
-  have w1 := wBuild_step L hw hn base hc O2 (2^32*H + l' + 2^128*K)
-  rw [hb1] at w1
   have squareBit : (b0%2^32)/2%2=0 := by
     change ((M^2%2^128)%2^32)/2%2=0
     rw[Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
@@ -141,13 +348,18 @@ theorem body_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L
     exact known_second_loan (b0%2^32) u squareBit
   have wm := wMidFullCC_step L hw hn base hc O2 (2^32*H+l'+2^128*K) b1 hb1 hb1lt hO2
     H l' K hH hl' hK rfl loanFact
-  have w5 := wUnbuildKnown_step L hw hn base hc O3 (2^32*H + l' + 2^128*K)
-  rw [hb1] at w5
+  have wmBase : Triple (BState L base O2 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base))
+      (wMidFullCC L)
+      (BState L base O3 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base)) := by
+    rw [hb1]; exact wm
+  have off:=b_wloop_sumCarry_free L hw hn c hcw
+  have loop:=InverseCarryDevelop.cached_wloop_bstate_step L hw hn base hc hsum O2 (2^32*H+l'+2^128*K) O3
+    (wMidFullCC L) wmBase off.1 (mid_sumCarry_free L hw hn c hcw) off.2.2
   have kc:=park_step L hw hn base hsum O3 (2^32*H+l') 0 (by omega) kap
   rw [kapNat] at kc
   have w3 := eSubK_step L hw hn baseK hcK O3 (2^32*H + l') 0 b1 (by omega) hb1K
   have tw : Triple (BState L base O2 b0 0) (fold L) (BState L baseK O3 E1 0) :=
-    k1.seq (w1.seq (wm.seq (w5.seq (kc.seq w3))))
+    by simpa only [fold,List.append_assoc] using k1.seq (loop.seq (kc.seq w3))
   -- eFoldTq
   have f1 := eFlip_step L hw hn baseK c hcw O3 E1 0
   have f2 := eCore_stepTq L hw hn baseK hcK O3 (flipE g E1) hO3
@@ -206,127 +418,8 @@ theorem body_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L
   rw [key] at all
   exact all
 
-theorem middle_delta (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths):
- toffoliCount (wMidFullCC L)+5=toffoliCount (wFwdK L++(wCoreK L++wInvK L)) ∧
- measurementCount (wMidFullCC L)=measurementCount (wFwdK L++(wCoreK L++wInvK L))+3 ∧
- Challenge.gateSlots (wMidFullCC L)+13=Challenge.gateSlots (wFwdK L++(wCoreK L++wInvK L)):=by
- have a:=SecondCarryLoan.midCC_counts L hw
- have b:=CarryWindowCache.mid_counts L hw
- exact ⟨by omega,by omega,by omega⟩
-
-theorem body_counts (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire):
- toffoliCount (body L c)=4766 ∧ measurementCount (body L c)=5924:=by
- have base:=ParkCarryDevelop.body_counts L hw c
- have mid:=middle_delta L hw
- have p:=padM_counts L 748
- have q:=padM_counts L 751
- simp only[toffoliCount_append,measurementCount_append]at mid
- simp only[body,fold,rebuild,ParkCarryDevelop.body,ParkCarryDevelop.fold,ParkCarryDevelop.rebuild,
-  toffoliCount_append,measurementCount_append]at base ⊢
- exact ⟨by omega,by omega⟩
-
-theorem body_slots (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire):
- Challenge.gateSlots (body L c)+16=Challenge.gateSlots (ParkCarryDevelop.body L c):=by
- have m:=(middle_delta L hw).2.2
- have p:=padM_slots L 748
- have q:=padM_slots L 751
- simp only[Challenge.gateSlots_append]at m
- simp only[body,fold,rebuild,ParkCarryDevelop.body,ParkCarryDevelop.fold,ParkCarryDevelop.rebuild,
-  Challenge.gateSlots_append]
- omega
-
-theorem body_physical (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire)
- (hn:(c::L.wires).Nodup):GatePhysical (body L c):=by
- have h:=ParkCarryDevelop.body_physical L hw c hn
- simp only[ParkCarryDevelop.body,ParkCarryDevelop.fold,ParkCarryDevelop.rebuild,gatePhysical_append]at h
- simp only[body,fold,rebuild,gatePhysical_append]
- exact ⟨h.1,h.2.1,⟨h.2.2.1.1,h.2.2.1.2.1,SecondCarryLoan.midCC_physical L hw (List.nodup_cons.mp hn).2,
-  h.2.2.1.2.2.2⟩,h.2.2.2.1,⟨h.2.2.2.2.1,h.2.2.2.2.2.1,padM_physical L 748⟩⟩
-theorem body_le_extra (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
-    ExtraLe L.core.sumCarry (body L c) (bBody L c) := by
-  have tailWires : wires (fold L ++ (eFoldTq L c ++ rebuild L)) ⊆
-      insert L.core.sumCarry (wires (wFold L ++ (eFold L c ++ wRestore L))) := by
-    have wc := (QRel.qprog_le (rotWCore L) 256 SquareReduction.p (rotWCore_widths L hw) (by decide)).1
-    have ef := (QRel.eFold_le L hw c).1
-    have sk := eSubK_wires L hw
-    have ab := eAddB_wires L hw
-    have ml {A B : Program} {q : Wire} (h : q ∈ wires A) : q ∈ wires (A ++ B) := by
-      rw [wires_append]; exact Finset.mem_union_left _ h
-    have mr {A B : Program} {q : Wire} (h : q ∈ wires B) : q ∈ wires (A ++ B) := by
-      rw [wires_append]; exact Finset.mem_union_right _ h
-    have hOE {q : Wire} (h : q ∈ oldE L) : q ∈ wires (wFold L ++ (eFold L c ++ wRestore L)) := by
-      rcases Finset.mem_union.mp h with h|h
-      · exact ml (mr (mr (ml h)))
-      · exact ml (mr (mr (mr (ml h))))
-    intro q hq
-    by_cases spare:q=L.core.sumCarry
-    · exact Finset.mem_insert.mpr (Or.inl spare)
-    apply Finset.mem_insert_of_mem
-    simp only [fold, wMidFullCC, wCoreK, rebuild, wires_append, Finset.mem_union] at hq
-    rcases hq with (h | h | (h | ((h | (h | h | h) | h) | h)) | h | h | h) | h | h | h | h
-    · exact hOE (eAddLo_oldE L hw h)
-    · exact ml (ml h)
-    · exact hOE ((endsCC_oldE L hw).1 h)
-    · exact hOE ((armsCC_oldE L hw).1 h)
-    · exact hOE (kw_oldE L hw h)
-    · exact ml (mr (ml (wc h)))
-    · exact hOE (kw_oldE L hw h)
-    · exact hOE ((armsCC_oldE L hw).2 h)
-    · exact hOE ((endsCC_oldE L hw).2 h)
-    · exact ml (mr (mr (mr (mr (wUnbuildKnown_wires L hw h)))))
-    · have hh:q=eU L ∨ q=L.core.sumCarry := by simpa [ParkCarryDevelop.program,wires,Instr.wires,or_comm] using h
-      rcases hh with hh|hh
-      · apply hOE
-        exact oldE_mem L hw q (Or.inr (Or.inr (Or.inr (Or.inl (hh ▸ (eK_mem L hw).2.1)))))
-      · exact False.elim (spare hh)
-    · exact ml (mr (mr (ml (sk h))))
-    · exact mr (ml (ef h))
-    · exact mr (mr (mr (mr (ml (ab h)))))
-    · have hh:=(restore_resources L hw).2.2.1 h
-      rcases Finset.mem_insert.mp hh with hh|hh
-      · exact False.elim (spare hh)
-      · exact hOE hh
-    · exact hOE (padM_oldE L hw 748 h)
-  refine ⟨?_, ?_⟩
-  · have a := (QRel.measuredFoldQ_le L hw (negP L)).1
-    have b := (QRel.measuredFoldQ_le L hw (rot128F L)).1
-    intro q hq
-    change q ∈ wires (measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++ (fold L ++ (eFoldTq L c ++ rebuild L)))) at hq
-    rw [wires_append] at hq
-    rcases Finset.mem_union.mp hq with h|h
-    · apply Finset.mem_insert_of_mem
-      change q ∈ wires (measuredFoldQ L (negP L) ++ (measuredFoldQ L (rot128F L) ++ (wFold L ++ (eFold L c ++ wRestore L))))
-      rw [wires_append];exact Finset.mem_union_left _ (a h)
-    · rw [wires_append] at h
-      rcases Finset.mem_union.mp h with h|h
-      · apply Finset.mem_insert_of_mem
-        change q ∈ wires (measuredFoldQ L (negP L) ++ (measuredFoldQ L (rot128F L) ++ (wFold L ++ (eFold L c ++ wRestore L))))
-        rw [wires_append];apply Finset.mem_union_right
-        rw [wires_append];exact Finset.mem_union_left _ (b h)
-      · have t := tailWires h
-        rcases Finset.mem_insert.mp t with t|t
-        · exact Finset.mem_insert.mpr (Or.inl t)
-        · apply Finset.mem_insert_of_mem
-          change q ∈ wires (measuredFoldQ L (negP L) ++ (measuredFoldQ L (rot128F L) ++ (wFold L ++ (eFold L c ++ wRestore L))))
-          rw [wires_append];apply Finset.mem_union_right
-          rw [wires_append];exact Finset.mem_union_right _ t
-  · have delta:=body_slots L hw c
-    have old:=(ParkCarryDevelop.body_le_extra L hw c).2
-    omega
-
-theorem body_support (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
-    (hn:L.wires.Nodup) (c : Wire) : wires (body L c)⊆(c::L.wires).toFinset := by
-  intro q hq
-  have h:=(body_le_extra L hw c).1 hq
-  rcases Finset.mem_insert.mp h with h|h
-  · simp only [List.mem_toFinset,List.mem_cons]
-    right
-    rw [h]
-    simp [Arithmetic.CuccaroStreamedSquareWideLayout.wires,Arithmetic.CuccaroStreamedSquareLayout.wires]
-  · exact (bBody_support L hw hn c) h
-
 theorem body_rel (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c : Wire) :
-    toffoliCount (body L c)+1057=toffoliCount (bBody L c) ∧
+    toffoliCount (body L c)+1058=toffoliCount (bBody L c) ∧
     measurementCount (body L c)+4=measurementCount (bBody L c) ∧
     ExtraLe L.core.sumCarry (body L c) (bBody L c) := by
   have current:=body_counts L hw c
@@ -337,7 +430,7 @@ theorem body_rel (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c : Wire) 
 def hostedBody (L:CuccaroStreamedSquareWideLayout) (rho:Equiv.Perm Wire) (c:Wire):Program:=body (hostLayout L rho) c
 
 theorem hosted_rel (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (rho:Equiv.Perm Wire) (c:Wire):
- toffoliCount (hostedBody L rho c)+1057=toffoliCount (bBody L c) ∧
+ toffoliCount (hostedBody L rho c)+1058=toffoliCount (bBody L c) ∧
  measurementCount (hostedBody L rho c)+4=measurementCount (bBody L c) ∧
  ExtraLe (rho.symm L.core.sumCarry) (hostedBody L rho c) (bBody L c):=by
  have h:=body_rel (hostLayout L rho) (host_widths L hw rho) c
@@ -348,17 +441,8 @@ theorem hosted_eq (L:CuccaroStreamedSquareWideLayout) (rho:Equiv.Perm Wire) (c:W
  change body (ParkCarryDevelop.hostLayout L rho) c=body L c
  rw[ParkCarryDevelop.host_eq L rho h]
 
-theorem hosted_slots (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (rho:Equiv.Perm Wire) (c:Wire):
- Challenge.gateSlots (hostedBody L rho c)=Challenge.gateSlots (body L c):=by
- have hr:Challenge.gateSlots (restore (hostLayout L rho))=Challenge.gateSlots (restore L):=
-  ParkCarryDevelop.hostSquare_slots_independent (mU L) (eLo L) ((eBank L).take 31) L.core.cin
-   (rho.symm L.core.sumCarry) L.core.sumCarry (eKw L)
-   (mU_length L hw) (eLo_length L hw) (eBank_take_length L hw 31 (by omega))
- simp only[hostedBody,body,fold,rebuild,Challenge.gateSlots_append,hr]
- rfl
-
 theorem hosted_counts (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (rho:Equiv.Perm Wire) (c:Wire):
- toffoliCount (hostedBody L rho c)=4766 ∧ measurementCount (hostedBody L rho c)=5924:=
+ toffoliCount (hostedBody L rho c)=4765 ∧ measurementCount (hostedBody L rho c)=5924:=
  body_counts (hostLayout L rho) (host_widths L hw rho) c
 #print axioms body_frame
 #print axioms body_counts
