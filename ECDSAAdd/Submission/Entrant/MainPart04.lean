@@ -3263,108 +3263,81 @@ end -- original module boundary
 end
 end
 
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-set_option maxRecDepth 30000
-set_option maxHeartbeats 4000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.ParkCopyMoreDevelop
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
-
-theorem double_cross_bound (v h:Nat)(hv:v<2^(2*h)):
- 2*(v%2^h)*(v/2^h)<2^(2*h+1):=by
- have eq:(2:Nat)^(2*h)=2^h*2^h:=by rw[show 2*h=h+h by omega,pow_add]
- have lo:v%2^h<2^h:=Nat.mod_lt _ (by positivity)
- have hi:v/2^h<2^h:=by
-  rw[Nat.div_lt_iff_lt_mul (by positivity)]
-  simpa only[eq]using hv
- have mul:=Nat.mul_lt_mul'' lo hi
- calc
-  2*(v%2^h)*(v/2^h)=2*((v%2^h)*(v/2^h)):=by ring
-  _ < 2*(2^h*2^h):=Nat.mul_lt_mul_of_pos_left mul (by decide)
-  _ = 2^(2*h+1):=by rw[pow_succ,eq];ring
-
-theorem top_bits_zero (r:List Wire)(st:BasisState)(k:Nat)(h:regValue r st<2^k)
- (q:Wire)(hq:q∈r.drop k):st q=false:=by
- by_cases hk:k≤r.length
- · have e:=regValue_append (r.take k) (r.drop k) st
-   rw[List.take_append_drop,List.length_take,Nat.min_eq_left hk]at e
-   have z:regValue (r.drop k) st=0:=by
-    by_contra nz
-    have :2^k≤2^k*regValue (r.drop k) st:=Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero nz)
-    omega
-   exact (regValue_zero _ _).mp z q hq
- · rw[List.drop_eq_nil_of_le (by omega)]at hq
-   simp at hq
-
-theorem inner_top_hosts_zero (L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)
- (ext src dst:List Wire)(he:300≤ext.length)(hs:src.length=128)(base st:BasisState)
- (i1:(LowZero18LowK.kg L ext src dst).I1 (regValue (LowZero18LowK.oregs L ext src dst).lo base) st)
- (i2:(LowZero18LowK.kg L ext src dst).I2 (regValue (LowZero18LowK.oregs L ext src dst).hi base) st):
- st (ext.getD 197 0)=false ∧ st (ext.getD 297 0)=false:=by
- have sizes:=L.measured_bank_widths hw
- have lol:(LowZero18LowK.oregs L ext src dst).lo.length=64:=by
-  simp[LowZero18LowK.oregs,KRegs.lo,sizes.1,hs]
- have hil:(LowZero18LowK.oregs L ext src dst).hi.length=64:=by
-  simp[LowZero18LowK.oregs,KRegs.hi,sizes.1,hs]
- have lo:=regValue_lt (LowZero18LowK.oregs L ext src dst).lo base
- have hi:=regValue_lt (LowZero18LowK.oregs L ext src dst).hi base
- rw[lol]at lo;rw[hil]at hi
- have b1:=double_cross_bound _ 32 lo
- have b2:=double_cross_bound _ 32 hi
- have t1:regValue (LowZero18LowK.iregs L ext src dst).T st=
-  2*(regValue (LowZero18LowK.oregs L ext src dst).lo base%2^32)*
-    (regValue (LowZero18LowK.oregs L ext src dst).lo base/2^32):=by
-  have h:(LowZero18LowK.iregs L ext src dst).invC (regValue (LowZero18LowK.oregs L ext src dst).lo base) st:=by
-   simpa only[LowZero18LowK.kg,hs,if_pos rfl,LowZero18LowK.kgH]using i1
-  exact h.2
- have t2:regValue (LowZero18LowK.jregsH L ext src dst).T st=
-  2*(regValue (LowZero18LowK.oregs L ext src dst).hi base%2^32)*
-    (regValue (LowZero18LowK.oregs L ext src dst).hi base/2^32):=by
-  have h:(LowZero18LowK.jregsH L ext src dst).invF (regValue (LowZero18LowK.oregs L ext src dst).hi base) st:=by
-   simpa only[LowZero18LowK.kg,hs,if_pos rfl,LowZero18LowK.kgH]using i2
-  exact h.2
- rw[←t1]at b1;rw[←t2]at b2
- constructor
- · apply top_bits_zero _ st 65 b1
-   simp only[LowZero18LowK.iregs]
-   rw[List.getD_eq_getElem _ _ (by omega)]
-   have e:ext[197]'(by omega)=(((ext.drop 132).take 66).drop 65)[0]'(by simp;omega):=by simp
-   rw[e];exact List.getElem_mem _
- · apply top_bits_zero _ st 65 b2
-   simp only[LowZero18LowK.jregsH]
-   rw[List.getD_eq_getElem _ _ (by omega)]
-   have e:ext[297]'(by omega)=(((ext.drop 232).take 66).drop 65)[0]'(by simp;omega):=by simp
-   rw[e];exact List.getElem_mem _
-
-end ECDSAAdd.Entrant.ParkCopyMoreDevelop
-
 
 set_option linter.unusedTactic false
 set_option linter.unreachableTactic false
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
-/-! Bank-bit parking for the 128-bit square leaves (part A: definitions and structural facts).
+set_option exponentiation.threshold 1024
+set_option maxHeartbeats 1000000
+namespace ECDSAAdd.Entrant.ParkCopy.CrossBits
+open Arithmetic
 
-Four `ext` wires are outside every register of the 128-bit leaf KG (`kgH`): the outer `T`
-uses `ext[0..130)`, the inner `T` uses `ext[132..198)`, the high inner `S` uses
-`ext[198..231)` and the high inner `T` uses `ext[232..298)`. The wires
-`ext[131]`, `ext[231]`, `ext[298]`, `ext[299]` (`ext[130]` is the retired-760 body host) are therefore zero during the whole branch.
-They hold the last four bank bits through the body, so the second controlled copy needs
-four Toffoli gates fewer. -/
+theorem cross_bound (v:Nat) (hv:v<2^64) : 2*(v%2^32)*(v/2^32)<2^65 := by
+ have ha:v%2^32<2^32 := Nat.mod_lt _ (by positivity)
+ have hb:v/2^32<2^32 := by norm_num at hv ⊢;omega
+ have hh:=Nat.mul_lt_mul_of_lt_of_lt ha hb
+ norm_num at hh ⊢
+ nlinarith
+
+theorem top_zero (r:List Wire) (hr:r.length=66) (v:Nat) (hv:v<2^64)
+ (s:BasisState) (h:regValue r s=2*(v%2^32)*(v/2^32)) : s (r.getD 65 0)=false := by
+ have hb:=regValue_bit r 65 0 s (by rw [hr];decide)
+ rw [h,Nat.div_eq_of_lt (cross_bound v hv)] at hb
+ simpa only [Nat.zero_mod,Bool.toNat_eq_zero] using hb
+
+
+theorem outer_bound (a b:Nat) (ha:a<2^64) (hb:b<2^64) : 2*a*b<2^129 := by
+ have h:=Nat.mul_lt_mul_of_lt_of_lt ha hb
+ norm_num at h ⊢
+ nlinarith
+
+theorem outer_zero (r:List Wire) (hr:r.length=130) (a b:Nat) (ha:a<2^64) (hb:b<2^64)
+ (s:BasisState) (h:regValue r s=2*a*b) : s (r.getD 129 0)=false := by
+ have bit:=regValue_bit r 129 0 s (by rw [hr];decide)
+ rw [h,Nat.div_eq_of_lt (outer_bound a b ha hb)] at bit
+ simpa only [Nat.zero_mod,Bool.toNat_eq_zero] using bit
+
+end ECDSAAdd.Entrant.ParkCopy.CrossBits
+
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+/-! Bank-bit parking for the 128-bit square leaves.
+
+Four sites lie outside the producer registers: ext[131], ext[231], ext[298],
+and ext[299]. Five further sites are zero at the producer boundary: ext[197]
+and ext[297] are the top bits of 66-bit inner cross terms, ext[129] is the top
+bit of the 130-bit outer cross term, and ext[132] and ext[232] are the low bits
+of the even inner cross terms. These nine sites hold the bank suffix through
+the body. Restoring the suffix with CX gates saves nine controlled recopies.
+The inner and outer cross invariants are restored before producer cleanup. -/
 
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
+namespace ECDSAAdd.Entrant.ParkCopy.CrossBits
+open Arithmetic
+
+theorem low_zero (r:List Wire) (hr:0<r.length) (a b:Nat) (s:BasisState)
+ (h:regValue r s=2*a*b) : s (r.getD 0 0)=false := by
+ have bit:=regValue_bit r 0 0 s hr
+ rw [h] at bit
+ simpa only [pow_zero,Nat.div_one,Nat.mul_mod,Nat.mod_self,Nat.zero_mul,Nat.zero_mod,
+   Bool.toNat_eq_zero] using bit
+
+end ECDSAAdd.Entrant.ParkCopy.CrossBits
 namespace ECDSAAdd.Entrant.ParkCopy
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout
 
-def hostIdx : List Nat := [129,131,197,231,297,298,299]
+def freeHostIdx : List Nat := [131,231,298,299]
 
-def hosts (ext : List Wire) : List Wire := hostIdx.map (fun i => ext.getD i 0)
+def freeHosts (ext : List Wire) : List Wire := freeHostIdx.map (fun i => ext.getD i 0)
 
 /-- Measurements of zero wires without corrections: they keep the record alignment. -/
 def dummies (hs : List Wire) : Program := hs.map (fun h => Instr.measureX h [] [])
@@ -3372,7 +3345,7 @@ def dummies (hs : List Wire) : Program := hs.map (fun h => Instr.measureX h [] [
 /-- Move a register into a zero register (and back): two CX passes. -/
 def move (a b : List Wire) : Program := copyRegister none a b ++ copyRegister none b a
 
-theorem hosts_length (ext : List Wire) : (hosts ext).length=7 := rfl
+theorem freeHosts_length (ext : List Wire) : (freeHosts ext).length=4 := rfl
 
 /-- Index characterisation of membership in a slice of a duplicate-free list. -/
 theorem getD_mem_slice (l : List Wire) (hl : l.Nodup) (i a b : Nat) (hi : i<l.length) :
@@ -3413,22 +3386,20 @@ section Hosts
 variable (ext : List Wire) (hx : ext.Nodup) (he : 300≤ext.length)
 
 include he in
-theorem hosts_sub : ∀h∈hosts ext,h∈ext := by
+theorem freeHosts_sub : ∀h∈freeHosts ext,h∈ext := by
   intro h hh
-  simp only [hosts,hostIdx,List.map_cons,List.map_nil,List.mem_cons,List.not_mem_nil,or_false] at hh
-  rcases hh with rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> exact getD_mem _ _ (by omega)
+  simp only [freeHosts,freeHostIdx,List.map_cons,List.map_nil,List.mem_cons,List.not_mem_nil,or_false] at hh
+  rcases hh with rfl|rfl|rfl|rfl <;> exact getD_mem _ _ (by omega)
 
 include hx he in
-theorem hosts_nodup : (hosts ext).Nodup := by
+theorem freeHosts_nodup : (freeHosts ext).Nodup := by
   have inj (i j : Nat) (hi : i<ext.length) (hj : j<ext.length) (e : ext.getD i 0=ext.getD j 0) : i=j := by
     rw [List.getD_eq_getElem _ _ hi,List.getD_eq_getElem _ _ hj] at e
     exact (List.Nodup.getElem_inj_iff hx).mp e
-  simp only [hosts,hostIdx,List.map_cons,List.map_nil,List.nodup_cons,List.mem_cons,
+  simp only [freeHosts,freeHostIdx,List.map_cons,List.map_nil,List.nodup_cons,List.mem_cons,
     List.not_mem_nil,or_false,List.nodup_nil,and_true]
   refine ⟨?_,?_,?_,?_⟩ <;> (try refine ⟨?_,?_⟩) <;> (try refine ⟨?_,?_⟩) <;> (try refine ⟨?_,?_⟩)
   all_goals first
-    | (intro e; rcases e with e|e|e|e|e|e <;> (have := inj _ _ (by omega) (by omega) e; omega))
-    | (intro e; rcases e with e|e|e|e|e <;> (have := inj _ _ (by omega) (by omega) e; omega))
     | (intro e; rcases e with e|e|e|e <;> (have := inj _ _ (by omega) (by omega) e; omega))
     | (intro e; rcases e with e|e|e <;> (have := inj _ _ (by omega) (by omega) e; omega))
     | (intro e; rcases e with e|e <;> (have := inj _ _ (by omega) (by omega) e; omega))
@@ -3436,45 +3407,44 @@ theorem hosts_nodup : (hosts ext).Nodup := by
     | trivial
 
 /-- Each host index avoids all four `ext` slices used by the 128-bit leaf KG and `ext[0]`. -/
-theorem idx_free (i : Nat) (hi : i∈hostIdx) :
-    (i≠129 → ¬ i < 131) ∧ (i≠197 → ¬(132 ≤ i ∧ i<132+66)) ∧ ¬(198 ≤ i ∧ i<198+33) ∧ (i≠297 → ¬(232 ≤ i ∧ i<232+66)) ∧ i≠0 ∧ i<300 := by
-  simp only [hostIdx,List.mem_cons,List.not_mem_nil,or_false] at hi
-  rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> refine ⟨?_,?_,?_,?_,?_,?_⟩ <;> (try intro) <;> omega
+theorem idx_free (i : Nat) (hi : i∈freeHostIdx) :
+    ¬ i < 131 ∧ ¬(132 ≤ i ∧ i<132+66) ∧ ¬(198 ≤ i ∧ i<198+33) ∧ ¬(232 ≤ i ∧ i<232+66) ∧ i≠0 ∧ i<300 := by
+  simp only [freeHostIdx,List.mem_cons,List.not_mem_nil,or_false] at hi
+  rcases hi with rfl|rfl|rfl|rfl <;> omega
 
 include hx he in
-theorem host_not_T (h : Wire) (hh : h∈hosts ext) (e : h≠ext.getD 129 0) : h∉(ext.take 132).take 130 := by
-  simp only [hosts,List.mem_map] at hh
+theorem host_not_T (h : Wire) (hh : h∈freeHosts ext) : h∉(ext.take 132).take 130 := by
+  simp only [freeHosts,List.mem_map] at hh
   obtain ⟨i,hi,rfl⟩ := hh
   have f := idx_free i hi
-  have i129 : i≠129 := fun h' => e (by rw [h'])
   rw [List.take_take,show min 130 132=130 by omega,getD_mem_take ext hx i 130 (by have := f.2.2.2.2.2; omega)]
-  have := f.1 i129; omega
+  have := f.1; omega
 
 include hx he in
-theorem host_not_iT (h : Wire) (hh : h∈hosts ext) (e:h≠ext.getD 197 0) : h∉(ext.drop 132).take 66 := by
-  simp only [hosts,List.mem_map] at hh
+theorem host_not_iT (h : Wire) (hh : h∈freeHosts ext) : h∉(ext.drop 132).take 66 := by
+  simp only [freeHosts,List.mem_map] at hh
   obtain ⟨i,hi,rfl⟩ := hh
   rw [getD_mem_slice ext hx i 132 66 (by have := (idx_free i hi).2.2.2.2.2; omega)]
-  exact (idx_free i hi).2.1 (fun h' => e (by rw[h']))
+  exact (idx_free i hi).2.1
 
 include hx he in
-theorem host_not_jS (h : Wire) (hh : h∈hosts ext) : h∉((ext.drop 198).take 34).take 33 := by
-  simp only [hosts,List.mem_map] at hh
+theorem host_not_jS (h : Wire) (hh : h∈freeHosts ext) : h∉((ext.drop 198).take 34).take 33 := by
+  simp only [freeHosts,List.mem_map] at hh
   obtain ⟨i,hi,rfl⟩ := hh
   rw [List.take_take,show min 33 34=33 by omega,
     getD_mem_slice ext hx i 198 33 (by have := (idx_free i hi).2.2.2.2.2; omega)]
   exact (idx_free i hi).2.2.1
 
 include hx he in
-theorem host_not_jT (h : Wire) (hh : h∈hosts ext) (e:h≠ext.getD 297 0) : h∉(ext.drop 232).take 66 := by
-  simp only [hosts,List.mem_map] at hh
+theorem host_not_jT (h : Wire) (hh : h∈freeHosts ext) : h∉(ext.drop 232).take 66 := by
+  simp only [freeHosts,List.mem_map] at hh
   obtain ⟨i,hi,rfl⟩ := hh
   rw [getD_mem_slice ext hx i 232 66 (by have := (idx_free i hi).2.2.2.2.2; omega)]
-  exact (idx_free i hi).2.2.2.1 (fun h' => e (by rw[h']))
+  exact (idx_free i hi).2.2.2.1
 
 include hx he in
-theorem host_ne_zero (h : Wire) (hh : h∈hosts ext) : h≠ext.getD 0 0 := by
-  simp only [hosts,List.mem_map] at hh
+theorem freeHost_ne_zero (h : Wire) (hh : h∈freeHosts ext) : h≠ext.getD 0 0 := by
+  simp only [freeHosts,List.mem_map] at hh
   obtain ⟨i,hi,rfl⟩ := hh
   intro e
   have f := idx_free i hi
@@ -3484,46 +3454,70 @@ theorem host_ne_zero (h : Wire) (hh : h∈hosts ext) : h≠ext.getD 0 0 := by
 
 end Hosts
 
-theorem park_top_bits_zero (r : List Wire) (st : BasisState) (k : Nat) (h : regValue r st<2^k)
-    (q : Wire) (hq : q∈r.drop k) : st q=false := by
-  by_cases hk : k≤r.length
-  · have e := regValue_append (r.take k) (r.drop k) st
-    rw [List.take_append_drop,List.length_take,Nat.min_eq_left hk] at e
-    have z : regValue (r.drop k) st=0 := by
-      by_contra nz
-      have : 2^k≤2^k*regValue (r.drop k) st := Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero nz)
-      omega
-    exact (regValue_zero _ _).mp z q hq
-  · rw [List.drop_eq_nil_of_le (by omega)] at hq
-    simp at hq
-
 section KGH
 variable (L : CuccaroStreamedSquareWideLayout) (ext src dst : List Wire)
 
 /-- For the 128-bit leaf, an `ext` wire outside the three inner slices is not a KG `X` wire. -/
 theorem host_not_X (hx : ext.Nodup) (he : 300≤ext.length) (h128 : src.length=128)
-    (hE : ∀q∈(LowZero18LowK.ktmp L),q∉ext) (h : Wire) (hh : h∈hosts ext) (e1:h≠ext.getD 197 0) (e2:h≠ext.getD 297 0) :
+    (hE : ∀q∈(LowZero18LowK.ktmp L),q∉ext) (h : Wire) (hh : h∈freeHosts ext) :
     h∉(LowZero18LowK.kg L ext src dst).X := by
   intro hX
   rw [LowZero18LowK.kg,if_pos h128] at hX
   simp only [KG.X,LowZero18LowK.kgH] at hX
-  have hext := hosts_sub ext he h hh
+  have hext := freeHosts_sub ext he h hh
   rcases List.mem_append.mp hX with hX|hX
   · rcases List.mem_append.mp hX with hX|hX
     · rcases List.mem_append.mp hX with hX|hX
       · exact hE h (List.mem_of_mem_drop (List.mem_of_mem_take (hX : h∈((LowZero18LowK.ktmp L).drop 66).take 33))) hext
-      · exact host_not_iT ext hx he h hh e1 hX
+      · exact host_not_iT ext hx he h hh hX
     · rcases List.mem_append.mp hX with hX|hX
       · exact host_not_jS ext hx he h hh hX
-      · exact host_not_jT ext hx he h hh e2 hX
+      · exact host_not_jT ext hx he h hh hX
   · exact List.not_mem_nil hX
 
 theorem host_not_oT (hx : ext.Nodup) (he : 300≤ext.length) (h128 : src.length=128)
-    (h : Wire) (hh : h∈hosts ext) (e : h≠ext.getD 129 0) : h∉(LowZero18LowK.oregs L ext src dst).T := by
+    (h : Wire) (hh : h∈freeHosts ext) : h∉(LowZero18LowK.oregs L ext src dst).T := by
   simp only [LowZero18LowK.oregs,h128]
-  exact host_not_T ext hx he h hh e
+  exact host_not_T ext hx he h hh
 
 end KGH
+
+
+def hostIdx : List Nat := [131,231,298,299,197,297,129,132,232]
+def hosts (ext:List Wire) : List Wire := hostIdx.map (fun i=>ext.getD i 0)
+theorem hosts_length (ext:List Wire) : (hosts ext).length=9 := rfl
+
+theorem host_index (i:Nat) (hi:i∈hostIdx) : i<300 ∧ i≠0 := by
+ simp only [hostIdx,List.mem_cons,List.not_mem_nil,or_false] at hi
+ rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> omega
+
+theorem hosts_sub (ext:List Wire) (he:300≤ext.length) : ∀h∈hosts ext,h∈ext := by
+ intro h hh
+ obtain ⟨i,hi,rfl⟩:=List.mem_map.mp hh
+ exact getD_mem ext i (by have hh:=host_index i hi;omega)
+
+theorem hosts_nodup (ext:List Wire) (hx:ext.Nodup) (he:300≤ext.length) : (hosts ext).Nodup := by
+ unfold hosts
+ apply List.Nodup.map_on
+ · intro i hi j hj h
+   have ilt:i<ext.length:=by have hh:=host_index i hi;omega
+   have jlt:j<ext.length:=by have hh:=host_index j hj;omega
+   rw [List.getD_eq_getElem _ _ ilt,List.getD_eq_getElem _ _ jlt] at h
+   exact (List.Nodup.getElem_inj_iff hx).mp h
+ · decide
+
+theorem host_ne_zero (ext:List Wire) (hx:ext.Nodup) (he:300≤ext.length)
+ (h:Wire) (hh:h∈hosts ext) : h≠ext.getD 0 0 := by
+ obtain ⟨i,hi,rfl⟩:=List.mem_map.mp hh
+ intro e
+ have hn:=host_index i hi
+ rw [List.getD_eq_getElem _ _ (by omega),List.getD_eq_getElem _ _ (by omega)] at e
+ exact hn.2 ((List.Nodup.getElem_inj_iff hx).mp e)
+
+theorem hosts_split (ext:List Wire) (h:Wire) (hh:h∈hosts ext) :
+ h∈freeHosts ext ∨ h=ext.getD 197 0 ∨ h=ext.getD 297 0 ∨ h=ext.getD 129 0 ∨ h=ext.getD 132 0 ∨ h=ext.getD 232 0 := by
+ simpa only [hosts,hostIdx,freeHosts,freeHostIdx,List.map_cons,List.map_nil,
+ List.mem_cons,List.not_mem_nil,or_false,or_assoc] using hh
 
 /-! Program-shape lemmas. -/
 
@@ -3599,16 +3593,16 @@ variable (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire
 
 def pA : Program := copyRegister (some control) src (L.inputBank.take src.length)
 def pM : Program := LowZero18Square.make L (LowZero18LowK.kg L ext src dst)
-def pE1 : Program := eraseMask control (src.take 121) ((L.inputBank.take src.length).take 121)
+def pE1 : Program := eraseMask control (src.take 119) ((L.inputBank.take src.length).take 119)
 def pD : Program := dummies (hosts ext)
-def pMI : Program := move ((L.inputBank.take src.length).drop 121) (hosts ext)
+def pMI : Program := move ((L.inputBank.take src.length).drop 119) (hosts ext)
 def pB : Program := renameProgram (LowZero18Square.foldPerm L ext) body
-def pC1 : Program := CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) (src.take 121) ((L.inputBank.take src.length).take 121)
-def pMO : Program := move (hosts ext) ((L.inputBank.take src.length).drop 121)
+def pC1 : Program := CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) (src.take 119) ((L.inputBank.take src.length).take 119)
+def pMO : Program := move (hosts ext) ((L.inputBank.take src.length).drop 119)
 def pCL : Program := LowZero18Square.clear L (LowZero18LowK.kg L ext src dst)
 def pE : Program := eraseMask control src (L.inputBank.take src.length)
 
-/-- The 128-bit leaf with its last five bank bits parked on five free `ext` wires. -/
+/-- The 128-bit leaf with its last nine bank bits parked on zero extension wires. -/
 def withLowK2P : Program :=
   pA L control src++pM L ext src dst++pE1 L control src++pD ext++pMI L ext src++pB L ext body++
     pC1 L control src dst++pMO L ext src++pCL L ext src dst++pE L control src
@@ -3768,8 +3762,8 @@ theorem withLowK2P_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have Blen : (L.inputBank.take src.length).length=128 := by rw [inputLen,h128']
   have hHx : ∀h∈hosts ext,h∈ext := hosts_sub ext he
   have hHnd : (hosts ext).Nodup := hosts_nodup ext hx he
-  have hHT : ∀h∈hosts ext,h≠ext.getD 129 0 → h∉(LowZero18LowK.oregs L ext src dst).T := fun h hh e => host_not_oT L ext src dst hx he h128' h hh e
-  have hHX : ∀h∈hosts ext,h≠ext.getD 197 0 → h≠ext.getD 297 0 → h∉(LowZero18LowK.kg L ext src dst).X := fun h hh e1 e2 => host_not_X L ext src dst hx he h128' tmpE h hh e1 e2
+  have hHT : ∀h∈freeHosts ext,h∉(LowZero18LowK.oregs L ext src dst).T := fun h hh => host_not_oT L ext src dst hx he h128' h hh
+  have hHX : ∀h∈freeHosts ext,h∉(LowZero18LowK.kg L ext src dst).X := fun h hh => host_not_X L ext src dst hx he h128' tmpE h hh
   have hH0 : ∀h∈hosts ext,h≠ext.getD 0 0 := host_ne_zero ext hx he
   have hHB : ∀h∈hosts ext,h∉(L.inputBank.take src.length) := fun h hh => extB h (hHx h hh)
   have hHD : ∀h∈hosts ext,h∉dst := fun h hh => extD h (hHx h hh)
@@ -3777,19 +3771,19 @@ theorem withLowK2P_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have hHs : ∀q∈src,q∉hosts ext := fun q hq hh => extSrc q (hHx q hh) hq
   have ctlH : control∉hosts ext := fun h => ctlE (hHx _ h)
   have bNd : (L.inputBank.take src.length).Nodup := (List.nodup_append.mp ndCopy).2.1
-  have b15 : ∀q∈(L.inputBank.take src.length).take 121,q∉(L.inputBank.take src.length).drop 121 := by
+  have b15 : ∀q∈(L.inputBank.take src.length).take 119,q∉(L.inputBank.take src.length).drop 119 := by
     intro q h1 h5
-    have nd : ((L.inputBank.take src.length).take 121++(L.inputBank.take src.length).drop 121).Nodup := by
+    have nd : ((L.inputBank.take src.length).take 119++(L.inputBank.take src.length).drop 119).Nodup := by
       rw [List.take_append_drop]; exact bNd
     exact (List.nodup_append.mp nd).2.2 q h1 q h5 rfl
-  have b51 : ∀q∈(L.inputBank.take src.length).drop 121,q∉(L.inputBank.take src.length).take 121 :=
+  have b51 : ∀q∈(L.inputBank.take src.length).drop 119,q∉(L.inputBank.take src.length).take 119 :=
     fun q h5 h1 => b15 q h1 h5
-  have ndMI : ((L.inputBank.take src.length).drop 121++hosts ext).Nodup :=
+  have ndMI : ((L.inputBank.take src.length).drop 119++hosts ext).Nodup :=
     List.nodup_append.mpr ⟨bNd.sublist (List.drop_sublist _ _),hHnd,
       fun a ha b hb e => hHB b hb (e ▸ List.mem_of_mem_drop ha)⟩
-  have ndMO : (hosts ext++(L.inputBank.take src.length).drop 121).Nodup :=
+  have ndMO : (hosts ext++(L.inputBank.take src.length).drop 119).Nodup :=
     (List.perm_append_comm.nodup_iff).mp ndMI
-  have lenMI : ((L.inputBank.take src.length).drop 121).length=(hosts ext).length := by
+  have lenMI : ((L.inputBank.take src.length).drop 119).length=(hosts ext).length := by
     rw [List.length_drop,Blen,hosts_length]
   obtain ⟨a9,r10,e10⟩ := kseq (pA L control src++pM L ext src dst++pE1 L control src++pD ext++pMI L ext src++pB L ext body++pC1 L control src dst++pMO L ext src++pCL L ext src dst) (pE L control src) records s
   obtain ⟨a8,r9,e9⟩ := kseq (pA L control src++pM L ext src dst++pE1 L control src++pD ext++pMI L ext src++pB L ext body++pC1 L control src dst++pMO L ext src) (pCL L ext src dst) a9 s
@@ -3863,69 +3857,100 @@ theorem withLowK2P_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have ctl1 : u1.basis control=s.basis control := (u1z _ ctlD ctlE).trans (u0s _ ctlB)
   have dst1 : regValue dst u1.basis=P^2 := by rw [←bank0]; exact mk.2.1
   -- hosts stay zero through the copy and the producer
-  -- ext[129] is the top bit of the outer T = 2*lo*hi < 2^129
-  have tTop : u1.basis (ext.getD 129 0)=false := by
-    have tv := mk.2.2.2.1
-    have lo_lt := regValue_lt (LowZero18LowK.oregs L ext src dst).lo u0.basis
-    have hi_lt := regValue_lt (LowZero18LowK.oregs L ext src dst).hi u0.basis
-    have lol : (LowZero18LowK.oregs L ext src dst).lo.length=64 := by
-      simp [LowZero18LowK.oregs,KRegs.lo,sizes.1,h128']
-    have hil : (LowZero18LowK.oregs L ext src dst).hi.length=64 := by
-      simp [LowZero18LowK.oregs,KRegs.hi,sizes.1,h128']
-    rw [lol] at lo_lt
-    rw [hil] at hi_lt
-    have prod : 2*regValue (LowZero18LowK.oregs L ext src dst).lo u0.basis*
-        regValue (LowZero18LowK.oregs L ext src dst).hi u0.basis<2^129 := by
-      have := Nat.mul_lt_mul'' lo_lt hi_lt
-      have e : (2:Nat)^129=2*(2^64*2^64) := by norm_num
-      rw [e,Nat.mul_assoc]
-      exact Nat.mul_lt_mul_of_pos_left this (by norm_num)
-    rw [← tv] at prod
-    apply park_top_bits_zero _ _ 129 prod
-    have tl : (LowZero18LowK.oregs L ext src dst).T=ext.take 130 := by
-      simp [LowZero18LowK.oregs,h128',List.take_take]
-    rw [tl,List.getD_eq_getElem _ _ (by omega)]
-    have : ext[129]'(by omega)=((ext.take 130).drop 129)[0]'(by simp; omega) := by simp
-    rw [this]; exact List.getElem_mem _
-  have tInner:=ParkCopyMoreDevelop.inner_top_hosts_zero L hw ext src dst he h128' u0.basis u1.basis
-    mk.2.2.2.2.1 mk.2.2.2.2.2.1
+  have loLen : (LowZero18LowK.oregs L ext src dst).lo.length=64 := by
+    rw [((LowZero18LowK.oregs L ext src dst).lens w).1]
+    rfl
+  have hiLen : (LowZero18LowK.oregs L ext src dst).hi.length=64 := by
+    rw [((LowZero18LowK.oregs L ext src dst).lens w).2.1]
+    change (L.inputBank.take src.length).length-64=64
+    rw [Blen]
+  have loBound : regValue (LowZero18LowK.oregs L ext src dst).lo u0.basis<2^64 := by
+    simpa only [loLen] using regValue_lt (LowZero18LowK.oregs L ext src dst).lo u0.basis
+  have hiBound : regValue (LowZero18LowK.oregs L ext src dst).hi u0.basis<2^64 := by
+    simpa only [hiLen] using regValue_lt (LowZero18LowK.oregs L ext src dst).hi u0.basis
+  have inv1:=mk.2.2.2.2.1
+  rw [LowZero18LowK.kg_I1] at inv1
+  have inv2:=mk.2.2.2.2.2.1
+  simp only [LowZero18LowK.kg,if_pos h128',LowZero18LowK.kgH] at inv2
+  have itLen : (LowZero18LowK.iregs L ext src dst).T.length=66 := by
+    simp only [LowZero18LowK.iregs,List.length_take,List.length_drop]
+    omega
+  have jtLen : (LowZero18LowK.jregsH L ext src dst).T.length=66 := by
+    simp only [LowZero18LowK.jregsH,List.length_take,List.length_drop]
+    omega
+  have iz:=CrossBits.top_zero (LowZero18LowK.iregs L ext src dst).T itLen
+    (regValue (LowZero18LowK.oregs L ext src dst).lo u0.basis) loBound u1.basis inv1.2
+  have jz:=CrossBits.top_zero (LowZero18LowK.jregsH L ext src dst).T jtLen
+    (regValue (LowZero18LowK.oregs L ext src dst).hi u0.basis) hiBound u1.basis inv2.2
+  have slice_get (a n i:Nat) (hi:i<n) (ha:a+i<ext.length) :
+      ((ext.drop a).take n).getD i 0=ext.getD (a+i) 0 := by
+    rw [List.getD_eq_getElem _ _ (by simp only [List.length_take,List.length_drop];omega),
+      List.getD_eq_getElem _ _ ha]
+    simp only [List.getElem_take,List.getElem_drop]
+  simp only [LowZero18LowK.iregs] at iz
+  simp only [LowZero18LowK.jregsH] at jz
+  rw [slice_get 132 66 65 (by omega) (by omega)] at iz
+  rw [slice_get 232 66 65 (by omega) (by omega)] at jz
+  have otLen : (LowZero18LowK.oregs L ext src dst).T.length=130 := by
+    simp only [LowZero18LowK.oregs,h128',List.length_take]
+    omega
+  have oz:=CrossBits.outer_zero (LowZero18LowK.oregs L ext src dst).T otLen
+    (regValue (LowZero18LowK.oregs L ext src dst).lo u0.basis)
+    (regValue (LowZero18LowK.oregs L ext src dst).hi u0.basis) loBound hiBound u1.basis mk.2.2.2.1
+  have otget : (LowZero18LowK.oregs L ext src dst).T.getD 129 0=ext.getD 129 0 := by
+    simp only [LowZero18LowK.oregs,h128']
+    rw [List.take_take]
+    rw [List.getD_eq_getElem _ _ (by simp only [List.length_take];omega),
+      List.getD_eq_getElem _ _ (by omega)]
+    simp only [List.getElem_take]
+  rw [otget] at oz
+  have iz0:=CrossBits.low_zero (LowZero18LowK.iregs L ext src dst).T (by rw [itLen];decide)
+    ((regValue (LowZero18LowK.oregs L ext src dst).lo u0.basis)%2^32)
+    ((regValue (LowZero18LowK.oregs L ext src dst).lo u0.basis)/2^32) u1.basis inv1.2
+  have jz0:=CrossBits.low_zero (LowZero18LowK.jregsH L ext src dst).T (by rw [jtLen];decide)
+    ((regValue (LowZero18LowK.oregs L ext src dst).hi u0.basis)%2^32)
+    ((regValue (LowZero18LowK.oregs L ext src dst).hi u0.basis)/2^32) u1.basis inv2.2
+  simp only [LowZero18LowK.iregs] at iz0
+  simp only [LowZero18LowK.jregsH] at jz0
+  rw [slice_get 132 66 0 (by omega) (by omega)] at iz0
+  rw [slice_get 232 66 0 (by omega) (by omega)] at jz0
   have hU1 : ∀h∈hosts ext,u1.basis h=false := by
     intro h hh
-    by_cases e : h=ext.getD 129 0
-    · rw [e]; exact tTop
-    by_cases e1:h=ext.getD 197 0
-    · rw[e1];exact tInner.1
-    by_cases e2:h=ext.getD 297 0
-    · rw[e2];exact tInner.2
-    exact (u1s h (hHD h hh) (hHT h hh e) (hHX h hh e1 e2)).trans
-      ((u0s h (hHB h hh)).trans (ext0 h (hHx h hh)))
+    rcases hosts_split ext h hh with hf|rfl|rfl|rfl|rfl|rfl
+    · exact (u1s h (hHD h hh) (hHT h hf) (hHX h hf)).trans
+        ((u0s h (hHB h hh)).trans (ext0 h (hHx h hh)))
+    · exact iz
+    · exact jz
+    · exact oz
+    · exact iz0
+    · exact jz0
   have srcw1 : ∀q∈src,u1.basis q=s.basis q := fun q hq =>
     (u1z q (srcD q hq) (fun h => extSrc q h hq)).trans (u0s q (srcB q hq))
-  have mask1 : regValue ((L.inputBank.take src.length).take 121) u1.basis=
-      if u1.basis control then regValue (src.take 121) u1.basis else 0 := by
-    rw [CuccaroStreamedSquareWideLayout.regValue_take_mod _ 121 (by rw [inputLen]; omega) u1.basis,bank1,
-      CuccaroStreamedSquareWideLayout.regValue_take_mod src 121 (by omega) u1.basis,ctl1,src1]
+  have mask1 : regValue ((L.inputBank.take src.length).take 119) u1.basis=
+      if u1.basis control then regValue (src.take 119) u1.basis else 0 := by
+    rw [CuccaroStreamedSquareWideLayout.regValue_take_mod _ 119 (by rw [inputLen]; omega) u1.basis,bank1,
+      CuccaroStreamedSquareWideLayout.regValue_take_mod src 119 (by omega) u1.basis,ctl1,src1]
     simp only [P]
     split_ifs <;> simp
-  -- erase only the first 123 bank bits
-  have ndMask1 : (control::(src.take 121++(L.inputBank.take src.length).take 121)).Nodup :=
+  -- erase only the first 119 bank bits
+  have ndMask1 : (control::(src.take 119++(L.inputBank.take src.length).take 119)).Nodup :=
     ndMask.sublist (List.Sublist.cons₂ _ (List.Sublist.append (List.take_sublist _ _) (List.take_sublist _ _)))
-  obtain ⟨ep1,ef1,ev1⟩ := eraseMask_correct control (src.take 121) ((L.inputBank.take src.length).take 121)
+  obtain ⟨ep1,ef1,ev1⟩ := eraseMask_correct control (src.take 119) ((L.inputBank.take src.length).take 119)
     (by simp only [List.length_take,inputLen]) ndMask1 u1 r3 mask1
-  generalize run (eraseMask control (src.take 121) ((L.inputBank.take src.length).take 121)) r3 u1=u2a at ep1 ef1 ev1 ⊢
+  generalize run (eraseMask control (src.take 119) ((L.inputBank.take src.length).take 119)) r3 u1=u2a at ep1 ef1 ev1 ⊢
   -- record-preserving dummies on the (zero) hosts
   have hU2a : ∀h∈hosts ext,u2a.basis h=false := fun h hh =>
     (ef1 h (fun hb => hHB h hh (List.mem_of_mem_take hb))).trans (hU1 h hh)
   rw [dummies_run (hosts ext) u2a r4 hU2a]
-  -- park the last five bank bits on the hosts
-  obtain ⟨mp1,mf1,mv1,mz1⟩ := move_correct ((L.inputBank.take src.length).drop 121) (hosts ext) lenMI ndMI u2a r5
+  -- park the last four bank bits on the hosts
+  obtain ⟨mp1,mf1,mv1,mz1⟩ := move_correct ((L.inputBank.take src.length).drop 119) (hosts ext) lenMI ndMI u2a r5
     ((regValue_zero _ _).mpr hU2a)
-  generalize run (move ((L.inputBank.take src.length).drop 121) (hosts ext)) r5 u2a=u2 at mp1 mf1 mv1 mz1 ⊢
-  have x5 : regValue (hosts ext) u2.basis=regValue ((L.inputBank.take src.length).drop 121) u1.basis := by
+  generalize run (move ((L.inputBank.take src.length).drop 119) (hosts ext)) r5 u2a=u2 at mp1 mf1 mv1 mz1 ⊢
+  have x5 : regValue (hosts ext) u2.basis=regValue ((L.inputBank.take src.length).drop 119) u1.basis := by
     rw [mv1]; exact regValue_congr _ _ _ (fun q hq => ef1 q (b51 q hq))
   have u2B : ∀q∈(L.inputBank.take src.length),u2.basis q=false := by
     intro q hq
-    have hsplit : q∈(L.inputBank.take src.length).take 121 ∨ q∈(L.inputBank.take src.length).drop 121 := by
+    have hsplit : q∈(L.inputBank.take src.length).take 119 ∨ q∈(L.inputBank.take src.length).drop 119 := by
       rw [←List.mem_append,List.take_append_drop]; exact hq
     rcases hsplit with h1|h5
     · rw [mf1 q (b15 q h1) (fun hh => hHB q hh hq)]; exact (regValue_zero _ _).mp ev1 q h1
@@ -4012,51 +4037,51 @@ theorem withLowK2P_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have cached : v.basis (dst.headD 0)=(v.basis control && v.basis (src.headD 0)) :=
     CachedSquareCopy.square_head src dst control v (by omega) (by omega)
       (by simpa only [P,vControl,vSource] using vDst)
-  rw [cacheWire,cacheFix,CachedSquareCopy.run_eq control (dst.headD 0) (src.take 121) ((L.inputBank.take src.length).take 121) v r7
-    (by rw [headD_take src 121 (by omega)]; exact cached)]
-  have inputLen1 : (src.take 121).length=((L.inputBank.take src.length).take 121).length := by
+  rw [cacheWire,cacheFix,CachedSquareCopy.run_eq control (dst.headD 0) (src.take 119) ((L.inputBank.take src.length).take 119) v r7
+    (by rw [headD_take src 119 (by omega)]; exact cached)]
+  have inputLen1 : (src.take 119).length=((L.inputBank.take src.length).take 119).length := by
     simp only [List.length_take,inputLen]
-  have ndCopy1 : (src.take 121++(L.inputBank.take src.length).take 121).Nodup :=
+  have ndCopy1 : (src.take 119++(L.inputBank.take src.length).take 119).Nodup :=
     ndCopy.sublist (List.Sublist.append (List.take_sublist _ _) (List.take_sublist _ _))
-  have hcB1 : ∀c∈some control,c∉(L.inputBank.take src.length).take 121 := fun c hc' h =>
+  have hcB1 : ∀c∈some control,c∉(L.inputBank.take src.length).take 119 := fun c hc' h =>
     hcB c hc' (List.mem_of_mem_take h)
-  obtain ⟨cp2,cf2,cv2⟩ := copyRegister_correct (some control) (src.take 121) ((L.inputBank.take src.length).take 121)
+  obtain ⟨cp2,cf2,cv2⟩ := copyRegister_correct (some control) (src.take 119) ((L.inputBank.take src.length).take 119)
     inputLen1 ndCopy1 hcB1 v r7
-  generalize run (copyRegister (some control) (src.take 121) ((L.inputBank.take src.length).take 121)) r7 v=w0' at cp2 cf2 cv2 ⊢
+  generalize run (copyRegister (some control) (src.take 119) ((L.inputBank.take src.length).take 119)) r7 v=w0' at cp2 cf2 cv2 ⊢
   have vB : ∀q∈(L.inputBank.take src.length),v.basis q=s.basis q := fun q hq =>
     (vFrame q (bOut q hq)).trans (u2s q (bD q hq) (fun h => extB q h hq))
   have vSrc : ∀q∈src,v.basis q=s.basis q := fun q hq =>
     (vFrame q (srcOut q hq)).trans (u2s q (srcD q hq) (fun h => extSrc q h hq))
-  have w0'B5 : regValue ((L.inputBank.take src.length).drop 121) w0'.basis=0 :=
+  have w0'B5 : regValue ((L.inputBank.take src.length).drop 119) w0'.basis=0 :=
     (regValue_zero _ _).mpr (fun q hq => (cf2 q (b51 q hq)).trans ((vB q (List.mem_of_mem_drop hq)).trans
       ((regValue_zero _ _).mp banks.1 q (List.mem_of_mem_drop hq))))
   -- unpark: hosts back into the bank, hosts cleared
-  obtain ⟨mp2,mf2,mv2,mz2⟩ := move_correct (hosts ext) ((L.inputBank.take src.length).drop 121) lenMI.symm ndMO w0' r8 w0'B5
-  generalize run (move (hosts ext) ((L.inputBank.take src.length).drop 121)) r8 w0'=w0 at mp2 mf2 mv2 mz2 ⊢
+  obtain ⟨mp2,mf2,mv2,mz2⟩ := move_correct (hosts ext) ((L.inputBank.take src.length).drop 119) lenMI.symm ndMO w0' r8 w0'B5
+  generalize run (move (hosts ext) ((L.inputBank.take src.length).drop 119)) r8 w0'=w0 at mp2 mf2 mv2 mz2 ⊢
   have cf2n : ∀q,q∉(L.inputBank.take src.length) → q∉hosts ext → w0.basis q=v.basis q := fun q hb hH =>
     (mf2 q hH (fun h => hb (List.mem_of_mem_drop h))).trans (cf2 q (fun h => hb (List.mem_of_mem_take h)))
-  have w0B5 : regValue ((L.inputBank.take src.length).drop 121) w0.basis=
-      regValue ((L.inputBank.take src.length).drop 121) u1.basis := by
+  have w0B5 : regValue ((L.inputBank.take src.length).drop 119) w0.basis=
+      regValue ((L.inputBank.take src.length).drop 119) u1.basis := by
     rw [mv2,←x5]
     apply regValue_congr; intro q hq
     rw [cf2 q (fun h => hHB q hq (List.mem_of_mem_take h)),vIn q (hHx q hq)]
   have vCtl1 : v.basis control=u1.basis control := (vFrame _ ctlO).trans ((u2s _ ctlD ctlE).trans ctl1.symm)
-  have w0B1 : regValue ((L.inputBank.take src.length).take 121) w0.basis=
-      regValue ((L.inputBank.take src.length).take 121) u1.basis := by
-    have v0 : regValue ((L.inputBank.take src.length).take 121) v.basis=0 :=
+  have w0B1 : regValue ((L.inputBank.take src.length).take 119) w0.basis=
+      regValue ((L.inputBank.take src.length).take 119) u1.basis := by
+    have v0 : regValue ((L.inputBank.take src.length).take 119) v.basis=0 :=
       (regValue_zero _ _).mpr (fun q hq => (vB q (List.mem_of_mem_take hq)).trans
         ((regValue_zero _ _).mp banks.1 q (List.mem_of_mem_take hq)))
-    have vs1 : regValue (src.take 121) v.basis=regValue (src.take 121) u1.basis :=
+    have vs1 : regValue (src.take 119) v.basis=regValue (src.take 119) u1.basis :=
       regValue_congr _ _ _ (fun q hq => (vSrc q (List.mem_of_mem_take hq)).trans (srcw1 q (List.mem_of_mem_take hq)).symm)
-    rw [show regValue ((L.inputBank.take src.length).take 121) w0.basis=
-        regValue ((L.inputBank.take src.length).take 121) w0'.basis from
+    rw [show regValue ((L.inputBank.take src.length).take 119) w0.basis=
+        regValue ((L.inputBank.take src.length).take 119) w0'.basis from
       regValue_congr _ _ _ (fun q hq => mf2 q (fun h => hHB q h (List.mem_of_mem_take hq)) (b15 q hq)),
       cv2,mask1,v0,Nat.zero_xor]
-    change (if v.basis control then regValue (src.take 121) v.basis else 0)=_
+    change (if v.basis control then regValue (src.take 119) v.basis else 0)=_
     rw [vCtl1,vs1]
   have wB : ∀q∈(L.inputBank.take src.length),w0.basis q=u1.basis q := by
     intro q hq
-    have hsplit : q∈(L.inputBank.take src.length).take 121 ∨ q∈(L.inputBank.take src.length).drop 121 := by
+    have hsplit : q∈(L.inputBank.take src.length).take 119 ∨ q∈(L.inputBank.take src.length).drop 119 := by
       rw [←List.mem_append,List.take_append_drop]; exact hq
     rcases hsplit with h1|h5
     · exact (regValue_eq_iff _ _ _).mp w0B1 q h1
@@ -4176,3 +4201,5 @@ theorem withLowK2P_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
       · exact u2s q hD hx
 
 end ECDSAAdd.Entrant.ParkCopy
+
+#print axioms ECDSAAdd.Entrant.ParkCopy.withLowK2P_correct
