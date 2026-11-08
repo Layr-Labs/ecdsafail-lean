@@ -15041,6 +15041,112 @@ section
 -- consolidated import: import ECDSAAdd.Submission.Entrant.LowZero18LowK
 
 /-! The checked675/BF719 square with only the18 carry-free low-bit changes. -/
+section CachedSquareCopyHelpers
+namespace ECDSAAdd.Entrant.CachedSquareCopy
+open Arithmetic
+set_option autoImplicit false
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 20000
+
+def copy (control cache : Wire) : List Wire → List Wire → Program
+ | _::src, b::dst => [.CX cache b] ++ copyRegister (some control) src dst
+ | src, dst => copyRegister (some control) src dst
+
+theorem run_eq (control cache : Wire) (src dst : List Wire) (s : State) (m : List Bool)
+    (h : s.basis cache = (s.basis control && s.basis (src.headD 0))) :
+    run (copy control cache src dst) m s = run (copyRegister (some control) src dst) m s := by
+ cases src with
+ | nil => rfl
+ | cons a src =>
+  cases dst with
+  | nil => rfl
+  | cons b dst =>
+   have first (r : List Bool) : run [.CX cache b] r s = run [.CCX control a b] r s := by
+    change (⟨s.phase,writeBit s.basis b (s.basis b ^^ s.basis cache)⟩ : State) =
+      ⟨s.phase,writeBit s.basis b (s.basis b ^^ (s.basis control && s.basis a))⟩
+    simpa only [List.headD_cons] using congrArg
+      (fun v => (⟨s.phase,writeBit s.basis b (s.basis b ^^ v)⟩ : State)) h
+   simp only [copy,copyRegister,copyGate,run_append]
+   rw [first]
+   rfl
+
+theorem head_bit (r : List Wire) (s : State) (hr : 0<r.length) :
+    s.basis (r.headD 0) = (regValue r s.basis % 2 == 1) := by
+ have h:=RawClearCarryProbe.register_bit r 0 s.basis hr
+ cases r with
+ | nil => simp at hr
+ | cons a rs => simpa using h
+
+theorem square_head (src dst : List Wire) (control : Wire) (s : State)
+    (hs : 0<src.length) (hd : 0<dst.length)
+    (hv : regValue dst s.basis=(if s.basis control then regValue src s.basis else 0)^2) :
+    s.basis (dst.headD 0) = (s.basis control && s.basis (src.headD 0)) := by
+ rw [head_bit dst s hd,head_bit src s hs,hv]
+ have squareMod (n : Nat) : (n^2)%2=n%2 := by
+  have hn : n%2=0 ∨ n%2=1 := by omega
+  rcases hn with hn|hn <;> simp [pow_two,Nat.mul_mod,hn]
+ cases s.basis control <;> simp [squareMod]
+
+theorem counts (control cache a b : Wire) (src dst : List Wire) :
+    toffoliCount (copy control cache (a::src) (b::dst))+1 =
+      toffoliCount (copyRegister (some control) (a::src) (b::dst)) ∧
+    measurementCount (copy control cache (a::src) (b::dst)) =
+      measurementCount (copyRegister (some control) (a::src) (b::dst)) := by
+ simp [copy,copyRegister,copyGate,toffoliCount,measurementCount,Nat.add_comm]
+
+theorem measurements (control cache : Wire) (src dst : List Wire) :
+    measurementCount (copy control cache src dst) =
+      measurementCount (copyRegister (some control) src dst) := by
+ cases src <;> cases dst <;> rfl
+
+theorem counts_nonempty (control cache : Wire) (src dst : List Wire)
+    (hs : 0<src.length) (hd : 0<dst.length) :
+    toffoliCount (copy control cache src dst)+1 =
+      toffoliCount (copyRegister (some control) src dst) := by
+ cases src with
+ | nil => simp at hs
+ | cons a src =>
+  cases dst with
+  | nil => simp at hd
+  | cons b dst => exact (counts control cache a b src dst).1
+
+theorem head_mem (r : List Wire) (hr : 0<r.length) : r.headD 0∈r := by
+ cases r with
+ | nil => simp at hr
+ | cons a rs => exact List.mem_cons_self
+
+theorem wires_subset (control cache : Wire) (src dst : List Wire) :
+    wires (copy control cache src dst) ⊆
+      wires (copyRegister (some control) src dst) ∪ {cache} := by
+ cases src <;> cases dst
+ all_goals
+  simp only [copy,copyRegister,copyGate,wires_append,wires,Instr.wires,Finset.union_empty]
+  intro q h
+  simp only [Finset.mem_union,Finset.mem_insert,Finset.mem_singleton] at h ⊢
+  tauto
+
+theorem slots (control cache : Wire) (src dst : List Wire) :
+    Challenge.gateSlots (copy control cache src dst) ≤
+      Challenge.gateSlots (copyRegister (some control) src dst) := by
+ cases src <;> cases dst
+ all_goals simp [copy,copyRegister,copyGate,Challenge.gateSlots,Challenge.instructionSlots]
+
+theorem physical (control cache : Wire) (src dst : List Wire)
+    (hc : cache≠dst.headD 0) (old : GatePhysical (copyRegister (some control) src dst)) :
+    GatePhysical (copy control cache src dst) := by
+ cases src with
+ | nil => exact old
+ | cons a src =>
+  cases dst with
+  | nil => exact old
+  | cons b dst =>
+   simp only [copy,copyRegister,copyGate,gatePhysical_append] at old ⊢
+   refine ⟨?_,old.2⟩
+   simpa [GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate] using hc
+
+end ECDSAAdd.Entrant.CachedSquareCopy
+end CachedSquareCopyHelpers
+
 namespace ECDSAAdd.Entrant.LowZero18Square
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout
 
@@ -15050,6 +15156,105 @@ abbrev earlyPerm := SquareCarryLoan719.earlyPerm
 abbrev foldPerm := SquareCarryLoan719.foldPerm
 abbrev patchKG := SquareCarryLoan719.patchKG
 abbrev K : Nat := ControlLoan1589BFFold.K
+
+def cacheWire (L : CuccaroStreamedSquareWideLayout) (dst : List Wire) : Wire :=
+  earlyPerm L (dst.headD 0)
+
+theorem cacheWire_fixed (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (dst : List Wire)
+    (hd : ∀q,dst.count q≤L.core.product.count q) (hp : 0<dst.length) :
+    cacheWire L dst=dst.headD 0 := by
+ have mem : dst.headD 0∈dst := by
+  cases dst with
+  | nil => simp at hp
+  | cons d ds => exact List.mem_cons_self
+ have prod : dst.headD 0∈L.core.product :=
+  List.count_pos_iff.mp (Nat.lt_of_lt_of_le (List.count_pos_iff.mpr mem) (hd _))
+ have targetM : target L∈LowZero18LowK.ktmp L := by
+  change (LowZero18LowK.ktmp L).getD 67 0∈LowZero18LowK.ktmp L
+  exact DiagSq.getD_in _ 67 (by rw [LowZero18LowK.ktmp_length L hw]; omega)
+ have hostM : earlyHost L∈LowZero18LowK.ktmp L := by
+  change (LowZero18LowK.ktmp L).getD 1 0∈LowZero18LowK.ktmp L
+  exact DiagSq.getD_in _ 1 (by rw [LowZero18LowK.ktmp_length L hw]; omega)
+ have targetPad : target L∈L.foldPad := List.mem_of_mem_drop targetM
+ have hostPad : earlyHost L∈L.foldPad := List.mem_of_mem_drop hostM
+ have ta := (L.pairAuxAway hn (target L) (by simp only [List.mem_append,List.mem_cons]; tauto)).1
+ have ha := (L.pairAuxAway hn (earlyHost L) (by simp only [List.mem_append,List.mem_cons]; tauto)).1
+ change (SquareCarryLoan719.earlyPerm L) (dst.headD 0)=dst.headD 0
+ rw [SquareCarryLoan719.earlyPerm_eq L hw]
+ exact Equiv.swap_apply_of_ne_of_ne (fun e => ta (by simpa only [e] using prod))
+   (fun e => ha (by simpa only [e] using prod))
+
+theorem cached_copy_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (control : Wire) (src dst : List Wire)
+    (hd : ∀q,dst.count q≤L.core.product.count q) (hp : 0<dst.length)
+    (hb : 0<(L.inputBank.take src.length).length)
+    (nd : (dst++L.inputBank.take src.length).Nodup)
+    (old : GatePhysical (copyRegister (some control) src (L.inputBank.take src.length))) :
+    GatePhysical (CachedSquareCopy.copy control (cacheWire L dst) src (L.inputBank.take src.length)) := by
+ apply CachedSquareCopy.physical _ _ _ _ _ old
+ rw [cacheWire_fixed L hw hn dst hd hp]
+ intro eq
+ have dmem := CachedSquareCopy.head_mem dst hp
+ have bmem := CachedSquareCopy.head_mem (L.inputBank.take src.length) hb
+ have dis := (List.nodup_append'.mp nd).2.2
+ exact List.disjoint_left.mp dis dmem (by rw [eq]; exact bmem)
+
+
+section CachedCopyFootprint
+attribute [local irreducible] wires
+theorem cached_rename_append (f : Wire → Wire) (P Q : Program) :
+    renameProgram f (P++Q) = renameProgram f P++renameProgram f Q := by
+ simp only [renameProgram,List.map_append]
+
+theorem cache_wire_in_old_make (L : CuccaroStreamedSquareWideLayout) (ext src dst : List Wire)
+    (hd : 0<dst.length) :
+    cacheWire L dst ∈ wires (SquareCarryLoan719BF.make L
+      (FrontierSumCleanup1591LowK.kg L ext src dst)) := by
+ let I := FrontierSumCleanup1591LowK.iregs L ext src dst
+ have dm : dst.headD 0∈I.dlo := by
+  change dst.headD 0∈(dst.take 128).take 64
+  cases dst with
+  | nil => simp at hd
+  | cons d ds => exact List.mem_cons_self
+ have dn : dst.headD 0∈wires (notRegister I.dlo) := by
+  rw [notRegister_wires]
+  exact List.mem_toFinset.mpr dm
+ have diag : dst.headD 0∈wires (DiagSq.make I) := by
+  simp only [DiagSq.make,DiagSq.headBlock,mappedDiagSub,mappedSub,wires_append,
+    Finset.mem_union]
+  tauto
+ have sub : wires (renameProgram (earlyPerm L) (DiagSq.make I)) ⊆
+     wires (SquareCarryLoan719BF.make L (FrontierSumCleanup1591LowK.kg L ext src dst)) := by
+  by_cases h : src.length=128
+  all_goals
+   simp only [SquareCarryLoan719BF.make,FrontierSumCleanup1591LowK.kg,h,ite_true,ite_false,
+    FrontierSumCleanup1591LowK.kgH,FrontierSumCleanup1591LowK.kgS,
+    SquareCarryLoan719.patchKG,FrontierSumCleanup1591KG.make,
+    FrontierSumCleanup1591Diagonal.makeC,cached_rename_append,wires_append]
+   intro q hq
+   simp only [Finset.mem_union] at *
+   tauto
+ apply sub
+ rw [renameProgram_support]
+ exact Finset.mem_image.mpr ⟨dst.headD 0,diag,rfl⟩
+
+
+theorem cached_context_support (A M M0 E B A' C C0 : Program)
+    (hm : wires M⊆wires M0) (hc : wires C⊆wires C0)
+    (hp : wires A'⊆wires A∪wires M0) :
+    wires (A++M++E++B++A'++C++E)⊆wires (A++M0++E++B++A++C0++E) := by
+  simp only [wires_append]
+  intro q hq
+  have mm:=@hm q
+  have cc:=@hc q
+  have pp:=@hp q
+  simp only [Finset.mem_union] at hq mm cc pp ⊢
+  tauto
+
+
+end CachedCopyFootprint
+
 
 def make (L : CuccaroStreamedSquareWideLayout) (R : KG) : Program :=
   LowZero18KG.make (patchKG L R)
@@ -15066,7 +15271,7 @@ def withLowK2 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire)
   copyRegister (some control) src (L.inputBank.take src.length)++make L R++
     eraseMask control src (L.inputBank.take src.length)++
     renameProgram (foldPerm L ext) body++
-    copyRegister (some control) src (L.inputBank.take src.length)++clear L R++
+    CachedSquareCopy.copy control (cacheWire L dst) src (L.inputBank.take src.length)++clear L R++
     eraseMask control src (L.inputBank.take src.length)
 
 def branchCK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
@@ -15437,18 +15642,34 @@ theorem withLowK2_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have hcB : ∀c∈some control,c∉(L.inputBank.take src.length) := by
     intro c hc; have e : c=control := by simpa [eq_comm] using hc
     subst e; exact ctlB
+  have cacheFix : earlyPerm L (dst.headD 0)=dst.headD 0 := by
+    have mem : dst.headD 0∈dst := by
+      rcases dst with _|⟨d,ds⟩
+      · have hz : src.length=0 := by simpa using hlen.symm
+        omega
+      · exact List.mem_cons_self
+    have targetM : target L∈LowZero18LowK.ktmp L := by
+      change (LowZero18LowK.ktmp L).getD 67 0∈LowZero18LowK.ktmp L
+      exact DiagSq.getD_in _ 67 (by rw [LowZero18LowK.ktmp_length L hw]; omega)
+    have hostM : earlyHost L∈LowZero18LowK.ktmp L := by
+      change (LowZero18LowK.ktmp L).getD 1 0∈LowZero18LowK.ktmp L
+      exact DiagSq.getD_in _ 1 (by rw [LowZero18LowK.ktmp_length L hw]; omega)
+    change (SquareCarryLoan719.earlyPerm L) (dst.headD 0)=dst.headD 0
+    rw [SquareCarryLoan719.earlyPerm_eq L hw]
+    exact Equiv.swap_apply_of_ne_of_ne (fun e => tmpD _ targetM (by simpa only [e] using mem))
+      (fun e => tmpD _ hostM (by simpa only [e] using mem))
   let P := if s.basis control then regValue src s.basis else 0
   obtain ⟨a6,r7,e7⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(LowZero18Square.make L (LowZero18LowK.kg L ext src dst))++eraseMask control src (L.inputBank.take src.length)++renameProgram (foldPerm L ext) body++
-    copyRegister (some control) src (L.inputBank.take src.length)++(LowZero18Square.clear L (LowZero18LowK.kg L ext src dst))) (eraseMask control src (L.inputBank.take src.length)) records s
+    CachedSquareCopy.copy control (cacheWire L dst) src (L.inputBank.take src.length)++(LowZero18Square.clear L (LowZero18LowK.kg L ext src dst))) (eraseMask control src (L.inputBank.take src.length)) records s
   obtain ⟨a5,r6,e6⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(LowZero18Square.make L (LowZero18LowK.kg L ext src dst))++eraseMask control src (L.inputBank.take src.length)++renameProgram (foldPerm L ext) body++
-    copyRegister (some control) src (L.inputBank.take src.length)) (LowZero18Square.clear L (LowZero18LowK.kg L ext src dst)) a6 s
+    CachedSquareCopy.copy control (cacheWire L dst) src (L.inputBank.take src.length)) (LowZero18Square.clear L (LowZero18LowK.kg L ext src dst)) a6 s
   obtain ⟨a4,r5,e5⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(LowZero18Square.make L (LowZero18LowK.kg L ext src dst))++eraseMask control src (L.inputBank.take src.length)++renameProgram (foldPerm L ext) body)
-    (copyRegister (some control) src (L.inputBank.take src.length)) a5 s
+    (CachedSquareCopy.copy control (cacheWire L dst) src (L.inputBank.take src.length)) a5 s
   obtain ⟨a3,r4,e4⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(LowZero18Square.make L (LowZero18LowK.kg L ext src dst))++eraseMask control src (L.inputBank.take src.length)) (renameProgram (foldPerm L ext) body) a4 s
   obtain ⟨a2,r3,e3⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)++(LowZero18Square.make L (LowZero18LowK.kg L ext src dst))) (eraseMask control src (L.inputBank.take src.length)) a3 s
   obtain ⟨r1,r2,e2⟩ := kseq (copyRegister (some control) src (L.inputBank.take src.length)) (LowZero18Square.make L (LowZero18LowK.kg L ext src dst)) a2 s
   rw [show LowZero18Square.withLowK2 L ext control src dst body=copyRegister (some control) src (L.inputBank.take src.length)++(LowZero18Square.make L (LowZero18LowK.kg L ext src dst))++
-    eraseMask control src (L.inputBank.take src.length)++renameProgram (foldPerm L ext) body++copyRegister (some control) src (L.inputBank.take src.length)++(LowZero18Square.clear L (LowZero18LowK.kg L ext src dst))++
+    eraseMask control src (L.inputBank.take src.length)++renameProgram (foldPerm L ext) body++CachedSquareCopy.copy control (cacheWire L dst) src (L.inputBank.take src.length)++(LowZero18Square.clear L (LowZero18LowK.kg L ext src dst))++
     eraseMask control src (L.inputBank.take src.length) from rfl,e7,e6,e5,e4,e3,e2]
   -- copy
   obtain ⟨cp1,cf1,cv1⟩ := copyRegister_correct (some control) src (L.inputBank.take src.length) inputLen.symm ndCopy hcB s r1
@@ -15574,6 +15795,22 @@ theorem withLowK2_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   rw [hv] at foldEq
   rw [foldEq]
   -- second copy
+  have vDst : regValue dst v.basis=P^2 := by
+    calc
+      regValue dst v.basis = regValue dst u2.basis :=
+        regValue_congr _ _ _ (fun q hq => vFrame q (dOut q hq))
+      _ = regValue dst u1.basis :=
+        regValue_congr _ _ _ (fun q hq => ef1 q (fun hb => bD q hb hq))
+      _ = P^2 := dst1
+  have vControl : v.basis control=s.basis control :=
+    (vFrame _ ctlO).trans (u2s _ ctlD ctlE)
+  have vSource : regValue src v.basis=regValue src s.basis :=
+    regValue_congr _ _ _ (fun q hq =>
+      (vFrame q (srcOut q hq)).trans (u2s q (srcD q hq) (fun h => extSrc q h hq)))
+  have cached : v.basis (dst.headD 0)=(v.basis control && v.basis (src.headD 0)) :=
+    CachedSquareCopy.square_head src dst control v (by omega) (by omega)
+      (by simpa only [P,vControl,vSource] using vDst)
+  rw [cacheWire,cacheFix,CachedSquareCopy.run_eq control (dst.headD 0) src (L.inputBank.take src.length) v r5 cached]
   obtain ⟨cp2,cf2,cv2⟩ := copyRegister_correct (some control) src (L.inputBank.take src.length) inputLen.symm ndCopy hcB v r5
   generalize run (copyRegister (some control) src (L.inputBank.take src.length)) r5 v=w0 at cp2 cf2 cv2 ⊢
   have vB : ∀q∈(L.inputBank.take src.length),v.basis q=s.basis q := fun q hq =>
@@ -15691,6 +15928,7 @@ theorem withLowK2_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
       by_cases hx : q∈ext
       · rw [u2ext q hx,u1s q hD hT hX,u0s q hb]
       · exact u2s q hD hx
+
 
 
 theorem reflection_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
@@ -16243,10 +16481,15 @@ theorem withLowK2_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
     (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
     (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
     (he : 300≤ext.length) :
-    toffoliCount (withLowK2 L ext control src dst body)+557+10*(if src.length=128 then 0 else 1)=
+    toffoliCount (withLowK2 L ext control src dst body)+558+10*(if src.length=128 then 0 else 1)=
       toffoliCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) ∧
     measurementCount (withLowK2 L ext control src dst body)+21+3*(if src.length=128 then 0 else 1)=
       measurementCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) := by
+  have bankLen : (L.inputBank.take src.length).length=src.length := by
+    simp [(L.measured_bank_widths hw).1,h129]
+  have copyT := CachedSquareCopy.counts_nonempty control (cacheWire L dst) src
+    (L.inputBank.take src.length) (by omega) (by rw [bankLen]; omega)
+  have copyM := CachedSquareCopy.measurements control (cacheWire L dst) src (L.inputBank.take src.length)
   have d := LowZero18LowK.kg_counts_diff L hw ext src dst h128 h129 hd he
   simp only [withLowK2,SquareCarryLoan719BF.withLowK2,toffoliCount_append,measurementCount_append,
     (patchKG_counts L _).1,(patchKG_counts L _).2.1,(patchKG_counts L _).2.2.1,(patchKG_counts L _).2.2.2,
@@ -16255,6 +16498,8 @@ theorem withLowK2_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
   constructor <;> omega
 
+section CachedCopySubsetOpaque
+attribute [local irreducible] LowZero18LowK.kg FrontierSumCleanup1591LowK.kg make clear SquareCarryLoan719BF.make SquareCarryLoan719BF.clear copyRegister eraseMask renameProgram CachedSquareCopy.copy
 theorem withLowK2_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
     (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
@@ -16263,9 +16508,29 @@ theorem withLowK2_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.W
       wires (SquareCarryLoan719BF.withLowK2 L ext control src dst body) := by
   have m := LowZero18LowK.loan_make_support_subset L hw ext src dst h128 h129 hd he
   have c := LowZero18LowK.loan_clear_support_subset L hw ext src dst h128 h129 hd he
-  simp only [withLowK2,SquareCarryLoan719BF.withLowK2,make,clear,wires_append]
-  repeat' apply Finset.union_subset_union
-  all_goals first | exact m | exact c | exact Finset.Subset.refl _
+  have cp := CachedSquareCopy.wires_subset control (cacheWire L dst) src (L.inputBank.take src.length)
+  have used := cache_wire_in_old_make L ext src dst (by omega)
+  have hp : wires (CachedSquareCopy.copy control (cacheWire L dst) src (L.inputBank.take src.length))⊆
+      wires (copyRegister (some control) src (L.inputBank.take src.length))∪
+        wires (SquareCarryLoan719BF.make L (FrontierSumCleanup1591LowK.kg L ext src dst)) := by
+    apply cp.trans
+    apply Finset.union_subset_union (Finset.Subset.refl _)
+    intro q hq
+    have eq : q=cacheWire L dst := Finset.mem_singleton.mp hq
+    simpa only [eq] using used
+  simpa only [withLowK2,SquareCarryLoan719BF.withLowK2] using
+    cached_context_support
+      (copyRegister (some control) src (L.inputBank.take src.length))
+      (make L (LowZero18LowK.kg L ext src dst))
+      (SquareCarryLoan719BF.make L (FrontierSumCleanup1591LowK.kg L ext src dst))
+      (eraseMask control src (L.inputBank.take src.length))
+      (renameProgram (foldPerm L ext) body)
+      (CachedSquareCopy.copy control (cacheWire L dst) src (L.inputBank.take src.length))
+      (clear L (LowZero18LowK.kg L ext src dst))
+      (SquareCarryLoan719BF.clear L (FrontierSumCleanup1591LowK.kg L ext src dst)) (by simpa only [make] using m) (by simpa only [clear] using c) hp
+
+
+end CachedCopySubsetOpaque
 
 theorem withLowK2_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
@@ -16273,6 +16538,7 @@ theorem withLowK2_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (he : 300≤ext.length) :
     Challenge.gateSlots (withLowK2 L ext control src dst body)≤
       Challenge.gateSlots (SquareCarryLoan719BF.withLowK2 L ext control src dst body) := by
+  have cp := CachedSquareCopy.slots control (cacheWire L dst) src (L.inputBank.take src.length)
   have m := LowZero18LowK.loan_make_slots_le L hw ext src dst h128 h129 hd he
   have c := LowZero18LowK.loan_clear_slots_le L hw ext src dst h128 h129 hd he
   simp only [withLowK2,SquareCarryLoan719BF.withLowK2,make,clear,patchKG,Challenge.gateSlots_append,
@@ -16301,7 +16567,7 @@ theorem withLowK2_body_rel (L : CuccaroStreamedSquareWideLayout) (ext : List Wir
 
 theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (raw L ext control)+2301=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
+    toffoliCount (raw L ext control)+2304=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
     measurementCount (raw L ext control)+75=measurementCount (SquareCarryLoan719BF.raw L ext control) := by
   have low := L.core.low_length hw.core
   have high := L.core.high_length hw.core
@@ -16390,7 +16656,7 @@ private theorem mRename (f : Wire→Wire) (P : Program) :
     measurementCount (renameProgram f P)=measurementCount P := (renameProgram_counts f P).2
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+2301=toffoliCount (SquareCarryLoan719BF.program L) ∧
+    toffoliCount (program L)+2304=toffoliCount (SquareCarryLoan719BF.program L) ∧
     measurementCount (program L)+75=measurementCount (SquareCarryLoan719BF.program L) := by
   have h := raw_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
@@ -16398,7 +16664,7 @@ theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
     fastCandidate,SquareCarryLoan719BF.fastCandidate,tRename,mRename] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=49958 ∧ measurementCount (program L)=53000 := by
+    toffoliCount (program L)=49955 ∧ measurementCount (program L)=53000 := by
   have a := counts_diff L hw
   have b := SquareCarryLoan719BF.counts L hw
   constructor <;> omega
@@ -16469,6 +16735,13 @@ private theorem withLowK2_physical_of_old (L : CuccaroStreamedSquareWideLayout) 
   have kernels := patchKG_physical L (LowZero18LowK.kg L ext src dst) ph.1 ph.2
   have bodyNew : GatePhysical (renameProgram (foldPerm L ext) body) :=
     gatePhysical_rename (foldPerm L ext) (foldPerm L ext).injective _ (by tauto)
+  have big := LowZero18LowK.kbig2_nodup L control hn src dst hs hd ext he.nodup he.away
+  have db : (dst++L.inputBank.take src.length).Nodup := knd big (fun q => by
+    simp only [LowZero18LowK.kbig2,List.count_cons,List.count_append]; omega)
+  have bankLen : (L.inputBank.take src.length).length=src.length := by
+    simp [(L.measured_bank_widths hw).1,h129]
+  have cachedPhysical := cached_copy_physical L hw (List.nodup_cons.mp hn).2 control src dst hd
+    (by omega) (by rw [bankLen]; omega) db (by tauto)
   simp only [withLowK2,gatePhysical_append]
   tauto
 
@@ -16487,6 +16760,13 @@ private theorem withLowK2_physical_of_old2 (L : CuccaroStreamedSquareWideLayout)
   have kernels := patchKG_physical L (LowZero18LowK.kg L ext src dst) ph.1 ph.2
   have bodyNew : GatePhysical (renameProgram (foldPerm L ext) body) :=
     gatePhysical_rename (foldPerm L ext) (foldPerm L ext).injective _ hb
+  have big := LowZero18LowK.kbig2_nodup L control hn src dst hs hd ext he.nodup he.away
+  have db : (dst++L.inputBank.take src.length).Nodup := knd big (fun q => by
+    simp only [LowZero18LowK.kbig2,List.count_cons,List.count_append]; omega)
+  have bankLen : (L.inputBank.take src.length).length=src.length := by
+    simp [(L.measured_bank_widths hw).1,h129]
+  have cachedPhysical := cached_copy_physical L hw (List.nodup_cons.mp hn).2 control src dst hd
+    (by omega) (by rw [bankLen]; omega) db (by tauto)
   simp only [withLowK2,gatePhysical_append]
   tauto
 
@@ -16573,7 +16853,7 @@ def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
     (exit Rolling1588.exitKernel L) cx cy
 
 private def Metrics (P Q : Program) : Prop :=
-  toffoliCount P+2301=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
+  toffoliCount P+2304=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private theorem gen_metrics_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
@@ -16595,7 +16875,7 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
     ⟨counts.1,counts.2,LowZero18Square.slots_le L hw⟩
 
 theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+2301=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+2304=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)+75=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
   ⟨(gen_metrics L hw cx cy).1,(gen_metrics L hw cx cy).2.1⟩
 
