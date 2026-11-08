@@ -1876,7 +1876,7 @@ def programOpt (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperOpt layout C cx cy
 
 def entryOpt : Challenge.Entry := fun C=>normalizeProgram (programOpt C)
-def boundsOpt : Challenge.Bounds := ⟨2147689,1498380,1587,50251236⟩
+def boundsOpt : Challenge.Bounds := ⟨2147686,1498380,1587,50251236⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programOpt C) (encodes b (if b then R+C else R)) := by
@@ -1887,14 +1887,14 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec hc b R) (support_used hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147689 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147686 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147695 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147689
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147692 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147686
     omega
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498380 := by
@@ -2155,7 +2155,7 @@ def programOpt (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperOpt layout C cx cy
 
 def entryOpt : Challenge.Entry := fun C=>normalizeProgram (programOpt C)
-def boundsOpt : Challenge.Bounds := ⟨2147688,1498380,1587,50251248⟩
+def boundsOpt : Challenge.Bounds := ⟨2147685,1498380,1587,50251248⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programOpt C) (encodes b (if b then R+C else R)) := by
@@ -2166,14 +2166,14 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec hc b R) (support_used hc)
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147688 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147685 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147695 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147688
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147692 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147685
     omega
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498380 := by
@@ -6929,7 +6929,7 @@ def programNew (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperNew layout C cx cy
 
 def entryNew : Challenge.Entry := fun C=>normalizeProgram (programNew C)
-def boundsNew : Challenge.Bounds := ⟨2147436,1498382,1587,50255906⟩
+def boundsNew : Challenge.Bounds := ⟨2147433,1498382,1587,50255906⟩
 
 theorem program_correct_new (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programNew C) (encodes b (if b then R+C else R)) := by
@@ -6940,14 +6940,14 @@ theorem program_correct_new (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_new hc b R) (support_used_new hc)
 
-theorem program_toffoli_new (C : Point) : toffoliCount (programNew C)≤2147436 := by
+theorem program_toffoli_new (C : Point) : toffoliCount (programNew C)≤2147433 := by
   cases C with
   | zero=>simp [programNew,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperNew_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperNew layout (.some hc) cx cy)≤2147436
+    change toffoliCount (wrapperNew layout (.some hc) cx cy)≤2147433
     omega
 
 theorem program_measurements_new (C : Point) : measurementCount (programNew C)≤1498382 := by
@@ -10037,7 +10037,7 @@ def programB (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperN layout C cx cy
 
 def entryB : Challenge.Entry := fun C=>normalizeProgram (programB C)
-def boundsB : Challenge.Bounds := ⟨2147184,1498385,1587,50256956⟩
+def boundsB : Challenge.Bounds := ⟨2147181,1498385,1587,50256956⟩
 
 theorem program_correct_B (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (programB C) (encodes b (if b then R+C else R)) := by
@@ -10048,14 +10048,14 @@ theorem program_correct_B (C : Point) (b : Bool) (R : Point) :
       using And.intro (Eq.refl s.phase) hs
   | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_N hc b R) (support_used_N hc)
 
-theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2147184 := by
+theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2147181 := by
   cases C with
   | zero=>simp [programB,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperN_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147184
+    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147181
     omega
 
 theorem program_measurements_B (C : Point) : measurementCount (programB C)≤1498385 := by
@@ -14336,7 +14336,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147713,1498902,1586,50264772⟩
+ def boundsQ : Challenge.Bounds :=⟨2147710,1498902,1586,50264772⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -14345,14 +14345,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147713 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147710 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147184 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147713
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147181 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147710
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498902 := by
  cases C with
@@ -15360,7 +15360,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147709,1498902,1586,50264772⟩
+ def boundsQ : Challenge.Bounds :=⟨2147706,1498902,1586,50264772⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -15369,14 +15369,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147709 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147706 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147184 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147709
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147181 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147706
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498902 := by
  cases C with
@@ -16152,7 +16152,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147707,1498900,1586,50264758⟩
+ def boundsQ : Challenge.Bounds :=⟨2147704,1498900,1586,50264758⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -16161,14 +16161,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147707 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147704 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147184 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147707
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147181 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147704
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498900 := by
  cases C with
@@ -17379,7 +17379,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147696,1498889,1586,50264758⟩
+ def boundsQ : Challenge.Bounds :=⟨2147693,1498889,1586,50264758⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -17388,14 +17388,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147696 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147693 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147184 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147696
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147181 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147693
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498889 := by
  cases C with
@@ -18291,7 +18291,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147695,1498888,1586,50264758⟩
+ def boundsQ : Challenge.Bounds :=⟨2147692,1498888,1586,50264758⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -18300,14 +18300,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147695 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147692 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147184 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147695
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2147181 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147692
   omega
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498888 := by
  cases C with
