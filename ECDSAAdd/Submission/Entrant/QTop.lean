@@ -10690,248 +10690,6 @@ end ECDSAAdd.Entrant.ControlLoan1589BFFold
 
 end
 
-namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
-
-end ECDSAAdd.Entrant.ControlLoan1589BFFold
-section
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxHeartbeats 4000000
-set_option maxRecDepth 20000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-set_option linter.unusedTactic false
-namespace ECDSAAdd.Entrant.SignTopDevelop
-open Arithmetic
-
-def program (xs ys cs : List Wire) (cin u v : Wire) : Program :=
-  [.CX u v]++addInPlace xs (ys++[u]) cs cin++[.CX u v]
-
-theorem single (u : Wire) (s : BasisState) : regValue [u] s=(s u).toNat := by
-  cases h:s u <;> simp [regValue,h]
-theorem pair (u v : Wire) (s : BasisState) : regValue [u,v] s=(s u).toNat+2*(s v).toNat := by
-  cases h:s u <;> cases k:s v <;> simp [regValue,h,k]
-
-theorem sign_eq (a : Nat) (u v : Bool) (ha : a<2^128)
-    (hs : a+2^128*u.toNat+2^129*v.toNat<2^128 ∨
-      3*2^128≤a+2^128*u.toNat+2^129*v.toNat) : u=v := by
-  cases u <;> cases v <;> norm_num at * <;> omega
-
-theorem reconstruct (a F : Nat) (u : Bool) (ha : a<2^128) (hF : F<2^130)
-    (hs : F<2^128 ∨ 3*2^128≤F) (hv : a+2^128*u.toNat=F%2^129) :
-    a+2^128*u.toNat+2^129*u.toNat=F := by
-  cases u <;> norm_num at * <;> omega
-
-theorem correct (xs ys cs : List Wire) (cin u v : Wire)
-    (hn : (v::cin::xs++(ys++[u])++cs).Nodup)
-    (hx : xs.length=129) (hy : ys.length=128) (hc : cs.length=128)
-    (s : State) (m : List Bool) (clean : ∀q∈cs,s.basis q=false) (hi : s.basis cin=false)
-    (E X : Nat) (he : regValue (ys++[u,v]) s.basis=E) (hE : E<2^130)
-    (hX : regValue xs s.basis=X)
-    (se : E<2^128 ∨ 3*2^128≤E)
-    (sf : (E+X)%2^130<2^128 ∨ 3*2^128≤(E+X)%2^130) :
-    (run (program xs ys cs cin u v) m s).phase=s.phase ∧
-    regValue (ys++[u,v]) (run (program xs ys cs cin u v) m s).basis=(E+X)%2^130 ∧
-    ∀q,q∉ys++[u,v] → (run (program xs ys cs cin u v) m s).basis q=s.basis q := by
-  have vn := (List.nodup_cons.mp hn).1
-  have nd := (List.nodup_cons.mp hn).2
-  have uv : u≠v := fun e=>vn (by simp [e])
-  have vxs : v∉xs := fun h=>vn (by simp [h])
-  have vys : v∉ys := fun h=>vn (by simp [h])
-  have vcs : v∉cs := fun h=>vn (by simp [h])
-  have vc : v≠cin := fun e=>vn (by simp [e])
-  have lo := regValue_lt ys s.basis
-  rw [hy] at lo
-  have unpack : regValue ys s.basis+2^128*(s.basis u).toNat+2^129*(s.basis v).toNat=E := by
-    rw [regValue_append,hy,pair] at he
-    change regValue ys s.basis+2^128*((s.basis u).toNat+2*(s.basis v).toNat)=E at he
-    omega
-  have eq := sign_eq _ _ _ lo (by rw [unpack];exact se)
-  let a : State := ⟨s.phase,writeBit s.basis v (s.basis v ^^ s.basis u)⟩
-  have keep (q : Wire) (hq : q≠v) : a.basis q=s.basis q := by simp [a,writeBit,hq,Function.update_apply]
-  have av : a.basis v=false := by simp [a,writeBit,eq,Function.update_apply]
-  have ay : regValue (ys++[u]) a.basis=E%2^129 := by
-    have k : regValue (ys++[u]) a.basis=regValue (ys++[u]) s.basis :=
-      regValue_congr _ _ _ (fun q hq=>keep q (fun e=>vn (by subst q;simp at hq ⊢;tauto)))
-    rw [k,regValue_append,hy,single]
-    change regValue ys s.basis+2^128*(s.basis u).toNat=E%2^129
-    have ub := Bool.toNat_le (s.basis u)
-    have vb := Bool.toNat_le (s.basis v)
-    omega
-  have ax : regValue xs a.basis=X :=
-    (regValue_congr _ _ _ (fun q hq=>keep q (fun e=>vxs (e ▸ hq)))).trans hX
-  have ai : a.basis cin=false := (keep cin (Ne.symm vc)).trans hi
-  have ac : ∀q∈cs,a.basis q=false := fun q hq=>(keep q (fun e=>vcs (e ▸ hq))).trans (clean q hq)
-  let b:=run (addInPlace xs (ys++[u]) cs cin) (m.take (measurementCount (addInPlace xs (ys++[u]) cs cin))) a
-  have add:=addInPlace_correct xs (ys++[u]) cs cin nd (by simp [hx,hy]) (by simp [hc,hy]) a (m.take (measurementCount (addInPlace xs (ys++[u]) cs cin))) ac
-  have bp : b.phase=s.phase := add.1
-  have bv : b.basis v=false := (add.2.1 v (by simp [vys,Ne.symm uv])).trans av
-  have value : regValue (ys++[u]) b.basis=(E+X)%2^129 := by
-    rw [ax,ay,ai] at add
-    simpa [b,hy,Nat.add_mod,Nat.add_comm] using add.2.2
-  let t : State := ⟨b.phase,writeBit b.basis v (b.basis v ^^ b.basis u)⟩
-  have tout (q : Wire) (hq : q≠v) : t.basis q=b.basis q := by simp [t,writeBit,hq,Function.update_apply]
-  have tv : t.basis v=b.basis u := by simp [t,writeBit,bv,Function.update_apply]
-  have ty : regValue ys t.basis=regValue ys b.basis := regValue_congr _ _ _ (fun q hq=>tout q (fun e=>vys (e ▸ hq)))
-  have tu : t.basis u=b.basis u := tout u uv
-  have final : regValue (ys++[u,v]) t.basis=(E+X)%2^130 := by
-    rw [regValue_append,hy,ty,pair]
-    change regValue ys b.basis+2^128*((t.basis u).toNat+2*(t.basis v).toNat)=(E+X)%2^130
-    rw [tu,tv]
-    have mod : ((E+X)%2^130)%2^129=(E+X)%2^129 := Nat.mod_mod_of_dvd _ (by norm_num : 2^129∣2^130)
-    have raw : regValue ys b.basis+2^128*(b.basis u).toNat+2^129*(b.basis u).toNat=(E+X)%2^130 := by
-      apply reconstruct _ _ _ (by simpa [hy] using regValue_lt ys b.basis) (Nat.mod_lt _ (by positivity)) sf
-      rw [mod]
-      rw [regValue_append,hy,single] at value
-      exact value
-    omega
-  unfold program
-  rw [run_append,run_append]
-  simp only [measurementCount_append,measurementCount,List.drop_zero,Nat.zero_add]
-  change t.phase=s.phase ∧ regValue (ys++[u,v]) t.basis=(E+X)%2^130 ∧ _
-  refine ⟨bp,final,?_⟩
-  intro q hq
-  have qv : q≠v := fun e=>hq (by simp [e])
-  have qy : q∉ys++[u] := fun h=>hq (by simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at h ⊢;tauto)
-  exact (tout q qv).trans ((add.2.1 q qy).trans (keep q qv))
-#print axioms correct
-end ECDSAAdd.Entrant.SignTopDevelop
-
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxHeartbeats 4000000
-namespace ECDSAAdd.Entrant.SignTopDevelop
-
-theorem initial_range (a b : Nat) (ha : a<2^128) (hb : b<2^128) :
-    (a+2^130-b)%2^130<2^128 ∨ 3*2^128≤(a+2^130-b)%2^130 := by
-  norm_num at *
-  omega
-
-theorem updated_range (a b u : Nat) (ha : a<2^128) (hb : b<2^128) (hu : u≤b) :
-    (((a+2^130-b)%2^130)+u)%2^130<2^128 ∨
-      3*2^128≤(((a+2^130-b)%2^130)+u)%2^130 := by
-  norm_num at *
-  omega
-#print axioms initial_range
-#print axioms updated_range
-end ECDSAAdd.Entrant.SignTopDevelop
-
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxHeartbeats 4000000
-set_option maxRecDepth 20000
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
-
-def eAddUSign (L : CuccaroStreamedSquareWideLayout) : Program :=
-  SignTopDevelop.program (uLow L++[eZ0 L]) (eRlow L) ((eBank L).take 128) L.core.cin (eU L) (eV L)
-
-theorem eAddUSign_lens (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
-    (uLow L++[eZ0 L]).length=129 ∧ (eRlow L).length=128 ∧ ((eBank L).take 128).length=128 := by
-  have fp : L.foldPad.length=254 := by simp [foldPad,hw.core.pad,hw.overflowPad]
-  simp [uLow,mU,hiReg,eRlow,eBank,hw.core.product,hw.core.work,fp]
-
-theorem eAddUSign_nodup (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    (eV L::L.core.cin::(uLow L++[eZ0 L])++(eRlow L++[eU L])++(eBank L).take 128).Nodup := by
-  have nd:=eU_nodup L hw hn 128 (by decide)
-  apply List.nodup_iff_count_le_one.mpr
-  intro q
-  have h:=List.nodup_iff_count_le_one.mp nd q
-  simp only [List.count_cons,List.count_append,List.count_nil] at h ⊢
-  omega
-
-theorem eAddUSign_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (base : BasisState) (hc : L.PairClean base) (O E : Nat)
-    (se : E<2^128 ∨ 3*2^128≤E)
-    (sf : (E+regValue (hiReg L) base/2^96)%2^130<2^128 ∨
-      3*2^128≤(E+regValue (hiReg L) base/2^96)%2^130) :
-    Triple (BState L base O E 0) (eAddUSign L)
-      (BState L base O ((E+regValue (hiReg L) base/2^96)%2^130) 0) := by
-  apply lift_e L hn base O E 0 _ (eAddUSign L)
-  intro s m h
-  have facts:=eK_facts L hw hn base hc O E 0 s.basis h
-  have lens:=eAddUSign_lens L hw
-  have shape:=(eShape L hw).1
-  have he : regValue (eRlow L++[eU L,eV L]) s.basis=E := by rw [←shape];exact h.2.1
-  have hE : E<2^130 := by
-    have k:=regValue_lt (eReg L) s.basis
-    rw [h.2.1,eReg_length L hw] at k
-    exact k
-  have hx : regValue (uLow L++[eZ0 L]) s.basis=regValue (hiReg L) base/2^96 := by
-    rw [regValue_append,SignTopDevelop.single,facts.1]
-    simpa using uLow_value L hw hn base hc O E s.basis h
-  have clean : ∀q∈(eBank L).take 128,s.basis q=false := (regValue_zero _ _).mp (facts.2.2.2.1 128)
-  have k:=SignTopDevelop.correct _ _ _ _ _ _ (eAddUSign_nodup L hw hn) lens.1 lens.2.1 lens.2.2
-    s m clean facts.2.2.1 E _ he hE hx se sf
-  rw [←shape] at k
-  exact k
-#print axioms eAddUSign_step
-end ECDSAAdd.Entrant.ControlLoan1589BFFold
-
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxHeartbeats 4000000
-set_option maxRecDepth 20000
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
-
-theorem eAddUSign_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
-    toffoliCount (eAddUSign L)=128 ∧ measurementCount (eAddUSign L)=128 := by
-  have len:=eAddUSign_lens L hw
-  have k:=addInPlace_counts (uLow L++[eZ0 L]) (eRlow L++[eU L]) ((eBank L).take 128) L.core.cin
-    (by simp [len.1,len.2.1]) (by simp [len.2.1,len.2.2])
-  simp only [List.length_append,List.length_singleton,len.2.1] at k
-  simpa [eAddUSign,SignTopDevelop.program,toffoliCount_append,measurementCount_append,toffoliCount,measurementCount] using k
-
-theorem eAddUSign_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    GatePhysical (eAddUSign L) := by
-  have nd:=eAddUSign_nodup L hw hn
-  have vn:=(List.nodup_cons.mp nd).1
-  have uv : eU L≠eV L := fun e=>vn (by simp [e])
-  have cx : GatePhysical [Instr.CX (eU L) (eV L)] := by simpa [GatePhysical,RecordedQuantum.PhysicalInstr,ECDSAAdd.ProperGate] using uv
-  have ad:=addInPlace_physical _ _ _ _ (List.nodup_cons.mp nd).2
-  simpa only [eAddUSign,SignTopDevelop.program,gatePhysical_append] using And.intro (And.intro cx ad) cx
-
-theorem eAddUSign_wires (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
-    wires (eAddUSign L)⊆wires (eAddU L) := by
-  have len:=eAddUSign_lens L hw
-  have old:=uSrc_length L hw
-  have shape:=eShape L hw
-  obtain ⟨z,hz⟩:=shape.2.1
-  rw [eAddU,eAdd,addInPlace_wires _ _ _ _ old.1 old.2]
-  have addw:=addInPlace_wires (uLow L++[eZ0 L]) (eRlow L++[eU L]) ((eBank L).take 128) L.core.cin
-    (by simp [len.1,len.2.1]) (by simp [len.2.1,len.2.2])
-  intro q hq
-  simp only [eAddUSign,SignTopDevelop.program,wires_append,Finset.mem_union] at hq
-  rw [addw] at hq
-  simp only [ECDSAAdd.wires,Instr.wires,List.toFinset_cons,List.toFinset_nil,Finset.mem_union,
-    Finset.mem_singleton,List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at hq
-  simp only [List.mem_toFinset,List.mem_cons,List.mem_append,uSrc,shape.1,hz,List.not_mem_nil,or_false]
-  simp only [Finset.mem_insert,Finset.mem_singleton,List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-  have bank : q∈(eBank L).take 128 → q∈eBank L := fun h=>List.mem_of_mem_take h
-  tauto
-
-theorem eAddUSign_slots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
-    Challenge.gateSlots (eAddUSign L)≤Challenge.gateSlots (eAdd L (whiSrc L)) := by
-  have len:=eAddUSign_lens L hw
-  have old:=eSrc_length L hw (whiSrc L) (Or.inr rfl)
-  have a:=KnownTopAdd.addInPlace_slots_eq (uLow L++[eZ0 L]) (eRlow L++[eU L]) ((eBank L).take 128) L.core.cin
-    (by simp [len.1,len.2.1]) (by simp [len.2.1,len.2.2])
-  have b:=KnownTopAdd.addInPlace_slots_eq (whiSrc L) (eReg L) (eBank L) L.core.cin old.1 old.2
-  rw [eReg_length L hw] at b
-  simp only [List.length_append,List.length_singleton,len.2.1] at a
-  have cx : Challenge.gateSlots [Instr.CX (eU L) (eV L)]=1 := rfl
-  simp only [eAddUSign,SignTopDevelop.program,eAdd,Challenge.gateSlots_append,cx]
-  omega
-#print axioms eAddUSign_counts
-#print axioms eAddUSign_physical
-#print axioms eAddUSign_wires
-#print axioms eAddUSign_slots
-end ECDSAAdd.Entrant.ControlLoan1589BFFold
-end
 
 -- Low-window `+u` / `-u` on `e` with the carry hosted on `eU`
 section
@@ -12289,8 +12047,494 @@ end ECDSAAdd.Entrant.ControlLoan1589BFFold
 
 end
 
+
+section
+set_option autoImplicit false
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.KnownSecondCarryDevelop
+open Arithmetic
+
+def head (expected : Bool) (a b c : Wire) : Program :=
+  [.CX a c,.CX b c]++(if expected then [.X c] else [])
+
+theorem head_correct (expected : Bool) (a b c : Wire) (hb:b≠c)
+    (s : State) (m : List Bool) :
+    run (head expected a b c) m s=
+      ⟨s.phase,writeBit s.basis c (((s.basis c ^^ s.basis a) ^^ s.basis b) ^^ expected)⟩ := by
+  cases expected <;> simp only [head,Bool.false_eq_true,if_false,if_true,List.cons_append,List.nil_append,run]
+  all_goals
+    apply congrArg (State.mk s.phase)
+    funext q
+    by_cases hq:q=c <;> simp [writeBit,Function.update,hq,hb]
+
+theorem head_eq_majority (expected : Bool) (a b a' b' cin c : Wire)
+    (hn:[a,b,cin,c].Nodup) (hb:b'≠c)
+    (s : State) (m : List Bool)
+    (ready:sumBit (s.basis a') (s.basis b') (carryBit (s.basis a) (s.basis b) (s.basis cin))=expected) :
+    run (head expected a' b' c) m s=run (majority a b cin c) m s := by
+  rw [head_correct expected a' b' c hb,majority_correct a b cin c hn]
+  have solve (x y z k d : Bool) (h:sumBit x y k=d) : (((z ^^ x) ^^ y) ^^ d)=(z ^^ k) := by
+    cases x <;> cases y <;> cases z <;> cases k <;> cases d <;> simp_all [sumBit]
+  rw [solve _ _ _ _ _ ready]
+
+theorem head_counts (expected : Bool) (a b c : Wire) :
+    toffoliCount (head expected a b c)=0 ∧ measurementCount (head expected a b c)=0 := by
+  cases expected <;> simp [head,toffoliCount,measurementCount]
+
+theorem head_physical (expected : Bool) (a b c : Wire) (ha:a≠c) (hb:b≠c) :
+    GatePhysical (head expected a b c) := by
+  cases expected <;> simp [head,GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate,ha,hb]
+
+#print axioms head_eq_majority
+#print axioms head_physical
+end ECDSAAdd.Entrant.KnownSecondCarryDevelop
+end
+
+section
+set_option autoImplicit false
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.KnownSecondAddDevelop
+open Arithmetic Instr KnownSecondCarryDevelop
+
+def add (expected : Bool) (x y cs : List Wire) (cin : Wire) : Program :=
+  match x,y,cs with
+  | a::a'::as,b::b'::bs,c::cs =>
+    head expected a' b' c ++ Arithmetic.addInPlace (a'::as) (b'::bs) cs c ++
+      eraseCarry a b cin c ++ [CX a b,CX cin b]
+  | _,_,_ => Arithmetic.addInPlace x y cs cin
+
+theorem add_eq (expected : Bool) (a a' b b' c cin : Wire)
+    (as bs cs : List Wire) (hn:[a,b,cin,c].Nodup) (hb:b'≠c)
+    (s : State) (m : List Bool)
+    (ready:sumBit (s.basis a') (s.basis b') (carryBit (s.basis a) (s.basis b) (s.basis cin))=expected) :
+    run (add expected (a::a'::as) (b::b'::bs) (c::cs) cin) m s =
+      run (Arithmetic.addInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) m s := by
+  simp only [add,Arithmetic.addInPlace,List.append_assoc]
+  rw [run_append (head expected a' b' c),run_append (majority a b cin c)]
+  have hm : measurementCount (head expected a' b' c)=measurementCount (majority a b cin c) := by
+    simp [head_counts,majority,measurementCount]
+  rw [hm,head_eq_majority expected a b a' b' cin c hn hb _ _ ready]
+
+theorem add_counts (expected : Bool) (a a' b b' c cin : Wire)
+    (as bs cs : List Wire) :
+    toffoliCount (add expected (a::a'::as) (b::b'::bs) (c::cs) cin)+1 =
+      toffoliCount (Arithmetic.addInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) ∧
+    measurementCount (add expected (a::a'::as) (b::b'::bs) (c::cs) cin) =
+      measurementCount (Arithmetic.addInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) := by
+  simp only [add,Arithmetic.addInPlace,toffoliCount_append,measurementCount_append]
+  have h:=head_counts expected a' b' c
+  simp [h,majority,toffoliCount,measurementCount]
+  omega
+
+#print axioms add_eq
+#print axioms add_counts
+end ECDSAAdd.Entrant.KnownSecondAddDevelop
+end
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.KnownSecondValueDevelop
+open Arithmetic
+
+theorem second (a a' b b' : Wire) (as bs : List Wire) (s : BasisState) :
+    (sumBit (s a') (s b') (carryBit (s a) (s b) false)).toNat =
+      (regValue (a::a'::as) s+regValue (b::b'::bs) s)/2%2 := by
+  cases ha:s a <;> cases hb:s b <;> cases ha':s a' <;> cases hb':s b' <;>
+    simp [regValue,ha,hb,ha',hb',sumBit,carryBit] <;> omega
+
+theorem ready_true (a a' b b' cin : Wire) (as bs : List Wire) (s : BasisState)
+    (hc:s cin=false)
+    (h:(regValue (a::a'::as) s+regValue (b::b'::bs) s)/2%2=1) :
+    sumBit (s a') (s b') (carryBit (s a) (s b) (s cin))=true := by
+  rw [hc]
+  have e := second a a' b b' as bs s
+  rw [h] at e
+  cases he:sumBit (s a') (s b') (carryBit (s a) (s b) false) <;> simp_all
+
+#print axioms ready_true
+end ECDSAAdd.Entrant.KnownSecondValueDevelop
+end
+
+section
+namespace ECDSAAdd.Entrant.KnownSecondAddDevelop
+open Arithmetic Instr KnownSecondCarryDevelop
+set_option autoImplicit false
+
+theorem add_physical (expected : Bool) (a a' b b' c cin : Wire)
+    (as bs cs : List Wire) (ha:a'≠c) (hb:b'≠c)
+    (old:GatePhysical (addInPlace (a::a'::as) (b::b'::bs) (c::cs) cin)) :
+    GatePhysical (add expected (a::a'::as) (b::b'::bs) (c::cs) cin) := by
+  simp only [addInPlace,gatePhysical_append] at old
+  simp only [add,gatePhysical_append]
+  exact ⟨⟨⟨head_physical expected a' b' c ha hb,old.1.1.2⟩,old.1.2⟩,old.2⟩
+
+theorem add_slots (expected : Bool) (a a' b b' c cin : Wire)
+    (as bs cs : List Wire) :
+    Challenge.gateSlots (add expected (a::a'::as) (b::b'::bs) (c::cs) cin) ≤
+      Challenge.gateSlots (addInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) := by
+  cases expected <;> simp [add,addInPlace,head,majority,Challenge.gateSlots,Challenge.instructionSlots] <;> omega
+
+#print axioms add_physical
+#print axioms add_slots
+end ECDSAAdd.Entrant.KnownSecondAddDevelop
+end
+
+section
+namespace ECDSAAdd.Entrant.KnownSecondAddDevelop
+open Arithmetic Instr KnownSecondCarryDevelop
+set_option autoImplicit false
+
+theorem add_support (expected : Bool) (a a' b b' c cin : Wire)
+    (as bs cs : List Wire) (hx:(a::a'::as).length=(b::b'::bs).length)
+    (hc:(c::cs).length+1=(b::b'::bs).length) :
+    wires (add expected (a::a'::as) (b::b'::bs) (c::cs) cin) ⊆
+      wires (addInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) := by
+  have tail:=addInPlace_wires (a'::as) (b'::bs) cs c (by simpa using hx) (by simpa using hc)
+  have hs:wires (head expected a' b' c)⊆wires (addInPlace (a'::as) (b'::bs) cs c) := by
+    rw [tail]
+    cases expected <;> intro q hq <;>
+      simp [head,wires,Instr.wires] at hq ⊢ <;> tauto
+  simp only [add,addInPlace,wires_append]
+  intro q hq
+  simp only [Finset.mem_union] at hq ⊢
+  rcases hq with ((h|h)|h)|h
+  · exact Or.inl (Or.inl (Or.inr (hs h)))
+  · exact Or.inl (Or.inl (Or.inr h))
+  · exact Or.inl (Or.inr h)
+  · exact Or.inr h
+
+#print axioms add_support
+end ECDSAAdd.Entrant.KnownSecondAddDevelop
+end
+
+section
+set_option autoImplicit false
+set_option maxHeartbeats 4000000
+namespace ECDSAAdd.Entrant.KnownSecondSubDevelop
+open Arithmetic Instr
+
+def sub (x y cs : List Wire) (cin : Wire) : Program :=
+  notRegister y ++ KnownSecondAddDevelop.add true x y cs cin ++ notRegister y
+
+theorem complement32 (a u : Nat) (hbit:a/2%2=0) :
+    (u+(2^32-1-(a+u)%2^32))/2%2=1 := by
+  have h:(a+u)%2^32<2^32 := Nat.mod_lt _ (by decide)
+  omega
+
+theorem square_second32 (M : Nat) : (M^2%2^32)/2%2=0 := by
+  have h:M%4=0 ∨ M%4=1 ∨ M%4=2 ∨ M%4=3 := by omega
+  have h4:M^2%4=0 ∨ M^2%4=1 := by
+    rcases h with h|h|h|h <;> simp [Nat.pow_mod,h]
+  have mod4:(M^2%2^32)%4=M^2%4 := Nat.mod_mod_of_dvd _ (by decide)
+  rcases h4 with h4|h4 <;> omega
+
+theorem sub_eq (a a' b b' c cin : Wire) (as bs cs : List Wire)
+    (hn:(cin::((a::a'::as)++(b::b'::bs)++(c::cs))).Nodup)
+    (hl:(b::b'::bs).length=32) (v u : Nat) (hbit:v/2%2=0)
+    (s : State) (m : List Bool) (hc:s.basis cin=false)
+    (hx:regValue (a::a'::as) s.basis=u)
+    (hy:regValue (b::b'::bs) s.basis=(v+u)%2^32) :
+    run (sub (a::a'::as) (b::b'::bs) (c::cs) cin) m s =
+      run (subInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) m s := by
+  have cnt:=fun q=>List.nodup_iff_count_le_one.mp hn q
+  have yn:(b::b'::bs).Nodup := by
+    apply List.nodup_iff_count_le_one.mpr
+    intro q
+    have h:=cnt q
+    simp only [List.count_cons,List.count_append,beq_iff_eq] at h ⊢
+    omega
+  have off (q : Wire) (hq:q=cin ∨ q∈a::a'::as ∨ q=c) : q∉b::b'::bs := by
+    intro hy
+    have h:=cnt q
+    have pos:=List.count_pos_iff.mpr hy
+    simp only [List.count_cons,beq_iff_eq] at pos
+    simp only [List.count_cons,List.count_append,beq_iff_eq] at h
+    rcases hq with rfl|hx|rfl
+    · simp only [if_true] at h pos
+      omega
+    · have x:=List.count_pos_iff.mpr hx
+      simp only [List.count_cons,beq_iff_eq] at x
+      omega
+    · simp only [if_true] at h pos
+      omega
+  have small:[a,b,cin,c].Nodup := by
+    apply List.nodup_iff_count_le_one.mpr
+    intro q
+    have h:=cnt q
+    simp only [List.count_cons,List.count_append,List.count_nil] at h ⊢
+    omega
+  have bc:b'≠c := by intro he;apply off c (Or.inr (Or.inr rfl));simp [←he]
+  simp only [sub,subInPlace,List.append_assoc]
+  rw [run_append (notRegister (b::b'::bs)),run_append (notRegister (b::b'::bs))]
+  rw [run_append (KnownSecondAddDevelop.add true (a::a'::as) (b::b'::bs) (c::cs) cin),
+    run_append (addInPlace (a::a'::as) (b::b'::bs) (c::cs) cin)]
+  have cm:measurementCount (KnownSecondAddDevelop.add true (a::a'::as) (b::b'::bs) (c::cs) cin)=
+      measurementCount (addInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) :=
+    (KnownSecondAddDevelop.add_counts true a a' b b' c cin as bs cs).2
+  rw [cm]
+  apply congrArg (fun st=>run (notRegister (b::b'::bs)) _ st)
+  apply KnownSecondAddDevelop.add_eq true a a' b b' c cin as bs cs small bc
+  apply KnownSecondValueDevelop.ready_true a a' b b' cin as bs
+  · rw [notRegister_correct _ yn]
+    simpa [off cin (Or.inl rfl)] using hc
+  · rw [notRegister_correct _ yn]
+    have xv:regValue (a::a'::as) (fun w=>if w∈b::b'::bs then !s.basis w else s.basis w)=u := by
+      rw [←hx]
+      apply regValue_congr
+      intro q hq
+      simp [off q (Or.inr (Or.inl hq))]
+    have yv:regValue (b::b'::bs) (fun w=>if w∈b::b'::bs then !s.basis w else s.basis w)=2^32-1-(v+u)%2^32 := by
+      rw [regValue_congr (b::b'::bs) _ (fun w=> !s.basis w) (by intro q hq;simp [hq]),regValue_complement,hl,hy]
+    rw [xv,yv]
+    exact complement32 v u hbit
+
+#print axioms sub_eq
+#print axioms square_second32
+end ECDSAAdd.Entrant.KnownSecondSubDevelop
+end
+
+section
+namespace ECDSAAdd.Entrant.KnownSecondSubDevelop
+open Arithmetic Instr
+set_option autoImplicit false
+
+theorem sub_counts (a a' b b' c cin : Wire) (as bs cs : List Wire) :
+    toffoliCount (sub (a::a'::as) (b::b'::bs) (c::cs) cin)+1 =
+      toffoliCount (subInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) ∧
+    measurementCount (sub (a::a'::as) (b::b'::bs) (c::cs) cin) =
+      measurementCount (subInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) := by
+  have h:=KnownSecondAddDevelop.add_counts true a a' b b' c cin as bs cs
+  simp only [sub,subInPlace,toffoliCount_append,measurementCount_append,
+    (notRegister_counts _).1,(notRegister_counts _).2,Nat.zero_add,Nat.add_zero]
+  exact h
+
+theorem sub_physical (a a' b b' c cin : Wire) (as bs cs : List Wire)
+    (ha:a'≠c) (hb:b'≠c)
+    (old:GatePhysical (subInPlace (a::a'::as) (b::b'::bs) (c::cs) cin)) :
+    GatePhysical (sub (a::a'::as) (b::b'::bs) (c::cs) cin) := by
+  simp only [subInPlace,gatePhysical_append] at old
+  simp only [sub,gatePhysical_append]
+  exact ⟨⟨old.1.1,KnownSecondAddDevelop.add_physical true a a' b b' c cin as bs cs ha hb old.1.2⟩,old.2⟩
+
+theorem sub_support (a a' b b' c cin : Wire) (as bs cs : List Wire)
+    (hx:(a::a'::as).length=(b::b'::bs).length)
+    (hc:(c::cs).length+1=(b::b'::bs).length) :
+    wires (sub (a::a'::as) (b::b'::bs) (c::cs) cin) ⊆
+      wires (subInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) := by
+  have h:=KnownSecondAddDevelop.add_support true a a' b b' c cin as bs cs hx hc
+  simp only [sub,subInPlace,wires_append]
+  exact Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) h) (Finset.Subset.refl _)
+
+theorem sub_slots (a a' b b' c cin : Wire) (as bs cs : List Wire) :
+    Challenge.gateSlots (sub (a::a'::as) (b::b'::bs) (c::cs) cin) ≤
+      Challenge.gateSlots (subInPlace (a::a'::as) (b::b'::bs) (c::cs) cin) := by
+  have h:=KnownSecondAddDevelop.add_slots true a a' b b' c cin as bs cs
+  simp only [sub,subInPlace,Challenge.gateSlots_append]
+  omega
+
+#print axioms sub_counts
+#print axioms sub_physical
+#print axioms sub_support
+#print axioms sub_slots
+end ECDSAAdd.Entrant.KnownSecondSubDevelop
+end
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.KnownSecondSubDevelop
+open Arithmetic
+
+theorem shape (x : List Wire) (h:2≤x.length) : ∃a b xs,x=a::b::xs := by
+  cases x with
+  | nil => simp at h
+  | cons a xs =>
+    cases xs with
+    | nil => simp at h
+    | cons b xs => exact ⟨a,b,xs,rfl⟩
+
+theorem lists_eq (x y cs : List Wire) (cin : Wire)
+    (hn:(cin::x++y++cs).Nodup) (lx:x.length=32) (ly:y.length=32) (lc:cs.length=31)
+    (v u : Nat) (hbit:v/2%2=0) (s : State) (m : List Bool) (hc:s.basis cin=false)
+    (hx:regValue x s.basis=u) (hy:regValue y s.basis=(v+u)%2^32) :
+    run (sub x y cs cin) m s=run (subInPlace x y cs cin) m s := by
+  obtain ⟨a,a',as,rfl⟩:=shape x (by omega)
+  obtain ⟨b,b',bs,rfl⟩:=shape y (by omega)
+  cases cs with
+  | nil => simp at lc
+  | cons c cs => exact sub_eq a a' b b' c cin as bs cs hn ly v u hbit s m hc hx hy
+
+theorem lists_resources (x y cs : List Wire) (cin : Wire)
+    (hn:(cin::x++y++cs).Nodup) (lx:x.length=32) (ly:y.length=32) (lc:cs.length=31)
+    (old:GatePhysical (subInPlace x y cs cin)) :
+    toffoliCount (sub x y cs cin)+1=toffoliCount (subInPlace x y cs cin) ∧
+    measurementCount (sub x y cs cin)=measurementCount (subInPlace x y cs cin) ∧
+    GatePhysical (sub x y cs cin) ∧ wires (sub x y cs cin)⊆wires (subInPlace x y cs cin) ∧
+    Challenge.gateSlots (sub x y cs cin)≤Challenge.gateSlots (subInPlace x y cs cin) := by
+  obtain ⟨a,a',as,rfl⟩:=shape x (by omega)
+  obtain ⟨b,b',bs,rfl⟩:=shape y (by omega)
+  cases cs with
+  | nil => simp at lc
+  | cons c cs =>
+    have cnt:=fun q=>List.nodup_iff_count_le_one.mp hn q
+    have ac:a'≠c := by
+      intro he
+      have h:=cnt c
+      simp only [List.count_cons,List.count_append,beq_iff_eq] at h
+      simp only [he,if_true] at h
+      omega
+    have bc:b'≠c := by
+      intro he
+      have h:=cnt c
+      simp only [List.count_cons,List.count_append,beq_iff_eq] at h
+      simp only [he,if_true] at h
+      omega
+    exact ⟨(sub_counts a a' b b' c cin as bs cs).1,(sub_counts a a' b b' c cin as bs cs).2,
+      sub_physical a a' b b' c cin as bs cs ac bc old,
+      sub_support a a' b b' c cin as bs cs (by omega) (by simp_all),
+      sub_slots a a' b b' c cin as bs cs⟩
+
+#print axioms lists_eq
+#print axioms lists_resources
+end ECDSAAdd.Entrant.KnownSecondSubDevelop
+end
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.KnownSecondSubDevelop
+open Arithmetic
+
+theorem lists_static (x y cs : List Wire) (cin : Wire)
+    (lx:x.length=32) (ly:y.length=32) (lc:cs.length=31) :
+    toffoliCount (sub x y cs cin)+1=toffoliCount (subInPlace x y cs cin) ∧
+    measurementCount (sub x y cs cin)=measurementCount (subInPlace x y cs cin) ∧
+    wires (sub x y cs cin)⊆wires (subInPlace x y cs cin) ∧
+    Challenge.gateSlots (sub x y cs cin)≤Challenge.gateSlots (subInPlace x y cs cin) := by
+  obtain ⟨a,a',as,rfl⟩:=shape x (by omega)
+  obtain ⟨b,b',bs,rfl⟩:=shape y (by omega)
+  cases cs with
+  | nil => simp at lc
+  | cons c cs =>
+    exact ⟨(sub_counts a a' b b' c cin as bs cs).1,(sub_counts a a' b b' c cin as bs cs).2,
+      sub_support a a' b b' c cin as bs cs (by omega) (by simp_all),
+      sub_slots a a' b b' c cin as bs cs⟩
+
+#print axioms lists_static
+end ECDSAAdd.Entrant.KnownSecondSubDevelop
+end
+
+section
+set_option autoImplicit false
+set_option maxHeartbeats 4000000
 namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+def eSubLoSq (L : CuccaroStreamedSquareWideLayout) : Program :=
+  KnownSecondSubDevelop.sub (mU L) (eLo L) ((eBank L).take 31) L.core.cin
+
+theorem eSubLoSq_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (base : BasisState) (hc : L.PairClean base) (O A H l : Nat) (hH : H < 2^96) (hl : l < 2^32)
+    (hbit:((l+2^32-regValue (hiReg L) base/2^96)%2^32)/2%2=0) :
+    Triple (BState L base O (2^32*H + l) A) (eSubLoSq L)
+      (BState L base O (2^32*H + (l + 2^32 - regValue (hiReg L) base / 2^96) % 2^32) A) := by
+  intro s m h
+  obtain ⟨_, _, f3, _, f5⟩ := eK_facts L hw hn base hc O _ A s.basis h
+  let u := regValue (hiReg L) base / 2^96
+  have hu : regValue (mU L) s.basis = u := by rw [hi96 L hw, f5]
+  have hv := eReg_split L hw s.basis
+  rw [h.2.1] at hv
+  have hl0 := eLo_lt L hw s.basis
+  have hm := eMid_lt L hw s.basis
+  have key : regValue (eLo L) s.basis = l ∧ regValue (eMid L) s.basis = H ∧
+      s.basis (eU L) = false ∧ s.basis (eV L) = false := by
+    cases e1 : s.basis (eU L) <;> cases e2 : s.basis (eV L) <;>
+      simp only [e1, e2, Bool.false_eq_true, if_false, if_true] at hv <;>
+      first | omega | (exact ⟨by omega, by omega, rfl, rfl⟩)
+  obtain ⟨k1, k2, k3, k4⟩ := key
+  have nd := lo_nodup L hw hn 31 (by omega)
+  have nd2 : (L.core.cin :: (mU L ++ eLo L ++ (eBank L).take 31)).Nodup := by
+    apply List.nodup_iff_count_le_one.mpr
+    intro q
+    have c := List.nodup_iff_count_le_one.mp nd q
+    simp only [List.count_cons, List.count_append] at c ⊢
+    omega
+  have hu32:u<2^32 := by
+    rw [←hu]
+    have z:=regValue_lt (mU L) s.basis
+    rwa [mU_length L hw] at z
+  have restore:(((l+2^32-u)%2^32)+u)%2^32=l := by omega
+  have eq:=KnownSecondSubDevelop.lists_eq (mU L) (eLo L) ((eBank L).take 31) L.core.cin nd2
+    (mU_length L hw) (eLo_length L hw) (eBank_take_length L hw 31 (by omega))
+    ((l+2^32-u)%2^32) u hbit s m f3 hu (by rw [restore];exact k1)
+  change run (eSubLoSq L) m s=run (eSubLo L) m s at eq
+  rw [eq]
+  exact eSubLo_step L hw hn base hc O A H l hH hl s m h
+
+#print axioms eSubLoSq_step
+end ECDSAAdd.Entrant.ControlLoan1589BFFold
+end
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+theorem eSubLoSq_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    toffoliCount (eSubLoSq L)=30 ∧ measurementCount (eSubLoSq L)=31 ∧
+    GatePhysical (eSubLoSq L) ∧ wires (eSubLoSq L)⊆oldE L ∧
+    Challenge.gateSlots (eSubLoSq L)≤448 := by
+  have nd := lo_nodup L hw hn 31 (by omega)
+  have nd2 : (L.core.cin :: (mU L ++ eLo L ++ (eBank L).take 31)).Nodup := by
+    apply List.nodup_iff_count_le_one.mpr
+    intro q
+    have c := List.nodup_iff_count_le_one.mp nd q
+    simp only [List.count_cons,List.count_append] at c ⊢
+    omega
+  have rr:=KnownSecondSubDevelop.lists_resources (mU L) (eLo L) ((eBank L).take 31) L.core.cin nd2
+    (mU_length L hw) (eLo_length L hw) (eBank_take_length L hw 31 (by omega)) (eSubLo_physical L hw hn)
+  change toffoliCount (eSubLoSq L)+1=toffoliCount (eSubLo L) ∧
+    measurementCount (eSubLoSq L)=measurementCount (eSubLo L) ∧ GatePhysical (eSubLoSq L) ∧
+    wires (eSubLoSq L)⊆wires (eSubLo L) ∧ Challenge.gateSlots (eSubLoSq L)≤Challenge.gateSlots (eSubLo L) at rr
+  have counts:=lo_counts L hw
+  exact ⟨by omega,by omega,rr.2.2.1,rr.2.2.2.1.trans (eSubLo_oldE L hw),
+    rr.2.2.2.2.trans (eSubLo_slots L hw)⟩
+
+#print axioms eSubLoSq_resources
+end ECDSAAdd.Entrant.ControlLoan1589BFFold
+end
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+theorem eSubLoSq_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    toffoliCount (eSubLoSq L)=30 ∧ measurementCount (eSubLoSq L)=31 ∧
+    wires (eSubLoSq L)⊆oldE L ∧ Challenge.gateSlots (eSubLoSq L)≤448 := by
+  have rr:=KnownSecondSubDevelop.lists_static (mU L) (eLo L) ((eBank L).take 31) L.core.cin
+    (mU_length L hw) (eLo_length L hw) (eBank_take_length L hw 31 (by omega))
+  change toffoliCount (eSubLoSq L)+1=toffoliCount (eSubLo L) ∧
+    measurementCount (eSubLoSq L)=measurementCount (eSubLo L) ∧
+    wires (eSubLoSq L)⊆wires (eSubLo L) ∧ Challenge.gateSlots (eSubLoSq L)≤Challenge.gateSlots (eSubLo L) at rr
+  have counts:=lo_counts L hw
+  exact ⟨by omega,by omega,rr.2.2.1.trans (eSubLo_oldE L hw),
+    rr.2.2.2.trans (eSubLo_slots L hw)⟩
+
+theorem eSubLoSq_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (eSubLoSq L) := (eSubLoSq_resources L hw hn).2.2.1
+
+theorem eSubLoSq_oldE (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    wires (eSubLoSq L)⊆oldE L := (eSubLoSq_static L hw).2.2.1
+
+theorem eSubLoSq_slots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+    Challenge.gateSlots (eSubLoSq L)≤448 := (eSubLoSq_static L hw).2.2.2
+
+#print axioms eSubLoSq_static
+#print axioms eSubLoSq_physical
+end ECDSAAdd.Entrant.ControlLoan1589BFFold
+end
+namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
 /-- The `W` fold with the low-window `+u` on `e`: `kap` rides on `eU` through the fold and is cleared after it. -/
 def wFoldTq (L : CuccaroStreamedSquareWideLayout) : Program :=
   eAddLo L++(wBuild L++((wFwdK L++(wCoreK L++wInvK L))++(wUnbuildKnown L++(kapClr L++eSubK L))))
@@ -12298,7 +12542,7 @@ def wFoldTq (L : CuccaroStreamedSquareWideLayout) : Program :=
 /-- The restore: `+b1`, then the low-window `-u`.
 No rebuild of `W`; 721 no-op measurements keep the measurement count of the B body. -/
 def wRestoreT (L : CuccaroStreamedSquareWideLayout) : Program :=
-  eAddB L++(eSubLo L++padM L 721)
+  eAddB L++(eSubLoSq L++padM L 721)
 
 def eFoldTq (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
   eFlip L c++(accFoldQ4KTq L (eItem L)++eFlip L c)
@@ -12465,7 +12709,15 @@ theorem bBody_frameTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn 
   have bk : (E1+b1)%2^130 = 2^32*H + l' := by show ((2^32*H + l' + 2^130 - b1) % 2^130 + b1) % 2^130 = _; omega
   have r2 := eAddB_step L hw hn base hc O4 E1 0 b1 hb1 (by rw [bk]; omega)
   rw [bk] at r2
-  have r3 := eSubLo_step L hw hn base hc O4 0 H l' hH hl'
+  have bit32 : ((l'+2^32-u)%2^32)/2%2=0 := by
+    have recover:(l'+2^32-u)%2^32=b0%2^32 := by
+      show (((b0%2^32+u)%2^32)+2^32-u)%2^32=b0%2^32
+      omega
+    rw [recover]
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw [Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have r3 := eSubLoSq_step L hw hn base hc O4 0 H l' hH hl' (by rw [hb1];exact bit32)
   rw [hb1] at r3
   have bb : 2^32*H + (l' + 2^32 - u) % 2^32 = b0 := by
     show 2^32*(b0/2^32) + ((b0%2^32 + u)%2^32 + 2^32 - u) % 2^32 = b0; omega
@@ -12805,14 +13057,14 @@ theorem aAcc_priceTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : acc
 
 
 theorem bBody_countsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
-    toffoliCount (bBodyTq L c)=4804 ∧ measurementCount (bBodyTq L c)=5924 := by
+    toffoliCount (bBodyTq L c)=4803 ∧ measurementCount (bBodyTq L c)=5924 := by
   have q1 := measuredFoldQ_countsTq L hw (negP L)
   have q2 := measuredFoldQ_countsTq L hw (rot128F L)
   have bc := CodexNarrowTail.build8_counts (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
     (acc_lengths L hw).1 (by rw [hiReg_length L hw]) (wTerms_okLen L hw)
   rw [CodexNarrowTail.build8_eq] at bc
   have wb : toffoliCount (wBuild L)=387 ∧ measurementCount (wBuild L)=388 := bc.1
-  have wu : toffoliCount (wUnbuildKnown L)=233 ∧ measurementCount (wUnbuildKnown L)=388 := wUnbuildKnown_counts L hw
+  have wu := wUnbuildKnown_counts L hw
   have core := QCore.qprog_countsTq (rotWCore L) 256 SquareReduction.p (rotWCore_widths L hw) (by decide)
   have wc : toffoliCount (wCoreTq L)=766 ∧ measurementCount (wCoreTq L)=767 :=
     ⟨core.1.trans (by norm_num),core.2.trans (by norm_num)⟩
@@ -12843,10 +13095,11 @@ theorem bBody_countsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c 
   have iv : toffoliCount (wInvK L)=71 ∧ measurementCount (wInvK L)=109 := WinArith.tInvK_counts (mLens L hw) (eU L)
   have kc := kw_counts L
   have lc := lo_counts L hw
+  have sq := eSubLoSq_static L hw
   have pd := padM_counts L 721
   simp only [bBodyTq,wFoldTq,wCoreK,eFoldTq,wRestoreT,toffoliCount_append,measurementCount_append,q1.1,q1.2,q2.1,q2.2,
     wb.1,wb.2,wu.1,wu.2,wc.1,wc.2,s1k.1,s1k.2,a1b.1,a1b.2,fl.1,fl.2,ac.1,ac.2,fw.1,fw.2,iv.1,iv.2,kc.1,kc.2,
-    lc.1,lc.2.1,lc.2.2.1,lc.2.2.2.1,lc.2.2.2.2.1,lc.2.2.2.2.2,pd.1,pd.2]
+    lc.1,lc.2.1,lc.2.2.1,lc.2.2.2.1,sq.1,sq.2.1,pd.1,pd.2]
   exact ⟨trivial,trivial⟩
 
 theorem aBody_countsTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
@@ -12888,7 +13141,7 @@ theorem bBody_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (
   simp only [bBodyTq,wFoldTq,wCoreK,eFoldTq,wRestoreT,gatePhysical_append]
   exact ⟨p1,p2,⟨eAddLo_physical L hw nd,wb.1,⟨WinArith.tFwdK_physical g (eU L) heZ,⟨kw_physical L hw nd,wc,
     kw_physical L hw nd⟩,WinArith.tInvK_physical g (eU L) heZ⟩,wUnbuildKnown_physical L hw nd,kapClr_physical L hw nd,eSubK_physical L hw nd⟩,
-    ⟨fl,ac,fl⟩,⟨eAddB_physical L hw nd,eSubLo_physical L hw nd,padM_physical L 721⟩⟩
+    ⟨fl,ac,fl⟩,⟨eAddB_physical L hw nd,eSubLoSq_physical L hw nd,padM_physical L 721⟩⟩
 
 theorem aBody_physicalTq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire)
     (hn : (c::L.wires).Nodup) : GatePhysical (aBodyTq L c) := by
@@ -13147,7 +13400,7 @@ theorem bBody_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire
     · exact ml (mr (mr (ml (sk h))))
     · exact mr (ml (ef h))
     · exact mr (mr (mr (mr (ml (ab h)))))
-    · exact hOE (eSubLo_oldE L hw h)
+    · exact hOE (eSubLoSq_oldE L hw h)
     · exact hOE (padM_oldE L hw 721 h)
   · have wc := (QRel.qprog_le (rotWCore L) 256 SquareReduction.p (rotWCore_widths L hw) (by decide)).2
     have ef := (QRel.eFold_le L hw c).2
@@ -13157,12 +13410,13 @@ theorem bBody_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire
     have f2 := WinArith.tInvK_slots (cin := L.core.cin) (mLens L hw) (eU L)
     have f5 := padM_slots L 721
     have g1 := wBuild_slots_ge L hw
-    have g2 := wUnbuild_slots_ge L hw
     have wun := wUnbuildKnown_slots L hw
+    have g2 := wUnbuild_slots_ge L hw
+    have known := wUnbuildKnown_slots L hw
     have k1 := kw_slots L
     have e1 := eAddLo_slots L hw
     have e2 := kapClr_slots L hw
-    have e3 := eSubLo_slots L hw
+    have e3 := eSubLoSq_slots L hw
     have l2 := eSrc_length L hw (whiSrc L) (Or.inr rfl)
     have wa := KnownTopAdd.addInPlace_slots_eq (whiSrc L) (eReg L) (eBank L) L.core.cin l2.1 l2.2
     rw [eReg_length L hw] at wa
@@ -13196,7 +13450,7 @@ theorem bodyCK_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (g : Wi
   exact ⟨by omega,by omega,bodyCK_le L hw g⟩
 
 theorem bBody_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
-    toffoliCount (ControlLoan1589BFFold.bBodyTq L c)+1019=toffoliCount (ControlLoan1589BFFold.bBody L c) ∧
+    toffoliCount (ControlLoan1589BFFold.bBodyTq L c)+1020=toffoliCount (ControlLoan1589BFFold.bBody L c) ∧
     measurementCount (ControlLoan1589BFFold.bBodyTq L c)+4=measurementCount (ControlLoan1589BFFold.bBody L c) ∧
     Le (ControlLoan1589BFFold.bBodyTq L c) (ControlLoan1589BFFold.bBody L c) := by
   have a := ControlLoan1589BFFold.bBody_countsTq L hw c
