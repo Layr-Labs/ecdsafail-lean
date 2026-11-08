@@ -1521,7 +1521,7 @@ theorem bBodyN_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn :
   exact all
 
 theorem bBodyN_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
-    toffoliCount (bBodyN L c)=4812 ∧ measurementCount (bBodyN L c)=5924 := by
+    toffoliCount (bBodyN L c)=4804 ∧ measurementCount (bBodyN L c)=5924 := by
   have q1 := measuredFoldQ_countsTq L hw (negP L)
   have q2 := measuredFoldQ_countsTq L hw (rot128F L)
   have bc := CodexNarrowTail.build8_counts (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
@@ -1547,9 +1547,9 @@ theorem bBodyN_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c :
   rw [eItem_priceTq L hw] at ac0
   have ac4 := Q4.accFoldQ4_countsTq L hw (eItem L)
   have k4 := Q4.accFoldQ4KTq_counts_early L hw (eItem L) (eReg L) (by simp [eReg,hw.core.product]) rfl st.2.1
-  rw [SourcePrefix130Develop.eItem_gain L hw] at k4
+  rw [SourceFourPrefix130Develop.eItem_gain L hw] at k4
   have k4m := (Q4.accFoldQ4KTq_rel L hw (eItem L) st.2.1).2.1
-  have ac : toffoliCount (accFoldQ4KTq L (eItem L))=1392 ∧ measurementCount (accFoldQ4KTq L (eItem L))=1555 :=
+  have ac : toffoliCount (accFoldQ4KTq L (eItem L))=1388 ∧ measurementCount (accFoldQ4KTq L (eItem L))=1555 :=
     ⟨by omega,by omega⟩
   have s1k : toffoliCount (eSubK L)=128 ∧ measurementCount (eSubK L)=129 := by
     have k := eSubK_counts L hw; exact ⟨by omega,by omega⟩
@@ -1648,7 +1648,7 @@ theorem bBodyN_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wir
 theorem bBodyN_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (c : Wire) :
  ECDSAAdd.wires (bBodyN L c)⊆(c::L.wires).toFinset := (bBodyN_le L hw c).1.trans (bBody_support L hw hn c)
 theorem bBodyN_rel (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
- toffoliCount (bBodyN L c)+1011=toffoliCount (bBody L c) ∧
+ toffoliCount (bBodyN L c)+1019=toffoliCount (bBody L c) ∧
  measurementCount (bBodyN L c)+4=measurementCount (bBody L c) ∧ QRel.Le (bBodyN L c) (bBody L c) := by
  have a:=bBodyN_counts L hw c
  have b:=bBody_counts L hw c
