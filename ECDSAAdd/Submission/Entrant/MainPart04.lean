@@ -867,7 +867,7 @@ theorem withLowK2_bodyCK (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (
   · simp only [withLowK2,Challenge.gateSlots_append,Baselines.rename_gateSlots]; omega
 
 def branchBF (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
-  withLowK2 L ext control L.core.high (L.core.product.take 256) (ParkCarry7Develop.hostedBody L (foldPerm L ext) control)
+  withLowK2 L ext control L.core.high (L.core.product.take 256) (ParkCarry8Develop.hostedBody L (foldPerm L ext) control)
 
 def branchAF (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
   withLowK2 L ext control L.core.low (L.core.product.take 256) (InverseCarryDevelop.hostedADual L (foldPerm L ext) control)
@@ -1141,23 +1141,71 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 set_option autoImplicit false
 set_option maxHeartbeats 6000000
-namespace ECDSAAdd.Entrant.ParkCarry7Develop
-open Arithmetic
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+namespace ECDSAAdd.Entrant.ParkCarry8Develop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ParkCarryDevelop InverseCarryDevelop
+open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop
 
-theorem hosted_window_rel (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
-    (ext : List Wire) (c : Wire) (src dst : List Wire) :
-    toffoliCount (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))+1058=
-      toffoliCount (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) ∧
-    measurementCount (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))+4=
-      measurementCount (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) ∧
-    wires (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))⊆
-      insert L.core.sumCarry (wires (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c))) ∧
-    Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))≤
-      Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) := by
-  have h:=hosted_rel L hw (LowZero18Square.foldPerm L ext) c
-  simpa only [Equiv.apply_symm_apply] using
-    ParkCarryDevelop.withLowK2_body_extra L ext c src dst _ _ 1058 4 _ h.1 h.2.1 h.2.2
-end ECDSAAdd.Entrant.ParkCarry7Develop
+theorem fold_fixes_source (L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(hn:L.wires.Nodup)
+ (ext:List Wire)(hlen:300≤ext.length)(away:∀q∈ext,q∉L.wires):
+ LowZero18Square.foldPerm L ext (bit1 L.core.high)=bit1 L.core.high:=by
+ have vy:=sourceHigh_in_y L hw
+ have ht:SquareCarryLoan719.target L∈L.foldPad:=by
+  apply List.mem_of_mem_drop
+  exact DiagSq.getD_in (LowZero18LowK.ktmp L) 67 (by rw[LowZero18LowK.ktmp_length L hw];omega)
+ have ne1:bit1 L.core.high≠SquareCarryLoan719.target L:=by
+  intro e
+  have a:=List.count_pos_iff.mpr vy
+  have b:=List.count_pos_iff.mpr ht
+  rw[←e]at b
+  have h:=layoutCount L hn (bit1 L.core.high)
+  omega
+ have ne2:bit1 L.core.high≠ext.getD 0 0:=by
+  intro e
+  apply away (ext.getD 0 0) (DiagSq.getD_in ext 0 (by omega))
+  rw[←e]
+  simp[CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,vy]
+ change SquareCarryLoan719.foldPerm L ext (bit1 L.core.high)=_
+ rw[SquareCarryLoan719.foldPerm_eq L hw]
+ exact Equiv.swap_apply_of_ne_of_ne ne1 ne2
+
+theorem hosted_window_rel (L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)
+ (ext:List Wire)(c:Wire)(src dst:List Wire)(hsrc:src=L.core.high):
+ toffoliCount (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))+1059=
+  toffoliCount (LowZero18Square.withLowK2 L ext c src dst (bBody L c)) ∧
+ measurementCount (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))+4=
+  measurementCount (LowZero18Square.withLowK2 L ext c src dst (bBody L c)) ∧
+ wires (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))⊆
+  insert L.core.sumCarry (wires (LowZero18Square.withLowK2 L ext c src dst (bBody L c))) ∧
+ Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))≤
+  Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (bBody L c)):=by
+ have h:=hosted_rel L hw (LowZero18Square.foldPerm L ext) c
+ have full:=withLowK2_body_extra_two L ext c src dst _ _ 1059 4 _ _ h.1 h.2.1 h.2.2
+ simp only[Equiv.apply_symm_apply]at full
+ have srcLen:src.length=128:=by rw[hsrc,L.core.high_length hw.core]
+ have banks:=(L.measured_bank_widths hw).1
+ have cp:bit1 L.core.high∈wires (copyRegister (some c) src (L.inputBank.take src.length)):=by
+  rw[copyRegister_wires _ _ _ (by simp[srcLen,banks])]
+  have nonempty:src.isEmpty=false:=by rw[List.isEmpty_eq_false_iff];intro e;rw[e]at srcLen;contradiction
+  rw[nonempty];simp only[Bool.false_eq_true,if_false,List.mem_toFinset,List.mem_append]
+  exact Or.inl (Or.inr (by rw[hsrc];exact bit1_mem _ (by rw[L.core.high_length hw.core];decide)))
+ have mem:bit1 L.core.high∈wires (LowZero18Square.withLowK2 L ext c src dst (bBody L c)):=by
+  simp only[LowZero18Square.withLowK2,wires_append,Finset.mem_union]
+  tauto
+ refine ⟨full.1,full.2.1,?_,full.2.2.2⟩
+ intro q hq
+ rcases Finset.mem_insert.mp (full.2.2.1 hq)with e|h
+ · exact Finset.mem_insert.mpr (Or.inl e)
+ rcases Finset.mem_insert.mp h with e|h
+ · exact Finset.mem_insert_of_mem (e ▸ mem)
+ · exact Finset.mem_insert_of_mem h
+
+end ECDSAAdd.Entrant.ParkCarry8Develop
+
 namespace ECDSAAdd.Entrant.InverseCarryDevelop
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
 
@@ -1996,14 +2044,14 @@ theorem branchBF_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (List.take_sublist 256 L.core.product).count_le q
   have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
     (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
-  simp only [branchBF,ParkCarry7Develop.hosted_eq L (foldPerm L ext) control
-    (ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
-  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (ParkCarry7Develop.body L control) := fun q hq hw' =>
-    he.away q hq (List.mem_toFinset.mp (ParkCarry7Develop.body_support L hw nd control hw'))
+  simp only [branchBF,ParkCarry8Develop.hosted_eq L (foldPerm L ext) control
+    (ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h))) (ParkCarry8Develop.fold_fixes_source L hw nd ext he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (ParkCarry8Develop.body L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (ParkCarry8Develop.body_support L hw nd control hw'))
   apply LowZero18Square.withLowK2_correct L hw control hn L.core.high (L.core.product.take 256) srcCount dstCount
     (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
     (by simp [hw.core.product,L.core.high_length hw.core]) ext he.nodup he.away he.len
-    (ParkCarry7Develop.body L control) hbody s records hc dstZero hz
+    (ParkCarry8Develop.body L control) hbody s records hc dstZero hz
   intro t m dstValue same
   rw [hb] at dstValue
   change regValue (L.core.product.take 256) t.basis=M^2 at dstValue
@@ -2025,7 +2073,19 @@ theorem branchBF_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     apply ParkCarryDevelop.sumCarry_away L nd
     simp [ParkCarryDevelop.restWires,List.mem_of_mem_take h]
   have hsumT:t.basis L.core.sumCarry=false := (same _ sumProd).trans hsum
-  have frame := ParkCarry7Develop.body_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg t m ⟨outO,fun _ _ => rfl⟩
+  have sourceT:regValue L.core.high t.basis=B:=by
+    apply Eq.trans (regValue_congr _ _ _ ?_) hb
+    intro q hq
+    apply same q
+    intro bad
+    have vy:q∈L.core.y:=List.mem_of_mem_drop (List.mem_of_mem_take hq)
+    have yp:=List.count_pos_iff.mpr vy
+    have pp:=List.count_pos_iff.mpr (List.mem_of_mem_take bad)
+    have lc:=ControlLoan1589BFFold.layoutCount L nd q
+    omega
+  have hSource:M=if t.basis control then regValue L.core.high t.basis else 0:=by
+    rw[sourceT,ctrlT]
+  have frame := ParkCarry8Develop.body_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg hSource t m ⟨outO,fun _ _ => rfl⟩
   rw [ControlLoan1589BFFold.bO4_eq M O (t.basis control) mb hg hO,ctrlT] at frame
   exact ⟨frame.1,frame.2.1,frame.2.2⟩
 
@@ -2452,7 +2512,7 @@ theorem withLowK2_body_rel (L : CuccaroStreamedSquareWideLayout) (ext : List Wir
 
 theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (raw L ext control)+3032=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
+    toffoliCount (raw L ext control)+3033=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
     measurementCount (raw L ext control)+75=measurementCount (SquareCarryLoan719BF.raw L ext control) := by
   have low := L.core.low_length hw.core
   have high := L.core.high_length hw.core
@@ -2467,7 +2527,7 @@ theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry7Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256)
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry8Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256) rfl
   obtain ⟨a1,a2,a3,a4⟩ := InverseCarryDevelop.hostedADual_window_rel L hw ext control L.core.low (L.core.product.take 256)
   rw [if_neg (show ¬L.core.sum.length=128 by omega)] at c
   rw [if_pos high] at b
@@ -2494,7 +2554,7 @@ theorem raw_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry7Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256)
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry8Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256) rfl
   obtain ⟨a1,a2,a3,a4⟩ := InverseCarryDevelop.hostedADual_window_rel L hw ext control L.core.low (L.core.product.take 256)
   have k3 := q3.trans k3
   have b := b3.trans (Finset.insert_subset_insert L.core.sumCarry b)
@@ -2534,7 +2594,7 @@ theorem raw_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry7Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256)
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry8Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256) rfl
   obtain ⟨a1,a2,a3,a4⟩ := InverseCarryDevelop.hostedADual_window_rel L hw ext control L.core.low (L.core.product.take 256)
   simp only [raw,SquareCarryLoan719BF.raw,LowZero18Square.branchCK,LowZero18Square.branchBF,
     LowZero18Square.branchAF,SquareCarryLoan719BF.branchCK,SquareCarryLoan719BF.branchBF,
@@ -2548,7 +2608,7 @@ private theorem mRename (f : Wire→Wire) (P : Program) :
     measurementCount (renameProgram f P)=measurementCount P := (renameProgram_counts f P).2
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+3032=toffoliCount (SquareCarryLoan719BF.program L) ∧
+    toffoliCount (program L)+3033=toffoliCount (SquareCarryLoan719BF.program L) ∧
     measurementCount (program L)+75=measurementCount (SquareCarryLoan719BF.program L) := by
   have h := raw_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
@@ -2556,7 +2616,7 @@ theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
     fastCandidate,SquareCarryLoan719BF.fastCandidate,tRename,mRename] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=49227 ∧ measurementCount (program L)=53000 := by
+    toffoliCount (program L)=49226 ∧ measurementCount (program L)=53000 := by
   have a := counts_diff L hw
   have b := SquareCarryLoan719BF.counts L hw
   constructor <;> omega
@@ -2684,12 +2744,13 @@ private theorem raw_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
     simp only [withLowK2,gatePhysical_append] at c ⊢
     tauto
   have b := withLowK2_physical_of_old2 L hw ext control hn he L.core.high (L.core.product.take 256)
-    (ControlLoan1589BFFold.bBody L control) (ParkCarry7Develop.hostedBody L (foldPerm L ext) control) sc.2.1 sc.2.2.2
+    (ControlLoan1589BFFold.bBody L control) (ParkCarry8Develop.hostedBody L (foldPerm L ext) control) sc.2.1 sc.2.2.2
     (by omega) (by omega) (by omega) old.1.1.2 (by
-      rw [ParkCarry7Develop.hosted_eq L (foldPerm L ext) control
+      rw [ParkCarry8Develop.hosted_eq L (foldPerm L ext) control
         (ParkCarryDevelop.fold_fixes_sumCarry L hw (List.nodup_cons.mp hn).2 ext he.len
+          (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h))) (ParkCarry8Develop.fold_fixes_source L hw (List.nodup_cons.mp hn).2 ext he.len
           (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
-      exact ParkCarry7Develop.body_physical L hw control hn)
+      exact ParkCarry8Develop.body_physical L hw control hn)
   have a := withLowK2_physical_of_old2 L hw ext control hn he L.core.low (L.core.product.take 256)
     (ControlLoan1589BFFold.aBody L control) (InverseCarryDevelop.hostedADual L (foldPerm L ext) control) sc.1 sc.2.2.2
     (by omega) (by omega) (by omega) old.1.2 (by
@@ -2753,7 +2814,7 @@ def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
     (exit Rolling1588.exitKernel L) cx cy
 
 private def Metrics (P Q : Program) : Prop :=
-  toffoliCount P+3032=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
+  toffoliCount P+3033=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private theorem gen_metrics_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
@@ -2775,7 +2836,7 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
     ⟨counts.1,counts.2,LowZero18Square.slots_le L hw⟩
 
 theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+3032=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+3033=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)+75=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
   ⟨(gen_metrics L hw cx cy).1,(gen_metrics L hw cx cy).2.1⟩
 
@@ -2846,7 +2907,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
     (Rolling1588BFFinal.wrapper_qubits C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2149200 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2149199 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -2869,7 +2930,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2149200,1499945,1588,50139199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2149199,1499945,1588,50139199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -2886,7 +2947,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2149200 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2149199 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
@@ -4009,13 +4070,15 @@ theorem hosts_sub : ∀h∈hosts ext,h∈ext := by
 
 include hx he in
 theorem hosts_nodup : (hosts ext).Nodup := by
-  have inj (i j : Nat) (hi : i<ext.length) (hj : j<ext.length) (e : ext.getD i 0=ext.getD j 0) : i=j := by
-    rw [List.getD_eq_getElem _ _ hi,List.getD_eq_getElem _ _ hj] at e
-    exact (List.Nodup.getElem_inj_iff hx).mp e
-  simp only [hosts,hostIdx,List.map_cons,List.map_nil,List.nodup_cons,List.mem_cons,
-    List.not_mem_nil,or_false,List.nodup_nil,and_true,not_or]
-  repeat' apply And.intro
-  all_goals first | trivial | (intro e; have := inj _ _ (by omega) (by omega) e;omega)
+ change (ParkCopy.hostIdx.map (fun i=>ext.getD i 0)).Nodup
+ apply List.Nodup.map_on ?_ (by decide : ParkCopy.hostIdx.Nodup)
+ intro i hi j hj e
+ have bound (k : Nat)(hk : k∈ParkCopy.hostIdx) : k<300 := by
+  simp only [ParkCopy.hostIdx,List.mem_cons,List.not_mem_nil,or_false]at hk
+  omega
+ rw [List.getD_eq_getElem ext 0 (n:=i) (by have := bound i hi;omega),
+     List.getD_eq_getElem ext 0 (n:=j) (by have := bound j hj;omega)]at e
+ exact (List.Nodup.getElem_inj_iff hx).mp e
 
 /-- Each host index avoids all four `ext` slices used by the 128-bit leaf KG and `ext[0]`. -/
 theorem idx_free (i : Nat) (hi : i∈hostIdx) :
