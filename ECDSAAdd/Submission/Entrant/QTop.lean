@@ -10934,12 +10934,9 @@ end ECDSAAdd.Entrant.ControlLoan1589BFFold
 end
 namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
-/-- The `W` fold with source `(u + c*d) + 2^128*(W mod 2^128)`; `e` gets `-b1` and `+u` after the unbuild. -/
 def wFoldTq (L : CuccaroStreamedSquareWideLayout) : Program :=
   wBuild L++((wFwd L++(wCoreTq L++wInv L))++(wUnbuildKnown L++(eSubK L++eAddUSign L)))
 
-/-- The restore: `+b1` (the sum `b0+u` is below `2^129`), then `-u` (the result `b0` is below `2^128`).
-No rebuild of `W`; 560 no-op measurements keep the measurement count of the B body. -/
 def wRestoreT (L : CuccaroStreamedSquareWideLayout) : Program :=
   eAddB L++(eSubU L++padM L 560)
 

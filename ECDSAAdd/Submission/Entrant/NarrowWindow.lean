@@ -7,7 +7,6 @@ set_option linter.unusedVariables false
 set_option linter.unusedTactic false
 set_option linter.unreachableTactic false
 set_option linter.unnecessarySeqFocus false
--- Low-window `+u` / `-u` on `e` with the carry hosted on `eU`
 section
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
@@ -18,20 +17,14 @@ set_option linter.unusedTactic false
 namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout KnownTopAdd
 
-/-! ## Low-window `+u` / `-u` on `e` with the carry hosted on `eU` -/
 
-/-- The low 32 bits of `e`. -/
 def eLo (L : CuccaroStreamedSquareWideLayout) : List Wire := (eRlow L).take 32
-/-- The high 96 bits of the low 128 bits of `e`. -/
 def eMid (L : CuccaroStreamedSquareWideLayout) : List Wire := (eRlow L).drop 32
 
-/-- `e_lo + u` in a 33-bit window whose top bit is `eU`. -/
 def eAddLo (L : CuccaroStreamedSquareWideLayout) : Program :=
   addInPlace (mU L ++ [eZ0 L]) (eLo L ++ [eU L]) ((eBank L).take 32) L.core.cin
-/-- `eU ^= [e_lo < u]`: clears the carry that `eAddLo` left on `eU`. -/
 def kapClr (L : CuccaroStreamedSquareWideLayout) : Program :=
   compareLt none (eLo L) (mU L) ((eBank L).take 32) L.core.cin (eU L)
-/-- `e_lo - u` modulo `2^32`. -/
 def eSubLo (L : CuccaroStreamedSquareWideLayout) : Program :=
   subInPlace (mU L) (eLo L) ((eBank L).take 31) L.core.cin
 
@@ -46,7 +39,6 @@ theorem eBank_take_length (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) 
   have fp : L.foldPad.length=254 := by simp [foldPad,hw.core.pad,hw.overflowPad]
   simp [eBank, fp]; omega
 
-/-- `eReg = eLo ++ eMid ++ [eU, eV]` as values. -/
 theorem eReg_split (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisState) :
     regValue (eReg L) t = regValue (eLo L) t + 2^32 * regValue (eMid L) t +
       2^128 * (if t (eU L) = true then 1 else 0) + 2^129 * (if t (eV L) = true then 1 else 0) := by
@@ -68,7 +60,6 @@ theorem eLo_lt (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : BasisS
   have h := regValue_lt (eLo L) t
   rwa [eLo_length L hw] at h
 
-/-- The wires of the low-window programs, as one duplicate-free list. -/
 theorem lo_nodup (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (j : Nat) (hj : j ≤ 128) :
     (L.core.cin :: eU L :: eZ0 L :: (mU L ++ eLo L ++ (eBank L).take j)).Nodup := by
   have b := eK_nodup L hw hn j hj
@@ -80,7 +71,6 @@ theorem lo_nodup (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.w
   simp only [List.count_cons, List.count_append] at c ⊢
   omega
 
-/-- After `eAddLo`: `e = 2^32*(b0/2^32) + (b0%2^32+u)%2^32 + 2^128*kap`, `kap = (b0%2^32+u)/2^32`. -/
 theorem eAddLo_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (base : BasisState) (hc : L.PairClean base) (O A b0 : Nat) (hb0 : b0 < 2^128) :
     Triple (BState L base O b0 A) (eAddLo L)
@@ -139,7 +129,6 @@ theorem eAddLo_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : 
     rw [eAddLo, addInPlace_wires _ _ _ _ lx lk]
     simp only [List.mem_toFinset, List.mem_cons, List.mem_append, not_or] at hx1 hx2 hx3 hq ⊢
     tauto
-  -- eMid and eV are outside the window
   have midAway : ∀ q ∈ eMid L, q ∉ eLo L ++ [eU L] := by
     intro q hq hin
     have c := List.nodup_iff_count_le_one.mp (eK_nodup L hw hn 0 (by omega)) q
@@ -185,7 +174,6 @@ theorem eAddLo_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : 
     · exact Or.inl (List.mem_of_mem_take h1)
     · exact Or.inr (Or.inl h1)
 
-/-- `eMid` and `eV` miss every wire of the low-window programs. -/
 theorem lo_away (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (q : Wire)
     (hq : q ∈ eMid L ∨ q = eV L) :
     q ≠ L.core.cin ∧ q ≠ eU L ∧ q ≠ eZ0 L ∧ q ∉ eLo L ∧ q ∉ mU L ∧ q ∉ (eBank L).take 32 := by
@@ -219,7 +207,6 @@ theorem lo_away (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wi
     · intro h; exact a3 (by simp [List.mem_of_mem_drop h])
     · intro h; exact a3 (by simp [h])
 
-/-- `kapClr` clears `eU` when it holds `[e_lo < u]`. -/
 theorem kapClr_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (base : BasisState) (hc : L.PairClean base) (O A H l : Nat) (hH : H < 2^96) (hl : l < 2^32) :
     Triple (BState L base O (2^32*H + l + 2^128*(if l < regValue (hiReg L) base / 2^96 then 1 else 0)) A) (kapClr L)
@@ -288,7 +275,6 @@ theorem kapClr_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : 
     obtain ⟨e1, _, _⟩ := eShape L hw
     rw [e1]; simp
 
-/-- `eSubLo`: `e = 2^32*H + l ↦ 2^32*H + (l - u) mod 2^32`. -/
 theorem eSubLo_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (base : BasisState) (hc : L.PairClean base) (O A H l : Nat) (hH : H < 2^96) (hl : l < 2^32) :
     Triple (BState L base O (2^32*H + l) A) (eSubLo L)
@@ -424,7 +410,6 @@ theorem kap_flip_core (H l u b1 k r : Nat) (hH : H < 2^96) (hl : l < 2^32) (hu :
       · have e2 : (2^32*H + r + 2^130 - b1) % 2^130 = 2^32*H + r + 2^130 - b1 := by omega
         rw [e2, e3]; omega
 
-/-- The low-window `+u` lowers `e` by `2^32*kap`; the flipped fold value rises by the same amount. -/
 theorem kap_flip (b0 b1 u : Nat) (h0 : b0 < 2^128) (h1 : b1 < 2^128) (hu : u < 2^32) :
     flipE true ((2^32*(b0/2^32) + (b0%2^32+u)%2^32 + 2^130 - b1) % 2^130) =
       flipE true (((b0+2^130-b1)%2^130 + u)%2^130) + 2^32*((b0%2^32+u)/2^32) := by
@@ -436,7 +421,6 @@ theorem kap_flip (b0 b1 u : Nat) (h0 : b0 < 2^128) (h1 : b1 < 2^128) (hu : u < 2
   exact this
 
 set_option maxHeartbeats 4000000 in
-/-- Moving `(c-1)*2^32*kap` from the `e` fold to the `W` fold does not change the B-body result. -/
 theorem o4K (b0 b1 O2 X : Nat) (g : Bool) (h0 : b0 < 2^128) (h1 : b1 < 2^128) (hO2 : O2 < SquareReduction.p)
     (hg : g = false → b1 = 0 ∧ b0 = 0) :
     (4294968272*flipE g ((2^32*(b0/2^32) + (b0%2^32+b1/2^96)%2^32 + 2^130 - b1) % 2^130) + (SquareReduction.p-1-
@@ -461,7 +445,6 @@ end ECDSAAdd.Entrant.ControlLoan1589BFFold
 namespace ECDSAAdd.Entrant.WinArith
 open ECDSAAdd ECDSAAdd.Arithmetic Instr
 
-/-! ## The `976*2^32*kap` pattern on the zero pad `Z` -/
 
 theorem list11 {α : Type} (Z : List α) (h : Z.length = 11) :
     ∃ a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10, Z = [a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10] := by
@@ -469,12 +452,9 @@ theorem list11 {α : Type} (Z : List α) (h : Z.length = 11) :
     ⟨a9, _ | ⟨a10, _ | ⟨a11, Z⟩⟩⟩⟩⟩⟩⟩⟩⟩⟩⟩⟩ <;> simp at h
   exact ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, rfl⟩
 
-/-- The pad wires of bits 4, 6, 7, 8, 9 (`976 = 2^4+2^6+2^7+2^8+2^9`). -/
 def zpat (Z : List Wire) : List Wire := [Z.getD 4 0, Z.getD 6 0, Z.getD 7 0, Z.getD 8 0, Z.getD 9 0]
-/-- `Z ^= 976*kap` on a clear pad. -/
 def kpat (k : Wire) (Z : List Wire) : Program :=
   [.CX k (Z.getD 4 0), .CX k (Z.getD 6 0), .CX k (Z.getD 7 0), .CX k (Z.getD 8 0), .CX k (Z.getD 9 0)]
-/-- The frame with the pattern applied. -/
 def kz (t : BasisState) (k : Wire) (Z : List Wire) : BasisState :=
   fun q => if q ∈ zpat Z then (t q ^^ t k) else t q
 
@@ -527,7 +507,6 @@ theorem kpat_masked (k : Wire) (Z : List Wire) (hz : Z.length = 11) : kpat k Z =
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, rfl⟩ := list11 Z hz
   simp [kpat, maskedConstant]
 
-/-- In the patterned frame, the source `U ++ Z.take 11` holds `u + 2^32*976*kap`. -/
 theorem valK {R S Z cs U : List Wire} {cin : Wire} (g : Geo R S Z cs U cin) {t : BasisState}
     (cl : Clean Z cs cin t) (u : Nat) (hu : regValue U t = u) (k : Wire) (hkZ : k ∉ Z) (V D : Nat) :
     ∀ s, PS R S (kz t k Z) V D s → regValue (U ++ Z.take 11) s = u + 2^32*(976*(if t k then 1 else 0)) := by
@@ -556,7 +535,6 @@ theorem valK {R S Z cs U : List Wire} {cin : Wire} (g : Geo R S Z cs U cin) {t :
   rw [regValue_append, uv, g.u, List.take_of_length_le (by rw [g.z]), zv]
   cases t k <;> simp
 
-/-- `R : u + d ↦ u + c*d + 976*2^32*kap`: `tFwd` with the pattern of `k` added in its last step. -/
 def tFwdK (R S Z cs U : List Wire) (cin k : Wire) : Program :=
   KnownWindowSubDevelop.sub33 R Z cs U cin ++
   (copyRegister none ((R.drop 0).take 10) S ++
@@ -616,7 +594,6 @@ theorem tFwdK_spec {R S Z cs U : List Wire} {cin : Wire} (g : Geo R S Z cs U cin
     (seqv p1 (fun _ h => h) (seqv s6 (fun _ h => h)
     (Triple.conseq (fun s h => h) p2 (PS_val (by cases t k <;> simp <;> omega)))))))))
 
-/-- `sub43` in the patterned frame: subtracts `u + 976*2^32*kap`, leaving `c*d`. -/
 theorem sub43K_spec {R S Z cs U : List Wire} {cin : Wire} (g : Geo R S Z cs U cin) {t : BasisState}
     (cl : Clean Z cs cin t) (u d : Nat) (hu : regValue U t = u) (hu32 : u < 2^32) (hd : d ≤ 976)
     (k : Wire) (hkZ : k ∉ Z) :
@@ -678,7 +655,6 @@ theorem sub43K_spec {R S Z cs U : List Wire} {cin : Wire} (g : Geo R S Z cs U ci
   refine ⟨res.1, PS_val (show u + 4294968273*d + 2^32*(976*(if t k then 1 else 0)) - 2^0*X = 4294968273*d by
     simp only [X]; cases t k <;> simp <;> omega) _ res.2⟩
 
-/-- `tInv` with the pattern of `k` removed in its first step. -/
 def tInvK (R S Z cs U : List Wire) (cin k : Wire) : Program :=
   kpat k Z ++ (KnownWindowSubDevelop.sub43 R Z cs U cin ++ (kpat k Z ++
   (copyRegister none ((R.drop 32).take 10) S ++
@@ -726,17 +702,13 @@ end ECDSAAdd.Entrant.WinArith
 namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 
-/-! ## The `W` fold with the carry `kap` of the low-window `+u` -/
 
-/-- Bit 64 of the high work half (bit 64 of the `W`-core source). -/
 def w192 (L : CuccaroStreamedSquareWideLayout) : Wire := ((L.core.work.drop 128).drop 43).getD 21 0
-/-- `w192 ^= kap`. -/
 def kw (L : CuccaroStreamedSquareWideLayout) : Program := [Instr.CX (eU L) (w192 L)]
 def wFwdK (L : CuccaroStreamedSquareWideLayout) : Program :=
   WinArith.tFwdK (mR L) (mS L) (mZ L) (mC L) (mU L) L.core.cin (eU L)
 def wInvK (L : CuccaroStreamedSquareWideLayout) : Program :=
   WinArith.tInvK (mR L) (mS L) (mZ L) (mC L) (mU L) L.core.cin (eU L)
-/-- The `W` core with `2^64*kap` added to its source. -/
 def wCoreK (L : CuccaroStreamedSquareWideLayout) : Program := kw L ++ (wCoreTq L ++ kw L)
 
 theorem eU_mem_prod (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : eU L ∈ L.core.product := by
@@ -777,7 +749,6 @@ theorem w192_facts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L
     fun hz => work_pad L hn _ hw1 (mZ_pad L _ hz)⟩
   exact (eU_away L hw hn).2.1 (e ▸ hw1)
 
-/-- The tail of the high work half holds `2^21*K` when only `w192` may be set. -/
 theorem tail_value (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (st : BasisState) (K : Nat) (hK : K ≤ 1) (hk : st (w192 L) = decide (K = 1))
     (hz : ∀ q ∈ (L.core.work.drop 128).drop 43, q ≠ w192 L → st q = false) :
@@ -866,7 +837,6 @@ theorem wMidK_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L
     have b := Nat.mod_lt W (show 2^128>0 by positivity)
     norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c] at b hu32 ws2 ⊢
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hK with hk | hk <;> subst hk <;> omega
-  -- frame facts of the start state
   have wnd : L.core.work.Nodup := by
     apply List.nodup_iff_count_le_one.mpr; intro q; have := lay_pos L hn q; omega
   have keepS (q : Wire) (h1 : q ∉ L.core.out) (h2 : q ∉ eReg L) (h3 : q ∉ accReg L) : s.basis q = base q :=
@@ -1015,7 +985,7 @@ theorem wMidK_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L
   refine ⟨ph, f.1, ?_, ?_, ?_⟩
   · exact (regValue_congr _ _ _ (fun q hq => f.2.2.2 q (eReg_away L hn q hq).1
       (fun hr => (m_away L hn q (Or.inl hr)).2 hq) (fun hs => (m_away L hn q (Or.inr hs)).2 hq))).trans h.2.1
-  · -- the work register is `W` again
+  ·
     have wv : regValue L.core.work (run (wFwdK L ++ (wCoreK L ++ wInvK L)) m s).basis = W := by
       rw [WinArith.split3 L.core.work 128 43 (by simp [hw.core.work])]
       have lo : regValue (L.core.work.take 128) (run (wFwdK L ++ (wCoreK L ++ wInvK L)) m s).basis = W % 2^128 := by
@@ -1042,7 +1012,7 @@ theorem wMidK_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L
     rw [accReg, WinArith.regValue_take_mod _ _ (by simp [hw.core.work]), wv, Nat.mod_eq_of_lt hWlt]
   · intro q h1 h2 h3
     by_cases hr : q ∈ mR L
-    · -- bits 163..170 of work are clear again
+    ·
       have wq : q ∈ L.core.work := mR_work L q hr
       have hd163 : q ∈ L.core.work.drop 163 := by
         have e := L.core.work.take_append_drop 163
@@ -1087,7 +1057,6 @@ end ECDSAAdd.Entrant.ControlLoan1589BFFold
 namespace ECDSAAdd.Entrant.WinArith
 open ECDSAAdd ECDSAAdd.Arithmetic Instr
 
-/-! ## Static facts of the patterned transforms -/
 
 theorem kpat_counts (k : Wire) (Z : List Wire) : toffoliCount (kpat k Z) = 0 ∧ measurementCount (kpat k Z) = 0 := by
   simp [kpat, toffoliCount, measurementCount]
@@ -1234,7 +1203,6 @@ end ECDSAAdd.Entrant.WinArith
 namespace ECDSAAdd.Entrant.ControlLoan1589BFFold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 
-/-! ## Static facts of the new B-body pieces -/
 
 theorem eLo_eReg (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (q : Wire) (h : q ∈ eLo L) : q ∈ eReg L :=
   (eK_mem L hw).2.2.2.2.1 q (List.mem_of_mem_take h)
@@ -1369,8 +1337,6 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 def wFoldN (L : CuccaroStreamedSquareWideLayout) : Program :=
   eAddLo L++(wBuild L++((wFwdK L++(wCoreK L++wInvK L))++(wUnbuildKnown L++(kapClr L++eSubK L))))
 
-/-- The restore: `+b1`, then the low-window `-u`.
-No rebuild of `W`; 733 no-op measurements keep the measurement count of the B body. -/
 def wRestoreN (L : CuccaroStreamedSquareWideLayout) : Program :=
   eAddB L++(eSubLo L++padM L 721)
 
@@ -1455,7 +1421,6 @@ theorem bBodyN_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn :
     by_cases hc' : (b0%2^32 + u)%2^32 < u
     · rw [if_pos hc']; omega
     · rw [if_neg hc']; omega
-  -- wFoldN
   have k1 := eAddLo_step L hw hn base hc O2 0 b0 hb0
   rw [hb1] at k1
   have w1 := wBuild_step L hw hn base hc O2 (2^32*H + l' + 2^128*K)
@@ -1471,14 +1436,12 @@ theorem bBodyN_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn :
   have w3 := eSubK_step L hw hn base hc O3 (2^32*H + l') 0 b1 (by omega) hb1
   have tw : Triple (BState L base O2 b0 0) (wFoldN L) (BState L base O3 E1 0) :=
     k1.seq (w1.seq (wm.seq (w5.seq (kc.seq w3))))
-  -- eFoldTq
   have f1 := eFlip_step L hw hn base c hcw O3 E1 0
   have f2 := eCore_stepTq L hw hn base hc O3 (flipE g E1) hO3
   have f3 := eFlip_step L hw hn base c hcw O4 (flipE g E1) 0
   rw [flipE_flipE] at f3
   have tf : Triple (BState L base O3 E1 0) (eFoldTq L c) (BState L base O4 E1 0) :=
     f1.seq (f2.seq f3)
-  -- wRestoreN
   have bk : (E1+b1)%2^130 = 2^32*H + l' := by show ((2^32*H + l' + 2^130 - b1) % 2^130 + b1) % 2^130 = _; omega
   have r2 := eAddB_step L hw hn base hc O4 E1 0 b1 hb1 (by rw [bk]; omega)
   rw [bk] at r2
