@@ -1,5 +1,4 @@
 import ECDSAAdd.Submission.Entrant.MainPart04Base
-import ECDSAAdd.Submission.Entrant.CarrySix
 
 -- The circuit and generic proofs live in the cached base module. This remainder
 -- instantiates the resource bounds and completes the point-addition interface.
@@ -1097,7 +1096,6 @@ theorem hostedA_window_rel (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
 
 end ECDSAAdd.Entrant.InverseCarryDevelop
 end
-
 
 section
 set_option linter.unusedSimpArgs false
