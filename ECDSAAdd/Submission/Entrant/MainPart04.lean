@@ -1,5 +1,4 @@
 import ECDSAAdd.Submission.Entrant.MainPart04Base
-import ECDSAAdd.Submission.Entrant.SquareSecond
 
 -- The circuit and generic proofs live in the cached base module. This remainder
 -- instantiates the resource bounds and completes the point-addition interface.
@@ -868,7 +867,7 @@ theorem withLowK2_bodyCK (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (
   · simp only [withLowK2,Challenge.gateSlots_append,Baselines.rename_gateSlots]; omega
 
 def branchBF (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
-  withLowK2 L ext control L.core.high (L.core.product.take 256) (ECDSAAdd.Entrant.SquareSecondStack.bBodyS L control)
+  withLowK2 L ext control L.core.high (L.core.product.take 256) (ParkCarryDevelop.hostedBody L (foldPerm L ext) control)
 
 def branchAF (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
   withLowK2 L ext control L.core.low (L.core.product.take 256) (ControlLoan1589BFFold.aBodyTq L control)
@@ -898,6 +897,156 @@ def program (L : ControlledPointLayout) : Program := place L (fastCandidate L)
 
 end ECDSAAdd.Entrant.LowZero18Square
 end -- original module boundary
+
+
+section
+set_option autoImplicit false
+set_option maxHeartbeats 6000000
+namespace ECDSAAdd.Entrant.ParkCarryDevelop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+theorem sumCarry_off_foldPad (L : CuccaroStreamedSquareWideLayout) (hn:L.wires.Nodup) :
+    L.core.sumCarry∉L.foldPad := by
+  intro h
+  apply sumCarry_away L hn
+  simpa only [foldPad,List.mem_append,restWires,List.mem_cons,List.not_mem_nil,or_false,or_assoc] using
+    (show L.core.sumCarry∈restWires L from by
+      simp only [foldPad,List.mem_append] at h
+      simp only [restWires,List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
+      tauto)
+
+theorem fold_fixes_sumCarry (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
+    (hn:L.wires.Nodup) (ext : List Wire) (hlen:300≤ext.length)
+    (away:∀q∈ext,q∉L.wires) :
+    SquareCarryLoan719.foldPerm L ext L.core.sumCarry=L.core.sumCarry := by
+  have ht:SquareCarryLoan719.target L∈L.foldPad := by
+    apply List.mem_of_mem_drop
+    exact DiagSq.getD_in (LowZero18LowK.ktmp L) 67 (by rw [LowZero18LowK.ktmp_length L hw];omega)
+  have hn1:L.core.sumCarry≠SquareCarryLoan719.target L := by
+    intro h;exact sumCarry_off_foldPad L hn (h ▸ ht)
+  have hn2:L.core.sumCarry≠ext.getD 0 0 := by
+    intro h
+    have hx:=away (ext.getD 0 0) (DiagSq.getD_in ext 0 (by omega))
+    apply hx
+    rw [←h]
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires]
+  rw [SquareCarryLoan719.foldPerm_eq L hw]
+  exact Equiv.swap_apply_of_ne_of_ne hn1 hn2
+
+end ECDSAAdd.Entrant.ParkCarryDevelop
+end
+
+section
+set_option autoImplicit false
+set_option maxHeartbeats 6000000
+namespace ECDSAAdd.Entrant.ParkCarryDevelop
+open Arithmetic LowZero18Square
+
+theorem withLowK2_body_extra (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire)
+    (src dst : List Wire) (body body0 : Program) (dT dM : Nat) (extra : Wire)
+    (hT:toffoliCount body+dT=toffoliCount body0)
+    (hM:measurementCount body+dM=measurementCount body0) (h:ExtraLe extra body body0) :
+    toffoliCount (LowZero18Square.withLowK2 L ext control src dst body)+dT=toffoliCount (LowZero18Square.withLowK2 L ext control src dst body0) ∧
+    measurementCount (LowZero18Square.withLowK2 L ext control src dst body)+dM=measurementCount (LowZero18Square.withLowK2 L ext control src dst body0) ∧
+    wires (LowZero18Square.withLowK2 L ext control src dst body)⊆insert ((foldPerm L ext) extra) (wires (LowZero18Square.withLowK2 L ext control src dst body0)) ∧
+    Challenge.gateSlots (LowZero18Square.withLowK2 L ext control src dst body)≤Challenge.gateSlots (LowZero18Square.withLowK2 L ext control src dst body0) := by
+  refine ⟨?_,?_,?_,?_⟩
+  · simp only [LowZero18Square.withLowK2,toffoliCount_append,(renameProgram_counts _ _).1]
+    omega
+  · simp only [LowZero18Square.withLowK2,measurementCount_append,(renameProgram_counts _ _).2]
+    omega
+  · intro q hq
+    by_cases he:q=(foldPerm L ext) extra
+    · exact Finset.mem_insert.mpr (Or.inl he)
+    apply Finset.mem_insert_of_mem
+    simp only [LowZero18Square.withLowK2,wires_append,renameProgram_support,Finset.mem_union,or_assoc] at hq ⊢
+    rcases hq with hq|hq|hq|hq|hq|hq|hq
+    · exact Or.inl hq
+    · exact Or.inr (Or.inl hq)
+    · exact Or.inr (Or.inr (Or.inl hq))
+    · obtain ⟨a,ha,eq⟩:=Finset.mem_image.mp hq
+      rcases Finset.mem_insert.mp (h.1 ha) with ha|ha
+      · apply False.elim
+        apply he
+        exact eq.symm.trans (congrArg (foldPerm L ext) ha)
+      · have image: q∈(wires body0).image (foldPerm L ext) := Finset.mem_image.mpr ⟨a,ha,eq⟩
+        exact Or.inr (Or.inr (Or.inr (Or.inl image)))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inl hq))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl hq)))))
+    · exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr hq)))))
+  · have slots:=h.2
+    simp only [LowZero18Square.withLowK2,Challenge.gateSlots_append,Baselines.rename_gateSlots]
+    omega
+
+end ECDSAAdd.Entrant.ParkCarryDevelop
+end
+
+section
+set_option autoImplicit false
+set_option maxHeartbeats 6000000
+namespace ECDSAAdd.Entrant.ParkCarryDevelop
+open Arithmetic
+
+theorem ExtraLe.rename (rho : Equiv.Perm Wire) {q : Wire} {P Q : Program} (h:ExtraLe q P Q) :
+    ExtraLe (rho q) (renameProgram rho P) (renameProgram rho Q) := by
+  refine ⟨?_,?_⟩
+  · rw [renameProgram_support,renameProgram_support]
+    intro w hw
+    obtain ⟨a,ha,rfl⟩:=Finset.mem_image.mp hw
+    rcases Finset.mem_insert.mp (h.1 ha) with ha|ha
+    · exact Finset.mem_insert.mpr (Or.inl (congrArg rho ha))
+    · exact Finset.mem_insert_of_mem (Finset.mem_image.mpr ⟨a,ha,rfl⟩)
+  · simpa only [Baselines.rename_gateSlots] using h.2
+
+theorem hosted_window_rel (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
+    (ext : List Wire) (c : Wire) (src dst : List Wire) :
+    toffoliCount (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))+1052=
+      toffoliCount (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) ∧
+    measurementCount (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))+4=
+      measurementCount (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) ∧
+    wires (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))⊆
+      insert L.core.sumCarry (wires (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c))) ∧
+    Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))≤
+      Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) := by
+  have h:=hosted_rel L hw (LowZero18Square.foldPerm L ext) c
+  simpa only [Equiv.apply_symm_apply] using
+    withLowK2_body_extra L ext c src dst _ _ 1052 4 _ h.1 h.2.1 h.2.2
+
+end ECDSAAdd.Entrant.ParkCarryDevelop
+end
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.ParkCarryDevelop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+
+theorem sumCarry_gPrep (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) :
+    L.core.sumCarry∈wires (OwnDiagAll12Square.gPrep L) := by
+  have h:=OwnDiagAll12Square.sum_lengths L hw
+  rw [OwnDiagAll12Square.gPrep,addInPlace_wires _ _ _ _ (by omega) (by omega)]
+  simp [CuccaroStreamedSquareLayout.sum]
+
+end ECDSAAdd.Entrant.ParkCarryDevelop
+end
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.ParkCarryDevelop
+open Arithmetic
+
+theorem absorb_support (q : Wire) (P P0 B B0 : Program)
+    (hp:wires P⊆wires P0) (hb:wires B⊆insert q (wires B0)) (hq:q∈wires P0) :
+    wires (P++B)⊆wires (P0++B0) := by
+  rw [wires_append,wires_append]
+  apply Finset.union_subset
+  · exact fun _ h=>Finset.mem_union_left _ (hp h)
+  · intro x hx
+    rcases Finset.mem_insert.mp (hb hx) with h|h
+    · exact Finset.mem_union_left _ (h ▸ hq)
+    · exact Finset.mem_union_right _ h
+
+end ECDSAAdd.Entrant.ParkCarryDevelop
+end
 
 -- ===== ECDSAAdd.Submission.Entrant.LowZero18SquareSupport =====
 section
@@ -1675,7 +1824,7 @@ theorem branchBF_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (B O : Nat) (hO : O<SquareReduction.p)
     (s : State) (records : List Bool) (hb : regValue L.core.high s.basis=B)
     (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
-    (hc : L.PairClean s.basis)
+    (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
     (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
     (run (branchBF L ext control) records s).phase=s.phase ∧
     regValue L.core.out (run (branchBF L ext control) records s).basis=
@@ -1695,12 +1844,14 @@ theorem branchBF_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (List.take_sublist 256 L.core.product).count_le q
   have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
     (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
-  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (ECDSAAdd.Entrant.SquareSecondStack.bBodyS L control) := fun q hq hw' =>
-    he.away q hq (List.mem_toFinset.mp (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_support L hw nd control hw'))
+  simp only [branchBF,ParkCarryDevelop.hosted_eq L (foldPerm L ext) control
+    (ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (ParkCarryDevelop.body L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (ParkCarryDevelop.body_support L hw nd control hw'))
   apply LowZero18Square.withLowK2_correct L hw control hn L.core.high (L.core.product.take 256) srcCount dstCount
     (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
     (by simp [hw.core.product,L.core.high_length hw.core]) ext he.nodup he.away he.len
-    (ECDSAAdd.Entrant.SquareSecondStack.bBodyS L control) hbody s records hc dstZero hz
+    (ParkCarryDevelop.body L control) hbody s records hc dstZero hz
   intro t m dstValue same
   rw [hb] at dstValue
   change regValue (L.core.product.take 256) t.basis=M^2 at dstValue
@@ -1717,7 +1868,12 @@ theorem branchBF_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have ctrlT : t.basis control=s.basis control := same control ctrlProd
   have hg : t.basis control=false → M=0 := by
     intro h; rw [ctrlT] at h; simp [M,h]
-  have frame := ECDSAAdd.Entrant.SquareSecondStack.bBodyS_frame L hw nd control hcw t.basis M mb full clean O hO hg t m ⟨outO,fun _ _ => rfl⟩
+  have sumProd:L.core.sumCarry∉L.core.product.take 256 := by
+    intro h
+    apply ParkCarryDevelop.sumCarry_away L nd
+    simp [ParkCarryDevelop.restWires,List.mem_of_mem_take h]
+  have hsumT:t.basis L.core.sumCarry=false := (same _ sumProd).trans hsum
+  have frame := ParkCarryDevelop.body_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg t m ⟨outO,fun _ _ => rfl⟩
   rw [ControlLoan1589BFFold.bO4_eq M O (t.basis control) mb hg hO,ctrlT] at frame
   exact ⟨frame.1,frame.2.1,frame.2.2⟩
 
@@ -1833,7 +1989,8 @@ theorem raw_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
       (SquareFrame L.core.out s.basis OB) := by
     intro t m hf
     have h := branchBF_correct L hw ext control hn B OC (ofCast_lt _ _) t m (high _ _ hf) hf.1 (prod _ _ hf)
-      (L.squareFrame_clean nd s.basis t.basis OC hf hc) he (extZ _ _ hf)
+      (L.squareFrame_clean nd s.basis t.basis OC hf hc)
+      ((hf.2 _ (ParkCarryDevelop.sumCarry_off_regs L nd).1).trans hs0) he (extZ _ _ hf)
     rw [hf.2 control ctrlAway] at h
     exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
   have stepA : Triple (SquareFrame L.core.out s.basis OB) (branchAF L ext control)
@@ -2134,7 +2291,7 @@ theorem withLowK2_body_rel (L : CuccaroStreamedSquareWideLayout) (ext : List Wir
 
 theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
-    toffoliCount (raw L ext control)+2995=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
+    toffoliCount (raw L ext control)+3024=toffoliCount (SquareCarryLoan719BF.raw L ext control) ∧
     measurementCount (raw L ext control)+75=measurementCount (SquareCarryLoan719BF.raw L ext control) := by
   have low := L.core.low_length hw.core
   have high := L.core.high_length hw.core
@@ -2149,8 +2306,7 @@ theorem raw_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 1023 4
-    (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).1 (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).2.1 (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).2.2
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarryDevelop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256)
   obtain ⟨a1,a2,a3,a4⟩ := withLowK2_body_rel L ext control L.core.low (L.core.product.take 256) _ _ 128 3
     (QRel.aBody_rel L hw control).1 (QRel.aBody_rel L hw control).2.1 (QRel.aBody_rel L hw control).2.2
   rw [if_neg (show ¬L.core.sum.length=128 by omega)] at c
@@ -2178,18 +2334,24 @@ theorem raw_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 1023 4
-    (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).1 (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).2.1 (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).2.2
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarryDevelop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256)
   obtain ⟨a1,a2,a3,a4⟩ := withLowK2_body_rel L ext control L.core.low (L.core.product.take 256) _ _ 128 3
     (QRel.aBody_rel L hw control).1 (QRel.aBody_rel L hw control).2.1 (QRel.aBody_rel L hw control).2.2
   have k3 := q3.trans k3
-  have b := b3.trans b
+  have b := b3.trans (Finset.insert_subset_insert L.core.sumCarry b)
   have a := a3.trans a
-  simp only [raw,SquareCarryLoan719BF.raw,LowZero18Square.branchCK,LowZero18Square.branchBF,
-    LowZero18Square.branchAF,SquareCarryLoan719BF.branchCK,SquareCarryLoan719BF.branchBF,
-    SquareCarryLoan719BF.branchAF,reflection,SquareCarryLoan719BF.reflection,wires_append]
-  repeat' apply Finset.union_subset_union
-  all_goals first | exact k3.trans c | exact c | exact b | exact a | exact Finset.Subset.refl _
+  have ck:wires (LowZero18Square.branchCK L ext control)⊆wires (SquareCarryLoan719BF.branchCK L ext control) := by
+    simp only [LowZero18Square.branchCK,SquareCarryLoan719BF.branchCK,wires_append]
+    repeat' apply Finset.union_subset_union
+    all_goals first | exact k3.trans c | exact Finset.Subset.refl _
+  have qmem:L.core.sumCarry∈wires (SquareCarryLoan719BF.branchCK L ext control) := by
+    simp only [SquareCarryLoan719BF.branchCK,wires_append]
+    exact Finset.mem_union_left _ (Finset.mem_union_left _ (ParkCarryDevelop.sumCarry_gPrep L hw))
+  have cb:=ParkCarryDevelop.absorb_support L.core.sumCarry _ _ _ _ ck b qmem
+  simp only [wires_append] at cb
+  have aa:wires (LowZero18Square.branchAF L ext control)⊆wires (SquareCarryLoan719BF.branchAF L ext control) := a
+  simp only [raw,SquareCarryLoan719BF.raw,wires_append]
+  exact Finset.union_subset_union (Finset.union_subset_union cb aa) (Finset.Subset.refl _)
 
 theorem raw_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
@@ -2207,8 +2369,7 @@ theorem raw_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
   obtain ⟨q1,q2,q3,q4⟩ := withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
     (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
-  obtain ⟨b1,b2,b3,b4⟩ := withLowK2_body_rel L ext control L.core.high (L.core.product.take 256) _ _ 1023 4
-    (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).1 (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).2.1 (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_rel L hw control).2.2
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarryDevelop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256)
   obtain ⟨a1,a2,a3,a4⟩ := withLowK2_body_rel L ext control L.core.low (L.core.product.take 256) _ _ 128 3
     (QRel.aBody_rel L hw control).1 (QRel.aBody_rel L hw control).2.1 (QRel.aBody_rel L hw control).2.2
   simp only [raw,SquareCarryLoan719BF.raw,LowZero18Square.branchCK,LowZero18Square.branchBF,
@@ -2223,7 +2384,7 @@ private theorem mRename (f : Wire→Wire) (P : Program) :
     measurementCount (renameProgram f P)=measurementCount P := (renameProgram_counts f P).2
 
 theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+2995=toffoliCount (SquareCarryLoan719BF.program L) ∧
+    toffoliCount (program L)+3024=toffoliCount (SquareCarryLoan719BF.program L) ∧
     measurementCount (program L)+75=measurementCount (SquareCarryLoan719BF.program L) := by
   have h := raw_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
     (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
@@ -2231,7 +2392,7 @@ theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
     fastCandidate,SquareCarryLoan719BF.fastCandidate,tRename,mRename] using h
 
 theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=49264 ∧ measurementCount (program L)=53000 := by
+    toffoliCount (program L)=49235 ∧ measurementCount (program L)=53000 := by
   have a := counts_diff L hw
   have b := SquareCarryLoan719BF.counts L hw
   constructor <;> omega
@@ -2359,8 +2520,12 @@ private theorem raw_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Width
     simp only [withLowK2,gatePhysical_append] at c ⊢
     tauto
   have b := withLowK2_physical_of_old2 L hw ext control hn he L.core.high (L.core.product.take 256)
-    (ControlLoan1589BFFold.bBody L control) (ECDSAAdd.Entrant.SquareSecondStack.bBodyS L control) sc.2.1 sc.2.2.2
-    (by omega) (by omega) (by omega) old.1.1.2 (ECDSAAdd.Entrant.SquareSecondStack.bBodyS_physical L hw control hn)
+    (ControlLoan1589BFFold.bBody L control) (ParkCarryDevelop.hostedBody L (foldPerm L ext) control) sc.2.1 sc.2.2.2
+    (by omega) (by omega) (by omega) old.1.1.2 (by
+      rw [ParkCarryDevelop.hosted_eq L (foldPerm L ext) control
+        (ParkCarryDevelop.fold_fixes_sumCarry L hw (List.nodup_cons.mp hn).2 ext he.len
+          (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
+      exact ParkCarryDevelop.body_physical L hw control hn)
   have a := withLowK2_physical_of_old2 L hw ext control hn he L.core.low (L.core.product.take 256)
     (ControlLoan1589BFFold.aBody L control) (ControlLoan1589BFFold.aBodyTq L control) sc.1 sc.2.2.2
     (by omega) (by omega) (by omega) old.1.2 (ControlLoan1589BFFold.aBody_physicalTq L hw control hn)
@@ -2420,7 +2585,7 @@ def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
     (exit Rolling1588.exitKernel L) cx cy
 
 private def Metrics (P Q : Program) : Prop :=
-  toffoliCount P+2995=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
+  toffoliCount P+3024=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
     gateSlots P≤gateSlots Q
 
 private theorem gen_metrics_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
@@ -2442,7 +2607,7 @@ private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy :
     ⟨counts.1,counts.2,LowZero18Square.slots_le L hw⟩
 
 theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+2995=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+3024=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)+75=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
   ⟨(gen_metrics L hw cx cy).1,(gen_metrics L hw cx cy).2.1⟩
 
@@ -2513,7 +2678,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
     (Rolling1588BFFinal.wrapper_qubits C cx cy)
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2149396 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2149208 := by
   have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
   have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -2536,7 +2701,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2149396,1499945,1588,50139199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2149208,1499945,1588,50139199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -2553,7 +2718,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2149396 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2149208 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
