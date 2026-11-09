@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.ParkAThird
+import ECDSAAdd.Submission.Entrant.ParkAMany
 import ECDSAAdd.Submission.Entrant.ParkCarry10
 import ECDSAAdd.Submission.Entrant.ParkCarry9
 import ECDSAAdd.Submission.Entrant.MainPart04Base
@@ -6772,4 +6772,27 @@ theorem hostedATriple_fold_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Wid
  rw [hostedATriple_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
  exact aBodyTriple_support L hw hn c
 end ThirdSavedCarryDevelop
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+
+theorem eU_off_aBodySelected (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (c:Wire) (hc:c∉L.wires):eU L∉wires (aBodySelected L c):=by
+ intro h
+ rcases Finset.mem_insert.mp (aBodySelected_refined L hw c h) with e|h
+ · exact (ThirdSavedCarryDevelop.spare_ne_eU L hw hn) e.symm
+ · exact InverseCarryDevelop.eU_off_aBodyDual L hw hn c hc h
+
+theorem hostedASelected_fold_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths)
+ (hn:L.wires.Nodup) (ext:List Wire) (c:Wire) (hlen:300≤ext.length) (away:∀q∈ext,q∉L.wires):
+ wires (hostedASelected L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset:=by
+ rw [hostedASelected_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
+ exact aBodySelected_support L hw hn c
+end ManyACarryDevelop
 end
