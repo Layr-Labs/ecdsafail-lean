@@ -1688,7 +1688,7 @@ theorem buildMany_frame (k:Nat) (acc Z bank : List Wire) (cin : Wire) (src hs : 
     (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (NarrowAcc.build8 acc Z bank cin src)) (rq:r≠q)
     (hp:s.basis p=false) (freshP:p∉cin::(src++acc++Z++bank))
     (offP:p∉wires (buildDual acc Z bank cin src q r))
-    (hk:k≤33) (ndhs:hs.Nodup)
+    (hk:k≤62) (ndhs:hs.Nodup)
     (hu:∀u∈hs,s.basis u=false) (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
     (offU:∀u∈hs,u∉wires (buildTriple acc Z bank cin src q r p)) :
     run (buildMany k acc Z bank cin src hs q r p) m s=
@@ -1925,7 +1925,7 @@ theorem unbuildMany_frame (k:Nat) (acc Z bank : List Wire) (cin : Wire) (src hs 
     (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src)) (rq:r≠q)
     (savedP:s.basis p=cacheBit7 (regValue src s.basis)) (freshP:p∉cin::(src++acc++Z++bank))
     (offP:p∉wires (unbuildDual acc Z bank cin src q r)) (pq:p≠q) (pr:p≠r)
-    (hk:k≤33) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+    (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
     (savedU:hs.map s.basis=bankValues 7 k (regValue src s.basis))
     (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
     (offU:∀u∈hs,u∉wires (unbuildTriple acc Z bank cin src q r p)) :
@@ -2178,7 +2178,7 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
 theorem buildMany_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤33) (hh:hs.length=k):
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62) (hh:hs.length=k):
  toffoliCount (buildMany k acc Z bank cin src hs q r p)=toffoliCount (buildTriple acc Z bank cin src q r p) ∧
  measurementCount (buildMany k acc Z bank cin src hs q r p)=measurementCount (buildTriple acc Z bank cin src q r p) ∧
  Challenge.gateSlots (buildMany k acc Z bank cin src hs q r p)=Challenge.gateSlots (buildTriple acc Z bank cin src q r p)+k:=by
@@ -2194,7 +2194,7 @@ theorem buildMany_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List 
  exact ⟨by omega,by omega,by omega⟩
 
 theorem unbuildMany_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤33) (hh:hs.length=k):
+ (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤62) (hh:hs.length=k):
  toffoliCount (unbuildMany k acc Z bank cin src hs q r p)+k=toffoliCount (unbuildTriple acc Z bank cin src q r p) ∧
  measurementCount (unbuildMany k acc Z bank cin src hs q r p)=measurementCount (unbuildTriple acc Z bank cin src q r p) ∧
  Challenge.gateSlots (unbuildMany k acc Z bank cin src hs q r p)+4*k=Challenge.gateSlots (unbuildTriple acc Z bank cin src q r p):=by
@@ -2270,7 +2270,7 @@ theorem cached_wloop_many_eq (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:L
  (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false) (zeroP:s.basis p=false) (zeroU:∀u∈hs,s.basis u=false)
  (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
  (freshP:p∉cin::(src++acc++Z++bank)) (pq:p≠q) (pr:p≠r)
- (hk:k≤33) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+ (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
  (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
  (oldNe:∀u∈hs,u≠q ∧ u≠r ∧ u≠p)
  (offF:q∉wires (NarrowAcc.build8 acc Z bank cin src)) (offI:q∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src))
@@ -2344,7 +2344,7 @@ theorem compiled_wloop_many_eq (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs
  (offIR:r∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src))
  (offFP:p∉wires (buildDual acc Z bank cin src q r)) (offMP:p∉wires middle)
  (offIP:p∉wires (unbuildDual acc Z bank cin src q r))
- (hk:k≤33) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+ (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
  (zeroU:∀u∈hs,s.basis u=false) (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
  (oldNe:∀u∈hs,u≠q ∧ u≠r ∧ u≠p)
  (offFU:∀u∈hs,u∉wires (buildTriple acc Z bank cin src q r p))
@@ -2439,7 +2439,7 @@ def aFoldMany (k:Nat) (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire
  unbuildMany k (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
 theorem aFoldMany_eq (k:Nat) (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
     (g:Wire) (hs:List Wire) (newMiddle:Program) (hg:g∉L.wires)
-    (hk:k≤33) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+    (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
     (work:∀u∈hs,u∈L.core.work)
     (freshU:∀u∈hs,u∉L.core.cin::(hiReg L++accReg L++accZ L++accBank L))
     (oldNe:∀u∈hs,u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L)
@@ -2564,19 +2564,19 @@ theorem support_surround (pre old new post:Program) (hs:List Wire)
  · exact Or.inl (Or.inr hw)
 
 theorem buildMany_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤33):
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62):
  wires (buildMany k acc Z bank cin src hs q r p)⊆wires (buildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
  have len:=sub6_lengths acc Z bank src ha hl hz hb
  exact support_surround _ _ _ _ hs (cachedSubMany_support k _ _ _ hs cin q r p (by omega) (by omega) (by omega))
 
 theorem unbuildMany_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤33):
+ (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤62):
  wires (unbuildMany k acc Z bank cin src hs q r p)⊆wires (unbuildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
  exact support_surround _ _ _ _ hs (consumedAddMany_support k src Z ((acc.take 139).drop 6) (bank.take 132) hs cin q r p
   (by omega) (by simp only[List.length_drop,List.length_take];omega) (by simp only[List.length_take];omega))
 
 theorem buildMany_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤33)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62)
  (fresh:∀u∈hs,u∉bank) (physical:GatePhysical (buildTriple acc Z bank cin src q r p)):
  GatePhysical (buildMany k acc Z bank cin src hs q r p):=by
  have len:=sub6_lengths acc Z bank src ha hl hz hb
@@ -2588,7 +2588,7 @@ theorem buildMany_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:Lis
  exact ⟨⟨physical.1.1,sub⟩,physical.2⟩
 
 theorem unbuildMany_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤33)
+ (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤62)
  (fresh:∀u∈hs,u∉bank) (physical:GatePhysical (unbuildTriple acc Z bank cin src q r p)):
  GatePhysical (unbuildMany k acc Z bank cin src hs q r p):=by
  rw[unbuildTriple,gatePhysical_append,gatePhysical_append]at physical
@@ -2614,7 +2614,7 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
 theorem compiled_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤33) (hostlen:hs.length=k)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62) (hostlen:hs.length=k)
  (cert:ManyRewrites hs middle newMiddle):
  toffoliCount (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)+k≤
  toffoliCount (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) ∧
@@ -2631,7 +2631,7 @@ theorem compiled_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List W
  exact ⟨by omega,by omega,by omega⟩
 
 theorem compiled_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤33)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62)
  (cert:ManyRewrites hs middle newMiddle):
  wires (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)⊆
  wires (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
@@ -2650,7 +2650,7 @@ theorem compiled_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List 
    · exact Or.inr hw
 
 theorem compiled_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤33)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62)
  (fresh:∀u∈hs,u∉bank) (cert:ManyRewrites hs middle newMiddle)
  (physical:GatePhysical (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p)):
  GatePhysical (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p):=by
@@ -2668,6 +2668,185 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ManyACarryDevelop
+open FourthASavedCarryDevelop ThirdSavedCarryDevelop ZeroReadDevelop Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.wires
+
+def zA (L:CuccaroStreamedSquareWideLayout):List Wire:=(accZ L).take 31
+
+def ZSame (L:CuccaroStreamedSquareWideLayout):Prop:=
+ buildTriple (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)=
+  buildTriple (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L) ∧
+ unbuildTriple (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)=
+  unbuildTriple (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L) ∧
+ NarrowAcc.build8 (accReg L) (zA L) (accBank L) L.core.cin (hiReg L)=wBuild L ∧
+ SourceAddFourDevelop.unbuild (accReg L) (zA L) (accBank L) L.core.cin (hiReg L)=wUnbuildKnown L ∧
+ buildDual (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L)=
+  buildDual (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) ∧
+ unbuildDual (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L)=
+  unbuildDual (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L)
+instance (L:CuccaroStreamedSquareWideLayout):Decidable (ZSame L):=by
+ unfold ZSame
+ infer_instance
+
+theorem fresh_take (cin:Wire) (src acc Z bank:List Wire) (n:Nat) (u:Wire)
+ (h:u∉cin::(src++acc++Z++bank)):u∉cin::(src++acc++Z.take n++bank):=by
+ intro bad
+ apply h
+ simp only[List.mem_cons,List.mem_append]at bad ⊢
+ rcases bad with b|b|b|b|b
+ · exact Or.inl b
+ · exact Or.inr (Or.inl b)
+ · exact Or.inr (Or.inr (Or.inl b))
+ · exact Or.inr (Or.inr (Or.inr (Or.inl (List.mem_of_mem_take b))))
+ · exact Or.inr (Or.inr (Or.inr (Or.inr b)))
+
+theorem zA_length (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths):(zA L).length=31:=by
+ have lens:=acc_lengths L hw
+ simp only[zA,List.length_take]
+ omega
+
+theorem zA_fits (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup):
+ ∀f∈earlyHTerms (hiReg L),Acc.Fits (accReg L) (zA L) (accBank L) L.core.cin 163 f:=by
+ intro f hf
+ have o:=wTerms_fits L hw hn f hf
+ have zl:=zA_length L hw
+ have hl:=hiReg_length L hw
+ refine ⟨⟨o.len,?_,o.bankLen⟩,?_⟩
+ · rw[zl]
+   simp only[earlyHTerms,List.mem_cons,List.not_mem_nil,or_false]at hf
+   rcases hf with rfl|rfl|rfl|rfl <;> simp[Acc.earlyTerm,hl]
+ · have nd:=o.nd
+   apply List.nodup_iff_count_le_one.mpr
+   intro q
+   have h:=List.nodup_iff_count_le_one.mp nd q
+   have t:=(List.take_sublist 31 (accZ L)).count_le q
+   simp only[zA,List.count_cons,List.count_append]at h ⊢
+   omega
+
+def aFoldManyZ (k:Nat) (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire) (middle:Program):Program:=
+ buildMany k (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)++middle++
+ unbuildMany k (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
+
+theorem aFoldManyZ_eq (k:Nat) (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+    (g:Wire) (hs:List Wire) (newMiddle:Program) (hg:g∉L.wires)
+    (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+    (work:∀u∈hs,u∈L.core.work)
+    (freshU:∀u∈hs,u∉L.core.cin::(hiReg L++accReg L++zA L++accBank L))
+    (oldNe:∀u∈hs,u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L) (same:ZSame L)
+    (cert:ManyRewrites hs (aMiddle L g) newMiddle) (base : BasisState) (hc:L.PairClean base) (hsum:base L.core.sumCarry=false) (hV:base (eV L)=false) (hP:base (spare L)=false)
+    (O : Nat) (hO:O<SquareReduction.p) (s : State) (m : List Bool) (hf:SquareFrame L.core.out base O s.basis) :
+    run (aFoldManyZ k L g hs newMiddle) m s=run (aFoldTriple L g) m s := by
+  have clean:=L.squareFrame_clean hn base s.basis O hf hc
+  have lens:=acc_lengths L hw
+  have hz0:∀q∈accZ L,s.basis q=false := by
+    intro q hq
+    rcases accZ_mem L q hq with h|h
+    · exact (regValue_zero _ _).mp clean.pad q h
+    · exact (regValue_zero _ _).mp clean.work q (List.mem_of_mem_drop h)
+  have hz:∀q∈zA L,s.basis q=false := fun q hq=>hz0 q (List.mem_of_mem_take hq)
+  have hb:∀q∈accBank L,s.basis q=false := fun q hq =>
+    (regValue_zero _ _).mp clean.pad q (List.mem_of_mem_take hq)
+  have ha:regValue (accReg L) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq=>(regValue_zero _ _).mp clean.work q (accReg_work L q hq))
+  have hfZ:=zA_fits L hw hn
+  have away:=ParkCarryDevelop.sumCarry_off_regs L hn
+  have zero:s.basis L.core.sumCarry=false := (hf.2 _ away.1).trans hsum
+  have off:=a_wloop_sumCarry_free L hw hn g hg
+  have offF:L.core.sumCarry∉wires (NarrowAcc.build8 (accReg L) (zA L) (accBank L) L.core.cin (hiReg L)) := by
+    rw[same.2.2.1];exact off.1
+  have offI:L.core.sumCarry∉wires (SourceAddFourDevelop.unbuild (accReg L) (zA L) (accBank L) L.core.cin (hiReg L)) := by
+    rw[same.2.2.2.1];exact off.2.2
+  have zeroR:s.basis (eV L)=false :=
+    (hf.2 _ (eReg_away L hn _ (eK_mem L hw).2.2.1).1).trans hV
+  have freshQ:L.core.sumCarry∉L.core.cin::(hiReg L++accReg L++zA L++accBank L):=
+    fresh_take _ _ _ _ _ 31 _ (sumCarry_fresh_domain L hn)
+  have freshR:eV L∉L.core.cin::(hiReg L++accReg L++zA L++accBank L):=
+    fresh_take _ _ _ _ _ 31 _ (eV_fresh_domain L hw hn)
+  have freshP:spare L∉L.core.cin::(hiReg L++accReg L++zA L++accBank L):=
+    fresh_take _ _ _ _ _ 31 _ (spare_fresh_domain L hw hn)
+  have offR:=wloop_original_off (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) (eV L)
+    lens.1 (hiReg_length L hw) hfZ freshR
+  have zeroP:s.basis (spare L)=false:=
+   (hf.2 _ (eReg_away L hn _ (spare_mem_eReg L hw)).1).trans hP
+  have offP:=spare_off_dual L hw hn
+  have offPF:spare L∉wires (buildDual (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L)) := by
+    rw[same.2.2.2.2.1];exact offP.1
+  have offPI:spare L∉wires (unbuildDual (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L)) := by
+    rw[same.2.2.2.2.2];exact offP.2
+  have zeroU:∀u∈hs,s.basis u=false:=by
+   intro u hu
+   exact (regValue_zero _ _).mp clean.work u (work u hu)
+  have offU (u:Wire) (hu:u∈hs):u∉wires (buildTriple (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)) ∧
+   u∉wires (unbuildTriple (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)):=
+   fresh_off_triple (accReg L) (zA L) (accBank L) L.core.cin (hiReg L)
+    L.core.sumCarry (eV L) (spare L) u lens.1 (hiReg_length L hw) hfZ
+    (freshU u hu) (oldNe u hu).1 (oldNe u hu).2.1 (oldNe u hu).2.2
+  have g0:WReady (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
+    (middleState (wBuild L) (aMiddle L g) s m) := a_middle_good L hw hn g hg base hc O hO s m hf
+  have good:WReady (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
+    (middleState (NarrowAcc.build8 (accReg L) (zA L) (accBank L) L.core.cin (hiReg L)) (aMiddle L g) s m) := by
+    rw[same.2.2.1]
+    exact ⟨g0.1,g0.2.1,fun w hw=>g0.2.2.1 w (List.mem_of_mem_take hw),g0.2.2.2.1,g0.2.2.2.2⟩
+  have eq:=compiled_wloop_many_eq k (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) hs
+   L.core.sumCarry (eV L) (spare L) (aMiddle L g) newMiddle
+   lens.1 (hiReg_length L hw) hfZ s m hz hb clean.cin ha zero zeroR zeroP
+   freshQ freshR (eV_ne_sumCarry L hw hn)
+   freshP (spare_ne_sumCarry L hw hn) (spare_ne_eV L hw hn)
+   offF off.2.1 offI offR.1 (eV_off_amiddle L hw hn g hg) offR.2
+   offPF (spare_off_amiddle L hw hn g hg) offPI hk ndhs hostlen zeroU freshU oldNe
+   (fun u hu=>(offU u hu).1) (fun u hu=>(offU u hu).2) cert good
+  rw[same.1,same.2.1]at eq
+  simpa only[aFoldManyZ,aFoldTriple]using eq
+
+theorem aFoldManyZ_resources (k:Nat) (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire) (hs:List Wire) (middle:Program)
+ (hk:k≤62) (hostlen:hs.length=k) (same:ZSame L) (cert:ManyRewrites hs (aMiddle L g) middle):
+ toffoliCount (aFoldManyZ k L g hs middle)+k≤toffoliCount (aFoldTriple L g) ∧
+ measurementCount (aFoldManyZ k L g hs middle)=measurementCount (aFoldTriple L g) ∧
+ Challenge.gateSlots (aFoldManyZ k L g hs middle)+3*k≤Challenge.gateSlots (aFoldTriple L g):=by
+ have lens:=acc_lengths L hw
+ have zl:=zA_length L hw
+ have h:=compiled_counts k (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
+  (aMiddle L g) middle lens.1 (hiReg_length L hw) (by omega) (by omega) hk hostlen cert
+ rw[same.1,same.2.1]at h
+ exact h
+
+theorem aFoldManyZ_support (k:Nat) (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire) (hs:List Wire) (middle:Program)
+ (hk:k≤62) (same:ZSame L) (cert:ManyRewrites hs (aMiddle L g) middle):
+ wires (aFoldManyZ k L g hs middle)⊆wires (aFoldTriple L g)∪hs.toFinset:=by
+ have lens:=acc_lengths L hw
+ have zl:=zA_length L hw
+ have h:=compiled_support k (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
+  (aMiddle L g) middle lens.1 (hiReg_length L hw) (by omega) (by omega) hk cert
+ rw[same.1,same.2.1]at h
+ exact h
+
+theorem aFoldManyZ_physical (k:Nat) (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire) (hs:List Wire) (middle:Program)
+ (hk:k≤62) (same:ZSame L) (fresh:∀u∈hs,u∉accBank L) (cert:ManyRewrites hs (aMiddle L g) middle)
+ (physical:GatePhysical (aFoldTriple L g)):GatePhysical (aFoldManyZ k L g hs middle):=by
+ have lens:=acc_lengths L hw
+ have zl:=zA_length L hw
+ have old:GatePhysical (buildTriple (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)++
+   aMiddle L g++unbuildTriple (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)):=by
+  rw[same.1,same.2.1]
+  exact physical
+ exact compiled_physical k (accReg L) (zA L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
+  (aMiddle L g) middle lens.1 (hiReg_length L hw) (by omega) (by omega) hk fresh cert old
+#print axioms aFoldManyZ_eq
+#print axioms aFoldManyZ_resources
+#print axioms aFoldManyZ_support
+#print axioms aFoldManyZ_physical
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
 open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
 open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
 set_option maxHeartbeats 6000000
@@ -2675,10 +2854,17 @@ set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
-def loans (L:CuccaroStreamedSquareWideLayout):List Wire:=(L.core.work.drop 163).take 33
+def loans (L:CuccaroStreamedSquareWideLayout):List Wire:=(L.core.work.drop 163).take 33++L.core.work.drop 227
+
+def LoanReadyZ (L:CuccaroStreamedSquareWideLayout) (g u:Wire):Prop:=
+ u∈L.core.work ∧ u∉L.core.cin::(hiReg L++accReg L++zA L++accBank L) ∧
+ u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L ∧ hasWire (aBodyTriple L g) u=true
+instance (L:CuccaroStreamedSquareWideLayout) (g u:Wire):Decidable (LoanReadyZ L g u):=by
+ unfold LoanReadyZ
+ infer_instance
 
 def BankReady (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Prop:=
- hs.length=33 ∧ hs.Nodup ∧ ∀u∈hs,LoanReady L g u
+ hs.length=62 ∧ hs.Nodup ∧ (∀u∈hs,LoanReadyZ L g u) ∧ ZSame L
 instance (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Decidable (BankReady L g hs):=by
  unfold BankReady
  infer_instance
@@ -2688,7 +2874,7 @@ def aFoldSelected (L:CuccaroStreamedSquareWideLayout) (g:Wire):Program:=
  if hr:BankReady L g hs then
   match compileManyChunked? hs (aMiddle L g) with
   | none=>aFoldTriple L g
-  | some cm=>aFoldMany 33 L g hs cm.out
+  | some cm=>aFoldManyZ 62 L g hs cm.out
  else aFoldTriple L g
 
 theorem aFoldSelected_eq (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
@@ -2703,10 +2889,10 @@ theorem aFoldSelected_eq (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L
    cases he:compileManyChunked? (loans L) (aMiddle L g) with
    | none=>rfl
    | some cm=>
-    exact aFoldMany_eq 33 L hw hn g (loans L) cm.out hg (by decide) hr.2.1 hr.1
-     (fun u hu=>(hr.2.2 u hu).1) (fun u hu=>(hr.2.2 u hu).2.1)
-     (fun u hu=>⟨(hr.2.2 u hu).2.2.1,(hr.2.2 u hu).2.2.2.1,(hr.2.2 u hu).2.2.2.2.1⟩)
-     cm.proof base hc hsum hV hP O hO s m hf
+    exact aFoldManyZ_eq 62 L hw hn g (loans L) cm.out hg (by decide) hr.2.1 hr.1
+     (fun u hu=>(hr.2.2.1 u hu).1) (fun u hu=>(hr.2.2.1 u hu).2.1)
+     (fun u hu=>⟨(hr.2.2.1 u hu).2.2.1,(hr.2.2.1 u hu).2.2.2.1,(hr.2.2.1 u hu).2.2.2.2.1⟩)
+     hr.2.2.2 cm.proof base hc hsum hV hP O hO s m hf
  · rfl
 
 #print axioms aFoldSelected_eq
@@ -2723,7 +2909,7 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
 theorem aFoldMany_resources (k:Nat) (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire) (hs:List Wire) (middle:Program)
- (hk:k≤33) (hostlen:hs.length=k) (cert:ManyRewrites hs (aMiddle L g) middle):
+ (hk:k≤62) (hostlen:hs.length=k) (cert:ManyRewrites hs (aMiddle L g) middle):
  toffoliCount (aFoldMany k L g hs middle)+k≤toffoliCount (aFoldTriple L g) ∧
  measurementCount (aFoldMany k L g hs middle)=measurementCount (aFoldTriple L g) ∧
  Challenge.gateSlots (aFoldMany k L g hs middle)+3*k≤Challenge.gateSlots (aFoldTriple L g):=by
@@ -2743,7 +2929,7 @@ theorem aFoldSelected_resources (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths
    | none=>exact ⟨le_rfl,rfl,le_rfl⟩
    | some cm=>
     dsimp only
-    have h:=aFoldMany_resources 33 L hw g (loans L) cm.out (by decide) hr.1 cm.proof
+    have h:=aFoldManyZ_resources 62 L hw g (loans L) cm.out (by decide) hr.1 hr.2.2.2 cm.proof
     exact ⟨by omega,h.2.1,by omega⟩
  · exact ⟨le_rfl,rfl,le_rfl⟩
 #print axioms aFoldSelected_resources
@@ -2898,9 +3084,7 @@ theorem aFoldSelected_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) 
    cases he:compileManyChunked? (loans L) (aMiddle L g) with
    | none=>exact Finset.subset_union_left
    | some cm=>
-    have lens:=acc_lengths L hw
-    exact compiled_support 33 (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) (loans L) L.core.sumCarry (eV L) (spare L)
-     (aMiddle L g) cm.out lens.1 (hiReg_length L hw) (by omega) (by omega) (by decide) cm.proof
+    exact aFoldManyZ_support 62 L hw g (loans L) cm.out (by decide) hr.2.2.2 cm.proof
  · exact Finset.subset_union_left
 
 theorem aFoldSelected_physical (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire)
@@ -2912,12 +3096,10 @@ theorem aFoldSelected_physical (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths)
    cases he:compileManyChunked? (loans L) (aMiddle L g) with
    | none=>exact physical
    | some cm=>
-    have lens:=acc_lengths L hw
     have fresh:∀u∈loans L,u∉accBank L:=by
      intro u hu bad
-     exact (hr.2.2 u hu).2.1 (by simp[bad])
-    exact compiled_physical 33 (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) (loans L) L.core.sumCarry (eV L) (spare L)
-     (aMiddle L g) cm.out lens.1 (hiReg_length L hw) (by omega) (by omega) (by decide) fresh cm.proof physical
+     exact (hr.2.2.1 u hu).2.1 (by simp[bad])
+    exact aFoldManyZ_physical 62 L hw g (loans L) cm.out (by decide) hr.2.2.2 fresh cm.proof physical
  · exact physical
 
 theorem aBodySelected_subset (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire):
@@ -2932,7 +3114,7 @@ theorem aBodySelected_subset (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (
     rcases Finset.mem_union.mp (aFoldSelected_support L hw g hwire)with h|h
     · exact oldfold h
     · have member:w∈loans L:=List.mem_toFinset.mp h
-      exact (FourthASavedCarryDevelop.hasWire_iff _ _).mp (hr.2.2 w member).2.2.2.2.2
+      exact (FourthASavedCarryDevelop.hasWire_iff _ _).mp (hr.2.2.1 w member).2.2.2.2.2
   · simpa only[aFoldSelected,dif_neg hr]using oldfold
  intro w hw
  simp only[aBodySelected,wires_append,Finset.mem_union]at hw
@@ -3052,30 +3234,30 @@ attribute [local irreducible] ECDSAAdd.toffoliCount
 
 theorem gain_of_success (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire)
  (ready:BankReady L g (loans L)) (success:(compileManyChunked? (loans L) (aMiddle L g)).isSome=true):
- toffoliCount (aFoldSelected L g)+33≤toffoliCount (aFoldTriple L g):=by
+ toffoliCount (aFoldSelected L g)+62≤toffoliCount (aFoldTriple L g):=by
  unfold aFoldSelected
  dsimp only
  rw[dif_pos ready]
  cases he:compileManyChunked? (loans L) (aMiddle L g) with
  | none=>simp[he]at success
- | some cm=>exact (aFoldMany_resources 33 L hw g (loans L) cm.out (by decide) ready.1 cm.proof).1
+ | some cm=>exact (aFoldManyZ_resources 62 L hw g (loans L) cm.out (by decide) ready.1 ready.2.2.2 cm.proof).1
 
 theorem actual_fold_gain:
- toffoliCount (aFoldSelected Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic)+33≤
+ toffoliCount (aFoldSelected Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic)+62≤
  toffoliCount (aFoldTriple Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic):=
  gain_of_success _ (ControlledPointLayout.dialogStreamedSquareWide_widths Baselines.layout Baselines.layout_widths) _ actual_ready actual_compiled
 
 theorem body_gain (L:CuccaroStreamedSquareWideLayout) (g:Wire)
- (h:toffoliCount (aFoldSelected L g)+33≤toffoliCount (aFoldTriple L g)):
- toffoliCount (aBodySelected L g)+33≤toffoliCount (aBodyTriple L g):=by
+ (h:toffoliCount (aFoldSelected L g)+62≤toffoliCount (aFoldTriple L g)):
+ toffoliCount (aBodySelected L g)+62≤toffoliCount (aBodyTriple L g):=by
  simp only[aBodySelected,aBodyTriple,toffoliCount_append]
  omega
 
-theorem bound2882 (a b:Nat) (h:a+33≤b) (hb:b=2915):a≤2882:=by omega
+theorem bound2853 (a b:Nat) (h:a+62≤b) (hb:b=2915):a≤2853:=by omega
 
 theorem actual_body_T_le:
- toffoliCount (aBodySelected Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic)≤2882:=
- bound2882 _ _ (body_gain _ _ actual_fold_gain)
+ toffoliCount (aBodySelected Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic)≤2853:=
+ bound2853 _ _ (body_gain _ _ actual_fold_gain)
   (aBodyTriple_counts _ (ControlledPointLayout.dialogStreamedSquareWide_widths Baselines.layout Baselines.layout_widths) _).1
 #print axioms actual_fold_gain
 #print axioms actual_body_T_le
