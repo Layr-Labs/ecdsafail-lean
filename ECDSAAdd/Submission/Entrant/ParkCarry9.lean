@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.MainPart04Base
+import ECDSAAdd.Submission.Entrant.ParkCarry8
 
 -- Fourth cached carry extending the published 52bbcfbf third-carry package.
 
@@ -178,7 +178,7 @@ theorem fourth_geometry (a0 a1 a2 a3 a4 b0 b1 b2 b3 b4 k0 k1 k2 k3 cin : Wire) (
  omega
 
 theorem mapped4_read_eq (cache0 cache1 cache2 cache3 a0 a1 a2 a3 a4 b0 b1 b2 b3 b4 k0 k1 k2 k3 cin : Wire)
- (xs ys ks : List Wire)
+ (xs ys ks : List Wire) 
  (nd : (cin::(a0::a1::a2::a3::a4::xs)++(b0::b1::b2::b3::b4::ys)++(k0::k1::k2::k3::ks)).Nodup)
  (away20 : cache2 ≠ k0) (away21 : cache2 ≠ k1)
  (away30 : cache3 ≠ k0) (away31 : cache3 ≠ k1) (away32 : cache3 ≠ k2)
@@ -212,7 +212,7 @@ theorem mapped4_read_eq (cache0 cache1 cache2 cache3 a0 a1 a2 a3 a4 b0 b1 b2 b3 
 #print axioms mapped4_read_eq
 
 theorem mixed4_read_eq (cache0 cache1 cache2 cache3 a0 a1 a2 a3 a4 b0 b1 b2 b3 b4 k0 k1 k2 k3 cin : Wire)
- (expected d : Bool) (xs ys ks : List Wire) (fs : List Bool)
+ (expected d : Bool) (xs ys ks : List Wire) (fs : List Bool) 
  (nd : (cin::(a0::a1::a2::a3::a4::xs)++(b0::b1::b2::b3::b4::ys)++(k0::k1::k2::k3::ks)).Nodup)
  (away20 : cache2 ≠ k0) (away21 : cache2 ≠ k1)
  (away30 : cache3 ≠ k0) (away31 : cache3 ≠ k1) (away32 : cache3 ≠ k2)
