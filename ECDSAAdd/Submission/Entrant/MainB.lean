@@ -14765,11 +14765,60 @@ theorem firstCellsJ_physical (cells : GatePhysical (firstCells true)) : GatePhys
   simp only [firstCellsJ,gatePhysical_append]
   exact ⟨cells.1,JointForward1588.paddedG_physical,cells.2.1.2,cells.2.2⟩
 
+def firstRestZFront : Program :=
+  triple 2 3 4 d3short ++ triple 1 3 4 e3short ++ cell true 0 2 4 ++
+  triple 1 3 4 d3 ++ triple 4 1 2 e3 ++ cell true 0 3 2 ++
+  triple 4 1 2 d3short ++ triple 3 1 2 e3short ++ cell true 0 4 2
+
+def firstCellsJFront : Program :=
+  triple 2 3 4 e3 ++ (JointForward1588.paddedG ++
+    (SW.selW (s 0 1) (base 2409) FrontierSW1591.swapBody ++ firstRestZFront))
+
+def firstJointBack : Program :=
+  cell false 0 4 2 ++
+  triple 3 1 2 d3short ++ triple 4 1 2 e3short ++ cell false 0 3 2 ++
+  triple 4 1 2 d3 ++ triple 1 3 4 e3 ++ cell false 0 2 4 ++
+  triple 1 3 4 d3short ++ triple 2 3 4 e3short ++
+  SW.selW (s 0 1) (base 2409) FrontierSW1591.swapBody ++ JointInverse1588.padded ++
+  triple 2 3 4 d3
+
+theorem firstBody_true_split : firstBody true=firstCellsJFront++triple 3 1 2 d3 := by
+  simp only [firstBody,if_true,firstCellsJ,firstCellsJFront,firstRestZ,firstRestZFront,
+    List.append_assoc]
+
+theorem firstBody_false_split : firstBody false=triple 3 1 2 e3++firstJointBack := by
+  simp only [firstBody,Bool.false_eq_true,if_false,firstJoint,firstHead,firstJointBack,
+    List.append_assoc]
+
+def firstBodyShort (divide : Bool) : Program :=
+  if divide then firstCellsJFront++triple 3 1 2 d3short
+  else triple 3 1 2 e3short++firstJointBack
+
+def firstEncodeShort : Program :=
+  renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+    (ParityCodec5New.twist++
+      (FirstNonzeroCodec.encodeFirst.take 15++FirstNonzeroCodec.encodeFirst.drop 16))
+
+def firstDecodeShort : Program :=
+  renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+    ((FirstNonzeroCodec.decodeFirst.take 124++FirstNonzeroCodec.decodeFirst.drop 125)++
+      ParityCodec5New.untwist)
+
+def firstCoreModel (divide : Bool) : Program :=
+  Prefix1590.firstDecode ++
+    G0CarryLoan5.program (base 1028) (base 0) (base 768) (firstBody divide) ++
+    Prefix1590.firstEncode
+
+def firstPacketModel (divide : Bool) : Program :=
+  renameProgram (shifted (Placement5.pi 0)) (firstCoreModel divide)
+
+def firstCore (divide : Bool) : Program :=
+  (if divide then Prefix1590.firstDecode else firstDecodeShort) ++
+    G0CarryLoan5.program (base 1028) (base 0) (base 768) (firstBodyShort divide) ++
+    (if divide then firstEncodeShort else Prefix1590.firstEncode)
+
 def firstPacket (divide : Bool) : Program :=
-  renameProgram (shifted (Placement5.pi 0))
-    (Prefix1590.firstDecode ++
-      G0CarryLoan5.program (base 1028) (base 0) (base 768) (firstBody divide) ++
-      Prefix1590.firstEncode)
+  renameProgram (shifted (Placement5.pi 0)) (firstCore divide)
 
 def placedFirstPacket (divide : Bool) : Program :=
   renameProgram (OB5.sig 511) (firstPacket divide)
@@ -23729,14 +23778,296 @@ private theorem encoded_unique (E : Program) (origin : BasisState) (X Y : Fp) (s
   rw [aEncoded,bEncoded,same]
 
 
+private theorem ren_app (f : Wire→Wire) (P Q : Program) :
+    renameProgram f (P++Q)=renameProgram f P++renameProgram f Q := by
+  simp only [renameProgram,List.map_append]
 
+private theorem prefix_congr (X X' Y : Program) (hm : measurementCount X=measurementCount X')
+    (h : ∀m s,run X m s=run X' m s) (m : List Bool) (s : State) :
+    run (X++Y) m s=run (X'++Y) m s := by
+  rw [run_append X Y,run_append X' Y,hm,h]
 
+private theorem suffix_congr (X Y Y' : Program)
+    (h : ∀m s,run Y m s=run Y' m s) (m : List Bool) (s : State) :
+    run (X++Y) m s=run (X++Y') m s := by
+  rw [run_append X Y,run_append X Y',h]
 
+private theorem free_local_eq (P Q : Program) (pSupport : wires P⊆Finset.range 10)
+    (qSupport : wires Q⊆Finset.range 10) (pFree : measurementCount P=0)
+    (qFree : measurementCount Q=0) (law : ∀x<1024,MeasuredCodec5.bitRun P x=MeasuredCodec5.bitRun Q x)
+    (m : List Bool) (state : State) :
+    run (renameProgram (MeasuredCodec5.label (History5.historyMap base 0)) P) m state=
+      run (renameProgram (MeasuredCodec5.label (History5.historyMap base 0)) Q) m state := by
+  let lst : State := ⟨state.phase,fun q => state.basis (MeasuredCodec5.label (History5.historyMap base 0) q)⟩
+  let x := MeasuredCodec5.pack10 (lst.basis 0) (lst.basis 1) (lst.basis 2) (lst.basis 3) (lst.basis 4)
+    (lst.basis 5) (lst.basis 6) (lst.basis 7) (lst.basis 8) (lst.basis 9)
+  have xlt : x<1024 := MeasuredCodec5.pack10_lt _ _ _ _ _ _ _ _ _ _
+  have tb : ∀q∈Finset.range 10,lst.basis q=MeasuredCodec5.bitsOf x q := by
+    intro q hq
+    have hq' : q<10 := Finset.mem_range.mp hq
+    change lst.basis q=x.testBit q
+    rw [show x=MeasuredCodec5.pack10 (lst.basis 0) (lst.basis 1) (lst.basis 2) (lst.basis 3)
+      (lst.basis 4) (lst.basis 5) (lst.basis 6) (lst.basis 7) (lst.basis 8) (lst.basis 9) from rfl,
+      MeasuredCodec5.pack10_bits _ _ _ _ _ _ _ _ _ _ q hq']
+    interval_cases q <;> simp [MeasuredCodec5.raw]
+  have localEq : run P m lst=run Q m lst := by
+    apply FirstNonzeroCodec.run_eq_of_model P Q pSupport qSupport lst m x tb
+    rw [MeasuredCodec5.run_sim P m lst.phase x,
+      MeasuredCodec5.sim_safe P x (Replay.safe_of_no_measurements P pFree x),
+      MeasuredCodec5.run_sim Q m lst.phase x,
+      MeasuredCodec5.sim_safe Q x (Replay.safe_of_no_measurements Q qFree x),law x xlt]
+  have inj := FirstNonzeroCodec.label_inj' (History5.historyMap base 0) packetMap_injective
+  have pp := run_rename_pool (MeasuredCodec5.label (History5.historyMap base 0)) (Finset.range 10)
+    inj P pSupport m lst state rfl (fun _ _ => rfl)
+  have qq := run_rename_pool (MeasuredCodec5.label (History5.historyMap base 0)) (Finset.range 10)
+    inj Q qSupport m lst state rfl (fun _ _ => rfl)
+  apply State.extensionality
+  · exact pp.1.trans ((congrArg State.phase localEq).trans qq.1.symm)
+  · funext q
+    by_cases used : q∈(Finset.range 10).image (MeasuredCodec5.label (History5.historyMap base 0))
+    · obtain ⟨i,hi,rfl⟩ := Finset.mem_image.mp used
+      exact (pp.2 i hi).trans ((congrArg (fun t : State => t.basis i) localEq).trans (qq.2 i hi).symm)
+    · have off (E : Program) (support : wires E⊆Finset.range 10) :
+          q∉wires (renameProgram (MeasuredCodec5.label (History5.historyMap base 0)) E) := by
+        rw [renameProgram_support]
+        intro member
+        obtain ⟨i,hi,eq⟩ := Finset.mem_image.mp member
+        exact used (Finset.mem_image.mpr ⟨i,support hi,eq⟩)
+      exact (run_preserves_outside _ m state q (off P pSupport)).trans
+        (run_preserves_outside _ m state q (off Q qSupport)).symm
 
+private theorem triple_label (P : Program) :
+    triple 3 1 2 P=renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+      (mappedTriple 3 1 2 P) :=
+  (onPacket_triple 3 1 2 (by decide) (by decide) (by decide) P).symm
 
+private theorem decode_label : Prefix1590.firstDecode=
+    renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+      (FirstNonzeroCodec.decodeFirst++ParityCodec5New.untwist) := rfl
 
+private theorem encode_label : Prefix1590.firstEncode=
+    renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+      (ParityCodec5New.twist++FirstNonzeroCodec.encodeFirst) := rfl
 
+private theorem expose_label : G0CarryLoan5.expose (base 1028) (base 0)=
+    renameProgram (MeasuredCodec5.label (History5.historyMap base 0)) [.CX 1 0,.X 0] := by
+  decide +kernel
 
+private theorem restore_label : G0CarryLoan5.restore (base 1028) (base 0)=
+    renameProgram (MeasuredCodec5.label (History5.historyMap base 0)) [.X 0,.CX 1 0] := by
+  decide +kernel
+
+private theorem swap_d3 :
+    renameProgram (Equiv.swap (base 768) (base 0)) (triple 3 1 2 d3)=triple 3 1 2 d3 := by
+  decide +kernel
+
+private theorem swap_d3short :
+    renameProgram (Equiv.swap (base 768) (base 0)) (triple 3 1 2 d3short)=triple 3 1 2 d3short := by
+  decide +kernel
+
+private theorem swap_e3 :
+    renameProgram (Equiv.swap (base 768) (base 0)) (triple 3 1 2 e3)=triple 3 1 2 e3 := by
+  decide +kernel
+
+private theorem swap_e3short :
+    renameProgram (Equiv.swap (base 768) (base 0)) (triple 3 1 2 e3short)=triple 3 1 2 e3short := by
+  decide +kernel
+
+private theorem entry_law : ∀x<1024,
+    MeasuredCodec5.bitRun (mappedTriple 3 1 2 d3++([.X 0,.CX 1 0]++
+      (ParityCodec5New.twist++FirstNonzeroCodec.encodeFirst.take 16))) x=
+    MeasuredCodec5.bitRun (mappedTriple 3 1 2 d3short++([.X 0,.CX 1 0]++
+      (ParityCodec5New.twist++FirstNonzeroCodec.encodeFirst.take 15))) x := by
+  decide +kernel
+
+private theorem exit_law : ∀x<1024,
+    MeasuredCodec5.bitRun ((FirstNonzeroCodec.decodeFirst.drop 124++ParityCodec5New.untwist)++
+      ([.CX 1 0,.X 0]++mappedTriple 3 1 2 (e3.take 16))) x=
+    MeasuredCodec5.bitRun ((FirstNonzeroCodec.decodeFirst.drop 125++ParityCodec5New.untwist)++
+      ([.CX 1 0,.X 0]++mappedTriple 3 1 2 (e3.take 15))) x := by
+  decide +kernel
+
+private theorem tail_true (m : List Bool) (s : State) :
+    run (triple 3 1 2 d3++(G0CarryLoan5.restore (base 1028) (base 0)++Prefix1590.firstEncode)) m s=
+      run (triple 3 1 2 d3short++(G0CarryLoan5.restore (base 1028) (base 0)++firstEncodeShort)) m s := by
+  have old : triple 3 1 2 d3++(G0CarryLoan5.restore (base 1028) (base 0)++Prefix1590.firstEncode)=
+      renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        (mappedTriple 3 1 2 d3++([.X 0,.CX 1 0]++
+          (ParityCodec5New.twist++FirstNonzeroCodec.encodeFirst.take 16)))++
+      renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        (FirstNonzeroCodec.encodeFirst.drop 16) := by
+    rw [triple_label,restore_label,encode_label]
+    conv_lhs => rw [←List.take_append_drop 16 FirstNonzeroCodec.encodeFirst]
+    simp only [ren_app,List.append_assoc]
+  have new : triple 3 1 2 d3short++(G0CarryLoan5.restore (base 1028) (base 0)++firstEncodeShort)=
+      renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        (mappedTriple 3 1 2 d3short++([.X 0,.CX 1 0]++
+          (ParityCodec5New.twist++FirstNonzeroCodec.encodeFirst.take 15)))++
+      renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        (FirstNonzeroCodec.encodeFirst.drop 16) := by
+    rw [triple_label,restore_label]
+    simp only [firstEncodeShort,ren_app,List.append_assoc]
+  rw [old,new]
+  exact prefix_congr _ _ _ (by decide +kernel)
+    (free_local_eq _ _ (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      entry_law) m s
+
+private theorem tail_false (W : Program) (m : List Bool) (s : State) :
+    run (Prefix1590.firstDecode++(G0CarryLoan5.expose (base 1028) (base 0)++(triple 3 1 2 e3++W))) m s=
+      run (firstDecodeShort++(G0CarryLoan5.expose (base 1028) (base 0)++(triple 3 1 2 e3short++W))) m s := by
+  have old : Prefix1590.firstDecode++(G0CarryLoan5.expose (base 1028) (base 0)++(triple 3 1 2 e3++W))=
+      renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        (FirstNonzeroCodec.decodeFirst.take 124)++
+      (renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        ((FirstNonzeroCodec.decodeFirst.drop 124++ParityCodec5New.untwist)++
+          ([.CX 1 0,.X 0]++mappedTriple 3 1 2 (e3.take 16)))++
+      (renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        (mappedTriple 3 1 2 (e3.drop 16))++W)) := by
+    rw [decode_label,expose_label,triple_label]
+    conv_lhs => rw [←List.take_append_drop 124 FirstNonzeroCodec.decodeFirst,←List.take_append_drop 16 e3]
+    simp only [mappedTriple,ren_app,List.append_assoc]
+  have new : firstDecodeShort++(G0CarryLoan5.expose (base 1028) (base 0)++(triple 3 1 2 e3short++W))=
+      renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        (FirstNonzeroCodec.decodeFirst.take 124)++
+      (renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        ((FirstNonzeroCodec.decodeFirst.drop 125++ParityCodec5New.untwist)++
+          ([.CX 1 0,.X 0]++mappedTriple 3 1 2 (e3.take 15)))++
+      (renameProgram (MeasuredCodec5.label (History5.historyMap base 0))
+        (mappedTriple 3 1 2 (e3.drop 16))++W)) := by
+    rw [expose_label,triple_label]
+    simp only [firstDecodeShort,e3short,mappedTriple,ren_app,List.append_assoc]
+  rw [old,new]
+  apply suffix_congr
+  intro m s
+  exact prefix_congr _ _ _ (by decide +kernel)
+    (free_local_eq _ _ (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      exit_law) m s
+
+private theorem core_true_shape : firstCore true=Prefix1590.firstDecode++
+    (G0CarryLoan5.expose (base 1028) (base 0)++
+      (renameProgram (Equiv.swap (base 768) (base 0)) firstCellsJFront++
+        (triple 3 1 2 d3short++(G0CarryLoan5.restore (base 1028) (base 0)++firstEncodeShort)))) := by
+  simp only [firstCore,firstBodyShort,if_true,G0CarryLoan5.program,ren_app,swap_d3short,
+    List.append_assoc]
+
+private theorem model_true_shape : firstCoreModel true=Prefix1590.firstDecode++
+    (G0CarryLoan5.expose (base 1028) (base 0)++
+      (renameProgram (Equiv.swap (base 768) (base 0)) firstCellsJFront++
+        (triple 3 1 2 d3++(G0CarryLoan5.restore (base 1028) (base 0)++Prefix1590.firstEncode)))) := by
+  simp only [firstCoreModel,firstBody_true_split,G0CarryLoan5.program,ren_app,swap_d3,
+    List.append_assoc]
+
+private theorem core_false_shape : firstCore false=firstDecodeShort++
+    (G0CarryLoan5.expose (base 1028) (base 0)++(triple 3 1 2 e3short++
+      (renameProgram (Equiv.swap (base 768) (base 0)) firstJointBack++
+        (G0CarryLoan5.restore (base 1028) (base 0)++Prefix1590.firstEncode)))) := by
+  simp only [firstCore,firstBodyShort,Bool.false_eq_true,if_false,G0CarryLoan5.program,ren_app,
+    swap_e3short,List.append_assoc]
+
+private theorem model_false_shape : firstCoreModel false=Prefix1590.firstDecode++
+    (G0CarryLoan5.expose (base 1028) (base 0)++(triple 3 1 2 e3++
+      (renameProgram (Equiv.swap (base 768) (base 0)) firstJointBack++
+        (G0CarryLoan5.restore (base 1028) (base 0)++Prefix1590.firstEncode)))) := by
+  simp only [firstCoreModel,firstBody_false_split,G0CarryLoan5.program,ren_app,swap_e3,
+    List.append_assoc]
+
+theorem firstCore_run (divide : Bool) (m : List Bool) (s : State) :
+    run (firstCore divide) m s=run (firstCoreModel divide) m s := by
+  cases divide
+  · rw [core_false_shape,model_false_shape]
+    exact (tail_false _ m s).symm
+  · rw [core_true_shape,model_true_shape]
+    apply suffix_congr
+    intro m s
+    apply suffix_congr
+    intro m s
+    apply suffix_congr
+    intro m s
+    exact (tail_true m s).symm
+
+private theorem pull_symm (e : Equiv.Perm Wire) (t : State) : pullState e.symm (pullState e t)=t := by
+  apply State.extensionality
+  · rfl
+  · funext q
+    simp [pullState]
+
+theorem firstPacket_run (divide : Bool) (m : List Bool) (s : State) :
+    run (firstPacket divide) m s=run (firstPacketModel divide) m s := by
+  let e := shifted (Placement5.pi 0)
+  have a := ECDSAAdd.run_rename e e.injective (firstCore divide) m s
+  have b := ECDSAAdd.run_rename e e.injective (firstCoreModel divide) m s
+  rw [firstCore_run divide m] at a
+  have c := a.trans b.symm
+  calc run (firstPacket divide) m s
+      = pullState e.symm (pullState e (run (renameProgram e (firstCore divide)) m s)) :=
+        (pull_symm e _).symm
+    _ = pullState e.symm (pullState e (run (renameProgram e (firstCoreModel divide)) m s)) := by
+        rw [c]
+    _ = run (firstPacketModel divide) m s := pull_symm e _
+
+private theorem first_instr_wires_sub (i : Instr) : ∀ Q : Program,i∈Q → i.wires⊆wires Q
+  | [],h => by simp at h
+  | j::Q,h => by
+    rcases List.mem_cons.mp h with e|e
+    · subst e
+      simp only [wires]
+      exact Finset.subset_union_left
+    · simp only [wires]
+      exact (first_instr_wires_sub i Q e).trans Finset.subset_union_right
+
+theorem first_wires_of_mem : ∀ P Q : Program,(∀i∈P,i∈Q) → wires P⊆wires Q
+  | [],_,_ => by simp [wires]
+  | i::P,Q,h => by
+    simp only [wires]
+    exact Finset.union_subset (first_instr_wires_sub i Q (h i (by simp)))
+      (first_wires_of_mem P Q (fun j hj => h j (by simp [hj])))
+
+private theorem decode_sublist : firstDecodeShort.Sublist Prefix1590.firstDecode := by
+  rw [decode_label]
+  exact List.Sublist.map _ (List.Sublist.append (by decide +kernel) (List.Sublist.refl _))
+
+private theorem encode_sublist : firstEncodeShort.Sublist Prefix1590.firstEncode := by
+  rw [encode_label]
+  exact List.Sublist.map _ (List.Sublist.append (List.Sublist.refl _) (by decide +kernel))
+
+private theorem triple_sublist (P Q : Program) (h : P.Sublist Q) : (triple 3 1 2 P).Sublist (triple 3 1 2 Q) :=
+  List.Sublist.map _ h
+
+theorem firstCore_mem (divide : Bool) : ∀i∈firstCore divide,i∈firstCoreModel divide := by
+  have sub : (firstCore divide).Sublist (firstCoreModel divide) := by
+    cases divide
+    · rw [core_false_shape,model_false_shape]
+      exact decode_sublist.append ((List.Sublist.refl _).append
+        ((triple_sublist _ _ (by decide +kernel)).append (List.Sublist.refl _)))
+    · rw [core_true_shape,model_true_shape]
+      exact (List.Sublist.refl _).append ((List.Sublist.refl _).append ((List.Sublist.refl _).append
+        ((triple_sublist _ _ (by decide +kernel)).append ((List.Sublist.refl _).append encode_sublist))))
+  intro i hi
+  exact sub.subset hi
+
+theorem firstCore_resources (divide : Bool) :
+    toffoliCount (firstCore divide)+2=toffoliCount (firstCoreModel divide) ∧
+    measurementCount (firstCore divide)=measurementCount (firstCoreModel divide) ∧
+    gateSlots (firstCore divide)≤gateSlots (firstCoreModel divide) := by
+  cases divide
+  · obtain ⟨t1,m1,g1⟩ : toffoliCount (triple 3 1 2 e3short)+1=toffoliCount (triple 3 1 2 e3) ∧
+        measurementCount (triple 3 1 2 e3short)=measurementCount (triple 3 1 2 e3) ∧
+        gateSlots (triple 3 1 2 e3short)≤gateSlots (triple 3 1 2 e3) := by decide +kernel
+    obtain ⟨t2,m2,g2⟩ : toffoliCount firstDecodeShort+1=toffoliCount Prefix1590.firstDecode ∧
+        measurementCount firstDecodeShort=measurementCount Prefix1590.firstDecode ∧
+        gateSlots firstDecodeShort≤gateSlots Prefix1590.firstDecode := by decide +kernel
+    rw [core_false_shape,model_false_shape]
+    simp only [toffoliCount_append,measurementCount_append,gateSlots_append]
+    exact ⟨by omega,by omega,by omega⟩
+  · obtain ⟨t1,m1,g1⟩ : toffoliCount (triple 3 1 2 d3short)+1=toffoliCount (triple 3 1 2 d3) ∧
+        measurementCount (triple 3 1 2 d3short)=measurementCount (triple 3 1 2 d3) ∧
+        gateSlots (triple 3 1 2 d3short)≤gateSlots (triple 3 1 2 d3) := by decide +kernel
+    obtain ⟨t2,m2,g2⟩ : toffoliCount firstEncodeShort+1=toffoliCount Prefix1590.firstEncode ∧
+        measurementCount firstEncodeShort=measurementCount Prefix1590.firstEncode ∧
+        gateSlots firstEncodeShort≤gateSlots Prefix1590.firstEncode := by decide +kernel
+    rw [core_true_shape,model_true_shape]
+    simp only [toffoliCount_append,measurementCount_append,gateSlots_append]
+    exact ⟨by omega,by omega,by omega⟩
 
 end ECDSAAdd.Entrant.Rolling1588First
 
@@ -23744,6 +24075,23 @@ namespace ECDSAAdd.Entrant.Rolling1588
 open Arithmetic Secp256k1 BalancedField OffsetBorrowedCanonical CompressedFieldSupport
   MappedCompressed DirectSkywalk
 attribute [local irreducible] run wires
+
+theorem firstPacketModel_cut_frame (divide : Bool) (cut : Nat) (origin : BasisState)
+    (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
+    (x : Nat) (hx : x<p)
+    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
+      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
+    (X Y : Fp) (hz : FirstZero.FirstHyp divide origin X Y) :
+    StateTriple (CutFrame cut origin X Y) (firstPacketModel divide)
+      (fun state => let V := Replay5.firstPayload divide origin (X,Y)
+        CutFrame cut origin V.1 V.2 state) := by
+  have first := Prefix1590.first_trit_of_trace origin ctx x hx trace
+  have current := Rolling1588First.first_cut_window_frame cut origin ctx X Y _ _ _
+    (firstBorrowedBody_read_support divide)
+    (firstBorrowedBody_frame divide origin ctx enabled X Y hz first) first.2
+  have placed := Rolling1588First.place_cut_frame cut origin ctx X Y _ _ _ current
+  apply StateTriple.program_eq _ placed
+  simp only [firstPacketModel,firstCoreModel,List.append_assoc]
 
 theorem firstPacket_cut_frame (divide : Bool) (cut : Nat) (origin : BasisState)
     (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
@@ -23754,13 +24102,9 @@ theorem firstPacket_cut_frame (divide : Bool) (cut : Nat) (origin : BasisState)
     StateTriple (CutFrame cut origin X Y) (firstPacket divide)
       (fun state => let V := Replay5.firstPayload divide origin (X,Y)
         CutFrame cut origin V.1 V.2 state) := by
-  have first := Prefix1590.first_trit_of_trace origin ctx x hx trace
-  have current := Rolling1588First.first_cut_window_frame cut origin ctx X Y _ _ _
-    (firstBorrowedBody_read_support divide)
-    (firstBorrowedBody_frame divide origin ctx enabled X Y hz first) first.2
-  have placed := Rolling1588First.place_cut_frame cut origin ctx X Y _ _ _ current
-  apply StateTriple.program_eq _ placed
-  simp only [firstPacket,List.append_assoc]
+  intro state records input
+  rw [Rolling1588First.firstPacket_run divide records state]
+  exact firstPacketModel_cut_frame divide cut origin ctx enabled x hx trace X Y hz state records input
 
 
 
@@ -26838,7 +27182,9 @@ private theorem baseFirstPacket_old_support (divide : Bool) :
 
 theorem placedFirstPacket_old_support (divide : Bool) :
     wires (placedFirstPacket divide)⊆wires (ControlLoan1589.placedFirstPacket divide) :=
-  rename_sub _ _ _ (rename_sub _ _ _ (baseFirstPacket_old_support divide))
+  rename_sub _ _ _ (rename_sub _ (firstCore divide) _
+    (Finset.Subset.trans (Rolling1588First.first_wires_of_mem _ _ (Rolling1588First.firstCore_mem divide))
+      (baseFirstPacket_old_support divide)))
 
 private theorem copy_771_mem : base 771∈wires HalfFieldOB5.copyN := by
   change base 771∈wires (copyRegister none (balancedSharedPorts base (base 2409)).r
@@ -27321,8 +27667,10 @@ private theorem placedFirstPacket_719_free (divide : Bool) :
       Prefix1590.firstEncode) := by
     simpa only [wires_append,Finset.mem_union,not_or] using
       And.intro (And.intro firstCodec.1 body) firstCodec.2
+  have rawNew : base 719∉wires (firstCore divide) := fun used =>
+    raw (Rolling1588First.first_wires_of_mem _ _ (Rolling1588First.firstCore_mem divide) used)
   have placed : base 719∉wires (firstPacket divide) :=
-    rename_free _ (shifted (Placement5.pi 0)).injective _ _ _ (by decide +kernel) raw
+    rename_free _ (shifted (Placement5.pi 0)).injective _ _ _ (by decide +kernel) rawNew
   exact rename_free _ (OB5.sig_injective 511 (by decide)) _ _ _ (by decide +kernel) placed
 
 private theorem copy_719_free : base 719∉wires HalfFieldOB5.copyN := by
@@ -27556,8 +27904,10 @@ private theorem placedFirstPacket_760_free (divide : Bool) :
       Prefix1590.firstEncode) := by
     simpa only [wires_append,Finset.mem_union,not_or] using
       And.intro (And.intro firstCodec.1 body) firstCodec.2
+  have rawNew : base 760∉wires (firstCore divide) := fun used =>
+    raw (Rolling1588First.first_wires_of_mem _ _ (Rolling1588First.firstCore_mem divide) used)
   have placed : base 760∉wires (firstPacket divide) :=
-    rename_free _ (shifted (Placement5.pi 0)).injective _ _ _ (by decide +kernel) raw
+    rename_free _ (shifted (Placement5.pi 0)).injective _ _ _ (by decide +kernel) rawNew
   exact rename_free _ (OB5.sig_injective 511 (by decide)) _ _ _ (by decide +kernel) placed
 
 private theorem copy_760_free : base 760∉wires HalfFieldOB5.copyN := by
@@ -27798,8 +28148,10 @@ private theorem placedFirstPacket_physical (divide : Bool) : GatePhysical (place
       G0CarryLoan5.program (base 1028) (base 0) (base 768) (firstBody divide)++
       Prefix1590.firstEncode) := by
     simpa only [gatePhysical_append] using And.intro (And.intro codecs.2 body) codecs.1
+  have rawNew : GatePhysical (firstCore divide) := fun i hi =>
+    raw i (Rolling1588First.firstCore_mem divide i hi)
   exact gatePhysical_rename _ (OB5.sig_injective 511 (by decide)) _
-    (gatePhysical_rename _ (shifted (Placement5.pi 0)).injective _ raw)
+    (gatePhysical_rename _ (shifted (Placement5.pi 0)).injective _ rawNew)
 
 private theorem endpoint_physical : GatePhysical Rolling1588Lifetime.center ∧
     GatePhysical Rolling1588Lifetime.canon := by
@@ -31804,19 +32156,29 @@ private theorem firstBody_resource_delta (divide : Bool) :
       toffoliCount_append,measurementCount_append,gateSlots_append] at old fresh ⊢
     exact ⟨by omega,by omega,by omega⟩
 
-theorem firstPacket_resource_delta (divide : Bool) :
-    toffoliCount (firstPacket divide)+FirstZero.saving divide+JointInverse1588.saving divide+
+theorem firstPacketModel_resource_delta (divide : Bool) :
+    toffoliCount (firstPacketModel divide)+FirstZero.saving divide+JointInverse1588.saving divide+
       JointForward1588.savingG divide=toffoliCount (ControlLoan1589.firstPacket divide)+24 ∧
-    measurementCount (firstPacket divide)=measurementCount (ControlLoan1589.firstPacket divide)+4 ∧
-    gateSlots (firstPacket divide)≤gateSlots (ControlLoan1589.firstPacket divide)+(898+4*halfExtra divide+9500) := by
+    measurementCount (firstPacketModel divide)=measurementCount (ControlLoan1589.firstPacket divide)+4 ∧
+    gateSlots (firstPacketModel divide)≤gateSlots (ControlLoan1589.firstPacket divide)+(898+4*halfExtra divide+9500) := by
   have fresh := G0CarryLoan5.counts (base 1028) (base 0) (base 768) (firstBody divide)
   have old := G0CarryLoan5.counts (base 1028) (base 0) (base 768) (ControlLoan1589.firstBody divide)
   have fs := G0CarryLoan5.slots (base 1028) (base 0) (base 768) (firstBody divide)
   have os := G0CarryLoan5.slots (base 1028) (base 0) (base 768) (ControlLoan1589.firstBody divide)
   have body := firstBody_resource_delta divide
-  simp only [firstPacket,ControlLoan1589.firstPacket,ControlLoan1589.firstBorrowedBody,
+  simp only [firstPacketModel,firstCoreModel,ControlLoan1589.firstPacket,ControlLoan1589.firstBorrowedBody,
     renameProgram_counts,rename_gateSlots,toffoliCount_append,measurementCount_append,
     gateSlots_append]
+  exact ⟨by omega,by omega,by omega⟩
+
+theorem firstPacket_resource_delta (divide : Bool) :
+    toffoliCount (firstPacket divide)+FirstZero.saving divide+JointInverse1588.saving divide+
+      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.firstPacket divide)+22 ∧
+    measurementCount (firstPacket divide)=measurementCount (ControlLoan1589.firstPacket divide)+4 ∧
+    gateSlots (firstPacket divide)≤gateSlots (ControlLoan1589.firstPacket divide)+(898+4*halfExtra divide+9500) := by
+  have old := firstPacketModel_resource_delta divide
+  have core := Rolling1588First.firstCore_resources divide
+  simp only [firstPacket,firstPacketModel,renameProgram_counts,rename_gateSlots] at old ⊢
   exact ⟨by omega,by omega,by omega⟩
 
 end ECDSAAdd.Entrant.Rolling1588
@@ -31852,7 +32214,7 @@ theorem groups_resource_delta (divide : Bool) (j n : Nat) :
 
 theorem placedFirstPacket_resource_delta (divide : Bool) :
     toffoliCount (placedFirstPacket divide)+FirstZero.saving divide+JointInverse1588.saving divide+
-      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.placedFirstPacket divide)+24 ∧
+      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.placedFirstPacket divide)+22 ∧
     measurementCount (placedFirstPacket divide)=measurementCount (ControlLoan1589.placedFirstPacket divide)+4 ∧
     gateSlots (placedFirstPacket divide)≤gateSlots (ControlLoan1589.placedFirstPacket divide)+(898+4*halfExtra divide+9500) := by
   simpa only [placedFirstPacket,ControlLoan1589.placedFirstPacket,renameProgram_counts,
@@ -31922,7 +32284,7 @@ private theorem exitHead_resource_delta :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryField_resource_delta :
-    toffoliCount entryField+492=toffoliCount ControlLoan1589.entryField ∧
+    toffoliCount entryField+494=toffoliCount ControlLoan1589.entryField ∧
     measurementCount entryField=measurementCount ControlLoan1589.entryField+106 ∧
     gateSlots entryField≤gateSlots ControlLoan1589.entryField+(50196+509*halfExtra true+9969) := by
   have pc := FourScratchWindow.counts
@@ -31945,7 +32307,7 @@ theorem entryField_resource_delta :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitField_resource_delta :
-    toffoliCount exitField+236=toffoliCount ControlLoan1589.exitField ∧
+    toffoliCount exitField+238=toffoliCount ControlLoan1589.exitField ∧
     measurementCount exitField=measurementCount ControlLoan1589.exitField+106 ∧
     gateSlots exitField≤gateSlots ControlLoan1589.exitField+(51299+509*halfExtra false+9969) := by
   have pc := FourScratchWindow.counts
@@ -32060,18 +32422,18 @@ private theorem hosted_resource_sub (P Q HP HQ : Program) (t m sl : Nat)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryFieldHosted_resource_delta :
-    toffoliCount entryFieldHosted+492=toffoliCount ControlLoan1589.entryFieldHosted ∧
+    toffoliCount entryFieldHosted+494=toffoliCount ControlLoan1589.entryFieldHosted ∧
     measurementCount entryFieldHosted=measurementCount ControlLoan1589.entryFieldHosted+106 ∧
     gateSlots entryFieldHosted≤gateSlots ControlLoan1589.entryFieldHosted+(50196+509*halfExtra true+9969) :=
   hosted_resource_sub entryField ControlLoan1589.entryField entryFieldHosted ControlLoan1589.entryFieldHosted
-    492 106 (50196+509*halfExtra true+9969) rfl rfl entryField_resource_delta
+    494 106 (50196+509*halfExtra true+9969) rfl rfl entryField_resource_delta
 
 theorem exitFieldHosted_resource_delta :
-    toffoliCount exitFieldHosted+236=toffoliCount ControlLoan1589.exitFieldHosted ∧
+    toffoliCount exitFieldHosted+238=toffoliCount ControlLoan1589.exitFieldHosted ∧
     measurementCount exitFieldHosted=measurementCount ControlLoan1589.exitFieldHosted+106 ∧
     gateSlots exitFieldHosted≤gateSlots ControlLoan1589.exitFieldHosted+(51299+509*halfExtra false+9969) :=
   hosted_resource_sub exitField ControlLoan1589.exitField exitFieldHosted ControlLoan1589.exitFieldHosted
-    236 106 (51299+509*halfExtra false+9969) rfl rfl exitField_resource_delta
+    238 106 (51299+509*halfExtra false+9969) rfl rfl exitField_resource_delta
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -32492,7 +32854,7 @@ theorem exitSlotGrowth_eq : exitSlotGrowth=11699 := rfl
 /- The deltas are proved with numerals (`omega` over the symbolic `halfExtra` atom makes the kernel
 recurse too deeply on these two goals) and restated with the named growth constants. -/
 private theorem entryKernel_resource_delta_num :
-    toffoliCount entryKernel+502=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+504=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
     gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+13226) := by
   have first := firstPhase_metrics true
@@ -32507,14 +32869,14 @@ private theorem entryKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryKernel_resource_delta :
-    toffoliCount entryKernel+502=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+504=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
     gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+entrySlotGrowth) := by
   rw [entrySlotGrowth_eq]
   exact entryKernel_resource_delta_num
 
 private theorem exitKernel_resource_delta_num :
-    toffoliCount exitKernel+246=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+248=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
     gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+11699) := by
   have first := firstPhase_metrics false
@@ -32529,7 +32891,7 @@ private theorem exitKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitKernel_resource_delta :
-    toffoliCount exitKernel+246=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+248=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
     gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+exitSlotGrowth) := by
   rw [exitSlotGrowth_eq]
@@ -35918,23 +36280,23 @@ private def DeltaSub (P Q : Program) (t m slots : Nat) : Prop :=
   toffoliCount P+t=toffoliCount Q ∧ measurementCount P=measurementCount Q+m ∧
     gateSlots P≤gateSlots Q+slots
 
-private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 502 106 (63762+Rolling1588.entrySlotGrowth))
+private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 504 106 (63762+Rolling1588.entrySlotGrowth))
     (L : ControlledPointLayout) (c : Fp) :
-    DeltaSub (division K L c) (division K0 L c) 502 106 (63762+Rolling1588.entrySlotGrowth) := by
+    DeltaSub (division K L c) (division K0 L c) 504 106 (63762+Rolling1588.entrySlotGrowth) := by
   simp only [DeltaSub,division,FrontierEntry1591Callers.entry,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
 
-private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 246 106 (64865+Rolling1588.exitSlotGrowth))
-    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 246 106 (64865+Rolling1588.exitSlotGrowth) := by
+private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 248 106 (64865+Rolling1588.exitSlotGrowth))
+    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 248 106 (64865+Rolling1588.exitSlotGrowth) := by
   simpa only [DeltaSub,exit,renameProgram_counts,rename_gateSlots] using h
 
 private theorem gen_delta_of_shapes (L : ControlledPointLayout)
     (D D0 : Fp→Program) (S S0 P P0 G G0 : Program) (cx cy : Fp)
     (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D0 S0 P0 cx cy)
-    (hd : ∀c,DeltaSub (D c) (D0 c) 502 106 (63762+Rolling1588.entrySlotGrowth))
-    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 246 106 (64865+Rolling1588.exitSlotGrowth)) :
-    DeltaSub G G0 748 212 (128627+Rolling1588.slotGrowth) := by
+    (hd : ∀c,DeltaSub (D c) (D0 c) 504 106 (63762+Rolling1588.entrySlotGrowth))
+    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 248 106 (64865+Rolling1588.exitSlotGrowth)) :
+    DeltaSub G G0 752 212 (128627+Rolling1588.slotGrowth) := by
   subst G G0
   have d:=hd (-cy)
   simp only [Delta,DeltaLe,DeltaSub,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
@@ -35943,7 +36305,7 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 748 212 (128627+Rolling1588.slotGrowth) := by
+    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 752 212 (128627+Rolling1588.slotGrowth) := by
   have squareCounts:=SquareCarryLoan719BF.counts_eq L
   have squareSlots:=SquareCarryLoan719BF.slots_eq L
   exact gen_delta_of_shapes L
@@ -35961,14 +36323,14 @@ private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
       Rolling1588.exitKernel_resource_delta L)
 
 theorem gen_resource_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+748=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+752=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ControlLoan1589BFFinal.gen L cx cy)+212 ∧
     gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+(128627+Rolling1588.slotGrowth) :=
   gen_delta L cx cy
 
 private theorem wrapper_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : DeltaSub P Q 748 212 (128627+Rolling1588.slotGrowth)) :
-    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 748 212 (128627+Rolling1588.slotGrowth) := by
+    (P Q : Program) (h : DeltaSub P Q 752 212 (128627+Rolling1588.slotGrowth)) :
+    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 752 212 (128627+Rolling1588.slotGrowth) := by
   simp only [DeltaSub,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -36118,7 +36480,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152175 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152171 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -36142,7 +36504,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152175,1499965,1588,50139199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152171,1499965,1588,50139199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -36159,7 +36521,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152175 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152171 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
