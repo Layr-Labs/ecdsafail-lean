@@ -1,3 +1,5 @@
+import ECDSAAdd.Submission.Entrant.ParkAThird
+import ECDSAAdd.Submission.Entrant.ParkCarry10
 import ECDSAAdd.Submission.Entrant.ParkCarry9
 import ECDSAAdd.Submission.Entrant.MainPart04Base
 
@@ -6685,3 +6687,89 @@ theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths
 end ECDSAAdd.Entrant.ParkCarry9Develop
 
 end -- Carry9 body support adapters
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.ParkCarry10Develop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ParkCarryDevelop InverseCarryDevelop
+open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+set_option maxHeartbeats 8000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+theorem source0_in_y (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : L.core.high.headD 0 ∈ L.core.y :=
+ List.mem_of_mem_drop (List.mem_of_mem_take (head_mem _ (by simp [CuccaroStreamedSquareLayout.high,hw.core.y])))
+
+theorem body_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (c : Wire) :
+ wires (body L c) ⊆ (c::L.wires).toFinset := by
+ have h := Carry10BodyRefined.body_refined L hw c
+ intro q hq
+ rcases Finset.mem_insert.mp (h hq) with e|h
+ · rw [e]
+   have vy := source0_in_y L hw
+   simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,
+    List.mem_toFinset,List.mem_cons,List.mem_append,List.mem_singleton,List.not_mem_nil]
+   tauto
+ · exact ParkCarry8Develop.body_support L hw hn c h
+
+theorem fold_fixes_source (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (ext : List Wire) (hlen : 300 ≤ ext.length) (away : ∀ q ∈ ext, q ∉ L.wires) :
+ LowZero18Square.foldPerm L ext (L.core.high.headD 0) = L.core.high.headD 0 := by
+ have vy := source0_in_y L hw
+ have ht : SquareCarryLoan719.target L ∈ L.foldPad := by
+  apply List.mem_of_mem_drop
+  exact DiagSq.getD_in (LowZero18LowK.ktmp L) 67 (by rw [LowZero18LowK.ktmp_length L hw]; omega)
+ have ne1 : L.core.high.headD 0 ≠ SquareCarryLoan719.target L := by
+  intro e
+  have a := List.count_pos_iff.mpr vy
+  have b := List.count_pos_iff.mpr ht
+  rw [←e] at b
+  have h := layoutCount L hn (L.core.high.headD 0)
+  omega
+ have ne2 : L.core.high.headD 0 ≠ ext.getD 0 0 := by
+  intro e
+  apply away (ext.getD 0 0) (DiagSq.getD_in ext 0 (by omega))
+  rw [←e]
+  simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,
+   List.mem_toFinset,List.mem_cons,List.mem_append,List.mem_singleton,List.not_mem_nil]
+  tauto
+ change SquareCarryLoan719.foldPerm L ext (L.core.high.headD 0) = _
+ rw [SquareCarryLoan719.foldPerm_eq L hw]
+ exact Equiv.swap_apply_of_ne_of_ne ne1 ne2
+
+theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (ext : List Wire) (c : Wire) (hlen : 300 ≤ ext.length) (away : ∀ q ∈ ext, q ∉ L.wires) :
+ wires (hostedBody L (LowZero18Square.foldPerm L ext) c) ⊆ (c::L.wires).toFinset := by
+ rw [hosted_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
+ exact body_support L hw hn c
+#print axioms body_support
+#print axioms fold_fixes_source
+#print axioms hosted_fold_support
+end ECDSAAdd.Entrant.ParkCarry10Develop
+
+end -- Carry10 body support adapters
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ThirdSavedCarryDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+
+theorem eU_off_aBodyTriple (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (c:Wire) (hc:c∉L.wires):eU L∉wires (aBodyTriple L c):=by
+ intro h
+ rcases Finset.mem_insert.mp (aBodyTriple_refined L hw c h) with e|h
+ · exact (spare_ne_eU L hw hn) e.symm
+ · exact InverseCarryDevelop.eU_off_aBodyDual L hw hn c hc h
+
+theorem hostedATriple_fold_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths)
+ (hn:L.wires.Nodup) (ext:List Wire) (c:Wire) (hlen:300≤ext.length) (away:∀q∈ext,q∉L.wires):
+ wires (hostedATriple L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset:=by
+ rw [hostedATriple_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
+ exact aBodyTriple_support L hw hn c
+end ThirdSavedCarryDevelop
+end
