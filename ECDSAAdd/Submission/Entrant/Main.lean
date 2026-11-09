@@ -9297,7 +9297,12 @@ def classify : Program := [
  .CCX 5 2 6,.CX 6 5,
  .CCX 5 3 7,.CX 7 5,
  .CCX 5 4 8,.CX 5 9,.CX 8 9,.CX 9 5,.CX 8 5]
-def undo : Program := classify.reverse
+def undo : Program := [
+ .CX 8 5,.CX 9 5,.CX 5 9,.CX 8 9,
+ .measureX 8 [] [.CZ 5 4],
+ .CX 7 5,.measureX 7 [] [.CZ 5 3],
+ .CX 6 5,.measureX 6 [] [.CZ 5 2],
+ .measureX 5 [] [.Z 0,.CZ 0 1]]
 
 def tagClassify : Program := [
  .X 1,.CCX 0 1 5,.X 1,
@@ -9307,11 +9312,12 @@ def tagClassify : Program := [
  .measureX 10 [] [.CZ 5 2],.measureX 5 [] [.Z 0,.CZ 0 1]]
 
 def tagClear : Program := [
- .X 1,.CCX 0 1 5,.X 1,
- .CX 5 7,.CX 6 7,.CX 8 7,.CX 9 7,
- .CCX 5 2 10,.CX 10 8,.CX 6 8,
- .CCX 5 3 9,.CX 6 9,.CCX 10 3 6,
- .measureX 10 [] [.CZ 5 2],.measureX 5 [] [.Z 0,.CZ 0 1]]
+ .CX 6 10,.CX 8 10,.CX 10 8,.CX 6 8,
+ .measureX 6 [] [.CZ 10 3],
+ .CX 7 5,.CX 9 5,.CX 5 7,.CX 9 7,
+ .measureX 9 [] [.CZ 5 3],
+ .CX 10 5,.measureX 10 [] [.CZ 5 2],
+ .measureX 5 [] [.Z 0,.CZ 0 1]]
 
 def h (n : Nat) : Bool := n.testBit 0 && !n.testBit 1
  def e (n : Nat) : Bool := h n && n.testBit 2
@@ -13374,14 +13380,12 @@ attribute [local irreducible] run
 
 def tailClass : Program := OneHotCornersDevelop.classify.drop 3
 def tailTag : Program := OneHotCornersDevelop.tagClassify.drop 3
-def tailClear : Program := OneHotCornersDevelop.tagClear.drop 3
  def linearClass : Program := newHead++tailClass
- def linearUndo : Program := linearClass.reverse
+ def linearUndo : Program := OneHotCornersDevelop.undo
  def linearTag : Program := newHead++tailTag
- def linearClear : Program := newHead++tailClear
+ def linearClear : Program := OneHotCornersDevelop.tagClear
  theorem oldClass_split : OneHotCornersDevelop.classify=oldHead++tailClass := rfl
  theorem oldTag_split : OneHotCornersDevelop.tagClassify=oldHead++tailTag := rfl
- theorem oldClear_split : OneHotCornersDevelop.tagClear=oldHead++tailClear := rfl
  theorem head_M : measurementCount newHead=0 ∧ measurementCount oldHead=0 := by decide +kernel
  theorem prefix_equal (P : Program) (s : State) (m : List Bool) (hs:legal s) :
  run (newHead++P) m s=run (oldHead++P) m s := by
@@ -13396,34 +13400,18 @@ def tailClear : Program := OneHotCornersDevelop.tagClear.drop 3
  run linearTag m s=run OneHotCornersDevelop.tagClassify m s := by
  rw [oldTag_split]
  exact prefix_equal tailTag s m hs
- theorem linearClear_equal (s : State) (m : List Bool) (hs:legal s) :
- run linearClear m s=run OneHotCornersDevelop.tagClear m s := by
- rw [oldClear_split]
- exact prefix_equal tailClear s m hs
- theorem linearUndo_equal (s : State) (m : List Bool) (hs:legal s) :
- run linearUndo m s=run OneHotCornersDevelop.undo m s := by
- have h0:0∉wires tailClass.reverse:=by decide +kernel
- have h1:1∉wires tailClass.reverse:=by decide +kernel
- have hm:measurementCount tailClass.reverse=0:=by decide +kernel
- let t:=run tailClass.reverse m s
- have ht:legal t:=by
-  intro hh
-  have hh':s.basis 1=true:=by rw [←run_preserves_outside tailClass.reverse m s 1 h1];exact hh
-  exact (run_preserves_outside tailClass.reverse m s 0 h0).trans (hs hh')
- have he:=reverse_head_equal t m ht
- change run (newHead++tailClass).reverse m s=run OneHotCornersDevelop.classify.reverse m s
- rw [oldClass_split,List.reverse_append,List.reverse_append]
- rw [run_append,run_take,run_append,run_take]
- simp only [hm,List.drop_zero]
- exact he
+ theorem linearClear_equal (s : State) (m : List Bool) (_hs:legal s) :
+ run linearClear m s=run OneHotCornersDevelop.tagClear m s := rfl
+ theorem linearUndo_equal (s : State) (m : List Bool) (_hs:legal s) :
+ run linearUndo m s=run OneHotCornersDevelop.undo m s := rfl
 
  theorem linear_counts : toffoliCount linearClass=3 ∧ measurementCount linearClass=0 ∧
- toffoliCount linearUndo=3 ∧ measurementCount linearUndo=0 ∧
+ toffoliCount linearUndo=0 ∧ measurementCount linearUndo=4 ∧
  toffoliCount linearTag=3 ∧ measurementCount linearTag=2 ∧
- toffoliCount linearClear=3 ∧ measurementCount linearClear=2 := by decide +kernel
+ toffoliCount linearClear=0 ∧ measurementCount linearClear=4 := by decide +kernel
  theorem linear_physical : GatePhysical linearClass ∧ GatePhysical linearUndo ∧ GatePhysical linearTag ∧ GatePhysical linearClear := by
- simp [linearClass,linearUndo,linearTag,linearClear,newHead,tailClass,tailTag,tailClear,
-  OneHotCornersDevelop.classify,OneHotCornersDevelop.tagClassify,OneHotCornersDevelop.tagClear,
+ simp [linearClass,linearUndo,linearTag,linearClear,newHead,tailClass,tailTag,
+  OneHotCornersDevelop.classify,OneHotCornersDevelop.undo,OneHotCornersDevelop.tagClassify,OneHotCornersDevelop.tagClear,
   GatePhysical,RecordedQuantum.PhysicalInstr,ProperGate]
  theorem linear_support : wires linearClass⊆wires OneHotCornersDevelop.classify ∧
  wires linearUndo⊆wires OneHotCornersDevelop.undo ∧ wires linearTag⊆wires OneHotCornersDevelop.tagClassify ∧
@@ -13761,8 +13749,8 @@ namespace ECDSAAdd.Entrant.LinearPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel ControlPointEncodingDevelop LinearCornerHeadDevelop
 attribute [local irreducible] layout wires run
 
- theorem counts (C : Point) : toffoliCount (encode C)=6 ∧ measurementCount (encode C)=2 ∧
- toffoliCount (decode C)=6 ∧ measurementCount (decode C)=2 := by
+ theorem counts (C : Point) : toffoliCount (encode C)=3 ∧ measurementCount (encode C)=4 ∧
+ toffoliCount (decode C)=3 ∧ measurementCount (decode C)=6 := by
  have h:=linear_counts
  simp only [encode,decode,firstFragment,undoFragment,tagClassFragment,tagClearFragment,classify,undo,tagClassify,tagClear,
   toffoliCount_append,measurementCount_append,toffoliCount_reverse,measurementCount_reverse,
@@ -13770,11 +13758,11 @@ attribute [local irreducible] layout wires run
   (renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
  omega
 
- theorem encoding_slots (C : Point) : gateSlots (encode C)≤2110 ∧ gateSlots (decode C)≤2110 := by
+ theorem encoding_slots (C : Point) : gateSlots (encode C)≤2111 ∧ gateSlots (decode C)≤2114 := by
  have hn:=ControlPointEncodingDevelop.normalize_slots C
  have ht:=copyTag_slots
  have hm:=masks_slots C
- have hp:gateSlots linearClass=11 ∧ gateSlots linearUndo=11 ∧ gateSlots linearTag=17 ∧ gateSlots linearClear=17:=by decide +kernel
+ have hp:gateSlots linearClass=11 ∧ gateSlots linearUndo=15 ∧ gateSlots linearTag=17 ∧ gateSlots linearClear=18:=by decide +kernel
  simp only [encode,decode,firstFragment,undoFragment,tagClassFragment,tagClearFragment,classify,undo,tagClassify,tagClear,
   gateSlots_append,slots_reverse,rename_gateSlots]
  omega
@@ -14720,14 +14708,14 @@ theorem tagShift_support : wires tagShift⊆auxPorts := by
     · exact aux_y q h
   simpa only [tagShift,shift,wires_append,Finset.union_subset_iff] using And.intro (And.intro cx_support m) cx_support
 
-theorem counts (C : Point) : toffoliCount (encode C)=6 ∧ measurementCount (encode C)=2 ∧
-    toffoliCount (decode C)=6 ∧ measurementCount (decode C)=2 := by
+theorem counts (C : Point) : toffoliCount (encode C)=3 ∧ measurementCount (encode C)=4 ∧
+    toffoliCount (decode C)=3 ∧ measurementCount (decode C)=6 := by
   have old:=LinearPointEncodingDevelop.counts C
   have h:=tagShift_counts
   simp only [encode,decode,toffoliCount_append,measurementCount_append]
   omega
 
-theorem encoding_slots (C : Point) : gateSlots (encode C)≤2120 ∧ gateSlots (decode C)≤2120 := by
+theorem encoding_slots (C : Point) : gateSlots (encode C)≤2121 ∧ gateSlots (decode C)≤2124 := by
   have old:=LinearPointEncodingDevelop.encoding_slots C
   simp only [encode,decode,gateSlots_append,tagShift_slots]
   omega
@@ -16756,9 +16744,9 @@ open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentine
 attribute [local irreducible] layout run
 
 theorem middle_metrics (C : Point) (cx cy : Fp) :
- toffoliCount (middle C cx cy)=toffoliCount (genericBlock cx cy)+505 ∧
- measurementCount (middle C cx cy)=measurementCount (genericBlock cx cy)+497 ∧
- gateSlots (middle C cx cy)≤gateSlots (genericBlock cx cy)+8834 := by
+ toffoliCount (middle C cx cy)=toffoliCount (genericBlock cx cy)+499 ∧
+ measurementCount (middle C cx cy)=measurementCount (genericBlock cx cy)+503 ∧
+ gateSlots (middle C cx cy)≤gateSlots (genericBlock cx cy)+8839 := by
  have h:=counts C
  have hm:=marker_counts
  have hs:=marker_slots
@@ -17028,9 +17016,9 @@ theorem wrapperBorrow_physical {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx 
  exact ⟨⟨FlagTop.stageNew_physical hc,middle_physical (.some hc) cx cy⟩,borrowOut_physical hc⟩
 
 theorem wrapperBorrow_metrics {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
- toffoliCount (wrapperBorrow (.some hc) cx cy)=toffoliCount (wrapperN layout (.some hc) cx cy)+505 ∧
- measurementCount (wrapperBorrow (.some hc) cx cy)=measurementCount (wrapperN layout (.some hc) cx cy)+497 ∧
- gateSlots (wrapperBorrow (.some hc) cx cy)≤gateSlots (wrapperN layout (.some hc) cx cy)+8834 := by
+ toffoliCount (wrapperBorrow (.some hc) cx cy)=toffoliCount (wrapperN layout (.some hc) cx cy)+499 ∧
+ measurementCount (wrapperBorrow (.some hc) cx cy)=measurementCount (wrapperN layout (.some hc) cx cy)+503 ∧
+ gateSlots (wrapperBorrow (.some hc) cx cy)≤gateSlots (wrapperN layout (.some hc) cx cy)+8839 := by
  have h:=middle_metrics (.some hc) cx cy
  simp only [genericBlock,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots] at h
  simp only [wrapperBorrow,finiteBorrow,wrapperN,finiteN,borrowOut,toffoliCount_append,measurementCount_append,gateSlots_append,
@@ -17053,7 +17041,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147441,1498882,1586,50265851⟩
+ def boundsQ : Challenge.Bounds :=⟨2147435,1498888,1586,50265851⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -17062,23 +17050,23 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147441 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147435 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
   change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146936 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147441
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147435
   omega
- theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498882 := by
+ theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498888 := by
  cases C with
  | zero=>simp [programQ,measurementCount]
  | @some cx cy hc=>
   have h:=program_measurements_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.1
   change measurementCount (wrapperN layout (.some hc) cx cy)≤1498385 at h
-  change measurementCount (wrapperBorrow (.some hc) cx cy)≤1498882
+  change measurementCount (wrapperBorrow (.some hc) cx cy)≤1498888
   omega
  theorem program_qubits_Q (C : Point) : qubits (programQ C)≤1586 := by
  cases C with
@@ -17102,7 +17090,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  physical C:=Baselines.normalize_physical _ (by simpa only [GatePhysical] using program_physical_Q C)
  toffoli_le C:=(normalize_toffoli _).trans (program_toffoli_Q C)
  measurements_le C:=by
-  change measurementCount (normalizeProgram (programQ C))≤1498882
+  change measurementCount (normalizeProgram (programQ C))≤1498888
   rw [normalize_measurements];exact program_measurements_Q C
  qubits_le C:=by
   change qubits (normalizeProgram (programQ C))≤1586
