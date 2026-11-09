@@ -1,3 +1,4 @@
+import ECDSAAdd.Submission.Entrant.ParkCarry9
 import ECDSAAdd.Submission.Entrant.MainPart04Base
 
 -- The circuit and generic proofs live in the cached base module. This remainder
@@ -6624,3 +6625,63 @@ theorem withLowK2S_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
       · exact u2s q hD hx
 
 end ECDSAAdd.Entrant.ParkCopyS
+
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.ParkCarry9Develop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ParkCarryDevelop InverseCarryDevelop
+open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+set_option maxHeartbeats 8000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+theorem source2_in_y (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : bit2 L.core.high ∈ L.core.y :=
+ List.mem_of_mem_drop (List.mem_of_mem_take (bit2_mem _ (by simp [CuccaroStreamedSquareLayout.high,hw.core.y])))
+
+theorem body_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (c : Wire) :
+ wires (body L c) ⊆ (c::L.wires).toFinset := by
+ have h := Carry9BodyRefined.body_refined L hw c
+ intro q hq
+ rcases Finset.mem_insert.mp (h hq) with e|h
+ · rw [e]
+   have vy := source2_in_y L hw
+   simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,vy]
+ · exact ParkCarry8Develop.body_support L hw hn c h
+
+theorem fold_fixes_source (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (ext : List Wire) (hlen : 300 ≤ ext.length) (away : ∀ q ∈ ext, q ∉ L.wires) :
+ LowZero18Square.foldPerm L ext (bit2 L.core.high) = bit2 L.core.high := by
+ have vy := source2_in_y L hw
+ have ht : SquareCarryLoan719.target L ∈ L.foldPad := by
+  apply List.mem_of_mem_drop
+  exact DiagSq.getD_in (LowZero18LowK.ktmp L) 67 (by rw [LowZero18LowK.ktmp_length L hw]; omega)
+ have ne1 : bit2 L.core.high ≠ SquareCarryLoan719.target L := by
+  intro e
+  have a := List.count_pos_iff.mpr vy
+  have b := List.count_pos_iff.mpr ht
+  rw [←e] at b
+  have h := layoutCount L hn (bit2 L.core.high)
+  omega
+ have ne2 : bit2 L.core.high ≠ ext.getD 0 0 := by
+  intro e
+  apply away (ext.getD 0 0) (DiagSq.getD_in ext 0 (by omega))
+  rw [←e]
+  simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,vy]
+ change SquareCarryLoan719.foldPerm L ext (bit2 L.core.high) = _
+ rw [SquareCarryLoan719.foldPerm_eq L hw]
+ exact Equiv.swap_apply_of_ne_of_ne ne1 ne2
+
+theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (ext : List Wire) (c : Wire) (hlen : 300 ≤ ext.length) (away : ∀ q ∈ ext, q ∉ L.wires) :
+ wires (hostedBody L (LowZero18Square.foldPerm L ext) c) ⊆ (c::L.wires).toFinset := by
+ rw [hosted_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
+ exact body_support L hw hn c
+#print axioms body_support
+#print axioms fold_fixes_source
+#print axioms hosted_fold_support
+end ECDSAAdd.Entrant.ParkCarry9Develop
+
+end
