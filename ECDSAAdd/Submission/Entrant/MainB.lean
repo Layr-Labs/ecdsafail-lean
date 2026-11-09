@@ -14681,22 +14681,22 @@ def firstCells (divide : Bool) : Program :=
   if divide then
     triple 2 3 4 e3 ++ cell true 0 1 4 ++
     triple 2 3 4 d3short ++ triple 1 3 4 e3short ++ cell true 0 2 4 ++
-    triple 1 3 4 d3 ++ triple 1 2 4 e3 ++ cell true 0 3 4 ++
-    triple 1 2 4 d3 ++ triple 1 2 3 e3 ++ cell true 0 4 3 ++
-    triple 1 2 3 d3
+    triple 1 3 4 d3 ++ triple 4 1 2 e3 ++ cell true 0 3 2 ++
+    triple 4 1 2 d3short ++ triple 3 1 2 e3short ++ cell true 0 4 2 ++
+    triple 3 1 2 d3
   else
-    triple 1 2 3 e3 ++ cell false 0 4 3 ++
-    triple 1 2 3 d3 ++ triple 1 2 4 e3 ++ cell false 0 3 4 ++
-    triple 1 2 4 d3 ++ triple 1 3 4 e3 ++ cell false 0 2 4 ++
+    triple 3 1 2 e3 ++ cell false 0 4 2 ++
+    triple 3 1 2 d3short ++ triple 4 1 2 e3short ++ cell false 0 3 2 ++
+    triple 4 1 2 d3 ++ triple 1 3 4 e3 ++ cell false 0 2 4 ++
     triple 1 3 4 d3short ++ triple 2 3 4 e3short ++ cell false 0 1 4 ++
     triple 2 3 4 d3
 
 /-- The divide first-packet cells after the first cell. -/
 def firstRestZ : Program :=
   triple 2 3 4 d3short ++ triple 1 3 4 e3short ++ cell true 0 2 4 ++
-  triple 1 3 4 d3 ++ triple 1 2 4 e3 ++ cell true 0 3 4 ++
-  triple 1 2 4 d3 ++ triple 1 2 3 e3 ++ cell true 0 4 3 ++
-  triple 1 2 3 d3
+  triple 1 3 4 d3 ++ triple 4 1 2 e3 ++ cell true 0 3 2 ++
+  triple 4 1 2 d3short ++ triple 3 1 2 e3short ++ cell true 0 4 2 ++
+  triple 3 1 2 d3
 
 /-- The first divide cell always sees one zero payload word, so it uses the
 comparator-free `FirstZero.cell`; the rest of `firstCells true` is unchanged. -/
@@ -14705,9 +14705,9 @@ def firstCellsZ : Program := triple 2 3 4 e3 ++ (FirstZero.cell ++ firstRestZ)
 /-- The S2 cells for logical trits 4, 3, 2, ending with the codec that opens the `s 0 4` hole
 for trit 1 (unchanged prefix of `firstCells false`). -/
 def firstHead : Program :=
-  triple 1 2 3 e3 ++ cell false 0 4 3 ++
-  triple 1 2 3 d3 ++ triple 1 2 4 e3 ++ cell false 0 3 4 ++
-  triple 1 2 4 d3 ++ triple 1 3 4 e3 ++ cell false 0 2 4 ++
+  triple 3 1 2 e3 ++ cell false 0 4 2 ++
+  triple 3 1 2 d3short ++ triple 4 1 2 e3short ++ cell false 0 3 2 ++
+  triple 4 1 2 d3 ++ triple 1 3 4 e3 ++ cell false 0 2 4 ++
   triple 1 3 4 d3short ++ triple 2 3 4 e3short
 
 /-- S2 first body with f2dcda16's measured joint inverse: the S1 swap of trit 1 is kept, and its
@@ -18485,11 +18485,11 @@ def firstCodec (divide : Bool) : Program :=
   let mapped := fun a b c P => renameProgram (localTriple a b c) P
   if divide then
     mapped 2 3 4 e3 ++ mapped 2 3 4 d3short ++ mapped 1 3 4 e3short ++
-    mapped 1 3 4 d3 ++ mapped 1 2 4 e3 ++ mapped 1 2 4 d3 ++ mapped 1 2 3 e3 ++
-    mapped 1 2 3 d3
+    mapped 1 3 4 d3 ++ mapped 4 1 2 e3 ++ mapped 4 1 2 d3short ++ mapped 3 1 2 e3short ++
+    mapped 3 1 2 d3
   else
-    mapped 1 2 3 e3 ++ mapped 1 2 3 d3 ++ mapped 1 2 4 e3 ++
-    mapped 1 2 4 d3 ++ mapped 1 3 4 e3 ++ mapped 1 3 4 d3short ++ mapped 2 3 4 e3short ++
+    mapped 3 1 2 e3 ++ mapped 3 1 2 d3short ++ mapped 4 1 2 e3short ++
+    mapped 4 1 2 d3 ++ mapped 1 3 4 e3 ++ mapped 1 3 4 d3short ++ mapped 2 3 4 e3short ++
     mapped 2 3 4 d3
 
 end ECDSAAdd.Entrant.Rolling1588
@@ -18590,8 +18590,8 @@ theorem codecPath_counts (divide : Bool) :
 
 
 theorem firstCodec_counts (divide : Bool) :
-    toffoliCount (firstCodec divide)=26 ∧
-      measurementCount (firstCodec divide)=4 ∧ gateSlots (firstCodec divide)=898 := by
+    toffoliCount (firstCodec divide)=24 ∧
+      measurementCount (firstCodec divide)=4 ∧ gateSlots (firstCodec divide)=896 := by
   cases divide <;> decide +kernel
 
 
@@ -22220,6 +22220,92 @@ theorem first_short_bridge (a b : Nat) (ha : a=1 ∨ a=2) (hb : b=1 ∨ b=2)
     (renameProgram (localTriple b 3 4) e3short) H _ x
     before.2.2.2 before.2.2.1 after.1 decoder.2 decoder.1 encoder.2 encoder.1 H_involution
 
+private abbrev H12 : Program := renameProgram (localTriple 3 1 2) Replay.c3RawH
+
+private theorem H12_ports (a : Nat) : renameProgram (localTriple a 1 2) Replay.c3RawH=H12 := by
+  simp [H12,Replay.c3RawH,renameProgram,renameInstr,localTriple]
+
+private theorem H12_safe (x : Nat) : safe H12 x=true :=
+  Replay.safe_of_no_measurements H12
+    ((renameProgram_counts (localTriple 3 1 2) Replay.c3RawH).2.trans rfl) x
+
+private theorem H12_involution (x : Nat) : bitRun H12 (bitRun H12 x)=x := by
+  have localLaw (y : Nat) : safe (Replay.c3RawH++Replay.c3RawH) y=safe [] y ∧
+      bitRun (Replay.c3RawH++Replay.c3RawH) y=bitRun [] y := by
+    constructor
+    · rw [Replay.safe_append,Replay.c3RawH_safe,Replay.c3RawH_safe]
+      rfl
+    · rw [Replay.bitRun_append,Replay.c3RawH_involution]
+      rfl
+  have result := triple_law 3 1 2 (by decide) (by decide) (by decide)
+    (Replay.c3RawH++Replay.c3RawH) []
+    (by simpa only [wires_append,Finset.union_subset_iff] using And.intro H_range H_range)
+    (by simp [wires]) localLaw x
+  have bits := result.2
+  rw [rename_append] at bits
+  change bitRun (H12++H12) x=x at bits
+  exact (Replay.bitRun_append H12 H12 x).symm.trans bits
+
+private theorem mapped_encode_factor12 (a : Nat) (a1 : a≠1) (a2 : a≠2) (x : Nat) :
+    safe (renameProgram (localTriple a 1 2) e3) x=
+      safe (renameProgram (localTriple a 1 2) e3short) (bitRun H12 x) ∧
+    bitRun (renameProgram (localTriple a 1 2) e3) x=
+      bitRun (renameProgram (localTriple a 1 2) e3short) (bitRun H12 x) := by
+  have law (y : Nat) : safe e3 y=safe (Replay.c3RawH++e3short) y ∧
+      bitRun e3 y=bitRun (Replay.c3RawH++e3short) y := by
+    constructor
+    · rw [Replay.safe_append,Replay.c3RawH_safe,Bool.true_and]
+      exact Replay.e3short_factor_safe y
+    · rw [Replay.bitRun_append]
+      exact Replay.e3short_factor_bits y
+  have result := triple_law a 1 2 a1 a2 (by decide) e3 (Replay.c3RawH++e3short)
+    c3_support.1 (by
+      simpa only [wires_append,Finset.union_subset_iff] using And.intro H_range c3_support.2.2.1)
+    law x
+  rw [rename_append] at result
+  simpa only [Replay.safe_append,Replay.bitRun_append,H12_ports a,H12_safe,Bool.true_and] using result
+
+private theorem mapped_decode_factor12 (a : Nat) (a1 : a≠1) (a2 : a≠2) (x : Nat) :
+    safe (renameProgram (localTriple a 1 2) d3) x=
+      safe (renameProgram (localTriple a 1 2) d3short) x ∧
+    bitRun (renameProgram (localTriple a 1 2) d3) x=
+      bitRun H12 (bitRun (renameProgram (localTriple a 1 2) d3short) x) := by
+  have law (y : Nat) : safe d3 y=safe (d3short++Replay.c3RawH) y ∧
+      bitRun d3 y=bitRun (d3short++Replay.c3RawH) y := by
+    constructor
+    · rw [Replay.safe_append,Replay.c3RawH_safe,Bool.and_true]
+      exact Replay.d3short_factor_safe y
+    · rw [Replay.bitRun_append]
+      exact Replay.d3short_factor_bits y
+  have result := triple_law a 1 2 a1 a2 (by decide) d3 (d3short++Replay.c3RawH)
+    c3_support.2.1 (by
+      simpa only [wires_append,Finset.union_subset_iff] using And.intro c3_support.2.2.2 H_range)
+    law x
+  rw [rename_append] at result
+  simpa only [Replay.safe_append,Replay.bitRun_append,H12_ports a,H12_safe,Bool.and_true] using result
+
+theorem first_short_bridge12 (a b : Nat) (ha : a=3 ∨ a=4) (hb : b=3 ∨ b=4)
+    (x : Nat) (legal : MeasuredCodec5.legalNat x=true) :
+    safe (renameProgram (localTriple a 1 2) d3short++renameProgram (localTriple b 1 2) e3short)
+      (bitRun (renameProgram (localTriple a 1 2) e3) x)=true ∧
+    bitRun (renameProgram (localTriple a 1 2) d3short++renameProgram (localTriple b 1 2) e3short)
+      (bitRun (renameProgram (localTriple a 1 2) e3) x)=
+        bitRun (renameProgram (localTriple b 1 2) e3) x := by
+  have a1 : a≠1 := by omega
+  have a2 : a≠2 := by omega
+  have b1 : b≠1 := by omega
+  have b2 : b≠2 := by omega
+  have before := triple_facts a 1 2 (by omega) (by decide) (by decide)
+    a1 a2 (by decide) x legal
+  have after := triple_facts b 1 2 (by omega) (by decide) (by decide)
+    b1 b2 (by decide) x legal
+  have decoder := mapped_decode_factor12 a a1 a2 (bitRun (renameProgram (localTriple a 1 2) e3) x)
+  have encoder := mapped_encode_factor12 b b1 b2 x
+  exact short_transition (renameProgram (localTriple a 1 2) d3)
+    (renameProgram (localTriple a 1 2) d3short) (renameProgram (localTriple b 1 2) e3)
+    (renameProgram (localTriple b 1 2) e3short) H12 _ x
+    before.2.2.2 before.2.2.1 after.1 decoder.2 decoder.1 encoder.2 encoder.1 H12_involution
+
 end ECDSAAdd.Entrant.Rolling1588FirstReplay
 end -- original module boundary
 
@@ -22244,14 +22330,14 @@ def mappedTriple (a b c : Nat) (P : Program) : Program :=
 def pack (k : Nat) : Program :=
   if k=0 then mappedTriple 2 3 4 e3
   else if k=1 then mappedTriple 1 3 4 e3
-  else if k=2 then mappedTriple 1 2 4 e3
-  else mappedTriple 1 2 3 e3
+  else if k=2 then mappedTriple 4 1 2 e3
+  else mappedTriple 3 1 2 e3
 
 def unpack (k : Nat) : Program :=
   if k=0 then mappedTriple 2 3 4 d3
   else if k=1 then mappedTriple 1 3 4 d3
-  else if k=2 then mappedTriple 1 2 4 d3
-  else mappedTriple 1 2 3 d3
+  else if k=2 then mappedTriple 4 1 2 d3
+  else mappedTriple 3 1 2 d3
 
 def stageIndex (divide : Bool) (k : Nat) : Nat := if divide then k else 3-k
 
@@ -22260,17 +22346,17 @@ def stageCode (divide : Bool) (k : Nat) : Program :=
 
 def active (divide : Bool) (k : Nat) : Nat := stageIndex divide k+1
 
-def hole (divide : Bool) (k : Nat) : Nat := if stageIndex divide k=3 then 3 else 4
+def hole (divide : Bool) (k : Nat) : Nat := if 2≤stageIndex divide k then 2 else 4
 
 def transition (divide : Bool) (k : Nat) : Program :=
   if k<3 then
     if divide then
       if k=0 then mappedTriple 2 3 4 d3short++mappedTriple 1 3 4 e3short
-      else if k=1 then mappedTriple 1 3 4 d3++mappedTriple 1 2 4 e3
-      else mappedTriple 1 2 4 d3++mappedTriple 1 2 3 e3
+      else if k=1 then mappedTriple 1 3 4 d3++mappedTriple 4 1 2 e3
+      else mappedTriple 4 1 2 d3short++mappedTriple 3 1 2 e3short
     else
-      if k=0 then mappedTriple 1 2 3 d3++mappedTriple 1 2 4 e3
-      else if k=1 then mappedTriple 1 2 4 d3++mappedTriple 1 3 4 e3
+      if k=0 then mappedTriple 3 1 2 d3short++mappedTriple 4 1 2 e3short
+      else if k=1 then mappedTriple 4 1 2 d3++mappedTriple 1 3 4 e3
       else mappedTriple 1 3 4 d3short++mappedTriple 2 3 4 e3short
   else unpack (if divide then 3 else 0)
 
@@ -22312,12 +22398,12 @@ private theorem pack_active_free (k : Nat) (hk : k<4) :
   interval_cases k
   · simpa [pack] using mapped_pair_free 2 3 4 1 (by decide) (by decide) (by decide)
   · simpa [pack] using mapped_pair_free 1 3 4 2 (by decide) (by decide) (by decide)
-  · simpa [pack] using mapped_pair_free 1 2 4 3 (by decide) (by decide) (by decide)
-  · simpa [pack] using mapped_pair_free 1 2 3 4 (by decide) (by decide) (by decide)
+  · simpa [pack] using mapped_pair_free 4 1 2 3 (by decide) (by decide) (by decide)
+  · simpa [pack] using mapped_pair_free 3 1 2 4 (by decide) (by decide) (by decide)
 
 private theorem pack_facts (k : Nat) (hk : k<4) (x : Nat) (legal : legalNat x=true) :
     safe (pack k) x=true ∧
-      (bitRun (pack k) x).testBit (2*(if k=3 then 3 else 4)+1)=false ∧
+      (bitRun (pack k) x).testBit (2*(if 2≤k then 2 else 4)+1)=false ∧
       safe (unpack k) (bitRun (pack k) x)=true ∧ bitRun (unpack k) (bitRun (pack k) x)=x := by
   interval_cases k
   · simpa [pack,unpack,mappedTriple] using Rolling1588FirstReplay.triple_facts
@@ -22325,14 +22411,14 @@ private theorem pack_facts (k : Nat) (hk : k<4) (x : Nat) (legal : legalNat x=tr
   · simpa [pack,unpack,mappedTriple] using Rolling1588FirstReplay.triple_facts
       1 3 4 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x legal
   · simpa [pack,unpack,mappedTriple] using Rolling1588FirstReplay.triple_facts
-      1 2 4 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x legal
+      4 1 2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x legal
   · simpa [pack,unpack,mappedTriple] using Rolling1588FirstReplay.triple_facts
-      1 2 3 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x legal
+      3 1 2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) x legal
 
 private theorem finite_pack (k : Nat) (hk : k<4) :
     ∀x,x<1024 → legalNat x=true →
       safe (pack k) x=true ∧
-      (bitRun (pack k) x).testBit (2*(if k=3 then 3 else 4)+1)=false ∧
+      (bitRun (pack k) x).testBit (2*(if 2≤k then 2 else 4)+1)=false ∧
       (bitRun (pack k) x).testBit (2*(k+1))=x.testBit (2*(k+1)) ∧
       (bitRun (pack k) x).testBit (2*(k+1)+1)=x.testBit (2*(k+1)+1) := by
   intro x _ legal
@@ -22379,7 +22465,7 @@ private theorem finite_transition_result (divide : Bool) (k : Nat) (hk : k<4) :
   cases divide
   · interval_cases k
     · simpa [stageCode,stageIndex,transition,pack,unpack,mappedTriple] using
-        full_bridge 3 2 (by decide) (by decide) x legal
+        Rolling1588FirstReplay.first_short_bridge12 3 4 (Or.inl rfl) (Or.inr rfl) x legal
     · simpa [stageCode,stageIndex,transition,pack,unpack,mappedTriple] using
         full_bridge 2 1 (by decide) (by decide) x legal
     · simpa [stageCode,stageIndex,transition,pack,unpack,mappedTriple] using
@@ -22393,7 +22479,7 @@ private theorem finite_transition_result (divide : Bool) (k : Nat) (hk : k<4) :
     · simpa [stageCode,stageIndex,transition,pack,unpack,mappedTriple] using
         full_bridge 1 2 (by decide) (by decide) x legal
     · simpa [stageCode,stageIndex,transition,pack,unpack,mappedTriple] using
-        full_bridge 2 3 (by decide) (by decide) x legal
+        Rolling1588FirstReplay.first_short_bridge12 4 3 (Or.inr rfl) (Or.inl rfl) x legal
     · have facts := pack_facts 3 (by decide) x legal
       simpa [stageCode,stageIndex,transition,pack,unpack,mappedTriple] using
         And.intro facts.2.2.1 facts.2.2.2
@@ -26517,22 +26603,26 @@ private theorem firstCells_support_into (divide : Bool) (W : Finset Wire)
     Finset.union_subset_iff]
   all_goals repeat' apply And.intro
   all_goals first
-    | exact code 1 2 3 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-    | exact code 1 2 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
+    | exact code 3 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
+    | exact code 4 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
     | exact code 1 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
     | exact code 2 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-    | exact code 1 2 3 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-    | exact code 1 2 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
+    | exact code 3 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
+    | exact code 4 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
     | exact code 1 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
     | exact code 2 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
     | exact code 1 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
     | exact code 2 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
+    | exact code 3 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
+    | exact code 4 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
     | exact code 1 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
     | exact code 2 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
+    | exact code 3 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
+    | exact code 4 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
     | exact half 1 4 (by decide) (by decide) (by decide)
     | exact half 2 4 (by decide) (by decide) (by decide)
-    | exact half 3 4 (by decide) (by decide) (by decide)
-    | exact half 4 3 (by decide) (by decide) (by decide)
+    | exact half 3 2 (by decide) (by decide) (by decide)
+    | exact half 4 2 (by decide) (by decide) (by decide)
 
 /-- The padded joint inverse only uses sites of the old trit-1 half window and the packet history. -/
 private theorem padded_old_support (W : Finset Wire)
@@ -27181,22 +27271,26 @@ private theorem firstBody_719_free (divide : Bool) : base 719∉wires (firstBody
       Finset.mem_union,not_or]
     all_goals repeat' apply And.intro
     all_goals first
-      | exact code 1 2 3 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 1 2 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
+      | exact code 3 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
+      | exact code 4 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
       | exact code 1 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
       | exact code 2 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 1 2 3 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 1 2 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
+      | exact code 3 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
+      | exact code 4 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
       | exact code 1 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
       | exact code 2 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
       | exact code 1 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
       | exact code 2 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
+      | exact code 3 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
+      | exact code 4 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
       | exact code 1 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
       | exact code 2 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
+      | exact code 3 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
+      | exact code 4 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
       | exact half 1 4 (by decide) (by decide)
       | exact half 2 4 (by decide) (by decide)
-      | exact half 3 4 (by decide) (by decide)
-      | exact half 4 3 (by decide) (by decide)
+      | exact half 3 2 (by decide) (by decide)
+      | exact half 4 2 (by decide) (by decide)
   cases divide
   · simp only [firstBody,Bool.false_eq_true,if_false]
     intro used
@@ -27412,22 +27506,26 @@ private theorem firstBody_760_free (divide : Bool) : base 760∉wires (firstBody
       Finset.mem_union,not_or]
     all_goals repeat' apply And.intro
     all_goals first
-      | exact code 1 2 3 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 1 2 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
+      | exact code 3 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
+      | exact code 4 1 2 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
       | exact code 1 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
       | exact code 2 3 4 (by decide) (by decide) (by decide) e3 Rolling1588.c3_support.1
-      | exact code 1 2 3 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
-      | exact code 1 2 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
+      | exact code 3 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
+      | exact code 4 1 2 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
       | exact code 1 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
       | exact code 2 3 4 (by decide) (by decide) (by decide) d3 Rolling1588.c3_support.2.1
       | exact code 1 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
       | exact code 2 3 4 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
+      | exact code 3 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
+      | exact code 4 1 2 (by decide) (by decide) (by decide) e3short Rolling1588.c3_support.2.2.1
       | exact code 1 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
       | exact code 2 3 4 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
+      | exact code 3 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
+      | exact code 4 1 2 (by decide) (by decide) (by decide) d3short Rolling1588.c3_support.2.2.2
       | exact half 1 4 (by decide) (by decide)
       | exact half 2 4 (by decide) (by decide)
-      | exact half 3 4 (by decide) (by decide)
-      | exact half 4 3 (by decide) (by decide)
+      | exact half 3 2 (by decide) (by decide)
+      | exact half 4 2 (by decide) (by decide)
   cases divide
   · simp only [firstBody,Bool.false_eq_true,if_false]
     intro used
@@ -27664,22 +27762,26 @@ private theorem firstCells_physical (divide : Bool) : GatePhysical (firstCells d
   cases divide <;> simp only [firstCells,Bool.false_eq_true,if_false,if_true,gatePhysical_append]
   all_goals repeat' apply And.intro
   all_goals first
-    | exact triple_physical 1 2 3 e3 Rolling1588.c3_support.1 (by decide +kernel) c3_physical.1
-    | exact triple_physical 1 2 4 e3 Rolling1588.c3_support.1 (by decide +kernel) c3_physical.1
+    | exact triple_physical 3 1 2 e3 Rolling1588.c3_support.1 (by decide +kernel) c3_physical.1
+    | exact triple_physical 4 1 2 e3 Rolling1588.c3_support.1 (by decide +kernel) c3_physical.1
     | exact triple_physical 1 3 4 e3 Rolling1588.c3_support.1 (by decide +kernel) c3_physical.1
     | exact triple_physical 2 3 4 e3 Rolling1588.c3_support.1 (by decide +kernel) c3_physical.1
-    | exact triple_physical 1 2 3 d3 Rolling1588.c3_support.2.1 (by decide +kernel) c3_physical.2.1
-    | exact triple_physical 1 2 4 d3 Rolling1588.c3_support.2.1 (by decide +kernel) c3_physical.2.1
+    | exact triple_physical 3 1 2 d3 Rolling1588.c3_support.2.1 (by decide +kernel) c3_physical.2.1
+    | exact triple_physical 4 1 2 d3 Rolling1588.c3_support.2.1 (by decide +kernel) c3_physical.2.1
     | exact triple_physical 1 3 4 d3 Rolling1588.c3_support.2.1 (by decide +kernel) c3_physical.2.1
     | exact triple_physical 2 3 4 d3 Rolling1588.c3_support.2.1 (by decide +kernel) c3_physical.2.1
     | exact triple_physical 1 3 4 e3short Rolling1588.c3_support.2.2.1 (by decide +kernel) c3_physical.2.2.1
     | exact triple_physical 2 3 4 e3short Rolling1588.c3_support.2.2.1 (by decide +kernel) c3_physical.2.2.1
+    | exact triple_physical 3 1 2 e3short Rolling1588.c3_support.2.2.1 (by decide +kernel) c3_physical.2.2.1
+    | exact triple_physical 4 1 2 e3short Rolling1588.c3_support.2.2.1 (by decide +kernel) c3_physical.2.2.1
     | exact triple_physical 1 3 4 d3short Rolling1588.c3_support.2.2.2 (by decide +kernel) c3_physical.2.2.2
     | exact triple_physical 2 3 4 d3short Rolling1588.c3_support.2.2.2 (by decide +kernel) c3_physical.2.2.2
+    | exact triple_physical 3 1 2 d3short Rolling1588.c3_support.2.2.2 (by decide +kernel) c3_physical.2.2.2
+    | exact triple_physical 4 1 2 d3short Rolling1588.c3_support.2.2.2 (by decide +kernel) c3_physical.2.2.2
     | exact cellAt 1 4 (by decide)
     | exact cellAt 2 4 (by decide)
-    | exact cellAt 3 4 (by decide)
-    | exact cellAt 4 3 (by decide)
+    | exact cellAt 3 2 (by decide)
+    | exact cellAt 4 2 (by decide)
 
 private theorem firstBody_physical (divide : Bool) : GatePhysical (firstBody divide) := by
   have cells := firstCells_physical divide
@@ -31612,16 +31714,16 @@ theorem packet_resource_delta (divide : Bool) (j : Nat) :
   all_goals exact ⟨by omega,by omega,by omega⟩
 
 private theorem firstCells_resources (divide : Bool) :
-    toffoliCount (firstCells divide)=4*1276+26 ∧
+    toffoliCount (firstCells divide)=4*1276+24 ∧
     measurementCount (firstCells divide)=4*1023+4 ∧
     gateSlots (firstCells divide)=4*
       (gateSlots (Q6EndpointCell.half divide base (base 2409))+
-        gateSlots FrontierSW1591.swapBody+8+halfExtra divide)+898 := by
+        gateSlots FrontierSW1591.swapBody+8+halfExtra divide)+896 := by
   have path := firstCodec_counts divide
   have a := cell_resources divide 0 1 4
   have b := cell_resources divide 0 2 4
-  have c := cell_resources divide 0 3 4
-  have d := cell_resources divide 0 4 3
+  have c := cell_resources divide 0 3 2
+  have d := cell_resources divide 0 4 2
   cases divide <;>
     simp only [firstCells,firstCodec,triple,Bool.false_eq_true,if_false,if_true,
       toffoliCount_append,measurementCount_append,gateSlots_append,
@@ -31673,7 +31775,7 @@ G1 half -> 773-T forward joint, `JointForward1588.savingG`); measurement record 
 unchanged and syntax slots do not grow. -/
 private theorem firstBody_resource_delta (divide : Bool) :
     toffoliCount (firstBody divide)+FirstZero.saving divide+JointInverse1588.saving divide+
-      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.firstBody divide)+26 ∧
+      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.firstBody divide)+24 ∧
     measurementCount (firstBody divide)=measurementCount (ControlLoan1589.firstBody divide)+4 ∧
     gateSlots (firstBody divide)≤gateSlots (ControlLoan1589.firstBody divide)+(898+4*halfExtra divide+9500) := by
   have old := old_raw_resources divide 0 Replay5.restLetters
@@ -31704,7 +31806,7 @@ private theorem firstBody_resource_delta (divide : Bool) :
 
 theorem firstPacket_resource_delta (divide : Bool) :
     toffoliCount (firstPacket divide)+FirstZero.saving divide+JointInverse1588.saving divide+
-      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.firstPacket divide)+26 ∧
+      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.firstPacket divide)+24 ∧
     measurementCount (firstPacket divide)=measurementCount (ControlLoan1589.firstPacket divide)+4 ∧
     gateSlots (firstPacket divide)≤gateSlots (ControlLoan1589.firstPacket divide)+(898+4*halfExtra divide+9500) := by
   have fresh := G0CarryLoan5.counts (base 1028) (base 0) (base 768) (firstBody divide)
@@ -31750,7 +31852,7 @@ theorem groups_resource_delta (divide : Bool) (j n : Nat) :
 
 theorem placedFirstPacket_resource_delta (divide : Bool) :
     toffoliCount (placedFirstPacket divide)+FirstZero.saving divide+JointInverse1588.saving divide+
-      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.placedFirstPacket divide)+26 ∧
+      JointForward1588.savingG divide=toffoliCount (ControlLoan1589.placedFirstPacket divide)+24 ∧
     measurementCount (placedFirstPacket divide)=measurementCount (ControlLoan1589.placedFirstPacket divide)+4 ∧
     gateSlots (placedFirstPacket divide)≤gateSlots (ControlLoan1589.placedFirstPacket divide)+(898+4*halfExtra divide+9500) := by
   simpa only [placedFirstPacket,ControlLoan1589.placedFirstPacket,renameProgram_counts,
@@ -31820,7 +31922,7 @@ private theorem exitHead_resource_delta :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryField_resource_delta :
-    toffoliCount entryField+490=toffoliCount ControlLoan1589.entryField ∧
+    toffoliCount entryField+492=toffoliCount ControlLoan1589.entryField ∧
     measurementCount entryField=measurementCount ControlLoan1589.entryField+106 ∧
     gateSlots entryField≤gateSlots ControlLoan1589.entryField+(50196+509*halfExtra true+9969) := by
   have pc := FourScratchWindow.counts
@@ -31843,7 +31945,7 @@ theorem entryField_resource_delta :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitField_resource_delta :
-    toffoliCount exitField+234=toffoliCount ControlLoan1589.exitField ∧
+    toffoliCount exitField+236=toffoliCount ControlLoan1589.exitField ∧
     measurementCount exitField=measurementCount ControlLoan1589.exitField+106 ∧
     gateSlots exitField≤gateSlots ControlLoan1589.exitField+(51299+509*halfExtra false+9969) := by
   have pc := FourScratchWindow.counts
@@ -31958,18 +32060,18 @@ private theorem hosted_resource_sub (P Q HP HQ : Program) (t m sl : Nat)
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryFieldHosted_resource_delta :
-    toffoliCount entryFieldHosted+490=toffoliCount ControlLoan1589.entryFieldHosted ∧
+    toffoliCount entryFieldHosted+492=toffoliCount ControlLoan1589.entryFieldHosted ∧
     measurementCount entryFieldHosted=measurementCount ControlLoan1589.entryFieldHosted+106 ∧
     gateSlots entryFieldHosted≤gateSlots ControlLoan1589.entryFieldHosted+(50196+509*halfExtra true+9969) :=
   hosted_resource_sub entryField ControlLoan1589.entryField entryFieldHosted ControlLoan1589.entryFieldHosted
-    490 106 (50196+509*halfExtra true+9969) rfl rfl entryField_resource_delta
+    492 106 (50196+509*halfExtra true+9969) rfl rfl entryField_resource_delta
 
 theorem exitFieldHosted_resource_delta :
-    toffoliCount exitFieldHosted+234=toffoliCount ControlLoan1589.exitFieldHosted ∧
+    toffoliCount exitFieldHosted+236=toffoliCount ControlLoan1589.exitFieldHosted ∧
     measurementCount exitFieldHosted=measurementCount ControlLoan1589.exitFieldHosted+106 ∧
     gateSlots exitFieldHosted≤gateSlots ControlLoan1589.exitFieldHosted+(51299+509*halfExtra false+9969) :=
   hosted_resource_sub exitField ControlLoan1589.exitField exitFieldHosted ControlLoan1589.exitFieldHosted
-    234 106 (51299+509*halfExtra false+9969) rfl rfl exitField_resource_delta
+    236 106 (51299+509*halfExtra false+9969) rfl rfl exitField_resource_delta
 
 end ECDSAAdd.Entrant.Rolling1588
 end -- original module boundary
@@ -32390,7 +32492,7 @@ theorem exitSlotGrowth_eq : exitSlotGrowth=11699 := rfl
 /- The deltas are proved with numerals (`omega` over the symbolic `halfExtra` atom makes the kernel
 recurse too deeply on these two goals) and restated with the named growth constants. -/
 private theorem entryKernel_resource_delta_num :
-    toffoliCount entryKernel+500=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+502=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
     gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+13226) := by
   have first := firstPhase_metrics true
@@ -32405,14 +32507,14 @@ private theorem entryKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem entryKernel_resource_delta :
-    toffoliCount entryKernel+500=toffoliCount ControlLoan1589.entryKernel ∧
+    toffoliCount entryKernel+502=toffoliCount ControlLoan1589.entryKernel ∧
     measurementCount entryKernel=measurementCount ControlLoan1589.entryKernel+106 ∧
     gateSlots entryKernel≤gateSlots ControlLoan1589.entryKernel+(63762+entrySlotGrowth) := by
   rw [entrySlotGrowth_eq]
   exact entryKernel_resource_delta_num
 
 private theorem exitKernel_resource_delta_num :
-    toffoliCount exitKernel+244=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+246=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
     gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+11699) := by
   have first := firstPhase_metrics false
@@ -32427,7 +32529,7 @@ private theorem exitKernel_resource_delta_num :
   exact ⟨by omega,by omega,by omega⟩
 
 theorem exitKernel_resource_delta :
-    toffoliCount exitKernel+244=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+246=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel=measurementCount ControlLoan1589.exitKernel+106 ∧
     gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+exitSlotGrowth) := by
   rw [exitSlotGrowth_eq]
@@ -35816,23 +35918,23 @@ private def DeltaSub (P Q : Program) (t m slots : Nat) : Prop :=
   toffoliCount P+t=toffoliCount Q ∧ measurementCount P=measurementCount Q+m ∧
     gateSlots P≤gateSlots Q+slots
 
-private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 500 106 (63762+Rolling1588.entrySlotGrowth))
+private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 502 106 (63762+Rolling1588.entrySlotGrowth))
     (L : ControlledPointLayout) (c : Fp) :
-    DeltaSub (division K L c) (division K0 L c) 500 106 (63762+Rolling1588.entrySlotGrowth) := by
+    DeltaSub (division K L c) (division K0 L c) 502 106 (63762+Rolling1588.entrySlotGrowth) := by
   simp only [DeltaSub,division,FrontierEntry1591Callers.entry,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
 
-private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 244 106 (64865+Rolling1588.exitSlotGrowth))
-    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 244 106 (64865+Rolling1588.exitSlotGrowth) := by
+private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 246 106 (64865+Rolling1588.exitSlotGrowth))
+    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 246 106 (64865+Rolling1588.exitSlotGrowth) := by
   simpa only [DeltaSub,exit,renameProgram_counts,rename_gateSlots] using h
 
 private theorem gen_delta_of_shapes (L : ControlledPointLayout)
     (D D0 : Fp→Program) (S S0 P P0 G G0 : Program) (cx cy : Fp)
     (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D0 S0 P0 cx cy)
-    (hd : ∀c,DeltaSub (D c) (D0 c) 500 106 (63762+Rolling1588.entrySlotGrowth))
-    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 244 106 (64865+Rolling1588.exitSlotGrowth)) :
-    DeltaSub G G0 744 212 (128627+Rolling1588.slotGrowth) := by
+    (hd : ∀c,DeltaSub (D c) (D0 c) 502 106 (63762+Rolling1588.entrySlotGrowth))
+    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 246 106 (64865+Rolling1588.exitSlotGrowth)) :
+    DeltaSub G G0 748 212 (128627+Rolling1588.slotGrowth) := by
   subst G G0
   have d:=hd (-cy)
   simp only [Delta,DeltaLe,DeltaSub,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
@@ -35841,7 +35943,7 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
   exact ⟨by omega,by omega,by omega⟩
 
 private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 744 212 (128627+Rolling1588.slotGrowth) := by
+    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 748 212 (128627+Rolling1588.slotGrowth) := by
   have squareCounts:=SquareCarryLoan719BF.counts_eq L
   have squareSlots:=SquareCarryLoan719BF.slots_eq L
   exact gen_delta_of_shapes L
@@ -35859,14 +35961,14 @@ private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
       Rolling1588.exitKernel_resource_delta L)
 
 theorem gen_resource_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+744=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
+    toffoliCount (gen L cx cy)+748=toffoliCount (ControlLoan1589BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)=measurementCount (ControlLoan1589BFFinal.gen L cx cy)+212 ∧
     gateSlots (gen L cx cy)≤gateSlots (ControlLoan1589BFFinal.gen L cx cy)+(128627+Rolling1588.slotGrowth) :=
   gen_delta L cx cy
 
 private theorem wrapper_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : DeltaSub P Q 744 212 (128627+Rolling1588.slotGrowth)) :
-    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 744 212 (128627+Rolling1588.slotGrowth) := by
+    (P Q : Program) (h : DeltaSub P Q 748 212 (128627+Rolling1588.slotGrowth)) :
+    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 748 212 (128627+Rolling1588.slotGrowth) := by
   simp only [DeltaSub,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -36016,7 +36118,7 @@ theorem wrapper_qubits (C : Point) (cx cy : Fp) :
       Rolling1588.exitKernel_719_free layout layout_widths layout_nodup) C cx cy
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152179 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2152175 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
@@ -36040,7 +36142,7 @@ def program (C : Point) : Program :=
       Edges.wrapper layout C cy (gen layout cx cy)
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2152179,1499965,1588,50139199+Rolling1588.slotGrowth⟩
+def bounds : Challenge.Bounds := ⟨2152175,1499965,1588,50139199+Rolling1588.slotGrowth⟩
 
 theorem program_correct (C : Point) (b : Bool) (R : Point) :
     Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
@@ -36057,7 +36159,7 @@ theorem program_correct (C : Point) (b : Bool) (R : Point) :
       ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
         (WrapperOB5.support_used layout layout_widths))
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152179 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2152175 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc => exact wrapper_toffoli cx cy hc
