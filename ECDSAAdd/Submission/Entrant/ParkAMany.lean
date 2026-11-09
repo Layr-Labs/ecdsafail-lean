@@ -1,4 +1,5 @@
 import ECDSAAdd.Submission.Entrant.ParkAWorkLoan
+import ECDSAAdd.Submission.Entrant.ParkAStagedProof
 
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
@@ -3035,7 +3036,7 @@ set_option maxRecDepth 100000
 set_option Elab.async false
  theorem actual_compiled:
  (compileManyChunked? (loans Baselines.layout.dialogStreamedSquareWide)
-  (aMiddle Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic)).isSome=true:=by decide +kernel
+  (aMiddle Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic)).isSome=true:=ParkAStagedProof.actual_compiled
 #print axioms actual_compiled
 end ManyACarryDevelop
 
