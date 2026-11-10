@@ -1,5 +1,5 @@
 import ECDSAAdd.Submission.Entrant.ParkAWorkLoan
-import ECDSAAdd.Submission.Entrant.ParkASet
+import ECDSAAdd.Submission.Entrant.ParkAStagedProof
 
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
@@ -253,34 +253,34 @@ theorem prefix_split (n:Nat) (xs ys cs:List Wire) (cin:Wire)
      rw[ih as bs cs c (by simp_all) (by simp_all) (by simp_all)]
      simp[nextMajority,lastCarry,List.append_assoc]
 
-theorem next_nd (n:Nat) (xs ys cs:List Wire) (cin:Wire)
- (hx:n+1≤xs.length) (hy:n+1≤ys.length) (hc:n+1≤cs.length)
- (hn:(cin::(xs++ys++cs)).Nodup):
- [xs.getD n 0,ys.getD n 0,lastCarry n cs cin,cs.getD n 0].Nodup:=by
- induction n generalizing xs ys cs cin with
- | zero=>
-  cases xs with
-  | nil=>simp at hx
-  | cons a as=>
-   cases ys with
-   | nil=>simp at hy
-   | cons b bs=>
-    cases cs with
-    | nil=>simp at hc
-    | cons c cs=>exact prefix_head_nd a b c cin as bs cs hn
- | succ n ih=>
-  cases xs with
-  | nil=>simp at hx
-  | cons a as=>
-   cases ys with
-   | nil=>simp at hy
-   | cons b bs=>
-    cases cs with
-    | nil=>simp at hc
-    | cons c cs=>
-     exact ih as bs cs c (by simp_all) (by simp_all) (by simp_all) (prefix_tail_nd a b c cin as bs cs hn)
+                                                       
+                                                         
+                                
+                                                                   
+                                           
+         
+               
+                   
+               
+                
+                    
+                
+                 
+                     
+                                                           
+              
+               
+                   
+               
+                
+                    
+                
+                 
+                     
+                 
+                                                                                                         
 #print axioms prefix_split
-#print axioms next_nd
+                     
 end ManyACarryDevelop
 
 end
@@ -294,36 +294,36 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 set_option linter.unnecessarySeqFocus false
 
-theorem index_not_take (n:Nat) (cs:List Wire) (hc:n<cs.length) (hn:cs.Nodup):cs.getD n 0∉cs.take n:=by
- induction n generalizing cs with
- | zero=>simp
- | succ n ih=>
-  cases cs with
-  | nil=>simp at hc
-  | cons c cs=>
-   have nd:=List.nodup_cons.mp hn
-   have len:n<cs.length:=by simp_all
-   simp only[List.getD_cons_succ,List.take_succ_cons,List.mem_cons,not_or]
-   constructor
-   · intro e;exact nd.1 (e ▸ DiagSq.getD_in cs n len)
-   · exact ih cs len nd.2
+                                                                                                      
+                                 
+             
+              
+               
+                   
+               
+                                 
+                                    
+                                                                          
+              
+                                                     
+                         
 
-theorem next_value (n:Nat) (xs ys cs:List Wire) (cin:Wire) (s:State)
- (hx:n+1≤xs.length) (hy:n+1≤ys.length) (hc:n+1≤cs.length)
- (hn:(cin::(xs++ys++cs)).Nodup) (hz:∀w∈cs,s.basis w=false):
- let t:=run (carryPrefix n xs ys cs cin) [] s
- (carryBit (t.basis (xs.getD n 0)) (t.basis (ys.getD n 0)) (t.basis (lastCarry n cs cin))).toNat=
- (regValue (xs.take (n+1)) s.basis+regValue (ys.take (n+1)) s.basis+(s.basis cin).toNat)/2^(n+1):=by
- let t:=run (carryPrefix n xs ys cs cin) [] s
- have ndcs:cs.Nodup:=(List.nodup_append'.mp (List.nodup_cons.mp hn).2).2.1
- have clean:t.basis (cs.getD n 0)=false:=
-  (carryPrefix_preserves n xs ys cs cin hn s [] _ (index_not_take n cs (by omega) ndcs)).trans
-   (hz _ (DiagSq.getD_in cs n (by omega)))
- have val:=prefix_value_reg n xs ys cs cin s [] hx hy hc hn hz
- rw[prefix_split n xs ys cs cin hx hy hc,run_append,List.take_nil,List.drop_nil]at val
- rw[nextMajority,majority_correct _ _ _ _ (next_nd n xs ys cs cin hx hy hc hn) t [],clean]at val
- simpa only[writeBit,Function.update_self,Bool.false_xor]using val
-#print axioms next_value
+                                                                    
+                                                         
+                                                           
+                                             
+                                                                                                 
+                                                                                                    
+                                             
+                                                                          
+                                         
+                                                                                              
+                                          
+                                                              
+                                                                                      
+                                                                                                
+                                                                  
+                        
 end ManyACarryDevelop
 
 end
@@ -402,20 +402,20 @@ theorem sub_known (n:Nat) (xs ys cs:List Wire) (cin:Wire) (s:State)
  rw[borrow_value _ _ _ hm (Nat.mod_lt _ hm) (Nat.mod_lt _ hm)]at val
  exact bool_nat_injective _ _ (val.trans (cacheN_value (n+1) H).symm)
 
-theorem add_next_known (n:Nat) (xs ys cs:List Wire) (cin:Wire) (s:State)
- (hx:n+1≤xs.length) (hy:n+1≤ys.length) (hc:n+1≤cs.length)
- (hn:(cin::(xs++ys++cs)).Nodup) (hz:∀q∈cs,s.basis q=false) (hi:s.basis cin=false)
- (H:Nat) (source:regValue xs s.basis=H) (target:regValue ys s.basis=976*H/64):
- let t:=run (carryPrefix n xs ys cs cin) [] s
- carryBit (t.basis (xs.getD n 0)) (t.basis (ys.getD n 0)) (t.basis (lastCarry n cs cin))=cacheN (n+1) H:=by
- have val:=next_value n xs ys cs cin s hx hy hc hn hz
- rw[regValue_take_mod xs (n+1) hx s.basis,regValue_take_mod ys (n+1) hy s.basis,source,target,hi]at val
- simp only[Bool.toNat_false,Nat.add_zero]at val
- have hm:0<2^(n+1):=by positivity
- rw[←w64_return _ H hm,borrow_value _ _ _ hm (Nat.mod_lt _ hm) (Nat.mod_lt _ hm)]at val
- exact bool_nat_injective _ _ (val.trans (cacheN_value (n+1) H).symm)
+                                                                        
+                                                         
+                                                                                 
+                                                                              
+                                             
+                                                                                                           
+                                                     
+                                                                                                       
+                                               
+                                 
+                                                                                       
+                                                                     
 #print axioms sub_known
-#print axioms add_next_known
+                            
 end ManyACarryDevelop
 
 end
@@ -1204,23 +1204,23 @@ theorem cachedSubMany_support (k:Nat) (xs ys cs hs:List Wire) (cin q r t:Wire)
    · exact Finset.mem_union_right _ h
  · exact Finset.mem_union_left _ (by rw[split,wires_append];exact Finset.mem_union_right _ hp)
 
-theorem cachedSubMany_physical (k:Nat) (xs ys cs hs:List Wire) (cin q r t:Wire)
- (hx:xs.length=ys.length) (hc:cs.length+1=ys.length) (hy:7+k+2≤ys.length)
- (fresh:∀h∈hs,h∉cs)
- (old:∀i∈cachedSubTriple xs ys cs cin q r t,Challenge.instructionValid i):
- ∀i∈cachedSubMany k xs ys cs hs cin q r t,Challenge.instructionValid i:=by
- have split:=cachedSubTriple_splitN k xs ys cs cin q r t hx hc hy
- intro i hi
- simp only[cachedSubMany,List.mem_append]at hi
- rcases hi with (hi|hi)|hi
- · apply old i
-   rw[split]
-   exact List.mem_append_left _ (List.mem_append.mpr hi)
- · exact copyMany_physical ((cs.drop 7).take k) hs
-    (fun h hh bad=>fresh h hh (List.mem_of_mem_drop (List.mem_of_mem_take bad))) i hi
- · apply old i
-   rw[split]
-   exact List.mem_append_right _ hi
+                                                                               
+                                                                         
+                   
+                                                                          
+                                                                          
+                                                                 
+           
+                                              
+                          
+              
+            
+                                                        
+                                                  
+                                                                                     
+              
+            
+                                   
 
 #print axioms cachedSubMany_counts
 #print axioms cachedSubMany_support
@@ -1269,12 +1269,12 @@ theorem mappedAdd_split (n:Nat) (xs ys cs:List Wire) (cin:Wire)
        rw[stepEq]
        simp only[List.append_assoc]
 
-theorem mappedAdd_take (n:Nat) (xs ys cs:List Wire) (cin:Wire)
- (hx:n+2≤xs.length) (hy:n+2≤ys.length) (hc:n≤cs.length):
- (mappedAdd (mappedRead xs false) ys cs cin).take (6*n)=carryPrefix n xs ys cs cin:=by
- rw[mappedAdd_split n xs ys cs cin hx hy hc]
- rw[←carryPrefix_length n xs ys cs cin (by omega) (by omega) hc,List.take_left]
-#print axioms mappedAdd_take
+                                                              
+                                                        
+                                                                                      
+                                            
+                                                                               
+                            
 
 #print axioms mappedAdd_split
 end ManyACarryDevelop
@@ -1689,7 +1689,7 @@ theorem buildMany_frame (k:Nat) (acc Z bank : List Wire) (cin : Wire) (src hs : 
     (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (NarrowAcc.build8 acc Z bank cin src)) (rq:r≠q)
     (hp:s.basis p=false) (freshP:p∉cin::(src++acc++Z++bank))
     (offP:p∉wires (buildDual acc Z bank cin src q r))
-    (hk:k≤62) (ndhs:hs.Nodup)
+    (hk:k≤119) (ndhs:hs.Nodup)
     (hu:∀u∈hs,s.basis u=false) (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
     (offU:∀u∈hs,u∉wires (buildTriple acc Z bank cin src q r p)) :
     run (buildMany k acc Z bank cin src hs q r p) m s=
@@ -1926,7 +1926,7 @@ theorem unbuildMany_frame (k:Nat) (acc Z bank : List Wire) (cin : Wire) (src hs 
     (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src)) (rq:r≠q)
     (savedP:s.basis p=cacheBit7 (regValue src s.basis)) (freshP:p∉cin::(src++acc++Z++bank))
     (offP:p∉wires (unbuildDual acc Z bank cin src q r)) (pq:p≠q) (pr:p≠r)
-    (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+    (hk:k≤119) (ndhs:hs.Nodup) (hostlen:hs.length=k)
     (savedU:hs.map s.basis=bankValues 7 k (regValue src s.basis))
     (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
     (offU:∀u∈hs,u∉wires (unbuildTriple acc Z bank cin src q r p)) :
@@ -2179,7 +2179,7 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
 theorem buildMany_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62) (hh:hs.length=k):
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤119) (hh:hs.length=k):
  toffoliCount (buildMany k acc Z bank cin src hs q r p)=toffoliCount (buildTriple acc Z bank cin src q r p) ∧
  measurementCount (buildMany k acc Z bank cin src hs q r p)=measurementCount (buildTriple acc Z bank cin src q r p) ∧
  Challenge.gateSlots (buildMany k acc Z bank cin src hs q r p)=Challenge.gateSlots (buildTriple acc Z bank cin src q r p)+k:=by
@@ -2195,7 +2195,7 @@ theorem buildMany_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List 
  exact ⟨by omega,by omega,by omega⟩
 
 theorem unbuildMany_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤62) (hh:hs.length=k):
+ (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤119) (hh:hs.length=k):
  toffoliCount (unbuildMany k acc Z bank cin src hs q r p)+k=toffoliCount (unbuildTriple acc Z bank cin src q r p) ∧
  measurementCount (unbuildMany k acc Z bank cin src hs q r p)=measurementCount (unbuildTriple acc Z bank cin src q r p) ∧
  Challenge.gateSlots (unbuildMany k acc Z bank cin src hs q r p)+4*k=Challenge.gateSlots (unbuildTriple acc Z bank cin src q r p):=by
@@ -2271,7 +2271,7 @@ theorem cached_wloop_many_eq (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:L
  (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false) (zeroP:s.basis p=false) (zeroU:∀u∈hs,s.basis u=false)
  (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
  (freshP:p∉cin::(src++acc++Z++bank)) (pq:p≠q) (pr:p≠r)
- (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+ (hk:k≤119) (ndhs:hs.Nodup) (hostlen:hs.length=k)
  (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
  (oldNe:∀u∈hs,u≠q ∧ u≠r ∧ u≠p)
  (offF:q∉wires (NarrowAcc.build8 acc Z bank cin src)) (offI:q∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src))
@@ -2345,12 +2345,12 @@ theorem compiled_wloop_many_eq (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs
  (offIR:r∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src))
  (offFP:p∉wires (buildDual acc Z bank cin src q r)) (offMP:p∉wires middle)
  (offIP:p∉wires (unbuildDual acc Z bank cin src q r))
- (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+ (hk:k≤119) (ndhs:hs.Nodup) (hostlen:hs.length=k)
  (zeroU:∀u∈hs,s.basis u=false) (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
  (oldNe:∀u∈hs,u≠q ∧ u≠r ∧ u≠p)
  (offFU:∀u∈hs,u∉wires (buildTriple acc Z bank cin src q r p))
  (offIU:∀u∈hs,u∉wires (unbuildTriple acc Z bank cin src q r p))
- (cert:ZeroSetDevelop.SRewrites hs middle newMiddle)
+ (cert:ManyRewrites hs middle newMiddle)
  (good:WReady acc Z bank cin src (regValue src s.basis) (middleState (NarrowAcc.build8 acc Z bank cin src) middle s m)):
  run (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p) m s=
  run (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) m s:=by
@@ -2402,25 +2402,25 @@ theorem consumedAddMany_support (k:Nat) (src Z ys cs hs:List Wire) (cin q r t:Wi
    · exact Finset.mem_union_right _ h
  · exact Finset.mem_union_left _ (by rw[split,wires_append];exact Finset.mem_union_right _ hp)
 
-theorem consumedAddMany_physical (k:Nat) (src Z ys cs hs:List Wire) (cin q r t:Wire)
- (hsrc:k+9≤src.length) (hy:k+10≤ys.length) (hc:k+10≤cs.length)
- (fresh:∀h∈hs,h∉cs)
- (old:∀i∈consumedAddTriple src Z ys cs cin q r t,Challenge.instructionValid i):
- ∀i∈consumedAddMany k src Z ys cs hs cin q r t,Challenge.instructionValid i:=by
- have split:=consumedAddTriple_splitN k src Z ys cs cin q r t hsrc hy hc
- intro i hi
- simp only[consumedAddMany,List.mem_append]at hi
- rcases hi with (hi|hi)|hi
- · apply old i
-   rw[split]
-   exact List.mem_append_left _ (List.mem_append_left _ hi)
- · exact moveMany_physical ((cs.drop 7).take k) hs
-    (fun h hh bad=>fresh h hh (List.mem_of_mem_drop (List.mem_of_mem_take bad))) i hi
- · apply old i
-   rw[split]
-   exact List.mem_append_right _ hi
+                                                                                    
+                                                              
+                   
+                                                                               
+                                                                               
+                                                                        
+           
+                                                
+                          
+              
+            
+                                                           
+                                                  
+                                                                                     
+              
+            
+                                   
 #print axioms consumedAddMany_support
-#print axioms consumedAddMany_physical
+                                      
 end ManyACarryDevelop
 
 end
@@ -2435,190 +2435,59 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 attribute [local irreducible] ECDSAAdd.wires
 
-/-- The W loop only reads the first 31 wires of the zero pad. -/
-def padZ (L:CuccaroStreamedSquareWideLayout):List Wire:=(accZ L).take 31
+                                                                                                            
+                                                                                                               
+                                                                                                       
+                                                                                                   
+                                                              
+                                                    
+                              
+                                                                       
+                                                        
+                                                                                                                                                                               
+                                                                                                               
+                                                                          
+                                                         
+                             
+                                         
+              
+                                   
+                                                
+                                                                        
+                                                     
+                                                                
+                                          
+                                                                                                
+                                                    
+                                                                       
+                                              
+                                    
+                                                              
+                                      
+                                                                                           
+                                                           
+                                      
+                                                               
+                                   
+                                      
+             
+                                                        
+                                                                                                                                            
+                                                                                                                  
+                                                                        
+                                                                                       
+                                                                  
+                                                                                           
+                                                           
+                                                                                           
+                                                               
+                                                                                 
+                                                                    
+                                                                                    
+                                                                                                            
+                                           
 
-/-- Exact program equalities: the short pad builds the same W loop. -/
-def PadReady (L:CuccaroStreamedSquareWideLayout):Prop:=
- buildTriple (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)=
-  buildTriple (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L) ∧
- unbuildTriple (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)=
-  unbuildTriple (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L) ∧
- NarrowAcc.build8 (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L)=
-  NarrowAcc.build8 (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) ∧
- SourceAddFourDevelop.unbuild (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L)=
-  SourceAddFourDevelop.unbuild (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) ∧
- buildDual (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L)=
-  buildDual (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) ∧
- unbuildDual (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L)=
-  unbuildDual (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L)
-
-theorem tx_short (Z:List Wire) (w:Nat) (f:MeasuredSquareFold) (h:w-f.shift-f.src.length≤31):
- Acc.tx (Z.take 31) w f=Acc.tx Z w f:=by
- simp only[Acc.tx,List.take_take,Nat.min_eq_left h]
-
-theorem buildTriple_short (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) (hs:src.length=128):
- buildTriple acc (Z.take 31) bank cin src q r p=buildTriple acc Z bank cin src q r p:=by
- have e4:=tx_short Z 163 (Acc.earlyTerm src false 4) (by simp[Acc.earlyTerm,hs])
- have e10:=tx_short Z 139 (Acc.earlyTerm src false 10) (by simp[Acc.earlyTerm,hs])
- have e6:=tx_short Z 139 (Acc.earlyTerm src true 6) (by simp[Acc.earlyTerm,hs])
- have e32:=tx_short Z 161 (Acc.earlyTerm src false 32) (by simp[Acc.earlyTerm,hs])
- simp only[buildTriple,buildPre,buildPost,Acc.seedOp,Acc.op,e4,e10,e6,e32]
-
-theorem take5 (Z:List Wire):(Z.take 31).take 5=Z.take 5:=by simp[List.take_take]
-theorem take1 (Z:List Wire):(Z.take 31).take 1=Z.take 1:=by simp[List.take_take]
-
-theorem unbuildTriple_short (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) (hs:src.length=128):
- unbuildTriple acc (Z.take 31) bank cin src q r p=unbuildTriple acc Z bank cin src q r p:=by
- have e4:=tx_short Z 163 (Acc.earlyTerm src false 4) (by simp[Acc.earlyTerm,hs])
- have e10:=tx_short Z 139 (Acc.earlyTerm src false 10) (by simp[Acc.earlyTerm,hs])
- have e6:=tx_short Z 139 (Acc.earlyTerm src true 6) (by simp[Acc.earlyTerm,hs])
- have e32:=tx_short Z 161 (Acc.earlyTerm src false 32) (by simp[Acc.earlyTerm,hs])
- simp only[unbuildTriple,unbuildPre,unbuildPost,consumedAddTriple,addPre,addPost3,
-  CodexKnownOnesTail.accSub,SourceTailDevelop.tail,SourceTailDevelop.program,Acc.seedOp,Acc.op,e4,e10,e6,e32,take5,take1]
-
-theorem build8_short (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (hs:src.length=128):
- NarrowAcc.build8 acc (Z.take 31) bank cin src=NarrowAcc.build8 acc Z bank cin src:=by
- have e4:=tx_short Z 163 (Acc.earlyTerm src false 4) (by simp[Acc.earlyTerm,hs])
- have e10:=tx_short Z 139 (Acc.earlyTerm src false 10) (by simp[Acc.earlyTerm,hs])
- have e6:=tx_short Z 139 (Acc.earlyTerm src true 6) (by simp[Acc.earlyTerm,hs])
- have e32:=tx_short Z 161 (Acc.earlyTerm src false 32) (by simp[Acc.earlyTerm,hs])
- simp only[NarrowAcc.build8,NarrowAcc.pre8,CodexNarrowSub.accSub,Acc.seedOp,Acc.op,e4,e10,e6,e32]
-
-theorem unbuild_short (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (hs:src.length=128):
- SourceAddFourDevelop.unbuild acc (Z.take 31) bank cin src=SourceAddFourDevelop.unbuild acc Z bank cin src:=by
- have e4:=tx_short Z 163 (Acc.earlyTerm src false 4) (by simp[Acc.earlyTerm,hs])
- have e10:=tx_short Z 139 (Acc.earlyTerm src false 10) (by simp[Acc.earlyTerm,hs])
- have e6:=tx_short Z 139 (Acc.earlyTerm src true 6) (by simp[Acc.earlyTerm,hs])
- have e32:=tx_short Z 161 (Acc.earlyTerm src false 32) (by simp[Acc.earlyTerm,hs])
- simp only[SourceAddFourDevelop.unbuild,SourceAddFourDevelop.add,SourceAddFourDevelop.program,
-  CodexKnownOnesTail.accSub,SourceTailDevelop.tail,SourceTailDevelop.program,Acc.seedOp,Acc.op,e4,e10,e6,e32,take5,take1]
-
-theorem buildDual_short (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r:Wire) (hs:src.length=128):
- buildDual acc (Z.take 31) bank cin src q r=buildDual acc Z bank cin src q r:=by
- have e4:=tx_short Z 163 (Acc.earlyTerm src false 4) (by simp[Acc.earlyTerm,hs])
- have e10:=tx_short Z 139 (Acc.earlyTerm src false 10) (by simp[Acc.earlyTerm,hs])
- have e6:=tx_short Z 139 (Acc.earlyTerm src true 6) (by simp[Acc.earlyTerm,hs])
- have e32:=tx_short Z 161 (Acc.earlyTerm src false 32) (by simp[Acc.earlyTerm,hs])
- simp only[buildDual,buildPre,buildPost,Acc.seedOp,Acc.op,e4,e10,e6,e32]
-
-theorem unbuildDual_short (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r:Wire) (hs:src.length=128):
- unbuildDual acc (Z.take 31) bank cin src q r=unbuildDual acc Z bank cin src q r:=by
- have e4:=tx_short Z 163 (Acc.earlyTerm src false 4) (by simp[Acc.earlyTerm,hs])
- have e10:=tx_short Z 139 (Acc.earlyTerm src false 10) (by simp[Acc.earlyTerm,hs])
- have e6:=tx_short Z 139 (Acc.earlyTerm src true 6) (by simp[Acc.earlyTerm,hs])
- have e32:=tx_short Z 161 (Acc.earlyTerm src false 32) (by simp[Acc.earlyTerm,hs])
- simp only[unbuildDual,unbuildPre,unbuildPost,consumedAddDual,addPre,addPost2,
-  CodexKnownOnesTail.accSub,SourceTailDevelop.tail,SourceTailDevelop.program,Acc.seedOp,Acc.op,e4,e10,e6,e32,take5,take1]
-
-theorem pad_ready (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths):PadReady L:=by
- have hs:=hiReg_length L hw
- exact ⟨buildTriple_short _ _ _ _ _ _ _ _ hs,unbuildTriple_short _ _ _ _ _ _ _ _ hs,
-  build8_short _ _ _ _ _ hs,unbuild_short _ _ _ _ _ hs,
-  buildDual_short _ _ _ _ _ _ _ hs,unbuildDual_short _ _ _ _ _ _ _ hs⟩
-
-theorem padZ_mem (L:CuccaroStreamedSquareWideLayout) (q:Wire) (h:q∈padZ L):q∈accZ L:=List.mem_of_mem_take h
-
-theorem pad_domain (L:CuccaroStreamedSquareWideLayout) (src:List Wire) (q:Wire)
- (h:q∉L.core.cin::(src++accReg L++accZ L++accBank L)):
- q∉L.core.cin::(src++accReg L++padZ L++accBank L):=by
- intro bad
- apply h
- simp only[List.mem_cons,List.mem_append]at bad ⊢
- rcases bad with e|((e|e)|e)|e
- · exact Or.inl e
- · exact Or.inr (Or.inl (Or.inl (Or.inl e)))
- · exact Or.inr (Or.inl (Or.inl (Or.inr e)))
- · exact Or.inr (Or.inl (Or.inr (padZ_mem L q e)))
- · exact Or.inr (Or.inr e)
-
-theorem pad_fits (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
- (f:MeasuredSquareFold) (hf:f∈earlyHTerms (hiReg L)):
- Acc.Fits (accReg L) (padZ L) (accBank L) L.core.cin 163 f:=by
- have old:=wTerms_fits L hw hn f hf
- have lens:=acc_lengths L hw
- have hl:=hiReg_length L hw
- have pl:(padZ L).length=31:=by simp[padZ,lens.2.1]
- refine ⟨⟨old.len,?_,old.bankLen⟩,?_⟩
- · rw[pl]
-   simp only[earlyHTerms,Acc.earlyTerm,List.mem_cons,List.not_mem_nil,or_false]at hf
-   rcases hf with rfl|rfl|rfl|rfl <;> simp[hl]
- · exact old.nd.sublist (List.Sublist.cons₂ _ (List.Sublist.append
-    (List.Sublist.append (List.Sublist.refl _) (List.take_sublist 31 (accZ L))) (List.Sublist.refl _)))
-
-def aFoldMany (k:Nat) (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire) (middle:Program):Program:=
- buildMany k (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)++middle++
- unbuildMany k (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
-theorem aFoldMany_eq (k:Nat) (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
-    (g:Wire) (hs:List Wire) (newMiddle:Program) (hg:g∉L.wires)
-    (hk:k≤62) (ndhs:hs.Nodup) (hostlen:hs.length=k)
-    (work:∀u∈hs,u∈L.core.work)
-    (freshU:∀u∈hs,u∉L.core.cin::(hiReg L++accReg L++padZ L++accBank L))
-    (oldNe:∀u∈hs,u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L)
-    (cert:ZeroSetDevelop.SRewrites hs (aMiddle L g) newMiddle) (base : BasisState) (hc:L.PairClean base) (hsum:base L.core.sumCarry=false) (hV:base (eV L)=false) (hP:base (spare L)=false)
-    (O : Nat) (hO:O<SquareReduction.p) (s : State) (m : List Bool) (hf:SquareFrame L.core.out base O s.basis) :
-    run (aFoldMany k L g hs newMiddle) m s=run (aFoldTriple L g) m s := by
-  have pad:=pad_ready L hw
-  have clean:=L.squareFrame_clean hn base s.basis O hf hc
-  have lens:=acc_lengths L hw
-  have hzFull:∀q∈accZ L,s.basis q=false := by
-    intro q hq
-    rcases accZ_mem L q hq with h|h
-    · exact (regValue_zero _ _).mp clean.pad q h
-    · exact (regValue_zero _ _).mp clean.work q (List.mem_of_mem_drop h)
-  have hz:∀q∈padZ L,s.basis q=false := fun q hq=>hzFull q (padZ_mem L q hq)
-  have hb:∀q∈accBank L,s.basis q=false := fun q hq =>
-    (regValue_zero _ _).mp clean.pad q (List.mem_of_mem_take hq)
-  have ha:regValue (accReg L) s.basis=0 :=
-    (regValue_zero _ _).mpr (fun q hq=>(regValue_zero _ _).mp clean.work q (accReg_work L q hq))
-  have away:=ParkCarryDevelop.sumCarry_off_regs L hn
-  have zero:s.basis L.core.sumCarry=false := (hf.2 _ away.1).trans hsum
-  have off:=a_wloop_sumCarry_free L hw hn g hg
-  have zeroR:s.basis (eV L)=false :=
-    (hf.2 _ (eReg_away L hn _ (eK_mem L hw).2.2.1).1).trans hV
-  have fits:=pad_fits L hw hn
-  have freshQ:=pad_domain L (hiReg L) _ (sumCarry_fresh_domain L hn)
-  have freshR:=pad_domain L (hiReg L) _ (eV_fresh_domain L hw hn)
-  have freshP:=pad_domain L (hiReg L) _ (spare_fresh_domain L hw hn)
-  have offR:=wloop_original_off (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) (eV L)
-    lens.1 (hiReg_length L hw) fits freshR
-  have zeroP:s.basis (spare L)=false:=
-   (hf.2 _ (eReg_away L hn _ (spare_mem_eReg L hw)).1).trans hP
-  have offP:=spare_off_dual L hw hn
-  rw[←pad.2.2.2.2.1,←pad.2.2.2.2.2]at offP
-  have offQ:=off.1
-  change L.core.sumCarry∉wires (NarrowAcc.build8 (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) at offQ
-  rw[←pad.2.2.1]at offQ
-  have offQI:=off.2.2
-  change L.core.sumCarry∉wires (SourceAddFourDevelop.unbuild (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) at offQI
-  rw[←pad.2.2.2.1]at offQI
-  have zeroU:∀u∈hs,s.basis u=false:=by
-   intro u hu
-   exact (regValue_zero _ _).mp clean.work u (work u hu)
-  have offU (u:Wire) (hu:u∈hs):u∉wires (buildTriple (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)) ∧
-   u∉wires (unbuildTriple (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)):=
-   fresh_off_triple (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L)
-    L.core.sumCarry (eV L) (spare L) u lens.1 (hiReg_length L hw) fits
-    (freshU u hu) (oldNe u hu).1 (oldNe u hu).2.1 (oldNe u hu).2.2
-  have good0:WReady (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
-    (middleState (NarrowAcc.build8 (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) (aMiddle L g) s m):=
-   a_middle_good L hw hn g hg base hc O hO s m hf
-  have good:WReady (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
-    (middleState (NarrowAcc.build8 (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L)) (aMiddle L g) s m):=by
-   rw[pad.2.2.1]
-   exact And.intro good0.1 (And.intro good0.2.1 (And.intro (fun w hw=>good0.2.2.1 w (padZ_mem L w hw)) good0.2.2.2))
-  have eq:=compiled_wloop_many_eq k (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) hs
-   L.core.sumCarry (eV L) (spare L) (aMiddle L g) newMiddle
-   lens.1 (hiReg_length L hw) fits s m hz hb clean.cin ha zero zeroR zeroP
-   freshQ freshR (eV_ne_sumCarry L hw hn)
-   freshP (spare_ne_sumCarry L hw hn) (spare_ne_eV L hw hn)
-   offQ off.2.1 offQI offR.1 (eV_off_amiddle L hw hn g hg) offR.2
-   offP.1 (spare_off_amiddle L hw hn g hg) offP.2 hk ndhs hostlen zeroU freshU oldNe
-   (fun u hu=>(offU u hu).1) (fun u hu=>(offU u hu).2) cert good
-  rw[pad.1,pad.2.1]at eq
-  simpa only[aFoldMany,aFoldTriple]using eq
-
-#print axioms aFoldMany_eq
+                          
 end ManyACarryDevelop
 
 end
@@ -2696,19 +2565,19 @@ theorem support_surround (pre old new post:Program) (hs:List Wire)
  · exact Or.inl (Or.inr hw)
 
 theorem buildMany_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62):
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤119):
  wires (buildMany k acc Z bank cin src hs q r p)⊆wires (buildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
  have len:=sub6_lengths acc Z bank src ha hl hz hb
  exact support_surround _ _ _ _ hs (cachedSubMany_support k _ _ _ hs cin q r p (by omega) (by omega) (by omega))
 
 theorem unbuildMany_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤62):
+ (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤119):
  wires (unbuildMany k acc Z bank cin src hs q r p)⊆wires (unbuildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
  exact support_surround _ _ _ _ hs (consumedAddMany_support k src Z ((acc.take 139).drop 6) (bank.take 132) hs cin q r p
   (by omega) (by simp only[List.length_drop,List.length_take];omega) (by simp only[List.length_take];omega))
 
 theorem buildMany_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤119)
  (fresh:∀u∈hs,u∉bank) (physical:GatePhysical (buildTriple acc Z bank cin src q r p)):
  GatePhysical (buildMany k acc Z bank cin src hs q r p):=by
  have len:=sub6_lengths acc Z bank src ha hl hz hb
@@ -2720,7 +2589,7 @@ theorem buildMany_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:Lis
  exact ⟨⟨physical.1.1,sub⟩,physical.2⟩
 
 theorem unbuildMany_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
- (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤62)
+ (ha:acc.length=163) (hl:src.length=128) (hb:132≤bank.length) (hk:k≤119)
  (fresh:∀u∈hs,u∉bank) (physical:GatePhysical (unbuildTriple acc Z bank cin src q r p)):
  GatePhysical (unbuildMany k acc Z bank cin src hs q r p):=by
  rw[unbuildTriple,gatePhysical_append,gatePhysical_append]at physical
@@ -2746,7 +2615,2012 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
 theorem compiled_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62) (hostlen:hs.length=k)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤119) (hostlen:hs.length=k)
+ (cert:ManyRewrites hs middle newMiddle):
+ toffoliCount (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)+k≤
+ toffoliCount (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) ∧
+ measurementCount (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)=
+ measurementCount (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) ∧
+ Challenge.gateSlots (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)+3*k≤
+ Challenge.gateSlots (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p):=by
+ have b:=buildMany_counts k acc Z bank cin src hs q r p ha hl hz hb hk hostlen
+ have i:=unbuildMany_counts k acc Z bank cin src hs q r p ha hl hb hk hostlen
+ have t:=cert.toffoli hs middle newMiddle
+ have m:=cert.measurements hs middle newMiddle
+ have slots:=cert.slots hs middle newMiddle
+ simp only[toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+ exact ⟨by omega,by omega,by omega⟩
+
+                                                                                                                             
+                                                                                        
+                                         
+                                                                                                       
+                                                                                                             
+                                                                       
+                                                                      
+                                               
+           
+                                                
+                          
+                                               
+                                      
+                    
+                                          
+                                               
+                             
+                    
+
+                                                                                                                              
+                                                                                        
+                                                             
+                                                                                                                
+                                                                                                                 
+                                                         
+                                                                                            
+                                                 
+                                                                                 
+#print axioms compiled_counts
+                              
+                               
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                       
+
+def BankReady (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Prop:=
+ hs.length=33 ∧ hs.Nodup ∧ ∀u∈hs,LoanReady L g u
+instance (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Decidable (BankReady L g hs):=by
+ unfold BankReady
+ infer_instance
+
+                                                                        
+                
+                            
+                                                 
+                         
+                                       
+                     
+
+                                                                                             
+                                                                                                  
+                                                                                  
+                                                                    
+                                                          
+                     
+           
+      
+              
+                                                            
+              
+              
+                                                                               
+                                                              
+                                                                                    
+                                            
+      
+
+                              
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                                                              
+                                                                              
+                                                                            
+                                                                                  
+                                                                                              
+                            
+                                                                                                                 
+                                                                                       
+
+                                                                                           
+                                                                  
+                                                                          
+                                                                                  
+                     
+           
+      
+              
+                                                            
+                                    
+              
+              
+                                                                                    
+                                   
+                            
+                                     
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+                                                                                                
+                                                                                                  
+                                                                                   
+                                                           
+                                                                                                             
+                                                                                            
+             
+                                                                 
+                                                                    
+
+                                 
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open ThirdSavedCarryDevelop Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxHeartbeats 8000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.wires
+
+                                                                        
+                                                                               
+                                                                                                      
+                                                                             
+                                                                                                                                           
+                               
+                                                                                                                           
+                                                                                                        
+                                                             
+                                                                                       
+              
+                                                         
+                                                                                        
+                                                      
+                                                      
+                                            
+                                                                                         
+                                                                                               
+                                                                                     
+                                                       
+                                                             
+                                                                                 
+                                                                                        
+                                                                
+                                             
+                                                                                                                      
+                                                                        
+                   
+                                                                                   
+                                            
+                                                                             
+                   
+                                                                                      
+                                                                                        
+           
+                                                                  
+                                                          
+                                                                                  
+                                                                                                     
+                   
+                                
+                                        
+            
+                             
+                                          
+                                                                                        
+                                                                                  
+                                                            
+                                                         
+                                                        
+                                                                          
+                
+                                                                                                            
+                      
+                                                                             
+                                                                                  
+                                                                                     
+                                                                                                                                    
+                     
+                                                                           
+                                                                                                                      
+                                                                                                                               
+                                                                         
+                                         
+                                           
+                                           
+                                                                                                              
+                                                   
+                                                                                                             
+                                              
+                                                                                                      
+                                       
+                                             
+                    
+                     
+                                                     
+                                                                                                      
+                      
+                                           
+              
+                                                                           
+            
+                  
+                            
+                       
+                                                                                              
+                                                                                                                                    
+                                          
+                            
+             
+                           
+
+                                 
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                         
+                                                                         
+                     
+           
+      
+              
+                                                            
+                                         
+              
+                               
+                                                                                                                             
+                                                                                               
+                                 
+
+                                                                                         
+                                                                               
+                     
+           
+      
+              
+                                                            
+                         
+              
+                               
+                                         
+                   
+                                           
+                                                                                                                              
+                                                                                                              
+                 
+
+                                                                                        
+                                                      
+                                                                 
+            
+                                                      
+                          
+                                                                
+                                     
+                 
+                                                                           
+                     
+                                                   
+                                                                                     
+                                                     
+           
+                                                            
+                          
+                                                                       
+                                                                                
+                
+
+                                                                                           
+                                                                                    
+                                                                                  
+                                    
+                                       
+                                                                                                                    
+                                   
+
+                                                                                         
+                                                             
+                                         
+                                                 
+                                                 
+                                             
+                           
+                                  
+                                     
+                                    
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ParkCarryDevelop
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unnecessarySeqFocus false
+
+                                                                                                                                  
+
+                                                                                             
+                                                                                      
+                                    
+
+                                                                                                                
+                                                                
+                                                                 
+
+                                                                                                                   
+                                                                              
+                                                                                      
+                                                                                              
+                                                                            
+                                                                       
+                                                                  
+                                                              
+                                    
+                                       
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop
+set_option linter.unusedSimpArgs false
+
+                                                                                         
+                                                                                         
+                                                                 
+
+                                                                                                            
+                                                  
+                                                                    
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+set_option maxHeartbeats 100000000
+set_option maxRecDepth 100000
+set_option Elab.async false
+                                                                                                       
+                                                                     
+                          
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open InverseCarryDevelop ZeroReadDevelop
+set_option maxHeartbeats 100000000
+set_option maxRecDepth 100000
+set_option Elab.async false
+                         
+                                                                       
+                                                                                                                                  
+                             
+end ManyACarryDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop InverseCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 100000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.toffoliCount
+
+                                                                                  
+                                                                                                     
+                                                                       
+                     
+           
+                  
+                                                          
+                           
+                                                                                                 
+
+                         
+                                                                                                         
+                                                                                                     
+                                                                                                                                                  
+
+                                                              
+                                                                        
+                                                                       
+                                                         
+      
+
+                                                                   
+
+                         
+                                                                                                            
+                                               
+                                                                                                                             
+                              
+                              
+end ManyACarryDevelop
+
+end
+
+section
+set_option Elab.async false
+set_option maxHeartbeats 6000000
+namespace ECDSAAdd.Entrant.BTrimCore
+open Arithmetic InverseCarryDevelop
+ theorem buildCached_trim (acc Z bank src : List Wire) (cin q : Wire) (hs:src.length=128) :
+ buildCached acc (Z.take 31) bank cin src q = buildCached acc Z bank cin src q := by
+ simp [buildCached,buildPre,buildPost,Acc.seedOp,Acc.op,Acc.tx,Acc.earlyTerm,hs,List.take_take]
+ theorem build8_trim (acc Z bank src : List Wire) (cin : Wire) (hs:src.length=128) :
+ NarrowAcc.build8 acc (Z.take 31) bank cin src = NarrowAcc.build8 acc Z bank cin src := by
+ simp [NarrowAcc.build8,NarrowAcc.pre8,CodexNarrowSub.accSub,Acc.seedOp,Acc.op,Acc.tx,Acc.earlyTerm,hs,List.take_take]
+ theorem unbuildConsumed_trim (acc Z bank src : List Wire) (cin q : Wire) (hs:src.length=128) :
+ unbuildConsumed acc (Z.take 31) bank cin src q = unbuildConsumed acc Z bank cin src q := by
+ simp [unbuildConsumed,unbuildPre,unbuildPost,consumedAdd,addPre,addPost,
+ SourceTailDevelop.tail,SourceTailDevelop.program,CodexKnownOnesTail.accSub,
+ Acc.seedOp,Acc.tx,Acc.earlyTerm,hs,List.take_take]
+                                                                                           
+                                                                                                                  
+                                                                                          
+                                                                            
+                                                   
+ theorem domain_sublist (acc Z bank src : List Wire) (cin : Wire) :
+ (cin::(src++acc++Z.take 31++bank)).Sublist (cin::(src++acc++Z++bank)) := by
+ simp only [List.append_assoc]
+ exact List.Sublist.cons₂ cin ((List.Sublist.refl src).append ((List.Sublist.refl acc).append
+  ((List.take_sublist 31 Z).append (List.Sublist.refl bank))))
+ theorem fits_trim (acc Z bank src : List Wire) (cin : Wire) (hs:src.length=128)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f) :
+ ∀f∈earlyHTerms src,Acc.Fits acc (Z.take 31) bank cin 163 f := by
+ intro f mem
+ have old:=hf f mem
+ have small:163-f.shift-f.src.length≤31 := by
+  simp only [earlyHTerms,List.mem_cons,List.not_mem_nil,or_false] at mem
+  rcases mem with rfl|rfl|rfl|rfl <;> simp [Acc.earlyTerm,hs]
+ refine {len:=old.len, zpad:=?_, bankLen:=old.bankLen,
+         nd:=List.Nodup.sublist (domain_sublist acc Z bank f.src cin) old.nd}
+ simp only [List.length_take]
+ have hz:=old.zpad
+ omega
+                                                                                           
+                                                                                    
+                                                                                             
+                                                                                             
+                                                                                        
+                                                                          
+                                                                            
+                                                   
+                                                                                               
+                                                                                                                                          
+                                                                                                                      
+                                                                                                 
+                                                                                                                                              
+                                                                                                                                                   
+                                                                            
+                                                   
+end ECDSAAdd.Entrant.BTrimCore
+
+end
+
+section
+namespace ECDSAAdd.Entrant.SharedPad
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold InverseCarryDevelop
+def pad (L : CuccaroStreamedSquareWideLayout) : List Wire := (accZ L).take 31
+                                                                                                 
+                         
+                                 
+      
+                                                                                               
+                                                                                     
+                                                                        
+                                                                                  
+                                                                          
+        
+                                                                                 
+                                                                        
+                                                                                   
+                                                    
+end ECDSAAdd.Entrant.SharedPad
+end
+
+section
+set_option Elab.async false
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+namespace ECDSAAdd.Entrant.AWideTemp
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop ControlLoan1589BFFold ManyACarryDevelop
+open SharedPad (pad)
+                                                                                                            
+                                                                                                              
+                                                                                                      
+                                                                                                   
+                                                              
+                                                    
+                              
+                                                                      
+                                                        
+                                                                                                                                                                               
+                                                                                                               
+                                                                          
+                                                         
+                             
+                                        
+              
+                                                          
+                                                
+                                                                        
+                                                     
+                                                                
+                                          
+                                                                                                
+                                                    
+                                                                       
+                                              
+                                         
+                                                           
+                                                                       
+                                    
+                                                              
+                                                                          
+          
+                                                                                
+                                                                                          
+                                                                    
+                                      
+                                                               
+                                                                                                                    
+                                                                                                                
+                                                                              
+                                                                                               
+                                      
+             
+                                                        
+                                                                                                                                           
+                                                                                                                 
+                                                                       
+                                                                                                
+                                                                  
+                                                              
+                                                                                                   
+                                                
+                                                                                              
+                                                                             
+          
+                                                                                   
+                                                                                          
+                                                           
+                                                                                                    
+                                                                 
+                                                           
+                                                                    
+                                                                                    
+                                                                                                                
+                                        
+                                                                   
+                                                                              
+
+
+                                                                                         
+                                                                                                                   
+                                                                                                                           
+                            
+                                                                  
+                                                                    
+
+                          
+end ECDSAAdd.Entrant.AWideTemp
+
+open ManyACarryDevelop
+open ECDSAAdd.Entrant.SharedPad (pad)
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AWideTemp
+open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                                                                                          
+
+def LoanReadyWide (L : CuccaroStreamedSquareWideLayout) (g u : Wire) : Prop :=
+ u∈L.core.work ∧ u∉L.core.cin::(hiReg L++accReg L++pad L++accBank L) ∧
+ u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L ∧ hasWire (aBodyTriple L g) u=true
+instance (L : CuccaroStreamedSquareWideLayout) (g u : Wire) : Decidable (LoanReadyWide L g u) := by
+ unfold LoanReadyWide
+ infer_instance
+
+def BankReady (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Prop:=
+ hs.length=62 ∧ hs.Nodup ∧ ∀u∈hs,LoanReadyWide L g u
+instance (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Decidable (BankReady L g hs):=by
+ unfold BankReady
+ infer_instance
+
+                                                                        
+                
+                            
+                                                 
+                         
+                                       
+                     
+
+                                                                                             
+                                                                                                  
+                                                                                  
+                                                                    
+                                                          
+                     
+           
+      
+              
+                                                            
+              
+              
+                                                                               
+                                                              
+                                                                                    
+                                            
+      
+
+                              
+end ECDSAAdd.Entrant.AWideTemp
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AWideTemp
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                                                              
+                                                                              
+                                                                            
+                                                                                  
+                                                                                              
+                            
+                                     
+                                                                                                                  
+                                                                                       
+                                                     
+
+                                                                                           
+                                                                  
+                                                                          
+                                                                                  
+                     
+           
+      
+              
+                                                            
+                                    
+              
+              
+                                                                                    
+                                   
+                            
+                                     
+end ECDSAAdd.Entrant.AWideTemp
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AWideTemp
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+                                                                                                
+                                                                                                  
+                                                                                   
+                                                           
+                                                                                                             
+                                                                                            
+             
+                                                                 
+                                                                    
+
+                                 
+end ECDSAAdd.Entrant.AWideTemp
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AWideTemp
+open ThirdSavedCarryDevelop Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxHeartbeats 8000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.wires
+
+                                                                        
+                                                                               
+                                                                                                      
+                                                                             
+                                                                                                                                           
+                               
+                                                                                                                           
+                                                                                                        
+                                                             
+                                                                                       
+              
+                                                         
+                                                                                        
+                                                      
+                                                      
+                                            
+                                                                                         
+                                                                                               
+                                                                                     
+                                                       
+                                                             
+                                                                                 
+                                                                                        
+                                                                
+                                             
+                                                                                                                      
+                                                                        
+                   
+                                                                                   
+                                            
+                                                                             
+                   
+                                                                                      
+                                                                                        
+           
+                                                                  
+                                                          
+                                                                                  
+                                                                                                     
+                   
+                                
+                                        
+            
+                             
+                                          
+                                                                                        
+                                                                                  
+                                                            
+                                                         
+                                                        
+                                                                          
+                
+                                                                                                            
+                      
+                                                                             
+                                                                                  
+                                                                                     
+                                                                                                                                    
+                     
+                                                                           
+                                                                                                                      
+                                                                                                                               
+                                                                         
+                                         
+                                           
+                                           
+                                                                                                              
+                                                   
+                                                                                                             
+                                              
+                                                                                                      
+                                       
+                                             
+                    
+                     
+                                                     
+                                                                                                      
+                      
+                                           
+              
+                                                                           
+            
+                  
+                            
+                       
+                                                                                              
+                                                                                                                                    
+                                          
+                            
+             
+                           
+
+                                 
+end ECDSAAdd.Entrant.AWideTemp
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AWideTemp
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                         
+                                                                         
+                     
+           
+      
+              
+                                                            
+                                         
+              
+                               
+                                        
+                                                                                                                              
+                                                                                               
+                                                        
+                                 
+
+                                                                                         
+                                                                               
+                     
+           
+      
+              
+                                                            
+                         
+              
+                               
+                                        
+                                         
+                   
+                                           
+                                                                                                                             
+                                                                                                                                                            
+                 
+
+                                                                                        
+                                                      
+                                                                 
+            
+                                                      
+                          
+                                                                
+                                     
+                 
+                                                                           
+                     
+                                                   
+                                                                                     
+                                                     
+           
+                                                            
+                          
+                                                                       
+                                                                                
+                
+
+                                                                                           
+                                                                                    
+                                                                                  
+                                    
+                                       
+                                                                                                                    
+                                   
+
+                                                                                         
+                                                             
+                                         
+                                                 
+                                                 
+                                             
+                           
+                                  
+                                     
+                                    
+end ECDSAAdd.Entrant.AWideTemp
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AWideTemp
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ParkCarryDevelop
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unnecessarySeqFocus false
+
+                                                                                                                                  
+
+                                                                                             
+                                                                                      
+                                    
+
+                                                                                                                
+                                                                
+                                                                 
+
+                                                                                                                   
+                                                                              
+                                                                                      
+                                                                                              
+                                                                            
+                                                                       
+                                                                  
+                                                              
+                                    
+                                       
+end ECDSAAdd.Entrant.AWideTemp
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AWideTemp
+open Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop
+set_option linter.unusedSimpArgs false
+
+                                                                                         
+                                                                                         
+                                                                 
+
+                                                                                                            
+                                                  
+                                                                    
+end ECDSAAdd.Entrant.AWideTemp
+
+end
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.SeedPadDevelop
+set_option maxHeartbeats 4000000
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+
+theorem copy_same (xs ys dst : List Wire)
+ (hx:xs.length=dst.length) (hy:ys.length=dst.length)
+ (nx:(xs++dst).Nodup) (ny:(ys++dst).Nodup)
+ (s:State) (m:List Bool) (hv:regValue xs s.basis=regValue ys s.basis) :
+ run (copyRegister none xs dst) m s=run (copyRegister none ys dst) m s := by
+ have a:=copyRegister_correct none xs dst hx nx (by simp) s m
+ have b:=copyRegister_correct none ys dst hy ny (by simp) s m
+ apply State.extensionality _ _ (a.1.trans b.1.symm)
+ funext q
+ by_cases hq:q∈dst
+ · apply (regValue_eq_iff dst _ _).mp _ q hq
+   rw [a.2.2,b.2.2]
+   simp only [copyValue,hv]
+ · exact (a.2.1 q hq).trans (b.2.1 q hq).symm
+
+open CuccaroStreamedSquareWideLayout in
+theorem seed_repad (acc Z Z' bank : List Wire) (cin w:Wire) (f:MeasuredSquareFold)
+ (ha:acc.length=w) (hf:Acc.Fits acc Z bank cin w f) (hf':Acc.Fits acc Z' bank cin w f)
+ (s:State) (m:List Bool) (hz:∀q∈Z,s.basis q=false) (hz':∀q∈Z',s.basis q=false) :
+ run (Acc.seedOp acc Z w f) m s=run (Acc.seedOp acc Z' w f) m s := by
+ have L:=Acc.fits_lengths acc Z bank cin w f ha hf.toFitsLen
+ have L':=Acc.fits_lengths acc Z' bank cin w f ha hf'.toFitsLen
+ have nd:=Acc.fits_nodup acc Z bank cin w f hf
+ have nd':=Acc.fits_nodup acc Z' bank cin w f hf'
+ have nx:(Acc.tx Z w f++Acc.ty acc f).Nodup :=
+  (List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)
+ have ny:(Acc.tx Z' w f++Acc.ty acc f).Nodup :=
+  (List.nodup_cons.mp nd').2.sublist (List.sublist_append_left _ _)
+ apply copy_same _ _ _ L.1 L'.1 nx ny s m
+ have z:regValue (Z.take (w-f.shift-f.src.length)) s.basis=0:=
+  (regValue_zero _ _).mpr (fun q hq=>hz q (List.mem_of_mem_take hq))
+ have z':regValue (Z'.take (w-f.shift-f.src.length)) s.basis=0:=
+  (regValue_zero _ _).mpr (fun q hq=>hz' q (List.mem_of_mem_take hq))
+ simp only [Acc.tx,regValue_append,z,z',Nat.mul_zero,Nat.add_zero]
+
+#print axioms copy_same
+#print axioms seed_repad
+open InverseCarryDevelop ThirdSavedCarryDevelop
+
+def buildTail (acc Z bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) : Program :=
+ Acc.op (acc.take 139) Z bank cin 139 false (Acc.earlyTerm src false 10) ++
+ cachedSubTriple (Acc.tx Z 139 (Acc.earlyTerm src true 6))
+  (Acc.ty (acc.take 139) (Acc.earlyTerm src true 6))
+  (Acc.tc bank 139 (Acc.earlyTerm src true 6)) cin q r p ++ buildPost acc Z bank cin src
+
+theorem buildTriple_split (acc Z bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) :
+ buildTriple acc Z bank cin src q r p =
+ Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4) ++ buildTail acc Z bank cin src q r p := by
+ simp only [buildTriple,buildPre,buildTail,List.append_assoc]
+
+theorem buildTail_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (hs:src.length=128) (h5:Z.take 5=Z'.take 5) :
+ buildTail acc Z bank cin src q r p=buildTail acc Z' bank cin src q r p := by
+ have h1:Z.take 1=Z'.take 1 := by
+  simpa only [List.take_take] using congrArg (List.take 1) h5
+ simp only [buildTail,buildPost,Acc.op,Acc.tx,Acc.earlyTerm,hs]
+ simp only [show 139-10-128=1 from rfl,show 139-6-128=5 from rfl,
+  show 161-32-128=1 from rfl,h1,h5]
+
+theorem buildTriple_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5) (s:State) (m:List Bool)
+ (hz:∀w∈Z,s.basis w=false) (hz':∀w∈Z',s.basis w=false) :
+ run (buildTriple acc Z bank cin src q r p) m s =
+ run (buildTriple acc Z' bank cin src q r p) m s := by
+ have he:=seed_repad acc Z Z' bank cin 163 (Acc.earlyTerm src false 4) ha hf hf' s (m.take 0) hz hz'
+ have ct:=Acc.seed_counts acc Z bank cin 163 (Acc.earlyTerm src false 4) ha hf.toFitsLen
+ have ct':=Acc.seed_counts acc Z' bank cin 163 (Acc.earlyTerm src false 4) ha hf'.toFitsLen
+ rw [buildTriple_split,buildTriple_split,run_append,run_append]
+ simp only [ct.2,ct'.2,List.drop_zero]
+ rw [buildTail_repad acc Z Z' bank cin src q r p hs h5,he]
+
+#print axioms buildTriple_repad
+open ZeroReadDevelop
+
+theorem noTargets_preserves (q:Wire) (p:Program) (h:noTargets q p) (s:State) (m:List Bool) :
+ (run p m s).basis q=s.basis q := by
+ induction p generalizing s m with
+ | nil => rfl
+ | cons i p ih =>
+  change (run ([i]++p) m s).basis q=s.basis q
+  rw [run_cat]
+  exact (ih (fun j hj=>h j (List.mem_cons_of_mem i hj)) _ _).trans
+   (single_target_preserves q i s m (h i (by simp)))
+
+def unbuildHead (acc Z bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) : Program :=
+ unbuildPre acc Z bank cin src ++
+ consumedAddTriple src Z ((acc.take 139).drop 6) (bank.take 132) cin q r p ++
+ SourceTailDevelop.tail acc Z bank cin src
+
+theorem unbuildTriple_split (acc Z bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) :
+ unbuildTriple acc Z bank cin src q r p =
+ unbuildHead acc Z bank cin src q r p ++ Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4) := by
+ simp only [unbuildTriple,unbuildPost,unbuildHead,List.append_assoc]
+
+theorem unbuildHead_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (hs:src.length=128) (h5:Z.take 5=Z'.take 5) :
+ unbuildHead acc Z bank cin src q r p=unbuildHead acc Z' bank cin src q r p := by
+ have h1:Z.take 1=Z'.take 1 := by
+  simpa only [List.take_take] using congrArg (List.take 1) h5
+ simp [unbuildHead,unbuildPre,consumedAddTriple,addPre,addPost3,
+  SourceTailDevelop.tail,SourceTailDevelop.program,CodexKnownOnesTail.accSub,
+  Acc.tx,Acc.earlyTerm,hs,h1,h5]
+
+theorem unbuildTriple_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5)
+ (avoid:∀w∈Z++Z',noTargets w (unbuildHead acc Z bank cin src q r p))
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hz':∀w∈Z',s.basis w=false) :
+ run (unbuildTriple acc Z bank cin src q r p) m s =
+ run (unbuildTriple acc Z' bank cin src q r p) m s := by
+ rw [unbuildTriple_split,unbuildTriple_split,run_cat,run_cat,
+  ←unbuildHead_repad acc Z Z' bank cin src q r p hs h5]
+ apply seed_repad acc Z Z' bank cin 163 (Acc.earlyTerm src false 4) ha hf hf'
+ · intro w hw
+   exact (noTargets_preserves w _ (avoid w (List.mem_append_left _ hw)) s m).trans (hz w hw)
+ · intro w hw
+   exact (noTargets_preserves w _ (avoid w (List.mem_append_right _ hw)) s m).trans (hz' w hw)
+
+#print axioms unbuildHead_repad
+#print axioms unbuildTriple_repad
+theorem buildTriple_measurement_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5) :
+ measurementCount (buildTriple acc Z bank cin src q r p)=
+ measurementCount (buildTriple acc Z' bank cin src q r p) := by
+ have ct:=Acc.seed_counts acc Z bank cin 163 (Acc.earlyTerm src false 4) ha hf.toFitsLen
+ have ct':=Acc.seed_counts acc Z' bank cin 163 (Acc.earlyTerm src false 4) ha hf'.toFitsLen
+ simp only [buildTriple_split,measurementCount_append,ct.2,ct'.2,
+  buildTail_repad acc Z Z' bank cin src q r p hs h5]
+
+theorem triple_loop_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) (middle:Program)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5)
+ (avoid:∀w∈Z++Z',noTargets w (unbuildHead acc Z bank cin src q r p))
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hz':∀w∈Z',s.basis w=false)
+ (postZero:∀w∈Z++Z',
+  (run middle (m.drop (measurementCount (buildTriple acc Z bank cin src q r p)))
+   (run (buildTriple acc Z bank cin src q r p) m s)).basis w=false) :
+ run (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) m s =
+ run (buildTriple acc Z' bank cin src q r p++middle++unbuildTriple acc Z' bank cin src q r p) m s := by
+ have ct:=buildTriple_measurement_repad acc Z Z' bank cin src q r p hs ha hf hf' h5
+ have forward:=buildTriple_repad acc Z Z' bank cin src q r p hs ha hf hf' h5 s m hz hz'
+ simp only [run_cat,measurementCount_append]
+ rw [←ct,←forward]
+ exact unbuildTriple_repad acc Z Z' bank cin src q r p hs ha hf hf' h5 avoid _ _
+  (fun w hw=>postZero w (List.mem_append_left _ hw))
+  (fun w hw=>postZero w (List.mem_append_right _ hw))
+
+#print axioms triple_loop_repad
+def build8Tail (acc Z bank : List Wire) (cin:Wire) (src:List Wire) : Program :=
+ Acc.op (acc.take 139) Z bank cin 139 false (Acc.earlyTerm src false 10) ++
+ CodexNarrowSub.accSub (acc.take 139) Z bank cin 139 (Acc.earlyTerm src true 6) ++
+ buildPost acc Z bank cin src
+
+theorem build8_split (acc Z bank : List Wire) (cin:Wire) (src:List Wire) :
+ NarrowAcc.build8 acc Z bank cin src =
+ Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4) ++ build8Tail acc Z bank cin src := by
+ rw [build_split]
+ simp only [buildPre,build8Tail,List.append_assoc]
+
+theorem build8Tail_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire)
+ (hs:src.length=128) (h5:Z.take 5=Z'.take 5) :
+ build8Tail acc Z bank cin src=build8Tail acc Z' bank cin src := by
+ have h1:Z.take 1=Z'.take 1 := by
+  simpa only [List.take_take] using congrArg (List.take 1) h5
+ simp [build8Tail,buildPost,Acc.op,CodexNarrowSub.accSub,Acc.tx,Acc.earlyTerm,hs,h1,h5]
+
+theorem build8_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5) (s:State) (m:List Bool)
+ (hz:∀w∈Z,s.basis w=false) (hz':∀w∈Z',s.basis w=false) :
+ run (NarrowAcc.build8 acc Z bank cin src) m s =
+ run (NarrowAcc.build8 acc Z' bank cin src) m s := by
+ rw [build8_split,build8_split,run_cat,run_cat]
+ have ct:=Acc.seed_counts acc Z bank cin 163 (Acc.earlyTerm src false 4) ha hf.toFitsLen
+ have ct':=Acc.seed_counts acc Z' bank cin 163 (Acc.earlyTerm src false 4) ha hf'.toFitsLen
+ simp only [ct.2,ct'.2,List.drop_zero]
+ rw [build8Tail_repad acc Z Z' bank cin src hs h5,
+  seed_repad acc Z Z' bank cin 163 (Acc.earlyTerm src false 4) ha hf hf' s m hz hz']
+
+#print axioms build8_repad
+theorem dual_off (acc Z bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hs:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length)
+ (offF:p∉wires (NarrowAcc.build8 acc Z bank cin src))
+ (offI:p∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src)) (pq:p≠q) (pr:p≠r) :
+ p∉wires (buildDual acc Z bank cin src q r) ∧ p∉wires (unbuildDual acc Z bank cin src q r) := by
+ constructor
+ · intro h
+   rcases Finset.mem_insert.mp (buildDual_support acc Z bank cin src q r ha hs hz hb h) with h|h
+   · exact pr h
+   · rcases Finset.mem_insert.mp (buildCached_support acc Z bank cin src q ha hs hz hb h) with h|h
+     · exact pq h
+     · exact offF h
+ · intro h
+   rcases Finset.mem_insert.mp (unbuildDual_support acc Z bank cin src q r ha hs hb h) with h|h
+   · exact pr h
+   · rcases Finset.mem_insert.mp (unbuildConsumed_support acc Z bank cin src q ha hs hb h) with h|h
+     · exact pq h
+     · exact offI h
+
+#print axioms dual_off
+theorem build8_measurement_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5) :
+ measurementCount (NarrowAcc.build8 acc Z bank cin src)=
+ measurementCount (NarrowAcc.build8 acc Z' bank cin src) := by
+ have ct:=Acc.seed_counts acc Z bank cin 163 (Acc.earlyTerm src false 4) ha hf.toFitsLen
+ have ct':=Acc.seed_counts acc Z' bank cin 163 (Acc.earlyTerm src false 4) ha hf'.toFitsLen
+ simp only [build8_split,measurementCount_append,ct.2,ct'.2,
+  build8Tail_repad acc Z Z' bank cin src hs h5]
+
+theorem middle8_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (middle:Program)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5) (s:State) (m:List Bool)
+ (hz:∀w∈Z,s.basis w=false) (hz':∀w∈Z',s.basis w=false) :
+ middleState (NarrowAcc.build8 acc Z bank cin src) middle s m =
+ middleState (NarrowAcc.build8 acc Z' bank cin src) middle s m := by
+ have ct:=build8_measurement_repad acc Z Z' bank cin src hs ha hf hf' h5
+ simp only [middleState,ct]
+ rw [build8_repad acc Z Z' bank cin src hs ha hf hf' h5 s _ hz hz']
+
+#print axioms middle8_repad
+def Counts (p q:Program):Prop := toffoliCount p=toffoliCount q ∧ measurementCount p=measurementCount q ∧ Challenge.gateSlots p=Challenge.gateSlots q
+
+theorem Counts.append {p q r s:Program} (a:Counts p q) (b:Counts r s):Counts (p++r) (q++s) := by
+ rcases a with ⟨a,b1,c⟩
+ rcases b with ⟨d,e,f⟩
+ exact ⟨by simp [toffoliCount_append,a,d],by simp [measurementCount_append,b1,e],by simp [Challenge.gateSlots_append,c,f]⟩
+
+theorem seed_counts_repad (acc Z Z' : List Wire) (src:List Wire)
+ (hs:src.length=128) (ha:acc.length=163) (hz:31≤Z.length) (hz':31≤Z'.length) :
+ Counts (Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4))
+  (Acc.seedOp acc Z' 163 (Acc.earlyTerm src false 4)) := by
+ have lx:(Acc.tx Z 163 (Acc.earlyTerm src false 4)).length=(Acc.ty acc (Acc.earlyTerm src false 4)).length := by
+  simp [Acc.tx,Acc.ty,Acc.earlyTerm,hs,ha,Nat.min_eq_left hz]
+ have ly:(Acc.tx Z' 163 (Acc.earlyTerm src false 4)).length=(Acc.ty acc (Acc.earlyTerm src false 4)).length := by
+  simp [Acc.tx,Acc.ty,Acc.earlyTerm,hs,ha,Nat.min_eq_left hz']
+ have a:=copyRegister_counts none _ _ lx
+ have b:=copyRegister_counts none _ _ ly
+ refine ⟨?_,?_,?_⟩
+ · exact a.1.trans b.1.symm
+ · exact a.2.trans b.2.symm
+ · simp only [Acc.seedOp,Baselines.copyRegister_gateSlots,lx,ly]
+
+theorem buildTriple_counts_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (hs:src.length=128) (ha:acc.length=163) (hz:31≤Z.length) (hz':31≤Z'.length)
+ (h5:Z.take 5=Z'.take 5) :
+ Counts (buildTriple acc Z bank cin src q r p) (buildTriple acc Z' bank cin src q r p) := by
+ rw [buildTriple_split,buildTriple_split,buildTail_repad acc Z Z' bank cin src q r p hs h5]
+ exact (seed_counts_repad acc Z Z' src hs ha hz hz').append ⟨rfl,rfl,rfl⟩
+
+theorem unbuildTriple_counts_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (hs:src.length=128) (ha:acc.length=163) (hz:31≤Z.length) (hz':31≤Z'.length)
+ (h5:Z.take 5=Z'.take 5) :
+ Counts (unbuildTriple acc Z bank cin src q r p) (unbuildTriple acc Z' bank cin src q r p) := by
+ rw [unbuildTriple_split,unbuildTriple_split,unbuildHead_repad acc Z Z' bank cin src q r p hs h5]
+ exact Counts.append ⟨rfl,rfl,rfl⟩ (seed_counts_repad acc Z Z' src hs ha hz hz')
+
+theorem triple_loop_counts_repad (acc Z Z' bank : List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) (middle:Program)
+ (hs:src.length=128) (ha:acc.length=163) (hz:31≤Z.length) (hz':31≤Z'.length)
+ (h5:Z.take 5=Z'.take 5) :
+ Counts (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p)
+  (buildTriple acc Z' bank cin src q r p++middle++unbuildTriple acc Z' bank cin src q r p) :=
+ ((buildTriple_counts_repad acc Z Z' bank cin src q r p hs ha hz hz' h5).append ⟨rfl,rfl,rfl⟩).append
+  (unbuildTriple_counts_repad acc Z Z' bank cin src q r p hs ha hz hz' h5)
+
+#print axioms triple_loop_counts_repad
+                                                               
+                                                                              
+                                                            
+                                                                             
+                                                                                                                
+                                                             
+                                                                                                                 
+                                                              
+                                                                       
+                                               
+                                                                        
+                                               
+                                                                                         
+                                                                                 
+                                                      
+          
+                                      
+                                        
+                                                                                        
+                                                                                                           
+                                                             
+
+                                                                                                   
+                                                                                                      
+                                                                                                             
+                                                                                            
+           
+                                                                              
+                                                                                          
+                                                                                                  
+                                      
+                                                                                                 
+
+                                                                                                     
+                                                                                                      
+                                                                                                                 
+                                                                                                  
+           
+                                                                              
+                                                                                                
+                                                                                          
+                                                                                                   
+                                      
+
+                                                                                                                    
+                                                                                                      
+                                                                                                 
+                                                                                                               
+           
+                                                  
+                          
+                                                                                   
+                                    
+                                                          
+                                    
+                                                                                     
+                                    
+                                                 
+
+                                       
+                                                                                
+                                                                             
+                                              
+                                     
+                                                                              
+
+                                                                                                                     
+                                            
+                                                                        
+                                                                                                                 
+                                                                                                            
+                                                                      
+                                                     
+                                                                     
+                                                               
+
+                                        
+end ECDSAAdd.Entrant.SeedPadDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltPadDevelop
+open CuccaroStreamedSquareWideLayout ControlLoan1589BFFold InverseCarryDevelop
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+
+def pad (L:CuccaroStreamedSquareWideLayout):List Wire :=
+ (L.core.work.drop 196).take 5 ++ (L.foldPad.drop 160).take 26
+
+theorem pad_sublist (L:CuccaroStreamedSquareWideLayout) : (pad L).Sublist (accZ L) :=
+ (List.take_sublist 5 _).append (List.take_sublist 26 _)
+
+theorem domain_sublist (L:CuccaroStreamedSquareWideLayout) (src:List Wire) :
+ (L.core.cin::(src++accReg L++pad L++accBank L)).Sublist
+ (L.core.cin::(src++accReg L++accZ L++accBank L)) := by
+ simp only [List.append_assoc]
+ exact List.Sublist.cons₂ _ ((List.Sublist.refl _).append
+  ((List.Sublist.refl _).append ((pad_sublist L).append (List.Sublist.refl _))))
+
+theorem pad_length (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) : (pad L).length=31 := by
+ simp [pad,hw.core.work,L.foldPad_length hw]
+
+theorem pad_take5 (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) :
+ (pad L).take 5=(accZ L).take 5 := by
+ simp [pad,accZ,hw.core.work,List.take_append,List.take_take]
+
+theorem terms_fits (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup) :
+ ∀f∈earlyHTerms (hiReg L),Acc.Fits (accReg L) (pad L) (accBank L) L.core.cin 163 f := by
+ intro f mem
+ have old:=wTerms_fits L hw hn f mem
+ have small:163-f.shift-f.src.length≤31 := by
+  simp only [earlyHTerms,List.mem_cons,List.not_mem_nil,or_false] at mem
+  rcases mem with rfl|rfl|rfl|rfl <;> simp [Acc.earlyTerm,hiReg_length L hw]
+ refine {len:=old.len,zpad:=?_,bankLen:=old.bankLen,nd:=?_}
+ · rw [pad_length L hw]
+   exact small
+ · exact List.Nodup.sublist (domain_sublist L f.src) old.nd
+
+#print axioms terms_fits
+end ECDSAAdd.Entrant.AltPadDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltAFoldDevelop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop ControlLoan1589BFFold ManyACarryDevelop
+open ECDSAAdd.Entrant.AltPadDevelop (pad)
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+def aFoldMany (k:Nat) (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire) (middle:Program):Program:=
+ buildMany k (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)++middle++
+ unbuildMany k (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
+
+theorem aFoldMany_eq (k:Nat) (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (g:Wire) (hs:List Wire) (newMiddle:Program) (hg:g∉L.wires)
+ (hk:k≤119) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+ (work:∀u∈hs,u∈L.core.work)
+ (freshU:∀u∈hs,u∉L.core.cin::(hiReg L++accReg L++pad L++accBank L))
+ (oldNe:∀u∈hs,u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L)
+ (avoid:∀w∈accZ L++pad L,noTargets w
+  (SeedPadDevelop.unbuildHead (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)))
+ (cert:ManyRewrites hs (aMiddle L g) newMiddle) (base : BasisState) (hc:L.PairClean base)
+ (hsum:base L.core.sumCarry=false) (hV:base (eV L)=false) (hP:base (spare L)=false)
+ (O : Nat) (hO:O<SquareReduction.p) (s : State) (m : List Bool) (hf:SquareFrame L.core.out base O s.basis) :
+ run (aFoldMany k L g hs newMiddle) m s=run (aFoldTriple L g) m s := by
+ have clean:=L.squareFrame_clean hn base s.basis O hf hc
+ have lens:=acc_lengths L hw
+ have fullfit:=wTerms_fits L hw hn
+ have newfit:=AltPadDevelop.terms_fits L hw hn
+ have seedmem:= (NarrowAcc.terms_mem (hiReg L)).1
+ have hzFull:∀q∈accZ L,s.basis q=false := by
+  intro q hq
+  rcases accZ_mem L q hq with h|h
+  · exact (regValue_zero _ _).mp clean.pad q h
+  · exact (regValue_zero _ _).mp clean.work q (List.mem_of_mem_drop h)
+ have hz:∀q∈pad L,s.basis q=false := fun q hq=>hzFull q ((AltPadDevelop.pad_sublist L).subset hq)
+ have hb:∀q∈accBank L,s.basis q=false := fun q hq=>
+  (regValue_zero _ _).mp clean.pad q (List.mem_of_mem_take hq)
+ have ha:regValue (accReg L) s.basis=0 :=
+  (regValue_zero _ _).mpr (fun q hq=>(regValue_zero _ _).mp clean.work q (accReg_work L q hq))
+ have away:=ParkCarryDevelop.sumCarry_off_regs L hn
+ have zero:s.basis L.core.sumCarry=false := (hf.2 _ away.1).trans hsum
+ have originalOff:=a_wloop_sumCarry_free L hw hn g hg
+ have zeroR:s.basis (eV L)=false :=
+  (hf.2 _ (eReg_away L hn _ (eK_mem L hw).2.2.1).1).trans hV
+ have freshR:eV L∉L.core.cin::(hiReg L++accReg L++pad L++accBank L) := by
+  intro h
+  exact eV_fresh_domain L hw hn ((AltPadDevelop.domain_sublist L _).subset h)
+ have fresh:L.core.sumCarry∉L.core.cin::(hiReg L++accReg L++pad L++accBank L) := by
+  intro h
+  exact sumCarry_fresh_domain L hn ((AltPadDevelop.domain_sublist L _).subset h)
+ have off:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+  lens.1 (hiReg_length L hw) newfit fresh
+ have offR:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (eV L)
+  lens.1 (hiReg_length L hw) newfit freshR
+ have zeroP:s.basis (spare L)=false:=
+  (hf.2 _ (eReg_away L hn _ (spare_mem_eReg L hw)).1).trans hP
+ have freshP:spare L∉L.core.cin::(hiReg L++accReg L++pad L++accBank L) := by
+  intro h
+  exact spare_fresh_domain L hw hn ((AltPadDevelop.domain_sublist L _).subset h)
+ have offPlainP:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (spare L)
+  lens.1 (hiReg_length L hw) newfit freshP
+ have offP:=SeedPadDevelop.dual_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (eV L) (spare L) lens.1 (hiReg_length L hw)
+  (by rw [AltPadDevelop.pad_length L hw];decide) (by omega)
+  offPlainP.1 offPlainP.2 (spare_ne_sumCarry L hw hn) (spare_ne_eV L hw hn)
+ have zeroU:∀u∈hs,s.basis u=false:=by
+  intro u hu
+  exact (regValue_zero _ _).mp clean.work u (work u hu)
+ have offU (u:Wire) (hu:u∈hs):u∉wires (buildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)) ∧
+  u∉wires (unbuildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)):=
+  fresh_off_triple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+   L.core.sumCarry (eV L) (spare L) u lens.1 (hiReg_length L hw) newfit
+   (freshU u hu) (oldNe u hu).1 (oldNe u hu).2.1 (oldNe u hu).2.2
+ have oldGood:=a_middle_good L hw hn g hg base hc O hO s m hf
+ have middleEq:=SeedPadDevelop.middle8_repad (accReg L) (accZ L) (pad L) (accBank L) L.core.cin
+  (hiReg L) (aMiddle L g) (hiReg_length L hw) lens.1
+  (fullfit _ seedmem) (newfit _ seedmem) (AltPadDevelop.pad_take5 L hw).symm s m hzFull hz
+ have good:WReady (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
+  (middleState (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)) (aMiddle L g) s m) := by
+  rw [←middleEq]
+  exact ⟨oldGood.1,oldGood.2.1,(fun w hw=>oldGood.2.2.1 w ((AltPadDevelop.pad_sublist L).subset hw)),oldGood.2.2.2⟩
+ have eq:=compiled_wloop_many_eq k (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) hs
+  L.core.sumCarry (eV L) (spare L) (aMiddle L g) newMiddle
+  lens.1 (hiReg_length L hw) newfit s m hz hb clean.cin ha zero zeroR zeroP
+  fresh freshR (eV_ne_sumCarry L hw hn) freshP (spare_ne_sumCarry L hw hn) (spare_ne_eV L hw hn)
+  off.1 originalOff.2.1 off.2 offR.1 (eV_off_amiddle L hw hn g hg) offR.2
+  offP.1 (spare_off_amiddle L hw hn g hg) offP.2 hk ndhs hostlen zeroU freshU oldNe
+  (fun u hu=>(offU u hu).1) (fun u hu=>(offU u hu).2) cert good
+ have oldOffR:=wloop_original_off (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) (eV L)
+  lens.1 (hiReg_length L hw) fullfit (eV_fresh_domain L hw hn)
+ have oldOffP:=spare_off_dual L hw hn
+ have oldReady:=triple_middle_ready (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (eV L) (spare L) (aMiddle L g) lens.1 (hiReg_length L hw) fullfit
+  s m hzFull hb clean.cin ha zero zeroR zeroP
+  (sumCarry_fresh_domain L hn) (eV_fresh_domain L hw hn) (eV_ne_sumCarry L hw hn)
+  (spare_fresh_domain L hw hn) (spare_ne_sumCarry L hw hn) (spare_ne_eV L hw hn)
+  originalOff.1 originalOff.2.1 originalOff.2.2 oldOffR.1 (eV_off_amiddle L hw hn g hg) oldOffR.2
+  oldOffP.1 (spare_off_amiddle L hw hn g hg) oldOffP.2 oldGood
+ have repad:=SeedPadDevelop.triple_loop_repad (accReg L) (accZ L) (pad L) (accBank L) L.core.cin
+  (hiReg L) L.core.sumCarry (eV L) (spare L) (aMiddle L g) (hiReg_length L hw) lens.1
+  (fullfit _ seedmem) (newfit _ seedmem) (AltPadDevelop.pad_take5 L hw).symm avoid s m hzFull hz ?_
+ · exact eq.trans (by simpa only [aFoldMany,aFoldTriple] using repad.symm)
+ · intro w hw
+   have mem:w∈accZ L:=by
+    rcases List.mem_append.mp hw with hw|hw
+    · exact hw
+    · exact (AltPadDevelop.pad_sublist L).subset hw
+   simpa only [middleState,run_take] using oldReady.1.2.2.1 w mem
+
+#print axioms aFoldMany_eq
+theorem aFoldMany_resources (k:Nat) (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire) (hs:List Wire) (middle:Program)
+ (hk:k≤119) (hostlen:hs.length=k) (cert:ManyRewrites hs (aMiddle L g) middle):
+ toffoliCount (aFoldMany k L g hs middle)+k≤toffoliCount (aFoldTriple L g) ∧
+ measurementCount (aFoldMany k L g hs middle)=measurementCount (aFoldTriple L g) ∧
+ Challenge.gateSlots (aFoldMany k L g hs middle)+3*k≤Challenge.gateSlots (aFoldTriple L g) := by
+ have lens:=acc_lengths L hw
+ have plen:=AltPadDevelop.pad_length L hw
+ have h:=compiled_counts k (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
+  (aMiddle L g) middle lens.1 (hiReg_length L hw) (by omega) (by omega) hk hostlen cert
+ have r:=SeedPadDevelop.triple_loop_counts_repad (accReg L) (pad L) (accZ L) (accBank L) L.core.cin
+  (hiReg L) L.core.sumCarry (eV L) (spare L) (aMiddle L g) (hiReg_length L hw) lens.1
+  (by omega) (by omega) (AltPadDevelop.pad_take5 L hw)
+ change SeedPadDevelop.Counts _ (aFoldTriple L g) at r
+ change toffoliCount _+k≤toffoliCount (aFoldTriple L g) ∧
+  measurementCount _=measurementCount (aFoldTriple L g) ∧ Challenge.gateSlots _+3*k≤Challenge.gateSlots (aFoldTriple L g)
+ refine ⟨?_,?_,?_⟩
+ · rw [←r.1]
+   exact h.1
+ · exact h.2.1.trans r.2.1
+ · rw [←r.2.2]
+   exact h.2.2
+
+#print axioms aFoldMany_resources
+                                                                                                                            
+                                                        
+                                                                                               
+                            
+                                         
+                                                                                                                   
+                                                                               
+                                                                                                    
+                                                                                     
+                                                           
+                                                             
+           
+                                             
+                                               
+                                                               
+                                      
+                                                              
+
+                                                                                                     
+                                            
+                                                                                                                              
+                                                                                                           
+                                                                                                                        
+                                                                
+                                                                                                   
+                                                                              
+                                                   
+
+                               
+                             
+end ECDSAAdd.Entrant.AltAFoldDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+open ECDSAAdd.Entrant.AltPadDevelop (pad)
+open ECDSAAdd.Entrant.AltAFoldDevelop (aFoldMany aFoldMany_eq aFoldMany_resources)
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ZeroReadDevelop
+open ControlLoan1589BFFold FourthASavedCarryDevelop
+
+def padNoTargets (L:CuccaroStreamedSquareWideLayout):Bool :=
+ (SeedPadDevelop.unbuildHead (accReg L) (accZ L)
+  (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)).all
+  (fun i=>decide (targetOf i∉accZ L++pad L))
+def PadReady (L:CuccaroStreamedSquareWideLayout) (g:Wire):Prop :=
+ padNoTargets L=true ∧ ∀w∈pad L,hasWire (aBodyTriple L g) w=true
+
+                                                                                       
+                             
+                                                 
+                                                                           
+                   
+                                       
+                                          
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                                                                                                                                                              
+
+def LoanReadyWide (L : CuccaroStreamedSquareWideLayout) (g u : Wire) : Prop :=
+ u∈L.core.work ∧ u∉L.core.cin::(hiReg L++accReg L++pad L++accBank L) ∧
+ u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L ∧ hasWire (aBodyTriple L g) u=true
+instance (L : CuccaroStreamedSquareWideLayout) (g u : Wire) : Decidable (LoanReadyWide L g u) := by
+ unfold LoanReadyWide
+ infer_instance
+
+def BankReady (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Prop:=
+ hs.length=87 ∧ hs.Nodup ∧ (∀u∈hs,LoanReadyWide L g u) ∧ PadReady L g
+instance (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Decidable (BankReady L g hs):=by
+ unfold BankReady PadReady
+ infer_instance
+
+                                                                        
+                
+                            
+                                                 
+                         
+                                       
+                     
+
+                                                                                             
+                                                                                                  
+                                                                                  
+                                                                    
+                                                          
+                     
+           
+      
+              
+                                                            
+              
+              
+                                                                               
+                                                                  
+                                                                                          
+                                                                              
+      
+
+                              
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                           
+                                                                  
+                                                                          
+                                                                                  
+                     
+           
+      
+              
+                                                            
+                                    
+              
+              
+                                                                                    
+                                   
+                            
+                                     
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+                                                                                                
+                                                                                                  
+                                                                                   
+                                                           
+                                                                                                             
+                                                                                            
+             
+                                                                 
+                                                                    
+
+                                 
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open ThirdSavedCarryDevelop Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxHeartbeats 8000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.wires
+
+                                                                        
+                                                                               
+                                                                                                      
+                                                                             
+                                                                                                                                           
+                               
+                                                                                                                           
+                                                                                                        
+                                                             
+                                                                                       
+              
+                                                         
+                                                                                        
+                                                      
+                                                      
+                                            
+                                                                                         
+                                                                                               
+                                                                                     
+                                                       
+                                                             
+                                                                                 
+                                                                                        
+                                                                
+                                             
+                                                                                                                      
+                                                                        
+                   
+                                                                                   
+                                            
+                                                                             
+                   
+                                                                                      
+                                                                                        
+           
+                                                                  
+                                                          
+                                                                                  
+                                                                                                     
+                   
+                                
+                                        
+            
+                             
+                                          
+                                                                                        
+                                                                                  
+                                                            
+                                                         
+                                                        
+                                                                          
+                
+                                                                                                            
+                      
+                                                                             
+                                                                                  
+                                                                                     
+                                                                                                                                    
+                     
+                                                                           
+                                                                                                                      
+                                                                                                                               
+                                                                         
+                                         
+                                           
+                                           
+                                                                                                              
+                                                   
+                                                                                                             
+                                              
+                                                                                                      
+                                       
+                                             
+                    
+                     
+                                                     
+                                                                                                      
+                      
+                                           
+              
+                                                                           
+            
+                  
+                            
+                       
+                                                                                              
+                                                                                                                                    
+                                          
+                            
+             
+                           
+
+                                 
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+                                                                                         
+                                                                                              
+                     
+           
+      
+              
+                                                            
+                                                                          
+                                                                                                     
+                                                                  
+
+                                                                                                            
+                                                                               
+                     
+           
+      
+              
+                                                            
+                         
+              
+                               
+                                            
+                                         
+                   
+                                             
+                                                                                                                                               
+                                                                                                                                                          
+                 
+
+                                                                                        
+                                                      
+                                                                 
+            
+                                                      
+                          
+                                                                
+                                     
+                 
+                                                                            
+                                           
+                       
+                                                     
+                                                                                         
+                                                                                                 
+                                                     
+           
+                                                            
+                          
+                                                                       
+                                                                                
+                
+
+                                                                                           
+                                                                                    
+                                                                                  
+                                    
+                                       
+                                                                                                                    
+                                   
+
+                                                                                         
+                                                             
+                                         
+                                                 
+                                                                           
+                                             
+                           
+                                  
+                                     
+                                    
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ParkCarryDevelop
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unnecessarySeqFocus false
+
+                                                                                                                                  
+
+                                                                                             
+                                                                                      
+                                    
+
+                                                                                                                
+                                                                
+                                                                 
+
+                                                                                                                   
+                                                                              
+                                                                                      
+                                                                                              
+                                                                            
+                                                                       
+                                                                  
+                                                              
+                                    
+                                       
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop
+set_option linter.unusedSimpArgs false
+
+                                                                                         
+                                                                                         
+                                                                 
+
+                                                                                                            
+                                                  
+                                                                    
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+end
+
+
+end
+
+
+section
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ManyACarryDevelop
+open FourthASavedCarryDevelop InverseCarryDevelop ThirdSavedCarryDevelop ZeroReadDevelop
+set_option Elab.async false
+set_option maxHeartbeats 6000000
+set_option maxRecDepth 20000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+theorem compiled_wloop_many_eq_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
+ (hacc:acc.length=163) (hsrc:src.length=128)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+ (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false) (zeroP:s.basis p=false)
+ (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
+ (freshP:p∉cin::(src++acc++Z++bank)) (pq:p≠q) (pr:p≠r)
+ (offF:q∉wires (NarrowAcc.build8 acc Z bank cin src)) (offM:q∉wires middle)
+ (offI:q∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src))
+ (offFR:r∉wires (NarrowAcc.build8 acc Z bank cin src)) (offMR:r∉wires middle)
+ (offIR:r∉wires (SourceAddFourDevelop.unbuild acc Z bank cin src))
+ (offFP:p∉wires (buildDual acc Z bank cin src q r)) (offMP:p∉wires middle)
+ (offIP:p∉wires (unbuildDual acc Z bank cin src q r))
+ (hk:k≤119) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+ (zeroU:∀u∈hs,s.basis u=false) (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
+ (oldNe:∀u∈hs,u≠q ∧ u≠r ∧ u≠p)
+ (offFU:∀u∈hs,u∉wires (buildTriple acc Z bank cin src q r p))
+ (offIU:∀u∈hs,u∉wires (unbuildTriple acc Z bank cin src q r p))
+ (cert:ZeroSetDevelop.SRewrites hs middle newMiddle)
+ (good:WReady acc Z bank cin src (regValue src s.basis) (middleState (NarrowAcc.build8 acc Z bank cin src) middle s m)):
+ run (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p) m s=
+ run (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) m s:=by
+ have ready:=triple_middle_ready acc Z bank cin src q r p middle hacc hsrc hf s m hz hb hi ha zero zeroR zeroP
+  fresh freshR rq freshP pq pr offF offM offI offFR offMR offIR offFP offMP offIP good
+ have middleEq:=cert.middle_eq hs middle newMiddle (buildTriple acc Z bank cin src q r p) s m zeroU offFU
+ rw[←middleEq]at ready
+ have newOff:∀u∈hs,u∉wires newMiddle:=cert.support hs middle newMiddle |>.2
+ have eq:=cached_wloop_many_eq k acc Z bank cin src hs q r p newMiddle hacc hsrc hf s m hz hb hi ha zero zeroR zeroP zeroU
+  fresh freshR rq freshP pq pr hk ndhs hostlen freshU oldNe offF offI offFR offIR offFP offIP offFU newOff offIU
+  ready.1 ready.2.1 ready.2.2.1 ready.2.2.2
+ have replaced:=cert.surround_eq hs middle newMiddle (buildTriple acc Z bank cin src q r p) (unbuildTriple acc Z bank cin src q r p) s m zeroU offFU
+ exact eq.trans replaced
+
+theorem compiled_counts_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤119) (hostlen:hs.length=k)
  (cert:ZeroSetDevelop.SRewrites hs middle newMiddle):
  toffoliCount (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)+k≤
  toffoliCount (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) ∧
@@ -2762,8 +4636,9 @@ theorem compiled_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List W
  simp only[toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
  exact ⟨by omega,by omega,by omega⟩
 
-theorem compiled_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62)
+
+theorem compiled_support_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤119)
  (cert:ZeroSetDevelop.SRewrites hs middle newMiddle):
  wires (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)⊆
  wires (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
@@ -2781,8 +4656,9 @@ theorem compiled_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List 
    · exact Or.inl (Or.inr hw)
    · exact Or.inr hw
 
-theorem compiled_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
- (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤62)
+
+theorem compiled_physical_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
+ (ha:acc.length=163) (hl:src.length=128) (hz:5≤Z.length) (hb:132≤bank.length) (hk:k≤119)
  (fresh:∀u∈hs,u∉bank) (cert:ZeroSetDevelop.SRewrites hs middle newMiddle)
  (physical:GatePhysical (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p)):
  GatePhysical (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p):=by
@@ -2790,479 +4666,8 @@ theorem compiled_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List
  exact ⟨⟨buildMany_physical k acc Z bank cin src hs q r p ha hl hz hb hk fresh physical.1.1,
  cert.physical hs middle newMiddle physical.1.2⟩,
  unbuildMany_physical k acc Z bank cin src hs q r p ha hl hb hk fresh physical.2⟩
-#print axioms compiled_counts
-#print axioms compiled_support
-#print axioms compiled_physical
-end ManyACarryDevelop
 
+end ManyACarryDevelop
 end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
-open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
-set_option maxHeartbeats 6000000
-set_option maxRecDepth 30000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-
-def loans (L:CuccaroStreamedSquareWideLayout):List Wire:=(L.core.work.drop 163).take 33
-
-def BankReady (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Prop:=
- hs.length=33 ∧ hs.Nodup ∧ ∀u∈hs,LoanReady L g u
-instance (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Decidable (BankReady L g hs):=by
- unfold BankReady
- infer_instance
-
-/-- The bank: the 33 idle temporaries and the 29 top work wires, which the W loop never touches
-(it reads only `padZ`) and which the middle only reads as zero source padding. -/
-def loans2 (L:CuccaroStreamedSquareWideLayout):List Wire:=loans L++(L.core.work.drop 227).take 29
-
-def LoanReady2 (L:CuccaroStreamedSquareWideLayout) (g u:Wire):Prop:=
- u∈L.core.work ∧ u∉L.core.cin::(hiReg L++accReg L++padZ L++accBank L) ∧
- u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L ∧ hasWire (ParkAInputFast.aMiddleFast L g) u=true
-instance (L:CuccaroStreamedSquareWideLayout) (g u:Wire):Decidable (LoanReady2 L g u):=by
- unfold LoanReady2
- infer_instance
-
-def BankReady2 (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Prop:=
- hs.length=62 ∧ hs.Nodup ∧ ∀u∈hs,LoanReady2 L g u
-instance (L:CuccaroStreamedSquareWideLayout) (g:Wire) (hs:List Wire):Decidable (BankReady2 L g hs):=by
- unfold BankReady2
- infer_instance
-
-def aFoldSelected (L:CuccaroStreamedSquareWideLayout) (g:Wire):Program:=
- let hs:=loans2 L
- if hr:BankReady2 L g hs then
-  match ZeroSetDevelop.compileS? hs (aMiddle L g) with
-  | none=>aFoldTriple L g
-  | some cm=>aFoldMany 62 L g hs cm.out
- else aFoldTriple L g
-
-theorem aFoldSelected_eq (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
- (g:Wire) (hg:g∉L.wires) (base:BasisState) (hc:L.PairClean base) (hsum:base L.core.sumCarry=false)
- (hV:base (eV L)=false) (hP:base (spare L)=false) (O:Nat) (hO:O<SquareReduction.p)
- (s:State) (m:List Bool) (hf:SquareFrame L.core.out base O s.basis):
- run (aFoldSelected L g) m s=run (aFoldTriple L g) m s:=by
- unfold aFoldSelected
- dsimp only
- split
- · rename_i hr
-   cases he:ZeroSetDevelop.compileS? (loans2 L) (aMiddle L g) with
-   | none=>rfl
-   | some cm=>
-    exact aFoldMany_eq 62 L hw hn g (loans2 L) cm.out hg (by decide) hr.2.1 hr.1
-     (fun u hu=>(hr.2.2 u hu).1) (fun u hu=>(hr.2.2 u hu).2.1)
-     (fun u hu=>⟨(hr.2.2 u hu).2.2.1,(hr.2.2 u hu).2.2.2.1,(hr.2.2 u hu).2.2.2.2.1⟩)
-     cm.proof base hc hsum hV hP O hO s m hf
- · rfl
-
-#print axioms aFoldSelected_eq
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
-set_option maxHeartbeats 6000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-
-theorem aFoldMany_resources (k:Nat) (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire) (hs:List Wire) (middle:Program)
- (hk:k≤62) (hostlen:hs.length=k) (cert:ZeroSetDevelop.SRewrites hs (aMiddle L g) middle):
- toffoliCount (aFoldMany k L g hs middle)+k≤toffoliCount (aFoldTriple L g) ∧
- measurementCount (aFoldMany k L g hs middle)=measurementCount (aFoldTriple L g) ∧
- Challenge.gateSlots (aFoldMany k L g hs middle)+3*k≤Challenge.gateSlots (aFoldTriple L g):=by
- have pad:=pad_ready L hw
- have lens:=acc_lengths L hw
- have pl:(padZ L).length=31:=by simp[padZ,lens.2.1]
- have h:=compiled_counts k (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) hs L.core.sumCarry (eV L) (spare L)
-  (aMiddle L g) middle lens.1 (hiReg_length L hw) (by omega) (by omega) hk hostlen cert
- rw[pad.1,pad.2.1]at h
- exact h
-
-theorem aFoldSelected_resources (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire):
- toffoliCount (aFoldSelected L g)≤toffoliCount (aFoldTriple L g) ∧
- measurementCount (aFoldSelected L g)=measurementCount (aFoldTriple L g) ∧
- Challenge.gateSlots (aFoldSelected L g)≤Challenge.gateSlots (aFoldTriple L g):=by
- unfold aFoldSelected
- dsimp only
- split
- · rename_i hr
-   cases he:ZeroSetDevelop.compileS? (loans2 L) (aMiddle L g) with
-   | none=>exact ⟨le_rfl,rfl,le_rfl⟩
-   | some cm=>
-    dsimp only
-    have h:=aFoldMany_resources 62 L hw g (loans2 L) cm.out (by decide) hr.1 cm.proof
-    exact ⟨by omega,h.2.1,by omega⟩
- · exact ⟨le_rfl,rfl,le_rfl⟩
-#print axioms aFoldSelected_resources
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-theorem aFoldSelected_frame (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
- (g:Wire) (hg:g∉L.wires) (base:BasisState) (hc:L.PairClean base) (hsum:base L.core.sumCarry=false)
- (hV:base (eV L)=false) (hP:base (spare L)=false) (O:Nat) (hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) (aFoldSelected L g)
-  (SquareFrame L.core.out base (((if base g then OwnDiagAll12Square.cFlipK-4294968272*regValue (hiReg L) base
-   else 4294968272*regValue (hiReg L) base)+(SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hs
- rw[aFoldSelected_eq L hw hn g hg base hc hsum hV hP O hO s m hs]
- exact aFoldTriple_frame L hw hn g hg base hc hsum hV hP O hO s m hs
-
-#print axioms aFoldSelected_frame
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open ThirdSavedCarryDevelop Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ControlLoan1589BFFold
-set_option Elab.async false
-set_option maxHeartbeats 8000000
-set_option maxRecDepth 30000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-attribute [local irreducible] ECDSAAdd.wires
-
-def aBodySelected (L:CuccaroStreamedSquareWideLayout) (c:Wire):Program:=
- measuredFoldQTq L (negP L)++(measuredFoldQTq L (rot128F L)++aFoldSelected L c)
-theorem aBodySelected_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (c : Wire) (hcw : c∉L.wires) (base : BasisState) (M : Nat) (hM : M<2^128)
-    (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hzero:base L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
-    (hg : base c=false → M=0) :
-    Triple (SquareFrame L.core.out base O) (aBodySelected L c) (SquareFrame L.core.out base (resAF (M^2) O (base c))) := by
-  have pmod : 0<SquareReduction.p := by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
-  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  have vZero:base (eV L)=false := eV_zero_of_product_lt L hw base (by rw [hP];exact hb)
-  let P := M^2
-  let O1 := (P+(SquareReduction.p-1-O))%SquareReduction.p
-  let O2 := ((P/2^128)%2^128+2^128*(P%2^128)+(SquareReduction.p-1-O1))%SquareReduction.p
-  have hO1 : O1<SquareReduction.p := Nat.mod_lt _ pmod
-  have hO2 : O2<SquareReduction.p := Nat.mod_lt _ pmod
-  have views := accA_views L hw base M hM hP
-  have v1 : L.MeasuredFoldView base (negP L) := views (.inl (negP L)) (by simp [accAMix])
-  have v2 : L.MeasuredFoldView base (rot128F L) := views (.inl (rot128F L)) (by simp [accAMix])
-  have v3 : AccView L base (aAcc L) := views (.inr (aAcc L)) (by simp [accAMix,aAcc])
-  have pay1 : measuredFoldPayload base (negP L)=P := by
-    simp only [measuredFoldPayload,negP,pow_zero,Nat.mul_one]
-    rw [L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
-  have pay2 : measuredFoldPayload base (rot128F L)=(P/2^128)%2^128+2^128*(P%2^128) := by
-    simp only [measuredFoldPayload,rot128F,pow_zero,Nat.mul_one]
-    exact L.rotated128_value hw base (M^2) hP
-  have t1 : Triple (SquareFrame L.core.out base O) (measuredFoldQTq L (negP L)) (SquareFrame L.core.out base O1) := by
-    have h := measuredFoldQ_frameTq L hw hn base (negP L) v1 rfl hc O hO
-    rwa [pay1] at h
-  have t2 : Triple (SquareFrame L.core.out base O1) (measuredFoldQTq L (rot128F L))
-      (SquareFrame L.core.out base O2) := by
-    have h := measuredFoldQ_frameTq L hw hn base (rot128F L) v2 rfl hc O1 hO1
-    rwa [pay2] at h
-  have hAeq : Acc.accVal base 0 (aAcc L).spec=4294968272*regValue (hiReg L) base := by
-    rw [show (aAcc L).spec=earlyHTerms (L.core.product.drop 128) from rfl,accVal_earlyH]
-    congr 1
-    rw [hiReg,regValue_drop_div _ 128 (by simp [hw.core.product]),
-      regValue_drop_div _ 128 (by simp [hw.core.product]),
-      L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb,hP]
-  have t3 := aFoldSelected_frame L hw hn c hcw base hc hzero vZero (spare_zero L hw base M hP) O2 hO2
-  rw [← hAeq] at t3
-  have all := t1.seq (t2.seq t3)
-  apply Triple.conseq (fun s h => h) all
-  intro s hs
-  refine ⟨hs.1.trans ?_,hs.2⟩
-  let A := Acc.accVal base 0 (aAcc L).spec
-  have hA : A<2^163 := Acc.accVal_lt base 163 (aAcc L).spec 0 (by norm_num) v3.specValid
-  have hsum := (accA_mixSum L hw base).trans (L.measuredA_sum hw base (M^2) hP hb)
-  have n1 : mixNeg (.inl (rot128F L) : MixItem)=false := rfl
-  have n2 : mixNeg (.inr (aAcc L) : MixItem)=false := rfl
-  have n3 : mixNeg (.inl (negP L) : MixItem)=true := rfl
-  have e : accAMix L=[.inl (rot128F L),.inr (aAcc L),.inl (negP L)] := rfl
-  rw [e] at hsum
-  simp only [mixSignedSum,mixSignedPayload,n1,n2,n3,Bool.false_eq_true,if_false,if_true,mixPayload,add_zero,
-    pay1,pay2] at hsum
-  change ((((P/2^128)%2^128+2^128*(P%2^128) : Nat) : ZMod SquareReduction.p)+
-    (((A : Nat) : ZMod SquareReduction.p)+-((P : Nat) : ZMod SquareReduction.p)))=
-      ((P : Nat) : ZMod SquareReduction.p)*2^128-(P : ZMod SquareReduction.p) at hsum
-  have bound : ((if base c then OwnDiagAll12Square.cFlipK-A else A)+(SquareReduction.p-1-O2))%SquareReduction.p<SquareReduction.p :=
-    Nat.mod_lt _ pmod
-  apply measuredOrientationCast_injective true _ _ bound (ofCast_lt true _)
-  refine Eq.trans ?_ (cast_ofCast true (measuredOrientationCast false O+(((M^2 : Nat) : ZMod SquareReduction.p)*2^128-
-    ((M^2 : Nat) : ZMod SquareReduction.p)-(if base c then (OwnDiagAll12Square.cFlipK : ZMod SquareReduction.p) else 0)))).symm
-  simp only [measuredOrientationCast,if_true,Bool.false_eq_true,if_false]
-  have c0 := measuredReflection_zmod O hO
-  have c1 := measuredReflection_zmod O1 hO1
-  have c2 := measuredReflection_zmod O2 hO2
-  have k1 : (O1 : ZMod SquareReduction.p)=(P : ZMod SquareReduction.p)+(-1-(O : ZMod SquareReduction.p)) := by
-    simp only [O1,ZMod.natCast_mod,Nat.cast_add,c0]
-  have k2 : (O2 : ZMod SquareReduction.p)=(((P/2^128)%2^128+2^128*(P%2^128) : Nat) : ZMod SquareReduction.p)+
-      (-1-(O1 : ZMod SquareReduction.p)) := by
-    rw [show O2=((P/2^128)%2^128+2^128*(P%2^128)+(SquareReduction.p-1-O1))%SquareReduction.p from rfl,
-      ZMod.natCast_mod,Nat.cast_add,c1]
-  rw [ZMod.natCast_mod,Nat.cast_add,c2,k2,k1]
-  cases hgv : base c
-  · have M0 := hg hgv
-    have P0 : P=0 := by show M^2=0; rw [M0]; norm_num
-    have R0 : (((P/2^128)%2^128+2^128*(P%2^128) : Nat) : ZMod SquareReduction.p)=0 := by rw [P0]; simp
-    rw [R0,P0] at hsum
-    simp only [Bool.false_eq_true,if_false]
-    rw [R0,P0]
-    have hM2 : ((M^2 : Nat) : ZMod SquareReduction.p)=0 := by rw [M0]; simp
-    rw [hM2]
-    simp at hsum ⊢
-    linear_combination -hsum
-  · simp only [if_true]
-    have hAle : A≤OwnDiagAll12Square.cFlipK := by simp only [OwnDiagAll12Square.cFlipK]; omega
-    have hoff : ((OwnDiagAll12Square.cFlipK-A : Nat) : ZMod SquareReduction.p)=(OwnDiagAll12Square.cFlipK : ZMod SquareReduction.p)-
-        (A : ZMod SquareReduction.p) := by
-      rw [Nat.cast_sub hAle]
-    rw [hoff]
-    linear_combination hsum
-
-#print axioms aBodySelected_frame
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
-set_option maxHeartbeats 6000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-
-theorem aFoldSelected_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire):
- wires (aFoldSelected L g)⊆wires (aFoldTriple L g)∪(loans2 L).toFinset:=by
- unfold aFoldSelected
- dsimp only
- split
- · rename_i hr
-   cases he:ZeroSetDevelop.compileS? (loans2 L) (aMiddle L g) with
-   | none=>exact Finset.subset_union_left
-   | some cm=>
-    have lens:=acc_lengths L hw
-    have pl:(padZ L).length=31:=by simp[padZ,lens.2.1]
-    have h:=compiled_support 62 (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) (loans2 L) L.core.sumCarry (eV L) (spare L)
-     (aMiddle L g) cm.out lens.1 (hiReg_length L hw) (by omega) (by omega) (by decide) cm.proof
-    rw[(pad_ready L hw).1,(pad_ready L hw).2.1]at h
-    exact h
- · exact Finset.subset_union_left
-
-theorem aFoldSelected_physical (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire)
- (physical:GatePhysical (aFoldTriple L g)):GatePhysical (aFoldSelected L g):=by
- unfold aFoldSelected
- dsimp only
- split
- · rename_i hr
-   cases he:ZeroSetDevelop.compileS? (loans2 L) (aMiddle L g) with
-   | none=>exact physical
-   | some cm=>
-    have lens:=acc_lengths L hw
-    have pl:(padZ L).length=31:=by simp[padZ,lens.2.1]
-    have fresh:∀u∈loans2 L,u∉accBank L:=by
-     intro u hu bad
-     exact (hr.2.2 u hu).2.1 (by simp[bad])
-    have old:GatePhysical (buildTriple (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)++aMiddle L g++
-      unbuildTriple (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (eV L) (spare L)):=by
-     rw[(pad_ready L hw).1,(pad_ready L hw).2.1]
-     exact physical
-    exact compiled_physical 62 (accReg L) (padZ L) (accBank L) L.core.cin (hiReg L) (loans2 L) L.core.sumCarry (eV L) (spare L)
-     (aMiddle L g) cm.out lens.1 (hiReg_length L hw) (by omega) (by omega) (by decide) fresh cm.proof old
- · exact physical
-
-theorem aBodySelected_subset (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire):
- wires (aBodySelected L g)⊆wires (aBodyTriple L g):=by
- have oldfold:wires (aFoldTriple L g)⊆wires (aBodyTriple L g):=by
-  intro w hw
-  simp only[aBodyTriple,wires_append,Finset.mem_union]
-  exact Or.inr (Or.inr hw)
- have midfold:wires (aMiddle L g)⊆wires (aFoldTriple L g):=by
-  intro w hw
-  simp only[aFoldTriple,wires_append,Finset.mem_union]
-  exact Or.inl (Or.inr hw)
- have fold:wires (aFoldSelected L g)⊆wires (aBodyTriple L g):=by
-  by_cases hr:BankReady2 L g (loans2 L)
-  · intro w hwire
-    rcases Finset.mem_union.mp (aFoldSelected_support L hw g hwire)with h|h
-    · exact oldfold h
-    · have member:w∈loans2 L:=List.mem_toFinset.mp h
-      have used:=(FourthASavedCarryDevelop.hasWire_iff _ _).mp (hr.2.2 w member).2.2.2.2.2
-      rw[ParkAInputFast.aMiddleFast_eq]at used
-      exact oldfold (midfold used)
-  · simpa only[aFoldSelected,dif_neg hr]using oldfold
- intro w hw
- simp only[aBodySelected,wires_append,Finset.mem_union]at hw
- rcases hw with hw|(hw|hw)
- · simp only[aBodyTriple,wires_append,Finset.mem_union];exact Or.inl hw
- · simp only[aBodyTriple,wires_append,Finset.mem_union];exact Or.inr (Or.inl hw)
- · exact fold hw
-
-theorem aBodySelected_resources (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire):
- toffoliCount (aBodySelected L g)≤2915 ∧ measurementCount (aBodySelected L g)=3077 ∧
- Challenge.gateSlots (aBodySelected L g)≤Challenge.gateSlots (aBodyTriple L g):=by
- have old:=aBodyTriple_counts L hw g
- have h:=aFoldSelected_resources L hw g
- simp only[aBodySelected,aBodyTriple,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]at old ⊢
- exact ⟨by omega,by omega,by omega⟩
-
-theorem aBodySelected_physical (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire)
- (hn:(g::L.wires).Nodup):GatePhysical (aBodySelected L g):=by
- have old:=aBodyTriple_physical L hw g hn
- simp only[aBodyTriple,gatePhysical_append]at old
- have fold:=aFoldSelected_physical L hw g old.2.2
- simp only[aBodySelected,gatePhysical_append]
- exact ⟨old.1,old.2.1,fold⟩
-#print axioms aBodySelected_subset
-#print axioms aBodySelected_resources
-#print axioms aBodySelected_physical
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold ParkCarryDevelop
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-set_option linter.unnecessarySeqFocus false
-
-def hostedASelected (L:CuccaroStreamedSquareWideLayout) (rho:Equiv.Perm Wire) (c:Wire):Program:=aBodySelected (hostLayout L rho) c
-
-theorem hostedASelected_eq (L:CuccaroStreamedSquareWideLayout) (rho:Equiv.Perm Wire) (c:Wire)
- (h:rho L.core.sumCarry=L.core.sumCarry):hostedASelected L rho c=aBodySelected L c:=by
- rw[hostedASelected,host_eq L rho h]
-
-theorem hostedASelected_subset (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (rho:Equiv.Perm Wire) (c:Wire):
- wires (hostedASelected L rho c)⊆wires (hostedATriple L rho c):=
- aBodySelected_subset (hostLayout L rho) (host_widths L hw rho) c
-
-theorem hostedASelected_resources (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (rho:Equiv.Perm Wire) (c:Wire):
- toffoliCount (hostedASelected L rho c)≤toffoliCount (hostedATriple L rho c) ∧
- measurementCount (hostedASelected L rho c)=measurementCount (hostedATriple L rho c) ∧
- Challenge.gateSlots (hostedASelected L rho c)≤Challenge.gateSlots (hostedATriple L rho c):=by
- have h:=aBodySelected_resources (hostLayout L rho) (host_widths L hw rho) c
- have o:=aBodyTriple_counts (hostLayout L rho) (host_widths L hw rho) c
- exact ⟨by simpa only[hostedASelected,hostedATriple,o.1]using h.1,
-  by simp only[hostedASelected,hostedATriple,h.2.1,o.2],h.2.2⟩
-#print axioms hostedASelected_subset
-#print axioms hostedASelected_resources
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop
-set_option linter.unusedSimpArgs false
-
-theorem aBodySelected_refined (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire):
- wires (aBodySelected L c)⊆insert (spare L) (wires (InverseCarryDevelop.aBodyDual L c)):=
- (aBodySelected_subset L hw c).trans (aBodyTriple_refined L hw c)
-
-theorem aBodySelected_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup) (c:Wire):
- wires (aBodySelected L c)⊆(c::L.wires).toFinset:=
- (aBodySelected_subset L hw c).trans (aBodyTriple_support L hw hn c)
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-set_option maxHeartbeats 100000000
-set_option maxRecDepth 100000
-set_option Elab.async false
- theorem actual_ready:BankReady Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic
- (loans Baselines.layout.dialogStreamedSquareWide):=by decide +kernel
-#print axioms actual_ready
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
-open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
-set_option maxHeartbeats 100000000
-set_option maxRecDepth 100000
-set_option Elab.async false
-
-abbrev actualL:CuccaroStreamedSquareWideLayout:=Baselines.layout.dialogStreamedSquareWide
-abbrev actualG:Wire:=Baselines.layout.core.generic
-
-theorem actual_loans:(loans2 actualL).length=62 ∧ (loans2 actualL).Nodup ∧ ∀u∈loans2 actualL,LoanReady2 actualL actualG u:=by
- decide +kernel
-
-theorem actual_ready2:BankReady2 actualL actualG (loans2 actualL):=actual_loans
-
-/-- One pass of the set compiler over the fast-constructed middle. -/
-theorem actual_compiled_fast:
- (ZeroSetDevelop.compileS? (loans2 actualL) (ParkAInputFast.aMiddleFast actualL actualG)).isSome=true:=by
- decide +kernel
-
-theorem actual_compiled2:
- (ZeroSetDevelop.compileS? (loans2 actualL) (aMiddle actualL actualG)).isSome=true:=by
- rw[←ParkAInputFast.aMiddleFast_eq]
- exact actual_compiled_fast
-#print axioms actual_ready2
-#print axioms actual_compiled2
-end ManyACarryDevelop
-
-end
-
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-namespace ManyACarryDevelop
-open Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop InverseCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
-set_option maxHeartbeats 6000000
-set_option maxRecDepth 100000
-set_option linter.unusedSimpArgs false
-attribute [local irreducible] ECDSAAdd.toffoliCount
-
-theorem gain_of_success (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g:Wire)
- (ready:BankReady2 L g (loans2 L)) (success:(ZeroSetDevelop.compileS? (loans2 L) (aMiddle L g)).isSome=true):
- toffoliCount (aFoldSelected L g)+62≤toffoliCount (aFoldTriple L g):=by
- unfold aFoldSelected
- dsimp only
- rw[dif_pos ready]
- cases he:ZeroSetDevelop.compileS? (loans2 L) (aMiddle L g) with
- | none=>simp[he]at success
- | some cm=>exact (aFoldMany_resources 62 L hw g (loans2 L) cm.out (by decide) ready.1 cm.proof).1
-
-theorem actual_fold_gain:
- toffoliCount (aFoldSelected Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic)+62≤
- toffoliCount (aFoldTriple Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic):=
- gain_of_success _ (ControlledPointLayout.dialogStreamedSquareWide_widths Baselines.layout Baselines.layout_widths) _ actual_ready2 actual_compiled2
-
-theorem body_gain (L:CuccaroStreamedSquareWideLayout) (g:Wire)
- (h:toffoliCount (aFoldSelected L g)+62≤toffoliCount (aFoldTriple L g)):
- toffoliCount (aBodySelected L g)+62≤toffoliCount (aBodyTriple L g):=by
- simp only[aBodySelected,aBodyTriple,toffoliCount_append]
- omega
-
-theorem bound2853 (a b:Nat) (h:a+62≤b) (hb:b=2915):a≤2853:=by omega
-
-theorem actual_body_T_le:
- toffoliCount (aBodySelected Baselines.layout.dialogStreamedSquareWide Baselines.layout.core.generic)≤2853:=
- bound2853 _ _ (body_gain _ _ actual_fold_gain)
-  (aBodyTriple_counts _ (ControlledPointLayout.dialogStreamedSquareWide_widths Baselines.layout Baselines.layout_widths) _).1
-#print axioms actual_fold_gain
-#print axioms actual_body_T_le
-end ManyACarryDevelop
 
 end

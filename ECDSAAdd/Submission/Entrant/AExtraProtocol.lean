@@ -1,4 +1,7 @@
 import ECDSAAdd.Submission.Entrant.MainPart07Core
+import ECDSAAdd.Submission.Entrant.ParkAMany
+
+section
 
 section
 section
@@ -972,7 +975,7 @@ theorem explicit505 : W.repairedTick base 505 = tick505 := by decide +kernel
 
 def ref : Program := tick505 ++ Five506.cand
 def enc (r : Bool × Bool × Nat × Nat) : Nat := encN_t8 (pre505 r.1 r.2.1 r.2.2.1 r.2.2.2) sites
-def checkRow (r : Bool × Bool × Nat × Nat) : Bool := agree508 cand6 ref (enc r)
+                                                                               
 
 open ECDSAAdd.Entrant.CodecBitSliceVerify
 def candidate : Program := [
@@ -3275,4 +3278,415 @@ end ECDSAAdd.Entrant.Six505
 end -- Six505
 
 end
+end
+
+end
+
+section
+
+section
+set_option Elab.async false
+
+set_option maxRecDepth 100000
+
+set_option maxHeartbeats 100000000
+
+namespace ECDSAAdd.Entrant.AWideSteps
+
+open ECDSAAdd ZeroReadDevelop
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                     
+
+                                                                                                                                             
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+
+end ECDSAAdd.Entrant.AWideSteps
+
+end
+
+section
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 500000000
+namespace ECDSAAdd.Entrant.AWideStaged
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ZeroReadDevelop AWideTemp
+
+                                                  
+                                      
+def suffix : List Wire := [4756,4728,4729,4730,4731,4732,4733,4734,4735,4736,4737,4738,4739,4740,4741,4742,4743,4744,4745,4746,4747,4748,4749,4750,4751,4752,4753,4754,4755]
+                                                                                                                                                                                                                                     
+
+                                                                   
+                          
+
+                                                                                 
+                                         
+                           
+
+                                                                  
+                                                                                             
+
+                                                                                         
+                                                                      
+                 
+                                                  
+                             
+end ECDSAAdd.Entrant.AWideStaged
+
+end
+
+section
+set_option Elab.async false
+set_option maxHeartbeats 6000000
+namespace ECDSAAdd.Entrant.AWideTemp
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop InverseCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+                                                                                  
+                                                                                                     
+                                                                       
+                     
+           
+                  
+                                                          
+                           
+                                                                                                 
+
+                         
+                                                                                                         
+                                                                                                     
+                                                                                                                                                                          
+
+                                                              
+                                                                        
+                                                                       
+                                                         
+      
+
+                                                                                                 
+                                                           
+        
+                                                                      
+                                                            
+                                                            
+
+                                                                                      
+                                                                                           
+                                                                                       
+                                                                                           
+                                      
+
+                              
+end ECDSAAdd.Entrant.AWideTemp
+
+end
+
+section
+
+
+open ECDSAAdd ECDSAAdd.Entrant ZeroReadDevelop
+
+set_option Elab.async false
+
+set_option maxRecDepth 100000
+
+set_option maxHeartbeats 100000000
+
+namespace ECDSAAdd.Entrant.RepadASteps
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                       
+
+                                                                                                                                               
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+
+                   
+
+end ECDSAAdd.Entrant.RepadASteps
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.RepadAReady
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ZeroReadDevelop
+open ECDSAAdd.Entrant.AltASelectedDevelop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 500000000
+
+                                                  
+                                      
+                                                                                                                                                     
+                               
+                                                                                                                                                                                                                             
+
+                                                                   
+                          
+
+                                                                                 
+                                          
+
+                                                              
+                                                                                             
+
+                                                                                         
+                                                                   
+                                                              
+                 
+                                                    
+                             
+end ECDSAAdd.Entrant.RepadAReady
+
+namespace ECDSAAdd.Entrant.AltASelectedDevelop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop InverseCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+
+                                                                                  
+                                                                                                     
+                                                                       
+                     
+           
+                   
+                                                          
+                             
+                                                                                                                 
+
+                         
+                                                                                                         
+                                                                                                     
+                                                                                                                                                                          
+
+                                                              
+                                                                        
+                                                                       
+                                                          
+      
+
+                                                                                                 
+                                                           
+        
+                                                                      
+                                                            
+                                                            
+
+                                                                                      
+                                                                                           
+                                                                                       
+                                                                                           
+                                      
+
+                              
+end ECDSAAdd.Entrant.AltASelectedDevelop
+
+end
+
 end

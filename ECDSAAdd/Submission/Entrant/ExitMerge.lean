@@ -143,26 +143,26 @@ theorem top_from_div (w : Nat→Wire) (s : BasisState) (W : Nat) (flag : Bool)
   rw [port,postWord,hdiv] at h
   cases hs : s (w 1027) <;> cases flag <;> simp [hs] at h ⊢
 
-theorem flag_counts (w : Nat→Wire) :
-    toffoliCount (literalKAdd w)=toffoliCount (flagKAdd w)+1 ∧
-    measurementCount (literalKAdd w)=measurementCount (flagKAdd w) ∧
-    gateSlots (literalKAdd w)=gateSlots (flagKAdd w)+5 := by
-  have o:=HighOutputTailStructuredResearch.counts false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
-  have n:=HighOutputFlagResearch.counts (w 1028) (w 256) (w 1026) (w 1795) (w 257) (w 1027)
-  have os:=HighOutputTailStructuredResearch.slots false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
-  simp only [literal_split,flagKAdd,toffoliCount_append,measurementCount_append,gateSlots_append]
-  omega
+                                    
+                                                              
+                                                                    
+                                                            
+                                                                                                           
+                                                                                           
+                                                                                                           
+                                                                                                 
+       
 
-theorem zero_counts (w : Nat→Wire) :
-    toffoliCount (literalKAdd w)=toffoliCount (zeroKAdd w)+1 ∧
-    measurementCount (literalKAdd w)=measurementCount (zeroKAdd w) ∧
-    gateSlots (literalKAdd w)=gateSlots (zeroKAdd w)+7 := by
-  have o:=HighOutputTailStructuredResearch.counts false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
-  have os:=HighOutputTailStructuredResearch.slots false (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)
-  change gateSlots (oldLeafAt (w 256) (w 1026) (w 1795) (w 257) (w 1027) (w 1796)) = 14 ∧
-    gateSlots (newLeafAt false (w 256) (w 1026) (w 1795) (w 257) (w 1027)) = 7 at os
-  simp only [literal_split,zeroKAdd,toffoliCount_append,measurementCount_append,gateSlots_append]
-  omega
+                                    
+                                                              
+                                                                    
+                                                            
+                                                                                                           
+                                                                                                           
+                                                                                         
+                                                                                    
+                                                                                                 
+       
 
 theorem flag_retired (w : Nat→Wire) (hinj : Function.Injective w) : w 1796∉wires (flagKAdd w) := by
   have hp:=P_avoid w hinj 1796 (Or.inl rfl)
@@ -176,17 +176,17 @@ theorem flag_retired (w : Nat→Wire) (hinj : Function.Injective w) : w 1796∉w
     · exact hl hLeaf
   · exact hr hR
 
-theorem zero_retired (w : Nat→Wire) (hinj : Function.Injective w) : w 1796∉wires (zeroKAdd w) := by
-  have hp:=P_avoid w hinj 1796 (Or.inl rfl)
-  have hr:=R_avoid w hinj 1796 (Or.inl rfl)
-  have hl:=HighOutputTailStructuredResearch.retired false _ _ _ _ _ _ (List.nodup_cons.mp (tail_nd w hinj)).2
-  simp only [zeroKAdd,wires_append,Finset.mem_union]
-  intro h
-  rcases h with hLeft | hR
-  · rcases hLeft with hP | hLeaf
-    · exact hp hP
-    · exact hl hLeaf
-  · exact hr hR
+                                                                                                   
+                                           
+                                           
+                                                                                                             
+                                                    
+         
+                          
+                                
+                 
+                    
+               
 
 
 /-- Bounded alternative rooted in the actual real-caller pool Nodup premise.
@@ -1073,15 +1073,15 @@ private theorem splice_valid3 (V : Instr → Prop) (p old new r : Program)
   · exact hn i hnw
   · exact ho i (by simp [hr])
 
-private theorem splice_support3 (p old new r : Program)
-    (hleaf : wires new ⊆ wires old) : wires (p++new++r) ⊆ wires (p++old++r) := by
-  simp only [wires_append]
-  intro q hq
-  simp only [Finset.mem_union] at hq ⊢
-  rcases hq with (hp|hn)|hr
-  · exact Or.inl (Or.inl hp)
-  · exact Or.inl (Or.inr (hleaf hn))
-  · exact Or.inr hr
+                                                       
+                                                                                 
+                          
+            
+                                      
+                           
+                            
+                                    
+                   
 
 /-- Explicit wire sets, mirroring `HighOutputTailStructuredResearch.support`. -/
 theorem support3 (a b c A B A' B' z z' : Wire) :
@@ -1094,70 +1094,70 @@ theorem support3 (a b c A B A' B' z z' : Wire) :
   · ext q
     (simp [newLeaf3At,wires,Instr.wires,correctionWires]; tauto)
 
-theorem leaf3_support (a b c A B A' B' z z' : Wire) :
-    wires (newLeaf3At a b c A B A' B') ⊆ wires (oldLeaf3At a b c A B A' B' z z') := by
-  rw [(support3 a b c A B A' B' z z').1, (support3 a b c A B A' B' z z').2]
-  intro q h
-  simp only [Finset.mem_insert,Finset.mem_singleton] at h
-  rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> simp
+                                                     
+                                                                                      
+                                                                           
+           
+                                                         
+                                                    
 
-theorem zero3_support (w : Nat → Wire) :
-    wires (zero3KAdd w) ⊆ wires (literalKAdd w) := by
-  have h := splice_support3 (P3 w)
-    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
-    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w)
-    (leaf3_support _ _ _ _ _ _ _ _ _)
-  exact (congrArg (fun s : Finset Wire => wires (zero3KAdd w) ⊆ s)
-    (congrArg ECDSAAdd.wires (literal_split3 w))).mpr h
+                                        
+                                                     
+                                  
+                                                                                              
+                                                                                   
+                                     
+                                                                  
+                                                       
 
 
-theorem nd7 (w : Nat→Wire) (hinj : Function.Injective w) :
-    [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027].Nodup :=
-  List.Nodup.map hinj (by decide : [255,1025,1794,256,1026,257,1027].Nodup)
+                                                          
+                                                            
+                                                                           
 
-private theorem leaf3_physical (a b c A B A' B' : Wire)
-    (nd : [a,b,c,A,B,A',B'].Nodup) : GatePhysical (newLeaf3At a b c A B A' B') := by
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-    not_or,not_false_eq_true,and_true] at nd
-  simp_all [newLeaf3At,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
+                                                       
+                                                                                    
+                                                                           
+                                            
+                                                                     
 
-private theorem leaf3_contract_valid (a b c A B A' B' : Wire)
-    (nd : [a,b,c,A,B,A',B'].Nodup) : ∀i∈newLeaf3At a b c A B A' B',instructionValid i := by
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-    not_or,not_false_eq_true,and_true] at nd
-  simp_all [newLeaf3At,instructionValid,correctionValid,ne_comm]
+                                                             
+                                                                                           
+                                                                           
+                                            
+                                                                
 
-theorem zero3_gatePhysical (w : Nat → Wire) (hinj : Function.Injective w)
-    (ho : GatePhysical (literalKAdd w)) : GatePhysical (zero3KAdd w) := by
-  have old := (congrArg GatePhysical (literal_split3 w)).mp ho
-  exact splice_valid3 (fun i => PhysicalInstr (.gate i)) (P3 w)
-    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
-    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w) old
-    (leaf3_physical _ _ _ _ _ _ _ (nd7 w hinj))
+                                                                         
+                                                                          
+                                                              
+                                                               
+                                                                                              
+                                                                                       
+                                               
 
-theorem zero3_contract_valid (w : Nat → Wire) (hinj : Function.Injective w)
-    (ho : ∀i∈literalKAdd w,instructionValid i) : ∀i∈zero3KAdd w,instructionValid i := by
-  have old := (congrArg (fun p : Program => ∀i∈p,instructionValid i) (literal_split3 w)).mp ho
-  exact splice_valid3 instructionValid (P3 w)
-    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
-    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w) old
-    (leaf3_contract_valid _ _ _ _ _ _ _ (nd7 w hinj))
+                                                                           
+                                                                                        
+                                                                                              
+                                             
+                                                                                              
+                                                                                       
+                                                     
 
-#print axioms zero3_gatePhysical
-#print axioms zero3_contract_valid
+                                
+                                  
 
 
 /-! ### Pool-Nodup variants, matching the ExitMerge call sites -/
 
-theorem nd7_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) :
-    [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027].Nodup := by
-  have neq (i j : Nat) (hi : i<1798) (hj : j<1798) (hne : i≠j) : w i≠w j := by
-    intro he
-    exact hne (skywalkPool_index_inj w hn i j hi hj he)
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-    not_or,not_false_eq_true,and_true]
-  repeat' constructor
-  all_goals exact neq _ _ (by decide) (by decide) (by decide)
+                                                                   
+                                                               
+                                                                              
+            
+                                                       
+                                                                           
+                                      
+                     
+                                                             
 
 theorem tail3_nd_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) :
     [w 255,w 1025,w 1794,w 256,w 1026,w 257,w 1027,w 1795,w 1796].Nodup := by
@@ -1220,27 +1220,27 @@ theorem exit3_run_eq_pool (w : Nat→Wire) (hn : (skywalkPoolWires w).Nodup) (s 
     (R3_avoid_pool w hn 1026 (Or.inr (Or.inr (Or.inl rfl))))
     (R3_avoid_pool w hn 1027 (Or.inr (Or.inr (Or.inr rfl)))) topB topB'
 
-theorem zero3_gatePhysical_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (ho : GatePhysical (literalKAdd w)) : GatePhysical (zero3KAdd w) := by
-  have old := (congrArg GatePhysical (literal_split3 w)).mp ho
-  exact splice_valid3 (fun i => PhysicalInstr (.gate i)) (P3 w)
-    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
-    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w) old
-    (leaf3_physical _ _ _ _ _ _ _ (nd7_pool w hn))
+                                                                                  
+                                                                          
+                                                              
+                                                               
+                                                                                              
+                                                                                       
+                                                  
 
-theorem zero3_contract_valid_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (ho : ∀i∈literalKAdd w,instructionValid i) : ∀i∈zero3KAdd w,instructionValid i := by
-  have old := (congrArg (fun p : Program => ∀i∈p,instructionValid i) (literal_split3 w)).mp ho
-  exact splice_valid3 instructionValid (P3 w)
-    (oldLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796))
-    (newLeaf3At (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027)) (R3 w) old
-    (leaf3_contract_valid _ _ _ _ _ _ _ (nd7_pool w hn))
+                                                                                    
+                                                                                        
+                                                                                              
+                                             
+                                                                                              
+                                                                                       
+                                                        
 
 #print axioms exit3_run_eq_pool
-#print axioms zero3_gatePhysical_pool
-#print axioms zero3_contract_valid_pool
+                                     
+                                       
 
-#print axioms nd7_pool
+                      
 #print axioms P3_avoid_pool
 #print axioms R3_avoid_pool
 
@@ -1253,16 +1253,16 @@ theorem leaf3_slots (a b c A B A' B' z z' : Wire) :
 #print axioms leaf3_slots
 
 
-theorem zero3_slots (w : Nat → Wire) :
-    Challenge.gateSlots (zero3KAdd w) + 14 = Challenge.gateSlots (literalKAdd w) := by
-  have hl := leaf3_slots (w 255) (w 1025) (w 1794) (w 256) (w 1026) (w 257) (w 1027) (w 1795) (w 1796)
-  rw [literal_split3 w]
-  simp only [zero3KAdd, Challenge.gateSlots_append, hl.1, hl.2]
-  omega
+                                      
+                                                                                      
+                                                                                                      
+                       
+                                                               
+       
 
-#print axioms zero3_slots
+                         
 
-#print axioms zero3_support
+                           
 end Verifier.Leaf3
 end
 
@@ -1978,9 +1978,9 @@ theorem zero4_support (w : Nat → Wire) :
   exact (congrArg (fun s : Finset Wire => wires (zero4KAdd w) ⊆ s)
     (congrArg ECDSAAdd.wires (literal_split4 w))).mpr h
 
-theorem nd9 (w : Nat→Wire) (hinj : Function.Injective w) :
-    [w 254,w 1024,w 1793,w 255,w 1025,w 256,w 1026,w 257,w 1027].Nodup :=
-  List.Nodup.map hinj (by decide : [254,1024,1793,255,1025,256,1026,257,1027].Nodup)
+                                                          
+                                                                         
+                                                                                    
 
 private theorem leaf4_physical (a b c A B A' B' A'' B'' : Wire)
     (nd : [a,b,c,A,B,A',B',A'',B''].Nodup) :
@@ -1989,12 +1989,12 @@ private theorem leaf4_physical (a b c A B A' B' A'' B'' : Wire)
     not_or,not_false_eq_true,and_true] at nd
   simp_all [newLeaf4At,GatePhysical,PhysicalInstr,ProperGate,ne_comm]
 
-private theorem leaf4_contract_valid (a b c A B A' B' A'' B'' : Wire)
-    (nd : [a,b,c,A,B,A',B',A'',B''].Nodup) :
-    ∀i∈newLeaf4At a b c A B A' B' A'' B'',instructionValid i := by
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
-    not_or,not_false_eq_true,and_true] at nd
-  simp_all [newLeaf4At,instructionValid,correctionValid,ne_comm]
+                                                                     
+                                            
+                                                                  
+                                                                           
+                                            
+                                                                
 
 /-! ### Pool-Nodup variants, matching the ExitMerge call sites -/
 
@@ -2085,14 +2085,14 @@ theorem zero4_gatePhysical_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).No
     (newLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027))
     (R4 w) old (leaf4_physical _ _ _ _ _ _ _ _ _ (nd9_pool w hn))
 
-theorem zero4_contract_valid_pool (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (ho : ∀i∈literalKAdd w,instructionValid i) : ∀i∈zero4KAdd w,instructionValid i := by
-  have old := (congrArg (fun p : Program => ∀i∈p,instructionValid i) (literal_split4 w)).mp ho
-  exact splice_valid4 instructionValid (P4 w)
-    (oldLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027)
-      (w 1794) (w 1795) (w 1796))
-    (newLeaf4At (w 254) (w 1024) (w 1793) (w 255) (w 1025) (w 256) (w 1026) (w 257) (w 1027))
-    (R4 w) old (leaf4_contract_valid _ _ _ _ _ _ _ _ _ (nd9_pool w hn))
+                                                                                    
+                                                                                        
+                                                                                              
+                                             
+                                                                                            
+                                 
+                                                                                             
+                                                                       
 
 theorem leaf4_slots (a b c A B A' B' A'' B'' z z' z'' : Wire) :
     Challenge.gateSlots (oldLeaf4At a b c A B A' B' A'' B'' z z' z'') = 38 ∧
@@ -2114,7 +2114,7 @@ theorem zero4_slots (w : Nat → Wire) :
 #print axioms zero4_support
 #print axioms exit4_run_eq_pool
 #print axioms zero4_gatePhysical_pool
-#print axioms zero4_contract_valid_pool
+                                       
 #print axioms zero4_slots
 end Verifier.Leaf4
 end
@@ -2481,8 +2481,8 @@ theorem run_cx (a b : Wire) (m : List Bool) (s : State) :
     run [.CX a b] m s=⟨s.phase,writeBit s.basis b (s.basis b ^^ s.basis a)⟩ := rfl
 theorem run_ccx (a b c : Wire) (m : List Bool) (s : State) :
     run [.CCX a b c] m s=⟨s.phase,writeBit s.basis c (s.basis c ^^ (s.basis a && s.basis b))⟩ := rfl
-theorem run_x (a : Wire) (m : List Bool) (s : State) :
-    run [.X a] m s=⟨s.phase,writeBit s.basis a (!s.basis a)⟩ := rfl
+                                                      
+                                                                   
 
 theorem run_meas_and (t a b : Wire) (m : List Bool) (s : State) (ha : a≠t) (hb : b≠t)
     (ht : s.basis t=(s.basis a && s.basis b)) :
@@ -3699,7 +3699,7 @@ theorem blk_mSites (w : Nat → Wire) (g : Wire) (a n : Nat)
 
 theorem g_mSites (w : Nat → Wire) (g : Wire) : g∈mSites w g := by simp [mSites]
 
-theorem dBits_wires_sub (w : Nat → Wire) : ∀q∈mappedWires (dBits w),q=w 1028 := dBits_wire w
+                                                                                            
 
 theorem lsub (w : Nat → Wire) (g : Wire) (l : List Wire) (h : ∀q∈l,q∈mSites w g) :
     l.toFinset⊆(mSites w g).toFinset := by
@@ -3711,374 +3711,374 @@ theorem gate_sub (w : Nat → Wire) (g : Wire) (i : Instr) (h : ∀q∈i.wires,q
   simp only [wires,Finset.union_empty] at hq
   exact List.mem_toFinset.mpr (h q hq)
 
-theorem merged_support (w : Nat → Wire) (g : Wire) (k : Nat) :
-    wires (merged w g k)⊆(mSites w g).toFinset := by
-  have B := blk_mSites w g
-  have I := in_mSites w g
-  have G := g_mSites w g
-  have mskH (c : Wire) (hc : c∈mSites w g) (v : Nat) : wires (maskedConstant c (hR w) v)⊆(mSites w g).toFinset :=
-    (maskedConstant_wires_subset c (hR w) v).trans (lsub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 0 258 (by omega) q hq))
-  have mskT (c : Wire) (hc : c∈mSites w g) (v : Nat) : wires (maskedConstant c (tR w) v)⊆(mSites w g).toFinset :=
-    (maskedConstant_wires_subset c (tR w) v).trans (lsub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 1029 256 (by omega) q hq))
-  have mskS (v : Nat) : wires (maskedConstant g (srcR w) v)⊆(mSites w g).toFinset :=
-    (maskedConstant_wires_subset g (srcR w) v).trans (lsub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact G
-      · exact B 0 256 (by omega) q hq))
-  have notS : wires (notRegister (srcR w))⊆(mSites w g).toFinset := by
-    rw [notRegister_wires]; exact lsub w g _ (B 0 256 (by omega))
-  have cmp : wires (compareLt none (srcR w) (xR w) (cR w) (w 513) (w 514))⊆(mSites w g).toFinset := by
-    rw [(compareLt_wires none (srcR w) (xR w) (cR w) (w 513) (w 514) (by simp [srcR,xR,wireBlock_length])
-      (by simp [cR,xR,wireBlock_length])).1]
-    apply lsub; intro q hq
-    simp only [Option.toList_none,List.nil_append,List.mem_cons,List.mem_append] at hq
-    rcases hq with rfl|rfl|(hq|hq)|hq
-    · exact I 514 (by omega)
-    · exact I 513 (by omega)
-    · exact B 0 256 (by omega) q hq
-    · exact B 770 256 (by omega) q hq
-    · exact B 256 256 (by omega) q hq
-  have hC : wires (comparePart w g k)⊆(mSites w g).toFinset := by
-    simp only [comparePart,wires_append,Finset.union_subset_iff]
-    exact ⟨⟨⟨⟨mskS _,notS⟩,cmp⟩,notS⟩,mskS _⟩
-  have cx (a b : Nat) (ha : a < 515 ∨ (770 ≤ a ∧ a < 1285) ∨ (1540 ≤ a ∧ a < 1798) ∨ a = 721 ∨ a = 722)
-      (hb : b < 515 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 721 ∨ b = 722) :
-      wires [.CX (w a) (w b)]⊆(mSites w g).toFinset := gate_sub w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact I a ha
-    · exact I b hb)
-  have cxg (b : Nat) (hb : b < 515 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 721 ∨ b = 722) :
-      wires [.CX g (w b)]⊆(mSites w g).toFinset := gate_sub w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact G
-    · exact I b hb)
-  have hP : wires (parGates w g k)⊆(mSites w g).toFinset := by
-    unfold parGates
-    split_ifs <;> simp only [wires_append,Finset.union_subset_iff] <;>
-      refine ⟨⟨⟨⟨⟨?_,?_⟩,?_⟩,?_⟩,?_⟩,?_⟩ <;>
-      first | exact cx _ _ (by omega) (by omega) | exact cxg _ (by omega) | simp [wires]
-  have hR' : wires (rotateRight (kR w))⊆(mSites w g).toFinset := by
-    rw [(rotate_wires (kR w)).1]
-    simp only [kR,wireBlock_length,show ¬(258<2) by omega,if_false]
-    exact lsub w g _ (B 770 258 (by omega))
-  have hPr : wires (prodPart w g)⊆(mSites w g).toFinset := by
-    unfold prodPart
-    rw [show ([.CCX g (w 1028) (w 721),.CCX (w 514) (w 1028) (w 722)] : Program)=
-      [.CCX g (w 1028) (w 721)]++[.CCX (w 514) (w 1028) (w 722)] from rfl,wires_append,Finset.union_subset_iff]
-    constructor <;> apply gate_sub <;> intro q hq <;>
-      simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq <;>
-      rcases hq with rfl|rfl|rfl <;> first | exact G | exact I _ (by omega)
-  have hL : wires (loadK w g k)⊆(mSites w g).toFinset := by
-    simp only [loadK,wires_append,Finset.union_subset_iff]
-    refine ⟨⟨⟨⟨⟨?_,mskH g G _⟩,mskH _ (I 514 (by omega)) _⟩,mskH _ (I 1028 (by omega)) _⟩,
-      mskH _ (I 721 (by omega)) _⟩,mskH _ (I 722 (by omega)) _⟩
-    exact (xorConstant_wires_subset (hR w) _).trans (lsub w g _ (B 0 258 (by omega)))
-  have hKOld : wires (kAddM w)⊆(mSites w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply lsub; intro q hq
-    simp only [mappedRead_wires,List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · exact B 0 258 (by omega) q hq
-    · exact B 770 258 (by omega) q hq
-    · exact B 1540 257 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hK : wires (KAddCallerBridgeResearch.flagKAdd w)⊆(mSites w g).toFinset := by
-    apply (KAddResourceBridgeResearch.flag_support w).trans
-    simp only [Finset.union_subset_iff]
-    constructor
-    · simpa only [←kAdd_literal] using hKOld
-    · intro q hq
-      have eq : q=w 1028 := Finset.mem_singleton.mp hq
-      rw [eq]
-      exact List.mem_toFinset.mpr (I 1028 (by omega))
-  have hM1 : wires [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]⊆(mSites w g).toFinset := by
-    apply gate_sub; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl <;> exact I _ (by omega)
-  have hM2 : wires [.measureX (w 721) [] [.CZ g (w 1028)]]⊆(mSites w g).toFinset := by
-    apply gate_sub; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl
-    · exact I _ (by omega)
-    · exact G
-    · exact I _ (by omega)
-  have hCp : wires (copyRegister none (wireBlock w 770 257) (hpR w))⊆(mSites w g).toFinset := by
-    rw [copyRegister_wires none _ _ (by simp [hpR,wireBlock_length])]
-    split
-    · exact Finset.empty_subset _
-    · apply lsub; intro q hq
-      simp only [Option.toList_none,List.nil_append,List.mem_append] at hq
-      rcases hq with hq|hq
-      · exact B 770 257 (by omega) q hq
-      · exact B 1 257 (by omega) q hq
-  have hH : wires (hAddM w)⊆(mSites w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply lsub; intro q hq
-    simp only [List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · rw [dBits_wire w q hq]; exact I 1028 (by omega)
-    · exact B 1 257 (by omega) q hq
-    · exact B 1540 256 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hW : wires [.CX (w 1028) (w 0),.X (w 0)]⊆(mSites w g).toFinset := by
-    rw [show ([.CX (w 1028) (w 0),.X (w 0)] : Program)=[.CX (w 1028) (w 0)]++[.X (w 0)] from rfl,
-      wires_append,Finset.union_subset_iff]
-    refine ⟨cx 1028 0 (by omega) (by omega),gate_sub w g _ ?_⟩
-    intro q hq; simp only [Instr.wires,Finset.mem_singleton] at hq; rw [hq]; exact I 0 (by omega)
-  have hT : wires (loadT w g k)⊆(mSites w g).toFinset := by
-    simp only [loadT,wires_append,Finset.union_subset_iff]
-    exact ⟨mskT g G _,mskT _ (I 721 (by omega)) _⟩
-  have hE : wires (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514))⊆(mSites w g).toFinset := by
-    apply (eraseLtChain_wires_subset _ _ _ _ _).trans
-    apply lsub; intro q hq
-    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with ((hq|hq)|hq)|rfl|rfl
-    · exact B 1 256 (by omega) q hq
-    · exact B 1029 256 (by omega) q hq
-    · exact B 1540 255 (by omega) q hq
-    · exact I 1797 (by omega)
-    · exact I 514 (by omega)
-  have hHT : wires (hAddT w)⊆(mSites w g).toFinset := (hAddT_wires w).trans hH
-  simp only [merged,wires_append,Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hC,hP,hR'⟩,hPr⟩,hL⟩,hK⟩,hL⟩,hM1⟩,hCp⟩,hHT⟩,hW⟩,hT⟩,hE⟩,hT⟩,hM2⟩
+                                                              
+                                                    
+                          
+                         
+                        
+                                                                                                                 
+                                                                              
+                                            
+                
+                                       
+                                                                                                                 
+                                                                              
+                                            
+                
+                                          
+                                                                                    
+                                                                                
+                                            
+               
+                                       
+                                                                      
+                                                                 
+                                                                                                      
+                                                                                                         
+                                            
+                          
+                                                                                      
+                                     
+                            
+                            
+                                   
+                                     
+                                     
+                                                                 
+                                                                
+                                             
+                                                                                                       
+                                                                                         
+                                                                         
+                                                                                    
+                          
+                  
+                   
+                                                                                                        
+                                                                     
+                                                                                    
+                          
+             
+                   
+                                                              
+                   
+                                                                      
+                                            
+                                                                                        
+                                                                   
+                                
+                                                                   
+                                           
+                                                             
+                   
+                                                                                 
+                                                                                                               
+                                                     
+                                                                              
+                                                                           
+                                                           
+                                                          
+                                                                                          
+                                                               
+                                                                                     
+                                                          
+                                                
+                          
+                                                                         
+                                   
+                                   
+                                     
+                                      
+                             
+                                                                                   
+                                                           
+                                       
+               
+                                            
+                
+                                                      
+             
+                                                     
+                                                                                            
+                              
+                                                                                                   
+                                                                      
+                                                       
+                                                                                      
+                              
+                                                                                                   
+                                                                      
+                              
+                          
+             
+                          
+                                                                                                
+                                                                     
+         
+                                 
+                            
+                                                                          
+                          
+                                       
+                                     
+                                                       
+                                                
+                          
+                                                        
+                                   
+                                                     
+                                   
+                                      
+                             
+                                                                           
+                                                                                                 
+                                           
+                                                              
+                                                                                                 
+                                                           
+                                                          
+                                                  
+                                                                                                    
+                                                     
+                          
+                                                                             
+                                       
+                                   
+                                      
+                                      
+                             
+                            
+                                                                              
+                                                         
+                                                                                    
 
 
-theorem merged_counts (w : Nat → Wire) (g : Wire) (k : Nat) :
-    toffoliCount (merged w g k)=1023 ∧ measurementCount (merged w g k)=1027 := by
-  have m1 (c : Wire) (r : List Wire) (v : Nat) := maskedConstant_counts c r v
-  have x1 (r : List Wire) (v : Nat) := xorConstant_counts r v
-  have n1 := notRegister_counts (srcR w)
-  have c1' := compareLt_counts none (srcR w) (xR w) (cR w) (w 513) (w 514)
-    (by simp [srcR,xR,wireBlock_length]) (by simp [cR,xR,wireBlock_length])
-  have r1 := rotate_counts (kR w)
-  have k1 := mappedAdd_counts (mappedRead (hR w) false) (kR w) (aC w) (w 1797)
-    (by simp [mappedRead_length,hR,kR,wireBlock_length]) (by simp [aC,kR,wireBlock_length])
-  have h1 := mappedAdd_counts (dBits w) (hpR w) (hC2 w) (w 1797)
-    (by simp [dBits_length,hpR,wireBlock_length]) (by simp [hC2,hpR,wireBlock_length])
-  have e1 := eraseLtChain_counts (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)
-    (by simp [hp8,tR,wireBlock_length]) (by simp [hC3,tR,wireBlock_length])
-  have cp1 := copyRegister_counts none (wireBlock w 770 257) (hpR w) (by simp [hpR,wireBlock_length])
-  have pg : toffoliCount (parGates w g k)=0 ∧ measurementCount (parGates w g k)=0 := by
-    unfold parGates; split_ifs <;> simp [toffoliCount,measurementCount]
-  have lx : (xR w).length=256 := by simp [xR,wireBlock_length]
-  have lk : (kR w).length=258 := by simp [kR,wireBlock_length]
-  have lh : (hpR w).length=257 := by simp [hpR,wireBlock_length]
-  have lt : (tR w).length=256 := by simp [tR,wireBlock_length]
-  rw [lx] at c1'
-  rw [lk] at k1
-  have kOld : toffoliCount (KAddCallerBridgeResearch.literalKAdd w)=257 ∧
-      measurementCount (KAddCallerBridgeResearch.literalKAdd w)=257 := k1
-  have kDelta := KAddCallerBridgeResearch.flag_counts w
-  have kNew : toffoliCount (KAddCallerBridgeResearch.flagKAdd w)=256 ∧
-      measurementCount (KAddCallerBridgeResearch.flagKAdd w)=257 := by omega
-  rw [lh] at h1
-  rw [lt] at e1
-  have hT := hAddT_counts w
-  rw [hAddM,h1.1,h1.2] at hT
-  have hT' : toffoliCount (hAddT w)=254 ∧ measurementCount (hAddT w)=256 := by omega
-  simp only [merged,comparePart,prodPart,loadK,kNew.1,kNew.2,hT'.1,hT'.2,loadT,toffoliCount_append,
-    measurementCount_append,(m1 _ _ _).1,(m1 _ _ _).2,(x1 _ _).1,(x1 _ _).2,n1.1,n1.2,c1'.1,c1'.2.1,
-    r1.1,r1.2.1,h1.1,h1.2,e1.1,e1.2,cp1.1,cp1.2,pg.1,pg.2]
-  simp [toffoliCount,measurementCount]
+                                                             
+                                                                                 
+                                                                             
+                                                             
+                                        
+                                                                          
+                                                                           
+                                 
+                                                                              
+                                                                                           
+                                                                
+                                                                                      
+                                                                        
+                                                                           
+                                                                                                     
+                                                                                       
+                                                                       
+                                                              
+                                                              
+                                                                
+                                                              
+                
+               
+                                                                         
+                                                                         
+                                                       
+                                                                      
+                                                                            
+               
+               
+                           
+                            
+                                                                                    
+                                                                                                   
+                                                                                                    
+                                                          
+                                      
 
 section Phys
 variable (w : Nat → Wire) (g : Wire) (hn : (skywalkPoolWires w).Nodup) (hg : g∉skywalkPoolWires w)
 include hn hg
 
-theorem merged_physical (k : Nat) : GatePhysical (merged w g k) := by
-  have ne (i j : Nat) (hi : i<1798) (hj : j<1798) (h : i≠j) : w i≠w j := w_ne w hn i j hi hj h
-  have gn (i : Nat) (hi : i<1798) : g≠w i := g_ne w hn g hg i hi
-  have cxp (a b : Wire) (h : a≠b) : GatePhysical [.CX a b] := by
-    simp [GatePhysical,PhysicalInstr,ProperGate,h]
-  have ccxp (a b c : Wire) (h1 : a≠c) (h2 : b≠c) : GatePhysical [.CCX a b c] := by
-    simp [GatePhysical,PhysicalInstr,ProperGate,h1,h2]
-  have mp (c : Wire) (c' : Wire) : GatePhysical [.measureX c [] [.CZ c' c]] ∧
-      GatePhysical [.measureX (w 722) [] [.CZ (w 514) (w 1028)]] := by
-    simp [GatePhysical,PhysicalInstr]
-  have gS : g∉srcR w := g_out w hn g hg 0 256 (by omega)
-  have gH : g∉hR w := g_out w hn g hg 0 258 (by omega)
-  have gT : g∉tR w := g_out w hn g hg 1029 256 (by omega)
-  have cmpP : GatePhysical (compareLt none (srcR w) (xR w) (cR w) (w 513) (w 514)) := by
-    apply compareLt_physical
-    · have a1 := blk_dis w hn 0 256 770 256 (by omega) (by omega) (by omega)
-      have a2 := blk_dis w hn 0 256 256 256 (by omega) (by omega) (by omega)
-      have a3 := blk_dis w hn 770 256 256 256 (by omega) (by omega) (by omega)
-      have l1 : (srcR w++xR w).Nodup := List.nodup_append'.mpr ⟨src_nd w hn,blk_nd w hn 770 256 (by omega),a1⟩
-      have l2 : (srcR w++xR w++cR w).Nodup := by
-        apply List.nodup_append'.mpr
-        refine ⟨l1,blk_nd w hn 256 256 (by omega),?_⟩
-        apply List.disjoint_left.mpr
-        intro q hq hc'
-        rcases List.mem_append.mp hq with h1|h1
-        · exact List.disjoint_left.mp a2 h1 hc'
-        · exact List.disjoint_left.mp a3 h1 hc'
-      simp only [List.cons_append,List.append_assoc] at l2 ⊢
-      refine List.nodup_cons.mpr ⟨?_,List.nodup_cons.mpr ⟨?_,by simpa [List.append_assoc] using l2⟩⟩
-      · simp only [List.mem_cons,List.mem_append,not_or]
-        exact ⟨ne 514 513 (by omega) (by omega) (by omega),nb w hn 514 0 256 (by omega) (by omega) (by omega),
-          nb w hn 514 770 256 (by omega) (by omega) (by omega),nb w hn 514 256 256 (by omega) (by omega) (by omega)⟩
-      · simp only [List.mem_append,not_or]
-        exact ⟨nb w hn 513 0 256 (by omega) (by omega) (by omega),nb w hn 513 770 256 (by omega) (by omega) (by omega),
-          nb w hn 513 256 256 (by omega) (by omega) (by omega)⟩
-    · simp
-  have kPOld : GatePhysical (kAddM w) := by
-    apply mappedAdd_physical
-    · rw [List.cons_append]
-      have d := blk_dis w hn 770 258 1540 257 (by omega) (by omega) (by omega)
-      refine List.nodup_cons.mpr ⟨?_,List.nodup_append'.mpr ⟨kR_nd w hn,blk_nd w hn 1540 257 (by omega),d⟩⟩
-      simp only [List.mem_append,not_or]
-      exact ⟨nb w hn 1797 770 258 (by omega) (by omega) (by omega),nb w hn 1797 1540 257 (by omega) (by omega) (by omega)⟩
-    · intro b hb q hq
-      simp only [mappedRead,List.mem_map] at hb
-      obtain ⟨q',hq',rfl⟩ := hb
-      simp only [Option.mem_def,Option.some.injEq] at hq
-      subst hq
-      rw [List.cons_append]
-      simp only [List.mem_cons,List.mem_append,not_or]
-      refine ⟨?_,?_,?_⟩
-      · intro e; exact nb w hn 1797 0 258 (by omega) (by omega) (by omega) (e ▸ hq')
-      · exact fun h' => hR_kR w hn _ h' hq'
-      · exact fun h' => List.disjoint_left.mp (blk_dis w hn 0 258 1540 257 (by omega) (by omega) (by omega)) hq' h'
-  have kP : GatePhysical (KAddCallerBridgeResearch.flagKAdd w) :=
-    KAddResourceBridgeResearch.flag_gatePhysical w hn (by simpa only [←kAdd_literal] using kPOld)
-  have hP : GatePhysical (hAddM w) := by
-    apply mappedAdd_physical
-    · rw [List.cons_append]
-      have d := blk_dis w hn 1 257 1540 256 (by omega) (by omega) (by omega)
-      refine List.nodup_cons.mpr ⟨?_,List.nodup_append'.mpr ⟨blk_nd w hn 1 257 (by omega),blk_nd w hn 1540 256 (by omega),d⟩⟩
-      simp only [List.mem_append,not_or]
-      exact ⟨nb w hn 1797 1 257 (by omega) (by omega) (by omega),nb w hn 1797 1540 256 (by omega) (by omega) (by omega)⟩
-    · intro b hb q hq
-      have : q∈mappedWires (dBits w) := List.mem_flatMap.mpr ⟨b,hb,by simpa using hq⟩
-      rw [dBits_wire w q this,List.cons_append]
-      simp only [List.mem_cons,List.mem_append,not_or]
-      exact ⟨ne 1028 1797 (by omega) (by omega) (by omega),nb w hn 1028 1 257 (by omega) (by omega) (by omega),
-        nb w hn 1028 1540 256 (by omega) (by omega) (by omega)⟩
-  have eP : GatePhysical (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)) := by
-    apply eraseLtChain_physical
-    have a1 := blk_dis w hn 1 256 1029 256 (by omega) (by omega) (by omega)
-    have a2 := blk_dis w hn 1 256 1540 255 (by omega) (by omega) (by omega)
-    have a3 := blk_dis w hn 1029 256 1540 255 (by omega) (by omega) (by omega)
-    have l1 : (hp8 w++tR w).Nodup := List.nodup_append'.mpr ⟨blk_nd w hn 1 256 (by omega),tR_nd w hn,a1⟩
-    have l2 : (hp8 w++tR w++hC3 w).Nodup := by
-      apply List.nodup_append'.mpr
-      refine ⟨l1,blk_nd w hn 1540 255 (by omega),?_⟩
-      apply List.disjoint_left.mpr
-      intro q hq hc'
-      rcases List.mem_append.mp hq with h1|h1
-      · exact List.disjoint_left.mp a2 h1 hc'
-      · exact List.disjoint_left.mp a3 h1 hc'
-    rw [List.cons_append,List.cons_append]
-    refine List.nodup_cons.mpr ⟨?_,l2⟩
-    simp only [List.mem_append,not_or]
-    exact ⟨⟨nb w hn 1797 1 256 (by omega) (by omega) (by omega),nb w hn 1797 1029 256 (by omega) (by omega) (by omega)⟩,
-      nb w hn 1797 1540 255 (by omega) (by omega) (by omega)⟩
-  have cpP : GatePhysical (copyRegister none (wireBlock w 770 257) (hpR w)) :=
-    copyRegister_physical none _ _ (List.nodup_append'.mpr ⟨blk_nd w hn 770 257 (by omega),
-      blk_nd w hn 1 257 (by omega),blk_dis w hn 770 257 1 257 (by omega) (by omega) (by omega)⟩) (by simp)
-  have parP : GatePhysical (parGates w g k) := by
-    unfold parGates
-    split_ifs <;> simp only [gatePhysical_append] <;>
-      refine ⟨⟨⟨⟨⟨?_,?_⟩,?_⟩,?_⟩,?_⟩,?_⟩ <;>
-      first
-        | exact cxp _ _ (ne _ _ (by omega) (by omega) (by omega))
-        | exact cxp _ _ (gn _ (by omega))
-        | simp [GatePhysical]
-  have rotP := (rotate_physical (kR w) (kR_nd w hn)).1
-  have prodP : GatePhysical (prodPart w g) := by
-    unfold prodPart
-    rw [show ([.CCX g (w 1028) (w 721),.CCX (w 514) (w 1028) (w 722)] : Program)=
-      [.CCX g (w 1028) (w 721)]++[.CCX (w 514) (w 1028) (w 722)] from rfl,gatePhysical_append]
-    exact ⟨ccxp _ _ _ (gn _ (by omega)) (ne _ _ (by omega) (by omega) (by omega)),
-      ccxp _ _ _ (ne _ _ (by omega) (by omega) (by omega)) (ne _ _ (by omega) (by omega) (by omega))⟩
-  have h514 : w 514∉hR w := nb w hn 514 0 258 (by omega) (by omega) (by omega)
-  have h1028 : w 1028∉hR w := nb w hn 1028 0 258 (by omega) (by omega) (by omega)
-  have h1286 : w 721∉hR w := nb w hn 721 0 258 (by omega) (by omega) (by omega)
-  have h1287 : w 722∉hR w := nb w hn 722 0 258 (by omega) (by omega) (by omega)
-  have t1286 : w 721∉tR w := nb w hn 721 1029 256 (by omega) (by omega) (by omega)
-  have lkP : GatePhysical (loadK w g k) := by
-    simp only [loadK,gatePhysical_append]
-    exact ⟨⟨⟨⟨⟨xorConstant_physical _ _,maskedConstant_physical _ _ _ gH⟩,maskedConstant_physical _ _ _ h514⟩,
-      maskedConstant_physical _ _ _ h1028⟩,maskedConstant_physical _ _ _ h1286⟩,maskedConstant_physical _ _ _ h1287⟩
-  have ltP : GatePhysical (loadT w g k) := by
-    simp only [loadT,gatePhysical_append]
-    exact ⟨maskedConstant_physical _ _ _ gT,maskedConstant_physical _ _ _ t1286⟩
-  have w0P : GatePhysical [.CX (w 1028) (w 0),.X (w 0)] := by
-    simp [GatePhysical,PhysicalInstr,ProperGate,ne 1028 0 (by omega) (by omega) (by omega)]
-  have cP : GatePhysical (comparePart w g k) := by
-    simp only [comparePart,gatePhysical_append]
-    exact ⟨⟨⟨⟨maskedConstant_physical _ _ _ gS,notRegister_physical _⟩,cmpP⟩,notRegister_physical _⟩,
-      maskedConstant_physical _ _ _ gS⟩
-  have m1 : GatePhysical [.measureX (w 722) [] [.CZ (w 514) (w 1028)]] := by simp [GatePhysical,PhysicalInstr]
-  have m2 : GatePhysical [.measureX (w 721) [] [.CZ g (w 1028)]] := by simp [GatePhysical,PhysicalInstr]
-  have hPT : GatePhysical (hAddT w) := hAddT_physical w hn hP
-  simp only [merged,gatePhysical_append]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨cP,parP,rotP⟩,prodP⟩,lkP⟩,kP⟩,lkP⟩,m1⟩,cpP⟩,hPT⟩,w0P⟩,ltP⟩,eP⟩,ltP⟩,m2⟩
+                                                                     
+                                                                                              
+                                                                
+                                                                
+                                                  
+                                                                                  
+                                                      
+                                                                             
+                                                                      
+                                     
+                                                        
+                                                      
+                                                         
+                                                                                        
+                            
+                                                                            
+                                                                            
+                                                                              
+                                                                                                              
+                                                
+                                    
+                                                     
+                                    
+                      
+                                               
+                                               
+                                               
+                                                            
+                                                                                                    
+                                                        
+                                                                                                              
+                                                                                                                    
+                                          
+                                                                                                                       
+                                                               
+          
+                                           
+                            
+                           
+                                                                              
+                                                                                                           
+                                        
+                                                                                                                          
+                     
+                                               
+                               
+                                                        
+              
+                           
+                                                      
+                       
+                                                                                    
+                                           
+                                                                                                                   
+                                                                 
+                                                                                                 
+                                        
+                            
+                           
+                                                                            
+                                                                                                                             
+                                        
+                                                                                                                        
+                     
+                                                                                     
+                                               
+                                                      
+                                                                                                               
+                                                               
+                                                                                     
+                               
+                                                                           
+                                                                           
+                                                                              
+                                                                                                        
+                                              
+                                  
+                                                    
+                                  
+                    
+                                             
+                                             
+                                             
+                                          
+                                      
+                                      
+                                                                                                                        
+                                                             
+                                                                              
+                                                                                           
+                                                                                                          
+                                                 
+                   
+                                                     
+                                            
+           
+                                                                 
+                                         
+                             
+                                                      
+                                                
+                   
+                                                                                 
+                                                                                              
+                                                                                  
+                                                                                                     
+                                                                              
+                                                                                 
+                                                                               
+                                                                               
+                                                                                  
+                                             
+                                         
+                                                                                                              
+                                                                                                                    
+                                             
+                                         
+                                                                                
+                                                             
+                                                                                           
+                                                  
+                                               
+                                                                                                     
+                                       
+                                                                                                              
+                                                                                                        
+                                                             
+                                        
+                                                                                            
 
 end Phys
 
-theorem gs1 (i : Instr) : Challenge.gateSlots [i]=Challenge.instructionSlots i := by
-  simp [Challenge.gateSlots]
+                                                                                    
+                            
 
-theorem merged_slots (w : Nat → Wire) (g : Wire) (k : Nat) : Challenge.gateSlots (merged w g k)≤25000 := by
-  have m1 (c : Wire) (r : List Wire) (v : Nat) := Baselines.maskedConstant_gateSlots_le c r v
-  have x1 (r : List Wire) (v : Nat) := Baselines.xorConstant_gateSlots_le r v
-  have c1' := Baselines.compareLt_gateSlots_le none (srcR w) (xR w) (cR w) (w 513) (w 514)
-  have r1 := (Baselines.rotate_gateSlots_le (kR w)).1
-  have k1 := Baselines.mappedAdd_gateSlots_le (mappedRead (hR w) false) (kR w) (aC w) (w 1797)
-  have h1 := Baselines.mappedAdd_gateSlots_le (dBits w) (hpR w) (hC2 w) (w 1797)
-  have e1 := Baselines.eraseLt_gateSlots_le (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)
-  have pg : Challenge.gateSlots (parGates w g k)≤6 := by
-    unfold parGates; split_ifs <;> simp [Challenge.gateSlots,Challenge.instructionSlots]
-  have pr : Challenge.gateSlots (prodPart w g)=2 := by simp [prodPart,Challenge.gateSlots,Challenge.instructionSlots]
-  have w0 : Challenge.gateSlots [.CX (w 1028) (w 0),.X (w 0)]=2 := by simp [Challenge.gateSlots,Challenge.instructionSlots]
-  have q1 : Challenge.gateSlots [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]=2 := by
-    simp [Challenge.gateSlots,Challenge.instructionSlots]
-  have q2 : Challenge.gateSlots [.measureX (w 721) [] [.CZ g (w 1028)]]=2 := by
-    simp [Challenge.gateSlots,Challenge.instructionSlots]
-  have lK : Challenge.gateSlots (loadK w g k)≤6*258 := by
-    simp only [loadK,Challenge.gateSlots_append]
-    have := x1 (hR w) (c1 k); have := m1 g (hR w) (cg k); have := m1 (w 514) (hR w) (cf k)
-    have := m1 (w 1028) (hR w) (cp k); have := m1 (w 721) (hR w) (cgp k); have := m1 (w 722) (hR w) (cfp k)
-    simp only [hR,wireBlock_length] at *
-    omega
-  have lT : Challenge.gateSlots (loadT w g k)≤2*256 := by
-    simp only [loadT,Challenge.gateSlots_append]
-    have := m1 g (tR w) (thrA k); have := m1 (w 721) (tR w) (thrB k)
-    simp only [tR,wireBlock_length] at *
-    omega
-  have cP : Challenge.gateSlots (comparePart w g k)≤4*256+12*256+4 := by
-    simp only [comparePart,Challenge.gateSlots_append,Baselines.notRegister_gateSlots]
-    have := m1 g (srcR w) (cmpC+k)
-    simp only [srcR,xR,wireBlock_length] at *
-    omega
-  have cp : Challenge.gateSlots (copyRegister none (wireBlock w 770 257) (hpR w))=257 := by
-    simp [hpR,wireBlock_length]
-  have lk : (kR w).length=258 := by simp [kR,wireBlock_length]
-  have lh : (hp8 w).length=256 := by simp [hp8,wireBlock_length]
-  have lhR : (hR w).length=258 := by simp [hR,wireBlock_length]
-  rw [lk] at r1
-  rw [mappedRead_length,lhR] at k1
-  have kOld : Challenge.gateSlots (KAddCallerBridgeResearch.literalKAdd w)≤17*258 := k1
-  have kNew : Challenge.gateSlots (KAddCallerBridgeResearch.flagKAdd w)+5≤17*258 := by
-    rw [←(KAddCallerBridgeResearch.flag_counts w).2.2]
-    exact kOld
-  rw [dBits_length] at h1
-  rw [lh] at e1
-  have hS := hAddT_slots w
-  rw [hAddM] at hS
-  simp only [merged,Challenge.gateSlots_append,pr,w0,q1,q2,cp]
-  omega
+                                                                                                           
+                                                                                             
+                                                                             
+                                                                                          
+                                                     
+                                                                                              
+                                                                                
+                                                                                   
+                                                        
+                                                                                        
+                                                                                                                     
+                                                                                                                           
+                                                                                     
+                                                         
+                                                                               
+                                                         
+                                                         
+                                                
+                                                                                          
+                                                                                                           
+                                        
+         
+                                                         
+                                                
+                                                                    
+                                        
+         
+                                                                        
+                                                                                      
+                                  
+                                             
+         
+                                                                                           
+                               
+                                                              
+                                                                
+                                                               
+               
+                                  
+                                                                                       
+                                                                                      
+                                                      
+              
+                         
+               
+                          
+                  
+                                                              
+       
 
 end ECDSAAdd.Entrant.E1Merge
 
@@ -5323,20 +5323,20 @@ theorem first_identity (p x y sig a c : Bool) (h : seedValid p sig a c) :
  cases p <;> cases x <;> cases y <;> cases sig <;> cases a <;> cases c <;>
    simp_all [seedValid,carryBit,firstValue]
 
-theorem reference_first (L : DecoderLayout) (b : BasisState) (g : BGraph L b)
- (adds : ∀j,j<255 → b (L.A j)=aExpected L b j)
- (hh : (b L.sigma && b L.h)=false) (hb : (b L.sigma && b L.bias)=false) :
- b (L.R 35)=firstValue (b (L.Y 33)) (b (L.Y 34)) (b (L.Y 35))
-   (b (L.A 33)) (bExpected L b 34) := by
- have seed:=seed_graph L b g adds hh hb 33 (by decide) (by decide)
-   (by rw [high_correction L 33 (by decide)];rfl)
- have ca:=add_step L b adds 34 (by decide) (by decide)
- have qa:=graph_zero_step L b g 34 (by decide) (by decide)
-   (by rw [high_correction L 34 (by decide)];rfl)
- have rr:=ref_r L b 35 (by decide) (by decide)
- change b (L.R 35)=(b (L.Y 34) ^^ b (L.Y 35) ^^ b L.sigma ^^ b (L.A 34) ^^ bExpected L b 35) at rr
- rw [rr,ca,qa]
- exact first_identity _ _ _ _ _ _ seed
+                                                                             
+                                              
+                                                                         
+                                                             
+                                        
+                                                                  
+                                                 
+                                                      
+                                                          
+                                                 
+                                              
+                                                                                                  
+              
+                                      
 
 end ECDSAAdd.Entrant.DecoderMeasuredTail
 end
@@ -5355,46 +5355,46 @@ def polyCorrections (p x y z sig r : Wire) (zEnabled : Bool) : List Correction :
  [.Z x,.Z y]++(if zEnabled then [.Z z] else [])++
  [.Z r,.CZ x sig,.CZ y p,.CZ y sig,.CZ y r,.CZ p r]
 
-theorem erase_poly (p x y z sig r t : Wire) (zEnabled : Bool)
- (hp:p≠t) (hx:x≠t) (hy:y≠t) (hz:z≠t) (hs:sig≠t) (hr:r≠t)
- (s : State) (m : List Bool)
- (known:s.basis t=poly (s.basis p) (s.basis x) (s.basis y)
-   (if zEnabled then s.basis z else false) (s.basis sig) (s.basis r)) :
- run [.measureX t [] (polyCorrections p x y z sig r zEnabled)] m s=
-   ⟨s.phase,writeBit s.basis t false⟩ := by
- apply State.extensionality
- · cases hm:m.headD false
-   · simp only [run,measureAndCorrect,hm,Bool.false_and,Bool.false_eq_true,if_false,correct,Bool.xor_false]
-   · simp only [run,measureAndCorrect,hm,Bool.true_and,ite_true]
-     cases zEnabled <;>
-       simp only [polyCorrections,Bool.false_eq_true,if_false,ite_true,List.append_assoc,List.nil_append,List.cons_append,List.append_nil,
-         correct,writeBit,Function.update_of_ne hp,Function.update_of_ne hx,Function.update_of_ne hy,
-         Function.update_of_ne hz,Function.update_of_ne hs,Function.update_of_ne hr]
-     all_goals
-       rw [known]
-       generalize s.phase=ph,s.basis p=pv,s.basis x=xv,s.basis y=yv,s.basis z=zv,s.basis sig=sv,s.basis r=rv
-       cases ph <;> cases pv <;> cases xv <;> cases yv <;> cases zv <;> cases sv <;> cases rv <;> rfl
- · simp only [run,measureAndCorrect,correct_basis]
+                                                             
+                                                        
+                            
+                                                          
+                                                                       
+                                                                   
+                                           
+                           
+                         
+                                                                                                           
+                                                                
+                       
+                                                                                                                                          
+                                                                                                     
+                                                                                    
+              
+                 
+                                                                                                            
+                                                                                                     
+                                                  
 
 def firstCorrections (p x y a c : Wire) : List Correction :=
  [.Z x,.Z y,.CZ x p,.CZ x a,.CZ x c,.CZ p a,.CZ p c,.CZ a c]
 
-theorem erase_first (p x y a c t : Wire)
- (hp:p≠t) (hx:x≠t) (hy:y≠t) (ha:a≠t) (hc:c≠t)
- (s : State) (m : List Bool)
- (known:s.basis t=firstValue (s.basis p) (s.basis x) (s.basis y) (s.basis a) (s.basis c)) :
- run [.measureX t [] (firstCorrections p x y a c)] m s=
-   ⟨s.phase,writeBit s.basis t false⟩ := by
- apply State.extensionality
- · cases hm:m.headD false
-   · simp only [run,measureAndCorrect,hm,Bool.false_and,Bool.false_eq_true,if_false,correct,Bool.xor_false]
-   · simp only [run,measureAndCorrect,hm,Bool.true_and,ite_true]
-     simp only [firstCorrections,correct,writeBit,Function.update_of_ne hp,
-       Function.update_of_ne hx,Function.update_of_ne hy,Function.update_of_ne ha,Function.update_of_ne hc]
-     rw [known]
-     generalize s.phase=ph,s.basis p=pv,s.basis x=xv,s.basis y=yv,s.basis a=av,s.basis c=cv
-     cases ph <;> cases pv <;> cases xv <;> cases yv <;> cases av <;> cases cv <;> rfl
- · simp only [run,measureAndCorrect,correct_basis]
+                                        
+                                             
+                            
+                                                                                           
+                                                       
+                                           
+                           
+                         
+                                                                                                           
+                                                                
+                                                                           
+                                                                                                           
+               
+                                                                                           
+                                                                                      
+                                                  
 
 def erase (L : DecoderLayout) (j : Nat) : Program :=
  if j=35 then [.measureX (L.R 35) [] (firstCorrections (L.Y 33) (L.Y 34) (L.Y 35) (L.A 33) (L.R 33))]
@@ -5408,46 +5408,46 @@ structure HighInput (L : DecoderLayout) (ref : BasisState) (n : Nat) (s : State)
  seedC:s.basis (L.R 33)=bExpected L ref 34
  pending:∀j,35≤j → j<35+n → s.basis (L.R j)=ref (L.R j)
 
-theorem erase_run (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
- (ref : BasisState) (g : BGraph L ref) (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
- (hh:(ref L.sigma && ref L.h)=false) (hb:(ref L.sigma && ref L.bias)=false)
- (n : Nat) (bound:n<221) (s : State) (f : HighInput L ref (n+1) s) (m : List Bool) :
- run (erase L (35+n)) m s=⟨s.phase,writeBit s.basis (L.R (35+n)) false⟩ := by
- have target:35+n<256:=by omega
- by_cases first:n=0
- · subst n
-   have known:s.basis (L.R 35)=firstValue (s.basis (L.Y 33)) (s.basis (L.Y 34))
-       (s.basis (L.Y 35)) (s.basis (L.A 33)) (s.basis (L.R 33)) := by
-     rw [f.pending 35 (by decide) (by omega),f.source 33 (by decide),f.source 34 (by decide),
-       f.source 35 (by decide),f.seedA,f.seedC]
-     exact reference_first L ref g adds hh hb
-   exact erase_first _ _ _ _ _ _
-     (y_ne_r L hw hn 33 35 (by decide) (by decide))
-     (y_ne_r L hw hn 34 35 (by decide) (by decide))
-     (y_ne_r L hw hn 35 35 (by decide) (by decide))
-     (Ne.symm (r_ne_a L hw hn 35 33 (by decide) (by decide)))
-     (r_ne_r L hw hn 33 35 (by decide) (by decide) (by decide)) s m known
- · have lower:36≤35+n:=by omega
-   have known:s.basis (L.R (35+n))=poly (s.basis (L.Y (35+n-3)))
-       (s.basis (L.Y (35+n-2))) (s.basis (L.Y (35+n-1)))
-       (if decide (35+n<255) then s.basis (L.Y (35+n)) else false)
-       (s.basis L.sigma) (s.basis (L.R (35+n-1))) := by
-     rw [f.pending (35+n) (by omega) (by omega),f.source _ (by omega),
-       f.source _ (by omega),f.source _ (by omega),f.source _ (by omega),f.sigma,
-       f.pending (35+n-1) (by omega) (by omega)]
-     have h:=reference_pair L ref g adds hh hb (35+n-2) (by omega) (by omega)
-     simp only [show 35+n-2+2=35+n by omega,show 35+n-2+1=35+n-1 by omega,
-       show 35+n-2-1=35+n-3 by omega,sourceAt,decide_eq_true_eq] at h ⊢
-     exact h
-   have result:=erase_poly (L.Y (35+n-3)) (L.Y (35+n-2)) (L.Y (35+n-1))
-     (L.Y (35+n)) L.sigma (L.R (35+n-1)) (L.R (35+n)) (decide (35+n<255))
-     (y_ne_r L hw hn _ _ (by omega) target)
-     (y_ne_r L hw hn _ _ (by omega) target)
-     (y_ne_r L hw hn _ _ (by omega) target)
-     (y_ne_r L hw hn _ _ target target)
-     (flag_ne_r L hw hn L.sigma (by tauto) _ target)
-     (r_ne_r L hw hn _ _ (by omega) target (by omega)) s m known
-   simpa only [erase,show ¬35+n=35 by omega,if_false] using result
+                                                                          
+                                                                                        
+                                                                           
+                                                                                    
+                                                                             
+                               
+                   
+          
+                                                                               
+                                                                     
+                                                                                             
+                                               
+                                             
+                                
+                                                   
+                                                   
+                                                   
+                                                             
+                                                                         
+                               
+                                                                
+                                                        
+                                                                  
+                                                       
+                                                                      
+                                                                                 
+                                                
+                                                                             
+                                                                          
+                                                                       
+            
+                                                                       
+                                                                         
+                                           
+                                           
+                                           
+                                       
+                                                    
+                                                                
+                                                                  
 
 end ECDSAAdd.Entrant.DecoderMeasuredTail
 end
@@ -5472,68 +5472,68 @@ structure HighOutput (L : DecoderLayout) (n : Nat) (s t : State) : Prop where
  outside:∀q,(∀j,35≤j → j<35+n → q≠L.R j) → t.basis q=s.basis q
  result:∀j,35≤j → j<35+n → t.basis (L.R j)=false
 
-theorem input_clear (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
- (ref : BasisState) (n : Nat) (bound:n<221) (s : State) (f : HighInput L ref (n+1) s) :
- HighInput L ref n ⟨s.phase,writeBit s.basis (L.R (35+n)) false⟩ := by
- have hi:35+n<256:=by omega
- refine ⟨?_,?_,?_,?_,?_⟩
- · intro j hj
-   simpa only [writeBit,Function.update_of_ne (y_ne_r L hw hn j (35+n) hj hi)] using f.source j hj
- · simpa only [writeBit,Function.update_of_ne (flag_ne_r L hw hn L.sigma (by tauto) (35+n) hi)] using f.sigma
- · simpa only [writeBit,Function.update_of_ne (Ne.symm (r_ne_a L hw hn (35+n) 33 hi (by decide)))] using f.seedA
- · simpa only [writeBit,Function.update_of_ne (r_ne_r L hw hn 33 (35+n) (by decide) hi (by omega))] using f.seedC
- · intro j hj hb
-   simpa only [writeBit,Function.update_of_ne (r_ne_r L hw hn j (35+n) (by omega) hi (by omega))] using f.pending j hj (by omega)
+                                                                            
+                                                                                       
+                                                                      
+                           
+                        
+             
+                                                                                                  
+                                                                                                             
+                                                                                                                
+                                                                                                                 
+                
+                                                                                                                                 
 
-theorem high_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
- (ref : BasisState) (g : BGraph L ref) (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
- (hh:(ref L.sigma && ref L.h)=false) (hb:(ref L.sigma && ref L.bias)=false)
- (n : Nat) (bound:n≤221) (s : State) (f : HighInput L ref n s) (m : List Bool) :
- HighOutput L n s (run (high L n) m s) := by
- induction n generalizing s m with
- | zero=>
-   simp only [high,run]
-   exact ⟨rfl,fun _ _=>rfl,fun _ h1 h2=>by omega⟩
- | succ n ih=>
-   have bn:n<221:=by omega
-   have hi:35+n<256:=by omega
-   have er:=erase_run L hw hn ref g adds hh hb n bn s f m
-   let u:State:=⟨s.phase,writeBit s.basis (L.R (35+n)) false⟩
-   have next:HighInput L ref n u:=input_clear L hw hn ref n bn s f
-   have done:=ih (by omega) u next (m.drop (measurementCount (erase L (35+n))))
-   simp only [high,run_append,run_take]
-   rw [er]
-   refine ⟨done.phase,?_,?_⟩
-   · intro q qr
-     exact (done.outside q (fun j hj hb=>qr j hj (by omega))).trans
-       (Function.update_of_ne (qr (35+n) (by omega) (by omega)) _ _)
-   · intro j hj hb
-     by_cases eq:j=35+n
-     · subst j
-       rw [done.outside (L.R (35+n)) (fun k hk hb=>r_ne_r L hw hn _ _ hi (by omega) (by omega))]
-       simp [u,writeBit]
-     · exact done.result j hj (by omega)
+                                                                             
+                                                                                        
+                                                                           
+                                                                                
+                                            
+                                  
+         
+                       
+                                                 
+              
+                          
+                             
+                                                         
+                                                             
+                                                                  
+                                                                               
+                                       
+          
+                            
+               
+                                                                   
+                                                                    
+                  
+                       
+              
+                                                                                                
+                        
+                                        
 
-theorem tail_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
- (ref : BasisState) (g : BGraph L ref) (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
- (hh:(ref L.sigma && ref L.h)=false) (hb:(ref L.sigma && ref L.bias)=false)
- (s : State) (f : TailInput L ref 34 s) (m : List Bool) :
- TailOutput L 34 s (run (high L 221) m s) := by
- have input:HighInput L ref 221 s:=⟨f.source,f.sigma,f.seedA,f.seedC,
-   fun j hj hb=>f.pending j (by omega) (by omega)⟩
- have done:=high_correct L hw hn ref g adds hh hb 221 (by decide) s input m
- refine ⟨done.phase,?_,?_,?_⟩
- · intro q qr _
-   exact done.outside q (fun j hj hb=>qr j (by omega) (by omega))
- · intro j hj hb
-   by_cases eq:j=34
-   · subst j
-     rw [done.outside (L.R 34) (fun k hk hb=>r_ne_r L hw hn _ _ (by decide) (by omega) (by omega))]
-     exact f.current
-   · exact done.result j (by omega) (by omega)
- · intro j hj hb
-   rw [done.outside (L.A j) (fun k hk hkb=>Ne.symm (r_ne_a L hw hn k j (by omega) hb))]
-   exact f.clean j hj hb
+                                                                             
+                                                                                        
+                                                                           
+                                                         
+                                               
+                                                                     
+                                                  
+                                                                           
+                             
+               
+                                                                 
+                
+                   
+            
+                                                                                                   
+                    
+                                              
+                
+                                                                                       
+                        
 
 end ECDSAAdd.Entrant.DecoderMeasuredTail
 end
@@ -5555,43 +5555,43 @@ def cells : List Cell := (List.range' 5 6).map .plain++
  ([11,16,21,26] : List Nat).map .zero5++(List.range' 31 3).map .plain
 private instance zeroStartDecidable (i : Nat) : Decidable (zeroStart i) := by
  unfold zeroStart;infer_instance
-def tailCheck : List Cell → Nat → Bool
-  | [],i=>decide (i=34)
-  | .first::_,_=>false
-  | .plain j::cs,i=>decide (i=j ∧ 2 ≤ j ∧ j<255) && tailCheck cs (j+1)
-  | .zero5 j::cs,i=>decide (i=j ∧ zeroStart j) && tailCheck cs (j+5)
+                                      
+                       
+                      
+                                                                      
+                                                                    
 
-theorem tail_schedule_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (ref : BasisState) (g : BGraph L ref)
-    (adds : ∀j,j<255 → ref (L.A j)=aExpected L ref j)
-    (hh : (ref L.sigma && ref L.h)=false) (hb : (ref L.sigma && ref L.bias)=false)
-    (cs : List Cell) (i : Nat) (legal : tailCheck cs i=true)
-    (s : State) (f : TailInput L ref i s) (m : List Bool) :
-    TailOutput L i s (run (cellGraph L cs) m s) := by
-  induction cs generalizing i s m with
-  | nil=>
-    have hi:i=34:=of_decide_eq_true legal
-    subst i
-    exact tail_correct L hw hn ref g adds hh hb s f m
-  | cons c cs ih=>
-    cases c with
-    | first=>simp [tailCheck] at legal
-    | plain j=>
-      have h:(i=j ∧ 2 ≤ j ∧ j<255) ∧ tailCheck cs (j+1)=true := by
-        simpa only [tailCheck,Bool.and_eq_true,decide_eq_true_eq] using legal
-      have ei:i=j:=h.1.1
-      subst i
-      exact plain_tail L hw hn ref g adds j h.1.2.1 h.1.2.2 (cellGraph L cs)
-        (fun t r hf=>ih (j+1) h.2 t hf r) s f m
-    | zero5 j=>
-      have h:(i=j ∧ zeroStart j) ∧ tailCheck cs (j+5)=true := by
-        simpa only [tailCheck,Bool.and_eq_true,decide_eq_true_eq] using legal
-      have ei:i=j:=h.1.1
-      subst i
-      exact zero_tail L hw hn ref g adds hh hb j h.1.2 (cellGraph L cs)
-        (fun t r hf=>ih (j+5) h.2 t hf r) s f m
+                                                                                      
+                                         
+                                                     
+                                                                                  
+                                                            
+                                                           
+                                                     
+                                      
+         
+                                         
+           
+                                                     
+                  
+                
+                                      
+               
+                                                                  
+                                                                             
+                        
+             
+                                                                            
+                                               
+               
+                                                                
+                                                                             
+                        
+             
+                                                                       
+                                               
 
-theorem selected_tail_check : tailCheck cells 5=true := by decide +kernel
+                                                                         
 
 
 end ECDSAAdd.Entrant.DecoderMeasuredTail
@@ -5608,74 +5608,74 @@ set_option maxHeartbeats 20000000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] run
 
-theorem first_body_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (ref : BasisState) (r : Reference L ref) (body : Program)
-    (bodyCorrect : ∀t m,TailInput L ref 5 t → TailOutput L 5 t (run (body) m t))
-    (s : State) (f : GraphInput L ref s) (m : List Bool) :
-    GraphOutput L s (run (renameProgram (firstLabel L) firstPrefix++body++
-      renameProgram (firstLabel L) firstCleanup) m s) := by
-  let x:Fin 512:=⟨firstRoot L ref,firstRoot_bound L hw ref⟩
-  have valid:(x.val.testBit 6 && x.val.testBit 7)=false:=firstRoot_valid L hw ref r
-  have hx:DecoderCells5.Placed (firstLabel L) (firstExpectedInput x.val) s:=first_input_placed L hw ref r.bias r.scalar s f
-  let pre:=renameProgram (firstLabel L) firstPrefix
-  let post:=renameProgram (firstLabel L) firstCleanup
-  let p:=run pre m s
-  let u:=run body m p
-  let v:=run post (m.drop (measurementCount body)) u
-  have count:measurementCount pre=0 := by
-    rw [show pre=renameProgram (firstLabel L) firstPrefix from rfl,(renameProgram_counts _ _).2,firstCounts.2.1]
-  have pr:=firstPrefix_placed (firstLabel L) (firstLabel_inj L hw hn)
-    ⟨firstIndex x.val,firstIndex_bound x⟩ s (by rwa [firstInput_model x valid]) m
-  have next:TailInput L ref 5 p:=first_next_input L hw hn ref r s f m
-  have out:TailOutput L 5 p u:=bodyCorrect p m next
-  have restored:=first_interface_restored L hw hn x valid p u pr.2 out
-  have qr:=firstCleanup_placed (firstLabel L) (firstLabel_inj L hw hn)
-    ⟨firstIndex x.val,firstIndex_bound x⟩ u restored (m.drop (measurementCount body))
-  rw [firstOutput_model x valid] at qr
-  have clear:=first_output_clear L hw x v qr.2
-  have locP (w : Wire) (away : FirstAway L w) : p.basis w=s.basis w :=
-    first_prefix_locality L hw hn x valid s hx m w away
-  have locQ (w : Wire) (away : FirstAway L w) : v.basis w=u.basis w :=
-    first_cleanup_locality L hw hn x valid u restored (m.drop (measurementCount body)) w away
-  have parts:renameProgram (firstLabel L) firstPrefix++body++
-      renameProgram (firstLabel L) firstCleanup=pre++body++post:=by rfl
-  have eq:run (renameProgram (firstLabel L) firstPrefix++body++
-      renameProgram (firstLabel L) firstCleanup) m s=v := by
-    rw [parts]
-    dsimp [v,u,p]
-    simp only [List.append_assoc,run_append,run_take]
-    simp only [count,List.drop_zero]
-  rw [eq]
-  refine ⟨qr.1.trans (out.phase.trans pr.1),?_,?_,?_,clear.2.2⟩
-  · intro w wa wr wb
-    have noR (j : Nat) (hb : j<256) : w≠L.R j := fun e=>wr (e ▸ r_mem L hw j hb)
-    have noA (j : Nat) (hb : j<255) : w≠L.A j := fun e=>wa (e ▸ a_mem L hw j hb)
-    have away:FirstAway L w:=firstAway_of L hw w (fun j hj=>noR j (by omega))
-      (fun j hj=>noA j (by omega)) wb
-    exact (locQ w away).trans ((out.outside w (fun j hj hb=>noR j hb)
-      (fun j hj hb=>noA j hb)).trans (locP w away))
-  · intro j hj
-    by_cases hlocal:j<5
-    · exact clear.2.1 j hlocal
-    · rw [locQ _ (firstAway_a_above L hw hn j (by omega) hj)]
-      exact out.carry j (by omega) hj
-  · intro j hj
-    by_cases hlocal:j<6
-    · exact clear.1 j hlocal
-    · rw [locQ _ (firstAway_r_above L hw hn j (by omega) hj)]
-      exact out.result j (by omega) hj
+                                                                                   
+                                                             
+                                                                                
+                                                          
+                                                                          
+                                                           
+                                                           
+                                                                                   
+                                                                                                                           
+                                                   
+                                                     
+                    
+                     
+                                                    
+                                         
+                                                                                                                
+                                                                     
+                                                                                 
+                                                                     
+                                                   
+                                                                      
+                                                                      
+                                                                                     
+                                      
+                                              
+                                                                      
+                                                       
+                                                                      
+                                                                                             
+                                                             
+                                                                       
+                                                               
+                                                            
+              
+                 
+                                                     
+                                    
+         
+                                                               
+                    
+                                                                                
+                                                                                
+                                                                             
+                                     
+                                                                     
+                                                   
+              
+                       
+                              
+                                                             
+                                     
+              
+                       
+                            
+                                                             
+                                      
 
 
 def actualCellGraph : Program := renameProgram (firstLabel fixedLayout) firstPrefix++
  cellGraph fixedLayout cells++renameProgram (firstLabel fixedLayout) firstCleanup
 
-theorem graph_correct (L : DecoderLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (ref : BasisState) (r : Reference L ref) (s : State) (f : GraphInput L ref s) (m : List Bool) :
-    GraphOutput L s (run (renameProgram (firstLabel L) firstPrefix++
-      cellGraph L cells++renameProgram (firstLabel L) firstCleanup) m s) :=
-  first_body_correct L hw hn ref r (cellGraph L cells)
-    (fun t m ht=>tail_schedule_correct L hw hn ref r.graph r.adds r.exclusive r.exclusiveBias
-      cells 5 selected_tail_check t ht m) s f m
+                                                                              
+                                                                                                   
+                                                                    
+                                                                           
+                                                      
+                                                                                             
+                                               
 end ECDSAAdd.Entrant.DecoderMeasuredTail
 end
 
@@ -5693,23 +5693,23 @@ attribute [local irreducible] run
 def cellDecoder : Program := DecoderBiasReuse.frontFast fixedLayout++actualCellGraph++
   clearQuotient fixedLayout++restoreSource fixedLayout++copySource fixedLayout
 
-theorem cell_core_correct (f : State)
-    (clean : ∀i,i<255 → f.basis (fixedLayout.A i)=false)
-    (scalar : regValue fixedLayout.r f.basis=
-      ((if f.basis fixedLayout.sigma then regValue (fixedLayout.y.take 255) f.basis
-        else 3*regValue (fixedLayout.y.take 255) f.basis)+
-        2*(f.basis fixedLayout.bias).toNat+(f.basis fixedLayout.h).toNat*(2^32+977))%2^256)
-    (bias : f.basis fixedLayout.bias=(f.basis (fixedLayout.Y 255) && !f.basis fixedLayout.sigma))
-    (exclusive : (f.basis fixedLayout.sigma && f.basis fixedLayout.h)=false) (m : List Bool) :
-    FastCoreResult f (run actualCellGraph m (withoutBias f)) := by
-  let ref:=run (aProgram fixedLayout) [] f
-  have good:=reference_after_add f clean scalar bias exclusive
-  have cg:=graph_correct fixedLayout fixed_widths fixed_nodup ref.basis good.1 (withoutBias f) good.2 m
-  refine ⟨cg.phase,?_,cg.carry,cg.result,cg.bias⟩
-  intro q ha hr hb
-  apply (cg.outside q ha hr hb).trans
-  change writeBit f.basis fixedLayout.bias false q=f.basis q
-  simp [writeBit,hb]
+                                     
+                                                        
+                                             
+                                                                                   
+                                                          
+                                                                                           
+                                                                                                 
+                                                                                              
+                                                                  
+                                          
+                                                              
+                                                                                                       
+                                                 
+                  
+                                     
+                                                            
+                    
 
 end ECDSAAdd.Entrant.DecoderMeasuredTail
 end
@@ -5725,46 +5725,46 @@ set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] run
 
-def cleanedCells : Program := actualCellGraph ++ clearQuotient fixedLayout
+                                                                          
 
-theorem cleanedCells_correct (f : State)
-    (clean : ∀i,i<255 → f.basis (fixedLayout.A i)=false)
-    (scalar : regValue fixedLayout.r f.basis=
-      ((if f.basis fixedLayout.sigma then regValue (fixedLayout.y.take 255) f.basis
-        else 3*regValue (fixedLayout.y.take 255) f.basis)+
-        2*(f.basis fixedLayout.bias).toNat+(f.basis fixedLayout.h).toNat*(2^32+977))%2^256)
-    (bias : f.basis 784=(f.basis 1041 && !f.basis 2425))
-    (quotient : f.basis fixedLayout.h=(!f.basis fixedLayout.sigma &&
-      !(decide (regValue (fixedLayout.y.take 255) f.basis <
-        ((p-1)/2)/3+(!f.basis (fixedLayout.Y 255)).toNat)))) (m : List Bool) :
-    ∃t,CoreResult fixedLayout f t ∧ run cleanedCells m (withoutBias f)=
-      ⟨f.phase,writeBit (writeBit t.basis fixedLayout.bias false) fixedLayout.h false⟩ := by
-  have exclusive : (f.basis 2425 && f.basis 1043)=false := by
-    change (f.basis fixedLayout.sigma && f.basis fixedLayout.h)=false
-    rw [quotient]
-    cases f.basis fixedLayout.sigma <;> simp
-  let u := run actualCellGraph m (withoutBias f)
-  have fu : FastCoreResult f u := cell_core_correct f clean scalar bias exclusive m
-  obtain ⟨t,old,ueq⟩ := restore_old_core f u fu
-  have values : regValue (fixedLayout.y.take 255) u.basis=
-      regValue (fixedLayout.y.take 255) f.basis := by
-    apply regValue_congr
-    intro q hq
-    exact core_source_agree f u fu q (Or.inl (List.mem_of_mem_take hq))
-  have quotient_u : u.basis fixedLayout.h=(!u.basis fixedLayout.sigma &&
-      !(decide (regValue (fixedLayout.y.take 255) u.basis <
-        ((p-1)/2)/3+(!u.basis (fixedLayout.Y 255)).toNat))) := by
-    rw [core_source_agree f u fu fixedLayout.h (Or.inr (Or.inr rfl)),
-      core_source_agree f u fu fixedLayout.sigma (Or.inr (Or.inl rfl)),
-      core_source_agree f u fu (fixedLayout.Y 255)
-        (Or.inl (y_mem fixedLayout fixed_widths 255 (by decide))),values]
-    exact quotient
-  have erase := clearQuotient_correct fixedLayout fixed_widths fixed_nodup u
-    (m.drop (measurementCount actualCellGraph)) (clean_carry_members f u fu) quotient_u
-  refine ⟨t,old,?_⟩
-  rw [cleanedCells,run_append,run_take]
-  change run (clearQuotient fixedLayout) (m.drop (measurementCount actualCellGraph)) u=_
-  rw [erase,ueq]
+                                        
+                                                        
+                                             
+                                                                                   
+                                                          
+                                                                                           
+                                                        
+                                                                    
+                                                           
+                                                                              
+                                                                       
+                                                                                            
+                                                             
+                                                                     
+                 
+                                            
+                                                
+                                                                                   
+                                               
+                                                          
+                                                     
+                        
+              
+                                                                       
+                                                                        
+                                                           
+                                                                 
+                                                                     
+                                                                       
+                                                  
+                                                                         
+                  
+                                                                            
+                                                                                       
+                   
+                                       
+                                                                                        
+                
 end ECDSAAdd.Entrant.DecoderMeasuredTail
 end
 
@@ -5779,81 +5779,81 @@ set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] run
 
-theorem cellDecoder_parts : cellDecoder=
-    frontFast fixedLayout ++ (cleanedCells ++ back fixedLayout) := by
-  simp only [cellDecoder,cleanedCells,back,List.append_assoc]
+                                        
+                                                                     
+                                                             
 
-theorem cellDecoder_correct (Y : Fp) (sigma : Bool) (s : State) (m : List Bool)
-    (ys : regValue fixedLayout.y s.basis=centerWord Y)
-    (rs : regValue fixedLayout.r s.basis=centerWord ((if sigma then 1 else 3)*Y))
-    (sig : s.basis fixedLayout.sigma=sigma)
-    (hc : s.basis fixedLayout.h=false) (bc : s.basis fixedLayout.bias=false)
-    (cc : ∀q∈fixedLayout.carry,s.basis q=false) :
-    (run (cellDecoder) m s).phase=s.phase ∧
-    (∀q,q∉fixedLayout.r → (run (cellDecoder) m s).basis q=s.basis q) ∧
-    regValue fixedLayout.r (run (cellDecoder) m s).basis=centerWord Y := by
-  have result := run_three_states (frontFast fixedLayout) cleanedCells (back fixedLayout)
-    (fun a d=>a=s → d.phase=s.phase ∧
-      (∀q,q∉fixedLayout.r → d.basis q=s.basis q) ∧ regValue fixedLayout.r d.basis=centerWord Y) (by
-      intro a n u d m1 m2 m3 han hnu hud eq
-      subst a
-      let f : State := ⟨s.phase,frontBasis fixedLayout s.basis⟩
-      have neq : n=withoutBias f := by
-        rw [←han,frontFast_view s m1 bc,front_run fixedLayout fixed_widths fixed_nodup]
-      rw [neq] at hnu
-      have scalar := actual_front_scalar fixedLayout fixed_widths fixed_nodup
-        s.basis Y sigma ys rs sig hc bc
-      have nc : ∀i,i<255 → f.basis (fixedLayout.A i)=false := by
-        intro i hi
-        exact front_carry_clean fixedLayout fixed_nodup s.basis cc
-          (fixedLayout.A i) (a_mem fixedLayout fixed_widths i hi)
-      have bb : f.basis 784=(f.basis 1041 && !f.basis 2425) := by
-        have facts := actual_front_values fixedLayout fixed_widths fixed_nodup
-          s.basis Y sigma ys rs sig hc bc
-        change frontBasis fixedLayout s.basis fixedLayout.bias=
-          (frontBasis fixedLayout s.basis (fixedLayout.Y 255) &&
-            !frontBasis fixedLayout s.basis fixedLayout.sigma)
-        rw [facts.2.2.2.1,facts.2.2.2.2.1,facts.2.2.2.2.2]
-      have cg := cleanedCells_correct f nc scalar.1
-        bb scalar.2 m2
-      obtain ⟨t,tf,ut⟩ := cg
-      rw [hnu] at ut
-      have cleanbasis := cleaned_front_basis fixedLayout fixed_widths fixed_nodup
-        s.basis s.phase t tf hc bc cc
-      have uz : u=⟨s.phase,zeroR fixedLayout s.basis⟩ := by
-        rw [ut,cleanbasis]
-      have done := back_correct fixedLayout fixed_widths fixed_nodup s.basis s.phase m3
-      rw [uz] at hud
-      rw [hud] at done
-      exact ⟨done.1,done.2.1,done.2.2.trans ys⟩) s m
-  rw [cellDecoder_parts]
-  exact result rfl
+                                                                               
+                                                      
+                                                                                 
+                                           
+                                                                            
+                                                 
+                                           
+                                                                      
+                                                                           
+                                                                                         
+                                     
+                                                                                                   
+                                           
+             
+                                                               
+                                      
+                                                                                       
+                     
+                                                                             
+                                       
+                                                                
+                  
+                                                                  
+                                                                 
+                                                                 
+                                                                              
+                                         
+                                                               
+                                                                
+                                                              
+                                                          
+                                                   
+                      
+                            
+                    
+                                                                                 
+                                     
+                                                           
+                          
+                                                                                       
+                    
+                      
+                                                    
+                        
+                  
 
-theorem cellDecoder_frame (origin : BasisState)
-    (clean : ∀q∈work fixedLayout,origin q=false) (X Y : Fp)
-    (hend : (X+(if origin fixedLayout.sigma then Y else -Y))/2=Y) :
-    Triple (PairFrame fixedLayout.r fixedLayout.y origin (centerWord X) (centerWord Y))
-      (cellDecoder)
-      (PairFrame fixedLayout.r fixedLayout.y origin (centerWord Y) (centerWord Y)) := by
-  intro s m input
-  have cleanS (q : Wire) (hq:q∈work fixedLayout) : s.basis q=false :=
-    (input.2.2 q (work_away fixedLayout fixed_nodup q hq).1
-      (work_away fixedLayout fixed_nodup q hq).2).trans (clean q hq)
-  have sig : s.basis fixedLayout.sigma=origin fixedLayout.sigma := input.2.2 fixedLayout.sigma
-    (source_r_away fixedLayout fixed_nodup _ (by tauto))
-    (flag_y_away fixedLayout fixed_nodup _ (by simp))
-  have rel := terminal_relation X Y (origin fixedLayout.sigma) hend
-  have rword : regValue fixedLayout.r s.basis=
-      centerWord ((if origin fixedLayout.sigma then 1 else 3)*Y) := by
-    rw [input.1,rel]
-  have c := cellDecoder_correct Y (origin fixedLayout.sigma) s m input.2.1 rword sig
-    (cleanS fixedLayout.h (by simp [work])) (cleanS fixedLayout.bias (by simp [work]))
-    (fun q hq=>cleanS q (by simp [work,hq]))
-  refine ⟨c.1,c.2.2,?_,?_⟩
-  · exact (regValue_congr fixedLayout.y _ _ (fun q hq=>c.2.1 q
-      (source_r_away fixedLayout fixed_nodup q (Or.inl hq)))).trans input.2.1
-  · intro q qr qy
-    exact (c.2.1 q qr).trans (input.2.2 q qr qy)
+                                               
+                                                           
+                                                                   
+                                                                                       
+                   
+                                                                                        
+                 
+                                                                     
+                                                           
+                                                                    
+                                                                                              
+                                                        
+                                                     
+                                                                   
+                                              
+                                                                      
+                    
+                                                                                    
+                                                                                      
+                                            
+                          
+                                                              
+                                                                             
+                 
+                                                
 end ECDSAAdd.Entrant.DecoderMeasuredTail
 end
 
@@ -5867,28 +5867,28 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 20000000
 set_option linter.unusedSimpArgs false
 
-theorem erase_counts (L : DecoderLayout) (j : Nat) :
- toffoliCount (erase L j)=0 ∧ measurementCount (erase L j)=1 ∧ gateSlots (erase L j)≤10 := by
- unfold erase
- split_ifs
- · exact ⟨rfl,rfl,by simp [gateSlots,instructionSlots,firstCorrections]⟩
- · constructor
-   · rfl
-   · constructor
-     · rfl
-     · unfold polyCorrections gateSlots
-       split_ifs <;> simp [instructionSlots]
+                                                    
+                                                                                             
+             
+          
+                                                                        
+              
+        
+                
+          
+                                       
+                                            
 
-theorem high_counts (L : DecoderLayout) (n : Nat) :
- toffoliCount (high L n)=0 ∧ measurementCount (high L n)=n ∧ gateSlots (high L n)≤10*n := by
- induction n with
- | zero=>exact ⟨rfl,rfl,by simp [high,gateSlots]⟩
- | succ n ih=>
-   have e:=erase_counts L (35+n)
-   simp only [high,toffoliCount_append,measurementCount_append,gateSlots_append]
-   constructor
-   · omega
-   · constructor <;> omega
+                                                   
+                                                                                            
+                 
+                                                 
+              
+                                
+                                                                                
+              
+          
+                          
 
 theorem erase_physical (L : DecoderLayout) (j : Nat) : GatePhysical (erase L j) := by
  unfold erase
@@ -5902,22 +5902,22 @@ theorem high_physical (L : DecoderLayout) (n : Nat) : GatePhysical (high L n) :=
 theorem pool_y_gen (L : DecoderLayout) (hw : L.Widths) (j : Nat) (h:j<256) : L.Y j∈L.wires.toFinset := by
  apply List.mem_toFinset.mpr
  simp [DecoderLayout.wires,y_mem L hw j h]
-theorem pool_y (j : Nat) (h:j<256) : fixedLayout.Y j∈fixedLayout.wires.toFinset :=
- pool_y_gen fixedLayout fixed_widths j h
+                                                                                  
+                                        
 theorem pool_r_gen (L : DecoderLayout) (hw : L.Widths) (j : Nat) (h:j<256) : L.R j∈L.wires.toFinset := by
  apply List.mem_toFinset.mpr
  simp [DecoderLayout.wires,r_mem L hw j h]
-theorem pool_r (j : Nat) (h:j<256) : fixedLayout.R j∈fixedLayout.wires.toFinset :=
- pool_r_gen fixedLayout fixed_widths j h
+                                                                                  
+                                        
 theorem pool_a_gen (L : DecoderLayout) (hw : L.Widths) (j : Nat) (h:j<255) : L.A j∈L.wires.toFinset := by
  apply List.mem_toFinset.mpr
  simp [DecoderLayout.wires,a_mem L hw j h]
-theorem pool_a (j : Nat) (h:j<255) : fixedLayout.A j∈fixedLayout.wires.toFinset :=
- pool_a_gen fixedLayout fixed_widths j h
+                                                                                  
+                                        
 theorem pool_sigma_gen (L : DecoderLayout) : L.sigma∈L.wires.toFinset := by
  apply List.mem_toFinset.mpr
  simp [DecoderLayout.wires]
-theorem pool_sigma : fixedLayout.sigma∈fixedLayout.wires.toFinset := pool_sigma_gen fixedLayout
+                                                                                               
 
 theorem erase_support (L : DecoderLayout) (hw : L.Widths) (j : Nat) (lo:35≤j) (hi:j≤255) :
  wires (erase L j) ⊆ L.wires.toFinset := by
@@ -5966,39 +5966,39 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 20000000
 set_option linter.unusedSimpArgs false
 
-theorem cellGraph_metrics (cs : List Cell) :
- toffoliCount (cellGraph fixedLayout cs)=(cs.map DecoderCells5.cellT).sum ∧
- measurementCount (cellGraph fixedLayout cs)=(cs.map DecoderCells5.cellM).sum+221 ∧
- gateSlots (cellGraph fixedLayout cs)≤(cs.map DecoderCells5.cellS).sum+2210 := by
- induction cs with
- | nil=>exact high_counts fixedLayout 221
- | cons c cs ih=>
-   have cc:=DecoderCells5.cell_counts fixedLayout c
-   have ss:=DecoderCells5.cell_slots c
-   simp only [cellGraph,List.foldr_cons,toffoliCount_append,measurementCount_append,
-     gateSlots_append,List.map_cons,List.sum_cons] at *
-   constructor
-   · omega
-   · constructor <;> omega
+                                            
+                                                                           
+                                                                                   
+                                                                                 
+                  
+                                         
+                 
+                                                   
+                                      
+                                                                                    
+                                                       
+              
+          
+                          
 
-theorem graph_counts : toffoliCount actualCellGraph=24 ∧ measurementCount actualCellGraph=279 := by
- have h:=cellGraph_metrics cells
- have totals:(cells.map DecoderCells5.cellT).sum=21 ∧ (cells.map DecoderCells5.cellM).sum=50:=by decide +kernel
- simp only [actualCellGraph,toffoliCount_append,measurementCount_append,
-   (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,
-   DecoderCells5.firstCounts.1,DecoderCells5.firstCounts.2.1,
-   DecoderCells5.firstCounts.2.2.1,DecoderCells5.firstCounts.2.2.2.1]
- constructor <;> omega
+                                                                                                   
+                                
+                                                                                                               
+                                                                        
+                                                             
+                                                             
+                                                                     
+                      
 
-theorem graph_slots : gateSlots actualCellGraph≤4222 := by
- have h:=cellGraph_metrics cells
- have totals:(cells.map DecoderCells5.cellS).sum=1706:=by decide +kernel
- have f:=DecoderCells5.cell_slots .first
- simp only [DecoderCells5.cellPrefix,DecoderCells5.cellCleanup] at f
- have exactfirst:DecoderCells5.cellS .first=306:=rfl
- rw [exactfirst] at f
- simp only [actualCellGraph,gateSlots_append]
- omega
+                                                          
+                                
+                                                                        
+                                        
+                                                                    
+                                                    
+                     
+                                             
+      
 
 theorem low_cells_good : cells.all DecoderCells5.goodCell=true := by decide +kernel
 
@@ -6036,24 +6036,24 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 20000000
 set_option linter.unusedSimpArgs false
 
-theorem raw_counts : toffoliCount cellDecoder=279 ∧ measurementCount cellDecoder=535 := by
- have s:=DecoderCells5.side_counts
- have g:=graph_counts
- simp only [cellDecoder,DecoderCells5.sideProgram,toffoliCount_append,measurementCount_append] at *
- constructor <;> omega
+                                                                                          
+                                  
+                     
+                                                                                                   
+                      
 
-theorem raw_slots : gateSlots cellDecoder≤7594 := by
- have s:=DecoderCells5.side_slots
- have g:=graph_slots
- simp only [cellDecoder,DecoderCells5.sideProgram,gateSlots_append] at *
- omega
+                                                    
+                                 
+                    
+                                                                        
+      
 
-theorem physical : GatePhysical cellDecoder := by
- have s:=DecoderCells5.side_physical
- have g:=actual_graph_resources.1
- simp only [DecoderCells5.sideProgram,gatePhysical_append] at s
- simp only [cellDecoder,gatePhysical_append]
- exact ⟨⟨⟨⟨s.1.1.1,g⟩,s.1.1.2⟩,s.1.2⟩,s.2⟩
+                                                 
+                                    
+                                 
+                                                               
+                                            
+                                          
 
 theorem support : wires cellDecoder ⊆ fixedLayout.wires.toFinset := by
  have s:=DecoderCells5.side_support

@@ -47,7 +47,7 @@ def Clean (p : Ports) (b : BasisState) : Prop :=
 /-- Exact physical port map, not a new low-prefix or pool-injectivity theorem. -/
 def actualPorts (w : Nat → Wire) : Ports :=
   ⟨w 254,w 255,w 256,w 257,w 1024,w 1025,w 1026,w 1027,w 1793,w 1794,w 1795,w 1796⟩
-def actualFlag (w : Nat → Wire) : Wire := w 1028
+                                                
 
 def oldPrefix (p : Ports) : Program :=
   majority p.a0 p.b0 p.cin p.z0 ++ majority p.a1 p.b1 p.z0 p.z1 ++
@@ -61,9 +61,9 @@ def clone256 (p : Ports) (flag : Wire) : Program :=
 def forwardPrefix (p : Ports) (flag : Wire) : Program :=
   majority p.a0 p.b0 p.cin p.z0 ++ clone255 p flag ++ clone256 p flag
 
-def exitPrefix (p : Ports) : Program :=
-  [.CX p.a1 p.z0,.CX p.b1 p.z0] ++ [.CX p.a2 p.z1,.CX p.b2 p.z1] ++
-    [.CX p.a3 p.z2,.CX p.b3 p.z2]
+                                       
+                                                                   
+                                 
 
 /-- Unchanged descending measurements z2,z1,z0 and unchanged sum gates. -/
 def commonSuffix (p : Ports) : Program :=
@@ -74,17 +74,17 @@ def commonSuffix (p : Ports) : Program :=
 
 def oldTail (p : Ports) : Program := oldPrefix p ++ commonSuffix p
 def forwardTail (p : Ports) (flag : Wire) : Program := forwardPrefix p flag ++ commonSuffix p
-def exitTail (p : Ports) : Program := exitPrefix p ++ commonSuffix p
+                                                                    
 
 /-- Promise about the ACTUAL OLD tail output, not an assumed carry/input predicate. -/
 def ForwardPromise (p : Ports) (par : Bool) (s : State) : Prop :=
   (run (oldTail p) [] s).basis p.b3=par ∧
   ((run (oldTail p) [] s).basis p.b2 ^^ (run (oldTail p) [] s).basis p.b1)=!par
 
-def ExitPromise (p : Ports) (s : State) : Prop :=
-  (run (oldTail p) [] s).basis p.b1=false ∧
-  (run (oldTail p) [] s).basis p.b2=false ∧
-  (run (oldTail p) [] s).basis p.b3=false
+                                                 
+                                           
+                                           
+                                         
 
 private theorem run_cat (p q : Program) (m : List Bool) (s : State) :
     run (p++q) m s=run q (m.drop (measurementCount p)) (run p m s) := by
@@ -135,9 +135,9 @@ private def affine256 (p : Ports) (b : BasisState) (par : Bool) : Bool :=
 private def forwardPost (p : Ports) (flag : Wire) (s : State) : State :=
   ⟨s.phase,paint p s.basis (c0 p s.basis)
     (affine255 p s.basis (s.basis flag)) (affine256 p s.basis (s.basis flag))⟩
-private def exitPost (p : Ports) (s : State) : State :=
-  ⟨s.phase,paint p s.basis (s.basis p.a1 ^^ s.basis p.b1)
-    (s.basis p.a2 ^^ s.basis p.b2) (s.basis p.a3 ^^ s.basis p.b3)⟩
+                                                       
+                                                         
+                                                                  
 
 private theorem cx2 (a b z : Wire) (ha : a≠z) (hb : b≠z) (s : State) (m : List Bool) :
     run [.CX a z,.CX b z] m s =
@@ -769,8 +769,8 @@ open KAddCallerBridgeResearch AffineCarryTail52Research E1CarrySplice52Research
 def flagKAdd52 (w : Nat → Wire) : Program :=
   lowPrefix52 w++forwardTail (actualPorts w) (w 1028)++lowSuffix52 w
 
-def zeroKAdd52 (w : Nat → Wire) : Program :=
-  lowPrefix52 w++exitTail (actualPorts w)++lowSuffix52 w
+                                            
+                                                        
 
 def highCarryClean52 (w : Nat → Wire) (b : BasisState) : Prop :=
   b (w 1794)=false ∧ b (w 1795)=false ∧ b (w 1796)=false
@@ -781,10 +781,10 @@ def ForwardOldOutputs52 (w : Nat → Wire) (par : Bool) (s : State) : Prop :=
   ((run (literalKAdd w) [] s).basis (w 1026) ^^
     (run (literalKAdd w) [] s).basis (w 1025))=!par
 
-def ExitOldOutputs52 (w : Nat → Wire) (s : State) : Prop :=
-  (run (literalKAdd w) [] s).basis (w 1025)=false ∧
-  (run (literalKAdd w) [] s).basis (w 1026)=false ∧
-  (run (literalKAdd w) [] s).basis (w 1027)=false
+                                                           
+                                                   
+                                                   
+                                                 
 
 private def prefixState52 (w : Nat → Wire) (s : State) : State :=
   run (lowPrefix52 w) [] s
@@ -4845,26 +4845,26 @@ section Correct
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
 
-theorem entryStage_step (X Y kx ky : Fp) (G : Bool) (origin : BasisState)
-    (hx : X+(if G then kx else 0)≠0) :
-    Triple (PointDialogValues L X Y G origin) (entryStage L kx ky)
-      (PointDialogValues L (X+(if G then kx else 0))
-        ((Y+(if G then ky else 0))/(X+(if G then kx else 0))) G origin) := by
-  have config:=MappedCompressed.LaneA.laneLogical_config
-  have above : History5.HistoryAbove base := by intro j hj;simp [base]
-  have add:=fastStep_addX L hw hn X Y G origin kx
-  have divide:=division_step Rolling1588.entryKernel Rolling1588.entryKernel_support
-    Rolling1588.entry_correct L hw hn config.1 above config.2.1 config.2.2
-    (X+(if G then kx else 0)) Y ky G origin hx
-  have prior:=add.seq divide
-  apply E1QubitPlacement.tri_transfer
-    (A:=fusedY L ky++E1QubitPlacement.entryM L kx)
-    (B:=fastConstAdd L L.point.x kx++fusedY L ky++E1QubitPlacement.tickF L)
-    (R:=restE L)
-  · intro s v m1 m2
-    exact E1QubitPlacement.entry1_eq L hw hn kx ky s X.val X.isLt Y G
-      v.x v.y v.generic v.clean m1 m2
-  · simpa only [entryStage,division,entry_split,List.append_assoc] using prior
+                                                                         
+                                      
+                                                                  
+                                                    
+                                                                             
+                                                        
+                                                                      
+                                                 
+                                                                                    
+                                                                          
+                                              
+                            
+                                     
+                                                  
+                                                                           
+                
+                   
+                                                                     
+                                     
+                                                                              
 
 /-- The deleted reflection and changed entry use independent record lists.
 The equality ends before the common suffix, so no suffix tape equality is assumed. -/
@@ -4908,28 +4908,28 @@ theorem squareEntry_eq (k : Fp) (X Y : Fp) (G : Bool) (origin : BasisState)
     (prior.1.trans fresh.1.symm) rx outside (m1.drop n1) (m2.drop n2)
   simpa only [squareEntry,run_append,n1,n2,ha,hr,List.append_assoc] using eq
 
-theorem secondStage_step (X Y k cy : Fp) (G : Bool) (origin : BasisState)
-    (hx : X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)+
-      (if G then k else 0)≠0) :
-    let Z:=X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)+
-      (if G then k else 0)
-    Triple (PointDialogValues L X Y G origin) (secondStage L k cy)
-      (PointDialogValues L Z (Y*Z-(if G then cy else 0)) G origin) := by
-  let Z:=X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)
-  have square:=SquareCarryLoan719BF.step L hw hn X Y G origin
-  have add:=fastStep_addX L hw hn Z Y G origin k
-  have multiply:=fusedMultiply_step L hw hn (FrontierEntry1591Callers.exit Rolling1588.exitKernel L)
-    (exit_correct Rolling1588.exitKernel Rolling1588.exitKernel_support Rolling1588.exit_correct L hw hn)
-    (Z+(if G then k else 0)) Y cy G origin hx
-  have prior:=(square.seq add).seq multiply
-  simp only [secondStage,List.append_assoc]
-  apply E1QubitPlacement.tri_transfer
-    (A:=squareEntry L k)
-    (B:=SquareCarryLoan719BF.program L++fastConstAdd L L.point.x k++E1QubitPlacement.tickF L)
-    (R:=restX L++exitY L cy)
-  · intro s v m1 m2
-    exact squareEntry_eq L hw hn k X Y G origin s m1 m2 v
-  · simpa only [secondStage,fusedMultiply,exit_split,List.append_assoc,Z] using prior
+                                                                         
+                                                                                  
+                               
+                                                                                   
+                          
+                                                                  
+                                                                        
+                                                                                
+                                                             
+                                                
+                                                                                                    
+                                                                                                         
+                                             
+                                           
+                                           
+                                     
+                        
+                                                                                             
+                            
+                   
+                                                         
+                                                                                     
 
 end Correct
 end ECDSAAdd.Entrant.ReflectionE1
@@ -4966,31 +4966,31 @@ section Correct
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
 
-theorem generic_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
-    (hd : cx-genericX X Y cx cy≠0) :
-    Triple (PointDialogValues L X Y true origin) (generic L cx cy)
-      (PointDialogValues L (genericX X Y cx cy) (genericY X Y cx cy) true origin) := by
-  let a:=genericSlope X Y cx cy
-  let d:=cx-genericX X Y cx cy
-  have hv:=generic_inplace_values X Y cx cy hX
-  have first:=entryStage_step L hw hn X Y (-cx) (-cy) true origin
-    (by simpa only [if_true,←sub_eq_add_neg] using sub_ne_zero.mpr hX)
-  have ha : (Y-cy)/(X-cx)=a:=rfl
-  simp only [if_true,←sub_eq_add_neg,ha] at first
-  have hd4 : (X-cx)-a*a+(SquareCarryLoan719BF.K:Nat)+correction cx=d := by
-    have e:=hv.2.1
-    change (X-cx)-a*a+3*cx=d at e
-    rw [←e]
-    unfold correction
-    ring
-  have second:=secondStage_step L hw hn (X-cx) a (correction cx) cy true origin
-    (by simpa only [if_true,hd4] using hd)
-  simp only [if_true,hd4] at second
-  have finish:=fastStep_negX L hw hn d (a*d-cy) true origin cx
-  simp only [if_true] at finish
-  rw [show cx-d=genericX X Y cx cy by dsimp [d];ring] at finish
-  rw [show a*d-cy=genericY X Y cx cy from hv.2.2] at second finish
-  exact (first.seq second).seq finish
+                                                                       
+                                    
+                                                                  
+                                                                                       
+                               
+                              
+                                              
+                                                                 
+                                                                      
+                                
+                                                 
+                                                                          
+                  
+                                 
+           
+                     
+        
+                                                                               
+                                          
+                                   
+                                                              
+                               
+                                                               
+                                                                  
+                                     
 
 
 
@@ -5365,10 +5365,10 @@ theorem gen_slots_delta (L : ControlledPointLayout) (cx cy : Fp) :
 
 
 
-theorem gen_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (cx cy : Fp) : wires (gen L cx cy)⊆(OB5Support.genericSites L).toFinset := by
-  rw [gen_shape]
-  exact GenericQ5Geometry.wrapG_sites L hw hn _ (generic_sites L hw hn cx cy)
+                                                                                  
+                                                                                 
+                
+                                                                             
 
 
 private theorem wrapper_counts_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
@@ -5379,12 +5379,12 @@ private theorem wrapper_counts_delta (L : ControlledPointLayout) (C : Point) (cy
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
   constructor <;> omega
 
-theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2151422 := by
-  have diff:=(wrapper_counts_delta layout (.some hc) cy _ _
-    (gen_counts_delta layout layout_widths cx cy)).1
-  have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
-  omega
+                                                                              
+                                                                                      
+                                                           
+                                                    
+                                                       
+       
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
     measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499214 := by
@@ -5416,16 +5416,14 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
 attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
 
-def program (C : Point) : Program :=
-  match C with
-  | .zero => []
-  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
-      Edges.wrapper layout C cy (gen layout cx cy)
+                                    
+              
+               
+                                                        
+                                                  
 
-def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2151422,1499214,1588,50189199+Rolling1588.slotGrowth⟩
-
-
+                                                                    
+                                                                                       
 
 
 
@@ -5440,10 +5438,12 @@ def bounds : Challenge.Bounds := ⟨2151422,1499214,1588,50189199+Rolling1588.sl
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2151422 := by
-  cases C with
-  | zero => simp [program,toffoliCount]
-  | @some cx cy hc => exact wrapper_toffoli cx cy hc
+
+
+                                                                            
+              
+                                       
+                                                    
 
 
 
@@ -7821,16 +7821,16 @@ theorem forward_metrics (i n : Nat) (hi : i+n ≤ 512) :
 
 
 
-theorem forward_physical (i n : Nat) (hi : i+n ≤ 512) : GatePhysical (forward i n) := by
-  induction n generalizing i with
-  | zero => simp [forward,GatePhysical]
-  | succ n ih =>
-    have stepPhysical := tick_physical base i (by omega) base_pool_nodup
-    have codec := (FirstNonzeroCodec.packet_physical base base_pool_nodup i (by omega)).1
-    have ren := gatePhysical_rename (sig i) (sig_injective i (by omega)) _
-      ((gatePhysical_append _ _).mpr ⟨stepPhysical,codec⟩)
-    simp only [forward,gatePhysical_append]
-    exact ⟨ren,ih (i+1) (by omega)⟩
+                                                                                        
+                                 
+                                       
+                
+                                                                        
+                                                                                         
+                                                                          
+                                                          
+                                           
+                                   
 
 
 end ECDSAAdd.Entrant.TickRanges
@@ -8617,344 +8617,344 @@ theorem safe_sound (P : Program) (b : Nat) (h : safe15 P b = true) (m : List Boo
 
 
 
-def candidate : Program := [
-  .X 786,
-  .CX 523 786,
-  .CX 527 524,
-  .CX 528 524,
-  .CX 787 524,
-  .CCX 523 524 529,
-  .X 524,
-  .CX 523 524,
-  .CX 525 524,
-  .CX 527 524,
-  .CX 528 524,
-  .CX 788 524,
-  .CCX 523 524 786,
-  .CX 526 525,
-  .CX 527 525,
-  .CX 528 525,
-  .CX 788 525,
-  .CX 789 525,
-  .CCX 523 525 1551,
-  .X 523,
-  .CX 527 523,
-  .CX 524 523,
-  .CX 526 523,
-  .CX 790 527,
-  .CX 525 523,
-  .CX 789 523,
-  .CX 528 523,
-  .CX 523 527,
-  .CX 529 523,
-  .CX 787 523,
-  .CCX 523 527 1552,
-  .CX 527 523,
-  .CX 529 523,
-  .CX 787 523,
-  .CX 526 525,
-  .CX 528 525,
-  .CX 529 525,
-  .CX 786 525,
-  .CX 788 525,
-  .CX 789 525,
-  .CX 790 525,
-  .CX 1552 525,
-  .CCX 523 525 1553,
-  .CX 527 525,
-  .CX 529 525,
-  .CX 525 529,
-  .CX 1553 529,
-  .CX 787 525,
-  .CCX 525 529 1554,
-  .CX 527 523,
-  .CX 525 523,
-  .CX 1554 525,
-  .CX 1553 523,
-  .CX 788 525,
-  .CX 787 525,
-  .CX 786 525,
-  .CX 523 525,
-  .CX 1552 525,
-  .CX 529 523,
-  .CCX 523 525 1556,
-  .X 526,
-  .CX 528 526,
-  .CX 788 526,
-  .CX 791 526,
-  .CX 1551 526,
-  .X 523,
-  .CX 527 523,
-  .CX 528 523,
-  .CX 786 523,
-  .CX 787 523,
-  .CX 788 523,
-  .CX 791 523,
-  .CX 1553 523,
-  .CX 1554 523,
-  .CCX 526 523 789,
-  .CX 528 525,
-  .CX 523 522,
-  .CX 1553 525,
-  .CX 527 525,
-  .CX 787 525,
-  .CX 529 522,
-  .CX 525 522,
-  .CX 788 522,
-  .CX 1554 525,
-  .CX 790 525,
-  .CX 789 525,
-  .CX 786 525,
-  .CX 786 522,
-  .CX 524 522,
-  .CX 1551 525,
-  .CX 1552 525,
-  .CX 791 522,
-  .CCX 522 525 1557,
-  .CX 789 788,
-  .CX 1551 788,
-  .X 523,
-  .CX 525 523,
-  .CX 529 523,
-  .CX 786 523,
-  .CX 787 523,
-  .CX 789 523,
-  .CX 790 523,
-  .CX 791 523,
-  .CX 1551 523,
-  .CX 1554 523,
-  .CCX 788 523 1558,
-  .CX 1552 524,
-  .CX 1552 525,
-  .CX 1552 790,
-  .CX 1552 1554,
-  .measureX 1552 [] [.Z 1554, .CZ 523 529],
-  .X 523,
-  .X 522,
-  .CX 791 523,
-  .CX 791 522,
-  .CX 786 523,
-  .CX 527 523,
-  .CX 789 523,
-  .CX 788 523,
-  .CX 787 523,
-  .CX 523 522,
-  .CX 1558 523,
-  .CX 1553 523,
-  .CX 1553 522,
-  .CX 1556 523,
-  .CX 1554 523,
-  .CX 1551 523,
-  .CX 1551 522,
-  .CX 528 523,
-  .CX 526 523,
-  .CCX 523 522 1552,
-  .CX 788 527,
-  .CX 788 786,
-  .CX 788 787,
-  .CX 788 790,
-  .CX 788 1551,
-  .CX 788 1552,
-  .CX 788 1553,
-  .CX 788 1556,
-  .CX 788 1557,
-  .CX 788 1558,
-  .measureX 788 [] [.Z 1552, .CZ 522 523],
-  .CX 523 522,
-  .CX 525 522,
-  .CX 528 522,
-  .CX 786 522,
-  .CX 787 522,
-  .CX 789 522,
-  .CX 790 522,
-  .CX 1551 522,
-  .CX 1558 522,
-  .CCX 523 522 788,
-  .X 1553,
-  .X 789,
-  .X 787,
-  .X 525,
-  .X 524,
-  .CX 789 1551,
-  .CX 523 1557,
-  .CX 523 1556,
-  .CX 523 1551,
-  .CX 523 790,
-  .CX 523 788,
-  .CX 523 787,
-  .CX 523 786,
-  .CX 523 522,
-  .CX 525 1556,
-  .CX 525 790,
-  .CX 525 526,
-  .CX 525 523,
-  .CX 523 525,
-  .CX 525 523,
-  .CX 1558 1557,
-  .CX 1558 1554,
-  .CX 1558 1552,
-  .CX 1558 790,
-  .CX 1558 787,
-  .CX 1558 786,
-  .CX 1558 529,
-  .CX 1558 789,
-  .CX 789 1558,
-  .CX 1558 789,
-  .CX 522 1553,
-  .CX 522 791,
-  .CX 522 790,
-  .CX 522 529,
-  .CX 522 527,
-  .CX 522 526,
-  .CX 522 789,
-  .CX 789 522,
-  .CX 522 789,
-  .CX 1554 1558,
-  .CX 1554 1556,
-  .CX 1554 522,
-  .CX 529 1558,
-  .CX 529 1557,
-  .CX 529 1552,
-  .CX 529 790,
-  .CX 529 786,
-  .CX 529 523,
-  .CX 788 1558,
-  .CX 788 1553,
-  .CX 788 1552,
-  .CX 788 787,
-  .CX 788 527,
-  .CX 788 526,
-  .CX 788 524,
-  .CX 788 522,
-  .CX 788 523,
-  .CX 523 788,
-  .CX 788 523,
-  .CX 524 1558,
-  .CX 524 1551,
-  .CX 524 789,
-  .CX 524 526,
-  .CX 524 529,
-  .CX 529 524,
-  .CX 524 529,
-  .CX 1551 1558,
-  .CX 1551 788,
-  .CX 1551 786,
-  .CX 1551 523,
-  .CX 523 1551,
-  .CX 1551 523,
-  .CX 528 791,
-  .CX 528 790,
-  .CX 528 789,
-  .CX 789 528,
-  .CX 528 789,
-  .CX 791 1556,
-  .CX 791 1554,
-  .CX 791 788,
-  .CX 791 522,
-  .CX 522 791,
-  .CX 791 522,
-  .CX 787 1556,
-  .CX 787 1553,
-  .CX 787 791,
-  .CX 787 786,
-  .CX 787 527,
-  .CX 787 526,
-  .CX 787 523,
-  .CX 787 789,
-  .CX 789 787,
-  .CX 787 789,
-  .CX 527 1553,
-  .CX 527 791,
-  .CX 527 789,
-  .CX 527 788,
-  .CX 527 786,
-  .CX 527 529,
-  .CX 527 528,
-  .CX 527 526,
-  .CX 527 523,
-  .CX 527 522,
-  .CX 522 527,
-  .CX 527 522,
-  .CX 1553 1554,
-  .CX 1553 791,
-  .CX 1553 789,
-  .CX 1553 528,
-  .CX 1553 527,
-  .CX 1553 526,
-  .CX 1553 522,
-  .CX 1553 523,
-  .CX 523 1553,
-  .CX 1553 523,
-  .CX 1557 1558,
-  .CX 1557 528,
-  .CX 1557 527,
-  .CX 786 1557,
-  .CX 786 529,
-  .CX 786 528,
-  .CX 786 526,
-  .CX 786 522,
-  .CX 786 1551,
-  .CX 1551 786,
-  .CX 786 1551,
-  .CX 1556 1557,
-  .CX 1556 788,
-  .CX 1556 526,
-  .CX 790 1557,
-  .CX 790 1553,
-  .CX 790 1551,
-  .CX 790 791,
-  .CX 790 789,
-  .CX 790 788,
-  .CX 790 528,
-  .CX 790 523,
-  .CX 790 522,
-  .CX 790 786,
-  .CX 786 790,
-  .CX 790 786,
-  .CX 1552 786,
-  .CX 1552 529,
-  .CX 1552 788,
-  .CX 788 1552,
-  .CX 1552 788,
-  .CX 526 1554,
-  .CX 526 1552,
-  .CX 526 1551,
-  .CX 526 791,
-  .CX 526 789,
-  .CX 526 788,
-  .CX 526 528,
-  .CX 526 527,
-  .CX 526 525,
-  .CX 526 523,
-  .measureX 1558 [] [.Z 791, .Z 1557, .CZ 522 523, .CZ 522 528, .CZ 522 788, .CZ 522 1552, .CZ 522 1557, .CZ 523 525, .CZ 523 529, .CZ 523 787, .CZ 523 788, .CZ 523 790, .CZ 523 1552, .CZ 524 527, .CZ 524 1557, .CZ 525 790, .CZ 525 1551, .CZ 525 1557, .CZ 526 787, .CZ 527 791, .CZ 528 1551, .CZ 528 1556, .CZ 529 789, .CZ 529 791, .CZ 529 1552, .CZ 529 1553, .CZ 787 1552, .CZ 787 1553, .CZ 788 790, .CZ 789 1552, .CZ 789 1557, .CZ 790 791, .CZ 790 1552, .CZ 790 1553, .CZ 790 1556, .CZ 790 1557, .CZ 1551 1552, .CZ 1551 1557, .CZ 1552 1553, .CZ 1552 1556],
-  .measureX 1557 [] [.Z 788, .Z 789, .Z 791, .Z 1551, .Z 1554, .Z 1556, .CZ 522 526, .CZ 524 525, .CZ 524 526, .CZ 525 526, .CZ 525 528, .CZ 526 788, .CZ 526 791, .CZ 526 1551, .CZ 526 1552, .CZ 526 1553, .CZ 526 1556],
-  .measureX 1556 [] [.Z 791, .Z 1552, .CZ 522 523, .CZ 522 524, .CZ 522 525, .CZ 522 526, .CZ 522 786, .CZ 522 788, .CZ 522 791, .CZ 522 1553, .CZ 522 1554, .CZ 523 524, .CZ 523 791, .CZ 523 1553, .CZ 524 529, .CZ 524 788, .CZ 524 789, .CZ 524 790, .CZ 525 791, .CZ 526 528],
-  .measureX 1554 [] [.CZ 523 526, .CZ 523 786, .CZ 524 526, .CZ 524 789, .CZ 525 526, .CZ 525 527, .CZ 525 791, .CZ 525 1552, .CZ 525 1553, .CZ 526 529, .CZ 526 788, .CZ 526 789, .CZ 526 790, .CZ 526 1552, .CZ 526 1553, .CZ 527 791, .CZ 790 791],
-  .measureX 1553 [] [.Z 1552, .CZ 523 525, .CZ 523 529, .CZ 523 786, .CZ 523 789, .CZ 524 525, .CZ 524 789, .CZ 524 791, .CZ 525 528, .CZ 525 788, .CZ 525 791],
-  .measureX 1552 [] [.Z 789, .Z 790, .Z 791, .CZ 522 524, .CZ 522 529, .CZ 522 786, .CZ 522 790, .CZ 523 525, .CZ 523 791, .CZ 523 1551, .CZ 524 525, .CZ 524 787, .CZ 524 791, .CZ 524 1551, .CZ 525 787],
-  .measureX 1551 [] [.CZ 522 523, .CZ 522 786, .CZ 522 788, .CZ 523 786, .CZ 523 787, .CZ 523 788, .CZ 523 789, .CZ 523 790, .CZ 525 787],
-  .measureX 791 [] [.CZ 523 524, .CZ 523 786, .CZ 523 788, .CZ 523 789, .CZ 523 790, .CZ 524 525, .CZ 524 789, .CZ 524 790],
-  .measureX 790 [] [.CZ 525 528, .CZ 525 786, .CZ 526 528],
-  .measureX 789 [] [.CZ 523 528, .CZ 523 529, .CZ 523 786, .CZ 524 527, .CZ 526 528],
-  .measureX 788 [] [.CZ 524 527, .CZ 525 527, .CZ 525 786, .CZ 526 529],
-  .measureX 787 [] [.CZ 522 527, .CZ 522 528, .CZ 522 529, .CZ 522 786],
-  .CX 529 1553,
-  .CX 786 1554,
-  .CX 1553 529,
-  .CX 527 1551,
-  .CX 528 1552,
-  .CX 1552 528,
-  .CX 526 786,
-  .CX 1554 786,
-  .X 527,
-  .CX 526 527,
-  .CX 1551 527
-]
-def checkPair (uv : Nat × Nat) : Bool :=
-  [false,true].all fun g => [false,true].all fun s =>
-    let e := encN_t8 (MorningFour.pre507 g s uv.1 uv.2) MorningFour.sites
-    safe15 candidate e && safe15 MorningFour.forward13 e &&
-    ((runN_t8 candidate [] (false,e)).2 == (runN_t8 MorningFour.forward13 [] (false,e)).2)
+                            
+         
+              
+              
+              
+              
+                   
+         
+              
+              
+              
+              
+              
+                   
+              
+              
+              
+              
+              
+                    
+         
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                    
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+               
+                    
+              
+              
+              
+               
+              
+                    
+              
+              
+               
+               
+              
+              
+              
+              
+               
+              
+                    
+         
+              
+              
+              
+               
+         
+              
+              
+              
+              
+              
+              
+               
+               
+                   
+              
+              
+               
+              
+              
+              
+              
+              
+               
+              
+              
+              
+              
+              
+               
+               
+              
+                    
+              
+               
+         
+              
+              
+              
+              
+              
+              
+              
+               
+               
+                    
+               
+               
+               
+                
+                                           
+         
+         
+              
+              
+              
+              
+              
+              
+              
+              
+               
+               
+               
+               
+               
+               
+               
+              
+              
+                    
+              
+              
+              
+              
+               
+               
+               
+               
+               
+               
+                                          
+              
+              
+              
+              
+              
+              
+              
+               
+               
+                   
+          
+         
+         
+         
+         
+               
+               
+               
+               
+              
+              
+              
+              
+              
+               
+              
+              
+              
+              
+              
+                
+                
+                
+               
+               
+               
+               
+               
+               
+               
+               
+              
+              
+              
+              
+              
+              
+              
+              
+                
+                
+               
+               
+               
+               
+              
+              
+              
+               
+               
+               
+              
+              
+              
+              
+              
+              
+              
+              
+               
+               
+              
+              
+              
+              
+              
+                
+               
+               
+               
+               
+               
+              
+              
+              
+              
+              
+               
+               
+              
+              
+              
+              
+               
+               
+              
+              
+              
+              
+              
+              
+              
+              
+               
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+                
+               
+               
+               
+               
+               
+               
+               
+               
+               
+                
+               
+               
+               
+              
+              
+              
+              
+               
+               
+               
+                
+               
+               
+               
+               
+               
+              
+              
+              
+              
+              
+              
+              
+              
+              
+               
+               
+               
+               
+               
+               
+               
+               
+              
+              
+              
+              
+              
+              
+              
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                      
+                                                                                                                                                                
+                                                                                                                                                                                                           
+                                                                                                                                          
+                                                                                                                            
+                                                           
+                                                                                     
+                                                                        
+                                                                        
+               
+               
+               
+               
+               
+               
+              
+               
+         
+              
+              
+ 
+                                        
+                                                     
+                                                                         
+                                                           
+                                                                                          
 
 
 
@@ -14223,47 +14223,47 @@ theorem resources : toffoliCount cand = 20 ∧ toffoliCount ref = 21 ∧
   omega
 
 theorem bsupport0 : wires block0 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical0 : GatePhysical block0 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport1 : wires block1 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical1 : GatePhysical block1 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport2 : wires block2 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical2 : GatePhysical block2 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport3 : wires block3 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical3 : GatePhysical block3 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport4 : wires block4 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical4 : GatePhysical block4 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport5 : wires block5 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical5 : GatePhysical block5 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport6 : wires block6 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical6 : GatePhysical block6 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport7 : wires block7 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical7 : GatePhysical block7 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport8 : wires block8 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical8 : GatePhysical block8 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport9 : wires block9 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical9 : GatePhysical block9 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                
 theorem bsupport10 : wires block10 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical10 : GatePhysical block10 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport11 : wires block11 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical11 : GatePhysical block11 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport12 : wires block12 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical12 : GatePhysical block12 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport13 : wires block13 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical13 : GatePhysical block13 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport14 : wires block14 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical14 : GatePhysical block14 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport15 : wires block15 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical15 : GatePhysical block15 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport16 : wires block16 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical16 : GatePhysical block16 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport17 : wires block17 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical17 : GatePhysical block17 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport18 : wires block18 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical18 : GatePhysical block18 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport19 : wires block19 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical19 : GatePhysical block19 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 theorem bsupport20 : wires block20 ⊆ candSites.toFinset := by decide +kernel
-theorem bphysical20 : GatePhysical block20 := Forward11Width.physical_of_all _ (by decide +kernel)
+                                                                                                  
 
 theorem tick_support0 : wires tick506 ⊆ sites.toFinset := by decide +kernel
 theorem morning_sub0 : MorningFour.sites.toFinset ⊆ sites.toFinset := by decide +kernel
@@ -14285,8 +14285,8 @@ theorem support2 : wires ref2 ⊆ sites.toFinset := by
   simp only [ref2, wires_append, Finset.union_subset_iff]
   exact ⟨tick_support0, MorningFour.support.1.trans morning_sub0⟩
 
-theorem physical : GatePhysical cand := by
-  simp only [cand, gatePhysical_append, bphysical0, bphysical1, bphysical2, bphysical3, bphysical4, bphysical5, bphysical6, bphysical7, bphysical8, bphysical9, bphysical10, bphysical11, bphysical12, bphysical13, bphysical14, bphysical15, bphysical16, bphysical17, bphysical18, bphysical19, bphysical20, and_self]
+                                          
+                                                                                                                                                                                                                                                                                                                        
 
 theorem pre_supp (g s : Bool) (u v : Nat) : ∀ q, pre506 g s u v q = true → q ∈ sites := by
   intro q h
@@ -14782,25 +14782,25 @@ theorem site_used (isA : Bool) (n : Nat) (hn : n ∈ candSites) :
     show ((n < 793) ∨ (803 < n)) ∧ n ≠ 1551 ∧ n ≠ 1552
     omega
 
-theorem merged_in (isA : Bool) : ∀ q ∈ wires merged5,
-    q ∈ wires (Rolling1588TickGap.forward isA 1 505 ++ (prior5 ++ ForwardSixPlacement.after isA)) := by
-  intro q hq
-  rw [merged5, renameProgram_support] at hq
-  obtain ⟨w, hw, rfl⟩ := Finset.mem_image.mp hq
-  exact site_used isA w (List.mem_toFinset.mp (csupport hw))
+                                                     
+                                                                                                       
+            
+                                           
+                                               
+                                                            
 
-theorem support5 (isA : Bool) :
-    wires (stackForward5 isA) ⊆ wires (Rolling1588TickGap.stackForward0 isA) := by
-  rw [shape]
-  intro q hq
-  rw [stackForward5, wires_append, wires_append] at hq
-  rcases Finset.mem_union.mp hq with h | h
-  · rw [wires_append]
-    exact Finset.mem_union_left _ h
-  · rcases Finset.mem_union.mp h with h | h
-    · exact merged_in isA q h
-    · rw [wires_append, wires_append]
-      exact Finset.mem_union_right _ (Finset.mem_union_right _ h)
+                               
+                                                                                  
+            
+            
+                                                      
+                                          
+                     
+                                   
+                                           
+                             
+                                     
+                                                                 
 
 end ECDSAAdd.Entrant.Five506
 

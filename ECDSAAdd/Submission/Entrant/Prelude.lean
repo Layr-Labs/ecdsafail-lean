@@ -5761,9 +5761,9 @@ theorem run_bits (p : Program) (hp : gateOnly p = true) (m : List Bool) (ph : Bo
         simpa using ih hp' _
     | measureX t c₀ c₁ => simp [gateOnly] at hp
 
-def pack10 (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 : Bool) : Nat :=
-  b0.toNat+2*b1.toNat+4*b2.toNat+8*b3.toNat+16*b4.toNat+32*b5.toNat+64*b6.toNat+
-    128*b7.toNat+256*b8.toNat+512*b9.toNat
+                                                          
+                                                                                
+                                          
 
 def raw (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 : Bool) : BasisState := fun q =>
   if q=0 then b0 else if q=1 then b1 else if q=2 then b2 else if q=3 then b3 else
@@ -5820,8 +5820,8 @@ theorem finite_holes : ∀ x<1024, legalNat x=true →
 /-- Only the ten declared local ports are mapped. -/
 def label (f : Fin 10→Wire) (q : Wire) : Wire := if h:q<10 then f ⟨q,h⟩ else q
 
-def encodeAt (f : Fin 10→Wire) : Program := renameProgram (label f) encode
-def decodeAt (f : Fin 10→Wire) : Program := renameProgram (label f) decode
+                                                                          
+                                                                          
 def legalAt (f : Fin 10→Wire) (s : BasisState) : Prop := legal (fun q => s (label f q))
 
 
@@ -12090,24 +12090,24 @@ theorem signedSum_perm (base : BasisState) {a b : List MeasuredSquareFold} (h : 
 
 def fastAItems (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
   sortedItems false L.measuredAItems
-def fastBItems (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
-  sortedItems true L.measuredBItems
+                                                                                 
+                                   
 def fastCItems (L : CuccaroStreamedSquareWideLayout) : List MeasuredSquareFold :=
   sortedItems false L.measuredCItems
 
 def fastBranchA (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   L.withMeasuredSquare control L.core.low (L.core.product.take 256)
     (L.measuredFolds false (fastAItems L))
-def fastBranchB (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
-  L.withMeasuredSquare control L.core.high (L.core.product.take 256)
-    (L.measuredFolds true (fastBItems L))
+                                                                                   
+                                                                    
+                                         
 def fastMiddleC (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
   L.withMeasuredSquare control L.core.sum L.core.product (L.measuredFolds false (fastCItems L))
-def fastBranchC (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
-  L.core.prepareSum++fastMiddleC L control++L.core.clearSum
+                                                                                   
+                                                           
 
-def fastProgram (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
-  fastBranchA L control++fastBranchB L control++fastBranchC L control++L.reflectOutput
+                                                                                   
+                                                                                      
 
 
 
@@ -12135,10 +12135,10 @@ theorem cast_ofCast (o : Bool) (z : ZMod SquareReduction.p) :
   · simp only [measuredOrientationCast,ofCast,if_true,ZMod.natCast_zmod_val]
     ring
 
-def resA (P O : Nat) : Nat :=
-  ofCast true (measuredOrientationCast false O+((P : ZMod SquareReduction.p)*2^128-P))
-def resB (P O : Nat) : Nat :=
-  ofCast false (measuredOrientationCast true O+((P : ZMod SquareReduction.p)*2^128-SquareReduction.c*P))
+                             
+                                                                                      
+                             
+                                                                                                        
 def resC (P O : Nat) : Nat :=
   ofCast true (measuredOrientationCast false O+(-(P : ZMod SquareReduction.p)*2^128))
 
@@ -13536,12 +13536,12 @@ def mixFoldsT : Bool → List MixItem → Nat
         | .inl f => 1023+(if f.canonical then 0 else 1022)
         | .inr a => accPrice a)+mixFoldsT (mixNeg i) is
 
-def mixFoldsM : Bool → List MixItem → Nat
-  | _,[] => 0
-  | o,i::is => (if o=mixNeg i then 0 else 255)+
-      (match i with
-        | .inl f => 1023+(if f.canonical then 0 else 1020)
-        | .inr a => accPrice a)+mixFoldsM (mixNeg i) is
+                                         
+             
+                                               
+                   
+                                                          
+                                                       
 
 def MixStatic (L : CuccaroStreamedSquareWideLayout) : MixItem → Prop
   | .inl f => ∀q,f.src.count q≤L.core.product.count q
@@ -14105,8 +14105,8 @@ orientation switch; the square then ends in the unreflected orientation. -/
 def resC2 (P O : Nat) : Nat :=
   ofCast true (measuredOrientationCast true O+(-(P : ZMod SquareReduction.p)*2^128))
 
-def accProgram (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
-  accBranchA L control++accBranchC L control++accBranchB L control++L.reflectOutput
+                                                                                  
+                                                                                   
 
 /-- The accumulated square without its final output reflection. -/
 def accPrefix (L : CuccaroStreamedSquareWideLayout) (control : Wire) : Program :=
@@ -14656,36 +14656,36 @@ theorem acc_static (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
 
 
 
-theorem acb_complete_exact (enabled : Bool) (A B O : Nat) :
-    resB ((if enabled then B else 0)^2)
-      (resC2 ((if enabled then A+B else 0)^2) (resA ((if enabled then A else 0)^2) O))=
-      subModValue (if enabled then (A+2^128*B)^2 else 0) O := by
-  let PA := (if enabled then A else 0)^2
-  let PB := (if enabled then B else 0)^2
-  let PC := (if enabled then A+B else 0)^2
-  let OA := resA PA O
-  let OC := resC2 PC OA
-  let OB := resB PB OC
-  have ea : measuredOrientationCast true OA=measuredOrientationCast false O+((PA : ZMod SquareReduction.p)*2^128-PA) :=
-    cast_ofCast _ _
-  have ec : measuredOrientationCast true OC=measuredOrientationCast true OA+(-(PC : ZMod SquareReduction.p)*2^128) :=
-    cast_ofCast _ _
-  have eb : measuredOrientationCast false OB=measuredOrientationCast true OC+
-      ((PB : ZMod SquareReduction.p)*2^128-SquareReduction.c*PB) := cast_ofCast _ _
-  simp only [measuredOrientationCast,Bool.false_eq_true,if_false,if_true] at ea eb ec
-  have identity := measured_controlled_square_identity enabled A B
-  change (PA : ZMod SquareReduction.p)*2^128-PA+
-    ((PB : ZMod SquareReduction.p)*2^128-SquareReduction.c*PB)-(PC : ZMod SquareReduction.p)*2^128=
-      -((if enabled then (A+2^128*B)^2 else 0 : Nat) : ZMod SquareReduction.p) at identity
-  have obBound : OB<SquareReduction.p := ofCast_lt _ _
-  have cast : (OB : ZMod SquareReduction.p)=
-      (subModValue (if enabled then (A+2^128*B)^2 else 0) O : ZMod SquareReduction.p) := by
-    rw [subModValue_cast]
-    linear_combination eb+ec+ea+identity
-  have targetBound : subModValue (if enabled then (A+2^128*B)^2 else 0) O<SquareReduction.p :=
-    Nat.mod_lt _ (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
-  have value := congrArg ZMod.val cast
-  simpa only [ZMod.val_natCast_of_lt obBound,ZMod.val_natCast_of_lt targetBound] using value
+                                                           
+                                       
+                                                                                       
+                                                                
+                                        
+                                        
+                                          
+                     
+                       
+                      
+                                                                                                                       
+                   
+                                                                                                                     
+                   
+                                                                             
+                                                                                   
+                                                                                     
+                                                                  
+                                                
+                                                                                                   
+                                                                                          
+                                                      
+                                            
+                                                                                           
+                         
+                                        
+                                                                                              
+                                                                                      
+                                      
+                                                                                            
 
 
 
@@ -16283,7 +16283,7 @@ open Arithmetic
 
 namespace KRegs
 variable (R : KRegs)
-def lowClearHead : Program := R.c8++R.c7++R.c6++R.c5++R.c4++R.m3++R.c2
+                                                                      
 
 
 
@@ -16548,11 +16548,11 @@ def X : List Wire := K.S1++K.T1
 def all : List Wire := K.R.all++K.X
 def tail : Program := K.R.m2++K.R.m3++K.R.m4++K.R.m5++K.R.m6++K.R.m7++K.R.m8
 def headClear : Program := K.R.c8++K.R.c7++K.R.c6++K.R.c5++K.R.c4++K.R.m3++K.R.c2
-def make : Program := K.I.make++K.tail
+                                      
 def clear : Program := K.headClear++K.I.clear
-def Aux (s : BasisState) : Prop :=
-  regValue K.S1 s=regValue K.I.lo s+regValue K.I.hi s ∧
-  regValue K.T1 s=2*regValue K.I.lo s*regValue K.I.hi s
+                                  
+                                                       
+                                                       
 
 structure W : Prop where
   outer : K.R.W
@@ -16805,7 +16805,7 @@ structure W : Prop where
 
 
 
-def cost : Nat := kcost K.R.bank.length K.R.h-ksq K.R.h+kcost K.R.h (K.R.h/2)
+                                                                             
 
 
 
@@ -16920,12 +16920,12 @@ def kregs (L : CuccaroStreamedSquareWideLayout) (ext src dst : List Wire) : KReg
    z:=((ext.drop 66).drop 132).take 62,
    pad:=L.leafPad,carry:=L.leafCarry,cin:=L.core.cin}
 
-def withK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire)
-    (src dst : List Wire) (body : Program) : Program :=
-  copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).make++
-    eraseMask control src (L.inputBank.take src.length)++body++
-    copyRegister (some control) src (L.inputBank.take src.length)++(kregs L ext src dst).clear++
-    eraseMask control src (L.inputBank.take src.length)
+                                                                                  
+                                                       
+                                                                                             
+                                                               
+                                                                                                
+                                                       
 
 def kbig (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire)
     (src dst : List Wire) : List Wire :=
@@ -18205,15 +18205,15 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 def lregs (L : CuccaroStreamedSquareWideLayout) (ext src dst : List Wire) : KRegs :=
   {kregs L ext src dst with z:=(L.leafCarry.drop 193).take 62,carry:=L.leafCarry.take 193}
 
-def low2regs (L : CuccaroStreamedSquareWideLayout) (ext src dst : List Wire) : KLow2 :=
-  ⟨lregs L ext src dst,(ext.drop 198).take 33,(ext.drop 231).take 66⟩
+                                                                                       
+                                                                     
 
-def withLowK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire)
-    (src dst : List Wire) (body : Program) : Program :=
-  copyRegister (some control) src (L.inputBank.take src.length)++(low2regs L ext src dst).make++
-    eraseMask control src (L.inputBank.take src.length)++body++
-    copyRegister (some control) src (L.inputBank.take src.length)++(low2regs L ext src dst).clear++
-    eraseMask control src (L.inputBank.take src.length)
+                                                                                     
+                                                       
+                                                                                                
+                                                               
+                                                                                                   
+                                                       
 
 
 
@@ -18574,7 +18574,7 @@ def withLowK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : 
 
 
 
-def lowkcost (n h : Nat) : Nat := kcost n h-ksq h+kcost h (h/2)
+                                                               
 
 
 
@@ -21749,12 +21749,12 @@ theorem fastSquare_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
 
 end StateEq
 
-theorem fastSquare_physical (L : ControlledPointLayout)
-    (hw : L.Widths) (hn : L.wires.Nodup) : GatePhysical (fastSquare L) := by
-  rw [fastSquare_eq L hw hn]
-  apply gatePhysical_rename _ (poolPermutation L.core.poolWire
-    (layout_bounded_injective L hw hn)).injective
-  exact fastCandidate_physical L hw hn
+                                                       
+                                                                            
+                            
+                                                              
+                                                 
+                                      
 
 
 
@@ -22129,13 +22129,13 @@ theorem shortEqual_counts (L : ControlledPointLayout) (hw : L.Widths) (c t : Wir
   rw [hl] at h
   exact h
 
-theorem shortEqual_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (c t : Wire) (hct : c ≠ t) (hc : c = L.control ∨ c ∈ L.inPlaceFlags) (ht : t ∈ L.inPlaceFlags)
-    (C : Point) : GatePhysical (shortEqual L c t C) := by
-  have hsl := (shortSrc_length L hw).trans (shortWork_length L hw).symm
-  apply equalConstant_physical
-  have hperm := ((zeroPorts_perm _ _ hsl).cons t).cons c
-  exact hperm.nodup_iff.mpr (short_nodup L hn c t hct hc ht)
+                                                                                            
+                                                                                                  
+                                                         
+                                                                       
+                              
+                                                        
+                                                            
 
 theorem shortEqual_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) (c t : Wire)
     (C : Point) : gateSlots (shortEqual L c t C) ≤ 2314 := by
@@ -22960,41 +22960,41 @@ theorem pairEqual_wires (L : ControlledPointLayout) (hw : L.Widths) (t₁ t₂ :
 
 
 
-theorem pairEqual_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (t₁ t₂ : Wire) (ht1 : t₁ ∈ L.inPlaceFlags) (ht2 : t₂ ∈ L.inPlaceFlags) (h12 : t₁ ≠ t₂)
-    (e₁ e₂ : Bool) (C D : Point) : GatePhysical (pairEqual L t₁ t₂ e₁ e₂ C D) := by
-  have hnd := pair_nodup L hw hn t₁ t₂ ht1 ht2 h12
-  have hperm := zeroPorts_perm (pairSrc L) (L.dialogPool.take 256)
-    ((pairSrc_length L hw).trans (pairWork_length L hw).symm)
-  have hchain : (L.control :: yLow L :: t₁ :: t₂ :: (pairPorts L).flatMap ZeroBit.wires).Nodup :=
-    ((((hperm.cons _).cons _).cons _).cons _).nodup_iff.mpr hnd
-  simp only [pairEqual, gatePhysical_append]
-  refine ⟨⟨xorConstant_physical _ _, ?_⟩, xorConstant_physical _ _⟩
-  clear hnd hperm
-  generalize L.control = c at hchain ⊢
-  generalize pairPorts L = bs at hchain ⊢
-  generalize yLow L = y at hchain ⊢
-  induction bs generalizing c with
-  | nil =>
-    simp only [List.flatMap_nil, List.nodup_cons, List.mem_cons, List.not_mem_nil, not_or,
-      or_false] at hchain
-    obtain ⟨⟨hcy, hc1, hc2⟩, ⟨hy1, hy2⟩, h12', -⟩ := hchain
-    simp only [zeroWith]
-    cases e₁ <;> cases e₂ <;> cases (yBit C) <;> cases (yBit D) <;>
-      simp [pairTail, plainTail, fusedTail, tailFused, bitTest, zeroFlag, GatePhysical, PhysicalInstr,
-        ProperGate, gatePhysical_append, hc1, hc2, hy1, hy2, h12]
-  | cons b bs ih =>
-    have hnames : (c::y::t₁::t₂::b.input::b.work::bs.flatMap ZeroBit.wires).Nodup := hchain
-    have hni := hnames
-    simp only [List.nodup_cons, List.mem_cons, not_or] at hni
-    obtain ⟨⟨hcy, hc1, hc2, hci, hcw, hcR⟩, ⟨hy1, hy2, hyi, hyw, hyR⟩, ⟨h12, h1i, h1w, h1R⟩,
-      ⟨h2i, h2w, h2R⟩, ⟨hiw, hiR⟩, hwR, hR⟩ := hni
-    have hchild : (b.work::y::t₁::t₂::bs.flatMap ZeroBit.wires).Nodup := by
-      simp only [List.nodup_cons, List.mem_cons, not_or]
-      exact ⟨⟨Ne.symm hyw, Ne.symm h1w, Ne.symm h2w, hwR⟩, ⟨hy1, hy2, hyR⟩, ⟨h12, h1R⟩, h2R, hR⟩
-    simp only [zeroWith, gatePhysical_append]
-    exact ⟨⟨by simp [chainAnd, GatePhysical, PhysicalInstr, ProperGate, hcw, hiw], ih b.work hchild⟩,
-      by simp [chainErase, GatePhysical, PhysicalInstr, ProperGate]⟩
+                                                                                           
+                                                                                          
+                                                                                   
+                                                  
+                                                                  
+                                                             
+                                                                                                 
+                                                               
+                                            
+                                                                   
+                 
+                                      
+                                         
+                                   
+                                  
+          
+                                                                                          
+                         
+                                                           
+                        
+                                                                   
+                                                                                                      
+                                                                 
+                   
+                                                                                           
+                      
+                                                             
+                                                                                            
+                                                  
+                                                                           
+                                                        
+                                                                                                
+                                             
+                                                                                                     
+                                                                    
 
 theorem zeroWith_pair_slots (y t₁ t₂ : Wire) (e₁ a₁ e₂ a₂ : Bool) (c : Wire) (bs : List ZeroBit) :
     gateSlots (zeroWith (pairTail y t₁ t₂ e₁ a₁ e₂ a₂) c bs) ≤ 7 * bs.length + 6 := by
@@ -31427,9 +31427,9 @@ theorem affineClassSelect_wires (r : Wire) (src : List Wire) (a b : Nat) :
   · exact List.mem_toFinset.mpr (List.mem_cons_of_mem r (List.mem_toFinset.mp (h1 hq)))
   · exact h2 hq
 
-theorem affineClassSelect_physical (r : Wire) (src : List Wire) (a b : Nat) (hr : r ∉ src) :
-    GatePhysical (affineClassSelect r src a b) := by
-  exact (gatePhysical_append _ _).mpr ⟨xorConstant_physical src a,maskedConstant_physical r src (a ^^^ b) hr⟩
+                                                                                            
+                                                    
+                                                                                                             
 
 theorem affineClassTail_wires (r y t₁ t₂ t₃ wa wb h : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool) :
     wires (affineClassTail r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) ⊆
@@ -31441,13 +31441,13 @@ theorem affineClassTail_wires (r y t₁ t₂ t₃ wa wb h : Wire) (e₁ a₁ e�
       Instr.wires,correctionWires,List.mem_toFinset] at hq ⊢ <;>
     (have hh := @hp q; simp at hh; tauto)
 
-theorem affineClassTail_physical (r y t₁ t₂ t₃ wa wb h : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
-    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup) :
-    GatePhysical (affineClassTail r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) := by
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false] at hnd
-  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> cases a₃ <;>
-    simp [affineClassTail,chainAnd,chainErase,pairTail,plainTail,fusedTail,tailFused,
-      bitTest,zeroFlag,gatePhysical_append,GatePhysical,PhysicalInstr,ProperGate] <;> tauto
+                                                                                      
+                                          
+                                                                            
+                                                                                   
+                                                                  
+                                                                                     
+                                                                                           
 
 theorem affineInputSuffix_wires (c r y t₁ t₂ t₃ wa wb : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
     (bs : List ZeroBit) (a b : Nat) :
@@ -31501,66 +31501,66 @@ theorem affineInputWith_wires (y t₁ t₂ t₃ wb : Wire) (e₁ a₁ e₂ a₂ 
       aesop
 
 
-theorem affine_chain_physical (c r y t₁ t₂ t₃ wa wb : Wire)
-    (e₁ a₁ e₂ a₂ a₃ : Bool) (bs : List ZeroBit)
-    (hnd : (c::r::y::t₁::t₂::t₃::wa::wb::bs.flatMap ZeroBit.wires).Nodup) :
-    GatePhysical (zeroWith (affineClassTail r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃) c bs) := by
-  induction bs generalizing c with
-  | nil => exact affineClassTail_physical r y t₁ t₂ t₃ wa wb c e₁ a₁ e₂ a₂ a₃ hnd
-  | cons q qs ih =>
-    have hn : (c::r::y::t₁::t₂::t₃::wa::wb::q.input::q.work::qs.flatMap ZeroBit.wires).Nodup := hnd
-    simp only [List.nodup_cons,List.mem_cons,not_or] at hn
-    have hchild : (q.work::r::y::t₁::t₂::t₃::wa::wb::qs.flatMap ZeroBit.wires).Nodup := by
-      simp only [List.nodup_cons,List.mem_cons,not_or]; tauto
-    simp only [zeroWith,gatePhysical_append]
-    refine ⟨⟨?_,ih q.work hchild⟩,?_⟩
-    · simp [chainAnd,GatePhysical,PhysicalInstr,ProperGate,show c ≠ q.work from by tauto,
-        show q.input ≠ q.work from by tauto]
-    · simp [chainErase,GatePhysical,PhysicalInstr,ProperGate]
+                                                           
+                                               
+                                                                           
+                                                                                          
+                                  
+                                                                                 
+                   
+                                                                                                   
+                                                          
+                                                                                          
+                                                             
+                                            
+                                     
+                                                                                         
+                                            
+                                                             
 
-theorem affineInputSuffix_physical (c r y t₁ t₂ t₃ wa wb : Wire)
-    (e₁ a₁ e₂ a₂ a₃ : Bool) (bs : List ZeroBit) (a b : Nat)
-    (hnd : (c::r::y::t₁::t₂::t₃::wa::wb::bs.flatMap ZeroBit.wires).Nodup) :
-    GatePhysical (affineInputSuffix c r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ bs a b) := by
-  have hn := hnd
-  simp only [List.nodup_cons,List.mem_cons,not_or] at hn
-  have hr : r ∉ bs.map ZeroBit.input := by
-    intro hm
-    obtain ⟨q,hq,rfl⟩ := List.mem_map.mp hm
-    have hi : q.input ∈ bs.flatMap ZeroBit.wires := List.mem_flatMap.mpr ⟨q,hq,by simp [ZeroBit.wires]⟩
-    tauto
-  simp only [affineInputSuffix,gatePhysical_append]
-  exact ⟨⟨affineClassSelect_physical r _ a b hr,affine_chain_physical c r y t₁ t₂ t₃ wa wb
-    e₁ a₁ e₂ a₂ a₃ bs hnd⟩,affineClassSelect_physical r _ a b hr⟩
+                                                                
+                                                           
+                                                                           
+                                                                                     
+                
+                                                        
+                                          
+            
+                                           
+                                                                                                       
+         
+                                                   
+                                                                                          
+                                                                 
 
-theorem affineInputWith_physical (y t₁ t₂ t₃ wb : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
-    (c : Wire) (bs : List ZeroBit) (a b : Nat)
-    (hnd : (c::y::t₁::t₂::t₃::wb::bs.flatMap ZeroBit.wires).Nodup) :
-    GatePhysical (affineInputWith y t₁ t₂ t₃ wb e₁ a₁ e₂ a₂ a₃ c bs a b) := by
-  induction bs generalizing c a b with
-  | nil =>
-    simp only [List.flatMap_nil,List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false] at hnd
-    cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> cases a₃ <;>
-      simp [affineInputWith,affineClassSameTail,pairTail,plainTail,fusedTail,tailFused,
-        bitTest,zeroFlag,GatePhysical,PhysicalInstr,ProperGate] <;> tauto
-  | cons q qs ih =>
-    have hn : (c::y::t₁::t₂::t₃::wb::q.input::q.work::qs.flatMap ZeroBit.wires).Nodup := hnd
-    simp only [List.nodup_cons,List.mem_cons,not_or] at hn
-    have hc : (q.work::y::t₁::t₂::t₃::wb::qs.flatMap ZeroBit.wires).Nodup := by
-      simp only [List.nodup_cons,List.mem_cons,not_or]; tauto
-    have hd : (c::q.input::y::t₁::t₂::t₃::q.work::wb::qs.flatMap ZeroBit.wires).Nodup := by
-      simp only [List.nodup_cons,List.mem_cons,not_or]; tauto
-    have hf : GatePhysical (if a%2=1 then [.X q.input] else []) := by
-      split_ifs <;> simp [GatePhysical,PhysicalInstr,ProperGate]
-    simp only [affineInputWith,gatePhysical_append]
-    refine ⟨⟨hf,?_⟩,hf⟩
-    split_ifs
-    · simp only [gatePhysical_append]
-      refine ⟨⟨?_,ih q.work (a/2) (b/2) hc⟩,?_⟩
-      · simp [chainAnd,GatePhysical,PhysicalInstr,ProperGate,show c ≠ q.work from by tauto,
-          show q.input ≠ q.work from by tauto]
-      · simp [chainErase,GatePhysical,PhysicalInstr,ProperGate]
-    · exact affineInputSuffix_physical c q.input y t₁ t₂ t₃ q.work wb e₁ a₁ e₂ a₂ a₃ qs (a/2) (b/2) hd
+                                                                               
+                                              
+                                                                    
+                                                                              
+                                      
+          
+                                                                                                      
+                                                                    
+                                                                                       
+                                                                         
+                   
+                                                                                            
+                                                          
+                                                                               
+                                                             
+                                                                                           
+                                                             
+                                                                     
+                                                                
+                                                   
+                       
+             
+                                     
+                                               
+                                                                                           
+                                              
+                                                               
+                                                                                                      
 
 
 theorem affineClassTail_slots (r y t₁ t₂ t₃ wa wb h : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool) :
@@ -31858,14 +31858,14 @@ theorem inputClass_wires (L : ControlledPointLayout) (hw : L.Widths) (C : Point)
     simp only [List.mem_toFinset,List.mem_cons] at hh ⊢
     tauto
 
-theorem inputClass_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (C : Point) (cy : Fp) : GatePhysical (inputClass L C cy) := by
-  unfold inputClass
-  split_ifs
-  · exact affineInputWith_physical _ _ _ _ _ _ _ _ _ _ _ _ _ _ (inputClass_nodup L hw hn)
-  · have sep := dialogFlag_separation L hn
-    simp only [inPlaceFlags,List.nodup_cons,List.mem_cons,not_or] at sep
-    exact pairEqual_physical L hw hn _ _ (by simp [inPlaceFlags]) (by simp [inPlaceFlags]) (by tauto) _ _ _ _
+                                                                                            
+                                                                  
+                   
+           
+                                                                                         
+                                          
+                                                                        
+                                                                                                             
 
 theorem inputClass_slots (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cy : Fp) :
     gateSlots (inputClass L C cy) ≤ 2836 := by
@@ -32002,7 +32002,7 @@ theorem pointX_lt (R : Point) : pointX R < 2^256 :=
 /-- Classical constants of the class discriminator for the addend `C`. -/
 def kx (C : Point) : Nat := sepBit (pointX C) (pointX (dialogExceptionPoint C))
 def cxk (C : Point) : Bool := (pointX C).testBit (kx C)
-def xb (R C : Point) : Bool := (pointX R).testBit (kx C)
+                                                        
 
 theorem kx_lt (C : Point) : kx C < 256 := sepBit_lt _ _
 
@@ -32209,14 +32209,14 @@ theorem gadget_gateSlots (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool
   cases enD <;> cases enH <;> cases cx <;> cases cy <;>
     simp [gadget, flipIf, Challenge.gateSlots, Challenge.instructionSlots]
 
-theorem gadget_physical (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
-    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) :
-    GatePhysical (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) := by
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-  intro i hi
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-    simp [gadget, flipIf] at hi <;> rcases hi with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
-    simp_all [RecordedQuantum.PhysicalInstr, ProperGate, eq_comm]
+                                                                                
+                                             
+                                                                      
+                                                                                      
+            
+                                                       
+                                                                                                                                                      
+                                                                 
 
 /-- An X-basis erasure of `t = a ∧ b` with its CZ correction leaves the phase unchanged. -/
 theorem measure_erase (t a b : Wire) (x : Bool) (s : State) (ha : a ≠ t) (hb : b ≠ t)
@@ -32758,11 +32758,11 @@ section Fold
 variable (L : ControlledPointLayout) (hn : L.wires.Nodup)
 include hn
 
-theorem fold_distinct : L.core.equalNegY ≠ L.control ∧ L.core.equalNegY ≠ L.doubleSelect ∧
-    L.control ≠ L.doubleSelect := by
-  have sep := dialogFlag_separation L hn
-  simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
-  refine ⟨?_, ?_, ?_⟩ <;> intro e <;> simp_all
+                                                                                          
+                                    
+                                        
+                                                                         
+                                              
 
 
 
@@ -33778,77 +33778,77 @@ theorem finiteProgramN_counts (L : ControlledPointLayout) (hw : L.Widths) (C : P
   simp only [finiteProgramN, outTail, toffoliCount_append, measurementCount_append]
   omega
 
-theorem finiteProgramN_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (C : Point) (cy : Fp) (Gen : Program) (hG : GatePhysical Gen) :
-    GatePhysical (finiteProgramN L C cy Gen) := by
-  have sep := dialogFlag_separation (L:=L) hn
-  have hg (en : Bool) (t : Wire) (ht : t∈L.inPlaceFlags) (P : Point) : GatePhysical (gatedShort L en t P) := by
-    have hct : L.control ≠ t := by
-      intro h
-      exact (List.nodup_cons.mp sep).1 (h ▸ ht)
-    cases en
-    · simp [gatedShort, GatePhysical]
-    · simpa only [gatedShort, if_true] using shortEqual_physical L hw hn L.control t hct (Or.inl rfl) ht P
-  have z2 : GatePhysical (chainErase L.control L.point.finite L.genericSelect) := by
-    intro i hi
-    simp only [chainErase, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl
-    all_goals trivial
-  have away (c : Wire) (hc : c ∈ L.inPlaceFlags) : c ∉ PointAddLayout.pointWires L.point := by
-    intro hm
-    have h := List.nodup_iff_count.mp (L.dialogUsed_nodup hn) c
-    have hf := List.count_pos_iff.mpr hc
-    have hp := List.count_pos_iff.mpr hm
-    simp only [dialogUsedWires,List.count_append,List.count_cons] at h
-    omega
-  have all (c : Wire) (hc : c ∈ L.inPlaceFlags) (D : Point) : GatePhysical (maskedPointConstant c L.point D) :=
-    maskedPointConstant_physical c L.point D (away c hc)
-  have co : GatePhysical (corners2 L C) := by
-    simp only [corners2, gatePhysical_append]
-    repeat constructor
-    all_goals apply all _ (by simp [inPlaceFlags])
-  have rn0 := gatePhysical_rename (tauM L) (tauM_injective L hn) Gen hG
-  have rn := gatePhysical_rename (swapE L) (swapE_injective L hw hn) _ rn0
-  obtain ⟨fd1, fd2, fd3⟩ := fold_distinct L hn
-  have fo : GatePhysical (clrDH L C cy) :=
-    DHGadget.gadget_physical _ _ _ _ _ _ _ _ _ _ _ _ _ _ (dh_nodup L hw hn _ (DHClass.kx_lt C))
-  have rnD := gatePhysical_rename (swapD L) (swapD_injective L hw hn) _ rn
+                                                                                                
+                                                                   
+                                                  
+                                             
+                                                                                                               
+                                  
+             
+                                               
+            
+                                     
+                                                                                                          
+                                                                                    
+              
+                                                                           
+                                  
+                     
+                                                                                              
+            
+                                                               
+                                        
+                                        
+                                                                      
+         
+                                                                                                               
+                                                        
+                                             
+                                             
+                      
+                                                  
+                                                                       
+                                                                          
+                                              
+                                          
+                                                                                               
+                                                                          
 
-  simp only [inPlaceFlags, List.nodup_cons, List.mem_cons, not_or] at sep
-  have hfin : L.point.finite ≠ L.genericSelect := by
-    intro e
-    exact away L.genericSelect (by simp [inPlaceFlags]) (e ▸ by simp [PointAddLayout.pointWires])
-  have fl : GatePhysical (genFlagN L) := by
-    intro i hi
-    simp only [genFlagN, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl
-    · exact ⟨by tauto, hfin⟩
-    · exact (by tauto : L.doubleSelect ≠ L.genericSelect)
-    · exact (by tauto : L.core.equalNegY ≠ L.genericSelect)
-  have aw := park_away L hw hn
-  have ip : L.genericSelect ≠ parkWire L := fun e => aw.2.2 (by simp [← e, inPlaceFlags])
-  have cp : L.control ≠ parkWire L := Ne.symm aw.2.1
-  have mf : GatePhysical (mergeFlagsN L) := by
-    intro i hi
-    simp only [mergeFlagsN, List.mem_cons, List.not_mem_nil, or_false] at hi
-    rcases hi with rfl | rfl | rfl | rfl | rfl | rfl
-    · exact ip
-    · exact ⟨by tauto, hfin⟩
-    · exact ip
-    · exact cp
-    · exact (by tauto : L.doubleSelect ≠ L.genericSelect)
-    · exact (by tauto : L.core.equalNegY ≠ L.genericSelect)
-  have q3 := hg (exceptionBit C) L.core.equalNegY (by simp [inPlaceFlags]) (dialogExceptionPoint C)
-  have q5 := hg (decide (cy≠-cy)) L.doubleSelect (by simp [inPlaceFlags]) (C+C)
-  have p1 := inputClass_physical L hw hn C cy
-  have p2 := pairEqual_physical L hw hn L.core.generic L.core.equalNegY (by simp [inPlaceFlags])
-    (by simp [inPlaceFlags]) (by tauto) true (exceptionBit C) C (-C)
-  have os : GatePhysical (outTail L C) := by
-    simp only [outTail, gatePhysical_append]
-    exact ⟨co, p2⟩
-  have rs := gatePhysical_rename (sigP L) (sigP_injective L hw hn) _ os
-  simp only [finiteProgramN, gatePhysical_append]
-  tauto
+                                                                         
+                                                    
+           
+                                                                                                 
+                                           
+              
+                                                                         
+                                  
+                            
+                                                         
+                                                           
+                              
+                                                                                         
+                                                    
+                                              
+              
+                                                                            
+                                                    
+              
+                            
+              
+              
+                                                         
+                                                           
+                                                                                                   
+                                                                               
+                                             
+                                                                                                
+                                                                    
+                                            
+                                            
+                  
+                                                                       
+                                                 
+       
 
 theorem finiteProgramN_gateSlots (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cy : Fp)
     (Gen : Program) : gateSlots (finiteProgramN L C cy Gen) ≤ 20000 + gateSlots Gen := by
@@ -42355,11 +42355,11 @@ def receiverAdd : List Wire → List Wire → List Wire → Wire → Program
   | [a], [b], _, cin => [.CX a b, .CX cin b]
   | _, _, _, _ => []
 
-def basis (v : List Bool) : BasisState := fun q => v.getD q false
+                                                                 
 
-def topOld : Program := majority 0 1 2 3 ++ [.CX 5 4, .CX 3 4] ++ eraseCarry 0 1 2 3
+                                                                                    
 
-def topReceiver : Program := eraseCarry 0 1 2 4 ++ [.CX 5 4]
+                                                            
 
 
 
@@ -45306,8 +45306,8 @@ open FieldRename
 attribute [local irreducible] literalConstAdd compareLt rotateLeft rotateRight signComplement
   addInPlace subInPlace mappedAdd mappedSub swapRegisters transcriptSelectWindow
 
-theorem bf_r_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
-    (mapCircuit f L).r=L.r.map f := r_map f L.toLayout
+                                                                 
+                                                      
 theorem bf_y_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
     (mapCircuit f L).y=L.y.map f := y_map f L.toLayout
 theorem bf_low_map (f : Wire → Wire) (L : BalancedCircuit.Layout) :
@@ -45345,12 +45345,12 @@ theorem bf_flip_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) (hw : L
 
 
 
-theorem bf_suffix_natural (f : Wire → Wire) (L : BalancedCircuit.Layout) :
-    renameProgram f (BiasedCircuit.cleanupSuffix L)=BiasedCircuit.cleanupSuffix (mapCircuit f L) := by
-  simp only [BiasedCircuit.cleanupSuffix,BalancedCleanup.unnormalize,BalancedCleanup.prepareCompare,
-    rename_append,rename_reverse,prepareSign_natural,literalConstAdd_natural,rotateLeft_natural,
-    signComplement_natural,compareLt_natural,bf_low_map,bf_r_map,bf_y_map,List.map_take]
-  rfl
+                                                                          
+                                                                                                      
+                                                                                                    
+                                                                                                
+                                                                                        
+     
 
 
 
@@ -47079,13 +47079,13 @@ theorem seed_natural (f : Wire → Wire) (L : Layout) (hy : L.ylow≠[]) :
     [.CX (f L.ymsb) (f L.sourceGuard)]++seed (mapCircuit f L) at h
   exact List.append_cancel_left h
 
-theorem cleanup_natural (f : Wire → Wire) (L : Layout) :
-    renameProgram f (cleanup L)=cleanup (mapCircuit f L) := by
-  have h:=bf_suffix_natural f L
-  simp only [old_cleanup_eq,rename_append] at h
-  change renameProgram f (cleanup L)++[.CX (f L.ymsb) (f L.sourceGuard)]=
-    cleanup (mapCircuit f L)++[.CX (f L.ymsb) (f L.sourceGuard)] at h
-  exact List.append_cancel_right h
+                                                        
+                                                              
+                               
+                                               
+                                                                         
+                                                                     
+                                  
 
 
 
@@ -47383,8 +47383,8 @@ theorem window_reset (a n h b c : Wire) (Q : Program) (s : State) (m : List Bool
   rw [eq,run_append]
   simp [run,measureAndCorrect,writeBit]
 
-def recycledWindow (a n h b c : Wire) (Q : Program) : Program :=
-  renameProgram (Equiv.swap b c) (erase b (window a n h b c Q))
+                                                                
+                                                               
 
 
 
@@ -48598,10 +48598,10 @@ namespace ECDSAAdd.Entrant.OneReuse
 open ECDSAAdd.Arithmetic FieldRename ShortKernelDependencies
 attribute [local irreducible] mappedAdd mappedSub rotateLeft rotateRight
 
-theorem addBody_natural (f : Wire → Wire) (L : Layout) :
-    renameProgram f (addBody L)=addBody (mapCircuit f L) := by
-  simp only [addBody,mappedAdd_natural,ShortBiasedNatural.lowBits_map,List.map_take,bf_low_map]
-  rfl
+                                                        
+                                                              
+                                                                                               
+     
 
 
 
@@ -51399,7 +51399,7 @@ namespace ECDSAAdd.Entrant.FifthCarry
 open ECDSAAdd.Arithmetic
 attribute [local irreducible] wires
 
-def activeSites (L : Layout) : List Wire := [L.parity,L.one,L.sign,L.lower]++L.y++L.r++L.carry.take 255
+                                                                                                       
 
 
 
@@ -52239,10 +52239,10 @@ theorem compareChainTop_physical (x y carry : List Wire) (cin t : Wire)
         · simp only [gatePhysical_append]
           exact ⟨majority_physical _ _ _ _ hs, ih ys ks k ht⟩
 
-theorem compareLtTop_physical (x y carry : List Wire) (cin t : Wire)
-    (hn : (t :: cin :: x ++ y ++ carry).Nodup) : GatePhysical (compareLtTop x y carry cin t) := by
-  simp only [compareLtTop, gatePhysical_append]
-  exact ⟨⟨notRegister_physical _, compareChainTop_physical _ _ _ _ _ hn⟩, notRegister_physical _⟩
+                                                                    
+                                                                                                  
+                                               
+                                                                                                 
 
 open Baselines Challenge in
 theorem compareChainTop_gateSlots_le (x y cs : List Wire) (c t : Wire) :
@@ -54525,8 +54525,8 @@ def body (divide : Bool) (L : Layout) (eff : Wire) : Program :=
   if divide then half true L++swapRegisters eff L.r L.y
   else swapRegisters eff L.r L.y++half false L
 
-def oldBody (divide : Bool) (L : Layout) (eff : Wire) : Program :=
-  if divide then balancedTranscriptBody L eff else balancedInverseTranscriptBody L eff
+                                                                  
+                                                                                      
 
 
 
@@ -56166,8 +56166,8 @@ def body (divide : Bool) (L : Layout) (eff : Wire) : Program :=
   if divide then half true L++swapRegisters eff L.r L.y
   else swapRegisters eff L.r L.y++half false L
 
-def oldBody (divide : Bool) (L : Layout) (eff : Wire) : Program :=
-  if divide then balancedTranscriptBody L eff else balancedInverseTranscriptBody L eff
+                                                                  
+                                                                                      
 
 theorem body_support (divide : Bool) (L : Layout) (eff : Wire) (hw : L.Widths) :
     wires (body divide L eff)⊆(eff::L.wires).toFinset := by
@@ -59498,7 +59498,7 @@ theorem base_pool (l : Nat) (hl : l < 1798) : base l ∈ skywalkPoolWires base :
 def integerSites : Finset Wire :=
   (wireBlock base 0 515++wireBlock base 770 515++wireBlock base 1540 257).toFinset
 
-abbrev Good (q : Wire) : Prop := q∈integerSites
+                                               
 
 theorem integerSites_mem (q : Wire) : q∈integerSites ↔
     ∃l,q=base l ∧ (l<515 ∨ (770≤l ∧ l<1285) ∨ (1540≤l ∧ l<1797)) := by
@@ -61046,7 +61046,7 @@ abbrev prime_facts := StackOB5Base.prime_facts
 abbrev stage_one := StackOB5Base.stage_one
 abbrev stage_zero := StackOB5Base.stage_zero
 abbrev integerSites := StackOB5Base.integerSites
-abbrev Good := StackOB5Base.Good
+                                
 end ECDSAAdd.Entrant.StackOB5
 
 
@@ -71689,17 +71689,17 @@ theorem mrel_wires {P Q : Program} (h : List.Forall₂ MRel P Q) : wires Q = wir
       simp [Instr.wires, correctionWires]
       tauto
 
-theorem mrel_physical {P Q : Program} (h : List.Forall₂ MRel P Q) (hP : GatePhysical P) :
-    GatePhysical Q := by
-  induction h with
-  | nil => intro i hi; simp at hi
-  | @cons i j P Q hij _ ih =>
-    intro k hk
-    rcases List.mem_cons.mp hk with rfl | hk
-    · rcases hij with rfl | ⟨a, b, t, rfl, rfl⟩
-      · exact hP k (by simp)
-      · simp [RecordedQuantum.PhysicalInstr]
-    · exact ih (fun x hx => hP x (by simp [hx])) k hk
+                                                                                         
+                        
+                  
+                                 
+                             
+              
+                                            
+                                               
+                            
+                                            
+                                                     
 
 theorem mrel_slots {P Q : Program} (h : List.Forall₂ MRel P Q) : gateSlots Q ≤ 2 * gateSlots P := by
   induction h with
@@ -72139,8 +72139,8 @@ theorem sharedM_rename_wires (L : ControlledPointLayout) (f : Wire → Wire) (C 
     wires (renameProgram f (sharedM L C)) = wires (renameProgram f (shared L C)) :=
   mrel_wires (mrel_rename f (sharedM_mrel L C))
 
-def outStage (L : ControlledPointLayout) (C : Point) : Program :=
-  zeroFlag L.point.finite L.control L.core.generic ++ corners2 L C ++ shared L C
+                                                                 
+                                                                                
 
 def outStageM (L : ControlledPointLayout) (C : Point) : Program :=
   zeroFlag L.point.finite L.control L.core.generic ++ corners2 L C ++ sharedM L C
@@ -72399,9 +72399,9 @@ theorem finite_spec (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.No
 
 
 
-theorem shared_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (C : Point) : GatePhysical (shared L C) :=
-  affineInputWith_physical _ _ _ _ _ _ _ _ _ _ _ _ _ _ (shared_nodup L hw hn)
+                                                                                        
+                                              
+                                                                             
 
 theorem shared_wires (L : ControlledPointLayout) (hw : L.Widths) (C : Point) :
     wires (shared L C) ⊆ (L.control::yLow L::L.core.generic::L.core.equalNegY::L.doubleSelect::
@@ -72602,20 +72602,20 @@ theorem wrapper_avoids (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires
   · exact old h
   · exact small_away L hw hn k hk (extra_small L hw hn C h)
 
-theorem finite_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (C : Point) (cy : Fp) (Gen : Program) (hG : GatePhysical Gen) :
-    GatePhysical (finiteProgram L C cy Gen) := by
-  have hp := finiteProgramN_physical L hw hn C cy Gen hG
-  have hs := gatePhysical_rename (sigP L) (sigP_injective L hw hn) (sharedM L C)
-    (mrel_physical (sharedM_mrel L C) (shared_physical L hw hn C))
-  simp only [finiteProgramN,ECDSAAdd.Entrant.outTail,rename_append,gatePhysical_append] at hp
-  simp only [finiteProgram,rename_append,gatePhysical_append]
-  tauto
+                                                                                        
+                                                                   
+                                                 
+                                                        
+                                                                                
+                                                                  
+                                                                                             
+                                                             
+       
 
-theorem wrapper_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (C : Point) (cy : Fp) (Gen : Program) (hG : GatePhysical Gen) : GatePhysical (wrapper L C cy Gen) :=
-  gatePhysical_rename (Wrapper5.U L) (Wrapper5.U L).injective _
-    (finite_physical L hw hn C cy _ (gatePhysical_rename (Wrapper5.U L) (Wrapper5.U L).injective Gen hG))
+                                                                                         
+                                                                                                        
+                                                               
+                                                                                                         
 
 theorem shared_slots (L : ControlledPointLayout) (hw : L.Widths) (C : Point) :
     gateSlots (shared L C) ≤ 2836 := by
@@ -73268,8 +73268,8 @@ theorem hostField5S_sub : SW.InstrSub2 hostField5S (KernelOB5.segH true) := by
       (SW.InstrSub2.refl [.X (base 511)]))
   simpa only [hostField5S,KernelOB5.segH] using h
 
-theorem hostField5_free : base 1026∉wires hostField5 := fun used =>
-  OwnQ5Actual.hosted_field_free true (hostField5_sub.wires_sub used)
+                                                                   
+                                                                    
 theorem hostField5S_free : base 1026∉wires hostField5S := fun used =>
   OwnQ5Actual.hosted_field_free true (hostField5S_sub.wires_sub used)
 
@@ -73285,9 +73285,9 @@ theorem hostField5S_free : base 1026∉wires hostField5S := fun used =>
 
 
 
-theorem field5S_physical : GatePhysical field5S := by
-  have cfg := MappedCompressed.LaneA.laneLogical_config
-  exact field5S_sub.physical (SegmentOB5.program_physical true cfg.1 cfg.2.1 cfg.2.2)
+                                                     
+                                                       
+                                                                                     
 
 theorem host_physical (P : Program) (hp : GatePhysical P) :
     GatePhysical ([.X (base 511)] ++ (renameProgram HostOB5.hostSwap P ++ [.X (base 511)])) := by
@@ -73300,8 +73300,8 @@ theorem host_physical (P : Program) (hp : GatePhysical P) :
   exact ⟨x,gatePhysical_rename HostOB5.hostSwap HostOB5.hostSwap_injective P hp,x⟩
 
 
-theorem hostField5S_physical : GatePhysical hostField5S := by
-  simpa only [hostField5S] using host_physical field5S field5S_physical
+                                                             
+                                                                       
 
 theorem selField5 : SW.Sel (base 2400) 1020 field5S field5 := by
   have canonSub : InstrSub OwnQ5Endpoint.canonT (SW.segmentS true) := by
@@ -76427,25 +76427,25 @@ theorem kernel5S_counts_diff :
   have old := OwnQ5SW.kernelQ_counts true
   simpa only [kernel5S,c.1,c.2,old.1,old.2] using EntryFuse.kernel5S_counts_diff
 
-theorem kernel5_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    DirectSkywalkArithmeticStrong true base (base 2400) x Y s (run kernel5 m t) := by
-  have old := EntryFuse.kernel5_correct hn hlo ho hf x Y hx0 hx s t m hin hg0 hs0 phase same value
-  have contract : DirectSkywalkArithmeticStrong true base (base 2400) x Y s
-      (run (Q5FusionPhase.kernel hostField5) m t) := by
-    simpa only [old_shape] using old
-  have eq := Q5FusionPhase.state_eq_of_contract hn x Y hx0 hx s t m hostField5 true
-    hin same hostField5_free contract
-  rw [kernel5,eq]
-  exact contract
+                       
+                                                                             
+                                                                       
+                                                                                                          
+                                                                           
+                                                       
+                                                                       
+                             
+                                                               
+                                                                           
+                                                                                     
+                                                                                                  
+                                                                           
+                                                       
+                                    
+                                                                                   
+                                     
+                 
+                
 
 theorem kernel5S_correct
     (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
@@ -77283,14 +77283,14 @@ section EdgesSupport
 open FiniteHostStack FiniteHostFusion FiniteHostFive
 attribute [local irreducible] wires genFFused midFFused genericFFused
 
-theorem edgesFFused_avoids (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (C : Point) (cx cy : Fp) (k : Nat) (hk : 515≤k ∧ k<2613)
-    (old : L.core.poolWire k∉wires (WrapperOB5.program L C cy (genFFused L cx cy))) :
-    L.core.poolWire k∉wires (Edges.wrapper L C cy (genFFused L cx cy)) := by
-  intro h
-  rcases Finset.mem_union.mp (Edges.wrapper_wires L C cy _ h) with h|h
-  · exact old h
-  · exact Edges.small_away L hw hn k hk (Edges.extra_small L hw hn C h)
+                                                                                           
+                                                            
+                                                                                     
+                                                                            
+         
+                                                                      
+               
+                                                                       
 
 end EdgesSupport
 
@@ -79153,26 +79153,26 @@ theorem field_canonical_pair_logical (hn : (skywalkSharedWires base).Nodup)
   intro q hq
   exact (congrFun (congrArg State.basis eq) q).trans (same q hq)
 
-theorem field_canonical_pair (hn : (skywalkSharedWires base).Nodup)
-    (origin : BasisState) (hr : origin (base 2312)=false) (hy : origin (base 1026)=false)
-    (H : Fp) (a b : State)
-    (half : FieldFrameOB5.EncodedFieldFrame origin H 0 a)
-    (canon : FieldFrameOB5.EncodedCanonicalFrame origin (2*H) 0 b)
-    (phase : a.phase=b.phase) :
-    regValue (wireBlock base 2056 256) a.basis=centerWord H ∧
-    ∀q,q∉wireBlock base 2056 256 → a.basis q=b.basis q := by
-  have same := field_canonical_pair_logical hn origin hr hy H
-    (pullState (OB5.sig 511) a) (pullState (OB5.sig 511) b) half canon phase
-  have value := encoded_field_value origin H 0 (pullState (OB5.sig 511) a) half
-  constructor
-  · apply (regValue_congr _ _ _ ?_).trans value
-    intro q hq
-    change a.basis q=a.basis (OB5.sig 511 q)
-    rw [EntryFuse.sig_num_fix q hq]
-  · intro q hq
-    have h := same (OB5.sig 511 q) (EntryFuse.sig_num_away q hq)
-    change a.basis (OB5.sig 511 (OB5.sig 511 q))=b.basis (OB5.sig 511 (OB5.sig 511 q)) at h
-    simpa only [OB5.sig_invol 511 (by decide)] using h
+                                                                   
+                                                                                         
+                          
+                                                         
+                                                                  
+                               
+                                                             
+                                                            
+                                                             
+                                                                            
+                                                                               
+             
+                                               
+              
+                                            
+                                   
+              
+                                                                
+                                                                                           
+                                                      
 
 def fieldMul : Program := OwnQ5Endpoint.centerT ++
   (HalfFieldOB5.copyN ++ OneBankReplay5.replay false)
@@ -79181,60 +79181,60 @@ attribute [local irreducible] fieldMul OneBankReplay5.replay OwnQ5Endpoint.cente
 theorem full_field_shape : SegmentOB5.program false=fieldMul++OwnQ5Endpoint.canonT := by
   simp only [SegmentOB5.program,fieldMul,Bool.false_eq_true,if_false,List.append_assoc]
 
-theorem fieldMul_frame
-    (hn : (skywalkSharedWires base).Nodup)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (origin : BasisState) (hg0 : origin (base 2409)=false) (hs0 : origin (base 2410)=false)
-    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
-    (hr : origin (base 2312)=false) (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    let H := if origin (base 2400) then Y/2*(x:Fp) else Y/2
-    (run fieldMul m s).phase=s.phase ∧
-      FieldFrameOB5.EncodedFieldFrame origin H 0 (run fieldMul m s) := by
-  let c := run OwnQ5Endpoint.centerT (m.take (measurementCount OwnQ5Endpoint.centerT)) s
-  let rest := m.drop (measurementCount OwnQ5Endpoint.centerT)
-  let d := run HalfFieldOB5.copyN (rest.take (measurementCount HalfFieldOB5.copyN)) c
-  have c1 := OwnQ5Endpoint.center_frame hn (hp _ (by simp)) origin env legal hr ha Y s
-    (m.take (measurementCount OwnQ5Endpoint.centerT)) input
-  have c2 := HalfFieldOB5.copy_fill hn origin (Y/2) c
-    (rest.take (measurementCount HalfFieldOB5.copyN)) c1.2
-  let ctx : OneBankReplay5.Context origin := ⟨hn,ho,hp,hf,hg0,hs0,env,legal,hr⟩
-  have c3 := OneBankReplay5.inverse_frame origin ctx x hx0 hx trace (Y/2) d
-    (rest.drop (measurementCount HalfFieldOB5.copyN)) c2.2
-  exact ⟨by simpa only [fieldMul,run_append,c,d,rest] using c3.1.trans (c2.1.trans c1.1),
-    by simpa only [fieldMul,run_append,c,d,rest] using c3.2⟩
+                      
+                                          
+                                                                       
+                                                                     
+                                                                                                          
+                                                                                           
+                                                                       
+                                                                                        
+                                    
+                                                                 
+                                                                               
+                                                                                                     
+                                                           
+                                      
+                                                                         
+                                                                                        
+                                                             
+                                                                                     
+                                                                                      
+                                                           
+                                                     
+                                                          
+                                                                               
+                                                                           
+                                                          
+                                                                                         
+                                                            
 
-theorem fieldMul_pair
-    (hn : (skywalkSharedWires base).Nodup)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (origin : BasisState) (hg0 : origin (base 2409)=false) (hs0 : origin (base 2410)=false)
-    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
-    (hr : origin (base 2312)=false) (hy : origin (base 1026)=false)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    let a := run fieldMul m s
-    let b := run (SegmentOB5.program false) m s
-    let H := if origin (base 2400) then Y/2*(x:Fp) else Y/2
-    a.phase=b.phase ∧ regValue (wireBlock base 2056 256) a.basis=centerWord H ∧
-      ∀q,q∉wireBlock base 2056 256 → a.basis q=b.basis q := by
-  have half := fieldMul_frame hn ho hp hf origin hg0 hs0 env legal hr ha x hx0 hx trace Y s m input
-  have canon := OwnQ5Endpoint.canon_frame hn (hp _ (by simp)) origin env legal hr ha _
-    (run fieldMul m s) (m.drop (measurementCount fieldMul)) half.2
-  have shape : run (SegmentOB5.program false) m s=
-      run OwnQ5Endpoint.canonT (m.drop (measurementCount fieldMul)) (run fieldMul m s) := by
-    rw [full_field_shape,run_append,run_take]
-  rw [←shape] at canon
-  exact ⟨canon.1.symm,field_canonical_pair hn origin hr hy _ _ _ half.2 canon.2 canon.1.symm⟩
+                     
+                                          
+                                                                       
+                                                                     
+                                                                                                          
+                                                                                           
+                                                                       
+                                                                   
+                                                        
+                                    
+                                                                 
+                                                                               
+                                                                                                     
+                             
+                                               
+                                                           
+                                                                               
+                                                              
+                                                                                                   
+                                                                                      
+                                                                  
+                                                  
+                                                                                            
+                                             
+                      
+                                                                                             
 
 def hostMul : Program := [.X (base 511)] ++
   (renameProgram HostOB5.hostSwap fieldMul ++ [.X (base 511)])
@@ -79253,59 +79253,59 @@ theorem hostMul_sub : LaneI.InstrSub hostMul (KernelOB5.segH false) := by
     ((fieldMul_sub.rename HostOB5.hostSwap).append (LaneI.InstrSub.refl [.X (base 511)]))
   simpa only [hostMul,KernelOB5.segH] using h
 
-theorem hostMul_free : base 1026∉wires hostMul := fun used =>
-  OwnQ5Actual.hosted_field_free false (hostMul_sub.wires_sub used)
+                                                             
+                                                                  
 
-theorem hostMul_pair
-    (hn : (skywalkSharedWires base).Nodup)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (origin : BasisState) (hg0 : origin (base 2409)=false) (hs0 : origin (base 2410)=false)
-    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
-    (hr : origin (base 2312)=false) (hy : origin (base 1026)=false)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedCanonicalFrame origin Y 0 s)
-    (in511 : s.basis (base 511)=true) (in1542 : s.basis (base 1542)=false) :
-    let a := run hostMul m s
-    let b := run (KernelOB5.segH false) m s
-    let H := if origin (base 2400) then Y/2*(x:Fp) else Y/2
-    a.phase=b.phase ∧ regValue (wireBlock base 2056 256) a.basis=centerWord H ∧
-      ∀q,q∉wireBlock base 2056 256 → a.basis q=b.basis q := by
-  have pair := fieldMul_pair hn ho hp hf origin hg0 hs0 env legal hr hy ha x hx0 hx trace Y s m input
-  have old := SegmentOB5.program_spec false hn ho hp hf origin hg0 hs0 env legal hr ha x hx0 hx trace Y s m input
-  have ins := EntryFuse.encoded_selectors5 hn hp origin hg0 hs0 ha Y s input
-  have outs := EntryFuse.encoded_selectors5 hn hp origin hg0 hs0 ha _ _ old.2
-  have away (i : Nat) (hi : i=2409 ∨ i=2410) : base i∉wireBlock base 2056 256 :=
-    OwnPlusHost.not_block i 2056 256 (by rcases hi with rfl|rfl <;> omega)
-  have qg : (run fieldMul m s).basis (base 2409)=false :=
-    (pair.2.2 _ (away 2409 (Or.inl rfl))).trans outs.1
-  have qs : (run fieldMul m s).basis (base 2410)=false :=
-    (pair.2.2 _ (away 2410 (Or.inr rfl))).trans outs.2
-  have oldfree := KernelOB5.seg_free false
-  have short := HostOB5.hosted_run fieldMul s m
-    (fun h => oldfree.1 (fieldMul_sub.wires_sub h))
-    (fun h => oldfree.2 (fieldMul_sub.wires_sub h)) ins.1 in511 ins.2 in1542 qg qs
-  have full := HostOB5.hosted_run (SegmentOB5.program false) s m
-    oldfree.1 oldfree.2 ins.1 in511 ins.2 in1542 outs.1 outs.2
-  simpa only [hostMul,KernelOB5.segH,short,full] using pair
+                    
+                                          
+                                                                       
+                                                                     
+                                                                                                          
+                                                                                           
+                                                                       
+                                                                   
+                                                        
+                                    
+                                                                 
+                                                                               
+                                                                                                   
+                                                                            
+                            
+                                           
+                                                           
+                                                                               
+                                                              
+                                                                                                     
+                                                                                                                 
+                                                                            
+                                                                             
+                                                                                
+                                                                          
+                                                         
+                                                      
+                                                         
+                                                      
+                                          
+                                               
+                                                   
+                                                                                  
+                                                                
+                                                              
+                                                           
 
-theorem clear_pool : wires (skywalkArithmeticClear base)⊆(skywalkPoolWires base).toFinset := EntryFuse.clear_pool5
+                                                                                                                  
 
-theorem reverse_pool : wires stackReverseT⊆(skywalkPoolWires base).toFinset := by
-  apply stackReverseT_subset.trans
-  apply StackOB5.reverse_support.trans
-  intro q hq
-  obtain ⟨i,rfl,hi⟩ := (OB5.integerSites_mem q).mp hq
-  exact List.mem_toFinset.mpr (arith_mem base 0 1798 i (by omega) (by omega))
+                                                                                 
+                                  
+                                      
+            
+                                                     
+                                                                             
 
-theorem native_inverse_pool : wires (NativeFirstKnown.inverse base)⊆(skywalkPoolWires base).toFinset := by
-  apply (NativeFirstKnown.inverse_support base).trans
-  intro q hq
-  exact List.mem_toFinset.mpr (NativeFirstDirect.prefix_pool_subset base (List.mem_toFinset.mp hq))
+                                                                                                          
+                                                     
+            
+                                                                                                   
 
 def rawKernel : Program :=
   NativeFirstDirect.forward base ++ stackForwardT ++ skywalkArithmeticClear base ++
@@ -79313,111 +79313,111 @@ def rawKernel : Program :=
 attribute [local irreducible] rawKernel NativeFirstDirect.forward NativeFirstKnown.inverse
   stackForwardT stackReverseT skywalkArithmeticClear compactForward5
 
-theorem rawKernel_states
-    (hn : (skywalkSharedWires base).Nodup) (hlo : HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State)
-    (m1 m2 m3 m4 m5 m6 m7 : List Bool) (input : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (s1 s2 s3 s4 s5 s6 s7 : State)
-    (h1 : run (NativeFirstDirect.forward base) m1 s=s1)
-    (h2 : run stackForwardT m2 s1=s2)
-    (h3 : run (skywalkArithmeticClear base) m3 s2=s3)
-    (h4 : run hostMul m4 s3=s4)
-    (h5 : run (skywalkArithmeticClear base) m5 s4=s5)
-    (h6 : run stackReverseT m6 s5=s6)
-    (h7 : run (NativeFirstKnown.inverse base) m7 s6=s7) :
-    s7.phase=s.phase ∧
-      regValue (wireBlock base 2056 256) s7.basis=
-        centerWord (directSkywalkResult false (s.basis (base 2400)) x Y/2) ∧
-      ∀q,q∉wireBlock base 2056 256 → s7.basis q=s.basis q := by
-  have first := NativeFirstDirect.caller_first_stage base hn x Y.val hx0 hx s m1 input
-  rw [h1] at first
-  have firstW := (W.compactSkywalkStage_one base _ s1.basis).mpr first
-  let t2 := run (compactForward5 base 1 511) m2 s1
-  let t3 := run (skywalkArithmeticClear base) m3 t2
-  obtain ⟨hp0,hpo,hpp,cop⟩ := OB5.prime_facts x hx0 hx
-  have gap : p+2^32≤2^256 := by norm_num [p]
-  have wEq : run (Stack5.forward5 base 1 511) m2 s1=t2 :=
-    Stack5.forward_old_eq base (skywalkShared_integer_nodup base hn) hlo x p hp0 hx0 hpo hpp
-      gap hx cop s1 m2 m2 first
-  have e2 : s2=pullState (OB5.sig 511) t2 := by
-    rw [←h2,stackForwardT_run hn hlo x hx0 hx s1 m2 firstW]
-    have fwd := StackOB5.forward_run x hx0 hx s1 m2 firstW
-    rw [wEq] at fwd
-    exact fwd
-  have e3 : s3=pullState (OB5.sig 511) t3 := by
-    rw [←h3,e2,KernelOB5.clear_placed]
-  obtain ⟨origin,facts,legal,_,encEq,entry⟩ := Kernel5.preparation_facts5 hn hlo ho x Y hx0 hx s
-    m1 m2 m3 input s1 t2 t3 h1 rfl rfl first
-  have hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base := by
-    intro q hq bad
-    exact ho q hq (arith_block_subset_shared base 0 1798 (by omega) bad)
-  have hg : origin.basis (base 2409)=false := (facts.controls _ (by simp)).trans hg0
-  have hs : origin.basis (base 2410)=false := (facts.controls _ (by simp)).trans hs0
-  have placed : FieldFrameOB5.EncodedCanonicalFrame origin.basis Y 0 s3 := by
-    change EncodedCanonicalFrame5 origin.basis Y 0 (pullState (OB5.sig 511) s3)
-    rw [e3,OB5.pull_invol 511 (by decide)]
-    exact entry
-  have bits := EntryFuse.encoded_host_bits5 x hx0 hx origin t3 s3 facts.trace encEq e3
-  have pair := hostMul_pair hn ho hp hf origin.basis hg hs facts.env legal facts.targetHigh
-    facts.sourceHigh facts.sourceZero x hx0 hx facts.trace Y s3 m4 placed bits.1 bits.2
-  rw [h4] at pair
-  let v4 := run (KernelOB5.segH false) m4 s3
-  let v5 := run (skywalkArithmeticClear base) m5 v4
-  let v6 := run stackReverseT m6 v5
-  let v7 := run (NativeFirstKnown.inverse base) m7 v6
-  have old := KernelOB5.program_states false hn hlo ho hf x Y hx0 hx s m1 m2 m3 m4 m5 m6 m7
-    input hg0 hs0 s1 s2 s3 v4 v5 v6 v7 h1 h2 h3 rfl rfl rfl rfl
-  have after := EntryFuse.pool_three (skywalkArithmeticClear base) stackReverseT
-    (NativeFirstKnown.inverse base) clear_pool reverse_pool native_inverse_pool s4 v4 m5 m6 m7
-    pair.1 pair.2.2 v5 v6 v7 rfl rfl rfl
-  change (run (NativeFirstKnown.inverse base) m7
-      (run stackReverseT m6 (run (skywalkArithmeticClear base) m5 s4))).phase=v7.phase ∧
-    (∀q,q∉wireBlock base 2056 256 →
-      (run (NativeFirstKnown.inverse base) m7
-        (run stackReverseT m6 (run (skywalkArithmeticClear base) m5 s4))).basis q=v7.basis q) ∧ _ at after
-  rw [h5,h6,h7] at after
-  have keeps (q : Wire) (hq : q∈wireBlock base 2056 256) : s7.basis q=s4.basis q := by
-    have away (P : Program) (hpP : wires P⊆(skywalkPoolWires base).toFinset) : q∉wires P :=
-      fun used => EntryFuse.pool_away q (List.mem_toFinset.mp (hpP used)) hq
-    rw [←h7,run_preserves_outside _ _ _ _ (away _ native_inverse_pool),
-      ←h6,run_preserves_outside _ _ _ _ (away _ reverse_pool),
-      ←h5,run_preserves_outside _ _ _ _ (away _ clear_pool)]
-  have H : (if origin.basis (base 2400) then Y/2*(x:Fp) else Y/2)=
-      directSkywalkResult false (s.basis (base 2400)) x Y/2 := by
-    rw [facts.controls _ (by simp)]
-    unfold directSkywalkResult skywalkArithmeticResult
-    cases s.basis (base 2400) <;> simp only [Bool.false_eq_true,if_false,if_true]
-    ring
-  refine ⟨after.1.trans old.1,?_,fun q hq => (after.2.1 q hq).trans (old.2.2 q hq)⟩
-  exact (regValue_congr _ _ _ keeps).trans (pair.2.1.trans (congrArg centerWord H))
+                        
+                                                                    
+                                                                       
+                                                                                                          
+                                                         
+                                                                                            
+                                                                       
+                                  
+                                                       
+                                     
+                                                     
+                               
+                                                     
+                                     
+                                                         
+                      
+                                                  
+                                                                            
+                                                               
+                                                                                      
+                  
+                                                                      
+                                                  
+                                                   
+                                                      
+                                            
+                                                         
+                                                                                            
+                               
+                                               
+                                                           
+                                                          
+                   
+             
+                                               
+                                      
+                                                                                                
+                                            
+                                                                            
+                  
+                                                                        
+                                                                                    
+                                                                                    
+                                                                             
+                                                                               
+                                          
+               
+                                                                                      
+                                                                                           
+                                                                                       
+                 
+                                            
+                                                   
+                                   
+                                                     
+                                                                                           
+                                                               
+                                                                                
+                                                                                              
+                                        
+                                                
+                                                                                        
+                                   
+                                             
+                                                                                                          
+                        
+                                                                                      
+                                                                                           
+                                                                            
+                                                                       
+                                                              
+                                                            
+                                                                  
+                                                                 
+                                   
+                                                      
+                                                                                 
+        
+                                                                                   
+                                                                                   
 
-theorem rawKernel_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (input : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false) :
-    let out := run rawKernel m s
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=
-      centerWord (directSkywalkResult false (s.basis (base 2400)) x Y/2) ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  let P : State → State → Prop := fun initial out =>
-    SkywalkArithmeticInput base x Y.val initial.basis → initial.basis (base 2409)=false →
-    initial.basis (base 2410)=false →
-    out.phase=initial.phase ∧ regValue (wireBlock base 2056 256) out.basis=
-      centerWord (directSkywalkResult false (initial.basis (base 2400)) x Y/2) ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=initial.basis q
-  have all := skywalkRunSeven (NativeFirstDirect.forward base) stackForwardT
-    (skywalkArithmeticClear base) hostMul (skywalkArithmeticClear base) stackReverseT
-    (NativeFirstKnown.inverse base) P (by
-      intro initial s1 s2 s3 s4 s5 s6 s7 m1 m2 m3 m4 m5 m6 m7 h1 h2 h3 h4 h5 h6 h7 hin hg hs
-      exact rawKernel_states hn hlo ho hf x Y hx0 hx initial m1 m2 m3 m4 m5 m6 m7 hin hg hs
-        s1 s2 s3 s4 s5 s6 s7 h1 h2 h3 h4 h5 h6 h7) s m
-  simpa only [rawKernel,List.append_assoc] using all input hg0 hs0
+                         
+                                                                    
+                                                                       
+                                                                                                          
+                                                                         
+                                                         
+                                                                         
+                                
+                                                                     
+                                                                          
+                                                                
+                                                    
+                                                                                         
+                                     
+                                                                           
+                                                                                
+                                                                
+                                                                            
+                                                                                     
+                                         
+                                                                                            
+                                                                                           
+                                                      
+                                                                  
 
 def kernel : Program := Q5FusionPhase.relocated hostMul
 attribute [local irreducible] kernel Q5FusionPhase.kernel
@@ -79425,21 +79425,21 @@ attribute [local irreducible] kernel Q5FusionPhase.kernel
 theorem raw_shape : Q5FusionPhase.kernel hostMul=rawKernel := by
   simp only [Q5FusionPhase.kernel,Q5Global718.firstPhase,Q5Global718.lastPhase,rawKernel,List.append_assoc]
 
-theorem kernel_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (input : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false) :
-    let out := run kernel m s
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=
-      centerWord (directSkywalkResult false (s.basis (base 2400)) x Y/2) ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  have old := rawKernel_correct hn hlo ho hf x Y hx0 hx s m input hg0 hs0
-  have eq := Q5FusionPhase.state_eq_of_frame hn x Y hx0 hx s s m hostMul input
-    (fun _ _ => rfl) hostMul_free (by simpa only [raw_shape] using old.2.2)
-  simpa only [kernel,eq,raw_shape] using old
+                      
+                                                                    
+                                                                       
+                                                                                                          
+                                                                         
+                                                         
+                                                                         
+                             
+                                                                     
+                                                                          
+                                                                
+                                                                         
+                                                                              
+                                                                           
+                                            
 
 def fieldMulS : Program := OwnQ5Endpoint.centerT ++ (HalfFieldOB5.copyN ++ SW.replayS false)
 def hostMulS : Program := [.X (base 511)] ++
@@ -79475,58 +79475,58 @@ theorem selKernel : SW.Sel (base 2400) 1020 kernelS kernel := by
 
 
 open SW
-theorem kernelS_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0 < x) (hx : x < p) (s : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false) :
-    (run kernelS m s).phase=s.phase ∧
-    regValue (skywalkArithmeticNumerator base) (run kernelS m s).basis=
-      centerWord (Y*(x:Fp)/2) ∧
-    ∀ q,q∉skywalkArithmeticNumerator base → (run kernelS m s).basis q=s.basis q := by
-  have sel := selKernel
-  let t : State := ⟨s.phase,writeBit s.basis (base 2400) true⟩
-  have tq (q : Wire) (hq : q≠base 2400) : t.basis q=s.basis q := by
-    simp only [t,writeBit,Function.update_of_ne hq]
-  have tb : t.basis (base 2400)=true := by simp only [t,writeBit,Function.update_self]
-  have bShared : base 2400∉skywalkSharedWires base := ho _ (by simp)
-  have bDiv : base 2400∉skywalkArithmeticDivisor base := fun h =>
-    bShared (arith_block_subset_shared base 770 256 (by omega) h)
-  have bNum : base 2400∉skywalkArithmeticNumerator base := fun h =>
-    bShared (arith_block_subset_shared base 2056 256 (by omega) h)
-  have tin : SkywalkArithmeticInput base x Y.val t.basis := by
-    refine ⟨?_,?_,?_⟩
-    · rw [←hin.1]
-      exact regValue_congr _ _ _ (fun q hq => tq q (fun e => bDiv (e ▸ hq)))
-    · rw [←hin.2.1]
-      exact regValue_congr _ _ _ (fun q hq => tq q (fun e => bNum (e ▸ hq)))
-    · intro q hq hdx hdy
-      rw [tq q (fun e => bShared (e ▸ hq))]
-      exact hin.2.2 q hq hdx hdy
-  have tg : t.basis (base 2409)=false := (tq _ (by simp [base])).trans hg0
-  have ts : t.basis (base 2410)=false := (tq _ (by simp [base])).trans hs0
-  have spec := kernel_correct hn hlo ho hf x Y hx0 hx t m tin tg ts
-  obtain ⟨eq,_⟩ := sel.eq m t tb
-  rw [tb,←eq] at spec
-  have agree := pool_run_agrees kernelS (wires kernelS)
-    (Finset.Subset.refl _) m s t rfl (fun w hw => (tq w (fun e => sel.away (e ▸ hw))).symm)
-  have same (q : Wire) (hq : q≠base 2400) :
-      (run kernelS m s).basis q=(run kernelS m t).basis q := by
-    by_cases hw : q∈wires kernelS
-    · exact agree.2 q hw
-    · rw [run_preserves_outside _ m s q hw,run_preserves_outside _ m t q hw,tq q hq]
-  refine ⟨agree.1.trans spec.1,?_,?_⟩
-  · have r := spec.2.1
-    simp only [directSkywalkResult,skywalkArithmeticResult,Bool.false_eq_true,if_false,if_true] at r
-    rw [←r]
-    exact regValue_congr _ _ _ (fun q hq => same q (fun e => bNum (e ▸ hq)))
-  · intro q hq
-    by_cases hb : q=base 2400
-    · subst hb
-      exact run_preserves_outside _ m s _ sel.away
-    · rw [same q hb,spec.2.2 q hq,tq q hb]
+                       
+                                                                             
+                                                                            
+                                                                                                          
+                                                                             
+                                                       
+                                                                         
+                                     
+                                                                       
+                               
+                                                                                     
+                       
+                                                              
+                                                                   
+                                                   
+                                                                                      
+                                                                    
+                                                                 
+                                                                 
+                                                                   
+                                                                  
+                                                              
+                     
+                 
+                                                                            
+                   
+                                                                            
+                        
+                                           
+                                
+                                                                          
+                                                                          
+                                                                   
+                                
+                     
+                                                       
+                                                                                           
+                                           
+                                                               
+                                 
+                        
+                                                                                    
+                                     
+                      
+                                                                                                    
+           
+                                                                            
+              
+                             
+              
+                                                  
+                                          
 
 theorem wordTransfer (L : ControlledPointLayout) (f : Wire → Wire)
     (domain : Finset Wire)
@@ -79601,10 +79601,10 @@ theorem kernel_sub : LaneI.InstrSub kernel (OwnQ5Integer.program false) := by
 def arithExit (L : ControlledPointLayout) : Program := renameProgram (wireFn2 L) kernelS
 attribute [local irreducible] arithExit
 
-theorem kernel_support : wires kernel⊆OB5Support.logicalSites :=
-  kernel_sub.wires_sub.trans (OwnQ5Integer.program_support_logical false)
-theorem kernelS_support : wires kernelS⊆OB5Support.logicalSites :=
-  selKernel.sub.wires_sub.trans kernel_support
+                                                                
+                                                                         
+                                                                  
+                                              
 
 
 
@@ -79662,17 +79662,15 @@ theorem kernelS_support : wires kernelS⊆OB5Support.logicalSites :=
 
 attribute [local irreducible] toffoliCount measurementCount
 
-theorem kernel_1026_free : base 1026∉wires kernel := by
-  simpa only [kernel] using Q5FusionPhase.relocated_1026_free hostMul hostMul_free
+                                                       
+                                                                                  
 
-theorem kernelS_1026_free : base 1026∉wires kernelS := fun used =>
-  kernel_1026_free (selKernel.sub.wires_sub used)
+                                                                  
+                                                 
 
-theorem kernel_physical : GatePhysical kernel :=
-  kernel_sub.physical (OwnQ5Integer.program_physical false)
-theorem kernelS_physical : GatePhysical kernelS := selKernel.sub.physical kernel_physical
-
-
+                                                
+                                                           
+                                                                                         
 
 
 
@@ -79681,10 +79679,12 @@ theorem kernelS_physical : GatePhysical kernelS := selKernel.sub.physical kernel
 
 
 
-theorem kernel_slots_le : Challenge.gateSlots kernel≤20500006 :=
-  kernel_sub.slots.trans (OwnQ5Actual.kernel_slots false)
-theorem kernelS_slots_le : Challenge.gateSlots kernelS≤20500006 :=
-  selKernel.sub.slots.trans kernel_slots_le
+
+
+                                                                
+                                                         
+                                                                  
+                                           
 
 
 
@@ -79794,10 +79794,10 @@ theorem arithExit_support_selected (L : ControlledPointLayout) :
   simp only [Bool.not_true,renameProgram_support]
   exact Finset.image_subset_image kernelS_sub_selected.wires_sub
 
-theorem arithExit_slots_selected (L : ControlledPointLayout) :
-    Challenge.gateSlots (arithExit L)≤Challenge.gateSlots (arithS L true) := by
-  simpa only [arithExit,arithS,OwnQ5Runtime.kernelS,Bool.not_true,Baselines.rename_gateSlots]
-    using kernelS_sub_selected.slots
+                                                              
+                                                                               
+                                                                                             
+                                    
 end ECDSAAdd.Entrant.OwnExitFuseQ5
 
 set_option maxRecDepth 8192
@@ -80040,12 +80040,12 @@ theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
 
 
 
-theorem generic_slots_relative (L : ControlledPointLayout) (hw : L.Widths)
-    (P : Program) (hP : Challenge.gateSlots P≤Challenge.gateSlots (arithS L true)) (cx cy : Fp) :
-    Challenge.gateSlots (generic L P cx cy)≤Challenge.gateSlots (EntryFuseFinite.genericFFused L cx cy)+25000 := by
-  have e:=exitY_slots L hw cy
-  simp only [generic,EntryFuseFinite.genericFFused,Challenge.gateSlots_append]
-  omega
+                                                                          
+                                                                                                 
+                                                                                                                   
+                             
+                                                                              
+       
 
 theorem generic_avoid (L : ControlledPointLayout) (hw : L.Widths)
     (P : Program) (hP : wires P⊆wires (arithS L true)) (cx cy : Fp) (q : Wire)
@@ -80142,13 +80142,13 @@ theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (P : Program
 
 
 
-theorem gen_slots_relative (L : ControlledPointLayout) (hw : L.Widths)
-    (P : Program) (hP : Challenge.gateSlots P≤Challenge.gateSlots (arithS L true)) (cx cy : Fp) :
-    Challenge.gateSlots (gen L P cx cy)≤Challenge.gateSlots (EntryFuseFinite.genFFused L cx cy)+25000 := by
-  have g:=generic_slots_relative L hw P hP cx cy
-  simp only [gen,mid,EntryFuseFinite.genFFused,EntryFuseFinite.midFFused,
-    Challenge.gateSlots_append,Baselines.rename_gateSlots]
-  omega
+                                                                      
+                                                                                                 
+                                                                                                           
+                                                
+                                                                         
+                                                          
+       
 end ECDSAAdd.Entrant.ExitGenericQ5
 
 set_option maxRecDepth 8192
@@ -80465,12 +80465,12 @@ theorem genE_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp
     measurementCount (genE L cx cy)+255=measurementCount (EntryFuseFinite.genFFused L cx cy) :=
   ExitGenericQ5.gen_counts_diff L hw _ 254 (OwnExitFuseQ5.arithExit_counts_diff L) cx cy
 
-theorem genE_gateSlots_le (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (cx cy : Fp) : Challenge.gateSlots (genE L cx cy)≤49331004 := by
-  have r:=ExitGenericQ5.gen_slots_relative L hw _ (OwnExitFuseQ5.arithExit_slots_selected L) cx cy
-  have old:=EntryFuseFinite.genFFused_gateSlots_le L hw hn cx cy
-  change Challenge.gateSlots (genE L cx cy)≤Challenge.gateSlots (EntryFuseFinite.genFFused L cx cy)+25000 at r
-  omega
+                                                                                          
+                                                                    
+                                                                                                  
+                                                                
+                                                                                                              
+       
 
 theorem genE_qubits1594 (C : Point) (cx cy : Fp) :
     qubits (Edges.wrapper layout C cy (genE layout cx cy))≤1594 := by
@@ -80495,9 +80495,9 @@ def program (C : Point) : Program :=
   | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
       Edges.wrapper layout C cy (OwnExitProducer.genE layout cx cy)
 
-def entry : Challenge.Entry := fun C => normalizeProgram (program C)
+                                                                    
 
-def bounds : Challenge.Bounds := ⟨2155412, 1501199, 1594, 50002840⟩
+                                                                   
 
 
 
@@ -80631,14 +80631,14 @@ open Arithmetic MappedCompressed
 
 
 
-theorem concrete_retired (divide : Bool) : base 1541∉wires (OwnQ6Core5.kernel divide (OneBankCell5.ports base (base 2409))) := by
-  have hw:=OneBankCell5.ports_widths base (base 2409)
-  have hs : base 2409∉OneBankCell5.ids.map base := by decide +kernel
-  have hn:=OneBankCell5.ports_nodup_injective base (base 2409) base_injective hs
-  have h:=OwnQ6Core5.kernel_retired_free divide (OneBankCell5.ports base (base 2409)) hw hn
-  have idx : (OneBankCell5.ports base (base 2409)).carry.getD 254 0=base 1541 := by decide +kernel
-  rw [idx] at h
-  exact h
+                                                                                                                                 
+                                                     
+                                                                    
+                                                                                
+                                                                                           
+                                                                                                  
+               
+         
 end ECDSAAdd.Entrant.Q6IntegrationActive
 
 
@@ -80654,57 +80654,57 @@ attribute [local irreducible] wires OwnQ6Core5.kernel OwnQ5Endpoint.centerT OwnQ
 variable (hKernel : ∀divide,base 1541∉wires (OwnQ6Core5.kernel divide (OneBankCell5.ports base (base 2409))))
 include hKernel
 
-theorem half_avoid (divide : Bool) :
-    base 1541∉wires (OneBankCell5.half divide base (base 2409)) := by
-  have k:=hKernel divide
-  simpa only [OneBankCell5.half,OwnQ6Core5.half,wires_append,wires,Instr.wires,
-    Finset.mem_union,Finset.mem_singleton,Finset.notMem_empty,or_false,
-    OneBankCell5.ports,not_or] using
-    And.intro (And.intro (by decide : base 1541≠base 2409) k) (by decide : base 1541≠base 2409)
+                                    
+                                                                     
+                        
+                                                                               
+                                                                       
+                                    
+                                                                                               
 
-theorem swap_avoid : base 1541∉wires (swapRegisters (base 2410)
-    (OneBankCell5.ports base (base 2409)).r (OneBankCell5.ports base (base 2409)).y) := by
-  have len:(OneBankCell5.ports base (base 2409)).r.length=
-      (OneBankCell5.ports base (base 2409)).y.length := by
-    rw [OneBankCell5.ports_r,OneBankCell5.ports_y,balancedSharedPorts_r,balancedSharedPorts_y]
-    simp [wireBlock_length]
-  have h:=swapRegisters_wires (base 2410) (OneBankCell5.ports base (base 2409)).r
-    (OneBankCell5.ports base (base 2409)).y len
-  intro used
-  have mem:=h used
-  rw [List.mem_toFinset,List.mem_cons,List.mem_append,OneBankCell5.ports_r,
-    OneBankCell5.ports_y,balancedSharedPorts_r,balancedSharedPorts_y] at mem
-  rcases mem with eq|r|y
-  · exact (by decide : base 1541≠base 2410) eq
-  · exact not_block 1541 2056 256 (by omega) r
-  · exact not_block 1541 770 256 (by omega) y
+                                                               
+                                                                                          
+                                                          
+                                                          
+                                                                                              
+                           
+                                                                                 
+                                               
+            
+                  
+                                                                           
+                                                                            
+                        
+                                              
+                                              
+                                             
 
-theorem body_avoid (divide : Bool) :
-    base 1541∉wires (OneBankCell5.body divide base (base 2409) (base 2410)) := by
-  cases divide <;> simp only [OneBankCell5.body,Bool.false_eq_true,if_false,if_true,
-    wires_append,Finset.mem_union,not_or]
-  · exact ⟨swap_avoid hKernel,half_avoid hKernel false⟩
-  · exact ⟨half_avoid hKernel true,swap_avoid hKernel⟩
+                                    
+                                                                                 
+                                                                                    
+                                         
+                                                       
+                                                      
 
-theorem select_avoid (b source flag : Wire) (v : Bool) (P : Program)
-    (hb : base 1541≠b) (hs : base 1541≠source) (hf : base 1541≠flag)
-    (hp : base 1541∉wires P) : base 1541∉wires (transcriptSelectWindow b source flag v P) := by
-  intro used
-  cases v <;>
-    simp only [transcriptSelectWindow,transcriptSelectCompute,transcriptSelectExpose,
-      transcriptSelectErase,Bool.false_eq_true,if_false,if_true,List.nil_append,
-      wires_append,Finset.mem_union,wires,Instr.wires,correctionWires,
-      Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty] at used <;> tauto
+                                                                    
+                                                                    
+                                                                                               
+            
+             
+                                                                                     
+                                                                                
+                                                                      
+                                                                                   
 
-theorem cell_avoid (divide : Bool) (g sw : Wire) (ig is : Bool)
-    (hg : base 1541≠g) (hs : base 1541≠sw) :
-    base 1541∉wires (OneBankCell5.cell divide base (base 2400) g sw (base 2409) (base 2410) ig is) := by
-  exact select_avoid hKernel _ _ _ _ _ (by decide) hg (by decide)
-    (select_avoid hKernel _ _ _ _ _ (by decide) hs (by decide) (body_avoid hKernel divide))
+                                                               
+                                            
+                                                                                                        
+                                                                 
+                                                                                           
 
-theorem endpoint_avoid (divide : Bool) (g : Wire) (ig : Bool) (hg : base 1541≠g) :
-    base 1541∉wires (OneBankCell5.endpoint divide base (base 2400) g (base 2409) ig) := by
-  exact select_avoid hKernel _ _ _ _ _ (by decide) hg (by decide) (half_avoid hKernel divide)
+                                                                                  
+                                                                                          
+                                                                                             
 
 attribute [local irreducible] OneBankCell5.cell OneBankCell5.endpoint
 
@@ -80717,118 +80717,118 @@ theorem codec_avoid (start : Nat) (hs : start+5≤512) (P : Program)
   have same:=base_injective eq
   omega
 
-theorem raw_avoid (divide : Bool) (ls : List MixedTranscriptLetter)
-    (controls : ∀l∈ls,base 1541≠l.1.1 ∧ base 1541≠l.1.2) :
-    base 1541∉wires (OneBankReplay5.rawReplay divide ls) := by
-  induction ls with
-  | nil => simp [OneBankReplay5.rawReplay,wires]
-  | cons l ls ih =>
-    have c:=cell_avoid hKernel divide l.1.1 l.1.2 l.2.1 l.2.2 (controls l (by simp)).1 (controls l (by simp)).2
-    have rest:=ih (fun k hk=>controls k (List.mem_cons_of_mem _ hk))
-    cases divide <;> simp only [OneBankReplay5.rawReplay,Bool.false_eq_true,if_false,if_true,
-      wires_append,Finset.mem_union,not_or] at c rest ⊢
-    · exact ⟨rest,c⟩
-    · exact ⟨c,rest⟩
+                                                                   
+                                                          
+                                                              
+                   
+                                                
+                   
+                                                                                                               
+                                                                    
+                                                                                             
+                                                       
+                    
+                    
 
-theorem body_replay_avoid (divide : Bool) (j : Nat) (hj : j<102) :
-    base 1541∉wires (OneBankReplay5.body divide j) := by
-  apply raw_avoid hKernel
-  intro l hl
-  have c:=Replay5.letters_controls j hj l hl
-  have no:=codec_avoid hKernel (5*j) (by omega) _ (Or.inl rfl)
-  exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
+                                                                  
+                                                        
+                         
+            
+                                            
+                                                              
+                                                 
 
-theorem firstSwap_avoid : base 1541∉wires Replay5.firstSwap := by
-  apply select_avoid hKernel _ _ _ _ _ (by decide) (by decide) (by decide)
-  exact swap_avoid hKernel
+                                                                 
+                                                                          
+                          
 
-theorem firstBody_avoid (divide : Bool) : base 1541∉wires (OneBankReplay5.firstBody divide) := by
-  have ctrl : ∀l∈Replay5.restLetters,base 1541≠l.1.1 ∧ base 1541≠l.1.2 := by
-    intro l hl
-    have mem:l∈Replay5.letters 0:=by rw [Replay5.letters_zero];simp [hl]
-    have c:=Replay5.letters_controls 0 (by omega) l mem
-    have no:=codec_avoid hKernel 0 (by omega) _ (Or.inl rfl)
-    exact ⟨fun e=>no (e ▸ c.1),fun e=>no (e ▸ c.2)⟩
-  cases divide <;> simp only [OneBankReplay5.firstBody,Bool.false_eq_true,if_false,if_true,
-    wires_append,Finset.mem_union,not_or]
-  · exact ⟨raw_avoid hKernel false _ ctrl,by rw [UncompSwap.firstSwapM_wires]; exact firstSwap_avoid hKernel⟩
-  · exact ⟨firstSwap_avoid hKernel,raw_avoid hKernel true _ ctrl⟩
+                                                                                                 
+                                                                            
+              
+                                                                        
+                                                       
+                                                            
+                                                   
+                                                                                           
+                                         
+                                                                                                             
+                                                                 
 
-theorem pi_fix (j : Nat) (hj : j<102) : shifted (Placement5.pi j) (base 1541)=base 1541 := by
-  rw [shifted_base,Placement5.pi_outside j 1541 hj]
-  unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion
-  omega
+                                                                                             
+                                                   
+                                                                          
+       
 
-theorem packet_avoid (divide : Bool) (j : Nat) (hj : j<102) :
-    base 1541∉wires (OneBankReplay5.packet divide j) := by
-  apply rename_avoid _ _ _ (pi_fix hKernel j hj)
-  simp only [OneBankReplay5.basePacket,wires_append,Finset.mem_union,not_or]
-  exact ⟨⟨codec_avoid hKernel _ (by omega) _ (Or.inr rfl),body_replay_avoid hKernel divide j hj⟩,
-    codec_avoid hKernel _ (by omega) _ (Or.inl rfl)⟩
+                                                             
+                                                          
+                                                
+                                                                            
+                                                                                                 
+                                                    
 
-theorem firstPacket_avoid (divide : Bool) : base 1541∉wires (OneBankReplay5.firstPacket divide) := by
-  apply rename_avoid _ _ _ (pi_fix hKernel 0 (by omega))
-  simp only [OneBankReplay5.baseFirstPacket,wires_append,Finset.mem_union,not_or]
-  exact ⟨⟨codec_avoid hKernel _ (by omega) _ (Or.inr rfl),firstBody_avoid hKernel divide⟩,
-    codec_avoid hKernel _ (by omega) _ (Or.inl rfl)⟩
+                                                                                                     
+                                                        
+                                                                                 
+                                                                                          
+                                                    
 
-theorem endPacket_avoid (divide : Bool) : base 1541∉wires (OneBankReplay5.endPacket divide) := by
-  have fix:shifted Placement5.pi0 (base 1541)=base 1541:=by
-    rw [shifted_base,Placement5.pi0_outside 1541]
-    unfold Placement5.zeroRegion Placement5.workRegion Placement5.holeRegion
-    omega
-  apply rename_avoid _ _ _ fix
-  apply endpoint_avoid hKernel
-  decide
+                                                                                                 
+                                                           
+                                                 
+                                                                            
+         
+                              
+                              
+        
 
-theorem groups_avoid (divide : Bool) (j n : Nat) (hb : j+n≤102) :
-    base 1541∉wires (OneBankReplay5.groups divide j n) := by
-  induction n generalizing j with
-  | zero => simp [OneBankReplay5.groups,PacketSequence.program,wires]
-  | succ n ih =>
-    have head:=packet_avoid hKernel divide j (by omega)
-    have tail:=ih (j+1) (by omega)
-    cases divide <;> simp only [OneBankReplay5.groups,PacketSequence.program,Bool.false_eq_true,
-      if_false,if_true,wires_append,Finset.mem_union,not_or] at head tail ⊢
-    · exact ⟨tail,head⟩
-    · exact ⟨head,tail⟩
+                                                                 
+                                                            
+                                 
+                                                                     
+                
+                                                       
+                                  
+                                                                                                
+                                                                           
+                       
+                       
 
-theorem replay_avoid (divide : Bool) : base 1541∉wires (OneBankReplay5.replay divide) := by
-  let e:Equiv.Perm Wire:=⟨OB5.sig 511,OB5.sig 511,OB5.sig_invol 511 (by omega),OB5.sig_invol 511 (by omega)⟩
-  have fix:e (base 1541)=base 1541:=by decide +kernel
-  apply rename_avoid e _ _ fix
-  cases divide <;> simp only [OneBankReplay5.logicalReplay,Bool.false_eq_true,if_false,if_true,
-    wires_append,Finset.mem_union,not_or]
-  · exact ⟨⟨endPacket_avoid hKernel false,groups_avoid hKernel false 1 101 (by omega)⟩,firstPacket_avoid hKernel false⟩
-  · exact ⟨⟨firstPacket_avoid hKernel true,groups_avoid hKernel true 1 101 (by omega)⟩,endPacket_avoid hKernel true⟩
-theorem copy_avoid : base 1541∉wires HalfFieldOB5.copyN := by
-  intro used
-  have mem:=copyRegister_wires_subset none
-    (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y used
-  simp only [Option.toList_none,List.nil_append,List.mem_toFinset,List.mem_append,
-    balancedSharedPorts_r,balancedSharedPorts_y] at mem
-  rcases mem with r|y
-  · exact not_block 1541 2056 256 (by omega) r
-  · exact not_block 1541 770 256 (by omega) y
+                                                                                           
+                                                                                                            
+                                                     
+                              
+                                                                                               
+                                         
+                                                                                                                       
+                                                                                                                    
+                                                             
+            
+                                          
+                                                                                          
+                                                                                  
+                                                       
+                     
+                                              
+                                             
 
 
-theorem segment_free (divide : Bool)
-    (endpoint_free : base 1541∉wires (OwnQ5Endpoint.centerT) ∧ base 1541∉wires (OwnQ5Endpoint.canonT)) :
-    base 1541∉wires (SegmentOB5.program divide) := by
-  cases divide <;> simp only [SegmentOB5.program,Bool.false_eq_true,if_false,if_true,
-    wires_append,Finset.mem_union,not_or]
-  · exact ⟨endpoint_free.1,⟨copy_avoid hKernel,⟨replay_avoid hKernel false,endpoint_free.2⟩⟩⟩
-  · exact ⟨endpoint_free.1,⟨replay_avoid hKernel true,⟨copy_avoid hKernel,endpoint_free.2⟩⟩⟩
+                                    
+                                                                                                        
+                                                     
+                                                                                     
+                                         
+                                                                                             
+                                                                                            
 
-theorem hosted_segment_free (divide : Bool)
-    (endpoint_free : base 1541∉wires (OwnQ5Endpoint.centerT) ∧ base 1541∉wires (OwnQ5Endpoint.canonT)) :
-    base 1541∉wires (KernelOB5.segH divide) := by
-  let e:Equiv.Perm Wire:=⟨HostOB5.hostSwap,HostOB5.hostSwap,HostOB5.hostSwap_invol,HostOB5.hostSwap_invol⟩
-  have fix:e (base 1541)=base 1541:=by decide +kernel
-  have mid:=rename_avoid e _ _ fix (segment_free hKernel divide endpoint_free)
-  simpa only [KernelOB5.segH,wires_append,wires,Instr.wires,Finset.mem_union,
-    Finset.mem_singleton,Finset.notMem_empty,or_false,not_or] using
-      And.intro (by decide : base 1541≠base 511) (And.intro mid (by decide : base 1541≠base 511))
+                                           
+                                                                                                        
+                                                 
+                                                                                                          
+                                                     
+                                                                              
+                                                                             
+                                                                   
+                                                                                                 
 end ECDSAAdd.Entrant.OwnQ6Replay
 
 
@@ -80857,42 +80857,42 @@ theorem raw_free : base 513 ∉ wires HalfField5.centerT ∧
     omega
   exact ⟨fun h => out (sup.1 h),fun h => out (sup.2 h)⟩
 
-theorem relocated_free : base 1541 ∉ wires HalfFieldOB5.centerT ∧
-    base 1541 ∉ wires HalfFieldOB5.canonT := by
-  have image : HalfFieldOB5.endpointMap (base 513)=base 1541 := by decide +kernel
-  have lift (P : Program) (hp : base 513∉wires P) :
-      base 1541∉wires (renameProgram HalfFieldOB5.endpointMap P) := by
-    intro h
-    rw [renameProgram_support] at h
-    obtain ⟨q,hq,eq⟩ := Finset.mem_image.mp h
-    have same : q=base 513 := HalfFieldOB5.endpointMap.injective (eq.trans image.symm)
-    subst q
-    exact hp hq
-  exact ⟨lift _ raw_free.1,lift _ raw_free.2⟩
+                                                                 
+                                               
+                                                                                 
+                                                   
+                                                                      
+           
+                                   
+                                             
+                                                                                      
+           
+               
+                                             
 
-theorem plus_free : base 1541 ∉ wires OwnPlusEndpoint.centerT ∧
-    base 1541 ∉ wires OwnPlusEndpoint.canonT := by
-  have fix : OwnPlusEndpoint.swap (base 1541)=base 1541 := by decide +kernel
-  exact ⟨OwnPlusHost.rename_avoid _ _ _ fix relocated_free.1,
-    OwnPlusHost.rename_avoid _ _ _ fix relocated_free.2⟩
+                                                               
+                                                  
+                                                                            
+                                                             
+                                                        
 
-theorem guard_free : base 1541 ∉ wires OwnGuardEndpoint.centerT ∧
-    base 1541 ∉ wires OwnGuardEndpoint.canonT := by
-  have fix : OwnGuardEndpoint.swap (base 1541)=base 1541 := by decide +kernel
-  exact ⟨OwnPlusHost.rename_avoid _ _ _ fix plus_free.1,
-    OwnPlusHost.rename_avoid _ _ _ fix plus_free.2⟩
+                                                                 
+                                                   
+                                                                             
+                                                        
+                                                   
 
-theorem q4_free : base 1541 ∉ wires OwnQ4Endpoint.centerT ∧
-    base 1541 ∉ wires OwnQ4Endpoint.canonT := by
-  have fix : OwnQ4Endpoint.swap (base 1541)=base 1541 := by decide +kernel
-  exact ⟨OwnPlusHost.rename_avoid _ _ _ fix guard_free.1,
-    OwnPlusHost.rename_avoid _ _ _ fix guard_free.2⟩
+                                                           
+                                                
+                                                                          
+                                                         
+                                                    
 
-theorem endpoint_free : base 1541 ∉ wires OwnQ5Endpoint.centerT ∧
-    base 1541 ∉ wires OwnQ5Endpoint.canonT := by
-  have fix : OwnQ5Endpoint.swap (base 1541)=base 1541 := by decide +kernel
-  exact ⟨OwnPlusHost.rename_avoid _ _ _ fix q4_free.1,
-    OwnPlusHost.rename_avoid _ _ _ fix q4_free.2⟩
+                                                                 
+                                                
+                                                                          
+                                                      
+                                                 
 end ECDSAAdd.Entrant.OwnQ6EndpointFree
 
 
@@ -80902,11 +80902,11 @@ open Arithmetic MappedCompressed
 variable (hKernel : ∀ divide,base 1541∉wires
   (OwnQ6Core5.kernel divide (OneBankCell5.ports base (base 2409))))
 include hKernel
-theorem segH_free (divide : Bool) : base 1541∉wires (KernelOB5.segH divide) :=
-  OwnQ6Replay.hosted_segment_free hKernel divide OwnQ6EndpointFree.endpoint_free
+                                                                              
+                                                                                
 
-theorem segHS_free (divide : Bool) : base 1541∉wires (SW.segHS divide) :=
-  fun h => segH_free hKernel divide ((SW.selSegH_sel divide).sub.wires_sub h)
+                                                                         
+                                                                             
 end ECDSAAdd.Entrant.OwnQ6FieldFree
 
 

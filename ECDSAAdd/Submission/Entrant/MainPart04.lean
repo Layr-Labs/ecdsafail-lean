@@ -1,7 +1,2083 @@
 import ECDSAAdd.Submission.Entrant.ParkAMany
-import ECDSAAdd.Submission.Entrant.ParkCarry10
-import ECDSAAdd.Submission.Entrant.ParkCarry9
+import ECDSAAdd.Submission.Entrant.ParkAStagedProof
+import ECDSAAdd.Submission.Entrant.ParkAWorkLoan
 import ECDSAAdd.Submission.Entrant.MainPart04Base
+import ECDSAAdd.Submission.Entrant.ParkAData
+
+section
+
+section
+namespace ECDSAAdd.Entrant.BThreeTemp
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
+def hostR (L : CuccaroStreamedSquareWideLayout) : Wire := L.core.work.getD 171 0
+def hostP (L : CuccaroStreamedSquareWideLayout) : Wire := L.core.work.getD 172 0
+                                                                                
+                                                                                        
+def middle (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
+  LowBitCarryDevelop.wMidFullCCC0 L c
+
+                                                                          
+                                                   
+                                                  
+
+def oldLoop (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
+  buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry ++
+    middle L c ++
+    unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+
+
+end ECDSAAdd.Entrant.BThreeTemp
+
+end
+
+section
+
+/-! Retain a bank of B-side carries using the inherited exact rewrite and scatter proofs. -/
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unnecessarySeqFocus false
+namespace ECDSAAdd.Entrant.BWideTemp
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
+
+def hostR := BThreeTemp.hostR
+def hostP := BThreeTemp.hostP
+                             
+def pad (L : CuccaroStreamedSquareWideLayout) : List Wire := (accZ L).take 31
+
+def loans (L : CuccaroStreamedSquareWideLayout) : List Wire :=
+ (L.core.work.drop 173).take 19 ++ (L.core.work.drop 193).take 3 ++ (L.core.work.drop 255).take 1 ++ (L.core.work.drop 227).take 28
+def hosts (L : CuccaroStreamedSquareWideLayout) : List Wire := hostR L::hostP L::loans L
+def middle := BThreeTemp.middle
+def LoanReadyTrim (L : CuccaroStreamedSquareWideLayout) (g u : Wire) : Prop :=
+ u∈L.core.work ∧ u∉L.core.cin::(hiReg L++accReg L++pad L++accBank L) ∧
+ u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L ∧ True
+def HostReady (L : CuccaroStreamedSquareWideLayout) (c x : Wire) : Prop :=
+ LoanReadyTrim L c x ∧ x∉mR L ∧ x≠w192 L ∧ x≠c ∧ hasWire (ParkCarry10Develop.body L c) x=true
+def Ready (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Prop :=
+ (loans L).length=51 ∧ (L.core.sumCarry::hosts L).Nodup ∧ ∀x∈hosts L,HostReady L c x
+instance (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Decidable (Ready L c) := by
+ unfold Ready HostReady LoanReadyTrim
+ unfold pad
+ infer_instance
+
+def checkedMiddle (L : CuccaroStreamedSquareWideLayout) (c : Wire) :
+ Option (CheckedMany (hosts L) (middle L c)) := compileManyChunked? (hosts L) (middle L c)
+def oldLoop := BThreeTemp.oldLoop
+def newLoop (L : CuccaroStreamedSquareWideLayout) (c : Wire)
+ (cm : CheckedMany (hosts L) (middle L c)) : Program :=
+ ManyACarryDevelop.buildMany 51 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  (loans L) L.core.sumCarry (hostR L) (hostP L) ++ cm.out ++
+ ManyACarryDevelop.unbuildMany 51 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  (loans L) L.core.sumCarry (hostR L) (hostP L)
+def newFold (L : CuccaroStreamedSquareWideLayout) (c : Wire)
+ (cm : CheckedMany (hosts L) (middle L c)) : Program :=
+ eAddLo L ++ (newLoop L c cm ++ (ParkCarryDevelop.program (eU L) L.core.sumCarry ++ eSubK L))
+def newBody (L : CuccaroStreamedSquareWideLayout) (c : Wire)
+ (cm : CheckedMany (hosts L) (middle L c)) : Program :=
+ measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++
+  (newFold L c cm ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L)))
+                                   
+def bodyWith (enabled : Bool) (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
+ if enabled then
+  if Ready L c then
+   match checkedMiddle L c with
+   | none => ParkCarry10Develop.body L c
+   | some cm => newBody L c cm
+  else ParkCarry10Develop.body L c
+ else ParkCarry10Develop.body L c
+                                                                                                            
+                                                                                                            
+                                                   
+
+                                                                                                                          
+                                                                                                                                                                   
+                                                                                                                                                                               
+
+                                                                            
+                                                               
+               
+                                                                                          
+                                                                 
+
+theorem host_ready (L : CuccaroStreamedSquareWideLayout) (c : Wire) (h : Ready L c) :
+ HostReady L c (hostR L) ∧ HostReady L c (hostP L) ∧ ∀x∈loans L,HostReady L c x := by
+ exact ⟨h.2.2 _ (by simp [hosts]),h.2.2 _ (by simp [hosts]),fun x hx=>h.2.2 x (by simp [hosts,hx])⟩
+theorem loan_ne (L : CuccaroStreamedSquareWideLayout) (c : Wire) (h : Ready L c) :
+ (loans L).Nodup ∧ hostP L≠hostR L ∧ ∀x∈loans L,x≠L.core.sumCarry ∧ x≠hostR L ∧ x≠hostP L := by
+ have nd := h.2.1
+ change (L.core.sumCarry::hostR L::hostP L::loans L).Nodup at nd
+ simp only [List.nodup_cons,List.mem_cons,not_or] at nd
+ refine ⟨nd.2.2.2,fun e=>nd.2.1.1 e.symm,?_⟩
+ intro x hx
+ exact ⟨fun e=>nd.1.2.2 (e ▸ hx),fun e=>nd.2.1.2 (e ▸ hx),fun e=>nd.2.2.1 (e ▸ hx)⟩
+
+theorem pad_length (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : 5≤(pad L).length := by
+ have h:=acc_lengths L hw
+ simp only [pad,List.length_take]
+ omega
+ theorem terms_fits (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+ ∀f∈earlyHTerms (hiReg L),Acc.Fits (accReg L) (pad L) (accBank L) L.core.cin 163 f :=
+ BTrimCore.fits_trim _ _ _ _ _ (hiReg_length L hw) (wTerms_fits L hw hn)
+ theorem sumCarry_trim (L : CuccaroStreamedSquareWideLayout) (hn : L.wires.Nodup) :
+ L.core.sumCarry ∉ L.core.cin::(hiReg L++accReg L++pad L++accBank L) := by
+ intro h
+ exact sumCarry_fresh_domain L hn ((BTrimCore.domain_sublist _ _ _ _ _).subset h)
+theorem host_zero_of_bstate (L : CuccaroStreamedSquareWideLayout)
+    (hn : L.wires.Nodup) (c x : Wire) (ready : HostReady L c x)
+    (base : BasisState) (clean : L.PairClean base) (O E A : Nat)
+    (s : BasisState) (hs : BState L base O E A s) : s x = false := by
+  have work : x ∈ L.core.work := ready.1.1
+  have away := L.pairAuxAway hn x (by simp [work])
+  have notE : x ∉ eReg L := fun h => away.1 (eReg_product L _ h)
+  have notAcc : x ∉ accReg L := by
+    intro member
+    exact ready.1.2.1 (by simp [member])
+  exact (hs.2.2.2 x away.2 notE notAcc).trans ((regValue_zero _ _).mp clean.work x work)
+
+/-- Source support bounds, rather than a false no-write assumption, establish endpoint freshness. -/
+theorem endpoint_off (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (x : Wire) (xq : x ≠ L.core.sumCarry) (xr : x ≠ hostR L) (xp : x ≠ hostP L)
+    (offF : x ∉ wires (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)))
+    (offI : x ∉ wires (SourceAddFourDevelop.unbuild (accReg L) (pad L) (accBank L) L.core.cin (hiReg L))) :
+    x ∉ wires (buildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) ∧
+    x ∉ wires (unbuildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) ∧
+    x ∉ wires (buildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L) (hostP L)) ∧
+    x ∉ wires (unbuildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L) (hostP L)) := by
+  have lens := acc_lengths L hw
+  have plen := pad_length L hw
+  have cF : x ∉ wires (buildCached (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) := by
+    intro h
+    rcases Finset.mem_insert.mp (buildCached_support _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) (by omega) h) with eq | h
+    · exact xq eq
+    · exact offF h
+  have cI : x ∉ wires (unbuildConsumed (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) := by
+    intro h
+    rcases Finset.mem_insert.mp (unbuildConsumed_support _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) h) with eq | h
+    · exact xq eq
+    · exact offI h
+  have dF : x ∉ wires (buildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) := by
+    intro h
+    rcases Finset.mem_insert.mp (buildDual_support _ _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) (by omega) h) with eq | h
+    · exact xr eq
+    · exact cF h
+  have dI : x ∉ wires (unbuildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) := by
+    intro h
+    rcases Finset.mem_insert.mp (unbuildDual_support _ _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) h) with eq | h
+    · exact xr eq
+    · exact cI h
+  refine ⟨dF,dI,?_,?_⟩
+  · intro h
+    rcases Finset.mem_insert.mp (buildTriple_support _ _ _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) (by omega) h) with eq | h
+    · exact xp eq
+    · exact dF h
+  · intro h
+    rcases Finset.mem_insert.mp (unbuildTriple_support _ _ _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) h) with eq | h
+    · exact xp eq
+    · exact dI h
+
+                                                                                             
+                                                                              
+                                
+                                                                                                 
+                                                                                                         
+                               
+                              
+                                                                                    
+                                                           
+             
+           
+                                                                       
+                                                                 
+           
+                                                                           
+                                                      
+
+
+theorem build_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) :
+ NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) = wBuild L :=
+ BTrimCore.build8_trim _ _ _ _ _ (hiReg_length L hw)
+ theorem cached_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (q : Wire) :
+ buildCached (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) q =
+ buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) q :=
+ BTrimCore.buildCached_trim _ _ _ _ _ _ (hiReg_length L hw)
+ theorem consumed_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (q : Wire) :
+ unbuildConsumed (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) q =
+ unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) q :=
+ BTrimCore.unbuildConsumed_trim _ _ _ _ _ _ (hiReg_length L hw)
+
+theorem loop_bstate_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+ (hn : L.wires.Nodup) (c : Wire) (hcw : c∉L.wires) (ready : Ready L c)
+ (cm : CheckedMany (hosts L) (middle L c))
+ (base : BasisState) (clean : L.PairClean base) (hsum : base L.core.sumCarry=false)
+ (O E O' : Nat)
+ (mid : Triple (BState L base O E (4294968272*regValue (hiReg L) base)) (middle L c)
+  (BState L base O' E (4294968272*regValue (hiReg L) base)))
+ (s : State) (records : List Bool) (hs : BState L base O E 0 s.basis) :
+ run (newLoop L c cm) records s=run (oldLoop L c) records s := by
+ have lens:=acc_lengths L hw
+ have plen:=pad_length L hw
+ have rr:=(host_ready L c ready).1
+ have pp:=(host_ready L c ready).2.1
+ have uu:=(host_ready L c ready).2.2
+ have nd:=loan_ne L c ready
+ have away:=ParkCarryDevelop.sumCarry_off_regs L hn
+ have zeroQ:s.basis L.core.sumCarry=false := (hs.2.2.2 _ away.1 away.2.1 away.2.2).trans hsum
+ have zeroR:=host_zero_of_bstate L hn c (hostR L) rr base clean O E 0 s.basis hs
+ have zeroP:=host_zero_of_bstate L hn c (hostP L) pp base clean O E 0 s.basis hs
+ have zeroU:∀x∈loans L,s.basis x=false := fun x hx=>host_zero_of_bstate L hn c x (uu x hx) base clean O E 0 s.basis hs
+ have freshQ:=sumCarry_trim L hn
+ have offQ:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry lens.1 (hiReg_length L hw) (terms_fits L hw hn) freshQ
+ have offR:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (hostR L) lens.1 (hiReg_length L hw) (terms_fits L hw hn) rr.1.2.1
+ have offP:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (hostP L) lens.1 (hiReg_length L hw) (terms_fits L hw hn) pp.1.2.1
+ have pF:hostP L∉wires (buildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) := by
+  intro h
+  rcases Finset.mem_insert.mp (buildDual_support _ _ _ _ _ _ _ lens.1 (hiReg_length L hw) (by omega) (by omega) h) with eq|h
+  · exact nd.2.1 eq
+  rcases Finset.mem_insert.mp (buildCached_support _ _ _ _ _ _ lens.1 (hiReg_length L hw) (by omega) (by omega) h) with eq|h
+  · exact pp.1.2.2.1 eq
+  · exact offP.1 h
+ have pI:hostP L∉wires (unbuildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) := by
+  intro h
+  rcases Finset.mem_insert.mp (unbuildDual_support _ _ _ _ _ _ _ lens.1 (hiReg_length L hw) (by omega) h) with eq|h
+  · exact nd.2.1 eq
+  rcases Finset.mem_insert.mp (unbuildConsumed_support _ _ _ _ _ _ lens.1 (hiReg_length L hw) (by omega) h) with eq|h
+  · exact pp.1.2.2.1 eq
+  · exact offP.2 h
+ have endpoints:∀x∈loans L,
+  x∉wires (buildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L) (hostP L)) ∧
+  x∉wires (unbuildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L) (hostP L)) := by
+  intro x hx
+  have off:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) x lens.1 (hiReg_length L hw) (terms_fits L hw hn) (uu x hx).1.2.1
+  exact (endpoint_off L hw x (nd.2.2 x hx).1 (nd.2.2 x hx).2.1 (nd.2.2 x hx).2.2 off.1 off.2).2.2
+ have offMiddle:L.core.sumCarry∉wires (middle L c):=ParkCarry10Develop.mid_sumCarry_free L hw hn c hcw
+ obtain ⟨hzFull,hb,hi,_,_⟩:=zero_regs L hn base clean O E 0 s.basis hs
+ have hz:∀w∈pad L,s.basis w=false := fun w hw=>hzFull w (List.mem_of_mem_take hw)
+ have source0:regValue (hiReg L) s.basis=regValue (hiReg L) base := regValue_congr _ _ _ (fun q hq=>bstate_other L hn base O E 0 s.basis hs q (Or.inl hq))
+ have good:WReady (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
+  (middleState (wBuild L) (middle L c) s records) := by
+  let first:=run (wBuild L) (records.take (measurementCount (wBuild L))) s
+  have firstGood:=(wBuild_step L hw hn base clean O E) s (records.take (measurementCount (wBuild L))) hs
+  have midGood:=mid first ((records.drop (measurementCount (wBuild L))).take (measurementCount (middle L c))) firstGood.2
+  obtain ⟨mz,mb,mi,_,_⟩:=zero_regs L hn base clean O' E _ _ midGood.2
+  have source1:=regValue_congr (hiReg L) _ base (fun q hq=>bstate_other L hn base O' E _ _ midGood.2 q (Or.inl hq))
+  exact ⟨midGood.2.2.2.1.trans (by rw [source0]),source1.trans source0.symm,(fun w hw=>mz w (List.mem_of_mem_take hw)),mb,mi⟩
+ have zeros:∀x∈hosts L,s.basis x=false := by
+  intro x hx; simp only [hosts,List.mem_cons] at hx
+  rcases hx with rfl|rfl|hx
+  · exact zeroR
+  · exact zeroP
+  · exact zeroU x hx
+ have offOriginal:∀x∈hosts L,x∉wires (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)) := by
+  intro x hx
+  exact (wloop_original_off _ _ _ _ _ _ lens.1 (hiReg_length L hw) (terms_fits L hw hn) (ready.2.2 x hx).1.2.1).1
+ simp only [build_eq L hw] at offOriginal
+ have midEq:=cm.proof.middle_eq (hosts L) (middle L c) cm.out (wBuild L) s records zeros offOriginal
+ have goodNew:WReady (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
+  (middleState (wBuild L) cm.out s records) := by rw [midEq];exact good
+ have support:=cm.proof.support (hosts L) (middle L c) cm.out
+ have nq:L.core.sumCarry∉wires cm.out := fun h=>offMiddle (support.1 h)
+ have nr:hostR L∉wires cm.out := support.2 _ (by simp [hosts])
+ have np:hostP L∉wires cm.out := support.2 _ (by simp [hosts])
+ have triple:=triple_middle_ready (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (hostR L) (hostP L) cm.out lens.1 (hiReg_length L hw) (terms_fits L hw hn)
+  s records hz hb hi hs.2.2.1 zeroQ zeroR zeroP freshQ rr.1.2.1 rr.1.2.2.1 pp.1.2.1 pp.1.2.2.1 nd.2.1
+  offQ.1 nq offQ.2 offR.1 nr offR.2 pF np pI (by simpa only [build_eq L hw] using goodNew)
+ have many:=ManyACarryDevelop.cached_wloop_many_eq 51 (accReg L) (pad L) (accBank L) L.core.cin
+  (hiReg L) (loans L) L.core.sumCarry (hostR L) (hostP L) cm.out lens.1 (hiReg_length L hw)
+  (terms_fits L hw hn) s records hz hb hi hs.2.2.1 zeroQ zeroR zeroP zeroU freshQ rr.1.2.1 rr.1.2.2.1
+  pp.1.2.1 pp.1.2.2.1 nd.2.1 (by decide) nd.1 ready.1 (fun x hx=>(uu x hx).1.2.1) nd.2.2
+  offQ.1 offQ.2 offR.1 offR.2 pF pI (fun x hx=>(endpoints x hx).1)
+  (fun x hx=>support.2 x (by simp [hosts,hx])) (fun x hx=>(endpoints x hx).2)
+  triple.1 triple.2.1 triple.2.2.1 triple.2.2.2
+ have tr:=cached_wloop_triple_eq (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (hostR L) (hostP L) cm.out lens.1 (hiReg_length L hw) (terms_fits L hw hn)
+  s records hz hb hi hs.2.2.1 zeroQ zeroR zeroP freshQ rr.1.2.1 rr.1.2.2.1 pp.1.2.1 pp.1.2.2.1 nd.2.1
+  offQ.1 nq offQ.2 offR.1 nr offR.2 pF np pI (by simpa only [build_eq L hw] using goodNew)
+ have du:=cached_wloop_dual_eq (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (hostR L) cm.out lens.1 (hiReg_length L hw) (terms_fits L hw hn)
+  s records hz hb hi hs.2.2.1 zeroQ zeroR freshQ rr.1.2.1 rr.1.2.2.1 offQ.1 nq offQ.2 offR.1 nr offR.2 (by simpa only [build_eq L hw] using goodNew)
+ have re:=cm.proof.surround_eq (hosts L) (middle L c) cm.out (wBuild L)
+  (SourceAddFourDevelop.unbuild (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)) s records zeros offOriginal
+ have ca:=cached_wloop_eq (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (middle L c) lens.1 (hiReg_length L hw) (terms_fits L hw hn)
+  s records hz hb hi hs.2.2.1 zeroQ freshQ offQ.1 offMiddle offQ.2 (by simpa only [build_eq L hw] using good)
+ rw [← build_eq L hw] at re
+ simpa only [newLoop,oldLoop,BThreeTemp.oldLoop,cached_eq L hw,consumed_eq L hw] using many.trans (tr.trans (du.trans (re.trans ca.symm)))
+
+theorem loop_bstate_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (c : Wire) (hcw : c ∉ L.wires) (ready : Ready L c)
+    (cm : CheckedMany (hosts L) (middle L c))
+    (base : BasisState) (clean : L.PairClean base) (hsum : base L.core.sumCarry = false)
+    (O E O' : Nat)
+    (mid : Triple (BState L base O E (4294968272 * regValue (hiReg L) base)) (middle L c)
+      (BState L base O' E (4294968272 * regValue (hiReg L) base))) :
+    Triple (BState L base O E 0) (newLoop L c cm) (BState L base O' E 0) := by
+  have off := b_wloop_sumCarry_free L hw hn c hcw
+  have old := cached_wloop_bstate_step L hw hn base clean hsum O E O' (middle L c)
+    mid off.1 (ParkCarry10Develop.mid_sumCarry_free L hw hn c hcw) off.2.2
+  intro s records hs
+  rw [loop_bstate_eq L hw hn c hcw ready cm base clean hsum O E O' mid s records hs]
+  exact old s records hs
+
+section
+open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
+  LowBitCarryDevelop ParkCarry7Develop ParkCarry10Develop
+
+-- Conditional full B10 frame: original arithmetic/source relations are retained verbatim.
+theorem newBody_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (c : Wire) (hcw : c∉L.wires) (ready : Ready L c)
+    (cm : CheckedMany (hosts L) (middle L c)) (base : BasisState) (M : Nat) (hM : M<2^128)
+    (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hsum:base L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
+    (hg : base c=false → M=0) (hSource:M=if base c then regValue L.core.high base else 0) :
+    Triple (SquareFrame L.core.out base O) (newBody L c cm) (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) := by
+  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
+  have pmod : 0<SquareReduction.p := by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
+  let P := M^2
+  let b0 := P%2^128
+  let b1 := P/2^128
+  let W := 4294968272*b1
+  let g := base c
+  let O1 := (P+(SquareReduction.p-1-O))%SquareReduction.p
+  let O2 := ((P/2^128)%2^128+2^128*(P%2^128)+(SquareReduction.p-1-O1))%SquareReduction.p
+  have hO1 : O1<SquareReduction.p := Nat.mod_lt _ pmod
+  have hO2 : O2<SquareReduction.p := Nat.mod_lt _ pmod
+  have hb1lt : b1<2^128 := by
+    show P/2^128<2^128
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc P<2^256 := hb
+      _ = 2^128*2^128 := by norm_num
+  have hWlt : W<2^163 := by
+    show 4294968272*b1<2^163
+    norm_num at hb1lt ⊢
+    omega
+  have views := accA_views L hw base M hM hP
+  have v1 : L.MeasuredFoldView base (negP L) := views (.inl (negP L)) (by simp [accAMix])
+  have v2 : L.MeasuredFoldView base (rot128F L) := views (.inl (rot128F L)) (by simp [accAMix])
+  have pay1 : measuredFoldPayload base (negP L)=P := by
+    simp only [measuredFoldPayload,negP,pow_zero,Nat.mul_one]
+    rw [L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
+  have pay2 : measuredFoldPayload base (rot128F L)=(P/2^128)%2^128+2^128*(P%2^128) := by
+    simp only [measuredFoldPayload,rot128F,pow_zero,Nat.mul_one]
+    exact L.rotated128_value hw base (M^2) hP
+  have t1 : Triple (SquareFrame L.core.out base O) (measuredFoldQTq L (negP L)) (SquareFrame L.core.out base O1) := by
+    have h := measuredFoldQ_frameTq L hw hn base (negP L) v1 rfl hc O hO
+    rwa [pay1] at h
+  have t2 : Triple (SquareFrame L.core.out base O1) (measuredFoldQTq L (rot128F L))
+      (SquareFrame L.core.out base O2) := by
+    have h := measuredFoldQ_frameTq L hw hn base (rot128F L) v2 rfl hc O1 hO1
+    rwa [pay2] at h
+  have e0 : regValue (eReg L) base=b0 := eReg_value L hw base P hP hb
+  have a0 : regValue (accReg L) base=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc.work q (accReg_work L q hq))
+  have hb1 : regValue (hiReg L) base=b1 := by
+    rw [hiReg,regValue_drop_div _ 128 (by simp [hw.core.product]),
+      L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
+  have conv1 : ∀s,SquareFrame L.core.out base O2 s → BState L base O2 b0 0 s := by
+    intro s hs
+    refine ⟨hs.1,?_,?_,fun q h1 _ _ => hs.2 q h1⟩
+    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (eReg_away L hn q hq).1)).trans e0
+    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (accReg_out L hn q hq))).trans a0
+
+
+  let u := b1/2^96
+  let d := W/2^128 - u
+  let H := b0/2^32
+  let l' := (b0%2^32 + u)%2^32
+  let K := (b0%2^32 + u)/2^32
+  let O3 := ((u + 4294968273*d) + 4294968272*2^32*K + 2^128*(W%2^128) + (SquareReduction.p-1-O2)) % SquareReduction.p
+  let E1 := (2^32*H + l' + 2^130 - b1) % 2^130
+  let O4 := (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p
+  have hO3 : O3<SquareReduction.p := Nat.mod_lt _ pmod
+  have hb0 : b0<2^128 := Nat.mod_lt _ (by positivity)
+  have hu32 : u < 2^32 := by
+    show b1/2^96 < 2^32
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc b1<2^128 := hb1lt
+      _ = 2^32*2^96 := by norm_num
+  have hH : H < 2^96 := by show b0/2^32 < 2^96; omega
+  have hl' : l' < 2^32 := Nat.mod_lt _ (by positivity)
+  have hK : K ≤ 1 := by show (b0%2^32 + u)/2^32 ≤ 1; omega
+  have hKif : (if l' < u then 1 else 0) = K := by
+    show (if (b0%2^32 + u)%2^32 < u then 1 else 0) = (b0%2^32 + u)/2^32
+    by_cases hc' : (b0%2^32 + u)%2^32 < u
+    · rw [if_pos hc']; omega
+    · rw [if_neg hc']; omega
+  let kap:Bool:=decide (K=1)
+  let baseK:=writeBit base L.core.sumCarry kap
+  have kapNat:kap.toNat=K := by
+    have kk:K=0 ∨ K=1 := by omega
+    rcases kk with kk|kk <;> simp [kap,kk]
+  have hcK:L.PairClean baseK := ParkCarryDevelop.base_clean L hn base hc kap
+  have productOff:L.core.sumCarry∉L.core.product := by
+    intro h;apply ParkCarryDevelop.sumCarry_away L hn;simp [ParkCarryDevelop.restWires,h]
+  have highOff:L.core.sumCarry∉hiReg L := by
+    intro h;exact productOff (List.mem_of_mem_take (List.mem_of_mem_drop h))
+  have hb1K:regValue (hiReg L) baseK=b1 := by
+    dsimp only [baseK]
+    rw [ParkCarryDevelop.reg_update_off _ _ _ _ highOff]
+    exact hb1
+  have cq:c≠L.core.sumCarry := by
+    intro h;apply hcw
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h]
+  have gc:baseK c=base c := by simp [baseK,writeBit,cq]
+  have resetBase:writeBit baseK L.core.sumCarry false=base := by
+    funext q
+    by_cases hq:q=L.core.sumCarry
+    · subst q;simp [writeBit,Function.update,hsum]
+    · simp [baseK,writeBit,Function.update,hq]
+  -- Park the completed low-window carry instead of recomputing it.
+  have k1 := eAddLo_step L hw hn base hc O2 0 b0 hb0
+  rw [hb1] at k1
+  have squareBit : (b0%2^32)/2%2=0 := by
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw[Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have loanFact : ((2^32*H+l'+2^128*K)/2%2==1)=
+      ((b1/2^96/2%2==1) ^^ (b1/2^96%2==1) ^^
+        ((b1/2^96%2==1)&&((2^32*H+l'+2^128*K)%2==1))) := by
+    have low0:(2^32*H+l'+2^128*K)%2=(b0%2^32+u)%2:=by dsimp[l'];omega
+    have low1:(2^32*H+l'+2^128*K)/2%2=(b0%2^32+u)/2%2:=by dsimp[l'];omega
+    rw[low0,low1]
+    exact known_second_loan (b0%2^32) u squareBit
+  let originalM:=regValue L.core.high base
+  have source1:base (bit1 L.core.high)=digit originalM 1:=by
+    simpa only[digit,pow_one]using bit1_parity L.core.high base
+      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
+  have modE:(2^32*H+l'+2^128*K)%16=lowSum (base c) originalM u%16:=by
+    rw[lowSum,←hSource]
+    exact folded_low_mod16 M u H l' K rfl rfl
+  have loanFact2:=loan2_from_mod16 (base c) originalM u (2^32*H+l'+2^128*K) modE
+  rw[←source1]at loanFact2
+  have source0:base (L.core.high.headD 0)=digit originalM 0:=by
+    simpa only[digit,pow_zero,Nat.div_one]using head_parity L.core.high base
+      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
+  have modE2:(2^32*H+l'+2^128*K)%2=lowSum (base c) originalM u%2:=by omega
+  have loanFact0:=LowBitCarryNumbers.loan0_from_mod2 (base c) originalM u (2^32*H+l'+2^128*K)
+    (by simpa only[lowSum]using modE2)
+  rw[←source0]at loanFact0
+  have wm := wMidFullCCC0_step L hw hn c hcw base hc O2 (2^32*H+l'+2^128*K) b1 hb1 hb1lt hO2
+    H l' K hH hl' hK rfl loanFact loanFact2 loanFact0
+  have wmBase : Triple (BState L base O2 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base))
+      (wMidFullCCC0 L c)
+      (BState L base O3 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base)) := by
+    simpa only [hb1] using wm
+  have loop := loop_bstate_step L hw hn c hcw ready cm base hc hsum
+    O2 (2^32*H+l'+2^128*K) O3 wmBase
+  have kc:=ParkCarryDevelop.park_step L hw hn base hsum O3 (2^32*H+l') 0 (by omega) kap
+  rw [kapNat] at kc
+  have w3 := eSubK_step L hw hn baseK hcK O3 (2^32*H + l') 0 b1 (by omega) hb1K
+  have tw : Triple (BState L base O2 b0 0) (newFold L c cm) (BState L baseK O3 E1 0) :=
+    by simpa only [newFold,newLoop,List.append_assoc] using k1.seq (loop.seq (kc.seq w3))
+  -- eFoldTq
+  have f1 := eFlip_step L hw hn baseK c hcw O3 E1 0
+  have f2 := eCore_stepTq L hw hn baseK hcK O3 (flipE g E1) hO3
+  have f3 := eFlip_step L hw hn baseK c hcw O4 (flipE g E1) 0
+  rw [gc] at f1 f3
+  rw [flipE_flipE] at f3
+  have tf : Triple (BState L baseK O3 E1 0) (eFoldTq L c) (BState L baseK O4 E1 0) :=
+    f1.seq (f2.seq f3)
+  -- wRestoreT
+  have bk : (E1+b1)%2^130 = 2^32*H + l' := by show ((2^32*H + l' + 2^130 - b1) % 2^130 + b1) % 2^130 = _; omega
+  have r2 := eAddB_step L hw hn baseK hcK O4 E1 0 b1 hb1K (by rw [bk]; omega)
+  rw [bk] at r2
+  have bit32:(b0%2^32)/2%2=0 := by
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw [Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have total:l'+2^32*(baseK L.core.sumCarry).toNat=b0%2^32+regValue (hiReg L) baseK/2^96 := by
+    have atq:baseK L.core.sumCarry=kap := by simp [baseK,writeBit]
+    rw [atq,kapNat,hb1K]
+    show ((b0%2^32+u)%2^32)+2^32*((b0%2^32+u)/2^32)=b0%2^32+u
+    exact Nat.mod_add_div _ _
+  have r3:=ParkCarryDevelop.restore_step L hw hn baseK hcK O4 0 H l' (b0%2^32) hH hl'
+    (Nat.mod_lt _ (by positivity)) bit32 total
+  have bb:2^32*H+b0%2^32=b0 := by dsimp [H];omega
+  rw [resetBase,bb] at r3
+  have rp := padM_step L hw hn base hc O4 b0 0 744
+  have tr : Triple (BState L baseK O4 E1 0) (ParkCarry10Develop.rebuild L) (BState L base O4 b0 0) :=
+    r2.seq (r3.seq rp)
+  have conv0 : ∀s,BState L base O4 b0 0 s → SquareFrame L.core.out base O4 s := by
+    intro s hs
+    refine ⟨hs.1,fun q hq => ?_⟩
+    by_cases he : q∈eReg L
+    · exact (regValue_eq_iff _ _ _).mp (hs.2.1.trans e0.symm) q he
+    by_cases ha : q∈accReg L
+    · exact (regValue_eq_iff _ _ _).mp (hs.2.2.1.trans a0.symm) q ha
+    exact hs.2.2.2 q hq he ha
+  have key : O4 = bO4 (M^2) (base c) O := by
+    have hg' : g = false → b1 = 0 ∧ b0 = 0 := by
+      intro h0
+      have : M = 0 := hg h0
+      subst this
+      simp [b1, b0, P]
+    have e3 : O3 = (((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
+        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p := by
+      simp only [O3, u, d, K, W]
+      congr 1; ring
+    have e4 : O4 = (4294968272*flipE g ((2^32*(b0/2^32) + (b0%2^32+b1/2^96)%2^32 + 2^130 - b1) % 2^130) +
+        (SquareReduction.p-1-((((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
+        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p))) % SquareReduction.p := by
+      show (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p = _
+      rw [e3]
+    rw [e4, o4K b0 b1 O2 _ g hb0 hb1lt hO2 hg']
+    exact o4_eq b0 b1 O2 g hb0 hb1lt hO2 hg'
+  have all := t1.seq (t2.seq (Triple.conseq (fun s h => h) ((Triple.conseq conv1 tw (fun s h => h)).seq
+    (tf.seq tr)) conv0))
+  rw [key] at all
+  exact all
+
+end
+
+
+/-- All selected branches retain the old square specification, including the full phase relation. -/
+theorem bodyWith_frame (enabled : Bool) (L : CuccaroStreamedSquareWideLayout)
+    (hw : L.Widths) (hn : L.wires.Nodup) (c : Wire) (hcw : c ∉ L.wires)
+    (base : BasisState) (M : Nat) (hM : M < 2^128) (hP : regValue L.core.product base = M^2)
+    (hc : L.PairClean base) (hsum : base L.core.sumCarry = false)
+    (O : Nat) (hO : O < SquareReduction.p) (hg : base c = false → M = 0)
+    (hSource : M = if base c then regValue L.core.high base else 0) :
+    Triple (SquareFrame L.core.out base O) (bodyWith enabled L c)
+      (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) := by
+  have old := ParkCarry10Develop.body_frame L hw hn c hcw base M hM hP hc hsum O hO hg hSource
+  cases enabled with
+  | false => exact old
+  | true =>
+      by_cases ready : Ready L c
+      · cases h : checkedMiddle L c with
+        | none => simpa only [bodyWith,if_true,if_pos ready,h] using old
+        | some cm =>
+            simpa only [bodyWith,if_true,if_pos ready,h] using
+              newBody_frame L hw hn c hcw ready cm base M hM hP hc hsum O hO hg hSource
+      · simpa only [bodyWith,if_true,if_neg ready] using old
+
+
+
+                                                                                    
+
+                                                                                          
+                                                                
+                                                              
+                                                                   
+                                                                                 
+                            
+                           
+                                                                                                                                                         
+                                                                                                                                                                     
+                                                                                                                                                                                                                      
+                                                                                                                                                
+                                                                                                                                                            
+                                                                                                                                                                                                             
+                                                     
+                                                        
+                                                             
+                                                      
+                               
+                                                                                                                      
+                                   
+
+                                                                                          
+                                                                
+                                                                              
+                                                                                   
+                                                                                                 
+                                             
+                                                                                                                              
+                                                                                                             
+                                                                                  
+                                   
+
+                                                                                        
+                                                                                                      
+                            
+                           
+                                                                                                                                                                                                               
+                                                                                                                                                                                                      
+                                                                                                                                                                      
+                                                                                                                                                             
+                                                                                                                                                          
+                                                                                                                                                 
+                                                     
+                                                          
+           
+                                                        
+                                                                     
+                          
+                                                
+                                                   
+                                                    
+                                                   
+                                                    
+                                      
+                                                                                                                                           
+                                             
+                                                
+                                                   
+                                                    
+                                                   
+                                                    
+                             
+                                                                                                                                           
+                                                              
+                                                                           
+                                                                         
+                                                    
+                                                              
+
+                                                                      
+                                               
+                                                                       
+                                                               
+
+                                                                        
+                                                                                 
+                                                                                                                                                   
+
+                                                                                        
+                                               
+                                                                                 
+                                           
+                                  
+                
+                                                       
+                                             
+                                
+                                                                    
+                        
+                                           
+                                        
+
+                                                                                        
+                                                                
+                                                                 
+           
+                                                                     
+                                                                             
+           
+
+                                                                           
+                                                    
+                                                                               
+                                    
+                            
+                           
+                                  
+                                    
+                                    
+                           
+                                                            
+                                                            
+                                                                                                                        
+                                                                                                                 
+             
+                                                                                                                                                
+                                                                                                                                       
+                                                                  
+                                                                                                                                                                                                                 
+                                                                                                                                                                                                        
+                                                                                                                                                                                     
+                                                                                                                                                                            
+                                        
+                                                  
+                                                                                                                                                                                                                         
+                                                                                                                                                                                                                
+                                               
+                                                                                       
+                                                                              
+                                                            
+                                                                                   
+                                                        
+                           
+                                        
+                    
+                                 
+                                                                                       
+
+                                                                                 
+                                
+                                                                                      
+                                                                                              
+                                                                                                        
+                    
+                                                                    
+           
+                                
+                                        
+                                                                                       
+                    
+                                                              
+                                                       
+                                                  
+                                                                                 
+
+                                                                               
+                                                                                                         
+                    
+                                       
+           
+                                
+                                        
+                                                                                                                     
+                                                                                                       
+                                                                                                               
+
+                                                                                
+                                                                                                    
+                                                        
+                    
+                      
+           
+                                
+                                        
+                                                                
+                                                                                                           
+                                                          
+
+end ECDSAAdd.Entrant.BWideTemp
+
+end
+
+section
+set_option Elab.async false
+
+set_option maxRecDepth 100000
+
+set_option maxHeartbeats 100000000
+
+namespace ECDSAAdd.Entrant.BExtraSteps
+
+open ECDSAAdd ZeroReadDevelop
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                       
+
+                                                                                                                                               
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+
+end ECDSAAdd.Entrant.BExtraSteps
+
+end
+
+section
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+namespace ECDSAAdd.Entrant.BWideStaged
+open ECDSAAdd Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ZeroReadDevelop BWideTemp
+
+                          
+                          
+
+                                                    
+                                                              
+                                    
+                 
+                 
+                                                                    
+
+                                                                                                                                                                                                                                                                                                                            
+ def suffix : List Wire := [4756,4728,4729,4730,4731,4732,4733,4734,4735,4736,4737,4738,4739,4740,4741,4742,4743,4744,4745,4746,4747,4748,4749,4750,4751,4752,4753,4754,4755]
+                                                                                                                                                                                        
+                                                                                                                                                                                              
+                                                                                                           
+                                                                                 
+                                          
+                                                                                        
+                                                                  
+                 
+                                                                                    
+
+                                                                                        
+              
+               
+
+                                                                                                                             
+              
+                     
+               
+
+                                                                      
+                                                  
+                                                   
+                                                                                         
+                                                             
+                                                                            
+                                                     
+                                                                                        
+
+                                      
+                                                
+           
+                      
+                                  
+                                                                                                    
+                             
+                          
+end ECDSAAdd.Entrant.BWideStaged
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.SeedPadDevelop
+open InverseCarryDevelop ThirdSavedCarryDevelop ZeroReadDevelop
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 30000
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+def plainHead (acc Z bank:List Wire) (cin:Wire) (src:List Wire):Program :=
+ unbuildPre acc Z bank cin src ++ SourceAddFourDevelop.add acc Z bank cin src ++ SourceTailDevelop.tail acc Z bank cin src
+
+theorem sourceUnbuild_split (acc Z bank:List Wire) (cin:Wire) (src:List Wire):
+ SourceAddFourDevelop.unbuild acc Z bank cin src=
+ plainHead acc Z bank cin src++Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4) := by
+ simp only [SourceAddFourDevelop.unbuild,plainHead,unbuildPre,List.append_assoc]
+
+theorem plainHead_repad (acc Z Z' bank:List Wire) (cin:Wire) (src:List Wire)
+ (hs:src.length=128) (h5:Z.take 5=Z'.take 5):
+ plainHead acc Z bank cin src=plainHead acc Z' bank cin src := by
+ have h1:Z.take 1=Z'.take 1 := by
+  simpa only [List.take_take] using congrArg (List.take 1) h5
+ simp [plainHead,unbuildPre,SourceAddFourDevelop.add,SourceAddFourDevelop.program,
+  SourceTailDevelop.tail,SourceTailDevelop.program,CodexKnownOnesTail.accSub,
+  Acc.tx,Acc.earlyTerm,hs,h1,h5]
+
+theorem sourceUnbuild_repad (acc Z Z' bank:List Wire) (cin:Wire) (src:List Wire)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5) (avoid:∀w∈Z++Z',noTargets w (plainHead acc Z bank cin src))
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hz':∀w∈Z',s.basis w=false):
+ run (SourceAddFourDevelop.unbuild acc Z bank cin src) m s=
+ run (SourceAddFourDevelop.unbuild acc Z' bank cin src) m s := by
+ rw [sourceUnbuild_split,sourceUnbuild_split,run_cat,run_cat,←plainHead_repad acc Z Z' bank cin src hs h5]
+ apply seed_repad acc Z Z' bank cin 163 (Acc.earlyTerm src false 4) ha hf hf'
+ · intro w hw
+   exact (noTargets_preserves w _ (avoid w (List.mem_append_left _ hw)) s m).trans (hz w hw)
+ · intro w hw
+   exact (noTargets_preserves w _ (avoid w (List.mem_append_right _ hw)) s m).trans (hz' w hw)
+
+theorem plain_loop_repad (acc Z Z' bank:List Wire) (cin:Wire) (src:List Wire) (middle:Program)
+ (hs:src.length=128) (ha:acc.length=163)
+ (hf:Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 4))
+ (hf':Acc.Fits acc Z' bank cin 163 (Acc.earlyTerm src false 4))
+ (h5:Z.take 5=Z'.take 5) (avoid:∀w∈Z++Z',noTargets w (plainHead acc Z bank cin src))
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hz':∀w∈Z',s.basis w=false)
+ (postZero:∀w∈Z++Z',
+  (run middle (m.drop (measurementCount (NarrowAcc.build8 acc Z bank cin src)))
+   (run (NarrowAcc.build8 acc Z bank cin src) m s)).basis w=false):
+ run (NarrowAcc.build8 acc Z bank cin src++middle++SourceAddFourDevelop.unbuild acc Z bank cin src) m s=
+ run (NarrowAcc.build8 acc Z' bank cin src++middle++SourceAddFourDevelop.unbuild acc Z' bank cin src) m s := by
+ have ct:=build8_measurement_repad acc Z Z' bank cin src hs ha hf hf' h5
+ have forward:=build8_repad acc Z Z' bank cin src hs ha hf hf' h5 s m hz hz'
+ simp only [run_cat,measurementCount_append]
+ rw [←ct,←forward]
+ exact sourceUnbuild_repad acc Z Z' bank cin src hs ha hf hf' h5 avoid _ _
+  (fun w hw=>postZero w (List.mem_append_left _ hw))
+  (fun w hw=>postZero w (List.mem_append_right _ hw))
+
+#print axioms plain_loop_repad
+def cachedTail (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q:Wire):Program :=
+ Acc.op (acc.take 139) Z bank cin 139 false (Acc.earlyTerm src false 10) ++
+ cachedSub (Acc.tx Z 139 (Acc.earlyTerm src true 6))
+  (Acc.ty (acc.take 139) (Acc.earlyTerm src true 6)) (Acc.tc bank 139 (Acc.earlyTerm src true 6)) cin q ++
+ buildPost acc Z bank cin src
+
+                                                                                      
+                                                                                                                             
+                                                              
+
+                                                                                      
+                                             
+                                                                         
+                                 
+                                                             
+                                                                 
+
+                                                                                      
+                                                                                                    
+                                          
+
+                                                                                        
+                                                                                                                                   
+                                                                       
+
+                                                                                        
+                                             
+                                                                             
+                                 
+                                                             
+                                                          
+                                                                             
+                                
+
+                                                                                                 
+                                                                            
+                          
+                                                                                    
+                                                                                          
+                                                                         
+
+
+                                                                                                   
+                                                                            
+                          
+                                                                                            
+                                                                                                
+                                                                                
+
+
+                                                                                                
+                                                                                                      
+                                                                                                     
+                                                                                           
+           
+                                                                              
+                                                                                          
+                                                                                                  
+                                      
+                                                                                                 
+
+
+                                                                                                  
+                                                                                                      
+                                                                                                             
+                                                                                                 
+           
+                                                                              
+                                                                                                
+                                                                                          
+                                                                                                   
+                                      
+
+
+                                                                                                                 
+                                            
+                                                                        
+                                                                                                           
+                                                                                                      
+                                                                        
+                                                  
+                                                                  
+                                                               
+
+
+                                        
+
+end ECDSAAdd.Entrant.SeedPadDevelop
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 100000
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.AltBTemp
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
+
+def hostR := BThreeTemp.hostR
+def hostP := BThreeTemp.hostP
+                             
+def pad (L : CuccaroStreamedSquareWideLayout) : List Wire := AltPadDevelop.pad L
+
+def loans (L : CuccaroStreamedSquareWideLayout) : List Wire :=
+ (L.core.work.drop 173).take 19 ++ (L.core.work.drop 193).take 3 ++ (L.core.work.drop 255).take 1 ++ (L.core.work.drop 227).take 28 ++ (L.core.work.drop 201).take 11 ++ (L.core.work.drop 213).take 14
+def hosts (L : CuccaroStreamedSquareWideLayout) : List Wire := hostR L::hostP L::loans L
+def middle := BThreeTemp.middle
+def LoanReadyTrim (L : CuccaroStreamedSquareWideLayout) (g u : Wire) : Prop :=
+ u∈L.core.work ∧ u∉L.core.cin::(hiReg L++accReg L++pad L++accBank L) ∧
+ u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L ∧ True
+def HostReady (L : CuccaroStreamedSquareWideLayout) (c x : Wire) : Prop :=
+ LoanReadyTrim L c x ∧ x∉mR L ∧ x≠w192 L ∧ x≠c ∧ hasWire (ParkCarry10Develop.body L c) x=true
+def padNoTargets (L:CuccaroStreamedSquareWideLayout):Bool :=
+ (SeedPadDevelop.plainHead (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)).all
+  (fun i=>decide (targetOf i∉accZ L++pad L))
+def PadReady (L:CuccaroStreamedSquareWideLayout) (c:Wire):Prop :=
+ padNoTargets L=true ∧ ∀w∈pad L,hasWire (ParkCarry10Develop.body L c) w=true
+
+theorem padNoTargets_sound (L:CuccaroStreamedSquareWideLayout) (h:padNoTargets L=true):
+ ∀w∈accZ L++pad L,noTargets w (SeedPadDevelop.plainHead (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)) := by
+ intro w hw i hi eq
+ have check:=List.all_eq_true.mp h i hi
+ exact (of_decide_eq_true check) (eq ▸ hw)
+
+def Ready (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Prop :=
+ (loans L).length=76 ∧ (L.core.sumCarry::hosts L).Nodup ∧ (∀x∈hosts L,HostReady L c x) ∧ PadReady L c
+instance (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Decidable (Ready L c) := by
+ unfold Ready HostReady LoanReadyTrim PadReady
+ unfold pad
+ infer_instance
+
+def checkedMiddle (L : CuccaroStreamedSquareWideLayout) (c : Wire) :
+ Option (CheckedMany (hosts L) (middle L c)) := compileManyChunked? (hosts L) (middle L c)
+def oldLoop := BThreeTemp.oldLoop
+def newLoop (L : CuccaroStreamedSquareWideLayout) (c : Wire)
+ (cm : CheckedMany (hosts L) (middle L c)) : Program :=
+ ManyACarryDevelop.buildMany 76 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  (loans L) L.core.sumCarry (hostR L) (hostP L) ++ cm.out ++
+ ManyACarryDevelop.unbuildMany 76 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  (loans L) L.core.sumCarry (hostR L) (hostP L)
+def newFold (L : CuccaroStreamedSquareWideLayout) (c : Wire)
+ (cm : CheckedMany (hosts L) (middle L c)) : Program :=
+ eAddLo L ++ (newLoop L c cm ++ (ParkCarryDevelop.program (eU L) L.core.sumCarry ++ eSubK L))
+def newBody (L : CuccaroStreamedSquareWideLayout) (c : Wire)
+ (cm : CheckedMany (hosts L) (middle L c)) : Program :=
+ measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++
+  (newFold L c cm ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L)))
+                                   
+def bodyWith (enabled : Bool) (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
+ if enabled then
+  if Ready L c then
+   match checkedMiddle L c with
+   | none => ParkCarry10Develop.body L c
+   | some cm => newBody L c cm
+  else ParkCarry10Develop.body L c
+ else ParkCarry10Develop.body L c
+                                                                                                            
+                                                                                                            
+                                                   
+
+                                                                                                                          
+                                                                                                                                                                   
+                                                                                                                                                                               
+
+                                                                            
+                                                               
+               
+                                                                                          
+                                                                 
+
+theorem host_ready (L : CuccaroStreamedSquareWideLayout) (c : Wire) (h : Ready L c) :
+ HostReady L c (hostR L) ∧ HostReady L c (hostP L) ∧ ∀x∈loans L,HostReady L c x := by
+ exact ⟨h.2.2.1 _ (by simp [hosts]),h.2.2.1 _ (by simp [hosts]),fun x hx=>h.2.2.1 x (by simp [hosts,hx])⟩
+theorem loan_ne (L : CuccaroStreamedSquareWideLayout) (c : Wire) (h : Ready L c) :
+ (loans L).Nodup ∧ hostP L≠hostR L ∧ ∀x∈loans L,x≠L.core.sumCarry ∧ x≠hostR L ∧ x≠hostP L := by
+ have nd := h.2.1
+ change (L.core.sumCarry::hostR L::hostP L::loans L).Nodup at nd
+ simp only [List.nodup_cons,List.mem_cons,not_or] at nd
+ refine ⟨nd.2.2.2,fun e=>nd.2.1.1 e.symm,?_⟩
+ intro x hx
+ exact ⟨fun e=>nd.1.2.2 (e ▸ hx),fun e=>nd.2.1.2 (e ▸ hx),fun e=>nd.2.2.1 (e ▸ hx)⟩
+
+theorem pad_length (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : 5≤(pad L).length := by
+ rw [pad,AltPadDevelop.pad_length L hw]
+ decide
+ theorem terms_fits (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+ ∀f∈earlyHTerms (hiReg L),Acc.Fits (accReg L) (pad L) (accBank L) L.core.cin 163 f :=
+ AltPadDevelop.terms_fits L hw hn
+ theorem sumCarry_trim (L : CuccaroStreamedSquareWideLayout) (hn : L.wires.Nodup) :
+ L.core.sumCarry ∉ L.core.cin::(hiReg L++accReg L++pad L++accBank L) := by
+ intro h
+ exact sumCarry_fresh_domain L hn ((AltPadDevelop.domain_sublist L _).subset h)
+theorem host_zero_of_bstate (L : CuccaroStreamedSquareWideLayout)
+    (hn : L.wires.Nodup) (c x : Wire) (ready : HostReady L c x)
+    (base : BasisState) (clean : L.PairClean base) (O E A : Nat)
+    (s : BasisState) (hs : BState L base O E A s) : s x = false := by
+  have work : x ∈ L.core.work := ready.1.1
+  have away := L.pairAuxAway hn x (by simp [work])
+  have notE : x ∉ eReg L := fun h => away.1 (eReg_product L _ h)
+  have notAcc : x ∉ accReg L := by
+    intro member
+    exact ready.1.2.1 (by simp [member])
+  exact (hs.2.2.2 x away.2 notE notAcc).trans ((regValue_zero _ _).mp clean.work x work)
+
+/-- Source support bounds, rather than a false no-write assumption, establish endpoint freshness. -/
+theorem endpoint_off (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (x : Wire) (xq : x ≠ L.core.sumCarry) (xr : x ≠ hostR L) (xp : x ≠ hostP L)
+    (offF : x ∉ wires (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)))
+    (offI : x ∉ wires (SourceAddFourDevelop.unbuild (accReg L) (pad L) (accBank L) L.core.cin (hiReg L))) :
+    x ∉ wires (buildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) ∧
+    x ∉ wires (unbuildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) ∧
+    x ∉ wires (buildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L) (hostP L)) ∧
+    x ∉ wires (unbuildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L) (hostP L)) := by
+  have lens := acc_lengths L hw
+  have plen := pad_length L hw
+  have cF : x ∉ wires (buildCached (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) := by
+    intro h
+    rcases Finset.mem_insert.mp (buildCached_support _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) (by omega) h) with eq | h
+    · exact xq eq
+    · exact offF h
+  have cI : x ∉ wires (unbuildConsumed (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) := by
+    intro h
+    rcases Finset.mem_insert.mp (unbuildConsumed_support _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) h) with eq | h
+    · exact xq eq
+    · exact offI h
+  have dF : x ∉ wires (buildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) := by
+    intro h
+    rcases Finset.mem_insert.mp (buildDual_support _ _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) (by omega) h) with eq | h
+    · exact xr eq
+    · exact cF h
+  have dI : x ∉ wires (unbuildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) := by
+    intro h
+    rcases Finset.mem_insert.mp (unbuildDual_support _ _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) h) with eq | h
+    · exact xr eq
+    · exact cI h
+  refine ⟨dF,dI,?_,?_⟩
+  · intro h
+    rcases Finset.mem_insert.mp (buildTriple_support _ _ _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) (by omega) h) with eq | h
+    · exact xp eq
+    · exact dF h
+  · intro h
+    rcases Finset.mem_insert.mp (unbuildTriple_support _ _ _ _ _ _ _ _ lens.1
+      (hiReg_length L hw) (by omega) h) with eq | h
+    · exact xp eq
+    · exact dI h
+
+                                                                                             
+                                                                              
+                                
+                                                                                                 
+                                                                                                         
+                               
+                              
+                                                                                    
+                                                           
+             
+           
+                                                                       
+                                                                 
+           
+                                                                           
+                                                      
+
+
+theorem loop_bstate_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+ (hn : L.wires.Nodup) (c : Wire) (hcw : c∉L.wires) (ready : Ready L c)
+ (cm : CheckedMany (hosts L) (middle L c))
+ (base : BasisState) (clean : L.PairClean base) (hsum : base L.core.sumCarry=false)
+ (O E O' : Nat)
+ (mid : Triple (BState L base O E (4294968272*regValue (hiReg L) base)) (middle L c)
+  (BState L base O' E (4294968272*regValue (hiReg L) base)))
+ (s : State) (records : List Bool) (hs : BState L base O E 0 s.basis) :
+ run (newLoop L c cm) records s=run (oldLoop L c) records s := by
+ have lens:=acc_lengths L hw
+ have plen:=pad_length L hw
+ have rr:=(host_ready L c ready).1
+ have pp:=(host_ready L c ready).2.1
+ have uu:=(host_ready L c ready).2.2
+ have nd:=loan_ne L c ready
+ have away:=ParkCarryDevelop.sumCarry_off_regs L hn
+ have zeroQ:s.basis L.core.sumCarry=false := (hs.2.2.2 _ away.1 away.2.1 away.2.2).trans hsum
+ have zeroR:=host_zero_of_bstate L hn c (hostR L) rr base clean O E 0 s.basis hs
+ have zeroP:=host_zero_of_bstate L hn c (hostP L) pp base clean O E 0 s.basis hs
+ have zeroU:∀x∈loans L,s.basis x=false := fun x hx=>host_zero_of_bstate L hn c x (uu x hx) base clean O E 0 s.basis hs
+ have freshQ:=sumCarry_trim L hn
+ have offQ:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry lens.1 (hiReg_length L hw) (terms_fits L hw hn) freshQ
+ have offR:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (hostR L) lens.1 (hiReg_length L hw) (terms_fits L hw hn) rr.1.2.1
+ have offP:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (hostP L) lens.1 (hiReg_length L hw) (terms_fits L hw hn) pp.1.2.1
+ have pF:hostP L∉wires (buildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) := by
+  intro h
+  rcases Finset.mem_insert.mp (buildDual_support _ _ _ _ _ _ _ lens.1 (hiReg_length L hw) (by omega) (by omega) h) with eq|h
+  · exact nd.2.1 eq
+  rcases Finset.mem_insert.mp (buildCached_support _ _ _ _ _ _ lens.1 (hiReg_length L hw) (by omega) (by omega) h) with eq|h
+  · exact pp.1.2.2.1 eq
+  · exact offP.1 h
+ have pI:hostP L∉wires (unbuildDual (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L)) := by
+  intro h
+  rcases Finset.mem_insert.mp (unbuildDual_support _ _ _ _ _ _ _ lens.1 (hiReg_length L hw) (by omega) h) with eq|h
+  · exact nd.2.1 eq
+  rcases Finset.mem_insert.mp (unbuildConsumed_support _ _ _ _ _ _ lens.1 (hiReg_length L hw) (by omega) h) with eq|h
+  · exact pp.1.2.2.1 eq
+  · exact offP.2 h
+ have endpoints:∀x∈loans L,
+  x∉wires (buildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L) (hostP L)) ∧
+  x∉wires (unbuildTriple (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry (hostR L) (hostP L)) := by
+  intro x hx
+  have off:=wloop_original_off (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) x lens.1 (hiReg_length L hw) (terms_fits L hw hn) (uu x hx).1.2.1
+  exact (endpoint_off L hw x (nd.2.2 x hx).1 (nd.2.2 x hx).2.1 (nd.2.2 x hx).2.2 off.1 off.2).2.2
+ have offMiddle:L.core.sumCarry∉wires (middle L c):=ParkCarry10Develop.mid_sumCarry_free L hw hn c hcw
+ obtain ⟨hzFull,hb,hi,_,_⟩:=zero_regs L hn base clean O E 0 s.basis hs
+ have hz:∀w∈pad L,s.basis w=false := fun w hw=>hzFull w ((AltPadDevelop.pad_sublist L).subset hw)
+ have source0:regValue (hiReg L) s.basis=regValue (hiReg L) base := regValue_congr _ _ _ (fun q hq=>bstate_other L hn base O E 0 s.basis hs q (Or.inl hq))
+ have goodFull:WReady (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
+  (middleState (wBuild L) (middle L c) s records) := by
+  let first:=run (wBuild L) (records.take (measurementCount (wBuild L))) s
+  have firstGood:=(wBuild_step L hw hn base clean O E) s (records.take (measurementCount (wBuild L))) hs
+  have midGood:=mid first ((records.drop (measurementCount (wBuild L))).take (measurementCount (middle L c))) firstGood.2
+  obtain ⟨mz,mb,mi,_,_⟩:=zero_regs L hn base clean O' E _ _ midGood.2
+  have source1:=regValue_congr (hiReg L) _ base (fun q hq=>bstate_other L hn base O' E _ _ midGood.2 q (Or.inl hq))
+  exact ⟨midGood.2.2.2.1.trans (by rw [source0]),source1.trans source0.symm,mz,mb,mi⟩
+ have midPadEq:=SeedPadDevelop.middle8_repad (accReg L) (accZ L) (pad L) (accBank L) L.core.cin
+  (hiReg L) (middle L c) (hiReg_length L hw) lens.1
+  (wTerms_fits L hw hn _ (NarrowAcc.terms_mem _).1) (terms_fits L hw hn _ (NarrowAcc.terms_mem _).1)
+  (AltPadDevelop.pad_take5 L hw).symm s records hzFull hz
+ have good:WReady (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
+  (middleState (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)) (middle L c) s records) := by
+  rw [←midPadEq]
+  exact ⟨goodFull.1,goodFull.2.1,(fun w hw=>goodFull.2.2.1 w ((AltPadDevelop.pad_sublist L).subset hw)),goodFull.2.2.2⟩
+ have zeros:∀x∈hosts L,s.basis x=false := by
+  intro x hx; simp only [hosts,List.mem_cons] at hx
+  rcases hx with rfl|rfl|hx
+  · exact zeroR
+  · exact zeroP
+  · exact zeroU x hx
+ have offOriginal:∀x∈hosts L,x∉wires (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)) := by
+  intro x hx
+  exact (wloop_original_off _ _ _ _ _ _ lens.1 (hiReg_length L hw) (terms_fits L hw hn) (ready.2.2.1 x hx).1.2.1).1
+ have midEq:=cm.proof.middle_eq (hosts L) (middle L c) cm.out (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)) s records zeros offOriginal
+ have goodNew:WReady (accReg L) (pad L) (accBank L) L.core.cin (hiReg L) (regValue (hiReg L) s.basis)
+  (middleState (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)) cm.out s records) := by rw [midEq];exact good
+ have support:=cm.proof.support (hosts L) (middle L c) cm.out
+ have nq:L.core.sumCarry∉wires cm.out := fun h=>offMiddle (support.1 h)
+ have nr:hostR L∉wires cm.out := support.2 _ (by simp [hosts])
+ have np:hostP L∉wires cm.out := support.2 _ (by simp [hosts])
+ have triple:=triple_middle_ready (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (hostR L) (hostP L) cm.out lens.1 (hiReg_length L hw) (terms_fits L hw hn)
+  s records hz hb hi hs.2.2.1 zeroQ zeroR zeroP freshQ rr.1.2.1 rr.1.2.2.1 pp.1.2.1 pp.1.2.2.1 nd.2.1
+  offQ.1 nq offQ.2 offR.1 nr offR.2 pF np pI goodNew
+ have many:=ManyACarryDevelop.cached_wloop_many_eq 76 (accReg L) (pad L) (accBank L) L.core.cin
+  (hiReg L) (loans L) L.core.sumCarry (hostR L) (hostP L) cm.out lens.1 (hiReg_length L hw)
+  (terms_fits L hw hn) s records hz hb hi hs.2.2.1 zeroQ zeroR zeroP zeroU freshQ rr.1.2.1 rr.1.2.2.1
+  pp.1.2.1 pp.1.2.2.1 nd.2.1 (by decide) nd.1 ready.1 (fun x hx=>(uu x hx).1.2.1) nd.2.2
+  offQ.1 offQ.2 offR.1 offR.2 pF pI (fun x hx=>(endpoints x hx).1)
+  (fun x hx=>support.2 x (by simp [hosts,hx])) (fun x hx=>(endpoints x hx).2)
+  triple.1 triple.2.1 triple.2.2.1 triple.2.2.2
+ have tr:=cached_wloop_triple_eq (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (hostR L) (hostP L) cm.out lens.1 (hiReg_length L hw) (terms_fits L hw hn)
+  s records hz hb hi hs.2.2.1 zeroQ zeroR zeroP freshQ rr.1.2.1 rr.1.2.2.1 pp.1.2.1 pp.1.2.2.1 nd.2.1
+  offQ.1 nq offQ.2 offR.1 nr offR.2 pF np pI goodNew
+ have du:=cached_wloop_dual_eq (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (hostR L) cm.out lens.1 (hiReg_length L hw) (terms_fits L hw hn)
+  s records hz hb hi hs.2.2.1 zeroQ zeroR freshQ rr.1.2.1 rr.1.2.2.1 offQ.1 nq offQ.2 offR.1 nr offR.2 goodNew
+ have re:=cm.proof.surround_eq (hosts L) (middle L c) cm.out (NarrowAcc.build8 (accReg L) (pad L) (accBank L) L.core.cin (hiReg L))
+  (SourceAddFourDevelop.unbuild (accReg L) (pad L) (accBank L) L.core.cin (hiReg L)) s records zeros offOriginal
+ have origOff:=b_wloop_sumCarry_free L hw hn c hcw
+ have ca:=cached_wloop_eq (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L)
+  L.core.sumCarry (middle L c) lens.1 (hiReg_length L hw) (wTerms_fits L hw hn)
+  s records hzFull hb hi hs.2.2.1 zeroQ (sumCarry_fresh_domain L hn)
+  origOff.1 offMiddle origOff.2.2 goodFull
+ have repad:=SeedPadDevelop.plain_loop_repad (accReg L) (accZ L) (pad L) (accBank L) L.core.cin
+  (hiReg L) (middle L c) (hiReg_length L hw) lens.1
+  (wTerms_fits L hw hn _ (NarrowAcc.terms_mem _).1) (terms_fits L hw hn _ (NarrowAcc.terms_mem _).1)
+  (AltPadDevelop.pad_take5 L hw).symm (padNoTargets_sound L ready.2.2.2.1) s records hzFull hz ?_
+ · simpa only [newLoop,oldLoop,BThreeTemp.oldLoop] using many.trans (tr.trans (du.trans (re.trans (repad.symm.trans ca.symm))))
+ · intro w hw
+   have mem:w∈accZ L:=by
+    rcases List.mem_append.mp hw with hw|hw
+    · exact hw
+    · exact (AltPadDevelop.pad_sublist L).subset hw
+   simpa only [wBuild,middleState,run_take] using goodFull.2.2.1 w mem
+
+#print axioms loop_bstate_eq
+theorem loop_bstate_step (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (c : Wire) (hcw : c ∉ L.wires) (ready : Ready L c)
+    (cm : CheckedMany (hosts L) (middle L c))
+    (base : BasisState) (clean : L.PairClean base) (hsum : base L.core.sumCarry = false)
+    (O E O' : Nat)
+    (mid : Triple (BState L base O E (4294968272 * regValue (hiReg L) base)) (middle L c)
+      (BState L base O' E (4294968272 * regValue (hiReg L) base))) :
+    Triple (BState L base O E 0) (newLoop L c cm) (BState L base O' E 0) := by
+  have off := b_wloop_sumCarry_free L hw hn c hcw
+  have old := cached_wloop_bstate_step L hw hn base clean hsum O E O' (middle L c)
+    mid off.1 (ParkCarry10Develop.mid_sumCarry_free L hw hn c hcw) off.2.2
+  intro s records hs
+  rw [loop_bstate_eq L hw hn c hcw ready cm base clean hsum O E O' mid s records hs]
+  exact old s records hs
+
+section
+open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
+  LowBitCarryDevelop ParkCarry7Develop ParkCarry10Develop
+
+-- Conditional full B10 frame: original arithmetic/source relations are retained verbatim.
+theorem newBody_frame (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (c : Wire) (hcw : c∉L.wires) (ready : Ready L c)
+    (cm : CheckedMany (hosts L) (middle L c)) (base : BasisState) (M : Nat) (hM : M<2^128)
+    (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hsum:base L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
+    (hg : base c=false → M=0) (hSource:M=if base c then regValue L.core.high base else 0) :
+    Triple (SquareFrame L.core.out base O) (newBody L c cm) (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) := by
+  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
+  have pmod : 0<SquareReduction.p := by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
+  let P := M^2
+  let b0 := P%2^128
+  let b1 := P/2^128
+  let W := 4294968272*b1
+  let g := base c
+  let O1 := (P+(SquareReduction.p-1-O))%SquareReduction.p
+  let O2 := ((P/2^128)%2^128+2^128*(P%2^128)+(SquareReduction.p-1-O1))%SquareReduction.p
+  have hO1 : O1<SquareReduction.p := Nat.mod_lt _ pmod
+  have hO2 : O2<SquareReduction.p := Nat.mod_lt _ pmod
+  have hb1lt : b1<2^128 := by
+    show P/2^128<2^128
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc P<2^256 := hb
+      _ = 2^128*2^128 := by norm_num
+  have hWlt : W<2^163 := by
+    show 4294968272*b1<2^163
+    norm_num at hb1lt ⊢
+    omega
+  have views := accA_views L hw base M hM hP
+  have v1 : L.MeasuredFoldView base (negP L) := views (.inl (negP L)) (by simp [accAMix])
+  have v2 : L.MeasuredFoldView base (rot128F L) := views (.inl (rot128F L)) (by simp [accAMix])
+  have pay1 : measuredFoldPayload base (negP L)=P := by
+    simp only [measuredFoldPayload,negP,pow_zero,Nat.mul_one]
+    rw [L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
+  have pay2 : measuredFoldPayload base (rot128F L)=(P/2^128)%2^128+2^128*(P%2^128) := by
+    simp only [measuredFoldPayload,rot128F,pow_zero,Nat.mul_one]
+    exact L.rotated128_value hw base (M^2) hP
+  have t1 : Triple (SquareFrame L.core.out base O) (measuredFoldQTq L (negP L)) (SquareFrame L.core.out base O1) := by
+    have h := measuredFoldQ_frameTq L hw hn base (negP L) v1 rfl hc O hO
+    rwa [pay1] at h
+  have t2 : Triple (SquareFrame L.core.out base O1) (measuredFoldQTq L (rot128F L))
+      (SquareFrame L.core.out base O2) := by
+    have h := measuredFoldQ_frameTq L hw hn base (rot128F L) v2 rfl hc O1 hO1
+    rwa [pay2] at h
+  have e0 : regValue (eReg L) base=b0 := eReg_value L hw base P hP hb
+  have a0 : regValue (accReg L) base=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc.work q (accReg_work L q hq))
+  have hb1 : regValue (hiReg L) base=b1 := by
+    rw [hiReg,regValue_drop_div _ 128 (by simp [hw.core.product]),
+      L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
+  have conv1 : ∀s,SquareFrame L.core.out base O2 s → BState L base O2 b0 0 s := by
+    intro s hs
+    refine ⟨hs.1,?_,?_,fun q h1 _ _ => hs.2 q h1⟩
+    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (eReg_away L hn q hq).1)).trans e0
+    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (accReg_out L hn q hq))).trans a0
+
+
+  let u := b1/2^96
+  let d := W/2^128 - u
+  let H := b0/2^32
+  let l' := (b0%2^32 + u)%2^32
+  let K := (b0%2^32 + u)/2^32
+  let O3 := ((u + 4294968273*d) + 4294968272*2^32*K + 2^128*(W%2^128) + (SquareReduction.p-1-O2)) % SquareReduction.p
+  let E1 := (2^32*H + l' + 2^130 - b1) % 2^130
+  let O4 := (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p
+  have hO3 : O3<SquareReduction.p := Nat.mod_lt _ pmod
+  have hb0 : b0<2^128 := Nat.mod_lt _ (by positivity)
+  have hu32 : u < 2^32 := by
+    show b1/2^96 < 2^32
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc b1<2^128 := hb1lt
+      _ = 2^32*2^96 := by norm_num
+  have hH : H < 2^96 := by show b0/2^32 < 2^96; omega
+  have hl' : l' < 2^32 := Nat.mod_lt _ (by positivity)
+  have hK : K ≤ 1 := by show (b0%2^32 + u)/2^32 ≤ 1; omega
+  have hKif : (if l' < u then 1 else 0) = K := by
+    show (if (b0%2^32 + u)%2^32 < u then 1 else 0) = (b0%2^32 + u)/2^32
+    by_cases hc' : (b0%2^32 + u)%2^32 < u
+    · rw [if_pos hc']; omega
+    · rw [if_neg hc']; omega
+  let kap:Bool:=decide (K=1)
+  let baseK:=writeBit base L.core.sumCarry kap
+  have kapNat:kap.toNat=K := by
+    have kk:K=0 ∨ K=1 := by omega
+    rcases kk with kk|kk <;> simp [kap,kk]
+  have hcK:L.PairClean baseK := ParkCarryDevelop.base_clean L hn base hc kap
+  have productOff:L.core.sumCarry∉L.core.product := by
+    intro h;apply ParkCarryDevelop.sumCarry_away L hn;simp [ParkCarryDevelop.restWires,h]
+  have highOff:L.core.sumCarry∉hiReg L := by
+    intro h;exact productOff (List.mem_of_mem_take (List.mem_of_mem_drop h))
+  have hb1K:regValue (hiReg L) baseK=b1 := by
+    dsimp only [baseK]
+    rw [ParkCarryDevelop.reg_update_off _ _ _ _ highOff]
+    exact hb1
+  have cq:c≠L.core.sumCarry := by
+    intro h;apply hcw
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h]
+  have gc:baseK c=base c := by simp [baseK,writeBit,cq]
+  have resetBase:writeBit baseK L.core.sumCarry false=base := by
+    funext q
+    by_cases hq:q=L.core.sumCarry
+    · subst q;simp [writeBit,Function.update,hsum]
+    · simp [baseK,writeBit,Function.update,hq]
+  -- Park the completed low-window carry instead of recomputing it.
+  have k1 := eAddLo_step L hw hn base hc O2 0 b0 hb0
+  rw [hb1] at k1
+  have squareBit : (b0%2^32)/2%2=0 := by
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw[Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have loanFact : ((2^32*H+l'+2^128*K)/2%2==1)=
+      ((b1/2^96/2%2==1) ^^ (b1/2^96%2==1) ^^
+        ((b1/2^96%2==1)&&((2^32*H+l'+2^128*K)%2==1))) := by
+    have low0:(2^32*H+l'+2^128*K)%2=(b0%2^32+u)%2:=by dsimp[l'];omega
+    have low1:(2^32*H+l'+2^128*K)/2%2=(b0%2^32+u)/2%2:=by dsimp[l'];omega
+    rw[low0,low1]
+    exact known_second_loan (b0%2^32) u squareBit
+  let originalM:=regValue L.core.high base
+  have source1:base (bit1 L.core.high)=digit originalM 1:=by
+    simpa only[digit,pow_one]using bit1_parity L.core.high base
+      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
+  have modE:(2^32*H+l'+2^128*K)%16=lowSum (base c) originalM u%16:=by
+    rw[lowSum,←hSource]
+    exact folded_low_mod16 M u H l' K rfl rfl
+  have loanFact2:=loan2_from_mod16 (base c) originalM u (2^32*H+l'+2^128*K) modE
+  rw[←source1]at loanFact2
+  have source0:base (L.core.high.headD 0)=digit originalM 0:=by
+    simpa only[digit,pow_zero,Nat.div_one]using head_parity L.core.high base
+      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
+  have modE2:(2^32*H+l'+2^128*K)%2=lowSum (base c) originalM u%2:=by omega
+  have loanFact0:=LowBitCarryNumbers.loan0_from_mod2 (base c) originalM u (2^32*H+l'+2^128*K)
+    (by simpa only[lowSum]using modE2)
+  rw[←source0]at loanFact0
+  have wm := wMidFullCCC0_step L hw hn c hcw base hc O2 (2^32*H+l'+2^128*K) b1 hb1 hb1lt hO2
+    H l' K hH hl' hK rfl loanFact loanFact2 loanFact0
+  have wmBase : Triple (BState L base O2 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base))
+      (wMidFullCCC0 L c)
+      (BState L base O3 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base)) := by
+    simpa only [hb1] using wm
+  have loop := loop_bstate_step L hw hn c hcw ready cm base hc hsum
+    O2 (2^32*H+l'+2^128*K) O3 wmBase
+  have kc:=ParkCarryDevelop.park_step L hw hn base hsum O3 (2^32*H+l') 0 (by omega) kap
+  rw [kapNat] at kc
+  have w3 := eSubK_step L hw hn baseK hcK O3 (2^32*H + l') 0 b1 (by omega) hb1K
+  have tw : Triple (BState L base O2 b0 0) (newFold L c cm) (BState L baseK O3 E1 0) :=
+    by simpa only [newFold,newLoop,List.append_assoc] using k1.seq (loop.seq (kc.seq w3))
+  -- eFoldTq
+  have f1 := eFlip_step L hw hn baseK c hcw O3 E1 0
+  have f2 := eCore_stepTq L hw hn baseK hcK O3 (flipE g E1) hO3
+  have f3 := eFlip_step L hw hn baseK c hcw O4 (flipE g E1) 0
+  rw [gc] at f1 f3
+  rw [flipE_flipE] at f3
+  have tf : Triple (BState L baseK O3 E1 0) (eFoldTq L c) (BState L baseK O4 E1 0) :=
+    f1.seq (f2.seq f3)
+  -- wRestoreT
+  have bk : (E1+b1)%2^130 = 2^32*H + l' := by show ((2^32*H + l' + 2^130 - b1) % 2^130 + b1) % 2^130 = _; omega
+  have r2 := eAddB_step L hw hn baseK hcK O4 E1 0 b1 hb1K (by rw [bk]; omega)
+  rw [bk] at r2
+  have bit32:(b0%2^32)/2%2=0 := by
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw [Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have total:l'+2^32*(baseK L.core.sumCarry).toNat=b0%2^32+regValue (hiReg L) baseK/2^96 := by
+    have atq:baseK L.core.sumCarry=kap := by simp [baseK,writeBit]
+    rw [atq,kapNat,hb1K]
+    show ((b0%2^32+u)%2^32)+2^32*((b0%2^32+u)/2^32)=b0%2^32+u
+    exact Nat.mod_add_div _ _
+  have r3:=ParkCarryDevelop.restore_step L hw hn baseK hcK O4 0 H l' (b0%2^32) hH hl'
+    (Nat.mod_lt _ (by positivity)) bit32 total
+  have bb:2^32*H+b0%2^32=b0 := by dsimp [H];omega
+  rw [resetBase,bb] at r3
+  have rp := padM_step L hw hn base hc O4 b0 0 744
+  have tr : Triple (BState L baseK O4 E1 0) (ParkCarry10Develop.rebuild L) (BState L base O4 b0 0) :=
+    r2.seq (r3.seq rp)
+  have conv0 : ∀s,BState L base O4 b0 0 s → SquareFrame L.core.out base O4 s := by
+    intro s hs
+    refine ⟨hs.1,fun q hq => ?_⟩
+    by_cases he : q∈eReg L
+    · exact (regValue_eq_iff _ _ _).mp (hs.2.1.trans e0.symm) q he
+    by_cases ha : q∈accReg L
+    · exact (regValue_eq_iff _ _ _).mp (hs.2.2.1.trans a0.symm) q ha
+    exact hs.2.2.2 q hq he ha
+  have key : O4 = bO4 (M^2) (base c) O := by
+    have hg' : g = false → b1 = 0 ∧ b0 = 0 := by
+      intro h0
+      have : M = 0 := hg h0
+      subst this
+      simp [b1, b0, P]
+    have e3 : O3 = (((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
+        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p := by
+      simp only [O3, u, d, K, W]
+      congr 1; ring
+    have e4 : O4 = (4294968272*flipE g ((2^32*(b0/2^32) + (b0%2^32+b1/2^96)%2^32 + 2^130 - b1) % 2^130) +
+        (SquareReduction.p-1-((((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
+        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p))) % SquareReduction.p := by
+      show (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p = _
+      rw [e3]
+    rw [e4, o4K b0 b1 O2 _ g hb0 hb1lt hO2 hg']
+    exact o4_eq b0 b1 O2 g hb0 hb1lt hO2 hg'
+  have all := t1.seq (t2.seq (Triple.conseq (fun s h => h) ((Triple.conseq conv1 tw (fun s h => h)).seq
+    (tf.seq tr)) conv0))
+  rw [key] at all
+  exact all
+
+end
+
+
+/-- All selected branches retain the old square specification, including the full phase relation. -/
+theorem bodyWith_frame (enabled : Bool) (L : CuccaroStreamedSquareWideLayout)
+    (hw : L.Widths) (hn : L.wires.Nodup) (c : Wire) (hcw : c ∉ L.wires)
+    (base : BasisState) (M : Nat) (hM : M < 2^128) (hP : regValue L.core.product base = M^2)
+    (hc : L.PairClean base) (hsum : base L.core.sumCarry = false)
+    (O : Nat) (hO : O < SquareReduction.p) (hg : base c = false → M = 0)
+    (hSource : M = if base c then regValue L.core.high base else 0) :
+    Triple (SquareFrame L.core.out base O) (bodyWith enabled L c)
+      (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) := by
+  have old := ParkCarry10Develop.body_frame L hw hn c hcw base M hM hP hc hsum O hO hg hSource
+  cases enabled with
+  | false => exact old
+  | true =>
+      by_cases ready : Ready L c
+      · cases h : checkedMiddle L c with
+        | none => simpa only [bodyWith,if_true,if_pos ready,h] using old
+        | some cm =>
+            simpa only [bodyWith,if_true,if_pos ready,h] using
+              newBody_frame L hw hn c hcw ready cm base M hM hP hc hsum O hO hg hSource
+      · simpa only [bodyWith,if_true,if_neg ready] using old
+
+
+
+                                                                                                     
+
+                                                                                          
+                                                                
+                                                              
+                                                                   
+                                                                                 
+                            
+                           
+                                                                                                                                                         
+                                                                                                                                                                     
+                                                                                                                                                                                                                      
+                                                                                                                                                
+                                                                                                                                                            
+                                                                                                                                                                                                             
+                                                                                                     
+                                                                                                                                            
+                                                                                                       
+                                                                                                                                            
+                                                           
+                                                        
+                                                             
+                                                      
+                               
+                                                                                                                      
+                                   
+
+                                                                                          
+                                                                
+                                                                              
+                                                                                   
+                                                                                                 
+                                             
+                                                                                                                              
+                                                                                                             
+                                                                                  
+                                   
+
+                                                                                        
+                                                                                                      
+                            
+                           
+                                                                                                                                                                                                               
+                                                                                                                                                                                                      
+                                                                                                                                                                      
+                                                                                                                                                             
+                                                                                                                                                          
+                                                                                                                                                 
+                                                                                                      
+                                                                                                                                                 
+                                                                                                        
+                                                                                                                                                 
+                                                          
+           
+                                                        
+                                                                     
+                          
+                                                
+                                                   
+                                                    
+                                                   
+                                                    
+                                                  
+                                        
+                                                 
+                                                                                                                                                              
+                                             
+                                                
+                                                   
+                                                    
+                                                   
+                                                    
+                                                  
+                               
+                                                 
+                                                                                                                                                              
+                                                              
+                                                                           
+                                                                         
+                                                    
+                                                              
+
+                                                                      
+                                               
+                                                                       
+                                                               
+
+                                                                        
+                                                                                 
+                                                                                                                                                   
+
+                                                                                        
+                                               
+                                                                                 
+                                           
+                                  
+                
+                                                       
+                                             
+                                
+                                                                    
+                        
+                                           
+                                        
+
+                                                                                        
+                                                                
+                                                                 
+           
+                                                                     
+                                           
+                                                                                 
+                                                                           
+           
+
+                                                                           
+                                                    
+                                                                               
+                                    
+                            
+                           
+                                  
+                                    
+                                    
+                           
+                                                            
+                                                            
+                                                                                                                        
+                                                                                                                 
+             
+                                                                                                                                                
+                                                                                                                                       
+                                                                                                                        
+                                                  
+                                                                                                       
+                                                                                                         
+                                       
+                                                                                                                                                                          
+                                                                                                                                                               
+                                                                                                                                                                                     
+                                                                                                                                                                            
+                                        
+                                                  
+                                                                                                                                                                                                                         
+                                                                                                                                                                                                                
+                                               
+                                                                                       
+                                                                              
+                                                            
+                                                                                   
+                                                        
+                           
+                                        
+                    
+                                 
+                                                                                       
+
+                                                                                 
+                                
+                                                                                      
+                                                                                              
+                                                                                                        
+                    
+                                                                    
+           
+                                
+                                        
+                                                                                       
+                    
+                                                              
+                                                       
+                                                  
+                                                                                 
+
+                                                                               
+                                                                                                         
+                    
+                                       
+           
+                                
+                                        
+                                                                                                                     
+                                                                                                       
+                                                                                                               
+
+                                                                                
+                                                                                                    
+                                                        
+                    
+                      
+           
+                                
+                                        
+                                                                
+                                                                                                           
+                                                          
+
+
+end ECDSAAdd.Entrant.AltBTemp
+
+end
+
+section
+
+
+open ECDSAAdd ECDSAAdd.Entrant ZeroReadDevelop
+
+set_option Elab.async false
+
+set_option maxRecDepth 100000
+
+set_option maxHeartbeats 100000000
+
+namespace ECDSAAdd.Entrant.RepadBSteps
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                      
+
+                                                                                                                                              
+
+                                                                                                                                                       
+
+                                                                                                                                               
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                         
+
+                                                                                                                                                  
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+
+                   
+
+end ECDSAAdd.Entrant.RepadBSteps
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.RepadBReady
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ZeroReadDevelop
+open ECDSAAdd.Entrant.AltBTemp
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 500000000
+
+                          
+                          
+                                                                                                                                                     
+                               
+                                                                                                                                                                                
+
+
+                         
+
+                                                                                  
+                                          
+
+
+                            
+
+                                                                                        
+                                                                    
+                                                                
+                 
+                                                                                
+                             
+
+end ECDSAAdd.Entrant.RepadBReady
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.RepadBReady
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ZeroReadDevelop
+open ECDSAAdd.Entrant.AltBTemp
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 500000000
+                                                                           
+                                                               
+                     
+               
+
+                                                                                                       
+
+                                                                 
+
+                                                                                                         
+
+
+                      
+                       
+                            
+                           
+end ECDSAAdd.Entrant.RepadBReady
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.RepadBReady
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ZeroReadDevelop
+open ECDSAAdd.Entrant.AltBTemp
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 500000000
+                                                                
+                                                                                                 
+
+                                                                                     
+                                                          
+                                                                            
+                                                     
+                                                                           
+
+                                                                                              
+                                                                         
+                                                                                  
+
+                                      
+                                                      
+             
+                            
+                                                                    
+             
+                                            
+
+                          
+#print axioms AltBTemp.bodyWith_frame
+                                        
+                                       
+                                        
+end ECDSAAdd.Entrant.RepadBReady
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ZeroReadDevelop
+namespace ECDSAAdd.Entrant.LateCarrySteps
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+                                                                                                                                                   
+                                                                                                                                        
+                  
+                                                                                                                                                   
+                                                                                                                                        
+                  
+end ECDSAAdd.Entrant.LateCarrySteps
+
+end
+
+end
+
+section
 
 -- The circuit and generic proofs live in the cached base module. This remainder
 -- instantiates the resource bounds and completes the point-addition interface.
@@ -257,7 +2333,7 @@ def lowkcost2 (n : Nat) : Nat := if n=128 then 6681 else 6797
 def lowkcostTMake (n : Nat) : Nat := if n=128 then 6565 else 6679
 def lowkcostTClear (n : Nat) : Nat := if n=128 then 6040 else 6149
 def lowkcostMClear (n : Nat) : Nat := if n=128 then 6684 else 6801
-def lowkcostTPair (n : Nat) : Nat := lowkcostTMake n+lowkcostTClear n
+                                                                     
 
 include hw h128 hsmax hlen he in
 theorem kg_counts :
@@ -990,30 +3066,30 @@ set_option maxHeartbeats 6000000
 namespace ECDSAAdd.Entrant.ParkCarryDevelop
 open Arithmetic
 
-theorem ExtraLe.rename (rho : Equiv.Perm Wire) {q : Wire} {P Q : Program} (h:ExtraLe q P Q) :
-    ExtraLe (rho q) (renameProgram rho P) (renameProgram rho Q) := by
-  refine ⟨?_,?_⟩
-  · rw [renameProgram_support,renameProgram_support]
-    intro w hw
-    obtain ⟨a,ha,rfl⟩:=Finset.mem_image.mp hw
-    rcases Finset.mem_insert.mp (h.1 ha) with ha|ha
-    · exact Finset.mem_insert.mpr (Or.inl (congrArg rho ha))
-    · exact Finset.mem_insert_of_mem (Finset.mem_image.mpr ⟨a,ha,rfl⟩)
-  · simpa only [Baselines.rename_gateSlots] using h.2
+                                                                                             
+                                                                     
+                
+                                                    
+              
+                                             
+                                                   
+                                                            
+                                                                      
+                                                     
 
-theorem hosted_window_rel (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
-    (ext : List Wire) (c : Wire) (src dst : List Wire) :
-    toffoliCount (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))+1052=
-      toffoliCount (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) ∧
-    measurementCount (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))+4=
-      measurementCount (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) ∧
-    wires (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))⊆
-      insert L.core.sumCarry (wires (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c))) ∧
-    Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (hostedBody L (LowZero18Square.foldPerm L ext) c))≤
-      Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.bBody L c)) := by
-  have h:=hosted_rel L hw (LowZero18Square.foldPerm L ext) c
-  simpa only [Equiv.apply_symm_apply] using
-    withLowK2_body_extra L ext c src dst _ _ 1052 4 _ h.1 h.2.1 h.2.2
+                                                                             
+                                                        
+                                                                                                                    
+                                                                                                  
+                                                                                                                     
+                                                                                                      
+                                                                                                        
+                                                                                                                    
+                                                                                                                      
+                                                                                                             
+                                                            
+                                           
+                                                                     
 
 end ECDSAAdd.Entrant.ParkCarryDevelop
 end
@@ -1059,27 +3135,27 @@ set_option maxHeartbeats 6000000
 namespace ECDSAAdd.Entrant.InverseCarryDevelop
 open Arithmetic
 
-theorem aBodyCached_support (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
-    (c : Wire) : wires (aBodyCached L c)⊆(c::L.wires).toFinset := by
-  intro q hq
-  have h:=Finset.mem_insert.mp ((aBodyCached_rel L hw c).2.2.1 hq)
-  rcases h with h|h
-  · subst q;simp [Arithmetic.CuccaroStreamedSquareWideLayout.wires,Arithmetic.CuccaroStreamedSquareLayout.wires]
-  · exact ControlLoan1589BFFold.aBody_support L hw hn c h
+                                                                                                  
+                                                                    
+            
+                                                                  
+                   
+                                                                                                                
+                                                         
 
-theorem hostedA_window_rel (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
-    (ext : List Wire) (c : Wire) (src dst : List Wire) :
-    toffoliCount (LowZero18Square.withLowK2 L ext c src dst (hostedA L (LowZero18Square.foldPerm L ext) c))+129=
-      toffoliCount (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.aBody L c)) ∧
-    measurementCount (LowZero18Square.withLowK2 L ext c src dst (hostedA L (LowZero18Square.foldPerm L ext) c))+3=
-      measurementCount (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.aBody L c)) ∧
-    wires (LowZero18Square.withLowK2 L ext c src dst (hostedA L (LowZero18Square.foldPerm L ext) c))⊆
-      insert L.core.sumCarry (wires (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.aBody L c))) ∧
-    Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (hostedA L (LowZero18Square.foldPerm L ext) c))≤
-      Challenge.gateSlots (LowZero18Square.withLowK2 L ext c src dst (ControlLoan1589BFFold.aBody L c)) := by
-  have h:=hostedA_rel L hw (LowZero18Square.foldPerm L ext) c
-  simpa only [Equiv.apply_symm_apply] using
-    ParkCarryDevelop.withLowK2_body_extra L ext c src dst _ _ 129 3 _ h.1 h.2.1 h.2.2
+                                                                              
+                                                        
+                                                                                                                
+                                                                                                  
+                                                                                                                  
+                                                                                                      
+                                                                                                     
+                                                                                                                    
+                                                                                                                   
+                                                                                                             
+                                                             
+                                           
+                                                                                     
 
 end ECDSAAdd.Entrant.InverseCarryDevelop
 end
@@ -1262,10 +3338,10 @@ namespace ECDSAAdd.Entrant.LowZero18SquareSupport
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout LowZero18Square
 attribute [local irreducible] wires
 
-theorem kg_X1_eq (L : CuccaroStreamedSquareWideLayout) (ext src dst : List Wire) :
-    (LowZero18LowK.kg L ext src dst).X1=(OwnDiagLowK.kg L ext src dst).X1 :=
-  (LowZero18LowK.kg_metadata L ext src dst).2.1.trans
-    (SquareCarryLoan719BFSupport.kg_X1_eq L ext src dst)
+                                                                                  
+                                                                            
+                                                     
+                                                        
 
 section Normal
 variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
@@ -1850,29 +3926,29 @@ theorem withLowK2_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
 
 
 
-theorem reflection_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (control : Wire) (hn : (control::L.wires).Nodup) (ext : List Wire)
-    (he : ECDSAAdd.Entrant.ExtOK L control ext) (O : Nat) (hO : O<SquareReduction.p)
-    (s : State) (m : List Bool) (ho : regValue L.core.out s.basis=O)
-    (hc : L.PairClean s.basis) (hz : regValue ext s.basis=0) :
-    (run (reflection L ext) m s).phase=s.phase ∧
-    regValue L.core.out (run (reflection L ext) m s).basis=SquareReduction.p-1-O ∧
-    ∀q,q∉L.core.out → (run (reflection L ext) m s).basis q=s.basis q := by
-  have nd := (List.nodup_cons.mp hn).2
-  have old := L.reflectOutput_correct hw nd O hO s m ho hc
-  have len := OwnDiagLowK.ktmp_length L hw
-  have member : target L∈OwnDiagLowK.ktmp L := DiagSq.getD_in _ 67 (by omega)
-  have pad : target L∈L.foldPad := List.mem_of_mem_drop member
-  have away : target L∉L.core.out :=
-    (L.pairAuxAway nd _ (by simp only [List.mem_append];tauto)).2
-  have tin : s.basis (target L)=false := (regValue_zero _ _).mp hc.pad _ pad
-  have tout : (run L.reflectOutput m s).basis (target L)=false := (old.2.2 _ away).trans tin
-  have host : ext.getD 0 0∈ext := DiagSq.getD_in _ 0 (by have h:=he.len;omega)
-  have hin : s.basis (ext.getD 0 0)=false := (regValue_zero _ _).mp hz _ host
-  have free : ext.getD 0 0∉wires L.reflectOutput := fun used=>
-    he.away _ host (List.mem_toFinset.mp (ControlLoan1589BFFold.reflect_support L control used))
-  have eq := SquareCarryLoan719.fold_run_eq L hw ext L.reflectOutput s m tin tout hin free
-  simpa only [reflection,eq] using old
+                                                                                
+                                                                      
+                                                                                    
+                                                                    
+                                                              
+                                                
+                                                                                  
+                                                                          
+                                      
+                                                          
+                                          
+                                                                             
+                                                              
+                                    
+                                                                 
+                                                                            
+                                                                                            
+                                                                              
+                                                                             
+                                                              
+                                                                                                
+                                                                                          
+                                      
 
 def middleCK (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
   LowZero18Square.withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCKTq L control)
@@ -2149,237 +4225,237 @@ theorem branchAF_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   exact ⟨frame.1,frame.2.1,frame.2.2⟩
 
 
-theorem raw_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
-    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
-    (hy : regValue L.core.y s.basis=Y) (ho : regValue L.core.out s.basis=O)
-    (hp0 : regValue L.core.product s.basis=0) (hs0 : s.basis L.core.sumCarry=false)
-    (hc : L.PairClean s.basis)
-    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
-    (run (raw L ext control) records s).phase=s.phase ∧
-    regValue L.core.out (run (raw L ext control) records s).basis=
-      ((O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p+
-        (if s.basis control then K else 0))%SquareReduction.p ∧
-    ∀q,q∉L.core.out → (run (raw L ext control) records s).basis q=s.basis q := by
-  have nd := (List.nodup_cons.mp hn).2
-  have disInput := L.measured_input_out_disjoint nd
-  have disProduct := L.product_out_disjoint nd
-  have ctrlAway : control∉L.core.out := by
-    intro bad
-    exact (List.nodup_cons.mp hn).1 (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,bad])
-  let A := regValue L.core.low s.basis
-  let B := regValue L.core.high s.basis
-  let enabled := s.basis control
-  let PA := (if enabled then A else 0)^2
-  let PB := (if enabled then B else 0)^2
-  let PC := (if enabled then A+B else 0)^2
-  let OC := OwnDiagAll12Square.resCF enabled PC O
-  let OB := ControlLoan1589BFFold.resBF PB OC enabled
-  let OA := ControlLoan1589BFFold.resAF PA OB enabled
-  have lowAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out :=
-    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_take hq))
-  have highAway (q : Wire) (hq : q∈L.core.high) : q∉L.core.out :=
-    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_drop (List.mem_of_mem_take hq)))
-  have sumAway (q : Wire) (hq : q∈L.core.sum) : q∉L.core.out :=
-    List.disjoint_left.mp (L.measured_sum_disjoint nd).2 hq
-  have sumB : regValue L.core.sum s.basis=B := by
-    simp [CuccaroStreamedSquareLayout.sum,regValue_append,regValue,hs0,B]
-  have ab : A<2^128 := by simpa [A,L.core.low_length hw.core] using regValue_lt L.core.low s.basis
-  have bb : B<2^128 := by simpa [B,L.core.high_length hw.core] using regValue_lt L.core.high s.basis
-  have sumBound : A+B<2^129 := by norm_num at ab bb ⊢;omega
-  have low (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
-      regValue L.core.low t=A := regValue_congr _ _ _ (fun q hq => hf.2 q (lowAway q hq))
-  have high (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
-      regValue L.core.high t=B := regValue_congr _ _ _ (fun q hq => hf.2 q (highAway q hq))
-  have sum (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
-      regValue L.core.sum t=B :=
-    (regValue_congr _ _ _ (fun q hq => hf.2 q (sumAway q hq))).trans sumB
-  have prod (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
-      regValue L.core.product t=0 :=
-    (regValue_congr _ _ _ (fun q hq => hf.2 q (List.disjoint_left.mp disProduct hq))).trans hp0
-  have extZ (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
-      regValue ext t=0 :=
-    (regValue_congr _ _ _ (fun q hq => hf.2 q (ECDSAAdd.Entrant.ext_out L control ext he q hq))).trans hz
-  have stepC : Triple (SquareFrame L.core.out s.basis O) (LowZero18Square.branchCK L ext control)
-      (SquareFrame L.core.out s.basis OC) := by
-    intro t m hf
-    have h := LowZero18Square.branchCK_correct L hw ext control hn A B O hO t m
-      (low _ _ hf) (sum _ _ hf) sumBound hf.1 (prod _ _ hf)
-      (L.squareFrame_clean nd s.basis t.basis O hf hc) he (extZ _ _ hf)
-    rw [hf.2 control ctrlAway] at h
-    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
-  have stepB : Triple (SquareFrame L.core.out s.basis OC) (branchBF L ext control)
-      (SquareFrame L.core.out s.basis OB) := by
-    intro t m hf
-    have h := branchBF_correct L hw ext control hn B OC (ofCast_lt _ _) t m (high _ _ hf) hf.1 (prod _ _ hf)
-      (L.squareFrame_clean nd s.basis t.basis OC hf hc)
-      ((hf.2 _ (ParkCarryDevelop.sumCarry_off_regs L nd).1).trans hs0) he (extZ _ _ hf)
-    rw [hf.2 control ctrlAway] at h
-    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
-  have stepA : Triple (SquareFrame L.core.out s.basis OB) (branchAF L ext control)
-      (SquareFrame L.core.out s.basis OA) := by
-    intro t m hf
-    have h := branchAF_correct L hw ext control hn A OB (ofCast_lt _ _) t m (low _ _ hf) hf.1 (prod _ _ hf)
-      (L.squareFrame_clean nd s.basis t.basis OB hf hc)
-      ((hf.2 _ (ParkCarryDevelop.sumCarry_off_regs L nd).1).trans hs0) he (extZ _ _ hf)
-    rw [hf.2 control ctrlAway] at h
-    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
-  have stepR : Triple (SquareFrame L.core.out s.basis OA) (reflection L ext)
-      (SquareFrame L.core.out s.basis (SquareReduction.p-1-OA)) := by
-    intro t m hf
-    have h := reflection_correct L hw control hn ext he OA (ofCast_lt _ _) t m hf.1
-      (L.squareFrame_clean nd s.basis t.basis OA hf hc) (extZ _ _ hf)
-    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
-  have all := ((stepC.seq stepB).seq stepA).seq stepR
-  obtain ⟨phase,value,frame⟩ := all s records ⟨ho,fun _ _ => rfl⟩
-  have split : A+2^128*B=Y := by
-    have highEq : L.core.high=L.core.y.drop 128 := by simp [CuccaroStreamedSquareLayout.high,hw.core.y]
-    have value := regValue_append (L.core.y.take 128) (L.core.y.drop 128) s.basis
-    rw [List.take_append_drop,hy,List.length_take,hw.core.y] at value
-    simpa only [A,B,CuccaroStreamedSquareLayout.low,highEq,show min 128 256=128 by decide] using value.symm
-  have exactResult := ControlLoan1589BFFold.complete_exact enabled A B O
-  rw [split] at exactResult
-  unfold subModValue at exactResult
-  exact ⟨phase,value.trans exactResult,frame⟩
+                                                                         
+                                                                                  
+                                                                
+                                                                           
+                                                                                   
+                              
+                                                                               
+                                                       
+                                                                  
+                                                                                                      
+                                                               
+                                                                                 
+                                      
+                                                   
+                                              
+                                          
+             
+                                                                                                                           
+                                      
+                                       
+                                
+                                        
+                                        
+                                          
+                                                 
+                                                     
+                                                     
+                                                               
+                                                                                     
+                                                                 
+                                                                                                            
+                                                               
+                                                           
+                                                 
+                                                                         
+                                                                                                  
+                                                                                                    
+                                                           
+                                                                                 
+                                                                                         
+                                                                                  
+                                                                                           
+                                                                                 
+                                
+                                                                         
+                                                                                  
+                                    
+                                                                                               
+                                                                                  
+                         
+                                                                                                         
+                                                                                                 
+                                               
+                
+                                                                               
+                                                           
+                                                                       
+                                   
+                                                                
+                                                                                  
+                                               
+                
+                                                                                                            
+                                                       
+                                                                                       
+                                   
+                                                                
+                                                                                  
+                                               
+                
+                                                                                                           
+                                                       
+                                                                                       
+                                   
+                                                                
+                                                                            
+                                                                     
+                
+                                                                                   
+                                                                     
+                                                                
+                                                     
+                                                                 
+                                
+                                                                                                       
+                                                                                 
+                                                                     
+                                                                                                           
+                                                                        
+                           
+                                   
+                                             
 
 
-theorem raw_state_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
-    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
-    (hO : O<SquareReduction.p) (s : State) (m mOld : List Bool)
-    (hy : regValue L.core.y s.basis=Y) (ho : regValue L.core.out s.basis=O)
-    (hp0 : regValue L.core.product s.basis=0) (hs0 : s.basis L.core.sumCarry=false)
-    (hc : L.PairClean s.basis) (he : ECDSAAdd.Entrant.ExtOK L control ext)
-    (hz : regValue ext s.basis=0) :
-    run (raw L ext control) m s=run (ControlLoan1589BFFold.program L ext control) mOld s := by
-  have fresh := raw_correct L hw ext control hn Y O hO s m hy ho hp0 hs0 hc he hz
-  have prior := ControlLoan1589BFFold.correct L hw ext control hn Y O hO s mOld hy ho hp0 hs0 hc he hz
-  apply State.extensionality
-  · exact fresh.1.trans prior.1.symm
-  · funext q
-    by_cases inside : q∈L.core.out
-    · exact (regValue_eq_iff _ _ _).mp (fresh.2.1.trans prior.2.1.symm) q inside
-    · exact (fresh.2.2 q inside).trans (prior.2.2 q inside).symm
+                                                                          
+                                                                                  
+                                                               
+                                                                           
+                                                                                   
+                                                                          
+                                   
+                                                                                              
+                                                                                 
+                                                                                                      
+                            
+                                    
+            
+                                  
+                                                                                
+                                                                
 
 open Secp256k1 MappedCompressed CompressedPointDialog
 
-theorem fastCandidate_state_eq (L : ControlledPointLayout) (hw : L.Widths)
-    (hn : L.wires.Nodup) (X Y : Nat) (hX : X<p) (s : State) (m mOld : List Bool)
-    (hx : regValue L.point.x s.basis=X) (hy : regValue L.point.y s.basis=Y)
-    (hc : regValue L.dialogPool s.basis=0) :
-    run (fastCandidate L) m s=run (ControlLoan1589BFSquare.fastCandidate L) mOld s := by
-  let K := L.dialogStreamedSquareWide
-  have hwK := L.dialogStreamedSquareWide_widths hw
-  have ndK := L.dialogStreamedSquareWide_nodup hw hn
-  have controlND : (L.core.generic::K.wires).Nodup := by
-    change (L.core.generic::L.dialogStreamedSquareWide.wires).Nodup
-    have nd := L.streamedSquare_control_nodup hw hn
-    apply List.nodup_iff_count.mpr
-    intro q
-    have h := List.nodup_iff_count.mp nd q
-    simp only [List.count_cons] at h ⊢
-    omega
-  have auxZero (q : Wire)
-      (hq : q∈K.core.product++K.core.pad++K.core.work++
-        [K.core.productHigh,K.core.outHigh,K.core.workHigh,K.core.cin,
-          K.core.normFlag,K.core.modFlag,K.core.sumCarry]++K.overflowPad) :
-      s.basis q=false := by
-    change q∈L.dialogStreamedSquareWide.core.product++
-      L.dialogStreamedSquareWide.core.pad++L.dialogStreamedSquareWide.core.work++
-      [L.dialogStreamedSquareWide.core.productHigh,L.dialogStreamedSquareWide.core.outHigh,
-        L.dialogStreamedSquareWide.core.workHigh,L.dialogStreamedSquareWide.core.cin,
-        L.dialogStreamedSquareWide.core.normFlag,L.dialogStreamedSquareWide.core.modFlag,
-        L.dialogStreamedSquareWide.core.sumCarry]++L.dialogStreamedSquareWide.overflowPad at hq
-    rw [L.dialogStreamedSquareWide_pool hw] at hq
-    exact (regValue_zero _ _).mp hc q (List.mem_of_mem_take hq)
-  have prod0 : regValue K.core.product s.basis=0 := by
-    apply (regValue_zero _ _).mpr
-    intro q hq
-    exact auxZero q (by simp [hq])
-  have clean : K.PairClean s.basis := by
-    constructor
-    · apply (regValue_zero _ _).mpr
-      intro q hq
-      simp only [CuccaroStreamedSquareWideLayout.foldPad,List.mem_append] at hq
-      exact auxZero q (by simp; tauto)
-    · apply (regValue_zero _ _).mpr
-      intro q hq
-      exact auxZero q (by simp [hq])
-    all_goals exact auxZero _ (by simp)
-  have sum0 : s.basis K.core.sumCarry=false := auxZero _ (by simp)
-  have hp : SquareReduction.p=p := by
-    norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c,p]
-  have hz : regValue (OwnDiagAll12Square.kext L) s.basis=0 :=
-    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc q (kext_mem L hw q hq))
-  have kernel := raw_state_eq K hwK (OwnDiagAll12Square.kext L) L.core.generic controlND Y X
-    (by simpa only [hp] using hX) s m mOld hy hx prod0 sum0 clean
-    (ECDSAAdd.Entrant.kext_ok L hw hn) hz
-  simpa only [fastCandidate,ControlLoan1589BFSquare.fastCandidate] using kernel
+                                                                          
+                                                                                
+                                                                           
+                                            
+                                                                                        
+                                     
+                                                  
+                                                    
+                                                        
+                                                                   
+                                                   
+                                  
+           
+                                          
+                                      
+         
+                         
+                                                       
+                                                                      
+                                                                           
+                           
+                                                      
+                                                                                 
+                                                                                           
+                                                                                     
+                                                                                         
+                                                                                               
+                                                 
+                                                               
+                                                      
+                                 
+              
+                                  
+                                        
+               
+                                   
+                
+                                                                               
+                                      
+                                   
+                
+                                    
+                                       
+                                                                  
+                                     
+                                                                      
+                                                             
+                                                                                          
+                                                                                            
+                                                                 
+                                         
+                                                                               
 
-theorem candidate_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    ControlLoan1589BFSquare.SquareCorrectK L K (fastCandidate L) := by
-  intro X Y G origin s m v
-  have old := ControlLoan1589BFSquare.candidate_correct L hw hn X Y G origin s m v
-  have eq := fastCandidate_state_eq L hw hn X.val Y.val X.isLt s m m v.x v.y v.clean
-  simpa only [eq] using old
+                                                                                            
+                                                                      
+                          
+                                                                                  
+                                                                                    
+                           
 
-private theorem relabel (L : ControlledPointLayout) (e : Equiv.Perm Wire)
-    (hp : ∀q∈L.dialogPool,e q∈L.dialogPool) (hf : ∀q,q∉L.dialogPool → e q=q)
-    (P : Program) (old : ControlLoan1589BFSquare.SquareCorrectK L K P) :
-    ControlLoan1589BFSquare.SquareCorrectK L K (renameProgram e P) := by
-  intro X Y G origin s m v
-  have result := old X Y G origin s m v
-  have eq := Square5Placement.pool_relabel_state_eq L e hp hf P s m v.clean result.2.clean
-  simpa only [eq] using result
+                                                                         
+                                                                            
+                                                                        
+                                                                        
+                          
+                                       
+                                                                                          
+                              
 
-theorem correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    ControlLoan1589BFSquare.SquareCorrectK L K (program L) := by
-  have a0 := relabel L (Square5Placement.blockPerm L 202)
-    (Square5Placement.block_pool L hw 202 (le_refl _))
-    (Square5Placement.block_outside L hw 202 (le_refl _)) _ (candidate_correct L hw hn)
-  have a1 := relabel L (OwnPlusSquare.swap L) (OwnPlusSquare.pool L hw) (OwnPlusSquare.outside L hw) _ a0
-  have a2 := relabel L (OwnGuardSquare.swap L) (OwnGuardSquare.pool L hw) (OwnGuardSquare.outside L hw) _ a1
-  have a3 := relabel L (OwnQ4Square.swap L) (OwnQ4Square.pool L hw) (OwnQ4Square.outside L hw) _ a2
-  have a4 := relabel L (OwnQ5Square.swap L) (OwnQ5Square.pool L hw) (OwnQ5Square.outside L hw) _ a3
-  have a5 := relabel L (OwnDiagAll12PlacedQ6.swap L) (OwnDiagAll12PlacedQ6.pool L hw) (OwnDiagAll12PlacedQ6.outside L hw) _ a4
-  have a6 := relabel L (OwnDiagAll12PlacedQ7.swap L) (OwnDiagAll12PlacedQ7.pool L hw) (OwnDiagAll12PlacedQ7.outside L hw) _ a5
-  have a7 := relabel L (PrefixFrontierSquare1591.swap L) (PrefixFrontierSquare1591.pool L hw) (PrefixFrontierSquare1591.outside L hw) _ a6
-  have a8 := relabel L (Prefix1590Square.swap L) (Prefix1590Square.pool L hw) (Prefix1590Square.outside L hw) _ a7
-  have a9 := relabel L (ControlLoan1589Square.swap L) (ControlLoan1589Square.pool L hw) (ControlLoan1589Square.outside L hw) _ a8
-  exact a9
+                                                                                  
+                                                                
+                                                         
+                                                      
+                                                                                       
+                                                                                                         
+                                                                                                            
+                                                                                                   
+                                                                                                   
+                                                                                                                              
+                                                                                                                              
+                                                                                                                                          
+                                                                                                                  
+                                                                                                                                 
+          
 
-theorem step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (X Y : Fp) (G : Bool) (origin : BasisState) :
-    Triple (PointDialogValues L X Y G origin) (program L)
-      (PointDialogValues L (X-(if G then Y*Y else 0)+(if G then (K:Fp) else 0)) Y G origin) :=
-  correct L hw hn X Y G origin
+                                                                             
+                                                 
+                                                         
+                                                                                              
+                              
 
-private theorem values_unique {L : ControlledPointLayout} {X Y : Fp} {G : Bool}
-    {origin a b : BasisState} (ha : PointDialogValues L X Y G origin a)
-    (hb : PointDialogValues L X Y G origin b) : a=b := by
-  funext q
-  by_cases hx : q∈L.point.x
-  · exact (regValue_eq_iff _ _ _).mp (ha.x.trans hb.x.symm) q hx
-  · by_cases hy : q∈L.point.y
-    · exact (regValue_eq_iff _ _ _).mp (ha.y.trans hb.y.symm) q hy
-    · have away : q∉L.point.x++L.point.y := by
-        simpa only [List.mem_append,not_or] using And.intro hx hy
-      exact (ha.rest q away).trans (hb.rest q away).symm
+                                                                               
+                                                                       
+                                                         
+          
+                           
+                                                                
+                             
+                                                                  
+                                              
+                                                                 
+                                                        
 
-theorem state_eq (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m mOld : List Bool)
-    (v : PointDialogValues L X Y G origin s.basis) :
-    run (program L) m s=run (ControlLoan1589BFSquare.program L) mOld s := by
-  have fresh := correct L hw hn X Y G origin s m v
-  have prior := ControlLoan1589BFSquare.correct L hw hn X Y G origin s mOld v
-  apply State.extensionality
-  · exact fresh.1.trans prior.1.symm
-  · exact values_unique fresh.2 prior.2
+                                                                                 
+                                                                                
+                                                    
+                                                                            
+                                                  
+                                                                             
+                            
+                                    
+                                       
 
-theorem cleanup (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m : List Bool)
-    (v : PointDialogValues L X Y G origin s.basis) :
-    regValue L.dialogPool (run (program L) m s).basis=0 :=
-  (correct L hw hn X Y G origin s m v).2.clean
+                                                                                
+                                                                           
+                                                    
+                                                          
+                                              
 
 end ECDSAAdd.Entrant.LowZero18Square
 end -- original module boundary
@@ -2418,12 +4494,12 @@ theorem patchKG_counts (L : CuccaroStreamedSquareWideLayout) (R : KG) :
     LowZero18KG.make,LowZero18KG.clear,toffoliCount_append,measurementCount_append,
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,and_self]
 
-theorem patchKG_slots (L : CuccaroStreamedSquareWideLayout) (R : KG) :
-    Challenge.gateSlots (LowZero18Square.make L R)=Challenge.gateSlots (LowZero18KG.make R) ∧
-    Challenge.gateSlots (LowZero18Square.clear L R)=Challenge.gateSlots (LowZero18KG.clear R) := by
-  simp only [LowZero18Square.make,LowZero18Square.clear,SquareCarryLoan719.patchKG,
-    LowZero18KG.make,LowZero18KG.clear,Challenge.gateSlots_append,
-    Baselines.rename_gateSlots,and_self]
+                                                                      
+                                                                                             
+                                                                                                   
+                                                                                   
+                                                                  
+                                        
 
 theorem withLowK2_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
@@ -2605,24 +4681,24 @@ theorem raw_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     Baselines.rename_gateSlots]
   omega
 
-private theorem tRename (f : Wire→Wire) (P : Program) :
-    toffoliCount (renameProgram f P)=toffoliCount P := (renameProgram_counts f P).1
-private theorem mRename (f : Wire→Wire) (P : Program) :
-    measurementCount (renameProgram f P)=measurementCount P := (renameProgram_counts f P).2
+                                                       
+                                                                                   
+                                                       
+                                                                                           
 
-theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)+3033=toffoliCount (SquareCarryLoan719BF.program L) ∧
-    measurementCount (program L)+75=measurementCount (SquareCarryLoan719BF.program L) := by
-  have h := raw_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
-    (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
-  simpa only [program,SquareCarryLoan719BF.program,place,SquareCarryLoan719BF.place,
-    fastCandidate,SquareCarryLoan719BF.fastCandidate,tRename,mRename] using h
+                                                                 
+                                                                                 
+                                                                                           
+                                                                                             
+                                                                                                   
+                                                                                    
+                                                                             
 
-theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=49226 ∧ measurementCount (program L)=53000 := by
-  have a := counts_diff L hw
-  have b := SquareCarryLoan719BF.counts L hw
-  constructor <;> omega
+                                                            
+                                                                             
+                            
+                                            
+                       
 
 theorem slots_le (L : ControlledPointLayout) (hw : L.Widths) :
     Challenge.gateSlots (program L)≤Challenge.gateSlots (SquareCarryLoan719BF.program L) := by
@@ -2650,17 +4726,17 @@ theorem support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     wires (program L)⊆(OB5Support.sites L).toFinset :=
   (support_subset L hw).trans (SquareCarryLoan719BF.support L hw hn)
 
-theorem square_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (k : Nat) (hk : k∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
-    L.core.poolWire k∉wires (program L) :=
-  fun used=>SquareCarryLoan719BF.square_free L hw hn k hk (support_subset L hw used)
+                                                                                    
+                                                                         
+                                          
+                                                                                    
 
-theorem retired_free719 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    L.core.poolWire 719∉wires (program L) := square_free L hw hn 719 (by simp)
-theorem retired_free768 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    L.core.poolWire 768∉wires (program L) := square_free L hw hn 768 (by simp)
-theorem retired_free718 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    L.core.poolWire 718∉wires (program L) := square_free L hw hn 718 (by simp)
+                                                                                          
+                                                                              
+                                                                                          
+                                                                              
+                                                                                          
+                                                                              
 
 private theorem patchKG_physical (L : CuccaroStreamedSquareWideLayout) (R : KG)
     (hm : GatePhysical (LowZero18KG.make R))
@@ -2812,184 +4888,184 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   ControlLoan1589BFFinal
 attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
 
-def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
-  Offset.gen L (division Rolling1588.entryKernel L) (LowZero18Square.program L)
-    (exit Rolling1588.exitKernel L) cx cy
+                                                             
+                                                                               
+                                         
 
-private def Metrics (P Q : Program) : Prop :=
-  toffoliCount P+3033=toffoliCount Q ∧ measurementCount P+75=measurementCount Q ∧
-    gateSlots P≤gateSlots Q
+                                             
+                                                                                 
+                           
 
-private theorem gen_metrics_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
-    (S Old P G G0 : Program) (cx cy : Fp)
-    (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D Old P cx cy)
-    (hs : Metrics S Old) : Metrics G G0 := by
-  subst G G0
-  simp only [Metrics,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
-    measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at hs ⊢
-  exact ⟨by omega,by omega,by omega⟩
+                                                                                  
+                                         
+                                                                           
+                                             
+            
+                                                                              
+                                                                                           
+                                    
 
-private theorem gen_metrics (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    Metrics (gen L cx cy) (Rolling1588BFFinal.gen L cx cy) := by
-  have counts:=LowZero18Square.counts_diff L hw
-  exact gen_metrics_of_shapes L (division Rolling1588.entryKernel L)
-    (LowZero18Square.program L) (SquareCarryLoan719BF.program L) (exit Rolling1588.exitKernel L)
-    (gen L cx cy) (Rolling1588BFFinal.gen L cx cy) cx cy
-    (by unfold gen; rfl) (by unfold Rolling1588BFFinal.gen; rfl)
-    ⟨counts.1,counts.2,LowZero18Square.slots_le L hw⟩
+                                                                                      
+                                                                
+                                               
+                                                                    
+                                                                                                
+                                                        
+                                                                
+                                                     
 
-theorem gen_counts_diff (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    toffoliCount (gen L cx cy)+3033=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
-    measurementCount (gen L cx cy)+75=measurementCount (Rolling1588BFFinal.gen L cx cy) :=
-  ⟨(gen_metrics L hw cx cy).1,(gen_metrics L hw cx cy).2.1⟩
+                                                                                  
+                                                                                   
+                                                                                          
+                                                           
 
-private theorem wrapper_metrics (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : Metrics P Q) :
-    Metrics (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) := by
-  simp only [Metrics,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
-    measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
-  exact ⟨by omega,by omega,by omega⟩
+                                                                                 
+                                       
+                                                                   
+                                                                           
+                                                                                          
+                                    
 
-private theorem gen_subset_of_shapes (L : ControlledPointLayout) (D : Fp→Program)
-    (S Old P G G0 : Program) (cx cy : Fp)
-    (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D Old P cx cy)
-    (hs : wires S⊆wires Old) : wires G⊆wires G0 := by
-  subst G G0
-  simp only [Offset.gen,Offset.mid,Offset.generic,wires_append,renameProgram_support]
-  repeat' first | apply Finset.union_subset_union | apply Finset.image_subset_image
-  all_goals first | exact hs | exact Finset.Subset.refl _
+                                                                                 
+                                         
+                                                                           
+                                                     
+            
+                                                                                     
+                                                                                   
+                                                         
 
-theorem gen_support_subset (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    wires (gen L cx cy)⊆wires (Rolling1588BFFinal.gen L cx cy) :=
-  gen_subset_of_shapes L (division Rolling1588.entryKernel L)
-    (LowZero18Square.program L) (SquareCarryLoan719BF.program L) (exit Rolling1588.exitKernel L)
-    (gen L cx cy) (Rolling1588BFFinal.gen L cx cy) cx cy
-    (by unfold gen; rfl) (by unfold Rolling1588BFFinal.gen; rfl)
-    (LowZero18Square.support_subset L hw)
+                                                                                     
+                                                                 
+                                                             
+                                                                                                
+                                                        
+                                                                
+                                         
 
-private theorem wrapper_subset (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : wires P⊆wires Q) :
-    wires (Edges.wrapper L C cy P)⊆wires (Edges.wrapper L C cy Q) := by
-  simp only [Edges.wrapper,Edges.finiteProgram,wires_append,renameProgram_support]
-  repeat' first | apply Finset.union_subset_union | apply Finset.image_subset_image
-  all_goals first | exact h | exact Finset.Subset.refl _
+                                                                                
+                                           
+                                                                       
+                                                                                  
+                                                                                   
+                                                        
 
-private theorem qubits_mono (P Q : Program) (h : wires P⊆wires Q) : qubits P≤qubits Q := by
-  change (ioWires∪wires P).card≤(ioWires∪wires Q).card
-  exact Finset.card_le_card (Finset.union_subset_union (Finset.Subset.refl _) h)
+                                                                                           
+                                                      
+                                                                                
 
-theorem gen_ok (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) : GenericOK L hc (gen L cx cy) := by
-  have config:=MappedCompressed.LaneA.laneLogical_config
-  have above : History5.HistoryAbove base := by intro j hj;simp [base]
-  exact Offset.genFFused_ok L hw hn _ _ _
-    (FrontierEntry1591Callers.exit_correct Rolling1588.exitKernel
-      Rolling1588.exitKernel_support Rolling1588.exit_correct L hw hn)
-    (FrontierEntry1591Callers.division_step Rolling1588.entryKernel
-      Rolling1588.entryKernel_support Rolling1588.entry_correct
-      L hw hn config.1 above config.2.1 config.2.2)
-    (LowZero18Square.step L hw hn) hc
+                                                                               
+                                                                                             
+                                                        
+                                                                      
+                                         
+                                                                 
+                                                                      
+                                                                   
+                                                               
+                                                   
+                                     
 
-theorem gen_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (cx cy : Fp) : wires (gen L cx cy)⊆(OB5Support.genericSites L).toFinset :=
-  (gen_support_subset L hw cx cy).trans (Rolling1588BFFinal.gen_sites L hw hn cx cy)
+                                                                                  
+                                                                              
+                                                                                    
 
-theorem gen_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (cx cy : Fp) : GatePhysical (gen L cx cy) :=
-  Offset.gen_physical L hw hn _ _ _
-    (division_physical Rolling1588.entryKernel Rolling1588.entryKernel_support
-      Rolling1588.entryKernel_physical L hw hn)
-    (LowZero18Square.physical L hw hn)
-    (placed_physical Rolling1588.exitKernel Rolling1588.exitKernel_support
-      Rolling1588.exitKernel_physical L hw hn) cx cy
+                                                                                     
+                                                
+                                   
+                                                                              
+                                               
+                                      
+                                                                          
+                                                    
 
-theorem wrapper_qubits (C : Point) (cx cy : Fp) :
-    qubits (Edges.wrapper layout C cy (gen layout cx cy))≤1588 :=
-  (qubits_mono _ _ (wrapper_subset layout C cy _ _
-    (gen_support_subset layout layout_widths cx cy))).trans
-    (Rolling1588BFFinal.wrapper_qubits C cx cy)
+                                                 
+                                                                 
+                                                  
+                                                           
+                                               
 
-theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2149199 := by
-  have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).1
-  have old:=Rolling1588BFFinal.wrapper_toffoli cx cy hc
-  omega
+                                                                              
+                                                                                      
+                                                                                                  
+                                                       
+       
 
-theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499945 := by
-  have diff:=(wrapper_metrics layout (.some hc) cy _ _ (gen_metrics layout layout_widths cx cy)).2.1
-  have old:=Rolling1588BFFinal.wrapper_measurements cx cy hc
-  omega
+                                                                                   
+                                                                                          
+                                                                                                    
+                                                            
+       
 
-theorem wrapper_slots (C : Point) (cx cy : Fp) :
-    gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50139199+Rolling1588.slotGrowth :=
-  (wrapper_metrics layout C cy _ _ (gen_metrics layout layout_widths cx cy)).2.2.trans
-    (Rolling1588BFFinal.wrapper_slots C cx cy)
+                                                
+                                                                                               
+                                                                                      
+                                              
 
-def program (C : Point) : Program :=
-  match C with
-  | .zero => []
-  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
-      Edges.wrapper layout C cy (gen layout cx cy)
+                                    
+              
+               
+                                                        
+                                                  
 
-def entry : Challenge.Entry := fun C => normalizeProgram (program C)
-def bounds : Challenge.Bounds := ⟨2149199,1499945,1588,50139199+Rolling1588.slotGrowth⟩
+                                                                    
+                                                                                       
 
-theorem program_correct (C : Point) (b : Bool) (R : Point) :
-    Triple (encodes b R) (program C) (encodes b (if b then R+C else R)) := by
-  cases C with
-  | zero =>
-    intro s m hs
-    simpa only [program,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self]
-      using And.intro (Eq.refl s.phase) hs
-  | @some cx cy hc =>
-    have sites:=gen_sites layout layout_widths layout_nodup cx cy
-    exact fixed_correct _ b R _
-      (Edges.full_spec layout layout_widths layout_nodup R hc b _
-        (gen_ok layout layout_widths layout_nodup hc) sites)
-      ((Edges.wrapper_support layout layout_widths layout_nodup _ cy _ sites).trans
-        (WrapperOB5.support_used layout layout_widths))
+                                                            
+                                                                             
+              
+           
+                
+                                                                                      
+                                          
+                     
+                                                                 
+                               
+                                                                 
+                                                            
+                                                                                   
+                                                       
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2149199 := by
-  cases C with
-  | zero => simp [program,toffoliCount]
-  | @some cx cy hc => exact wrapper_toffoli cx cy hc
+                                                                            
+              
+                                       
+                                                    
 
-theorem program_measurements (C : Point) : measurementCount (program C)≤1499945 := by
-  cases C with
-  | zero => simp [program,measurementCount]
-  | @some cx cy hc => exact wrapper_measurements cx cy hc
+                                                                                     
+              
+                                           
+                                                         
 
-theorem program_qubits (C : Point) : qubits (program C)≤1588 := by
-  cases C with
-  | zero => change qubits []≤1588;rw [qubits_empty];decide
-  | @some cx cy hc => exact wrapper_qubits (.some hc) cx cy
+                                                                  
+              
+                                                          
+                                                           
 
-theorem program_physical (C : Point) : GatePhysical (program C) := by
-  cases C with
-  | zero => simp [program,GatePhysical]
-  | @some cx cy hc =>
-    exact Edges.wrapper_physical layout layout_widths layout_nodup _ cy _
-      (gen_physical layout layout_widths layout_nodup cx cy)
+                                                                     
+              
+                                       
+                     
+                                                                         
+                                                            
 
-theorem program_gateSlots (C : Point) : gateSlots (program C)≤50139199+Rolling1588.slotGrowth := by
-  cases C with
-  | zero => simp [program,gateSlots]
-  | @some cx cy hc => exact wrapper_slots (.some hc) cx cy
+                                                                                                   
+              
+                                    
+                                                          
 
-theorem certificate : Challenge.Certificate entry bounds where
-  correct C b R := (normalize_triple _ _ _).mpr (program_correct C b R)
-  physical C := normalize_physical _ (program_physical C)
-  toffoli_le C := (normalize_toffoli _).trans (program_toffoli C)
-  measurements_le C := by
-    change measurementCount (normalizeProgram (program C))≤1499945
-    rw [normalize_measurements];exact program_measurements C
-  qubits_le C := by
-    change qubits (normalizeProgram (program C))≤1588
-    rw [normalize_qubits];exact program_qubits C
-  gateSlots_le C := by
-    change gateSlots (normalizeProgram (program C))≤50139199+Rolling1588.slotGrowth
-    rw [normalize_slots];exact program_gateSlots C
+                                                              
+                                                                       
+                                                         
+                                                                 
+                         
+                                                                  
+                                                            
+                   
+                                                     
+                                                
+                      
+                                                                                   
+                                                  
 
 end ECDSAAdd.Entrant.Rolling1588LowZeroFinal
 end -- original module boundary
@@ -3275,11 +5351,11 @@ theorem support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     wires (program L)⊆(OB5Support.sites L).toFinset :=
   (support_subset L).trans (SquareCarryLoan719BF.support L hw hn)
 
-theorem physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
-    GatePhysical (program L) := by
-  have old:=SquareCarryLoan719BF.physical L hw hn
-  rw [program_split,gatePhysical_append] at old
-  exact old.1
+                                                                                   
+                                  
+                                                 
+                                               
+             
 
 theorem free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
@@ -3307,16 +5383,16 @@ theorem counts_delta (L : ControlledPointLayout) (hw : L.Widths) :
     (reflectedTail_counts L hw).1,(reflectedTail_counts L hw).2]
   exact ⟨rfl,rfl⟩
 
-theorem counts (L : ControlledPointLayout) (hw : L.Widths) :
-    toffoliCount (program L)=52004 ∧ measurementCount (program L)=52820 := by
-  have d:=counts_delta L hw
-  have c:=SquareCarryLoan719BF.counts L hw
-  constructor <;> omega
+                                                            
+                                                                             
+                           
+                                          
+                       
 
-theorem slots_le (L : ControlledPointLayout) :
-    Challenge.gateSlots (program L)≤Challenge.gateSlots (SquareCarryLoan719BF.program L) := by
-  rw [program_split,Challenge.gateSlots_append]
-  omega
+                                              
+                                                                                              
+                                               
+       
 
 end ECDSAAdd.Entrant.ReflectionE1Square
 end -- original module boundary
@@ -5090,12 +7166,12 @@ end ECDSAAdd.Entrant.InverseCarryDevelop
 namespace ECDSAAdd.Entrant.InverseCarryDevelop
 open Arithmetic
 
-theorem eU_mem_parkCarry7 (L : CuccaroStreamedSquareWideLayout) (c : Wire) :
-    ControlLoan1589BFFold.eU L∈wires (ParkCarry7Develop.body L c) := by
-  simp only [ParkCarry7Develop.body,ParkCarry7Develop.fold,wires_append,Finset.mem_union]
-  right; right; left; right; right; right; right; left
-  simp [ParkCarryDevelop.program, wires]
-  left; simp [Instr.wires]
+                                                                            
+                                                                       
+                                                                                         
+                                                      
+                                        
+                          
 
 end ECDSAAdd.Entrant.InverseCarryDevelop
 
@@ -5958,9 +8034,9 @@ def supportHosts (ext : List Wire) (g : Wire) : List Wire := hosts10 ext g++[ext
 def withLowK2PA (enabled : Bool) (L : CuccaroStreamedSquareWideLayout) (ext : List Wire)
  (c : Wire) (src dst : List Wire) (B : Program) (g : Wire) : Program :=
  if enabled then withLowK2P10 L ext c src dst B g else ParkCopy.withLowK2P L ext c src dst B
- theorem disabled_is_nine (L : CuccaroStreamedSquareWideLayout) (ext : List Wire)
- (c : Wire) (src dst : List Wire) (B : Program) (g : Wire) :
- withLowK2PA false L ext c src dst B g=ParkCopy.withLowK2P L ext c src dst B := by rfl
+                                                                                 
+                                                            
+                                                                                      
 end ECDSAAdd.Entrant.ParkCopy10
 
 namespace ECDSAAdd.Entrant.InverseCarryDevelop
@@ -6640,50 +8716,50 @@ set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
-theorem source2_in_y (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : bit2 L.core.high ∈ L.core.y :=
- List.mem_of_mem_drop (List.mem_of_mem_take (bit2_mem _ (by simp [CuccaroStreamedSquareLayout.high,hw.core.y])))
+                                                                                                           
+                                                                                                                
 
-theorem body_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) (c : Wire) :
- wires (body L c) ⊆ (c::L.wires).toFinset := by
- have h := Carry9BodyRefined.body_refined L hw c
- intro q hq
- rcases Finset.mem_insert.mp (h hq) with e|h
- · rw [e]
-   have vy := source2_in_y L hw
-   simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,vy]
- · exact ParkCarry8Develop.body_support L hw hn c h
+                                                                                                            
+                                               
+                                                
+           
+                                            
+         
+                               
+                                                                                    
+                                                   
 
-theorem fold_fixes_source (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
- (ext : List Wire) (hlen : 300 ≤ ext.length) (away : ∀ q ∈ ext, q ∉ L.wires) :
- LowZero18Square.foldPerm L ext (bit2 L.core.high) = bit2 L.core.high := by
- have vy := source2_in_y L hw
- have ht : SquareCarryLoan719.target L ∈ L.foldPad := by
-  apply List.mem_of_mem_drop
-  exact DiagSq.getD_in (LowZero18LowK.ktmp L) 67 (by rw [LowZero18LowK.ktmp_length L hw]; omega)
- have ne1 : bit2 L.core.high ≠ SquareCarryLoan719.target L := by
-  intro e
-  have a := List.count_pos_iff.mpr vy
-  have b := List.count_pos_iff.mpr ht
-  rw [←e] at b
-  have h := layoutCount L hn (bit2 L.core.high)
-  omega
- have ne2 : bit2 L.core.high ≠ ext.getD 0 0 := by
-  intro e
-  apply away (ext.getD 0 0) (DiagSq.getD_in ext 0 (by omega))
-  rw [←e]
-  simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,vy]
- change SquareCarryLoan719.foldPerm L ext (bit2 L.core.high) = _
- rw [SquareCarryLoan719.foldPerm_eq L hw]
- exact Equiv.swap_apply_of_ne_of_ne ne1 ne2
+                                                                                                    
+                                                                              
+                                                                           
+                             
+                                                        
+                            
+                                                                                                
+                                                                
+         
+                                     
+                                     
+              
+                                               
+       
+                                                 
+         
+                                                             
+         
+                                                                                   
+                                                                
+                                         
+                                           
 
-theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
- (ext : List Wire) (c : Wire) (hlen : 300 ≤ ext.length) (away : ∀ q ∈ ext, q ∉ L.wires) :
- wires (hostedBody L (LowZero18Square.foldPerm L ext) c) ⊆ (c::L.wires).toFinset := by
- rw [hosted_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
- exact body_support L hw hn c
-#print axioms body_support
-#print axioms fold_fixes_source
-#print axioms hosted_fold_support
+                                                                                                      
+                                                                                         
+                                                                                      
+                                                                                  
+                             
+                          
+                               
+                                 
 end ECDSAAdd.Entrant.ParkCarry9Develop
 
 end -- Carry9 body support adapters
@@ -6759,18 +8835,18 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 set_option maxHeartbeats 6000000
 set_option linter.unusedSimpArgs false
 
-theorem eU_off_aBodyTriple (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
- (c:Wire) (hc:c∉L.wires):eU L∉wires (aBodyTriple L c):=by
- intro h
- rcases Finset.mem_insert.mp (aBodyTriple_refined L hw c h) with e|h
- · exact (spare_ne_eU L hw hn) e.symm
- · exact InverseCarryDevelop.eU_off_aBodyDual L hw hn c hc h
+                                                                                               
+                                                         
+        
+                                                                    
+                                     
+                                                            
 
-theorem hostedATriple_fold_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths)
- (hn:L.wires.Nodup) (ext:List Wire) (c:Wire) (hlen:300≤ext.length) (away:∀q∈ext,q∉L.wires):
- wires (hostedATriple L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset:=by
- rw [hostedATriple_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
- exact aBodyTriple_support L hw hn c
+                                                                                    
+                                                                                           
+                                                                                     
+                                                                                         
+                                    
 end ThirdSavedCarryDevelop
 end
 
@@ -6782,17 +8858,155 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 set_option maxHeartbeats 6000000
 set_option linter.unusedSimpArgs false
 
-theorem eU_off_aBodySelected (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
- (c:Wire) (hc:c∉L.wires):eU L∉wires (aBodySelected L c):=by
- intro h
- rcases Finset.mem_insert.mp (aBodySelected_refined L hw c h) with e|h
- · exact (ThirdSavedCarryDevelop.spare_ne_eU L hw hn) e.symm
- · exact InverseCarryDevelop.eU_off_aBodyDual L hw hn c hc h
+                                                                                                 
+                                                           
+        
+                                                                      
+                                                            
+                                                            
 
-theorem hostedASelected_fold_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths)
- (hn:L.wires.Nodup) (ext:List Wire) (c:Wire) (hlen:300≤ext.length) (away:∀q∈ext,q∉L.wires):
- wires (hostedASelected L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset:=by
- rw [hostedASelected_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
- exact aBodySelected_support L hw hn c
+                                                                                      
+                                                                                           
+                                                                                       
+                                                                                           
+                                      
 end ManyACarryDevelop
+end
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ZeroReadDevelop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+
+namespace ECDSAAdd.Entrant.AWideSteps
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                    
+
+                                                                                                                                            
+
+                                                                                                                                                     
+
+                                                                                                                                             
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+
+end ECDSAAdd.Entrant.AWideSteps
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ZeroReadDevelop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+namespace ECDSAAdd.Entrant.AWideSteps
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+
+                                                                                                                                                       
+
+                                                                                                                                                
+end ECDSAAdd.Entrant.AWideSteps
 end
