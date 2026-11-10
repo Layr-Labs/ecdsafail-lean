@@ -1,5 +1,4 @@
-import ECDSAAdd.Submission.Entrant.BThreeTemp
-import ECDSAAdd.Submission.Entrant.BThreeStagedProof
+import ECDSAAdd.Submission.Entrant.BWideProtocol
 import ECDSAAdd.Submission.Entrant.MainPart07Six505
 
 section
@@ -9837,7 +9836,7 @@ set_option maxRecDepth 100000
 set_option maxHeartbeats 8000000
 set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.BThreeTemp
+namespace ECDSAAdd.Entrant.BWideTemp
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
 
 theorem selected_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire) :
@@ -9890,25 +9889,25 @@ theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths
     wires (hostedSelectedBody L (LowZero18Square.foldPerm L ext) c) ⊆ (c::L.wires).toFinset := by
   rw [hostedSelectedBody_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
   exact selected_support L hw hn c
-end ECDSAAdd.Entrant.BThreeTemp
+end ECDSAAdd.Entrant.BWideTemp
 end
 
 
-namespace ECDSAAdd.Entrant.BThreeTemp
+namespace ECDSAAdd.Entrant.BWideTemp
 set_option maxRecDepth 100000
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
 
 /-- The compiler split is performed only with symbolic layout/control, never on a closed large program. -/
 theorem gain_of_success (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire)
     (ready : Ready L c) (success : (checkedMiddle L c).isSome=true) :
-    toffoliCount (selectedBody L c)+3≤toffoliCount (ParkCarry10Develop.body L c) ∧
+    toffoliCount (selectedBody L c)+53≤toffoliCount (ParkCarry10Develop.body L c) ∧
     measurementCount (selectedBody L c)=measurementCount (ParkCarry10Develop.body L c) ∧
-    Challenge.gateSlots (selectedBody L c)+9≤Challenge.gateSlots (ParkCarry10Develop.body L c) := by
+    Challenge.gateSlots (selectedBody L c)+159≤Challenge.gateSlots (ParkCarry10Develop.body L c) := by
   cases h : checkedMiddle L c with
   | none => simp only [h,Option.isSome_none,Bool.false_eq_true] at success
   | some cm =>
       simpa only [selectedBody,mechanismEnabled,bodyWith,if_true,if_pos ready,h] using
-        newBody_resources L hw c cm
+        newBody_resources L hw c ready cm
 
 def actualLayout : CuccaroStreamedSquareWideLayout := Baselines.layout.dialogStreamedSquareWide
 def actualControl : Wire := Baselines.layout.core.generic
@@ -9947,44 +9946,19 @@ theorem host_r_eq : hostR actualLayout=4672 := by decide +kernel
 theorem host_p_eq : hostP actualLayout=4673 := by decide +kernel
 theorem host_u_eq : hostU actualLayout=4674 := by decide +kernel
 
-theorem actual_used_r : FourthASavedCarryDevelop.hasWire
-    (ParkCarry10Develop.body actualLayout actualControl) (hostR actualLayout)=true := by
-  apply hasWire_middle_to_body
-  rw [host_r_eq]
-  exact hasWire_transport BData301.p0 (middle actualLayout actualControl)
-    BThreeStaged301.input_eq 4672 BThreeStaged301.data_uses_r
 
-theorem actual_used_p : FourthASavedCarryDevelop.hasWire
-    (ParkCarry10Develop.body actualLayout actualControl) (hostP actualLayout)=true := by
-  apply hasWire_middle_to_body
-  rw [host_p_eq]
-  exact hasWire_transport BData301.p0 (middle actualLayout actualControl)
-    BThreeStaged301.input_eq 4673 BThreeStaged301.data_uses_p
 
-theorem actual_used_u : FourthASavedCarryDevelop.hasWire
-    (ParkCarry10Develop.body actualLayout actualControl) (hostU actualLayout)=true := by
-  apply hasWire_middle_to_body
-  rw [host_u_eq]
-  exact hasWire_transport BData301.p0 (middle actualLayout actualControl)
-    BThreeStaged301.input_eq 4674 BThreeStaged301.data_uses_u
 
 /-- Concrete LoanReady is inherited from the original Many bank contract, not inferred from native data. -/
-theorem actual_ready : Ready actualLayout actualControl := by
-  have loanR := ManyACarryDevelop.actual_ready.2.2 (hostR actualLayout) (by decide +kernel)
-  have loanP := ManyACarryDevelop.actual_ready.2.2 (hostP actualLayout) (by decide +kernel)
-  have loanU := ManyACarryDevelop.actual_ready.2.2 (hostU actualLayout) (by decide +kernel)
-  refine ⟨⟨loanR,?_,?_,?_,actual_used_r⟩,⟨loanP,?_,?_,?_,actual_used_p⟩,
-    ⟨loanU,?_,?_,?_,actual_used_u⟩,?_⟩ <;> decide +kernel
+theorem actual_ready : Ready actualLayout actualControl := BWideStaged.actual_ready
 
 def RankedCompilerSuccess : Prop := (checkedMiddle actualHostedLayout actualControl).isSome=true
 
 theorem ranked_compiler_success : RankedCompilerSuccess := by
   unfold RankedCompilerSuccess
   rw [actualHostedLayout_eq]
-  change (ZeroReadDevelop.compileManyChunked? (hosts actualLayout) (middle actualLayout actualControl)).isSome=true
-  have hs : hosts actualLayout=[4672,4673,4674] := by decide +kernel
-  rw [hs]
-  exact BThreeStaged301.actual_compiled
+  change (ZeroSetDevelop.compileS? (hosts actualLayout) (middle actualLayout actualControl)).isSome=true
+  exact BWideStaged.actual_compiled
 
 theorem ranked_selected_exact :
     hostedSelectedBody actualLayout actualFoldPerm actualControl=selectedBody actualLayout actualControl := by
@@ -9992,7 +9966,7 @@ theorem ranked_selected_exact :
   rw [actualHostedLayout_eq]
 
 theorem ranked_certified_gain :
-    toffoliCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)+3≤4762 ∧
+    toffoliCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)+53≤4762 ∧
     measurementCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)=5924 := by
   rw [ranked_selected_exact]
   have success : (checkedMiddle actualLayout actualControl).isSome=true := by
@@ -10004,10 +9978,10 @@ theorem ranked_certified_gain :
   have old := ParkCarry10Develop.body_counts actualLayout hw actualControl
   refine ⟨?_,gain.2.1.trans old.2⟩
   calc
-    toffoliCount (selectedBody actualLayout actualControl)+3 ≤
+    toffoliCount (selectedBody actualLayout actualControl)+53 ≤
         toffoliCount (ParkCarry10Develop.body actualLayout actualControl) := gain.1
     _ = 4762 := old.1
-end ECDSAAdd.Entrant.BThreeTemp
+end ECDSAAdd.Entrant.BWideTemp
 
 
 
@@ -10023,7 +9997,7 @@ attribute [local irreducible] run wires
 
 def branchBF760 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
   ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-    (R2SqEp760.bodySwap L ext (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control))
+    (R2SqEp760.bodySwap L ext (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control))
 
 theorem branchBFP3_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (B O : Nat) (hO : O<SquareReduction.p)
@@ -10032,12 +10006,12 @@ theorem branchBFP3_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
     (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
     (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-      (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).phase=s.phase ∧
+      (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).phase=s.phase ∧
     regValue L.core.out (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-      (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis=
+      (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis=
       ControlLoan1589BFFold.resBF ((if s.basis control then B else 0)^2) O (s.basis control) ∧
     ∀q,q∉L.core.out → (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-      (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis q=s.basis q := by
+      (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis q=s.basis q := by
   have nd := (List.nodup_cons.mp hn).2
   have hcw : control∉L.wires := (List.nodup_cons.mp hn).1
   let M := if s.basis control then B else 0
@@ -10052,14 +10026,14 @@ theorem branchBFP3_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (List.take_sublist 256 L.core.product).count_le q
   have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
     (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
-  simp only [BThreeTemp.hostedSelectedBody_eq L (LowZero18Square.foldPerm L ext) control
+  simp only [BWideTemp.hostedSelectedBody_eq L (LowZero18Square.foldPerm L ext) control
     (ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
-  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (BThreeTemp.selectedBody L control) := fun q hq hw' =>
-    he.away q hq (List.mem_toFinset.mp (BThreeTemp.selected_support L hw nd control hw'))
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (BWideTemp.selectedBody L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (BWideTemp.selected_support L hw nd control hw'))
   apply ParkCopy.withLowK2P_correct L hw control hn L.core.high (L.core.product.take 256) srcCount dstCount
     (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
     (by simp [hw.core.product,L.core.high_length hw.core]) (L.core.high_length hw.core) ext he.nodup he.away he.len
-    (BThreeTemp.selectedBody L control) hbody s records hc dstZero hz
+    (BWideTemp.selectedBody L control) hbody s records hc dstZero hz
   intro t m dstValue same
   rw [hb] at dstValue
   change regValue (L.core.product.take 256) t.basis=M^2 at dstValue
@@ -10093,7 +10067,7 @@ theorem branchBFP3_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     omega
   have hSource:M=if t.basis control then regValue L.core.high t.basis else 0:=by
     rw[sourceT,ctrlT]
-  have frame := BThreeTemp.selected_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg hSource t m ⟨outO,fun _ _ => rfl⟩
+  have frame := BWideTemp.selected_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg hSource t m ⟨outO,fun _ _ => rfl⟩
   rw [ControlLoan1589BFFold.bO4_eq M O (t.basis control) mb hg hO,ctrlT] at frame
   exact ⟨frame.1,frame.2.1,frame.2.2⟩
 
@@ -10120,11 +10094,11 @@ theorem branchBF760_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have fin := newC.2.2 (sqRet L) (sqRet_not_out L hw nd)
   rw [sqRet_clean L hw _ hc] at fin
   rw [show branchBF760 L ext control=ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-      (bodySwap L ext (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) from rfl,
+      (bodySwap L ext (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) from rfl,
     withLowK2P_swap_run_eq L hw control hn L.core.high (L.core.product.take 256) srcCount dstCount
       (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
       (by simp [hw.core.product,L.core.high_length hw.core]) ext he.nodup he.away he.len _
-      (BThreeTemp.hosted_fold_support L hw nd ext control he.len
+      (BWideTemp.hosted_fold_support L hw nd ext control he.len
         (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h))) s records hc dstZero hz fin]
   exact park_state_eq L _ _ s newC.1 oldC.1 (newC.2.1.trans oldC.2.1.symm) newC.2.2 oldC.2.2
 
@@ -10158,7 +10132,7 @@ theorem branchBF760_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
     toffoliCount (branchBF760 L ext c)≤toffoliCount (R2SqEp760.branchBF760 L ext c) ∧
     measurementCount (branchBF760 L ext c)=measurementCount (R2SqEp760.branchBF760 L ext c) ∧
     gateSlots (branchBF760 L ext c)≤gateSlots (R2SqEp760.branchBF760 L ext c) := by
-  have h := BThreeTemp.hosted_resources L hw (LowZero18Square.foldPerm L ext) c
+  have h := BWideTemp.hosted_resources L hw (LowZero18Square.foldPerm L ext) c
   simp only [branchBF760,R2SqEp760.branchBF760,ParkCopy.withLowK2P,ParkCopy.pB,R2SqEp760.bodySwap,
     toffoliCount_append,measurementCount_append,gateSlots_append,
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
@@ -10166,8 +10140,8 @@ theorem branchBF760_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
 
 theorem branchBF760_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire) (c : Wire) :
     wires (branchBF760 L ext c)⊆wires (R2SqEp760.branchBF760 L ext c) := by
-  have h := BThreeTemp.hosted_subset L hw (LowZero18Square.foldPerm L ext) c
-  have image : wires (R2SqEp760.bodySwap L ext (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c))⊆
+  have h := BWideTemp.hosted_subset L hw (LowZero18Square.foldPerm L ext) c
+  have image : wires (R2SqEp760.bodySwap L ext (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c))⊆
       wires (R2SqEp760.bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)) := by
     simpa only [R2SqEp760.bodySwap,renameProgram_support] using Finset.image_subset_image (f := R2SqEp760.sqSwap L ext) h
   exact wrapper_mono L ext c L.core.high (L.core.product.take 256) _ _ image
@@ -10234,9 +10208,9 @@ theorem program760_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
   have he := OwnDiagAll12Square.kext_ok L hw hn
   have fixed := ParkCarryDevelop.fold_fixes_sumCarry K hwK (List.nodup_cons.mp controlND).2 ext he.len
     (fun q hq h => he.away q hq (List.mem_cons_of_mem c h))
-  have body : GatePhysical (BThreeTemp.hostedSelectedBody K (LowZero18Square.foldPerm K ext) c) := by
-    rw [BThreeTemp.hostedSelectedBody_eq K _ c fixed]
-    exact BThreeTemp.selected_physical K hwK c controlND
+  have body : GatePhysical (BWideTemp.hostedSelectedBody K (LowZero18Square.foldPerm K ext) c) := by
+    rw [BWideTemp.hostedSelectedBody_eq K _ c fixed]
+    exact BWideTemp.selected_physical K hwK c controlND
   have swapped := gatePhysical_rename _ (R2SqEp760.sqSwap K ext).injective _ body
   have bf := replace_physical K ext c K.core.high (K.core.product.take 256) _ _ old.1.2 swapped
   exact ⟨⟨old.1.1,bf⟩,old.2⟩
@@ -10437,7 +10411,7 @@ theorem slots_le760 (L : ControlledPointLayout) (hw : L.Widths) :
 
 theorem branchBF760_gain (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (c : Wire)
     (d : Nat)
-    (h : toffoliCount (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d≤
+    (h : toffoliCount (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d≤
       toffoliCount (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)) :
     toffoliCount (branchBF760 L ext c)+d≤toffoliCount (R2SqEp760.branchBF760 L ext c) := by
   simp only [branchBF760,R2SqEp760.branchBF760,ParkCopy.withLowK2P,ParkCopy.pB,R2SqEp760.bodySwap,
@@ -10447,19 +10421,19 @@ theorem branchBF760_gain (L : CuccaroStreamedSquareWideLayout) (ext : List Wire)
 /-- Infer no layout or arithmetic argument through closed circuit expressions. -/
 theorem branchBF760_gain_of_numeric (L : CuccaroStreamedSquareWideLayout)
     (ext : List Wire) (c : Wire) (d bound : Nat)
-    (newBound : toffoliCount (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d≤bound)
+    (newBound : toffoliCount (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d≤bound)
     (oldCount : toffoliCount (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)=bound) :
     toffoliCount (branchBF760 L ext c)+d≤toffoliCount (R2SqEp760.branchBF760 L ext c) := by
   apply branchBF760_gain L ext c d
   calc
-    toffoliCount (BThreeTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d ≤ bound := newBound
+    toffoliCount (BWideTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d ≤ bound := newBound
     _ = toffoliCount (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c) := oldCount.symm
 
 /-- Keep the permutation identical in both numeric premise types before symbolic substitution. -/
 theorem branchBF760_gain_of_numeric_rho (L : CuccaroStreamedSquareWideLayout)
     (ext : List Wire) (c : Wire) (rho : Equiv.Perm Wire)
     (eRho : rho=LowZero18Square.foldPerm L ext) (d bound : Nat)
-    (newBound : toffoliCount (BThreeTemp.hostedSelectedBody L rho c)+d≤bound)
+    (newBound : toffoliCount (BWideTemp.hostedSelectedBody L rho c)+d≤bound)
     (oldCount : toffoliCount (ParkCarry10Develop.hostedBody L rho c)=bound) :
     toffoliCount (branchBF760 L ext c)+d≤toffoliCount (R2SqEp760.branchBF760 L ext c) := by
   subst rho
@@ -10485,14 +10459,14 @@ theorem branchBF760_actual_delta :
     toffoliCount (R2SqEp760.branchBF760 Baselines.layout.dialogStreamedSquareWide
       (OwnDiagAll12Square.kext Baselines.layout) Baselines.layout.core.generic) :=
   branch_delta_transport
-    BThreeTemp.actualLayout Baselines.layout.dialogStreamedSquareWide
-    BThreeTemp.actualExt (OwnDiagAll12Square.kext Baselines.layout)
-    BThreeTemp.actualControl Baselines.layout.core.generic rfl rfl rfl
-    (branchBF760_gain_of_numeric_rho BThreeTemp.actualLayout BThreeTemp.actualExt BThreeTemp.actualControl
-      BThreeTemp.actualFoldPerm rfl 3 4762 BThreeTemp.ranked_certified_gain.1
-      (ParkCarry10Develop.hosted_counts BThreeTemp.actualLayout
+    BWideTemp.actualLayout Baselines.layout.dialogStreamedSquareWide
+    BWideTemp.actualExt (OwnDiagAll12Square.kext Baselines.layout)
+    BWideTemp.actualControl Baselines.layout.core.generic rfl rfl rfl
+    (branchBF760_gain_of_numeric_rho BWideTemp.actualLayout BWideTemp.actualExt BWideTemp.actualControl
+      BWideTemp.actualFoldPerm rfl 53 4762 BWideTemp.ranked_certified_gain.1
+      (ParkCarry10Develop.hosted_counts BWideTemp.actualLayout
         (ControlledPointLayout.dialogStreamedSquareWide_widths Baselines.layout Baselines.layout_widths)
-        BThreeTemp.actualFoldPerm BThreeTemp.actualControl).1)
+        BWideTemp.actualFoldPerm BWideTemp.actualControl).1)
 
 theorem program760_gain (L : ControlledPointLayout) (d : Nat)
     (h : toffoliCount (branchBF760 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic)+d≤
@@ -10518,7 +10492,7 @@ theorem savedA_actual : 65≤savedA Baselines.layout :=
   savedA_ge_three Baselines.layout Baselines.layout_widths
     (program760_gain Baselines.layout 3 branchBF760_actual_delta) R2SqEp760.savedA_actual
 
-#print axioms BThreeTemp.selected_frame
+#print axioms BWideTemp.selected_frame
 #print axioms program760_boundary
 #print axioms program760_physical
 #print axioms counts_diff760
