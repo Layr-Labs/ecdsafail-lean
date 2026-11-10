@@ -38,3 +38,24 @@ theorem isSome (qs : List Wire) (p t : Program) (h : Steps qs p t) :
 #print axioms outputs
 #print axioms isSome
 end ParkAChain
+
+namespace ParkAChain
+open ECDSAAdd ZeroReadDevelop
+ theorem extend_isSome {qs rs : List Wire} {p t : Program}
+ (h:ParkAChain.Steps qs p t) (htail:(compileManyChunked? rs t).isSome=true) :
+ (compileManyChunked? (qs++rs) p).isSome=true := by
+ induction h with
+ | nil => exact htail
+ | cons q qs p r t head tail ih =>
+   have rest:=ih htail
+   rw [List.cons_append,compileManyChunked?]
+   cases hc:compileChunked? q p with
+   | none => simp [hc] at head
+   | some first =>
+     have eq:first.out=r := by simpa [hc] using head
+     subst r
+     cases hr:compileManyChunked? (qs++rs) first.out with
+     | none => simp [hr] at rest
+     | some last => simp [hr,Option.bind]
+
+end ParkAChain
