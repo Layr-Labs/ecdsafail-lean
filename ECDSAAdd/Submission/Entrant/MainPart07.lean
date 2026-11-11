@@ -2,7 +2,7 @@ import ECDSAAdd.Submission.Entrant.FullLogic
 import ECDSAAdd.Submission.Entrant.MainPart04
 import ECDSAAdd.Submission.Entrant.ParkAMany
 import ECDSAAdd.Submission.Entrant.AExtraProtocol
-import ECDSAAdd.Submission.Entrant.FullB
+import ECDSAAdd.Submission.Entrant.LowAccCarry
 
 section
 
@@ -10030,113 +10030,7 @@ end ECDSAAdd.Entrant.FullBTemp
 end
 
 
-namespace ECDSAAdd.Entrant.FullBTemp
-set_option maxRecDepth 100000
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
 
-/-- The compiler split is performed only with symbolic layout/control, never on a closed large program. -/
-theorem gain_of_success (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire)
-    (ready : Ready L c) (success : (checkedMiddle L c).isSome=true) :
-    toffoliCount (selectedBody L c)+84≤toffoliCount (ParkCarry10Develop.body L c) ∧
-    measurementCount (selectedBody L c)=measurementCount (ParkCarry10Develop.body L c) ∧
-    Challenge.gateSlots (selectedBody L c)+252≤Challenge.gateSlots (ParkCarry10Develop.body L c) := by
-  cases h : checkedMiddle L c with
-  | none => simp only [h,Option.isSome_none,Bool.false_eq_true] at success
-  | some cm =>
-      simpa only [selectedBody,mechanismEnabled,bodyWith,if_true,if_pos ready,h] using
-        newBody_resources L hw c ready cm
-
-def actualLayout : CuccaroStreamedSquareWideLayout := Baselines.layout.dialogStreamedSquareWide
-def actualControl : Wire := Baselines.layout.core.generic
-def actualExt : List Wire := OwnDiagAll12Square.kext Baselines.layout
-def actualFoldPerm : Equiv.Perm Wire := LowZero18Square.foldPerm actualLayout actualExt
-def actualHostedLayout : CuccaroStreamedSquareWideLayout := ParkCarryDevelop.hostLayout actualLayout actualFoldPerm
-
-theorem actualHostedLayout_eq : actualHostedLayout = actualLayout := by
-  apply ParkCarryDevelop.host_eq
-  have hw := Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths
-  have nd : actualLayout.wires.Nodup := by
-    change Baselines.layout.dialogStreamedSquareWide.wires.Nodup
-    have full := Baselines.layout.streamedSquare_control_nodup Baselines.layout_widths Baselines.layout_nodup
-    exact (List.nodup_cons.mp (List.nodup_cons.mp full).2).2
-  have he := OwnDiagAll12Square.kext_ok Baselines.layout Baselines.layout_widths Baselines.layout_nodup
-  exact ParkCarryDevelop.fold_fixes_sumCarry actualLayout hw nd actualExt he.len
-    (fun q hq h => he.away q hq (List.mem_cons_of_mem actualControl h))
-
-                                                                      
-                                                     
-                                                      
-
-theorem middle_wires_subset_body (L : CuccaroStreamedSquareWideLayout) (c : Wire) :
-    wires (middle L c) ⊆ wires (ParkCarry10Develop.body L c) := by
-  intro q member
-  simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,wires_append,Finset.mem_union]
-  exact Or.inr (Or.inr (Or.inl (Or.inr (Or.inr (Or.inl member)))))
-
-                                                                                         
-                                                                
-                                                                               
-                                                      
-                                                                                      
-
-                                                                
-                                                                
-                                                                
-
-                                                        
-                                                                                        
-                              
-                
-                                                                         
-                                                             
-
-                                                        
-                                                                                        
-                              
-                
-                                                                         
-                                                             
-
-                                                        
-                                                                                        
-                              
-                
-                                                                         
-                                                             
-
-/-- Concrete LoanReady is inherited from the original Many bank contract, not inferred from native data. -/
-theorem actual_ready : Ready actualLayout actualControl := FullBReady.actual_ready
-
-                                                                                                
-
-                                                             
-                              
-                            
-                                                                                                        
-                                  
-
-theorem ranked_selected_exact :
-    hostedSelectedBody actualLayout actualFoldPerm actualControl=selectedBody actualLayout actualControl := by
-  change selectedBody actualHostedLayout actualControl=selectedBody actualLayout actualControl
-  rw [actualHostedLayout_eq]
-
-                               
-                                                                                         
-                                                                                              
-                            
-                                                                             
-                                     
-                                     
-                                    
-                                                                                                           
-                                                                                 
-                                                                          
-                                  
-      
-                                                               
-                                                                                   
-                     
-end ECDSAAdd.Entrant.FullBTemp
 
 
 
@@ -10152,7 +10046,7 @@ attribute [local irreducible] run wires
 
 def branchBF760 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
   ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-    (R2SqEp760.bodySwap L ext (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control))
+    (R2SqEp760.bodySwap L ext (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control))
 
 theorem branchBFP3_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (B O : Nat) (hO : O<SquareReduction.p)
@@ -10161,12 +10055,12 @@ theorem branchBFP3_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
     (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
     (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-      (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).phase=s.phase ∧
+      (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).phase=s.phase ∧
     regValue L.core.out (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-      (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis=
+      (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis=
       ControlLoan1589BFFold.resBF ((if s.basis control then B else 0)^2) O (s.basis control) ∧
     ∀q,q∉L.core.out → (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-      (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis q=s.basis q := by
+      (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis q=s.basis q := by
   have nd := (List.nodup_cons.mp hn).2
   have hcw : control∉L.wires := (List.nodup_cons.mp hn).1
   let M := if s.basis control then B else 0
@@ -10181,14 +10075,14 @@ theorem branchBFP3_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     (List.take_sublist 256 L.core.product).count_le q
   have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
     (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
-  simp only [FullBOptTemp.hostedSelectedBody_eq L (LowZero18Square.foldPerm L ext) control
+  simp only [FullB88OptTemp.hostedSelectedBody_eq L (LowZero18Square.foldPerm L ext) control
     (ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
-  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (FullBOptTemp.selectedBody L control) := fun q hq hw' =>
-    he.away q hq (List.mem_toFinset.mp (FullBOptTemp.selected_support L hw nd control hw'))
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (FullB88OptTemp.selectedBody L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (FullB88OptTemp.selected_support L hw nd control hw'))
   apply ParkCopy.withLowK2P_correct L hw control hn L.core.high (L.core.product.take 256) srcCount dstCount
     (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
     (by simp [hw.core.product,L.core.high_length hw.core]) (L.core.high_length hw.core) ext he.nodup he.away he.len
-    (FullBOptTemp.selectedBody L control) hbody s records hc dstZero hz
+    (FullB88OptTemp.selectedBody L control) hbody s records hc dstZero hz
   intro t m dstValue same
   rw [hb] at dstValue
   change regValue (L.core.product.take 256) t.basis=M^2 at dstValue
@@ -10222,7 +10116,7 @@ theorem branchBFP3_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
     omega
   have hSource:M=if t.basis control then regValue L.core.high t.basis else 0:=by
     rw[sourceT,ctrlT]
-  have frame := FullBOptTemp.selected_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg hSource t m ⟨outO,fun _ _ => rfl⟩
+  have frame := FullB88OptTemp.selected_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg hSource t m ⟨outO,fun _ _ => rfl⟩
   rw [ControlLoan1589BFFold.bO4_eq M O (t.basis control) mb hg hO,ctrlT] at frame
   exact ⟨frame.1,frame.2.1,frame.2.2⟩
 
@@ -10249,11 +10143,11 @@ theorem branchBF760_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   have fin := newC.2.2 (sqRet L) (sqRet_not_out L hw nd)
   rw [sqRet_clean L hw _ hc] at fin
   rw [show branchBF760 L ext control=ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
-      (bodySwap L ext (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) from rfl,
+      (bodySwap L ext (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) control)) from rfl,
     withLowK2P_swap_run_eq L hw control hn L.core.high (L.core.product.take 256) srcCount dstCount
       (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
       (by simp [hw.core.product,L.core.high_length hw.core]) ext he.nodup he.away he.len _
-      (FullBOptTemp.hosted_fold_support L hw nd ext control he.len
+      (FullB88OptTemp.hosted_fold_support L hw nd ext control he.len
         (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h))) s records hc dstZero hz fin]
   exact park_state_eq L _ _ s newC.1 oldC.1 (newC.2.1.trans oldC.2.1.symm) newC.2.2 oldC.2.2
 
@@ -10287,7 +10181,7 @@ theorem branchBF760_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
     toffoliCount (branchBF760 L ext c)≤toffoliCount (R2SqEp760.branchBF760 L ext c) ∧
     measurementCount (branchBF760 L ext c)=measurementCount (R2SqEp760.branchBF760 L ext c) ∧
     gateSlots (branchBF760 L ext c)≤gateSlots (R2SqEp760.branchBF760 L ext c) := by
-  have h := FullBOptTemp.hosted_resources L hw (LowZero18Square.foldPerm L ext) c
+  have h := FullB88OptTemp.hosted_resources L hw (LowZero18Square.foldPerm L ext) c
   simp only [branchBF760,R2SqEp760.branchBF760,ParkCopy.withLowK2P,ParkCopy.pB,R2SqEp760.bodySwap,
     toffoliCount_append,measurementCount_append,gateSlots_append,
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
@@ -10295,8 +10189,8 @@ theorem branchBF760_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widt
 
 theorem branchBF760_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire) (c : Wire) :
     wires (branchBF760 L ext c)⊆wires (R2SqEp760.branchBF760 L ext c) := by
-  have h := FullBOptTemp.hosted_subset L hw (LowZero18Square.foldPerm L ext) c
-  have image : wires (R2SqEp760.bodySwap L ext (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c))⊆
+  have h := FullB88OptTemp.hosted_subset L hw (LowZero18Square.foldPerm L ext) c
+  have image : wires (R2SqEp760.bodySwap L ext (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c))⊆
       wires (R2SqEp760.bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)) := by
     simpa only [R2SqEp760.bodySwap,renameProgram_support] using Finset.image_subset_image (f := R2SqEp760.sqSwap L ext) h
   exact wrapper_mono L ext c L.core.high (L.core.product.take 256) _ _ image
@@ -10363,9 +10257,9 @@ theorem program760_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
   have he := OwnDiagAll12Square.kext_ok L hw hn
   have fixed := ParkCarryDevelop.fold_fixes_sumCarry K hwK (List.nodup_cons.mp controlND).2 ext he.len
     (fun q hq h => he.away q hq (List.mem_cons_of_mem c h))
-  have body : GatePhysical (FullBOptTemp.hostedSelectedBody K (LowZero18Square.foldPerm K ext) c) := by
-    rw [FullBOptTemp.hostedSelectedBody_eq K _ c fixed]
-    exact FullBOptTemp.selected_physical K hwK c controlND
+  have body : GatePhysical (FullB88OptTemp.hostedSelectedBody K (LowZero18Square.foldPerm K ext) c) := by
+    rw [FullB88OptTemp.hostedSelectedBody_eq K _ c fixed]
+    exact FullB88OptTemp.selected_physical K hwK c controlND
   have swapped := gatePhysical_rename _ (R2SqEp760.sqSwap K ext).injective _ body
   have bf := replace_physical K ext c K.core.high (K.core.product.take 256) _ _ old.1.2 swapped
   exact ⟨⟨old.1.1,bf⟩,old.2⟩
@@ -10566,7 +10460,7 @@ theorem slots_le760 (L : ControlledPointLayout) (hw : L.Widths) :
 
 theorem branchBF760_gain (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (c : Wire)
     (d : Nat)
-    (h : toffoliCount (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d≤
+    (h : toffoliCount (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d≤
       toffoliCount (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)) :
     toffoliCount (branchBF760 L ext c)+d≤toffoliCount (R2SqEp760.branchBF760 L ext c) := by
   simp only [branchBF760,R2SqEp760.branchBF760,ParkCopy.withLowK2P,ParkCopy.pB,R2SqEp760.bodySwap,
@@ -10576,19 +10470,19 @@ theorem branchBF760_gain (L : CuccaroStreamedSquareWideLayout) (ext : List Wire)
 /-- Infer no layout or arithmetic argument through closed circuit expressions. -/
 theorem branchBF760_gain_of_numeric (L : CuccaroStreamedSquareWideLayout)
     (ext : List Wire) (c : Wire) (d bound : Nat)
-    (newBound : toffoliCount (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d≤bound)
+    (newBound : toffoliCount (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d≤bound)
     (oldCount : toffoliCount (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)=bound) :
     toffoliCount (branchBF760 L ext c)+d≤toffoliCount (R2SqEp760.branchBF760 L ext c) := by
   apply branchBF760_gain L ext c d
   calc
-    toffoliCount (FullBOptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d ≤ bound := newBound
+    toffoliCount (FullB88OptTemp.hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)+d ≤ bound := newBound
     _ = toffoliCount (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c) := oldCount.symm
 
 /-- Keep the permutation identical in both numeric premise types before symbolic substitution. -/
 theorem branchBF760_gain_of_numeric_rho (L : CuccaroStreamedSquareWideLayout)
     (ext : List Wire) (c : Wire) (rho : Equiv.Perm Wire)
     (eRho : rho=LowZero18Square.foldPerm L ext) (d bound : Nat)
-    (newBound : toffoliCount (FullBOptTemp.hostedSelectedBody L rho c)+d≤bound)
+    (newBound : toffoliCount (FullB88OptTemp.hostedSelectedBody L rho c)+d≤bound)
     (oldCount : toffoliCount (ParkCarry10Develop.hostedBody L rho c)=bound) :
     toffoliCount (branchBF760 L ext c)+d≤toffoliCount (R2SqEp760.branchBF760 L ext c) := by
   subst rho
@@ -10597,8 +10491,8 @@ theorem branchBF760_gain_of_numeric_rho (L : CuccaroStreamedSquareWideLayout)
 /-- Convert only small layout/ext/control equalities, never normalize a closed branch. -/
 theorem branch_delta_transport (L K : CuccaroStreamedSquareWideLayout)
     (ext ext' : List Wire) (c c' : Wire) (eL : L=K) (eExt : ext=ext') (eC : c=c')
-    (h : toffoliCount (branchBF760 L ext c)+85≤toffoliCount (R2SqEp760.branchBF760 L ext c)) :
-    toffoliCount (branchBF760 K ext' c')+85≤toffoliCount (R2SqEp760.branchBF760 K ext' c') := by
+    (h : toffoliCount (branchBF760 L ext c)+88≤toffoliCount (R2SqEp760.branchBF760 L ext c)) :
+    toffoliCount (branchBF760 K ext' c')+88≤toffoliCount (R2SqEp760.branchBF760 K ext' c') := by
   cases eL
   cases eExt
   cases eC
@@ -10610,18 +10504,18 @@ attribute [local irreducible] toffoliCount measurementCount gateSlots
 
 theorem branchBF760_actual_delta :
     toffoliCount (branchBF760 Baselines.layout.dialogStreamedSquareWide
-      (OwnDiagAll12Square.kext Baselines.layout) Baselines.layout.core.generic)+85≤
+      (OwnDiagAll12Square.kext Baselines.layout) Baselines.layout.core.generic)+88≤
     toffoliCount (R2SqEp760.branchBF760 Baselines.layout.dialogStreamedSquareWide
       (OwnDiagAll12Square.kext Baselines.layout) Baselines.layout.core.generic) :=
   branch_delta_transport
-    FullBOptTemp.actualLayout Baselines.layout.dialogStreamedSquareWide
-    FullBOptTemp.actualExt (OwnDiagAll12Square.kext Baselines.layout)
-    FullBOptTemp.actualControl Baselines.layout.core.generic rfl rfl rfl
-    (branchBF760_gain_of_numeric_rho FullBOptTemp.actualLayout FullBOptTemp.actualExt FullBOptTemp.actualControl
-      FullBOptTemp.actualFoldPerm rfl 85 4762 FullBOptTemp.ranked_certified_gain.1
-      (ParkCarry10Develop.hosted_counts FullBOptTemp.actualLayout
+    FullB88OptTemp.actualLayout Baselines.layout.dialogStreamedSquareWide
+    FullB88OptTemp.actualExt (OwnDiagAll12Square.kext Baselines.layout)
+    FullB88OptTemp.actualControl Baselines.layout.core.generic rfl rfl rfl
+    (branchBF760_gain_of_numeric_rho FullB88OptTemp.actualLayout FullB88OptTemp.actualExt FullB88OptTemp.actualControl
+      FullB88OptTemp.actualFoldPerm rfl 88 4762 FullB88OptTemp.ranked_certified_gain.1
+      (ParkCarry10Develop.hosted_counts FullB88OptTemp.actualLayout
         (ControlledPointLayout.dialogStreamedSquareWide_widths Baselines.layout Baselines.layout_widths)
-        FullBOptTemp.actualFoldPerm FullBOptTemp.actualControl).1)
+        FullB88OptTemp.actualFoldPerm FullB88OptTemp.actualControl).1)
 
 theorem program760_gain (L : ControlledPointLayout) (d : Nat)
     (h : toffoliCount (branchBF760 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic)+d≤
@@ -10631,23 +10525,23 @@ theorem program760_gain (L : ControlledPointLayout) (d : Nat)
     core760,R2SqEp760.core760,toffoliCount_append,(renameProgram_counts _ _).1]
   omega
 
-private theorem saved_ge_of_delta (n o r a : Nat) (hnew : n+85≤o)
-    (hold : o+3064+a=r) (ha : 93≤a) : 178≤r-(n+3064) := by omega
+private theorem saved_ge_of_delta (n o r a : Nat) (hnew : n+88≤o)
+    (hold : o+3064+a=r) (ha : 93≤a) : 181≤r-(n+3064) := by omega
 
 /-- Keep every whole-program arithmetic expression abstract until the final specialization. -/
 theorem savedA_ge_three (L : ControlledPointLayout) (hw : L.Widths)
-    (delta : toffoliCount (program760 L)+85≤toffoliCount (R2SqEp760.program760 L))
-    (baseSaved : 93≤R2SqEp760.savedA L) : 178≤savedA L :=
+    (delta : toffoliCount (program760 L)+88≤toffoliCount (R2SqEp760.program760 L))
+    (baseSaved : 93≤R2SqEp760.savedA L) : 181≤savedA L :=
   saved_ge_of_delta
     (toffoliCount (program760 L)) (toffoliCount (R2SqEp760.program760 L))
     (toffoliCount (ReflectionE1Square.program L)) (R2SqEp760.savedA L)
     delta (R2SqEp760.counts_diff760 L hw).1 baseSaved
 
-theorem savedA_actual : 178≤savedA Baselines.layout :=
+theorem savedA_actual : 181≤savedA Baselines.layout :=
   savedA_ge_three Baselines.layout Baselines.layout_widths
-    (program760_gain Baselines.layout 85 branchBF760_actual_delta) R2SqEp760.savedA_actual
+    (program760_gain Baselines.layout 88 branchBF760_actual_delta) R2SqEp760.savedA_actual
 
-#print axioms FullBOptTemp.selected_frame
+#print axioms FullB88OptTemp.selected_frame
 #print axioms program760_boundary
 #print axioms program760_physical
 #print axioms counts_diff760
@@ -11130,12 +11024,12 @@ private theorem wrapper_facts (d : Nat) (L : ControlledPointLayout) (C : Point) 
     gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
-private theorem toffoli_of_saved (x y s : Nat) (h : x+3316+s=y) (hs : 178≤s) (hy : y≤2151274) :
-    x≤2147780 := by
+private theorem toffoli_of_saved (x y s : Nat) (h : x+3316+s=y) (hs : 181≤s) (hy : y≤2151274) :
+    x≤2147777 := by
   omega
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2147780 :=
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2147777 :=
   toffoli_of_saved _ _ _ (wrapper_facts _ layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
     B3CarryPort.savedA_actual (ReflectionE1TickGap.wrapper_toffoli cx cy hc)
 
@@ -12172,7 +12066,7 @@ theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (
                                                                        
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2147763 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2147760 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := ReflectionE1TickGapLow48.wrapper_toffoli cx cy hc
   omega
@@ -14784,14 +14678,14 @@ def program (C : Point) : Program :=
                                                                   
                                                                     
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2147751 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2147748 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2147751
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2147748
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1498871 := by
