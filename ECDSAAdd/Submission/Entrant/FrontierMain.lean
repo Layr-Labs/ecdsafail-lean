@@ -8089,7 +8089,7 @@ def program (C : Point) : Program :=
                      
                                                                                   
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2147501 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2147494 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -8098,8 +8098,8 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2147501 := by
     have st := (stage_counts hc).1
     have old := CodexYParityProbe.program_toffoli (.some hc)
     change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      2147748 at old
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147501
+      2147741 at old
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147494
     omega
 
 theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498624 := by
@@ -11153,7 +11153,7 @@ def program2 (C : Point) : Program :=
                      
                                                                                   
 
-theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2147257 := by
+theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2147250 := by
   cases C with
   | zero => simp [program2, toffoliCount]
   | @some cx cy hc =>
@@ -11161,8 +11161,8 @@ theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2147257 := 
     have o : 504 ≤ toffoliCount (oldOut layout (.some hc)) := (old_out_counts hc).1
     have st := (outStage_counts hc).1
     have old := program_toffoli (.some hc)
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147501 at old
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2147257
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147494 at old
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2147250
     omega
 
 theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498380 := by
@@ -11943,14 +11943,14 @@ def program530 (C : Point) : Program :=
                      
                                                                                       
 
-theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤ 2147255 := by
+theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤ 2147248 := by
   cases C with
   | zero => simp [program530, toffoliCount]
   | @some cx cy hc =>
     have old := InputSentinel.program2_toffoli (.some hc)
     have delta := (wrapper_metrics530 hc).1
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2147257 at old
-    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤ 2147255
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2147250 at old
+    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤ 2147248
     omega
 
 theorem program_measurements530 (C : Point) : measurementCount (program530 C) ≤ 1498380 := by
