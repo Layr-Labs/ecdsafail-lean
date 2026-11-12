@@ -1,5 +1,43 @@
+import ECDSAAdd.Submission.Entrant.NewCarry4901
 import ECDSAAdd.Submission.Entrant.CarryIdentityBundle
 import ECDSAAdd.Submission.Entrant.ParkAMany
+section
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+set_option linter.unusedVariables false
+namespace ECDSAAdd.Entrant.NewCarry4901
+open ECDSAAdd SixCarryTrace SixCarryFrame
+attribute [local irreducible] SixCarryPrefixData.program prefixState
+
+/-- Every initial fact used by the new certificate is already supplied by the loop domain. -/
+theorem domain (b : BasisState) (hc : ExtraCarryDomain.Clean b) : Clean b := by
+ have checked : zeros.all (fun q=>decide (q∈ExtraCarryDomain.sites))=true := by decide +kernel
+ intro q hq
+ exact ExtraCarryDomain.zero b hc q (of_decide_eq_true (List.all_eq_true.mp checked q hq))
+
+theorem bool_imp (a b : Bool) (h : ¬ (a=false ∧ b=true)) : (a && b)=b := by
+ cases a <;> cases b <;> simp_all
+
+/-- The actual instruction-4901 control product on every allowed incoming basis state. -/
+theorem condition (b : BasisState) (hc : ExtraCarryDomain.Clean b) :
+ ((prefixState SixCarryPrefixData.program 4901 b 4662) &&
+  (prefixState SixCarryPrefixData.program 4901 b 4405))=
+   prefixState SixCarryPrefixData.program 4901 b 4405 := by
+ apply bool_imp
+ have f:=at_between SixCarryPrefixData.program 4900 4901 4662 (by decide +kernel) (by decide +kernel) b
+ simpa only [v4570,v4571,f] using query b (domain b hc)
+
+theorem gate (s : State) (m : List Bool)
+ (h : (s.basis 4662 && s.basis 4405)=s.basis 4405) :
+ run [.CCX 4662 4405 4406] m s=run [.CX 4405 4406] m s := by
+ simp only [run,h]
+
+#print axioms condition
+#print axioms gate
+end ECDSAAdd.Entrant.NewCarry4901
+end
+
 section
 -- Preserved checked proof component: LocalEFoldTrace
 open ECDSAAdd Lean
@@ -8286,8 +8324,79 @@ end ECDSAAdd.Entrant.LocalSevenWitness
 end
 
 section
--- Preserved checked B98 component: LocalSevenLoop
-namespace ECDSAAdd.Entrant.LocalSevenLoop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.EightCarryPrefix
+open ECDSAAdd Arithmetic Challenge SixCarryPatchGeneric
+attribute [local irreducible] run toffoliCount measurementCount gateSlots LocalSevenExtra.improved LocalSevenCore.core
+
+def repair : Program := [.CX 4405 4406]
+def improved : Program := patch LocalSevenExtra.improved 4901 repair
+
+theorem seven_take (n : Nat) (hn : n≤4907) :
+ LocalSevenExtra.improved.take n=LocalSevenCore.core.take n := by
+ have a:=SixCarryPatchPrefix.take_before LocalSevenCore.p6 4907 (.CCX 4663 4406 4407)
+  ExtraCarryGateRepairs.repair4907 n LocalSevenExtra.gate_lookup hn
+ have b:=congrArg (fun p : Program=>p.take n) LocalSevenExtra.prefix_eq
+ simp only [List.take_take,Nat.min_eq_left hn] at b
+ delta LocalSevenExtra.improved
+ exact a.trans b
+
+theorem prefix_eq : LocalSevenExtra.improved.take 4901=LocalSevenCore.core.take 4901 :=
+ seven_take 4901 (by decide +kernel)
+
+theorem original_lookup : LocalSevenCore.core[4901]?=some (.CCX 4662 4405 4406) := by
+ have hg : SixCarryPrefixData.program[4901]?=some (.CCX 4662 4405 4406) := by
+  apply List.getElem?_eq_some_iff.mpr
+  exact ⟨by rw [SixCarryPrefixData.program_length];decide +kernel,SixCarryTraceFacts.gate_4901⟩
+ rw [LocalSevenCore.core,List.getElem?_take_of_lt (by decide : 4901<12792)]
+ exact SixCarryLookupTransfer.lookup 4901 4662 4405 4406 (by decide +kernel) hg
+
+theorem gate_lookup : LocalSevenExtra.improved[4901]?=some (.CCX 4662 4405 4406) := by
+ have h:=congrArg (fun p : Program=>p[4901]?) (seven_take 4902 (by decide +kernel))
+ simp only [List.getElem?_take_of_lt (by decide : 4901<4902)] at h
+ exact h.trans original_lookup
+
+theorem run_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.basis) :
+ run LocalSevenExtra.improved m s=run improved m s := by
+ delta improved
+ apply SixCarryPatchGeneric.run_eq LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel) s m
+ apply NewCarry4901.gate
+ simp only [prefix_eq]
+ rw [LocalSevenCore.core_prefix 4901 (by decide +kernel)]
+ rw [SixCarryBasisTransfer.actual_prefix_basis 4901 (by decide +kernel)]
+ exact NewCarry4901.condition s.basis hc
+
+theorem run_core_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.basis) :
+ run LocalSevenCore.core m s=run improved m s :=
+ (LocalSevenExtra.run_core_eq s m hc).trans (run_eq s m hc)
+
+theorem toffoli : toffoliCount improved+8=toffoliCount LocalSevenCore.core := by
+ have h:=SixCarryPatchResources.toffoli LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
+ change toffoliCount improved+1=toffoliCount LocalSevenExtra.improved at h
+ have old:=LocalSevenResources.toffoli
+ omega
+
+theorem measurements : measurementCount improved=measurementCount LocalSevenCore.core := by
+ have h:=SixCarryPatchResources.measurements LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
+ change measurementCount improved=measurementCount LocalSevenExtra.improved at h
+ exact h.trans LocalSevenResources.measurements
+
+theorem slots : gateSlots improved=gateSlots LocalSevenCore.core+13 := by
+ have h:=SixCarryPatchResources.slots LocalSevenExtra.improved 4901 4662 4405 4406 repair 0 gate_lookup (by decide +kernel)
+ change gateSlots improved=gateSlots LocalSevenExtra.improved+0 at h
+ have old:=LocalSevenResources.slots
+ omega
+
+#print axioms run_core_eq
+end ECDSAAdd.Entrant.EightCarryPrefix
+end
+
+section
+-- Preserved checked B98 component: LocalEightLoop
+namespace ECDSAAdd.Entrant.LocalEightLoop
 open ECDSAAdd Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 open ControlLoan1589BFFold ManyACarryDevelop FullBTemp LowAccCarryDevelop
 set_option Elab.async false
@@ -8315,7 +8424,7 @@ theorem exists_cm : ∃cm : CM,cm.out=SixCarryLoopAnchor.output :=
 def unbuild : Program :=
  unbuildMany 86 LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L) LowAccCarryDevelop.loans88
   LowAccCarryDevelop.L.core.sumCarry (FullBTemp.hostR LowAccCarryDevelop.L) (FullBTemp.hostP LowAccCarryDevelop.L)
-def improved : Program := LocalSevenExtra.improved++unbuild
+def improved : Program := EightCarryPrefix.improved++unbuild
 attribute [local irreducible] unbuild improved
 
 theorem old_shape (cm : CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
@@ -8328,8 +8437,8 @@ theorem old_shape (cm : CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
 theorem run_eq (cm : CM) (hcm : cm.out=SixCarryLoopAnchor.output)
  (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.basis) :
  run improved m s=run (LowAccCarryDevelop.loopWith cm) m s := by
- rw [improved,old_shape cm hcm,run_append,run_append,LocalSevenResources.measurements]
- rw [← LocalSevenExtra.run_core_eq s (m.take (measurementCount LocalSevenCore.core)) hc]
+ rw [improved,old_shape cm hcm,run_append,run_append,EightCarryPrefix.measurements]
+ rw [← EightCarryPrefix.run_core_eq s (m.take (measurementCount LocalSevenCore.core)) hc]
 
 theorem frame (cm : CM) (hcm : cm.out=SixCarryLoopAnchor.output)
  (base : BasisState) (clean : LowAccCarryDevelop.L.PairClean base) (hsum : base LowAccCarryDevelop.L.core.sumCarry=false)
@@ -8345,7 +8454,7 @@ theorem frame (cm : CM) (hcm : cm.out=SixCarryLoopAnchor.output)
  · exact LowAccCarryDevelop.loop_bstate_step cm base clean hsum O E O' mid
 
 #print axioms frame
-end ECDSAAdd.Entrant.LocalSevenLoop
+end ECDSAAdd.Entrant.LocalEightLoop
 
 end
 
@@ -8616,14 +8725,14 @@ end ECDSAAdd.Entrant.LocalSevenBody
 end
 
 section
--- Preserved checked B98 component: LocalSevenBody98
-namespace ECDSAAdd.Entrant.LocalSevenBody98
+-- Preserved checked B98 component: LocalEightBody99
+namespace ECDSAAdd.Entrant.LocalEightBody99
 open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold
 set_option Elab.async false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 def body : Program :=
- LocalSevenBody.bodyForBoth LowAccCarryDevelop.L LocalSevenLoop.improved LocalEFoldOptimize.improved LocalRebuild.improved
+ LocalSevenBody.bodyForBoth LowAccCarryDevelop.L LocalEightLoop.improved LocalEFoldOptimize.improved LocalRebuild.improved
 
 theorem frame
  (base : BasisState) (M : Nat) (hM : M<2^128)
@@ -8633,18 +8742,18 @@ theorem frame
  (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
  Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) body
   (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) := by
- obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+ obtain ⟨cm,hcm⟩:=LocalEightLoop.exists_cm
  unfold body
  apply LocalSevenBody.frame LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths
   LowAccCarryDevelop.layout_nodup LowAccCarryDevelop.c LowAccCarryDevelop.control_outside
-  LocalSevenLoop.improved (fun b clean hs O0 E0 O1 he mid=>LocalSevenLoop.frame cm hcm b clean hs O0 E0 O1 he mid)
+  LocalEightLoop.improved (fun b clean hs O0 E0 O1 he mid=>LocalEightLoop.frame cm hcm b clean hs O0 E0 O1 he mid)
   LocalEFoldOptimize.improved ?_ LocalRebuild.improved ?_ base M hM hP hc hsum O hO hg hSource
  · intro b clean O0 E0 _ eb er off Q old
    exact LocalEFoldLift.transfer b clean O0 E0 eb er off Q old
  · intro b outB clean O0 E0 B0 hb old
    exact LocalRebuildLift.transfer b outB clean O0 E0 B0 hb old
 #print axioms frame
-end ECDSAAdd.Entrant.LocalSevenBody98
+end ECDSAAdd.Entrant.LocalEightBody99
 
 end
 
@@ -8735,20 +8844,46 @@ end ECDSAAdd.Entrant.LocalSevenSupport
 end
 
 section
--- Preserved checked B98 component: LocalSevenLoopResources
-namespace ECDSAAdd.Entrant.LocalSevenLoopResources
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+namespace ECDSAAdd.Entrant.EightCarryPrefixSupport
+open ECDSAAdd Arithmetic Challenge EightCarryPrefix
+attribute [local irreducible] wires GatePhysical LocalSevenCore.core LocalSevenExtra.improved
+
+theorem repair_support : wires repair⊆wires LocalSevenCore.core :=
+ LocalSevenSupport.repair_lookup_support LocalSevenCore.core 4901 (.CCX 4662 4405 4406) repair
+  original_lookup (by decide +kernel)
+
+theorem support : wires improved⊆wires LocalSevenCore.core := by
+ have h:=SixCarryAllSupport.patch_upper_support LocalSevenExtra.improved repair 4901 (wires LocalSevenCore.core)
+  LocalSevenSupport.support repair_support
+ change wires improved⊆wires LocalSevenCore.core at h
+ exact h
+
+theorem physical : GatePhysical improved := by
+ have h:=SixCarryPatchSupport.physical LocalSevenExtra.improved 4901 (.CCX 4662 4405 4406) repair
+  gate_lookup LocalSevenSupport.physical (physicalGateCheck_correct repair (by decide +kernel))
+ change GatePhysical improved at h
+ exact h
+end ECDSAAdd.Entrant.EightCarryPrefixSupport
+end
+
+section
+-- Preserved checked B98 component: LocalEightLoopResources
+namespace ECDSAAdd.Entrant.LocalEightLoopResources
 open ECDSAAdd Arithmetic Challenge
 set_option Elab.async false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
-attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots Arithmetic.GatePhysical LowAccCarryDevelop.loopWith LocalSevenLoop.improved LocalSevenLoop.unbuild LocalSevenCore.core LocalSevenExtra.improved
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots Arithmetic.GatePhysical LowAccCarryDevelop.loopWith LocalEightLoop.improved LocalEightLoop.unbuild LocalSevenCore.core EightCarryPrefix.improved
 
-theorem new_shape : LocalSevenLoop.improved=LocalSevenExtra.improved++LocalSevenLoop.unbuild := by
- delta LocalSevenLoop.improved
+theorem new_shape : LocalEightLoop.improved=EightCarryPrefix.improved++LocalEightLoop.unbuild := by
+ delta LocalEightLoop.improved
  rfl
 
-theorem append_t (p q tail : Program) (h : toffoliCount q+7=toffoliCount p) :
- toffoliCount (q++tail)+7=toffoliCount (p++tail) := by
+theorem append_t (p q tail : Program) (h : toffoliCount q+8=toffoliCount p) :
+ toffoliCount (q++tail)+8=toffoliCount (p++tail) := by
  rw [toffoliCount_append,toffoliCount_append]
  omega
 theorem append_m (p q tail : Program) (h : measurementCount q=measurementCount p) :
@@ -8762,77 +8897,77 @@ theorem append_support (p q tail : Program) (h : wires q⊆wires p) : wires (q++
  rw [wires_append,wires_append]
  exact Finset.union_subset_union h (Finset.Subset.refl _)
 
-theorem toffoli (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
- toffoliCount LocalSevenLoop.improved+7=toffoliCount (LowAccCarryDevelop.loopWith cm) :=
- Eq.mp (congrArg (fun p : Program=>toffoliCount LocalSevenLoop.improved+7=toffoliCount p) (LocalSevenLoop.old_shape cm hcm).symm)
-  (Eq.mp (congrArg (fun q : Program=>toffoliCount q+7=toffoliCount (LocalSevenCore.core++LocalSevenLoop.unbuild)) new_shape.symm)
-   (append_t _ _ _ LocalSevenResources.toffoli))
-theorem measurements (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
- measurementCount LocalSevenLoop.improved=measurementCount (LowAccCarryDevelop.loopWith cm) :=
- Eq.mp (congrArg (fun p : Program=>measurementCount LocalSevenLoop.improved=measurementCount p) (LocalSevenLoop.old_shape cm hcm).symm)
-  (Eq.mp (congrArg (fun q : Program=>measurementCount q=measurementCount (LocalSevenCore.core++LocalSevenLoop.unbuild)) new_shape.symm)
-   (append_m _ _ _ LocalSevenResources.measurements))
-theorem slots (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
- gateSlots LocalSevenLoop.improved=gateSlots (LowAccCarryDevelop.loopWith cm)+13 :=
- Eq.mp (congrArg (fun p : Program=>gateSlots LocalSevenLoop.improved=gateSlots p+13) (LocalSevenLoop.old_shape cm hcm).symm)
-  (Eq.mp (congrArg (fun q : Program=>gateSlots q=gateSlots (LocalSevenCore.core++LocalSevenLoop.unbuild)+13) new_shape.symm)
-   (append_s _ _ _ LocalSevenResources.slots))
-theorem support (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
- wires LocalSevenLoop.improved⊆wires (LowAccCarryDevelop.loopWith cm) :=
- Eq.mp (congrArg (fun p : Program=>wires LocalSevenLoop.improved⊆wires p) (LocalSevenLoop.old_shape cm hcm).symm)
-  (Eq.mp (congrArg (fun q : Program=>wires q⊆wires (LocalSevenCore.core++LocalSevenLoop.unbuild)) new_shape.symm)
-   (append_support _ _ _ LocalSevenSupport.support))
+theorem toffoli (cm : LocalEightLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ toffoliCount LocalEightLoop.improved+8=toffoliCount (LowAccCarryDevelop.loopWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount LocalEightLoop.improved+8=toffoliCount p) (LocalEightLoop.old_shape cm hcm).symm)
+  (Eq.mp (congrArg (fun q : Program=>toffoliCount q+8=toffoliCount (LocalSevenCore.core++LocalEightLoop.unbuild)) new_shape.symm)
+   (append_t _ _ _ EightCarryPrefix.toffoli))
+theorem measurements (cm : LocalEightLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ measurementCount LocalEightLoop.improved=measurementCount (LowAccCarryDevelop.loopWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount LocalEightLoop.improved=measurementCount p) (LocalEightLoop.old_shape cm hcm).symm)
+  (Eq.mp (congrArg (fun q : Program=>measurementCount q=measurementCount (LocalSevenCore.core++LocalEightLoop.unbuild)) new_shape.symm)
+   (append_m _ _ _ EightCarryPrefix.measurements))
+theorem slots (cm : LocalEightLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ gateSlots LocalEightLoop.improved=gateSlots (LowAccCarryDevelop.loopWith cm)+13 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots LocalEightLoop.improved=gateSlots p+13) (LocalEightLoop.old_shape cm hcm).symm)
+  (Eq.mp (congrArg (fun q : Program=>gateSlots q=gateSlots (LocalSevenCore.core++LocalEightLoop.unbuild)+13) new_shape.symm)
+   (append_s _ _ _ EightCarryPrefix.slots))
+theorem support (cm : LocalEightLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ wires LocalEightLoop.improved⊆wires (LowAccCarryDevelop.loopWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>wires LocalEightLoop.improved⊆wires p) (LocalEightLoop.old_shape cm hcm).symm)
+  (Eq.mp (congrArg (fun q : Program=>wires q⊆wires (LocalSevenCore.core++LocalEightLoop.unbuild)) new_shape.symm)
+   (append_support _ _ _ EightCarryPrefixSupport.support))
 
 theorem append_physical (p q : Program) (hp : GatePhysical p) (hq : GatePhysical q) : GatePhysical (p++q) := by
  rw [gatePhysical_append]
  exact ⟨hp,hq⟩
-theorem unbuild_physical : GatePhysical LocalSevenLoop.unbuild := by
- obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+theorem unbuild_physical : GatePhysical LocalEightLoop.unbuild := by
+ obtain ⟨cm,hcm⟩:=LocalEightLoop.exists_cm
  have hp:=ParkCarry10Develop.body_physical LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths
   LowAccCarryDevelop.c LowAccCarryDevelop.layout_control_nodup
  simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,gatePhysical_append] at hp
  have mid : GatePhysical (FullBTemp.middle LowAccCarryDevelop.L LowAccCarryDevelop.c) := hp.2.2.1.2.2.1
  have hl:=LowAccCarryDevelop.loop_physical cm mid
- rw [LocalSevenLoop.old_shape cm hcm,gatePhysical_append] at hl
+ rw [LocalEightLoop.old_shape cm hcm,gatePhysical_append] at hl
  exact hl.2
 
-theorem physical : GatePhysical LocalSevenLoop.improved :=
+theorem physical : GatePhysical LocalEightLoop.improved :=
  Eq.mp (congrArg GatePhysical new_shape.symm)
-  (append_physical _ _ LocalSevenSupport.physical unbuild_physical)
+  (append_physical _ _ EightCarryPrefixSupport.physical unbuild_physical)
 #print axioms toffoli
 #print axioms support
 #print axioms physical
-end ECDSAAdd.Entrant.LocalSevenLoopResources
+end ECDSAAdd.Entrant.LocalEightLoopResources
 
 end
 
 section
--- Preserved checked B98 component: LocalSevenBody98Costs
-namespace ECDSAAdd.Entrant.LocalSevenBody98Costs
+-- Preserved checked B98 component: LocalEightBody99Costs
+namespace ECDSAAdd.Entrant.LocalEightBody99Costs
 open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold
 set_option Elab.async false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
-attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots Arithmetic.GatePhysical LocalSevenBody98.body LocalRebuildBody91.bodyWith LocalSevenLoop.improved LowAccCarryDevelop.loopWith LocalEFoldOptimize.improved LocalRebuild.improved
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots Arithmetic.GatePhysical LocalEightBody99.body LocalRebuildBody91.bodyWith LocalEightLoop.improved LowAccCarryDevelop.loopWith LocalEFoldOptimize.improved LocalRebuild.improved
 
 def post : Program :=
  ParkCarryDevelop.program (eU LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.sumCarry ++
  (eSubK LowAccCarryDevelop.L ++ (LocalEFoldOptimize.improved ++ LocalRebuild.improved))
 attribute [local irreducible] post
 
-theorem old_shape (cm : LocalSevenLoop.CM) : LocalRebuildBody91.bodyWith cm=
+theorem old_shape (cm : LocalEightLoop.CM) : LocalRebuildBody91.bodyWith cm=
  FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post) := by
  delta LocalRebuildBody91.bodyWith
  simp only [LocalRebuildBody.bodyForBoth,LowAccCarryDevelop.foldFor,FullBTemp.prefixP,post,
   LocalRebuildBody91.L,List.append_assoc]
 
-theorem new_shape : LocalSevenBody98.body=
- FullBTemp.prefixP LowAccCarryDevelop.L++(LocalSevenLoop.improved++post) := by
- delta LocalSevenBody98.body
+theorem new_shape : LocalEightBody99.body=
+ FullBTemp.prefixP LowAccCarryDevelop.L++(LocalEightLoop.improved++post) := by
+ delta LocalEightBody99.body
  simp only [LocalSevenBody.bodyForBoth,LowAccCarryDevelop.foldFor,FullBTemp.prefixP,post,List.append_assoc]
 
-theorem context_t (pre p q tail : Program) (h : toffoliCount q+7=toffoliCount p) :
- toffoliCount (pre++(q++tail))+7=toffoliCount (pre++(p++tail)) := by
+theorem context_t (pre p q tail : Program) (h : toffoliCount q+8=toffoliCount p) :
+ toffoliCount (pre++(q++tail))+8=toffoliCount (pre++(p++tail)) := by
  simp only [toffoliCount_append]
  omega
 theorem context_m (pre p q tail : Program) (h : measurementCount q=measurementCount p) :
@@ -8848,32 +8983,32 @@ theorem context_support (pre p q tail : Program) (h : wires q⊆wires p) :
  simp only [wires_append]
  exact Finset.union_subset_union (Finset.Subset.refl _) (Finset.union_subset_union h (Finset.Subset.refl _))
 
-theorem toffoli (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
- toffoliCount LocalSevenBody98.body+7=toffoliCount (LocalRebuildBody91.bodyWith cm) :=
- Eq.mp (congrArg (fun p : Program=>toffoliCount LocalSevenBody98.body+7=toffoliCount p) (old_shape cm).symm)
-  (Eq.mp (congrArg (fun q : Program=>toffoliCount q+7=toffoliCount (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))) new_shape.symm)
-   (context_t _ _ _ _ (LocalSevenLoopResources.toffoli cm hcm)))
-theorem measurements (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
- measurementCount LocalSevenBody98.body=measurementCount (LocalRebuildBody91.bodyWith cm) :=
- Eq.mp (congrArg (fun p : Program=>measurementCount LocalSevenBody98.body=measurementCount p) (old_shape cm).symm)
+theorem toffoli (cm : LocalEightLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ toffoliCount LocalEightBody99.body+8=toffoliCount (LocalRebuildBody91.bodyWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount LocalEightBody99.body+8=toffoliCount p) (old_shape cm).symm)
+  (Eq.mp (congrArg (fun q : Program=>toffoliCount q+8=toffoliCount (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))) new_shape.symm)
+   (context_t _ _ _ _ (LocalEightLoopResources.toffoli cm hcm)))
+theorem measurements (cm : LocalEightLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ measurementCount LocalEightBody99.body=measurementCount (LocalRebuildBody91.bodyWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount LocalEightBody99.body=measurementCount p) (old_shape cm).symm)
   (Eq.mp (congrArg (fun q : Program=>measurementCount q=measurementCount (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))) new_shape.symm)
-   (context_m _ _ _ _ (LocalSevenLoopResources.measurements cm hcm)))
-theorem slots (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
- gateSlots LocalSevenBody98.body=gateSlots (LocalRebuildBody91.bodyWith cm)+13 :=
- Eq.mp (congrArg (fun p : Program=>gateSlots LocalSevenBody98.body=gateSlots p+13) (old_shape cm).symm)
+   (context_m _ _ _ _ (LocalEightLoopResources.measurements cm hcm)))
+theorem slots (cm : LocalEightLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ gateSlots LocalEightBody99.body=gateSlots (LocalRebuildBody91.bodyWith cm)+13 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots LocalEightBody99.body=gateSlots p+13) (old_shape cm).symm)
   (Eq.mp (congrArg (fun q : Program=>gateSlots q=gateSlots (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))+13) new_shape.symm)
-   (context_s _ _ _ _ (LocalSevenLoopResources.slots cm hcm)))
-theorem support (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
- wires LocalSevenBody98.body⊆wires (LocalRebuildBody91.bodyWith cm) :=
- Eq.mp (congrArg (fun p : Program=>wires LocalSevenBody98.body⊆wires p) (old_shape cm).symm)
+   (context_s _ _ _ _ (LocalEightLoopResources.slots cm hcm)))
+theorem support (cm : LocalEightLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ wires LocalEightBody99.body⊆wires (LocalRebuildBody91.bodyWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>wires LocalEightBody99.body⊆wires p) (old_shape cm).symm)
   (Eq.mp (congrArg (fun q : Program=>wires q⊆wires (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))) new_shape.symm)
-   (context_support _ _ _ _ (LocalSevenLoopResources.support cm hcm)))
+   (context_support _ _ _ _ (LocalEightLoopResources.support cm hcm)))
 
 theorem resources :
- toffoliCount LocalSevenBody98.body+98≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount LocalSevenBody98.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- gateSlots LocalSevenBody98.body+250≤gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
- obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+ toffoliCount LocalEightBody99.body+99≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ measurementCount LocalEightBody99.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ gateSlots LocalEightBody99.body+250≤gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
+ obtain ⟨cm,hcm⟩:=LocalEightLoop.exists_cm
  have h:=LocalRebuildBody91Costs.resources cm
  try dsimp only [LocalRebuildBody91.L,LocalRebuildBody91.c,LocalEFoldBody90.L,LocalEFoldBody90.c] at h
  have ht:=toffoli cm hcm
@@ -8881,8 +9016,8 @@ theorem resources :
  have hs:=slots cm hcm
  exact ⟨by omega,hm.trans h.2.1,by omega⟩
 
-theorem support_old : wires LocalSevenBody98.body⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
- obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+theorem support_old : wires LocalEightBody99.body⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
+ obtain ⟨cm,hcm⟩:=LocalEightLoop.exists_cm
  exact (support cm hcm).trans (LocalRebuildBody91Costs.support_old cm)
 
 theorem context_physical (pre p q tail : Program) (hp : GatePhysical (pre++(p++tail)))
@@ -8890,22 +9025,22 @@ theorem context_physical (pre p q tail : Program) (hp : GatePhysical (pre++(p++t
  simp only [gatePhysical_append] at hp ⊢
  exact ⟨hp.1,hq,hp.2.2⟩
 
-theorem physical : GatePhysical LocalSevenBody98.body := by
- obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+theorem physical : GatePhysical LocalEightBody99.body := by
+ obtain ⟨cm,hcm⟩:=LocalEightLoop.exists_cm
  have hp : GatePhysical (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post)) :=
   Eq.mp (congrArg GatePhysical (old_shape cm)) (LocalRebuildBody91Costs.physical cm)
  exact Eq.mp (congrArg GatePhysical new_shape.symm)
-  (context_physical _ _ _ _ hp LocalSevenLoopResources.physical)
+  (context_physical _ _ _ _ hp LocalEightLoopResources.physical)
 #print axioms resources
 #print axioms support_old
 #print axioms physical
-end ECDSAAdd.Entrant.LocalSevenBody98Costs
+end ECDSAAdd.Entrant.LocalEightBody99Costs
 
 end
 
 section
 -- Preserved checked B98 component: LocalSevenSelector98
-namespace ECDSAAdd.Entrant.FullB98OptTemp
+namespace ECDSAAdd.Entrant.FullB99OptTemp
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
 set_option Elab.async false
 set_option maxRecDepth 100000
@@ -8915,29 +9050,29 @@ set_option linter.unusedVariables false
 attribute [local irreducible] ZeroSetDevelop.compileS? ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots
 
 theorem actual_resources :
- toffoliCount LocalSevenBody98.body+98≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount LocalSevenBody98.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- Challenge.gateSlots LocalSevenBody98.body+250≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
- LocalSevenBody98Costs.resources
+ toffoliCount LocalEightBody99.body+99≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ measurementCount LocalEightBody99.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ Challenge.gateSlots LocalEightBody99.body+250≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
+ LocalEightBody99Costs.resources
 
-theorem actual_subset : wires LocalSevenBody98.body⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
- LocalSevenBody98Costs.support_old
+theorem actual_subset : wires LocalEightBody99.body⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
+ LocalEightBody99Costs.support_old
 
-theorem actual_physical : GatePhysical LocalSevenBody98.body := LocalSevenBody98Costs.physical
+theorem actual_physical : GatePhysical LocalEightBody99.body := LocalEightBody99Costs.physical
 
 theorem actual_frame (base : BasisState) (M : Nat) (hM : M<2^128)
  (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
  (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
  (hg : base LowAccCarryDevelop.c=false → M=0)
  (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
- Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) LocalSevenBody98.body
+ Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) LocalEightBody99.body
   (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) :=
- LocalSevenBody98.frame base M hM hP hc hsum O hO hg hSource
+ LocalEightBody99.frame base M hM hP hc hsum O hO hg hSource
 
 def selectedBody (K : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
  match FastGuardResearch.wideEq K LowAccCarryDevelop.L with
  | isFalse _ => FullB88OptTemp.selectedBody K g
- | isTrue _ => if g=LowAccCarryDevelop.c then LocalSevenBody98.body else FullB88OptTemp.selectedBody K g
+ | isTrue _ => if g=LowAccCarryDevelop.c then LocalEightBody99.body else FullB88OptTemp.selectedBody K g
 
 theorem selected_body_transport (K K' : CuccaroStreamedSquareWideLayout) (g g' : Wire)
  (he : K=K') (hg : g=g') : selectedBody K g=selectedBody K' g' := by
@@ -9034,13 +9169,13 @@ abbrev actualControl := FullB88OptTemp.actualControl
 abbrev actualExt := FullB88OptTemp.actualExt
 abbrev actualFoldPerm := FullB88OptTemp.actualFoldPerm
 
-theorem selected_actual : selectedBody LowAccCarryDevelop.L LowAccCarryDevelop.c=LocalSevenBody98.body := by
+theorem selected_actual : selectedBody LowAccCarryDevelop.L LowAccCarryDevelop.c=LocalEightBody99.body := by
  unfold selectedBody
  cases he : FastGuardResearch.wideEq LowAccCarryDevelop.L LowAccCarryDevelop.L with
  | isFalse hn => exact False.elim (hn rfl)
  | isTrue hl => exact if_pos rfl
 
-theorem ranked_selected_exact : hostedSelectedBody actualLayout actualFoldPerm actualControl=LocalSevenBody98.body := by
+theorem ranked_selected_exact : hostedSelectedBody actualLayout actualFoldPerm actualControl=LocalEightBody99.body := by
  have he : ParkCarryDevelop.hostLayout actualLayout actualFoldPerm=actualLayout :=
   FullBOptTemp.actualHostedLayout_eq
  exact (congrArg (fun K=>selectedBody K actualControl) he).trans
@@ -9048,15 +9183,15 @@ theorem ranked_selected_exact : hostedSelectedBody actualLayout actualFoldPerm a
 
 
 theorem ranked_certified_gain :
- toffoliCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)+98≤4762 ∧
+ toffoliCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)+99≤4762 ∧
  measurementCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)=5924 := by
  rw [ranked_selected_exact]
  have h:=actual_resources
  have old:=ParkCarry10Develop.body_counts LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths LowAccCarryDevelop.c
  exact ⟨h.1.trans old.1.le,h.2.1.trans old.2⟩
 
-end ECDSAAdd.Entrant.FullB98OptTemp
-#print axioms ECDSAAdd.Entrant.FullB98OptTemp.actual_frame
-#print axioms ECDSAAdd.Entrant.FullB98OptTemp.ranked_certified_gain
+end ECDSAAdd.Entrant.FullB99OptTemp
+#print axioms ECDSAAdd.Entrant.FullB99OptTemp.actual_frame
+#print axioms ECDSAAdd.Entrant.FullB99OptTemp.ranked_certified_gain
 
 end
