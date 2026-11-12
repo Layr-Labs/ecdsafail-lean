@@ -7,9 +7,7 @@ import ECDSAAdd.Framework.RecordPadding
 import ECDSAAdd.Baselines.SlotSignedSquare
 import ECDSAAdd.Baselines.SlotAlgebra
 import ECDSAAdd.Arithmetic.PointFixedPrimitivesPhysical
-import ECDSAAdd.Submission.Entrant.ExitMerge
-import ECDSAAdd.Submission.Entrant.TerminalGraph
-
+import ECDSAAdd.Submission.Entrant.DeadCarry
 section
 
 /-! Known first carry of a rebuilt Karatsuba sum. At the start of `clear` the cross register `T`

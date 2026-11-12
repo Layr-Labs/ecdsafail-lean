@@ -65,69 +65,69 @@ theorem pull_clean (s : State) (a : s.basis (base 1541)=false)
       · subst q; simp [swap,a,b]
       · rw [show swap q=q by exact Equiv.swap_apply_of_ne_of_ne h h']
 
-theorem run_eq (P : Program) (s : State) (m : List Bool)
-    (a : s.basis (base 1541)=false) (b : s.basis (base 719)=false)
-    (c : (run P m s).basis (base 1541)=false)
-    (d : (run P m s).basis (base 719)=false) :
-    run (renameProgram swap P) m s=run P m s := by
-  apply pullState_perm_injective swap
-  rw [run_rename swap swap.injective,pull_clean s a b,pull_clean _ c d]
 
 
-theorem integer719_free : base 719∉OB5.integerSites := by
-  intro used
-  obtain ⟨i,e,hi⟩ := (OB5.integerSites_mem _).mp used
-  have same := base_injective e
-  omega
 
-theorem prefix719_free : base 719∉NativeFirstDirect.prefixSites base := by
-  intro used
-  simp only [NativeFirstDirect.prefixSites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at used
-  rcases used with ((a|b)|c)|(a|b)
-  · exact OwnPlusHost.not_block 719 0 257 (by omega) a
-  · exact OwnPlusHost.not_block 719 770 258 (by omega) b
-  · exact OwnPlusHost.not_block 719 1540 256 (by omega) c
-  · exact (by decide : base 719≠base 1028) a
-  · exact (by decide : base 719≠base 1797) b
 
-theorem terminal1541 (x : Nat) (s : State)
-    (h : W.CompressedCompactStage5 base x p 512 s.basis) :
-    s.basis (base 1541)=false := by
-  obtain ⟨raw,stage,eq⟩ := h
-  have fields := (W.compactSkywalkStage_fields_iff base _ 512 (by omega) base_pool_nodup raw.basis).mp stage
-  have carry : regValue (wireBlock base 1540 257) raw.basis=0 := fields.2.2.2.2.2.1
-  have clean : raw.basis (base 1541)=false := (regValue_zero _ _).mp carry _ (by decide +kernel)
-  have away : base 1541∉wires (History5.encodePrefix base 512) := by
-    rw [History5.encodePrefix_512]
-    intro used
-    have support := History5.allEncode_history_support base 102 (by decide) used
-    simp only [List.mem_toFinset,List.mem_append] at support
-    rcases support with a|b
-    · exact OwnPlusHost.not_block 1541 0 512 (by omega) a
-    · exact OwnPlusHost.not_block 1541 1028 512 (by omega) b
-  rw [eq,run_preserves_outside _ [] raw _ away]
-  exact clean
-theorem forward_terminal1541 (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (hx0 : 0<x) (hx : x<p) (s1 : State) (m2 : List Bool)
-    (firstW : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s1.basis) :
-    (run stackForwardT m2 s1).basis (base 1541)=false := by
-  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
-  have gap : p+2^32≤2^256 := by norm_num [p]
-  obtain ⟨t, ht⟩ : ∃t : State,run (Stack5.forward5 base 1 511) m2 s1=t := ⟨_,rfl⟩
-  have terminal : W.CompressedCompactStage5 base x p 512 t.basis := by
-    have raw := (Stack5.forward_spec base base_pool_nodup StackOB5.historyAbove x p 1 511
-      hp0 hx0 hpo hp gap hx cop (by omega) s1 m2 (W.compactStage5_first base x p s1 firstW)).2
-    rw [ht] at raw
-    exact raw
-  have eq : run stackForwardT m2 s1 = pullState (OB5.sig 511) t := by
-    rw [←ht]
-    exact (stackForwardT_run hn StackOB5.historyAbove x hx0 hx s1 m2 firstW).trans
-      (StackOB5.forward_run x hx0 hx s1 m2 firstW)
-  have fixed : OB5.sig 511 (base 1541)=base 1541 := by decide +kernel
-  rw [eq]
-  change t.basis (OB5.sig 511 (base 1541))=false
-  rw [fixed]
-  exact terminal1541 x _ terminal
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -140,14 +140,14 @@ theorem forward_terminal1541 (hn : (skywalkSharedWires base).Nodup)
 def firstPhase : Program := NativeFirstDirect.forward base ++ (stackForwardT ++ skywalkArithmeticClear base)
 attribute [local irreducible] firstPhase
 
-theorem firstPhase719_free : base 719∉wires firstPhase := by
-  have native : base 719∉wires (NativeFirstDirect.forward base) := fun h =>
-    prefix719_free (List.mem_toFinset.mp ((NativeFirstDirect.prefix_support base).1 h))
-  have stack : base 719∉wires stackForwardT := fun h =>
-    integer719_free ((StackOB5.support_gen 1 511 (by omega) (by omega)).1 _ (stackForwardT_subset h))
-  have clear : base 719∉wires (skywalkArithmeticClear base) := by
-    simp [skywalkArithmeticClear,skywalkTerminalClear,wires,Instr.wires,base]
-  simpa only [firstPhase,wires_append,Finset.mem_union,not_or] using ⟨native,stack,clear⟩
+
+
+
+
+
+
+
+
 
 theorem input_clean (x y i : Nat) (s : State) (hin : SkywalkArithmeticInput base x y s.basis)
     (hi : i=719 ∨ i=1541) : s.basis (base i)=false := by
@@ -156,61 +156,61 @@ theorem input_clean (x y i : Nat) (s : State) (hin : SkywalkArithmeticInput base
   · exact OwnPlusHost.not_block i 770 256 (by rcases hi with rfl|rfl <;> omega)
   · exact OwnPlusHost.not_block i 2056 256 (by rcases hi with rfl|rfl <;> omega)
 
-theorem firstPhase1541_clean (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis) :
-    (run firstPhase m s).basis (base 1541)=false := by
-  rw [firstPhase,run_append,run_append]
-  have first := NativeFirstDirect.caller_first_stage base hn x Y.val hx0 hx s
-    (m.take (measurementCount (NativeFirstDirect.forward base))) hin
-  have firstW := (W.compactSkywalkStage_one base _ _).mpr first
-  have cleaned := forward_terminal1541 hn x hx0 hx _
-    ((m.drop (measurementCount (NativeFirstDirect.forward base))).take (measurementCount stackForwardT)) firstW
-  have away : base 1541∉wires (skywalkArithmeticClear base) := by
-    simp [skywalkArithmeticClear,skywalkTerminalClear,wires,Instr.wires,base]
-  exact (run_preserves_outside _ _ _ _ away).trans cleaned
 
-theorem firstPhase_state_eq (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis) :
-    run (renameProgram swap firstPhase) m s=run firstPhase m s := by
-  apply run_eq
-  · exact input_clean x Y.val 1541 s hin (Or.inr rfl)
-  · exact input_clean x Y.val 719 s hin (Or.inl rfl)
-  · exact firstPhase1541_clean hn x Y hx0 hx s m hin
-  · exact (run_preserves_outside _ _ _ _ firstPhase719_free).trans
-      (input_clean x Y.val 719 s hin (Or.inl rfl))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def lastPhase : Program := skywalkArithmeticClear base ++ (stackReverseT ++ NativeFirstKnown.inverse base)
 attribute [local irreducible] lastPhase
 
-theorem lastPhase719_free : base 719∉wires lastPhase := by
-  have native : base 719∉wires (NativeFirstKnown.inverse base) := fun h =>
-    prefix719_free (List.mem_toFinset.mp (NativeFirstKnown.inverse_support base h))
-  have stack : base 719∉wires stackReverseT := fun h =>
-    integer719_free ((StackOB5.support_gen 1 511 (by omega) (by omega)).2 _ (stackReverseT_subset h))
-  have clear : base 719∉wires (skywalkArithmeticClear base) := by
-    simp [skywalkArithmeticClear,skywalkTerminalClear,wires,Instr.wires,base]
-  simpa only [lastPhase,wires_append,Finset.mem_union,not_or] using ⟨clear,stack,native⟩
 
-/-- Full arbitrary-record transfer needs only the old complete program's clean
-output and the new field implementation's literal omission of1541. It imposes
-no new promise on the original caller input. -/
-theorem three_states_eq (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State)
-    (mp mf mr : List Bool) (F : Program)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (field_free : base 1541∉wires F)
-    (out1541 : (run lastPhase mr (run F mf (run firstPhase mp s))).basis (base 1541)=false)
-    (out719 : (run lastPhase mr (run F mf (run firstPhase mp s))).basis (base 719)=false) :
-    run (renameProgram swap lastPhase) mr
-      (run F mf (run (renameProgram swap firstPhase) mp s)) =
-    run lastPhase mr (run F mf (run firstPhase mp s)) := by
-  rw [firstPhase_state_eq hn x Y hx0 hx s mp hin]
-  have mid1541 : (run F mf (run firstPhase mp s)).basis (base 1541)=false :=
-    (run_preserves_outside _ _ _ _ field_free).trans (firstPhase1541_clean hn x Y hx0 hx s mp hin)
-  have mid719 : (run F mf (run firstPhase mp s)).basis (base 719)=false :=
-    (run_preserves_outside lastPhase mr _ _ lastPhase719_free).symm.trans out719
-  exact run_eq lastPhase _ mr mid1541 mid719 out1541 out719
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -236,34 +236,34 @@ def q5First : Program := renameProgram Q5Global718.swap firstPhase
 def q5Last : Program := renameProgram Q5Global718.swap lastPhase
 attribute [local irreducible] q5First q5Last
 
-private theorem q5first_eq (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis) :
-    run q5First m s=run firstPhase m s := by
-  have same : firstPhase=Q5Global718.firstPhase := by unfold firstPhase Q5Global718.firstPhase; rfl
-  unfold q5First
-  rw [same]
-  exact Q5Global718.firstPhase_state_eq hn x Y hx0 hx s m hin
 
-theorem q5First719_free : base 719∉wires q5First := by
-  unfold q5First
-  exact OwnPlusHost.rename_avoid _ _ _ (by decide +kernel) firstPhase719_free
 
-theorem q5Last719_free : base 719∉wires q5Last := by
-  unfold q5Last
-  exact OwnPlusHost.rename_avoid _ _ _ (by decide +kernel) lastPhase719_free
 
-theorem q5First_state_eq (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis) :
-    run (renameProgram swap q5First) m s=run q5First m s := by
-  apply run_eq
-  · exact input_clean x Y.val 1541 s hin (Or.inr rfl)
-  · exact input_clean x Y.val 719 s hin (Or.inl rfl)
-  · rw [q5first_eq hn x Y hx0 hx s m hin]
-    exact firstPhase1541_clean hn x Y hx0 hx s m hin
-  · exact (run_preserves_outside _ _ _ _ q5First719_free).trans
-      (input_clean x Y.val 719 s hin (Or.inl rfl))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -293,90 +293,90 @@ namespace ECDSAAdd.Entrant.Q6FusionPhase
 open ECDSAAdd Arithmetic Secp256k1 MappedCompressed DirectSkywalk CompressedAllocation Q6IntegerHost
 attribute [local irreducible] run wires Q6IntegerHost.q5First Q6IntegerHost.q5Last
 
-theorem outside_num (i : Nat) (hi : i=719∨i=1541) : base i∉wireBlock base 2056 256 :=
-  OwnPlusHost.not_block i 2056 256 (by rcases hi with rfl|rfl <;> omega)
 
-theorem q5First_pool : wires q5First⊆(skywalkPoolWires base).toFinset := by
-  unfold q5First
-  rw [renameProgram_support]
-  intro q h
-  obtain ⟨old,used,rfl⟩:=Finset.mem_image.mp h
-  have oldPool : old∈skywalkPoolWires base := by
-    apply List.mem_toFinset.mp
-    apply Q5FusionPhase.firstPhase_pool
-    simpa only [Q6IntegerHost.firstPhase,Q5Global718.firstPhase] using used
-  apply List.mem_toFinset.mpr
-  by_cases a:old=base 1026
-  · subst old
-    simpa only [Q5Global718.swap,Equiv.swap_apply_left] using
-      arith_mem base 0 1798 718 (by omega) (by omega)
-  · by_cases b:old=base 718
-    · subst old
-      simpa only [Q5Global718.swap,Equiv.swap_apply_right] using
-        arith_mem base 0 1798 1026 (by omega) (by omega)
-    · simpa only [Q5Global718.swap,Equiv.swap_apply_of_ne_of_ne a b] using oldPool
 
-theorem firstPhase1541_paired (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (m : List Bool)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Q5FusionPhase.Paired a b) :
-    (run q5First m b).basis (base 1541)=false := by
-  have agree := Q5FusionPhase.pool_agreement q5First q5First_pool a b m same (base 1541)
-    (arith_mem base 0 1798 1541 (by omega) (by omega))
-  have canonical : run q5First m a=run Q6IntegerHost.firstPhase m a := by
-    simpa only [q5First,Q6IntegerHost.firstPhase,Q5Global718.firstPhase] using
-      Q5Global718.firstPhase_state_eq hn x Y hx0 hx a m input
-  exact agree.trans (canonical ▸ Q6IntegerHost.firstPhase1541_clean hn x Y hx0 hx a m input)
 
-theorem firstPhase_eq_paired (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (m : List Bool)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Q5FusionPhase.Paired a b) :
-    run (renameProgram swap q5First) m b=run q5First m b := by
-  have clean1541 : b.basis (base 1541)=false :=
-    (same _ (outside_num 1541 (Or.inr rfl))).trans (input_clean x Y.val 1541 a input (Or.inr rfl))
-  have clean719 : b.basis (base 719)=false :=
-    (same _ (outside_num 719 (Or.inl rfl))).trans (input_clean x Y.val 719 a input (Or.inl rfl))
-  exact run_eq q5First b m clean1541 clean719
-    (firstPhase1541_paired hn x Y hx0 hx a b m input same)
-    ((run_preserves_outside _ _ _ _ q5First719_free).trans clean719)
 
-theorem three_states_eq_paired (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (mp mf mr : List Bool) (F : Program)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Q5FusionPhase.Paired a b)
-    (field_free : base 1541∉wires F)
-    (out1541 : (run q5Last mr (run F mf (run q5First mp b))).basis (base 1541)=false)
-    (out719 : (run q5Last mr (run F mf (run q5First mp b))).basis (base 719)=false) :
-    run (renameProgram swap q5Last) mr (run F mf (run (renameProgram swap q5First) mp b))=
-      run q5Last mr (run F mf (run q5First mp b)) := by
-  rw [firstPhase_eq_paired hn x Y hx0 hx a b mp input same]
-  have mid1541 : (run F mf (run q5First mp b)).basis (base 1541)=false :=
-    (run_preserves_outside _ _ _ _ field_free).trans (firstPhase1541_paired hn x Y hx0 hx a b mp input same)
-  have mid719 : (run F mf (run q5First mp b)).basis (base 719)=false :=
-    (run_preserves_outside q5Last mr _ _ q5Last719_free).symm.trans out719
-  exact run_eq q5Last _ mr mid1541 mid719 out1541 out719
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def kernel (F : Program) := q5First++(F++q5Last)
 def relocated (F : Program) := renameProgram swap q5First++(F++renameProgram swap q5Last)
 attribute [local irreducible] kernel relocated
 
-theorem state_eq_of_frame (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (m : List Bool) (F : Program)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Q5FusionPhase.Paired a b)
-    (field_free : base 1541∉wires F)
-    (frame : ∀q,q∉wireBlock base 2056 256 → (run (kernel F) m b).basis q=a.basis q) :
-    run (relocated F) m b=run (kernel F) m b := by
-  have clean (i : Nat) (hi : i=719∨i=1541) : (run (kernel F) m b).basis (base i)=false :=
-    (frame _ (outside_num i hi)).trans (input_clean x Y.val i a input hi)
-  have h:=three_states_eq_paired hn x Y hx0 hx a b
-    (m.take (measurementCount q5First))
-    ((m.drop (measurementCount q5First)).take (measurementCount F))
-    ((m.drop (measurementCount q5First)).drop (measurementCount F)) F input same field_free
-    (by simpa only [kernel,run_append] using clean 1541 (Or.inr rfl))
-    (by simpa only [kernel,run_append] using clean 719 (Or.inl rfl))
-  simpa only [kernel,relocated,run_append,(renameProgram_counts swap q5First).2] using h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -410,11 +410,11 @@ theorem counts (F : Program) :
     measurementCount (Q6FusionPhase.relocated F)=measurementCount (Q5FusionPhase.relocated F) := by
   simpa only [old_shape] using Q6FusionPhase.relocated_counts F
 
-theorem slots (F : Program) :
-    Challenge.gateSlots (Q6FusionPhase.relocated F)=Challenge.gateSlots (Q5FusionPhase.relocated F) := by
-  simp only [Q6FusionPhase.relocated,Q5FusionPhase.relocated,q5First,q5Last,
-    Q6IntegerHost.firstPhase,Q6IntegerHost.lastPhase,Q5Global718.firstPhase,Q5Global718.lastPhase,
-    Challenge.gateSlots_append,Baselines.rename_gateSlots]
+
+
+
+
+
 
 
 
@@ -515,8 +515,8 @@ theorem kernel5_counts_eq : toffoliCount kernel5=toffoliCount OwnEntryFuseQ5.ker
 
 def kernel5S : Program := Q6FusionPhase.relocated Q5FusionFields.hostField5S
 attribute [local irreducible] kernel5S
-theorem old_shape_kernel5S : Q6FusionPhase.kernel Q5FusionFields.hostField5S=OwnEntryFuseQ5.kernel5S := by
-  simpa only [OwnEntryFuseQ5.kernel5S] using Q6FusionGeometry.old_shape Q5FusionFields.hostField5S
+
+
 
 
 
@@ -526,29 +526,29 @@ theorem old_shape_kernel5S : Q6FusionPhase.kernel Q5FusionFields.hostField5S=Own
 theorem kernel5S_counts_eq : toffoliCount kernel5S=toffoliCount OwnEntryFuseQ5.kernel5S ∧
     measurementCount kernel5S=measurementCount OwnEntryFuseQ5.kernel5S := by
   simpa only [kernel5S,OwnEntryFuseQ5.kernel5S] using Q6FusionGeometry.counts Q5FusionFields.hostField5S
-theorem kernel5S_slots_eq : Challenge.gateSlots kernel5S=Challenge.gateSlots OwnEntryFuseQ5.kernel5S := by
-  simpa only [kernel5S,OwnEntryFuseQ5.kernel5S] using Q6FusionGeometry.slots Q5FusionFields.hostField5S
 
 
-theorem kernel5S_correct (free : base 1541∉wires Q5FusionFields.hostField5S)
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    let out := run kernel5S m t
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(skywalkArithmeticResult true x Y).val ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  have old:=OwnEntryFuseQ5.kernel5S_correct hn hlo ho hf x Y hx0 hx s t m hin hg0 hs0 phase same value
-  have frame : ∀q,q∉wireBlock base 2056 256 →
-      (run (Q6FusionPhase.kernel Q5FusionFields.hostField5S) m t).basis q=s.basis q := by
-    simpa only [old_shape_kernel5S] using old.2.2
-  have eq:=Q6FusionPhase.state_eq_of_frame hn x Y hx0 hx s t m Q5FusionFields.hostField5S hin same free frame
-  simpa only [kernel5S,eq,old_shape_kernel5S] using old
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 theorem selKernel5 : SW.Sel (base 2400) 1020 kernel5S kernel5 := by
   simpa only [kernel5,kernel5S] using Q6FusionGeometry.sel Q5FusionFields.hostField5 Q5FusionFields.hostField5S Q5FusionFields.selHostField5
 end ECDSAAdd.Entrant.OwnEntryFuseQ6
@@ -557,8 +557,8 @@ open ECDSAAdd Arithmetic Secp256k1 MappedCompressed DirectSkywalk BalancedField 
 attribute [local irreducible] run wires
 def kernel : Program := Q6FusionPhase.relocated OwnExitFuseQ5.hostMul
 attribute [local irreducible] kernel
-theorem old_shape_kernel : Q6FusionPhase.kernel OwnExitFuseQ5.hostMul=OwnExitFuseQ5.kernel := by
-  simpa only [OwnExitFuseQ5.kernel] using Q6FusionGeometry.old_shape OwnExitFuseQ5.hostMul
+
+
 
 
 
@@ -636,98 +636,98 @@ open Arithmetic Secp256k1 DirectSkywalk MappedCompressed MappedCompressed.LaneA
   CompressedAllocation CompressedFieldSupport OffsetBorrowedCanonical BalancedField History5
 attribute [local irreducible] run wires
 
-private theorem mapped_regS (f : Wire → Wire) (r : List Wire)
-    (logical physical : BasisState) (h : ∀q∈r,logical q=physical (f q)) :
-    regValue r logical=regValue (r.map f) physical := by
-  induction r generalizing logical physical with
-  | nil => rfl
-  | cons a rs ih =>
-    change (if logical a then 1 else 0)+2*regValue rs logical=
-      (if physical (f a) then 1 else 0)+2*regValue (rs.map f) physical
-    rw [h a (by simp),ih logical physical (fun q hq => h q (List.mem_cons_of_mem a hq))]
 
-/-- A renamed replay receives the same pool as a canonical virtual state,
-while its actual numerator has already been half-centered. -/
-theorem kernelTransferS (freeS : base 1541∉wires Q5FusionFields.hostField5S) (L : ControlledPointLayout) (f : Wire → Wire) (domain : Finset Wire)
-    (injective : ∀a∈domain,∀b∈domain,f a=f b → a=b)
-    (divisorMap : (wireBlock base 770 256).map f=L.point.x)
-    (numeratorMap : (wireBlock base 2056 256).map f=L.point.y)
-    (controlMap : f (base 2400)=L.core.generic)
-    (sharedWork : ∀q∈skywalkSharedWires base,q∈domain → q∉wireBlock base 770 256 →
-      q∉wireBlock base 2056 256 → f q∈L.dialogPool)
-    (selectorG : f (base 2409)∈L.dialogPool) (selectorS : f (base 2410)∈L.dialogPool)
-    (dxSites : (wireBlock base 770 256).toFinset⊆domain)
-    (dySites : (wireBlock base 2056 256).toFinset⊆domain) (bSite : base 2400∈domain)
-    (sites : wires OwnEntryFuseQ6.kernel5S⊆domain)
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (X : Nat) (Y : Fp) (B : Bool) (hX0 : 0<X) (hX : X<p)
-    (s t : State) (m : List Bool) (hb : s.basis L.core.generic=B)
-    (hx : regValue L.point.x s.basis=X) (hy : regValue L.point.y s.basis=Y.val)
-    (clean : regValue L.dialogPool s.basis=0)
-    (phase : t.phase=s.phase) (same : ∀q,q∉L.point.y → t.basis q=s.basis q)
-    (half : regValue L.point.y t.basis=centerWord (Y/2)) :
-    let out := run (renameProgram f OwnEntryFuseQ6.kernel5S) m t
-    out.phase=s.phase ∧ regValue L.point.y out.basis=(skywalkArithmeticResult true X Y).val ∧
-      ∀q,q∉L.point.y → out.basis q=s.basis q := by
-  let a := laneLogicalInput domain f s
-  let b := laneLogicalInput domain f t
-  have aBits (q : Wire) (hq : q∈domain) : a.basis q=s.basis (f q) := by
-    simp only [a,laneLogicalInput,if_pos hq]
-  have bBits (q : Wire) (hq : q∈domain) : b.basis q=t.basis (f q) := by
-    simp only [b,laneLogicalInput,if_pos hq]
-  have zero (q : Wire) (hq : f q∈L.dialogPool) : a.basis q=false := by
-    change (if q∈domain then s.basis (f q) else false)=false
-    split
-    · exact (regValue_zero _ _).mp clean _ hq
-    · rfl
-  have input : SkywalkArithmeticInput base X Y.val a.basis := by
-    refine ⟨?_,?_,?_⟩
-    · change regValue (wireBlock base 770 256) a.basis=X
-      rw [mapped_regS f _ a.basis s.basis (fun q hq => aBits q (dxSites (List.mem_toFinset.mpr hq))),divisorMap]
-      exact hx
-    · change regValue (wireBlock base 2056 256) a.basis=Y.val
-      rw [mapped_regS f _ a.basis s.basis (fun q hq => aBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
-      exact hy
-    · intro q hq hdx hdy
-      by_cases used : q∈domain
-      · exact zero q (sharedWork q hq used hdx hdy)
-      · simp only [a,laneLogicalInput,if_neg used]
-  have outside (q : Wire) (hq : q∈domain) (haway : q∉wireBlock base 2056 256) : f q∉L.point.y := by
-    rw [←numeratorMap]
-    intro bad
-    obtain ⟨r,hr,he⟩ := List.mem_map.mp bad
-    have eq : q=r := injective q hq r (dySites (List.mem_toFinset.mpr hr)) he.symm
-    exact haway (eq ▸ hr)
-  have paired : ∀q,q∉wireBlock base 2056 256 → b.basis q=a.basis q := by
-    intro q hq
-    by_cases used : q∈domain
-    · rw [bBits q used,aBits q used]
-      exact same (f q) (outside q used hq)
-    · simp only [a,b,laneLogicalInput,if_neg used]
-  have halfLogical : regValue (wireBlock base 2056 256) b.basis=centerWord (Y/2) := by
-    rw [mapped_regS f _ b.basis t.basis (fun q hq => bBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
-    exact half
-  have phases : b.phase=a.phase := by change t.phase=s.phase; exact phase
-  have strong := OwnEntryFuseQ6.kernel5S_correct freeS hn hlo ho hf X Y hX0 hX a b m input
-    (zero _ selectorG) (zero _ selectorS) phases paired halfLogical
-  have transfer := run_rename_pool f domain injective OwnEntryFuseQ6.kernel5S sites m b t rfl bBits
-  refine ⟨transfer.1.trans strong.1,?_,?_⟩
-  · rw [←numeratorMap]
-    exact (mapped_regS f _ (run OwnEntryFuseQ6.kernel5S m b).basis
-      (run (renameProgram f OwnEntryFuseQ6.kernel5S) m t).basis
-      (fun q hq => (transfer.2 q (dySites (List.mem_toFinset.mpr hq))).symm)).symm.trans strong.2.1
-  · intro q hq
-    by_cases image : q∈domain.image f
-    · obtain ⟨r,hr,rfl⟩ := Finset.mem_image.mp image
-      have away : r∉skywalkArithmeticNumerator base := by
-        intro mem
-        apply hq
-        rw [←numeratorMap]
-        exact List.mem_map.mpr ⟨r,mem,rfl⟩
-      exact (transfer.2 r hr).trans ((strong.2.2 r away).trans (aBits r hr))
-    · exact (run_rename_pool_outside f domain OwnEntryFuseQ6.kernel5S sites m t q image).trans (same q hq)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.OwnEntryFuseQ6
@@ -762,9 +762,9 @@ theorem arithEntryS_counts_eq (L : ControlledPointLayout) :
   have b:=renameProgram_counts (wireFn2 L) OwnEntryFuseQ5.kernel5S
   simpa only [arithEntryS,EntryFuse.arithEntryS,a.1,a.2,b.1,b.2] using c
 
-theorem arithEntryS_gateSlots_le (L : ControlledPointLayout) :
-    Challenge.gateSlots (arithEntryS L)≤20500006 := by
-  simpa only [arithEntryS,Baselines.rename_gateSlots] using kernel5S_slots_eq.trans_le OwnEntryFuseQ5.kernel5S_gateSlots_le
+
+
+
 
 
 
@@ -1928,11 +1928,11 @@ namespace ECDSAAdd.Entrant.All12ParentCertificate
 open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed CompressedPointDialog
   CompressedAllocation CompressedFieldSupport DirectSkywalk BalancedField History5 EntryFuse EntryFuseFinite
 
-def program (C : Point) : Program :=
-  match C with
-  | .zero => []
-  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
-      Edges.wrapper layout C cy (OwnQ6Producer.genE layout cx cy)
+
+
+
+
+
                                                                     
                                                                 
 
@@ -3526,8 +3526,8 @@ open Arithmetic Secp256k1 ControlledPointLayout MappedCompressed CompressedPoint
 
 section SquareStep
 attribute [local irreducible] run fastSquare fastCandidate
-private instance : NeZero p := ⟨by norm_num [p]⟩
-private instance : Fact (1<p) := ⟨by norm_num [p]⟩
+
+
 
 
 
@@ -4366,14 +4366,14 @@ attribute [local irreducible] fastConstAdd fastConstNeg exitY
 
 
 
-/-- The actual Q6 entry provider, including its affine entry conversion. -/
-theorem actual_division_slots (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
-    gateSlots (OwnEntryFuseQ6.fusedDivisionF L k) ≤ 20525006 := by
-  have d := OwnEntryFuseQ6.arithEntryS_gateSlots_le L
-  have y := entry_gateSlots_le (L.recoveryConstant L.point.y) L.core.generic
-    EntryFuseArithmetic.complement k.val (L.recoveryConstant_widths hw L.point.y hw.inputY)
-  simpa only [OwnEntryFuseQ6.fusedDivisionF,EntryFuse.fusedY,gateSlots_append] using
-    Nat.add_le_add y d
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.All12Generic
 
 
@@ -4543,11 +4543,11 @@ namespace ECDSAAdd.Entrant.All12CurrentCertificate
 open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed CompressedPointDialog
   CompressedAllocation CompressedFieldSupport DirectSkywalk BalancedField History5 EntryFuse EntryFuseFinite
 
-def program (C : Point) : Program :=
-  match C with
-  | .zero => []
-  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
-      Edges.wrapper layout C cy (OwnAll12Producer.genE layout cx cy)
+
+
+
+
+
                                                                     
                                                                 
 
@@ -6200,134 +6200,134 @@ theorem half_frame (divide : Bool) (w : Nat → Wire) (sign : Wire)
   · exact balancedTranscriptDouble_frame _ hw hn origin cl X Y s m h
   · exact balancedTranscriptHalf_frame _ hw hn origin cl X Y s m h
 
-private theorem swap_frame (r y : List Wire) (c : Wire) (hlen : r.length=y.length)
-    (hn : (c::r++y).Nodup) (base : BasisState) (A B : Nat) :
-    Triple (PairFrame r y base A B) (swapRegisters c r y)
-      (PairFrame r y base (if base c then B else A) (if base c then A else B)) := by
-  intro s m h
-  have v := swapRegisters_correct c r y hlen hn s m
-  have ca : c∉r ∧ c∉y := by
-    have d := (List.nodup_cons.mp hn).1
-    exact ⟨fun hm => d (List.mem_append_left _ hm),fun hm => d (List.mem_append_right _ hm)⟩
-  have same := h.2.2 c ca.1 ca.2
-  refine ⟨v.1,?_,?_,fun q qr qy => (v.2.1 q qr qy).trans (h.2.2 q qr qy)⟩
-  · rw [v.2.2.1,same,h.1,h.2.1]
-  · rw [v.2.2.2,same,h.1,h.2.1]
 
-theorem body_frame (divide : Bool) (w : Nat → Wire) (sign eff : Wire)
-    (hn : (ports w sign).wires.Nodup)
-    (hs : (eff::(ports w sign).r++(ports w sign).y).Nodup)
-    (origin : BasisState) (hc : Clean w origin) (X Y : Fp) :
-    Triple (PairFrame (ports w sign).r (ports w sign).y origin (centerWord X) (centerWord Y))
-      (body divide w sign eff)
-      (PairFrame (ports w sign).r (ports w sign).y origin
-        (centerWord (payload divide (origin sign) (origin eff) (X,Y)).1)
-        (centerWord (payload divide (origin sign) (origin eff) (X,Y)).2)) := by
-  let L := ports w sign
-  have len := BalancedCleanup.widths L.toLayout (ports_widths w sign)
-  cases divide
-  · have sw := swap_frame L.r L.y eff (len.2.1.trans len.2.2.1.symm) hs
-      origin (centerWord X) (centerWord Y)
-    let A := if origin eff then Y else X
-    let B := if origin eff then X else Y
-    have view : PairFrame L.r L.y origin (centerWord A) (centerWord B) =
-        PairFrame L.r L.y origin (if origin eff then centerWord Y else centerWord X)
-          (if origin eff then centerWord X else centerWord Y) := by
-      cases e : origin eff <;> simp only [A,B,e,Bool.false_eq_true,if_true,if_false]
-    rw [←view] at sw
-    have dbl := half_frame false w sign hn origin hc A B
-    have out : PairFrame L.r L.y origin
-        (centerWord (payload false (origin sign) (origin eff) (X,Y)).1)
-        (centerWord (payload false (origin sign) (origin eff) (X,Y)).2) =
-        PairFrame L.r L.y origin (centerWord (2*A+(if origin sign then -B else B)))
-          (centerWord B) := by
-      cases e : origin eff <;>
-        simp only [payload,skywalkPayloadUncell,A,B,e,Bool.false_eq_true,if_true,if_false]
-    change Triple _ _ (PairFrame L.r L.y origin _ _)
-    rw [out]
-    simpa only [body,Bool.false_eq_true,if_false] using sw.seq dbl
-  · have hh := half_frame true w sign hn origin hc X Y
-    let T := (X+(if origin sign then Y else -Y))/2
-    have sw := swap_frame L.r L.y eff (len.2.1.trans len.2.2.1.symm) hs
-      origin (centerWord T) (centerWord Y)
-    have view : PairFrame L.r L.y origin
-        (centerWord (payload true (origin sign) (origin eff) (X,Y)).1)
-        (centerWord (payload true (origin sign) (origin eff) (X,Y)).2) =
-        PairFrame L.r L.y origin (if origin eff then centerWord Y else centerWord T)
-          (if origin eff then centerWord T else centerWord Y) := by
-      cases e : origin eff <;>
-        simp only [payload,skywalkPayloadCell,e,Bool.false_eq_true,if_true,if_false,T]
-    rw [←view] at sw
-    simpa only [body,if_true] using hh.seq sw
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 private theorem selected_other (base : BasisState) (b source flag q : Wire) (v : Bool)
     (hne : q≠flag) : mixedTranscriptBase base b source flag v q=base q := by
   simp [mixedTranscriptBase,writeBit,Function.update,hne]
 
-theorem cell_frame (divide : Bool) (w : Nat → Wire) (b g sw sign effS : Wire)
-    (ig is : Bool) (hl : BalancedTranscriptLayout (ports w sign) b g sw effS)
-    (origin : BasisState) (hg0 : origin sign=false) (hs0 : origin effS=false)
-    (hc : Clean w origin) (X Y : Fp) :
-    Triple (PairFrame (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y origin
-      (centerWord X) (centerWord Y)) (cell divide w b g sw sign effS ig is)
-      (PairFrame (balancedSharedPorts w sign).r (balancedSharedPorts w sign).y origin
-        (centerWord (payload divide (mixedTranscriptBit origin b g ig)
-          (mixedTranscriptBit origin b sw is) (X,Y)).1)
-        (centerWord (payload divide (mixedTranscriptBit origin b g ig)
-          (mixedTranscriptBit origin b sw is) (X,Y)).2)) := by
-  let L := ports w sign
-  change BalancedTranscriptLayout L b g sw effS at hl
-  change origin L.sign=false at hg0
-  have hc := clean_work w sign origin hc
-  let bg := mixedTranscriptBase origin b g L.sign ig
-  let bs := mixedTranscriptBase bg b sw effS is
-  have sg : [b,g,L.sign].Nodup := by
-    apply List.nodup_iff_count.mpr
-    intro q
-    have h := List.nodup_iff_count.mp hl.controls q
-    simp only [List.count_cons,List.count_nil] at h ⊢
-    omega
-  have ss : [b,sw,effS].Nodup := by
-    apply List.nodup_iff_count.mpr
-    intro q
-    have h := List.nodup_iff_count.mp hl.controls q
-    simp only [List.count_cons,List.count_nil] at h ⊢
-    omega
-  have d0 := List.nodup_cons.mp hl.controls
-  have d1 := List.nodup_cons.mp d0.2
-  have d2 := List.nodup_cons.mp d1.2
-  have d3 := List.nodup_cons.mp d2.2
-  have ne : effS≠L.sign := Ne.symm (by simpa using d3.1)
-  have bn : b≠L.sign := by
-    have h := (List.nodup_cons.mp sg).1
-    intro e; exact h (by simp [e])
-  have sn : sw≠L.sign := by
-    intro e
-    exact d2.1 (by simp [e])
-  have bgS : bg effS=false := (selected_other _ _ _ _ _ _ ne).trans hs0
-  have bgB : bg b=origin b := selected_other _ _ _ _ _ _ bn
-  have bgSwap : bg sw=origin sw := selected_other _ _ _ _ _ _ sn
-  have bsG : bs L.sign=mixedTranscriptBit origin b g ig := by
-    rw [show bs L.sign=bg L.sign from selected_other _ _ _ _ _ _ (Ne.symm ne)]
-    simp [bg,mixedTranscriptBase,writeBit]
-  have bsS : bs effS=mixedTranscriptBit origin b sw is := by
-    simp [bs,mixedTranscriptBase,mixedTranscriptBit,writeBit,bgB,bgSwap]
-  have clean : ∀q∈BalancedCircuit.work L,bs q=false := by
-    intro q hq
-    have qg : q≠L.sign := fun e => hl.scratch.1 (e ▸ hq)
-    have qs : q≠effS := fun e => hl.scratch.2 (e ▸ hq)
-    exact (selected_other _ _ _ _ _ _ qs).trans
-      ((selected_other _ _ _ _ _ _ qg).trans (hc q hq))
-  have body := body_frame divide w sign effS hl.kernel hl.swapND bs
-    (by simpa only [Clean,←ports_work w sign] using clean) X Y
-  change bs sign=mixedTranscriptBit origin b g ig at bsG
-  rw [bsG,bsS] at body
-  have inner := transcriptSelectWindow_pairFrame b sw effS is L.r L.y ss
-    (hl.outside b (by simp)) (hl.outside sw (by simp))
-    (hl.outside effS (by simp)) bg bgS (centerWord X) (centerWord Y) _ _ _ body
-  exact transcriptSelectWindow_pairFrame b g L.sign ig L.r L.y sg
-    (hl.outside b (by simp)) (hl.outside g (by simp))
-    (hl.outside L.sign (by simp)) origin hg0 _ _ _ _ _ inner
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -6553,18 +6553,18 @@ open FieldRename
 end Natural
 
 section Physical
-/-- Checked on the emitted one-bank ports; narrow programs inherit this result. -/
-theorem fixed_kernels_physical :
-    GatePhysical (BalancedCircuit.program (ports id 2409)) ∧
-      GatePhysical (BalancedInverse.program (ports id 2409)) := by
-  have hs : 2409∉ids.map id := by
-    simp only [List.map_id]
-    intro h
-    have bound := ids_bound 2409 h
-    omega
-  have nd := ports_nodup_injective id 2409 (fun _ _ h => h) hs
-  exact ⟨OneBankPhysical5.circuit_physical _ (ports_widths id 2409) nd,
-    OneBankPhysical5.inverse_physical _ (ports_widths id 2409) nd⟩
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem kernel_physical (divide : Bool) (w : Nat → Wire) (hw : Function.Injective w) :
     GatePhysical (OwnQ6Core5.kernel divide (ports w (w 2409))) := by
@@ -6774,21 +6774,21 @@ theorem body_support (divide : Bool) (j : Nat) (hj : j<102) :
     have c := Replay5.letters_controls j hj l hl
     exact ⟨Finset.mem_union_right _ c.1,Finset.mem_union_right _ c.2⟩
 
-theorem readSites_sub (start : Nat) : readSites start⊆
-    History5.groupReadSites base (base 2400) (base 2409) (base 2410) start ∪ {base 2312} := by
-  intro q hq
-  simp only [readSites,Finset.mem_union] at hq
-  rcases hq with (h|h)|h
-  · have hp := (Q6EndpointCell.mem_ports_wires base (base 2409) q).mpr (List.mem_toFinset.mp h)
-    rcases Q6EndpointCell.ports_site base (base 2409) q hp with h|h
-    · exact Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_union_left _ (List.mem_toFinset.mpr h)))
-    · exact Finset.mem_union_right _ (Finset.mem_singleton.mpr h)
-  · exact Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_union_right _ h))
-  · exact Finset.mem_union_left _ (Finset.mem_union_right _ h)
 
-theorem body_read_support (divide : Bool) (j : Nat) (hj : j<102) :
-    wires (body divide j)⊆History5.groupReadSites base (base 2400) (base 2409) (base 2410) (5*j) ∪ {base 2312} :=
-  (body_support divide j hj).trans (readSites_sub (5*j))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem firstBody_support (divide : Bool) : wires (firstBody divide)⊆readSites 0 := by
   let W := readSites 0
@@ -6821,9 +6821,9 @@ theorem firstBody_support (divide : Bool) : wires (firstBody divide)⊆readSites
   · exact ⟨rest,swapM⟩
   · exact ⟨swap,rest⟩
 
-theorem firstBody_read_support (divide : Bool) :
-    wires (firstBody divide)⊆History5.groupReadSites base (base 2400) (base 2409) (base 2410) 0 ∪ {base 2312} :=
-  (firstBody_support divide).trans (readSites_sub 0)
+
+
+
 
 theorem rawEnd_support (divide : Bool) : wires (rawEnd divide)⊆fieldSites ∪ {base 2400,base 510} := by
   apply Q6EndpointCell.endpoint_support divide base (base 2400) (base 510) (base 2409)
@@ -6867,149 +6867,149 @@ theorem rawEnd_disjoint (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
       unfold History5.historyId at same
       split_ifs at same <;> omega
 
-private theorem letter_layout (origin : BasisState) (ctx : Context origin)
-    (ls : List MixedTranscriptLetter)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) ls)
-    (l : MixedTranscriptLetter) (hl : l∈ls) :
-    BalancedTranscriptLayout (Q6EndpointCell.ports base (base 2409))
-      (base 2400) l.1.1 l.1.2 (base 2410) :=
-  Q6EndpointCell.ports_transcript base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410) ctx.hn
-    (balancedSharedTranscriptLayout_direct base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410) (hf l hl) ctx.ho)
-    (ctx.ho _ (by simp)) (ctx.ho _ (by simp))
-
-theorem raw_frame (divide : Bool) (ls : List MixedTranscriptLetter)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) ls)
-    (origin : BasisState) (ctx : Context origin) (X Y : Fp) :
-    Triple (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y
-      origin (centerWord X) (centerWord Y)) (rawReplay divide ls)
-      (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y origin
-        (centerWord (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) ls) (X,Y)).1)
-        (centerWord (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) ls) (X,Y)).2)) := by
-  have clean := Q6EndpointCell.clean_of_env base origin ctx.env ctx.parity
-  induction ls generalizing X Y with
-  | nil =>
-    intro s m h
-    cases divide <;> simpa only [rawReplay,directionalPayload,Bool.not_false,Bool.not_true,
-      Bool.false_eq_true,if_false,if_true,mixedTranscriptControls,List.map_nil,skywalkPayloadReplay,
-      skywalkPayloadReplayInverse,run] using And.intro (Eq.refl s.phase) h
-  | cons l ls ih =>
-    have layout := letter_layout origin ctx (l::ls) hf l (by simp)
-    have tailLayout := fun k hk => hf k (List.mem_cons_of_mem l hk)
-    cases divide
-    · let Q := skywalkPayloadReplayInverse (mixedTranscriptControls origin (base 2400) ls) (X,Y)
-      have rest := ih tailLayout X Y
-      have head := Q6EndpointCell.cell_frame false base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410)
-        l.2.1 l.2.2 layout origin ctx.hg0 ctx.hs0 clean Q.1 Q.2
-      simpa only [rawReplay,Bool.false_eq_true,if_false,directionalPayload,Bool.not_false,if_true,
-        mixedTranscriptControls,List.map_cons,skywalkPayloadReplayInverse,Q6EndpointCell.payload,Q,Prod.mk.eta]
-        using rest.seq head
-    · let Q := skywalkPayloadCell (mixedTranscriptBit origin (base 2400) l.1.1 l.2.1)
-        (mixedTranscriptBit origin (base 2400) l.1.2 l.2.2) (X,Y)
-      have head := Q6EndpointCell.cell_frame true base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410)
-        l.2.1 l.2.2 layout origin ctx.hg0 ctx.hs0 clean X Y
-      have rest := ih tailLayout Q.1 Q.2
-      simpa only [rawReplay,if_true,directionalPayload,Bool.not_true,Bool.false_eq_true,if_false,
-        mixedTranscriptControls,List.map_cons,skywalkPayloadReplay,Q6EndpointCell.payload,Q,Prod.mk.eta]
-        using head.seq rest
-
-private theorem rest_layout
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base)) :
-    MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) Replay5.restLetters := by
-  intro l hl
-  obtain ⟨k,hk,rfl⟩ := List.mem_map.mp hl
-  have bound := List.mem_range'_1.mp hk
-  simpa only [Replay5.restLetters,tapeLetter] using
-    mixedTape_getD_layout base _ _ _ hf k (by omega)
-
-private theorem first_layout (origin : BasisState) (ctx : Context origin) :
-    BalancedTranscriptLayout (balancedSharedPorts base (base 2409))
-      (base 2400) (base 0) (base 1028) (base 2410) := by
-  have h := balancedSharedTranscriptLayout_direct base (base 2400) _ _ (base 2409) (base 2410)
-    (mixedTape_getD_layout base _ _ _ ctx.hf 0 (by decide)) ctx.ho
-  rw [mixedTape_base_getD 0 (by decide)] at h
-  exact h
-
-theorem packet_frame (divide : Bool) (j : Nat) (hj : j<102)
-    (origin : BasisState) (ctx : Context origin) (X Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    (run (packet divide j) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin
-        (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)).1
-        (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)).2
-        (run (packet divide j) m s) := by
-  have raw := raw_frame divide (Replay5.letters j) (Replay5.letters_layouts ctx.hf j hj) origin ctx X Y
-  have fresh := FieldFrameOB5.encoded_window_step base (base 2400) (base 2409) (base 2410)
-    ctx.hn ctx.hp j hj origin X Y _ _ _ (body_read_support divide j hj) raw s m input ctx.legal
-  have eq := Replay5.placed_eq (Placement5.pi j) (basePacket divide j)
-    (fun q hq => Placement5.pi_outside j q hj hq) s m
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal X Y s input)
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal _ _ _ fresh.2)
-  have same : run (packet divide j) m s=run (basePacket divide j) m s := eq
-  rw [same]
-  exact fresh
 
 
-theorem groups_frame (divide : Bool) (j n : Nat) (bound : j+n≤102)
-    (origin : BasisState) (ctx : Context origin) (X Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    (run (groups divide j n) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin (Replay5.groupsPayload divide origin j n (X,Y)).1
-        (Replay5.groupsPayload divide origin j n (X,Y)).2 (run (groups divide j n) m s) := by
-  have result := PacketSequence.frame divide (packet divide) (packet divide)
-    (fun k V => directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V)
-    (fun V t => History5.EncodedFieldFrame5 base (base 2409) origin V.1 V.2 t) 102 (fun _ => rfl)
-    (fun k hk V t records h => ⟨rfl,packet_frame divide k hk origin ctx V.1 V.2 t records h⟩)
-    j n bound (X,Y) s m input
-  exact result.2
 
-theorem firstBody_frame (divide : Bool) (origin : BasisState) (ctx : Context origin) (X Y : Fp)
-    (hz : divide=false → (Replay5.firstPayload divide origin (X,Y)).2=0) :
-    Triple (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y
-      origin (centerWord X) (centerWord Y)) (firstBody divide)
-      (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y origin
-        (centerWord (Replay5.firstPayload divide origin (X,Y)).1)
-        (centerWord (Replay5.firstPayload divide origin (X,Y)).2)) := by
-  let S := mixedTranscriptBit origin (base 2400) (base 1028) (mixedTranscriptUnitTrace.getD 0 (false,false)).2
-  have swap := EntrySelectedSwapFrame.selectedSwap_frame base (base 2400) (base 0) (base 1028)
-    (base 2409) (base 2410) (mixedTranscriptUnitTrace.getD 0 (false,false)).2
-    (first_layout origin ctx) origin ctx.hs0
-  cases divide
-  · let V := directionalPayload true (mixedTranscriptControls origin (base 2400) Replay5.restLetters) (X,Y)
-    have zero : (if S then V.1 else V.2)=0 := by
-      have h := hz rfl
-      have k : ∀ (b : Bool) (p : Fp×Fp), (if b then (p.2,p.1) else p).2=(if b then p.1 else p.2) := by
-        intro b p; cases b <;> rfl
-      simp only [Replay5.firstPayload,Bool.false_eq_true,if_false,k] at h
-      exact h
-    have swapM := UncompSwap.selectedSwapM_frame base (base 2400) (base 0) (base 1028)
-      (base 2409) (base 2410) (mixedTranscriptUnitTrace.getD 0 (false,false)).2
-      (first_layout origin ctx) origin ctx.hs0 V.1 V.2 zero
-    have rest := raw_frame false Replay5.restLetters (rest_layout ctx.hf) origin ctx X Y
-    have out := rest.seq swapM
-    cases hS : S <;> simpa only [firstBody,UncompSwap.firstSwapM,Replay5.firstPayload,Bool.false_eq_true,
-      if_false,Bool.not_false,if_true,S,hS,V] using out
-  · have out := (swap X Y).seq (raw_frame true Replay5.restLetters (rest_layout ctx.hf)
-      origin ctx (if S then Y else X) (if S then X else Y))
-    cases hS : S <;> simpa only [firstBody,Replay5.firstPayload,if_true,Bool.not_true,
-      Bool.false_eq_true,if_false,S,hS] using out
 
-theorem firstPacket_frame (divide : Bool) (origin : BasisState) (ctx : Context origin)
-    (X Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s)
-    (hz : divide=false → (Replay5.firstPayload divide origin (X,Y)).2=0) :
-    (run (firstPacket divide) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin (Replay5.firstPayload divide origin (X,Y)).1
-        (Replay5.firstPayload divide origin (X,Y)).2 (run (firstPacket divide) m s) := by
-  have fresh := FieldFrameOB5.encoded_window_step base (base 2400) (base 2409) (base 2410)
-    ctx.hn ctx.hp 0 (by decide) origin X Y _ _ _ (firstBody_read_support divide)
-    (firstBody_frame divide origin ctx X Y hz) s m input ctx.legal
-  have eq := Replay5.placed_eq (Placement5.pi 0) (baseFirstPacket divide)
-    (fun q hq => Placement5.pi_outside 0 q (by decide) hq) s m
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal X Y s input)
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal _ _ _ fresh.2)
-  have same : run (firstPacket divide) m s=run (baseFirstPacket divide) m s := eq
-  rw [same]
-  exact fresh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 theorem rawEnd_frame (divide : Bool) (origin : BasisState) (ctx : Context origin) (X Y : Fp)
@@ -7034,99 +7034,99 @@ theorem rawEnd_frame (divide : Bool) (origin : BasisState) (ctx : Context origin
       simpa only [Replay5.endPayload,if_true] using e)
   simpa only [rawEnd,Replay5.endPayload,Prod.fst,Prod.snd] using result
 
-theorem endPacket_frame (divide : Bool) (origin : BasisState) (ctx : Context origin)
-    (X Y : Fp) (hend : divide=true → (Replay5.endPayload divide origin (X,Y)).1=Y) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    (run (endPacket divide) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin (Replay5.endPayload divide origin (X,Y)).1
-        (Replay5.endPayload divide origin (X,Y)).2 (run (endPacket divide) m s) := by
-  have fresh := History5.encoded_disjoint_step base (base 2409)
-    (skywalkShared_integer_nodup base ctx.hn) origin X Y _ _ _ (rawEnd_disjoint divide ctx.hn ctx.hp)
-    (rawEnd_frame divide origin ctx X Y hend) s m input
-  have eq := Replay5.placed_eq Placement5.pi0 (rawEnd divide) Placement5.pi0_outside s m
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal X Y s input)
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal _ _ _ fresh.2)
-  have same : run (endPacket divide) m s=run (rawEnd divide) m s := eq
-  rw [same]
-  exact fresh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 attribute [local irreducible] Replay5.groupsPayload Replay5.firstPayload Replay5.endPayload
   mixedTranscriptUnitTrace SkywalkTrace.trace SkywalkTrace.next Nat.iterate
 
-theorem logical_forward_frame (origin : BasisState) (ctx : Context origin)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin Y 0 s) :
-    let Z := if origin (base 2400) then Y/(x:Fp) else Y
-    (run (logicalReplay true) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin Z Z (run (logicalReplay true) m s) := by
-  let Z := if origin (base 2400) then Y/(x:Fp) else Y
-  have result := run_three_states (firstPacket true) (groups true 1 101) (endPacket true)
-    (fun a b => History5.EncodedFieldFrame5 base (base 2409) origin Y 0 a →
-      b.phase=a.phase ∧ History5.EncodedFieldFrame5 base (base 2409) origin Z Z b) (by
-      intro a b c d m1 m2 m3 hab hbc hcd h
-      have first := firstPacket_frame true origin ctx Y 0 a m1 h (fun e => absurd e (by decide))
-      rw [hab] at first
-      have middle := groups_frame true 1 101 (by decide) origin ctx _ _ b m2 first.2
-      rw [hbc] at middle
-      have fp := Replay5.forward_payload origin x Y hx0 hx trace
-      have last := endPacket_frame true origin ctx _ _ (fun _ => by
-        rw [Prod.mk.eta,fp]
-        exact (congrArg Prod.snd fp).symm.trans (by simp only [Replay5.endPayload])) c m3 middle.2
-      rw [hcd] at last
-      refine ⟨last.1.trans (middle.1.trans first.1),?_⟩
-      simpa only [Prod.mk.eta,Replay5.forward_payload origin x Y hx0 hx trace] using last.2) s m
-  simpa only [logicalReplay,if_true,List.append_assoc] using result input
 
-theorem logical_inverse_frame (origin : BasisState) (ctx : Context origin)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin Y Y s) :
-    let Z := if origin (base 2400) then Y*(x:Fp) else Y
-    (run (logicalReplay false) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin Z 0 (run (logicalReplay false) m s) := by
-  let Z := if origin (base 2400) then Y*(x:Fp) else Y
-  have result := run_three_states (endPacket false) (groups false 1 101) (firstPacket false)
-    (fun a b => History5.EncodedFieldFrame5 base (base 2409) origin Y Y a →
-      b.phase=a.phase ∧ History5.EncodedFieldFrame5 base (base 2409) origin Z 0 b) (by
-      intro a b c d m1 m2 m3 hab hbc hcd h
-      have first := endPacket_frame false origin ctx Y Y (fun e => absurd e (by decide)) a m1 h
-      rw [hab] at first
-      have middle := groups_frame false 1 101 (by decide) origin ctx _ _ b m2 first.2
-      rw [hbc] at middle
-      have last := firstPacket_frame false origin ctx _ _ c m3 middle.2 (fun _ => by
-        simp only [Prod.mk.eta]
-        exact congrArg Prod.snd (Replay5.inverse_payload origin x Y hx0 hx trace))
-      rw [hcd] at last
-      refine ⟨last.1.trans (middle.1.trans first.1),?_⟩
-      simpa only [Prod.mk.eta,Replay5.inverse_payload origin x Y hx0 hx trace] using last.2) s m
-  simpa only [logicalReplay,Bool.false_eq_true,if_false,List.append_assoc] using result input
 
-theorem forward_frame (origin : BasisState) (ctx : Context origin)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedFieldFrame origin Y 0 s) :
-    let Z := if origin (base 2400) then Y/(x:Fp) else Y
-    (run (replay true) m s).phase=s.phase ∧
-      FieldFrameOB5.EncodedFieldFrame origin Z Z (run (replay true) m s) :=
-  FieldFrameOB5.placed_step (logicalReplay true) origin Y 0 _ _
-    (logical_forward_frame origin ctx x hx0 hx trace Y) s m input
 
-theorem inverse_frame (origin : BasisState) (ctx : Context origin)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedFieldFrame origin Y Y s) :
-    let Z := if origin (base 2400) then Y*(x:Fp) else Y
-    (run (replay false) m s).phase=s.phase ∧
-      FieldFrameOB5.EncodedFieldFrame origin Z 0 (run (replay false) m s) :=
-  FieldFrameOB5.placed_step (logicalReplay false) origin Y Y _ _
-    (logical_inverse_frame origin ctx x hx0 hx trace Y) s m input
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7471,13 +7471,13 @@ def logicalReplayS (divide : Bool) : Program :=
 
 def replayS (divide : Bool) : Program := renameProgram (OB5.sig 511) (logicalReplayS divide)
 
-def segmentS (divide : Bool) : Program :=
-  if divide then OwnQ5Endpoint.centerT++(replayS true++(HalfFieldOB5.copyN++OwnQ5Endpoint.canonT))
-  else OwnQ5Endpoint.centerT++(HalfFieldOB5.copyN++(replayS false++OwnQ5Endpoint.canonT))
 
-/-- The selector-hosted segment (`KernelOB5.segH`) around the selector-free segment. -/
-def segHS (divide : Bool) : Program :=
-  [.X (base 511)] ++ (renameProgram HostOB5.hostSwap (segmentS divide) ++ [.X (base 511)])
+
+
+
+
+
+
 
                                         
                                                                               
@@ -7744,85 +7744,85 @@ def program (divide : Bool) : Program :=
   if divide then OwnQ5Endpoint.centerT++(Q6EndpointReplay.replay true++(copyN++OwnQ5Endpoint.canonT))
   else OwnQ5Endpoint.centerT++(copyN++(Q6EndpointReplay.replay false++OwnQ5Endpoint.canonT))
 
-private theorem run_four_states (a b c d : Program) (P : State → State → Prop)
-    (h : ∀ (s s1 s2 s3 s4 : State) (m1 m2 m3 m4 : List Bool),
-      run a m1 s=s1 → run b m2 s1=s2 → run c m3 s2=s3 → run d m4 s3=s4 → P s s4)
-    (s : State) (m : List Bool) : P s (run (a++(b++(c++d))) m s) := by
-  simp only [run_append]
-  exact h _ _ _ _ _ _ _ _ _ rfl rfl rfl rfl
 
-private theorem double_half (Y W : Fp) : 2*(Y/2*W)=Y*W := by
-  have two : (2:Fp) ≠ 0 := by decide
-  field_simp
 
-private theorem double_half_div (Y W : Fp) : 2*(Y/2/W)=Y/W := by
-  have two : (2:Fp) ≠ 0 := by decide
-  rw [div_div,mul_comm (2:Fp) W,←div_div,mul_div_cancel₀ _ two]
 
-private theorem double_half_one (Y : Fp) : 2*(Y/2)=Y := by
-  have two : (2:Fp) ≠ 0 := by decide
-  exact mul_div_cancel₀ Y two
 
-/-- Same hypotheses and conclusion as the protected selected field segment. -/
-theorem program_spec (divide : Bool)
-    (hn : (skywalkSharedWires base).Nodup) (ho : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkSharedWires base)
-    (hp : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkPoolWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (origin : BasisState) (hg0 : origin (base 2409)=false) (hs0 : origin (base 2410)=false)
-    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
-    (hr : origin (base 2312)=false) (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0 < x) (hx : x < p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    let out := run (program divide) m s
-    out.phase=s.phase ∧ FieldFrameOB5.EncodedCanonicalFrame origin (fieldResult divide origin x Y) 0 out := by
-  let ctx : Q6EndpointReplay.Context origin := ⟨hn,ho,hp,hf,hg0,hs0,env,legal,hr⟩
-  cases divide
-  · let P : State → State → Prop := fun initial out => FieldFrameOB5.EncodedCanonicalFrame origin Y 0 initial →
-      out.phase=initial.phase ∧ FieldFrameOB5.EncodedCanonicalFrame origin (fieldResult false origin x Y) 0 out
-    have all := run_four_states OwnQ5Endpoint.centerT copyN (Q6EndpointReplay.replay false) OwnQ5Endpoint.canonT P (by
-      intro initial s1 s2 s3 s4 m1 m2 m3 m4 h1 h2 h3 h4 hin
-      have c1 := OwnQ5Endpoint.center_frame hn (hp _ (by simp)) origin env legal hr ha Y initial m1 hin
-      rw [h1] at c1
-      have c2 := copy_fill hn origin (Y/2) s1 m2 c1.2
-      rw [h2] at c2
-      have c3 := Q6EndpointReplay.inverse_frame origin ctx
-        x hx0 hx trace (Y/2) s2 m3 c2.2
-      rw [h3] at c3
-      have c4 := OwnQ5Endpoint.canon_frame hn (hp _ (by simp)) origin env legal hr ha _ s3 m4 c3.2
-      rw [h4] at c4
-      refine ⟨c4.1.trans (c3.1.trans (c2.1.trans c1.1)),?_⟩
-      have eq : 2*(if origin (base 2400) then Y/2*(x:Fp) else Y/2)=fieldResult false origin x Y := by
-        unfold fieldResult
-        split
-        · simp only [Bool.false_eq_true,if_false]; exact double_half Y _
-        · exact double_half_one Y
-      rw [←eq]
-      exact c4.2) s m
-    simpa only [program,Bool.false_eq_true,if_false] using all input
-  · let P : State → State → Prop := fun initial out => FieldFrameOB5.EncodedCanonicalFrame origin Y 0 initial →
-      out.phase=initial.phase ∧ FieldFrameOB5.EncodedCanonicalFrame origin (fieldResult true origin x Y) 0 out
-    have all := run_four_states OwnQ5Endpoint.centerT (Q6EndpointReplay.replay true) copyN OwnQ5Endpoint.canonT P (by
-      intro initial s1 s2 s3 s4 m1 m2 m3 m4 h1 h2 h3 h4 hin
-      have c1 := OwnQ5Endpoint.center_frame hn (hp _ (by simp)) origin env legal hr ha Y initial m1 hin
-      rw [h1] at c1
-      have c2 := Q6EndpointReplay.forward_frame origin ctx x hx0 hx trace
-        (Y/2) s1 m2 c1.2
-      rw [h2] at c2
-      have c3 := copy_clear hn origin _ s2 m3 c2.2
-      rw [h3] at c3
-      have c4 := OwnQ5Endpoint.canon_frame hn (hp _ (by simp)) origin env legal hr ha _ s3 m4 c3.2
-      rw [h4] at c4
-      refine ⟨c4.1.trans (c3.1.trans (c2.1.trans c1.1)),?_⟩
-      have eq : 2*(if origin (base 2400) then Y/2/(x:Fp) else Y/2)=fieldResult true origin x Y := by
-        unfold fieldResult
-        split
-        · simp only [if_true]; exact double_half_div Y _
-        · exact double_half_one Y
-      rw [←eq]
-      exact c4.2) s m
-    simpa only [program,if_true] using all input
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 attribute [local irreducible] toffoliCount measurementCount
 
@@ -7860,25 +7860,25 @@ theorem program_gateSlots_le (divide : Bool) : Challenge.gateSlots (program divi
   have r := Q6EndpointReplay.replay_gateSlots_le divide
   cases divide <;> simp only [program,Bool.false_eq_true,if_false,if_true,Challenge.gateSlots_append] <;> omega
 
-theorem program_state_eq (divide : Bool)
-    (hn : (skywalkSharedWires base).Nodup) (ho : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkSharedWires base)
-    (hp : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkPoolWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (origin : BasisState) (hg0 : origin (base 2409)=false) (hs0 : origin (base 2410)=false)
-    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
-    (hr : origin (base 2312)=false) (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0 < x) (hx : x < p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    run (program divide) m s=run (SegmentOB5.program divide) m s := by
-  have new:=program_spec divide hn ho hp hf origin hg0 hs0 env legal hr ha x hx0 hx trace Y s m input
-  have old:=SegmentOB5.program_spec divide hn ho hp hf origin hg0 hs0 env legal hr ha x hx0 hx trace Y s m input
-  have eq:=encoded_canonical_unique origin (fieldResult divide origin x Y) 0
-    (pullState (OB5.sig 511) (run (program divide) m s))
-    (pullState (OB5.sig 511) (run (SegmentOB5.program divide) m s)) new.2 old.2 (new.1.trans old.1.symm)
-  have pulled:=congrArg (pullState (OB5.sig 511)) eq
-  simpa only [OB5.pull_invol 511 (by decide)] using pulled
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.Q6EndpointSegment
 
@@ -8095,242 +8095,242 @@ def hostField5 : Program := [.X (base 511)] ++ (renameProgram HostOB5.hostSwap f
 def kernel5 : Program := NativeFirstDirect.forward base ++ stackForwardT ++ skywalkArithmeticClear base ++
   hostField5 ++ skywalkArithmeticClear base ++ stackReverseT ++ NativeFirstKnown.inverse base
 
-theorem field_support : wires field5⊆OB5Support.segSites := by
-  simp only [field5,wires_append,Finset.union_subset_iff]
-  exact ⟨Q6EndpointReplaySupport.replay_support true,HalfFieldOB5Support.copy_support,OwnQ5Endpoint.support.2⟩
 
-theorem field_free : base 511∉wires field5 ∧ base 1542∉wires field5 :=
-  ⟨fun h=>OB5Support.seg_host_free.1 (field_support h),fun h=>OB5Support.seg_host_free.2 (field_support h)⟩
 
-theorem field5_unhosted_state
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State)
-    (m1 m2 m3 m4 : List Bool)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base)) (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2))
-    (v1 v2 v3 v4 : State)
-    (h1 : run (NativeFirstDirect.forward base) m1 t=v1)
-    (h2 : run (stackForwardT) m2 v1=v2)
-    (h3 : run (skywalkArithmeticClear base) m3 v2=v3)
-    (h4 : run field5 m4 v3=v4) :
-    let a1 := run (NativeFirstDirect.forward base) m1 s
-    let a2 := run (stackForwardT) m2 a1
-    let a3 := run (skywalkArithmeticClear base) m3 a2
-    run (SegmentOB5.program true)
-      (List.replicate (measurementCount OwnQ5Endpoint.centerT) false++m4) a3=v4 := by
-  let a1 := run (NativeFirstDirect.forward base) m1 s
-  let a2 := run (stackForwardT) m2 a1
-  let a3 := run (skywalkArithmeticClear base) m3 a2
-  have paired := pool_three (NativeFirstDirect.forward base) (stackForwardT)
-    (skywalkArithmeticClear base) first_pool5 forward_pool5 clear_pool5 s t m1 m2 m3
-    phase.symm (fun q hq => (same q hq).symm) v1 v2 v3 h1 h2 h3
-  change a3.phase=v3.phase ∧
-    (∀q,q∉wireBlock base 2056 256 → a3.basis q=v3.basis q) ∧
-    (∀q,q∈wireBlock base 2056 256 → v3.basis q=t.basis q) at paired
-  have target : regValue (wireBlock base 2056 256) v3.basis=centerWord (Y/2) := by
-    exact (regValue_congr _ _ _ paired.2.2).trans value
-  have first := NativeFirstDirect.caller_first_stage base hn x Y.val hx0 hx s m1 hin
-  change CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 a1.basis at first
-  let t2 := run (compactForward5 base 1 511) m2 a1
-  let t3 := run (skywalkArithmeticClear base) m3 t2
-  obtain ⟨hp0,hpo,hpp,cop⟩ := OB5.prime_facts x hx0 hx
-  have pool := skywalkShared_integer_nodup base hn
-  have firstW := (W.compactSkywalkStage_one base _ a1.basis).mpr first
-  have hpGap : p+2^32 ≤ 2^256 := by norm_num [p]
-  have wEq : run (Stack5.forward5 base 1 511) m2 a1=t2 :=
-    Stack5.forward_old_eq base pool hlo x p hp0 hx0 hpo hpp hpGap hx cop a1 m2 m2 first
-  have e2 : a2=pullState (OB5.sig 511) t2 := by
-    change run stackForwardT m2 a1 = _
-    rw [stackForwardT_run hn hlo x hx0 hx a1 m2 firstW]
-    have fwd := StackOB5.forward_run x hx0 hx a1 m2 firstW
-    rw [wEq] at fwd
-    exact fwd
-  have e3 : a3=pullState (OB5.sig 511) t3 := by
-    change run (skywalkArithmeticClear base) m3 a2=_
-    rw [e2,KernelOB5.clear_placed]
-  obtain ⟨origin,facts,legal,_,_,entry⟩ := Kernel5.preparation_facts5 hn hlo ho x Y hx0 hx s
-    m1 m2 m3 hin a1 t2 t3 rfl rfl rfl first
-  have hpPool : base 2409∉skywalkPoolWires base := by
-    intro bad
-    exact ho _ (by simp) (arith_block_subset_shared base 0 1798 (by omega) bad)
-  have placedInput : FieldFrameOB5.EncodedCanonicalFrame origin.basis Y 0 a3 := by
-    change EncodedCanonicalFrame5 origin.basis Y 0 (pullState (OB5.sig 511) a3)
-    rw [e3,OB5.pull_invol 511 (by decide)]
-    exact entry
-  have centerEq := center5_compare hn hpPool origin.basis facts.env legal facts.targetHigh
-    facts.sourceHigh facts.sourceZero Y a3 v3 placedInput paired.1 paired.2.1 target
-    ((List.replicate (measurementCount OwnQ5Endpoint.centerT) false++m4).take
-      (measurementCount OwnQ5Endpoint.centerT))
-  let dummy := List.replicate (measurementCount OwnQ5Endpoint.centerT) false
-  have hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base := by
-    intro q hq bad
-    exact ho q hq (arith_block_subset_shared base 0 1798 (by omega) bad)
-  have hg : origin.basis (base 2409)=false := (facts.controls _ (by simp)).trans hg0
-  have hs : origin.basis (base 2410)=false := (facts.controls _ (by simp)).trans hs0
-  have replacement:=Q6EndpointSegment.program_state_eq true hn ho hp hf origin.basis hg hs facts.env legal
-    facts.targetHigh facts.sourceZero x hx0 hx facts.trace Y a3 (dummy++m4) placedInput
-  change run (SegmentOB5.program true) (dummy++m4) a3=v4
-  rw [←replacement]
-  have shape : Q6EndpointSegment.program true=OwnQ5Endpoint.centerT++field5 := by
-    simp only [Q6EndpointSegment.program,field5,if_true]
-  change run (Q6EndpointSegment.program true) (dummy++m4) a3=v4
-  rw [shape,run_append]
-  have drop : (dummy++m4).drop (measurementCount OwnQ5Endpoint.centerT)=m4 := by simp [dummy]
-  rw [drop,centerEq]
-  exact h4
 
-theorem kernel5_field_state
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State)
-    (m1 m2 m3 m4 : List Bool) (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2))
-    (v1 v2 v3 v4 : State)
-    (h1 : run (NativeFirstDirect.forward base) m1 t=v1)
-    (h2 : run (stackForwardT) m2 v1=v2)
-    (h3 : run (skywalkArithmeticClear base) m3 v2=v3)
-    (h4 : run hostField5 m4 v3=v4) :
-    let a1 := run (NativeFirstDirect.forward base) m1 s
-    let a2 := run (stackForwardT) m2 a1
-    let a3 := run (skywalkArithmeticClear base) m3 a2
-    run (KernelOB5.segH true)
-      (List.replicate (measurementCount OwnQ5Endpoint.centerT) false++m4) a3=v4 := by
-  let a1 := run (NativeFirstDirect.forward base) m1 s
-  let a2 := run (stackForwardT) m2 a1
-  let a3 := run (skywalkArithmeticClear base) m3 a2
-  let dummy := List.replicate (measurementCount OwnQ5Endpoint.centerT) false
-  let oldRecords := dummy++m4
-  let v4' := run field5 m4 v3
-  have unEq := field5_unhosted_state hn hlo ho x Y hx0 hx s t m1 m2 m3 m4 hg0 hs0 hf hin
-    phase same value v1 v2 v3 v4' h1 h2 h3 rfl
-  change run (SegmentOB5.program true) oldRecords a3=v4' at unEq
-  have paired := pool_three (NativeFirstDirect.forward base) (stackForwardT)
-    (skywalkArithmeticClear base) first_pool5 forward_pool5 clear_pool5 s t m1 m2 m3
-    phase.symm (fun q hq => (same q hq).symm) v1 v2 v3 h1 h2 h3
-  change a3.phase=v3.phase ∧
-    (∀q,q∉wireBlock base 2056 256 → a3.basis q=v3.basis q) ∧
-    (∀q,q∈wireBlock base 2056 256 → v3.basis q=t.basis q) at paired
-  have first := NativeFirstDirect.caller_first_stage base hn x Y.val hx0 hx s m1 hin
-  change CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 a1.basis at first
-  let t2 := run (compactForward5 base 1 511) m2 a1
-  let t3 := run (skywalkArithmeticClear base) m3 t2
-  obtain ⟨hp0,hpo,hpp,cop⟩ := OB5.prime_facts x hx0 hx
-  have pool := skywalkShared_integer_nodup base hn
-  have firstW := (W.compactSkywalkStage_one base _ a1.basis).mpr first
-  have hpGap : p+2^32 ≤ 2^256 := by norm_num [p]
-  have wEq : run (Stack5.forward5 base 1 511) m2 a1=t2 :=
-    Stack5.forward_old_eq base pool hlo x p hp0 hx0 hpo hpp hpGap hx cop a1 m2 m2 first
-  have e2 : a2=pullState (OB5.sig 511) t2 := by
-    change run stackForwardT m2 a1 = _
-    rw [stackForwardT_run hn hlo x hx0 hx a1 m2 firstW]
-    have fwd := StackOB5.forward_run x hx0 hx a1 m2 firstW
-    rw [wEq] at fwd
-    exact fwd
-  have e3 : a3=pullState (OB5.sig 511) t3 := by
-    change run (skywalkArithmeticClear base) m3 a2=_
-    rw [e2,KernelOB5.clear_placed]
-  obtain ⟨origin,facts,legal,_,encEq,entry⟩ := Kernel5.preparation_facts5 hn hlo ho x Y hx0 hx s
-    m1 m2 m3 hin a1 t2 t3 rfl rfl rfl first
-  have hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base := by
-    intro q hq bad
-    exact ho q hq (arith_block_subset_shared base 0 1798 (by omega) bad)
-  have hg : origin.basis (base 2409)=false := (facts.controls _ (by simp)).trans hg0
-  have hs : origin.basis (base 2410)=false := (facts.controls _ (by simp)).trans hs0
-  have placedInput : FieldFrameOB5.EncodedCanonicalFrame origin.basis Y 0 a3 := by
-    change EncodedCanonicalFrame5 origin.basis Y 0 (pullState (OB5.sig 511) a3)
-    rw [e3,OB5.pull_invol 511 (by decide)]
-    exact entry
-  have fresh := SegmentOB5.program_spec true hn ho hp hf origin.basis hg hs facts.env legal
-    facts.targetHigh facts.sourceZero x hx0 hx facts.trace Y a3 oldRecords placedInput
-  have inS := encoded_selectors5 hn hp origin.basis hg hs facts.sourceZero Y a3 placedInput
-  have outS := encoded_selectors5 hn hp origin.basis hg hs facts.sourceZero _ _ fresh.2
-  have hostBits := encoded_host_bits5 x hx0 hx origin t3 a3 facts.trace encEq e3
-  have in2409 : a3.basis (base 2409)=false := inS.1
-  have in2410 : a3.basis (base 2410)=false := inS.2
-  have in511 : a3.basis (base 511)=true := hostBits.1
-  have in1542 : a3.basis (base 1542)=false := hostBits.2
-  have out2409 : (run (SegmentOB5.program true) oldRecords a3).basis (base 2409)=false := outS.1
-  have out2410 : (run (SegmentOB5.program true) oldRecords a3).basis (base 2410)=false := outS.2
-  have away (i : Nat) (hi : i < 2056 ∨ 2312 ≤ i) : base i∉wireBlock base 2056 256 := by
-    intro mem
-    obtain ⟨j,hj,eq⟩ := List.mem_map.mp mem
-    simp only [List.mem_range'_1] at hj
-    have e := base_injective eq
-    omega
-  have inT (i : Nat) (hi : i < 2056 ∨ 2312 ≤ i) : v3.basis (base i)=a3.basis (base i) :=
-    (paired.2.1 _ (away i hi)).symm
-  have freeP := KernelOB5.seg_free true
-  have freeQ511 : base 511∉wires field5 := field_free.1
-  have freeQ1542 : base 1542∉wires field5 := field_free.2
-  have hosted := hosted_pair5 (SegmentOB5.program true) field5 a3 v3 oldRecords m4
-    freeP.1 freeP.2 freeQ511 freeQ1542 in2409 in511 in2410 in1542
-    ((inT 2409 (by omega)).trans in2409) ((inT 511 (by omega)).trans in511)
-    ((inT 2410 (by omega)).trans in2410) ((inT 1542 (by omega)).trans in1542)
-    out2409 out2410 unEq
-  change run (KernelOB5.segH true) oldRecords a3=v4
-  rw [show KernelOB5.segH true=[.X (base 511)]++
-    (renameProgram HostOB5.hostSwap (SegmentOB5.program true)++[.X (base 511)]) from rfl,hosted]
-  simpa only [hostField5] using h4
 
-theorem kernel5_states
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State)
-    (m1 m2 m3 m4 m5 m6 m7 : List Bool) (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2))
-    (v1 v2 v3 v4 v5 v6 v7 : State)
-    (h1 : run (NativeFirstDirect.forward base) m1 t=v1)
-    (h2 : run (stackForwardT) m2 v1=v2)
-    (h3 : run (skywalkArithmeticClear base) m3 v2=v3)
-    (h4 : run hostField5 m4 v3=v4)
-    (h5 : run (skywalkArithmeticClear base) m5 v4=v5)
-    (h6 : run (stackReverseT) m6 v5=v6)
-    (h7 : run (NativeFirstKnown.inverse base) m7 v6=v7) :
-    DirectSkywalkArithmeticStrong true base (base 2400) x Y s v7 := by
-  let a1 := run (NativeFirstDirect.forward base) m1 s
-  let a2 := run (stackForwardT) m2 a1
-  let a3 := run (skywalkArithmeticClear base) m3 a2
-  have old4 := kernel5_field_state hn hlo ho hf x Y hx0 hx s t m1 m2 m3 m4 hin hg0 hs0
-    phase same value v1 v2 v3 v4 h1 h2 h3 h4
-  exact KernelOB5.program_states true hn hlo ho hf x Y hx0 hx s
-    m1 m2 m3 (List.replicate (measurementCount OwnQ5Endpoint.centerT) false++m4) m5 m6 m7
-    hin hg0 hs0 a1 a2 a3 v4 v5 v6 v7 rfl rfl rfl old4 h5 h6 h7
 
-theorem kernel5_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    DirectSkywalkArithmeticStrong true base (base 2400) x Y s (run kernel5 m t) := by
-  let P : State → State → Prop := fun initial out =>
-    initial.phase=s.phase →
-    (∀q,q∉wireBlock base 2056 256 → initial.basis q=s.basis q) →
-    regValue (wireBlock base 2056 256) initial.basis=centerWord (Y/2) →
-    DirectSkywalkArithmeticStrong true base (base 2400) x Y s out
-  have all := skywalkRunSeven (NativeFirstDirect.forward base) (stackForwardT)
-    (skywalkArithmeticClear base) hostField5 (skywalkArithmeticClear base)
-    (stackReverseT) (NativeFirstKnown.inverse base) P (by
-      intro initial v1 v2 v3 v4 v5 v6 v7 m1 m2 m3 m4 m5 m6 m7 h1 h2 h3 h4 h5 h6 h7 hp hs hv
-      exact kernel5_states hn hlo ho hf x Y hx0 hx s initial m1 m2 m3 m4 m5 m6 m7
-        hin hg0 hs0 hp hs hv v1 v2 v3 v4 v5 v6 v7 h1 h2 h3 h4 h5 h6 h7) t m
-  simpa only [kernel5,List.append_assoc] using all phase same value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.Q6EndpointEntryRaw
 
@@ -9434,17 +9434,17 @@ theorem field_free (k : Nat) (hk : k∈[1541,1026,2312,766,765,767]) :
  simp only [wires_append,Finset.mem_union,not_or]
  exact ⟨replay_free true k hk,copy_free k hk,(converter_free k hk).2⟩
 
-theorem selected_replay_free (divide : Bool) (k : Nat) (hk : k∈[1541,1026,2312,766,765,767]) :
- base k∉wires (Q6EndpointSW.replayS divide) := by
- intro used
- exact replay_free divide k hk
-   ((@SW.InstrSub2.wires_sub (Q6EndpointSW.replayS divide) (Q6EndpointReplay.replay divide)
-     (Q6EndpointSW.selReplay_sel divide).sub) used)
 
-theorem fieldS_free (k : Nat) (hk : k∈[1541,1026,2312,766,765,767]) :
- base k∉wires (Q6EndpointSW.replayS true++(HalfFieldOB5.copyN++OwnQ5Endpoint.canonT)) := by
- simp only [wires_append,Finset.mem_union,not_or]
- exact ⟨selected_replay_free true k hk,copy_free k hk,(converter_free k hk).2⟩
+
+
+
+
+
+
+
+
+
+
 
 theorem host_free (P : Program) (k : Nat) (hk : k∈[1541,1026,2312,766,765,767])
  (hP : base k∉wires P) :
@@ -9496,99 +9496,99 @@ theorem selHostField5 : SW.Sel (base 2400) 1020 hostField5S hostField5 := by
     (r.append (SW.Sel.refl _ _ SW.selX511_away))
   simpa only [hostField5S,hostField5,Nat.zero_add,Nat.add_zero] using h
 
-theorem selKernel5 : SW.Sel (base 2400) 1020 kernel5S kernel5 := by
-  have native := NativeFirstDirect.prefix_support base
-  have known := NativeFirstKnown.inverse_support base
-  have fw : base 2400∉wires (NativeFirstDirect.forward base) := fun h => SW.selPrefix_away (native.1 h)
-  have iv : base 2400∉wires (NativeFirstKnown.inverse base) := fun h => SW.selPrefix_away (known h)
-  have ints := SW.selInt_away
-  have h := ((((((SW.Sel.refl _ _ fw).append (SW.Sel.refl _ _ ints.1)).append
-    (SW.Sel.refl _ _ SW.selClear_away)).append selHostField5).append
-    (SW.Sel.refl _ _ SW.selClear_away)).append (SW.Sel.refl _ _ ints.2)).append (SW.Sel.refl _ _ iv)
-  simpa only [kernel5S,kernel5,Nat.zero_add,Nat.add_zero] using h
+
+
+
+
+
+
+
+
+
+
 
 
 attribute [local irreducible] kernel5S
-def forceControl5 (s : State) : State := ⟨s.phase,writeBit s.basis (base 2400) true⟩
 
-theorem forceControl5_keep (s : State) (q : Wire) (hq : q≠base 2400) :
-    (forceControl5 s).basis q=s.basis q := by simp [forceControl5,writeBit,Function.update_of_ne hq]
 
-theorem forceControl5_true (s : State) : (forceControl5 s).basis (base 2400)=true := by
-  simp [forceControl5,writeBit]
 
-/-- The shortened selector-free division receives a half-centered numerator. -/
-theorem kernel5S_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    let out := run kernel5S m t
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(skywalkArithmeticResult true x Y).val ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  let a := forceControl5 s
-  let b := forceControl5 t
-  have shared : base 2400∉skywalkSharedWires base := ho _ (by simp)
-  have divAway : base 2400∉wireBlock base 770 256 := fun h =>
-    shared (arith_block_subset_shared base 770 256 (by omega) h)
-  have numAway : base 2400∉wireBlock base 2056 256 := fun h =>
-    shared (arith_block_subset_shared base 2056 256 (by omega) h)
-  have input : SkywalkArithmeticInput base x Y.val a.basis := by
-    refine ⟨?_,?_,?_⟩
-    · change regValue (wireBlock base 770 256) a.basis=x
-      apply (regValue_congr _ _ _ ?_).trans hin.1
-      intro q hq
-      exact forceControl5_keep s q (fun e => divAway (e ▸ hq))
-    · change regValue (wireBlock base 2056 256) a.basis=Y.val
-      apply (regValue_congr _ _ _ ?_).trans hin.2.1
-      intro q hq
-      exact forceControl5_keep s q (fun e => numAway (e ▸ hq))
-    · intro q hq hdx hdy
-      rw [forceControl5_keep s q (fun e => shared (e ▸ hq))]
-      exact hin.2.2 q hq hdx hdy
-  have hg : a.basis (base 2409)=false :=
-    (forceControl5_keep s _ (by simp [base])).trans hg0
-  have hs : a.basis (base 2410)=false :=
-    (forceControl5_keep s _ (by simp [base])).trans hs0
-  have ab : a.basis (base 2400)=true := forceControl5_true s
-  have bb : b.basis (base 2400)=true := forceControl5_true t
-  have phases : b.phase=a.phase := phase
-  have paired (q : Wire) (hq : q∉wireBlock base 2056 256) : b.basis q=a.basis q := by
-    by_cases e : q=base 2400
-    · subst q; rw [forceControl5_true,forceControl5_true]
-    · rw [forceControl5_keep t q e,forceControl5_keep s q e]
-      exact same q hq
-  have half : regValue (wireBlock base 2056 256) b.basis=centerWord (Y/2) := by
-    apply (regValue_congr _ _ _ ?_).trans value
-    intro q hq
-    exact forceControl5_keep t q (fun e => numAway (e ▸ hq))
-  have strong := kernel5_correct hn hlo ho hf x Y hx0 hx a b m input hg hs phases paired half
-  obtain ⟨equiv,_⟩ := selKernel5.eq m b bb
-  unfold DirectSkywalkArithmeticStrong at strong
-  rw [ab,←equiv] at strong
-  simp only [directSkywalkResult,if_true] at strong
-  have agree := pool_run_agrees kernel5S (wires kernel5S) (Finset.Subset.refl _) m t b rfl
-    (fun q hq => (forceControl5_keep t q (fun e => selKernel5.away (e ▸ hq))).symm)
-  have sameRun (q : Wire) (hq : q≠base 2400) :
-      (run kernel5S m t).basis q=(run kernel5S m b).basis q := by
-    by_cases used : q∈wires kernel5S
-    · exact agree.2 q used
-    · rw [run_preserves_outside _ m t q used,run_preserves_outside _ m b q used]
-      exact (forceControl5_keep t q hq).symm
-  refine ⟨agree.1.trans strong.1,?_,?_⟩
-  · apply (regValue_congr _ _ _ ?_).trans strong.2.1
-    intro q hq
-    exact sameRun q (fun e => numAway (e ▸ hq))
-  · intro q hq
-    by_cases e : q=base 2400
-    · subst q
-      exact (run_preserves_outside _ m t _ selKernel5.away).trans (same _ numAway)
-    · exact (sameRun q e).trans ((strong.2.2 q hq).trans (forceControl5_keep s q e))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.Q6EndpointEntryRaw
@@ -9607,14 +9607,12 @@ def kernel5 : Program:=Q5FusionPhase.relocated hostField5
 def kernel5S : Program:=Q5FusionPhase.relocated hostField5S
 attribute [local irreducible] kernel5 kernel5S
 
-theorem hostField5_free : base 1026∉wires hostField5 := by
- exact Q6EndpointOmissions.host_free field5 1026 (by simp) (Q6EndpointOmissions.field_free 1026 (by simp))
-theorem hostField5S_free : base 1026∉wires hostField5S := by
- exact Q6EndpointOmissions.host_free field5S 1026 (by simp) (Q6EndpointOmissions.fieldS_free 1026 (by simp))
+
+
+
+
 theorem old_shape : Q5FusionPhase.kernel hostField5=Q6EndpointEntryRaw.kernel5 := by
  simp only [Q5FusionPhase.kernel,firstPhase,lastPhase,Q6EndpointEntryRaw.kernel5,List.append_assoc]
-theorem old_shapeS : Q5FusionPhase.kernel hostField5S=Q6EndpointEntryRaw.kernel5S := by
- simp only [Q5FusionPhase.kernel,firstPhase,lastPhase,Q6EndpointEntryRaw.kernel5S,List.append_assoc]
 
 
 
@@ -9635,27 +9633,29 @@ theorem old_shapeS : Q5FusionPhase.kernel hostField5S=Q6EndpointEntryRaw.kernel5
 
 
 
-theorem kernel5S_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    let out := run kernel5S m t
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(skywalkArithmeticResult true x Y).val ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  have old := Q6EndpointEntryRaw.kernel5S_correct hn hlo ho hf x Y hx0 hx s t m hin hg0 hs0 phase same value
-  have frame : ∀q,q∉wireBlock base 2056 256 →
-      (run (Q5FusionPhase.kernel hostField5S) m t).basis q=s.basis q := by
-    simpa only [old_shapeS] using old.2.2
-  have eq := Q5FusionPhase.state_eq_of_frame hn x Y hx0 hx s t m hostField5S
-    hin same hostField5S_free frame
-  simp only [kernel5S,eq,old_shapeS]
-  exact old
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.EndpointEntryQ5
@@ -9673,18 +9673,16 @@ def kernel5 : Program:=Q6FusionPhase.relocated Q6EndpointEntryRaw.hostField5
 def kernel5S : Program:=Q6FusionPhase.relocated Q6EndpointEntryRaw.hostField5S
 attribute [local irreducible] kernel5 kernel5S
 
-theorem hostField5_free1541 : base 1541∉wires Q6EndpointEntryRaw.hostField5 := by
- exact Q6EndpointOmissions.host_free field5 1541 (by simp) (Q6EndpointOmissions.field_free 1541 (by simp))
-theorem hostField5S_free1541 : base 1541∉wires Q6EndpointEntryRaw.hostField5S := by
- exact Q6EndpointOmissions.host_free field5S 1541 (by simp) (Q6EndpointOmissions.fieldS_free 1541 (by simp))
+
+
+
+
 
 theorem outer_shape (F : Program) : Q6FusionPhase.kernel F=Q5FusionPhase.relocated F := by
  simp only [Q6FusionPhase.kernel,Q5FusionPhase.relocated,Q6IntegerHost.q5First,Q6IntegerHost.q5Last,
    Q6IntegerHost.firstPhase,Q6IntegerHost.lastPhase,Q5Global718.firstPhase,Q5Global718.lastPhase]
 
 
-theorem old_shape_kernel5S : Q6FusionPhase.kernel Q6EndpointEntryRaw.hostField5S=EndpointEntryQ5.kernel5S := by
- simpa only [EndpointEntryQ5.kernel5S] using outer_shape Q6EndpointEntryRaw.hostField5S
 
 
 
@@ -9701,24 +9699,26 @@ theorem old_shape_kernel5S : Q6FusionPhase.kernel Q6EndpointEntryRaw.hostField5S
 
 
 
-theorem kernel5S_correct     (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    let out := run kernel5S m t
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(skywalkArithmeticResult true x Y).val ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  have old:=EndpointEntryQ5.kernel5S_correct hn hlo ho hf x Y hx0 hx s t m hin hg0 hs0 phase same value
-  have frame : ∀q,q∉wireBlock base 2056 256 →
-      (run (Q6FusionPhase.kernel Q6EndpointEntryRaw.hostField5S) m t).basis q=s.basis q := by
-    simpa only [old_shape_kernel5S] using old.2.2
-  have eq:=Q6FusionPhase.state_eq_of_frame hn x Y hx0 hx s t m Q6EndpointEntryRaw.hostField5S hin same hostField5S_free1541 frame
-  simpa only [kernel5S,eq,old_shape_kernel5S] using old
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.OwnEndpointEntryQ6
 
@@ -9857,98 +9857,98 @@ open Arithmetic Secp256k1 DirectSkywalk MappedCompressed MappedCompressed.LaneA
   CompressedAllocation CompressedFieldSupport OffsetBorrowedCanonical BalancedField History5
 attribute [local irreducible] run wires
 
-private theorem mapped_regS (f : Wire → Wire) (r : List Wire)
-    (logical physical : BasisState) (h : ∀q∈r,logical q=physical (f q)) :
-    regValue r logical=regValue (r.map f) physical := by
-  induction r generalizing logical physical with
-  | nil => rfl
-  | cons a rs ih =>
-    change (if logical a then 1 else 0)+2*regValue rs logical=
-      (if physical (f a) then 1 else 0)+2*regValue (rs.map f) physical
-    rw [h a (by simp),ih logical physical (fun q hq => h q (List.mem_cons_of_mem a hq))]
 
-/-- A renamed replay receives the same pool as a canonical virtual state,
-while its actual numerator has already been half-centered. -/
-theorem kernelTransferS (L : ControlledPointLayout) (f : Wire → Wire) (domain : Finset Wire)
-    (injective : ∀a∈domain,∀b∈domain,f a=f b → a=b)
-    (divisorMap : (wireBlock base 770 256).map f=L.point.x)
-    (numeratorMap : (wireBlock base 2056 256).map f=L.point.y)
-    (controlMap : f (base 2400)=L.core.generic)
-    (sharedWork : ∀q∈skywalkSharedWires base,q∈domain → q∉wireBlock base 770 256 →
-      q∉wireBlock base 2056 256 → f q∈L.dialogPool)
-    (selectorG : f (base 2409)∈L.dialogPool) (selectorS : f (base 2410)∈L.dialogPool)
-    (dxSites : (wireBlock base 770 256).toFinset⊆domain)
-    (dySites : (wireBlock base 2056 256).toFinset⊆domain) (bSite : base 2400∈domain)
-    (sites : wires OwnEndpointEntryQ6.kernel5S⊆domain)
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (X : Nat) (Y : Fp) (B : Bool) (hX0 : 0<X) (hX : X<p)
-    (s t : State) (m : List Bool) (hb : s.basis L.core.generic=B)
-    (hx : regValue L.point.x s.basis=X) (hy : regValue L.point.y s.basis=Y.val)
-    (clean : regValue L.dialogPool s.basis=0)
-    (phase : t.phase=s.phase) (same : ∀q,q∉L.point.y → t.basis q=s.basis q)
-    (half : regValue L.point.y t.basis=centerWord (Y/2)) :
-    let out := run (renameProgram f OwnEndpointEntryQ6.kernel5S) m t
-    out.phase=s.phase ∧ regValue L.point.y out.basis=(skywalkArithmeticResult true X Y).val ∧
-      ∀q,q∉L.point.y → out.basis q=s.basis q := by
-  let a := laneLogicalInput domain f s
-  let b := laneLogicalInput domain f t
-  have aBits (q : Wire) (hq : q∈domain) : a.basis q=s.basis (f q) := by
-    simp only [a,laneLogicalInput,if_pos hq]
-  have bBits (q : Wire) (hq : q∈domain) : b.basis q=t.basis (f q) := by
-    simp only [b,laneLogicalInput,if_pos hq]
-  have zero (q : Wire) (hq : f q∈L.dialogPool) : a.basis q=false := by
-    change (if q∈domain then s.basis (f q) else false)=false
-    split
-    · exact (regValue_zero _ _).mp clean _ hq
-    · rfl
-  have input : SkywalkArithmeticInput base X Y.val a.basis := by
-    refine ⟨?_,?_,?_⟩
-    · change regValue (wireBlock base 770 256) a.basis=X
-      rw [mapped_regS f _ a.basis s.basis (fun q hq => aBits q (dxSites (List.mem_toFinset.mpr hq))),divisorMap]
-      exact hx
-    · change regValue (wireBlock base 2056 256) a.basis=Y.val
-      rw [mapped_regS f _ a.basis s.basis (fun q hq => aBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
-      exact hy
-    · intro q hq hdx hdy
-      by_cases used : q∈domain
-      · exact zero q (sharedWork q hq used hdx hdy)
-      · simp only [a,laneLogicalInput,if_neg used]
-  have outside (q : Wire) (hq : q∈domain) (haway : q∉wireBlock base 2056 256) : f q∉L.point.y := by
-    rw [←numeratorMap]
-    intro bad
-    obtain ⟨r,hr,he⟩ := List.mem_map.mp bad
-    have eq : q=r := injective q hq r (dySites (List.mem_toFinset.mpr hr)) he.symm
-    exact haway (eq ▸ hr)
-  have paired : ∀q,q∉wireBlock base 2056 256 → b.basis q=a.basis q := by
-    intro q hq
-    by_cases used : q∈domain
-    · rw [bBits q used,aBits q used]
-      exact same (f q) (outside q used hq)
-    · simp only [a,b,laneLogicalInput,if_neg used]
-  have halfLogical : regValue (wireBlock base 2056 256) b.basis=centerWord (Y/2) := by
-    rw [mapped_regS f _ b.basis t.basis (fun q hq => bBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
-    exact half
-  have phases : b.phase=a.phase := by change t.phase=s.phase; exact phase
-  have strong := OwnEndpointEntryQ6.kernel5S_correct hn hlo ho hf X Y hX0 hX a b m input
-    (zero _ selectorG) (zero _ selectorS) phases paired halfLogical
-  have transfer := run_rename_pool f domain injective OwnEndpointEntryQ6.kernel5S sites m b t rfl bBits
-  refine ⟨transfer.1.trans strong.1,?_,?_⟩
-  · rw [←numeratorMap]
-    exact (mapped_regS f _ (run OwnEndpointEntryQ6.kernel5S m b).basis
-      (run (renameProgram f OwnEndpointEntryQ6.kernel5S) m t).basis
-      (fun q hq => (transfer.2 q (dySites (List.mem_toFinset.mpr hq))).symm)).symm.trans strong.2.1
-  · intro q hq
-    by_cases image : q∈domain.image f
-    · obtain ⟨r,hr,rfl⟩ := Finset.mem_image.mp image
-      have away : r∉skywalkArithmeticNumerator base := by
-        intro mem
-        apply hq
-        rw [←numeratorMap]
-        exact List.mem_map.mpr ⟨r,mem,rfl⟩
-      exact (transfer.2 r hr).trans ((strong.2.2 r away).trans (aBits r hr))
-    · exact (run_rename_pool_outside f domain OwnEndpointEntryQ6.kernel5S sites m t q image).trans (same q hq)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.OwnEndpointEntryQ6
@@ -13235,33 +13235,33 @@ theorem kg_support :
     exact KG.steps_support _ w (ap (tr is.1 iK) (tr ip.2.1 iK)) (ap (tr ip.1 iK) (tr is.2 iK))
       (tr rp.2.2.2.2.1 rK) (tr rp.2.2.2.2.2.1 rK) (tr js.1 jK) (tr js.2 jK)
 
-include hw h128 hsmax hlen he in
-theorem kg_physical (hall : (kg L ext src dst).all.Nodup) :
-    GatePhysical (kg L ext src dst).make ∧ GatePhysical (kg L ext src dst).clear := by
-  have ap {P Q : Program} (h1 : GatePhysical P) (h2 : GatePhysical Q) : GatePhysical (P++Q) :=
-    (gatePhysical_append P Q).mpr ⟨h1,h2⟩
-  have wi := iregs_W L hw ext src dst h128 hsmax hlen he
-  by_cases h : src.length=128
-  · rw [kg,if_pos h] at hall ⊢
-    have wj := jregsH_W L hw ext src dst h hlen he
-    have hR : (oregs L ext src dst).all.Nodup := (List.nodup_append.mp hall).1
-    have ni := knd hall (kgH_iall L ext src dst)
-    have nj := knd hall (kgH_jall L ext src dst)
-    have rp := (oregs L ext src dst).piece_physical hR
-    have ip := (iregs L ext src dst).piece_physical ni
-    have is := DiagSq.steps_physical (iregs L ext src dst) wi ni
-    have js := DiagSq.steps_physical (jregsH L ext src dst) wj nj
-    exact KG.steps_physical _ hall (ap is.1 ip.2.1) (ap ip.1 is.2) js.1 js.2 rp.2.2.2.2.2.2.1 rp.2.2.2.2.2.2.2
-  · rw [kg,if_neg h] at hall ⊢
-    have wj := jregsS_W L hw ext src dst (by omega) hlen he
-    have hR : (oregs L ext src dst).all.Nodup := (List.nodup_append.mp hall).1
-    have ni := knd hall (kgS_iall L ext src dst)
-    have nj := knd hall (kgS_jall L ext src dst)
-    have rp := (oregs L ext src dst).piece_physical hR
-    have ip := (iregs L ext src dst).piece_physical ni
-    have is := DiagSq.steps_physical (iregs L ext src dst) wi ni
-    have js := DiagSq.steps_physical (jregsS L ext src dst) wj nj
-    exact KG.steps_physical _ hall (ap is.1 ip.2.1) (ap ip.1 is.2) rp.2.2.2.2.1 rp.2.2.2.2.2.1 js.1 js.2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 include hw h128 hsmax hlen he in
 theorem kg_slots :
@@ -14083,45 +14083,45 @@ theorem physical (n : Nat) (x y carry : List Wire) (cin : Wire)
   simp only [program,subInPlace,gatePhysical_append] at hp ⊢
   exact ⟨⟨hp.1.1,CKKnownTop.addKT_physical true n x y carry cin hy hx hc hn hp.1.2⟩,hp.2⟩
 
-/-- First NarrowAcc sub-step: 1040 H minus 64 H, in the 133-bit shifted window. -/
-theorem build_sub6_range (H : Nat) (hH : H < 2^128) :
-    H ≤ 1040*H/64 ∧ 1040*H/64-H = 976*H/64 ∧ 1040*H/64-H < 2^132 := by
-  have hd := Nat.mod_add_div H 4
-  have hm := Nat.mod_lt H (show 0<4 by decide)
-  have hs : 1040*H/64 = 16*H+H/4 := by omega
-  have ht : 976*H/64 = 15*H+H/4 := by omega
-  norm_num at hH ⊢
-  omega
 
-/-- Inverse final add: remove 2^32 H from (2^32+976) H. -/
-theorem clear_sub32_range (H : Nat) (hH : H < 2^128) :
-    H ≤ 4294968272*H/4294967296 ∧
-    4294968272*H/4294967296-H = 976*H/4294967296 ∧
-    4294968272*H/4294967296-H < 2^128 := by
-  have hs : 4294968272*H/4294967296 = H+976*H/4294967296 := by omega
-  norm_num at hH ⊢
-  omega
 
-/-- Inverse first add: remove 1024 H, leaving the seeded 16 H. -/
-theorem clear_sub10_range (H : Nat) (hH : H < 2^128) :
-    H ≤ 1040*H/1024 ∧ 1040*H/1024-H = H/64 ∧ 1040*H/1024-H < 2^128 := by
-  have hs : 1040*H/1024 = H+H/64 := by omega
-  norm_num at hH ⊢
-  omega
 
-/-- Exact first sub-process of NarrowAcc.build8 after its 1040 H prefix.
-    Its input is the 133-bit window obtained by dropping six low bits. -/
-theorem build_sub6_run (x y carry : List Wire) (cin : Wire)
-    (hx : x.length = 133) (hy : y.length = 133) (hc : carry.length = 132)
-    (hn : (cin :: (x ++ y ++ carry)).Nodup) (s : State) (m : List Bool)
-    (hclean : ∀ q ∈ carry, s.basis q = false) (hi : s.basis cin = false)
-    (H : Nat) (hH : H < 2^128) (hX : regValue x s.basis = H)
-    (hY : regValue y s.basis = 1040*H/64) :
-    run (program x y carry cin) m s = run (subInPlace x y carry cin) m s := by
-  have hr := build_sub6_range H hH
-  apply run_eq 131 x y carry cin (by omega) (by omega) (by omega) hn s m hclean hi
-  · simpa only [hX,hY] using hr.1
-  · simpa only [hX,hY] using hr.2.2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -16521,7 +16521,7 @@ private theorem diag5_sub_val' (x y : Fp) : (x-y).val=(x.val+p-y.val)%p := by
 section SquareStep
 attribute [local irreducible] run fastSquare fastCandidate
 private instance : NeZero p := ⟨by norm_num [p]⟩
-private instance : Fact (1<p) := ⟨by norm_num [p]⟩
+
 
 theorem fast_step_square (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y : Fp) (G : Bool) (base : BasisState) :
@@ -17569,16 +17569,16 @@ namespace ECDSAAdd.Entrant.OneFlagReplay
 open Arithmetic Secp256k1 BalancedField MappedCompressed CompressedFieldSupport OffsetBorrowedCanonical
 attribute [local irreducible] run wires toffoliCount measurementCount
 
-structure Context (origin : BasisState) : Prop where
-  hn : (skywalkSharedWires base).Nodup
-  ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base
-  hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base
-  hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base)
-  hg0 : origin (base 2409)=false
-  hs0 : origin (base 2410)=false
-  env : Env base origin
-  legal : History5.RawLegal base 102 origin
-  parity : origin (base 2312)=false
+
+
+
+
+
+
+
+
+
+
 
 def rawReplay (divide : Bool) : List MixedTranscriptLetter → Program
   | [] => []
@@ -17654,21 +17654,21 @@ theorem body_support (divide : Bool) (j : Nat) (hj : j<102) :
     have c := Replay5.letters_controls j hj l hl
     exact ⟨Finset.mem_union_right _ c.1,Finset.mem_union_right _ c.2⟩
 
-theorem readSites_sub (start : Nat) : readSites start⊆
-    History5.groupReadSites base (base 2400) (base 2409) (base 2410) start ∪ {base 2312} := by
-  intro q hq
-  simp only [readSites,Finset.mem_union] at hq
-  rcases hq with (h|h)|h
-  · have hp := (Q6EndpointCell.mem_ports_wires base (base 2409) q).mpr (List.mem_toFinset.mp h)
-    rcases Q6EndpointCell.ports_site base (base 2409) q hp with h|h
-    · exact Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_union_left _ (List.mem_toFinset.mpr h)))
-    · exact Finset.mem_union_right _ (Finset.mem_singleton.mpr h)
-  · exact Finset.mem_union_left _ (Finset.mem_union_left _ (Finset.mem_union_right _ h))
-  · exact Finset.mem_union_left _ (Finset.mem_union_right _ h)
 
-theorem body_read_support (divide : Bool) (j : Nat) (hj : j<102) :
-    wires (body divide j)⊆History5.groupReadSites base (base 2400) (base 2409) (base 2410) (5*j) ∪ {base 2312} :=
-  (body_support divide j hj).trans (readSites_sub (5*j))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem firstBody_support (divide : Bool) : wires (firstBody divide)⊆readSites 0 := by
   let W := readSites 0
@@ -17697,9 +17697,9 @@ theorem firstBody_support (divide : Bool) : wires (firstBody divide)⊆readSites
   · exact ⟨rest,swapM⟩
   · exact ⟨swap,rest⟩
 
-theorem firstBody_read_support (divide : Bool) :
-    wires (firstBody divide)⊆History5.groupReadSites base (base 2400) (base 2409) (base 2410) 0 ∪ {base 2312} :=
-  (firstBody_support divide).trans (readSites_sub 0)
+
+
+
 
 theorem rawEnd_support (divide : Bool) : wires (rawEnd divide)⊆fieldSites ∪ {base 2400,base 510} := by
   apply Q6EndpointCell.endpoint_support divide base (base 2400) (base 510) (base 2409)
@@ -17743,100 +17743,100 @@ theorem rawEnd_disjoint (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
       unfold History5.historyId at same
       split_ifs at same <;> omega
 
-private theorem q7part2_letter_layout (origin : BasisState) (ctx : Context origin)
-    (ls : List MixedTranscriptLetter)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) ls)
-    (l : MixedTranscriptLetter) (hl : l∈ls) :
-    BalancedTranscriptLayout (Q6EndpointCell.ports base (base 2409))
-      (base 2400) l.1.1 l.1.2 (base 2410) :=
-  Q6EndpointCell.ports_transcript base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410) ctx.hn
-    (balancedSharedTranscriptLayout_direct base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410) (hf l hl) ctx.ho)
-    (ctx.ho _ (by simp)) (ctx.ho _ (by simp))
-
-theorem raw_frame (divide : Bool) (ls : List MixedTranscriptLetter)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) ls)
-    (origin : BasisState) (ctx : Context origin) (X Y : Fp) :
-    Triple (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y
-      origin (centerWord X) (centerWord Y)) (rawReplay divide ls)
-      (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y origin
-        (centerWord (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) ls) (X,Y)).1)
-        (centerWord (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) ls) (X,Y)).2)) := by
-  have clean := Q6EndpointCell.clean_of_env base origin ctx.env ctx.parity
-  induction ls generalizing X Y with
-  | nil =>
-    intro s m h
-    cases divide <;> simpa only [rawReplay,directionalPayload,Bool.not_false,Bool.not_true,
-      Bool.false_eq_true,if_false,if_true,mixedTranscriptControls,List.map_nil,skywalkPayloadReplay,
-      skywalkPayloadReplayInverse,run] using And.intro (Eq.refl s.phase) h
-  | cons l ls ih =>
-    have layout := q7part2_letter_layout origin ctx (l::ls) hf l (by simp)
-    have tailLayout := fun k hk => hf k (List.mem_cons_of_mem l hk)
-    cases divide
-    · let Q := skywalkPayloadReplayInverse (mixedTranscriptControls origin (base 2400) ls) (X,Y)
-      have rest := ih tailLayout X Y
-      have head := OneFlagCell.cell_frame_legacy false base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410)
-        l.2.1 l.2.2 layout origin ctx.hg0 clean Q.1 Q.2
-      simpa only [rawReplay,Bool.false_eq_true,if_false,directionalPayload,Bool.not_false,if_true,
-        mixedTranscriptControls,List.map_cons,skywalkPayloadReplayInverse,Q6EndpointCell.payload,Q,Prod.mk.eta]
-        using rest.seq head
-    · let Q := skywalkPayloadCell (mixedTranscriptBit origin (base 2400) l.1.1 l.2.1)
-        (mixedTranscriptBit origin (base 2400) l.1.2 l.2.2) (X,Y)
-      have head := OneFlagCell.cell_frame_legacy true base (base 2400) l.1.1 l.1.2 (base 2409) (base 2410)
-        l.2.1 l.2.2 layout origin ctx.hg0 clean X Y
-      have rest := ih tailLayout Q.1 Q.2
-      simpa only [rawReplay,if_true,directionalPayload,Bool.not_true,Bool.false_eq_true,if_false,
-        mixedTranscriptControls,List.map_cons,skywalkPayloadReplay,Q6EndpointCell.payload,Q,Prod.mk.eta]
-        using head.seq rest
-
-private theorem q7part2_rest_layout
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base)) :
-    MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) Replay5.restLetters := by
-  intro l hl
-  obtain ⟨k,hk,rfl⟩ := List.mem_map.mp hl
-  have bound := List.mem_range'_1.mp hk
-  simpa only [Replay5.restLetters,tapeLetter] using
-    mixedTape_getD_layout base _ _ _ hf k (by omega)
-
-private theorem q7part2_first_layout (origin : BasisState) (ctx : Context origin) :
-    BalancedTranscriptLayout (balancedSharedPorts base (base 2409))
-      (base 2400) (base 0) (base 1028) (base 2410) := by
-  have h := balancedSharedTranscriptLayout_direct base (base 2400) _ _ (base 2409) (base 2410)
-    (mixedTape_getD_layout base _ _ _ ctx.hf 0 (by decide)) ctx.ho
-  rw [mixedTape_base_getD 0 (by decide)] at h
-  exact h
-
-theorem packet_frame (divide : Bool) (j : Nat) (hj : j<102)
-    (origin : BasisState) (ctx : Context origin) (X Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    (run (packet divide j) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin
-        (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)).1
-        (directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)).2
-        (run (packet divide j) m s) := by
-  have raw := raw_frame divide (Replay5.letters j) (Replay5.letters_layouts ctx.hf j hj) origin ctx X Y
-  have fresh := FieldFrameOB5.encoded_window_step base (base 2400) (base 2409) (base 2410)
-    ctx.hn ctx.hp j hj origin X Y _ _ _ (body_read_support divide j hj) raw s m input ctx.legal
-  have eq := Replay5.placed_eq (Placement5.pi j) (basePacket divide j)
-    (fun q hq => Placement5.pi_outside j q hj hq) s m
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal X Y s input)
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal _ _ _ fresh.2)
-  have same : run (packet divide j) m s=run (basePacket divide j) m s := eq
-  rw [same]
-  exact fresh
 
 
-theorem groups_frame (divide : Bool) (j n : Nat) (bound : j+n≤102)
-    (origin : BasisState) (ctx : Context origin) (X Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    (run (groups divide j n) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin (Replay5.groupsPayload divide origin j n (X,Y)).1
-        (Replay5.groupsPayload divide origin j n (X,Y)).2 (run (groups divide j n) m s) := by
-  have result := PacketSequence.frame divide (packet divide) (packet divide)
-    (fun k V => directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V)
-    (fun V t => History5.EncodedFieldFrame5 base (base 2409) origin V.1 V.2 t) 102 (fun _ => rfl)
-    (fun k hk V t records h => ⟨rfl,packet_frame divide k hk origin ctx V.1 V.2 t records h⟩)
-    j n bound (X,Y) s m input
-  exact result.2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 theorem base_sign_nd : (base 2409::(Q6EndpointCell.ports base (base 2409)).r++
@@ -17856,161 +17856,161 @@ theorem base_sign_nd : (base 2409::(Q6EndpointCell.ports base (base 2409)).r++
     Q6EndpointCell.ports_sign] at h ⊢
   omega
 
-theorem firstBody_frame (divide : Bool) (origin : BasisState) (ctx : Context origin) (X Y : Fp)
-    (hz : divide=false → (Replay5.firstPayload divide origin (X,Y)).2=0) :
-    Triple (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y
-      origin (centerWord X) (centerWord Y)) (firstBody divide)
-      (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y origin
-        (centerWord (Replay5.firstPayload divide origin (X,Y)).1)
-        (centerWord (Replay5.firstPayload divide origin (X,Y)).2)) := by
-  let S := mixedTranscriptBit origin (base 2400) (base 1028) (mixedTranscriptUnitTrace.getD 0 (false,false)).2
-  have nl := Q6EndpointCell.ports_transcript base (base 2400) (base 0) (base 1028)
-    (base 2409) (base 2410) ctx.hn (q7part2_first_layout origin ctx) (ctx.ho _ (by simp)) (ctx.ho _ (by simp))
-  have hb := nl.outside (base 2400) (by simp)
-  have hs := nl.outside (base 1028) (by simp)
-  have hf := nl.outside (base 2409) (by simp [Q6EndpointCell.ports_sign])
-  have swap := OneFlagCell.selectSwap_frame base (base 2400) (base 1028) (base 2409)
-    (mixedTranscriptUnitTrace.getD 0 (false,false)).2 base_sign_nd (by decide) hb hs hf origin ctx.hg0
-  cases divide
-  · let V := directionalPayload true (mixedTranscriptControls origin (base 2400) Replay5.restLetters) (X,Y)
-    have zero : (if S then V.1 else V.2)=0 := by
-      have h := hz rfl
-      have k : ∀ (b : Bool) (p : Fp×Fp), (if b then (p.2,p.1) else p).2=(if b then p.1 else p.2) := by
-        intro b p; cases b <;> rfl
-      simp only [Replay5.firstPayload,Bool.false_eq_true,if_false,k] at h
-      exact h
-    have swapM := OneFlagCell.selectMSwap_frame base (base 2400) (base 1028) (base 2409)
-      (mixedTranscriptUnitTrace.getD 0 (false,false)).2 base_sign_nd (by decide) hb hs hf origin ctx.hg0 V.1 V.2 zero
-    have rest := raw_frame false Replay5.restLetters (q7part2_rest_layout ctx.hf) origin ctx X Y
-    have out := rest.seq swapM
-    cases hS : S <;> simpa only [firstBody,firstSwapM,Replay5.firstPayload,Bool.false_eq_true,
-      if_false,Bool.not_false,if_true,S,hS,V] using out
-  · have out := (swap X Y).seq (raw_frame true Replay5.restLetters (q7part2_rest_layout ctx.hf)
-      origin ctx (if S then Y else X) (if S then X else Y))
-    cases hS : S <;> simpa only [firstBody,firstSwap,Replay5.firstPayload,if_true,Bool.not_true,
-      Bool.false_eq_true,if_false,S,hS] using out
-
-theorem firstPacket_frame (divide : Bool) (origin : BasisState) (ctx : Context origin)
-    (X Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s)
-    (hz : divide=false → (Replay5.firstPayload divide origin (X,Y)).2=0) :
-    (run (firstPacket divide) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin (Replay5.firstPayload divide origin (X,Y)).1
-        (Replay5.firstPayload divide origin (X,Y)).2 (run (firstPacket divide) m s) := by
-  have fresh := FieldFrameOB5.encoded_window_step base (base 2400) (base 2409) (base 2410)
-    ctx.hn ctx.hp 0 (by decide) origin X Y _ _ _ (firstBody_read_support divide)
-    (firstBody_frame divide origin ctx X Y hz) s m input ctx.legal
-  have eq := Replay5.placed_eq (Placement5.pi 0) (baseFirstPacket divide)
-    (fun q hq => Placement5.pi_outside 0 q (by decide) hq) s m
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal X Y s input)
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal _ _ _ fresh.2)
-  have same : run (firstPacket divide) m s=run (baseFirstPacket divide) m s := eq
-  rw [same]
-  exact fresh
 
 
-theorem rawEnd_frame (divide : Bool) (origin : BasisState) (ctx : Context origin) (X Y : Fp)
-    (hend : divide=true → (Replay5.endPayload divide origin (X,Y)).1=Y) :
-    Triple (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y
-      origin (centerWord X) (centerWord Y)) (rawEnd divide)
-      (PairFrame (balancedSharedPorts base (base 2409)).r (balancedSharedPorts base (base 2409)).y origin
-        (centerWord (Replay5.endPayload divide origin (X,Y)).1)
-        (centerWord (Replay5.endPayload divide origin (X,Y)).2)) := by
-  let oldctx : Q6EndpointReplay.Context origin :=
-    ⟨ctx.hn,ctx.ho,ctx.hp,ctx.hf,ctx.hg0,ctx.hs0,ctx.env,ctx.legal,ctx.parity⟩
-  first
-  | exact Q6EndpointReplay.rawEnd_frame divide origin oldctx X Y hend
-  | exact Q6EndpointReplay.rawEnd_frame divide origin oldctx X Y
 
-theorem endPacket_frame (divide : Bool) (origin : BasisState) (ctx : Context origin)
-    (X Y : Fp) (hend : divide=true → (Replay5.endPayload divide origin (X,Y)).1=Y) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    (run (endPacket divide) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin (Replay5.endPayload divide origin (X,Y)).1
-        (Replay5.endPayload divide origin (X,Y)).2 (run (endPacket divide) m s) := by
-  let oldctx : Q6EndpointReplay.Context origin :=
-    ⟨ctx.hn,ctx.ho,ctx.hp,ctx.hf,ctx.hg0,ctx.hs0,ctx.env,ctx.legal,ctx.parity⟩
-  first
-  | exact Q6EndpointReplay.endPacket_frame divide origin oldctx X Y hend s m input
-  | exact Q6EndpointReplay.endPacket_frame divide origin oldctx X Y s m input
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 attribute [local irreducible] Replay5.groupsPayload Replay5.firstPayload Replay5.endPayload
   mixedTranscriptUnitTrace SkywalkTrace.trace SkywalkTrace.next Nat.iterate
 
-theorem logical_forward_frame (origin : BasisState) (ctx : Context origin)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin Y 0 s) :
-    let Z := if origin (base 2400) then Y/(x:Fp) else Y
-    (run (logicalReplay true) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin Z Z (run (logicalReplay true) m s) := by
-  let Z := if origin (base 2400) then Y/(x:Fp) else Y
-  have result := run_three_states (firstPacket true) (groups true 1 101) (endPacket true)
-    (fun a b => History5.EncodedFieldFrame5 base (base 2409) origin Y 0 a →
-      b.phase=a.phase ∧ History5.EncodedFieldFrame5 base (base 2409) origin Z Z b) (by
-      intro a b c d m1 m2 m3 hab hbc hcd h
-      have first := firstPacket_frame true origin ctx Y 0 a m1 h (fun e => absurd e (by decide))
-      rw [hab] at first
-      have middle := groups_frame true 1 101 (by decide) origin ctx _ _ b m2 first.2
-      rw [hbc] at middle
-      have fp := Replay5.forward_payload origin x Y hx0 hx trace
-      have last := endPacket_frame true origin ctx _ _ (fun _ => by
-        rw [Prod.mk.eta,fp]
-        exact (congrArg Prod.snd fp).symm.trans (by simp only [Replay5.endPayload])) c m3 middle.2
-      rw [hcd] at last
-      refine ⟨last.1.trans (middle.1.trans first.1),?_⟩
-      simpa only [Prod.mk.eta,Replay5.forward_payload origin x Y hx0 hx trace] using last.2) s m
-  simpa only [logicalReplay,if_true,List.append_assoc] using result input
 
-theorem logical_inverse_frame (origin : BasisState) (ctx : Context origin)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool)
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin Y Y s) :
-    let Z := if origin (base 2400) then Y*(x:Fp) else Y
-    (run (logicalReplay false) m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin Z 0 (run (logicalReplay false) m s) := by
-  let Z := if origin (base 2400) then Y*(x:Fp) else Y
-  have result := run_three_states (endPacket false) (groups false 1 101) (firstPacket false)
-    (fun a b => History5.EncodedFieldFrame5 base (base 2409) origin Y Y a →
-      b.phase=a.phase ∧ History5.EncodedFieldFrame5 base (base 2409) origin Z 0 b) (by
-      intro a b c d m1 m2 m3 hab hbc hcd h
-      have first := endPacket_frame false origin ctx Y Y (fun e => absurd e (by decide)) a m1 h
-      rw [hab] at first
-      have middle := groups_frame false 1 101 (by decide) origin ctx _ _ b m2 first.2
-      rw [hbc] at middle
-      have last := firstPacket_frame false origin ctx _ _ c m3 middle.2 (fun _ => by
-        simp only [Prod.mk.eta]
-        exact congrArg Prod.snd (Replay5.inverse_payload origin x Y hx0 hx trace))
-      rw [hcd] at last
-      refine ⟨last.1.trans (middle.1.trans first.1),?_⟩
-      simpa only [Prod.mk.eta,Replay5.inverse_payload origin x Y hx0 hx trace] using last.2) s m
-  simpa only [logicalReplay,Bool.false_eq_true,if_false,List.append_assoc] using result input
 
-theorem forward_frame (origin : BasisState) (ctx : Context origin)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedFieldFrame origin Y 0 s) :
-    let Z := if origin (base 2400) then Y/(x:Fp) else Y
-    (run (replay true) m s).phase=s.phase ∧
-      FieldFrameOB5.EncodedFieldFrame origin Z Z (run (replay true) m s) :=
-  FieldFrameOB5.placed_step (logicalReplay true) origin Y 0 _ _
-    (logical_forward_frame origin ctx x hx0 hx trace Y) s m input
 
-theorem inverse_frame (origin : BasisState) (ctx : Context origin)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedFieldFrame origin Y Y s) :
-    let Z := if origin (base 2400) then Y*(x:Fp) else Y
-    (run (replay false) m s).phase=s.phase ∧
-      FieldFrameOB5.EncodedFieldFrame origin Z 0 (run (replay false) m s) :=
-  FieldFrameOB5.placed_step (logicalReplay false) origin Y Y _ _
-    (logical_inverse_frame origin ctx x hx0 hx trace Y) s m input
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -18172,10 +18172,10 @@ theorem replay_eff_free (divide : Bool) : base 2410∉wires (replay divide) := b
     · exact ⟨⟨a,b⟩,c⟩
   exact rename_free (OB5.sig 511) (OB5.sig_injective 511 (by decide)) _ _ (by decide) _ away
 
-/-- Existing host permutation can be retained: absent input2410 maps to absent output1542. -/
-theorem hosted_replay_1542_free (divide : Bool) :
-    base 1542∉wires (renameProgram HostOB5.hostSwap (replay divide)) :=
-  rename_free HostOB5.hostSwap HostOB5.hostSwap_injective _ _ (by decide) _ (replay_eff_free divide)
+
+
+
+
 end ECDSAAdd.Entrant.OneFlagReplay
 
 
@@ -18711,93 +18711,93 @@ def program (divide : Bool) : Program :=
   if divide then OwnQ5Endpoint.centerT++(OneFlagReplay.replay true++(copyN++OwnQ5Endpoint.canonT))
   else OwnQ5Endpoint.centerT++(copyN++(OneFlagReplay.replay false++OwnQ5Endpoint.canonT))
 
-private theorem q7part7_run_four_states (a b c d : Program) (P : State → State → Prop)
-    (h : ∀ (s s1 s2 s3 s4 : State) (m1 m2 m3 m4 : List Bool),
-      run a m1 s=s1 → run b m2 s1=s2 → run c m3 s2=s3 → run d m4 s3=s4 → P s s4)
-    (s : State) (m : List Bool) : P s (run (a++(b++(c++d))) m s) := by
-  simp only [run_append]
-  exact h _ _ _ _ _ _ _ _ _ rfl rfl rfl rfl
 
-private theorem q7part7_double_half (Y W : Fp) : 2*(Y/2*W)=Y*W := by
-  have two : (2:Fp) ≠ 0 := by decide
-  field_simp
 
-private theorem q7part7_double_half_div (Y W : Fp) : 2*(Y/2/W)=Y/W := by
-  have two : (2:Fp) ≠ 0 := by decide
-  rw [div_div,mul_comm (2:Fp) W,←div_div,mul_div_cancel₀ _ two]
 
-private theorem q7part7_double_half_one (Y : Fp) : 2*(Y/2)=Y := by
-  have two : (2:Fp) ≠ 0 := by decide
-  exact mul_div_cancel₀ Y two
 
-/-- Same hypotheses and conclusion as the protected selected field segment. -/
-theorem program_spec (divide : Bool)
-    (hn : (skywalkSharedWires base).Nodup) (ho : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkSharedWires base)
-    (hp : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkPoolWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (origin : BasisState) (hg0 : origin (base 2409)=false) (hs0 : origin (base 2410)=false)
-    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
-    (hr : origin (base 2312)=false) (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0 < x) (hx : x < p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    let out := run (program divide) m s
-    out.phase=s.phase ∧ FieldFrameOB5.EncodedCanonicalFrame origin (fieldResult divide origin x Y) 0 out := by
-  let ctx : OneFlagReplay.Context origin := ⟨hn,ho,hp,hf,hg0,hs0,env,legal,hr⟩
-  cases divide
-  · let P : State → State → Prop := fun initial out => FieldFrameOB5.EncodedCanonicalFrame origin Y 0 initial →
-      out.phase=initial.phase ∧ FieldFrameOB5.EncodedCanonicalFrame origin (fieldResult false origin x Y) 0 out
-    have all := q7part7_run_four_states OwnQ5Endpoint.centerT copyN (OneFlagReplay.replay false) OwnQ5Endpoint.canonT P (by
-      intro initial s1 s2 s3 s4 m1 m2 m3 m4 h1 h2 h3 h4 hin
-      have c1 := OwnQ5Endpoint.center_frame hn (hp _ (by simp)) origin env legal hr ha Y initial m1 hin
-      rw [h1] at c1
-      have c2 := copy_fill hn origin (Y/2) s1 m2 c1.2
-      rw [h2] at c2
-      have c3 := OneFlagReplay.inverse_frame origin ctx
-        x hx0 hx trace (Y/2) s2 m3 c2.2
-      rw [h3] at c3
-      have c4 := OwnQ5Endpoint.canon_frame hn (hp _ (by simp)) origin env legal hr ha _ s3 m4 c3.2
-      rw [h4] at c4
-      refine ⟨c4.1.trans (c3.1.trans (c2.1.trans c1.1)),?_⟩
-      have eq : 2*(if origin (base 2400) then Y/2*(x:Fp) else Y/2)=fieldResult false origin x Y := by
-        unfold fieldResult
-        split
-        · simp only [Bool.false_eq_true,if_false]; exact q7part7_double_half Y _
-        · exact q7part7_double_half_one Y
-      rw [←eq]
-      exact c4.2) s m
-    simpa only [program,Bool.false_eq_true,if_false] using all input
-  · let P : State → State → Prop := fun initial out => FieldFrameOB5.EncodedCanonicalFrame origin Y 0 initial →
-      out.phase=initial.phase ∧ FieldFrameOB5.EncodedCanonicalFrame origin (fieldResult true origin x Y) 0 out
-    have all := q7part7_run_four_states OwnQ5Endpoint.centerT (OneFlagReplay.replay true) copyN OwnQ5Endpoint.canonT P (by
-      intro initial s1 s2 s3 s4 m1 m2 m3 m4 h1 h2 h3 h4 hin
-      have c1 := OwnQ5Endpoint.center_frame hn (hp _ (by simp)) origin env legal hr ha Y initial m1 hin
-      rw [h1] at c1
-      have c2 := OneFlagReplay.forward_frame origin ctx x hx0 hx trace
-        (Y/2) s1 m2 c1.2
-      rw [h2] at c2
-      have c3 := copy_clear hn origin _ s2 m3 c2.2
-      rw [h3] at c3
-      have c4 := OwnQ5Endpoint.canon_frame hn (hp _ (by simp)) origin env legal hr ha _ s3 m4 c3.2
-      rw [h4] at c4
-      refine ⟨c4.1.trans (c3.1.trans (c2.1.trans c1.1)),?_⟩
-      have eq : 2*(if origin (base 2400) then Y/2/(x:Fp) else Y/2)=fieldResult true origin x Y := by
-        unfold fieldResult
-        split
-        · simp only [if_true]; exact q7part7_double_half_div Y _
-        · exact q7part7_double_half_one Y
-      rw [←eq]
-      exact c4.2) s m
-    simpa only [program,if_true] using all input
 
-theorem counts_eq (divide : Bool) (hn : (skywalkSharedWires base).Nodup)
-    (ho : base 2410∉skywalkSharedWires base) :
-    toffoliCount (program divide)=toffoliCount (Q6EndpointSegment.program divide) ∧
-      measurementCount (program divide)=measurementCount (Q6EndpointSegment.program divide) := by
-  have r := OneFlagReplay.replay_counts_eq divide hn ho
-  cases divide <;> simp only [program,Q6EndpointSegment.program,Bool.false_eq_true,if_false,if_true,
-    toffoliCount_append,measurementCount_append] at r ⊢ <;> constructor <;> omega
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -18867,31 +18867,31 @@ theorem hosted1542_free (divide : Bool) : base 1542∉wires (segH divide) := by
   simpa only [segH,wires_append,wires,Instr.wires,Finset.union_empty,Finset.mem_union,
     Finset.mem_singleton,not_or] using And.intro (by decide : base 1542≠base 511)
       (And.intro h (by decide : base 1542≠base 511))
-theorem canonical_frame_unique (origin : BasisState) (X Y : Fp) (s t : State)
-    (hs : FieldFrameOB5.EncodedCanonicalFrame origin X Y s)
-    (ht : FieldFrameOB5.EncodedCanonicalFrame origin X Y t) (phase : s.phase=t.phase) : s=t := by
-  have e := History5.encoded_canonical_unique origin X Y (pullState (OB5.sig 511) s)
-    (pullState (OB5.sig 511) t) hs ht phase
-  apply State.extensionality s t phase
-  funext q
-  have h := congrArg (fun a:State=>a.basis (OB5.sig 511 q)) e
-  simpa only [pullState,OB5.sig_invol 511 (by decide)] using h
 
-theorem program_state_eq (divide : Bool)
-    (hn : (skywalkSharedWires base).Nodup) (ho : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkSharedWires base)
-    (hp : ∀ q ∈ [base 2400,base 2409,base 2410],q ∉ skywalkPoolWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (origin : BasisState) (hg0 : origin (base 2409)=false) (hs0 : origin (base 2410)=false)
-    (env : Env base origin) (legal : History5.RawLegal base 102 origin)
-    (hr : origin (base 2312)=false) (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0 < x) (hx : x < p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool) (input : FieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    run (program divide) m s=run (Q6EndpointSegment.program divide) m s := by
-  have a := program_spec divide hn ho hp hf origin hg0 hs0 env legal hr ha x hx0 hx trace Y s m input
-  have b := Q6EndpointSegment.program_spec divide hn ho hp hf origin hg0 hs0 env legal hr ha x hx0 hx trace Y s m input
-  exact canonical_frame_unique origin _ _ _ _ a.2 b.2 (a.1.trans b.1.symm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -18931,88 +18931,88 @@ theorem pull_clean (s : State) (a : s.basis (base 1542)=false)
       · subst q; simp [swap,a,b]
       · rw [show swap q=q by exact Equiv.swap_apply_of_ne_of_ne h h']
 
-theorem run_eq (P : Program) (s : State) (m : List Bool)
-    (a : s.basis (base 1542)=false) (b : s.basis (base 720)=false)
-    (c : (run P m s).basis (base 1542)=false)
-    (d : (run P m s).basis (base 720)=false) :
-    run (renameProgram swap P) m s=run P m s := by
-  apply pullState_perm_injective swap
-  rw [run_rename swap swap.injective,pull_clean s a b,pull_clean _ c d]
 
 
-theorem integer720_free : base 720∉OB5.integerSites := by
-  intro used
-  obtain ⟨i,e,hi⟩ := (OB5.integerSites_mem _).mp used
-  have same := base_injective e
-  omega
 
-theorem prefix720_free : base 720∉NativeFirstDirect.prefixSites base := by
-  intro used
-  simp only [NativeFirstDirect.prefixSites,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at used
-  rcases used with ((a|b)|c)|(a|b)
-  · exact OwnPlusHost.not_block 720 0 257 (by omega) a
-  · exact OwnPlusHost.not_block 720 770 258 (by omega) b
-  · exact OwnPlusHost.not_block 720 1540 256 (by omega) c
-  · exact (by decide : base 720≠base 1028) a
-  · exact (by decide : base 720≠base 1797) b
 
-theorem terminal1542 (x : Nat) (s : State)
-    (h : W.CompressedCompactStage5 base x p 512 s.basis) :
-    s.basis (base 1542)=false := by
-  obtain ⟨raw,stage,eq⟩ := h
-  have fields := (W.compactSkywalkStage_fields_iff base _ 512 (by omega) base_pool_nodup raw.basis).mp stage
-  have carry : regValue (wireBlock base 1540 257) raw.basis=0 := fields.2.2.2.2.2.1
-  have clean : raw.basis (base 1542)=false := (regValue_zero _ _).mp carry _ (by decide +kernel)
-  have away : base 1542∉wires (History5.encodePrefix base 512) := by
-    rw [History5.encodePrefix_512]
-    intro used
-    have support := History5.allEncode_history_support base 102 (by decide) used
-    simp only [List.mem_toFinset,List.mem_append] at support
-    rcases support with a|b
-    · exact OwnPlusHost.not_block 1542 0 512 (by omega) a
-    · exact OwnPlusHost.not_block 1542 1028 512 (by omega) b
-  rw [eq,run_preserves_outside _ [] raw _ away]
-  exact clean
-theorem terminalS511 (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State)
-    (h : W.CompressedCompactStage5 base x p 512 s.basis) : s.basis (base 1539)=false := by
-  obtain ⟨raw,stage,eq⟩ := h
-  have fields := (W.compactSkywalkStage_fields_iff base _ 512 (by omega) base_pool_nodup raw.basis).mp stage
-  have bit := (fields.2.2.2.1 511 (by omega)).2
-  rw [SkywalkTrace.code511 x hx0 hx] at bit
-  have away : base 1539∉wires (History5.encodePrefix base 512) := by
-    rw [History5.encodePrefix_512]
-    intro used
-    obtain ⟨j,hj,mem⟩:=History5.allEncode_member base 102 _ used
-    obtain ⟨i,e⟩:=History5.history_gate_mem base (5*j) _ (Or.inl rfl) _ mem
-    change base 1539=base (History5.historyId (5*j) i) at e
-    have same:=base_injective e
-    have hi:=i.isLt
-    unfold History5.historyId at same
-    split_ifs at same <;> omega
-  rw [eq,run_preserves_outside _ [] raw _ away]
-  exact bit
 
-theorem forward_terminal1542 (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (hx0 : 0<x) (hx : x<p) (s1 : State) (m2 : List Bool)
-    (firstW : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s1.basis) :
-    (run stackForwardT m2 s1).basis (base 1542)=false := by
-  obtain ⟨hp0,hpo,hp,cop⟩ := StackOB5.prime_facts x hx0 hx
-  have gap : p+2^32≤2^256 := by norm_num [p]
-  obtain ⟨t, ht⟩ : ∃t : State,run (Stack5.forward5 base 1 511) m2 s1=t := ⟨_,rfl⟩
-  have terminal : W.CompressedCompactStage5 base x p 512 t.basis := by
-    have raw := (Stack5.forward_spec base base_pool_nodup StackOB5.historyAbove x p 1 511
-      hp0 hx0 hpo hp gap hx cop (by omega) s1 m2 (W.compactStage5_first base x p s1 firstW)).2
-    rw [ht] at raw
-    exact raw
-  have eq : run stackForwardT m2 s1 = pullState (OB5.sig 511) t := by
-    rw [←ht]
-    exact (stackForwardT_run hn StackOB5.historyAbove x hx0 hx s1 m2 firstW).trans
-      (StackOB5.forward_run x hx0 hx s1 m2 firstW)
-  have fixed : OB5.sig 511 (base 1542)=base 1539 := by decide +kernel
-  rw [eq]
-  change t.basis (OB5.sig 511 (base 1542))=false
-  rw [fixed]
-  exact terminalS511 x hx0 hx _ terminal
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -19025,14 +19025,14 @@ theorem forward_terminal1542 (hn : (skywalkSharedWires base).Nodup)
 def firstPhase : Program := NativeFirstDirect.forward base ++ (stackForwardT ++ skywalkArithmeticClear base)
 attribute [local irreducible] firstPhase
 
-theorem firstPhase720_free : base 720∉wires firstPhase := by
-  have native : base 720∉wires (NativeFirstDirect.forward base) := fun h =>
-    prefix720_free (List.mem_toFinset.mp ((NativeFirstDirect.prefix_support base).1 h))
-  have stack : base 720∉wires stackForwardT := fun h =>
-    integer720_free ((StackOB5.support_gen 1 511 (by omega) (by omega)).1 _ (stackForwardT_subset h))
-  have clear : base 720∉wires (skywalkArithmeticClear base) := by
-    simp [skywalkArithmeticClear,skywalkTerminalClear,wires,Instr.wires,base]
-  simpa only [firstPhase,wires_append,Finset.mem_union,not_or] using ⟨native,stack,clear⟩
+
+
+
+
+
+
+
+
 
 theorem input_clean (x y i : Nat) (s : State) (hin : SkywalkArithmeticInput base x y s.basis)
     (hi : i=720 ∨ i=1542) : s.basis (base i)=false := by
@@ -19041,61 +19041,61 @@ theorem input_clean (x y i : Nat) (s : State) (hin : SkywalkArithmeticInput base
   · exact OwnPlusHost.not_block i 770 256 (by rcases hi with rfl|rfl <;> omega)
   · exact OwnPlusHost.not_block i 2056 256 (by rcases hi with rfl|rfl <;> omega)
 
-theorem firstPhase1542_clean (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis) :
-    (run firstPhase m s).basis (base 1542)=false := by
-  rw [firstPhase,run_append,run_append]
-  have first := NativeFirstDirect.caller_first_stage base hn x Y.val hx0 hx s
-    (m.take (measurementCount (NativeFirstDirect.forward base))) hin
-  have firstW := (W.compactSkywalkStage_one base _ _).mpr first
-  have cleaned := forward_terminal1542 hn x hx0 hx _
-    ((m.drop (measurementCount (NativeFirstDirect.forward base))).take (measurementCount stackForwardT)) firstW
-  have away : base 1542∉wires (skywalkArithmeticClear base) := by
-    simp [skywalkArithmeticClear,skywalkTerminalClear,wires,Instr.wires,base]
-  exact (run_preserves_outside _ _ _ _ away).trans cleaned
 
-theorem firstPhase_state_eq (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis) :
-    run (renameProgram swap firstPhase) m s=run firstPhase m s := by
-  apply run_eq
-  · exact input_clean x Y.val 1542 s hin (Or.inr rfl)
-  · exact input_clean x Y.val 720 s hin (Or.inl rfl)
-  · exact firstPhase1542_clean hn x Y hx0 hx s m hin
-  · exact (run_preserves_outside _ _ _ _ firstPhase720_free).trans
-      (input_clean x Y.val 720 s hin (Or.inl rfl))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def lastPhase : Program := skywalkArithmeticClear base ++ (stackReverseT ++ NativeFirstKnown.inverse base)
 attribute [local irreducible] lastPhase
 
-theorem lastPhase720_free : base 720∉wires lastPhase := by
-  have native : base 720∉wires (NativeFirstKnown.inverse base) := fun h =>
-    prefix720_free (List.mem_toFinset.mp (NativeFirstKnown.inverse_support base h))
-  have stack : base 720∉wires stackReverseT := fun h =>
-    integer720_free ((StackOB5.support_gen 1 511 (by omega) (by omega)).2 _ (stackReverseT_subset h))
-  have clear : base 720∉wires (skywalkArithmeticClear base) := by
-    simp [skywalkArithmeticClear,skywalkTerminalClear,wires,Instr.wires,base]
-  simpa only [lastPhase,wires_append,Finset.mem_union,not_or] using ⟨clear,stack,native⟩
 
-/-- Full arbitrary-record transfer needs only the old complete program's clean
-output and the new field implementation's literal omission of1542. It imposes
-no new promise on the original caller input. -/
-theorem three_states_eq (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State)
-    (mp mf mr : List Bool) (F : Program)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (field_free : base 1542∉wires F)
-    (out1542 : (run lastPhase mr (run F mf (run firstPhase mp s))).basis (base 1542)=false)
-    (out720 : (run lastPhase mr (run F mf (run firstPhase mp s))).basis (base 720)=false) :
-    run (renameProgram swap lastPhase) mr
-      (run F mf (run (renameProgram swap firstPhase) mp s)) =
-    run lastPhase mr (run F mf (run firstPhase mp s)) := by
-  rw [firstPhase_state_eq hn x Y hx0 hx s mp hin]
-  have mid1542 : (run F mf (run firstPhase mp s)).basis (base 1542)=false :=
-    (run_preserves_outside _ _ _ _ field_free).trans (firstPhase1542_clean hn x Y hx0 hx s mp hin)
-  have mid720 : (run F mf (run firstPhase mp s)).basis (base 720)=false :=
-    (run_preserves_outside lastPhase mr _ _ lastPhase720_free).symm.trans out720
-  exact run_eq lastPhase _ mr mid1542 mid720 out1542 out720
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -19121,22 +19121,22 @@ def q5First : Program := renameProgram Q5Global718.swap firstPhase
 def q5Last : Program := renameProgram Q5Global718.swap lastPhase
 attribute [local irreducible] q5First q5Last
 
-theorem q5first_eq (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis) :
-    run q5First m s=run firstPhase m s := by
-  have same : firstPhase=Q5Global718.firstPhase := by unfold firstPhase Q5Global718.firstPhase; rfl
-  unfold q5First
-  rw [same]
-  exact Q5Global718.firstPhase_state_eq hn x Y hx0 hx s m hin
 
-theorem q5First720_free : base 720∉wires q5First := by
-  unfold q5First
-  exact OwnPlusHost.rename_avoid _ _ _ (by decide +kernel) firstPhase720_free
 
-theorem q5Last720_free : base 720∉wires q5Last := by
-  unfold q5Last
-  exact OwnPlusHost.rename_avoid _ _ _ (by decide +kernel) lastPhase720_free
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -19181,79 +19181,79 @@ def q6First : Program := renameProgram Q6IntegerHost.swap Q6IntegerHost.q5First
 def q6Last : Program := renameProgram Q6IntegerHost.swap Q6IntegerHost.q5Last
 attribute [local irreducible] run wires q6First q6Last
 
-theorem q6First720_free : base 720∉wires q6First := by
- have old : base 720∉wires Q6IntegerHost.q5First := by
-  simpa only [Q6IntegerHost.q5First,Q7IntegerHost.q5First,Q6IntegerHost.firstPhase,Q7IntegerHost.firstPhase] using
-    Q7IntegerHost.q5First720_free
- simpa only [q6First] using OwnPlusHost.rename_avoid Q6IntegerHost.swap _ _ (by decide +kernel) old
 
-theorem q6Last720_free : base 720∉wires q6Last := by
- have old : base 720∉wires Q6IntegerHost.q5Last := by
-  simpa only [Q6IntegerHost.q5Last,Q7IntegerHost.q5Last,Q6IntegerHost.lastPhase,Q7IntegerHost.lastPhase] using
-    Q7IntegerHost.q5Last720_free
- simpa only [q6Last] using OwnPlusHost.rename_avoid Q6IntegerHost.swap _ _ (by decide +kernel) old
 
-theorem outside_num (i : Nat) (hi : i=720∨i=1542) : base i∉wireBlock base 2056 256 :=
-  OwnPlusHost.not_block i 2056 256 (by rcases hi with rfl|rfl <;> omega)
 
-theorem q6First_pool : wires q6First⊆(skywalkPoolWires base).toFinset := by
- unfold q6First
- rw [renameProgram_support]
- intro q h
- obtain ⟨old,used,rfl⟩:=Finset.mem_image.mp h
- have oldPool := Q6FusionPhase.q5First_pool used
- by_cases a:old=base 1541
- · subst old
-   apply List.mem_toFinset.mpr
-   simpa only [Q6IntegerHost.swap,Equiv.swap_apply_left] using arith_mem base 0 1798 719 (by omega) (by omega)
- · by_cases b:old=base 719
-   · subst old
-     apply List.mem_toFinset.mpr
-     simpa only [Q6IntegerHost.swap,Equiv.swap_apply_right] using arith_mem base 0 1798 1541 (by omega) (by omega)
-   · simpa only [Q6IntegerHost.swap,Equiv.swap_apply_of_ne_of_ne a b] using oldPool
 
-theorem firstPhase1542_paired (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (m : List Bool)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Q5FusionPhase.Paired a b) :
-    (run q6First m b).basis (base 1542)=false := by
-  have agree := Q5FusionPhase.pool_agreement q6First q6First_pool a b m same (base 1542)
-    (arith_mem base 0 1798 1542 (by omega) (by omega))
-  have canonical : run q6First m a=run Q7IntegerHost.firstPhase m a := by
-    unfold q6First
-    rw [Q6IntegerHost.q5First_state_eq hn x Y hx0 hx a m input]
-    change run Q7IntegerHost.q5First m a=run Q7IntegerHost.firstPhase m a
-    exact Q7IntegerHost.q5first_eq hn x Y hx0 hx a m input
-  exact agree.trans (canonical ▸ Q7IntegerHost.firstPhase1542_clean hn x Y hx0 hx a m input)
 
-theorem firstPhase_eq_paired (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (m : List Bool)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Q5FusionPhase.Paired a b) :
-    run (renameProgram swap q6First) m b=run q6First m b := by
-  have clean1542 : b.basis (base 1542)=false :=
-    (same _ (outside_num 1542 (Or.inr rfl))).trans (input_clean x Y.val 1542 a input (Or.inr rfl))
-  have clean720 : b.basis (base 720)=false :=
-    (same _ (outside_num 720 (Or.inl rfl))).trans (input_clean x Y.val 720 a input (Or.inl rfl))
-  exact run_eq q6First b m clean1542 clean720
-    (firstPhase1542_paired hn x Y hx0 hx a b m input same)
-    ((run_preserves_outside _ _ _ _ q6First720_free).trans clean720)
 
-theorem three_states_eq_paired (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (mp mf mr : List Bool) (F : Program)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Q5FusionPhase.Paired a b)
-    (field_free : base 1542∉wires F)
-    (out1542 : (run q6Last mr (run F mf (run q6First mp b))).basis (base 1542)=false)
-    (out720 : (run q6Last mr (run F mf (run q6First mp b))).basis (base 720)=false) :
-    run (renameProgram swap q6Last) mr (run F mf (run (renameProgram swap q6First) mp b))=
-      run q6Last mr (run F mf (run q6First mp b)) := by
-  rw [firstPhase_eq_paired hn x Y hx0 hx a b mp input same]
-  have mid1542 : (run F mf (run q6First mp b)).basis (base 1542)=false :=
-    (run_preserves_outside _ _ _ _ field_free).trans (firstPhase1542_paired hn x Y hx0 hx a b mp input same)
-  have mid720 : (run F mf (run q6First mp b)).basis (base 720)=false :=
-    (run_preserves_outside q6Last mr _ _ q6Last720_free).symm.trans out720
-  exact run_eq q6Last _ mr mid1542 mid720 out1542 out720
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def kernel (F : Program) := q6First++(F++q6Last)
 def relocated (F : Program) := renameProgram swap q6First++(F++renameProgram swap q6Last)
@@ -19262,22 +19262,22 @@ attribute [local irreducible] kernel relocated
 theorem old_shape (F : Program) : kernel F=Q6FusionPhase.relocated F := by
  simp only [kernel,q6First,q6Last,Q6FusionPhase.relocated]
 
-theorem state_eq_of_frame (hn : (skywalkSharedWires base).Nodup)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p)
-    (a b : State) (m : List Bool) (F : Program)
-    (input : SkywalkArithmeticInput base x Y.val a.basis) (same : Q5FusionPhase.Paired a b)
-    (field_free : base 1542∉wires F)
-    (frame : ∀q,q∉wireBlock base 2056 256 → (run (kernel F) m b).basis q=a.basis q) :
-    run (relocated F) m b=run (kernel F) m b := by
-  have clean (i : Nat) (hi : i=720∨i=1542) : (run (kernel F) m b).basis (base i)=false :=
-    (frame _ (outside_num i hi)).trans (input_clean x Y.val i a input hi)
-  have h:=three_states_eq_paired hn x Y hx0 hx a b
-    (m.take (measurementCount q6First))
-    ((m.drop (measurementCount q6First)).take (measurementCount F))
-    ((m.drop (measurementCount q6First)).drop (measurementCount F)) F input same field_free
-    (by simpa only [kernel,run_append] using clean 1542 (Or.inr rfl))
-    (by simpa only [kernel,run_append] using clean 720 (Or.inl rfl))
-  simpa only [kernel,relocated,run_append,(renameProgram_counts swap q6First).2] using h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -19358,13 +19358,13 @@ def logicalReplayS (divide : Bool) : Program :=
 
 def replayS (divide : Bool) : Program := renameProgram (OB5.sig 511) (logicalReplayS divide)
 
-def segmentS (divide : Bool) : Program :=
-  if divide then OwnQ5Endpoint.centerT++(replayS true++(HalfFieldOB5.copyN++OwnQ5Endpoint.canonT))
-  else OwnQ5Endpoint.centerT++(HalfFieldOB5.copyN++(replayS false++OwnQ5Endpoint.canonT))
 
-/-- The selector-hosted segment (`KernelOB5.segH`) around the selector-free segment. -/
-def segHS (divide : Bool) : Program :=
-  [.X (base 511)] ++ (renameProgram HostOB5.hostSwap (segmentS divide) ++ [.X (base 511)])
+
+
+
+
+
+
 
                                         
                                                                               
@@ -19654,238 +19654,238 @@ theorem field_support : wires field5⊆OB5Support.segSites := by
 theorem field_free : base 511∉wires field5 ∧ base 1542∉wires field5 :=
   ⟨fun h=>OB5Support.seg_host_free.1 (field_support h),fun h=>OB5Support.seg_host_free.2 (field_support h)⟩
 
-theorem field5_unhosted_state
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State)
-    (m1 m2 m3 m4 : List Bool)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base)) (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2))
-    (v1 v2 v3 v4 : State)
-    (h1 : run (NativeFirstDirect.forward base) m1 t=v1)
-    (h2 : run (stackForwardT) m2 v1=v2)
-    (h3 : run (skywalkArithmeticClear base) m3 v2=v3)
-    (h4 : run field5 m4 v3=v4) :
-    let a1 := run (NativeFirstDirect.forward base) m1 s
-    let a2 := run (stackForwardT) m2 a1
-    let a3 := run (skywalkArithmeticClear base) m3 a2
-    run (SegmentOB5.program true)
-      (List.replicate (measurementCount OwnQ5Endpoint.centerT) false++m4) a3=v4 := by
-  let a1 := run (NativeFirstDirect.forward base) m1 s
-  let a2 := run (stackForwardT) m2 a1
-  let a3 := run (skywalkArithmeticClear base) m3 a2
-  have paired := pool_three (NativeFirstDirect.forward base) (stackForwardT)
-    (skywalkArithmeticClear base) first_pool5 forward_pool5 clear_pool5 s t m1 m2 m3
-    phase.symm (fun q hq => (same q hq).symm) v1 v2 v3 h1 h2 h3
-  change a3.phase=v3.phase ∧
-    (∀q,q∉wireBlock base 2056 256 → a3.basis q=v3.basis q) ∧
-    (∀q,q∈wireBlock base 2056 256 → v3.basis q=t.basis q) at paired
-  have target : regValue (wireBlock base 2056 256) v3.basis=centerWord (Y/2) := by
-    exact (regValue_congr _ _ _ paired.2.2).trans value
-  have first := NativeFirstDirect.caller_first_stage base hn x Y.val hx0 hx s m1 hin
-  change CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 a1.basis at first
-  let t2 := run (compactForward5 base 1 511) m2 a1
-  let t3 := run (skywalkArithmeticClear base) m3 t2
-  obtain ⟨hp0,hpo,hpp,cop⟩ := OB5.prime_facts x hx0 hx
-  have pool := skywalkShared_integer_nodup base hn
-  have firstW := (W.compactSkywalkStage_one base _ a1.basis).mpr first
-  have hpGap : p+2^32 ≤ 2^256 := by norm_num [p]
-  have wEq : run (Stack5.forward5 base 1 511) m2 a1=t2 :=
-    Stack5.forward_old_eq base pool hlo x p hp0 hx0 hpo hpp hpGap hx cop a1 m2 m2 first
-  have e2 : a2=pullState (OB5.sig 511) t2 := by
-    change run stackForwardT m2 a1 = _
-    rw [stackForwardT_run hn hlo x hx0 hx a1 m2 firstW]
-    have fwd := StackOB5.forward_run x hx0 hx a1 m2 firstW
-    rw [wEq] at fwd
-    exact fwd
-  have e3 : a3=pullState (OB5.sig 511) t3 := by
-    change run (skywalkArithmeticClear base) m3 a2=_
-    rw [e2,KernelOB5.clear_placed]
-  obtain ⟨origin,facts,legal,_,_,entry⟩ := Kernel5.preparation_facts5 hn hlo ho x Y hx0 hx s
-    m1 m2 m3 hin a1 t2 t3 rfl rfl rfl first
-  have hpPool : base 2409∉skywalkPoolWires base := by
-    intro bad
-    exact ho _ (by simp) (arith_block_subset_shared base 0 1798 (by omega) bad)
-  have placedInput : FieldFrameOB5.EncodedCanonicalFrame origin.basis Y 0 a3 := by
-    change EncodedCanonicalFrame5 origin.basis Y 0 (pullState (OB5.sig 511) a3)
-    rw [e3,OB5.pull_invol 511 (by decide)]
-    exact entry
-  have centerEq := center5_compare hn hpPool origin.basis facts.env legal facts.targetHigh
-    facts.sourceHigh facts.sourceZero Y a3 v3 placedInput paired.1 paired.2.1 target
-    ((List.replicate (measurementCount OwnQ5Endpoint.centerT) false++m4).take
-      (measurementCount OwnQ5Endpoint.centerT))
-  let dummy := List.replicate (measurementCount OwnQ5Endpoint.centerT) false
-  have hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base := by
-    intro q hq bad
-    exact ho q hq (arith_block_subset_shared base 0 1798 (by omega) bad)
-  have hg : origin.basis (base 2409)=false := (facts.controls _ (by simp)).trans hg0
-  have hs : origin.basis (base 2410)=false := (facts.controls _ (by simp)).trans hs0
-  have oldReplacement:=Q6EndpointSegment.program_state_eq true hn ho hp hf origin.basis hg hs facts.env legal
-    facts.targetHigh facts.sourceZero x hx0 hx facts.trace Y a3 (dummy++m4) placedInput
-  have newReplacement:=OneFlagSegment.program_state_eq true hn ho hp hf origin.basis hg hs facts.env legal
-    facts.targetHigh facts.sourceZero x hx0 hx facts.trace Y a3 (dummy++m4) placedInput
-  have replacement := newReplacement.trans oldReplacement
-  change run (SegmentOB5.program true) (dummy++m4) a3=v4
-  rw [←replacement]
-  have shape : OneFlagSegment.program true=OwnQ5Endpoint.centerT++field5 := by
-    simp only [OneFlagSegment.program,field5,if_true]
-  change run (OneFlagSegment.program true) (dummy++m4) a3=v4
-  rw [shape,run_append]
-  have drop : (dummy++m4).drop (measurementCount OwnQ5Endpoint.centerT)=m4 := by simp [dummy]
-  rw [drop,centerEq]
-  exact h4
 
-theorem kernel5_field_state
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State)
-    (m1 m2 m3 m4 : List Bool) (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2))
-    (v1 v2 v3 v4 : State)
-    (h1 : run (NativeFirstDirect.forward base) m1 t=v1)
-    (h2 : run (stackForwardT) m2 v1=v2)
-    (h3 : run (skywalkArithmeticClear base) m3 v2=v3)
-    (h4 : run hostField5 m4 v3=v4) :
-    let a1 := run (NativeFirstDirect.forward base) m1 s
-    let a2 := run (stackForwardT) m2 a1
-    let a3 := run (skywalkArithmeticClear base) m3 a2
-    run (KernelOB5.segH true)
-      (List.replicate (measurementCount OwnQ5Endpoint.centerT) false++m4) a3=v4 := by
-  let a1 := run (NativeFirstDirect.forward base) m1 s
-  let a2 := run (stackForwardT) m2 a1
-  let a3 := run (skywalkArithmeticClear base) m3 a2
-  let dummy := List.replicate (measurementCount OwnQ5Endpoint.centerT) false
-  let oldRecords := dummy++m4
-  let v4' := run field5 m4 v3
-  have unEq := field5_unhosted_state hn hlo ho x Y hx0 hx s t m1 m2 m3 m4 hg0 hs0 hf hin
-    phase same value v1 v2 v3 v4' h1 h2 h3 rfl
-  change run (SegmentOB5.program true) oldRecords a3=v4' at unEq
-  have paired := pool_three (NativeFirstDirect.forward base) (stackForwardT)
-    (skywalkArithmeticClear base) first_pool5 forward_pool5 clear_pool5 s t m1 m2 m3
-    phase.symm (fun q hq => (same q hq).symm) v1 v2 v3 h1 h2 h3
-  change a3.phase=v3.phase ∧
-    (∀q,q∉wireBlock base 2056 256 → a3.basis q=v3.basis q) ∧
-    (∀q,q∈wireBlock base 2056 256 → v3.basis q=t.basis q) at paired
-  have first := NativeFirstDirect.caller_first_stage base hn x Y.val hx0 hx s m1 hin
-  change CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 1 a1.basis at first
-  let t2 := run (compactForward5 base 1 511) m2 a1
-  let t3 := run (skywalkArithmeticClear base) m3 t2
-  obtain ⟨hp0,hpo,hpp,cop⟩ := OB5.prime_facts x hx0 hx
-  have pool := skywalkShared_integer_nodup base hn
-  have firstW := (W.compactSkywalkStage_one base _ a1.basis).mpr first
-  have hpGap : p+2^32 ≤ 2^256 := by norm_num [p]
-  have wEq : run (Stack5.forward5 base 1 511) m2 a1=t2 :=
-    Stack5.forward_old_eq base pool hlo x p hp0 hx0 hpo hpp hpGap hx cop a1 m2 m2 first
-  have e2 : a2=pullState (OB5.sig 511) t2 := by
-    change run stackForwardT m2 a1 = _
-    rw [stackForwardT_run hn hlo x hx0 hx a1 m2 firstW]
-    have fwd := StackOB5.forward_run x hx0 hx a1 m2 firstW
-    rw [wEq] at fwd
-    exact fwd
-  have e3 : a3=pullState (OB5.sig 511) t3 := by
-    change run (skywalkArithmeticClear base) m3 a2=_
-    rw [e2,KernelOB5.clear_placed]
-  obtain ⟨origin,facts,legal,_,encEq,entry⟩ := Kernel5.preparation_facts5 hn hlo ho x Y hx0 hx s
-    m1 m2 m3 hin a1 t2 t3 rfl rfl rfl first
-  have hp : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkPoolWires base := by
-    intro q hq bad
-    exact ho q hq (arith_block_subset_shared base 0 1798 (by omega) bad)
-  have hg : origin.basis (base 2409)=false := (facts.controls _ (by simp)).trans hg0
-  have hs : origin.basis (base 2410)=false := (facts.controls _ (by simp)).trans hs0
-  have placedInput : FieldFrameOB5.EncodedCanonicalFrame origin.basis Y 0 a3 := by
-    change EncodedCanonicalFrame5 origin.basis Y 0 (pullState (OB5.sig 511) a3)
-    rw [e3,OB5.pull_invol 511 (by decide)]
-    exact entry
-  have fresh := SegmentOB5.program_spec true hn ho hp hf origin.basis hg hs facts.env legal
-    facts.targetHigh facts.sourceZero x hx0 hx facts.trace Y a3 oldRecords placedInput
-  have inS := encoded_selectors5 hn hp origin.basis hg hs facts.sourceZero Y a3 placedInput
-  have outS := encoded_selectors5 hn hp origin.basis hg hs facts.sourceZero _ _ fresh.2
-  have hostBits := encoded_host_bits5 x hx0 hx origin t3 a3 facts.trace encEq e3
-  have in2409 : a3.basis (base 2409)=false := inS.1
-  have in2410 : a3.basis (base 2410)=false := inS.2
-  have in511 : a3.basis (base 511)=true := hostBits.1
-  have in1542 : a3.basis (base 1542)=false := hostBits.2
-  have out2409 : (run (SegmentOB5.program true) oldRecords a3).basis (base 2409)=false := outS.1
-  have out2410 : (run (SegmentOB5.program true) oldRecords a3).basis (base 2410)=false := outS.2
-  have away (i : Nat) (hi : i < 2056 ∨ 2312 ≤ i) : base i∉wireBlock base 2056 256 := by
-    intro mem
-    obtain ⟨j,hj,eq⟩ := List.mem_map.mp mem
-    simp only [List.mem_range'_1] at hj
-    have e := base_injective eq
-    omega
-  have inT (i : Nat) (hi : i < 2056 ∨ 2312 ≤ i) : v3.basis (base i)=a3.basis (base i) :=
-    (paired.2.1 _ (away i hi)).symm
-  have freeP := KernelOB5.seg_free true
-  have freeQ511 : base 511∉wires field5 := field_free.1
-  have freeQ1542 : base 1542∉wires field5 := field_free.2
-  have hosted := hosted_pair5 (SegmentOB5.program true) field5 a3 v3 oldRecords m4
-    freeP.1 freeP.2 freeQ511 freeQ1542 in2409 in511 in2410 in1542
-    ((inT 2409 (by omega)).trans in2409) ((inT 511 (by omega)).trans in511)
-    ((inT 2410 (by omega)).trans in2410) ((inT 1542 (by omega)).trans in1542)
-    out2409 out2410 unEq
-  change run (KernelOB5.segH true) oldRecords a3=v4
-  rw [show KernelOB5.segH true=[.X (base 511)]++
-    (renameProgram HostOB5.hostSwap (SegmentOB5.program true)++[.X (base 511)]) from rfl,hosted]
-  simpa only [hostField5] using h4
 
-theorem kernel5_states
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State)
-    (m1 m2 m3 m4 m5 m6 m7 : List Bool) (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2))
-    (v1 v2 v3 v4 v5 v6 v7 : State)
-    (h1 : run (NativeFirstDirect.forward base) m1 t=v1)
-    (h2 : run (stackForwardT) m2 v1=v2)
-    (h3 : run (skywalkArithmeticClear base) m3 v2=v3)
-    (h4 : run hostField5 m4 v3=v4)
-    (h5 : run (skywalkArithmeticClear base) m5 v4=v5)
-    (h6 : run (stackReverseT) m6 v5=v6)
-    (h7 : run (NativeFirstKnown.inverse base) m7 v6=v7) :
-    DirectSkywalkArithmeticStrong true base (base 2400) x Y s v7 := by
-  let a1 := run (NativeFirstDirect.forward base) m1 s
-  let a2 := run (stackForwardT) m2 a1
-  let a3 := run (skywalkArithmeticClear base) m3 a2
-  have old4 := kernel5_field_state hn hlo ho hf x Y hx0 hx s t m1 m2 m3 m4 hin hg0 hs0
-    phase same value v1 v2 v3 v4 h1 h2 h3 h4
-  exact KernelOB5.program_states true hn hlo ho hf x Y hx0 hx s
-    m1 m2 m3 (List.replicate (measurementCount OwnQ5Endpoint.centerT) false++m4) m5 m6 m7
-    hin hg0 hs0 a1 a2 a3 v4 v5 v6 v7 rfl rfl rfl old4 h5 h6 h7
 
-theorem kernel5_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    DirectSkywalkArithmeticStrong true base (base 2400) x Y s (run kernel5 m t) := by
-  let P : State → State → Prop := fun initial out =>
-    initial.phase=s.phase →
-    (∀q,q∉wireBlock base 2056 256 → initial.basis q=s.basis q) →
-    regValue (wireBlock base 2056 256) initial.basis=centerWord (Y/2) →
-    DirectSkywalkArithmeticStrong true base (base 2400) x Y s out
-  have all := skywalkRunSeven (NativeFirstDirect.forward base) (stackForwardT)
-    (skywalkArithmeticClear base) hostField5 (skywalkArithmeticClear base)
-    (stackReverseT) (NativeFirstKnown.inverse base) P (by
-      intro initial v1 v2 v3 v4 v5 v6 v7 m1 m2 m3 m4 m5 m6 m7 h1 h2 h3 h4 h5 h6 h7 hp hs hv
-      exact kernel5_states hn hlo ho hf x Y hx0 hx s initial m1 m2 m3 m4 m5 m6 m7
-        hin hg0 hs0 hp hs hv v1 v2 v3 v4 v5 v6 v7 h1 h2 h3 h4 h5 h6 h7) t m
-  simpa only [kernel5,List.append_assoc] using all phase same value
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.OneFlagEntryRaw
 
@@ -19921,99 +19921,99 @@ theorem selHostField5 : SW.Sel (base 2400) 1020 hostField5S hostField5 := by
     (r.append (SW.Sel.refl _ _ SW.selX511_away))
   simpa only [hostField5S,hostField5,Nat.zero_add,Nat.add_zero] using h
 
-theorem selKernel5 : SW.Sel (base 2400) 1020 kernel5S kernel5 := by
-  have native := NativeFirstDirect.prefix_support base
-  have known := NativeFirstKnown.inverse_support base
-  have fw : base 2400∉wires (NativeFirstDirect.forward base) := fun h => SW.selPrefix_away (native.1 h)
-  have iv : base 2400∉wires (NativeFirstKnown.inverse base) := fun h => SW.selPrefix_away (known h)
-  have ints := SW.selInt_away
-  have h := ((((((SW.Sel.refl _ _ fw).append (SW.Sel.refl _ _ ints.1)).append
-    (SW.Sel.refl _ _ SW.selClear_away)).append selHostField5).append
-    (SW.Sel.refl _ _ SW.selClear_away)).append (SW.Sel.refl _ _ ints.2)).append (SW.Sel.refl _ _ iv)
-  simpa only [kernel5S,kernel5,Nat.zero_add,Nat.add_zero] using h
+
+
+
+
+
+
+
+
+
+
 
 
 attribute [local irreducible] kernel5S
-def forceControl5 (s : State) : State := ⟨s.phase,writeBit s.basis (base 2400) true⟩
 
-theorem forceControl5_keep (s : State) (q : Wire) (hq : q≠base 2400) :
-    (forceControl5 s).basis q=s.basis q := by simp [forceControl5,writeBit,Function.update_of_ne hq]
 
-theorem forceControl5_true (s : State) : (forceControl5 s).basis (base 2400)=true := by
-  simp [forceControl5,writeBit]
 
-/-- The shortened selector-free division receives a half-centered numerator. -/
-theorem kernel5S_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    let out := run kernel5S m t
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(skywalkArithmeticResult true x Y).val ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  let a := forceControl5 s
-  let b := forceControl5 t
-  have shared : base 2400∉skywalkSharedWires base := ho _ (by simp)
-  have divAway : base 2400∉wireBlock base 770 256 := fun h =>
-    shared (arith_block_subset_shared base 770 256 (by omega) h)
-  have numAway : base 2400∉wireBlock base 2056 256 := fun h =>
-    shared (arith_block_subset_shared base 2056 256 (by omega) h)
-  have input : SkywalkArithmeticInput base x Y.val a.basis := by
-    refine ⟨?_,?_,?_⟩
-    · change regValue (wireBlock base 770 256) a.basis=x
-      apply (regValue_congr _ _ _ ?_).trans hin.1
-      intro q hq
-      exact forceControl5_keep s q (fun e => divAway (e ▸ hq))
-    · change regValue (wireBlock base 2056 256) a.basis=Y.val
-      apply (regValue_congr _ _ _ ?_).trans hin.2.1
-      intro q hq
-      exact forceControl5_keep s q (fun e => numAway (e ▸ hq))
-    · intro q hq hdx hdy
-      rw [forceControl5_keep s q (fun e => shared (e ▸ hq))]
-      exact hin.2.2 q hq hdx hdy
-  have hg : a.basis (base 2409)=false :=
-    (forceControl5_keep s _ (by simp [base])).trans hg0
-  have hs : a.basis (base 2410)=false :=
-    (forceControl5_keep s _ (by simp [base])).trans hs0
-  have ab : a.basis (base 2400)=true := forceControl5_true s
-  have bb : b.basis (base 2400)=true := forceControl5_true t
-  have phases : b.phase=a.phase := phase
-  have paired (q : Wire) (hq : q∉wireBlock base 2056 256) : b.basis q=a.basis q := by
-    by_cases e : q=base 2400
-    · subst q; rw [forceControl5_true,forceControl5_true]
-    · rw [forceControl5_keep t q e,forceControl5_keep s q e]
-      exact same q hq
-  have half : regValue (wireBlock base 2056 256) b.basis=centerWord (Y/2) := by
-    apply (regValue_congr _ _ _ ?_).trans value
-    intro q hq
-    exact forceControl5_keep t q (fun e => numAway (e ▸ hq))
-  have strong := kernel5_correct hn hlo ho hf x Y hx0 hx a b m input hg hs phases paired half
-  obtain ⟨equiv,_⟩ := selKernel5.eq m b bb
-  unfold DirectSkywalkArithmeticStrong at strong
-  rw [ab,←equiv] at strong
-  simp only [directSkywalkResult,if_true] at strong
-  have agree := pool_run_agrees kernel5S (wires kernel5S) (Finset.Subset.refl _) m t b rfl
-    (fun q hq => (forceControl5_keep t q (fun e => selKernel5.away (e ▸ hq))).symm)
-  have sameRun (q : Wire) (hq : q≠base 2400) :
-      (run kernel5S m t).basis q=(run kernel5S m b).basis q := by
-    by_cases used : q∈wires kernel5S
-    · exact agree.2 q used
-    · rw [run_preserves_outside _ m t q used,run_preserves_outside _ m b q used]
-      exact (forceControl5_keep t q hq).symm
-  refine ⟨agree.1.trans strong.1,?_,?_⟩
-  · apply (regValue_congr _ _ _ ?_).trans strong.2.1
-    intro q hq
-    exact sameRun q (fun e => numAway (e ▸ hq))
-  · intro q hq
-    by_cases e : q=base 2400
-    · subst q
-      exact (run_preserves_outside _ m t _ selKernel5.away).trans (same _ numAway)
-    · exact (sameRun q e).trans ((strong.2.2 q hq).trans (forceControl5_keep s q e))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.OneFlagEntryRaw
@@ -20061,55 +20061,55 @@ def kernel5 : Program:=Q5FusionPhase.relocated hostField5
 def kernel5S : Program:=Q5FusionPhase.relocated hostField5S
 attribute [local irreducible] kernel5 kernel5S
 
-theorem hostField5_free : base 1026∉wires hostField5 := by
- exact fun used=>EndpointEntryQ5.hostField5_free (OneFlagEntrySupport.host_subset used)
-theorem hostField5S_free : base 1026∉wires hostField5S := by
- exact fun used=>EndpointEntryQ5.hostField5_free (OneFlagEntrySupport.hostS_subset used)
+
+
+
+
 theorem old_shape : Q5FusionPhase.kernel hostField5=OneFlagEntryRaw.kernel5 := by
  simp only [Q5FusionPhase.kernel,firstPhase,lastPhase,OneFlagEntryRaw.kernel5,List.append_assoc]
-theorem old_shapeS : Q5FusionPhase.kernel hostField5S=OneFlagEntryRaw.kernel5S := by
- simp only [Q5FusionPhase.kernel,firstPhase,lastPhase,OneFlagEntryRaw.kernel5S,List.append_assoc]
-theorem kernel5_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    DirectSkywalkArithmeticStrong true base (base 2400) x Y s (run kernel5 m t) := by
-  have old := OneFlagEntryRaw.kernel5_correct hn hlo ho hf x Y hx0 hx s t m hin hg0 hs0 phase same value
-  have contract : DirectSkywalkArithmeticStrong true base (base 2400) x Y s
-      (run (Q5FusionPhase.kernel hostField5) m t) := by
-    simpa only [old_shape] using old
-  have eq := Q5FusionPhase.state_eq_of_contract hn x Y hx0 hx s t m hostField5 true
-    hin same hostField5_free contract
-  rw [kernel5,eq]
-  exact contract
 
-theorem kernel5S_correct
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    let out := run kernel5S m t
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(skywalkArithmeticResult true x Y).val ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  have old := OneFlagEntryRaw.kernel5S_correct hn hlo ho hf x Y hx0 hx s t m hin hg0 hs0 phase same value
-  have frame : ∀q,q∉wireBlock base 2056 256 →
-      (run (Q5FusionPhase.kernel hostField5S) m t).basis q=s.basis q := by
-    simpa only [old_shapeS] using old.2.2
-  have eq := Q5FusionPhase.state_eq_of_frame hn x Y hx0 hx s t m hostField5S
-    hin same hostField5S_free frame
-  simp only [kernel5S,eq,old_shapeS]
-  exact old
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.OneFlagEntryQ5
@@ -20127,18 +20127,16 @@ def kernel5 : Program:=Q6FusionPhase.relocated OneFlagEntryRaw.hostField5
 def kernel5S : Program:=Q6FusionPhase.relocated OneFlagEntryRaw.hostField5S
 attribute [local irreducible] kernel5 kernel5S
 
-theorem hostField5_free1541 : base 1541∉wires OneFlagEntryRaw.hostField5 := by
- exact fun used=>OwnEndpointEntryQ6.hostField5_free1541 (OneFlagEntrySupport.host_subset used)
-theorem hostField5S_free1541 : base 1541∉wires OneFlagEntryRaw.hostField5S := by
- exact fun used=>OwnEndpointEntryQ6.hostField5_free1541 (OneFlagEntrySupport.hostS_subset used)
+
+
+
+
 
 theorem outer_shape (F : Program) : Q6FusionPhase.kernel F=Q5FusionPhase.relocated F := by
  simp only [Q6FusionPhase.kernel,Q5FusionPhase.relocated,Q6IntegerHost.q5First,Q6IntegerHost.q5Last,
    Q6IntegerHost.firstPhase,Q6IntegerHost.lastPhase,Q5Global718.firstPhase,Q5Global718.lastPhase]
 
 
-theorem old_shape_kernel5S : Q6FusionPhase.kernel OneFlagEntryRaw.hostField5S=OneFlagEntryQ5.kernel5S := by
- simpa only [OneFlagEntryQ5.kernel5S] using outer_shape OneFlagEntryRaw.hostField5S
 
 
 
@@ -20155,24 +20153,26 @@ theorem old_shape_kernel5S : Q6FusionPhase.kernel OneFlagEntryRaw.hostField5S=On
 
 
 
-theorem kernel5S_correct     (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    let out := run kernel5S m t
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(skywalkArithmeticResult true x Y).val ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  have old:=OneFlagEntryQ5.kernel5S_correct hn hlo ho hf x Y hx0 hx s t m hin hg0 hs0 phase same value
-  have frame : ∀q,q∉wireBlock base 2056 256 →
-      (run (Q6FusionPhase.kernel OneFlagEntryRaw.hostField5S) m t).basis q=s.basis q := by
-    simpa only [old_shape_kernel5S] using old.2.2
-  have eq:=Q6FusionPhase.state_eq_of_frame hn x Y hx0 hx s t m OneFlagEntryRaw.hostField5S hin same hostField5S_free1541 frame
-  simpa only [kernel5S,eq,old_shape_kernel5S] using old
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.OneFlagEntryQ6
 
@@ -20189,14 +20189,6 @@ def kernel5 : Program:=Q7FusionPhase.relocated OneFlagEntryRaw.hostField5
 def kernel5S : Program:=Q7FusionPhase.relocated OneFlagEntryRaw.hostField5S
 attribute [local irreducible] kernel5 kernel5S
 
-theorem hostField5_free1542 : base 1542∉wires OneFlagEntryRaw.hostField5 := OneFlagEntrySupport.host1542_free
-theorem hostField5S_free1542 : base 1542∉wires OneFlagEntryRaw.hostField5S := OneFlagEntrySupport.hostS1542_free
-
-theorem outer_shape (F : Program) : Q7FusionPhase.kernel F=Q6FusionPhase.relocated F := Q7FusionPhase.old_shape F
-
-
-theorem old_shape_kernel5S : Q7FusionPhase.kernel OneFlagEntryRaw.hostField5S=OneFlagEntryQ6.kernel5S := by
- simpa only [OneFlagEntryQ6.kernel5S] using outer_shape OneFlagEntryRaw.hostField5S
 
 
 
@@ -20213,24 +20205,32 @@ theorem old_shape_kernel5S : Q7FusionPhase.kernel OneFlagEntryRaw.hostField5S=On
 
 
 
-theorem kernel5S_correct     (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0<x) (hx : x<p) (s t : State) (m : List Bool)
-    (hin : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false)
-    (phase : t.phase=s.phase)
-    (same : ∀q,q∉wireBlock base 2056 256 → t.basis q=s.basis q)
-    (value : regValue (wireBlock base 2056 256) t.basis=centerWord (Y/2)) :
-    let out := run kernel5S m t
-    out.phase=s.phase ∧ regValue (wireBlock base 2056 256) out.basis=(skywalkArithmeticResult true x Y).val ∧
-      ∀q,q∉wireBlock base 2056 256 → out.basis q=s.basis q := by
-  have old:=OneFlagEntryQ6.kernel5S_correct hn hlo ho hf x Y hx0 hx s t m hin hg0 hs0 phase same value
-  have frame : ∀q,q∉wireBlock base 2056 256 →
-      (run (Q7FusionPhase.kernel OneFlagEntryRaw.hostField5S) m t).basis q=s.basis q := by
-    simpa only [old_shape_kernel5S] using old.2.2
-  have eq:=Q7FusionPhase.state_eq_of_frame hn x Y hx0 hx s t m OneFlagEntryRaw.hostField5S hin same hostField5S_free1542 frame
-  simpa only [kernel5S,eq,old_shape_kernel5S] using old
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.OwnOneFlagEntryQ7
 
@@ -20286,48 +20286,48 @@ theorem host_support (P : Program) (hp:wires P⊆OB5Support.segSites) : wires ([
       omega
   · rw [x q h]; exact m511
 
-theorem raw_support : wires OneFlagEntryRaw.kernel5⊆OB5Support.logicalSites := by
- have first:=(NativeFirstDirect.prefix_support base).1.trans OB5Support.prefixSites_sub_logical
- have f:=stackForwardT_subset.trans (StackOB5.forward_support.trans OB5Support.integer_sub_logical)
- have c:=OB5Support.clear_support_logical
- have b:=host_support OneFlagEntryRaw.field5 OneFlagEntryRaw.field_support
- have r:=stackReverseT_subset.trans (StackOB5.reverse_support.trans OB5Support.integer_sub_logical)
- have last:=(NativeFirstKnown.inverse_support base).trans OB5Support.prefixSites_sub_logical
- simp only [OneFlagEntryRaw.kernel5,wires_append,Finset.union_subset_iff,and_assoc]
- exact ⟨first,f,c,b,c,r,last⟩
 
-theorem q5support (F : Program) (old:wires (Q5FusionPhase.kernel F)⊆OB5Support.logicalSites) :
- wires (Q5FusionPhase.relocated F)⊆OB5Support.logicalSites := by
- simp only [Q5FusionPhase.kernel,wires_append,Finset.union_subset_iff] at old
- simp only [Q5FusionPhase.relocated,wires_append,Finset.union_subset_iff]
- exact ⟨OwnQ5Integer.rename_support _ old.1,old.2.1,OwnQ5Integer.rename_support _ old.2.2⟩
-theorem swap_logical (q : Wire) (hq : q∈OB5Support.logicalSites) : swap q∈OB5Support.logicalSites := by
-  have member (i : Nat) (hi : i=719∨i=1541) : base i∈OB5Support.logicalSites := by
-    apply List.mem_toFinset.mpr
-    apply List.mem_map.mpr
-    refine ⟨i,?_,rfl⟩
-    simp only [OB5Support.logicalIndices,List.mem_append,List.mem_range'_1,
-      List.mem_cons,List.not_mem_nil,or_false]
-    rcases hi with rfl|rfl <;> omega
-  by_cases a:q=base 1541
-  · subst q;simpa only [swap,Equiv.swap_apply_left] using member 719 (Or.inl rfl)
-  · by_cases b:q=base 719
-    · subst q;simpa only [swap,Equiv.swap_apply_right] using member 1541 (Or.inr rfl)
-    · simpa only [swap,Equiv.swap_apply_of_ne_of_ne a b] using hq
 
-theorem rename_support (P : Program) (old : wires P⊆OB5Support.logicalSites) :
-    wires (renameProgram swap P)⊆OB5Support.logicalSites := by
-  rw [renameProgram_support]
-  intro q h
-  obtain ⟨w,hw,rfl⟩:=Finset.mem_image.mp h
-  exact swap_logical w (old hw)
 
-theorem q6support (F : Program) (old : wires (Q5FusionPhase.relocated F)⊆OB5Support.logicalSites) :
-    wires (Q6FusionPhase.relocated F)⊆OB5Support.logicalSites := by
-  rw [←OneFlagEntryQ6.outer_shape] at old
-  simp only [Q6FusionPhase.kernel,wires_append,Finset.union_subset_iff] at old
-  simp only [Q6FusionPhase.relocated,wires_append,Finset.union_subset_iff]
-  exact ⟨rename_support _ old.1,old.2.1,rename_support _ old.2.2⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -20345,10 +20345,10 @@ namespace ECDSAAdd.Entrant.OneFlagEntryQ6
 open Arithmetic MappedCompressed Q6IntegerHost
 attribute [local irreducible] wires
 
-theorem kernel5_support : wires kernel5⊆OB5Support.logicalSites := by
- apply OneFlagEntryGeometry.q6support
- apply OneFlagEntryGeometry.q5support
- simpa only [OneFlagEntryQ5.old_shape] using OneFlagEntryGeometry.raw_support
+
+
+
+
 
 
 
@@ -20381,12 +20381,12 @@ attribute [local irreducible] wires
   intro q h
   obtain ⟨w,hw,rfl⟩:=Finset.mem_image.mp h
   exact swap_logical w (old hw)
- theorem support (F : Program) (old : wires (Q6FusionPhase.relocated F)⊆OB5Support.logicalSites) :
-    wires (Q7FusionPhase.relocated F)⊆OB5Support.logicalSites := by
-  rw [←Q7FusionPhase.old_shape] at old
-  simp only [Q7FusionPhase.kernel,wires_append,Finset.union_subset_iff] at old
-  simp only [Q7FusionPhase.relocated,wires_append,Finset.union_subset_iff]
-  exact ⟨rename_support _ old.1,old.2.1,rename_support _ old.2.2⟩
+ 
+
+
+
+
+
  theorem sel (F G : Program) (h : SW.Sel (base 2400) 1020 G F) :
     SW.Sel (base 2400) 1020 (Q7FusionPhase.relocated G) (Q7FusionPhase.relocated F) := by
   have fix6 : Q6IntegerHost.swap (base 2400)=base 2400 := by decide +kernel
@@ -20406,13 +20406,13 @@ end ECDSAAdd.Entrant.OneFlagEntryGeometryQ7
 namespace ECDSAAdd.Entrant.OwnOneFlagEntryQ7
 open Arithmetic MappedCompressed
 attribute [local irreducible] wires
- theorem kernel5_support : wires kernel5⊆OB5Support.logicalSites := by
-  apply OneFlagEntryGeometryQ7.support
-  exact OneFlagEntryQ6.kernel5_support
+ 
+
+
  theorem selKernel5 : SW.Sel (base 2400) 1020 kernel5S kernel5 :=
   OneFlagEntryGeometryQ7.sel _ _ OneFlagEntryRaw.selHostField5
- theorem kernel5S_support : wires kernel5S⊆OB5Support.logicalSites :=
-  selKernel5.sub.wires_sub.trans kernel5_support
+ 
+
 end ECDSAAdd.Entrant.OwnOneFlagEntryQ7
 
 
@@ -20427,98 +20427,98 @@ open Arithmetic Secp256k1 DirectSkywalk MappedCompressed MappedCompressed.LaneA
   CompressedAllocation CompressedFieldSupport OffsetBorrowedCanonical BalancedField History5
 attribute [local irreducible] run wires
 
-private theorem q7part19_mapped_regS (f : Wire → Wire) (r : List Wire)
-    (logical physical : BasisState) (h : ∀q∈r,logical q=physical (f q)) :
-    regValue r logical=regValue (r.map f) physical := by
-  induction r generalizing logical physical with
-  | nil => rfl
-  | cons a rs ih =>
-    change (if logical a then 1 else 0)+2*regValue rs logical=
-      (if physical (f a) then 1 else 0)+2*regValue (rs.map f) physical
-    rw [h a (by simp),ih logical physical (fun q hq => h q (List.mem_cons_of_mem a hq))]
 
-/-- A renamed replay receives the same pool as a canonical virtual state,
-while its actual numerator has already been half-centered. -/
-theorem kernelTransferS (L : ControlledPointLayout) (f : Wire → Wire) (domain : Finset Wire)
-    (injective : ∀a∈domain,∀b∈domain,f a=f b → a=b)
-    (divisorMap : (wireBlock base 770 256).map f=L.point.x)
-    (numeratorMap : (wireBlock base 2056 256).map f=L.point.y)
-    (controlMap : f (base 2400)=L.core.generic)
-    (sharedWork : ∀q∈skywalkSharedWires base,q∈domain → q∉wireBlock base 770 256 →
-      q∉wireBlock base 2056 256 → f q∈L.dialogPool)
-    (selectorG : f (base 2409)∈L.dialogPool) (selectorS : f (base 2410)∈L.dialogPool)
-    (dxSites : (wireBlock base 770 256).toFinset⊆domain)
-    (dySites : (wireBlock base 2056 256).toFinset⊆domain) (bSite : base 2400∈domain)
-    (sites : wires OwnOneFlagEntryQ7.kernel5S⊆domain)
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (X : Nat) (Y : Fp) (B : Bool) (hX0 : 0<X) (hX : X<p)
-    (s t : State) (m : List Bool) (hb : s.basis L.core.generic=B)
-    (hx : regValue L.point.x s.basis=X) (hy : regValue L.point.y s.basis=Y.val)
-    (clean : regValue L.dialogPool s.basis=0)
-    (phase : t.phase=s.phase) (same : ∀q,q∉L.point.y → t.basis q=s.basis q)
-    (half : regValue L.point.y t.basis=centerWord (Y/2)) :
-    let out := run (renameProgram f OwnOneFlagEntryQ7.kernel5S) m t
-    out.phase=s.phase ∧ regValue L.point.y out.basis=(skywalkArithmeticResult true X Y).val ∧
-      ∀q,q∉L.point.y → out.basis q=s.basis q := by
-  let a := laneLogicalInput domain f s
-  let b := laneLogicalInput domain f t
-  have aBits (q : Wire) (hq : q∈domain) : a.basis q=s.basis (f q) := by
-    simp only [a,laneLogicalInput,if_pos hq]
-  have bBits (q : Wire) (hq : q∈domain) : b.basis q=t.basis (f q) := by
-    simp only [b,laneLogicalInput,if_pos hq]
-  have zero (q : Wire) (hq : f q∈L.dialogPool) : a.basis q=false := by
-    change (if q∈domain then s.basis (f q) else false)=false
-    split
-    · exact (regValue_zero _ _).mp clean _ hq
-    · rfl
-  have input : SkywalkArithmeticInput base X Y.val a.basis := by
-    refine ⟨?_,?_,?_⟩
-    · change regValue (wireBlock base 770 256) a.basis=X
-      rw [q7part19_mapped_regS f _ a.basis s.basis (fun q hq => aBits q (dxSites (List.mem_toFinset.mpr hq))),divisorMap]
-      exact hx
-    · change regValue (wireBlock base 2056 256) a.basis=Y.val
-      rw [q7part19_mapped_regS f _ a.basis s.basis (fun q hq => aBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
-      exact hy
-    · intro q hq hdx hdy
-      by_cases used : q∈domain
-      · exact zero q (sharedWork q hq used hdx hdy)
-      · simp only [a,laneLogicalInput,if_neg used]
-  have outside (q : Wire) (hq : q∈domain) (haway : q∉wireBlock base 2056 256) : f q∉L.point.y := by
-    rw [←numeratorMap]
-    intro bad
-    obtain ⟨r,hr,he⟩ := List.mem_map.mp bad
-    have eq : q=r := injective q hq r (dySites (List.mem_toFinset.mpr hr)) he.symm
-    exact haway (eq ▸ hr)
-  have paired : ∀q,q∉wireBlock base 2056 256 → b.basis q=a.basis q := by
-    intro q hq
-    by_cases used : q∈domain
-    · rw [bBits q used,aBits q used]
-      exact same (f q) (outside q used hq)
-    · simp only [a,b,laneLogicalInput,if_neg used]
-  have halfLogical : regValue (wireBlock base 2056 256) b.basis=centerWord (Y/2) := by
-    rw [q7part19_mapped_regS f _ b.basis t.basis (fun q hq => bBits q (dySites (List.mem_toFinset.mpr hq))),numeratorMap]
-    exact half
-  have phases : b.phase=a.phase := by change t.phase=s.phase; exact phase
-  have strong := OwnOneFlagEntryQ7.kernel5S_correct hn hlo ho hf X Y hX0 hX a b m input
-    (zero _ selectorG) (zero _ selectorS) phases paired halfLogical
-  have transfer := run_rename_pool f domain injective OwnOneFlagEntryQ7.kernel5S sites m b t rfl bBits
-  refine ⟨transfer.1.trans strong.1,?_,?_⟩
-  · rw [←numeratorMap]
-    exact (q7part19_mapped_regS f _ (run OwnOneFlagEntryQ7.kernel5S m b).basis
-      (run (renameProgram f OwnOneFlagEntryQ7.kernel5S) m t).basis
-      (fun q hq => (transfer.2 q (dySites (List.mem_toFinset.mpr hq))).symm)).symm.trans strong.2.1
-  · intro q hq
-    by_cases image : q∈domain.image f
-    · obtain ⟨r,hr,rfl⟩ := Finset.mem_image.mp image
-      have away : r∉skywalkArithmeticNumerator base := by
-        intro mem
-        apply hq
-        rw [←numeratorMap]
-        exact List.mem_map.mpr ⟨r,mem,rfl⟩
-      exact (transfer.2 r hr).trans ((strong.2.2 r away).trans (aBits r hr))
-    · exact (run_rename_pool_outside f domain OwnOneFlagEntryQ7.kernel5S sites m t q image).trans (same q hq)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.OwnOneFlagEntryQ7
@@ -20533,9 +20533,9 @@ open Arithmetic Secp256k1 DirectSkywalk MappedCompressed MappedCompressed.LaneA
 attribute [local irreducible] run wires toffoliCount measurementCount
 def arithEntryS (L : ControlledPointLayout) : Program := renameProgram (wireFn2 L) OwnOneFlagEntryQ7.kernel5S
 
-theorem arithEntryS_support (L : ControlledPointLayout) (hw : L.Widths) :
-    wires (arithEntryS L)⊆(OB5Support.sites L).toFinset :=
-  OB5Support.placed_support_logical L hw _ kernel5S_support
+
+
+
 
 
 
@@ -21060,43 +21060,43 @@ namespace ECDSAAdd.Entrant.OneFlagExitRaw
 open BalancedField History5 DirectSkywalk CompressedFieldSupport CompressedAllocation OffsetBorrowedCanonical
 attribute [local irreducible] run wires History5.allEncode
 
-theorem encoded_field_value (origin : BasisState) (X Y : Fp) (s : State)
-    (frame : EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    regValue (wireBlock base 2056 256) s.basis=centerWord X := by
-  obtain ⟨raw,phase,pair,encoded⟩ := frame
-  have rEq := balancedSharedPorts_r base (base 2409)
-  rw [rEq] at pair
-  apply (regValue_congr _ _ _ ?_).trans pair.1
-  intro q hq
-  rw [encoded]
-  apply run_preserves_outside
-  intro used
-  exact EntryFuse.pool_away q (List.mem_toFinset.mp (HalfField5.encoder_pool_support used)) hq
 
-/-- A centered output and its canonicalized frame agree on every other wire. -/
-theorem field_canonical_pair_logical (hn : (skywalkSharedWires base).Nodup)
-    (origin : BasisState) (hr : origin (base 2312)=false) (hy : origin (base 1026)=false)
-    (H : Fp) (a b : State)
-    (half : EncodedFieldFrame5 base (base 2409) origin H 0 a)
-    (canon : EncodedCanonicalFrame5 origin (2*H) 0 b)
-    (phase : a.phase=b.phase) :
-    ∀q,q∉wireBlock base 2056 256 → a.basis q=b.basis q := by
-  let w : State := ⟨a.phase,fun q => if q∈wireBlock base 2056 256 then a.basis q else b.basis q⟩
-  have value : regValue (wireBlock base 2056 256) w.basis=centerWord H := by
-    apply (regValue_congr _ _ _ ?_).trans (encoded_field_value origin H 0 a half)
-    intro q hq
-    simp only [w,if_pos hq]
-  have same : ∀q,q∉wireBlock base 2056 256 → w.basis q=b.basis q := by
-    intro q hq
-    simp only [w,if_neg hq]
-  have two : (2:Fp)≠0 := by decide
-  have div : 2*H/2=H := by field_simp
-  have framed := EntryFuse.encoded_retarget5 hn origin hr hy (2*H) b w phase same
-    (by simpa only [div] using value) canon
-  rw [div] at framed
-  have eq := EntryFuse.encoded_field_unique5 origin H 0 a w half framed rfl
-  intro q hq
-  exact (congrFun (congrArg State.basis eq) q).trans (same q hq)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -22236,8 +22236,8 @@ namespace ECDSAAdd.Entrant.OwnOneFlagActual
 open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed CompressedPointDialog
  CompressedAllocation CompressedFieldSupport DirectSkywalk BalancedField History5 EntryFuse EntryFuseFinite
 attribute [local irreducible] wires run toffoliCount measurementCount
- def generic (L : ControlledPointLayout) (cx cy : Fp) : Program:=
-  OneFlagProducer.generic L (OwnOneFlagExitQ7.arithExit L) cx cy
+ 
+
  def gen (L : ControlledPointLayout) (cx cy : Fp) : Program:=
   OneFlagProducer.gen L (OwnOneFlagExitQ7.arithExit L) cx cy
 
@@ -22640,13 +22640,13 @@ theorem run_eq (work host : Wire) (P : Program) (s : State) (m : List Bool)
   have lifted := congrArg (pullState (Equiv.swap work host)) same
   simpa only [pull_swap_invol,program] using lifted
 
-/-- Independent-record correctness is inherited from the original program. -/
-theorem run_eq_independent (work host : Wire) (P : Program) (s : State)
-    (m n : List Bool) (hw : s.basis work=false) (hh : s.basis host=false)
-    (ow : (run P m s).basis work=false) (oh : host∉wires P)
-    (records : run P m s=run P n s) :
-    run (program work host P) m s=run P n s :=
-  (run_eq work host P s m hw hh ow oh).trans records
+
+
+
+
+
+
+
 
 theorem counts (work host : Wire) (P : Program) :
     toffoliCount (program work host P)=toffoliCount P ∧
@@ -26953,13 +26953,13 @@ def logicalReplayS (divide : Bool) : Program :=
 
 def replayS (divide : Bool) : Program := renameProgram (OB5.sig 511) (logicalReplayS divide)
 
-def segmentS (divide : Bool) : Program :=
-  if divide then OwnQ5Endpoint.centerT++(replayS true++(HalfFieldOB5.copyN++OwnQ5Endpoint.canonT))
-  else OwnQ5Endpoint.centerT++(HalfFieldOB5.copyN++(replayS false++OwnQ5Endpoint.canonT))
 
-/-- The selector-hosted segment (`KernelOB5.segH`) around the selector-free segment. -/
-def segHS (divide : Bool) : Program :=
-  [.X (base 511)] ++ (renameProgram HostOB5.hostSwap (segmentS divide) ++ [.X (base 511)])
+
+
+
+
+
+
 
 
 /-! ### Frames -/
@@ -28692,27 +28692,27 @@ theorem restore_run (controls : List Wire) (host : Wire) (initial current : Stat
     List.map_congr_left hc
   rw [setup_run controls host current m hh,hz,same,←hp,Bool.false_xor]
 
-/-- Both record lists are arbitrary and independent. -/
-theorem setup_roundtrip (controls : List Wire) (host : Wire) (s : State)
-    (m n : List Bool) (hh : host∉controls) :
-    run (setup controls host) n (run (setup controls host) m s)=s := by
-  rw [setup_run controls host s m hh]
-  let t : State := ⟨s.phase,writeBit s.basis host
-    (s.basis host ^^ parity (controls.map s.basis))⟩
-  have same : controls.map t.basis=controls.map s.basis := by
-    apply List.map_congr_left
-    intro q hq
-    have qh : q≠host := fun e => hh (e ▸ hq)
-    simp [t,writeBit,qh]
-  change run (setup controls host) n t=s
-  rw [setup_run controls host t n hh,same]
-  apply State.extensionality
-  · rfl
-  · funext q
-    by_cases qh : q=host
-    · subst q
-      simp [t,writeBit,Bool.xor_assoc]
-    · simp [t,writeBit,qh]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem setup_counts (controls : List Wire) (host : Wire) :
     toffoliCount (setup controls host)=0 ∧
@@ -28754,19 +28754,6 @@ def payloadControls (payload : Nat → Wire) : List Wire :=
 theorem payloadControls_length (payload : Nat → Wire) :
     (payloadControls payload).length=816 := by simp [payloadControls]
 
-/-- The packet identities are the local codec's parity theorem. The host
-holds the actual penultimate flag, also after an injective wire placement. -/
-theorem encoded_host_relation (x : Nat) (hx0 : 0<x) (hx : x<ECDSAAdd.p)
-    (payload : Nat → Wire) (host : Wire) (s : State)
-    (hs : s.basis host=rawS x 510)
-    (packets : ∀j,j<102 →
-      xorRange 8 (fun i => s.basis (payload (8*j+i)))=
-        xorRange 5 (fun i => rawS x (5*j+i))) :
-    s.basis host=parity ((payloadControls payload).map s.basis) := by
-  rw [hs]
-  have whole := encoded_payload_parity x hx0 hx (fun i => s.basis (payload i)) packets
-  have list := parity_range 816 (fun i => s.basis (payload i))
-  simpa only [payloadControls,List.map_map,Function.comp_def] using whole.symm.trans list.symm
 
 
 
@@ -28778,20 +28765,33 @@ theorem encoded_host_relation (x : Nat) (hx0 : 0<x) (hx : x<ECDSAAdd.p)
 
 
 
-/-- The field work role returns the host to zero. The restored value is the
-actual raw S510, not a new constant or a clean-input assumption. -/
-theorem encoded_restore_run (x : Nat) (hx0 : 0<x) (hx : x<ECDSAAdd.p)
-    (payload : Nat → Wire) (host : Wire) (initial current : State) (m : List Bool)
-    (hh : host∉payloadControls payload) (hs : initial.basis host=rawS x 510)
-    (packets : ∀j,j<102 →
-      xorRange 8 (fun i => initial.basis (payload (8*j+i)))=
-        xorRange 5 (fun i => rawS x (5*j+i)))
-    (hc : ∀q∈payloadControls payload,current.basis q=initial.basis q)
-    (hz : current.basis host=false) :
-    run (setup (payloadControls payload) host) m current=
-      ⟨current.phase,writeBit current.basis host (rawS x 510)⟩ := by
-  rw [restore_run _ _ initial current m hh
-    (encoded_host_relation x hx0 hx payload host initial hs packets) hc hz,hs]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -28854,13 +28854,13 @@ theorem run_eq (work host : Wire) (P : Program) (s : State) (m : List Bool)
   have lifted := congrArg (pullState (Equiv.swap work host)) same
   simpa only [pull_swap_invol,program] using lifted
 
-/-- Independent-record correctness is inherited from the original program. -/
-theorem run_eq_independent (work host : Wire) (P : Program) (s : State)
-    (m n : List Bool) (hw : s.basis work=false) (hh : s.basis host=false)
-    (ow : (run P m s).basis work=false) (oh : host∉wires P)
-    (records : run P m s=run P n s) :
-    run (program work host P) m s=run P n s :=
-  (run_eq work host P s m hw hh ow oh).trans records
+
+
+
+
+
+
+
 
 theorem counts (work host : Wire) (P : Program) :
     toffoliCount (program work host P)=toffoliCount P ∧
@@ -29537,11 +29537,6 @@ def codeOf (b : BasisState) : Nat :=
                                                      
 abbrev label := MeasuredCodec5.label
 
-private def properBool : Instr → Bool
-  | .X _ => true
-  | .CX c t => decide (c≠t)
-  | .CCX a b t => decide (a≠t ∧ b≠t)
-  | .measureX _ _ _ => false
 
 
 
@@ -29553,15 +29548,6 @@ private def properBool : Instr → Bool
 
 
 
-/-- The same generic phase argument as Framework.FiniteUnitary.run_phase. -/
-private theorem proper_phase (P : Program) (hp : ProperProgram P) (s : State) (m : List Bool) :
-    (run P m s).phase=s.phase := by
-  induction P generalizing s with
-  | nil => rfl
-  | cons i P ih =>
-    have hi := hp i (by simp)
-    have ht : ProperProgram P := fun j hj => hp j (by simp [hj])
-    cases i <;> simp_all [ProperGate,run]
 
 
 
@@ -29571,12 +29557,26 @@ private theorem proper_phase (P : Program) (hp : ProperProgram P) (s : State) (m
 
 
 
-/-- The emitted programs are checked below on every hole-zero word for clean
-holes, the required zero payload bit, measurement-phase safety, and the complete
-inverse round trip. -/
-private def codecPhysicalBool : Instr → Bool
-  | .measureX _ _ _ => true
-  | i => properBool i
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                                                                                                             
             
@@ -31321,28 +31321,28 @@ theorem retired_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
 
 
 
-private theorem values_unique {L : ControlledPointLayout} {X Y : Fp} {G : Bool}
-    {origin a b : BasisState} (ha : PointDialogValues L X Y G origin a)
-    (hb : PointDialogValues L X Y G origin b) : a=b := by
-  funext q
-  by_cases hx : q∈L.point.x
-  · exact (regValue_eq_iff _ _ _).mp (ha.x.trans hb.x.symm) q hx
-  · by_cases hy : q∈L.point.y
-    · exact (regValue_eq_iff _ _ _).mp (ha.y.trans hb.y.symm) q hy
-    · have away : q∉L.point.x++L.point.y := by
-        simpa only [List.mem_append,not_or] using And.intro hx hy
-      exact (ha.rest q away).trans (hb.rest q away).symm
 
-/-- Complete State equality for independent old and new measurement streams. -/
-theorem state_eq (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m mOld : List Bool)
-    (v : PointDialogValues L X Y G origin s.basis) :
-    run (program L) m s=run (Prefix1590Square.program L) mOld s := by
-  have fresh := correct L hw hn X Y G origin s m v
-  have prior := Prefix1590Square.correct L hw hn X Y G origin s mOld v
-  apply State.extensionality
-  · exact fresh.1.trans prior.1.symm
-  · exact values_unique fresh.2 prior.2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem square_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (k : Nat) (hk : k∈[1800,766,765,767,770,1285,1286,769,768,718]) :
@@ -31491,12 +31491,12 @@ def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   All12Generic.gen L (FrontierEntry1591Callers.division entryKernel L)
     (square L) (FrontierEntry1591Callers.exit exitKernel L) cx cy
 
-/-- Complete program, with the protected contract and existing wrapper unchanged. -/
-def program (C : Point) : Program :=
-  match C with
-  | .zero => []
-  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _ =>
-      Edges.wrapper layout C cy (gen layout cx cy)
+
+
+
+
+
+
 
                                                                              
 
@@ -32705,52 +32705,52 @@ theorem encoded_canonical_prefix_codes (hn : (skywalkPoolWires MappedCompressed.
 
 end
 
-private theorem prefix_zero (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
-    (s : State) (m n : List Bool)
-    (codes : s.basis (History5.historyMap w 0 5)=false ∧
-      s.basis (History5.historyMap w 0 9)=false ∧
-      Prefix1590Codec.codeAt (History5.historyMap w 0) s.basis∈Prefix1590Codec.canonicalCodes) :
-    (run (Prefix1590Codec.perm w) m s).phase=s.phase ∧
-      (run (Prefix1590Codec.perm w) m s).basis (History5.historyMap w 0 0)=false ∧
-      (run (Prefix1590Codec.perm w) m s).basis (History5.historyMap w 0 5)=false ∧
-      (run (Prefix1590Codec.perm w) m s).basis (History5.historyMap w 0 9)=false ∧
-      run (Prefix1590Codec.invPerm w) n (run (Prefix1590Codec.perm w) m s)=s := by
-  have holes := Prefix1590Codec.VAt_holes (History5.historyMap w 0)
-    (History5.historyMap_injective w hn 0 (by decide)) s m codes.1 codes.2.1
-  exact ⟨Prefix1590Codec.perm_phase w hn s m codes.1 codes.2.1,
-    Prefix1590Codec.perm_zero w hn s m codes.1 codes.2.1 codes.2.2,
-    holes.1,holes.2,Prefix1590Codec.perm_roundtrip w hn s m n codes.1 codes.2.1⟩
 
-/-- V clears G0 and restores both holes on the actual encoded field frame. -/
-theorem encoded_frame_prefix_zero (w : Nat → Wire) (sign : Wire)
-    (hn : (skywalkSharedWires w).Nodup) (ho : sign∉skywalkPoolWires w)
-    (origin : BasisState) (X Y : Fp) (s : State)
-    (input : NewHistory5.EncodedFieldFrame5 w sign origin X Y s)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape w)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int))) (m n : List Bool) :
-    (run (Prefix1590Codec.perm w) m s).phase=s.phase ∧
-      (run (Prefix1590Codec.perm w) m s).basis (History5.historyMap w 0 0)=false ∧
-      (run (Prefix1590Codec.perm w) m s).basis (History5.historyMap w 0 5)=false ∧
-      (run (Prefix1590Codec.perm w) m s).basis (History5.historyMap w 0 9)=false ∧
-      run (Prefix1590Codec.invPerm w) n (run (Prefix1590Codec.perm w) m s)=s :=
-  prefix_zero w (skywalkShared_integer_nodup w hn) s m n
-    (encoded_frame_prefix_codes w sign hn ho origin X Y s input x hx0 hx trace)
 
-/-- The canonical exit frame has the same V boundary contract. -/
-theorem encoded_canonical_prefix_zero (hn : (skywalkPoolWires MappedCompressed.base).Nodup)
-    (origin : BasisState) (X Y : Fp) (s : State)
-    (input : NewHistory5.EncodedCanonicalFrame5 origin X Y s)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape MappedCompressed.base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int))) (m n : List Bool) :
-    (run (Prefix1590Codec.perm MappedCompressed.base) m s).phase=s.phase ∧
-      (run (Prefix1590Codec.perm MappedCompressed.base) m s).basis (History5.historyMap MappedCompressed.base 0 0)=false ∧
-      (run (Prefix1590Codec.perm MappedCompressed.base) m s).basis (History5.historyMap MappedCompressed.base 0 5)=false ∧
-      (run (Prefix1590Codec.perm MappedCompressed.base) m s).basis (History5.historyMap MappedCompressed.base 0 9)=false ∧
-      run (Prefix1590Codec.invPerm MappedCompressed.base) n (run (Prefix1590Codec.perm MappedCompressed.base) m s)=s :=
-  prefix_zero MappedCompressed.base hn s m n
-    (encoded_canonical_prefix_codes hn origin X Y s input x hx0 hx trace)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.Prefix1590Domain
 end -- original module boundary
@@ -37578,12 +37578,12 @@ theorem prepare_counts (L : Layout) (hw : L.Widths) (J B : Wire) :
   simp only [prepare,toffoliCount_append,measurementCount_append,c.1,c.2,rot.1,rot.2.1,comp.1,comp.2,r]
   norm_num [toffoliCount,measurementCount]
 
-theorem arithmetic_counts (L : Layout) (hw : L.Widths) :
-    toffoliCount (arithmetic L)=255 ∧ measurementCount (arithmetic L)=255 := by
-  have len := BalancedCleanup.widths L.toLayout hw
-  have h := Affine.add_counts (sources L) L.r (L.carry.take 255) (lowY L)
-    (by rw [sources_length,len.2.1]) (by simp [List.length_take,hw.2.2,len.2.1])
-  simpa only [arithmetic,len.2.1] using h
+
+
+
+
+
+
 
                                                                  
                                                                                              
@@ -39169,105 +39169,105 @@ namespace ECDSAAdd.Entrant.FrontierEntry
 open Arithmetic BalancedCircuit BalancedField MappedCompressed Secp256k1 RecordedQuantum
 attribute [local irreducible] run wires joint EntryRetained5.program
 
-def loanPorts1592 : BalancedCircuit.Layout :=
-  { r0:=base 2056,rtail:=wireBlock base 2057 254,rmsb:=base 2311,
-    ylow:=wireBlock base 770 255,ymsb:=base 1025,
-    carry:=wireBlock base 512 253++[base 1540,base 1541,base 1026],
-    sign:=base 2409,parity:=base 768,lower:=base 1797,one:=base 1027,
-    sourceGuard:=base 765,cout:=base 2312,minus:=base 767,plus:=base 766 }
 
-theorem loanPorts1592_widths : loanPorts1592.Widths := by
-  simp [BalancedCircuit.Layout.Widths,BalancedCleanup.Layout.Widths,loanPorts1592,wireBlock]
 
-private theorem not_block (i a n : Nat) (sep : i < a ∨ a + n ≤ i) : base i∉wireBlock base a n := by
-  intro used
-  obtain ⟨k,hk,eq⟩:=List.mem_map.mp used
-  simp only [List.mem_range'_1] at hk
-  have same:=base_injective eq
-  omega
 
-def joint1592 : Program := G0CarryLoan5.program (base 1028) (base 0) (base 1541)
-  (joint loanPorts1592 (base 1028) (base 1))
 
-private theorem joint_support_generic (L : BalancedCircuit.Layout) (hw : L.Widths)
-    (J G : Wire) : wires (joint L J G)⊆
-    (L.r++L.y++L.carry++[L.parity,L.lower,L.one,L.sign,J,G]).toFinset := by
-  let W:=(L.r++L.y++L.carry++[L.parity,L.lower,L.one,L.sign,J,G]).toFinset
-  have x : wires [Instr.X G]⊆W := by
-    intro q used
-    have eq : q=G := by simpa [wires,Instr.wires] using used
-    subst q
-    simp [W]
-  have core : wires (EntryRetained5.program L J G)⊆W := by
-    intro q used
-    have member:=List.mem_toFinset.mp (EntryRetained5.program_support L hw J G used)
-    simp only [List.mem_append] at member
-    simp only [W,List.mem_toFinset,List.mem_append]
-    rcases member with ((r|y)|c)|flags
-    · exact Or.inl (Or.inl (Or.inl r))
-    · exact Or.inl (Or.inl (Or.inr y))
-    · exact Or.inl (Or.inr (List.mem_of_mem_take c))
-    · exact Or.inr flags
-  rw [joint,wires_append,wires_append]
-  exact Finset.union_subset (Finset.union_subset x core) x
 
-private theorem joint_off (i : Nat) (hi : i=0 ∨ i=2410) :
-    base i∉wires (joint loanPorts1592 (base 1028) (base 1)) := by
-  intro used
-  have member:=List.mem_toFinset.mp (joint_support_generic loanPorts1592
-    loanPorts1592_widths (base 1028) (base 1) used)
-  simp only [loanPorts1592,BalancedCleanup.Layout.r,
-    BalancedCleanup.Layout.low,BalancedCleanup.Layout.y,wireBlock,List.mem_append,List.mem_cons,List.not_mem_nil,
-    List.mem_map,List.mem_range'_1,or_false,base_injective.eq_iff] at member
-  rcases hi with rfl|rfl <;> omega
 
-private theorem data_away (i : Nat) (hi : i=0 ∨ i=1028 ∨ i=1541) :
-    base i∉loanPorts1592.r ∧ base i∉loanPorts1592.y := by
-  have one (k : Nat) : wireBlock base k 1=[base k] := by simp [wireBlock,List.range']
-  have r : loanPorts1592.r=wireBlock base 2056 256 := by
-    change [base 2056]++(wireBlock base 2057 254++[base 2311])=wireBlock base 2056 256
-    rw [←one 2311,wireBlock_append,←one 2056,wireBlock_append]
-  have y : loanPorts1592.y=wireBlock base 770 256 := by
-    change wireBlock base 770 255++[base 1025]=wireBlock base 770 256
-    rw [←one 1025,wireBlock_append]
-  rw [r,y]
-  exact ⟨not_block i 2056 256 (by rcases hi with rfl|rfl|rfl <;> omega),
-    not_block i 770 256 (by rcases hi with rfl|rfl|rfl <;> omega)⟩
 
-/-- Both first-trit premises must be discharged from the actual caller trace. -/
-theorem joint1592_eq (origin : BasisState) (env : OffsetBorrowedCanonical.Env base origin)
-    (I V A B : Nat)
-    (legal : (origin (base 0)).toNat+2*(origin (base 1028)).toNat<3)
-    (nonzero : origin (base 0)=true ∨ origin (base 1028)=true)
-    (correct : Triple (PairFrame loanPorts1592.r loanPorts1592.y origin I V)
-      (joint loanPorts1592 (base 1028) (base 1))
-      (PairFrame loanPorts1592.r loanPorts1592.y origin A B))
-    (s : State) (m : List Bool) (input : PairFrame loanPorts1592.r loanPorts1592.y origin I V s.basis) :
-    run joint1592 m s=run (joint loanPorts1592 (base 1028) (base 1)) m s := by
-  have clean : origin (base 1541)=false := by
-    apply (regValue_zero _ _).mp env.1
-    have member : base 1541∈wireBlock base 1540 257 :=
-      List.mem_map.mpr ⟨1541,by simp [List.mem_range'_1],rfl⟩
-    simp only [skywalkSharedField,ModInPlaceLayout.work,ModAddCoreLayout.work,List.mem_append]
-    exact Or.inl (Or.inl (Or.inl (Or.inl member)))
-  exact G0CarryLoan5.pair_frame_eq _ _ origin I V A B _ _ _ _
-    (by intro e; have:=base_injective e; omega)
-    (by intro e; have:=base_injective e; omega)
-    (data_away 1028 (by simp)) (data_away 0 (by simp)) (data_away 1541 (by simp))
-    (joint_off 0 (Or.inl rfl)) clean legal nonzero correct s m input
 
-theorem joint1592_frame (origin : BasisState) (env : OffsetBorrowedCanonical.Env base origin)
-    (I V A B : Nat)
-    (legal : (origin (base 0)).toNat+2*(origin (base 1028)).toNat<3)
-    (nonzero : origin (base 0)=true ∨ origin (base 1028)=true)
-    (correct : Triple (PairFrame loanPorts1592.r loanPorts1592.y origin I V)
-      (joint loanPorts1592 (base 1028) (base 1))
-      (PairFrame loanPorts1592.r loanPorts1592.y origin A B)) :
-    Triple (PairFrame loanPorts1592.r loanPorts1592.y origin I V) joint1592
-      (PairFrame loanPorts1592.r loanPorts1592.y origin A B) := by
-  intro s m input
-  rw [joint1592_eq origin env I V A B legal nonzero correct s m input]
-  exact correct s m input
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -39324,17 +39324,17 @@ set_option maxHeartbeats 400000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.FrontierEntry
 open Arithmetic BalancedCircuit BalancedField MappedCompressed
-abbrev ports : BalancedCircuit.Layout := loanPorts1592
 
 
 
 
-def remainingLetters : List MixedTranscriptLetter := (List.range' 2 3).map tapeLetter
-def firstBody : Program :=
-  joint1592 ++ SW.selW (base 1029) (base 2409) OneFlagSW.swapBody ++
-    OneFlagSW.rawReplayS true remainingLetters
-def baseFirstPacket : Program := History5.decode base 0 ++ firstBody ++ History5.encode base 0
-def firstPacket : Program := renameProgram (shifted (Placement5.pi 0)) baseFirstPacket
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.FrontierEntry
 end -- original module boundary
 
@@ -39486,10 +39486,10 @@ namespace ECDSAAdd.Entrant.FrontierEntry
 open Arithmetic BalancedCircuit BalancedField MappedCompressed CompressedFieldSupport Secp256k1
 attribute [local irreducible] run mixedTranscriptUnitTrace SkywalkTrace.trace SkywalkTrace.next Nat.iterate
 
-/-- Exact caller facts for the first raw G/S pair. -/
-def FirstTrit (origin : BasisState) : Prop :=
-  (origin (base 0)).toNat+2*(origin (base 1028)).toNat<3 ∧
-    (origin (base 0)=true ∨ origin (base 1028)=true)
+
+
+
+
 
 
 
@@ -39505,56 +39505,6 @@ private theorem work_away (L : BalancedCircuit.Layout) (hn : L.wires.Nodup)
     simp only [BalancedCircuit.work,List.count_append,List.count_cons,List.count_nil] at h w
     omega
 
-private theorem joint_pair (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wires.Nodup)
-    (J G : Wire) (hJ : J∉L.wires) (hG : G∉L.wires) (hJG : [J,G].Nodup)
-    (hj : J∉L.r ∧ J∉L.y) (hg : G∉L.r ∧ G∉L.y)
-    (origin : BasisState) (hc : ∀q∈BalancedCircuit.work L,origin q=false)
-    (hs : origin L.sign=false) (Z : Fp) :
-    Triple (PairFrame L.r L.y origin (centerWord Z) 0) (joint L J G)
-      (PairFrame L.r L.y origin
-        (encodeWord 256 (halfResult (signedY (origin J && !origin G) (centerFp Z))))
-        (encodeWord 256 (if origin J then centerFp Z else 0))) := by
-  intro s m h
-  have sign_away : L.sign∉L.r ∧ L.sign∉L.y := by
-    have f := BalancedCircuit.flagAway L hn L.sign (by simp)
-    exact ⟨fun a=>f (by simp only [List.mem_append];tauto),
-      fun a=>f (by simp only [List.mem_append];tauto)⟩
-  have clean : ∀q∈BalancedCircuit.work L,s.basis q=false := by
-    intro q hq
-    have away := work_away L hn q hq
-    exact (h.2.2 q away.1 away.2).trans (hc q hq)
-  have out := joint_frame L hw hn J G hJ hG hJG (origin J) (origin G) (centerFp Z)
-    (centerFp_bounds Z) s m h.1 h.2.1 clean
-    ((h.2.2 _ sign_away.1 sign_away.2).trans hs)
-    (h.2.2 _ hj.1 hj.2) (h.2.2 _ hg.1 hg.2)
-  exact ⟨out.1,out.2.1,out.2.2.1,fun q qr qy=>(out.2.2.2 q qr qy).trans (h.2.2 q qr qy)⟩
-
-private theorem unary_half (b : Bool) (Z : Fp) :
-    halfResult (signedY b (centerFp Z))=centerFp ((if b then -Z else Z)/2) := by
-  have h:=signedY_bounds b (centerFp Z) (centerFp_bounds Z)
-  have q0 : 0≤BalancedField.q := (BalancedField.constants).1.le
-  have bounds : -(2*BalancedField.q)≤signedY b (centerFp Z) ∧
-      signedY b (centerFp Z)≤2*BalancedField.q := by
-    unfold Centered at h
-    omega
-  have hh:=halfResult_center _ bounds
-  cases b <;> simpa only [signedY,Bool.false_eq_true,if_false,if_true,Int.cast_neg,centerFp_cast] using hh
-
-private theorem source_word (b : Bool) (Z : Fp) :
-    encodeWord 256 (if b then centerFp Z else 0)=centerWord (if b then Z else 0) := by
-  cases b
-  · simp only [Bool.false_eq_true,if_false,HalfField.centerWord_zero]
-    rfl
-  · rfl
-
-private theorem enable_frame {k : Nat} {P Q : Program} (h : SW.Sel (base 2400) k P Q)
-    (origin : BasisState) (hb : origin (base 2400)=true)
-    (away : base 2400∉ports.r ∧ base 2400∉ports.y) (I J X Y : Nat)
-    (hq : Triple (PairFrame ports.r ports.y origin I J) Q (PairFrame ports.r ports.y origin X Y)) :
-    Triple (PairFrame ports.r ports.y origin I J) P (PairFrame ports.r ports.y origin X Y) := by
-  intro s m hs
-  rw [(h.eq m s ((hs.2.2 _ away.1 away.2).trans hb)).1]
-  exact hq s m hs
 
 
 
@@ -39564,178 +39514,228 @@ private theorem enable_frame {k : Nat} {P Q : Program} (h : SW.Sel (base 2400) k
 
 
 
-private theorem rest_split : Replay5.restLetters=tapeLetter 1::remainingLetters := by
-  have range : List.range' 1 4=1::List.range' 2 3 := rfl
-  have mapped:=congrArg (fun ns:List Nat=>ns.map tapeLetter) range
-  simpa only [Replay5.restLetters,remainingLetters,List.map_cons] using mapped
-
-private theorem letter_sources (i : Nat) (hi : i<512) :
-    (tapeLetter i).1=(base i,base (1028+i)) :=
-  congrArg Prod.fst (mixedTape_base_getD i hi)
-
-private theorem prefix_append_eq (P Q R : Program) (s : State) (m : List Bool)
-    (equal : ∀a b,run P a s=run Q b s) :
-    run (P++R) m s=run (Q++R)
-      (List.replicate (measurementCount Q) false++m.drop (measurementCount P)) s := by
-  let n:=measurementCount Q
-  have take : (List.replicate n false++m.drop (measurementCount P)).take n=List.replicate n false := by
-    rw [List.take_append_of_le_length (by simpa only [List.length_replicate] using Nat.le_refl n)]
-    simpa only [List.length_replicate] using List.take_length (l:=List.replicate n false)
-  have drop : (List.replicate n false++m.drop (measurementCount P)).drop n=m.drop (measurementCount P) := by
-    simp [List.drop_append,List.length_replicate]
-  rw [run_append,run_append,take,drop,equal]
-
-private theorem raw_cons (l : MixedTranscriptLetter) (ls : List MixedTranscriptLetter) :
-    OneFlagSW.rawReplayS true (l::ls)=OneFlagSW.cellS true l.1.1 l.1.2++OneFlagSW.rawReplayS true ls := rfl
-
-private theorem raw_rest_split : OneFlagSW.rawReplayS true Replay5.restLetters=
-    OneFlagSW.cellS true (base 1) (base 1029)++OneFlagSW.rawReplayS true remainingLetters := by
-  have eq:=congrArg (OneFlagSW.rawReplayS true) rest_split
-  have head:=raw_cons (tapeLetter 1) remainingLetters
-  have g:=congrArg Prod.fst (letter_sources 1 (by decide))
-  have sw:=congrArg Prod.snd (letter_sources 1 (by decide))
-  rw [g,sw] at head
-  exact eq.trans head
-
-/-- Joint initial copy/half, then the unchanged S1 swap and cells2..4. -/
-theorem firstBody_frame (origin : BasisState) (ctx : OneFlagReplay.Context origin)
-    (hb : origin (base 2400)=true) (first : FirstTrit origin) (Z : Fp) :
-    Triple (PairFrame ports.r ports.y origin (centerWord Z) 0) firstBody
-      (PairFrame ports.r ports.y origin
-        (centerWord (Replay5.firstPayload true origin (Z,0)).1)
-        (centerWord (Replay5.firstPayload true origin (Z,0)).2)) := by
-  have layout := balancedSharedTranscriptLayout_direct base (base 2400) _ _ (base 2409) (base 2410)
-    (mixedTape_getD_layout base _ _ _ ctx.hf 1 (by decide)) ctx.ho
-  rw [mixedTape_base_getD 1 (by decide)] at layout
-  have newLayout := Q6EndpointCell.ports_transcript base (base 2400) (base 1) (base 1029)
-    (base 2409) (base 2410) ctx.hn layout (ctx.ho _ (by simp)) (ctx.ho _ (by simp))
-  have hn := newLayout.kernel
-  have hw := newLayout.widths
-  have hJ : base 1028∉ports.wires := by decide
-  have hG : base 1∉ports.wires := by decide
-  have outside (q : Wire) (hq : q∉ports.wires) : q∉ports.r ∧ q∉ports.y := by
-    constructor <;> intro h <;> apply hq
-    · exact EntryRetained5.data_member ports q (by simp [h])
-    · exact EntryRetained5.data_member ports q (by simp [h])
-  have away : base 2400∉ports.r ∧ base 2400∉ports.y := newLayout.outside _ (by simp)
-  have clean := Q6EndpointCell.clean_of_env_work base (base 2409) origin ctx.env ctx.parity
-  have hjoint := joint_pair ports hw hn _ _ hJ hG (by decide) (outside _ hJ) (outside _ hG)
-    origin clean ctx.hg0 Z
-  let J:=origin (base 1028)
-  let G:=origin (base 1)
-  let S:=origin (base 1029)
-  let A:Fp := (if J && !G then -Z else Z)/2
-  let B:Fp := if J then Z else 0
-  have jfOld : Triple (PairFrame ports.r ports.y origin (centerWord Z) 0)
-      (joint ports (base 1028) (base 1)) (PairFrame ports.r ports.y origin (centerWord A) (centerWord B)) := by
-    rw [unary_half,source_word] at hjoint
-    exact hjoint
-  have jf : Triple (PairFrame ports.r ports.y origin (centerWord Z) 0) joint1592
-      (PairFrame ports.r ports.y origin (centerWord A) (centerWord B)) :=
-    joint1592_frame origin ctx.env (centerWord Z) 0 (centerWord A) (centerWord B)
-      first.1 first.2 jfOld
-  have q6Layout:=Q6EndpointCell.ports_transcript base (base 2400) (base 1) (base 1029)
-    (base 2409) (base 2410) ctx.hn layout (ctx.ho _ (by simp)) (ctx.ho _ (by simp))
-  have swap := OneFlagCell.selectSwap_frame base (base 2400) (base 1029) (base 2409)
-    (mixedTranscriptUnitTrace.getD 1 (false,false)).2 OneFlagReplay.base_sign_nd (by decide)
-    (q6Layout.outside _ (by simp)) (q6Layout.outside _ (by simp))
-    (q6Layout.outside _ (by simp [Q6EndpointCell.ports_sign])) origin ctx.hg0 A B
-  have sel := ((SW.Sel.refl (base 2400) OneFlagSW.swapBody OneFlagSW.selSwap_away).window
-    (base 1029) (base 2409) (mixedTranscriptUnitTrace.getD 1 (false,false)).2 (by decide))
-  have sf := enable_frame sel origin hb away (centerWord A) (centerWord B)
-    (centerWord (if S then B else A)) (centerWord (if S then A else B)) (by
-      simpa only [OneFlagCell.selectSwap,OneFlagSW.swapBody,Q6EndpointCell.ports_r,Q6EndpointCell.ports_y,
-        mixedTranscriptBit,hb,if_true,S] using swap)
-  let C:=skywalkPayloadCell G S (if J then (0,Z) else (Z,0))
-  have cell : (if S then B else A,if S then A else B)=C := by
-    cases eJ:J <;> cases eG:G <;> cases eS:S <;>
-      simp [C,A,B,skywalkPayloadCell,eJ,eG,eS]
-  have newPrefix : Triple (PairFrame ports.r ports.y origin (centerWord Z) 0)
-      (joint1592++SW.selW (base 1029) (base 2409) OneFlagSW.swapBody)
-      (PairFrame ports.r ports.y origin (centerWord C.1) (centerWord C.2)) := by
-    have cx : (if S then B else A)=C.1 := congrArg Prod.fst cell
-    have cy : (if S then A else B)=C.2 := congrArg Prod.snd cell
-    simpa only [cx,cy] using jf.seq sf
-  let D:Fp:=if J then 0 else Z
-  let E:Fp:=if J then Z else 0
-  have pair0 : (D,E)=(if J then (0,Z) else (Z,0)) := by cases eJ:J <;> simp [D,E,eJ]
-  have layout0:=balancedSharedTranscriptLayout_direct base (base 2400) _ _ (base 2409) (base 2410)
-    (mixedTape_getD_layout base _ _ _ ctx.hf 0 (by decide)) ctx.ho
-  rw [mixedTape_base_getD 0 (by decide)] at layout0
-  have q6Layout0:=Q6EndpointCell.ports_transcript base (base 2400) (base 0) (base 1028)
-    (base 2409) (base 2410) ctx.hn layout0 (ctx.ho _ (by simp)) (ctx.ho _ (by simp))
-  have swap0:=OneFlagCell.selectSwap_frame base (base 2400) (base 1028) (base 2409)
-    (mixedTranscriptUnitTrace.getD 0 (false,false)).2 OneFlagReplay.base_sign_nd (by decide)
-    (q6Layout0.outside _ (by simp)) (q6Layout0.outside _ (by simp))
-    (q6Layout0.outside _ (by simp [Q6EndpointCell.ports_sign])) origin ctx.hg0 Z 0
-  have oldSwap : Triple (PairFrame ports.r ports.y origin (centerWord Z) 0) OneFlagSW.firstSwapS
-      (PairFrame ports.r ports.y origin (centerWord D) (centerWord E)) :=
-    enable_frame OneFlagSW.selFirstSwap_sel origin hb away _ _ _ _ (by
-      simpa only [OneFlagReplay.firstSwap,OneFlagCell.selectSwap,mixedTranscriptBit,hb,if_true,
-        HalfField.centerWord_zero,J,D,E] using swap0)
-  have oldCell:=OneFlagCell.cell_frame_legacy true base (base 2400) (base 1) (base 1029)
-    (base 2409) (base 2410) (mixedTranscriptUnitTrace.getD 1 (false,false)).1
-    (mixedTranscriptUnitTrace.getD 1 (false,false)).2 q6Layout origin ctx.hg0
-    (Q6EndpointCell.clean_of_env base origin ctx.env ctx.parity) D E
-  have oldSelected:=OneFlagSW.selCell_sel true (base 1) (base 1029)
-    (mixedTranscriptUnitTrace.getD 1 (false,false)).1 (mixedTranscriptUnitTrace.getD 1 (false,false)).2
-    (by decide) (by decide)
-  have oldHalf : Triple (PairFrame ports.r ports.y origin (centerWord D) (centerWord E))
-      (OneFlagSW.cellS true (base 1) (base 1029))
-      (PairFrame ports.r ports.y origin (centerWord C.1) (centerWord C.2)) :=
-    enable_frame oldSelected origin hb away _ _ _ _ (by
-      simpa only [Q6EndpointCell.payload,if_true,mixedTranscriptBit,hb,pair0,C,G,S] using oldCell)
-  have oldPrefix:=oldSwap.seq oldHalf
-  have selected:=(OneFlagSW.selFirstSwap_sel.append (OneFlagSW.selRaw_sel true Replay5.restLetters OneFlagSW.selRest_nodup))
-  have accepted:=OneFlagReplay.firstBody_frame true origin ctx Z 0 (by simp)
-  have full : Triple (PairFrame ports.r ports.y origin (centerWord Z) 0)
-      (OneFlagSW.firstSwapS++OneFlagSW.rawReplayS true Replay5.restLetters)
-      (PairFrame ports.r ports.y origin
-        (centerWord (Replay5.firstPayload true origin (Z,0)).1)
-        (centerWord (Replay5.firstPayload true origin (Z,0)).2)) :=
-    enable_frame selected origin hb away _ _ _ _ (by
-      simpa only [OneFlagReplay.firstBody,if_true,HalfField.centerWord_zero] using accepted)
-  intro state records input
-  have eq:=prefix_append_eq
-    (joint1592++SW.selW (base 1029) (base 2409) OneFlagSW.swapBody)
-    (OneFlagSW.firstSwapS++OneFlagSW.cellS true (base 1) (base 1029))
-    (OneFlagSW.rawReplayS true remainingLetters) state records (by
-      intro a b
-      exact PairFrame.program_eq _ _ origin _ _ _ _ _ _ newPrefix oldPrefix state a b input)
-  have shape : firstBody=(joint1592++SW.selW (base 1029) (base 2409) OneFlagSW.swapBody)++
-      OneFlagSW.rawReplayS true remainingLetters := by simp only [firstBody,List.append_assoc]
-  have oldShape : OneFlagSW.firstSwapS++OneFlagSW.rawReplayS true Replay5.restLetters=
-      (OneFlagSW.firstSwapS++OneFlagSW.cellS true (base 1) (base 1029))++OneFlagSW.rawReplayS true remainingLetters := by
-    rw [raw_rest_split,List.append_assoc]
-  rw [shape,eq]
-  rw [oldShape] at full
-  exact full state _ input
 
 
-/-- Codec records, entry records and tail records remain independent. -/
-theorem firstPacket_frame (origin : BasisState) (ctx : OneFlagReplay.Context origin)
-    (hb : origin (base 2400)=true) (first : FirstTrit origin) (Z : Fp) (s : State) (m : List Bool)
-    (support : wires firstBody⊆History5.groupReadSites base (base 2400) (base 2409) (base 2410) 0 ∪ {base 2312})
-    (input : History5.EncodedFieldFrame5 base (base 2409) origin Z 0 s) :
-    (run firstPacket m s).phase=s.phase ∧
-      History5.EncodedFieldFrame5 base (base 2409) origin
-        (Replay5.firstPayload true origin (Z,0)).1 (Replay5.firstPayload true origin (Z,0)).2
-        (run firstPacket m s) := by
-  have body : Triple
-      (PairFrame ports.r ports.y origin (centerWord Z) (centerWord (0:Fp))) firstBody
-      (PairFrame ports.r ports.y origin
-        (centerWord (Replay5.firstPayload true origin (Z,0)).1)
-        (centerWord (Replay5.firstPayload true origin (Z,0)).2)) := by
-    simpa only [HalfField.centerWord_zero] using firstBody_frame origin ctx hb first Z
-  have fresh := FieldFrameOB5.encoded_window_step base (base 2400) (base 2409) (base 2410)
-    ctx.hn ctx.hp 0 (by decide) origin Z 0 _ _ _ support body s m input ctx.legal
-  have eq := Replay5.placed_eq (Placement5.pi 0) baseFirstPacket
-    (fun q hq=>Placement5.pi_outside 0 q (by decide) hq) s m
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal Z 0 s input)
-    (History5.encoded_zero_region base (base 2409) ctx.hn (ctx.hp _ (by simp)) origin ctx.env ctx.legal _ _ _ fresh.2)
-  have same : run firstPacket m s=run baseFirstPacket m s := eq
-  rw [same]
-  exact fresh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.FrontierEntry
 end -- original module boundary
@@ -39920,19 +39920,19 @@ attribute [local irreducible] run wires
 
 
 
-theorem logical_control (origin : BasisState) (X Y : Fp) (s : State)
-    (input : NewHistory5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    s.basis (base 2400)=origin (base 2400) := by
-  obtain ⟨raw,_,frame,encoded⟩ := input
-  have rawControl : raw.basis (base 2400)=origin (base 2400) := by
-    apply frame.2.2
-    · rw [balancedSharedPorts_r]
-      exact OwnPlusHost.not_block 2400 2056 256 (by omega)
-    · rw [balancedSharedPorts_y]
-      exact OwnPlusHost.not_block 2400 770 256 (by omega)
-  rw [encoded]
-  exact (run_preserves_outside _ [] raw _
-    (FrontierEntry1591Field.encoder_special_away 2400 (by simp))).trans rawControl
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -40050,305 +40050,305 @@ attribute [local irreducible] run wires FrontierEntry1591Kernel.firstPhase
   FrontierEntry1591Kernel.lastPhase entry exit entryKernel exitKernel
   Replay5.groupsPayload Replay5.firstPayload Replay5.endPayload
 
-private theorem exit_append_frame (P Q : Program) (A B C : State → Prop)
-    (first : ∀s m,A s → (run P m s).phase=s.phase ∧ B (run P m s))
-    (second : ∀s m,B s → (run Q m s).phase=s.phase ∧ C (run Q m s))
-    (s : State) (m : List Bool) (input : A s) :
-    (run (P++Q) m s).phase=s.phase ∧ C (run (P++Q) m s) := by
-  simp only [run_append]
-  have a:=first s (m.take (measurementCount P)) input
-  have b:=second (run P (m.take (measurementCount P)) s) (m.drop (measurementCount P)) a.2
-  exact ⟨b.1.trans a.1,b.2⟩
+
+
+
+
+
+
+
+
+
 
 private theorem exit_state_transport (P : State → Prop) (a b : State)
     (eq : a=b) (result : P b) : P a := by
   cases eq
   exact result
 
-private theorem exit_program_transport (P Q : Program) (eq : P=Q)
-    (s : State) (m : List Bool) (A : State → Prop) (result : A (run Q m s)) :
-    A (run P m s) := by
-  cases eq
-  exact result
 
-def exitHeadPayload (origin : BasisState) (Y : Fp) : Fp×Fp :=
-  Replay5.groupsPayload false origin 1 101 (Replay5.endPayload false origin (Y/2,Y/2))
 
-theorem logicalExitHead_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (m : List Bool)
-    (input : NewHistory5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    (run (FrontierSW1591.endPacketS false++FrontierSW1591.groupsS false 1 101) m s).phase=s.phase ∧
-      NewHistory5.EncodedFieldFrame5 base (base 2409) origin
-        (Replay5.groupsPayload false origin 1 101 (Replay5.endPayload false origin (X,Y))).1
-        (Replay5.groupsPayload false origin 1 101 (Replay5.endPayload false origin (X,Y))).2
-        (run (FrontierSW1591.endPacketS false++FrontierSW1591.groupsS false 1 101) m s) := by
-  let E:=Replay5.endPayload false origin (X,Y)
-  let G:=Replay5.groupsPayload false origin 1 101 E
-  have result:=exit_append_frame (FrontierReplay1591.endPacket false)
-    (FrontierReplay1591.groups false 1 101)
-    (NewHistory5.EncodedFieldFrame5 base (base 2409) origin X Y)
-    (NewHistory5.EncodedFieldFrame5 base (base 2409) origin E.1 E.2)
-    (NewHistory5.EncodedFieldFrame5 base (base 2409) origin G.1 G.2)
-    (fun t records h => FrontierReplay1591.endPacket_frame false origin ctx X Y
-      (fun bad => absurd bad (by decide)) t records h)
-    (fun t records h => by
-      simpa only [Prod.mk.eta] using FrontierReplay1591.groups_frame false 1 101 (by decide)
-        origin ctx E.1 E.2 t records h) s m input
-  have selected:=(FrontierSW1591.selEnd_sel false).append
-    (FrontierSW1591.selGroups_sel false 1 101 (by decide))
-  have control : s.basis (base 2400)=true :=
-    (FrontierEntryJoint1591.logical_control origin X Y s input).trans enabled
-  exact exit_state_transport
-    (fun out => out.phase=s.phase ∧
-      NewHistory5.EncodedFieldFrame5 base (base 2409) origin G.1 G.2 out)
-    _ _ (selected.eq m s control).1 result
 
-theorem exitHead_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (enabled : origin (base 2400)=true) (Y : Fp) (s : State) (m : List Bool)
-    (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    (run exitHead m s).phase=s.phase ∧
-      NewFieldFrameOB5.EncodedFieldFrame origin (exitHeadPayload origin Y).1
-        (exitHeadPayload origin Y).2 (run exitHead m s) := by
-  have result:=run_three_states OwnQ5Endpoint.centerT HalfFieldOB5.copyN
-    (renameProgram (OB5.sig 511)
-      (FrontierSW1591.endPacketS false++FrontierSW1591.groupsS false 1 101))
-    (fun a d => NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 a →
-      d.phase=a.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin
-        (exitHeadPayload origin Y).1 (exitHeadPayload origin Y).2 d) (by
-      intro a b c d m1 m2 m3 h1 h2 h3 hin
-      have first:=NewOwnQ5Endpoint.center_frame ctx.hn (ctx.hp _ (by simp)) origin
-        ctx.env ctx.legal ctx.parity ha Y a m1 hin
-      change (run OwnQ5Endpoint.centerT m1 a).phase=a.phase ∧
-        NewFieldFrameOB5.EncodedFieldFrame origin (Y/2) 0 (run OwnQ5Endpoint.centerT m1 a) at first
-      rw [h1] at first
-      have middle:=NewHalfFieldOB5.copy_fill ctx.hn origin (Y/2) b m2 first.2
-      rw [h2] at middle
-      have last:=NewFieldFrameOB5.placed_step
-        (FrontierSW1591.endPacketS false++FrontierSW1591.groupsS false 1 101)
-        origin (Y/2) (Y/2) (exitHeadPayload origin Y).1 (exitHeadPayload origin Y).2
-        (logicalExitHead_frame origin ctx enabled (Y/2) (Y/2)) c m3 middle.2
-      rw [h3] at last
-      exact ⟨last.1.trans (middle.1.trans first.1),last.2⟩) s m
-  exact exit_program_transport exitHead _ (by unfold exitHead;rfl) s m
-    (fun out => out.phase=s.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin
-      (exitHeadPayload origin Y).1 (exitHeadPayload origin Y).2 out) (result input)
 
-theorem exitHead_first_zero (origin : BasisState) (x : Nat) (Y : Fp)
-    (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int))) :
-    (Replay5.firstPayload false origin (exitHeadPayload origin Y)).2=0 := by
-  simpa only [exitHeadPayload] using
-    congrArg Prod.snd (Replay5.inverse_payload origin x (Y/2) hx0 hx trace)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem exit_control_away : base 2400∉wires exit :=
   fun used => FrontierEntry1591Field.exit_control_away (exit_subset used)
 
-private theorem exit_field_frame_unique (origin : BasisState) (X Y : Fp) (s t : State)
-    (hs : NewFieldFrameOB5.EncodedFieldFrame origin X Y s)
-    (ht : NewFieldFrameOB5.EncodedFieldFrame origin X Y t) (phase : s.phase=t.phase) : s=t := by
-  obtain ⟨a,ha,fa,ea⟩:=hs
-  obtain ⟨b,hb,fb,eb⟩:=ht
-  have raw : a=b := by
-    apply State.extensionality
-    · exact ha.trans (phase.trans hb.symm)
-    · exact PairFrame.unique _ _ origin _ _ _ _ fa fb
-  have pulled : pullState (OB5.sig 511) s=pullState (OB5.sig 511) t := by
-    rw [ea,eb,raw]
-  apply State.extensionality
-  · exact phase
-  · funext q
-    have eq:=congrArg (fun u : State => u.basis (OB5.sig 511 q)) pulled
-    simpa only [pullState,OB5.sig_invol 511 (by decide)] using eq
 
-private theorem exit_field_unforce (P : Program) (off : base 2400∉wires P)
-    (origin : BasisState) (s forced : State) (m : List Bool)
-    (forceEq : forced=⟨s.phase,writeBit s.basis (base 2400) true⟩)
-    (B : Fp) (control : s.basis (base 2400)=origin (base 2400))
-    (result : (run P m forced).phase=forced.phase ∧
-      NewFieldFrameOB5.EncodedFieldFrame (writeBit origin (base 2400) true) B 0 (run P m forced)) :
-    (run P m s).phase=s.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin B 0 (run P m s) := by
-  subst forced
-  have back:=FrontierEntry1591.frame_control_set (writeBit origin (base 2400) true) B 0
-    (run P m ⟨s.phase,writeBit s.basis (base 2400) true⟩) (origin (base 2400)) result.2
-  have undo:=FrontierEntry1591.run_control_unset P off s m true
-  have restore : writeBit (writeBit origin (base 2400) true) (base 2400)
-      (origin (base 2400))=origin := by
-    funext q
-    by_cases eq : q=base 2400
-    · subst q;simp only [writeBit,Function.update_self]
-    · simp only [writeBit,Function.update_of_ne eq]
-  refine ⟨(congrArg State.phase undo).trans result.1,?_⟩
-  rw [undo]
-  simpa only [restore,control] using back
 
-theorem exitHead_borrow_run_eq (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (enabled : origin (base 2400)=true) (Y : Fp) (s : State) (m : List Bool)
-    (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    run (prefixProgram++(renameProgram borrow exitHead++unprefix)) m s=run exitHead (m.drop 5) s := by
-  have old:=exitHead_frame origin ctx ha enabled Y s (m.drop 5) input
-  have before:=canonical_prefix_codes origin ctx Y 0 s input x hx0 hx trace
-  have after:=field_prefix_codes origin ctx _ _ (run exitHead (m.drop 5) s) old.2 x hx0 hx trace
-  exact prefix_window_run_eq exitHead _ rfl exitHead_payload_free s m
-    before.1 before.2.1 after.1 after.2.1
-    (canonical_768_zero origin ctx Y 0 s input)
-    (field_768_zero origin ctx _ _ _ old.2) (prefix_zero_of_codes s before)
 
-theorem exitField_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (enabled : origin (base 2400)=true) (Y : Fp) (s : State) (m : List Bool)
-    (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    (run exitField m s).phase=s.phase ∧
-      NewFieldFrameOB5.EncodedFieldFrame origin (Y/2*(x:Fp)) 0 (run exitField m s) := by
-  let W:=prefixProgram++(renameProgram borrow exitHead++unprefix)
-  let H:=exitHeadPayload origin Y
-  let F:=Replay5.firstPayload false origin H
-  have result:=exit_append_frame W (placedFirstPacket false)
-    (NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0)
-    (NewFieldFrameOB5.EncodedFieldFrame origin H.1 H.2)
-    (NewFieldFrameOB5.EncodedFieldFrame origin F.1 F.2)
-    (fun t records h => by
-      have old:=exitHead_frame origin ctx ha enabled Y t (records.drop 5) h
-      exact exit_state_transport
-        (fun out => out.phase=t.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin H.1 H.2 out) _ _
-        (exitHead_borrow_run_eq origin ctx ha x hx0 hx trace enabled Y t records h) old)
-    (fun t records h => by
-      have zero : (Replay5.firstPayload false origin (H.1,H.2)).2=0 := by
-        simpa only [H,Prod.mk.eta] using exitHead_first_zero origin x Y hx0 hx trace
-      simpa only [F,Prod.mk.eta] using placedFirstPacket_frame false origin ctx enabled x hx trace
-        H.1 H.2 (fun _ => zero) t records h) s m input
-  have payload : F=(Y/2*(x:Fp),0) := by
-    simpa only [F,H,exitHeadPayload,enabled,if_true] using
-      Replay5.inverse_payload origin x (Y/2) hx0 hx trace
-  have finished : (run (W++placedFirstPacket false) m s).phase=s.phase ∧
-      NewFieldFrameOB5.EncodedFieldFrame origin (Y/2*(x:Fp)) 0
-        (run (W++placedFirstPacket false) m s) := by
-    simpa only [payload] using result
-  have shape : exitField=W++placedFirstPacket false := by
-    dsimp only [W]
-    unfold exitField
-    simp only [List.append_assoc]
-  exact exit_program_transport exitField _ shape s m
-    (fun out => out.phase=s.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin (Y/2*(x:Fp)) 0 out)
-    finished
 
-theorem exitField_run_eq_old (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (enabled : origin (base 2400)=true) (Y : Fp) (s : State) (m : List Bool)
-    (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    run exitField m s=run FrontierEntry1591Field.exitField m s := by
-  have fresh:=exitField_frame origin ctx ha x hx0 hx trace enabled Y s m input
-  have control : s.basis (base 2400)=true := by
-    have bit:=FrontierEntry1591Field.canonical_special_at origin Y 0 s 2400 (by simp) input
-    rw [OneFlagSW.selSig_2400] at bit
-    exact bit.trans enabled
-  have old:=FrontierEntry1591Field.exitField_frame origin ctx ha x hx0 hx trace Y s m control input
-  have oldFrame : NewFieldFrameOB5.EncodedFieldFrame origin (Y/2*(x:Fp)) 0
-      (run FrontierEntry1591Field.exitField m s) := by
-    simpa only [enabled,if_true] using old.2
-  exact exit_field_frame_unique origin _ _ _ _ fresh.2 oldFrame (fresh.1.trans old.1.symm)
 
-theorem exit_core_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (enabled : origin (base 2400)=true) (Y : Fp) (s : State) (m : List Bool)
-    (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s)
-    (in511 : s.basis (base 511)=true) (in1542 : s.basis (base 1542)=false)
-    (workIn : s.basis FrontierEntry1591Field.work=false)
-    (parity : s.basis FrontierEntry1591Field.host=
-      TraceParity5.parity (FrontierEntry1591Field.controls.map s.basis)) :
-    (run exit m s).phase=s.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin
-      (Y/2*(x:Fp)) 0 (run exit m s) := by
-  have result:=exitField_frame origin ctx ha x hx0 hx trace enabled Y s m input
-  have outside:=FrontierEntry1591Field.canonical_field_outside origin ctx ha Y _ s _ input result.2 result.1
-  have g0 : s.basis (base 2409)=false := by
-    have bit:=FrontierEntry1591Field.canonical_special_at origin Y 0 s 2409 (by simp) input
-    have fix : OB5.sig 511 (base 2409)=base 2409 := by decide +kernel
-    exact (fix ▸ bit).trans ctx.hg0
-  have s0 : s.basis (base 2410)=false := by
-    have bit:=FrontierEntry1591Field.canonical_special_at origin Y 0 s 2410 (by simp) input
-    have fix : OB5.sig 511 (base 2410)=base 2410 := by decide +kernel
-    exact (fix ▸ bit).trans ctx.hs0
-  have gOff : base 2409∉FrontierEntry1591Field.numerator :=
-    OwnPlusHost.not_block 2409 2056 256 (by omega)
-  have sOff : base 2410∉FrontierEntry1591Field.numerator :=
-    OwnPlusHost.not_block 2410 2056 256 (by omega)
-  have free511 : base 511∉wires exitField :=
-    fun used => FrontierEntry1591Field.exitField_host_free.1 (exitField_subset used)
-  have free1542 : base 1542∉wires exitField :=
-    fun used => FrontierEntry1591Field.exitField_host_free.2 (exitField_subset used)
-  have hostedEq : run exitHosted m s=run exitField m s :=
-    HostOB5.hosted_run exitField s m free511 free1542 g0 in511 s0 in1542
-      ((outside _ gOff).trans g0) ((outside _ sOff).trans s0)
-  have hostFree : FrontierEntry1591Field.host∉wires exitHosted :=
-    fun used => FrontierEntry1591Field.exitHosted_avoids_host (exitHosted_subset used)
-  have allEq:=ParityField1591.run_eq FrontierEntry1591Field.controls FrontierEntry1591Field.work
-    FrontierEntry1591Field.host exitHosted s m (by decide)
-    FrontierEntry1591Field.host_not_controls hostFree parity workIn
-    (by
-      rw [hostedEq]
-      exact (outside FrontierEntry1591Field.work
-        (OwnPlusHost.not_block 1797 2056 256 (by omega))).trans workIn)
-    (by
-      intro q hq
-      rw [hostedEq]
-      exact outside q (FrontierEntry1591Field.controls_away_numerator q hq))
-  have wrappedEq : run exit m s=run exitHosted m s :=
-    exit_program_transport exit _ (by unfold exit;rfl) s m
-      (fun out => out=run exitHosted m s) allEq
-  exact exit_state_transport
-    (fun out => out.phase=s.phase ∧ NewFieldFrameOB5.EncodedFieldFrame origin (Y/2*(x:Fp)) 0 out)
-    _ _ (wrappedEq.trans hostedEq) result
 
-theorem exit_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m : List Bool)
-    (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s)
-    (in511 : s.basis (base 511)=true) (in1542 : s.basis (base 1542)=false)
-    (workIn : s.basis FrontierEntry1591Field.work=false)
-    (parity : s.basis FrontierEntry1591Field.host=
-      TraceParity5.parity (FrontierEntry1591Field.controls.map s.basis)) :
-    (run exit m s).phase=s.phase ∧
-      NewFieldFrameOB5.EncodedFieldFrame origin (Y*(x:Fp)/2) 0 (run exit m s) := by
-  let origin':=writeBit origin (base 2400) true
-  let forced : State:=⟨s.phase,writeBit s.basis (base 2400) true⟩
-  have ctx':=FrontierEntry1591.context_control_set origin ctx true
-  have ha':=FrontierEntry1591.source_zero_control_set origin true ha
-  have trace' : skywalkTapeControls origin' (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)) := by
-    rw [FrontierEntry1591.trace_control_set]
-    exact trace
-  have input':=FrontierEntry1591.canonical_control_set origin Y 0 s true input
-  have parity':=FrontierEntry1591.parity_host_control_set FrontierEntry1591Field.controls
-    FrontierEntry1591Field.host (by decide) FrontierEntry1591Field.controls_away_control s true parity
-  have result:=exit_core_frame origin' ctx' ha' x hx0 hx trace'
-    (by simp only [origin',writeBit,Function.update_self]) Y forced m input'
-    (by simpa only [forced,writeBit,Function.update_of_ne (show base 511≠base 2400 from by decide)] using in511)
-    (by simpa only [forced,writeBit,Function.update_of_ne (show base 1542≠base 2400 from by decide)] using in1542)
-    (by simpa only [forced,writeBit,Function.update_of_ne (show FrontierEntry1591Field.work≠base 2400 from by decide)] using workIn)
-    parity'
-  have value : Y/2*(x:Fp)=Y*(x:Fp)/2 := by simp only [div_eq_mul_inv];ring
-  rw [value] at result
-  have control : s.basis (base 2400)=origin (base 2400) := by
-    have bit:=FrontierEntry1591Field.canonical_special_at origin Y 0 s 2400 (by simp) input
-    rwa [OneFlagSW.selSig_2400] at bit
-  exact exit_field_unforce exit exit_control_away origin s forced m rfl (Y*(x:Fp)/2) control result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -41558,33 +41558,33 @@ private theorem encoded_control (origin : BasisState) (X Y : Fp) (s : State)
   exact (run_preserves_outside _ [] raw _
     (FrontierEntry1591Field.encoder_special_away 2400 (by simp))).trans same
 
-private theorem encoded_field_unique (origin : BasisState) (X Y : Fp) (s t : State)
-    (hs : NewHistory5.EncodedFieldFrame5 base (base 2409) origin X Y s)
-    (ht : NewHistory5.EncodedFieldFrame5 base (base 2409) origin X Y t) (phase : s.phase=t.phase) : s=t := by
-  obtain ⟨a,ha,fa,ea⟩ := hs
-  obtain ⟨b,hb,fb,eb⟩ := ht
-  have raw : a=b := by
-    apply State.extensionality
-    · exact ha.trans (phase.trans hb.symm)
-    · exact PairFrame.unique _ _ origin _ _ _ _ fa fb
-  rw [ea,eb,raw]
 
-/-- Independent complete measurement lists give the identical restored packet state. -/
-theorem packet_run_eq_old (divide : Bool) (j : Nat) (hj : j<102)
-    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (m n : List Bool)
-    (input : NewHistory5.EncodedFieldFrame5 base (base 2409) origin X Y s) :
-    run (packet divide j) m s=run (FrontierSW1591.packetS divide j) n s := by
-  have a := packet_frame divide j hj origin ctx enabled X Y s m input
-  have old := FrontierReplay1591.packet_frame divide j hj origin ctx X Y s n input
-  have selected := (FrontierSW1591.selPacket_sel divide j hj).eq n s
-    ((encoded_control origin X Y s input).trans enabled)
-  have b : (run (FrontierSW1591.packetS divide j) n s).phase=s.phase ∧
-      NewHistory5.EncodedFieldFrame5 base (base 2409) origin
-        (CompressedFieldSupport.directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)).1
-        (CompressedFieldSupport.directionalPayload (!divide) (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)).2
-        (run (FrontierSW1591.packetS divide j) n s) := by rw [selected.1];exact old
-  exact encoded_field_unique origin _ _ _ _ a.2 b.2 (a.1.trans b.1.symm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -41755,16 +41755,16 @@ theorem placedFirstPacket_frame (divide : Bool) (origin : BasisState)
   NewFieldFrameOB5.placed_step (firstPacket divide) origin X Y _ _
     (fun a records h => firstPacket_frame divide origin ctx enabled x hx trace X Y hz a records h) s m input
 
-private theorem placed_field_unique (origin : BasisState) (X Y : Fp) (s t : State)
-    (hs : NewFieldFrameOB5.EncodedFieldFrame origin X Y s)
-    (ht : NewFieldFrameOB5.EncodedFieldFrame origin X Y t) (phase : s.phase=t.phase) : s=t := by
-  have pulled := encoded_field_unique origin X Y (pullState (OB5.sig 511) s) (pullState (OB5.sig 511) t)
-    hs ht phase
-  apply State.extensionality
-  · exact phase
-  · funext q
-    have equal := congrArg (fun u : State => u.basis (OB5.sig 511 q)) pulled
-    simpa only [pullState,OB5.sig_invol 511 (by decide)] using equal
+
+
+
+
+
+
+
+
+
+
 
 private theorem placed_canonical_unique (origin : BasisState) (X Y : Fp) (s t : State)
     (hs : NewFieldFrameOB5.EncodedCanonicalFrame origin X Y s)
@@ -41777,18 +41777,18 @@ private theorem placed_canonical_unique (origin : BasisState) (X Y : Fp) (s t : 
     have equal := congrArg (fun u : State => u.basis (OB5.sig 511 q)) pulled
     simpa only [pullState,OB5.sig_invol 511 (by decide)] using equal
 
-/-- The retained G0 loan and every record segment agree with the old first packet. -/
-theorem placedFirstPacket_run_eq_old (divide : Bool) (origin : BasisState)
-    (ctx : FrontierReplay1591.Context origin) (enabled : origin (base 2400)=true)
-    (x : Nat) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (X Y : Fp) (hz : divide=false → (Replay5.firstPayload divide origin (X,Y)).2=0)
-    (s : State) (m n : List Bool) (input : NewFieldFrameOB5.EncodedFieldFrame origin X Y s) :
-    run (placedFirstPacket divide) m s=run (Prefix1590.placedFirstPacket divide) n s := by
-  have a := placedFirstPacket_frame divide origin ctx enabled x hx trace X Y hz s m input
-  have b := Prefix1590.placedFirstPacket_frame divide origin ctx enabled x hx trace X Y hz s n input
-  exact placed_field_unique origin _ _ _ _ a.2 b.2 (a.1.trans b.1.symm)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -42281,18 +42281,18 @@ theorem entryField_run_eq_old (origin : BasisState) (ctx : FrontierReplay1591.Co
   have old := Prefix1590.entryField_frame origin ctx ha enabled x hx0 hx trace Y s n input
   exact placed_canonical_unique origin _ _ _ _ fresh.2 old.2 (fresh.1.trans old.1.symm)
 
-/-- The full exit restores the same state for every measurement record. -/
-theorem exitField_run_eq_old (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (enabled : origin (base 2400)=true) (Y : Fp) (s : State) (m n : List Bool)
-    (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s) :
-    run exitField m s=run Prefix1590.exitField n s := by
-  have fresh := exitField_frame origin ctx ha x hx0 hx trace enabled Y s m input
-  have old := Prefix1590.exitField_frame origin ctx ha x hx0 hx trace enabled Y s n input
-  exact placed_field_unique origin _ _ _ _ fresh.2 old.2 (fresh.1.trans old.1.symm)
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem entryField_support : wires entryField⊆wires Prefix1590.entryField∪{base 2409} := by
   have fixed : Prefix1590.borrow (base 2409)=base 2409 := by decide +kernel
@@ -42502,21 +42502,21 @@ theorem entry_frame (origin : BasisState) (ctx : FrontierReplay1591.Context orig
   exact canonical_unforce entryFieldHosted entry_control_free origin s forced m rfl (Y/(x:Fp)) control result
 
 
-/-- The parity and host wrappers preserve complete-State equality for all records. -/
-theorem entryFieldHosted_run_eq_old (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m n : List Bool)
-    (input : NewFieldFrameOB5.EncodedFieldFrame origin (Y/2) 0 s)
-    (in511 : s.basis (base 511)=true) (in1542 : s.basis (base 1542)=false)
-    (workIn : s.basis work=false)
-    (parity : s.basis host=TraceParity5.parity (controls.map s.basis)) :
-    run entryFieldHosted m s=run Prefix1590.entry n s := by
-  have fresh := entry_frame origin ctx ha x hx0 hx trace Y s m input in511 in1542 workIn parity
-  have old := Prefix1590.entry_frame origin ctx ha x hx0 hx trace Y s n input in511 in1542 workIn parity
-  exact placed_canonical_unique origin _ _ _ _ fresh.2 old.2 (fresh.1.trans old.1.symm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem entry_result (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
     (ha : regValue (skywalkSharedField base).a origin=0)
@@ -42653,21 +42653,21 @@ theorem exit_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origi
 
 
 
-/-- The parity and host wrappers preserve complete-State equality for all records. -/
-theorem exitFieldHosted_run_eq_old (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
-    (ha : regValue (skywalkSharedField base).a origin=0)
-    (x : Nat) (hx0 : 0<x) (hx : x<p)
-    (trace : skywalkTapeControls origin (skywalkSharedTape base)=
-      SkywalkTrace.trace 512 (SkywalkRails.encode false false (x:Int) (p:Int)))
-    (Y : Fp) (s : State) (m n : List Bool)
-    (input : NewFieldFrameOB5.EncodedCanonicalFrame origin Y 0 s)
-    (in511 : s.basis (base 511)=true) (in1542 : s.basis (base 1542)=false)
-    (workIn : s.basis work=false)
-    (parity : s.basis host=TraceParity5.parity (controls.map s.basis)) :
-    run exitFieldHosted m s=run Prefix1590.exit n s := by
-  have fresh := exit_frame origin ctx ha x hx0 hx trace Y s m input in511 in1542 workIn parity
-  have old := Prefix1590.exit_frame origin ctx ha x hx0 hx trace Y s n input in511 in1542 workIn parity
-  exact placed_field_unique origin _ _ _ _ fresh.2 old.2 (fresh.1.trans old.1.symm)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem exit_result (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
     (ha : regValue (skywalkSharedField base).a origin=0)
@@ -42867,28 +42867,28 @@ theorem gen_counts_diff (L : ControlledPointLayout) (D : Fp→Program) (S P : Pr
     renameProgram_counts]
   constructor <;> omega
 
-theorem gen_slots (L : ControlledPointLayout) (hw : L.Widths)
-    (D : Fp→Program) (S P : Program)
-    (ds : ∀k,gateSlots (D k)≤20527854) (ss : gateSlots S≤8000000)
-    (ps : gateSlots P≤20502854) (cx cy : Fp) :
-    gateSlots (All12Generic.gen L D S P cx cy)≤49205696 := by
-  have add (k : Fp) : gateSlots (fastConstAdd L L.point.x k)≤15368 := by
-    simpa only [fastConstAdd] using FastConst.fastAdd_gateSlots_le
-      (g:=L.core.generic) 256 SquareReduction.c k.val
-      (L.recoveryConstant_widths hw L.point.x hw.inputX)
-  have neg : gateSlots (fastConstNeg L cx)≤17928 := by
-    simpa only [fastConstNeg] using FastConst.fastNeg_gateSlots_le
-      (g:=L.core.generic) 256 p cx.val
-      (L.recoveryConstant_widths hw L.point.x hw.inputX)
-  have a:=add (-cx)
-  have b:=add (3*cx-(2^163-1:Nat))
-  have d:=ds (-cy)
-  have e:=exitY_slots L hw cy
-  have z:=zrep_gateSlots_le L hw
-  have c:=clrF_gateSlots_le L hw
-  simp only [All12Generic.gen,All12Generic.mid,All12Generic.generic,
-    gateSlots_append,rename_gateSlots]
-  omega
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.Prefix1590Inventory
 
@@ -42941,21 +42941,21 @@ theorem counts_diff (K E : Program)
   Prefix1590Inventory.gen_counts_diff L _ _ _ (division_counts_diff K kc L)
     (Prefix1590Square.counts L) (exit_counts_diff E ec L) cx cy
 
-private theorem division_slots (K : Program) (ks : gateSlots K≤20502854)
-    (L : ControlledPointLayout) (hw : L.Widths) (k : Fp) :
-    gateSlots (division K L k)≤20527854 := by
-  have y:=entry_gateSlots_le (L.recoveryConstant L.point.y) L.core.generic
-    EntryFuseArithmetic.complement k.val (L.recoveryConstant_widths hw L.point.y hw.inputY)
-  simp only [division,FrontierEntry1591Callers.entry,EntryFuse.fusedY,gateSlots_append,rename_gateSlots]
-  omega
 
-theorem slots (K E : Program) (ks : gateSlots K≤20502854) (es : gateSlots E≤20502854)
-    (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
-    gateSlots (gen K E L cx cy)≤49205696 := by
-  have placed : gateSlots (exit E L)≤20502854 := by
-    simpa only [exit,rename_gateSlots] using es
-  exact Prefix1590Inventory.gen_slots L hw _ _ _ (division_slots K ks L hw)
-    (Prefix1590Square.slots L hw) placed cx cy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
                                                                    
                              
