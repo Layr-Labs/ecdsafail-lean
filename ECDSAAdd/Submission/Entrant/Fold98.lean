@@ -1,283 +1,5 @@
-import ECDSAAdd.Submission.Entrant.LowAccCarry
+import ECDSAAdd.Submission.Entrant.CarryIdentityBundle
 import ECDSAAdd.Submission.Entrant.ParkAMany
-/-
-Provenance for the compact B91 implementation:
-The 88-host compiler and arithmetic frame come from promoted submission
-64f31ed4-9047-48e1-aa2a-e4ac946ba734. The short checked program-literal
-anchors reuse the proof-performance technique of 1fcbdb87-cb36-410b-9f0a-f48b20575965.
-Discovery used the intermediate B97 program, including the five-CNOT identity
-from cdf6d5e2-5408-4b4e-9d6a-970bb2c11b87 and the seven-repair program
-288e1bc0-dc77-4212-aa14-ce114b203c1c. The final body here returns to the
-unpatched 88-host loop; those particular CDF/seven/eighth loop repairs are
-not retained. Generic state, patch, resource and support lemmas are retained
-from the seven-repair proof framework. Two new fold identities and a short
-rebuild output-frame proof provide the B91 gain. Public terminal removals
-from b566a8f1-1884-42cd-9a7d-f2e9b975ab1e are separately credited in DeadCarry.
--/
-
-section
--- Preserved checked proof component: SixCarryBase
-namespace ECDSAAdd.Entrant
-open ECDSAAdd Arithmetic
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-namespace SixCarryTrace
-def basisStep : Instr → BasisState → BasisState
- | .X t, b => writeBit b t (!b t)
- | .CX a t, b => writeBit b t (b t ^^ b a)
- | .CCX a c t, b => writeBit b t (b t ^^ (b a && b c))
- | .measureX t _ _, b => writeBit b t false
-
-def basisRun : Program → BasisState → BasisState
- | [], b => b
- | i::p,b => basisRun p (basisStep i b)
-
-theorem run_basis (p : Program) (m : List Bool) (s : State) :
- (run p m s).basis = basisRun p s.basis := by
- induction p generalizing m s with
- | nil => rfl
- | cons i p ih => cases i <;> simp [run,basisRun,basisStep,ih,measureAndCorrect]
-
-theorem basisRun_append (p q : Program) (b : BasisState) :
- basisRun (p++q) b = basisRun q (basisRun p b) := by
- induction p generalizing b with
- | nil => rfl
- | cons i p ih => simp [basisRun,ih]
-
-def stripPhase : Instr → Instr
- | .measureX q _ _ => .measureX q [] []
- | i => i
-
-theorem basisRun_stripPhase (p : Program) (b : BasisState) :
- basisRun (p.map stripPhase) b = basisRun p b := by
- induction p generalizing b with
- | nil => rfl
- | cons i p ih => cases i <;> simp [basisRun,stripPhase,ih,basisStep]
-
-
-end SixCarryTrace
-namespace SixCarryFrame
-open SixCarryTrace
-def target : Instr → Wire
- | .X q => q
- | .CX _ q => q
- | .CCX _ _ q => q
- | .measureX q _ _ => q
-
-theorem basisStep_preserves (i : Instr) (b : BasisState) (q : Wire) (h : target i ≠ q) :
- basisStep i b q = b q := by
- have hrev := Ne.symm h
- cases i <;> simp_all [target,basisStep,writeBit]
-
-theorem basisRun_preserves (p : Program) (b : BasisState) (q : Wire)
- (h : ∀ i ∈ p, target i ≠ q) : basisRun p b q = b q := by
- induction p generalizing b with
- | nil => rfl
- | cons i p ih =>
-  change basisRun p (basisStep i b) q = b q
-  rw [ih _ (fun j hj => h j (by simp [hj]))]
-  exact basisStep_preserves i b q (h i (by simp))
-
-def prefixState (p : Program) (i : Nat) (b : BasisState) : BasisState := basisRun (p.take i) b
-
-theorem at_succ (p : Program) (i : Nat) (hi : i < p.length) (b : BasisState) :
- prefixState p (i+1) b = basisStep p[i] (prefixState p i b) := by
- simp only [prefixState,List.take_succ_eq_append_getElem hi,basisRun_append,basisRun]
-
-def noWriteBetween (p : Program) (i j : Nat) (q : Wire) : Bool :=
- ((p.drop i).take (j-i)).all (fun ins => decide (target ins ≠ q))
-
-theorem at_between (p : Program) (i j : Nat) (q : Wire) (hij : i ≤ j)
- (hn : noWriteBetween p i j q = true) (b : BasisState) :
- prefixState p j b q = prefixState p i b q := by
- unfold prefixState
- rw [show j = i+(j-i) from by omega,List.take_add,basisRun_append]
- apply basisRun_preserves
- intro ins hins
- exact of_decide_eq_true (List.all_eq_true.mp hn ins hins)
-
-theorem at_full (p : Program) (b : BasisState) : prefixState p p.length b = basisRun p b := by
- simp only [prefixState,List.take_length]
-
-
-end SixCarryFrame
-namespace SixCarryReplace
-theorem old_shape_of_lookup (p : Program) (i : Nat) (g : Instr)
- (h : p[i]? = some g) : p = p.take i ++ ([g] ++ p.drop (i+1)) := by
- obtain ⟨hi,hg⟩ := List.getElem?_eq_some_iff.mp h
- have hd := List.drop_eq_getElem_cons hi
- rw [hg] at hd
- exact (List.take_append_drop i p).symm.trans (congrArg (fun q => p.take i ++ q) hd)
-
-end SixCarryReplace
-namespace SixCarryReplacement
-theorem state_ext {s t : State} (hp : s.phase=t.phase) (hb : s.basis=t.basis) : s=t := by
- cases s
- cases t
- cases hp
- cases hb
- rfl
-
-end SixCarryReplacement
-namespace SixCarrySupport
-theorem replacement_support (pre old new post : Program)
- (hs : wires new ⊆ wires (pre ++ (old ++ post))) :
- wires (pre ++ (new ++ post)) ⊆ wires (pre ++ (old ++ post)) := by
- intro w hw
- simp only [wires_append,Finset.mem_union] at hw ⊢
- rcases hw with h | h | h
- · exact Or.inl h
- · have hh:=hs h; simpa only [wires_append,Finset.mem_union] using hh
- · exact Or.inr (Or.inr h)
-
-theorem replacement_physical (pre old new post : Program)
- (hp : GatePhysical (pre ++ (old ++ post))) (hn : GatePhysical new) :
- GatePhysical (pre ++ (new ++ post)) := by
- simp only [gatePhysical_append] at hp ⊢
- exact ⟨hp.1,hn,hp.2.2⟩
-
-end SixCarrySupport
-namespace SixCarryResource
-theorem slots_append (p q : Program) : Challenge.gateSlots (p++q)=Challenge.gateSlots p+Challenge.gateSlots q := by
- simp [Challenge.gateSlots,List.map_append,List.sum_append]
-end SixCarryResource
-end ECDSAAdd.Entrant
-
-end
-
-section
--- Preserved checked proof component: SixCarryPatchGeneric
-namespace ECDSAAdd.Entrant.SixCarryPatchGeneric
-open ECDSAAdd SixCarryReplace
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
-
-def patch (p : Program) (i : Nat) (replacement : Program) : Program :=
- p.take i++(replacement++p.drop (i+1))
-
-theorem run_eq (p : Program) (i a b t : Nat) (replacement : Program)
- (hg : p[i]?=some (.CCX a b t)) (hm : measurementCount replacement=0)
- (s : State) (m : List Bool)
- (h : run [.CCX a b t] [] (run (p.take i) (m.take (measurementCount (p.take i))) s)=
-      run replacement [] (run (p.take i) (m.take (measurementCount (p.take i))) s)) :
- run p m s=run (patch p i replacement) m s := by
- have shape := old_shape_of_lookup p i (.CCX a b t) hg
- conv_lhs => rw [shape]
- unfold patch
- conv_lhs => rw [run_append]
- conv_rhs => rw [run_append]
- rw [run_append,run_append,hm]
- simpa only [measurementCount,List.take_zero,List.drop_zero] using
-  congrArg (run (p.drop (i+1)) (m.drop (measurementCount (p.take i)))) h
-end ECDSAAdd.Entrant.SixCarryPatchGeneric
-
-end
-
-section
--- Preserved checked proof component: SixCarryPatchResources
-namespace ECDSAAdd.Entrant.SixCarryPatchResources
-open ECDSAAdd Challenge SixCarryPatchGeneric SixCarryReplace
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
-
-theorem toffoli (p : Program) (i a b t : Nat) (r : Program)
- (hg : p[i]?=some (.CCX a b t)) (hr : toffoliCount r=0) :
- toffoliCount (patch p i r)+1=toffoliCount p := by
- have h := congrArg toffoliCount (old_shape_of_lookup p i (.CCX a b t) hg)
- have one : toffoliCount [.CCX a b t]=1 := by simp only [toffoliCount]
- simp only [toffoliCount_append,one] at h
- simp only [patch,toffoliCount_append,hr]
- omega
-
-theorem measurements (p : Program) (i a b t : Nat) (r : Program)
- (hg : p[i]?=some (.CCX a b t)) (hr : measurementCount r=0) :
- measurementCount (patch p i r)=measurementCount p := by
- have h := congrArg measurementCount (old_shape_of_lookup p i (.CCX a b t) hg)
- have zero : measurementCount [.CCX a b t]=0 := by simp only [measurementCount]
- simp only [measurementCount_append,zero] at h
- simp only [patch,measurementCount_append,hr]
- omega
-
-theorem slots (p : Program) (i a b t : Nat) (r : Program) (n : Nat)
- (hg : p[i]?=some (.CCX a b t)) (hr : gateSlots r=n+1) :
- gateSlots (patch p i r)=gateSlots p+n := by
- have h := congrArg gateSlots (old_shape_of_lookup p i (.CCX a b t) hg)
- have one : gateSlots [.CCX a b t]=1 := by unfold gateSlots; rfl
- simp only [SixCarryResource.slots_append,one] at h
- simp only [patch,SixCarryResource.slots_append,hr]
- omega
-end ECDSAAdd.Entrant.SixCarryPatchResources
-
-end
-
-section
--- Preserved checked proof component: SixCarryPatchPrefix
-namespace ECDSAAdd.Entrant.SixCarryPatchPrefix
-open ECDSAAdd SixCarryPatchGeneric
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-
-theorem take_before (p : Program) (j : Nat) (g : Instr) (r : Program) (i : Nat)
- (hg : p[j]?=some g) (hi : i≤j) : (patch p j r).take i=p.take i := by
- have hj := (List.getElem?_eq_some_iff.mp hg).1
- unfold patch
- rw [List.take_append_of_le_length (by rw [List.length_take];omega),List.take_take,Nat.min_eq_left hi]
-
-theorem lookup_before (p : Program) (j : Nat) (g : Instr) (r : Program) (i : Nat)
- (hg : p[j]?=some g) (hi : i<j) : (patch p j r)[i]?=p[i]? := by
- have hj := (List.getElem?_eq_some_iff.mp hg).1
- unfold patch
- rw [List.getElem?_append_left (by rw [List.length_take];omega),List.getElem?_take_of_lt hi]
-end ECDSAAdd.Entrant.SixCarryPatchPrefix
-
-end
-
-section
--- Preserved checked proof component: SmallPatchSupport
-namespace ECDSAAdd.Entrant.SixCarryPatchSupport
-open ECDSAAdd Arithmetic SixCarryPatchGeneric SixCarryReplace
-theorem support (p : Program) (i : Nat) (g : Instr) (r : Program)
- (hg : p[i]?=some g) (hr : wires r⊆wires p) : wires (patch p i r)⊆wires p := by
- have hs := old_shape_of_lookup p i g hg
- exact Eq.mp (congrArg (fun p'=>wires (patch p i r)⊆wires p') hs.symm)
-  (SixCarrySupport.replacement_support (p.take i) [g] r (p.drop (i+1))
-   (Eq.mp (congrArg (fun p'=>wires r⊆wires p') hs) hr))
-
-theorem physical (p : Program) (i : Nat) (g : Instr) (r : Program)
- (hg : p[i]?=some g) (hp : GatePhysical p) (hr : GatePhysical r) : GatePhysical (patch p i r) := by
- have hs := old_shape_of_lookup p i g hg
- exact SixCarrySupport.replacement_physical (p.take i) [g] r (p.drop (i+1))
-  (Eq.mp (congrArg GatePhysical hs) hp) hr
-
-end ECDSAAdd.Entrant.SixCarryPatchSupport
-
-end
-
-section
--- Preserved checked proof component: SmallPatchSlots
-namespace ECDSAAdd.Entrant.ExtraCarryResourceGeneric
-open ECDSAAdd Challenge
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-attribute [local irreducible] Challenge.gateSlots
-
-theorem patch_slots_zero (p : Program) (i a b t : Nat) (r : Program)
- (hg : p[i]?=some (.CCX a b t)) (hr : gateSlots r=1) :
- gateSlots (SixCarryPatchGeneric.patch p i r)=gateSlots p := by
- have h := SixCarryPatchResources.slots p i a b t r 0 hg (by simpa only [Nat.zero_add] using hr)
- simpa only [Nat.add_zero] using h
-
-end ECDSAAdd.Entrant.ExtraCarryResourceGeneric
-
-end
-
 section
 -- Preserved checked proof component: LocalEFoldTrace
 open ECDSAAdd Lean
@@ -8047,5 +7769,1294 @@ theorem ranked_certified_gain :
 end ECDSAAdd.Entrant.FullB91FoldOptTemp
 #print axioms ECDSAAdd.Entrant.FullB91FoldOptTemp.actual_frame
 #print axioms ECDSAAdd.Entrant.FullB91FoldOptTemp.ranked_certified_gain
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenCore
+namespace ECDSAAdd.Entrant.LocalSevenCore
+open ECDSAAdd SixCarryTrace SixCarryFrame SixCarryLoopAnchor SixCarryBasisTransfer
+open SixCarryLookupTransfer SixCarryGateRepairs SixCarryPatchGeneric SixCarryPatchPrefix SixCarryChunkViews
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.run SixCarryLoopAnchor.loop SixCarryPrefixData.program
+
+def core : Program := SixCarryLoopAnchor.loop.take 12792
+attribute [local irreducible] core
+theorem core_prefix (i : Nat) (hi : i≤12792) : core.take i=SixCarryLoopAnchor.loop.take i := by
+ unfold core
+ rw [List.take_take,Nat.min_eq_left hi]
+
+def Clean (b : BasisState) : Prop := ∀q∈SixCarryCleanDomain.cleanSites,b q=false
+def p1 : Program := patch core 11959 repair11959
+def p2 : Program := patch p1 11953 repair11953
+def p3 : Program := patch p2 11947 repair11947
+def p4 : Program := patch p3 11941 repair11941
+def p5 : Program := patch p4 11935 repair11935
+def p6 : Program := patch p5 4913 repair4913
+attribute [local irreducible] p1 p2 p3 p4 p5 p6
+
+theorem original_gate_11959 : core[11959]?=some (.CCX 4664 4407 4408) := by
+ rw [core,List.getElem?_take_of_lt (by decide : 11959<12792)]
+ exact SixCarryAllPatch.original_gate_11959
+
+theorem original_gate_11953 : core[11953]?=some (.CCX 4663 4406 4407) := by
+ rw [core,List.getElem?_take_of_lt (by decide : 11953<12792)]
+ exact SixCarryAllPatch.original_gate_11953
+
+theorem original_gate_11947 : core[11947]?=some (.CCX 4662 4405 4406) := by
+ rw [core,List.getElem?_take_of_lt (by decide : 11947<12792)]
+ exact SixCarryAllPatch.original_gate_11947
+
+theorem original_gate_11941 : core[11941]?=some (.CCX 4661 4404 4405) := by
+ rw [core,List.getElem?_take_of_lt (by decide : 11941<12792)]
+ exact SixCarryAllPatch.original_gate_11941
+
+theorem original_gate_11935 : core[11935]?=some (.CCX 4660 4403 4404) := by
+ rw [core,List.getElem?_take_of_lt (by decide : 11935<12792)]
+ exact SixCarryAllPatch.original_gate_11935
+
+theorem original_gate_4913 : core[4913]?=some (.CCX 4664 4407 4408) := by
+ rw [core,List.getElem?_take_of_lt (by decide : 4913<12792)]
+ exact SixCarryAllPatch.original_gate_4913
+
+theorem lookup1 : core[11959]?=some (.CCX 4664 4407 4408) := by
+ exact original_gate_11959
+
+theorem clean11959 (b : BasisState) (hz : Clean b) : SixCarryBridge11959.Clean b :=
+ ⟨hz 4372 (by decide +kernel),hz 4489 (by decide +kernel),hz 4490 (by decide +kernel),hz 4491 (by decide +kernel),hz 4492 (by decide +kernel),hz 4493 (by decide +kernel),hz 4494 (by decide +kernel),hz 4495 (by decide +kernel),hz 4496 (by decide +kernel),hz 4627 (by decide +kernel),hz 4628 (by decide +kernel),hz 4629 (by decide +kernel),hz 4630 (by decide +kernel),hz 4631 (by decide +kernel),hz 4632 (by decide +kernel),hz 4633 (by decide +kernel),hz 4634 (by decide +kernel),hz 4654 (by decide +kernel),hz 4655 (by decide +kernel),hz 4656 (by decide +kernel),hz 4657 (by decide +kernel),hz 4658 (by decide +kernel),hz 4659 (by decide +kernel),hz 4662 (by decide +kernel),hz 4663 (by decide +kernel),hz 4664 (by decide +kernel),hz 4760 (by decide +kernel),hz 4796 (by decide +kernel),hz 4797 (by decide +kernel),hz 4817 (by decide +kernel),hz 4818 (by decide +kernel),hz 4819 (by decide +kernel),hz 4820 (by decide +kernel),hz 4821 (by decide +kernel),hz 4822 (by decide +kernel),hz 4825 (by decide +kernel),hz 4826 (by decide +kernel)⟩
+
+theorem step1 (s : State) (m : List Bool) (hz : Clean s.basis) :
+ run core m s=run p1 m s := by
+ unfold p1
+ apply SixCarryPatchGeneric.run_eq core 11959 4664 4407 4408 repair11959 lookup1 (by decide +kernel) s m
+ apply gate11959
+ rw [core_prefix 11959 (by decide)]
+ rw [actual_prefix_basis 11959 (by decide +kernel)]
+ exact SixCarryCondition11959.condition s.basis (clean11959 s.basis hz)
+
+theorem lookup2 : p1[11953]?=some (.CCX 4663 4406 4407) := by
+ have h1 : p1[11953]?=some (.CCX 4663 4406 4407) := by
+  unfold p1
+  exact (lookup_before core 11959 (.CCX 4664 4407 4408) repair11959 11953 lookup1 (by decide +kernel)).trans original_gate_11953
+ exact h1
+
+theorem prefix2 : p1.take 11953=core.take 11953 := by
+ have h1 : p1.take 11953=core.take 11953 := by
+  unfold p1
+  exact (take_before core 11959 (.CCX 4664 4407 4408) repair11959 11953 lookup1 (by decide +kernel)).trans (Eq.refl _)
+ exact h1
+
+theorem clean11953 (b : BasisState) (hz : Clean b) : SixCarryBridge11953.Clean b :=
+ hz 4664 (by decide +kernel)
+
+theorem step2 (s : State) (m : List Bool) (hz : Clean s.basis) :
+ run p1 m s=run p2 m s := by
+ unfold p2
+ apply SixCarryPatchGeneric.run_eq p1 11953 4663 4406 4407 repair11953 lookup2 (by decide +kernel) s m
+ apply gate11953
+ simp only [prefix2]
+ rw [core_prefix 11953 (by decide)]
+ rw [actual_prefix_basis 11953 (by decide +kernel)]
+ exact SixCarryCondition11953.condition s.basis (clean11953 s.basis hz)
+
+theorem lookup3 : p2[11947]?=some (.CCX 4662 4405 4406) := by
+ have h1 : p1[11947]?=some (.CCX 4662 4405 4406) := by
+  unfold p1
+  exact (lookup_before core 11959 (.CCX 4664 4407 4408) repair11959 11947 lookup1 (by decide +kernel)).trans original_gate_11947
+ have h2 : p2[11947]?=some (.CCX 4662 4405 4406) := by
+  unfold p2
+  exact (lookup_before p1 11953 (.CCX 4663 4406 4407) repair11953 11947 lookup2 (by decide +kernel)).trans h1
+ exact h2
+
+theorem prefix3 : p2.take 11947=core.take 11947 := by
+ have h1 : p1.take 11947=core.take 11947 := by
+  unfold p1
+  exact (take_before core 11959 (.CCX 4664 4407 4408) repair11959 11947 lookup1 (by decide +kernel)).trans (Eq.refl _)
+ have h2 : p2.take 11947=core.take 11947 := by
+  unfold p2
+  exact (take_before p1 11953 (.CCX 4663 4406 4407) repair11953 11947 lookup2 (by decide +kernel)).trans h1
+ exact h2
+
+theorem clean11947 (b : BasisState) (hz : Clean b) : SixCarryBridge11947.Clean b :=
+ ⟨hz 4663 (by decide +kernel),hz 4826 (by decide +kernel)⟩
+
+theorem step3 (s : State) (m : List Bool) (hz : Clean s.basis) :
+ run p2 m s=run p3 m s := by
+ unfold p3
+ apply SixCarryPatchGeneric.run_eq p2 11947 4662 4405 4406 repair11947 lookup3 (by decide +kernel) s m
+ apply gate11947
+ simp only [prefix3]
+ rw [core_prefix 11947 (by decide)]
+ rw [actual_prefix_basis 11947 (by decide +kernel)]
+ exact SixCarryCondition11947.condition s.basis (clean11947 s.basis hz)
+
+theorem lookup4 : p3[11941]?=some (.CCX 4661 4404 4405) := by
+ have h1 : p1[11941]?=some (.CCX 4661 4404 4405) := by
+  unfold p1
+  exact (lookup_before core 11959 (.CCX 4664 4407 4408) repair11959 11941 lookup1 (by decide +kernel)).trans original_gate_11941
+ have h2 : p2[11941]?=some (.CCX 4661 4404 4405) := by
+  unfold p2
+  exact (lookup_before p1 11953 (.CCX 4663 4406 4407) repair11953 11941 lookup2 (by decide +kernel)).trans h1
+ have h3 : p3[11941]?=some (.CCX 4661 4404 4405) := by
+  unfold p3
+  exact (lookup_before p2 11947 (.CCX 4662 4405 4406) repair11947 11941 lookup3 (by decide +kernel)).trans h2
+ exact h3
+
+theorem prefix4 : p3.take 11941=core.take 11941 := by
+ have h1 : p1.take 11941=core.take 11941 := by
+  unfold p1
+  exact (take_before core 11959 (.CCX 4664 4407 4408) repair11959 11941 lookup1 (by decide +kernel)).trans (Eq.refl _)
+ have h2 : p2.take 11941=core.take 11941 := by
+  unfold p2
+  exact (take_before p1 11953 (.CCX 4663 4406 4407) repair11953 11941 lookup2 (by decide +kernel)).trans h1
+ have h3 : p3.take 11941=core.take 11941 := by
+  unfold p3
+  exact (take_before p2 11947 (.CCX 4662 4405 4406) repair11947 11941 lookup3 (by decide +kernel)).trans h2
+ exact h3
+
+theorem clean11941 (b : BasisState) (hz : Clean b) : SixCarryBridge11941.Clean b :=
+ ⟨hz 4658 (by decide +kernel),hz 4659 (by decide +kernel),hz 4660 (by decide +kernel),hz 4662 (by decide +kernel),hz 4821 (by decide +kernel),hz 4822 (by decide +kernel),hz 4823 (by decide +kernel),hz 4825 (by decide +kernel)⟩
+
+theorem step4 (s : State) (m : List Bool) (hz : Clean s.basis) :
+ run p3 m s=run p4 m s := by
+ unfold p4
+ apply SixCarryPatchGeneric.run_eq p3 11941 4661 4404 4405 repair11941 lookup4 (by decide +kernel) s m
+ apply gate11941
+ simp only [prefix4]
+ rw [core_prefix 11941 (by decide)]
+ rw [actual_prefix_basis 11941 (by decide +kernel)]
+ exact SixCarryCondition11941.condition s.basis (clean11941 s.basis hz)
+
+theorem lookup5 : p4[11935]?=some (.CCX 4660 4403 4404) := by
+ have h1 : p1[11935]?=some (.CCX 4660 4403 4404) := by
+  unfold p1
+  exact (lookup_before core 11959 (.CCX 4664 4407 4408) repair11959 11935 lookup1 (by decide +kernel)).trans original_gate_11935
+ have h2 : p2[11935]?=some (.CCX 4660 4403 4404) := by
+  unfold p2
+  exact (lookup_before p1 11953 (.CCX 4663 4406 4407) repair11953 11935 lookup2 (by decide +kernel)).trans h1
+ have h3 : p3[11935]?=some (.CCX 4660 4403 4404) := by
+  unfold p3
+  exact (lookup_before p2 11947 (.CCX 4662 4405 4406) repair11947 11935 lookup3 (by decide +kernel)).trans h2
+ have h4 : p4[11935]?=some (.CCX 4660 4403 4404) := by
+  unfold p4
+  exact (lookup_before p3 11941 (.CCX 4661 4404 4405) repair11941 11935 lookup4 (by decide +kernel)).trans h3
+ exact h4
+
+theorem prefix5 : p4.take 11935=core.take 11935 := by
+ have h1 : p1.take 11935=core.take 11935 := by
+  unfold p1
+  exact (take_before core 11959 (.CCX 4664 4407 4408) repair11959 11935 lookup1 (by decide +kernel)).trans (Eq.refl _)
+ have h2 : p2.take 11935=core.take 11935 := by
+  unfold p2
+  exact (take_before p1 11953 (.CCX 4663 4406 4407) repair11953 11935 lookup2 (by decide +kernel)).trans h1
+ have h3 : p3.take 11935=core.take 11935 := by
+  unfold p3
+  exact (take_before p2 11947 (.CCX 4662 4405 4406) repair11947 11935 lookup3 (by decide +kernel)).trans h2
+ have h4 : p4.take 11935=core.take 11935 := by
+  unfold p4
+  exact (take_before p3 11941 (.CCX 4661 4404 4405) repair11941 11935 lookup4 (by decide +kernel)).trans h3
+ exact h4
+
+theorem clean11935 (b : BasisState) (hz : Clean b) : SixCarryBridge11935.Clean b :=
+ ⟨hz 4660 (by decide +kernel),hz 4661 (by decide +kernel),hz 4760 (by decide +kernel),hz 4796 (by decide +kernel),hz 4823 (by decide +kernel),hz 4824 (by decide +kernel)⟩
+
+theorem step5 (s : State) (m : List Bool) (hz : Clean s.basis) :
+ run p4 m s=run p5 m s := by
+ unfold p5
+ apply SixCarryPatchGeneric.run_eq p4 11935 4660 4403 4404 repair11935 lookup5 (by decide +kernel) s m
+ apply gate11935
+ simp only [prefix5]
+ rw [core_prefix 11935 (by decide)]
+ rw [actual_prefix_basis 11935 (by decide +kernel)]
+ exact SixCarryCondition11935.condition s.basis (clean11935 s.basis hz)
+
+theorem lookup6 : p5[4913]?=some (.CCX 4664 4407 4408) := by
+ have h1 : p1[4913]?=some (.CCX 4664 4407 4408) := by
+  unfold p1
+  exact (lookup_before core 11959 (.CCX 4664 4407 4408) repair11959 4913 lookup1 (by decide +kernel)).trans original_gate_4913
+ have h2 : p2[4913]?=some (.CCX 4664 4407 4408) := by
+  unfold p2
+  exact (lookup_before p1 11953 (.CCX 4663 4406 4407) repair11953 4913 lookup2 (by decide +kernel)).trans h1
+ have h3 : p3[4913]?=some (.CCX 4664 4407 4408) := by
+  unfold p3
+  exact (lookup_before p2 11947 (.CCX 4662 4405 4406) repair11947 4913 lookup3 (by decide +kernel)).trans h2
+ have h4 : p4[4913]?=some (.CCX 4664 4407 4408) := by
+  unfold p4
+  exact (lookup_before p3 11941 (.CCX 4661 4404 4405) repair11941 4913 lookup4 (by decide +kernel)).trans h3
+ have h5 : p5[4913]?=some (.CCX 4664 4407 4408) := by
+  unfold p5
+  exact (lookup_before p4 11935 (.CCX 4660 4403 4404) repair11935 4913 lookup5 (by decide +kernel)).trans h4
+ exact h5
+
+theorem prefix6 : p5.take 4913=core.take 4913 := by
+ have h1 : p1.take 4913=core.take 4913 := by
+  unfold p1
+  exact (take_before core 11959 (.CCX 4664 4407 4408) repair11959 4913 lookup1 (by decide +kernel)).trans (Eq.refl _)
+ have h2 : p2.take 4913=core.take 4913 := by
+  unfold p2
+  exact (take_before p1 11953 (.CCX 4663 4406 4407) repair11953 4913 lookup2 (by decide +kernel)).trans h1
+ have h3 : p3.take 4913=core.take 4913 := by
+  unfold p3
+  exact (take_before p2 11947 (.CCX 4662 4405 4406) repair11947 4913 lookup3 (by decide +kernel)).trans h2
+ have h4 : p4.take 4913=core.take 4913 := by
+  unfold p4
+  exact (take_before p3 11941 (.CCX 4661 4404 4405) repair11941 4913 lookup4 (by decide +kernel)).trans h3
+ have h5 : p5.take 4913=core.take 4913 := by
+  unfold p5
+  exact (take_before p4 11935 (.CCX 4660 4403 4404) repair11935 4913 lookup5 (by decide +kernel)).trans h4
+ exact h5
+
+theorem clean4913 (b : BasisState) (hz : Clean b) : SixCarryBridge4913.Clean b :=
+ ⟨hz 4372 (by decide +kernel),hz 4492 (by decide +kernel),hz 4493 (by decide +kernel),hz 4630 (by decide +kernel),hz 4631 (by decide +kernel),hz 4632 (by decide +kernel),hz 4652 (by decide +kernel),hz 4653 (by decide +kernel),hz 4654 (by decide +kernel),hz 4655 (by decide +kernel),hz 4657 (by decide +kernel),hz 4658 (by decide +kernel),hz 4659 (by decide +kernel),hz 4662 (by decide +kernel),hz 4663 (by decide +kernel),hz 4664 (by decide +kernel),hz 4815 (by decide +kernel),hz 4816 (by decide +kernel),hz 4817 (by decide +kernel),hz 4818 (by decide +kernel),hz 4820 (by decide +kernel),hz 4821 (by decide +kernel),hz 4822 (by decide +kernel),hz 4825 (by decide +kernel),hz 4826 (by decide +kernel)⟩
+
+theorem step6 (s : State) (m : List Bool) (hz : Clean s.basis) :
+ run p5 m s=run p6 m s := by
+ unfold p6
+ apply SixCarryPatchGeneric.run_eq p5 4913 4664 4407 4408 repair4913 lookup6 (by decide +kernel) s m
+ apply gate4913
+ simp only [prefix6]
+ rw [core_prefix 4913 (by decide)]
+ rw [actual_prefix_basis 4913 (by decide +kernel)]
+ exact SixCarryCondition4913.condition s.basis (clean4913 s.basis hz)
+
+theorem run_eq (s : State) (m : List Bool) (hz : Clean s.basis) : run core m s=run p6 m s :=
+ (step1 s m hz).trans ((step2 s m hz).trans ((step3 s m hz).trans ((step4 s m hz).trans ((step5 s m hz).trans (step6 s m hz)))))
+end ECDSAAdd.Entrant.LocalSevenCore
+#print axioms ECDSAAdd.Entrant.LocalSevenCore.run_eq
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenExtra
+namespace ECDSAAdd.Entrant.LocalSevenExtra
+open ECDSAAdd SixCarryLoopAnchor SixCarryChunkViews
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.run ZeroSetDevelop.compileS? SixCarryLoopAnchor.loop SixCarryPrefixData.program
+attribute [local irreducible] LocalSevenCore.p1 LocalSevenCore.p2 LocalSevenCore.p3 LocalSevenCore.p4 LocalSevenCore.p5 LocalSevenCore.p6
+
+def improved : Program := SixCarryPatchGeneric.patch LocalSevenCore.p6 4907 ExtraCarryGateRepairs.repair4907
+attribute [local irreducible] improved
+
+theorem original_gate : LocalSevenCore.core[4907]?=some (.CCX 4663 4406 4407) := by
+ rw [LocalSevenCore.core,List.getElem?_take_of_lt (by decide : 4907<12792)]
+ exact ExtraCarryLoop4907.original_gate
+
+theorem prefix_eq : LocalSevenCore.p6.take 4907=LocalSevenCore.core.take 4907 := by
+ have h1 : LocalSevenCore.p1.take 4907=LocalSevenCore.core.take 4907 := by
+  delta LocalSevenCore.p1
+  exact (SixCarryPatchPrefix.take_before LocalSevenCore.core 11959 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair11959 4907 LocalSevenCore.lookup1 (by decide +kernel)).trans (Eq.refl _)
+ have h2 : LocalSevenCore.p2.take 4907=LocalSevenCore.core.take 4907 := by
+  delta LocalSevenCore.p2
+  exact (SixCarryPatchPrefix.take_before LocalSevenCore.p1 11953 (.CCX 4663 4406 4407) SixCarryGateRepairs.repair11953 4907 LocalSevenCore.lookup2 (by decide +kernel)).trans h1
+ have h3 : LocalSevenCore.p3.take 4907=LocalSevenCore.core.take 4907 := by
+  delta LocalSevenCore.p3
+  exact (SixCarryPatchPrefix.take_before LocalSevenCore.p2 11947 (.CCX 4662 4405 4406) SixCarryGateRepairs.repair11947 4907 LocalSevenCore.lookup3 (by decide +kernel)).trans h2
+ have h4 : LocalSevenCore.p4.take 4907=LocalSevenCore.core.take 4907 := by
+  delta LocalSevenCore.p4
+  exact (SixCarryPatchPrefix.take_before LocalSevenCore.p3 11941 (.CCX 4661 4404 4405) SixCarryGateRepairs.repair11941 4907 LocalSevenCore.lookup4 (by decide +kernel)).trans h3
+ have h5 : LocalSevenCore.p5.take 4907=LocalSevenCore.core.take 4907 := by
+  delta LocalSevenCore.p5
+  exact (SixCarryPatchPrefix.take_before LocalSevenCore.p4 11935 (.CCX 4660 4403 4404) SixCarryGateRepairs.repair11935 4907 LocalSevenCore.lookup5 (by decide +kernel)).trans h4
+ have h6 : LocalSevenCore.p6.take 4907=LocalSevenCore.core.take 4907 := by
+  delta LocalSevenCore.p6
+  exact (SixCarryPatchPrefix.take_before LocalSevenCore.p5 4913 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair4913 4907 LocalSevenCore.lookup6 (by decide +kernel)).trans h5
+ exact h6
+
+theorem gate_lookup : LocalSevenCore.p6[4907]?=some (.CCX 4663 4406 4407) := by
+ have h1 : LocalSevenCore.p1[4907]?=some (.CCX 4663 4406 4407) := by
+  delta LocalSevenCore.p1
+  exact (SixCarryPatchPrefix.lookup_before LocalSevenCore.core 11959 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair11959 4907 LocalSevenCore.lookup1 (by decide +kernel)).trans original_gate
+ have h2 : LocalSevenCore.p2[4907]?=some (.CCX 4663 4406 4407) := by
+  delta LocalSevenCore.p2
+  exact (SixCarryPatchPrefix.lookup_before LocalSevenCore.p1 11953 (.CCX 4663 4406 4407) SixCarryGateRepairs.repair11953 4907 LocalSevenCore.lookup2 (by decide +kernel)).trans h1
+ have h3 : LocalSevenCore.p3[4907]?=some (.CCX 4663 4406 4407) := by
+  delta LocalSevenCore.p3
+  exact (SixCarryPatchPrefix.lookup_before LocalSevenCore.p2 11947 (.CCX 4662 4405 4406) SixCarryGateRepairs.repair11947 4907 LocalSevenCore.lookup3 (by decide +kernel)).trans h2
+ have h4 : LocalSevenCore.p4[4907]?=some (.CCX 4663 4406 4407) := by
+  delta LocalSevenCore.p4
+  exact (SixCarryPatchPrefix.lookup_before LocalSevenCore.p3 11941 (.CCX 4661 4404 4405) SixCarryGateRepairs.repair11941 4907 LocalSevenCore.lookup4 (by decide +kernel)).trans h3
+ have h5 : LocalSevenCore.p5[4907]?=some (.CCX 4663 4406 4407) := by
+  delta LocalSevenCore.p5
+  exact (SixCarryPatchPrefix.lookup_before LocalSevenCore.p4 11935 (.CCX 4660 4403 4404) SixCarryGateRepairs.repair11935 4907 LocalSevenCore.lookup5 (by decide +kernel)).trans h4
+ have h6 : LocalSevenCore.p6[4907]?=some (.CCX 4663 4406 4407) := by
+  delta LocalSevenCore.p6
+  exact (SixCarryPatchPrefix.lookup_before LocalSevenCore.p5 4913 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair4913 4907 LocalSevenCore.lookup6 (by decide +kernel)).trans h5
+ exact h6
+
+theorem clean (b : BasisState) (hc : ExtraCarryDomain.Clean b) : ExtraCarryBridge4907.Clean b :=
+ ⟨ExtraCarryDomain.zero b hc 4372 (by decide +kernel),ExtraCarryDomain.zero b hc 4469 (by decide +kernel),ExtraCarryDomain.zero b hc 4470 (by decide +kernel),ExtraCarryDomain.zero b hc 4474 (by decide +kernel),ExtraCarryDomain.zero b hc 4475 (by decide +kernel),ExtraCarryDomain.zero b hc 4476 (by decide +kernel),ExtraCarryDomain.zero b hc 4477 (by decide +kernel),ExtraCarryDomain.zero b hc 4478 (by decide +kernel),ExtraCarryDomain.zero b hc 4479 (by decide +kernel),ExtraCarryDomain.zero b hc 4480 (by decide +kernel),ExtraCarryDomain.zero b hc 4481 (by decide +kernel),ExtraCarryDomain.zero b hc 4482 (by decide +kernel),ExtraCarryDomain.zero b hc 4483 (by decide +kernel),ExtraCarryDomain.zero b hc 4484 (by decide +kernel),ExtraCarryDomain.zero b hc 4485 (by decide +kernel),ExtraCarryDomain.zero b hc 4486 (by decide +kernel),ExtraCarryDomain.zero b hc 4487 (by decide +kernel),ExtraCarryDomain.zero b hc 4488 (by decide +kernel),ExtraCarryDomain.zero b hc 4489 (by decide +kernel),ExtraCarryDomain.zero b hc 4490 (by decide +kernel),ExtraCarryDomain.zero b hc 4491 (by decide +kernel),ExtraCarryDomain.zero b hc 4492 (by decide +kernel),ExtraCarryDomain.zero b hc 4607 (by decide +kernel),ExtraCarryDomain.zero b hc 4608 (by decide +kernel),ExtraCarryDomain.zero b hc 4609 (by decide +kernel),ExtraCarryDomain.zero b hc 4613 (by decide +kernel),ExtraCarryDomain.zero b hc 4614 (by decide +kernel),ExtraCarryDomain.zero b hc 4615 (by decide +kernel),ExtraCarryDomain.zero b hc 4616 (by decide +kernel),ExtraCarryDomain.zero b hc 4617 (by decide +kernel),ExtraCarryDomain.zero b hc 4618 (by decide +kernel),ExtraCarryDomain.zero b hc 4619 (by decide +kernel),ExtraCarryDomain.zero b hc 4620 (by decide +kernel),ExtraCarryDomain.zero b hc 4621 (by decide +kernel),ExtraCarryDomain.zero b hc 4622 (by decide +kernel),ExtraCarryDomain.zero b hc 4623 (by decide +kernel),ExtraCarryDomain.zero b hc 4624 (by decide +kernel),ExtraCarryDomain.zero b hc 4625 (by decide +kernel),ExtraCarryDomain.zero b hc 4626 (by decide +kernel),ExtraCarryDomain.zero b hc 4627 (by decide +kernel),ExtraCarryDomain.zero b hc 4628 (by decide +kernel),ExtraCarryDomain.zero b hc 4629 (by decide +kernel),ExtraCarryDomain.zero b hc 4630 (by decide +kernel),ExtraCarryDomain.zero b hc 4631 (by decide +kernel),ExtraCarryDomain.zero b hc 4662 (by decide +kernel),ExtraCarryDomain.zero b hc 4663 (by decide +kernel),ExtraCarryDomain.zero b hc 4825 (by decide +kernel),ExtraCarryDomain.zero b hc 4826 (by decide +kernel)⟩
+
+theorem run_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.basis) :
+ run LocalSevenCore.p6 m s=run improved m s := by
+ delta LocalSevenExtra.improved
+ apply SixCarryPatchGeneric.run_eq LocalSevenCore.p6 4907 4663 4406 4407 ExtraCarryGateRepairs.repair4907 gate_lookup (by decide +kernel) s m
+ apply ExtraCarryGateRepairs.gate4907
+ simp only [prefix_eq]
+ rw [LocalSevenCore.core_prefix 4907 (by decide)]
+ rw [SixCarryBasisTransfer.actual_prefix_basis 4907 (by decide +kernel)]
+ exact ExtraCarryCondition4907.condition s.basis (clean s.basis hc)
+theorem run_core_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.basis) :
+ run LocalSevenCore.core m s=run improved m s :=
+ (LocalSevenCore.run_eq s m (SixCarryCleanDomain.domain s.basis hc.1 hc.2)).trans (run_eq s m hc)
+end ECDSAAdd.Entrant.LocalSevenExtra
+#print axioms ECDSAAdd.Entrant.LocalSevenExtra.run_core_eq
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenResources
+namespace ECDSAAdd.Entrant.LocalSevenResources
+open ECDSAAdd Challenge SixCarryPatchGeneric
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots LocalSevenCore.core LocalSevenCore.p1 LocalSevenCore.p2 LocalSevenCore.p3 LocalSevenCore.p4 LocalSevenCore.p5 LocalSevenCore.p6 LocalSevenExtra.improved SixCarryLoopAnchor.loop SixCarryPrefixData.program
+theorem shape1 : LocalSevenCore.p1=patch LocalSevenCore.core 11959 SixCarryGateRepairs.repair11959 := by delta LocalSevenCore.p1; rfl
+theorem t1 : toffoliCount LocalSevenCore.p1+1=toffoliCount LocalSevenCore.core :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount p+1=toffoliCount LocalSevenCore.core) shape1.symm)
+  (SixCarryPatchResources.toffoli LocalSevenCore.core 11959 4664 4407 4408 SixCarryGateRepairs.repair11959 LocalSevenCore.lookup1 (by decide +kernel))
+theorem m1 : measurementCount LocalSevenCore.p1=measurementCount LocalSevenCore.core :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount p=measurementCount LocalSevenCore.core) shape1.symm)
+  (SixCarryPatchResources.measurements LocalSevenCore.core 11959 4664 4407 4408 SixCarryGateRepairs.repair11959 LocalSevenCore.lookup1 (by decide +kernel))
+theorem s1 : gateSlots LocalSevenCore.p1=gateSlots LocalSevenCore.core+0 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots p=gateSlots LocalSevenCore.core+0) shape1.symm)
+  (SixCarryPatchResources.slots LocalSevenCore.core 11959 4664 4407 4408 SixCarryGateRepairs.repair11959 0 LocalSevenCore.lookup1 (by decide +kernel))
+theorem shape2 : LocalSevenCore.p2=patch LocalSevenCore.p1 11953 SixCarryGateRepairs.repair11953 := by delta LocalSevenCore.p2; rfl
+theorem t2 : toffoliCount LocalSevenCore.p2+1=toffoliCount LocalSevenCore.p1 :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount p+1=toffoliCount LocalSevenCore.p1) shape2.symm)
+  (SixCarryPatchResources.toffoli LocalSevenCore.p1 11953 4663 4406 4407 SixCarryGateRepairs.repair11953 LocalSevenCore.lookup2 (by decide +kernel))
+theorem m2 : measurementCount LocalSevenCore.p2=measurementCount LocalSevenCore.p1 :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount p=measurementCount LocalSevenCore.p1) shape2.symm)
+  (SixCarryPatchResources.measurements LocalSevenCore.p1 11953 4663 4406 4407 SixCarryGateRepairs.repair11953 LocalSevenCore.lookup2 (by decide +kernel))
+theorem s2 : gateSlots LocalSevenCore.p2=gateSlots LocalSevenCore.p1+3 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots p=gateSlots LocalSevenCore.p1+3) shape2.symm)
+  (SixCarryPatchResources.slots LocalSevenCore.p1 11953 4663 4406 4407 SixCarryGateRepairs.repair11953 3 LocalSevenCore.lookup2 (by decide +kernel))
+theorem shape3 : LocalSevenCore.p3=patch LocalSevenCore.p2 11947 SixCarryGateRepairs.repair11947 := by delta LocalSevenCore.p3; rfl
+theorem t3 : toffoliCount LocalSevenCore.p3+1=toffoliCount LocalSevenCore.p2 :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount p+1=toffoliCount LocalSevenCore.p2) shape3.symm)
+  (SixCarryPatchResources.toffoli LocalSevenCore.p2 11947 4662 4405 4406 SixCarryGateRepairs.repair11947 LocalSevenCore.lookup3 (by decide +kernel))
+theorem m3 : measurementCount LocalSevenCore.p3=measurementCount LocalSevenCore.p2 :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount p=measurementCount LocalSevenCore.p2) shape3.symm)
+  (SixCarryPatchResources.measurements LocalSevenCore.p2 11947 4662 4405 4406 SixCarryGateRepairs.repair11947 LocalSevenCore.lookup3 (by decide +kernel))
+theorem s3 : gateSlots LocalSevenCore.p3=gateSlots LocalSevenCore.p2+3 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots p=gateSlots LocalSevenCore.p2+3) shape3.symm)
+  (SixCarryPatchResources.slots LocalSevenCore.p2 11947 4662 4405 4406 SixCarryGateRepairs.repair11947 3 LocalSevenCore.lookup3 (by decide +kernel))
+theorem shape4 : LocalSevenCore.p4=patch LocalSevenCore.p3 11941 SixCarryGateRepairs.repair11941 := by delta LocalSevenCore.p4; rfl
+theorem t4 : toffoliCount LocalSevenCore.p4+1=toffoliCount LocalSevenCore.p3 :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount p+1=toffoliCount LocalSevenCore.p3) shape4.symm)
+  (SixCarryPatchResources.toffoli LocalSevenCore.p3 11941 4661 4404 4405 SixCarryGateRepairs.repair11941 LocalSevenCore.lookup4 (by decide +kernel))
+theorem m4 : measurementCount LocalSevenCore.p4=measurementCount LocalSevenCore.p3 :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount p=measurementCount LocalSevenCore.p3) shape4.symm)
+  (SixCarryPatchResources.measurements LocalSevenCore.p3 11941 4661 4404 4405 SixCarryGateRepairs.repair11941 LocalSevenCore.lookup4 (by decide +kernel))
+theorem s4 : gateSlots LocalSevenCore.p4=gateSlots LocalSevenCore.p3+3 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots p=gateSlots LocalSevenCore.p3+3) shape4.symm)
+  (SixCarryPatchResources.slots LocalSevenCore.p3 11941 4661 4404 4405 SixCarryGateRepairs.repair11941 3 LocalSevenCore.lookup4 (by decide +kernel))
+theorem shape5 : LocalSevenCore.p5=patch LocalSevenCore.p4 11935 SixCarryGateRepairs.repair11935 := by delta LocalSevenCore.p5; rfl
+theorem t5 : toffoliCount LocalSevenCore.p5+1=toffoliCount LocalSevenCore.p4 :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount p+1=toffoliCount LocalSevenCore.p4) shape5.symm)
+  (SixCarryPatchResources.toffoli LocalSevenCore.p4 11935 4660 4403 4404 SixCarryGateRepairs.repair11935 LocalSevenCore.lookup5 (by decide +kernel))
+theorem m5 : measurementCount LocalSevenCore.p5=measurementCount LocalSevenCore.p4 :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount p=measurementCount LocalSevenCore.p4) shape5.symm)
+  (SixCarryPatchResources.measurements LocalSevenCore.p4 11935 4660 4403 4404 SixCarryGateRepairs.repair11935 LocalSevenCore.lookup5 (by decide +kernel))
+theorem s5 : gateSlots LocalSevenCore.p5=gateSlots LocalSevenCore.p4+4 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots p=gateSlots LocalSevenCore.p4+4) shape5.symm)
+  (SixCarryPatchResources.slots LocalSevenCore.p4 11935 4660 4403 4404 SixCarryGateRepairs.repair11935 4 LocalSevenCore.lookup5 (by decide +kernel))
+theorem shape6 : LocalSevenCore.p6=patch LocalSevenCore.p5 4913 SixCarryGateRepairs.repair4913 := by delta LocalSevenCore.p6; rfl
+theorem t6 : toffoliCount LocalSevenCore.p6+1=toffoliCount LocalSevenCore.p5 :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount p+1=toffoliCount LocalSevenCore.p5) shape6.symm)
+  (SixCarryPatchResources.toffoli LocalSevenCore.p5 4913 4664 4407 4408 SixCarryGateRepairs.repair4913 LocalSevenCore.lookup6 (by decide +kernel))
+theorem m6 : measurementCount LocalSevenCore.p6=measurementCount LocalSevenCore.p5 :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount p=measurementCount LocalSevenCore.p5) shape6.symm)
+  (SixCarryPatchResources.measurements LocalSevenCore.p5 4913 4664 4407 4408 SixCarryGateRepairs.repair4913 LocalSevenCore.lookup6 (by decide +kernel))
+theorem s6 : gateSlots LocalSevenCore.p6=gateSlots LocalSevenCore.p5+0 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots p=gateSlots LocalSevenCore.p5+0) shape6.symm)
+  (SixCarryPatchResources.slots LocalSevenCore.p5 4913 4664 4407 4408 SixCarryGateRepairs.repair4913 0 LocalSevenCore.lookup6 (by decide +kernel))
+theorem shape7 : LocalSevenExtra.improved=patch LocalSevenCore.p6 4907 ExtraCarryGateRepairs.repair4907 := by delta LocalSevenExtra.improved; rfl
+theorem t7 : toffoliCount LocalSevenExtra.improved+1=toffoliCount LocalSevenCore.p6 :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount p+1=toffoliCount LocalSevenCore.p6) shape7.symm)
+  (SixCarryPatchResources.toffoli LocalSevenCore.p6 4907 4663 4406 4407 ExtraCarryGateRepairs.repair4907 LocalSevenExtra.gate_lookup (by decide +kernel))
+theorem m7 : measurementCount LocalSevenExtra.improved=measurementCount LocalSevenCore.p6 :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount p=measurementCount LocalSevenCore.p6) shape7.symm)
+  (SixCarryPatchResources.measurements LocalSevenCore.p6 4907 4663 4406 4407 ExtraCarryGateRepairs.repair4907 LocalSevenExtra.gate_lookup (by decide +kernel))
+theorem s7 : gateSlots LocalSevenExtra.improved=gateSlots LocalSevenCore.p6+0 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots p=gateSlots LocalSevenCore.p6+0) shape7.symm)
+  (SixCarryPatchResources.slots LocalSevenCore.p6 4907 4663 4406 4407 ExtraCarryGateRepairs.repair4907 0 LocalSevenExtra.gate_lookup (by decide +kernel))
+theorem toffoli : toffoliCount LocalSevenExtra.improved+7=toffoliCount LocalSevenCore.core := by
+ have h1:=t1
+ have h2:=t2
+ have h3:=t3
+ have h4:=t4
+ have h5:=t5
+ have h6:=t6
+ have h7:=t7
+ omega
+theorem measurements : measurementCount LocalSevenExtra.improved=measurementCount LocalSevenCore.core := by
+ have h1:=m1
+ have h2:=m2
+ have h3:=m3
+ have h4:=m4
+ have h5:=m5
+ have h6:=m6
+ have h7:=m7
+ omega
+theorem slots : gateSlots LocalSevenExtra.improved=gateSlots LocalSevenCore.core+13 := by
+ have h1:=s1
+ have h2:=s2
+ have h3:=s3
+ have h4:=s4
+ have h5:=s5
+ have h6:=s6
+ have h7:=s7
+ omega
+
+#print axioms toffoli
+#print axioms slots
+end ECDSAAdd.Entrant.LocalSevenResources
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenOutputLength
+namespace ECDSAAdd.Entrant.LocalSevenOutputLength
+open ECDSAAdd
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] SixCarryLoopAnchor.output ZeroSetDevelop.compileS?
+theorem shape : SixCarryLoopAnchor.output=LowAccMiddleLiteral.output := by
+ delta SixCarryLoopAnchor.output
+ exact LowAccMiddleLiteral.compiler_output_eq
+theorem length : SixCarryLoopAnchor.output.length=8783 :=
+ Eq.mp (congrArg (fun p : Program=>p.length=8783) shape.symm)
+  (by decide +kernel : LowAccMiddleLiteral.output.length=8783)
+#print axioms length
+end ECDSAAdd.Entrant.LocalSevenOutputLength
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenShape
+namespace ECDSAAdd.Entrant.LocalSevenShape
+open ECDSAAdd
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ZeroSetDevelop.compileS? SixCarryLoopAnchor.loop SixCarryLoopAnchor.build SixCarryLoopAnchor.output LocalSevenCore.core
+theorem build_length : SixCarryLoopAnchor.build.length=4009 := by decide +kernel
+
+theorem output_length : SixCarryLoopAnchor.output.length=8783 := LocalSevenOutputLength.length
+
+
+theorem core_shape : LocalSevenCore.core=SixCarryLoopAnchor.build++SixCarryLoopAnchor.output := by
+ unfold LocalSevenCore.core SixCarryLoopAnchor.loop
+ rw [← List.append_assoc]
+ have h : (SixCarryLoopAnchor.build++SixCarryLoopAnchor.output).length=12792 := by
+  rw [List.length_append,build_length,output_length]
+ rw [← h,List.take_left]
+
+
+#print axioms core_shape
+end ECDSAAdd.Entrant.LocalSevenShape
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenWitness
+namespace ECDSAAdd.Entrant.LocalSevenWitness
+open ECDSAAdd
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ZeroSetDevelop.compileS?
+theorem fromLiteral_out (value : ZeroSetDevelop.CheckedS LowAccCarryDevelop.hosts88 BData301.p0) :
+ (LowAccCarryDevelop.fromLiteral value).out=value.out := by
+ delta LowAccCarryDevelop.fromLiteral
+ rfl
+theorem some_exists (value : ZeroSetDevelop.CheckedS LowAccCarryDevelop.hosts88 BData301.p0) :
+ ∃cm : ZeroSetDevelop.CheckedS LowAccCarryDevelop.hosts88 (FullBTemp.middle LowAccCarryDevelop.L LowAccCarryDevelop.c),
+ cm.out=value.out :=
+ ⟨LowAccCarryDevelop.fromLiteral value,fromLiteral_out value⟩
+#print axioms some_exists
+end ECDSAAdd.Entrant.LocalSevenWitness
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenLoop
+namespace ECDSAAdd.Entrant.LocalSevenLoop
+open ECDSAAdd Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+open ControlLoan1589BFFold ManyACarryDevelop FullBTemp LowAccCarryDevelop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+abbrev CM := ZeroSetDevelop.CheckedS LowAccCarryDevelop.hosts88 (FullBTemp.middle LowAccCarryDevelop.L LowAccCarryDevelop.c)
+attribute [local irreducible] ECDSAAdd.measurementCount ECDSAAdd.run ZeroSetDevelop.compileS? SixCarryLoopAnchor.loop SixCarryLoopAnchor.build SixCarryLoopAnchor.output LocalSevenCore.core LocalSevenExtra.improved
+
+theorem converted_exists
+ (o : Option (ZeroSetDevelop.CheckedS LowAccCarryDevelop.hosts88 BData301.p0))
+ (h : o.isSome=true) : ∃cm : CM,cm.out=(o.map (fun x=>x.out)).getD [] := by
+ cases o with
+ | none => simp at h
+ | some value => exact LocalSevenWitness.some_exists value
+
+theorem output_def : SixCarryLoopAnchor.output=
+ ((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map (fun x=>x.out)).getD [] := by
+ delta SixCarryLoopAnchor.output
+ rfl
+
+theorem exists_cm : ∃cm : CM,cm.out=SixCarryLoopAnchor.output :=
+ Eq.mp (congrArg (fun p : Program=>∃cm : CM,cm.out=p) output_def.symm)
+  (converted_exists _ LowAccCarryDevelop.success_literal)
+
+def unbuild : Program :=
+ unbuildMany 86 LowAccCarryDevelop.ga (FullBTemp.pad LowAccCarryDevelop.L) (accBank LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.cin (hiReg LowAccCarryDevelop.L) LowAccCarryDevelop.loans88
+  LowAccCarryDevelop.L.core.sumCarry (FullBTemp.hostR LowAccCarryDevelop.L) (FullBTemp.hostP LowAccCarryDevelop.L)
+def improved : Program := LocalSevenExtra.improved++unbuild
+attribute [local irreducible] unbuild improved
+
+theorem old_shape (cm : CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ LowAccCarryDevelop.loopWith cm=LocalSevenCore.core++unbuild := by
+ rw [LocalSevenShape.core_shape]
+ delta LowAccCarryDevelop.loopWith SixCarryLoopAnchor.build unbuild
+ dsimp only [SixCarryLoopAnchor.L,SixCarryLoopAnchor.ga]
+ rw [hcm,List.append_assoc]
+
+theorem run_eq (cm : CM) (hcm : cm.out=SixCarryLoopAnchor.output)
+ (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.basis) :
+ run improved m s=run (LowAccCarryDevelop.loopWith cm) m s := by
+ rw [improved,old_shape cm hcm,run_append,run_append,LocalSevenResources.measurements]
+ rw [← LocalSevenExtra.run_core_eq s (m.take (measurementCount LocalSevenCore.core)) hc]
+
+theorem frame (cm : CM) (hcm : cm.out=SixCarryLoopAnchor.output)
+ (base : BasisState) (clean : LowAccCarryDevelop.L.PairClean base) (hsum : base LowAccCarryDevelop.L.core.sumCarry=false)
+ (O E O' : Nat) (hE : E<2^129)
+ (mid : Triple (BState LowAccCarryDevelop.L base O E (4294968272*regValue (hiReg LowAccCarryDevelop.L) base)) (FullBTemp.middle LowAccCarryDevelop.L LowAccCarryDevelop.c)
+  (BState LowAccCarryDevelop.L base O' E (4294968272*regValue (hiReg LowAccCarryDevelop.L) base))) :
+ Triple (BState LowAccCarryDevelop.L base O E 0) improved (BState LowAccCarryDevelop.L base O' E 0) := by
+ apply SixCarryAllBody.conditional_transfer (BState LowAccCarryDevelop.L base O E 0) (BState LowAccCarryDevelop.L base O' E 0)
+  (LowAccCarryDevelop.loopWith cm) improved
+ · intro s m hs
+   apply run_eq cm hcm s m
+   exact ⟨bstate_clean LowAccCarryDevelop.L LowAccCarryDevelop.layout_nodup base clean O E s.basis hs,by rw [hs.2.1];exact hE⟩
+ · exact LowAccCarryDevelop.loop_bstate_step cm base clean hsum O E O' mid
+
+#print axioms frame
+end ECDSAAdd.Entrant.LocalSevenLoop
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenBody
+namespace ECDSAAdd.Entrant.LocalSevenBody
+open ECDSAAdd Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+open InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
+open ManyACarryDevelop FullBTemp ZeroReadDevelop FourthASavedCarryDevelop LowAccCarryDevelop
+open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
+open LowBitCarryDevelop ParkCarry7Develop ParkCarry10Develop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+def bodyForBoth (L : CuccaroStreamedSquareWideLayout) (loop fold rebuild : Program) : Program :=
+ measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++
+  (foldFor L loop ++ (fold ++ rebuild)))
+theorem frame
+ (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+ (c : Wire) (hcw : c∉L.wires) (loopProgram : Program)
+ (loopSpec : ∀ (base : BasisState) (_clean : L.PairClean base) (_hsum : base L.core.sumCarry=false)
+  (O E O' : Nat) (_hE : E<2^129),
+  Triple (BState L base O E (4294968272*regValue (hiReg L) base)) (FullBTemp.middle L c)
+   (BState L base O' E (4294968272*regValue (hiReg L) base)) →
+  Triple (BState L base O E 0) loopProgram (BState L base O' E 0))
+ (foldProgram : Program)
+ (foldSpec : ∀ (base : BasisState) (_clean : L.PairClean base) (O E : Nat)
+  (_hO : O<SquareReduction.p) (_hE : E<2^130)
+  (_hRange : E<2^128 ∨ 2^130-2^128≤E)
+  (_hOff : base c=false → E=0) (Q : BasisState→Prop),
+  Triple (BState L base O E 0) (eFoldTq L c) Q →
+  Triple (BState L base O E 0) foldProgram Q)
+ (rebuildProgram : Program)
+ (rebuildSpec : ∀ (base outBase : BasisState) (_clean : L.PairClean base) (O E B : Nat)
+  (_hb : B<2^128),
+  Triple (BState L base O E 0) (ParkCarry10Develop.rebuild L) (BState L outBase O B 0) →
+  Triple (BState L base O E 0) rebuildProgram (BState L outBase O B 0))
+ (base : BasisState) (M : Nat) (hM : M<2^128)
+ (hP : regValue L.core.product base=M^2) (hc : L.PairClean base) (hsum:base L.core.sumCarry=false)
+ (O : Nat) (hO : O<SquareReduction.p)
+ (hg : base c=false → M=0) (hSource : M=if base c then regValue L.core.high base else 0) :
+ Triple (SquareFrame L.core.out base O) (bodyForBoth L loopProgram foldProgram rebuildProgram)
+  (SquareFrame L.core.out base (bO4 (M^2) (base c) O)) := by
+
+  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
+  have pmod : 0<SquareReduction.p := by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
+  let P := M^2
+  let b0 := P%2^128
+  let b1 := P/2^128
+  let W := 4294968272*b1
+  let g := base c
+  let O1 := (P+(SquareReduction.p-1-O))%SquareReduction.p
+  let O2 := ((P/2^128)%2^128+2^128*(P%2^128)+(SquareReduction.p-1-O1))%SquareReduction.p
+  have hO1 : O1<SquareReduction.p := Nat.mod_lt _ pmod
+  have hO2 : O2<SquareReduction.p := Nat.mod_lt _ pmod
+  have hb1lt : b1<2^128 := by
+    show P/2^128<2^128
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc P<2^256 := hb
+      _ = 2^128*2^128 := by norm_num
+  have hWlt : W<2^163 := by
+    show 4294968272*b1<2^163
+    norm_num at hb1lt ⊢
+    omega
+  have views := accA_views L hw base M hM hP
+  have v1 : L.MeasuredFoldView base (negP L) := views (.inl (negP L)) (by simp [accAMix])
+  have v2 : L.MeasuredFoldView base (rot128F L) := views (.inl (rot128F L)) (by simp [accAMix])
+  have pay1 : measuredFoldPayload base (negP L)=P := by
+    simp only [measuredFoldPayload,negP,pow_zero,Nat.mul_one]
+    rw [L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
+  have pay2 : measuredFoldPayload base (rot128F L)=(P/2^128)%2^128+2^128*(P%2^128) := by
+    simp only [measuredFoldPayload,rot128F,pow_zero,Nat.mul_one]
+    exact L.rotated128_value hw base (M^2) hP
+  have t1 : Triple (SquareFrame L.core.out base O) (measuredFoldQTq L (negP L)) (SquareFrame L.core.out base O1) := by
+    have h := measuredFoldQ_frameTq L hw hn base (negP L) v1 rfl hc O hO
+    rwa [pay1] at h
+  have t2 : Triple (SquareFrame L.core.out base O1) (measuredFoldQTq L (rot128F L))
+      (SquareFrame L.core.out base O2) := by
+    have h := measuredFoldQ_frameTq L hw hn base (rot128F L) v2 rfl hc O1 hO1
+    rwa [pay2] at h
+  have e0 : regValue (eReg L) base=b0 := eReg_value L hw base P hP hb
+  have a0 : regValue (accReg L) base=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc.work q (accReg_work L q hq))
+  have hb1 : regValue (hiReg L) base=b1 := by
+    rw [hiReg,regValue_drop_div _ 128 (by simp [hw.core.product]),
+      L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
+  have conv1 : ∀s,SquareFrame L.core.out base O2 s → BState L base O2 b0 0 s := by
+    intro s hs
+    refine ⟨hs.1,?_,?_,fun q h1 _ _ => hs.2 q h1⟩
+    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (eReg_away L hn q hq).1)).trans e0
+    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (accReg_out L hn q hq))).trans a0
+
+
+  let u := b1/2^96
+  let d := W/2^128 - u
+  let H := b0/2^32
+  let l' := (b0%2^32 + u)%2^32
+  let K := (b0%2^32 + u)/2^32
+  let O3 := ((u + 4294968273*d) + 4294968272*2^32*K + 2^128*(W%2^128) + (SquareReduction.p-1-O2)) % SquareReduction.p
+  let E1 := (2^32*H + l' + 2^130 - b1) % 2^130
+  let O4 := (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p
+  have hO3 : O3<SquareReduction.p := Nat.mod_lt _ pmod
+  have hb0 : b0<2^128 := Nat.mod_lt _ (by positivity)
+  have hu32 : u < 2^32 := by
+    show b1/2^96 < 2^32
+    rw [Nat.div_lt_iff_lt_mul (by positivity)]
+    calc b1<2^128 := hb1lt
+      _ = 2^32*2^96 := by norm_num
+  have hH : H < 2^96 := by show b0/2^32 < 2^96; omega
+  have hl' : l' < 2^32 := Nat.mod_lt _ (by positivity)
+  have hK : K ≤ 1 := by show (b0%2^32 + u)/2^32 ≤ 1; omega
+  have hKif : (if l' < u then 1 else 0) = K := by
+    show (if (b0%2^32 + u)%2^32 < u then 1 else 0) = (b0%2^32 + u)/2^32
+    by_cases hc' : (b0%2^32 + u)%2^32 < u
+    · rw [if_pos hc']; omega
+    · rw [if_neg hc']; omega
+  let kap:Bool:=decide (K=1)
+  let baseK:=writeBit base L.core.sumCarry kap
+  have kapNat:kap.toNat=K := by
+    have kk:K=0 ∨ K=1 := by omega
+    rcases kk with kk|kk <;> simp [kap,kk]
+  have hcK:L.PairClean baseK := ParkCarryDevelop.base_clean L hn base hc kap
+  have productOff:L.core.sumCarry∉L.core.product := by
+    intro h;apply ParkCarryDevelop.sumCarry_away L hn;simp [ParkCarryDevelop.restWires,h]
+  have highOff:L.core.sumCarry∉hiReg L := by
+    intro h;exact productOff (List.mem_of_mem_take (List.mem_of_mem_drop h))
+  have hb1K:regValue (hiReg L) baseK=b1 := by
+    dsimp only [baseK]
+    rw [ParkCarryDevelop.reg_update_off _ _ _ _ highOff]
+    exact hb1
+  have cq:c≠L.core.sumCarry := by
+    intro h;apply hcw
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h]
+  have gc:baseK c=base c := by simp [baseK,writeBit,cq]
+  have resetBase:writeBit baseK L.core.sumCarry false=base := by
+    funext q
+    by_cases hq:q=L.core.sumCarry
+    · subst q;simp [writeBit,Function.update,hsum]
+    · simp [baseK,writeBit,Function.update,hq]
+  -- Park the completed low-window carry instead of recomputing it.
+  have k1 := eAddLo_step L hw hn base hc O2 0 b0 hb0
+  rw [hb1] at k1
+  have squareBit : (b0%2^32)/2%2=0 := by
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw[Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have loanFact : ((2^32*H+l'+2^128*K)/2%2==1)=
+      ((b1/2^96/2%2==1) ^^ (b1/2^96%2==1) ^^
+        ((b1/2^96%2==1)&&((2^32*H+l'+2^128*K)%2==1))) := by
+    have low0:(2^32*H+l'+2^128*K)%2=(b0%2^32+u)%2:=by dsimp[l'];omega
+    have low1:(2^32*H+l'+2^128*K)/2%2=(b0%2^32+u)/2%2:=by dsimp[l'];omega
+    rw[low0,low1]
+    exact known_second_loan (b0%2^32) u squareBit
+  let originalM:=regValue L.core.high base
+  have source1:base (bit1 L.core.high)=digit originalM 1:=by
+    simpa only[digit,pow_one]using bit1_parity L.core.high base
+      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
+  have modE:(2^32*H+l'+2^128*K)%16=lowSum (base c) originalM u%16:=by
+    rw[lowSum,←hSource]
+    exact folded_low_mod16 M u H l' K rfl rfl
+  have loanFact2:=loan2_from_mod16 (base c) originalM u (2^32*H+l'+2^128*K) modE
+  rw[←source1]at loanFact2
+  have source0:base (L.core.high.headD 0)=digit originalM 0:=by
+    simpa only[digit,pow_zero,Nat.div_one]using head_parity L.core.high base
+      (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
+  have modE2:(2^32*H+l'+2^128*K)%2=lowSum (base c) originalM u%2:=by omega
+  have loanFact0:=LowBitCarryNumbers.loan0_from_mod2 (base c) originalM u (2^32*H+l'+2^128*K)
+    (by simpa only[lowSum]using modE2)
+  rw[←source0]at loanFact0
+  have wm := wMidFullCCC0_step L hw hn c hcw base hc O2 (2^32*H+l'+2^128*K) b1 hb1 hb1lt hO2
+    H l' K hH hl' hK rfl loanFact loanFact2 loanFact0
+  have wmBase : Triple (BState L base O2 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base))
+      (wMidFullCCC0 L c)
+      (BState L base O3 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base)) := by
+    simpa only [hb1] using wm
+  have loopE : 2^32*H+l'+2^128*K<2^129 := by
+    have h0:=hH
+    have h1:=hl'
+    have h2:=hK
+    norm_num only at h0 h1 h2 ⊢
+    omega
+  have loop := loopSpec base hc hsum
+    O2 (2^32*H+l'+2^128*K) O3 loopE wmBase
+  have kc:=ParkCarryDevelop.park_step L hw hn base hsum O3 (2^32*H+l') 0 (by omega) kap
+  rw [kapNat] at kc
+  have w3 := eSubK_step L hw hn baseK hcK O3 (2^32*H + l') 0 b1 (by omega) hb1K
+  have tw : Triple (BState L base O2 b0 0) (foldFor L loopProgram) (BState L baseK O3 E1 0) :=
+    by simpa only [foldFor,List.append_assoc] using k1.seq (loop.seq (kc.seq w3))
+  -- eFoldTq
+  have f1 := eFlip_step L hw hn baseK c hcw O3 E1 0
+  have f2 := eCore_stepTq L hw hn baseK hcK O3 (flipE g E1) hO3
+  have f3 := eFlip_step L hw hn baseK c hcw O4 (flipE g E1) 0
+  rw [gc] at f1 f3
+  rw [flipE_flipE] at f3
+  have tf : Triple (BState L baseK O3 E1 0) (eFoldTq L c) (BState L baseK O4 E1 0) :=
+    f1.seq (f2.seq f3)
+  have hA : 2^32*H+l'<2^128 := by
+    have hH0:=hH
+    have hl0:=hl'
+    norm_num at hH0 hl0 ⊢
+    omega
+  have hEbound : E1<2^130 := Nat.mod_lt _ (by positivity)
+  have hErange : E1<2^128 ∨ 2^130-2^128≤E1 :=
+    LocalEFoldInputs.range (2^32*H+l') b1 hA hb1lt
+  have hEoff : baseK c=false → E1=0 := by
+    intro hc0
+    have m0 : M=0 := hg (gc.symm.trans hc0)
+    simp [E1,H,l',b0,b1,P,u,m0]
+  have tfNew : Triple (BState L baseK O3 E1 0) foldProgram (BState L baseK O4 E1 0) :=
+    foldSpec baseK hcK O3 E1 hO3 hEbound hErange hEoff _ tf
+  -- wRestoreT
+  have bk : (E1+b1)%2^130 = 2^32*H + l' := by show ((2^32*H + l' + 2^130 - b1) % 2^130 + b1) % 2^130 = _; omega
+  have r2 := eAddB_step L hw hn baseK hcK O4 E1 0 b1 hb1K (by rw [bk]; omega)
+  rw [bk] at r2
+  have bit32:(b0%2^32)/2%2=0 := by
+    change ((M^2%2^128)%2^32)/2%2=0
+    rw [Nat.mod_mod_of_dvd _ (by decide : 2^32 ∣ 2^128)]
+    exact KnownSecondSubDevelop.square_second32 M
+  have total:l'+2^32*(baseK L.core.sumCarry).toNat=b0%2^32+regValue (hiReg L) baseK/2^96 := by
+    have atq:baseK L.core.sumCarry=kap := by simp [baseK,writeBit]
+    rw [atq,kapNat,hb1K]
+    show ((b0%2^32+u)%2^32)+2^32*((b0%2^32+u)/2^32)=b0%2^32+u
+    exact Nat.mod_add_div _ _
+  have r3:=ParkCarryDevelop.restore_step L hw hn baseK hcK O4 0 H l' (b0%2^32) hH hl'
+    (Nat.mod_lt _ (by positivity)) bit32 total
+  have bb:2^32*H+b0%2^32=b0 := by dsimp [H];omega
+  rw [resetBase,bb] at r3
+  have rp := padM_step L hw hn base hc O4 b0 0 744
+  have tr : Triple (BState L baseK O4 E1 0) (ParkCarry10Develop.rebuild L) (BState L base O4 b0 0) :=
+    r2.seq (r3.seq rp)
+  have trNew : Triple (BState L baseK O4 E1 0) rebuildProgram (BState L base O4 b0 0) :=
+    rebuildSpec baseK base hcK O4 E1 b0 hb0 tr
+  have conv0 : ∀s,BState L base O4 b0 0 s → SquareFrame L.core.out base O4 s := by
+    intro s hs
+    refine ⟨hs.1,fun q hq => ?_⟩
+    by_cases he : q∈eReg L
+    · exact (regValue_eq_iff _ _ _).mp (hs.2.1.trans e0.symm) q he
+    by_cases ha : q∈accReg L
+    · exact (regValue_eq_iff _ _ _).mp (hs.2.2.1.trans a0.symm) q ha
+    exact hs.2.2.2 q hq he ha
+  have key : O4 = bO4 (M^2) (base c) O := by
+    have hg' : g = false → b1 = 0 ∧ b0 = 0 := by
+      intro h0
+      have : M = 0 := hg h0
+      subst this
+      simp [b1, b0, P]
+    have e3 : O3 = (((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
+        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p := by
+      simp only [O3, u, d, K, W]
+      congr 1; ring
+    have e4 : O4 = (4294968272*flipE g ((2^32*(b0/2^32) + (b0%2^32+b1/2^96)%2^32 + 2^130 - b1) % 2^130) +
+        (SquareReduction.p-1-((((b1/2^96 + 4294968273*(4294968272*b1/2^128 - b1/2^96)) + 2^128*((4294968272*b1)%2^128)) +
+        4294968272*2^32*((b0%2^32+b1/2^96)/2^32) + (SquareReduction.p-1-O2)) % SquareReduction.p))) % SquareReduction.p := by
+      show (4294968272*flipE g E1 + (SquareReduction.p-1-O3)) % SquareReduction.p = _
+      rw [e3]
+    rw [e4, o4K b0 b1 O2 _ g hb0 hb1lt hO2 hg']
+    exact o4_eq b0 b1 O2 g hb0 hb1lt hO2 hg'
+  have all := t1.seq (t2.seq (Triple.conseq (fun s h => h) ((Triple.conseq conv1 tw (fun s h => h)).seq
+    (tfNew.seq trNew)) conv0))
+  rw [key] at all
+  simpa only [bodyForBoth] using all
+
+
+#print axioms frame
+end ECDSAAdd.Entrant.LocalSevenBody
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenBody98
+namespace ECDSAAdd.Entrant.LocalSevenBody98
+open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+def body : Program :=
+ LocalSevenBody.bodyForBoth LowAccCarryDevelop.L LocalSevenLoop.improved LocalEFoldOptimize.improved LocalRebuild.improved
+
+theorem frame
+ (base : BasisState) (M : Nat) (hM : M<2^128)
+ (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
+ (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
+ (hg : base LowAccCarryDevelop.c=false → M=0)
+ (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
+ Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) body
+  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) := by
+ obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+ unfold body
+ apply LocalSevenBody.frame LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths
+  LowAccCarryDevelop.layout_nodup LowAccCarryDevelop.c LowAccCarryDevelop.control_outside
+  LocalSevenLoop.improved (fun b clean hs O0 E0 O1 he mid=>LocalSevenLoop.frame cm hcm b clean hs O0 E0 O1 he mid)
+  LocalEFoldOptimize.improved ?_ LocalRebuild.improved ?_ base M hM hP hc hsum O hO hg hSource
+ · intro b clean O0 E0 _ eb er off Q old
+   exact LocalEFoldLift.transfer b clean O0 E0 eb er off Q old
+ · intro b outB clean O0 E0 B0 hb old
+   exact LocalRebuildLift.transfer b outB clean O0 E0 B0 hb old
+#print axioms frame
+end ECDSAAdd.Entrant.LocalSevenBody98
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenSupport
+namespace ECDSAAdd.Entrant.LocalSevenSupport
+open ECDSAAdd Arithmetic SixCarryLoopAnchor SixCarryPatchGeneric
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.wires Arithmetic.GatePhysical LocalSevenCore.core LocalSevenCore.p1 LocalSevenCore.p2 LocalSevenCore.p3 LocalSevenCore.p4 LocalSevenCore.p5 LocalSevenCore.p6 LocalSevenExtra.improved SixCarryLoopAnchor.loop SixCarryPrefixData.program
+
+theorem core_def : LocalSevenCore.core=SixCarryLoopAnchor.loop.take 12792 := by
+ delta LocalSevenCore.core
+ rfl
+
+theorem literal_anchor : (LocalSevenCore.core.take 11960).map SixCarryLoopAnchor.strip=SixCarryPrefixData.program :=
+ (congrArg (fun p : Program=>p.map SixCarryLoopAnchor.strip) (LocalSevenCore.core_prefix 11960 (by decide))).trans SixCarryLoopAnchor.literal_anchor
+
+theorem literal_support : wires SixCarryPrefixData.program⊆wires LocalSevenCore.core := by
+ have h:=SixCarryPatchSupport.map_strip_support (LocalSevenCore.core.take 11960)
+ rw [literal_anchor] at h
+ exact h.trans (SixCarryPatchSupport.take_support LocalSevenCore.core 11960)
+
+theorem take_physical (p : Program) (n : Nat) (hp : GatePhysical p) : GatePhysical (p.take n) := by
+ have h:=Eq.mp (congrArg GatePhysical (List.take_append_drop n p).symm) hp
+ rw [gatePhysical_append] at h
+ exact h.1
+
+theorem core_physical : GatePhysical LocalSevenCore.core :=
+ Eq.mp (congrArg GatePhysical core_def.symm)
+  (take_physical SixCarryLoopAnchor.loop 12792 SixCarryAllSupport.original_physical)
+
+theorem repair_lookup_support (p : Program) (i : Nat) (g : Instr) (r : Program)
+ (hg : p[i]?=some g) (hr : wires r⊆wires [g]) : wires r⊆wires p := by
+ have hs:=SixCarryReplace.old_shape_of_lookup p i g hg
+ apply Eq.mp (congrArg (fun q : Program=>wires r⊆wires q) hs.symm)
+ rw [wires_append,wires_append]
+ exact hr.trans (Finset.subset_union_left.trans Finset.subset_union_right)
+theorem support1 : wires LocalSevenCore.p1⊆wires LocalSevenCore.core :=
+ Eq.mp (congrArg (fun q : Program=>wires q⊆wires LocalSevenCore.core) LocalSevenResources.shape1.symm)
+  (SixCarryAllSupport.patch_upper_support LocalSevenCore.core SixCarryGateRepairs.repair11959 11959 (wires LocalSevenCore.core) (Finset.Subset.refl _) (SixCarryAllSupport.repair_literal11959.trans literal_support))
+theorem physical1 : GatePhysical LocalSevenCore.p1 :=
+ Eq.mp (congrArg GatePhysical LocalSevenResources.shape1.symm)
+  (SixCarryPatchSupport.physical LocalSevenCore.core 11959 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair11959 LocalSevenCore.lookup1 core_physical (physicalGateCheck_correct SixCarryGateRepairs.repair11959 (by decide +kernel)))
+theorem support2 : wires LocalSevenCore.p2⊆wires LocalSevenCore.core :=
+ Eq.mp (congrArg (fun q : Program=>wires q⊆wires LocalSevenCore.core) LocalSevenResources.shape2.symm)
+  (SixCarryAllSupport.patch_upper_support LocalSevenCore.p1 SixCarryGateRepairs.repair11953 11953 (wires LocalSevenCore.core) support1 (SixCarryAllSupport.repair_literal11953.trans literal_support))
+theorem physical2 : GatePhysical LocalSevenCore.p2 :=
+ Eq.mp (congrArg GatePhysical LocalSevenResources.shape2.symm)
+  (SixCarryPatchSupport.physical LocalSevenCore.p1 11953 (.CCX 4663 4406 4407) SixCarryGateRepairs.repair11953 LocalSevenCore.lookup2 physical1 (physicalGateCheck_correct SixCarryGateRepairs.repair11953 (by decide +kernel)))
+theorem support3 : wires LocalSevenCore.p3⊆wires LocalSevenCore.core :=
+ Eq.mp (congrArg (fun q : Program=>wires q⊆wires LocalSevenCore.core) LocalSevenResources.shape3.symm)
+  (SixCarryAllSupport.patch_upper_support LocalSevenCore.p2 SixCarryGateRepairs.repair11947 11947 (wires LocalSevenCore.core) support2 (SixCarryAllSupport.repair_literal11947.trans literal_support))
+theorem physical3 : GatePhysical LocalSevenCore.p3 :=
+ Eq.mp (congrArg GatePhysical LocalSevenResources.shape3.symm)
+  (SixCarryPatchSupport.physical LocalSevenCore.p2 11947 (.CCX 4662 4405 4406) SixCarryGateRepairs.repair11947 LocalSevenCore.lookup3 physical2 (physicalGateCheck_correct SixCarryGateRepairs.repair11947 (by decide +kernel)))
+theorem support4 : wires LocalSevenCore.p4⊆wires LocalSevenCore.core :=
+ Eq.mp (congrArg (fun q : Program=>wires q⊆wires LocalSevenCore.core) LocalSevenResources.shape4.symm)
+  (SixCarryAllSupport.patch_upper_support LocalSevenCore.p3 SixCarryGateRepairs.repair11941 11941 (wires LocalSevenCore.core) support3 (SixCarryAllSupport.repair_literal11941.trans literal_support))
+theorem physical4 : GatePhysical LocalSevenCore.p4 :=
+ Eq.mp (congrArg GatePhysical LocalSevenResources.shape4.symm)
+  (SixCarryPatchSupport.physical LocalSevenCore.p3 11941 (.CCX 4661 4404 4405) SixCarryGateRepairs.repair11941 LocalSevenCore.lookup4 physical3 (physicalGateCheck_correct SixCarryGateRepairs.repair11941 (by decide +kernel)))
+theorem support5 : wires LocalSevenCore.p5⊆wires LocalSevenCore.core :=
+ Eq.mp (congrArg (fun q : Program=>wires q⊆wires LocalSevenCore.core) LocalSevenResources.shape5.symm)
+  (SixCarryAllSupport.patch_upper_support LocalSevenCore.p4 SixCarryGateRepairs.repair11935 11935 (wires LocalSevenCore.core) support4 (SixCarryAllSupport.repair_literal11935.trans literal_support))
+theorem physical5 : GatePhysical LocalSevenCore.p5 :=
+ Eq.mp (congrArg GatePhysical LocalSevenResources.shape5.symm)
+  (SixCarryPatchSupport.physical LocalSevenCore.p4 11935 (.CCX 4660 4403 4404) SixCarryGateRepairs.repair11935 LocalSevenCore.lookup5 physical4 (physicalGateCheck_correct SixCarryGateRepairs.repair11935 (by decide +kernel)))
+theorem support6 : wires LocalSevenCore.p6⊆wires LocalSevenCore.core :=
+ Eq.mp (congrArg (fun q : Program=>wires q⊆wires LocalSevenCore.core) LocalSevenResources.shape6.symm)
+  (SixCarryAllSupport.patch_upper_support LocalSevenCore.p5 SixCarryGateRepairs.repair4913 4913 (wires LocalSevenCore.core) support5 (SixCarryAllSupport.repair_literal4913.trans literal_support))
+theorem physical6 : GatePhysical LocalSevenCore.p6 :=
+ Eq.mp (congrArg GatePhysical LocalSevenResources.shape6.symm)
+  (SixCarryPatchSupport.physical LocalSevenCore.p5 4913 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair4913 LocalSevenCore.lookup6 physical5 (physicalGateCheck_correct SixCarryGateRepairs.repair4913 (by decide +kernel)))
+theorem support7 : wires LocalSevenExtra.improved⊆wires LocalSevenCore.core :=
+ Eq.mp (congrArg (fun q : Program=>wires q⊆wires LocalSevenCore.core) LocalSevenResources.shape7.symm)
+  (SixCarryAllSupport.patch_upper_support LocalSevenCore.p6 ExtraCarryGateRepairs.repair4907 4907 (wires LocalSevenCore.core) support6 (repair_lookup_support LocalSevenCore.core 4907 (.CCX 4663 4406 4407) ExtraCarryGateRepairs.repair4907 LocalSevenExtra.original_gate (by decide +kernel)))
+theorem physical7 : GatePhysical LocalSevenExtra.improved :=
+ Eq.mp (congrArg GatePhysical LocalSevenResources.shape7.symm)
+  (SixCarryPatchSupport.physical LocalSevenCore.p6 4907 (.CCX 4663 4406 4407) ExtraCarryGateRepairs.repair4907 LocalSevenExtra.gate_lookup physical6 (physicalGateCheck_correct ExtraCarryGateRepairs.repair4907 (by decide +kernel)))
+theorem support : wires LocalSevenExtra.improved⊆wires LocalSevenCore.core := support7
+theorem physical : GatePhysical LocalSevenExtra.improved := physical7
+#print axioms support
+#print axioms physical
+end ECDSAAdd.Entrant.LocalSevenSupport
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenLoopResources
+namespace ECDSAAdd.Entrant.LocalSevenLoopResources
+open ECDSAAdd Arithmetic Challenge
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots Arithmetic.GatePhysical LowAccCarryDevelop.loopWith LocalSevenLoop.improved LocalSevenLoop.unbuild LocalSevenCore.core LocalSevenExtra.improved
+
+theorem new_shape : LocalSevenLoop.improved=LocalSevenExtra.improved++LocalSevenLoop.unbuild := by
+ delta LocalSevenLoop.improved
+ rfl
+
+theorem append_t (p q tail : Program) (h : toffoliCount q+7=toffoliCount p) :
+ toffoliCount (q++tail)+7=toffoliCount (p++tail) := by
+ rw [toffoliCount_append,toffoliCount_append]
+ omega
+theorem append_m (p q tail : Program) (h : measurementCount q=measurementCount p) :
+ measurementCount (q++tail)=measurementCount (p++tail) := by
+ rw [measurementCount_append,measurementCount_append,h]
+theorem append_s (p q tail : Program) (h : gateSlots q=gateSlots p+13) :
+ gateSlots (q++tail)=gateSlots (p++tail)+13 := by
+ rw [gateSlots_append,gateSlots_append]
+ omega
+theorem append_support (p q tail : Program) (h : wires q⊆wires p) : wires (q++tail)⊆wires (p++tail) := by
+ rw [wires_append,wires_append]
+ exact Finset.union_subset_union h (Finset.Subset.refl _)
+
+theorem toffoli (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ toffoliCount LocalSevenLoop.improved+7=toffoliCount (LowAccCarryDevelop.loopWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount LocalSevenLoop.improved+7=toffoliCount p) (LocalSevenLoop.old_shape cm hcm).symm)
+  (Eq.mp (congrArg (fun q : Program=>toffoliCount q+7=toffoliCount (LocalSevenCore.core++LocalSevenLoop.unbuild)) new_shape.symm)
+   (append_t _ _ _ LocalSevenResources.toffoli))
+theorem measurements (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ measurementCount LocalSevenLoop.improved=measurementCount (LowAccCarryDevelop.loopWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount LocalSevenLoop.improved=measurementCount p) (LocalSevenLoop.old_shape cm hcm).symm)
+  (Eq.mp (congrArg (fun q : Program=>measurementCount q=measurementCount (LocalSevenCore.core++LocalSevenLoop.unbuild)) new_shape.symm)
+   (append_m _ _ _ LocalSevenResources.measurements))
+theorem slots (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ gateSlots LocalSevenLoop.improved=gateSlots (LowAccCarryDevelop.loopWith cm)+13 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots LocalSevenLoop.improved=gateSlots p+13) (LocalSevenLoop.old_shape cm hcm).symm)
+  (Eq.mp (congrArg (fun q : Program=>gateSlots q=gateSlots (LocalSevenCore.core++LocalSevenLoop.unbuild)+13) new_shape.symm)
+   (append_s _ _ _ LocalSevenResources.slots))
+theorem support (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ wires LocalSevenLoop.improved⊆wires (LowAccCarryDevelop.loopWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>wires LocalSevenLoop.improved⊆wires p) (LocalSevenLoop.old_shape cm hcm).symm)
+  (Eq.mp (congrArg (fun q : Program=>wires q⊆wires (LocalSevenCore.core++LocalSevenLoop.unbuild)) new_shape.symm)
+   (append_support _ _ _ LocalSevenSupport.support))
+
+theorem append_physical (p q : Program) (hp : GatePhysical p) (hq : GatePhysical q) : GatePhysical (p++q) := by
+ rw [gatePhysical_append]
+ exact ⟨hp,hq⟩
+theorem unbuild_physical : GatePhysical LocalSevenLoop.unbuild := by
+ obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+ have hp:=ParkCarry10Develop.body_physical LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths
+  LowAccCarryDevelop.c LowAccCarryDevelop.layout_control_nodup
+ simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,gatePhysical_append] at hp
+ have mid : GatePhysical (FullBTemp.middle LowAccCarryDevelop.L LowAccCarryDevelop.c) := hp.2.2.1.2.2.1
+ have hl:=LowAccCarryDevelop.loop_physical cm mid
+ rw [LocalSevenLoop.old_shape cm hcm,gatePhysical_append] at hl
+ exact hl.2
+
+theorem physical : GatePhysical LocalSevenLoop.improved :=
+ Eq.mp (congrArg GatePhysical new_shape.symm)
+  (append_physical _ _ LocalSevenSupport.physical unbuild_physical)
+#print axioms toffoli
+#print axioms support
+#print axioms physical
+end ECDSAAdd.Entrant.LocalSevenLoopResources
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenBody98Costs
+namespace ECDSAAdd.Entrant.LocalSevenBody98Costs
+open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots Arithmetic.GatePhysical LocalSevenBody98.body LocalRebuildBody91.bodyWith LocalSevenLoop.improved LowAccCarryDevelop.loopWith LocalEFoldOptimize.improved LocalRebuild.improved
+
+def post : Program :=
+ ParkCarryDevelop.program (eU LowAccCarryDevelop.L) LowAccCarryDevelop.L.core.sumCarry ++
+ (eSubK LowAccCarryDevelop.L ++ (LocalEFoldOptimize.improved ++ LocalRebuild.improved))
+attribute [local irreducible] post
+
+theorem old_shape (cm : LocalSevenLoop.CM) : LocalRebuildBody91.bodyWith cm=
+ FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post) := by
+ delta LocalRebuildBody91.bodyWith
+ simp only [LocalRebuildBody.bodyForBoth,LowAccCarryDevelop.foldFor,FullBTemp.prefixP,post,
+  LocalRebuildBody91.L,List.append_assoc]
+
+theorem new_shape : LocalSevenBody98.body=
+ FullBTemp.prefixP LowAccCarryDevelop.L++(LocalSevenLoop.improved++post) := by
+ delta LocalSevenBody98.body
+ simp only [LocalSevenBody.bodyForBoth,LowAccCarryDevelop.foldFor,FullBTemp.prefixP,post,List.append_assoc]
+
+theorem context_t (pre p q tail : Program) (h : toffoliCount q+7=toffoliCount p) :
+ toffoliCount (pre++(q++tail))+7=toffoliCount (pre++(p++tail)) := by
+ simp only [toffoliCount_append]
+ omega
+theorem context_m (pre p q tail : Program) (h : measurementCount q=measurementCount p) :
+ measurementCount (pre++(q++tail))=measurementCount (pre++(p++tail)) := by
+ simp only [measurementCount_append]
+ omega
+theorem context_s (pre p q tail : Program) (h : gateSlots q=gateSlots p+13) :
+ gateSlots (pre++(q++tail))=gateSlots (pre++(p++tail))+13 := by
+ simp only [gateSlots_append]
+ omega
+theorem context_support (pre p q tail : Program) (h : wires q⊆wires p) :
+ wires (pre++(q++tail))⊆wires (pre++(p++tail)) := by
+ simp only [wires_append]
+ exact Finset.union_subset_union (Finset.Subset.refl _) (Finset.union_subset_union h (Finset.Subset.refl _))
+
+theorem toffoli (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ toffoliCount LocalSevenBody98.body+7=toffoliCount (LocalRebuildBody91.bodyWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>toffoliCount LocalSevenBody98.body+7=toffoliCount p) (old_shape cm).symm)
+  (Eq.mp (congrArg (fun q : Program=>toffoliCount q+7=toffoliCount (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))) new_shape.symm)
+   (context_t _ _ _ _ (LocalSevenLoopResources.toffoli cm hcm)))
+theorem measurements (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ measurementCount LocalSevenBody98.body=measurementCount (LocalRebuildBody91.bodyWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>measurementCount LocalSevenBody98.body=measurementCount p) (old_shape cm).symm)
+  (Eq.mp (congrArg (fun q : Program=>measurementCount q=measurementCount (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))) new_shape.symm)
+   (context_m _ _ _ _ (LocalSevenLoopResources.measurements cm hcm)))
+theorem slots (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ gateSlots LocalSevenBody98.body=gateSlots (LocalRebuildBody91.bodyWith cm)+13 :=
+ Eq.mp (congrArg (fun p : Program=>gateSlots LocalSevenBody98.body=gateSlots p+13) (old_shape cm).symm)
+  (Eq.mp (congrArg (fun q : Program=>gateSlots q=gateSlots (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))+13) new_shape.symm)
+   (context_s _ _ _ _ (LocalSevenLoopResources.slots cm hcm)))
+theorem support (cm : LocalSevenLoop.CM) (hcm : cm.out=SixCarryLoopAnchor.output) :
+ wires LocalSevenBody98.body⊆wires (LocalRebuildBody91.bodyWith cm) :=
+ Eq.mp (congrArg (fun p : Program=>wires LocalSevenBody98.body⊆wires p) (old_shape cm).symm)
+  (Eq.mp (congrArg (fun q : Program=>wires q⊆wires (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post))) new_shape.symm)
+   (context_support _ _ _ _ (LocalSevenLoopResources.support cm hcm)))
+
+theorem resources :
+ toffoliCount LocalSevenBody98.body+98≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ measurementCount LocalSevenBody98.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ gateSlots LocalSevenBody98.body+250≤gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
+ obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+ have h:=LocalRebuildBody91Costs.resources cm
+ try dsimp only [LocalRebuildBody91.L,LocalRebuildBody91.c,LocalEFoldBody90.L,LocalEFoldBody90.c] at h
+ have ht:=toffoli cm hcm
+ have hm:=measurements cm hcm
+ have hs:=slots cm hcm
+ exact ⟨by omega,hm.trans h.2.1,by omega⟩
+
+theorem support_old : wires LocalSevenBody98.body⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
+ obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+ exact (support cm hcm).trans (LocalRebuildBody91Costs.support_old cm)
+
+theorem context_physical (pre p q tail : Program) (hp : GatePhysical (pre++(p++tail)))
+ (hq : GatePhysical q) : GatePhysical (pre++(q++tail)) := by
+ simp only [gatePhysical_append] at hp ⊢
+ exact ⟨hp.1,hq,hp.2.2⟩
+
+theorem physical : GatePhysical LocalSevenBody98.body := by
+ obtain ⟨cm,hcm⟩:=LocalSevenLoop.exists_cm
+ have hp : GatePhysical (FullBTemp.prefixP LowAccCarryDevelop.L++(LowAccCarryDevelop.loopWith cm++post)) :=
+  Eq.mp (congrArg GatePhysical (old_shape cm)) (LocalRebuildBody91Costs.physical cm)
+ exact Eq.mp (congrArg GatePhysical new_shape.symm)
+  (context_physical _ _ _ _ hp LocalSevenLoopResources.physical)
+#print axioms resources
+#print axioms support_old
+#print axioms physical
+end ECDSAAdd.Entrant.LocalSevenBody98Costs
+
+end
+
+section
+-- Preserved checked B98 component: LocalSevenSelector98
+namespace ECDSAAdd.Entrant.FullB98OptTemp
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ZeroSetDevelop.compileS? ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots
+
+theorem actual_resources :
+ toffoliCount LocalSevenBody98.body+98≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ measurementCount LocalSevenBody98.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
+ Challenge.gateSlots LocalSevenBody98.body+250≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
+ LocalSevenBody98Costs.resources
+
+theorem actual_subset : wires LocalSevenBody98.body⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
+ LocalSevenBody98Costs.support_old
+
+theorem actual_physical : GatePhysical LocalSevenBody98.body := LocalSevenBody98Costs.physical
+
+theorem actual_frame (base : BasisState) (M : Nat) (hM : M<2^128)
+ (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
+ (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
+ (hg : base LowAccCarryDevelop.c=false → M=0)
+ (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
+ Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) LocalSevenBody98.body
+  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) :=
+ LocalSevenBody98.frame base M hM hP hc hsum O hO hg hSource
+
+def selectedBody (K : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
+ match FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse _ => FullB88OptTemp.selectedBody K g
+ | isTrue _ => if g=LowAccCarryDevelop.c then LocalSevenBody98.body else FullB88OptTemp.selectedBody K g
+
+theorem selected_body_transport (K K' : CuccaroStreamedSquareWideLayout) (g g' : Wire)
+ (he : K=K') (hg : g=g') : selectedBody K g=selectedBody K' g' := by
+ cases he
+ cases hg
+ rfl
+
+def hostedSelectedBody (L : CuccaroStreamedSquareWideLayout) (rho : Equiv.Perm Wire) (c : Wire) : Program :=
+ selectedBody (ParkCarryDevelop.hostLayout L rho) c
+
+theorem selected_subset (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
+ wires (selectedBody K g)⊆wires (ParkCarry10Develop.body K g) := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse hn => exact FullB88OptTemp.selected_subset K hw g
+ | isTrue hl =>
+  dsimp only
+  split
+  · rename_i hg;subst K;subst g;exact actual_subset
+  · exact FullB88OptTemp.selected_subset K hw g
+
+theorem selected_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+ (hn : L.wires.Nodup) (c : Wire) : wires (selectedBody L c)⊆(c::L.wires).toFinset :=
+ (selected_subset L hw c).trans (ParkCarry10Develop.body_support L hw hn c)
+
+theorem selected_physical (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths)
+ (g : Wire) (nd : (g::K.wires).Nodup) : GatePhysical (selectedBody K g) := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse hn => exact FullB88OptTemp.selected_physical K hw g nd
+ | isTrue hl =>
+  dsimp only
+  split
+  · rename_i hg;subst K;subst g;exact actual_physical
+  · exact FullB88OptTemp.selected_physical K hw g nd
+
+theorem selected_frame (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (hn : K.wires.Nodup)
+ (g : Wire) (hcw : g∉K.wires) (base : BasisState) (M : Nat) (hM : M<2^128)
+ (hP : regValue K.core.product base=M^2) (hc : K.PairClean base)
+ (hsum : base K.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
+ (hg : base g=false → M=0) (hSource : M=if base g then regValue K.core.high base else 0) :
+ Triple (SquareFrame K.core.out base O) (selectedBody K g)
+  (SquareFrame K.core.out base (bO4 (M^2) (base g) O)) := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse hne => exact FullB88OptTemp.selected_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
+ | isTrue hl =>
+  dsimp only
+  split
+  · rename_i hgc;subst K;subst g;exact actual_frame base M hM hP hc hsum O hO hg hSource
+  · exact FullB88OptTemp.selected_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
+
+theorem selected_resources (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
+ toffoliCount (selectedBody K g)≤toffoliCount (ParkCarry10Develop.body K g) ∧
+ measurementCount (selectedBody K g)=measurementCount (ParkCarry10Develop.body K g) ∧
+ Challenge.gateSlots (selectedBody K g)≤Challenge.gateSlots (ParkCarry10Develop.body K g) := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
+ | isFalse hn => exact FullB88OptTemp.selected_resources K hw g
+ | isTrue hl =>
+  dsimp only
+  split
+  · rename_i hg;subst K;subst g
+    have h:=actual_resources
+    exact ⟨by omega,h.2.1,by omega⟩
+  · exact FullB88OptTemp.selected_resources K hw g
+
+theorem hostedSelectedBody_eq (L : CuccaroStreamedSquareWideLayout) (rho : Equiv.Perm Wire)
+ (c : Wire) (fixed : rho L.core.sumCarry=L.core.sumCarry) :
+ hostedSelectedBody L rho c=selectedBody L c :=
+ congrArg (fun K=>selectedBody K c) (ParkCarryDevelop.host_eq L rho fixed)
+
+theorem hosted_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+ (rho : Equiv.Perm Wire) (c : Wire) :
+ toffoliCount (hostedSelectedBody L rho c)≤toffoliCount (ParkCarry10Develop.hostedBody L rho c) ∧
+ measurementCount (hostedSelectedBody L rho c)=measurementCount (ParkCarry10Develop.hostedBody L rho c) ∧
+ Challenge.gateSlots (hostedSelectedBody L rho c)≤Challenge.gateSlots (ParkCarry10Develop.hostedBody L rho c) :=
+ selected_resources (ParkCarryDevelop.hostLayout L rho) (ParkCarryDevelop.host_widths L hw rho) c
+
+theorem hosted_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+ (rho : Equiv.Perm Wire) (c : Wire) :
+ wires (hostedSelectedBody L rho c)⊆wires (ParkCarry10Develop.hostedBody L rho c) :=
+ selected_subset (ParkCarryDevelop.hostLayout L rho) (ParkCarryDevelop.host_widths L hw rho) c
+
+theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+ (hn : L.wires.Nodup) (ext : List Wire) (c : Wire) (hlen : 300≤ext.length)
+ (away : ∀q∈ext,q∉L.wires) :
+ wires (hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset := by
+ rw [hostedSelectedBody_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
+ exact selected_support L hw hn c
+
+abbrev actualLayout := FullB88OptTemp.actualLayout
+abbrev actualControl := FullB88OptTemp.actualControl
+abbrev actualExt := FullB88OptTemp.actualExt
+abbrev actualFoldPerm := FullB88OptTemp.actualFoldPerm
+
+theorem selected_actual : selectedBody LowAccCarryDevelop.L LowAccCarryDevelop.c=LocalSevenBody98.body := by
+ unfold selectedBody
+ cases he : FastGuardResearch.wideEq LowAccCarryDevelop.L LowAccCarryDevelop.L with
+ | isFalse hn => exact False.elim (hn rfl)
+ | isTrue hl => exact if_pos rfl
+
+theorem ranked_selected_exact : hostedSelectedBody actualLayout actualFoldPerm actualControl=LocalSevenBody98.body := by
+ have he : ParkCarryDevelop.hostLayout actualLayout actualFoldPerm=actualLayout :=
+  FullBOptTemp.actualHostedLayout_eq
+ exact (congrArg (fun K=>selectedBody K actualControl) he).trans
+  ((selected_body_transport actualLayout LowAccCarryDevelop.L actualControl LowAccCarryDevelop.c rfl rfl).trans selected_actual)
+
+
+theorem ranked_certified_gain :
+ toffoliCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)+98≤4762 ∧
+ measurementCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)=5924 := by
+ rw [ranked_selected_exact]
+ have h:=actual_resources
+ have old:=ParkCarry10Develop.body_counts LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths LowAccCarryDevelop.c
+ exact ⟨h.1.trans old.1.le,h.2.1.trans old.2⟩
+
+end ECDSAAdd.Entrant.FullB98OptTemp
+#print axioms ECDSAAdd.Entrant.FullB98OptTemp.actual_frame
+#print axioms ECDSAAdd.Entrant.FullB98OptTemp.ranked_certified_gain
 
 end
