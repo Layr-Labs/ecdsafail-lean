@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.ParkAData
+import ECDSAAdd.Submission.Entrant.MainA
 import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Arithmetic.MappedSignedSquare
 import ECDSAAdd.Arithmetic.MappedSquarePhysical
