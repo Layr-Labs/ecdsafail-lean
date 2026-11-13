@@ -1,5 +1,6 @@
 import ECDSAAdd.Submission.Entrant.MainPart07
 import Mathlib.Tactic.FinCases
+import ECDSAAdd.Submission.Entrant.XParityMarker
 
 section
 
@@ -17466,194 +17467,49 @@ namespace ECDSAAdd.Entrant.AboveFieldPointDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel ControlPointEncodingDevelop
 attribute [local irreducible] layout run wires
 
-def pivotW : Wire := layout.point.y.getD 2 0
-def markerHead : Wire := layout.point.y.getD 0 0
+set_option linter.unusedVariables false
+abbrev markerHead : Wire := XParityGadget.xHead
 def markerLast : Wire := layout.point.y.getD 255 0
-def markerInputs : List Wire :=
-  ((layout.point.y.drop 3).take 1++(layout.point.y.drop 10).take 22)++(layout.point.y.drop 33).take 222
-def markerWork : List Wire := (List.range 245).map w
+def markerInputs : List Wire := (layout.point.y.drop 10).take 22++(layout.point.y.drop 33).take 222
+def markerWork : List Wire := (List.range 244).map w
 def markerBits : List ZeroBit := zeroPorts markerInputs markerWork
-def markerPrefix : List Wire := markerHead::markerBits.map ZeroBit.input++[markerLast]
+abbrev markerPrefix := XParityGadget.markerPrefix
+abbrev prep := XParityGadget.prep
+abbrev prep_M := XParityGadget.prep_M
+abbrev prep_T := XParityGadget.prep_T
+abbrev undo_prep := XParityGadget.undo_prep
+abbrev b_off_prefix := XParityGadget.b_off_prefix
+abbrev g_off_prefix := XParityGadget.g_off_prefix
 
-theorem input_sub : (markerHead::markerInputs).Sublist layout.point.y := by decide +kernel
-theorem prefix_sub : markerPrefix.Sublist layout.point.y := by decide +kernel
+theorem input_sub : markerInputs.Sublist layout.point.y := by decide +kernel
 theorem marker_lengths : markerInputs.length=markerWork.length := by decide +kernel
-theorem marker_length : markerBits.length=245 := by decide +kernel
-theorem prefix_length : markerPrefix.length=247 := by decide +kernel
-theorem work_nd : markerWork.Nodup := by decide +kernel
+theorem marker_length : markerBits.length=244 := by decide +kernel
+theorem prefix_length : markerPrefix.length=246 := by decide +kernel
+theorem marker_shape : markerPrefix=markerHead::markerBits.map ZeroBit.input++[markerLast] := by decide +kernel
 
 theorem work_pool_mem (q : Wire) (hq:q∈markerWork) : q∈layout.dialogPool := by
   obtain ⟨i,hi,he⟩:=List.mem_map.mp hq
   rw [←he]
   exact Square5Placement.pool_member layout layout_widths _ (lt_trans (List.mem_range.mp hi) (by decide))
 
-theorem marker_nd : (markerHead::markerBits.flatMap ZeroBit.wires).Nodup := by
-  have inputs : (markerHead::markerInputs).Nodup := by
-    apply List.nodup_iff_count_le_one.mpr
-    intro q
-    exact (input_sub.count_le q).trans (List.nodup_iff_count_le_one.mp y_nodup q)
-  apply List.nodup_iff_count_le_one.mpr
-  intro q
-  have c:=BucketAffine8PointDevelop.zeroPorts_count markerInputs markerWork marker_lengths q
-  have yi:=List.nodup_iff_count_le_one.mp inputs q
-  have wi:=List.nodup_iff_count_le_one.mp work_nd q
-  by_cases hw:q∈markerWork
-  · have off:q∉markerHead::markerInputs := by
-      intro hm
-      exact pool_off_xy q (work_pool_mem q hw) (by simp [input_sub.subset hm])
-    have iz := List.count_eq_zero.mpr off
-    simp only [markerBits,List.count_cons] at c yi iz ⊢
-    omega
-  · have wz := List.count_eq_zero.mpr hw
-    simp only [markerBits,List.count_cons] at c yi ⊢
-    omega
-
+theorem marker_nd : (markerHead::markerBits.flatMap ZeroBit.wires).Nodup := by decide +kernel
 theorem marker_disjoint : ∀q∈markerBits,q.input∉[layout.control,markerLast] ∧ q.work∉[layout.control,markerLast] := by decide +kernel
 theorem marker_off_head : ∀q∈markerBits,q.input≠markerHead ∧ q.work≠markerHead := by decide +kernel
-theorem prefix_nd : markerPrefix.Nodup := by
-  apply List.nodup_iff_count_le_one.mpr
-  intro q
-  exact (prefix_sub.count_le q).trans (List.nodup_iff_count_le_one.mp y_nodup q)
-theorem pivot_off : pivotW∉markerPrefix := by decide +kernel
-theorem b_off_prefix : layout.control∉markerPrefix := by
-  intro h
-  exact control_off_xy (by simp [prefix_sub.subset h])
-theorem g_off_prefix : layout.genericSelect∉markerPrefix := by
-  intro h
-  exact generic_off_xy (by simp [prefix_sub.subset h])
-theorem work_off_prefix : ∀q∈markerBits,q.work∉markerPrefix := by
-  intro q hq h
-  have mem:=zeroPorts_mem markerInputs markerWork q hq
-  exact pool_off_xy _ (work_pool_mem _ mem.2) (by simp [prefix_sub.subset h])
+theorem work_off_prefix : ∀q∈markerBits,q.work∉markerPrefix := by decide +kernel
 
-theorem marker_prefix : markerPrefix=((layout.point.y.take 1++(layout.point.y.drop 3).take 1)++(layout.point.y.drop 10).take 22)++(layout.point.y.drop 33).take 223 := by decide +kernel
-theorem marker_read (s : BasisState) :
-    regValue markerPrefix s=AboveFieldYDevelop.compressed (regValue layout.point.y s) := by
-  rw [marker_prefix,
-    regValue_append,
-    regValue_append,
-    regValue_append,
-    CuccaroStreamedSquareWideLayout.regValue_take_mod layout.point.y 1 (by decide +kernel),
-    CuccaroStreamedSquareWideLayout.regValue_take_mod (layout.point.y.drop 3) 1 (by decide +kernel),
-    CuccaroStreamedSquareWideLayout.regValue_take_mod (layout.point.y.drop 10) 22 (by decide +kernel),
-    CuccaroStreamedSquareWideLayout.regValue_take_mod (layout.point.y.drop 33) 223 (by decide +kernel),
-    CuccaroStreamedSquareWideLayout.regValue_drop_div layout.point.y 3 (by decide +kernel),
-    CuccaroStreamedSquareWideLayout.regValue_drop_div layout.point.y 10 (by decide +kernel),
-    CuccaroStreamedSquareWideLayout.regValue_drop_div layout.point.y 33 (by decide +kernel)]
-  have l0 : (layout.point.y.take 1).length=1 := by decide +kernel
-  have l1 : (layout.point.y.take 1++(layout.point.y.drop 3).take 1).length=2 := by decide +kernel
-  have l2 : ((layout.point.y.take 1++(layout.point.y.drop 3).take 1)++(layout.point.y.drop 10).take 22).length=24 := by decide +kernel
-  rw [l0,l1,l2]
-  rfl
-theorem pivot_read (s : BasisState) :
-    s pivotW=AboveFieldYDevelop.pivot (regValue layout.point.y s) := by
-  have h:=BucketAffinePointDevelop.read_bit layout.point.y s 2 (by decide +kernel)
-  rw [Nat.testBit_eq_decide_div_mod_eq] at h
-  exact h.symm
 theorem all_zero (s : BasisState) :
     ((!s markerHead && markerBits.all (fun q=>!s q.input)) && !s markerLast)=
       decide (regValue markerPrefix s=0) := by
   have h:=ZeroRegisterMarkerDevelop.chain_zero markerHead (markerBits++[⟨markerLast,0⟩]) s
-  simpa [markerPrefix,List.all_append,Bool.and_assoc] using h
-#print axioms marker_nd
-#print axioms marker_read
-#print axioms pivot_read
-end ECDSAAdd.Entrant.AboveFieldPointDevelop
-end
+  simpa [marker_shape,List.all_append,Bool.and_assoc] using h
 
-section
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxHeartbeats 5000000
-set_option maxRecDepth 30000
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.AboveFieldPointDevelop
-open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel ControlPointEncodingDevelop
-attribute [local irreducible] layout run wires
+def marker (X Y : Nat) : Bool := XParityMarker.marker X Y
+def recover (g : Bool) (X Y : Nat) : Bool := g ^^ marker X Y
 
-def linear : Program := maskedConstant pivotW markerPrefix 1
-def linearMask (s : BasisState) : Nat := if s pivotW then 1 else 0
-def prep : Program := linear++xorConstant markerPrefix 226156424291633194186662080095093570025917938800079226639565593765455331326
-
-theorem linear_M : measurementCount linear=0 := by
-  have mc0:=maskedConstant_counts pivotW markerPrefix 1
-  simp [linear,mc0.2]
-
-theorem linear_correct (s : State) (m : List Bool) :
-    (run linear m s).phase=s.phase ∧
-    (∀q,q∉markerPrefix→(run linear m s).basis q=s.basis q) ∧
-    regValue markerPrefix (run linear m s).basis=regValue markerPrefix s.basis ^^^ linearMask s.basis := by
-  have h0:=maskedConstant_correct pivotW markerPrefix 1 prefix_nd pivot_off
-    (by rw [prefix_length];decide +kernel) s m
-  exact ⟨h0.1,h0.2.1,h0.2.2⟩
-
-theorem prep_correct (s : State) (m : List Bool) :
-    (run prep m s).phase=s.phase ∧
-    (∀q,q∉markerPrefix→(run prep m s).basis q=s.basis q) ∧
-    regValue markerPrefix (run prep m s).basis=
-      (regValue markerPrefix s.basis ^^^ linearMask s.basis) ^^^ 226156424291633194186662080095093570025917938800079226639565593765455331326 := by
-  let a:=run linear [] s
-  have l:=linear_correct s []
-  have x:=xorConstant_correct markerPrefix prefix_nd 226156424291633194186662080095093570025917938800079226639565593765455331326
-    (by rw [prefix_length];decide +kernel) a m
-  rw [prep,run_append]
-  simp only [linear_M,List.take_zero,List.drop_zero]
-  change (run (xorConstant markerPrefix 226156424291633194186662080095093570025917938800079226639565593765455331326) m a).phase=s.phase ∧ _ ∧ _
-  exact ⟨x.1.trans l.1,fun q hq=>(x.2.1 q hq).trans (l.2.1 q hq),by rw [x.2.2,l.2.2]⟩
-
-theorem prep_project (s : State) (m : List Bool) :
-    regValue markerPrefix (run prep m s).basis=
-      AboveFieldYDevelop.project (regValue layout.point.y s.basis) ^^^ 226156424291633194186662080095093570025917938800079226639565593765455331326 := by
-  rw [(prep_correct s m).2.2,marker_read s.basis]
-  simp only [linearMask,pivot_read s.basis,AboveFieldYDevelop.project,Nat.xor_assoc]
-
-theorem prep_M : measurementCount prep=0 := by
-  have b:=xorConstant_counts markerPrefix 226156424291633194186662080095093570025917938800079226639565593765455331326
-  simp [prep,measurementCount_append,linear_M,b.2]
-
-theorem xor_cancel (v mask k : Nat) : (((v ^^^ mask) ^^^ k) ^^^ mask) ^^^ k=v := by
-  simp only [Nat.xor_assoc]
-  rw [Nat.xor_left_comm k mask k]
-  simp
-
-theorem undo_prep (s : State) (value : Bool) (m : List Bool) :
-    run prep m ⟨(run prep [] s).phase,writeBit (run prep [] s).basis layout.control value⟩=
-      ⟨s.phase,writeBit s.basis layout.control value⟩ := by
-  let a:=run prep [] s
-  let mid : State:=⟨a.phase,writeBit a.basis layout.control value⟩
-  have first:=prep_correct s []
-  have off (q : Wire) (hq:q∉markerPrefix) : a.basis q=s.basis q := first.2.1 q hq
-  have mv : regValue markerPrefix mid.basis=regValue markerPrefix a.basis := by
-    apply regValue_congr
-    intro q hq
-    simp [mid,writeBit,Function.update_apply,show q≠layout.control from fun e=>b_off_prefix (e ▸ hq)]
-  have pv0 : mid.basis pivotW=s.basis pivotW := by
-    have ne : pivotW≠layout.control := by decide +kernel
-    simpa [mid,writeBit,Function.update_apply,ne] using off pivotW pivot_off
-  have pv : linearMask mid.basis=linearMask s.basis := by simp only [linearMask,pv0]
-  have last:=prep_correct mid m
-  have val : regValue markerPrefix (run prep m mid).basis=regValue markerPrefix s.basis := by
-    rw [last.2.2,mv,first.2.2,pv]
-    exact xor_cancel _ _ _
-  apply State.extensionality (run prep m mid) (⟨s.phase,writeBit s.basis layout.control value⟩:State) (last.1.trans first.1)
-  funext q
-  change (run prep m mid).basis q=writeBit s.basis layout.control value q
-  by_cases hr:q∈markerPrefix
-  · have qb:q≠layout.control:=fun e=>b_off_prefix (e ▸ hr)
-    rw [writeBit,Function.update_apply,if_neg qb]
-    exact (regValue_eq_iff _ _ _).mp val q hr
-  · rw [last.2.1 q hr]
-    by_cases qb:q=layout.control
-    · subst q;simp [mid,writeBit,Function.update_apply]
-    · simp [mid,writeBit,Function.update_apply,qb,off q hr]
-
-def marker (Y : Nat) : Bool := decide (AboveFieldYDevelop.project Y=226156424291633194186662080095093570025917938800079226639565593765455331326)
-def recover (g : Bool) (Y : Nat) : Bool := g ^^ marker Y
-
-theorem xor_check (v : Nat) : (v ^^^ 226156424291633194186662080095093570025917938800079226639565593765455331326=0) ↔ v=226156424291633194186662080095093570025917938800079226639565593765455331326 := by
+theorem xor_check (v : Nat) : (v ^^^ 113078212145816597093331040047546785012958969400039613319782796882727665662=0) ↔ v=113078212145816597093331040047546785012958969400039613319782796882727665662 := by
   constructor
   · intro h
-    have k:=congrArg (fun n : Nat=>n ^^^ 226156424291633194186662080095093570025917938800079226639565593765455331326) h
+    have k:=congrArg (fun n : Nat=>n ^^^ 113078212145816597093331040047546785012958969400039613319782796882727665662) h
     simpa only [Nat.xor_assoc,Nat.xor_self,Nat.xor_zero,Nat.zero_xor] using k
   · rintro rfl
     exact Nat.xor_self _
@@ -17663,30 +17519,15 @@ theorem prep_data (s : State) :
     a.phase=s.phase ∧ a.basis layout.control=s.basis layout.control ∧
     a.basis layout.genericSelect=s.basis layout.genericSelect ∧
     (((!a.basis markerHead && markerBits.all (fun q=>!a.basis q.input)) && !a.basis markerLast)=
-      marker (regValue layout.point.y s.basis)) ∧
+      marker (regValue layout.point.x s.basis) (regValue layout.point.y s.basis)) ∧
     ∀q∈markerBits,a.basis q.work=s.basis q.work := by
-  have first:=prep_correct s []
+  have first:=XParityGadget.prep_correct s []
   refine ⟨first.1,first.2.1 _ b_off_prefix,first.2.1 _ g_off_prefix,?_,fun q hq=>first.2.1 q.work (work_off_prefix q hq)⟩
-  rw [all_zero,prep_project]
-  exact decide_eq_decide.mpr (xor_check _)
-#print axioms prep_correct
-#print axioms undo_prep
-#print axioms prep_data
-end ECDSAAdd.Entrant.AboveFieldPointDevelop
-end
+  rw [all_zero,XParityGadget.prep_project]
+  exact (decide_eq_decide.mpr (xor_check _)).trans (XParityGadget.marker_project _ _)
 
-
-section
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxHeartbeats 5000000
-set_option maxRecDepth 30000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-namespace ECDSAAdd.Entrant.AboveFieldPointDevelop
-open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel ControlPointEncodingDevelop
 open YControlMarkerDevelop
-attribute [local irreducible] layout run wires
+
 def eraseB : Program :=
  prep++ControlMarkerDevelop.eraseControl layout.control layout.genericSelect markerLast markerHead markerBits++prep
 def loadB : Program :=
@@ -17695,13 +17536,13 @@ def loadB : Program :=
 theorem eraseB_run (s : State) (m : List Bool) (X Y : Nat)
  (hx:regValue layout.point.x s.basis=X) (hy:regValue layout.point.y s.basis=Y)
  (hf:s.basis layout.point.finite=false) (hz:∀q∈markerBits,s.basis q.work=false)
- (hb:s.basis layout.control=recover (s.basis layout.genericSelect) Y) :
+ (hb:s.basis layout.control=recover (s.basis layout.genericSelect) X Y) :
  run eraseB m s=⟨s.phase,writeBit s.basis layout.control false⟩ := by
  let a:=run prep [] s
  have data:=prep_data s
  have az : ∀q∈markerBits,a.basis q.work=false := fun q hq=>(data.2.2.2.2 q hq).trans (hz q hq)
  have pred : a.basis layout.control=(a.basis layout.genericSelect ^^ ((!a.basis markerHead && markerBits.all (fun q=>!a.basis q.input)) && !a.basis markerLast)) := by
-  rw [data.2.1,data.2.2.1,data.2.2.2.1,hy]
+  rw [data.2.1,data.2.2.1,data.2.2.2.1,hx,hy]
   exact hb
  let records:=m.take (measurementCount (ControlMarkerDevelop.eraseControl layout.control layout.genericSelect markerLast markerHead markerBits))
  have inner:=eraseControl_arbitrary layout.control layout.genericSelect markerLast markerHead
@@ -17717,7 +17558,7 @@ theorem loadB_run (s : State) (m : List Bool) (X Y : Nat)
  (hx:regValue layout.point.x s.basis=X) (hy:regValue layout.point.y s.basis=Y)
  (hf:s.basis layout.point.finite=false) (hz:∀q∈markerBits,s.basis q.work=false)
  (hb:s.basis layout.control=false) :
- run loadB m s=⟨s.phase,writeBit s.basis layout.control (recover (s.basis layout.genericSelect) Y)⟩ := by
+ run loadB m s=⟨s.phase,writeBit s.basis layout.control (recover (s.basis layout.genericSelect) X Y)⟩ := by
  let a:=run prep [] s
  have data:=prep_data s
  have az : ∀q∈markerBits,a.basis q.work=false := fun q hq=>(data.2.2.2.2 q hq).trans (hz q hq)
@@ -17725,9 +17566,9 @@ theorem loadB_run (s : State) (m : List Bool) (X Y : Nat)
  have inner:=loadControl_arbitrary layout.control layout.genericSelect markerLast markerHead
   (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
   markerBits marker_nd marker_disjoint marker_off_head a records az
- rw [data.2.1,data.2.2.1,data.2.2.2.1,hy,hb] at inner
+ rw [data.2.1,data.2.2.1,data.2.2.2.1,hx,hy,hb] at inner
  simp only [Bool.false_xor] at inner
- have val : (marker Y ^^ s.basis layout.genericSelect)=recover (s.basis layout.genericSelect) Y := by simp [recover,Bool.xor_comm]
+ have val : (marker X Y ^^ s.basis layout.genericSelect)=recover (s.basis layout.genericSelect) X Y := by simp [recover,Bool.xor_comm]
  rw [val] at inner
  unfold loadB
  rw [run_append,run_append]
@@ -17759,29 +17600,46 @@ abbrev encoding_support := @AboveFieldTagDevelop.encoding_support
 abbrev encode_spec := @AboveFieldTagDevelop.encode_spec
 abbrev decode_spec := @AboveFieldTagDevelop.decode_spec
 abbrev formatY := AboveFieldTagDevelop.formatY
+theorem ordinary_marker (R : Point) : marker (ControlSentinelDevelop.ordinaryX R) (pointY R)=false := by
+  cases R with
+  | zero =>
+    change XParityMarker.marker (p-1) 0=false
+    decide +kernel
+  | @some x y hc =>
+    have ex : ControlSentinelDevelop.ordinaryX (.some hc)=x.val := by
+      simp [ControlSentinelDevelop.ordinaryX,pointX]
+    have ey : pointY (.some hc)=y.val := by simp [pointY]
+    rw [ex,ey]
+    exact XParityMarker.free x y hc
+
+theorem format_pred (C : Point) (b g : Bool) (R : Point) :
+ marker (formatX C b g R) (formatY C b g R)=(b && !g) := by
+ change marker (if b && !g then ControlSentinelDevelop.tag C R else ControlSentinelDevelop.ordinaryX R)
+   (if b && !g then AboveFieldYDevelop.tagY else pointY R)=(b && !g)
+ cases h : (b && !g)
+ · simp only [h,Bool.false_eq_true,if_false]
+   exact ordinary_marker R
+ · simp only [h,if_true]
+   exact XParityMarker.tag _ (ControlSentinelDevelop.tag_le7 C R)
+
 theorem format_recover (C : Point) (b g : Bool) (R : Point) (hg : g=true→b=true) :
-    recover g (formatY C b g R)=b := by
-  change (g ^^ decide (AboveFieldYDevelop.project (AboveFieldTagDevelop.formatY C b g R)=226156424291633194186662080095093570025917938800079226639565593765455331326))=b
-  rw [AboveFieldTagDevelop.format_pred]
-  cases b <;> cases g <;> simp_all
+ recover g (formatX C b g R) (formatY C b g R)=b := by
+ unfold recover
+ rw [format_pred]
+ cases b <;> cases g <;> simp_all
 abbrev generic_format_run := @AboveFieldTagDevelop.generic_format_run
 attribute [local irreducible] layout run wires
 
-theorem prep_T : toffoliCount prep=0 := by
- have a:=maskedConstant_counts pivotW markerPrefix 1
- have e:=xorConstant_counts markerPrefix 226156424291633194186662080095093570025917938800079226639565593765455331326
- simp [prep,linear,toffoliCount_append,a.1,e.1]
-
-theorem marker_counts : toffoliCount eraseB=245 ∧ measurementCount eraseB=246 ∧
- toffoliCount loadB=246 ∧ measurementCount loadB=245 := by
+theorem marker_counts : toffoliCount eraseB=244 ∧ measurementCount eraseB=245 ∧
+ toffoliCount loadB=245 ∧ measurementCount loadB=244 := by
  have h:=control_counts layout.control layout.genericSelect markerLast markerHead markerBits
  simp only [marker_length] at h
  simp only [eraseB,loadB,toffoliCount_append,measurementCount_append,prep_T,prep_M]
  omega
 
-theorem prep_slots : gateSlots prep≤250 := by decide +kernel
+theorem prep_slots : gateSlots prep≤262 := XParityGadget.prep_slots
 
-theorem marker_slots : gateSlots eraseB≤2221 ∧ gateSlots loadB≤2221 := by
+theorem marker_slots : gateSlots eraseB≤2250 ∧ gateSlots loadB≤2250 := by
  have h:=control_slots layout.control layout.genericSelect markerLast markerHead markerBits
  simp only [marker_length] at h
  have hp:=prep_slots
@@ -17789,10 +17647,7 @@ theorem marker_slots : gateSlots eraseB≤2221 ∧ gateSlots loadB≤2221 := by
  omega
 
 theorem marker_physical : GatePhysical eraseB ∧ GatePhysical loadB := by
- have pre : GatePhysical prep := by
-  have a:=maskedConstant_physical pivotW markerPrefix 1 pivot_off
-  have e:=xorConstant_physical markerPrefix 226156424291633194186662080095093570025917938800079226639565593765455331326
-  simpa only [prep,linear,gatePhysical_append] using And.intro a e
+ have pre : GatePhysical prep := XParityGadget.prep_physical
  have nd:(markerHead::markerBits.map ZeroBit.work).Nodup := by decide +kernel
  have hi:∀q∈markerBits,q.input≠q.work := by decide +kernel
  have he:=eraseControl_physical layout.control layout.genericSelect markerLast markerHead (by decide +kernel) markerBits nd hi
@@ -17804,7 +17659,7 @@ theorem aux_marker_bits : ∀q∈markerBits,q.input∈auxPorts ∧ q.work∈auxP
  intro q hq
  have h:=zeroPorts_mem markerInputs markerWork q hq
  constructor
- · exact aux_y _ (input_sub.subset (List.mem_cons_of_mem _ h.1))
+ · exact aux_y _ (input_sub.subset h.1)
  · obtain ⟨i,hi,he⟩:=List.mem_map.mp h.2
    rw [←he]
    apply Finset.mem_union_left
@@ -17818,7 +17673,7 @@ theorem marker_support : wires eraseB⊆auxPorts ∧ wires loadB⊆auxPorts := b
  have hb:layout.control∈auxPorts:=aux_flag _ (by simp)
  have hg:layout.genericSelect∈auxPorts:=aux_flag _ (by simp)
  have hx:markerLast∈auxPorts:=aux_y _ (by decide +kernel)
- have hh:markerHead∈auxPorts:=aux_y _ (by decide +kernel)
+ have hh:markerHead∈auxPorts:=aux_x_get 215 (by decide)
  have he:wires (zeroWith (eraseTail layout.control markerLast) markerHead markerBits)⊆auxPorts:=by
    apply zeroWith_sub _ auxPorts ?_ _ _ hh aux_marker_bits
    intro h hmem
@@ -17828,19 +17683,11 @@ theorem marker_support : wires eraseB⊆auxPorts ∧ wires loadB⊆auxPorts := b
    intro h hmem
    simp [loadTail,wires,Instr.wires,Finset.insert_subset_iff,hb,hx,hmem]
  have pre:wires prep⊆auxPorts := by
-   have py (q : Wire) (hq:q∈markerPrefix) : q∈auxPorts := aux_y _ (prefix_sub.subset hq)
-   have masked (c : Wire) (K : Nat) (hc : c∈auxPorts) :
-       wires (maskedConstant c markerPrefix K)⊆auxPorts := by
-     apply (maskedConstant_wires_subset c markerPrefix K).trans
-     intro q hq
-     simp only [List.mem_toFinset,List.mem_cons] at hq
-     rcases hq with hq|hq
-     · simpa only [hq] using hc
-     · exact py q hq
-   have a:=masked pivotW 1 (aux_y _ (by decide +kernel))
-   have e:wires (xorConstant markerPrefix 226156424291633194186662080095093570025917938800079226639565593765455331326)⊆auxPorts :=
-     (xorConstant_wires_subset markerPrefix 226156424291633194186662080095093570025917938800079226639565593765455331326).trans (fun q hq=>py q (List.mem_toFinset.mp hq))
-   simpa only [prep,linear,wires_append,Finset.union_subset_iff] using And.intro a e
+   apply XParityGadget.prep_support.trans
+   intro q hq
+   rcases List.mem_append.mp (List.mem_toFinset.mp hq) with hx|hy
+   · exact aux_x q hx
+   · exact aux_y q hy
 
  simp only [eraseB,loadB,eraseControl,loadControl,wires_append,Finset.union_subset_iff]
  constructor <;> refine ⟨⟨pre,?_⟩,pre⟩
@@ -18092,9 +17939,9 @@ open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentine
 attribute [local irreducible] layout run
 
 theorem middle_metrics (C : Point) (cx cy : Fp) :
- toffoliCount (middle C cx cy)=toffoliCount (genericBlock cx cy)+497 ∧
- measurementCount (middle C cx cy)=measurementCount (genericBlock cx cy)+501 ∧
- gateSlots (middle C cx cy)≤gateSlots (genericBlock cx cy)+9207 := by
+ toffoliCount (middle C cx cy)=toffoliCount (genericBlock cx cy)+495 ∧
+ measurementCount (middle C cx cy)=measurementCount (genericBlock cx cy)+499 ∧
+ gateSlots (middle C cx cy)≤gateSlots (genericBlock cx cy)+9300 := by
  have h:=counts C
  have hm:=marker_counts
  have hs:=marker_slots
@@ -18364,9 +18211,9 @@ theorem wrapperBorrow_physical {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx 
  exact ⟨⟨FlagTop.stageNew_physical hc,middle_physical (.some hc) cx cy⟩,borrowOut_physical hc⟩
 
 theorem wrapperBorrow_metrics {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
- toffoliCount (wrapperBorrow (.some hc) cx cy)=toffoliCount (wrapperN layout (.some hc) cx cy)+497 ∧
- measurementCount (wrapperBorrow (.some hc) cx cy)=measurementCount (wrapperN layout (.some hc) cx cy)+501 ∧
- gateSlots (wrapperBorrow (.some hc) cx cy)≤gateSlots (wrapperN layout (.some hc) cx cy)+9207 := by
+ toffoliCount (wrapperBorrow (.some hc) cx cy)=toffoliCount (wrapperN layout (.some hc) cx cy)+495 ∧
+ measurementCount (wrapperBorrow (.some hc) cx cy)=measurementCount (wrapperN layout (.some hc) cx cy)+499 ∧
+ gateSlots (wrapperBorrow (.some hc) cx cy)≤gateSlots (wrapperN layout (.some hc) cx cy)+9300 := by
  have h:=middle_metrics (.some hc) cx cy
  simp only [genericBlock,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots] at h
  simp only [wrapperBorrow,finiteBorrow,wrapperN,finiteN,borrowOut,toffoliCount_append,measurementCount_append,gateSlots_append,
@@ -18389,7 +18236,7 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147228,1498886,1586,50266225⟩
+ def boundsQ : Challenge.Bounds :=⟨2147226,1498884,1586,50266318⟩
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -18398,23 +18245,23 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147228 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147226 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
   change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146731 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147228
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147226
   omega
- theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498886 := by
+ theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498884 := by
  cases C with
  | zero=>simp [programQ,measurementCount]
  | @some cx cy hc=>
   have h:=program_measurements_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.1
   change measurementCount (wrapperN layout (.some hc) cx cy)≤1498385 at h
-  change measurementCount (wrapperBorrow (.some hc) cx cy)≤1498886
+  change measurementCount (wrapperBorrow (.some hc) cx cy)≤1498884
   omega
  theorem program_qubits_Q (C : Point) : qubits (programQ C)≤1586 := by
  cases C with
@@ -18424,27 +18271,27 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
- theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50266225 := by
+ theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50266318 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
  | @some cx cy hc=>
   have h:=program_slots_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).2.2
   change gateSlots (wrapperN layout (.some hc) cx cy)≤50257018 at h
-  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50266225
+  change gateSlots (wrapperBorrow (.some hc) cx cy)≤50266318
   omega
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
  physical C:=Baselines.normalize_physical _ (by simpa only [GatePhysical] using program_physical_Q C)
  toffoli_le C:=(normalize_toffoli _).trans (program_toffoli_Q C)
  measurements_le C:=by
-  change measurementCount (normalizeProgram (programQ C))≤1498886
+  change measurementCount (normalizeProgram (programQ C))≤1498884
   rw [normalize_measurements];exact program_measurements_Q C
  qubits_le C:=by
   change qubits (normalizeProgram (programQ C))≤1586
   rw [normalize_qubits];exact program_qubits_Q C
  gateSlots_le C:=by
-  change gateSlots (normalizeProgram (programQ C))≤50266225
+  change gateSlots (normalizeProgram (programQ C))≤50266318
   rw [Baselines.normalize_slots];exact program_slots_Q C
 
 #print axioms certificateQ
