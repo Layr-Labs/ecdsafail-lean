@@ -9195,3 +9195,4755 @@ end ECDSAAdd.Entrant.FullB99OptTemp
 #print axioms ECDSAAdd.Entrant.FullB99OptTemp.ranked_certified_gain
 
 end
+
+open ECDSAAdd
+
+-- C163 component Range
+section
+namespace ECDSAAdd.Entrant.C163Range
+set_option maxHeartbeats 4000000
+theorem build_sub6_range (H:Nat) (hH:H<2^130) :
+ H≤1040*H/64 ∧ 1040*H/64-H=976*H/64 ∧ 1040*H/64-H<2^134 := by
+ have hd:=Nat.mod_add_div H 4
+ have hm:=Nat.mod_lt H (show 0<4 by decide)
+ have hs:1040*H/64=16*H+H/4:=by omega
+ have ht:976*H/64=15*H+H/4:=by omega
+ norm_num at hH ⊢
+ omega
+
+theorem clear_sub32_range (H:Nat) (hH:H<2^130) :
+ H≤4294968272*H/4294967296 ∧
+ 4294968272*H/4294967296-H=976*H/4294967296 ∧
+ 4294968272*H/4294967296-H<2^108 := by
+ norm_num at hH ⊢
+ omega
+end ECDSAAdd.Entrant.C163Range
+
+end
+
+-- C163 component NarrowAcc
+section
+-- Adapted from the retained NarrowAcc proof in QTop: outer accumulator width161.
+-- This is scratch proof development, not an entrant replacement.
+set_option Elab.async false
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.C163NarrowAcc
+open Arithmetic
+
+/-! Narrow H accumulator for a source of at most 130 bits.
+
+`earlyHTerms src` accumulates `(2^32+976)*H` with `H < 2^130`. The generic early prefix runs its two
+signed steps on 141 accumulator bits and the final `2^32` step on all 163 bits, which is sized for
+130-bit sources. For a 130-bit source `1040*H < 2^141` and `(2^32+976)*H < 2^163`, so the same
+operations run on 141 and 163 bits: the top two carries of each of the three adders are never produced
+(two Toffolis and two measurements less per adder). -/
+
+def pre8 (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)++
+    Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src false 10)++
+    CodexNarrowSub.accSub (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6)
+
+def build8 (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  pre8 acc Z bank cin src++Acc.op (acc.take 163) Z bank cin 163 false (Acc.earlyTerm src false 32)
+
+def unbuild8 (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  CodexNarrowSub.accSub (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32)++
+    Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6)++
+    CodexNarrowSub.accSub (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)++
+    Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)
+
+theorem terms_mem (src : List Wire) :
+    Acc.earlyTerm src false 4∈earlyHTerms src ∧ Acc.earlyTerm src false 10∈earlyHTerms src ∧
+      Acc.earlyTerm src true 6∈earlyHTerms src ∧ Acc.earlyTerm src false 32∈earlyHTerms src := by
+  simp [earlyHTerms]
+
+theorem build8_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length≤130)
+    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) :
+    Triple (SquareFrame acc base 0) (build8 acc Z bank cin src)
+      (SquareFrame acc base (4294968272*regValue src base)) := by
+  have tm := terms_mem src
+  have hf4 := hf _ tm.1
+  have hf10 := hf _ tm.2.1
+  have hf6 := hf _ tm.2.2.1
+  have hf32 := hf _ tm.2.2.2
+  let H := regValue src base
+  have hH : H<2^130 := lt_of_lt_of_le (regValue_lt src base) (Nat.pow_le_pow_right (by norm_num) hsrc)
+  have seed := Acc.seed_triple acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc hf4 base hz
+    0 (16*H) (Or.inl (by simp [Acc.earlyTerm,H,Nat.mul_comm]))
+  have add : Triple (SquareFrame acc base (16*H))
+      (Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src false 10))
+      (SquareFrame acc base (1040*H)) := by
+    have h := Acc.op_prefix_triple acc Z bank cin 163 141 (Acc.earlyTerm src false 10) hacc
+      (by norm_num [Acc.earlyTerm]) hf10 (by simp only [Acc.earlyTerm]; omega) base hz hb hi false (16*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm] at hH ⊢;dsimp [H] at *;omega)
+    have value : Acc.step base false (16*H) (Acc.earlyTerm src false 10)=1040*H := by
+      norm_num [Acc.step,Acc.earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  have sub : Triple (SquareFrame acc base (1040*H))
+      (CodexNarrowSub.accSub (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6))
+      (SquareFrame acc base (976*H)) := by
+    have h := CodexNarrowSub.accSub_prefix_triple acc Z bank cin 163 141 (Acc.earlyTerm src true 6) hacc
+      (by norm_num [Acc.earlyTerm]) hf6 (by simp only [Acc.earlyTerm]; omega) (by norm_num [Acc.earlyTerm]) base hz hb hi (1040*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm];dsimp [H];omega)
+      (by simpa only [Acc.earlyTerm] using (C163Range.build_sub6_range H hH).2.2)
+    have value : Acc.step base true (1040*H) (Acc.earlyTerm src true 6)=976*H := by
+      norm_num [Acc.step,Acc.earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  have top : Triple (SquareFrame acc base (976*H))
+      (Acc.op (acc.take 163) Z bank cin 163 false (Acc.earlyTerm src false 32))
+      (SquareFrame acc base (4294968272*H)) := by
+    have h := Acc.op_prefix_triple acc Z bank cin 163 163 (Acc.earlyTerm src false 32) hacc
+      (by norm_num [Acc.earlyTerm]) hf32 (by simp only [Acc.earlyTerm]; omega) base hz hb hi false (976*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm] at hH ⊢;dsimp [H] at *;omega)
+    have value : Acc.step base false (976*H) (Acc.earlyTerm src false 32)=4294968272*H := by
+      norm_num [Acc.step,Acc.earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  exact ((seed.seq add).seq sub).seq top
+
+                                                                               
+                                                   
+                                                           
+                                                                            
+                           
+                                                                                              
+                                    
+                          
+                       
+                          
+                           
+                            
+                            
+                                                                                                      
+                                                         
+                                                                                        
+                                          
+                                                                                                          
+                                                                              
+                                                                
+                                                                               
+                                                                                       
+                                                                                           
+                                                                             
+                                                
+            
+           
+                   
+           
+                                                  
+                                                                             
+                                           
+                                                                                         
+                                                                                                         
+                                                                                            
+                                                                                    
+                                       
+               
+           
+                   
+           
+                                                   
+                                                                                        
+                                         
+                                                                                                          
+                                                                              
+                                                          
+                                                                               
+                                                                                       
+                                                                                    
+                                       
+               
+           
+                   
+           
+                                                                                              
+                                                              
+                                        
+
+
+end ECDSAAdd.Entrant.C163NarrowAcc
+
+end
+
+-- C163 component SourceUnbuild
+section
+-- Width161 specializations of the retained QTop SourceTail/SourceAddFour proofs.
+-- Existing bit/arithmetic protocols are reused, not claimed as newly invented.
+set_option Elab.async false
+set_option maxHeartbeats 10000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.C163SourceTail
+open SourceTail130Develop
+open Arithmetic
+
+def tail (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  program src Z ((acc.take 141).drop 10) (bank.take 130) cin
+
+theorem tail_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 10))
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) :
+    Triple (SquareFrame acc base (1040*regValue src base)) (tail acc Z bank cin src)
+      (SquareFrame acc base (16*regValue src base)) := by
+  let f:=Acc.earlyTerm src false 10
+  let H:=regValue src base
+  have hH : H<2^130 := by have h:=regValue_lt src base;rw [hsrc] at h;exact h
+  have old:=Acc.op_prefix_triple acc Z bank cin 163 141 f hacc (by decide) hf
+    (by simp [f,Acc.earlyTerm,hsrc]) base hz hb hi true (1040*H)
+    (by omega) (by simp only [f,Acc.earlyTerm];dsimp [H];omega)
+  have value : Acc.step base true (1040*H) f=16*H := by
+    norm_num [Acc.step,f,Acc.earlyTerm]
+    dsimp [H]
+    omega
+  rw [value] at old
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf (by simp [f,Acc.earlyTerm,hsrc])
+  have len : (acc.take 141).length=141 := by simp [hacc]
+  have rawEq : Acc.op (acc.take 141) Z bank cin 141 true f=
+      subInPlace (src++Z.take 1) ((acc.take 141).drop 10) (bank.take 130) cin := by
+    simp [Acc.op,Acc.tx,Acc.ty,Acc.tc,f,Acc.earlyTerm,hsrc]
+  intro s m hs
+  have away (q : Wire) (hq : q∈src++Z++bank ∨ q=cin) : q∉acc := by
+    intro bad
+    have h:=List.nodup_iff_count.mp hf.nd q
+    have a:=List.count_pos_iff.mpr bad
+    rcases hq with hq|rfl
+    · have b:=List.count_pos_iff.mpr hq
+      simp only [List.count_cons,List.count_append,Acc.earlyTerm] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true,Acc.earlyTerm] at h
+      omega
+  have same (q : Wire) (hq : q∈src++Z++bank ∨ q=cin) : s.basis q=base q := hs.2 q (away q hq)
+  have pref:=regValue_take_drop_of_lt acc 141 (1040*H) s.basis (by omega) hs.1 (by omega)
+  have sy : regValue ((acc.take 141).drop 10) s.basis=1040*H/1024 := by
+    rw [CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by rw [len];decide),pref.1]
+    rfl
+  have sh : regValue src s.basis=H := regValue_congr src _ base (fun q hq=>same q (Or.inl (by simp [hq])))
+  have sz (q : Wire) (hq : q∈Z) : s.basis q=false :=
+    (same q (Or.inl (by simp [hq]))).trans (hz q hq)
+  have sb (q : Wire) (hq : q∈bank.take 130) : s.basis q=false :=
+    (same q (Or.inl (by simp [List.mem_of_mem_take hq]))).trans (hb q (List.mem_of_mem_take hq))
+  have si : s.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have nd:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have nd' : (cin::((src++Z.take 1)++(acc.take 141).drop 10++bank.take 130)).Nodup := by
+    simpa [Acc.tx,Acc.ty,Acc.tc,f,Acc.earlyTerm,hsrc] using nd
+  have zl : 1≤Z.length := by
+    have h:=fit.zpad
+    simpa [f,Acc.earlyTerm,hsrc] using h
+  have bl : (bank.take 130).length=130 := by
+    have h:=fit.bankLen
+    simp only [f,Acc.earlyTerm] at h
+    simp only [List.length_take]
+    omega
+  have e:=run_eq_sub src Z ((acc.take 141).drop 10) (bank.take 130) cin hsrc zl
+    (by simp [len]) bl nd' s m sz sb si H hH sh sy
+  change run (tail acc Z bank cin src) m s=_ at e
+  rw [e,←rawEq]
+  exact old s m hs
+#print axioms tail_triple
+end ECDSAAdd.Entrant.C163SourceTail
+
+
+namespace ECDSAAdd.Entrant.C163SourceAdd
+open SourceAddFourDevelop
+open Arithmetic
+
+def add (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  program src Z ((acc.take 141).drop 6) (bank.take 134) cin
+
+theorem add_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src true 6))
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) :
+    Triple (SquareFrame acc base (976*regValue src base)) (add acc Z bank cin src)
+      (SquareFrame acc base (1040*regValue src base)) := by
+  let f:=Acc.earlyTerm src true 6
+  let H:=regValue src base
+  have hH : H<2^130 := by have h:=regValue_lt src base;rw [hsrc] at h;exact h
+  have old:=Acc.op_prefix_triple acc Z bank cin 163 141 f hacc (by decide) hf
+    (by simp [f,Acc.earlyTerm,hsrc]) base hz hb hi false (976*H)
+    (by omega) (by simp only [f,Acc.earlyTerm];dsimp [H];omega)
+  have value : Acc.step base false (976*H) f=1040*H := by
+    norm_num [Acc.step,f,Acc.earlyTerm]
+    dsimp [H]
+    omega
+  rw [value] at old
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf (by simp [f,Acc.earlyTerm,hsrc])
+  have len : (acc.take 141).length=141 := by simp [hacc]
+  have rawEq : Acc.op (acc.take 141) Z bank cin 141 false f=
+      addInPlace (src++Z.take 5) ((acc.take 141).drop 6) (bank.take 134) cin := by
+    simp [Acc.op,Acc.tx,Acc.ty,Acc.tc,f,Acc.earlyTerm,hsrc]
+  intro s m hs
+  have away (q : Wire) (hq : q∈src++Z++bank ∨ q=cin) : q∉acc := by
+    intro bad
+    have h:=List.nodup_iff_count.mp hf.nd q
+    have a:=List.count_pos_iff.mpr bad
+    rcases hq with hq|rfl
+    · have b:=List.count_pos_iff.mpr hq
+      simp only [List.count_cons,List.count_append,Acc.earlyTerm] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true,Acc.earlyTerm] at h
+      omega
+  have same (q : Wire) (hq : q∈src++Z++bank ∨ q=cin) : s.basis q=base q := hs.2 q (away q hq)
+  have pref:=regValue_take_drop_of_lt acc 141 (976*H) s.basis (by omega) hs.1 (by omega)
+  have sy : regValue ((acc.take 141).drop 6) s.basis=976*H/64 := by
+    rw [CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by rw [len];decide),pref.1]
+    rfl
+  have sh : regValue src s.basis=H := regValue_congr src _ base (fun q hq=>same q (Or.inl (by simp [hq])))
+  have sz (q : Wire) (hq : q∈Z) : s.basis q=false :=
+    (same q (Or.inl (by simp [hq]))).trans (hz q hq)
+  have sb (q : Wire) (hq : q∈bank.take 134) : s.basis q=false :=
+    (same q (Or.inl (by simp [List.mem_of_mem_take hq]))).trans (hb q (List.mem_of_mem_take hq))
+  have si : s.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have nd:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have nd' : (cin::((src++Z.take 5)++(acc.take 141).drop 6++bank.take 134)).Nodup := by
+    simpa [Acc.tx,Acc.ty,Acc.tc,f,Acc.earlyTerm,hsrc] using nd
+  have zl : 5≤Z.length := by
+    have h:=fit.zpad
+    simpa [f,Acc.earlyTerm,hsrc] using h
+  have bl : (bank.take 134).length=134 := by
+    have h:=fit.bankLen
+    simp only [f,Acc.earlyTerm] at h
+    simp only [List.length_take]
+    omega
+  have e:=run_eq_add src Z ((acc.take 141).drop 6) (bank.take 134) cin (by omega) zl
+    (by simp [len,hsrc]) (by simp [bl,len]) nd' s m sz sb si H sh sy
+  change run (add acc Z bank cin src) m s=_ at e
+  rw [e,←rawEq]
+  exact old s m hs
+#print axioms add_triple
+end ECDSAAdd.Entrant.C163SourceAdd
+
+
+namespace ECDSAAdd.Entrant.C163SourceAdd
+open SourceAddFourDevelop
+open Arithmetic CodexNarrowTail SourceTail130Develop
+
+def unbuild (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  CodexKnownOnesTail.accSub 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32)++
+    add acc Z bank cin src++
+    C163SourceTail.tail acc Z bank cin src++Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)
+
+theorem unbuild_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) :
+    Triple (SquareFrame acc base (4294968272*regValue src base)) (unbuild acc Z bank cin src)
+      (SquareFrame acc base 0) := by
+  have tm := terms_mem src
+  have hf4 := hf _ tm.1
+  have hf10 := hf _ tm.2.1
+  have hf6 := hf _ tm.2.2.1
+  have hf32 := hf _ tm.2.2.2
+  let H := regValue src base
+  have hH : H<2^130 := by have h:=regValue_lt src base;rw [hsrc] at h;exact h
+  have top : Triple (SquareFrame acc base (4294968272*H))
+      (CodexKnownOnesTail.accSub 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32))
+      (SquareFrame acc base (976*H)) := by
+    have h := CodexKnownOnesTail.accSub_prefix_triple acc Z bank cin 163 163 108 (Acc.earlyTerm src false 32) hacc
+      (by norm_num [Acc.earlyTerm]) hf32 (by simp only [Acc.earlyTerm]; omega)
+      (by norm_num [Acc.earlyTerm]) base hz hb hi (4294968272*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm];dsimp [H];omega)
+      (by simpa only [Acc.earlyTerm] using (C163Range.clear_sub32_range H hH).2.2)
+    have value : Acc.step base true (4294968272*H) (Acc.earlyTerm src false 32)=976*H := by
+      have e : regValue src base*2^32=4294967296*H := by dsimp only [H]; ring
+      simp only [Acc.step,Acc.earlyTerm,if_true]
+      rw [e]
+      omega
+    rw [value] at h
+    exact h
+  have ad := add_triple acc Z bank cin src hacc hsrc hf6 base hz hb hi
+  change Triple (SquareFrame acc base (976*H)) (add acc Z bank cin src)
+    (SquareFrame acc base (1040*H)) at ad
+  have sub : Triple (SquareFrame acc base (1040*H)) (C163SourceTail.tail acc Z bank cin src)
+      (SquareFrame acc base (16*H)) := C163SourceTail.tail_triple acc Z bank cin src hacc hsrc hf10 base hz hb hi
+  have seed := Acc.seed_triple acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc hf4 base hz
+    (16*H) 0 (Or.inr (by simp [Acc.earlyTerm,H,Nat.mul_comm]))
+  exact ((top.seq ad).seq sub).seq seed
+
+
+                                                                              
+                                                   
+                                                           
+                                                                                          
+                                                                                          
+                                                                                                    
+                                                                                                     
+                                                                                   
+                                                                                                          
+                                
+                            
+          
+                     
+                                                                                            
+                                              
+#print axioms unbuild_triple
+                            
+end ECDSAAdd.Entrant.C163SourceAdd
+
+end
+
+-- C163 component Carry
+section
+-- Retained generic carry protocols adapted to a161-bit accumulator interface.
+-- The bit-level cached/consumed carry primitives are inherited unchanged.
+namespace ECDSAAdd.Entrant.C163Carry
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop FourthASavedCarryDevelop ManyACarryDevelop ControlLoan1589BFFold ZeroReadDevelop CodexNarrowTail
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.wires
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: buildPre
+def buildPre (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)++
+    Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src false 10)
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: buildPost
+def buildPost (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  Acc.op (acc.take 163) Z bank cin 163 false (Acc.earlyTerm src false 32)
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: buildCached
+def buildCached (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire) : Program :=
+  buildPre acc Z bank cin src++
+    cachedSub (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+      (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6))
+      (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q++buildPost acc Z bank cin src
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: build_split
+theorem build_split (acc Z bank : List Wire) (cin : Wire) (src : List Wire) :
+    C163NarrowAcc.build8 acc Z bank cin src=buildPre acc Z bank cin src++
+      CodexNarrowSub.accSub (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6)++buildPost acc Z bank cin src := rfl
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: buildPre_triple
+theorem buildPre_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc:acc.length=163) (hsrc:src.length≤130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (base : BasisState) (hz:∀q∈Z,base q=false) (hb:∀q∈bank,base q=false) (hi:base cin=false) :
+    Triple (SquareFrame acc base 0) (buildPre acc Z bank cin src)
+      (SquareFrame acc base (1040*regValue src base)) := by
+  have tm := C163NarrowAcc.terms_mem src
+  have hf4 := hf _ tm.1
+  have hf10 := hf _ tm.2.1
+  let H := regValue src base
+  have hH : H<2^130 := lt_of_lt_of_le (regValue_lt src base) (Nat.pow_le_pow_right (by norm_num) hsrc)
+  have seed := Acc.seed_triple acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc hf4 base hz
+    0 (16*H) (Or.inl (by simp [Acc.earlyTerm,H,Nat.mul_comm]))
+  have add : Triple (SquareFrame acc base (16*H))
+      (Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src false 10))
+      (SquareFrame acc base (1040*H)) := by
+    have h := Acc.op_prefix_triple acc Z bank cin 163 141 (Acc.earlyTerm src false 10) hacc
+      (by norm_num [Acc.earlyTerm]) hf10 (by simp only [Acc.earlyTerm]; omega) base hz hb hi false (16*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm] at hH ⊢;dsimp [H] at *;omega)
+    have value : Acc.step base false (16*H) (Acc.earlyTerm src false 10)=1040*H := by
+      norm_num [Acc.step,Acc.earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  exact seed.seq add
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: buildCached_frame
+theorem buildCached_frame (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (hq:s.basis q=false)
+    (fresh:q∉cin::(src++acc++Z++bank)) (off:q∉wires (C163NarrowAcc.build8 acc Z bank cin src)) :
+    run (buildCached acc Z bank cin src q) m s=
+      setWire (run (C163NarrowAcc.build8 acc Z bank cin src) m s) q (cacheBit (regValue src s.basis)) := by
+  let H:=regValue src s.basis
+  let f:=Acc.earlyTerm src true 6
+  let t:=run (buildPre acc Z bank cin src) (m.take (measurementCount (buildPre acc Z bank cin src))) s
+  have preFrame:=buildPre_triple acc Z bank cin src hacc (by omega) hf s.basis hz hb hi s
+    (m.take (measurementCount (buildPre acc Z bank cin src))) ⟨ha,fun _ _=>rfl⟩
+  have hH:H<2^130 := by simpa [H,hsrc] using regValue_lt src s.basis
+  have hf6:=hf f (C163NarrowAcc.terms_mem src).2.2.1
+  have ndall:(cin::(src++acc++Z++bank)).Nodup := by simpa [f,Acc.earlyTerm] using hf6.nd
+  have hnd:=List.nodup_iff_count_le_one.mp ndall
+  have away (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : w∉acc := by
+    intro bad
+    have h:=hnd w
+    have a:=List.count_pos_iff.mpr bad
+    rcases hw with hw|rfl
+    · have b:=List.count_pos_iff.mpr hw
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : t.basis w=s.basis w := preFrame.2.2 w (away w hw)
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf6 (by simp [f,Acc.earlyTerm,hsrc])
+  have len:(acc.take 141).length=141 := by simp [hacc]
+  have lens:=Acc.fits_lengths (acc.take 141) Z bank cin 141 f len fit.toFitsLen
+  have nd:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have window:(Acc.ty (acc.take 141) f).length=135 := by simpa [f,Acc.earlyTerm] using lens.2.2
+  have xv:regValue (Acc.tx Z 141 f) t.basis=H := by
+    have zero:regValue (Z.take (141-f.shift-f.src.length)) t.basis=0 := (regValue_zero _ _).mpr (by
+      intro w hw
+      exact (same w (Or.inl (by simp [List.mem_of_mem_take hw]))).trans (hz w (List.mem_of_mem_take hw)))
+    have srcv:regValue src t.basis=H := regValue_congr _ _ _ (fun w hw=>same w (Or.inl (by simp [hw])))
+    change regValue (src++Z.take (141-6-src.length)) t.basis=H
+    change regValue (Z.take (141-6-src.length)) t.basis=0 at zero
+    rw [regValue_append,srcv,zero,Nat.mul_zero,Nat.add_zero]
+  have pref:=regValue_take_drop_of_lt acc 141 (1040*H) t.basis (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
+  have yv:regValue (Acc.ty (acc.take 141) f) t.basis=1040*H/64 := by
+    rw [Acc.ty,regValue_drop_div _ _ (by simp [f,Acc.earlyTerm,len]),pref.1]
+    simp [f,Acc.earlyTerm]
+  have clean:∀w∈Acc.tc bank 141 f,t.basis w=false := by
+    intro w hw
+    have member:w∈bank := List.mem_of_mem_take hw
+    exact (same w (Or.inl (by simp [member]))).trans (hb w member)
+  have iv:t.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have qacc:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qt:t.basis q=false := (preFrame.2.2 q qacc).trans hq
+  have pieces:=off
+  rw [build_split] at pieces
+  simp only [wires_append,Finset.mem_union,not_or] at pieces
+  have count:=cachedSub_counts (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q lens.1 lens.2.1 (by omega)
+  have changed:=cachedSub_known_frame (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q
+    lens.1 lens.2.1 (by omega) nd t
+    ((m.drop (measurementCount (buildPre acc Z bank cin src))).take (measurementCount (CodexNarrowSub.accSub (acc.take 141) Z bank cin 141 f)))
+    clean iv pieces.1.2 qt H xv yv
+  have result:=modify_inside (buildPre acc Z bank cin src) (CodexNarrowSub.accSub (acc.take 141) Z bank cin 141 f)
+    (cachedSub (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q)
+    (buildPost acc Z bank cin src) q (cacheBit H) count.2.1 pieces.2 s m changed
+  simpa only [buildCached,build_split,f] using result
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: unbuildPre
+def unbuildPre (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  CodexKnownOnesTail.accSub 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32)
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: unbuildPost
+def unbuildPost (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  C163SourceTail.tail acc Z bank cin src++Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: unbuildConsumed
+def unbuildConsumed (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire) : Program :=
+  unbuildPre acc Z bank cin src++consumedAdd src Z ((acc.take 141).drop 6) (bank.take 134) cin q++unbuildPost acc Z bank cin src
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: unbuild_split
+theorem unbuild_split (acc Z bank : List Wire) (cin : Wire) (src : List Wire) :
+    C163SourceAdd.unbuild acc Z bank cin src=
+      unbuildPre acc Z bank cin src++C163SourceAdd.add acc Z bank cin src++unbuildPost acc Z bank cin src := by
+  simp only [C163SourceAdd.unbuild,unbuildPre,unbuildPost,List.append_assoc]
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: unbuildPre_triple
+theorem unbuildPre_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (base : BasisState) (hz:∀q∈Z,base q=false) (hb:∀q∈bank,base q=false) (hi:base cin=false) :
+    Triple (SquareFrame acc base (4294968272*regValue src base)) (unbuildPre acc Z bank cin src)
+      (SquareFrame acc base (976*regValue src base)) := by
+  have tm := C163NarrowAcc.terms_mem src
+  have hf32 := hf _ tm.2.2.2
+  let H := regValue src base
+  have hH : H<2^130 := by have h:=regValue_lt src base;rw [hsrc] at h;exact h
+  have top : Triple (SquareFrame acc base (4294968272*H))
+      (CodexKnownOnesTail.accSub 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32))
+      (SquareFrame acc base (976*H)) := by
+    have h := CodexKnownOnesTail.accSub_prefix_triple acc Z bank cin 163 163 108 (Acc.earlyTerm src false 32) hacc
+      (by norm_num [Acc.earlyTerm]) hf32 (by simp only [Acc.earlyTerm]; omega)
+      (by norm_num [Acc.earlyTerm]) base hz hb hi (4294968272*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm];dsimp [H];omega)
+      (by simpa only [Acc.earlyTerm] using (C163Range.clear_sub32_range H hH).2.2)
+    have value : Acc.step base true (4294968272*H) (Acc.earlyTerm src false 32)=976*H := by
+      have e : regValue src base*2^32=4294967296*H := by dsimp only [H]; ring
+      simp only [Acc.step,Acc.earlyTerm,if_true]
+      rw [e]
+      omega
+    rw [value] at h
+    exact h
+  exact top
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: unbuildConsumed_frame
+theorem unbuildConsumed_frame (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=4294968272*regValue src s.basis)
+    (saved:s.basis q=cacheBit (regValue src s.basis))
+    (fresh:q∉cin::(src++acc++Z++bank)) (off:q∉wires (C163SourceAdd.unbuild acc Z bank cin src)) :
+    run (unbuildConsumed acc Z bank cin src q) m s=
+      setWire (run (C163SourceAdd.unbuild acc Z bank cin src) m s) q false := by
+  let H:=regValue src s.basis
+  let f:=Acc.earlyTerm src true 6
+  let t:=run (unbuildPre acc Z bank cin src) (m.take (measurementCount (unbuildPre acc Z bank cin src))) s
+  have preFrame:=unbuildPre_triple acc Z bank cin src hacc hsrc hf s.basis hz hb hi s
+    (m.take (measurementCount (unbuildPre acc Z bank cin src))) ⟨ha,fun _ _=>rfl⟩
+  have hH:H<2^130 := by simpa [H,hsrc] using regValue_lt src s.basis
+  have hf6:=hf f (C163NarrowAcc.terms_mem src).2.2.1
+  have ndall:(cin::(src++acc++Z++bank)).Nodup := by simpa [f,Acc.earlyTerm] using hf6.nd
+  have hnd:=List.nodup_iff_count_le_one.mp ndall
+  have away (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : w∉acc := by
+    intro bad
+    have h:=hnd w
+    have a:=List.count_pos_iff.mpr bad
+    rcases hw with hw|rfl
+    · have b:=List.count_pos_iff.mpr hw
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : t.basis w=s.basis w := preFrame.2.2 w (away w hw)
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf6 (by simp [f,Acc.earlyTerm,hsrc])
+  have nd0:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have nd:(cin::((src++Z.take 5)++(acc.take 141).drop 6++bank.take 134)).Nodup := by
+    simpa only [Acc.tx,Acc.ty,Acc.tc,f,Acc.earlyTerm,hsrc] using nd0
+  have bankLen:134≤bank.length := by
+    have h:=hf6.bankLen
+    norm_num [f,Acc.earlyTerm] at h
+    omega
+  have zlen:5≤Z.length := by
+    have h:=hf6.zpad
+    norm_num [f,Acc.earlyTerm,hsrc] at h
+    omega
+  have sv:regValue src t.basis=H := regValue_congr _ _ _ (fun w hw=>same w (Or.inl (by simp [hw])))
+  have pref:=regValue_take_drop_of_lt acc 141 (976*H) t.basis (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
+  have yv:regValue ((acc.take 141).drop 6) t.basis=976*H/64 := by
+    rw [regValue_drop_div _ 6 (by simp [hacc]),pref.1]
+    norm_num
+  have zt:∀w∈Z,t.basis w=false := by
+    intro w hw
+    exact (same w (Or.inl (by simp [hw]))).trans (hz w hw)
+  have clean:∀w∈bank.take 134,t.basis w=false := by
+    intro w hw
+    have member:w∈bank := List.mem_of_mem_take hw
+    exact (same w (Or.inl (by simp [member]))).trans (hb w member)
+  have iv:t.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have qacc:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qt:t.basis q=cacheBit H := (preFrame.2.2 q qacc).trans saved
+  have qbank:q∉bank.take 134 := by intro bad;exact fresh (by simp [List.mem_of_mem_take bad])
+  have pieces:=off
+  rw [unbuild_split] at pieces
+  simp only [wires_append,Finset.mem_union,not_or] at pieces
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [hacc,hsrc]
+  have hc:(bank.take 134).length+1=((acc.take 141).drop 6).length := by simp [hacc,Nat.min_eq_left bankLen]
+  have count:=consumedAdd_counts src Z ((acc.take 141).drop 6) (bank.take 134) cin q (by omega) hy (by simp [Nat.min_eq_left bankLen])
+  have changed:=consumedAdd_frame src Z ((acc.take 141).drop 6) (bank.take 134) cin q (by omega) zlen hy hc nd t
+    ((m.drop (measurementCount (unbuildPre acc Z bank cin src))).take (measurementCount (C163SourceAdd.add acc Z bank cin src)))
+    zt clean iv H sv yv qbank pieces.1.2 qt
+  have result:=modify_inside (unbuildPre acc Z bank cin src) (C163SourceAdd.add acc Z bank cin src)
+    (consumedAdd src Z ((acc.take 141).drop 6) (bank.take 134) cin q) (unbuildPost acc Z bank cin src)
+    q false count.2.1 pieces.2 s m changed
+  simpa only [unbuildConsumed,unbuild_split] using result
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: buildDual
+def buildDual (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire) : Program :=
+  buildPre acc Z bank cin src++
+    cachedSubDual (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+      (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6))
+      (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q r++buildPost acc Z bank cin src
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: buildDual_frame
+theorem buildDual_frame (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (hq:s.basis q=false) (hr:s.basis r=false)
+    (fresh:q∉cin::(src++acc++Z++bank)) (off:q∉wires (C163NarrowAcc.build8 acc Z bank cin src))
+    (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (rq:r≠q) :
+    run (buildDual acc Z bank cin src q r) m s=
+      setWire (run (buildCached acc Z bank cin src q) m s) r (cacheBit6 (regValue src s.basis)) := by
+  let H:=regValue src s.basis
+  let f:=Acc.earlyTerm src true 6
+  let t:=run (buildPre acc Z bank cin src) (m.take (measurementCount (buildPre acc Z bank cin src))) s
+  have preFrame:=buildPre_triple acc Z bank cin src hacc (by omega) hf s.basis hz hb hi s
+    (m.take (measurementCount (buildPre acc Z bank cin src))) ⟨ha,fun _ _=>rfl⟩
+  have hH:H<2^130 := by simpa [H,hsrc] using regValue_lt src s.basis
+  have hf6:=hf f (C163NarrowAcc.terms_mem src).2.2.1
+  have ndall:(cin::(src++acc++Z++bank)).Nodup := by simpa [f,Acc.earlyTerm] using hf6.nd
+  have hnd:=List.nodup_iff_count_le_one.mp ndall
+  have away (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : w∉acc := by
+    intro bad
+    have h:=hnd w
+    have a:=List.count_pos_iff.mpr bad
+    rcases hw with hw|rfl
+    · have b:=List.count_pos_iff.mpr hw
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : t.basis w=s.basis w := preFrame.2.2 w (away w hw)
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf6 (by simp [f,Acc.earlyTerm,hsrc])
+  have len:(acc.take 141).length=141 := by simp [hacc]
+  have lens:=Acc.fits_lengths (acc.take 141) Z bank cin 141 f len fit.toFitsLen
+  have nd:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have window:(Acc.ty (acc.take 141) f).length=135 := by simpa [f,Acc.earlyTerm] using lens.2.2
+  have xv:regValue (Acc.tx Z 141 f) t.basis=H := by
+    have zero:regValue (Z.take (141-f.shift-f.src.length)) t.basis=0 := (regValue_zero _ _).mpr (by
+      intro w hw
+      exact (same w (Or.inl (by simp [List.mem_of_mem_take hw]))).trans (hz w (List.mem_of_mem_take hw)))
+    have srcv:regValue src t.basis=H := regValue_congr _ _ _ (fun w hw=>same w (Or.inl (by simp [hw])))
+    change regValue (src++Z.take (141-6-src.length)) t.basis=H
+    change regValue (Z.take (141-6-src.length)) t.basis=0 at zero
+    rw [regValue_append,srcv,zero,Nat.mul_zero,Nat.add_zero]
+  have pref:=regValue_take_drop_of_lt acc 141 (1040*H) t.basis (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
+  have yv:regValue (Acc.ty (acc.take 141) f) t.basis=1040*H/64 := by
+    rw [Acc.ty,regValue_drop_div _ _ (by simp [f,Acc.earlyTerm,len]),pref.1]
+    simp [f,Acc.earlyTerm]
+  have clean:∀w∈Acc.tc bank 141 f,t.basis w=false := by
+    intro w hw
+    have member:w∈bank := List.mem_of_mem_take hw
+    exact (same w (Or.inl (by simp [member]))).trans (hb w member)
+  have iv:t.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have qacc:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qt:t.basis q=false := (preFrame.2.2 q qacc).trans hq
+  have pieces:=off
+  rw [build_split] at pieces
+  simp only [wires_append,Finset.mem_union,not_or] at pieces
+  have racc:r∉acc := by intro bad;exact freshR (by simp [bad])
+  have rt:t.basis r=false := (preFrame.2.2 r racc).trans hr
+  have piecesR:=offR
+  rw [build_split] at piecesR
+  simp only [wires_append,Finset.mem_union,not_or] at piecesR
+  have count:=cachedSubDual_counts (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r lens.1 lens.2.1 (by omega)
+  have changed:=cachedSubDual_known_frame (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r
+    lens.1 lens.2.1 (by omega) nd t
+    ((m.drop (measurementCount (buildPre acc Z bank cin src))).take
+      (measurementCount (cachedSub (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q)))
+    clean iv pieces.1.2 piecesR.1.2 rq qt rt H xv yv
+  have result:=modify_inside (buildPre acc Z bank cin src)
+    (cachedSub (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q)
+    (cachedSubDual (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r)
+    (buildPost acc Z bank cin src) r (cacheBit6 H) count.2.1 piecesR.2 s m changed
+  simpa only [buildDual,buildCached,f] using result
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: unbuildDual
+def unbuildDual (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire) : Program :=
+  unbuildPre acc Z bank cin src++
+    consumedAddDual src Z ((acc.take 141).drop 6) (bank.take 134) cin q r++unbuildPost acc Z bank cin src
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/MainPart04Base.lean :: unbuildDual_frame
+theorem unbuildDual_frame (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=4294968272*regValue src s.basis)
+    (saved:s.basis q=cacheBit (regValue src s.basis)) (savedR:s.basis r=cacheBit6 (regValue src s.basis))
+    (fresh:q∉cin::(src++acc++Z++bank)) (off:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+    (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src)) (rq:r≠q) :
+    run (unbuildDual acc Z bank cin src q r) m s=
+      setWire (run (unbuildConsumed acc Z bank cin src q) m s) r false := by
+  let H:=regValue src s.basis
+  let f:=Acc.earlyTerm src true 6
+  let t:=run (unbuildPre acc Z bank cin src) (m.take (measurementCount (unbuildPre acc Z bank cin src))) s
+  have preFrame:=unbuildPre_triple acc Z bank cin src hacc hsrc hf s.basis hz hb hi s
+    (m.take (measurementCount (unbuildPre acc Z bank cin src))) ⟨ha,fun _ _=>rfl⟩
+  have hH:H<2^130 := by simpa [H,hsrc] using regValue_lt src s.basis
+  have hf6:=hf f (C163NarrowAcc.terms_mem src).2.2.1
+  have ndall:(cin::(src++acc++Z++bank)).Nodup := by simpa [f,Acc.earlyTerm] using hf6.nd
+  have hnd:=List.nodup_iff_count_le_one.mp ndall
+  have away (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : w∉acc := by
+    intro bad
+    have h:=hnd w
+    have a:=List.count_pos_iff.mpr bad
+    rcases hw with hw|rfl
+    · have b:=List.count_pos_iff.mpr hw
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : t.basis w=s.basis w := preFrame.2.2 w (away w hw)
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf6 (by simp [f,Acc.earlyTerm,hsrc])
+  have nd0:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have nd:(cin::((src++Z.take 5)++(acc.take 141).drop 6++bank.take 134)).Nodup := by
+    simpa only [Acc.tx,Acc.ty,Acc.tc,f,Acc.earlyTerm,hsrc] using nd0
+  have bankLen:134≤bank.length := by
+    have h:=hf6.bankLen
+    norm_num [f,Acc.earlyTerm] at h
+    omega
+  have zlen:5≤Z.length := by
+    have h:=hf6.zpad
+    norm_num [f,Acc.earlyTerm,hsrc] at h
+    omega
+  have sv:regValue src t.basis=H := regValue_congr _ _ _ (fun w hw=>same w (Or.inl (by simp [hw])))
+  have pref:=regValue_take_drop_of_lt acc 141 (976*H) t.basis (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
+  have yv:regValue ((acc.take 141).drop 6) t.basis=976*H/64 := by
+    rw [regValue_drop_div _ 6 (by simp [hacc]),pref.1]
+    norm_num
+  have zt:∀w∈Z,t.basis w=false := by
+    intro w hw
+    exact (same w (Or.inl (by simp [hw]))).trans (hz w hw)
+  have clean:∀w∈bank.take 134,t.basis w=false := by
+    intro w hw
+    have member:w∈bank := List.mem_of_mem_take hw
+    exact (same w (Or.inl (by simp [member]))).trans (hb w member)
+  have iv:t.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have qacc:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qt:t.basis q=cacheBit H := (preFrame.2.2 q qacc).trans saved
+  have qbank:q∉bank.take 134 := by intro bad;exact fresh (by simp [List.mem_of_mem_take bad])
+  have pieces:=off
+  rw [unbuild_split] at pieces
+  simp only [wires_append,Finset.mem_union,not_or] at pieces
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [hacc,hsrc]
+  have hc:(bank.take 134).length+1=((acc.take 141).drop 6).length := by simp [hacc,Nat.min_eq_left bankLen]
+  have racc:r∉acc := by intro bad;exact freshR (by simp [bad])
+  have rt:t.basis r=cacheBit6 H := (preFrame.2.2 r racc).trans savedR
+  have rbank:r∉bank.take 134 := by intro bad;exact freshR (by simp [List.mem_of_mem_take bad])
+  have freshQ:q∉(src++Z.take 5)++(acc.take 141).drop 6++bank.take 134 := by
+    intro bad
+    simp only [List.mem_append] at bad
+    rcases bad with ((h|h)|h)|h
+    · exact fresh (by simp [h])
+    · exact fresh (by simp [List.mem_of_mem_take h])
+    · exact fresh (by simp [List.mem_of_mem_take (List.mem_of_mem_drop h)])
+    · exact fresh (by simp [List.mem_of_mem_take h])
+  have piecesR:=offR
+  rw [unbuild_split] at piecesR
+  simp only [wires_append,Finset.mem_union,not_or] at piecesR
+  have count:=consumedAddDual_counts src Z ((acc.take 141).drop 6) (bank.take 134) cin q r
+    (by omega) hy (by simp [Nat.min_eq_left bankLen])
+  have changed:=consumedAddDual_frame src Z ((acc.take 141).drop 6) (bank.take 134) cin q r
+    (by omega) zlen hy hc nd t
+    ((m.drop (measurementCount (unbuildPre acc Z bank cin src))).take
+      (measurementCount (consumedAdd src Z ((acc.take 141).drop 6) (bank.take 134) cin q)))
+    zt clean iv H sv yv freshQ rbank rq piecesR.1.2 qt rt
+  have result:=modify_inside (unbuildPre acc Z bank cin src)
+    (consumedAdd src Z ((acc.take 141).drop 6) (bank.take 134) cin q)
+    (consumedAddDual src Z ((acc.take 141).drop 6) (bank.take 134) cin q r) (unbuildPost acc Z bank cin src)
+    r false count.2.1 piecesR.2 s m changed
+  simpa only [unbuildDual,unbuildConsumed] using result
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/ParkAMany.lean :: buildTriple
+def buildTriple (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire):Program:=
+ buildPre acc Z bank cin src++cachedSubTriple (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+  (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q r p++buildPost acc Z bank cin src
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/ParkAMany.lean :: buildTriple_frame
+theorem buildTriple_frame (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r p : Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (hq:s.basis q=false) (hr:s.basis r=false)
+    (fresh:q∉cin::(src++acc++Z++bank)) (off:q∉wires (C163NarrowAcc.build8 acc Z bank cin src))
+    (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (rq:r≠q)
+    (hp:s.basis p=false) (freshP:p∉cin::(src++acc++Z++bank))
+    (offP:p∉wires (buildDual acc Z bank cin src q r)) :
+    run (buildTriple acc Z bank cin src q r p) m s=
+      setWire (run (buildDual acc Z bank cin src q r) m s) p (cacheBit7 (regValue src s.basis)) := by
+  let H:=regValue src s.basis
+  let f:=Acc.earlyTerm src true 6
+  let t:=run (buildPre acc Z bank cin src) (m.take (measurementCount (buildPre acc Z bank cin src))) s
+  have preFrame:=buildPre_triple acc Z bank cin src hacc (by omega) hf s.basis hz hb hi s
+    (m.take (measurementCount (buildPre acc Z bank cin src))) ⟨ha,fun _ _=>rfl⟩
+  have hH:H<2^130 := by simpa [H,hsrc] using regValue_lt src s.basis
+  have hf6:=hf f (C163NarrowAcc.terms_mem src).2.2.1
+  have ndall:(cin::(src++acc++Z++bank)).Nodup := by simpa [f,Acc.earlyTerm] using hf6.nd
+  have hnd:=List.nodup_iff_count_le_one.mp ndall
+  have away (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : w∉acc := by
+    intro bad
+    have h:=hnd w
+    have a:=List.count_pos_iff.mpr bad
+    rcases hw with hw|rfl
+    · have b:=List.count_pos_iff.mpr hw
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : t.basis w=s.basis w := preFrame.2.2 w (away w hw)
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf6 (by simp [f,Acc.earlyTerm,hsrc])
+  have len:(acc.take 141).length=141 := by simp [hacc]
+  have lens:=Acc.fits_lengths (acc.take 141) Z bank cin 141 f len fit.toFitsLen
+  have nd:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have window:(Acc.ty (acc.take 141) f).length=135 := by simpa [f,Acc.earlyTerm] using lens.2.2
+  have xv:regValue (Acc.tx Z 141 f) t.basis=H := by
+    have zero:regValue (Z.take (141-f.shift-f.src.length)) t.basis=0 := (regValue_zero _ _).mpr (by
+      intro w hw
+      exact (same w (Or.inl (by simp [List.mem_of_mem_take hw]))).trans (hz w (List.mem_of_mem_take hw)))
+    have srcv:regValue src t.basis=H := regValue_congr _ _ _ (fun w hw=>same w (Or.inl (by simp [hw])))
+    change regValue (src++Z.take (141-6-src.length)) t.basis=H
+    change regValue (Z.take (141-6-src.length)) t.basis=0 at zero
+    rw [regValue_append,srcv,zero,Nat.mul_zero,Nat.add_zero]
+  have pref:=regValue_take_drop_of_lt acc 141 (1040*H) t.basis (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
+  have yv:regValue (Acc.ty (acc.take 141) f) t.basis=1040*H/64 := by
+    rw [Acc.ty,regValue_drop_div _ _ (by simp [f,Acc.earlyTerm,len]),pref.1]
+    simp [f,Acc.earlyTerm]
+  have clean:∀w∈Acc.tc bank 141 f,t.basis w=false := by
+    intro w hw
+    have member:w∈bank := List.mem_of_mem_take hw
+    exact (same w (Or.inl (by simp [member]))).trans (hb w member)
+  have iv:t.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have qacc:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qt:t.basis q=false := (preFrame.2.2 q qacc).trans hq
+  have pieces:=off
+  rw [build_split] at pieces
+  simp only [wires_append,Finset.mem_union,not_or] at pieces
+  have racc:r∉acc := by intro bad;exact freshR (by simp [bad])
+  have rt:t.basis r=false := (preFrame.2.2 r racc).trans hr
+  have piecesR:=offR
+  rw [build_split] at piecesR
+  simp only [wires_append,Finset.mem_union,not_or] at piecesR
+  have pacc:p∉acc:=by intro bad;exact freshP (by simp[bad])
+  have pt:t.basis p=false:=(preFrame.2.2 p pacc).trans hp
+  have piecesP:=offP
+  rw[buildDual]at piecesP
+  simp only[wires_append,Finset.mem_union,not_or]at piecesP
+  have count:=cachedSubTriple_counts (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r p lens.1 lens.2.1 (by omega)
+  have changed:=cachedSubTriple_known_frame (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r p
+   lens.1 lens.2.1 (by omega) nd t
+   ((m.drop (measurementCount (buildPre acc Z bank cin src))).take
+    (measurementCount (cachedSubDual (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r)))
+   clean iv pieces.1.2 piecesR.1.2 rq piecesP.1.2 qt rt pt H xv yv
+  have result:=modify_inside (buildPre acc Z bank cin src)
+   (cachedSubDual (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r)
+   (cachedSubTriple (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r p)
+   (buildPost acc Z bank cin src) p (cacheBit7 H) count.2.1 piecesP.2 s m changed
+  simpa only[buildTriple,buildDual,f]using result
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/ParkAMany.lean :: unbuildTriple
+def unbuildTriple (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire):Program:=
+ unbuildPre acc Z bank cin src++consumedAddTriple src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p++unbuildPost acc Z bank cin src
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/ParkAMany.lean :: unbuildTriple_frame
+theorem unbuildTriple_frame (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r p : Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=4294968272*regValue src s.basis)
+    (saved:s.basis q=cacheBit (regValue src s.basis)) (savedR:s.basis r=cacheBit6 (regValue src s.basis))
+    (fresh:q∉cin::(src++acc++Z++bank)) (off:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+    (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src)) (rq:r≠q)
+    (savedP:s.basis p=cacheBit7 (regValue src s.basis)) (freshP:p∉cin::(src++acc++Z++bank))
+    (offP:p∉wires (unbuildDual acc Z bank cin src q r)) (pq:p≠q) (pr:p≠r) :
+    run (unbuildTriple acc Z bank cin src q r p) m s=
+      setWire (run (unbuildDual acc Z bank cin src q r) m s) p false := by
+  let H:=regValue src s.basis
+  let f:=Acc.earlyTerm src true 6
+  let t:=run (unbuildPre acc Z bank cin src) (m.take (measurementCount (unbuildPre acc Z bank cin src))) s
+  have preFrame:=unbuildPre_triple acc Z bank cin src hacc hsrc hf s.basis hz hb hi s
+    (m.take (measurementCount (unbuildPre acc Z bank cin src))) ⟨ha,fun _ _=>rfl⟩
+  have hH:H<2^130 := by simpa [H,hsrc] using regValue_lt src s.basis
+  have hf6:=hf f (C163NarrowAcc.terms_mem src).2.2.1
+  have ndall:(cin::(src++acc++Z++bank)).Nodup := by simpa [f,Acc.earlyTerm] using hf6.nd
+  have hnd:=List.nodup_iff_count_le_one.mp ndall
+  have away (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : w∉acc := by
+    intro bad
+    have h:=hnd w
+    have a:=List.count_pos_iff.mpr bad
+    rcases hw with hw|rfl
+    · have b:=List.count_pos_iff.mpr hw
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : t.basis w=s.basis w := preFrame.2.2 w (away w hw)
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf6 (by simp [f,Acc.earlyTerm,hsrc])
+  have nd0:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have nd:(cin::((src++Z.take 5)++(acc.take 141).drop 6++bank.take 134)).Nodup := by
+    simpa only [Acc.tx,Acc.ty,Acc.tc,f,Acc.earlyTerm,hsrc] using nd0
+  have bankLen:134≤bank.length := by
+    have h:=hf6.bankLen
+    norm_num [f,Acc.earlyTerm] at h
+    omega
+  have zlen:5≤Z.length := by
+    have h:=hf6.zpad
+    norm_num [f,Acc.earlyTerm,hsrc] at h
+    omega
+  have sv:regValue src t.basis=H := regValue_congr _ _ _ (fun w hw=>same w (Or.inl (by simp [hw])))
+  have pref:=regValue_take_drop_of_lt acc 141 (976*H) t.basis (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
+  have yv:regValue ((acc.take 141).drop 6) t.basis=976*H/64 := by
+    rw [regValue_drop_div _ 6 (by simp [hacc]),pref.1]
+    norm_num
+  have zt:∀w∈Z,t.basis w=false := by
+    intro w hw
+    exact (same w (Or.inl (by simp [hw]))).trans (hz w hw)
+  have clean:∀w∈bank.take 134,t.basis w=false := by
+    intro w hw
+    have member:w∈bank := List.mem_of_mem_take hw
+    exact (same w (Or.inl (by simp [member]))).trans (hb w member)
+  have iv:t.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have qacc:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qt:t.basis q=cacheBit H := (preFrame.2.2 q qacc).trans saved
+  have qbank:q∉bank.take 134 := by intro bad;exact fresh (by simp [List.mem_of_mem_take bad])
+  have pieces:=off
+  rw [unbuild_split] at pieces
+  simp only [wires_append,Finset.mem_union,not_or] at pieces
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [hacc,hsrc]
+  have hc:(bank.take 134).length+1=((acc.take 141).drop 6).length := by simp [hacc,Nat.min_eq_left bankLen]
+  have racc:r∉acc := by intro bad;exact freshR (by simp [bad])
+  have rt:t.basis r=cacheBit6 H := (preFrame.2.2 r racc).trans savedR
+  have rbank:r∉bank.take 134 := by intro bad;exact freshR (by simp [List.mem_of_mem_take bad])
+  have freshQ:q∉(src++Z.take 5)++(acc.take 141).drop 6++bank.take 134 := by
+    intro bad
+    simp only [List.mem_append] at bad
+    rcases bad with ((h|h)|h)|h
+    · exact fresh (by simp [h])
+    · exact fresh (by simp [List.mem_of_mem_take h])
+    · exact fresh (by simp [List.mem_of_mem_take (List.mem_of_mem_drop h)])
+    · exact fresh (by simp [List.mem_of_mem_take h])
+  have piecesR:=offR
+  rw [unbuild_split] at piecesR
+  simp only [wires_append,Finset.mem_union,not_or] at piecesR
+  have pacc:p∉acc:=by intro bad;exact freshP (by simp[bad])
+  have pt:t.basis p=cacheBit7 H:=(preFrame.2.2 p pacc).trans savedP
+  have pbank:p∉bank.take 134:=by intro bad;exact freshP (by simp[List.mem_of_mem_take bad])
+  have freshR':r∉(src++Z.take 5)++(acc.take 141).drop 6++bank.take 134:=by
+   intro bad
+   simp only[List.mem_append]at bad
+   rcases bad with ((h|h)|h)|h
+   · exact freshR (by simp[h])
+   · exact freshR (by simp[List.mem_of_mem_take h])
+   · exact freshR (by simp[List.mem_of_mem_take (List.mem_of_mem_drop h)])
+   · exact freshR (by simp[List.mem_of_mem_take h])
+  have piecesP:=offP
+  rw[unbuildDual]at piecesP
+  simp only[wires_append,Finset.mem_union,not_or]at piecesP
+  have count:=consumedAddTriple_counts src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p
+   (by omega) hy (by simp[Nat.min_eq_left bankLen])
+  have changed:=consumedAddTriple_frame src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p
+   (by omega) zlen hy hc nd t
+   ((m.drop (measurementCount (unbuildPre acc Z bank cin src))).take
+    (measurementCount (consumedAddDual src Z ((acc.take 141).drop 6) (bank.take 134) cin q r)))
+   zt clean iv H sv yv freshQ freshR' rq pbank pq pr piecesP.1.2 qt rt pt
+  have result:=modify_inside (unbuildPre acc Z bank cin src)
+   (consumedAddDual src Z ((acc.take 141).drop 6) (bank.take 134) cin q r)
+   (consumedAddTriple src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p) (unbuildPost acc Z bank cin src)
+   p false count.2.1 piecesP.2 s m changed
+  simpa only[unbuildTriple,unbuildDual]using result
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/ParkAMany.lean :: buildMany
+def buildMany (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire):Program:=
+ buildPre acc Z bank cin src++cachedSubMany k (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+  (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) hs cin q r p++buildPost acc Z bank cin src
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/ParkAMany.lean :: buildMany_frame
+theorem buildMany_frame (k:Nat) (acc Z bank : List Wire) (cin : Wire) (src hs : List Wire) (q r p : Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (hq:s.basis q=false) (hr:s.basis r=false)
+    (fresh:q∉cin::(src++acc++Z++bank)) (off:q∉wires (C163NarrowAcc.build8 acc Z bank cin src))
+    (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (rq:r≠q)
+    (hp:s.basis p=false) (freshP:p∉cin::(src++acc++Z++bank))
+    (offP:p∉wires (buildDual acc Z bank cin src q r))
+    (hk:k≤121) (ndhs:hs.Nodup)
+    (hu:∀u∈hs,s.basis u=false) (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
+    (offU:∀u∈hs,u∉wires (buildTriple acc Z bank cin src q r p)) :
+    run (buildMany k acc Z bank cin src hs q r p) m s=
+      scatterState hs (bankValues 7 k (regValue src s.basis)) (run (buildTriple acc Z bank cin src q r p) m s) := by
+  let H:=regValue src s.basis
+  let f:=Acc.earlyTerm src true 6
+  let t:=run (buildPre acc Z bank cin src) (m.take (measurementCount (buildPre acc Z bank cin src))) s
+  have preFrame:=buildPre_triple acc Z bank cin src hacc (by omega) hf s.basis hz hb hi s
+    (m.take (measurementCount (buildPre acc Z bank cin src))) ⟨ha,fun _ _=>rfl⟩
+  have hH:H<2^130 := by simpa [H,hsrc] using regValue_lt src s.basis
+  have hf6:=hf f (C163NarrowAcc.terms_mem src).2.2.1
+  have ndall:(cin::(src++acc++Z++bank)).Nodup := by simpa [f,Acc.earlyTerm] using hf6.nd
+  have hnd:=List.nodup_iff_count_le_one.mp ndall
+  have away (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : w∉acc := by
+    intro bad
+    have h:=hnd w
+    have a:=List.count_pos_iff.mpr bad
+    rcases hw with hw|rfl
+    · have b:=List.count_pos_iff.mpr hw
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : t.basis w=s.basis w := preFrame.2.2 w (away w hw)
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf6 (by simp [f,Acc.earlyTerm,hsrc])
+  have len:(acc.take 141).length=141 := by simp [hacc]
+  have lens:=Acc.fits_lengths (acc.take 141) Z bank cin 141 f len fit.toFitsLen
+  have nd:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have window:(Acc.ty (acc.take 141) f).length=135 := by simpa [f,Acc.earlyTerm] using lens.2.2
+  have xv:regValue (Acc.tx Z 141 f) t.basis=H := by
+    have zero:regValue (Z.take (141-f.shift-f.src.length)) t.basis=0 := (regValue_zero _ _).mpr (by
+      intro w hw
+      exact (same w (Or.inl (by simp [List.mem_of_mem_take hw]))).trans (hz w (List.mem_of_mem_take hw)))
+    have srcv:regValue src t.basis=H := regValue_congr _ _ _ (fun w hw=>same w (Or.inl (by simp [hw])))
+    change regValue (src++Z.take (141-6-src.length)) t.basis=H
+    change regValue (Z.take (141-6-src.length)) t.basis=0 at zero
+    rw [regValue_append,srcv,zero,Nat.mul_zero,Nat.add_zero]
+  have pref:=regValue_take_drop_of_lt acc 141 (1040*H) t.basis (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
+  have yv:regValue (Acc.ty (acc.take 141) f) t.basis=1040*H/64 := by
+    rw [Acc.ty,regValue_drop_div _ _ (by simp [f,Acc.earlyTerm,len]),pref.1]
+    simp [f,Acc.earlyTerm]
+  have clean:∀w∈Acc.tc bank 141 f,t.basis w=false := by
+    intro w hw
+    have member:w∈bank := List.mem_of_mem_take hw
+    exact (same w (Or.inl (by simp [member]))).trans (hb w member)
+  have iv:t.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have qacc:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qt:t.basis q=false := (preFrame.2.2 q qacc).trans hq
+  have pieces:=off
+  rw [build_split] at pieces
+  simp only [wires_append,Finset.mem_union,not_or] at pieces
+  have racc:r∉acc := by intro bad;exact freshR (by simp [bad])
+  have rt:t.basis r=false := (preFrame.2.2 r racc).trans hr
+  have piecesR:=offR
+  rw [build_split] at piecesR
+  simp only [wires_append,Finset.mem_union,not_or] at piecesR
+  have pacc:p∉acc:=by intro bad;exact freshP (by simp[bad])
+  have pt:t.basis p=false:=(preFrame.2.2 p pacc).trans hp
+  have piecesP:=offP
+  rw[buildDual]at piecesP
+  simp only[wires_append,Finset.mem_union,not_or]at piecesP
+  have ut (u:Wire) (h:u∈hs):t.basis u=false:=by
+    have uacc:u∉acc:=by intro bad;exact freshU u h (by simp[bad])
+    exact (preFrame.2.2 u uacc).trans (hu u h)
+  have piecesU (u:Wire) (h:u∈hs):u∉wires (buildPre acc Z bank cin src) ∧
+    u∉wires (cachedSubTriple (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r p) ∧
+    u∉wires (buildPost acc Z bank cin src):=by
+    have free:=offU u h
+    rw[buildTriple]at free
+    simpa only[wires_append,Finset.mem_union,not_or,and_assoc,f]using free
+  have freshcs (u:Wire) (h:u∈hs):u∉Acc.tc bank 141 f:=by
+    intro bad
+    exact freshU u h (by simp[List.mem_of_mem_take bad])
+  have qc:q∉Acc.tc bank 141 f:=by intro bad;exact fresh (by simp[List.mem_of_mem_take bad])
+  have rc:r∉Acc.tc bank 141 f:=by intro bad;exact freshR (by simp[List.mem_of_mem_take bad])
+  have pc:p∉Acc.tc bank 141 f:=by intro bad;exact freshP (by simp[List.mem_of_mem_take bad])
+  have count:=cachedSubMany_counts k (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) hs cin q r p lens.1 lens.2.1 (by omega)
+  have changed:=cachedSubMany_known_frame k H (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) hs cin q r p
+   lens.1 lens.2.1 (by omega) nd t (m.drop (measurementCount (buildPre acc Z bank cin src)))
+   clean iv pieces.1.2 piecesR.1.2 rq piecesP.1.2 qc rc pc qt rt pt xv yv ndhs freshcs
+   (fun u h=>(piecesU u h).2.1) ut
+  have result:=modify_many_inside (buildPre acc Z bank cin src)
+   (cachedSubTriple (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) cin q r p)
+   (cachedSubMany k (Acc.tx Z 141 f) (Acc.ty (acc.take 141) f) (Acc.tc bank 141 f) hs cin q r p)
+   (buildPost acc Z bank cin src) hs (bankValues 7 k H) count.2.1
+   (fun u h=>(piecesU u h).2.2) s m (by simpa only[t,run_take]using changed)
+  simpa only[buildMany,buildTriple,f,H]using result
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/ParkAMany.lean :: unbuildMany
+def unbuildMany (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire):Program:=
+ unbuildPre acc Z bank cin src++consumedAddMany k src Z ((acc.take 141).drop 6) (bank.take 134) hs cin q r p++unbuildPost acc Z bank cin src
+
+-- Width161 adaptation from ECDSAAdd/Submission/Entrant/ParkAMany.lean :: unbuildMany_frame
+theorem unbuildMany_frame (k:Nat) (acc Z bank : List Wire) (cin : Wire) (src hs : List Wire) (q r p : Wire)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=4294968272*regValue src s.basis)
+    (saved:s.basis q=cacheBit (regValue src s.basis)) (savedR:s.basis r=cacheBit6 (regValue src s.basis))
+    (fresh:q∉cin::(src++acc++Z++bank)) (off:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+    (freshR:r∉cin::(src++acc++Z++bank)) (offR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src)) (rq:r≠q)
+    (savedP:s.basis p=cacheBit7 (regValue src s.basis)) (freshP:p∉cin::(src++acc++Z++bank))
+    (offP:p∉wires (unbuildDual acc Z bank cin src q r)) (pq:p≠q) (pr:p≠r)
+    (hk:k≤121) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+    (savedU:hs.map s.basis=bankValues 7 k (regValue src s.basis))
+    (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
+    (offU:∀u∈hs,u∉wires (unbuildTriple acc Z bank cin src q r p)) :
+    run (unbuildMany k acc Z bank cin src hs q r p) m s=
+      scatterState hs (List.replicate hs.length false) (run (unbuildTriple acc Z bank cin src q r p) m s) := by
+  let H:=regValue src s.basis
+  let f:=Acc.earlyTerm src true 6
+  let t:=run (unbuildPre acc Z bank cin src) (m.take (measurementCount (unbuildPre acc Z bank cin src))) s
+  have preFrame:=unbuildPre_triple acc Z bank cin src hacc hsrc hf s.basis hz hb hi s
+    (m.take (measurementCount (unbuildPre acc Z bank cin src))) ⟨ha,fun _ _=>rfl⟩
+  have hH:H<2^130 := by simpa [H,hsrc] using regValue_lt src s.basis
+  have hf6:=hf f (C163NarrowAcc.terms_mem src).2.2.1
+  have ndall:(cin::(src++acc++Z++bank)).Nodup := by simpa [f,Acc.earlyTerm] using hf6.nd
+  have hnd:=List.nodup_iff_count_le_one.mp ndall
+  have away (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : w∉acc := by
+    intro bad
+    have h:=hnd w
+    have a:=List.count_pos_iff.mpr bad
+    rcases hw with hw|rfl
+    · have b:=List.count_pos_iff.mpr hw
+      simp only [List.count_cons,List.count_append] at h b
+      split at h <;> omega
+    · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true] at h
+      omega
+  have same (w : Wire) (hw:w∈src++Z++bank ∨ w=cin) : t.basis w=s.basis w := preFrame.2.2 w (away w hw)
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 f (by decide) hf6 (by simp [f,Acc.earlyTerm,hsrc])
+  have nd0:=Acc.fits_nodup (acc.take 141) Z bank cin 141 f fit
+  have nd:(cin::((src++Z.take 5)++(acc.take 141).drop 6++bank.take 134)).Nodup := by
+    simpa only [Acc.tx,Acc.ty,Acc.tc,f,Acc.earlyTerm,hsrc] using nd0
+  have bankLen:134≤bank.length := by
+    have h:=hf6.bankLen
+    norm_num [f,Acc.earlyTerm] at h
+    omega
+  have zlen:5≤Z.length := by
+    have h:=hf6.zpad
+    norm_num [f,Acc.earlyTerm,hsrc] at h
+    omega
+  have sv:regValue src t.basis=H := regValue_congr _ _ _ (fun w hw=>same w (Or.inl (by simp [hw])))
+  have pref:=regValue_take_drop_of_lt acc 141 (976*H) t.basis (by omega) preFrame.2.1 (by norm_num at hH ⊢;omega)
+  have yv:regValue ((acc.take 141).drop 6) t.basis=976*H/64 := by
+    rw [regValue_drop_div _ 6 (by simp [hacc]),pref.1]
+    norm_num
+  have zt:∀w∈Z,t.basis w=false := by
+    intro w hw
+    exact (same w (Or.inl (by simp [hw]))).trans (hz w hw)
+  have clean:∀w∈bank.take 134,t.basis w=false := by
+    intro w hw
+    have member:w∈bank := List.mem_of_mem_take hw
+    exact (same w (Or.inl (by simp [member]))).trans (hb w member)
+  have iv:t.basis cin=false := (same cin (Or.inr rfl)).trans hi
+  have qacc:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qt:t.basis q=cacheBit H := (preFrame.2.2 q qacc).trans saved
+  have qbank:q∉bank.take 134 := by intro bad;exact fresh (by simp [List.mem_of_mem_take bad])
+  have pieces:=off
+  rw [unbuild_split] at pieces
+  simp only [wires_append,Finset.mem_union,not_or] at pieces
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [hacc,hsrc]
+  have hc:(bank.take 134).length+1=((acc.take 141).drop 6).length := by simp [hacc,Nat.min_eq_left bankLen]
+  have racc:r∉acc := by intro bad;exact freshR (by simp [bad])
+  have rt:t.basis r=cacheBit6 H := (preFrame.2.2 r racc).trans savedR
+  have rbank:r∉bank.take 134 := by intro bad;exact freshR (by simp [List.mem_of_mem_take bad])
+  have freshQ:q∉(src++Z.take 5)++(acc.take 141).drop 6++bank.take 134 := by
+    intro bad
+    simp only [List.mem_append] at bad
+    rcases bad with ((h|h)|h)|h
+    · exact fresh (by simp [h])
+    · exact fresh (by simp [List.mem_of_mem_take h])
+    · exact fresh (by simp [List.mem_of_mem_take (List.mem_of_mem_drop h)])
+    · exact fresh (by simp [List.mem_of_mem_take h])
+  have piecesR:=offR
+  rw [unbuild_split] at piecesR
+  simp only [wires_append,Finset.mem_union,not_or] at piecesR
+  have pacc:p∉acc:=by intro bad;exact freshP (by simp[bad])
+  have pt:t.basis p=cacheBit7 H:=(preFrame.2.2 p pacc).trans savedP
+  have freshP':p∉(src++Z.take 5)++(acc.take 141).drop 6++bank.take 134:=by
+   intro bad
+   simp only[List.mem_append]at bad
+   rcases bad with ((h|h)|h)|h
+   · exact freshP (by simp[h])
+   · exact freshP (by simp[List.mem_of_mem_take h])
+   · exact freshP (by simp[List.mem_of_mem_take (List.mem_of_mem_drop h)])
+   · exact freshP (by simp[List.mem_of_mem_take h])
+  have freshR':r∉(src++Z.take 5)++(acc.take 141).drop 6++bank.take 134:=by
+   intro bad
+   simp only[List.mem_append]at bad
+   rcases bad with ((h|h)|h)|h
+   · exact freshR (by simp[h])
+   · exact freshR (by simp[List.mem_of_mem_take h])
+   · exact freshR (by simp[List.mem_of_mem_take (List.mem_of_mem_drop h)])
+   · exact freshR (by simp[List.mem_of_mem_take h])
+  have restrictFresh (w:Wire) (free:w∉cin::(src++acc++Z++bank)):
+    w∉cin::((src++Z.take 5)++(acc.take 141).drop 6++bank.take 134):=by
+    intro bad
+    simp only[List.mem_cons,List.mem_append]at bad
+    rcases bad with rfl|((h|h)|h)|h
+    · exact free (by simp)
+    · exact free (by simp[h])
+    · exact free (by simp[List.mem_of_mem_take h])
+    · exact free (by simp[List.mem_of_mem_take (List.mem_of_mem_drop h)])
+    · exact free (by simp[List.mem_of_mem_take h])
+  have preEq:run (consumePre3 src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p) [] t=
+    scatterState [q,r,p] [false,false,false]
+      (run (carryPrefix 7 (src++Z.take 5) ((acc.take 141).drop 6) (bank.take 134) cin) [] t):=by
+    exact source_prefix_consumed_eq7 src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p
+     (by omega) zlen hy hc nd t zt clean iv H sv yv freshQ freshR' rq
+     (by intro h;exact freshP' (by simp[h])) pq pr qt rt pt
+  have svx:regValue (src++Z.take 5) t.basis=H:=by
+    rw[regValue_append,sv,(regValue_zero _ _).mpr (fun w hw=>zt w (List.mem_of_mem_take hw))]
+    simp
+  have savedUt:hs.map t.basis=bankValues 7 k H:=by
+    rw[show bankValues 7 k H=hs.map s.basis from savedU.symm]
+    apply List.map_congr_left
+    intro u hu
+    exact preFrame.2.2 u (fun bad=>freshU u hu (by simp[bad]))
+  have windowlen:((acc.take 141).drop 6).length=135:=by simp[hacc]
+  have carrylen:(bank.take 134).length=134:=by simp[Nat.min_eq_left bankLen]
+  have piecesU (u:Wire) (hu:u∈hs):u∉wires (unbuildPre acc Z bank cin src) ∧
+    u∉wires (consumedAddTriple src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p) ∧
+    u∉wires (unbuildPost acc Z bank cin src):=by
+    have free:=offU u hu
+    rw[unbuildTriple]at free
+    simpa only[wires_append,Finset.mem_union,not_or,and_assoc]using free
+  have freepieces (u:Wire) (hu:u∈hs):
+    u∉wires (consumePre3 src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p) ∧
+    u∉wires (prefixAfter 7 k (src++Z.take 5) ((acc.take 141).drop 6) (bank.take 134) cin) ∧
+    u∉wires (inversePostN k src Z ((acc.take 141).drop 6) (bank.take 134) cin):=by
+    have free:=(piecesU u hu).2.1
+    rw[consumedAddTriple_splitN k src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p (by omega) (by omega) (by omega)]at free
+    simpa only[wires_append,Finset.mem_union,not_or,and_assoc]using free
+  have oldoff:∀w∈[q,r,p],w∉wires (prefixAfter 7 k (src++Z.take 5) ((acc.take 141).drop 6) (bank.take 134) cin):=by
+    intro w hw
+    simp only[List.mem_cons,List.not_mem_nil,or_false]at hw
+    rcases hw with rfl|rfl|rfl
+    · exact prefixAfter_off _ _ _ _ _ _ _ (restrictFresh _ fresh)
+    · exact prefixAfter_off _ _ _ _ _ _ _ (restrictFresh _ freshR)
+    · exact prefixAfter_off _ _ _ _ _ _ _ (restrictFresh _ freshP)
+  have oldfresh:∀w∈((bank.take 134).drop 7).take k,w∉[q,r,p]:=by
+    intro w hw bad
+    have mem:w∈bank:=List.mem_of_mem_take (List.mem_of_mem_drop (List.mem_of_mem_take hw))
+    simp only[List.mem_cons,List.not_mem_nil,or_false]at bad
+    rcases bad with rfl|rfl|rfl
+    · exact fresh (by simp[mem])
+    · exact freshR (by simp[mem])
+    · exact freshP (by simp[mem])
+  have freebank:∀u∈hs,u∉((bank.take 134).drop 7).take k:=by
+    intro u hu bad
+    exact freshU u hu (by simp[List.mem_of_mem_take (List.mem_of_mem_drop (List.mem_of_mem_take bad))])
+  have count:=consumedAddMany_counts k src Z ((acc.take 141).drop 6) (bank.take 134) hs cin q r p
+   (by omega) (by omega) (by omega) hostlen
+  have changed:=consumedAddMany_known_frame k H src Z ((acc.take 141).drop 6) (bank.take 134) hs cin q r p
+   (by omega) (by omega) (by omega) nd ndhs hostlen freebank
+   (fun u hu=>(freepieces u hu).1) (fun u hu=>(freepieces u hu).2.2) oldoff oldfresh
+   t (m.drop (measurementCount (unbuildPre acc Z bank cin src))) clean iv svx yv preEq savedUt
+  have result:=modify_many_inside (unbuildPre acc Z bank cin src)
+   (consumedAddTriple src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p)
+   (consumedAddMany k src Z ((acc.take 141).drop 6) (bank.take 134) hs cin q r p) (unbuildPost acc Z bank cin src)
+   hs (List.replicate hs.length false) count.2.1 (fun u hu=>(piecesU u hu).2.2) s m
+   (by simpa only[t,run_take]using changed)
+  simpa only[unbuildMany,unbuildTriple]using result
+#print axioms buildMany_frame
+#print axioms unbuildMany_frame
+end ECDSAAdd.Entrant.C163Carry
+
+end
+
+-- C163 component Loops
+section
+namespace ECDSAAdd.Entrant.C163Carry
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop FourthASavedCarryDevelop ManyACarryDevelop ControlLoan1589BFFold ZeroReadDevelop CodexNarrowTail
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.wires
+-- Width161 adaptation of MainPart04Base.lean :: sub6_lengths
+theorem sub6_lengths (acc Z bank : List Wire) (src : List Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) :
+    (Acc.tx Z 141 (Acc.earlyTerm src true 6)).length=135 ∧
+    (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)).length=135 ∧
+    (Acc.tc bank 141 (Acc.earlyTerm src true 6)).length=134 := by
+  simp [Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,ha,hs,Nat.min_eq_left hz,Nat.min_eq_left hb]
+
+-- Width161 adaptation of MainPart04Base.lean :: buildCached_counts
+theorem buildCached_counts (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) :
+    toffoliCount (buildCached acc Z bank cin src q)=toffoliCount (C163NarrowAcc.build8 acc Z bank cin src) ∧
+    measurementCount (buildCached acc Z bank cin src q)=measurementCount (C163NarrowAcc.build8 acc Z bank cin src) ∧
+    Challenge.gateSlots (buildCached acc Z bank cin src q)=Challenge.gateSlots (C163NarrowAcc.build8 acc Z bank cin src)+1 := by
+  have len:=sub6_lengths acc Z bank src ha hs hz hb
+  have count:=cachedSub_counts (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+    (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q
+    (by omega) (by omega) (by omega)
+  simp only [buildCached,build_split,CodexNarrowSub.accSub,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+  exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of MainPart04Base.lean :: unbuildConsumed_counts
+theorem unbuildConsumed_counts (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length) :
+    toffoliCount (unbuildConsumed acc Z bank cin src q)+1=toffoliCount (C163SourceAdd.unbuild acc Z bank cin src) ∧
+    measurementCount (unbuildConsumed acc Z bank cin src q)=measurementCount (C163SourceAdd.unbuild acc Z bank cin src) ∧
+    Challenge.gateSlots (unbuildConsumed acc Z bank cin src q)+4=Challenge.gateSlots (C163SourceAdd.unbuild acc Z bank cin src) := by
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [ha,hs]
+  have hc:5≤(bank.take 134).length := by simp [Nat.min_eq_left hb]
+  have count:=consumedAdd_counts src Z ((acc.take 141).drop 6) (bank.take 134) cin q (by omega) hy hc
+  simp only [unbuildConsumed,unbuild_split,C163SourceAdd.add,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+  exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of MainPart04Base.lean :: cached_wloop_eq
+theorem cached_wloop_eq (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire) (middle : Program)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false)
+    (fresh:q∉cin::(src++acc++Z++bank))
+    (offF:q∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offM:q∉wires middle)
+    (offI:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+    (good:let u:=middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m
+      regValue acc u.basis=4294968272*regValue src s.basis ∧ regValue src u.basis=regValue src s.basis ∧
+      (∀w∈Z,u.basis w=false) ∧ (∀w∈bank,u.basis w=false) ∧ u.basis cin=false) :
+    run (buildCached acc Z bank cin src q++middle++unbuildConsumed acc Z bank cin src q) m s=
+      run (C163NarrowAcc.build8 acc Z bank cin src++middle++C163SourceAdd.unbuild acc Z bank cin src) m s := by
+  let H:=regValue src s.basis
+  let u:=middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m
+  let t:=setWire u q (cacheBit H)
+  have qs:q∉src := by intro bad;exact fresh (by simp [bad])
+  have qa:q∉acc := by intro bad;exact fresh (by simp [bad])
+  have qz:q∉Z := by intro bad;exact fresh (by simp [bad])
+  have qb:q∉bank := by intro bad;exact fresh (by simp [bad])
+  have qi:cin≠q := by intro e;exact fresh (by simp [←e])
+  have keep (w : Wire) (ne:w≠q) : t.basis w=u.basis w := by simp [t,setWire,writeBit,Function.update,ne]
+  have sv:regValue src t.basis=H := (setWire_regValue src u q _ qs).trans good.2.1
+  have av:regValue acc t.basis=4294968272*regValue src t.basis := by
+    rw [show regValue acc t.basis=regValue acc u.basis from setWire_regValue acc u q _ qa,sv]
+    exact good.1
+  have zt:∀w∈Z,t.basis w=false := by
+    intro w hw
+    exact (keep w (by intro e;exact qz (e ▸ hw))).trans (good.2.2.1 w hw)
+  have bt:∀w∈bank,t.basis w=false := by
+    intro w hw
+    exact (keep w (by intro e;exact qb (e ▸ hw))).trans (good.2.2.2.1 w hw)
+  have it:t.basis cin=false := (keep cin qi).trans good.2.2.2.2
+  have saved:t.basis q=cacheBit (regValue src t.basis) := by
+    rw [sv]
+    simp only [t,setWire,writeBit,Function.update_self]
+  have fwd:=buildCached_frame acc Z bank cin src q hacc hsrc hf s
+    (m.take (measurementCount (C163NarrowAcc.build8 acc Z bank cin src))) hz hb hi ha zero fresh offF
+  have inv:=unbuildConsumed_frame acc Z bank cin src q hacc hsrc hf t
+    (m.drop (measurementCount (C163NarrowAcc.build8 acc Z bank cin src)+measurementCount middle)) zt bt it av saved fresh offI
+  have hf6:=hf _ (C163NarrowAcc.terms_mem src).2.2.1
+  have zl:5≤Z.length := by have h:=hf6.zpad;norm_num [Acc.earlyTerm,hsrc] at h;omega
+  have bl:134≤bank.length := by have h:=hf6.bankLen;norm_num [Acc.earlyTerm] at h;omega
+  have count:=buildCached_counts acc Z bank cin src q hacc hsrc zl bl
+  exact cached_pair_eq _ _ middle _ _ q (cacheBit H) count.2.1 offF offM offI s m zero fwd inv
+
+-- Width161 adaptation of MainPart04Base.lean :: buildCached_support
+theorem buildCached_support (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) :
+    wires (buildCached acc Z bank cin src q)⊆insert q (wires (C163NarrowAcc.build8 acc Z bank cin src)) := by
+  have len:=sub6_lengths acc Z bank src ha hs hz hb
+  have sub:=cachedSub_support (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+    (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q
+    (by omega) (by omega) (by omega)
+  intro w hw
+  by_cases eq:w=q
+  · exact Finset.mem_insert.mpr (Or.inl eq)
+  apply Finset.mem_insert_of_mem
+  simp only [buildCached,wires_append,Finset.mem_union] at hw
+  simp only [build_split,CodexNarrowSub.accSub,wires_append,Finset.mem_union]
+  rcases hw with (hw|hw)|hw
+  · exact Or.inl (Or.inl hw)
+  · have h:=Finset.mem_insert.mp (sub hw)
+    exact h.elim (fun e=>False.elim (eq e)) (fun h=>Or.inl (Or.inr h))
+  · exact Or.inr hw
+
+-- Width161 adaptation of MainPart04Base.lean :: unbuildConsumed_support
+theorem unbuildConsumed_support (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length) :
+    wires (unbuildConsumed acc Z bank cin src q)⊆insert q (wires (C163SourceAdd.unbuild acc Z bank cin src)) := by
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [ha,hs]
+  have hc:5≤(bank.take 134).length := by simp [Nat.min_eq_left hb]
+  have sub:=consumedAdd_support src Z ((acc.take 141).drop 6) (bank.take 134) cin q (by omega) hy hc
+  intro w hw
+  by_cases eq:w=q
+  · exact Finset.mem_insert.mpr (Or.inl eq)
+  apply Finset.mem_insert_of_mem
+  simp only [unbuildConsumed,wires_append,Finset.mem_union] at hw
+  simp only [unbuild_split,C163SourceAdd.add,wires_append,Finset.mem_union]
+  rcases hw with (hw|hw)|hw
+  · exact Or.inl (Or.inl hw)
+  · have h:=Finset.mem_insert.mp (sub hw)
+    exact h.elim (fun e=>False.elim (eq e)) (fun h=>Or.inl (Or.inr h))
+  · exact Or.inr hw
+
+-- Width161 adaptation of MainPart04Base.lean :: buildDual_counts
+theorem buildDual_counts (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) :
+    toffoliCount (buildDual acc Z bank cin src q r)=toffoliCount (buildCached acc Z bank cin src q) ∧
+    measurementCount (buildDual acc Z bank cin src q r)=measurementCount (buildCached acc Z bank cin src q) ∧
+    Challenge.gateSlots (buildDual acc Z bank cin src q r)=Challenge.gateSlots (buildCached acc Z bank cin src q)+1 := by
+  have len:=sub6_lengths acc Z bank src ha hs hz hb
+  have count:=cachedSubDual_counts (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+    (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q r
+    (by omega) (by omega) (by omega)
+  simp only [buildDual,buildCached,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+  exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of MainPart04Base.lean :: unbuildDual_counts
+theorem unbuildDual_counts (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length) :
+    toffoliCount (unbuildDual acc Z bank cin src q r)+1=toffoliCount (unbuildConsumed acc Z bank cin src q) ∧
+    measurementCount (unbuildDual acc Z bank cin src q r)=measurementCount (unbuildConsumed acc Z bank cin src q) ∧
+    Challenge.gateSlots (unbuildDual acc Z bank cin src q r)+4=Challenge.gateSlots (unbuildConsumed acc Z bank cin src q) := by
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [ha,hs]
+  have hc:6≤(bank.take 134).length := by simp [Nat.min_eq_left hb]
+  have count:=consumedAddDual_counts src Z ((acc.take 141).drop 6) (bank.take 134) cin q r (by omega) hy hc
+  simp only [unbuildDual,unbuildConsumed,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+  exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of MainPart04Base.lean :: cached_wloop_dual_eq
+theorem cached_wloop_dual_eq (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire) (middle : Program)
+    (hacc:acc.length=163) (hsrc:src.length=130)
+    (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (s : State) (m : List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+    (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false)
+    (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
+    (offF:q∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offM:q∉wires middle)
+    (offI:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+    (offFR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offMR:r∉wires middle)
+    (offIR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+    (good:WReady acc Z bank cin src (regValue src s.basis)
+      (middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m)) :
+    run (buildDual acc Z bank cin src q r++middle++unbuildDual acc Z bank cin src q r) m s=
+      run (C163NarrowAcc.build8 acc Z bank cin src++middle++C163SourceAdd.unbuild acc Z bank cin src) m s := by
+  let H:=regValue src s.basis
+  have hf6:=hf _ (C163NarrowAcc.terms_mem src).2.2.1
+  have zl:5≤Z.length := by have h:=hf6.zpad;norm_num [Acc.earlyTerm,hsrc] at h;omega
+  have bl:134≤bank.length := by have h:=hf6.bankLen;norm_num [Acc.earlyTerm] at h;omega
+  have bc:=buildCached_counts acc Z bank cin src q hacc hsrc zl bl
+  have dc:=buildDual_counts acc Z bank cin src q r hacc hsrc zl bl
+  have offF1:r∉wires (buildCached acc Z bank cin src q) := by
+    intro h
+    have h:=Finset.mem_insert.mp (buildCached_support acc Z bank cin src q hacc hsrc zl bl h)
+    exact h.elim rq offFR
+  have offI1:r∉wires (unbuildConsumed acc Z bank cin src q) := by
+    intro h
+    have h:=Finset.mem_insert.mp (unbuildConsumed_support acc Z bank cin src q hacc hsrc bl h)
+    exact h.elim rq offIR
+  let u:=middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m
+  let t1:=middleState (buildCached acc Z bank cin src q) middle s m
+  let t2:=setWire t1 r (cacheBit6 H)
+  have eq1:t1=setWire u q (cacheBit H) :=
+    middleState_frame_copy _ _ middle q (cacheBit H) bc.2.1 offM s m
+      (fun tape=>buildCached_frame acc Z bank cin src q hacc hsrc hf s tape hz hb hi ha zero fresh offF)
+  have ready1:WReady acc Z bank cin src H t1 := by
+    rw [eq1]
+    exact WReady.setWire acc Z bank cin src H u q (cacheBit H) fresh good
+  have ready2:WReady acc Z bank cin src H t2 :=
+    WReady.setWire acc Z bank cin src H t1 r (cacheBit6 H) freshR ready1
+  have saved1:t2.basis q=cacheBit (regValue src t2.basis) := by
+    rw [ready2.2.1]
+    have atq:t1.basis q=cacheBit H := by
+      rw [eq1]
+      simp only [setWire,writeBit,Function.update_self]
+    exact (setWire_basis_outside t1 r q (cacheBit6 H) (Ne.symm rq)).trans atq
+  have saved2:t2.basis r=cacheBit6 (regValue src t2.basis) := by
+    rw [ready2.2.1]
+    simp only [t2,setWire,writeBit,Function.update_self]
+  have av:regValue acc t2.basis=4294968272*regValue src t2.basis := by
+    rw [ready2.2.1]
+    exact ready2.1
+  have forward:=buildDual_frame acc Z bank cin src q r hacc hsrc hf s
+    (m.take (measurementCount (buildCached acc Z bank cin src q))) hz hb hi ha zero zeroR fresh offF freshR offFR rq
+  have inverse:=unbuildDual_frame acc Z bank cin src q r hacc hsrc hf t2
+    (m.drop (measurementCount (buildCached acc Z bank cin src q)+measurementCount middle))
+    ready2.2.2.1 ready2.2.2.2.1 ready2.2.2.2.2 av saved1 saved2 fresh offI freshR offIR rq
+  have paired:=cached_pair_eq (buildCached acc Z bank cin src q) (buildDual acc Z bank cin src q r) middle
+    (unbuildConsumed acc Z bank cin src q) (unbuildDual acc Z bank cin src q r) r (cacheBit6 H)
+    dc.2.1 offF1 offMR offI1 s m zeroR forward inverse
+  exact paired.trans (cached_wloop_eq acc Z bank cin src q middle hacc hsrc hf s m hz hb hi ha zero fresh offF offM offI good)
+
+-- Width161 adaptation of ParkAMany.lean :: buildTriple_counts
+theorem buildTriple_counts (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length):
+ toffoliCount (buildTriple acc Z bank cin src q r p)=toffoliCount (buildDual acc Z bank cin src q r) ∧
+ measurementCount (buildTriple acc Z bank cin src q r p)=measurementCount (buildDual acc Z bank cin src q r) ∧
+ Challenge.gateSlots (buildTriple acc Z bank cin src q r p)=Challenge.gateSlots (buildDual acc Z bank cin src q r)+1:=by
+ have len:=sub6_lengths acc Z bank src ha hs hz hb
+ have count:=cachedSubTriple_counts (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+  (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q r p
+  (by omega) (by omega) (by omega)
+ simp only[buildTriple,buildDual,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+ exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of ParkAMany.lean :: unbuildTriple_counts
+theorem unbuildTriple_counts (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length):
+ toffoliCount (unbuildTriple acc Z bank cin src q r p)+1=toffoliCount (unbuildDual acc Z bank cin src q r) ∧
+ measurementCount (unbuildTriple acc Z bank cin src q r p)=measurementCount (unbuildDual acc Z bank cin src q r) ∧
+ Challenge.gateSlots (unbuildTriple acc Z bank cin src q r p)+4=Challenge.gateSlots (unbuildDual acc Z bank cin src q r):=by
+ have hy:((acc.take 141).drop 6).length=src.length+5:=by simp[ha,hs]
+ have hc:7≤(bank.take 134).length:=by simp[Nat.min_eq_left hb]
+ have count:=consumedAddTriple_counts src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p (by omega) hy hc
+ simp only[unbuildTriple,unbuildDual,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+ exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of ParkAMany.lean :: cached_wloop_triple_eq
+theorem cached_wloop_triple_eq (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) (middle:Program)
+ (hacc:acc.length=163) (hsrc:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+ (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false) (zeroP:s.basis p=false)
+ (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
+ (freshP:p∉cin::(src++acc++Z++bank)) (pq:p≠q) (pr:p≠r)
+ (offF:q∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offM:q∉wires middle)
+ (offI:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offMR:r∉wires middle)
+ (offIR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFP:p∉wires (buildDual acc Z bank cin src q r)) (offMP:p∉wires middle)
+ (offIP:p∉wires (unbuildDual acc Z bank cin src q r))
+ (good:WReady acc Z bank cin src (regValue src s.basis) (middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m)):
+ run (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) m s=
+ run (buildDual acc Z bank cin src q r++middle++unbuildDual acc Z bank cin src q r) m s:=by
+ let H:=regValue src s.basis
+ have hf6:=hf _ (C163NarrowAcc.terms_mem src).2.2.1
+ have zl:5≤Z.length:=by have h:=hf6.zpad;norm_num[Acc.earlyTerm,hsrc]at h;omega
+ have bl:134≤bank.length:=by have h:=hf6.bankLen;norm_num[Acc.earlyTerm]at h;omega
+ have bc:=buildCached_counts acc Z bank cin src q hacc hsrc zl bl
+ have dc:=buildDual_counts acc Z bank cin src q r hacc hsrc zl bl
+ have tc:=buildTriple_counts acc Z bank cin src q r p hacc hsrc zl bl
+ let u:=middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m
+ let t1:=middleState (buildCached acc Z bank cin src q) middle s m
+ let t2:=middleState (buildDual acc Z bank cin src q r) middle s m
+ let t3:=setWire t2 p (cacheBit7 H)
+ have eq1:t1=setWire u q (cacheBit H):=
+  middleState_frame_copy _ _ middle q (cacheBit H) bc.2.1 offM s m
+   (fun tape=>buildCached_frame acc Z bank cin src q hacc hsrc hf s tape hz hb hi ha zero fresh offF)
+ have eq2:t2=setWire t1 r (cacheBit6 H):=
+  middleState_frame_copy _ _ middle r (cacheBit6 H) dc.2.1 offMR s m
+   (fun tape=>buildDual_frame acc Z bank cin src q r hacc hsrc hf s tape hz hb hi ha zero zeroR fresh offF freshR offFR rq)
+ have ready1:WReady acc Z bank cin src H t1:=by
+  rw[eq1]
+  exact WReady.setWire acc Z bank cin src H u q (cacheBit H) fresh good
+ have ready2:WReady acc Z bank cin src H t2:=by
+  rw[eq2]
+  exact WReady.setWire acc Z bank cin src H t1 r (cacheBit6 H) freshR ready1
+ have ready3:WReady acc Z bank cin src H t3:=
+  WReady.setWire acc Z bank cin src H t2 p (cacheBit7 H) freshP ready2
+ have atq:t2.basis q=cacheBit H:=by
+  rw[eq2]
+  rw[setWire_basis_outside t1 r q (cacheBit6 H) (Ne.symm rq)]
+  rw[eq1]
+  simp only[setWire,writeBit,Function.update_self]
+ have atr:t2.basis r=cacheBit6 H:=by
+  rw[eq2]
+  simp only[setWire,writeBit,Function.update_self]
+ have saved1:t3.basis q=cacheBit (regValue src t3.basis):=by
+  rw[ready3.2.1]
+  exact (setWire_basis_outside t2 p q (cacheBit7 H) (Ne.symm pq)).trans atq
+ have saved2:t3.basis r=cacheBit6 (regValue src t3.basis):=by
+  rw[ready3.2.1]
+  exact (setWire_basis_outside t2 p r (cacheBit7 H) (Ne.symm pr)).trans atr
+ have saved3:t3.basis p=cacheBit7 (regValue src t3.basis):=by
+  rw[ready3.2.1]
+  simp only[t3,setWire,writeBit,Function.update_self]
+ have av:regValue acc t3.basis=4294968272*regValue src t3.basis:=by rw[ready3.2.1];exact ready3.1
+ have forward:=buildTriple_frame acc Z bank cin src q r p hacc hsrc hf s
+  (m.take (measurementCount (buildDual acc Z bank cin src q r))) hz hb hi ha zero zeroR fresh offF freshR offFR rq zeroP freshP offFP
+ have inverse:=unbuildTriple_frame acc Z bank cin src q r p hacc hsrc hf t3
+  (m.drop (measurementCount (buildDual acc Z bank cin src q r)+measurementCount middle))
+  ready3.2.2.1 ready3.2.2.2.1 ready3.2.2.2.2 av saved1 saved2 fresh offI freshR offIR rq saved3 freshP offIP pq pr
+ exact cached_pair_eq (buildDual acc Z bank cin src q r) (buildTriple acc Z bank cin src q r p) middle
+  (unbuildDual acc Z bank cin src q r) (unbuildTriple acc Z bank cin src q r p) p (cacheBit7 H)
+  tc.2.1 offFP offMP offIP s m zeroP forward inverse
+
+-- Width161 adaptation of ParkAMany.lean :: triple_middle_ready
+theorem triple_middle_ready (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) (middle:Program)
+ (hacc:acc.length=163) (hsrc:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+ (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false) (zeroP:s.basis p=false)
+ (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
+ (freshP:p∉cin::(src++acc++Z++bank)) (pq:p≠q) (pr:p≠r)
+ (offF:q∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offM:q∉wires middle)
+ (offI:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offMR:r∉wires middle)
+ (offIR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFP:p∉wires (buildDual acc Z bank cin src q r)) (offMP:p∉wires middle)
+ (offIP:p∉wires (unbuildDual acc Z bank cin src q r))
+ (good:WReady acc Z bank cin src (regValue src s.basis) (middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m)):
+ let t:=middleState (buildTriple acc Z bank cin src q r p) middle s m
+ WReady acc Z bank cin src (regValue src s.basis) t ∧
+ t.basis q=cacheBit (regValue src s.basis) ∧ t.basis r=cacheBit6 (regValue src s.basis) ∧ t.basis p=cacheBit7 (regValue src s.basis):=by
+ let H:=regValue src s.basis
+ have hf6:=hf _ (C163NarrowAcc.terms_mem src).2.2.1
+ have zl:5≤Z.length:=by have h:=hf6.zpad;norm_num[Acc.earlyTerm,hsrc]at h;omega
+ have bl:134≤bank.length:=by have h:=hf6.bankLen;norm_num[Acc.earlyTerm]at h;omega
+ have bc:=buildCached_counts acc Z bank cin src q hacc hsrc zl bl
+ have dc:=buildDual_counts acc Z bank cin src q r hacc hsrc zl bl
+ have tc:=buildTriple_counts acc Z bank cin src q r p hacc hsrc zl bl
+ let u:=middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m
+ let t1:=middleState (buildCached acc Z bank cin src q) middle s m
+ let t2:=middleState (buildDual acc Z bank cin src q r) middle s m
+ let t3:=middleState (buildTriple acc Z bank cin src q r p) middle s m
+ have eq1:t1=setWire u q (cacheBit H):=
+  middleState_frame_copy _ _ middle q (cacheBit H) bc.2.1 offM s m
+   (fun tape=>buildCached_frame acc Z bank cin src q hacc hsrc hf s tape hz hb hi ha zero fresh offF)
+ have eq2:t2=setWire t1 r (cacheBit6 H):=
+  middleState_frame_copy _ _ middle r (cacheBit6 H) dc.2.1 offMR s m
+   (fun tape=>buildDual_frame acc Z bank cin src q r hacc hsrc hf s tape hz hb hi ha zero zeroR fresh offF freshR offFR rq)
+ have eq3:t3=setWire t2 p (cacheBit7 H):=
+  middleState_frame_copy _ _ middle p (cacheBit7 H) tc.2.1 offMP s m
+   (fun tape=>buildTriple_frame acc Z bank cin src q r p hacc hsrc hf s tape hz hb hi ha zero zeroR fresh offF freshR offFR rq zeroP freshP offFP)
+ have ready1:WReady acc Z bank cin src H t1:=by
+  rw[eq1]
+  exact WReady.setWire acc Z bank cin src H u q (cacheBit H) fresh good
+ have ready2:WReady acc Z bank cin src H t2:=by
+  rw[eq2]
+  exact WReady.setWire acc Z bank cin src H t1 r (cacheBit6 H) freshR ready1
+ have ready3:WReady acc Z bank cin src H t3:=by
+  rw[eq3]
+  exact WReady.setWire acc Z bank cin src H t2 p (cacheBit7 H) freshP ready2
+ have atq:t2.basis q=cacheBit H:=by
+  rw[eq2]
+  rw[setWire_basis_outside t1 r q (cacheBit6 H) (Ne.symm rq)]
+  rw[eq1]
+  simp only[setWire,writeBit,Function.update_self]
+ have atr:t2.basis r=cacheBit6 H:=by
+  rw[eq2]
+  simp only[setWire,writeBit,Function.update_self]
+ have saved1:t3.basis q=cacheBit (regValue src t3.basis):=by
+  rw[ready3.2.1]
+  rw[eq3]
+  exact (setWire_basis_outside t2 p q (cacheBit7 H) (Ne.symm pq)).trans atq
+ have saved2:t3.basis r=cacheBit6 (regValue src t3.basis):=by
+  rw[ready3.2.1]
+  rw[eq3]
+  exact (setWire_basis_outside t2 p r (cacheBit7 H) (Ne.symm pr)).trans atr
+ have saved3:t3.basis p=cacheBit7 (regValue src t3.basis):=by
+  rw[ready3.2.1]
+  rw[eq3]
+  simp only[setWire,writeBit,Function.update_self]
+ exact ⟨ready3,by simpa only[ready3.2.1]using saved1,by simpa only[ready3.2.1]using saved2,by simpa only[ready3.2.1]using saved3⟩
+
+-- Width161 adaptation of ParkAMany.lean :: buildMany_counts
+theorem buildMany_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hl:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) (hk:k≤121) (hh:hs.length=k):
+ toffoliCount (buildMany k acc Z bank cin src hs q r p)=toffoliCount (buildTriple acc Z bank cin src q r p) ∧
+ measurementCount (buildMany k acc Z bank cin src hs q r p)=measurementCount (buildTriple acc Z bank cin src q r p) ∧
+ Challenge.gateSlots (buildMany k acc Z bank cin src hs q r p)=Challenge.gateSlots (buildTriple acc Z bank cin src q r p)+k:=by
+ have len:=sub6_lengths acc Z bank src ha hl hz hb
+ have count:=cachedSubMany_counts k (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+  (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) hs cin q r p
+  (by omega) (by omega) (by omega)
+ have banklen:(((Acc.tc bank 141 (Acc.earlyTerm src true 6)).drop 7).take k).length=k:=by
+  simp only[List.length_take,List.length_drop,len.2.2]
+  omega
+ rw[banklen,hh,Nat.min_self]at count
+ simp only[buildMany,buildTriple,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+ exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of ParkAMany.lean :: unbuildMany_counts
+theorem unbuildMany_counts (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hl:src.length=130) (hb:134≤bank.length) (hk:k≤121) (hh:hs.length=k):
+ toffoliCount (unbuildMany k acc Z bank cin src hs q r p)+k=toffoliCount (unbuildTriple acc Z bank cin src q r p) ∧
+ measurementCount (unbuildMany k acc Z bank cin src hs q r p)=measurementCount (unbuildTriple acc Z bank cin src q r p) ∧
+ Challenge.gateSlots (unbuildMany k acc Z bank cin src hs q r p)+4*k=Challenge.gateSlots (unbuildTriple acc Z bank cin src q r p):=by
+ have count:=consumedAddMany_counts k src Z ((acc.take 141).drop 6) (bank.take 134) hs cin q r p
+  (by omega) (by simp only[List.length_drop,List.length_take];omega)
+  (by simp only[List.length_take];omega) hh
+ simp only[unbuildMany,unbuildTriple,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+ exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of ParkAMany.lean :: cached_wloop_many_eq
+theorem cached_wloop_many_eq (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle:Program)
+ (hacc:acc.length=163) (hsrc:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+ (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false) (zeroP:s.basis p=false) (zeroU:∀u∈hs,s.basis u=false)
+ (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
+ (freshP:p∉cin::(src++acc++Z++bank)) (pq:p≠q) (pr:p≠r)
+ (hk:k≤121) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+ (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
+ (oldNe:∀u∈hs,u≠q ∧ u≠r ∧ u≠p)
+ (offF:q∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offI:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offIR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFP:p∉wires (buildDual acc Z bank cin src q r)) (offIP:p∉wires (unbuildDual acc Z bank cin src q r))
+ (offFU:∀u∈hs,u∉wires (buildTriple acc Z bank cin src q r p)) (offMU:∀u∈hs,u∉wires middle)
+ (offIU:∀u∈hs,u∉wires (unbuildTriple acc Z bank cin src q r p))
+ (good:WReady acc Z bank cin src (regValue src s.basis) (middleState (buildTriple acc Z bank cin src q r p) middle s m))
+ (savedQ:(middleState (buildTriple acc Z bank cin src q r p) middle s m).basis q=cacheBit (regValue src s.basis))
+ (savedR:(middleState (buildTriple acc Z bank cin src q r p) middle s m).basis r=cacheBit6 (regValue src s.basis))
+ (savedP:(middleState (buildTriple acc Z bank cin src q r p) middle s m).basis p=cacheBit7 (regValue src s.basis)):
+ run (buildMany k acc Z bank cin src hs q r p++middle++unbuildMany k acc Z bank cin src hs q r p) m s=
+ run (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) m s:=by
+ let H:=regValue src s.basis
+ have hf6:=hf _ (C163NarrowAcc.terms_mem src).2.2.1
+ have zl:5≤Z.length:=by have h:=hf6.zpad;norm_num[Acc.earlyTerm,hsrc]at h;omega
+ have bl:134≤bank.length:=by have h:=hf6.bankLen;norm_num[Acc.earlyTerm]at h;omega
+ have tc:=buildMany_counts k acc Z bank cin src hs q r p hacc hsrc zl bl hk hostlen
+ let t3:=middleState (buildTriple acc Z bank cin src q r p) middle s m
+ let tm:=scatterState hs (bankValues 7 k H) t3
+ have ready:WReady acc Z bank cin src H tm:=WReady_scatter acc Z bank cin src H hs (bankValues 7 k H) t3 freshU good
+ have qoff:q∉hs:=by intro h;exact (oldNe q h).1 rfl
+ have roff:r∉hs:=by intro h;exact (oldNe r h).2.1 rfl
+ have poff:p∉hs:=by intro h;exact (oldNe p h).2.2 rfl
+ have saved1:tm.basis q=cacheBit (regValue src tm.basis):=by
+  rw[ready.2.1]
+  exact (scatter_outside hs (bankValues 7 k H) t3 q qoff).trans savedQ
+ have saved2:tm.basis r=cacheBit6 (regValue src tm.basis):=by
+  rw[ready.2.1]
+  exact (scatter_outside hs (bankValues 7 k H) t3 r roff).trans savedR
+ have saved3:tm.basis p=cacheBit7 (regValue src tm.basis):=by
+  rw[ready.2.1]
+  exact (scatter_outside hs (bankValues 7 k H) t3 p poff).trans savedP
+ have savedMany:hs.map tm.basis=bankValues 7 k (regValue src tm.basis):=by
+  rw[ready.2.1]
+  exact scatter_saved_map hs (bankValues 7 k H) t3 ndhs (by simp[bankValues,hostlen])
+ have av:regValue acc tm.basis=4294968272*regValue src tm.basis:=by rw[ready.2.1];exact ready.1
+ have forward:=buildMany_frame k acc Z bank cin src hs q r p hacc hsrc hf s
+  (m.take (measurementCount (buildTriple acc Z bank cin src q r p))) hz hb hi ha zero zeroR fresh offF freshR offFR rq zeroP freshP offFP hk ndhs zeroU freshU offFU
+ have inverse:=unbuildMany_frame k acc Z bank cin src hs q r p hacc hsrc hf tm
+  (m.drop (measurementCount (buildTriple acc Z bank cin src q r p)+measurementCount middle))
+  ready.2.2.1 ready.2.2.2.1 ready.2.2.2.2 av saved1 saved2 fresh offI freshR offIR rq saved3 freshP offIP pq pr hk ndhs hostlen savedMany freshU offIU
+ exact cached_pair_many_eq (buildTriple acc Z bank cin src q r p) (buildMany k acc Z bank cin src hs q r p) middle
+  (unbuildTriple acc Z bank cin src q r p) (unbuildMany k acc Z bank cin src hs q r p) hs (bankValues 7 k H)
+  tc.2.1 offFU offMU offIU ndhs s m zeroU forward inverse
+
+-- Width161 adaptation of ParkAMany.lean :: compiled_wloop_many_eq_set
+theorem compiled_wloop_many_eq_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
+ (hacc:acc.length=163) (hsrc:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+ (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false) (zeroP:s.basis p=false)
+ (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
+ (freshP:p∉cin::(src++acc++Z++bank)) (pq:p≠q) (pr:p≠r)
+ (offF:q∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offM:q∉wires middle)
+ (offI:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offMR:r∉wires middle)
+ (offIR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFP:p∉wires (buildDual acc Z bank cin src q r)) (offMP:p∉wires middle)
+ (offIP:p∉wires (unbuildDual acc Z bank cin src q r))
+ (hk:k≤121) (ndhs:hs.Nodup) (hostlen:hs.length=k)
+ (zeroU:∀u∈hs,s.basis u=false) (freshU:∀u∈hs,u∉cin::(src++acc++Z++bank))
+ (oldNe:∀u∈hs,u≠q ∧ u≠r ∧ u≠p)
+ (offFU:∀u∈hs,u∉wires (buildTriple acc Z bank cin src q r p))
+ (offIU:∀u∈hs,u∉wires (unbuildTriple acc Z bank cin src q r p))
+ (cert:ZeroSetDevelop.SRewrites hs middle newMiddle)
+ (good:WReady acc Z bank cin src (regValue src s.basis) (middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m)):
+ run (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p) m s=
+ run (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) m s:=by
+ have ready:=triple_middle_ready acc Z bank cin src q r p middle hacc hsrc hf s m hz hb hi ha zero zeroR zeroP
+  fresh freshR rq freshP pq pr offF offM offI offFR offMR offIR offFP offMP offIP good
+ have middleEq:=cert.middle_eq hs middle newMiddle (buildTriple acc Z bank cin src q r p) s m zeroU offFU
+ rw[←middleEq]at ready
+ have newOff:∀u∈hs,u∉wires newMiddle:=cert.support hs middle newMiddle |>.2
+ have eq:=cached_wloop_many_eq k acc Z bank cin src hs q r p newMiddle hacc hsrc hf s m hz hb hi ha zero zeroR zeroP zeroU
+  fresh freshR rq freshP pq pr hk ndhs hostlen freshU oldNe offF offI offFR offIR offFP offIP offFU newOff offIU
+  ready.1 ready.2.1 ready.2.2.1 ready.2.2.2
+ have replaced:=cert.surround_eq hs middle newMiddle (buildTriple acc Z bank cin src q r p) (unbuildTriple acc Z bank cin src q r p) s m zeroU offFU
+ exact eq.trans replaced
+
+-- Width161 adaptation of ParkAMany.lean :: compiled_counts_set
+theorem compiled_counts_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
+ (ha:acc.length=163) (hl:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) (hk:k≤121) (hostlen:hs.length=k)
+ (cert:ZeroSetDevelop.SRewrites hs middle newMiddle):
+ toffoliCount (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)+k≤
+ toffoliCount (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) ∧
+ measurementCount (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)=
+ measurementCount (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) ∧
+ Challenge.gateSlots (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)+3*k≤
+ Challenge.gateSlots (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p):=by
+ have b:=buildMany_counts k acc Z bank cin src hs q r p ha hl hz hb hk hostlen
+ have i:=unbuildMany_counts k acc Z bank cin src hs q r p ha hl hb hk hostlen
+ have t:=cert.toffoli hs middle newMiddle
+ have m:=cert.measurements hs middle newMiddle
+ have slots:=cert.slots hs middle newMiddle
+ simp only[toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+ exact ⟨by omega,by omega,by omega⟩
+
+-- Width161 adaptation of FullLogic.lean :: triple_plain_eq
+theorem triple_plain_eq (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire) (middle:Program)
+ (hacc:acc.length=163) (hsrc:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (s:State) (m:List Bool) (hz:∀w∈Z,s.basis w=false) (hb:∀w∈bank,s.basis w=false)
+ (hi:s.basis cin=false) (ha:regValue acc s.basis=0) (zero:s.basis q=false) (zeroR:s.basis r=false) (zeroP:s.basis p=false)
+ (fresh:q∉cin::(src++acc++Z++bank)) (freshR:r∉cin::(src++acc++Z++bank)) (rq:r≠q)
+ (freshP:p∉cin::(src++acc++Z++bank)) (pq:p≠q) (pr:p≠r)
+ (offF:q∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offM:q∉wires middle)
+ (offI:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src)) (offMR:r∉wires middle)
+ (offIR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFP:p∉wires (buildDual acc Z bank cin src q r)) (offMP:p∉wires middle)
+ (offIP:p∉wires (unbuildDual acc Z bank cin src q r))
+ (good:WReady acc Z bank cin src (regValue src s.basis) (middleState (C163NarrowAcc.build8 acc Z bank cin src) middle s m)):
+ run (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p) m s=
+ run (C163NarrowAcc.build8 acc Z bank cin src++middle++C163SourceAdd.unbuild acc Z bank cin src) m s := by
+ have a:=cached_wloop_triple_eq acc Z bank cin src q r p middle hacc hsrc hf s m hz hb hi ha zero zeroR zeroP fresh freshR rq freshP pq pr offF offM offI offFR offMR offIR offFP offMP offIP good
+ have b:=cached_wloop_dual_eq acc Z bank cin src q r middle hacc hsrc hf s m hz hb hi ha zero zeroR fresh freshR rq offF offM offI offFR offMR offIR good
+ exact a.trans b
+#print axioms compiled_wloop_many_eq_set
+#print axioms triple_plain_eq
+end ECDSAAdd.Entrant.C163Carry
+
+end
+
+-- C163 component Middle
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+abbrev L:=Baselines.layout.dialogStreamedSquareWide
+abbrev g:=Baselines.layout.core.generic
+abbrev acc:=L.core.work.take 163
+abbrev pad:=(L.foldPad.drop 160).take 33
+abbrev bank:=accBank L
+abbrev src:=L.core.product.drop 128
+abbrev q:=L.core.work.getD 163 0
+abbrev r:=L.core.work.getD 164 0
+abbrev p:=L.core.product.getD 1 0
+abbrev hs:=L.core.work.drop 165++[Baselines.layout.core.poolWire 1540]
+def topIn : Program:=Acc.op acc pad bank L.core.cin 163 false (posTop L)
+def topOut : Program:=Acc.op acc pad bank L.core.cin 163 true (posTop L)
+def middle : Program:=topIn++(InverseCarryDevelop.aMiddle L g++topOut)
+def literal : Program:=topIn++(ParkAData.p0++topOut)
+theorem input_eq : literal=middle :=
+ congrArg (fun P:Program=>topIn++(P++topOut)) ParkAStagedProof.input_eq
+
+theorem compiled_specials : (ZeroSetDevelop.compileS? [q,r] literal).isSome=true := by decide +kernel
+
+def specialChecked : ZeroSetDevelop.CheckedS [q,r] literal :=
+ (ZeroSetDevelop.compileS? [q,r] literal).get compiled_specials
+attribute [local irreducible] specialChecked
+
+theorem special_cert : ZeroSetDevelop.SRewrites [q,r] middle specialChecked.out :=
+ Eq.mp (congrArg (fun P:Program=>ZeroSetDevelop.SRewrites [q,r] P specialChecked.out) input_eq) specialChecked.proof
+
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component Bank
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] specialChecked
+
+theorem special_free : q∉wires specialChecked.out ∧ r∉wires specialChecked.out := by
+ have off:=(special_cert.support [q,r] middle specialChecked.out).2
+ exact ⟨off q (by simp),off r (by simp)⟩
+
+theorem special_run (s:State) (m:List Bool) (hq:s.basis q=false) (hr:s.basis r=false) :
+ run specialChecked.out m s=run middle m s := by
+ apply special_cert.run_eq
+ intro u hu
+ simp only [List.mem_cons,List.not_mem_nil,or_false] at hu
+ rcases hu with rfl|rfl
+ · exact hq
+ · exact hr
+
+theorem compiled_bank : (ZeroSetDevelop.compileS? hs specialChecked.out).isSome=true := by decide +kernel
+
+def bankChecked : ZeroSetDevelop.CheckedS hs specialChecked.out :=
+ (ZeroSetDevelop.compileS? hs specialChecked.out).get compiled_bank
+attribute [local irreducible] bankChecked
+
+theorem bank_cert : ZeroSetDevelop.SRewrites hs specialChecked.out bankChecked.out := bankChecked.proof
+
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component KnownTail
+section
+-- Width161 specialization of retained CodexNarrowTail resource proofs.
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.C163KnownTail
+open Arithmetic
+
+
+theorem clear_sub32_range (H : Nat) (hH : H<2^130) :
+    H≤4294968272*H/4294967296 ∧
+    4294968272*H/4294967296-H=976*H/4294967296 ∧
+    4294968272*H/4294967296-H<2^108 := by
+  norm_num at hH ⊢
+  omega
+
+theorem clear_sub10_range (H : Nat) (hH : H<2^130) :
+    H≤1040*H/1024 ∧ 1040*H/1024-H=H/64 ∧ 1040*H/1024-H<2^124 := by
+  norm_num at hH ⊢
+  omega
+
+/-! Narrow H accumulator for a source of at most 130 bits.
+
+`earlyHTerms src` accumulates `(2^32+976)*H` with `H < 2^130`. The generic early prefix runs its two
+signed steps on 141 accumulator bits and the final `2^32` step on all 163 bits, which is sized for
+130-bit sources. For a 130-bit source `1040*H < 2^141` and `(2^32+976)*H < 2^163`, so the same
+operations run on 141 and 163 bits: the top two carries of each of the three adders are never produced
+(two Toffolis and two measurements less per adder). -/
+
+def pre8 (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)++
+    Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src false 10)++
+    CodexNarrowSub.accSub (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6)
+
+def build8 (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  pre8 acc Z bank cin src++Acc.op (acc.take 163) Z bank cin 163 false (Acc.earlyTerm src false 32)
+
+def unbuild8 (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  CodexKnownOnesTail.accSub 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32)++
+    Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6)++
+    CodexKnownOnesTail.accSub 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)++
+    Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)
+
+theorem terms_mem (src : List Wire) :
+    Acc.earlyTerm src false 4∈earlyHTerms src ∧ Acc.earlyTerm src false 10∈earlyHTerms src ∧
+      Acc.earlyTerm src true 6∈earlyHTerms src ∧ Acc.earlyTerm src false 32∈earlyHTerms src := by
+  simp [earlyHTerms]
+
+                                                                             
+                                                   
+                                                           
+                                                                            
+                           
+                                                               
+                                                                 
+                          
+                       
+                          
+                           
+                            
+                            
+                                                                                                      
+                                                                                              
+                                                              
+                                                 
+                                                                               
+                                           
+                                                                                           
+                                                                                                         
+                                                                                            
+                                                                                     
+                                       
+               
+           
+                   
+           
+                                                   
+                                                                                      
+                                          
+                                                                                                        
+                                                                                                                                  
+                                                                               
+                                                                                      
+                                                                                   
+                                       
+               
+           
+                   
+           
+                                                  
+                                                                               
+                                                 
+                                                                                           
+                                                                                                          
+                                                                                            
+                                                                                            
+                                       
+               
+           
+                   
+           
+                                        
+
+theorem unbuild8_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length≤130)
+    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) :
+    Triple (SquareFrame acc base (4294968272*regValue src base)) (unbuild8 acc Z bank cin src)
+      (SquareFrame acc base 0) := by
+  have tm := terms_mem src
+  have hf4 := hf _ tm.1
+  have hf10 := hf _ tm.2.1
+  have hf6 := hf _ tm.2.2.1
+  have hf32 := hf _ tm.2.2.2
+  let H := regValue src base
+  have hH : H<2^130 := lt_of_lt_of_le (regValue_lt src base) (Nat.pow_le_pow_right (by norm_num) hsrc)
+  have top : Triple (SquareFrame acc base (4294968272*H))
+      (CodexKnownOnesTail.accSub 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32))
+      (SquareFrame acc base (976*H)) := by
+    have h := CodexKnownOnesTail.accSub_prefix_triple acc Z bank cin 163 163 108 (Acc.earlyTerm src false 32) hacc
+      (by norm_num [Acc.earlyTerm]) hf32 (by simp only [Acc.earlyTerm]; omega)
+      (by norm_num [Acc.earlyTerm]) base hz hb hi (4294968272*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm];dsimp [H];omega)
+      (by simpa only [Acc.earlyTerm] using (clear_sub32_range H hH).2.2)
+    have value : Acc.step base true (4294968272*H) (Acc.earlyTerm src false 32)=976*H := by
+      have e : regValue src base*2^32=4294967296*H := by dsimp only [H]; ring
+      simp only [Acc.step,Acc.earlyTerm,if_true]
+      rw [e]
+      omega
+    rw [value] at h
+    exact h
+  have add : Triple (SquareFrame acc base (976*H))
+      (Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6))
+      (SquareFrame acc base (1040*H)) := by
+    have h := Acc.op_prefix_triple acc Z bank cin 163 141 (Acc.earlyTerm src true 6) hacc
+      (by norm_num [Acc.earlyTerm]) hf6 (by simp only [Acc.earlyTerm]; omega) base hz hb hi false (976*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm] at hH ⊢;dsimp [H] at *;omega)
+    have value : Acc.step base false (976*H) (Acc.earlyTerm src true 6)=1040*H := by
+      norm_num [Acc.step,Acc.earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  have sub : Triple (SquareFrame acc base (1040*H))
+      (CodexKnownOnesTail.accSub 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10))
+      (SquareFrame acc base (16*H)) := by
+    have h := CodexKnownOnesTail.accSub_prefix_triple acc Z bank cin 163 141 124 (Acc.earlyTerm src false 10) hacc
+      (by norm_num [Acc.earlyTerm]) hf10 (by simp only [Acc.earlyTerm]; omega)
+      (by norm_num [Acc.earlyTerm]) base hz hb hi (1040*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm];dsimp [H];omega)
+      (by simpa only [Acc.earlyTerm] using (clear_sub10_range H hH).2.2)
+    have value : Acc.step base true (1040*H) (Acc.earlyTerm src false 10)=16*H := by
+      norm_num [Acc.step,Acc.earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  have seed := Acc.seed_triple acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc hf4 base hz
+    (16*H) 0 (Or.inr (by simp [Acc.earlyTerm,H,Nat.mul_comm]))
+  exact ((top.seq add).seq sub).seq seed
+
+theorem narrowLen (Z bank : List Wire) (n : Nat) (f : MeasuredSquareFold)
+    (hf : Acc.FitsLen Z bank 163 f) (hn : n≤163) (hl : f.src.length+f.shift<n) :
+    Acc.FitsLen Z bank n f := by
+  refine ⟨hl,?_,?_⟩
+  · have h := hf.zpad; omega
+  · have h := hf.bankLen; omega
+
+theorem build8_counts (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length≤130)
+    (hf : ∀f∈earlyHTerms src,Acc.FitsLen Z bank 163 f) :
+    (toffoliCount (build8 acc Z bank cin src)=393 ∧ measurementCount (build8 acc Z bank cin src)=394) ∧
+    (toffoliCount (unbuild8 acc Z bank cin src)=364 ∧
+      measurementCount (unbuild8 acc Z bank cin src)=394) := by
+  have tm := terms_mem src
+  have l139 : (acc.take 141).length=141 := by simp [List.length_take,hacc]
+  have l161 : (acc.take 163).length=163 := by simp [List.length_take,hacc]
+  have seed := Acc.seed_counts acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc (hf _ tm.1)
+  have f10 := narrowLen Z bank 141 _ (hf _ tm.2.1) (by norm_num [Acc.earlyTerm]) (by simp only [Acc.earlyTerm]; omega)
+  have f6 := narrowLen Z bank 141 _ (hf _ tm.2.2.1) (by norm_num [Acc.earlyTerm]) (by simp only [Acc.earlyTerm]; omega)
+  have f32 := narrowLen Z bank 163 _ (hf _ tm.2.2.2) (by norm_num [Acc.earlyTerm]) (by simp only [Acc.earlyTerm]; omega)
+  have a0 := Acc.op_counts (acc.take 141) Z bank cin 141 false _ l139 f10
+  have a1 := Acc.op_counts (acc.take 141) Z bank cin 141 true _ l139 f10
+  have b0 := Acc.op_counts (acc.take 141) Z bank cin 141 false _ l139 f6
+  have b1 := Acc.op_counts (acc.take 141) Z bank cin 141 true _ l139 f6
+  have c0 := Acc.op_counts (acc.take 163) Z bank cin 163 false _ l161 f32
+  have c1 := Acc.op_counts (acc.take 163) Z bank cin 163 true _ l161 f32
+  have bk := CodexNarrowSub.accSub_counts (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6) l139 f6 (by norm_num [Acc.earlyTerm])
+  rw [b1.1,b1.2] at bk
+  have ak := CodexNarrowTailResource.accSub_counts 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10) l139 f10 (by norm_num [Acc.earlyTerm])
+  have ck := CodexNarrowTailResource.accSub_counts 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32) l161 f32 (by norm_num [Acc.earlyTerm])
+  simp only [build8,unbuild8,pre8,toffoliCount_append,measurementCount_append,
+    seed.1,seed.2,a0.1,a0.2,a1.1,a1.2,b0.1,b0.2,b1.1,b1.2,c0.1,c0.2,c1.1,c1.2]
+  norm_num [Acc.earlyTerm] at bk ak ck ⊢
+  omega
+
+theorem build8_support (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length≤130)
+    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f) :
+    wires (build8 acc Z bank cin src)⊆(cin::(src++acc++Z++bank)).toFinset ∧
+    wires (unbuild8 acc Z bank cin src)⊆(cin::(src++acc++Z++bank)).toFinset := by
+  have tm := terms_mem src
+  have seed := Acc.seed_support acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc (hf _ tm.1)
+  have a0 := Acc.op_prefix_support acc Z bank cin 163 141 (Acc.earlyTerm src false 10) hacc
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.1) (by simp only [Acc.earlyTerm]; omega) false
+  have a1 := Acc.op_prefix_support acc Z bank cin 163 141 (Acc.earlyTerm src false 10) hacc
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.1) (by simp only [Acc.earlyTerm]; omega) true
+  have b0 := Acc.op_prefix_support acc Z bank cin 163 141 (Acc.earlyTerm src true 6) hacc
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.2.1) (by simp only [Acc.earlyTerm]; omega) false
+  have b1 := Acc.op_prefix_support acc Z bank cin 163 141 (Acc.earlyTerm src true 6) hacc
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.2.1) (by simp only [Acc.earlyTerm]; omega) true
+  have c0 := Acc.op_prefix_support acc Z bank cin 163 163 (Acc.earlyTerm src false 32) hacc
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.2.2) (by simp only [Acc.earlyTerm]; omega) false
+  have c1 := Acc.op_prefix_support acc Z bank cin 163 163 (Acc.earlyTerm src false 32) hacc
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.2.2) (by simp only [Acc.earlyTerm]; omega) true
+  have fit6 := Acc.fits_prefix acc Z bank cin 163 141 (Acc.earlyTerm src true 6) (by norm_num [Acc.earlyTerm])
+    (hf _ tm.2.2.1) (by simp only [Acc.earlyTerm]; omega)
+  have bk := CodexNarrowSub.accSub_support (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6)
+    (by simp [List.length_take,hacc]) fit6.toFitsLen (by norm_num [Acc.earlyTerm])
+  have b1 := bk.trans b1
+  have fit10 := Acc.fits_prefix acc Z bank cin 163 141 (Acc.earlyTerm src false 10) (by norm_num [Acc.earlyTerm])
+    (hf _ tm.2.1) (by simp only [Acc.earlyTerm]; omega)
+  have new10 := CodexNarrowTailResource.accSub_support 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)
+    (by simp [List.length_take,hacc]) fit10.toFitsLen (by norm_num [Acc.earlyTerm])
+  have a1 := new10.trans a1
+  have fit32 := Acc.fits_prefix acc Z bank cin 163 163 (Acc.earlyTerm src false 32) (by norm_num [Acc.earlyTerm])
+    (hf _ tm.2.2.2) (by simp only [Acc.earlyTerm]; omega)
+  have new32 := CodexNarrowTailResource.accSub_support 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32)
+    (by simp [List.length_take,hacc]) fit32.toFitsLen (by norm_num [Acc.earlyTerm])
+  have c1 := new32.trans c1
+  simp only [Acc.earlyTerm] at seed a0 a1 b0 b1 c0 c1
+  simp only [build8,unbuild8,pre8,wires_append,Finset.union_subset_iff]
+  exact ⟨⟨⟨⟨seed,a0⟩,b1⟩,c0⟩,⟨⟨⟨c1,b0⟩,a1⟩,seed⟩⟩
+
+theorem build8_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length≤130)
+    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f) :
+    GatePhysical (build8 acc Z bank cin src) ∧ GatePhysical (unbuild8 acc Z bank cin src) := by
+  have tm := terms_mem src
+  have hf4 := hf _ tm.1
+  have seed : GatePhysical (Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)) := by
+    have len := Acc.fits_lengths acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc hf4.toFitsLen
+    have nd := Acc.fits_nodup acc Z bank cin 163 (Acc.earlyTerm src false 4) hf4
+    exact copyRegister_physical none _ _
+      ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
+  have a0 := Acc.op_prefix_physical acc Z bank cin 163 141 (Acc.earlyTerm src false 10)
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.1) (by simp only [Acc.earlyTerm]; omega) false
+  have a1 := Acc.op_prefix_physical acc Z bank cin 163 141 (Acc.earlyTerm src false 10)
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.1) (by simp only [Acc.earlyTerm]; omega) true
+  have b0 := Acc.op_prefix_physical acc Z bank cin 163 141 (Acc.earlyTerm src true 6)
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.2.1) (by simp only [Acc.earlyTerm]; omega) false
+  have b1 := Acc.op_prefix_physical acc Z bank cin 163 141 (Acc.earlyTerm src true 6)
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.2.1) (by simp only [Acc.earlyTerm]; omega) true
+  have c0 := Acc.op_prefix_physical acc Z bank cin 163 163 (Acc.earlyTerm src false 32)
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.2.2) (by simp only [Acc.earlyTerm]; omega) false
+  have c1 := Acc.op_prefix_physical acc Z bank cin 163 163 (Acc.earlyTerm src false 32)
+    (by norm_num [Acc.earlyTerm]) (hf _ tm.2.2.2) (by simp only [Acc.earlyTerm]; omega) true
+  have fit6 := Acc.fits_prefix acc Z bank cin 163 141 (Acc.earlyTerm src true 6) (by norm_num [Acc.earlyTerm])
+    (hf _ tm.2.2.1) (by simp only [Acc.earlyTerm]; omega)
+  have b1 := CodexNarrowSub.accSub_physical (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6)
+    (by simp [List.length_take,hacc]) fit6 (by norm_num [Acc.earlyTerm])
+  have fit10 := Acc.fits_prefix acc Z bank cin 163 141 (Acc.earlyTerm src false 10) (by norm_num [Acc.earlyTerm])
+    (hf _ tm.2.1) (by simp only [Acc.earlyTerm]; omega)
+  have new10 := CodexKnownOnesTail.accSub_physical 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)
+    (by simp [List.length_take,hacc]) fit10 (by norm_num [Acc.earlyTerm])
+  have a1 := new10
+  have fit32 := Acc.fits_prefix acc Z bank cin 163 163 (Acc.earlyTerm src false 32) (by norm_num [Acc.earlyTerm])
+    (hf _ tm.2.2.2) (by simp only [Acc.earlyTerm]; omega)
+  have new32 := CodexKnownOnesTail.accSub_physical 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32)
+    (by simp [List.length_take,hacc]) fit32 (by norm_num [Acc.earlyTerm])
+  have c1 := new32
+  simp only [build8,unbuild8,pre8,gatePhysical_append]
+  exact ⟨⟨⟨⟨seed,a0⟩,b1⟩,c0⟩,⟨⟨⟨c1,b0⟩,a1⟩,seed⟩⟩
+
+theorem build8_gateSlots (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length≤130)
+    (hf : ∀f∈earlyHTerms src,Acc.FitsLen Z bank 163 f) :
+    Challenge.gateSlots (build8 acc Z bank cin src)≤4*(14*163) ∧
+    Challenge.gateSlots (unbuild8 acc Z bank cin src)≤4*(14*163) := by
+  have tm := terms_mem src
+  have hf4 := hf _ tm.1
+  have seed : Challenge.gateSlots (Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4))≤163 := by
+    have l := Acc.fits_lengths acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc hf4
+    have h : Challenge.gateSlots (Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4))≤
+        (Acc.tx Z 163 (Acc.earlyTerm src false 4)).length := by
+      simp [Acc.seedOp,Baselines.copyRegister_gateSlots]
+    rw [l.1,l.2.2] at h
+    exact h.trans (by omega)
+  have op (n : Nat) (hn : n≤163) (f : MeasuredSquareFold) (hff : Acc.FitsLen Z bank 163 f)
+      (hl : f.src.length+f.shift<n) (neg : Bool) :
+      Challenge.gateSlots (Acc.op (acc.take n) Z bank cin n neg f)≤14*n := by
+    have len : (acc.take n).length=n := by simp [List.length_take,hacc]; omega
+    have h := Acc.op_gateSlots (acc.take n) Z bank cin n neg f
+    have l := Acc.fits_lengths (acc.take n) Z bank cin n f len (narrowLen Z bank n f hff hn hl)
+    rw [l.1,l.2.2] at h
+    exact h.trans (by omega)
+  have a0 := op 141 (by norm_num [Acc.earlyTerm]) _ (hf _ tm.2.1) (by simp only [Acc.earlyTerm]; omega) false
+  have a1 := op 141 (by norm_num [Acc.earlyTerm]) _ (hf _ tm.2.1) (by simp only [Acc.earlyTerm]; omega) true
+  have b0 := op 141 (by norm_num [Acc.earlyTerm]) _ (hf _ tm.2.2.1) (by simp only [Acc.earlyTerm]; omega) false
+  have b1 := op 141 (by norm_num [Acc.earlyTerm]) _ (hf _ tm.2.2.1) (by simp only [Acc.earlyTerm]; omega) true
+  have c0 := op 163 (by norm_num [Acc.earlyTerm]) _ (hf _ tm.2.2.2) (by simp only [Acc.earlyTerm]; omega) false
+  have c1 := op 163 (by norm_num [Acc.earlyTerm]) _ (hf _ tm.2.2.2) (by simp only [Acc.earlyTerm]; omega) true
+  have fit6 := narrowLen Z bank 141 _ (hf _ tm.2.2.1) (by norm_num [Acc.earlyTerm]) (by simp only [Acc.earlyTerm]; omega)
+  have bk := CodexNarrowSub.accSub_slots (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6)
+    (by simp [List.length_take,hacc]) fit6 (by norm_num [Acc.earlyTerm])
+  have b1 := bk.trans b1
+  have fit10 := narrowLen Z bank 141 _ (hf _ tm.2.1) (by norm_num [Acc.earlyTerm]) (by simp only [Acc.earlyTerm]; omega)
+  have new10 := CodexNarrowTailResource.accSub_slots 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)
+    (by simp [List.length_take,hacc]) fit10 (by norm_num [Acc.earlyTerm])
+  have a1 := new10.trans a1
+  have fit32 := narrowLen Z bank 163 _ (hf _ tm.2.2.2) (by norm_num [Acc.earlyTerm]) (by simp only [Acc.earlyTerm]; omega)
+  have new32 := CodexNarrowTailResource.accSub_slots 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32)
+    (by simp [List.length_take,hacc]) fit32 (by norm_num [Acc.earlyTerm])
+  have c1 := new32.trans c1
+  simp only [build8,unbuild8,pre8,Challenge.gateSlots_append]
+  omega
+
+end ECDSAAdd.Entrant.C163KnownTail
+
+#print axioms ECDSAAdd.Entrant.C163KnownTail.build8_counts
+
+end
+
+-- C163 component SourceResources
+section
+-- Width161 specializations of retained optimized inverse resource proofs.
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 30000
+set_option maxHeartbeats 10000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.C163SourceTail
+open SourceTail130Develop
+open Arithmetic C163KnownTail
+
+def unbuild (acc Z bank : List Wire) (cin : Wire) (src : List Wire) : Program :=
+  CodexKnownOnesTail.accSub 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32)++
+    Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6)++
+    tail acc Z bank cin src++Acc.seedOp acc Z 163 (Acc.earlyTerm src false 4)
+
+theorem unbuild_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (base : BasisState) (hz : ∀q∈Z,base q=false) (hb : ∀q∈bank,base q=false)
+    (hi : base cin=false) :
+    Triple (SquareFrame acc base (4294968272*regValue src base)) (unbuild acc Z bank cin src)
+      (SquareFrame acc base 0) := by
+  have tm := terms_mem src
+  have hf4 := hf _ tm.1
+  have hf10 := hf _ tm.2.1
+  have hf6 := hf _ tm.2.2.1
+  have hf32 := hf _ tm.2.2.2
+  let H := regValue src base
+  have hH : H<2^130 := by have h:=regValue_lt src base;rw [hsrc] at h;exact h
+  have top : Triple (SquareFrame acc base (4294968272*H))
+      (CodexKnownOnesTail.accSub 108 (acc.take 163) Z bank cin 163 (Acc.earlyTerm src false 32))
+      (SquareFrame acc base (976*H)) := by
+    have h := CodexKnownOnesTail.accSub_prefix_triple acc Z bank cin 163 163 108 (Acc.earlyTerm src false 32) hacc
+      (by norm_num [Acc.earlyTerm]) hf32 (by simp only [Acc.earlyTerm]; omega)
+      (by norm_num [Acc.earlyTerm]) base hz hb hi (4294968272*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm];dsimp [H];omega)
+      (by simpa only [Acc.earlyTerm] using (clear_sub32_range H hH).2.2)
+    have value : Acc.step base true (4294968272*H) (Acc.earlyTerm src false 32)=976*H := by
+      have e : regValue src base*2^32=4294967296*H := by dsimp only [H]; ring
+      simp only [Acc.step,Acc.earlyTerm,if_true]
+      rw [e]
+      omega
+    rw [value] at h
+    exact h
+  have add : Triple (SquareFrame acc base (976*H))
+      (Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6))
+      (SquareFrame acc base (1040*H)) := by
+    have h := Acc.op_prefix_triple acc Z bank cin 163 141 (Acc.earlyTerm src true 6) hacc
+      (by norm_num [Acc.earlyTerm]) hf6 (by simp only [Acc.earlyTerm]; omega) base hz hb hi false (976*H)
+      (by norm_num at hH ⊢;omega) (by norm_num [Acc.earlyTerm] at hH ⊢;dsimp [H] at *;omega)
+    have value : Acc.step base false (976*H) (Acc.earlyTerm src true 6)=1040*H := by
+      norm_num [Acc.step,Acc.earlyTerm]
+      dsimp [H]
+      omega
+    rw [value] at h
+    exact h
+  have sub : Triple (SquareFrame acc base (1040*H)) (tail acc Z bank cin src)
+      (SquareFrame acc base (16*H)) := tail_triple acc Z bank cin src hacc hsrc hf10 base hz hb hi
+  have seed := Acc.seed_triple acc Z bank cin 163 (Acc.earlyTerm src false 4) hacc hf4 base hz
+    (16*H) 0 (Or.inr (by simp [Acc.earlyTerm,H,Nat.mul_comm]))
+  exact ((top.seq add).seq sub).seq seed
+
+
+                                                                              
+                                                   
+                                                           
+                                                                                          
+                                                                                          
+                                                                                                    
+                                                                                                     
+                                                                                   
+                                                                                                          
+                                
+                            
+          
+                     
+                                                                                            
+                                              
+#print axioms unbuild_triple
+                            
+end ECDSAAdd.Entrant.C163SourceTail
+
+
+namespace ECDSAAdd.Entrant.C163SourceAdd
+open SourceAddFourDevelop
+open Arithmetic C163KnownTail
+theorem add_resources (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : Acc.FitsLen Z bank 163 (Acc.earlyTerm src true 6)) :
+    toffoliCount (add acc Z bank cin src)+4=
+      toffoliCount (Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6)) ∧
+    measurementCount (add acc Z bank cin src)=
+      measurementCount (Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6)) ∧
+    wires (add acc Z bank cin src)⊆
+      wires (Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6)) ∧
+    Challenge.gateSlots (add acc Z bank cin src)≤
+      Challenge.gateSlots (Acc.op (acc.take 141) Z bank cin 141 false (Acc.earlyTerm src true 6)) := by
+  have fit:=C163KnownTail.narrowLen Z bank 141 (Acc.earlyTerm src true 6) hf (by decide)
+    (by simp [Acc.earlyTerm,hsrc])
+  have zl : 5≤Z.length := by simpa [Acc.earlyTerm,hsrc] using fit.zpad
+  have bl : (bank.take 134).length=134 := by
+    have h:=fit.bankLen
+    simp only [Acc.earlyTerm] at h
+    simp only [List.length_take]
+    omega
+  have h:=program_resources src Z ((acc.take 141).drop 6) (bank.take 134) cin (by omega) zl
+    (by simp [hacc,hsrc]) (by simp [hacc,bl])
+  simpa [add,Acc.op,Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,hsrc] using h
+
+theorem add_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src true 6)) :
+    GatePhysical (add acc Z bank cin src) := by
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 (Acc.earlyTerm src true 6) (by decide) hf
+    (by simp [Acc.earlyTerm,hsrc])
+  have zl : 5≤Z.length := by simpa [Acc.earlyTerm,hsrc] using fit.zpad
+  have bl : (bank.take 134).length=134 := by
+    have h:=fit.bankLen
+    simp only [Acc.earlyTerm] at h
+    simp only [List.length_take]
+    omega
+  have nd:=Acc.fits_nodup (acc.take 141) Z bank cin 141 (Acc.earlyTerm src true 6) fit
+  have nd' : (cin::((src++Z.take 5)++(acc.take 141).drop 6++bank.take 134)).Nodup := by
+    simpa [Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,hsrc] using nd
+  exact program_physical src Z ((acc.take 141).drop 6) (bank.take 134) cin (by omega) zl (by simp [hacc,hsrc]) (by simp [hacc,bl]) nd'
+
+
+#print axioms add_resources
+#print axioms add_physical
+end ECDSAAdd.Entrant.C163SourceAdd
+
+
+namespace ECDSAAdd.Entrant.C163SourceTail
+open SourceTail130Develop
+open Arithmetic C163KnownTail
+
+theorem tail_resources (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : Acc.FitsLen Z bank 163 (Acc.earlyTerm src false 10)) :
+    toffoliCount (tail acc Z bank cin src)+123=
+      toffoliCount (CodexKnownOnesTail.accSub 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)) ∧
+    measurementCount (tail acc Z bank cin src)=
+      measurementCount (CodexKnownOnesTail.accSub 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)) ∧
+    wires (tail acc Z bank cin src)⊆
+      wires (CodexKnownOnesTail.accSub 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)) ∧
+    Challenge.gateSlots (tail acc Z bank cin src)≤
+      Challenge.gateSlots (CodexKnownOnesTail.accSub 124 (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10)) := by
+  have fit:=C163KnownTail.narrowLen Z bank 141 (Acc.earlyTerm src false 10) hf (by decide)
+    (by simp [Acc.earlyTerm,hsrc])
+  have zl : 1≤Z.length := by simpa [Acc.earlyTerm,hsrc] using fit.zpad
+  have bl : (bank.take 130).length=130 := by
+    have h:=fit.bankLen
+    simp only [Acc.earlyTerm] at h
+    simp only [List.length_take]
+    omega
+  have h:=program_resources src Z ((acc.take 141).drop 10) (bank.take 130) cin hsrc zl
+    (by simp [hacc]) bl
+  simpa [tail,CodexKnownOnesTail.accSub,Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,hsrc] using h
+
+theorem unbuild_resources (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : ∀f∈earlyHTerms src,Acc.FitsLen Z bank 163 f) :
+    toffoliCount (unbuild acc Z bank cin src)=241 ∧ measurementCount (unbuild acc Z bank cin src)=394 ∧
+    wires (unbuild acc Z bank cin src)⊆wires (C163KnownTail.unbuild8 acc Z bank cin src) ∧
+    Challenge.gateSlots (unbuild acc Z bank cin src)≤Challenge.gateSlots (C163KnownTail.unbuild8 acc Z bank cin src) := by
+  have t:=tail_resources acc Z bank cin src hacc hsrc (hf _ (C163KnownTail.terms_mem src).2.1)
+  have old:=(C163KnownTail.build8_counts acc Z bank cin src hacc (by omega) hf).2
+  have dt : toffoliCount (unbuild acc Z bank cin src)+123=toffoliCount (C163KnownTail.unbuild8 acc Z bank cin src) := by
+    simp only [unbuild,C163KnownTail.unbuild8,toffoliCount_append]
+    omega
+  have dm : measurementCount (unbuild acc Z bank cin src)=measurementCount (C163KnownTail.unbuild8 acc Z bank cin src) := by
+    simp only [unbuild,C163KnownTail.unbuild8,measurementCount_append]
+    omega
+  refine ⟨by omega,by omega,?_,?_⟩
+  · simp only [unbuild,C163KnownTail.unbuild8,wires_append]
+    exact Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) t.2.2.1) (Finset.Subset.refl _)
+  · simp only [unbuild,C163KnownTail.unbuild8,Challenge.gateSlots_append]
+    omega
+
+theorem tail_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : Acc.Fits acc Z bank cin 163 (Acc.earlyTerm src false 10)) :
+    GatePhysical (tail acc Z bank cin src) := by
+  have fit:=Acc.fits_prefix acc Z bank cin 163 141 (Acc.earlyTerm src false 10) (by decide) hf
+    (by simp [Acc.earlyTerm,hsrc])
+  have zl : 1≤Z.length := by simpa [Acc.earlyTerm,hsrc] using fit.zpad
+  have bl : (bank.take 130).length=130 := by
+    have h:=fit.bankLen
+    simp only [Acc.earlyTerm] at h
+    simp only [List.length_take]
+    omega
+  have nd:=Acc.fits_nodup (acc.take 141) Z bank cin 141 (Acc.earlyTerm src false 10) fit
+  have nd' : (cin::((src++Z.take 1)++(acc.take 141).drop 10++bank.take 130)).Nodup := by
+    simpa [Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,hsrc] using nd
+  exact program_physical src Z ((acc.take 141).drop 10) (bank.take 130) cin hsrc zl (by simp [hacc]) bl nd'
+
+theorem unbuild_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f) :
+    GatePhysical (unbuild acc Z bank cin src) := by
+  have old:=(C163KnownTail.build8_physical acc Z bank cin src hacc (by omega) hf).2
+  have new:=tail_physical acc Z bank cin src hacc hsrc (hf _ (C163KnownTail.terms_mem src).2.1)
+  simp only [unbuild,C163KnownTail.unbuild8,gatePhysical_append] at old ⊢
+  exact ⟨⟨⟨old.1.1.1,old.1.1.2⟩,new⟩,old.2⟩
+#print axioms tail_resources
+#print axioms unbuild_resources
+#print axioms unbuild_physical
+end ECDSAAdd.Entrant.C163SourceTail
+
+
+namespace ECDSAAdd.Entrant.C163SourceAdd
+open SourceAddFourDevelop
+open Arithmetic C163KnownTail
+
+theorem unbuild_resources (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : ∀f∈earlyHTerms src,Acc.FitsLen Z bank 163 f) :
+    toffoliCount (unbuild acc Z bank cin src)=237 ∧ measurementCount (unbuild acc Z bank cin src)=394 ∧
+    wires (unbuild acc Z bank cin src)⊆wires (C163KnownTail.unbuild8 acc Z bank cin src) ∧
+    Challenge.gateSlots (unbuild acc Z bank cin src)≤Challenge.gateSlots (C163KnownTail.unbuild8 acc Z bank cin src) := by
+  have a:=add_resources acc Z bank cin src hacc hsrc (hf _ (terms_mem src).2.2.1)
+  have old:=C163SourceTail.unbuild_resources acc Z bank cin src hacc hsrc hf
+  have dt : toffoliCount (unbuild acc Z bank cin src)+4=toffoliCount (C163SourceTail.unbuild acc Z bank cin src) := by
+    simp only [unbuild,C163SourceTail.unbuild,toffoliCount_append]
+    omega
+  have dm : measurementCount (unbuild acc Z bank cin src)=measurementCount (C163SourceTail.unbuild acc Z bank cin src) := by
+    simp only [unbuild,C163SourceTail.unbuild,measurementCount_append]
+    omega
+  refine ⟨by omega,by omega,?_,?_⟩
+  · apply Finset.Subset.trans _ old.2.2.1
+    simp only [unbuild,C163SourceTail.unbuild,wires_append]
+    exact Finset.union_subset_union
+      (Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) a.2.2.1)
+        (Finset.Subset.refl _)) (Finset.Subset.refl _)
+  · have h : Challenge.gateSlots (unbuild acc Z bank cin src)≤Challenge.gateSlots (C163SourceTail.unbuild acc Z bank cin src) := by
+      simp only [unbuild,C163SourceTail.unbuild,Challenge.gateSlots_append]
+      omega
+    exact h.trans old.2.2.2
+
+theorem unbuild_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
+    (hacc : acc.length=163) (hsrc : src.length=130)
+    (hf : ∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f) :
+    GatePhysical (unbuild acc Z bank cin src) := by
+  have old:=C163SourceTail.unbuild_physical acc Z bank cin src hacc hsrc hf
+  have a:=add_physical acc Z bank cin src hacc hsrc (hf _ (terms_mem src).2.2.1)
+  simp only [unbuild,C163SourceTail.unbuild,gatePhysical_append] at old ⊢
+  exact ⟨⟨⟨old.1.1.1,a⟩,old.1.2⟩,old.2⟩
+#print axioms unbuild_resources
+#print axioms unbuild_physical
+end ECDSAAdd.Entrant.C163SourceAdd
+
+end
+
+-- C163 component Ambient
+section
+namespace ECDSAAdd.Entrant.C163KnownTail
+open Arithmetic
+theorem build8_eq (acc Z bank : List Wire) (cin : Wire) (src : List Wire) :
+ build8 acc Z bank cin src=C163NarrowAcc.build8 acc Z bank cin src := rfl
+end ECDSAAdd.Entrant.C163KnownTail
+
+namespace ECDSAAdd.Entrant.C163Carry
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop FourthASavedCarryDevelop ManyACarryDevelop ControlLoan1589BFFold ZeroReadDevelop CodexNarrowTail
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.wires
+-- Width161 specialization of MainPart04Base.lean :: buildCached_physical
+theorem buildCached_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length)
+    (off:q∉wires (C163NarrowAcc.build8 acc Z bank cin src))
+    (physical:GatePhysical (C163NarrowAcc.build8 acc Z bank cin src)) :
+    GatePhysical (buildCached acc Z bank cin src q) := by
+  have len:=sub6_lengths acc Z bank src ha hs hz hb
+  have pp:=physical
+  rw [build_split,gatePhysical_append,gatePhysical_append] at pp
+  have qo:q∉wires (CodexNarrowSub.program (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+      (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin) := by
+    intro h;apply off
+    simp only [build_split,CodexNarrowSub.accSub,wires_append,Finset.mem_union]
+    exact Or.inl (Or.inr h)
+  have sub:=cachedSub_resources _ _ _ cin q (by omega) (by omega) (by omega) qo pp.1.2
+  simp only [buildCached,gatePhysical_append]
+  exact ⟨⟨pp.1.1,sub.2⟩,pp.2⟩
+
+-- Width161 specialization of MainPart04Base.lean :: unbuildConsumed_physical
+theorem unbuildConsumed_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length)
+    (off:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+    (physical:GatePhysical (C163SourceAdd.unbuild acc Z bank cin src)) :
+    GatePhysical (unbuildConsumed acc Z bank cin src q) := by
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [ha,hs]
+  have hc:5≤(bank.take 134).length := by simp [Nat.min_eq_left hb]
+  have pp:=physical
+  rw [unbuild_split,gatePhysical_append,gatePhysical_append] at pp
+  have qo:q∉wires (SourceAddFourDevelop.program src Z ((acc.take 141).drop 6) (bank.take 134) cin) := by
+    intro h;apply off
+    simp only [unbuild_split,C163SourceAdd.add,wires_append,Finset.mem_union]
+    exact Or.inl (Or.inr h)
+  have sub:=consumedAdd_resources src Z ((acc.take 141).drop 6) (bank.take 134) cin q (by omega) hy hc qo pp.1.2
+  simp only [unbuildConsumed,gatePhysical_append]
+  exact ⟨⟨pp.1.1,sub.2⟩,pp.2⟩
+
+-- Width161 specialization of MainPart04Base.lean :: wloop_original_off
+theorem wloop_original_off (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+    (fresh:q∉cin::(src++acc++Z++bank)) :
+    q∉wires (C163NarrowAcc.build8 acc Z bank cin src) ∧
+    q∉wires (C163SourceAdd.unbuild acc Z bank cin src) := by
+  have support:=C163KnownTail.build8_support acc Z bank cin src ha (by omega) hf
+  rw [C163KnownTail.build8_eq] at support
+  have inv:=C163SourceAdd.unbuild_resources acc Z bank cin src ha hs
+    (fun f h=>(hf f h).toFitsLen)
+  exact ⟨fun h=>fresh (List.mem_toFinset.mp (support.1 h)),
+    fun h=>fresh (List.mem_toFinset.mp (support.2 (inv.2.2.1 h)))⟩
+
+-- Width161 specialization of MainPart04Base.lean :: buildDual_support
+theorem buildDual_support (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) :
+    wires (buildDual acc Z bank cin src q r)⊆insert r (wires (buildCached acc Z bank cin src q)) := by
+  have len:=sub6_lengths acc Z bank src ha hs hz hb
+  have sub:=cachedSubDual_support (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+    (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q r
+    (by omega) (by omega) (by omega)
+  intro w hw
+  by_cases eq:w=r
+  · exact Finset.mem_insert.mpr (Or.inl eq)
+  apply Finset.mem_insert_of_mem
+  simp only [buildDual,wires_append,Finset.mem_union] at hw
+  simp only [buildCached,wires_append,Finset.mem_union]
+  rcases hw with (hw|hw)|hw
+  · exact Or.inl (Or.inl hw)
+  · have h:=Finset.mem_insert.mp (sub hw)
+    exact h.elim (fun e=>False.elim (eq e)) (fun h=>Or.inl (Or.inr h))
+  · exact Or.inr hw
+
+-- Width161 specialization of MainPart04Base.lean :: unbuildDual_support
+theorem unbuildDual_support (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length) :
+    wires (unbuildDual acc Z bank cin src q r)⊆insert r (wires (unbuildConsumed acc Z bank cin src q)) := by
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [ha,hs]
+  have hc:6≤(bank.take 134).length := by simp [Nat.min_eq_left hb]
+  have sub:=consumedAddDual_support src Z ((acc.take 141).drop 6) (bank.take 134) cin q r (by omega) hy hc
+  intro w hw
+  by_cases eq:w=r
+  · exact Finset.mem_insert.mpr (Or.inl eq)
+  apply Finset.mem_insert_of_mem
+  simp only [unbuildDual,wires_append,Finset.mem_union] at hw
+  simp only [unbuildConsumed,wires_append,Finset.mem_union]
+  rcases hw with (hw|hw)|hw
+  · exact Or.inl (Or.inl hw)
+  · have h:=Finset.mem_insert.mp (sub hw)
+    exact h.elim (fun e=>False.elim (eq e)) (fun h=>Or.inl (Or.inr h))
+  · exact Or.inr hw
+
+-- Width161 specialization of MainPart04Base.lean :: buildDual_physical
+theorem buildDual_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length)
+    (off:r∉wires (buildCached acc Z bank cin src q)) (physical:GatePhysical (buildCached acc Z bank cin src q)) :
+    GatePhysical (buildDual acc Z bank cin src q r) := by
+  have len:=sub6_lengths acc Z bank src ha hs hz hb
+  rw [buildCached,gatePhysical_append,gatePhysical_append] at physical
+  have midOff:r∉wires (cachedSub (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+      (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q) := by
+    intro h;apply off
+    simp only [buildCached,wires_append,Finset.mem_union]
+    exact Or.inl (Or.inr h)
+  have sub:=cachedSubDual_physical _ _ _ cin q r (by omega) (by omega) (by omega) midOff physical.1.2
+  simp only [buildDual,gatePhysical_append]
+  exact ⟨⟨physical.1.1,sub⟩,physical.2⟩
+
+-- Width161 specialization of MainPart04Base.lean :: unbuildDual_physical
+theorem unbuildDual_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length)
+    (off:r∉wires (unbuildConsumed acc Z bank cin src q)) (physical:GatePhysical (unbuildConsumed acc Z bank cin src q)) :
+    GatePhysical (unbuildDual acc Z bank cin src q r) := by
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [ha,hs]
+  have hc:6≤(bank.take 134).length := by simp [Nat.min_eq_left hb]
+  rw [unbuildConsumed,gatePhysical_append,gatePhysical_append] at physical
+  have midOff:r∉wires (consumedAdd src Z ((acc.take 141).drop 6) (bank.take 134) cin q) := by
+    intro h;apply off
+    simp only [unbuildConsumed,wires_append,Finset.mem_union]
+    exact Or.inl (Or.inr h)
+  have sub:=consumedAddDual_physical src Z ((acc.take 141).drop 6) (bank.take 134) cin q r (by omega) hy hc midOff physical.1.2
+  simp only [unbuildDual,gatePhysical_append]
+  exact ⟨⟨physical.1.1,sub⟩,physical.2⟩
+
+-- Width161 specialization of ParkAMany.lean :: buildTriple_support
+theorem buildTriple_support (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r p : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) :
+    wires (buildTriple acc Z bank cin src q r p)⊆insert p (wires (buildDual acc Z bank cin src q r)) := by
+  have len:=sub6_lengths acc Z bank src ha hs hz hb
+  have sub:=cachedSubTriple_support (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+    (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q r p
+    (by omega) (by omega) (by omega)
+  intro w hw
+  by_cases eq:w=p
+  · exact Finset.mem_insert.mpr (Or.inl eq)
+  apply Finset.mem_insert_of_mem
+  simp only [buildTriple,wires_append,Finset.mem_union] at hw
+  simp only [buildDual,wires_append,Finset.mem_union]
+  rcases hw with (hw|hw)|hw
+  · exact Or.inl (Or.inl hw)
+  · have h:=Finset.mem_insert.mp (sub hw)
+    exact h.elim (fun e=>False.elim (eq e)) (fun h=>Or.inl (Or.inr h))
+  · exact Or.inr hw
+
+-- Width161 specialization of ParkAMany.lean :: unbuildTriple_support
+theorem unbuildTriple_support (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r p : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length) :
+    wires (unbuildTriple acc Z bank cin src q r p)⊆insert p (wires (unbuildDual acc Z bank cin src q r)) := by
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [ha,hs]
+  have hc:7≤(bank.take 134).length := by simp [Nat.min_eq_left hb]
+  have sub:=consumedAddTriple_support src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p (by omega) hy hc
+  intro w hw
+  by_cases eq:w=p
+  · exact Finset.mem_insert.mpr (Or.inl eq)
+  apply Finset.mem_insert_of_mem
+  simp only [unbuildTriple,wires_append,Finset.mem_union] at hw
+  simp only [unbuildDual,wires_append,Finset.mem_union]
+  rcases hw with (hw|hw)|hw
+  · exact Or.inl (Or.inl hw)
+  · have h:=Finset.mem_insert.mp (sub hw)
+    exact h.elim (fun e=>False.elim (eq e)) (fun h=>Or.inl (Or.inr h))
+  · exact Or.inr hw
+
+-- Width161 specialization of ParkAMany.lean :: buildTriple_physical
+theorem buildTriple_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r p : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length)
+    (off:p∉wires (buildDual acc Z bank cin src q r)) (physical:GatePhysical (buildDual acc Z bank cin src q r)) :
+    GatePhysical (buildTriple acc Z bank cin src q r p) := by
+  have len:=sub6_lengths acc Z bank src ha hs hz hb
+  rw [buildDual,gatePhysical_append,gatePhysical_append] at physical
+  have midOff:p∉wires (cachedSubDual (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+      (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) cin q r) := by
+    intro h;apply off
+    simp only [buildDual,wires_append,Finset.mem_union]
+    exact Or.inl (Or.inr h)
+  have sub:=cachedSubTriple_physical _ _ _ cin q r p (by omega) (by omega) (by omega) midOff physical.1.2
+  simp only [buildTriple,gatePhysical_append]
+  exact ⟨⟨physical.1.1,sub⟩,physical.2⟩
+
+-- Width161 specialization of ParkAMany.lean :: unbuildTriple_physical
+theorem unbuildTriple_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire) (q r p : Wire)
+    (ha:acc.length=163) (hs:src.length=130) (hb:134≤bank.length)
+    (off:p∉wires (unbuildDual acc Z bank cin src q r)) (physical:GatePhysical (unbuildDual acc Z bank cin src q r)) :
+    GatePhysical (unbuildTriple acc Z bank cin src q r p) := by
+  have hy:((acc.take 141).drop 6).length=src.length+5 := by simp [ha,hs]
+  have hc:7≤(bank.take 134).length := by simp [Nat.min_eq_left hb]
+  rw [unbuildDual,gatePhysical_append,gatePhysical_append] at physical
+  have midOff:p∉wires (consumedAddDual src Z ((acc.take 141).drop 6) (bank.take 134) cin q r) := by
+    intro h;apply off
+    simp only [unbuildDual,wires_append,Finset.mem_union]
+    exact Or.inl (Or.inr h)
+  have sub:=consumedAddTriple_physical src Z ((acc.take 141).drop 6) (bank.take 134) cin q r p (by omega) hy hc midOff physical.1.2
+  simp only [unbuildTriple,gatePhysical_append]
+  exact ⟨⟨physical.1.1,sub⟩,physical.2⟩
+
+-- Width161 specialization of ParkAMany.lean :: fresh_off_triple
+theorem fresh_off_triple (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p u:Wire)
+ (ha:acc.length=163) (hs:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (fresh:u∉cin::(src++acc++Z++bank)) (uq:u≠q) (ur:u≠r) (up:u≠p):
+ u∉wires (buildTriple acc Z bank cin src q r p) ∧ u∉wires (unbuildTriple acc Z bank cin src q r p):=by
+ have hf6:=hf _ (C163NarrowAcc.terms_mem src).2.2.1
+ have zl:5≤Z.length:=by have h:=hf6.zpad;norm_num[Acc.earlyTerm,hs]at h;omega
+ have bl:134≤bank.length:=by have h:=hf6.bankLen;norm_num[Acc.earlyTerm]at h;omega
+ have off:=wloop_original_off acc Z bank cin src u ha hs hf fresh
+ have bc:=buildCached_support acc Z bank cin src q ha hs zl bl
+ have uc:=unbuildConsumed_support acc Z bank cin src q ha hs bl
+ have bd:=buildDual_support acc Z bank cin src q r ha hs zl bl
+ have ud:=unbuildDual_support acc Z bank cin src q r ha hs bl
+ have bt:=buildTriple_support acc Z bank cin src q r p ha hs zl bl
+ have ut:=unbuildTriple_support acc Z bank cin src q r p ha hs bl
+ constructor
+ · intro h
+   rcases Finset.mem_insert.mp (bt h)with e|h
+   · exact up e
+   rcases Finset.mem_insert.mp (bd h)with e|h
+   · exact ur e
+   exact (Finset.mem_insert.mp (bc h)).elim uq off.1
+ · intro h
+   rcases Finset.mem_insert.mp (ut h)with e|h
+   · exact up e
+   rcases Finset.mem_insert.mp (ud h)with e|h
+   · exact ur e
+   exact (Finset.mem_insert.mp (uc h)).elim uq off.2
+
+-- Width161 specialization of ParkAMany.lean :: buildMany_support
+theorem buildMany_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hl:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) (hk:k≤121):
+ wires (buildMany k acc Z bank cin src hs q r p)⊆wires (buildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
+ have len:=sub6_lengths acc Z bank src ha hl hz hb
+ exact support_surround _ _ _ _ hs (cachedSubMany_support k _ _ _ hs cin q r p (by omega) (by omega) (by omega))
+
+-- Width161 specialization of ParkAMany.lean :: unbuildMany_support
+theorem unbuildMany_support (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hl:src.length=130) (hb:134≤bank.length) (hk:k≤121):
+ wires (unbuildMany k acc Z bank cin src hs q r p)⊆wires (unbuildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
+ exact support_surround _ _ _ _ hs (consumedAddMany_support k src Z ((acc.take 141).drop 6) (bank.take 134) hs cin q r p
+  (by omega) (by simp only[List.length_drop,List.length_take];omega) (by simp only[List.length_take];omega))
+
+-- Width161 specialization of ParkAMany.lean :: buildMany_physical
+theorem buildMany_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hl:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) (hk:k≤121)
+ (fresh:∀u∈hs,u∉bank) (physical:GatePhysical (buildTriple acc Z bank cin src q r p)):
+ GatePhysical (buildMany k acc Z bank cin src hs q r p):=by
+ have len:=sub6_lengths acc Z bank src ha hl hz hb
+ rw[buildTriple,gatePhysical_append,gatePhysical_append]at physical
+ have sub:=cachedSubMany_gatePhysical k (Acc.tx Z 141 (Acc.earlyTerm src true 6))
+  (Acc.ty (acc.take 141) (Acc.earlyTerm src true 6)) (Acc.tc bank 141 (Acc.earlyTerm src true 6)) hs cin q r p
+  (by omega) (by omega) (by omega) (fun u hu bad=>fresh u hu (List.mem_of_mem_take bad)) physical.1.2
+ rw[buildMany,gatePhysical_append,gatePhysical_append]
+ exact ⟨⟨physical.1.1,sub⟩,physical.2⟩
+
+-- Width161 specialization of ParkAMany.lean :: unbuildMany_physical
+theorem unbuildMany_physical (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hl:src.length=130) (hb:134≤bank.length) (hk:k≤121)
+ (fresh:∀u∈hs,u∉bank) (physical:GatePhysical (unbuildTriple acc Z bank cin src q r p)):
+ GatePhysical (unbuildMany k acc Z bank cin src hs q r p):=by
+ rw[unbuildTriple,gatePhysical_append,gatePhysical_append]at physical
+ have sub:=consumedAddMany_gatePhysical k src Z ((acc.take 141).drop 6) (bank.take 134) hs cin q r p
+  (by omega) (by simp only[List.length_drop,List.length_take];omega) (by simp only[List.length_take];omega)
+  (fun u hu bad=>fresh u hu (List.mem_of_mem_take bad)) physical.1.2
+ rw[unbuildMany,gatePhysical_append,gatePhysical_append]
+ exact ⟨⟨physical.1.1,sub⟩,physical.2⟩
+
+-- Width161 specialization of ParkAMany.lean :: compiled_support_set
+theorem compiled_support_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
+ (ha:acc.length=163) (hl:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) (hk:k≤121)
+ (cert:ZeroSetDevelop.SRewrites hs middle newMiddle):
+ wires (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p)⊆
+ wires (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p)∪hs.toFinset:=by
+ have b:=buildMany_support k acc Z bank cin src hs q r p ha hl hz hb hk
+ have i:=unbuildMany_support k acc Z bank cin src hs q r p ha hl hb hk
+ have mid:=(cert.support hs middle newMiddle).1
+ intro w hw
+ simp only[wires_append,Finset.mem_union]at hw ⊢
+ rcases hw with (hw|hw)|hw
+ · rcases Finset.mem_union.mp (b hw) with hw|hw
+   · exact Or.inl (Or.inl (Or.inl hw))
+   · exact Or.inr hw
+ · exact Or.inl (Or.inl (Or.inr (mid hw)))
+ · rcases Finset.mem_union.mp (i hw) with hw|hw
+   · exact Or.inl (Or.inr hw)
+   · exact Or.inr hw
+
+-- Width161 specialization of ParkAMany.lean :: compiled_physical_set
+theorem compiled_physical_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:List Wire) (q r p:Wire) (middle newMiddle:Program)
+ (ha:acc.length=163) (hl:src.length=130) (hz:5≤Z.length) (hb:134≤bank.length) (hk:k≤121)
+ (fresh:∀u∈hs,u∉bank) (cert:ZeroSetDevelop.SRewrites hs middle newMiddle)
+ (physical:GatePhysical (buildTriple acc Z bank cin src q r p++middle++unbuildTriple acc Z bank cin src q r p)):
+ GatePhysical (buildMany k acc Z bank cin src hs q r p++newMiddle++unbuildMany k acc Z bank cin src hs q r p):=by
+ rw[gatePhysical_append,gatePhysical_append]at physical ⊢
+ exact ⟨⟨buildMany_physical k acc Z bank cin src hs q r p ha hl hz hb hk fresh physical.1.1,
+ cert.physical hs middle newMiddle physical.1.2⟩,
+ unbuildMany_physical k acc Z bank cin src hs q r p ha hl hb hk fresh physical.2⟩
+#print axioms compiled_physical_set
+end ECDSAAdd.Entrant.C163Carry
+
+end
+
+-- C163 component Geometry
+section
+namespace ECDSAAdd.Entrant.C163Fold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+def acc (L:CuccaroStreamedSquareWideLayout) := L.core.work.take 163
+def pad (L:CuccaroStreamedSquareWideLayout) := (L.foldPad.drop 160).take 33
+abbrev bank := ECDSAAdd.Entrant.accBank
+def src (L:CuccaroStreamedSquareWideLayout) := L.core.product.drop 128
+def domain (L:CuccaroStreamedSquareWideLayout) (s:List Wire) :=
+ L.core.cin::(s++acc L++pad L++bank L)
+
+theorem lengths (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) :
+ (acc L).length=163 ∧ (pad L).length=33 ∧ (bank L).length=160 ∧ (src L).length=130 := by
+ simp [acc,pad,bank,accBank,src,foldPad,hw.core.work,hw.core.pad,hw.core.product,hw.overflowPad]
+
+theorem domain_nodup (L:CuccaroStreamedSquareWideLayout) (hn:L.wires.Nodup)
+ (s:List Wire) (hs:s.Sublist L.core.product) : (domain L s).Nodup := by
+ apply List.nodup_iff_count_le_one.mpr
+ intro w
+ have parent:=List.nodup_iff_count_le_one.mp hn w
+ have source:=hs.count_le w
+ have work:=(List.take_sublist 163 L.core.work).count_le w
+ have ps:(L.foldPad.take 160++(L.foldPad.drop 160).take 33).Sublist L.foldPad := by
+  have h:=(List.Sublist.refl (L.foldPad.take 160)).append (List.take_sublist 33 (L.foldPad.drop 160))
+  rwa [List.take_append_drop] at h
+ have pb:=ps.count_le w
+ simp only [List.count_append] at pb
+ simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,foldPad,
+  List.count_cons,List.count_append,List.count_nil] at parent pb
+ simp only [domain,acc,pad,bank,accBank,foldPad,List.count_cons,List.count_append]
+ omega
+
+theorem terms_fits (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup) :
+ ∀f∈earlyHTerms (src L),Acc.Fits (acc L) (pad L) (bank L) L.core.cin 163 f := by
+ intro f hf
+ have len:=lengths L hw
+ have nd:=domain_nodup L hn (src L) (List.drop_sublist 128 L.core.product)
+ simp only [earlyHTerms,List.mem_cons,List.not_mem_nil,or_false] at hf
+ rcases hf with rfl|rfl|rfl|rfl
+ all_goals exact {len:=by simp [Acc.earlyTerm,len.2.2.2],zpad:=by simp [Acc.earlyTerm,len.2.1,len.2.2.2],bankLen:=by simp [Acc.earlyTerm,len.2.2.1],nd:=by simpa only [Acc.earlyTerm] using nd}
+
+theorem top_fits (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup) :
+ Acc.Fits (acc L) (pad L) (bank L) L.core.cin 163 (posTop L) := by
+ have len:=lengths L hw
+ exact {len:=by simp [posTop,hw.core.product],zpad:=by simp [posTop,hw.core.product,len.2.1],bankLen:=by simp [posTop,len.2.2.1],nd:=domain_nodup L hn (L.core.product.drop 256) (List.drop_sublist 256 L.core.product)}
+
+theorem src_in (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈src L) : q∈L.core.product :=
+ List.mem_of_mem_drop hq
+
+theorem acc_work (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈acc L) : q∈L.core.work :=
+ List.mem_of_mem_take hq
+
+def build (L:CuccaroStreamedSquareWideLayout) : Program :=
+ C163NarrowAcc.build8 (acc L) (pad L) (bank L) L.core.cin (src L)
+def clear (L:CuccaroStreamedSquareWideLayout) : Program :=
+ C163SourceAdd.unbuild (acc L) (pad L) (bank L) L.core.cin (src L)
+def topIn (L:CuccaroStreamedSquareWideLayout) : Program :=
+ Acc.op (acc L) (pad L) (bank L) L.core.cin 163 false (posTop L)
+def topOut (L:CuccaroStreamedSquareWideLayout) : Program :=
+ Acc.op (acc L) (pad L) (bank L) L.core.cin 163 true (posTop L)
+def buildFull (L:CuccaroStreamedSquareWideLayout) : Program := build L++topIn L
+def clearFull (L:CuccaroStreamedSquareWideLayout) : Program := topOut L++clear L
+def payload (L:CuccaroStreamedSquareWideLayout) (b:BasisState) : Nat :=
+ 4294968272*regValue (src L) b+2^128*regValue (L.core.product.drop 256) b
+
+theorem payload_lt (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (b:BasisState) :
+ payload L b<2^163 := by
+ have h:=regValue_lt (src L) b
+ rw [(lengths L hw).2.2.2] at h
+ have t:=regValue_lt (L.core.product.drop 256) b
+ simp only [List.length_drop,hw.core.product] at t
+ norm_num at h t ⊢
+ unfold payload
+ norm_num
+ omega
+
+theorem w_lt (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (b:BasisState) :
+ 4294968272*regValue (src L) b<2^163 := by
+ have h:=regValue_lt (src L) b
+ rw [(lengths L hw).2.2.2] at h
+ norm_num at h ⊢
+ omega
+
+end ECDSAAdd.Entrant.C163Fold
+
+end
+
+-- C163 component Frames
+section
+namespace ECDSAAdd.Entrant.C163Fold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+
+theorem topIn_triple (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (base:BasisState) (hz:∀q∈pad L,base q=false) (hb:∀q∈bank L,base q=false)
+ (hi:base L.core.cin=false) :
+ Triple (SquareFrame (acc L) base (4294968272*regValue (src L) base)) (topIn L)
+  (SquareFrame (acc L) base (payload L base)) := by
+ have ha:=(lengths L hw).1
+ have takeEq:(acc L).take (acc L).length=acc L:=List.take_length
+ rw [ha] at takeEq
+ have h:=Acc.op_prefix_triple (acc L) (pad L) (bank L) L.core.cin 163 163 (posTop L)
+  ha (by omega) (top_fits L hw hn) (by simp [posTop,hw.core.product])
+  base hz hb hi false (4294968272*regValue (src L) base) (w_lt L hw base)
+  (by simpa only [Bool.false_eq_true,if_false,posTop,payload,Nat.mul_comm] using payload_lt L hw base)
+ simpa only [topIn,takeEq,Acc.step,Bool.false_eq_true,if_false,posTop,payload,Nat.mul_comm] using h
+
+theorem topOut_triple (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (base:BasisState) (hz:∀q∈pad L,base q=false) (hb:∀q∈bank L,base q=false)
+ (hi:base L.core.cin=false) :
+ Triple (SquareFrame (acc L) base (payload L base)) (topOut L)
+  (SquareFrame (acc L) base (4294968272*regValue (src L) base)) := by
+ have ha:=(lengths L hw).1
+ have takeEq:(acc L).take (acc L).length=acc L:=List.take_length
+ rw [ha] at takeEq
+ have h:=Acc.op_prefix_triple (acc L) (pad L) (bank L) L.core.cin 163 163 (posTop L)
+  ha (by omega) (top_fits L hw hn) (by simp [posTop,hw.core.product])
+  base hz hb hi true (payload L base) (payload_lt L hw base)
+  (by simp only [if_true,posTop,payload,Nat.mul_comm];omega)
+ have value:Acc.step base true (payload L base) (posTop L)=4294968272*regValue (src L) base := by
+  simp [Acc.step,posTop,payload,Nat.mul_comm]
+ rw [value] at h
+ simpa only [topOut,takeEq] using h
+
+theorem buildFull_triple (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (base:BasisState) (hz:∀q∈pad L,base q=false) (hb:∀q∈bank L,base q=false)
+ (hi:base L.core.cin=false) :
+ Triple (SquareFrame (acc L) base 0) (buildFull L) (SquareFrame (acc L) base (payload L base)) := by
+ have b:=C163NarrowAcc.build8_triple (acc L) (pad L) (bank L) L.core.cin (src L)
+  (lengths L hw).1 (by rw [(lengths L hw).2.2.2]) (terms_fits L hw hn) base hz hb hi
+ exact b.seq (topIn_triple L hw hn base hz hb hi)
+
+theorem clearFull_triple (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (base:BasisState) (hz:∀q∈pad L,base q=false) (hb:∀q∈bank L,base q=false)
+ (hi:base L.core.cin=false) :
+ Triple (SquareFrame (acc L) base (payload L base)) (clearFull L) (SquareFrame (acc L) base 0) := by
+ have c:=C163SourceAdd.unbuild_triple (acc L) (pad L) (bank L) L.core.cin (src L)
+  (lengths L hw).1 (lengths L hw).2.2.2 (terms_fits L hw hn) base hz hb hi
+ exact (topOut_triple L hw hn base hz hb hi).seq c
+
+theorem payload_congr (L:CuccaroStreamedSquareWideLayout) (b b':BasisState)
+ (h:∀q∈L.core.product,b q=b' q) : payload L b=payload L b' := by
+ have hs:regValue (src L) b=regValue (src L) b':=
+  regValue_congr _ _ _ (fun q hq=>h q (List.mem_of_mem_drop hq))
+ have ht:regValue (L.core.product.drop 256) b=regValue (L.core.product.drop 256) b':=
+  regValue_congr _ _ _ (fun q hq=>h q (List.mem_of_mem_drop hq))
+ unfold payload
+ rw [hs,ht]
+
+end ECDSAAdd.Entrant.C163Fold
+
+end
+
+-- C163 component PlainPrelude
+section
+namespace ECDSAAdd.Entrant.C163Fold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+abbrev accReg := acc
+abbrev accZ := pad
+abbrev accBank := bank
+abbrev hiReg := src
+abbrev cFlipK := OwnDiagAll12Square.cFlipK
+abbrev wBuild := buildFull
+abbrev wUnbuild := clearFull
+def aMiddle (L:CuccaroStreamedSquareWideLayout) (g:Wire) : Program :=
+ maskedConstant g (accReg L) cFlipK++(qprogTq L.measuredCore SquareReduction.p++maskedConstant g (accReg L) cFlipK)
+
+theorem acc_lengths (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) :
+ (accReg L).length=163 ∧ (accZ L).length=33 ∧ (accBank L).length=160 ∧ (hiReg L).length=130 :=
+ lengths L hw
+theorem hiReg_length (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) : (hiReg L).length=130 :=
+ (lengths L hw).2.2.2
+theorem hiReg_product (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈hiReg L) : q∈L.core.product :=
+ src_in L q hq
+theorem accReg_work (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈accReg L) : q∈L.core.work :=
+ acc_work L q hq
+theorem accReg_in (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈accReg L) : q∈L.wires :=
+ OwnDiagAll12Square.accReg_in L q hq
+abbrev flip_run := OwnDiagAll12Square.flip_run
+
+theorem accZ_mem (L:CuccaroStreamedSquareWideLayout) (q:Wire) (hq:q∈accZ L) :
+ q∈L.foldPad ∨ q∈L.core.work.drop 196 :=
+ Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take hq))
+
+theorem accReg_away (L:CuccaroStreamedSquareWideLayout) (hn:L.wires.Nodup) (q:Wire)
+ (hq:q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
+  L.core.normFlag,L.core.modFlag]++L.core.out++L.core.product++L.core.work.drop 163) :
+ q∉accReg L := by
+ intro bad
+ have h:=List.nodup_iff_count_le_one.mp hn q
+ have a:=List.count_pos_iff.mpr bad
+ have b:=List.count_pos_iff.mpr hq
+ have e1:(L.core.work.take 163).count q+(L.core.work.drop 163).count q=L.core.work.count q:=by
+  rw [←List.count_append,List.take_append_drop]
+ simp only [accReg,acc] at a
+ simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,foldPad,
+  List.count_append,List.count_cons,List.count_nil] at h b
+ omega
+
+theorem other_away (L:CuccaroStreamedSquareWideLayout) (hn:L.wires.Nodup) (q:Wire)
+ (h:q∈hiReg L ∨ q∈L.core.work.drop 163 ∨ q∈L.foldPad ∨
+  q∈[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) :
+ q∉L.core.out ∧ q∉accReg L := by
+ have off:q∉accReg L:=by
+  apply accReg_away L hn q
+  rcases h with h|h|h|h
+  · simp [hiReg_product L q h]
+  · simp [h]
+  · simp [h]
+  · simp only [List.mem_cons,List.not_mem_nil,or_false] at h
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
+    tauto
+ refine ⟨?_,off⟩
+ rcases h with h|h|h|h
+ · exact fun ho=>List.disjoint_left.mp (L.product_out_disjoint hn) (hiReg_product L q h) ho
+ · exact (L.pairAuxAway hn q (by simp [List.mem_of_mem_drop h])).2
+ · exact (L.pairAuxAway hn q (by simp [h])).2
+ · exact (L.pairAuxAway hn q (by simp only [List.mem_append];exact Or.inr h)).2
+end ECDSAAdd.Entrant.C163Fold
+
+end
+
+-- C163 component Plain
+section
+namespace ECDSAAdd.Entrant.C163Fold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ControlLoan1589BFFold ThirdSavedCarryDevelop ZeroReadDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.wires
+theorem a_middle_good (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+    (g : Wire) (hg:g∉L.wires) (base : BasisState) (hc:L.PairClean base) (O : Nat) (hO:O<SquareReduction.p)
+    (s : State) (m : List Bool) (hf:SquareFrame L.core.out base O s.basis) :
+    let u:=middleState (wBuild L) (aMiddle L g) s m
+    regValue (accReg L) u.basis=payload L s.basis ∧
+    regValue (hiReg L) u.basis=regValue (hiReg L) s.basis ∧
+    (∀w∈accZ L,u.basis w=false) ∧ (∀w∈accBank L,u.basis w=false) ∧ u.basis L.core.cin=false ∧ (∀q,q∉accReg L → q∉L.core.out → u.basis q=s.basis q) := by
+  have lens := acc_lengths L hw
+  have clean := L.squareFrame_clean hn base s.basis O hf hc
+  let b0 := s.basis
+  have prodOut := L.product_out_disjoint hn
+  have auxAway (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
+      L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉L.core.out :=
+    (L.pairAuxAway hn q hq).2
+  have gAcc : g∉accReg L := fun h => hg (accReg_in L g h)
+  have gOut : g∉L.core.out := fun h => hg (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h])
+  have workZero : ∀q∈L.core.work,b0 q=false := (regValue_zero _ _).mp clean.work
+  have padZero : ∀q∈L.foldPad,b0 q=false := (regValue_zero _ _).mp clean.pad
+  have hz : ∀q∈accZ L,b0 q=false := by
+    intro q hq
+    rcases accZ_mem L q hq with h|h
+    · exact padZero q h
+    · exact workZero q (List.mem_of_mem_drop h)
+  have hb : ∀q∈accBank L,b0 q=false := fun q hq => padZero q (List.mem_of_mem_take hq)
+  have prodNotOut (q : Wire) (hq : q∈L.core.product) : q∉L.core.out :=
+    fun ho => List.disjoint_left.mp prodOut hq ho
+  have agree0 : ∀q∈L.core.product,b0 q=base q := fun q hq => hf.2 q (prodNotOut q hq)
+  let A := payload L base
+  have hA : A<2^163 := payload_lt L hw base
+  have hAK : A≤cFlipK := by unfold cFlipK OwnDiagAll12Square.cFlipK; omega
+  let A' := if base g then cFlipK-A else A
+  have hA' : A'<2^163 := by
+    simp only [A']; split
+    · unfold cFlipK OwnDiagAll12Square.cFlipK; omega
+    · exact hA
+  have accZero : regValue (accReg L) b0=0 :=
+    (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
+  have hhi : regValue (hiReg L) b0=regValue (hiReg L) base :=
+    regValue_congr _ _ _ (fun q hq => agree0 q (hiReg_product L q hq))
+  have hA0 : payload L b0=payload L base := payload_congr L b0 base agree0
+  have hbuild : Triple (SquareFrame (accReg L) b0 0) (wBuild L) (SquareFrame (accReg L) b0 A) := by
+    have h:=buildFull_triple L hw hn b0 hz hb clean.cin
+    rw [hA0] at h
+    exact h
+  let mb := measurementCount (wBuild L)
+  let m1 := m.drop mb
+  let mc := measurementCount (maskedConstant g (accReg L) cFlipK)
+  let m2 := m1.drop mc
+  let mk := measurementCount (qprogTq L.measuredCore SquareReduction.p)
+  let m3 := m2.drop mk
+  let u := run (wBuild L) (m.take mb) s
+  have eu := hbuild s (m.take mb) ⟨accZero,fun _ _ => rfl⟩
+  change u.phase=s.phase ∧ SquareFrame (accReg L) b0 A u.basis at eu
+  have gU : u.basis g=base g := (eu.2.2 g gAcc).trans (hf.2 g gOut)
+  let u1 := run (maskedConstant g (accReg L) cFlipK) (m1.take mc) u
+  have fl := flip_run L hw hn g gAcc u (m1.take mc)
+  change u1.phase=u.phase ∧ (∀q,q∉accReg L → u1.basis q=u.basis q) ∧
+    regValue (accReg L) u1.basis=(if u.basis g then cFlipK-regValue (accReg L) u.basis
+      else regValue (accReg L) u.basis) at fl
+  rw [gU,eu.2.1] at fl
+  have accU1 : regValue (accReg L) u1.basis=A' := fl.2.2
+  have keepU (q : Wire) (hq : q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
+      L.core.normFlag,L.core.modFlag]++L.core.out++L.core.product++L.core.work.drop 163) : u1.basis q=b0 q :=
+    (fl.2.1 q (accReg_away L hn q hq)).trans (eu.2.2 q (accReg_away L hn q hq))
+  have workU : regValue L.core.work u1.basis=A' := by
+    have sp := regValue_append (L.core.work.take 163) (L.core.work.drop 163) u1.basis
+    rw [List.take_append_drop] at sp
+    have hi : regValue (L.core.work.drop 163) u1.basis=0 :=
+      (regValue_zero _ _).mpr (fun q hq => (keepU q (by simp [hq])).trans (workZero q (List.mem_of_mem_drop hq)))
+    rw [sp,hi]
+    simpa [accReg,acc] using accU1
+  have outU : regValue L.core.out u1.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => keepU q (by simp [hq]))).trans hf.1
+  have coreNd : L.measuredCore.wires.Nodup :=
+    (List.nodup_cons.mp (by simpa using L.measuredFold_interfaces hn [] (by simp))).2
+  have hp : SquareReduction.p+SquareReduction.c=2^256 := by
+    norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
+  have hAp : A'<SquareReduction.p := lt_of_lt_of_le hA' (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have carryU : ∀q∈L.measuredCore.carry,u1.basis q=false := by
+    intro q hq
+    simp only [measuredCore,foldCarry,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
+    rcases hq with hq|rfl|rfl
+    · exact (keepU q (by simp [hq])).trans (padZero q hq)
+    · exact (keepU _ (by simp)).trans clean.productHigh
+    · exact (keepU _ (by simp)).trans clean.workHigh
+  have ek := QCore.qprog_correctTq L.measuredCore 256 SquareReduction.c SquareReduction.p (L.measuredCore_widths hw)
+    coreNd (by decide) hp (by norm_num [SquareReduction.c]) A' O hAp hO u1 (m2.take mk)
+    workU outU ((keepU _ (by simp [measuredCore])).trans clean.outHigh)
+    ((keepU _ (by simp [measuredCore])).trans clean.modFlag)
+    carryU ((keepU _ (by simp [measuredCore])).trans clean.cin)
+  let v := run (qprogTq L.measuredCore SquareReduction.p) (m2.take mk) u1
+  change v.phase=u1.phase ∧ regValue L.core.out v.basis=(A'+(SquareReduction.p-1-O))%SquareReduction.p ∧
+    ∀q,q∉L.core.out → v.basis q=u1.basis q at ek
+  have accOut (q : Wire) (hq : q∈accReg L) : q∉L.core.out := auxAway q (by simp [accReg_work L q hq])
+  have gV : v.basis g=base g := (ek.2.2 g gOut).trans ((fl.2.1 g gAcc).trans gU)
+  have accV : regValue (accReg L) v.basis=A' :=
+    (regValue_congr _ _ _ (fun q hq => ek.2.2 q (accOut q hq))).trans accU1
+  let v1 := run (maskedConstant g (accReg L) cFlipK) (m3.take mc) v
+  have fl2 := flip_run L hw hn g gAcc v (m3.take mc)
+  change v1.phase=v.phase ∧ (∀q,q∉accReg L → v1.basis q=v.basis q) ∧
+    regValue (accReg L) v1.basis=(if v.basis g then cFlipK-regValue (accReg L) v.basis
+      else regValue (accReg L) v.basis) at fl2
+  rw [gV,accV] at fl2
+  have back : (if base g then cFlipK-A' else A')=A := by
+    simp only [A']
+    cases base g
+    · simp
+    · simp only [if_true]; omega
+  rw [back] at fl2
+  let base2 : BasisState := fun q => if q∈L.core.out then v1.basis q else b0 q
+  have b2off (q : Wire) (hq : q∉L.core.out) : base2 q=b0 q := by simp [base2,hq]
+  have frame2 : SquareFrame (accReg L) base2 A v1.basis := by
+    refine ⟨fl2.2.2,?_⟩
+    intro q hq
+    by_cases ho : q∈L.core.out
+    · simp [base2,ho]
+    · rw [b2off q ho,fl2.2.1 q hq,ek.2.2 q ho,fl.2.1 q hq]; exact eu.2.2 q hq
+  have hz2 : ∀q∈accZ L,base2 q=false := by
+    intro q hq
+    have hp:q∈L.foldPad:=List.mem_of_mem_drop (List.mem_of_mem_take hq)
+    have ho:q∉L.core.out:=auxAway q (by simp [hp])
+    rw [b2off q ho]
+    exact hz q hq
+  have hb2 : ∀q∈accBank L,base2 q=false := by
+    intro q hq
+    have ho : q∉L.core.out := auxAway q (by simp [List.mem_of_mem_take hq])
+    rw [b2off q ho]; exact hb q hq
+  have hi2 : base2 L.core.cin=false := by
+    rw [b2off _ (auxAway _ (by simp))]; exact clean.cin
+  have hhi2 : regValue (hiReg L) base2=regValue (hiReg L) base :=
+    regValue_congr _ _ _ (fun q hq => (b2off q (prodNotOut q (hiReg_product L q hq))).trans
+      (agree0 q (hiReg_product L q hq)))
+  have offAcc (q : Wire) (hq:q∈hiReg L ∨ q∈L.foldPad ∨ q∈L.core.work.drop 163 ∨
+      q∈[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉accReg L := by
+    apply (other_away L hn q ?_).2
+    tauto
+  have source:regValue (hiReg L) v1.basis=regValue (hiReg L) base :=
+    (regValue_congr _ _ _ (fun q hq=>frame2.2 q (offAcc q (Or.inl hq)))).trans hhi2
+  have zv:∀q∈accZ L,v1.basis q=false := by
+    intro q hq
+    have na:q∉accReg L := by
+      rcases accZ_mem L q hq with h|h
+      · exact offAcc q (Or.inr (Or.inl h))
+      · apply offAcc q
+        have hd:(L.core.work.drop 163).drop 33=L.core.work.drop 196 := by simp [List.drop_drop]
+        rw [←hd] at h
+        exact Or.inr (Or.inr (Or.inl (List.mem_of_mem_drop h)))
+    exact (frame2.2 q na).trans (hz2 q hq)
+  have bv:∀q∈accBank L,v1.basis q=false := by
+    intro q hq
+    exact (frame2.2 q (offAcc q (Or.inr (Or.inl (List.mem_of_mem_take hq))))).trans (hb2 q hq)
+  have iv:v1.basis L.core.cin=false :=
+    (frame2.2 _ (offAcc _ (by simp))).trans hi2
+  have midEq:middleState (wBuild L) (aMiddle L g) s m=v1 := by
+    simp only [middleState,aMiddle,run_append,measurementCount_append,
+      (maskedConstant_counts _ _ _).2,Nat.zero_add,Nat.add_zero,List.take_zero,List.drop_zero,List.drop_drop]
+    dsimp only [v1,v,u1,u,m3,m2,m1,mc,mb,mk]
+    simp only [(maskedConstant_counts _ _ _).2,List.take_zero,List.drop_zero,Nat.add_zero,List.take_take,Nat.min_self,List.drop_take,Nat.sub_self]
+  rw [midEq]
+  exact ⟨frame2.1.trans hA0.symm,source.trans hhi.symm,zv,bv,iv,fun q ha ho=>(frame2.2 q ha).trans (b2off q ho)⟩
+
+theorem plain_frame (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (g:Wire) (hg:g∉L.wires) (base:BasisState) (hc:L.PairClean base) (O:Nat) (hO:O<SquareReduction.p) :
+ Triple (SquareFrame L.core.out base O) ((wBuild L++aMiddle L g)++wUnbuild L)
+  (SquareFrame L.core.out base
+   (((if base g then cFlipK-payload L base else payload L base)+
+     (SquareReduction.p-1-O))%SquareReduction.p)) := by
+  intro s m hf
+  have lens := acc_lengths L hw
+  have clean := L.squareFrame_clean hn base s.basis O hf hc
+  let b0 := s.basis
+  have prodOut := L.product_out_disjoint hn
+  have auxAway (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
+      L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉L.core.out :=
+    (L.pairAuxAway hn q hq).2
+  have gAcc : g∉accReg L := fun h => hg (accReg_in L g h)
+  have gOut : g∉L.core.out := fun h => hg (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h])
+  have workZero : ∀q∈L.core.work,b0 q=false := (regValue_zero _ _).mp clean.work
+  have padZero : ∀q∈L.foldPad,b0 q=false := (regValue_zero _ _).mp clean.pad
+  have hz : ∀q∈accZ L,b0 q=false := by
+    intro q hq
+    rcases accZ_mem L q hq with h|h
+    · exact padZero q h
+    · exact workZero q (List.mem_of_mem_drop h)
+  have hb : ∀q∈accBank L,b0 q=false := fun q hq => padZero q (List.mem_of_mem_take hq)
+  have prodNotOut (q : Wire) (hq : q∈L.core.product) : q∉L.core.out :=
+    fun ho => List.disjoint_left.mp prodOut hq ho
+  have agree0 : ∀q∈L.core.product,b0 q=base q := fun q hq => hf.2 q (prodNotOut q hq)
+  let A := payload L base
+  have hA : A<2^163 := payload_lt L hw base
+  have hAK : A≤cFlipK := by unfold cFlipK OwnDiagAll12Square.cFlipK; omega
+  let A' := if base g then cFlipK-A else A
+  have hA' : A'<2^163 := by
+    simp only [A']; split
+    · unfold cFlipK OwnDiagAll12Square.cFlipK; omega
+    · exact hA
+  have accZero : regValue (accReg L) b0=0 :=
+    (regValue_zero _ _).mpr (fun q hq => workZero q (accReg_work L q hq))
+  have hhi : regValue (hiReg L) b0=regValue (hiReg L) base :=
+    regValue_congr _ _ _ (fun q hq => agree0 q (hiReg_product L q hq))
+  have hA0 : payload L b0=payload L base := payload_congr L b0 base agree0
+  have hbuild : Triple (SquareFrame (accReg L) b0 0) (wBuild L) (SquareFrame (accReg L) b0 A) := by
+    have h:=buildFull_triple L hw hn b0 hz hb clean.cin
+    rw [hA0] at h
+    exact h
+  let mb := measurementCount (wBuild L)
+  let m1 := m.drop mb
+  let mc := measurementCount (maskedConstant g (accReg L) cFlipK)
+  let m2 := m1.drop mc
+  let mk := measurementCount (qprogTq L.measuredCore SquareReduction.p)
+  let m3 := m2.drop mk
+  let u := run (wBuild L) (m.take mb) s
+  have eu := hbuild s (m.take mb) ⟨accZero,fun _ _ => rfl⟩
+  change u.phase=s.phase ∧ SquareFrame (accReg L) b0 A u.basis at eu
+  have gU : u.basis g=base g := (eu.2.2 g gAcc).trans (hf.2 g gOut)
+  let u1 := run (maskedConstant g (accReg L) cFlipK) (m1.take mc) u
+  have fl := flip_run L hw hn g gAcc u (m1.take mc)
+  change u1.phase=u.phase ∧ (∀q,q∉accReg L → u1.basis q=u.basis q) ∧
+    regValue (accReg L) u1.basis=(if u.basis g then cFlipK-regValue (accReg L) u.basis
+      else regValue (accReg L) u.basis) at fl
+  rw [gU,eu.2.1] at fl
+  have accU1 : regValue (accReg L) u1.basis=A' := fl.2.2
+  have keepU (q : Wire) (hq : q∈L.foldPad++[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,
+      L.core.normFlag,L.core.modFlag]++L.core.out++L.core.product++L.core.work.drop 163) : u1.basis q=b0 q :=
+    (fl.2.1 q (accReg_away L hn q hq)).trans (eu.2.2 q (accReg_away L hn q hq))
+  have workU : regValue L.core.work u1.basis=A' := by
+    have sp := regValue_append (L.core.work.take 163) (L.core.work.drop 163) u1.basis
+    rw [List.take_append_drop] at sp
+    have hi : regValue (L.core.work.drop 163) u1.basis=0 :=
+      (regValue_zero _ _).mpr (fun q hq => (keepU q (by simp [hq])).trans (workZero q (List.mem_of_mem_drop hq)))
+    rw [sp,hi]
+    simpa [accReg,acc] using accU1
+  have outU : regValue L.core.out u1.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => keepU q (by simp [hq]))).trans hf.1
+  have coreNd : L.measuredCore.wires.Nodup :=
+    (List.nodup_cons.mp (by simpa using L.measuredFold_interfaces hn [] (by simp))).2
+  have hp : SquareReduction.p+SquareReduction.c=2^256 := by
+    norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
+  have hAp : A'<SquareReduction.p := lt_of_lt_of_le hA' (by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c])
+  have carryU : ∀q∈L.measuredCore.carry,u1.basis q=false := by
+    intro q hq
+    simp only [measuredCore,foldCarry,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
+    rcases hq with hq|rfl|rfl
+    · exact (keepU q (by simp [hq])).trans (padZero q hq)
+    · exact (keepU _ (by simp)).trans clean.productHigh
+    · exact (keepU _ (by simp)).trans clean.workHigh
+  have ek := QCore.qprog_correctTq L.measuredCore 256 SquareReduction.c SquareReduction.p (L.measuredCore_widths hw)
+    coreNd (by decide) hp (by norm_num [SquareReduction.c]) A' O hAp hO u1 (m2.take mk)
+    workU outU ((keepU _ (by simp [measuredCore])).trans clean.outHigh)
+    ((keepU _ (by simp [measuredCore])).trans clean.modFlag)
+    carryU ((keepU _ (by simp [measuredCore])).trans clean.cin)
+  let v := run (qprogTq L.measuredCore SquareReduction.p) (m2.take mk) u1
+  change v.phase=u1.phase ∧ regValue L.core.out v.basis=(A'+(SquareReduction.p-1-O))%SquareReduction.p ∧
+    ∀q,q∉L.core.out → v.basis q=u1.basis q at ek
+  have accOut (q : Wire) (hq : q∈accReg L) : q∉L.core.out := auxAway q (by simp [accReg_work L q hq])
+  have gV : v.basis g=base g := (ek.2.2 g gOut).trans ((fl.2.1 g gAcc).trans gU)
+  have accV : regValue (accReg L) v.basis=A' :=
+    (regValue_congr _ _ _ (fun q hq => ek.2.2 q (accOut q hq))).trans accU1
+  let v1 := run (maskedConstant g (accReg L) cFlipK) (m3.take mc) v
+  have fl2 := flip_run L hw hn g gAcc v (m3.take mc)
+  change v1.phase=v.phase ∧ (∀q,q∉accReg L → v1.basis q=v.basis q) ∧
+    regValue (accReg L) v1.basis=(if v.basis g then cFlipK-regValue (accReg L) v.basis
+      else regValue (accReg L) v.basis) at fl2
+  rw [gV,accV] at fl2
+  have back : (if base g then cFlipK-A' else A')=A := by
+    simp only [A']
+    cases base g
+    · simp
+    · simp only [if_true]; omega
+  rw [back] at fl2
+  let base2 : BasisState := fun q => if q∈L.core.out then v1.basis q else b0 q
+  have b2off (q : Wire) (hq : q∉L.core.out) : base2 q=b0 q := by simp [base2,hq]
+  have frame2 : SquareFrame (accReg L) base2 A v1.basis := by
+    refine ⟨fl2.2.2,?_⟩
+    intro q hq
+    by_cases ho : q∈L.core.out
+    · simp [base2,ho]
+    · rw [b2off q ho,fl2.2.1 q hq,ek.2.2 q ho,fl.2.1 q hq]; exact eu.2.2 q hq
+  have hz2 : ∀q∈accZ L,base2 q=false := by
+    intro q hq
+    have hp:q∈L.foldPad:=List.mem_of_mem_drop (List.mem_of_mem_take hq)
+    have ho:q∉L.core.out:=auxAway q (by simp [hp])
+    rw [b2off q ho]
+    exact hz q hq
+  have hb2 : ∀q∈accBank L,base2 q=false := by
+    intro q hq
+    have ho : q∉L.core.out := auxAway q (by simp [List.mem_of_mem_take hq])
+    rw [b2off q ho]; exact hb q hq
+  have hi2 : base2 L.core.cin=false := by
+    rw [b2off _ (auxAway _ (by simp))]; exact clean.cin
+  have hhi2 : regValue (hiReg L) base2=regValue (hiReg L) base :=
+    regValue_congr _ _ _ (fun q hq => (b2off q (prodNotOut q (hiReg_product L q hq))).trans
+      (agree0 q (hiReg_product L q hq)))
+  have offAcc (q : Wire) (hq:q∈hiReg L ∨ q∈L.foldPad ∨ q∈L.core.work.drop 163 ∨
+      q∈[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉accReg L := by
+    apply (other_away L hn q ?_).2
+    tauto
+  have source:regValue (hiReg L) v1.basis=regValue (hiReg L) base :=
+    (regValue_congr _ _ _ (fun q hq=>frame2.2 q (offAcc q (Or.inl hq)))).trans hhi2
+  have zv:∀q∈accZ L,v1.basis q=false := by
+    intro q hq
+    have na:q∉accReg L := by
+      rcases accZ_mem L q hq with h|h
+      · exact offAcc q (Or.inr (Or.inl h))
+      · apply offAcc q
+        have hd:(L.core.work.drop 163).drop 33=L.core.work.drop 196 := by simp [List.drop_drop]
+        rw [←hd] at h
+        exact Or.inr (Or.inr (Or.inl (List.mem_of_mem_drop h)))
+    exact (frame2.2 q na).trans (hz2 q hq)
+  have bv:∀q∈accBank L,v1.basis q=false := by
+    intro q hq
+    exact (frame2.2 q (offAcc q (Or.inr (Or.inl (List.mem_of_mem_take hq))))).trans (hb2 q hq)
+  have iv:v1.basis L.core.cin=false :=
+    (frame2.2 _ (offAcc _ (by simp))).trans hi2
+  have midEq:middleState (wBuild L) (aMiddle L g) s m=v1 := by
+    simp only [middleState,aMiddle,run_append,measurementCount_append,
+      (maskedConstant_counts _ _ _).2,Nat.zero_add,Nat.add_zero,List.take_zero,List.drop_zero,List.drop_drop]
+    dsimp only [v1,v,u1,u,m3,m2,m1,mc,mb,mk]
+    simp only [(maskedConstant_counts _ _ _).2,List.take_zero,List.drop_zero,Nat.add_zero,List.take_take,Nat.min_self,List.drop_take,Nat.sub_self]
+  let post := m.drop (measurementCount (wBuild L)+measurementCount (aMiddle L g))
+  have hPayload2:payload L base2=payload L base:=
+    payload_congr L base2 base (fun q hq=>(b2off q (prodNotOut q hq)).trans (agree0 q hq))
+  have pre2 : SquareFrame (accReg L) base2 (payload L base2) v1.basis := by
+    simpa only [hPayload2] using frame2
+  have inv := clearFull_triple L hw hn base2 hz2 hb2 hi2 v1 post pre2
+  have valuev1 : regValue L.core.out v1.basis=(A'+(SquareReduction.p-1-O))%SquareReduction.p :=
+    (regValue_congr _ _ _ (fun q hq => fl2.2.1 q (fun ha => accOut q ha hq))).trans ek.2.1
+  have firstTwo : run (wBuild L++aMiddle L g) m s=middleState (wBuild L) (aMiddle L g) s m := by
+    simp only [middleState,run_take]
+    exact run_cat _ _ _ _
+  have loop : run ((wBuild L++aMiddle L g)++wUnbuild L) m s=
+    run (wUnbuild L) post (middleState (wBuild L) (aMiddle L g) s m) := by
+    rw [run_cat (wBuild L++aMiddle L g) (wUnbuild L) m s,measurementCount_append,firstTwo]
+  rw [loop,midEq]
+  refine ⟨inv.1.trans (fl2.1.trans (ek.1.trans (fl.1.trans eu.1))),?_,?_⟩
+  · have agreeOut : ∀q∈L.core.out,(run (wUnbuild L) post v1).basis q=v1.basis q := by
+      intro q hq
+      exact (inv.2.2 q (fun ha => accOut q ha hq)).trans (by simp [base2,hq])
+    exact (regValue_congr _ _ _ agreeOut).trans valuev1
+  · intro q hq
+    by_cases ha:q∈accReg L
+    · have outZero := (regValue_zero _ _).mp inv.2.1 q ha
+      have oldZero := (regValue_zero _ _).mp hc.work q (accReg_work L q ha)
+      exact outZero.trans oldZero.symm
+    · exact (inv.2.2 q ha).trans ((b2off q hq).trans (hf.2 q hq))
+
+
+end ECDSAAdd.Entrant.C163Fold
+
+end
+
+-- C163 component Good
+section
+namespace ECDSAAdd.Entrant.C163Fold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ZeroSetDevelop ZeroReadDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires
+
+theorem middle_eq_run (F M:Program) (s:State) (m:List Bool) :
+ middleState F M s m=run (F++M) m s := by
+ simp only [middleState,run_take]
+ exact (run_cat F M m s).symm
+
+theorem middle_split (F I M O:Program) (s:State) (m:List Bool) :
+ middleState F (I++(M++O)) s m=
+ run O (m.drop (measurementCount (F++I)+measurementCount M)) (middleState (F++I) M s m) := by
+ rw [middle_eq_run]
+ have shape:F++(I++(M++O))=((F++I)++M)++O:=by simp only [List.append_assoc]
+ rw [shape,run_cat,measurementCount_append,←middle_eq_run]
+
+def fullMiddle (L:CuccaroStreamedSquareWideLayout) (g:Wire) : Program :=
+ topIn L++(aMiddle L g++topOut L)
+
+theorem middle_good (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (g:Wire) (hg:g∉L.wires) (base:BasisState) (hc:L.PairClean base) (O:Nat) (hO:O<SquareReduction.p)
+ (s:State) (m:List Bool) (hf:SquareFrame L.core.out base O s.basis) :
+ WReady (acc L) (pad L) (bank L) L.core.cin (src L) (regValue (src L) s.basis)
+  (middleState (build L) (fullMiddle L g) s m) := by
+ let u:=middleState (buildFull L) (aMiddle L g) s m
+ have good:=a_middle_good L hw hn g hg base hc O hO s m hf
+ have product (q:Wire) (hq:q∈L.core.product) : u.basis q=s.basis q :=
+  good.2.2.2.2.2 q (accReg_away L hn q (by simp [hq]))
+   (fun ho=>List.disjoint_left.mp (L.product_out_disjoint hn) hq ho)
+ have payloadU:payload L u.basis=payload L s.basis:=payload_congr L u.basis s.basis product
+ have pre:SquareFrame (acc L) u.basis (payload L u.basis) u.basis :=
+  ⟨good.1.trans payloadU.symm,fun _ _=>rfl⟩
+ let tape:=m.drop (measurementCount (buildFull L)+measurementCount (aMiddle L g))
+ let v:=run (topOut L) tape u
+ have result:=topOut_triple L hw hn u.basis good.2.2.1 good.2.2.2.1 good.2.2.2.2.1 u tape pre
+ have state:middleState (build L) (fullMiddle L g) s m=v := by
+  exact middle_split (build L) (topIn L) (aMiddle L g) (topOut L) s m
+ have off (q:Wire) (hq:q∈src L++pad L++bank L ∨ q=L.core.cin) : q∉acc L := by
+  have hnd:=List.nodup_iff_count_le_one.mp
+   (domain_nodup L hn (src L) (List.drop_sublist 128 L.core.product)) q
+  intro bad
+  have a:=List.count_pos_iff.mpr bad
+  rcases hq with hq|rfl
+  · have b:=List.count_pos_iff.mpr hq
+    simp only [domain,List.count_cons,List.count_append] at hnd b
+    split at hnd <;> omega
+  · simp only [domain,List.count_cons,List.count_append,beq_self_eq_true,if_true] at hnd
+    omega
+ rw [state]
+ refine ⟨?_,?_,?_,?_,?_⟩
+ · exact result.2.1.trans (congrArg (fun H:Nat=>4294968272*H) good.2.1)
+ · exact (regValue_congr _ _ _ (fun q hq=>result.2.2 q (off q (Or.inl (by simp [hq]))))).trans good.2.1
+ · intro q hq
+   exact (result.2.2 q (off q (Or.inl (by simp [hq])))).trans (good.2.2.1 q hq)
+ · intro q hq
+   exact (result.2.2 q (off q (Or.inl (by simp [hq])))).trans (good.2.2.2.1 q hq)
+ · exact (result.2.2 _ (off _ (Or.inr rfl))).trans good.2.2.2.2.1
+
+end ECDSAAdd.Entrant.C163Fold
+
+end
+
+-- C163 component Ready
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop ZeroSetDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+attribute [local irreducible] specialChecked ECDSAAdd.wires List.toFinset
+abbrev domain:=C163Fold.domain L src
+theorem hw:L.Widths:=Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths
+theorem hn:L.wires.Nodup:=
+ Baselines.layout.dialogStreamedSquareWide_nodup Baselines.layout_widths Baselines.layout_nodup
+
+theorem geometry : g∉L.wires ∧ hs.length=92 ∧ hs.Nodup ∧
+ (∀u∈hs,u∉domain) ∧ (∀u∈hs,u≠q ∧ u≠r ∧ u≠p) ∧
+ q∉domain ∧ r∉domain ∧ p∉domain ∧ r≠q ∧ p≠q ∧ p≠r := by decide
+
+theorem original_p_free : p∉wires middle := by
+ have away:p∉(L.core.cin::((posTop L).src++acc++pad++bank)):=by decide
+ have opFree (neg:Bool) : p∉wires (Acc.op acc pad bank L.core.cin 163 neg (posTop L)) := by
+  intro used
+  have support:=Acc.op_support acc pad bank L.core.cin 163 neg (posTop L)
+   (C163Fold.lengths L hw).1 (C163Fold.top_fits L hw hn)
+  exact away (List.mem_toFinset.mp (support used))
+ have midFree:p∉wires (InverseCarryDevelop.aMiddle L g):=
+  ThirdSavedCarryDevelop.spare_off_amiddle L hw hn g geometry.1
+ simp only [middle,wires_append,Finset.mem_union,not_or]
+ exact ⟨opFree false,midFree,opFree true⟩
+
+theorem special_p_free : p∉wires specialChecked.out :=
+ fun h=>original_p_free ((special_cert.support [q,r] middle specialChecked.out).1 h)
+
+theorem off_base (u:Wire) (fresh:u∉domain) :
+ u∉wires (C163Fold.build L) ∧ u∉wires (C163Fold.clear L) :=
+ C163Carry.wloop_original_off acc pad bank L.core.cin src u
+  (C163Fold.lengths L hw).1 (C163Fold.lengths L hw).2.2.2 (C163Fold.terms_fits L hw hn) fresh
+
+theorem fixed_middle : middle=C163Fold.fullMiddle L g := by
+ have core (K:CuccaroStreamedSquareWideLayout) (c:Wire) :
+  InverseCarryDevelop.aMiddle K c=C163Fold.aMiddle K c := rfl
+ exact congrArg (fun P:Program=>topIn++(P++topOut)) (core L g)
+
+theorem special_middle_state (s:State) (m:List Bool) (hq:s.basis q=false) (hr:s.basis r=false) :
+ middleState (C163Fold.build L) specialChecked.out s m=
+ middleState (C163Fold.build L) middle s m := by
+ rcases geometry with ⟨_,_,_,_,_,fq,fr,_,_,_,_⟩
+ have qf:=(off_base q fq).1
+ have rf:=(off_base r fr).1
+ simp only [middleState,run_take]
+ apply special_run
+ · exact (run_preserves_outside _ _ s q qf).trans hq
+ · exact (run_preserves_outside _ _ s r rf).trans hr
+
+theorem good (base:BasisState) (hc:L.PairClean base) (O:Nat) (hO:O<SquareReduction.p)
+ (s:State) (m:List Bool) (hf:SquareFrame L.core.out base O s.basis) :
+ WReady acc pad bank L.core.cin src (regValue src s.basis)
+  (middleState (C163Fold.build L) specialChecked.out s m) := by
+ have clean:=L.squareFrame_clean hn base s.basis O hf hc
+ have qz:s.basis q=false:=(regValue_zero _ _).mp clean.work q (by decide)
+ have rz:s.basis r=false:=(regValue_zero _ _).mp clean.work r (by decide)
+ rw [special_middle_state s m qz rz,fixed_middle]
+ exact C163Fold.middle_good L hw hn g geometry.1 base hc O hO s m hf
+
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component Loop
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop ZeroSetDevelop ZeroReadDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] specialChecked bankChecked ECDSAAdd.run ECDSAAdd.wires
+abbrev d:=Baselines.layout.core.poolWire 1540
+def loop : Program :=
+ C163Carry.buildMany 92 acc pad bank L.core.cin src hs q r p++bankChecked.out++
+ C163Carry.unbuildMany 92 acc pad bank L.core.cin src hs q r p
+
+theorem eq_plain (base:BasisState) (hc:L.PairClean base) (hp:base p=false) (hd:base d=false)
+ (O:Nat) (hO:O<SquareReduction.p) (s:State) (m:List Bool) (hf:SquareFrame L.core.out base O s.basis) :
+ run loop m s=run (C163Fold.build L++specialChecked.out++C163Fold.clear L) m s := by
+ rcases geometry with ⟨hg,hlen,hnd,hfresh,hne,fq,fr,fp,rq,pq,pr⟩
+ have len:=C163Fold.lengths L hw
+ have fits:=C163Fold.terms_fits L hw hn
+ have clean:=L.squareFrame_clean hn base s.basis O hf hc
+ have hz:∀u∈pad,s.basis u=false:=fun u hu=>
+  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+ have hb:∀u∈bank,s.basis u=false:=fun u hu=>
+  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
+ have ha:regValue acc s.basis=0:=(regValue_zero _ _).mpr (fun u hu=>
+  (regValue_zero _ _).mp clean.work u (List.mem_of_mem_take hu))
+ have qz:s.basis q=false:=(regValue_zero _ _).mp clean.work q (by decide)
+ have rz:s.basis r=false:=(regValue_zero _ _).mp clean.work r (by decide)
+ have pz:s.basis p=false:=(hf.2 p (by decide)).trans hp
+ have dz:s.basis d=false:=(hf.2 d (by decide)).trans hd
+ have zeroU:∀u∈hs,s.basis u=false:=by
+  intro u hu
+  rcases List.mem_append.mp hu with hu|hu
+  · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_drop hu)
+  · have e:u=d:=by simpa only [List.mem_singleton] using hu
+    subst u
+    exact dz
+ have offq:=off_base q fq
+ have offr:=off_base r fr
+ have offp:=off_base p fp
+ have zlen:5≤pad.length:=by have pl:pad.length=33:=len.2.1;omega
+ have blen:134≤bank.length:=by have bl:bank.length=160:=len.2.2.1;omega
+ have bc:=C163Carry.buildCached_support acc pad bank L.core.cin src q len.1 len.2.2.2 zlen blen
+ have uc:=C163Carry.unbuildConsumed_support acc pad bank L.core.cin src q len.1 len.2.2.2 blen
+ have bd:=C163Carry.buildDual_support acc pad bank L.core.cin src q r len.1 len.2.2.2 zlen blen
+ have ud:=C163Carry.unbuildDual_support acc pad bank L.core.cin src q r len.1 len.2.2.2 blen
+ have offpd:p∉wires (C163Carry.buildDual acc pad bank L.core.cin src q r) ∧
+  p∉wires (C163Carry.unbuildDual acc pad bank L.core.cin src q r):=by
+  constructor
+  · intro h
+    exact (Finset.mem_insert.mp (bd h)).elim pr (fun h=>(Finset.mem_insert.mp (bc h)).elim pq offp.1)
+  · intro h
+    exact (Finset.mem_insert.mp (ud h)).elim pr (fun h=>(Finset.mem_insert.mp (uc h)).elim pq offp.2)
+ have offU (u:Wire) (hu:u∈hs):=C163Carry.fresh_off_triple acc pad bank L.core.cin src q r p u
+  len.1 len.2.2.2 fits (hfresh u hu) (hne u hu).1 (hne u hu).2.1 (hne u hu).2.2
+ have ready:=good base hc O hO s m hf
+ have many:=C163Carry.compiled_wloop_many_eq_set 92 acc pad bank L.core.cin src hs q r p specialChecked.out bankChecked.out
+  len.1 len.2.2.2 fits s m hz hb clean.cin ha qz rz pz fq fr rq fp pq pr
+  offq.1 special_free.1 offq.2 offr.1 special_free.2 offr.2 offpd.1 special_p_free offpd.2
+  (by decide) hnd hlen zeroU hfresh hne (fun u hu=>(offU u hu).1) (fun u hu=>(offU u hu).2) bank_cert ready
+ have plain:=C163Carry.triple_plain_eq acc pad bank L.core.cin src q r p specialChecked.out
+  len.1 len.2.2.2 fits s m hz hb clean.cin ha qz rz pz fq fr rq fp pq pr
+  offq.1 special_free.1 offq.2 offr.1 special_free.2 offr.2 offpd.1 special_p_free offpd.2 ready
+ exact many.trans plain
+
+theorem reference_eq (base:BasisState) (hc:L.PairClean base) (hp:base p=false) (hd:base d=false)
+ (O:Nat) (hO:O<SquareReduction.p) (s:State) (m:List Bool) (hf:SquareFrame L.core.out base O s.basis) :
+ run loop m s=run ((C163Fold.buildFull L++C163Fold.aMiddle L g)++C163Fold.clearFull L) m s := by
+ rcases geometry with ⟨_,_,_,_,_,fq,fr,_,_,_,_⟩
+ have clean:=L.squareFrame_clean hn base s.basis O hf hc
+ have qz:s.basis q=false:=(regValue_zero _ _).mp clean.work q (by decide)
+ have rz:s.basis r=false:=(regValue_zero _ _).mp clean.work r (by decide)
+ have changed:=special_cert.surround_eq [q,r] middle specialChecked.out (C163Fold.build L) (C163Fold.clear L) s m
+  (by intro u hu;simp only [List.mem_cons,List.not_mem_nil,or_false] at hu;rcases hu with rfl|rfl;exact qz;exact rz)
+  (by intro u hu;simp only [List.mem_cons,List.not_mem_nil,or_false] at hu;rcases hu with rfl|rfl;exact (off_base q fq).1;exact (off_base r fr).1)
+ have shape:C163Fold.build L++middle++C163Fold.clear L=
+  ((C163Fold.buildFull L++C163Fold.aMiddle L g)++C163Fold.clearFull L):=by
+  have e:=congrArg (fun P:Program=>C163Fold.build L++P++C163Fold.clear L) fixed_middle
+  exact e.trans (by simp only [C163Fold.fullMiddle,C163Fold.buildFull,C163Fold.clearFull,List.append_assoc])
+ exact (eq_plain base hc hp hd O hO s m hf).trans (changed.trans (congrArg (fun P:Program=>run P m s) shape))
+
+theorem frame (base:BasisState) (hc:L.PairClean base) (hp:base p=false) (hd:base d=false)
+ (O:Nat) (hO:O<SquareReduction.p) :
+ Triple (SquareFrame L.core.out base O) loop
+  (SquareFrame L.core.out base
+   (((if base g then OwnDiagAll12Square.cFlipK-C163Fold.payload L base else C163Fold.payload L base)+
+    (SquareReduction.p-1-O))%SquareReduction.p)) := by
+ intro s m hf
+ rw [reference_eq base hc hp hd O hO s m hf]
+ exact C163Fold.plain_frame L hw hn g geometry.1 base hc O hO s m hf
+
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component TripleResources
+section
+namespace ECDSAAdd.Entrant.C163Carry
+open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires
+ theorem physical (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hs:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f) (rq:r≠q)
+ (offF:q∉wires (C163NarrowAcc.build8 acc Z bank cin src))
+ (offI:q∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFR:r∉wires (C163NarrowAcc.build8 acc Z bank cin src))
+ (offIR:r∉wires (C163SourceAdd.unbuild acc Z bank cin src))
+ (offFP:p∉wires (buildDual acc Z bank cin src q r))
+ (offIP:p∉wires (unbuildDual acc Z bank cin src q r)):
+ GatePhysical (buildTriple acc Z bank cin src q r p) ∧ GatePhysical (unbuildTriple acc Z bank cin src q r p) := by
+ have fit:=hf _ (C163NarrowAcc.terms_mem src).2.2.1
+ have hz:5≤Z.length:=by have h:=fit.zpad;norm_num [Acc.earlyTerm,hs] at h;omega
+ have hb:134≤bank.length:=by have h:=fit.bankLen;norm_num [Acc.earlyTerm] at h;omega
+ have plainF:=(C163KnownTail.build8_physical acc Z bank cin src ha (by omega) hf).1
+ rw [C163KnownTail.build8_eq] at plainF
+ have plainI:=C163SourceAdd.unbuild_physical acc Z bank cin src ha hs hf
+ have cachedF:=buildCached_physical acc Z bank cin src q ha hs hz hb offF plainF
+ have cachedI:=unbuildConsumed_physical acc Z bank cin src q ha hs hb offI plainI
+ have offCF:r∉wires (buildCached acc Z bank cin src q):=by
+  intro h
+  exact (Finset.mem_insert.mp (buildCached_support acc Z bank cin src q ha hs hz hb h)).elim rq offFR
+ have offCI:r∉wires (unbuildConsumed acc Z bank cin src q):=by
+  intro h
+  exact (Finset.mem_insert.mp (unbuildConsumed_support acc Z bank cin src q ha hs hb h)).elim rq offIR
+ have dualF:=buildDual_physical acc Z bank cin src q r ha hs hz hb offCF cachedF
+ have dualI:=unbuildDual_physical acc Z bank cin src q r ha hs hb offCI cachedI
+ exact ⟨buildTriple_physical acc Z bank cin src q r p ha hs hz hb offFP dualF,
+  unbuildTriple_physical acc Z bank cin src q r p ha hs hb offIP dualI⟩
+
+ theorem support (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p:Wire)
+ (ha:acc.length=163) (hs:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f):
+ wires (buildTriple acc Z bank cin src q r p) ⊆ (p::r::q::cin::(src++acc++Z++bank)).toFinset ∧
+ wires (unbuildTriple acc Z bank cin src q r p) ⊆ (p::r::q::cin::(src++acc++Z++bank)).toFinset := by
+ have fit:=hf _ (C163NarrowAcc.terms_mem src).2.2.1
+ have hz:5≤Z.length:=by have h:=fit.zpad;norm_num [Acc.earlyTerm,hs] at h;omega
+ have hb:134≤bank.length:=by have h:=fit.bankLen;norm_num [Acc.earlyTerm] at h;omega
+ have plain:=C163KnownTail.build8_support acc Z bank cin src ha (by omega) hf
+ rw [C163KnownTail.build8_eq] at plain
+ have unbuild:=C163SourceAdd.unbuild_resources acc Z bank cin src ha hs (fun f h=>(hf f h).toFitsLen)
+ constructor
+ · intro w hw
+   rcases Finset.mem_insert.mp (buildTriple_support acc Z bank cin src q r p ha hs hz hb hw) with eq|hw
+   · simp [eq]
+   rcases Finset.mem_insert.mp (buildDual_support acc Z bank cin src q r ha hs hz hb hw) with eq|hw
+   · simp [eq]
+   rcases Finset.mem_insert.mp (buildCached_support acc Z bank cin src q ha hs hz hb hw) with eq|hw
+   · simp [eq]
+   have h:=List.mem_toFinset.mp (plain.1 hw)
+   simp only [List.mem_toFinset,List.mem_cons]
+   exact Or.inr (Or.inr (Or.inr (by simpa only [List.mem_cons] using h)))
+ · intro w hw
+   rcases Finset.mem_insert.mp (unbuildTriple_support acc Z bank cin src q r p ha hs hb hw) with eq|hw
+   · simp [eq]
+   rcases Finset.mem_insert.mp (unbuildDual_support acc Z bank cin src q r ha hs hb hw) with eq|hw
+   · simp [eq]
+   rcases Finset.mem_insert.mp (unbuildConsumed_support acc Z bank cin src q ha hs hb hw) with eq|hw
+   · simp [eq]
+   have oldI := (C163KnownTail.build8_support acc Z bank cin src ha (by omega) hf).2
+   have h:=List.mem_toFinset.mp (oldI (unbuild.2.2.1 hw))
+   simp only [List.mem_toFinset,List.mem_cons]
+   exact Or.inr (Or.inr (Or.inr (by simpa only [List.mem_cons] using h)))
+#print axioms physical
+#print axioms support
+end ECDSAAdd.Entrant.C163Carry
+
+end
+
+-- C163 component Physical
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop ZeroSetDevelop ZeroReadDevelop
+set_option autoImplicit false
+set_option linter.unusedSimpArgs false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run specialChecked bankChecked
+
+theorem loop_physical : GatePhysical loop := by
+ rcases geometry with ⟨hg,hlen,hnd,hfresh,hne,fq,fr,fp,rq,pq,pr⟩
+ have len:=C163Fold.lengths L hw
+ have fits:=C163Fold.terms_fits L hw hn
+ have offq:=off_base q fq
+ have offr:=off_base r fr
+ have offp:=off_base p fp
+ have zlen:5≤pad.length:=by have pl:pad.length=33:=len.2.1;omega
+ have blen:134≤bank.length:=by have bl:bank.length=160:=len.2.2.1;omega
+ have bc:=C163Carry.buildCached_support acc pad bank L.core.cin src q len.1 len.2.2.2 zlen blen
+ have uc:=C163Carry.unbuildConsumed_support acc pad bank L.core.cin src q len.1 len.2.2.2 blen
+ have bd:=C163Carry.buildDual_support acc pad bank L.core.cin src q r len.1 len.2.2.2 zlen blen
+ have ud:=C163Carry.unbuildDual_support acc pad bank L.core.cin src q r len.1 len.2.2.2 blen
+ have offpd:p∉wires (C163Carry.buildDual acc pad bank L.core.cin src q r) ∧
+  p∉wires (C163Carry.unbuildDual acc pad bank L.core.cin src q r):=by
+  constructor
+  · intro h
+    exact (Finset.mem_insert.mp (bd h)).elim pr (fun h=>(Finset.mem_insert.mp (bc h)).elim pq offp.1)
+  · intro h
+    exact (Finset.mem_insert.mp (ud h)).elim pr (fun h=>(Finset.mem_insert.mp (uc h)).elim pq offp.2)
+ have pp:=C163Carry.physical acc pad bank L.core.cin src q r p len.1 len.2.2.2 fits rq
+  offq.1 offq.2 offr.1 offr.2 offpd.1 offpd.2
+ have coreNd : L.measuredCore.wires.Nodup :=
+  (List.nodup_cons.mp (by simpa using L.measuredFold_interfaces hn [] (by simp))).2
+ have mc:=maskedConstant_physical g acc OwnDiagAll12Square.cFlipK (by decide)
+ have cm:GatePhysical (aMiddle L g):=by
+  simp only [aMiddle,gatePhysical_append]
+  exact ⟨mc,QCore.qprog_physicalTq L.measuredCore SquareReduction.p coreNd,mc⟩
+ have tf:=C163Fold.top_fits L hw hn
+ have top:GatePhysical topIn ∧ GatePhysical topOut:=
+  ⟨Acc.op_physical acc pad bank L.core.cin 163 false (posTop L) tf,
+   Acc.op_physical acc pad bank L.core.cin 163 true (posTop L) tf⟩
+ have raw:GatePhysical middle:=by
+  simp only [middle,gatePhysical_append]
+  exact ⟨top.1,cm,top.2⟩
+ have sp:=special_cert.physical [q,r] middle specialChecked.out raw
+ have tri:GatePhysical (C163Carry.buildTriple acc pad bank L.core.cin src q r p++specialChecked.out++C163Carry.unbuildTriple acc pad bank L.core.cin src q r p):=by
+  simp only [gatePhysical_append]
+  exact ⟨⟨pp.1,sp⟩,pp.2⟩
+ have fresh:∀u∈hs,u∉bank:=by
+  intro u hu hb
+  exact hfresh u hu (by simp [C163Fold.domain,hb])
+ exact C163Carry.compiled_physical_set 92 acc pad bank L.core.cin src hs q r p specialChecked.out bankChecked.out
+  len.1 len.2.2.2 zlen blen (by decide) fresh bank_cert tri
+#print axioms loop_physical
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component Counts
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop ZeroSetDevelop ZeroReadDevelop
+set_option autoImplicit false
+set_option linter.unusedSimpArgs false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots specialChecked bankChecked
+
+theorem middle_counts : toffoliCount middle=834 ∧ measurementCount middle=835 := by
+ have len:=C163Fold.lengths L hw
+ have fit:=C163Fold.top_fits L hw hn
+ have ti:=Acc.op_counts acc pad bank L.core.cin 163 false (posTop L) len.1 fit.toFitsLen
+ have tu:=Acc.op_counts acc pad bank L.core.cin 163 true (posTop L) len.1 fit.toFitsLen
+ have mask:=maskedConstant_counts g (accReg L) OwnDiagAll12Square.cFlipK
+ have mid:=QCore.qprog_countsTq L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw) (by decide)
+ change toffoliCount (Acc.op acc pad bank L.core.cin 163 false (posTop L))=34 ∧
+  measurementCount (Acc.op acc pad bank L.core.cin 163 false (posTop L))=34 at ti
+ change toffoliCount (Acc.op acc pad bank L.core.cin 163 true (posTop L))=34 ∧
+  measurementCount (Acc.op acc pad bank L.core.cin 163 true (posTop L))=34 at tu
+ simp only [middle,topIn,topOut,aMiddle,toffoliCount_append,measurementCount_append,ti.1,ti.2,tu.1,tu.2,mask.1,mask.2,mid.1,mid.2]
+ constructor <;> trivial
+
+theorem loop_counts : toffoliCount loop≤1369 ∧ measurementCount loop=1623 := by
+ have len:=C163Fold.lengths L hw
+ have fit:=C163Fold.terms_fits L hw hn
+ have zp:5≤pad.length:=by have pl:pad.length=33:=len.2.1;omega
+ have bp:134≤bank.length:=by have bl:bank.length=160:=len.2.2.1;omega
+ have b:=C163KnownTail.build8_counts acc pad bank L.core.cin src len.1 (by have sl:src.length=130:=len.2.2.2;omega) (fun f h=>(fit f h).toFitsLen)
+ rw [C163KnownTail.build8_eq] at b
+ have u:=C163SourceAdd.unbuild_resources acc pad bank L.core.cin src len.1 len.2.2.2 (fun f h=>(fit f h).toFitsLen)
+ have bc:=C163Carry.buildCached_counts acc pad bank L.core.cin src q len.1 len.2.2.2 zp bp
+ have uc:=C163Carry.unbuildConsumed_counts acc pad bank L.core.cin src q len.1 len.2.2.2 bp
+ have bd:=C163Carry.buildDual_counts acc pad bank L.core.cin src q r len.1 len.2.2.2 zp bp
+ have ud:=C163Carry.unbuildDual_counts acc pad bank L.core.cin src q r len.1 len.2.2.2 bp
+ have bt:=C163Carry.buildTriple_counts acc pad bank L.core.cin src q r p len.1 len.2.2.2 zp bp
+ have ut:=C163Carry.unbuildTriple_counts acc pad bank L.core.cin src q r p len.1 len.2.2.2 bp
+ have smt:=special_cert.toffoli [q,r] middle specialChecked.out
+ have smm:=special_cert.measurements [q,r] middle specialChecked.out
+ have cm:=C163Carry.compiled_counts_set 92 acc pad bank L.core.cin src hs q r p specialChecked.out bankChecked.out
+  len.1 len.2.2.2 zp bp (by decide) geometry.2.1 bank_cert
+ have mid:=middle_counts
+ simp only [toffoliCount_append,measurementCount_append] at cm
+ simp only [loop,toffoliCount_append,measurementCount_append]
+ constructor <;> omega
+#print axioms middle_counts
+#print axioms loop_counts
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component Slots
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop ZeroSetDevelop ZeroReadDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots specialChecked bankChecked
+
+theorem middle_slots : Challenge.gateSlots middle≤42000 := by
+ have len:=C163Fold.lengths L hw
+ have fit:=C163Fold.top_fits L hw hn
+ have ti:=Acc.op_gateSlots acc pad bank L.core.cin 163 false (posTop L)
+ have tu:=Acc.op_gateSlots acc pad bank L.core.cin 163 true (posTop L)
+ have lens:=Acc.fits_lengths acc pad bank L.core.cin 163 (posTop L) len.1 fit.toFitsLen
+ have mask:=Baselines.maskedConstant_gateSlots_le g (accReg L) OwnDiagAll12Square.cFlipK
+ have mid:=QCore.qprog_gateSlotsTq L.measuredCore 256 SquareReduction.p (L.measuredCore_widths hw)
+ have al:(accReg L).length=163:=by decide
+ simp only [middle,topIn,topOut,aMiddle,Challenge.gateSlots_append]
+ have shift:(posTop L).shift=128:=rfl
+ rw [shift] at lens
+ omega
+
+theorem loop_slots : Challenge.gateSlots loop≤65000 := by
+ have len:=C163Fold.lengths L hw
+ have fit:=C163Fold.terms_fits L hw hn
+ have zp:5≤pad.length:=by have pl:pad.length=33:=len.2.1;omega
+ have bp:134≤bank.length:=by have bl:bank.length=160:=len.2.2.1;omega
+ have b:=C163KnownTail.build8_gateSlots acc pad bank L.core.cin src len.1 (by have sl:src.length=130:=len.2.2.2;omega) (fun f h=>(fit f h).toFitsLen)
+ rw [C163KnownTail.build8_eq] at b
+ have u:=C163SourceAdd.unbuild_resources acc pad bank L.core.cin src len.1 len.2.2.2 (fun f h=>(fit f h).toFitsLen)
+ have bc:=C163Carry.buildCached_counts acc pad bank L.core.cin src q len.1 len.2.2.2 zp bp
+ have uc:=C163Carry.unbuildConsumed_counts acc pad bank L.core.cin src q len.1 len.2.2.2 bp
+ have bd:=C163Carry.buildDual_counts acc pad bank L.core.cin src q r len.1 len.2.2.2 zp bp
+ have ud:=C163Carry.unbuildDual_counts acc pad bank L.core.cin src q r len.1 len.2.2.2 bp
+ have bt:=C163Carry.buildTriple_counts acc pad bank L.core.cin src q r p len.1 len.2.2.2 zp bp
+ have ut:=C163Carry.unbuildTriple_counts acc pad bank L.core.cin src q r p len.1 len.2.2.2 bp
+ have sm:=special_cert.slots [q,r] middle specialChecked.out
+ have mid:=middle_slots
+ have cm:=C163Carry.compiled_counts_set 92 acc pad bank L.core.cin src hs q r p specialChecked.out bankChecked.out
+  len.1 len.2.2.2 zp bp (by decide) geometry.2.1 bank_cert
+ simp only [Challenge.gateSlots_append] at cm
+ simp only [loop,Challenge.gateSlots_append]
+ omega
+#print axioms middle_slots
+#print axioms loop_slots
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component Body
+section
+namespace ECDSAAdd.Entrant.C163Fold
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+theorem state_eq_of_frame (acc:List Wire) (base:BasisState) (V:Nat) (s t:State)
+ (hp:s.phase=t.phase) (hs:SquareFrame acc base V s.basis) (ht:SquareFrame acc base V t.basis):s=t := by
+ apply State.extensionality _ _ hp
+ funext w
+ by_cases hw:w∈acc
+ · exact (regValue_eq_iff acc _ _).mp (hs.1.trans ht.1.symm) w hw
+ · exact (hs.2 w hw).trans (ht.2 w hw).symm
+
+
+theorem payload_spec (K:CuccaroStreamedSquareWideLayout) (base:BasisState) :
+ payload K base=Acc.accVal base 0 (OwnDiagAll12Square.accCItem K).spec := by
+ norm_num [payload,src,OwnDiagAll12Square.accCItem,earlyHTerms,Acc.accVal,Acc.step,Acc.earlyTerm,posTop]
+ omega
+end ECDSAAdd.Entrant.C163Fold
+
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop OwnDiagAll12Square
+ ThirdSavedCarryDevelop ZeroSetDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] specialChecked bankChecked ECDSAAdd.run ECDSAAdd.wires
+
+theorem fold_eq (base:BasisState) (hv:AccView L base (accCItem L)) (hc:L.PairClean base)
+ (hp:base p=false) (hd:base d=false) (O:Nat) (hO:O<SquareReduction.p)
+ (s:State) (m:List Bool) (hf:SquareFrame L.core.out base O s.basis) :
+ run loop m s=run (accFoldQFKTq L g (accCItem L)) m s := by
+ have fresh:=frame base hc hp hd O hO s m hf
+ have prior:=accFoldQFK_frameTq L hw hn g geometry.1 base (accCItem L) hv hc O hO s m hf
+ let V:=((if base g then cFlipK-C163Fold.payload L base else C163Fold.payload L base)+(SquareReduction.p-1-O))%SquareReduction.p
+ have valueEq:V=((if base g then cFlipK-Acc.accVal base 0 (accCItem L).spec else Acc.accVal base 0 (accCItem L).spec)+(SquareReduction.p-1-O))%SquareReduction.p:=
+  congrArg (fun A:Nat=>((if base g then cFlipK-A else A)+(SquareReduction.p-1-O))%SquareReduction.p)
+   (C163Fold.payload_spec L base)
+ have oldFrame:SquareFrame L.core.out base V (run (accFoldQFKTq L g (accCItem L)) m s).basis:=
+  Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run (accFoldQFKTq L g (accCItem L)) m s).basis) valueEq.symm) prior.2
+ exact C163Fold.state_eq_of_frame L.core.out base V (run loop m s) (run (accFoldQFKTq L g (accCItem L)) m s)
+  (fresh.1.trans prior.1.symm) fresh.2 oldFrame
+
+def body : Program:=mixFoldsQTq L false [.inl (negRot L)]++loop
+
+theorem append_run_congr (F P Q:Program) (s:State) (m:List Bool)
+ (h:run P (m.drop (measurementCount F)) (run F (m.take (measurementCount F)) s)=
+    run Q (m.drop (measurementCount F)) (run F (m.take (measurementCount F)) s)) :
+ run (F++P) m s=run (F++Q) m s := by
+ simpa only [run_append] using h
+
+attribute [local irreducible] loop mixFoldsQTq accFoldQFKTq List.append
+
+theorem bodyCKTq_def (K:CuccaroStreamedSquareWideLayout) (control:Wire):
+ bodyCKTq K control=mixFoldsQTq K false [.inl (negRot K)]++accFoldQFKTq K control (accCItem K):=rfl
+
+theorem transport_runs (P PP Q QQ:Program) (a:P=PP) (b:Q=QQ) (s:State) (m:List Bool)
+ (h:run PP m s=run QQ m s):run P m s=run Q m s:=by
+ cases a
+ cases b
+ exact h
+
+theorem body_eq_generic (K:CuccaroStreamedSquareWideLayout) (kw:K.Widths) (kn:K.wires.Nodup)
+ (control:Wire) (loan:Wire) (newFold:Program)
+ (foldEq:∀(base:BasisState), AccView K base (accCItem K) → K.PairClean base →
+  ∀(M:Nat),regValue K.core.product base=M^2 → base loan=false →
+  ∀(O:Nat),O<SquareReduction.p → ∀(s:State)(m:List Bool),SquareFrame K.core.out base O s.basis →
+  run newFold m s=run (accFoldQFKTq K control (accCItem K)) m s)
+ (M O:Nat) (hO:O<SquareReduction.p) (s:State) (m:List Bool)
+ (pv:regValue K.core.product s.basis=M^2) (clean:K.PairClean s.basis)
+ (hd:s.basis loan=false) (outO:regValue K.core.out s.basis=O):
+ run (mixFoldsQTq K false [.inl (negRot K)]++newFold) m s=run (bodyCKTq K control) m s := by
+ have views:=accC_views K kw s.basis M pv
+ rw [accCMix_eq] at views
+ have v1:∀i∈[(.inl (negRot K):MixItem)],MixView K s.basis i:=by
+  intro i hi
+  exact views i (by simp at hi ⊢;exact Or.inl hi)
+ have va:AccView K s.basis (accCItem K):=views (.inr (accCItem K)) (by simp)
+ let mm:=measurementCount (mixFoldsQTq K false [.inl (negRot K)])
+ let r1:=run (mixFoldsQTq K false [.inl (negRot K)]) (m.take mm) s
+ have first:=mixFoldsQ_frameTq K kw kn s.basis clean false O hO [.inl (negRot K)] v1 s (m.take mm) ⟨outO,fun _ _=>rfl⟩
+ let O1:=mixValue s.basis false O [.inl (negRot K)]
+ have bound:O1<SquareReduction.p:=mixValue_lt _ _ _ _ hO
+ have e:=foldEq s.basis va clean M pv hd O1 bound r1 (m.drop mm) first.2
+ have result:=append_run_congr (mixFoldsQTq K false [.inl (negRot K)]) newFold
+  (accFoldQFKTq K control (accCItem K)) s m e
+ simpa only [bodyCKTq] using result
+
+theorem body_eq (M O:Nat) (hO:O<SquareReduction.p) (s:State) (m:List Bool)
+ (pv:regValue L.core.product s.basis=M^2) (clean:L.PairClean s.basis)
+ (hd:s.basis d=false) (outO:regValue L.core.out s.basis=O) :
+ run body m s=run (bodyCKTq L g) m s := by
+ have callback:∀(base:BasisState),AccView L base (accCItem L) → L.PairClean base →
+  ∀(M:Nat),regValue L.core.product base=M^2 → base d=false →
+  ∀(O:Nat),O<SquareReduction.p → ∀(s:State)(m:List Bool),SquareFrame L.core.out base O s.basis →
+  run loop m s=run (accFoldQFKTq L g (accCItem L)) m s:=by
+  intro base hv hc M pv hd O ho s m hf
+  exact fold_eq base hv hc (spare_zero L hw base M pv) hd O ho s m hf
+ have result:=body_eq_generic L hw hn g d loop callback M O hO s m pv clean hd outO
+ have a:body=mixFoldsQTq L false [.inl (negRot L)]++loop:=rfl
+ exact transport_runs body (mixFoldsQTq L false [.inl (negRot L)]++loop)
+  (bodyCKTq L g) (bodyCKTq L g) a rfl s m result
+
+theorem body_frame (base:BasisState) (M:Nat) (pv:regValue L.core.product base=M^2)
+ (clean:L.PairClean base) (disabled:base g=false→M=0) (hd:base d=false)
+ (O:Nat) (hO:O<SquareReduction.p) :
+ Triple (SquareFrame L.core.out base O) body
+  (SquareFrame L.core.out base (resCF (base g) (M^2) O)) := by
+ intro s m hf
+ have away (q:Wire) (hq:q∈L.core.product):q∉L.core.out:=
+  fun ho=>List.disjoint_left.mp (L.product_out_disjoint hn) hq ho
+ have prod:regValue L.core.product s.basis=M^2:=
+  (regValue_congr _ _ _ (fun q hq=>hf.2 q (away q hq))).trans pv
+ have cs:=L.squareFrame_clean hn base s.basis O hf clean
+ have gs:s.basis g=base g:=hf.2 g (by decide)
+ have ds:s.basis d=false:=(hf.2 d (by decide)).trans hd
+ have dm:s.basis g=false→M=0:=by rw [gs];exact disabled
+ rw [body_eq M O hO s m prod cs ds hf.1]
+ have old:=accMiddleCFK_bodyTq L hw g (List.nodup_cons.mpr ⟨geometry.1,hn⟩) M O hO s m prod dm cs hf.1
+ rw [gs] at old
+ exact ⟨old.1,old.2.1,fun q hq=>(old.2.2 q hq).trans (hf.2 q hq)⟩
+
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component BodyResources
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout OwnDiagAll12Square
+ InverseCarryDevelop ThirdSavedCarryDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
+
+theorem prefix_eq (K:CuccaroStreamedSquareWideLayout):
+ mixFoldsQTq K false [.inl (negRot K)]=measuredFoldQTq K (negRot K):=by
+ simp only [mixFoldsQTq,mixNeg,negRot,Bool.false_eq_true,if_false,mixProgQTq,if_true,List.append_nil]
+
+theorem body_counts : toffoliCount body≤2135 ∧ measurementCount body=2390 := by
+ have lc:=loop_counts
+ have pre:=mixFoldsQ_countsTq L hw false [.inl (negRot L)] (bodyC_static L hw).1
+ change toffoliCount (mixFoldsQTq L false [.inl (negRot L)])=766 ∧
+  measurementCount (mixFoldsQTq L false [.inl (negRot L)])=767 at pre
+ simp only [body,toffoliCount_append,measurementCount_append]
+ constructor <;> omega
+
+theorem body_physical : GatePhysical body:=by
+ have old:=bodyCK_physicalTq L hw hn g geometry.1
+ simp only [bodyCKTq,gatePhysical_append] at old
+ simp only [body,gatePhysical_append]
+ exact ⟨old.1,loop_physical⟩
+
+theorem body_slots : Challenge.gateSlots body≤112000:=by
+ have l:=loop_slots
+ have p:=measuredFoldQ_gateSlotsTq L hw (negRot L)
+ have eq:=prefix_eq L
+ have ps:Challenge.gateSlots (mixFoldsQTq L false [.inl (negRot L)])≤36000:=by
+  rw [eq]
+  exact p
+ simp only [body,Challenge.gateSlots_append]
+ omega
+#print axioms body_counts
+#print axioms body_physical
+#print axioms body_slots
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component Support
+section
+namespace ECDSAAdd.Entrant.C163Middle
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
+ ThirdSavedCarryDevelop ZeroSetDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run specialChecked bankChecked List.toFinset
+
+def ambient:List Wire:=g::p::r::q::(domain++L.measuredCore.wires++(posTop L).src++hs)
+
+theorem middle_support : wires middle⊆ambient.toFinset:=by
+ have lens:=C163Fold.lengths L hw
+ have fit:=C163Fold.top_fits L hw hn
+ have top (neg:Bool):wires (Acc.op acc pad bank L.core.cin 163 neg (posTop L))⊆ambient.toFinset:=by
+  intro u hu
+  have h:=List.mem_toFinset.mp (Acc.op_support acc pad bank L.core.cin 163 neg (posTop L) lens.1 fit hu)
+  simp only [List.mem_cons,List.mem_append] at h
+  simp only [ambient,domain,C163Fold.domain,List.mem_toFinset,List.mem_cons,List.mem_append]
+  tauto
+ have mask:wires (maskedConstant g (accReg L) OwnDiagAll12Square.cFlipK)⊆ambient.toFinset:=by
+  intro u hu
+  have h:=List.mem_toFinset.mp (maskedConstant_wires_subset g (accReg L) OwnDiagAll12Square.cFlipK hu)
+  change u∈g::acc at h
+  simp only [List.mem_cons] at h
+  simp only [ambient,domain,C163Fold.domain,List.mem_toFinset,List.mem_cons,List.mem_append]
+  tauto
+ have core:wires (qprogTq L.measuredCore SquareReduction.p)⊆ambient.toFinset:=by
+  intro u hu
+  have h:=List.mem_toFinset.mp (QCore.qprog_supportTq L.measuredCore SquareReduction.p hu)
+  simp only [ambient,List.mem_toFinset,List.mem_cons,List.mem_append]
+  tauto
+ simp only [middle,topIn,topOut,aMiddle,wires_append,Finset.union_subset_iff]
+ exact ⟨top false,⟨mask,core,mask⟩,top true⟩
+
+theorem loop_support : wires loop⊆ambient.toFinset:=by
+ have len:=C163Fold.lengths L hw
+ have fits:=C163Fold.terms_fits L hw hn
+ have hz:5≤pad.length:=by have pl:pad.length=33:=len.2.1;omega
+ have hb:134≤bank.length:=by have bl:bank.length=160:=len.2.2.1;omega
+ have tri:=C163Carry.support acc pad bank L.core.cin src q r p len.1 len.2.2.2 fits
+ have sp: wires specialChecked.out⊆ambient.toFinset:=
+  (special_cert.support [q,r] middle specialChecked.out).1.trans middle_support
+ have cmp:=C163Carry.compiled_support_set 92 acc pad bank L.core.cin src hs q r p specialChecked.out bankChecked.out
+  len.1 len.2.2.2 hz hb (by decide) bank_cert
+ have sub:(p::r::q::L.core.cin::(src++acc++pad++bank)).toFinset⊆ambient.toFinset:=by
+  intro u hu
+  simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at hu
+  simp only [ambient,domain,C163Fold.domain,List.mem_toFinset,List.mem_cons,List.mem_append]
+  tauto
+ intro u hu
+ rcases Finset.mem_union.mp (cmp hu) with h|h
+ · simp only [wires_append,Finset.mem_union] at h
+   rcases h with (h|h)|h
+   · exact sub (tri.1 h)
+   · exact sp h
+   · exact sub (tri.2 h)
+ · have h:=List.mem_toFinset.mp h
+   simp only [hs,List.mem_append,List.mem_singleton] at h
+   simp only [ambient,List.mem_toFinset,List.mem_cons,List.mem_append]
+   tauto
+#print axioms middle_support
+#print axioms loop_support
+end ECDSAAdd.Entrant.C163Middle
+
+end
+
+-- C163 component Touch
+section
+namespace ECDSAAdd.Entrant.C163Touch
+open Arithmetic
+set_option Elab.async false
+set_option autoImplicit false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.wires
+
+def correctionTouches (q:Wire) : Correction→Bool
+ | .Z a => q==a
+ | .CZ a b => q==a || q==b
+
+def instructionTouches (q:Wire) : Instr→Bool
+ | .X a => q==a
+ | .CX a b => q==a || q==b
+ | .CCX a b d => q==a || q==b || q==d
+ | .measureX a cs ds => q==a || cs.any (correctionTouches q) || ds.any (correctionTouches q)
+
+theorem corrections_spec (cs:List Correction) (q:Wire) :
+ cs.any (correctionTouches q)=true ↔ q∈correctionWires cs := by
+ induction cs with
+ | nil => simp [correctionWires]
+ | cons i cs ih => cases i <;> simp only [correctionTouches,correctionWires,List.any_cons,ih,Bool.or_eq_true,beq_iff_eq,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,or_assoc]
+
+theorem instruction_spec (i:Instr) (q:Wire) : instructionTouches q i=true ↔ q∈i.wires := by
+ cases i <;> simp only [instructionTouches,Instr.wires,corrections_spec,Bool.or_eq_true,beq_iff_eq,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,or_assoc]
+
+def touched (P:Program) (q:Wire) : Bool := P.any (instructionTouches q)
+
+theorem touched_spec (P:Program) (q:Wire) : touched P q=true ↔ q∈wires P := by
+ induction P with
+ | nil => simp [touched,wires]
+ | cons i P ih => simpa only [touched,List.any_cons,Bool.or_eq_true,wires,Finset.mem_union,instruction_spec] using (or_congr Iff.rfl ih)
+
+theorem append_left (A B:Program) : wires A⊆wires (A++B) := by
+ rw [wires_append]
+ exact Finset.subset_union_left
+
+theorem append_right (A B:Program) : wires B⊆wires (A++B) := by
+ rw [wires_append]
+ exact Finset.subset_union_right
+
+theorem append_union (A B P:Program) (ha:wires A⊆wires P) (hb:wires B⊆wires P) :
+ wires (A++B)⊆wires P := by
+ rw [wires_append]
+ exact Finset.union_subset ha hb
+
+end ECDSAAdd.Entrant.C163Touch
+
+end
+
+-- C163 component CoverFast
+section
+namespace ECDSAAdd.Entrant.C163CoverFast
+open C163Middle Arithmetic OwnDiagAll12Square
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run List.toFinset
+
+def copyW:Program:=copyRegister none (negRot L).src (L.foldDestination (negRot L))
+
+theorem combine (A B:List Wire) (P:Wire→Prop) (ha:∀u∈A,P u) (hb:∀u∈B,P u):∀u∈A++B,P u:=by
+ intro u hu
+ exact (List.mem_append.mp hu).elim (ha u) (hb u)
+
+theorem shared44_support:wires ParkAData.shared44⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared44⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared44⊆wires ParkAData.shared44 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared43 ParkAData.shared44)).trans (C163Touch.append_right (ParkAData.shared41++ParkAData.shared42) (ParkAData.shared43++ParkAData.shared44))).trans (C163Touch.append_right ((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40)) ((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))).trans (C163Touch.append_right ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known44:List Wire:=[65, 66, 4435, 4436]
+theorem known44_checked:(known44.all (C163Touch.touched ParkAData.shared44))=true:=by decide +kernel
+theorem known44_support:∀u∈known44,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared44_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known44_checked u hu))
+
+theorem shared47_support:wires ParkAData.shared47⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared47⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared47⊆wires ParkAData.shared47 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared47 ParkAData.shared48)).trans (C163Touch.append_right (ParkAData.shared45++ParkAData.shared46) (ParkAData.shared47++ParkAData.shared48))).trans (C163Touch.append_left ((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48)) ((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))).trans (C163Touch.append_left (((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52))) (((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))).trans (C163Touch.append_right (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known47:List Wire:=[36, 37, 4406, 4407, 4762]
+theorem known47_checked:(known47.all (C163Touch.touched ParkAData.shared47))=true:=by decide +kernel
+theorem known47_support:∀u∈known47,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared47_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known47_checked u hu))
+
+theorem shared105_support:wires ParkAData.shared105⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared105⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared105⊆wires ParkAData.shared105 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared104 ParkAData.shared105)).trans (C163Touch.append_right (ParkAData.shared102++ParkAData.shared103) (ParkAData.shared104++ParkAData.shared105))).trans (C163Touch.append_right ((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101)) ((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))).trans (C163Touch.append_right ((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97))) (((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))).trans (C163Touch.append_left (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known105:List Wire:=[256, 4757, 4889]
+theorem known105_checked:(known105.all (C163Touch.touched ParkAData.shared105))=true:=by decide +kernel
+theorem known105_support:∀u∈known105,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared105_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known105_checked u hu))
+
+theorem shared108_support:wires ParkAData.shared108⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared108⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared108⊆wires ParkAData.shared108 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared108 ParkAData.shared109)).trans (C163Touch.append_right (ParkAData.shared106++ParkAData.shared107) (ParkAData.shared108++ParkAData.shared109))).trans (C163Touch.append_left ((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109)) ((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))).trans (C163Touch.append_left (((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113))) (((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))).trans (C163Touch.append_right (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known108:List Wire:=[228, 4861, 4862]
+theorem known108_checked:(known108.all (C163Touch.touched ParkAData.shared108))=true:=by decide +kernel
+theorem known108_support:∀u∈known108,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared108_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known108_checked u hu))
+
+theorem shared113_support:wires ParkAData.shared113⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared113⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared113⊆wires ParkAData.shared113 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared112 ParkAData.shared113)).trans (C163Touch.append_right (ParkAData.shared110++ParkAData.shared111) (ParkAData.shared112++ParkAData.shared113))).trans (C163Touch.append_right ((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109)) ((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))).trans (C163Touch.append_left (((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113))) (((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))).trans (C163Touch.append_right (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known113:List Wire:=[152, 4785, 4786]
+theorem known113_checked:(known113.all (C163Touch.touched ParkAData.shared113))=true:=by decide +kernel
+theorem known113_support:∀u∈known113,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared113_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known113_checked u hu))
+
+theorem shared116_support:wires ParkAData.shared116⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared116⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared116⊆wires ParkAData.shared116 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared116 ParkAData.shared117)).trans (C163Touch.append_right (ParkAData.shared114++ParkAData.shared115) (ParkAData.shared116++ParkAData.shared117))).trans (C163Touch.append_left ((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117)) ((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))).trans (C163Touch.append_right (((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113))) (((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))).trans (C163Touch.append_right (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known116:List Wire:=[55, 4425, 4426]
+theorem known116_checked:(known116.all (C163Touch.touched ParkAData.shared116))=true:=by decide +kernel
+theorem known116_support:∀u∈known116,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared116_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known116_checked u hu))
+
+theorem shared5_support:wires ParkAData.shared5⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared5⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared5⊆wires ParkAData.shared5 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared5 ParkAData.shared6)).trans (C163Touch.append_right (ParkAData.shared3++ParkAData.shared4) (ParkAData.shared5++ParkAData.shared6))).trans (C163Touch.append_right (ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2)) ((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))).trans (C163Touch.append_left ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known5:List Wire:=[153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227]
+theorem known5_checked:(known5.all (C163Touch.touched ParkAData.shared5))=true:=by decide +kernel
+theorem known5_support:∀u∈known5,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared5_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known5_checked u hu))
+
+theorem shared4_support:wires ParkAData.shared4⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared4⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared4⊆wires ParkAData.shared4 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared3 ParkAData.shared4)).trans (C163Touch.append_left (ParkAData.shared3++ParkAData.shared4) (ParkAData.shared5++ParkAData.shared6))).trans (C163Touch.append_right (ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2)) ((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))).trans (C163Touch.append_left ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known4:List Wire:=[56, 57, 58, 59, 60, 61, 62, 63, 64, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151]
+theorem known4_checked:(known4.all (C163Touch.touched ParkAData.shared4))=true:=by decide +kernel
+theorem known4_support:∀u∈known4,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared4_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known4_checked u hu))
+
+theorem shared6_support:wires ParkAData.shared6⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared6⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared6⊆wires ParkAData.shared6 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared5 ParkAData.shared6)).trans (C163Touch.append_right (ParkAData.shared3++ParkAData.shared4) (ParkAData.shared5++ParkAData.shared6))).trans (C163Touch.append_right (ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2)) ((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))).trans (C163Touch.append_left ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known6:List Wire:=[229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255]
+theorem known6_checked:(known6.all (C163Touch.touched ParkAData.shared6))=true:=by decide +kernel
+theorem known6_support:∀u∈known6,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared6_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known6_checked u hu))
+
+theorem shared3_support:wires ParkAData.shared3⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared3⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared3⊆wires ParkAData.shared3 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared3 ParkAData.shared4)).trans (C163Touch.append_left (ParkAData.shared3++ParkAData.shared4) (ParkAData.shared5++ParkAData.shared6))).trans (C163Touch.append_right (ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2)) ((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))).trans (C163Touch.append_left ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known3:List Wire:=[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54]
+theorem known3_checked:(known3.all (C163Touch.touched ParkAData.shared3))=true:=by decide +kernel
+theorem known3_support:∀u∈known3,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared3_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known3_checked u hu))
+
+theorem shared8_support:wires ParkAData.shared8⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared8⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared8⊆wires ParkAData.shared8 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared7 ParkAData.shared8)).trans (C163Touch.append_left (ParkAData.shared7++ParkAData.shared8) (ParkAData.shared9++ParkAData.shared10))).trans (C163Touch.append_left ((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10)) ((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))).trans (C163Touch.append_right ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known8:List Wire:=[4381, 4382]
+theorem known8_checked:(known8.all (C163Touch.touched ParkAData.shared8))=true:=by decide +kernel
+theorem known8_support:∀u∈known8,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared8_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known8_checked u hu))
+
+theorem shared10_support:wires ParkAData.shared10⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared10⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared10⊆wires ParkAData.shared10 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared9 ParkAData.shared10)).trans (C163Touch.append_right (ParkAData.shared7++ParkAData.shared8) (ParkAData.shared9++ParkAData.shared10))).trans (C163Touch.append_left ((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10)) ((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))).trans (C163Touch.append_right ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known10:List Wire:=[4398, 4399]
+theorem known10_checked:(known10.all (C163Touch.touched ParkAData.shared10))=true:=by decide +kernel
+theorem known10_support:∀u∈known10,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared10_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known10_checked u hu))
+
+theorem shared12_support:wires ParkAData.shared12⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared12⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared12⊆wires ParkAData.shared12 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared11 ParkAData.shared12)).trans (C163Touch.append_left (ParkAData.shared11++ParkAData.shared12) (ParkAData.shared13++ParkAData.shared14))).trans (C163Touch.append_right ((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10)) ((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))).trans (C163Touch.append_right ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known12:List Wire:=[4428, 4429]
+theorem known12_checked:(known12.all (C163Touch.touched ParkAData.shared12))=true:=by decide +kernel
+theorem known12_support:∀u∈known12,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared12_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known12_checked u hu))
+
+theorem shared14_support:wires ParkAData.shared14⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared14⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared14⊆wires ParkAData.shared14 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared13 ParkAData.shared14)).trans (C163Touch.append_right (ParkAData.shared11++ParkAData.shared12) (ParkAData.shared13++ParkAData.shared14))).trans (C163Touch.append_right ((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10)) ((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))).trans (C163Touch.append_right ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known14:List Wire:=[4431, 4432]
+theorem known14_checked:(known14.all (C163Touch.touched ParkAData.shared14))=true:=by decide +kernel
+theorem known14_support:∀u∈known14,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared14_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known14_checked u hu))
+
+theorem shared24_support:wires ParkAData.shared24⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared24⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared24⊆wires ParkAData.shared24 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared24 ParkAData.shared25)).trans (C163Touch.append_right (ParkAData.shared22++ParkAData.shared23) (ParkAData.shared24++ParkAData.shared25))).trans (C163Touch.append_left ((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25)) ((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))).trans (C163Touch.append_right ((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21))) (((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))).trans (C163Touch.append_right (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known24:List Wire:=[4810, 4811]
+theorem known24_checked:(known24.all (C163Touch.touched ParkAData.shared24))=true:=by decide +kernel
+theorem known24_support:∀u∈known24,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared24_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known24_checked u hu))
+
+theorem shared27_support:wires ParkAData.shared27⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared27⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared27⊆wires ParkAData.shared27 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared26 ParkAData.shared27)).trans (C163Touch.append_left (ParkAData.shared26++ParkAData.shared27) (ParkAData.shared28++ParkAData.shared29))).trans (C163Touch.append_right ((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25)) ((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))).trans (C163Touch.append_right ((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21))) (((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))).trans (C163Touch.append_right (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known27:List Wire:=[4843, 4844]
+theorem known27_checked:(known27.all (C163Touch.touched ParkAData.shared27))=true:=by decide +kernel
+theorem known27_support:∀u∈known27,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared27_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known27_checked u hu))
+
+theorem shared32_support:wires ParkAData.shared32⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared32⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared32⊆wires ParkAData.shared32 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared31 ParkAData.shared32)).trans (C163Touch.append_right ParkAData.shared30 (ParkAData.shared31++ParkAData.shared32))).trans (C163Touch.append_left (ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32)) ((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))).trans (C163Touch.append_left ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known32:List Wire:=[4884, 4885]
+theorem known32_checked:(known32.all (C163Touch.touched ParkAData.shared32))=true:=by decide +kernel
+theorem known32_support:∀u∈known32,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared32_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known32_checked u hu))
+
+theorem shared52_support:wires ParkAData.shared52⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared52⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared52⊆wires ParkAData.shared52 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared51 ParkAData.shared52)).trans (C163Touch.append_right (ParkAData.shared49++ParkAData.shared50) (ParkAData.shared51++ParkAData.shared52))).trans (C163Touch.append_right ((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48)) ((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))).trans (C163Touch.append_left (((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52))) (((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))).trans (C163Touch.append_right (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known52:List Wire:=[4479, 4480]
+theorem known52_checked:(known52.all (C163Touch.touched ParkAData.shared52))=true:=by decide +kernel
+theorem known52_support:∀u∈known52,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared52_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known52_checked u hu))
+
+theorem shared59_support:wires ParkAData.shared59⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared59⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared59⊆wires ParkAData.shared59 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared59 ParkAData.shared60)).trans (C163Touch.append_right (ParkAData.shared57++ParkAData.shared58) (ParkAData.shared59++ParkAData.shared60))).trans (C163Touch.append_right ((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56)) ((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))).trans (C163Touch.append_right (((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52))) (((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))).trans (C163Touch.append_right (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known59:List Wire:=[4788, 4789]
+theorem known59_checked:(known59.all (C163Touch.touched ParkAData.shared59))=true:=by decide +kernel
+theorem known59_support:∀u∈known59,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared59_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known59_checked u hu))
+
+theorem shared70_support:wires ParkAData.shared70⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared70⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared70⊆wires ParkAData.shared70 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared70 ParkAData.shared71)).trans (C163Touch.append_right (ParkAData.shared68++ParkAData.shared69) (ParkAData.shared70++ParkAData.shared71))).trans (C163Touch.append_left ((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71)) ((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))).trans (C163Touch.append_right ((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67))) (((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))).trans (C163Touch.append_left (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known70:List Wire:=[4870, 4871]
+theorem known70_checked:(known70.all (C163Touch.touched ParkAData.shared70))=true:=by decide +kernel
+theorem known70_support:∀u∈known70,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared70_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known70_checked u hu))
+
+theorem shared96_support:wires ParkAData.shared96⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared96⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared96⊆wires ParkAData.shared96 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared96 ParkAData.shared97)).trans (C163Touch.append_right (ParkAData.shared94++ParkAData.shared95) (ParkAData.shared96++ParkAData.shared97))).trans (C163Touch.append_right (ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93)) ((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))).trans (C163Touch.append_left ((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97))) (((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))).trans (C163Touch.append_left (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known96:List Wire:=[4838, 4839]
+theorem known96_checked:(known96.all (C163Touch.touched ParkAData.shared96))=true:=by decide +kernel
+theorem known96_support:∀u∈known96,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared96_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known96_checked u hu))
+
+theorem shared80_support:wires ParkAData.shared80⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared80⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared80⊆wires ParkAData.shared80 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared79 ParkAData.shared80)).trans (C163Touch.append_left (ParkAData.shared79++ParkAData.shared80) (ParkAData.shared81++ParkAData.shared82))).trans (C163Touch.append_right (ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78)) ((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))).trans (C163Touch.append_left ((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82))) (((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))).trans (C163Touch.append_right (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known80:List Wire:=[4488, 4489, 4490, 4491, 4492, 4493, 4494]
+theorem known80_checked:(known80.all (C163Touch.touched ParkAData.shared80))=true:=by decide +kernel
+theorem known80_support:∀u∈known80,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared80_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known80_checked u hu))
+
+theorem shared76_support:wires ParkAData.shared76⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared76⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact (((((((show wires ParkAData.shared76⊆wires ParkAData.shared76 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared76 (ParkAData.shared77++ParkAData.shared78))).trans (C163Touch.append_left (ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78)) ((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))).trans (C163Touch.append_left ((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82))) (((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))).trans (C163Touch.append_right (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known76:List Wire:=[4826, 4827, 4828, 4829, 4830, 4831, 4832, 4833]
+theorem known76_checked:(known76.all (C163Touch.touched ParkAData.shared76))=true:=by decide +kernel
+theorem known76_support:∀u∈known76,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared76_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known76_checked u hu))
+
+theorem shared78_support:wires ParkAData.shared78⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared78⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared78⊆wires ParkAData.shared78 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared77 ParkAData.shared78)).trans (C163Touch.append_right ParkAData.shared76 (ParkAData.shared77++ParkAData.shared78))).trans (C163Touch.append_left (ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78)) ((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))).trans (C163Touch.append_left ((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82))) (((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))).trans (C163Touch.append_right (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known78:List Wire:=[4799, 4800, 4801]
+theorem known78_checked:(known78.all (C163Touch.touched ParkAData.shared78))=true:=by decide +kernel
+theorem known78_support:∀u∈known78,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared78_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known78_checked u hu))
+
+theorem shared30_support:wires ParkAData.shared30⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared30⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact (((((((show wires ParkAData.shared30⊆wires ParkAData.shared30 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared30 (ParkAData.shared31++ParkAData.shared32))).trans (C163Touch.append_left (ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32)) ((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))).trans (C163Touch.append_left ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known30:List Wire:=[4879, 4880]
+theorem known30_checked:(known30.all (C163Touch.touched ParkAData.shared30))=true:=by decide +kernel
+theorem known30_support:∀u∈known30,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared30_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known30_checked u hu))
+
+theorem shared84_support:wires ParkAData.shared84⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared84⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared84⊆wires ParkAData.shared84 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared83 ParkAData.shared84)).trans (C163Touch.append_left (ParkAData.shared83++ParkAData.shared84) (ParkAData.shared85++ParkAData.shared86))).trans (C163Touch.append_left ((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86)) ((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))).trans (C163Touch.append_right ((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82))) (((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))).trans (C163Touch.append_right (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known84:List Wire:=[4389, 4390]
+theorem known84_checked:(known84.all (C163Touch.touched ParkAData.shared84))=true:=by decide +kernel
+theorem known84_support:∀u∈known84,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared84_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known84_checked u hu))
+
+theorem shared114_support:wires ParkAData.shared114⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared114⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared114⊆wires ParkAData.shared114 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared114 ParkAData.shared115)).trans (C163Touch.append_left (ParkAData.shared114++ParkAData.shared115) (ParkAData.shared116++ParkAData.shared117))).trans (C163Touch.append_left ((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117)) ((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))).trans (C163Touch.append_right (((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113))) (((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))).trans (C163Touch.append_right (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known114:List Wire:=[4772, 4773, 4774, 4775, 4776, 4777, 4778, 4779, 4780, 4781, 4782, 4783, 4784]
+theorem known114_checked:(known114.all (C163Touch.touched ParkAData.shared114))=true:=by decide +kernel
+theorem known114_support:∀u∈known114,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared114_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known114_checked u hu))
+
+theorem shared117_support:wires ParkAData.shared117⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared117⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared117⊆wires ParkAData.shared117 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared116 ParkAData.shared117)).trans (C163Touch.append_right (ParkAData.shared114++ParkAData.shared115) (ParkAData.shared116++ParkAData.shared117))).trans (C163Touch.append_left ((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117)) ((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))).trans (C163Touch.append_right (((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113))) (((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))).trans (C163Touch.append_right (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known117:List Wire:=[4422, 4423, 4424]
+theorem known117_checked:(known117.all (C163Touch.touched ParkAData.shared117))=true:=by decide +kernel
+theorem known117_support:∀u∈known117,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared117_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known117_checked u hu))
+
+theorem shared43_support:wires ParkAData.shared43⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared43⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared43⊆wires ParkAData.shared43 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared43 ParkAData.shared44)).trans (C163Touch.append_right (ParkAData.shared41++ParkAData.shared42) (ParkAData.shared43++ParkAData.shared44))).trans (C163Touch.append_right ((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40)) ((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))).trans (C163Touch.append_right ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known43:List Wire:=[4437, 4438, 4439, 4440, 4441, 4442, 4443, 4444, 4445, 4446, 4447, 4448, 4449, 4450, 4451, 4452, 4453, 4454, 4455, 4456, 4457, 4458, 4459, 4460, 4461, 4462, 4463, 4464, 4465, 4466, 4467, 4468, 4469, 4470, 4471]
+theorem known43_checked:(known43.all (C163Touch.touched ParkAData.shared43))=true:=by decide +kernel
+theorem known43_support:∀u∈known43,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared43_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known43_checked u hu))
+
+theorem shared77_support:wires ParkAData.shared77⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared77⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared77⊆wires ParkAData.shared77 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared77 ParkAData.shared78)).trans (C163Touch.append_right ParkAData.shared76 (ParkAData.shared77++ParkAData.shared78))).trans (C163Touch.append_left (ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78)) ((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))).trans (C163Touch.append_left ((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82))) (((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))).trans (C163Touch.append_right (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known77:List Wire:=[4802, 4803, 4804, 4805, 4806, 4807, 4808, 4809, 4812, 4813, 4814, 4815, 4816, 4817, 4818, 4819, 4820, 4821, 4822, 4823, 4824, 4825]
+theorem known77_checked:(known77.all (C163Touch.touched ParkAData.shared77))=true:=by decide +kernel
+theorem known77_support:∀u∈known77,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared77_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known77_checked u hu))
+
+theorem shared42_support:wires ParkAData.shared42⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared42⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared42⊆wires ParkAData.shared42 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared41 ParkAData.shared42)).trans (C163Touch.append_left (ParkAData.shared41++ParkAData.shared42) (ParkAData.shared43++ParkAData.shared44))).trans (C163Touch.append_right ((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40)) ((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))).trans (C163Touch.append_right ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known42:List Wire:=[4472, 4473, 4474, 4475, 4476, 4477, 4478, 4481, 4482, 4483, 4484, 4485]
+theorem known42_checked:(known42.all (C163Touch.touched ParkAData.shared42))=true:=by decide +kernel
+theorem known42_support:∀u∈known42,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared42_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known42_checked u hu))
+
+theorem shared35_support:wires ParkAData.shared35⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared35⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared35⊆wires ParkAData.shared35 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared35 ParkAData.shared36)).trans (C163Touch.append_right (ParkAData.shared33++ParkAData.shared34) (ParkAData.shared35++ParkAData.shared36))).trans (C163Touch.append_right (ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32)) ((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))).trans (C163Touch.append_left ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known35:List Wire:=[4836, 4837, 4840, 4841, 4842, 4845, 4846, 4847, 4848, 4849, 4850, 4851, 4852, 4853, 4854, 4855, 4856, 4857, 4858, 4859, 4860, 4863, 4864, 4865, 4866, 4867, 4868, 4869, 4872, 4873, 4874, 4875, 4876, 4877, 4878]
+theorem known35_checked:(known35.all (C163Touch.touched ParkAData.shared35))=true:=by decide +kernel
+theorem known35_support:∀u∈known35,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared35_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known35_checked u hu))
+
+theorem shared48_support:wires ParkAData.shared48⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared48⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared48⊆wires ParkAData.shared48 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared47 ParkAData.shared48)).trans (C163Touch.append_right (ParkAData.shared45++ParkAData.shared46) (ParkAData.shared47++ParkAData.shared48))).trans (C163Touch.append_left ((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48)) ((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))).trans (C163Touch.append_left (((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52))) (((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))).trans (C163Touch.append_right (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known48:List Wire:=[4408]
+theorem known48_checked:(known48.all (C163Touch.touched ParkAData.shared48))=true:=by decide +kernel
+theorem known48_support:∀u∈known48,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared48_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known48_checked u hu))
+
+theorem shared73_support:wires ParkAData.shared73⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared73⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared73⊆wires ParkAData.shared73 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared72 ParkAData.shared73)).trans (C163Touch.append_left (ParkAData.shared72++ParkAData.shared73) (ParkAData.shared74++ParkAData.shared75))).trans (C163Touch.append_right ((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71)) ((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))).trans (C163Touch.append_right ((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67))) (((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))).trans (C163Touch.append_left (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known73:List Wire:=[4886]
+theorem known73_checked:(known73.all (C163Touch.touched ParkAData.shared73))=true:=by decide +kernel
+theorem known73_support:∀u∈known73,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared73_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known73_checked u hu))
+
+theorem shared118_support:wires ParkAData.shared118⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared118⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared118⊆wires ParkAData.shared118 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared118 ParkAData.shared1)).trans (C163Touch.append_left (ParkAData.shared118++ParkAData.shared1) (ParkAData.shared2++ParkAData.shared119))).trans (C163Touch.append_right ((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117)) ((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))).trans (C163Touch.append_right (((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113))) (((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))).trans (C163Touch.append_right (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known118:List Wire:=[4373, 4374, 4375, 4376, 4377, 4378, 4379, 4380, 4383, 4384, 4385, 4386, 4387, 4388, 4391, 4392, 4393, 4394, 4395, 4396, 4397, 4400, 4401, 4402, 4403, 4404, 4405, 4409, 4410, 4411, 4412, 4413, 4414, 4415, 4416, 4417, 4418, 4419, 4420, 4421, 4760]
+theorem known118_checked:(known118.all (C163Touch.touched ParkAData.shared118))=true:=by decide +kernel
+theorem known118_support:∀u∈known118,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared118_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known118_checked u hu))
+
+theorem shared34_support:wires ParkAData.shared34⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared34⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared34⊆wires ParkAData.shared34 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared33 ParkAData.shared34)).trans (C163Touch.append_left (ParkAData.shared33++ParkAData.shared34) (ParkAData.shared35++ParkAData.shared36))).trans (C163Touch.append_right (ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32)) ((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))).trans (C163Touch.append_left ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known34:List Wire:=[4881, 4882, 4883]
+theorem known34_checked:(known34.all (C163Touch.touched ParkAData.shared34))=true:=by decide +kernel
+theorem known34_support:∀u∈known34,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared34_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known34_checked u hu))
+
+theorem shared58_support:wires ParkAData.shared58⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared58⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared58⊆wires ParkAData.shared58 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared57 ParkAData.shared58)).trans (C163Touch.append_left (ParkAData.shared57++ParkAData.shared58) (ParkAData.shared59++ParkAData.shared60))).trans (C163Touch.append_right ((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56)) ((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))).trans (C163Touch.append_right (((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52))) (((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))).trans (C163Touch.append_right (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known58:List Wire:=[4787]
+theorem known58_checked:(known58.all (C163Touch.touched ParkAData.shared58))=true:=by decide +kernel
+theorem known58_support:∀u∈known58,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared58_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known58_checked u hu))
+
+theorem shared104_support:wires ParkAData.shared104⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared104⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared104⊆wires ParkAData.shared104 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared104 ParkAData.shared105)).trans (C163Touch.append_right (ParkAData.shared102++ParkAData.shared103) (ParkAData.shared104++ParkAData.shared105))).trans (C163Touch.append_right ((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101)) ((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))).trans (C163Touch.append_right ((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97))) (((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))).trans (C163Touch.append_left (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known104:List Wire:=[257]
+theorem known104_checked:(known104.all (C163Touch.touched ParkAData.shared104))=true:=by decide +kernel
+theorem known104_support:∀u∈known104,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared104_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known104_checked u hu))
+
+theorem shared81_support:wires ParkAData.shared81⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared81⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared81⊆wires ParkAData.shared81 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared81 ParkAData.shared82)).trans (C163Touch.append_right (ParkAData.shared79++ParkAData.shared80) (ParkAData.shared81++ParkAData.shared82))).trans (C163Touch.append_right (ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78)) ((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))).trans (C163Touch.append_left ((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82))) (((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))).trans (C163Touch.append_right (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known81:List Wire:=[4486, 4487]
+theorem known81_checked:(known81.all (C163Touch.touched ParkAData.shared81))=true:=by decide +kernel
+theorem known81_support:∀u∈known81,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared81_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known81_checked u hu))
+
+theorem shared79_support:wires ParkAData.shared79⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared79⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared79⊆wires ParkAData.shared79 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared79 ParkAData.shared80)).trans (C163Touch.append_left (ParkAData.shared79++ParkAData.shared80) (ParkAData.shared81++ParkAData.shared82))).trans (C163Touch.append_right (ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78)) ((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))).trans (C163Touch.append_left ((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82))) (((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))).trans (C163Touch.append_right (((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75)))) (((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))).trans (C163Touch.append_left ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known79:List Wire:=[4495, 4496, 4497, 4498, 4499, 4500, 4764, 4765, 4766, 4767, 4768, 4769, 4770, 4771, 4790, 4791, 4792, 4793, 4794, 4795, 4796, 4797, 4798]
+theorem known79_checked:(known79.all (C163Touch.touched ParkAData.shared79))=true:=by decide +kernel
+theorem known79_support:∀u∈known79,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared79_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known79_checked u hu))
+
+theorem shared36_support:wires ParkAData.shared36⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared36⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared36⊆wires ParkAData.shared36 from fun _ h=>h)).trans (C163Touch.append_right ParkAData.shared35 ParkAData.shared36)).trans (C163Touch.append_right (ParkAData.shared33++ParkAData.shared34) (ParkAData.shared35++ParkAData.shared36))).trans (C163Touch.append_right (ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32)) ((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))).trans (C163Touch.append_left ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known36:List Wire:=[4834, 4835]
+theorem known36_checked:(known36.all (C163Touch.touched ParkAData.shared36))=true:=by decide +kernel
+theorem known36_support:∀u∈known36,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared36_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known36_checked u hu))
+
+theorem shared15_support:wires ParkAData.shared15⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared15⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact (((((((show wires ParkAData.shared15⊆wires ParkAData.shared15 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared15 (ParkAData.shared16++ParkAData.shared17))).trans (C163Touch.append_left (ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17)) ((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))).trans (C163Touch.append_left ((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21))) (((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))).trans (C163Touch.append_right (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known15:List Wire:=[4433, 4434]
+theorem known15_checked:(known15.all (C163Touch.touched ParkAData.shared15))=true:=by decide +kernel
+theorem known15_support:∀u∈known15,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared15_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known15_checked u hu))
+
+theorem shared102_support:wires ParkAData.shared102⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared102⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared102⊆wires ParkAData.shared102 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared102 ParkAData.shared103)).trans (C163Touch.append_left (ParkAData.shared102++ParkAData.shared103) (ParkAData.shared104++ParkAData.shared105))).trans (C163Touch.append_right ((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101)) ((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))).trans (C163Touch.append_right ((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97))) (((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))).trans (C163Touch.append_left (((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105)))) ((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))).trans (C163Touch.append_right ((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90))))) ((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119))))))).trans (C163Touch.append_right (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known102:List Wire:=[4887, 4888]
+theorem known102_checked:(known102.all (C163Touch.touched ParkAData.shared102))=true:=by decide +kernel
+theorem known102_support:∀u∈known102,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared102_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known102_checked u hu))
+
+theorem shared13_support:wires ParkAData.shared13⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared13⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared13⊆wires ParkAData.shared13 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared13 ParkAData.shared14)).trans (C163Touch.append_right (ParkAData.shared11++ParkAData.shared12) (ParkAData.shared13++ParkAData.shared14))).trans (C163Touch.append_right ((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10)) ((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))).trans (C163Touch.append_right ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known13:List Wire:=[4430]
+theorem known13_checked:(known13.all (C163Touch.touched ParkAData.shared13))=true:=by decide +kernel
+theorem known13_support:∀u∈known13,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared13_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known13_checked u hu))
+
+theorem shared33_support:wires ParkAData.shared33⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared33⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared33⊆wires ParkAData.shared33 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared33 ParkAData.shared34)).trans (C163Touch.append_left (ParkAData.shared33++ParkAData.shared34) (ParkAData.shared35++ParkAData.shared36))).trans (C163Touch.append_right (ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32)) ((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))).trans (C163Touch.append_left ((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36))) (((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))).trans (C163Touch.append_left (((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44)))) ((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))).trans (C163Touch.append_right ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known33:List Wire:=[4758, 4759]
+theorem known33_checked:(known33.all (C163Touch.touched ParkAData.shared33))=true:=by decide +kernel
+theorem known33_support:∀u∈known33,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared33_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known33_checked u hu))
+
+theorem shared11_support:wires ParkAData.shared11⊆wires ParkAData.p0:=by
+ change wires ParkAData.shared11⊆wires ((((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))++(((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+ exact ((((((((show wires ParkAData.shared11⊆wires ParkAData.shared11 from fun _ h=>h)).trans (C163Touch.append_left ParkAData.shared11 ParkAData.shared12)).trans (C163Touch.append_left (ParkAData.shared11++ParkAData.shared12) (ParkAData.shared13++ParkAData.shared14))).trans (C163Touch.append_right ((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10)) ((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))).trans (C163Touch.append_right ((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6))) (((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))).trans (C163Touch.append_left (((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14)))) (((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))).trans (C163Touch.append_left ((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29))))) ((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60))))))).trans (C163Touch.append_left (((((ParkAData.shared0++(ParkAData.shared1++ParkAData.shared2))++((ParkAData.shared3++ParkAData.shared4)++(ParkAData.shared5++ParkAData.shared6)))++(((ParkAData.shared7++ParkAData.shared8)++(ParkAData.shared9++ParkAData.shared10))++((ParkAData.shared11++ParkAData.shared12)++(ParkAData.shared13++ParkAData.shared14))))++(((ParkAData.shared15++(ParkAData.shared16++ParkAData.shared17))++((ParkAData.shared18++ParkAData.shared19)++(ParkAData.shared20++ParkAData.shared21)))++(((ParkAData.shared22++ParkAData.shared23)++(ParkAData.shared24++ParkAData.shared25))++((ParkAData.shared26++ParkAData.shared27)++(ParkAData.shared28++ParkAData.shared29)))))++((((ParkAData.shared30++(ParkAData.shared31++ParkAData.shared32))++((ParkAData.shared33++ParkAData.shared34)++(ParkAData.shared35++ParkAData.shared36)))++(((ParkAData.shared37++ParkAData.shared38)++(ParkAData.shared39++ParkAData.shared40))++((ParkAData.shared41++ParkAData.shared42)++(ParkAData.shared43++ParkAData.shared44))))++((((ParkAData.shared45++ParkAData.shared46)++(ParkAData.shared47++ParkAData.shared48))++((ParkAData.shared49++ParkAData.shared50)++(ParkAData.shared51++ParkAData.shared52)))++(((ParkAData.shared53++ParkAData.shared54)++(ParkAData.shared55++ParkAData.shared56))++((ParkAData.shared57++ParkAData.shared58)++(ParkAData.shared59++ParkAData.shared60)))))) (((((ParkAData.shared61++(ParkAData.shared62++ParkAData.shared63))++((ParkAData.shared64++ParkAData.shared65)++(ParkAData.shared66++ParkAData.shared67)))++(((ParkAData.shared68++ParkAData.shared69)++(ParkAData.shared70++ParkAData.shared71))++((ParkAData.shared72++ParkAData.shared73)++(ParkAData.shared74++ParkAData.shared75))))++(((ParkAData.shared76++(ParkAData.shared77++ParkAData.shared78))++((ParkAData.shared79++ParkAData.shared80)++(ParkAData.shared81++ParkAData.shared82)))++(((ParkAData.shared83++ParkAData.shared84)++(ParkAData.shared85++ParkAData.shared86))++((ParkAData.shared87++ParkAData.shared88)++(ParkAData.shared89++ParkAData.shared90)))))++((((ParkAData.shared91++(ParkAData.shared92++ParkAData.shared93))++((ParkAData.shared94++ParkAData.shared95)++(ParkAData.shared96++ParkAData.shared97)))++(((ParkAData.shared98++ParkAData.shared99)++(ParkAData.shared100++ParkAData.shared101))++((ParkAData.shared102++ParkAData.shared103)++(ParkAData.shared104++ParkAData.shared105))))++((((ParkAData.shared106++ParkAData.shared107)++(ParkAData.shared108++ParkAData.shared109))++((ParkAData.shared110++ParkAData.shared111)++(ParkAData.shared112++ParkAData.shared113)))++(((ParkAData.shared114++ParkAData.shared115)++(ParkAData.shared116++ParkAData.shared117))++((ParkAData.shared118++ParkAData.shared1)++(ParkAData.shared2++ParkAData.shared119)))))))
+def known11:List Wire:=[4427]
+theorem known11_checked:(known11.all (C163Touch.touched ParkAData.shared11))=true:=by decide +kernel
+theorem known11_support:∀u∈known11,u∈wires ParkAData.p0:=by
+ intro u hu
+ exact shared11_support ((C163Touch.touched_spec _ _).mp (List.all_eq_true.mp known11_checked u hu))
+
+def known:List Wire:=(((((known44++known47)++(known105++(known108++known113)))++((known116++(known5++known4))++(known6++(known3++known8))))++(((known10++(known12++known14))++(known24++(known27++known32)))++((known52++(known59++known70))++(known96++(known80++known76)))))++((((known78++known30)++(known84++(known114++known117)))++((known43++(known77++known42))++(known35++(known48++known73))))++(((known118++(known34++known58))++(known104++(known81++known79)))++((known36++(known15++known102))++(known13++(known33++known11))))))
+theorem known_support:∀u∈known,u∈wires ParkAData.p0:=(combine ((((known44++known47)++(known105++(known108++known113)))++((known116++(known5++known4))++(known6++(known3++known8))))++(((known10++(known12++known14))++(known24++(known27++known32)))++((known52++(known59++known70))++(known96++(known80++known76))))) ((((known78++known30)++(known84++(known114++known117)))++((known43++(known77++known42))++(known35++(known48++known73))))++(((known118++(known34++known58))++(known104++(known81++known79)))++((known36++(known15++known102))++(known13++(known33++known11))))) (fun u=>u∈wires ParkAData.p0) (combine (((known44++known47)++(known105++(known108++known113)))++((known116++(known5++known4))++(known6++(known3++known8)))) (((known10++(known12++known14))++(known24++(known27++known32)))++((known52++(known59++known70))++(known96++(known80++known76)))) (fun u=>u∈wires ParkAData.p0) (combine ((known44++known47)++(known105++(known108++known113))) ((known116++(known5++known4))++(known6++(known3++known8))) (fun u=>u∈wires ParkAData.p0) (combine (known44++known47) (known105++(known108++known113)) (fun u=>u∈wires ParkAData.p0) (combine known44 known47 (fun u=>u∈wires ParkAData.p0) known44_support known47_support) (combine known105 (known108++known113) (fun u=>u∈wires ParkAData.p0) known105_support (combine known108 known113 (fun u=>u∈wires ParkAData.p0) known108_support known113_support))) (combine (known116++(known5++known4)) (known6++(known3++known8)) (fun u=>u∈wires ParkAData.p0) (combine known116 (known5++known4) (fun u=>u∈wires ParkAData.p0) known116_support (combine known5 known4 (fun u=>u∈wires ParkAData.p0) known5_support known4_support)) (combine known6 (known3++known8) (fun u=>u∈wires ParkAData.p0) known6_support (combine known3 known8 (fun u=>u∈wires ParkAData.p0) known3_support known8_support)))) (combine ((known10++(known12++known14))++(known24++(known27++known32))) ((known52++(known59++known70))++(known96++(known80++known76))) (fun u=>u∈wires ParkAData.p0) (combine (known10++(known12++known14)) (known24++(known27++known32)) (fun u=>u∈wires ParkAData.p0) (combine known10 (known12++known14) (fun u=>u∈wires ParkAData.p0) known10_support (combine known12 known14 (fun u=>u∈wires ParkAData.p0) known12_support known14_support)) (combine known24 (known27++known32) (fun u=>u∈wires ParkAData.p0) known24_support (combine known27 known32 (fun u=>u∈wires ParkAData.p0) known27_support known32_support))) (combine (known52++(known59++known70)) (known96++(known80++known76)) (fun u=>u∈wires ParkAData.p0) (combine known52 (known59++known70) (fun u=>u∈wires ParkAData.p0) known52_support (combine known59 known70 (fun u=>u∈wires ParkAData.p0) known59_support known70_support)) (combine known96 (known80++known76) (fun u=>u∈wires ParkAData.p0) known96_support (combine known80 known76 (fun u=>u∈wires ParkAData.p0) known80_support known76_support))))) (combine (((known78++known30)++(known84++(known114++known117)))++((known43++(known77++known42))++(known35++(known48++known73)))) (((known118++(known34++known58))++(known104++(known81++known79)))++((known36++(known15++known102))++(known13++(known33++known11)))) (fun u=>u∈wires ParkAData.p0) (combine ((known78++known30)++(known84++(known114++known117))) ((known43++(known77++known42))++(known35++(known48++known73))) (fun u=>u∈wires ParkAData.p0) (combine (known78++known30) (known84++(known114++known117)) (fun u=>u∈wires ParkAData.p0) (combine known78 known30 (fun u=>u∈wires ParkAData.p0) known78_support known30_support) (combine known84 (known114++known117) (fun u=>u∈wires ParkAData.p0) known84_support (combine known114 known117 (fun u=>u∈wires ParkAData.p0) known114_support known117_support))) (combine (known43++(known77++known42)) (known35++(known48++known73)) (fun u=>u∈wires ParkAData.p0) (combine known43 (known77++known42) (fun u=>u∈wires ParkAData.p0) known43_support (combine known77 known42 (fun u=>u∈wires ParkAData.p0) known77_support known42_support)) (combine known35 (known48++known73) (fun u=>u∈wires ParkAData.p0) known35_support (combine known48 known73 (fun u=>u∈wires ParkAData.p0) known48_support known73_support)))) (combine ((known118++(known34++known58))++(known104++(known81++known79))) ((known36++(known15++known102))++(known13++(known33++known11))) (fun u=>u∈wires ParkAData.p0) (combine (known118++(known34++known58)) (known104++(known81++known79)) (fun u=>u∈wires ParkAData.p0) (combine known118 (known34++known58) (fun u=>u∈wires ParkAData.p0) known118_support (combine known34 known58 (fun u=>u∈wires ParkAData.p0) known34_support known58_support)) (combine known104 (known81++known79) (fun u=>u∈wires ParkAData.p0) known104_support (combine known81 known79 (fun u=>u∈wires ParkAData.p0) known81_support known79_support))) (combine (known36++(known15++known102)) (known13++(known33++known11)) (fun u=>u∈wires ParkAData.p0) (combine known36 (known15++known102) (fun u=>u∈wires ParkAData.p0) known36_support (combine known15 known102 (fun u=>u∈wires ParkAData.p0) known15_support known102_support)) (combine known13 (known33++known11) (fun u=>u∈wires ParkAData.p0) known13_support (combine known33 known11 (fun u=>u∈wires ParkAData.p0) known33_support known11_support))))))
+
+def inside (ranges:List (Nat×Nat)) (u:Wire):Bool:=
+ ranges.any (fun r=>decide (r.1≤u ∧ u<r.1+r.2))
+def sites(ranges:List (Nat×Nat)):List Wire:=ranges.flatMap (fun r=>List.range' r.1 r.2)
+theorem inside_spec(ranges:List (Nat×Nat)) (u:Wire):inside ranges u=true ↔ u∈sites ranges:=by
+ simp [inside,sites,List.mem_flatMap,List.mem_range'_1]
+def copyRanges:List (Nat×Nat):=[(4115,256),(4501,256)]
+def knownRanges:List (Nat×Nat):=[(2,256),(4373,128),(4757,4),(4762,1),(4764,126)]
+theorem copy_sites_checked:((sites copyRanges).all (C163Touch.touched copyW))=true:=by decide +kernel
+theorem known_sites_checked:((sites knownRanges).all (fun u=>known.contains u))=true:=by decide +kernel
+
+theorem copy_fast (u:Wire) (h:inside copyRanges u=true):u∈wires copyW:=
+ (C163Touch.touched_spec _ _).mp (List.all_eq_true.mp copy_sites_checked u ((inside_spec _ _).mp h))
+theorem known_fast(u:Wire) (h:inside knownRanges u=true):u∈wires ParkAData.p0:=
+ known_support u (List.contains_iff_mem.mp (List.all_eq_true.mp known_sites_checked u ((inside_spec _ _).mp h)))
+def cover(u:Wire):Bool:=u==d || u==g || u==4371 || u==4372 || inside copyRanges u || inside knownRanges u
+theorem used0:(((ambient.drop 0).take 80).all cover)=true:=by decide +kernel
+theorem used1:(((ambient.drop 80).take 80).all cover)=true:=by decide +kernel
+theorem used2:(((ambient.drop 160).take 80).all cover)=true:=by decide +kernel
+theorem used3:(((ambient.drop 240).take 80).all cover)=true:=by decide +kernel
+theorem used4:(((ambient.drop 320).take 80).all cover)=true:=by decide +kernel
+theorem used5:(((ambient.drop 400).take 80).all cover)=true:=by decide +kernel
+theorem used6:(((ambient.drop 480).take 80).all cover)=true:=by decide +kernel
+theorem used7:(((ambient.drop 560).take 80).all cover)=true:=by decide +kernel
+theorem used8:(((ambient.drop 640).take 80).all cover)=true:=by decide +kernel
+theorem used9:(((ambient.drop 720).take 80).all cover)=true:=by decide +kernel
+theorem used10:(((ambient.drop 800).take 80).all cover)=true:=by decide +kernel
+theorem used11:(((ambient.drop 880).take 80).all cover)=true:=by decide +kernel
+theorem used12:(((ambient.drop 960).take 80).all cover)=true:=by decide +kernel
+theorem used13:(((ambient.drop 1040).take 80).all cover)=true:=by decide +kernel
+theorem used14:(((ambient.drop 1120).take 80).all cover)=true:=by decide +kernel
+theorem used15:(((ambient.drop 1200).take 80).all cover)=true:=by decide +kernel
+theorem used16:(((ambient.drop 1280).take 80).all cover)=true:=by decide +kernel
+theorem partition:ambient=((ambient.drop 0).take 80) ++ ((ambient.drop 80).take 80) ++ ((ambient.drop 160).take 80) ++ ((ambient.drop 240).take 80) ++ ((ambient.drop 320).take 80) ++ ((ambient.drop 400).take 80) ++ ((ambient.drop 480).take 80) ++ ((ambient.drop 560).take 80) ++ ((ambient.drop 640).take 80) ++ ((ambient.drop 720).take 80) ++ ((ambient.drop 800).take 80) ++ ((ambient.drop 880).take 80) ++ ((ambient.drop 960).take 80) ++ ((ambient.drop 1040).take 80) ++ ((ambient.drop 1120).take 80) ++ ((ambient.drop 1200).take 80) ++ ((ambient.drop 1280).take 80) := by decide +kernel
+theorem all_cover:ambient.all cover=true:=by
+ rw [partition]
+ simp only [List.all_append,used0,used1,used2,used3,used4,used5,used6,used7,used8,used9,used10,used11,used12,used13,used14,used15,used16,Bool.true_and]
+#print axioms known_fast
+#print axioms copy_fast
+#print axioms all_cover
+end ECDSAAdd.Entrant.C163CoverFast
+
+end
+
+-- C163 component FineFast
+section
+namespace ECDSAAdd.Entrant.C163FineFast
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout OwnDiagAll12Square
+ InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop C163Middle
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run List.toFinset
+
+theorem copy_subset (K:CuccaroStreamedSquareWideLayout) (control:Wire):
+ wires (copyRegister none (negRot K).src (K.foldDestination (negRot K)))⊆wires (bodyCKTq K control):=by
+ intro u hu
+ simp only [bodyCKTq,wires_append,Finset.mem_union]
+ apply Or.inl
+ rw [prefix_eq K]
+ simp only [measuredFoldQTq,wires_append,Finset.mem_union]
+ exact Or.inl (Or.inl hu)
+
+theorem middle_subset (K:CuccaroStreamedSquareWideLayout) (control:Wire):
+ wires (aMiddle K control)⊆wires (bodyCKTq K control):=by
+ intro u hu
+ simp only [aMiddle,wires_append,Finset.mem_union] at hu
+ simp only [bodyCKTq,accFoldQFKTq,wires_append,Finset.mem_union]
+ tauto
+
+theorem fill_subset(K:CuccaroStreamedSquareWideLayout) (control:Wire):
+ wires (fillInK K (accCItem K))⊆wires (bodyCKTq K control):=by
+ intro u hu
+ simp only [bodyCKTq,accFoldQFKTq,wires_append,Finset.mem_union]
+ exact Or.inr (Or.inl hu)
+
+theorem mask_subset(K:CuccaroStreamedSquareWideLayout) (control:Wire):
+ wires (maskedConstant control (accReg K) OwnDiagAll12Square.cFlipK)⊆wires (bodyCKTq K control):=by
+ intro u hu
+ simp only [bodyCKTq,accFoldQFKTq,wires_append,Finset.mem_union]
+ exact Or.inr (Or.inr (Or.inl hu))
+
+theorem g_used:C163Touch.touched (maskedConstant g (accReg L) OwnDiagAll12Square.cFlipK) g=true:=by decide +kernel
+theorem top0_used:C163Touch.touched (fillInK L (accCItem L)) 4371=true:=by decide +kernel
+theorem top1_used:C163Touch.touched (fillInK L (accCItem L)) 4372=true:=by decide +kernel
+
+theorem ambient_fine:ambient.toFinset⊆insert d (wires (bodyCKTq L g)):=by
+ intro u hu
+ have hit:=List.all_eq_true.mp C163CoverFast.all_cover u (List.mem_toFinset.mp hu)
+ simp only [C163CoverFast.cover,Bool.or_eq_true,beq_iff_eq,List.contains_iff_mem] at hit
+ rcases hit with ((((h|h)|h)|h)|h)|h
+ · exact Finset.mem_insert.mpr (Or.inl h)
+ · subst u
+   exact Finset.mem_insert_of_mem (mask_subset L g ((C163Touch.touched_spec _ _).mp g_used))
+ · subst u
+   exact Finset.mem_insert_of_mem (fill_subset L g ((C163Touch.touched_spec _ _).mp top0_used))
+ · subst u
+   exact Finset.mem_insert_of_mem (fill_subset L g ((C163Touch.touched_spec _ _).mp top1_used))
+ · exact Finset.mem_insert_of_mem (copy_subset L g (C163CoverFast.copy_fast u h))
+ · have hm:=C163CoverFast.known_fast u h
+   have e:=congrArg ECDSAAdd.wires ParkAStagedProof.input_eq
+   have oldMid:u∈wires (aMiddle L g):=e ▸ hm
+   exact Finset.mem_insert_of_mem (middle_subset L g oldMid)
+
+theorem body_fine:wires body⊆insert d (wires (bodyCKTq L g)):=by
+ intro u hu
+ simp only [body,wires_append,Finset.mem_union] at hu
+ rcases hu with hu|hu
+ · apply Finset.mem_insert_of_mem
+   simp only [bodyCKTq,wires_append,Finset.mem_union]
+   exact Or.inl hu
+ · exact ambient_fine (loop_support hu)
+
+theorem body_coarse:wires body⊆insert d (g::L.wires).toFinset:=
+ body_fine.trans (Finset.insert_subset_insert d (bodyCK_supportTq L hw hn g))
+#print axioms ambient_fine
+#print axioms body_fine
+#print axioms body_coarse
+end ECDSAAdd.Entrant.C163FineFast
+
+end
