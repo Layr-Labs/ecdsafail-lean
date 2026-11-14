@@ -1,4 +1,4 @@
-import ECDSAAdd.Submission.Entrant.CarryTraceBase
+import ECDSAAdd.Submission.Entrant.LowAccCarry
 set_option Elab.async false
 
 -- Preserved proof module: SixCarryBasisTransfer
