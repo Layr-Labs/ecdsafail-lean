@@ -1,3 +1,4 @@
+import Mathlib.Data.List.GetD
 import ECDSAAdd.Arithmetic.PhysicalGateCheck
 import ECDSAAdd.Submission.Entrant.ParkAMany
 section
@@ -483,6 +484,312 @@ end
 
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+
+-- Structural support proof component FastMappedWires
+section
+open ECDSAAdd ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.FastMappedWires
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxHeartbeats 50000000
+set_option maxRecDepth 100000
+set_option linter.unusedSimpArgs false
+set_option linter.unnecessarySeqFocus false
+attribute [local irreducible] ECDSAAdd.wires
+
+theorem step(b:MappedBit)(y cin c:Wire)(P:Program):
+ wires (mappedMajority b y cin c++P++mappedEraseCarry b y cin c++mappedSum b y cin)=
+ wires P∪(b.wire.toList++[y,cin,c]).toFinset:=by
+ rcases b with ⟨a,f⟩
+ cases a <;> cases f
+ all_goals
+  ext u
+  simp [mappedMajority,mappedEraseCarry,mappedSum,majority,borrowMajority,eraseCarry,eraseBorrow,
+   wires,Instr.wires,correctionWires] <;> tauto
+
+theorem exact_wires(bits:List MappedBit)(ys cs:List Wire)(cin:Wire)
+ (hlen:bits.length=ys.length)(hc:cs.length+1=ys.length):
+ wires (mappedAdd bits ys cs cin)=(cin::(mappedWires bits++ys++cs)).toFinset:=by
+ induction ys generalizing bits cs cin with
+ | nil=>simp at hc
+ | cons y ys ih=>
+  cases bits with
+  | nil=>simp at hlen
+  | cons b bits=>
+   cases ys with
+   | nil=>
+    have hb:bits=[]:=List.eq_nil_of_length_eq_zero (by simpa using hlen)
+    have hs:cs=[]:=List.eq_nil_of_length_eq_zero (by simpa using hc)
+    subst bits cs
+    rcases b with ⟨a,f⟩
+    cases a <;> cases f <;> ext u <;> simp [mappedAdd,mappedSum,mappedWires,wires,Instr.wires]
+   | cons y' ys=>
+    cases bits with
+    | nil=>simp at hlen
+    | cons b' bits=>
+     cases cs with
+     | nil=>simp at hc
+     | cons c cs=>
+      have recursive := ih (b'::bits) cs c (by simpa using hlen) (by simpa using hc)
+      rw [mappedAdd,step,recursive]
+      ext u
+      simp only [mappedWires,List.flatMap_cons,List.mem_toFinset,List.mem_cons,List.mem_append,
+       List.not_mem_nil,or_false,Finset.mem_union]
+      tauto
+#print axioms exact_wires
+end ECDSAAdd.Entrant.FastMappedWires
+
+end
+
+-- Structural support proof component FastSupportCore
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.FastSupportCore
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
+ FourthASavedCarryDevelop ControlLoan1589BFFold
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxHeartbeats 50000000
+set_option maxRecDepth 100000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+
+theorem mapped_app(a b:List MappedBit):mappedWires (a++b)=mappedWires a++mappedWires b:=by
+ simp [mappedWires,List.flatMap_append]
+
+theorem sum_wires(K:MeasuredCanonicalModLayout)(n:Nat)(hw:K.Widths n):
+ wires K.sum=(K.cin::(K.src++K.extended++K.carry)).toFinset:=by
+ have len:(mappedRead K.src false++[({wire:=none,flip:=false}:MappedBit)]).length=K.extended.length:=by
+  simp [mappedRead,MeasuredCanonicalModLayout.extended,hw.src,hw.out]
+ have carry:K.carry.length+1=K.extended.length:=by simp [MeasuredCanonicalModLayout.extended,hw.carry,hw.out]
+ have h:=FastMappedWires.exact_wires _ _ _ K.cin len carry
+ have e:mappedWires (mappedRead K.src false++[({wire:=none,flip:=false}:MappedBit)])=K.src:=by
+  rw [mapped_app,mappedRead_wires]
+  simp [mappedWires]
+ simpa only [MeasuredCanonicalModLayout.sum,e] using h
+
+theorem sum_in_q(K:MeasuredCanonicalModLayout)(p:Nat):wires K.sum⊆wires (qprogTq K p):=by
+ intro u h
+ simp only [qprogTq,wires_append,Finset.mem_union]
+ tauto
+
+theorem q_in_fold(L:CuccaroStreamedSquareWideLayout)(f:MeasuredSquareFold):
+ wires (qprogTq L.measuredCore SquareReduction.p)⊆wires (measuredFoldQTq L f):=by
+ intro u h
+ simp only [measuredFoldQTq,wires_append,Finset.mem_union]
+ tauto
+
+theorem copy_in_fold(L:CuccaroStreamedSquareWideLayout)(f:MeasuredSquareFold):
+ wires (copyRegister none f.src (L.foldDestination f))⊆wires (measuredFoldQTq L f):=by
+ intro u h
+ simp only [measuredFoldQTq,wires_append,Finset.mem_union]
+ tauto
+
+def envelope(L:CuccaroStreamedSquareWideLayout):List Wire:=
+ L.core.cin::((negP L).src++L.measuredCore.src++L.measuredCore.extended++L.measuredCore.carry)
+
+theorem envelope_fold(L:CuccaroStreamedSquareWideLayout)(hw:L.Widths):
+ (envelope L).toFinset⊆wires (measuredFoldQTq L (negP L)):=by
+ have sum:=sum_wires L.measuredCore 256 (L.measuredCore_widths hw)
+ have sums:wires L.measuredCore.sum⊆wires (measuredFoldQTq L (negP L)):=
+  (sum_in_q _ _).trans (q_in_fold _ _)
+ have len:(negP L).src.length=(L.foldDestination (negP L)).length:=by
+  simp [negP,foldDestination,hw.core.product,hw.core.work]
+ have cpy:=copyRegister_wires none (negP L).src (L.foldDestination (negP L)) len
+ have copies:wires (copyRegister none (negP L).src (L.foldDestination (negP L)))⊆wires (measuredFoldQTq L (negP L)):=copy_in_fold _ _
+ have ne:(negP L).src.isEmpty=false:=by
+  have np:L.core.product≠[]:=by
+   intro h
+   have hl:=hw.core.product
+   rw [h] at hl
+   contradiction
+  simp [negP,np]
+ simp only [ne,Bool.false_eq_true,if_false] at cpy
+ rw [sum] at sums
+ have inputs:((negP L).src).toFinset⊆wires (measuredFoldQTq L (negP L)):=by
+  intro u hu
+  apply copies
+  rw [cpy]
+  simp only [Option.toList_none,List.nil_append,List.toFinset_append,Finset.mem_union]
+  exact Or.inl hu
+ have eq:(envelope L).toFinset=((negP L).src).toFinset∪
+  (L.measuredCore.cin::(L.measuredCore.src++L.measuredCore.extended++L.measuredCore.carry)).toFinset:=by
+  ext u
+  simp [envelope,measuredCore,MeasuredCanonicalModLayout.extended]
+ rw [eq]
+ exact Finset.union_subset inputs sums
+
+#print axioms envelope_fold
+end ECDSAAdd.Entrant.FastSupportCore
+
+end
+
+-- Structural support proof component FastSupportHosts
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.FastSupportHosts
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
+ FourthASavedCarryDevelop ControlLoan1589BFFold
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxHeartbeats 50000000
+set_option maxRecDepth 100000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+
+theorem cx_target(a q:Wire):q∈wires [.CX a q]:=by simp [wires,Instr.wires]
+
+theorem cached_q(xs ys cs:List Wire)(cin q:Wire):q∈wires (cachedSub xs ys cs cin q):=by
+ have h:=cx_target (cs.getD 4 0) q
+ simp only [cachedSub,insertCopy,wires_append,Finset.mem_union]
+ tauto
+
+theorem cached_three(xs ys cs:List Wire)(cin q r p:Wire):
+ q∈wires (cachedSubTriple xs ys cs cin q r p) ∧
+ r∈wires (cachedSubTriple xs ys cs cin q r p) ∧
+ p∈wires (cachedSubTriple xs ys cs cin q r p):=by
+ have hq:=cx_target (cs.getD 4 0) q
+ have hr:=cx_target (cs.getD 5 0) r
+ have hp:=cx_target (cs.getD 6 0) p
+ simp only [cachedSubTriple,secondCopy,insertCopy,wires_append,Finset.mem_union]
+ tauto
+
+theorem a_hosts(L:CuccaroStreamedSquareWideLayout)(g:Wire):
+ L.core.sumCarry∈wires (aBodyTriple L g) ∧ eV L∈wires (aBodyTriple L g) ∧ spare L∈wires (aBodyTriple L g):=by
+ have h:=cached_three (Acc.tx (accZ L) 139 (Acc.earlyTerm (hiReg L) true 6))
+  (Acc.ty ((accReg L).take 139) (Acc.earlyTerm (hiReg L) true 6))
+  (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry (eV L) (spare L)
+ simp only [aBodyTriple,aFoldTriple,buildTriple,wires_append,Finset.mem_union]
+ tauto
+
+theorem b_host(L:CuccaroStreamedSquareWideLayout)(g:Wire):
+ L.core.sumCarry∈wires (ParkCarry10Develop.body L g):=by
+ have h:=cached_q (Acc.tx (accZ L) 139 (Acc.earlyTerm (hiReg L) true 6))
+  (Acc.ty ((accReg L).take 139) (Acc.earlyTerm (hiReg L) true 6))
+  (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry
+ simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,buildCached,wires_append,Finset.mem_union]
+ tauto
+
+theorem envelope_a(L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(g:Wire):
+ (FastSupportCore.envelope L).toFinset⊆wires (aBodyTriple L g):=by
+ have h:=FastSupportCore.envelope_fold L hw
+ intro u hu
+ have hi:=h hu
+ simp only [aBodyTriple,wires_append,Finset.mem_union]
+ tauto
+
+theorem envelope_b(L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(g:Wire):
+ (FastSupportCore.envelope L).toFinset⊆wires (ParkCarry10Develop.body L g):=by
+ have h:=FastSupportCore.envelope_fold L hw
+ intro u hu
+ have hi:=h hu
+ simp only [ParkCarry10Develop.body,wires_append,Finset.mem_union]
+ tauto
+#print axioms a_hosts
+#print axioms b_host
+#print axioms envelope_a
+#print axioms envelope_b
+end ECDSAAdd.Entrant.FastSupportHosts
+
+end
+
+-- Structural support proof component FastGenericCovers
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.FastGenericCovers
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold InverseCarryDevelop
+ ThirdSavedCarryDevelop FourthASavedCarryDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxHeartbeats 50000000
+set_option maxRecDepth 100000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
+
+def pad(K:CuccaroStreamedSquareWideLayout):List Wire:=(K.foldPad.drop 160).take 31
+
+def domainA(K:CuccaroStreamedSquareWideLayout):List Wire:=
+ K.core.sumCarry::eV K::spare K::K.core.cin::(hiReg K++accReg K++pad K++accBank K)
+
+def domainB(K:CuccaroStreamedSquareWideLayout):List Wire:=
+ BThreeTemp.hostP K::BThreeTemp.hostR K::K.core.sumCarry::K.core.cin::(hiReg K++accReg K++pad K++accBank K)
+
+theorem env_cin(K:CuccaroStreamedSquareWideLayout):K.core.cin∈FastSupportCore.envelope K:=by
+ simp [FastSupportCore.envelope]
+
+theorem env_product(K:CuccaroStreamedSquareWideLayout)(u:Wire)(h:u∈K.core.product.take 256):
+ u∈FastSupportCore.envelope K:=by
+ simp only [FastSupportCore.envelope,measuredCore,MeasuredCanonicalModLayout.extended,foldCarry,negP,
+  List.mem_cons,List.mem_append,List.mem_singleton] at *
+ tauto
+
+theorem env_work(K:CuccaroStreamedSquareWideLayout)(u:Wire)(h:u∈K.core.work):
+ u∈FastSupportCore.envelope K:=by
+ simp only [FastSupportCore.envelope,measuredCore,MeasuredCanonicalModLayout.extended,foldCarry,negP,
+  List.mem_cons,List.mem_append,List.mem_singleton] at *
+ tauto
+
+theorem env_foldpad(K:CuccaroStreamedSquareWideLayout)(u:Wire)(h:u∈K.foldPad):
+ u∈FastSupportCore.envelope K:=by
+ simp only [FastSupportCore.envelope,measuredCore,MeasuredCanonicalModLayout.extended,foldCarry,negP,
+  List.mem_cons,List.mem_append,List.mem_singleton] at *
+ tauto
+
+theorem a(K:CuccaroStreamedSquareWideLayout)(hw:K.Widths)(g:Wire):
+ ∀u∈domainA K,hasWire (aBodyTriple K g) u=true:=by
+ intro u hu
+ apply (hasWire_iff _ _).mpr
+ have env:∀u∈FastSupportCore.envelope K,u∈wires (aBodyTriple K g):=fun u h=>
+  FastSupportHosts.envelope_a K hw g (List.mem_toFinset.mpr h)
+ simp only [domainA,List.mem_cons,List.mem_append,or_assoc] at hu
+ rcases hu with h|h|h|h|h|h|h|h
+ · subst u
+   exact (FastSupportHosts.a_hosts K g).1
+ · subst u
+   exact (FastSupportHosts.a_hosts K g).2.1
+ · subst u
+   exact (FastSupportHosts.a_hosts K g).2.2
+ · subst u
+   exact env _ (env_cin K)
+ · exact env _ (env_product K u (List.mem_of_mem_drop h))
+ · exact env _ (env_work K u (List.mem_of_mem_take h))
+ · exact env _ (env_foldpad K u (List.mem_of_mem_drop (List.mem_of_mem_take h)))
+ · exact env _ (env_foldpad K u (List.mem_of_mem_take h))
+
+theorem b(K:CuccaroStreamedSquareWideLayout)(hw:K.Widths)(g:Wire):
+ ∀u∈domainB K,hasWire (ParkCarry10Develop.body K g) u=true:=by
+ intro u hu
+ apply (hasWire_iff _ _).mpr
+ have env:∀u∈FastSupportCore.envelope K,u∈wires (ParkCarry10Develop.body K g):=fun u h=>
+  FastSupportHosts.envelope_b K hw g (List.mem_toFinset.mpr h)
+ have hp:BThreeTemp.hostP K∈K.core.work:=by
+  have hi:172<K.core.work.length:=by rw [hw.core.work];decide
+  rw [BThreeTemp.hostP,List.getD_eq_getElem K.core.work 0 hi]
+  exact List.getElem_mem hi
+ have hr:BThreeTemp.hostR K∈K.core.work:=by
+  have hi:171<K.core.work.length:=by rw [hw.core.work];decide
+  rw [BThreeTemp.hostR,List.getD_eq_getElem K.core.work 0 hi]
+  exact List.getElem_mem hi
+ simp only [domainB,List.mem_cons,List.mem_append,or_assoc] at hu
+ rcases hu with h|h|h|h|h|h|h|h
+ · subst u
+   exact env _ (env_work K _ hp)
+ · subst u
+   exact env _ (env_work K _ hr)
+ · subst u
+   exact FastSupportHosts.b_host K g
+ · subst u
+   exact env _ (env_cin K)
+ · exact env _ (env_product K u (List.mem_of_mem_drop h))
+ · exact env _ (env_work K u (List.mem_of_mem_take h))
+ · exact env _ (env_foldpad K u (List.mem_of_mem_drop (List.mem_of_mem_take h)))
+ · exact env _ (env_foldpad K u (List.mem_of_mem_take h))
+#print axioms a
+#print axioms b
+end ECDSAAdd.Entrant.FastGenericCovers
+
+end
+
 namespace ECDSAAdd.Entrant.FullPadSupport
 open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop ControlLoan1589BFFold
 set_option Elab.async false
@@ -497,19 +804,40 @@ set_option maxHeartbeats 100000000
   infer_instance
  def L := Baselines.layout.dialogStreamedSquareWide
  def c := Baselines.layout.core.generic
- theorem used0 : ∀w∈((supportDomain L).drop 0).take 80,hasWire (aBodyTriple L c) w=true := by decide +kernel
+ theorem used0 : ∀w∈((supportDomain L).drop 0).take 80,hasWire (aBodyTriple L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.a L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
 #print axioms used0
- theorem used1 : ∀w∈((supportDomain L).drop 80).take 80,hasWire (aBodyTriple L c) w=true := by decide +kernel
+ theorem used1 : ∀w∈((supportDomain L).drop 80).take 80,hasWire (aBodyTriple L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.a L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
 #print axioms used1
- theorem used2 : ∀w∈((supportDomain L).drop 160).take 80,hasWire (aBodyTriple L c) w=true := by decide +kernel
+ theorem used2 : ∀w∈((supportDomain L).drop 160).take 80,hasWire (aBodyTriple L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.a L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
 #print axioms used2
- theorem used3 : ∀w∈((supportDomain L).drop 240).take 80,hasWire (aBodyTriple L c) w=true := by decide +kernel
+ theorem used3 : ∀w∈((supportDomain L).drop 240).take 80,hasWire (aBodyTriple L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.a L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
 #print axioms used3
- theorem used4 : ∀w∈((supportDomain L).drop 320).take 80,hasWire (aBodyTriple L c) w=true := by decide +kernel
+ theorem used4 : ∀w∈((supportDomain L).drop 320).take 80,hasWire (aBodyTriple L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.a L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
 #print axioms used4
- theorem used5 : ∀w∈((supportDomain L).drop 400).take 80,hasWire (aBodyTriple L c) w=true := by decide +kernel
+ theorem used5 : ∀w∈((supportDomain L).drop 400).take 80,hasWire (aBodyTriple L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.a L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
 #print axioms used5
- theorem used6 : ∀w∈((supportDomain L).drop 480).take 80,hasWire (aBodyTriple L c) w=true := by decide +kernel
+ theorem used6 : ∀w∈((supportDomain L).drop 480).take 80,hasWire (aBodyTriple L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.a L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
 #print axioms used6
  theorem domain_split : supportDomain L = ((supportDomain L).drop 0).take 80 ++ ((supportDomain L).drop 80).take 80 ++ ((supportDomain L).drop 160).take 80 ++ ((supportDomain L).drop 240).take 80 ++ ((supportDomain L).drop 320).take 80 ++ ((supportDomain L).drop 400).take 80 ++ ((supportDomain L).drop 480).take 80 := by decide +kernel
  theorem actual_support_ready : SupportReady L c := by
@@ -7105,4 +7433,245 @@ theorem body_eU_free : eU L∉wires body := by
 #print axioms body_support
 #print axioms body_eU_free
 end ECDSAAdd.Entrant.A161Low4FixedFold
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+open ECDSAAdd.Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+open InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 500000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.WholePadConcrete
+
+ def oldCachedBuild := buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+
+ def newCachedBuild := buildCached (accReg L) pad (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+
+ def oldCachedUnbuild := unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+
+ def newCachedUnbuild := unbuildConsumed (accReg L) pad (accBank L) L.core.cin (hiReg L) L.core.sumCarry
+
+ theorem cached_build_counts : SeedPadDevelop.Counts newCachedBuild oldCachedBuild := by unfold SeedPadDevelop.Counts; decide +kernel
+
+ theorem cached_unbuild_counts : SeedPadDevelop.Counts newCachedUnbuild oldCachedUnbuild := by unfold SeedPadDevelop.Counts; decide +kernel
+
+end ECDSAAdd.Entrant.WholePadConcrete
+
+namespace ECDSAAdd.Entrant.FullBMeta
+
+ def MetricReady (L:CuccaroStreamedSquareWideLayout):Prop :=
+ SeedPadDevelop.Counts
+  (buildCached (accReg L) (FullPadDevelop.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)
+  (buildCached (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry) ∧
+ SeedPadDevelop.Counts
+  (unbuildConsumed (accReg L) (FullPadDevelop.pad L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)
+  (unbuildConsumed (accReg L) (accZ L) (accBank L) L.core.cin (hiReg L) L.core.sumCarry)
+
+ instance (L:CuccaroStreamedSquareWideLayout):Decidable (MetricReady L):=by
+  unfold MetricReady SeedPadDevelop.Counts
+  infer_instance
+
+ theorem actual_metric : MetricReady Baselines.layout.dialogStreamedSquareWide :=
+  ⟨WholePadConcrete.cached_build_counts, WholePadConcrete.cached_unbuild_counts⟩
+
+ def supportDomain (L:CuccaroStreamedSquareWideLayout):List Wire :=
+  BThreeTemp.hostP L::BThreeTemp.hostR L::L.core.sumCarry::L.core.cin::(hiReg L++accReg L++FullPadDevelop.pad L++accBank L)
+
+ def SupportReady (L:CuccaroStreamedSquareWideLayout) (c:Wire):Prop :=
+  ∀w∈supportDomain L,hasWire (ParkCarry10Develop.body L c) w=true
+
+ instance (L:CuccaroStreamedSquareWideLayout) (c:Wire):Decidable (SupportReady L c):=by
+  unfold SupportReady
+  infer_instance
+
+ def L := Baselines.layout.dialogStreamedSquareWide
+
+ def c := Baselines.layout.core.generic
+
+ theorem used0 : ∀w∈((supportDomain L).drop 0).take 80,hasWire (ParkCarry10Develop.body L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.b L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+
+ theorem used1 : ∀w∈((supportDomain L).drop 80).take 80,hasWire (ParkCarry10Develop.body L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.b L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+
+ theorem used2 : ∀w∈((supportDomain L).drop 160).take 80,hasWire (ParkCarry10Develop.body L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.b L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+
+ theorem used3 : ∀w∈((supportDomain L).drop 240).take 80,hasWire (ParkCarry10Develop.body L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.b L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+
+ theorem used4 : ∀w∈((supportDomain L).drop 320).take 80,hasWire (ParkCarry10Develop.body L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.b L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+
+ theorem used5 : ∀w∈((supportDomain L).drop 400).take 80,hasWire (ParkCarry10Develop.body L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.b L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+
+ theorem used6 : ∀w∈((supportDomain L).drop 480).take 80,hasWire (ParkCarry10Develop.body L c) w=true := by
+  intro u hu
+  exact FastGenericCovers.b L (Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths) c u
+   (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+
+ theorem domain_split : supportDomain L = ((supportDomain L).drop 0).take 80 ++ ((supportDomain L).drop 80).take 80 ++ ((supportDomain L).drop 160).take 80 ++ ((supportDomain L).drop 240).take 80 ++ ((supportDomain L).drop 320).take 80 ++ ((supportDomain L).drop 400).take 80 ++ ((supportDomain L).drop 480).take 80 := by decide +kernel
+
+ theorem actual_support_ready : SupportReady L c := by
+  unfold SupportReady
+  rw [domain_split]
+  simp only [List.mem_append,or_imp,forall_and]
+  exact ⟨⟨⟨⟨⟨⟨used0, used1⟩, used2⟩, used3⟩, used4⟩, used5⟩, used6⟩
+
+end ECDSAAdd.Entrant.FullBMeta
+
+namespace ECDSAAdd.Entrant.FullBTemp
+
+def hostR := BThreeTemp.hostR
+
+def hostP := BThreeTemp.hostP
+
+def pad (L : CuccaroStreamedSquareWideLayout) : List Wire := FullPadDevelop.pad L
+
+def loans (L : CuccaroStreamedSquareWideLayout) : List Wire :=
+ (L.core.work.drop 173).take 19 ++ (L.core.work.drop 193).take 3 ++ (L.core.work.drop 255).take 1 ++ (L.core.work.drop 227).take 28 ++ (L.core.work.drop 201).take 11 ++ (L.core.work.drop 213).take 14 ++ (L.core.work.drop 212).take 1 ++ (L.core.work.drop 196).take 5
+
+def hosts (L : CuccaroStreamedSquareWideLayout) : List Wire := hostR L::hostP L::loans L
+
+def middle := BThreeTemp.middle
+
+def LoanReadyTrim (L : CuccaroStreamedSquareWideLayout) (g u : Wire) : Prop :=
+ u∈L.core.work ∧ u∉L.core.cin::(hiReg L++accReg L++pad L++accBank L) ∧
+ u≠L.core.sumCarry ∧ u≠eV L ∧ u≠spare L ∧ True
+
+def HostReady (L : CuccaroStreamedSquareWideLayout) (c x : Wire) : Prop :=
+ LoanReadyTrim L c x ∧ x∉mR L ∧ x≠w192 L ∧ x≠c ∧ hasWire (ParkCarry10Develop.body L c) x=true
+
+def PadReady (L:CuccaroStreamedSquareWideLayout) (c:Wire):Prop :=
+ FullBMeta.MetricReady L ∧ FullFitReady.Ready L ∧ FullBMeta.SupportReady L c
+
+def Ready (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Prop :=
+ (loans L).length=82 ∧ (L.core.sumCarry::hosts L).Nodup ∧ (∀x∈hosts L,HostReady L c x) ∧ PadReady L c
+
+instance (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Decidable (Ready L c) := by
+ unfold Ready HostReady LoanReadyTrim PadReady
+ unfold pad
+ infer_instance
+
+def oldLoop := BThreeTemp.oldLoop
+
+theorem middle_subset_old (L : CuccaroStreamedSquareWideLayout) (c : Wire) :
+ wires (middle L c) ⊆ wires (ParkCarry10Develop.body L c) := by
+ intro q member
+ simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,wires_append,Finset.mem_union]
+ exact Or.inr (Or.inr (Or.inl (Or.inr (Or.inr (Or.inl member)))))
+
+theorem pad_length (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) : 5≤(pad L).length := by
+ rw [pad,FullPadDevelop.pad_length L hw]
+ decide
+
+ theorem terms_fits (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+ ∀f∈earlyHTerms (hiReg L),Acc.Fits (accReg L) (pad L) (accBank L) L.core.cin 163 f :=
+ FullPadDevelop.terms_fits L hw hn
+
+def prefixP (L : CuccaroStreamedSquareWideLayout) : Program :=
+  measuredFoldQTq L (negP L) ++ (measuredFoldQTq L (rot128F L) ++ eAddLo L)
+
+def suffixP (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
+  ParkCarryDevelop.program (eU L) L.core.sumCarry ++
+    (eSubK L ++ (eFoldTq L c ++ ParkCarry10Develop.rebuild L))
+
+theorem oldBody_shape (L : CuccaroStreamedSquareWideLayout) (c : Wire) :
+    ParkCarry10Develop.body L c = prefixP L ++ (oldLoop L c ++ suffixP L c) := by
+  simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,oldLoop,BThreeTemp.oldLoop,middle,BThreeTemp.middle,prefixP,suffixP,List.append_assoc]
+
+end ECDSAAdd.Entrant.FullBTemp
+
+namespace ECDSAAdd.Entrant.FullBReady
+open ECDSAAdd.Entrant.FullBTemp
+
+def L := BThreeStaged301.L
+
+def c := BThreeStaged301.c
+
+theorem onePass_input_eq : BData301.p0=middle L c := BThreeStaged301.input_eq
+
+theorem geometry : (loans L).length=82 ∧ (L.core.sumCarry::hosts L).Nodup ∧
+ ∀x∈hosts L,LoanReadyTrim L c x ∧ x∉mR L ∧ x≠w192 L ∧ x≠c := by
+ unfold LoanReadyTrim
+ decide +kernel
+
+theorem used_data : ∀x∈hosts L,FourthASavedCarryDevelop.hasWire BData301.p0 x=true := by decide +kernel
+
+private theorem hasWire_transport (p q:Program) (e:p=q) (x:Wire)
+ (h:FourthASavedCarryDevelop.hasWire p x=true):FourthASavedCarryDevelop.hasWire q x=true := e ▸ h
+
+private theorem hasWire_middle_to_body (K:CuccaroStreamedSquareWideLayout) (g x:Wire)
+ (h:FourthASavedCarryDevelop.hasWire (middle K g) x=true):
+ FourthASavedCarryDevelop.hasWire (ParkCarry10Develop.body K g) x=true := by
+ exact (FourthASavedCarryDevelop.hasWire_iff _ _).mpr
+  (middle_subset_old K g ((FourthASavedCarryDevelop.hasWire_iff _ _).mp h))
+
+private theorem used_to_body (x:Wire) (h:FourthASavedCarryDevelop.hasWire BData301.p0 x=true):
+ FourthASavedCarryDevelop.hasWire (ParkCarry10Develop.body L c) x=true :=
+ hasWire_middle_to_body L c x (hasWire_transport _ _ BThreeStaged301.input_eq x h)
+
+theorem actual_ready : Ready L c := by
+ refine ⟨geometry.1,geometry.2.1,?_,FullBMeta.actual_metric,FullFitReady.actual,FullBMeta.actual_support_ready⟩
+ intro x hx
+ have g:=geometry.2.2 x hx
+ exact ⟨g.1,g.2.1,g.2.2.1,g.2.2.2,used_to_body x (used_data x hx)⟩
+
+end ECDSAAdd.Entrant.FullBReady
+
+namespace FastGuardResearch
+
+def wideEq : DecidableEq CuccaroStreamedSquareWideLayout := by
+ intro a b
+ rcases a with ⟨ac,ap⟩
+ rcases b with ⟨bc,bp⟩
+ cases ac
+ cases bc
+ simp only [CuccaroStreamedSquareWideLayout.mk.injEq,CuccaroStreamedSquareLayout.mk.injEq]
+ infer_instance
+
+end FastGuardResearch
+
+namespace ECDSAAdd.Entrant.FullBOptTemp
+
+def actualLayout : CuccaroStreamedSquareWideLayout := Baselines.layout.dialogStreamedSquareWide
+
+def actualControl : Wire := Baselines.layout.core.generic
+
+def actualExt : List Wire := OwnDiagAll12Square.kext Baselines.layout
+
+def actualFoldPerm : Equiv.Perm Wire := LowZero18Square.foldPerm actualLayout actualExt
+
+def actualHostedLayout : CuccaroStreamedSquareWideLayout := ParkCarryDevelop.hostLayout actualLayout actualFoldPerm
+
+theorem actualHostedLayout_eq : actualHostedLayout = actualLayout := by
+ apply ParkCarryDevelop.host_eq
+ have hw := Baselines.layout.dialogStreamedSquareWide_widths Baselines.layout_widths
+ have nd : actualLayout.wires.Nodup := by
+  change Baselines.layout.dialogStreamedSquareWide.wires.Nodup
+  have full := Baselines.layout.streamedSquare_control_nodup Baselines.layout_widths Baselines.layout_nodup
+  exact (List.nodup_cons.mp (List.nodup_cons.mp full).2).2
+ have he := OwnDiagAll12Square.kext_ok Baselines.layout Baselines.layout_widths Baselines.layout_nodup
+ exact ParkCarryDevelop.fold_fixes_sumCarry actualLayout hw nd actualExt he.len
+  (fun q hq h => he.away q hq (List.mem_cons_of_mem actualControl h))
+
+end ECDSAAdd.Entrant.FullBOptTemp
+
 end
