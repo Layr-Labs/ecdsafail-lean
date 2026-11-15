@@ -164,8 +164,8 @@ theorem success_literal : (ZeroSetDevelop.compileS? hosts88 BData301.p0).isSome=
 
 attribute [local irreducible] ZeroSetDevelop.compileS?
 
-theorem success : (ZeroSetDevelop.compileS? hosts88 (FullBTemp.middle L c)).isSome=true :=
- (congrArg (fun p=>(ZeroSetDevelop.compileS? hosts88 p).isSome) FullBReady.onePass_input_eq).symm.trans success_literal
+
+
 
 
 def loopWith (cm : ZeroSetDevelop.CheckedS hosts88 (FullBTemp.middle L c)) : Program :=
@@ -904,14 +904,14 @@ def selectedBody (K : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
  | isFalse _ => ParkCarry10Develop.body K g
  | isTrue _ => if g=LowAccCarryDevelop.c then (((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith) else ParkCarry10Develop.body K g
 
-theorem selected_body_transport (K K' : CuccaroStreamedSquareWideLayout) (g g' : Wire)
- (he : K=K') (hg : g=g') : selectedBody K g=selectedBody K' g' := by
- cases he
- cases hg
- rfl
 
-def hostedSelectedBody (L : CuccaroStreamedSquareWideLayout) (rho : Equiv.Perm Wire) (c : Wire) : Program :=
- selectedBody (ParkCarryDevelop.hostLayout L rho) c
+
+
+
+
+
+
+
 
 theorem selected_subset (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
  wires (selectedBody K g)⊆wires (ParkCarry10Develop.body K g) := by
@@ -924,9 +924,9 @@ theorem selected_subset (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g
   · rename_i hg;subst K;subst g;exact actual_subset
   · exact Finset.Subset.refl _
 
-theorem selected_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (hn : L.wires.Nodup) (c : Wire) : wires (selectedBody L c)⊆(c::L.wires).toFinset :=
- (selected_subset L hw c).trans (ParkCarry10Develop.body_support L hw hn c)
+
+
+
 
 theorem selected_physical (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths)
  (g : Wire) (nd : (g::K.wires).Nodup) : GatePhysical (selectedBody K g) := by
@@ -970,54 +970,54 @@ theorem selected_resources (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths)
     exact ⟨by omega,h.2.1,by omega⟩
   · exact ⟨Nat.le_refl _,rfl,Nat.le_refl _⟩
 
-theorem hostedSelectedBody_eq (L : CuccaroStreamedSquareWideLayout) (rho : Equiv.Perm Wire)
- (c : Wire) (fixed : rho L.core.sumCarry=L.core.sumCarry) :
- hostedSelectedBody L rho c=selectedBody L c :=
- congrArg (fun K=>selectedBody K c) (ParkCarryDevelop.host_eq L rho fixed)
 
-theorem hosted_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (rho : Equiv.Perm Wire) (c : Wire) :
- toffoliCount (hostedSelectedBody L rho c)≤toffoliCount (ParkCarry10Develop.hostedBody L rho c) ∧
- measurementCount (hostedSelectedBody L rho c)=measurementCount (ParkCarry10Develop.hostedBody L rho c) ∧
- Challenge.gateSlots (hostedSelectedBody L rho c)≤Challenge.gateSlots (ParkCarry10Develop.hostedBody L rho c) :=
- selected_resources (ParkCarryDevelop.hostLayout L rho) (ParkCarryDevelop.host_widths L hw rho) c
 
-theorem hosted_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (rho : Equiv.Perm Wire) (c : Wire) :
- wires (hostedSelectedBody L rho c)⊆wires (ParkCarry10Develop.hostedBody L rho c) :=
- selected_subset (ParkCarryDevelop.hostLayout L rho) (ParkCarryDevelop.host_widths L hw rho) c
 
-theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (hn : L.wires.Nodup) (ext : List Wire) (c : Wire) (hlen : 300≤ext.length)
- (away : ∀q∈ext,q∉L.wires) :
- wires (hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset := by
- rw [hostedSelectedBody_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
- exact selected_support L hw hn c
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 abbrev actualLayout := FullBOptTemp.actualLayout
 abbrev actualControl := FullBOptTemp.actualControl
 abbrev actualExt := FullBOptTemp.actualExt
 abbrev actualFoldPerm := FullBOptTemp.actualFoldPerm
 
-theorem selected_actual : selectedBody LowAccCarryDevelop.L LowAccCarryDevelop.c=(((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq LowAccCarryDevelop.L LowAccCarryDevelop.L with
- | isFalse hn => exact False.elim (hn rfl)
- | isTrue hl => exact if_pos rfl
 
-theorem ranked_selected_exact : hostedSelectedBody actualLayout actualFoldPerm actualControl=(((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) LowAccCarryDevelop.bodyWith) := by
- have he : ParkCarryDevelop.hostLayout actualLayout actualFoldPerm=actualLayout :=
-  FullBOptTemp.actualHostedLayout_eq
- exact (congrArg (fun K=>selectedBody K actualControl) he).trans
-  ((selected_body_transport actualLayout LowAccCarryDevelop.L actualControl LowAccCarryDevelop.c rfl rfl).trans selected_actual)
 
-theorem ranked_certified_gain :
- toffoliCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)+88≤4762 ∧
- measurementCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)=5924 := by
- rw [ranked_selected_exact]
- have h:=actual_resources
- have old:=ParkCarry10Develop.body_counts LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths LowAccCarryDevelop.c
- exact ⟨h.1.trans old.1.le,h.2.1.trans old.2⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.FullB88OptTemp
 
@@ -10433,26 +10433,26 @@ set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
 
-theorem toffoli (old new pre oldTail newTail : Program)
- (ho : old=pre++oldTail) (hn : new=pre++newTail)
- (ht : toffoliCount newTail+1=toffoliCount oldTail) : toffoliCount new+1=toffoliCount old := by
- calc toffoliCount new+1=toffoliCount (pre++newTail)+1 := congrArg (fun p=>toffoliCount p+1) hn
-      _ = toffoliCount (pre++oldTail) := by simp only [toffoliCount_append];omega
-      _ = toffoliCount old := congrArg toffoliCount ho.symm
 
-theorem measurements (old new pre oldTail newTail : Program)
- (ho : old=pre++oldTail) (hn : new=pre++newTail)
- (ht : measurementCount newTail=measurementCount oldTail) : measurementCount new=measurementCount old := by
- calc measurementCount new=measurementCount (pre++newTail) := congrArg measurementCount hn
-      _ = measurementCount (pre++oldTail) := by simp only [measurementCount_append,ht]
-      _ = measurementCount old := congrArg measurementCount ho.symm
 
-theorem slots (old new pre oldTail newTail : Program) (n : Nat)
- (ho : old=pre++oldTail) (hn : new=pre++newTail)
- (ht : gateSlots newTail=gateSlots oldTail+n) : gateSlots new=gateSlots old+n := by
- calc gateSlots new=gateSlots (pre++newTail) := congrArg gateSlots hn
-      _ = gateSlots (pre++oldTail)+n := by simp only [SixCarryResource.slots_append];omega
-      _ = gateSlots old+n := congrArg (fun p=>gateSlots p+n) ho.symm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.SixCarryContextResources
 
 end
@@ -10474,11 +10474,11 @@ theorem patch_slots_zero (p : Program) (i a b t : Nat) (r : Program)
  have h := SixCarryPatchResources.slots p i a b t r 0 hg (by simpa only [Nat.zero_add] using hr)
  simpa only [Nat.add_zero] using h
 
-theorem context_slots_zero (old new pre oldTail newTail : Program)
- (ho : old=pre++oldTail) (hn : new=pre++newTail)
- (ht : gateSlots newTail=gateSlots oldTail) : gateSlots new=gateSlots old := by
- have h := SixCarryContextResources.slots old new pre oldTail newTail 0 ho hn (by simpa only [Nat.add_zero] using ht)
- simpa only [Nat.add_zero] using h
+
+
+
+
+
 end ECDSAAdd.Entrant.ExtraCarryResourceGeneric
 
 end
@@ -17738,82 +17738,82 @@ set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 set_option linter.unusedVariables false
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
- theorem prefix_spec
- (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
- (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue L.core.product base=M^2) (hc : L.PairClean base)
- (O : Nat) (hO : O<SquareReduction.p) :
- Triple (SquareFrame L.core.out base O) (FullBTemp.prefixP L)
-  (fun b=>L.PairClean b ∧ regValue (eReg L) b<2^129) := by
 
 
-  have hb : M^2<2^256 := by simpa using square_bound M 128 hM
-  have pmod : 0<SquareReduction.p := by norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c]
-  let P := M^2
-  let b0 := P%2^128
-  let b1 := P/2^128
-  let W := 4294968272*b1
-  let O1 := (P+(SquareReduction.p-1-O))%SquareReduction.p
-  let O2 := ((P/2^128)%2^128+2^128*(P%2^128)+(SquareReduction.p-1-O1))%SquareReduction.p
-  have hO1 : O1<SquareReduction.p := Nat.mod_lt _ pmod
-  have hO2 : O2<SquareReduction.p := Nat.mod_lt _ pmod
-  have hb1lt : b1<2^128 := by
-    show P/2^128<2^128
-    rw [Nat.div_lt_iff_lt_mul (by positivity)]
-    calc P<2^256 := hb
-      _ = 2^128*2^128 := by norm_num
-  have hWlt : W<2^163 := by
-    show 4294968272*b1<2^163
-    norm_num at hb1lt ⊢
-    omega
-  have views := accA_views L hw base M hM hP
-  have v1 : L.MeasuredFoldView base (negP L) := views (.inl (negP L)) (by simp [accAMix])
-  have v2 : L.MeasuredFoldView base (rot128F L) := views (.inl (rot128F L)) (by simp [accAMix])
-  have pay1 : measuredFoldPayload base (negP L)=P := by
-    simp only [measuredFoldPayload,negP,pow_zero,Nat.mul_one]
-    rw [L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
-  have pay2 : measuredFoldPayload base (rot128F L)=(P/2^128)%2^128+2^128*(P%2^128) := by
-    simp only [measuredFoldPayload,rot128F,pow_zero,Nat.mul_one]
-    exact L.rotated128_value hw base (M^2) hP
-  have t1 : Triple (SquareFrame L.core.out base O) (measuredFoldQTq L (negP L)) (SquareFrame L.core.out base O1) := by
-    have h := measuredFoldQ_frameTq L hw hn base (negP L) v1 rfl hc O hO
-    rwa [pay1] at h
-  have t2 : Triple (SquareFrame L.core.out base O1) (measuredFoldQTq L (rot128F L))
-      (SquareFrame L.core.out base O2) := by
-    have h := measuredFoldQ_frameTq L hw hn base (rot128F L) v2 rfl hc O1 hO1
-    rwa [pay2] at h
-  have e0 : regValue (eReg L) base=b0 := eReg_value L hw base P hP hb
-  have a0 : regValue (accReg L) base=0 :=
-    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc.work q (accReg_work L q hq))
-  have hb1 : regValue (hiReg L) base=b1 := by
-    rw [hiReg,regValue_drop_div _ 128 (by simp [hw.core.product]),
-      L.product_take_value hw base (M^2) hP 256 (by omega),Nat.mod_eq_of_lt hb]
-  have conv1 : ∀s,SquareFrame L.core.out base O2 s → BState L base O2 b0 0 s := by
-    intro s hs
-    refine ⟨hs.1,?_,?_,fun q h1 _ _ => hs.2 q h1⟩
-    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (eReg_away L hn q hq).1)).trans e0
-    · exact (regValue_congr _ _ _ (fun q hq => hs.2 q (accReg_out L hn q hq))).trans a0
 
 
-  have hb0 : b0<2^128 := Nat.mod_lt _ (by positivity)
-  have hu : b1/2^96<2^32 := by
-   rw [Nat.div_lt_iff_lt_mul (by positivity)]
-   calc b1<2^128 := hb1lt
-        _ = 2^32*2^96 := by norm_num
-  have hH : b0/2^32<2^96 := by omega
-  have hl : (b0%2^32+b1/2^96)%2^32<2^32 := Nat.mod_lt _ (by positivity)
-  have hk : (b0%2^32+b1/2^96)/2^32≤1 := by omega
-  have hE : 2^32*(b0/2^32)+(b0%2^32+b1/2^96)%2^32+
-    2^128*((b0%2^32+b1/2^96)/2^32)<2^129 := by
-   norm_num at hH hl hk ⊢
-   omega
-  have k1 := eAddLo_step L hw hn base hc O2 0 b0 hb0
-  rw [hb1] at k1
-  have kk : Triple (BState L base O2 b0 0) (eAddLo L)
-    (fun b=>L.PairClean b ∧ regValue (eReg L) b<2^129) :=
-   Triple.conseq (fun _ h=>h) k1 (fun b h=>
-    ⟨bstate_clean L hn base hc _ _ b h,h.2.1.symm ▸ hE⟩)
-  simpa only [FullBTemp.prefixP] using t1.seq (t2.seq (Triple.conseq conv1 kk (fun _ h=>h)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.SixCarryPrefixSpec
 
 end
@@ -17892,33 +17892,33 @@ theorem raw_eq : originalBody=(((ZeroSetDevelop.compileS? LowAccCarryDevelop.hos
   congrArg₂ ParkCarry10Develop.body (show L=LowAccCarryDevelop.L from rfl) (show c=LowAccCarryDevelop.c from rfl)
  exact congrArg (fun fallback=>((ZeroSetDevelop.compileS? LowAccCarryDevelop.hosts88 BData301.p0).map LowAccCarryDevelop.fromLiteral).elim fallback LowAccCarryDevelop.bodyWith) he
 
-theorem resources :
- toffoliCount originalBody+88≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount originalBody=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- Challenge.gateSlots originalBody+264≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
- Eq.mp (congrArg (fun p=>toffoliCount p+88≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount p=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- Challenge.gateSlots p+264≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c)) raw_eq.symm)
-  FullB88OptTemp.actual_resources
 
-theorem support : wires originalBody⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
- Eq.mp (congrArg (fun p=>wires p⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c)) raw_eq.symm)
-  FullB88OptTemp.actual_subset
+
+
+
+
+
+
+
+
+
+
+
 
 theorem physical : GatePhysical originalBody :=
  Eq.mp (congrArg (fun p=>GatePhysical p) raw_eq.symm)
   FullB88OptTemp.actual_physical
 
-theorem frame (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
- (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base LowAccCarryDevelop.c=false → M=0)
- (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
- Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) SixCarryLoopAnchor.originalBody
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) :=
- Eq.mp (congrArg (fun p=>Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) p
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O))) raw_eq.symm)
-  (FullB88OptTemp.actual_frame base M hM hP hc hsum O hO hg hSource)
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.SixCarryOriginal
 
 end
@@ -34828,7 +34828,7 @@ set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.run SixCarryLoopAnchor.loop SixCarryPrefixData.program
 
-def Clean (b : BasisState) : Prop := ∀q∈SixCarryCleanDomain.cleanSites,b q=false
+
 def p1 : Program := patch loop 11959 repair11959
 def p2 : Program := patch p1 11953 repair11953
 def p3 : Program := patch p2 11947 repair11947
@@ -34867,202 +34867,202 @@ theorem original_gate_4913 : loop[4913]?=some (.CCX 4664 4407 4408) := by
  have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 49 shape38 before_len38 (by rw [len38]; decide +kernel)
  exact h.trans (by decide +kernel)
 
-theorem lookup1 : loop[11959]?=some (.CCX 4664 4407 4408) := by
- exact original_gate_11959
 
-theorem clean11959 (b : BasisState) (hz : Clean b) : SixCarryBridge11959.Clean b :=
- ⟨hz 4372 (by decide +kernel),hz 4489 (by decide +kernel),hz 4490 (by decide +kernel),hz 4491 (by decide +kernel),hz 4492 (by decide +kernel),hz 4493 (by decide +kernel),hz 4494 (by decide +kernel),hz 4495 (by decide +kernel),hz 4496 (by decide +kernel),hz 4627 (by decide +kernel),hz 4628 (by decide +kernel),hz 4629 (by decide +kernel),hz 4630 (by decide +kernel),hz 4631 (by decide +kernel),hz 4632 (by decide +kernel),hz 4633 (by decide +kernel),hz 4634 (by decide +kernel),hz 4654 (by decide +kernel),hz 4655 (by decide +kernel),hz 4656 (by decide +kernel),hz 4657 (by decide +kernel),hz 4658 (by decide +kernel),hz 4659 (by decide +kernel),hz 4662 (by decide +kernel),hz 4663 (by decide +kernel),hz 4664 (by decide +kernel),hz 4760 (by decide +kernel),hz 4796 (by decide +kernel),hz 4797 (by decide +kernel),hz 4817 (by decide +kernel),hz 4818 (by decide +kernel),hz 4819 (by decide +kernel),hz 4820 (by decide +kernel),hz 4821 (by decide +kernel),hz 4822 (by decide +kernel),hz 4825 (by decide +kernel),hz 4826 (by decide +kernel)⟩
 
-theorem step1 (s : State) (m : List Bool) (hz : Clean s.basis) :
- run loop m s=run p1 m s := by
- unfold p1
- apply SixCarryPatchGeneric.run_eq loop 11959 4664 4407 4408 repair11959 lookup1 (by decide +kernel) s m
- apply gate11959
- rw [actual_prefix_basis 11959 (by decide +kernel)]
- exact SixCarryCondition11959.condition s.basis (clean11959 s.basis hz)
 
-theorem lookup2 : p1[11953]?=some (.CCX 4663 4406 4407) := by
- have h1 : p1[11953]?=some (.CCX 4663 4406 4407) := by
-  unfold p1
-  exact (lookup_before loop 11959 (.CCX 4664 4407 4408) repair11959 11953 lookup1 (by decide +kernel)).trans original_gate_11953
- exact h1
 
-theorem prefix2 : p1.take 11953=loop.take 11953 := by
- have h1 : p1.take 11953=loop.take 11953 := by
-  unfold p1
-  exact (take_before loop 11959 (.CCX 4664 4407 4408) repair11959 11953 lookup1 (by decide +kernel)).trans (Eq.refl _)
- exact h1
 
-theorem clean11953 (b : BasisState) (hz : Clean b) : SixCarryBridge11953.Clean b :=
- hz 4664 (by decide +kernel)
 
-theorem step2 (s : State) (m : List Bool) (hz : Clean s.basis) :
- run p1 m s=run p2 m s := by
- unfold p2
- apply SixCarryPatchGeneric.run_eq p1 11953 4663 4406 4407 repair11953 lookup2 (by decide +kernel) s m
- apply gate11953
- simp only [prefix2]
- rw [actual_prefix_basis 11953 (by decide +kernel)]
- exact SixCarryCondition11953.condition s.basis (clean11953 s.basis hz)
 
-theorem lookup3 : p2[11947]?=some (.CCX 4662 4405 4406) := by
- have h1 : p1[11947]?=some (.CCX 4662 4405 4406) := by
-  unfold p1
-  exact (lookup_before loop 11959 (.CCX 4664 4407 4408) repair11959 11947 lookup1 (by decide +kernel)).trans original_gate_11947
- have h2 : p2[11947]?=some (.CCX 4662 4405 4406) := by
-  unfold p2
-  exact (lookup_before p1 11953 (.CCX 4663 4406 4407) repair11953 11947 lookup2 (by decide +kernel)).trans h1
- exact h2
 
-theorem prefix3 : p2.take 11947=loop.take 11947 := by
- have h1 : p1.take 11947=loop.take 11947 := by
-  unfold p1
-  exact (take_before loop 11959 (.CCX 4664 4407 4408) repair11959 11947 lookup1 (by decide +kernel)).trans (Eq.refl _)
- have h2 : p2.take 11947=loop.take 11947 := by
-  unfold p2
-  exact (take_before p1 11953 (.CCX 4663 4406 4407) repair11953 11947 lookup2 (by decide +kernel)).trans h1
- exact h2
 
-theorem clean11947 (b : BasisState) (hz : Clean b) : SixCarryBridge11947.Clean b :=
- ⟨hz 4663 (by decide +kernel),hz 4826 (by decide +kernel)⟩
 
-theorem step3 (s : State) (m : List Bool) (hz : Clean s.basis) :
- run p2 m s=run p3 m s := by
- unfold p3
- apply SixCarryPatchGeneric.run_eq p2 11947 4662 4405 4406 repair11947 lookup3 (by decide +kernel) s m
- apply gate11947
- simp only [prefix3]
- rw [actual_prefix_basis 11947 (by decide +kernel)]
- exact SixCarryCondition11947.condition s.basis (clean11947 s.basis hz)
 
-theorem lookup4 : p3[11941]?=some (.CCX 4661 4404 4405) := by
- have h1 : p1[11941]?=some (.CCX 4661 4404 4405) := by
-  unfold p1
-  exact (lookup_before loop 11959 (.CCX 4664 4407 4408) repair11959 11941 lookup1 (by decide +kernel)).trans original_gate_11941
- have h2 : p2[11941]?=some (.CCX 4661 4404 4405) := by
-  unfold p2
-  exact (lookup_before p1 11953 (.CCX 4663 4406 4407) repair11953 11941 lookup2 (by decide +kernel)).trans h1
- have h3 : p3[11941]?=some (.CCX 4661 4404 4405) := by
-  unfold p3
-  exact (lookup_before p2 11947 (.CCX 4662 4405 4406) repair11947 11941 lookup3 (by decide +kernel)).trans h2
- exact h3
 
-theorem prefix4 : p3.take 11941=loop.take 11941 := by
- have h1 : p1.take 11941=loop.take 11941 := by
-  unfold p1
-  exact (take_before loop 11959 (.CCX 4664 4407 4408) repair11959 11941 lookup1 (by decide +kernel)).trans (Eq.refl _)
- have h2 : p2.take 11941=loop.take 11941 := by
-  unfold p2
-  exact (take_before p1 11953 (.CCX 4663 4406 4407) repair11953 11941 lookup2 (by decide +kernel)).trans h1
- have h3 : p3.take 11941=loop.take 11941 := by
-  unfold p3
-  exact (take_before p2 11947 (.CCX 4662 4405 4406) repair11947 11941 lookup3 (by decide +kernel)).trans h2
- exact h3
 
-theorem clean11941 (b : BasisState) (hz : Clean b) : SixCarryBridge11941.Clean b :=
- ⟨hz 4658 (by decide +kernel),hz 4659 (by decide +kernel),hz 4660 (by decide +kernel),hz 4662 (by decide +kernel),hz 4821 (by decide +kernel),hz 4822 (by decide +kernel),hz 4823 (by decide +kernel),hz 4825 (by decide +kernel)⟩
 
-theorem step4 (s : State) (m : List Bool) (hz : Clean s.basis) :
- run p3 m s=run p4 m s := by
- unfold p4
- apply SixCarryPatchGeneric.run_eq p3 11941 4661 4404 4405 repair11941 lookup4 (by decide +kernel) s m
- apply gate11941
- simp only [prefix4]
- rw [actual_prefix_basis 11941 (by decide +kernel)]
- exact SixCarryCondition11941.condition s.basis (clean11941 s.basis hz)
 
-theorem lookup5 : p4[11935]?=some (.CCX 4660 4403 4404) := by
- have h1 : p1[11935]?=some (.CCX 4660 4403 4404) := by
-  unfold p1
-  exact (lookup_before loop 11959 (.CCX 4664 4407 4408) repair11959 11935 lookup1 (by decide +kernel)).trans original_gate_11935
- have h2 : p2[11935]?=some (.CCX 4660 4403 4404) := by
-  unfold p2
-  exact (lookup_before p1 11953 (.CCX 4663 4406 4407) repair11953 11935 lookup2 (by decide +kernel)).trans h1
- have h3 : p3[11935]?=some (.CCX 4660 4403 4404) := by
-  unfold p3
-  exact (lookup_before p2 11947 (.CCX 4662 4405 4406) repair11947 11935 lookup3 (by decide +kernel)).trans h2
- have h4 : p4[11935]?=some (.CCX 4660 4403 4404) := by
-  unfold p4
-  exact (lookup_before p3 11941 (.CCX 4661 4404 4405) repair11941 11935 lookup4 (by decide +kernel)).trans h3
- exact h4
 
-theorem prefix5 : p4.take 11935=loop.take 11935 := by
- have h1 : p1.take 11935=loop.take 11935 := by
-  unfold p1
-  exact (take_before loop 11959 (.CCX 4664 4407 4408) repair11959 11935 lookup1 (by decide +kernel)).trans (Eq.refl _)
- have h2 : p2.take 11935=loop.take 11935 := by
-  unfold p2
-  exact (take_before p1 11953 (.CCX 4663 4406 4407) repair11953 11935 lookup2 (by decide +kernel)).trans h1
- have h3 : p3.take 11935=loop.take 11935 := by
-  unfold p3
-  exact (take_before p2 11947 (.CCX 4662 4405 4406) repair11947 11935 lookup3 (by decide +kernel)).trans h2
- have h4 : p4.take 11935=loop.take 11935 := by
-  unfold p4
-  exact (take_before p3 11941 (.CCX 4661 4404 4405) repair11941 11935 lookup4 (by decide +kernel)).trans h3
- exact h4
 
-theorem clean11935 (b : BasisState) (hz : Clean b) : SixCarryBridge11935.Clean b :=
- ⟨hz 4660 (by decide +kernel),hz 4661 (by decide +kernel),hz 4760 (by decide +kernel),hz 4796 (by decide +kernel),hz 4823 (by decide +kernel),hz 4824 (by decide +kernel)⟩
 
-theorem step5 (s : State) (m : List Bool) (hz : Clean s.basis) :
- run p4 m s=run p5 m s := by
- unfold p5
- apply SixCarryPatchGeneric.run_eq p4 11935 4660 4403 4404 repair11935 lookup5 (by decide +kernel) s m
- apply gate11935
- simp only [prefix5]
- rw [actual_prefix_basis 11935 (by decide +kernel)]
- exact SixCarryCondition11935.condition s.basis (clean11935 s.basis hz)
 
-theorem lookup6 : p5[4913]?=some (.CCX 4664 4407 4408) := by
- have h1 : p1[4913]?=some (.CCX 4664 4407 4408) := by
-  unfold p1
-  exact (lookup_before loop 11959 (.CCX 4664 4407 4408) repair11959 4913 lookup1 (by decide +kernel)).trans original_gate_4913
- have h2 : p2[4913]?=some (.CCX 4664 4407 4408) := by
-  unfold p2
-  exact (lookup_before p1 11953 (.CCX 4663 4406 4407) repair11953 4913 lookup2 (by decide +kernel)).trans h1
- have h3 : p3[4913]?=some (.CCX 4664 4407 4408) := by
-  unfold p3
-  exact (lookup_before p2 11947 (.CCX 4662 4405 4406) repair11947 4913 lookup3 (by decide +kernel)).trans h2
- have h4 : p4[4913]?=some (.CCX 4664 4407 4408) := by
-  unfold p4
-  exact (lookup_before p3 11941 (.CCX 4661 4404 4405) repair11941 4913 lookup4 (by decide +kernel)).trans h3
- have h5 : p5[4913]?=some (.CCX 4664 4407 4408) := by
-  unfold p5
-  exact (lookup_before p4 11935 (.CCX 4660 4403 4404) repair11935 4913 lookup5 (by decide +kernel)).trans h4
- exact h5
 
-theorem prefix6 : p5.take 4913=loop.take 4913 := by
- have h1 : p1.take 4913=loop.take 4913 := by
-  unfold p1
-  exact (take_before loop 11959 (.CCX 4664 4407 4408) repair11959 4913 lookup1 (by decide +kernel)).trans (Eq.refl _)
- have h2 : p2.take 4913=loop.take 4913 := by
-  unfold p2
-  exact (take_before p1 11953 (.CCX 4663 4406 4407) repair11953 4913 lookup2 (by decide +kernel)).trans h1
- have h3 : p3.take 4913=loop.take 4913 := by
-  unfold p3
-  exact (take_before p2 11947 (.CCX 4662 4405 4406) repair11947 4913 lookup3 (by decide +kernel)).trans h2
- have h4 : p4.take 4913=loop.take 4913 := by
-  unfold p4
-  exact (take_before p3 11941 (.CCX 4661 4404 4405) repair11941 4913 lookup4 (by decide +kernel)).trans h3
- have h5 : p5.take 4913=loop.take 4913 := by
-  unfold p5
-  exact (take_before p4 11935 (.CCX 4660 4403 4404) repair11935 4913 lookup5 (by decide +kernel)).trans h4
- exact h5
 
-theorem clean4913 (b : BasisState) (hz : Clean b) : SixCarryBridge4913.Clean b :=
- ⟨hz 4372 (by decide +kernel),hz 4492 (by decide +kernel),hz 4493 (by decide +kernel),hz 4630 (by decide +kernel),hz 4631 (by decide +kernel),hz 4632 (by decide +kernel),hz 4652 (by decide +kernel),hz 4653 (by decide +kernel),hz 4654 (by decide +kernel),hz 4655 (by decide +kernel),hz 4657 (by decide +kernel),hz 4658 (by decide +kernel),hz 4659 (by decide +kernel),hz 4662 (by decide +kernel),hz 4663 (by decide +kernel),hz 4664 (by decide +kernel),hz 4815 (by decide +kernel),hz 4816 (by decide +kernel),hz 4817 (by decide +kernel),hz 4818 (by decide +kernel),hz 4820 (by decide +kernel),hz 4821 (by decide +kernel),hz 4822 (by decide +kernel),hz 4825 (by decide +kernel),hz 4826 (by decide +kernel)⟩
 
-theorem step6 (s : State) (m : List Bool) (hz : Clean s.basis) :
- run p5 m s=run p6 m s := by
- unfold p6
- apply SixCarryPatchGeneric.run_eq p5 4913 4664 4407 4408 repair4913 lookup6 (by decide +kernel) s m
- apply gate4913
- simp only [prefix6]
- rw [actual_prefix_basis 4913 (by decide +kernel)]
- exact SixCarryCondition4913.condition s.basis (clean4913 s.basis hz)
 
-theorem run_eq (s : State) (m : List Bool) (hz : Clean s.basis) : run loop m s=run p6 m s :=
- (step1 s m hz).trans ((step2 s m hz).trans ((step3 s m hz).trans ((step4 s m hz).trans ((step5 s m hz).trans (step6 s m hz)))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.SixCarryAllPatch
 
 end
@@ -35083,38 +35083,38 @@ attribute [local irreducible] SixCarryLoopAnchor.loop SixCarryLoopAnchor.origina
 def body : Program := FullBTemp.prefixP LowAccCarryDevelop.L++SixCarryAllPatch.p6
 attribute [local irreducible] body
 
-theorem run_eq (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
- (O : Nat) (hO : O<SquareReduction.p) (s : State) (m : List Bool)
- (hs : SquareFrame LowAccCarryDevelop.L.core.out base O s.basis) :
- run body m s=run SixCarryLoopAnchor.originalBody m s := by
- have prefSpec := SixCarryPrefixSpec.prefix_spec LowAccCarryDevelop.L layout_widths layout_nodup base M hM hP hc O hO
- have hp := (prefSpec s (m.take (measurementCount (FullBTemp.prefixP LowAccCarryDevelop.L))) hs).2
- have z := SixCarryCleanDomain.domain _ hp.1 hp.2
- have hz : SixCarryAllPatch.Clean
-   (run (FullBTemp.prefixP LowAccCarryDevelop.L) (m.take (measurementCount (FullBTemp.prefixP LowAccCarryDevelop.L))) s).basis := z
- rw [SixCarryLoopAnchor.body_shape]
- delta SixCarryAllBody.body
- rw [run_append,run_append]
- exact (SixCarryAllPatch.run_eq _ _ hz).symm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem conditional_transfer (P Q : BasisState→Prop) (old new : Program)
  (he : ∀ (s : State) (m : List Bool), P s.basis → run new m s=run old m s) (ht : Triple P old Q) : Triple P new Q := by
  intro s m hs
  exact Eq.mp (congrArg (fun v : State=>v.phase=s.phase ∧ Q v.basis) (he s m hs).symm) (ht s m hs)
 
-theorem frame (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
- (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base LowAccCarryDevelop.c=false → M=0)
- (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
- Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) body
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) :=
- conditional_transfer (SquareFrame LowAccCarryDevelop.L.core.out base O)
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O))
-  SixCarryLoopAnchor.originalBody body
-  (run_eq base M hM hP hc O hO)
-  (SixCarryOriginal.frame base M hM hP hc hsum O hO hg hSource)
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.SixCarryAllBody
 
@@ -35133,117 +35133,117 @@ attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Ch
 attribute [local irreducible] SixCarryLoopAnchor.loop body SixCarryLoopAnchor.originalBody FullBTemp.prefixP
 attribute [local irreducible] p1 p2 p3 p4 p5 p6 SixCarryPatchGeneric.patch
 
-theorem shape1 : p1=SixCarryPatchGeneric.patch loop 11959 repair11959 := by delta SixCarryAllPatch.p1; rfl
-theorem t1 : toffoliCount p1+1=toffoliCount loop :=
- Eq.mp (congrArg (fun p=>toffoliCount p+1=toffoliCount loop) shape1.symm)
-  (SixCarryPatchResources.toffoli loop 11959 4664 4407 4408 repair11959 lookup1 (by decide +kernel))
-theorem m1 : measurementCount p1=measurementCount loop :=
- Eq.mp (congrArg (fun p=>measurementCount p=measurementCount loop) shape1.symm)
-  (SixCarryPatchResources.measurements loop 11959 4664 4407 4408 repair11959 lookup1 (by decide +kernel))
-theorem s1 : gateSlots p1=gateSlots loop+0 :=
- Eq.mp (congrArg (fun p=>gateSlots p=gateSlots loop+0) shape1.symm)
-  (SixCarryPatchResources.slots loop 11959 4664 4407 4408 repair11959 0 lookup1 (by decide +kernel))
 
-theorem shape2 : p2=SixCarryPatchGeneric.patch p1 11953 repair11953 := by delta SixCarryAllPatch.p2; rfl
-theorem t2 : toffoliCount p2+1=toffoliCount p1 :=
- Eq.mp (congrArg (fun p=>toffoliCount p+1=toffoliCount p1) shape2.symm)
-  (SixCarryPatchResources.toffoli p1 11953 4663 4406 4407 repair11953 lookup2 (by decide +kernel))
-theorem m2 : measurementCount p2=measurementCount p1 :=
- Eq.mp (congrArg (fun p=>measurementCount p=measurementCount p1) shape2.symm)
-  (SixCarryPatchResources.measurements p1 11953 4663 4406 4407 repair11953 lookup2 (by decide +kernel))
-theorem s2 : gateSlots p2=gateSlots p1+3 :=
- Eq.mp (congrArg (fun p=>gateSlots p=gateSlots p1+3) shape2.symm)
-  (SixCarryPatchResources.slots p1 11953 4663 4406 4407 repair11953 3 lookup2 (by decide +kernel))
 
-theorem shape3 : p3=SixCarryPatchGeneric.patch p2 11947 repair11947 := by delta SixCarryAllPatch.p3; rfl
-theorem t3 : toffoliCount p3+1=toffoliCount p2 :=
- Eq.mp (congrArg (fun p=>toffoliCount p+1=toffoliCount p2) shape3.symm)
-  (SixCarryPatchResources.toffoli p2 11947 4662 4405 4406 repair11947 lookup3 (by decide +kernel))
-theorem m3 : measurementCount p3=measurementCount p2 :=
- Eq.mp (congrArg (fun p=>measurementCount p=measurementCount p2) shape3.symm)
-  (SixCarryPatchResources.measurements p2 11947 4662 4405 4406 repair11947 lookup3 (by decide +kernel))
-theorem s3 : gateSlots p3=gateSlots p2+3 :=
- Eq.mp (congrArg (fun p=>gateSlots p=gateSlots p2+3) shape3.symm)
-  (SixCarryPatchResources.slots p2 11947 4662 4405 4406 repair11947 3 lookup3 (by decide +kernel))
 
-theorem shape4 : p4=SixCarryPatchGeneric.patch p3 11941 repair11941 := by delta SixCarryAllPatch.p4; rfl
-theorem t4 : toffoliCount p4+1=toffoliCount p3 :=
- Eq.mp (congrArg (fun p=>toffoliCount p+1=toffoliCount p3) shape4.symm)
-  (SixCarryPatchResources.toffoli p3 11941 4661 4404 4405 repair11941 lookup4 (by decide +kernel))
-theorem m4 : measurementCount p4=measurementCount p3 :=
- Eq.mp (congrArg (fun p=>measurementCount p=measurementCount p3) shape4.symm)
-  (SixCarryPatchResources.measurements p3 11941 4661 4404 4405 repair11941 lookup4 (by decide +kernel))
-theorem s4 : gateSlots p4=gateSlots p3+3 :=
- Eq.mp (congrArg (fun p=>gateSlots p=gateSlots p3+3) shape4.symm)
-  (SixCarryPatchResources.slots p3 11941 4661 4404 4405 repair11941 3 lookup4 (by decide +kernel))
 
-theorem shape5 : p5=SixCarryPatchGeneric.patch p4 11935 repair11935 := by delta SixCarryAllPatch.p5; rfl
-theorem t5 : toffoliCount p5+1=toffoliCount p4 :=
- Eq.mp (congrArg (fun p=>toffoliCount p+1=toffoliCount p4) shape5.symm)
-  (SixCarryPatchResources.toffoli p4 11935 4660 4403 4404 repair11935 lookup5 (by decide +kernel))
-theorem m5 : measurementCount p5=measurementCount p4 :=
- Eq.mp (congrArg (fun p=>measurementCount p=measurementCount p4) shape5.symm)
-  (SixCarryPatchResources.measurements p4 11935 4660 4403 4404 repair11935 lookup5 (by decide +kernel))
-theorem s5 : gateSlots p5=gateSlots p4+4 :=
- Eq.mp (congrArg (fun p=>gateSlots p=gateSlots p4+4) shape5.symm)
-  (SixCarryPatchResources.slots p4 11935 4660 4403 4404 repair11935 4 lookup5 (by decide +kernel))
 
-theorem shape6 : p6=SixCarryPatchGeneric.patch p5 4913 repair4913 := by delta SixCarryAllPatch.p6; rfl
-theorem t6 : toffoliCount p6+1=toffoliCount p5 :=
- Eq.mp (congrArg (fun p=>toffoliCount p+1=toffoliCount p5) shape6.symm)
-  (SixCarryPatchResources.toffoli p5 4913 4664 4407 4408 repair4913 lookup6 (by decide +kernel))
-theorem m6 : measurementCount p6=measurementCount p5 :=
- Eq.mp (congrArg (fun p=>measurementCount p=measurementCount p5) shape6.symm)
-  (SixCarryPatchResources.measurements p5 4913 4664 4407 4408 repair4913 lookup6 (by decide +kernel))
-theorem s6 : gateSlots p6=gateSlots p5+0 :=
- Eq.mp (congrArg (fun p=>gateSlots p=gateSlots p5+0) shape6.symm)
-  (SixCarryPatchResources.slots p5 4913 4664 4407 4408 repair4913 0 lookup6 (by decide +kernel))
 
-theorem loop_toffoli : toffoliCount p6+6=toffoliCount loop := by
- have h1 := t1
- have h2 := t2
- have h3 := t3
- have h4 := t4
- have h5 := t5
- have h6 := t6
- omega
 
-theorem loop_measurements : measurementCount p6=measurementCount loop := by
- have h1 := m1
- have h2 := m2
- have h3 := m3
- have h4 := m4
- have h5 := m5
- have h6 := m6
- omega
 
-theorem loop_slots : gateSlots p6=gateSlots loop+13 := by
- have h1 := s1
- have h2 := s2
- have h3 := s3
- have h4 := s4
- have h5 := s5
- have h6 := s6
- omega
 
-theorem context_toffoli (old new pre oldTail newTail : Program) (saved : Nat)
- (ho : old=pre++oldTail) (hn : new=pre++newTail)
- (ht : toffoliCount newTail+saved=toffoliCount oldTail) : toffoliCount new+saved=toffoliCount old := by
- calc toffoliCount new+saved=toffoliCount (pre++newTail)+saved := congrArg (fun p=>toffoliCount p+saved) hn
-      _ = toffoliCount (pre++oldTail) := by simp only [toffoliCount_append];omega
-      _ = toffoliCount old := congrArg toffoliCount ho.symm
 
-theorem toffoli : toffoliCount body+6=toffoliCount SixCarryLoopAnchor.originalBody :=
- context_toffoli SixCarryLoopAnchor.originalBody body (FullBTemp.prefixP SixCarryLoopAnchor.L)
-  loop p6 6 SixCarryLoopAnchor.body_shape (by unfold body;rfl) loop_toffoli
 
-theorem measurements : measurementCount body=measurementCount SixCarryLoopAnchor.originalBody :=
- SixCarryContextResources.measurements SixCarryLoopAnchor.originalBody body (FullBTemp.prefixP SixCarryLoopAnchor.L)
-  loop p6 SixCarryLoopAnchor.body_shape (by unfold body;rfl) loop_measurements
 
-theorem slots : gateSlots body=gateSlots SixCarryLoopAnchor.originalBody+13 :=
- SixCarryContextResources.slots SixCarryLoopAnchor.originalBody body (FullBTemp.prefixP SixCarryLoopAnchor.L)
-  loop p6 13 SixCarryLoopAnchor.body_shape (by unfold body;rfl) loop_slots
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.SixCarryAllResources
 
 end
@@ -35274,10 +35274,10 @@ theorem take_support (p : Program) (n : Nat) : wires (p.take n)⊆wires p := by
  rw [wires_append] at h
  exact h ▸ Finset.subset_union_left
 
-theorem literal_support : wires SixCarryPrefixData.program⊆wires loop := by
- have h := map_strip_support (loop.take 11960)
- rw [literal_anchor] at h
- exact h.trans (take_support loop 11960)
+
+
+
+
 
 theorem support (p : Program) (i : Nat) (g : Instr) (r : Program)
  (hg : p[i]?=some g) (hr : wires r⊆wires p) : wires (patch p i r)⊆wires p := by
@@ -35320,24 +35320,24 @@ theorem patch_upper_support (p r : Program) (i : Nat) (W : Finset Wire)
  exact Finset.union_subset ((SixCarryPatchSupport.take_support p i).trans hp)
   (Finset.union_subset hr ((drop_support p (i+1)).trans hp))
 
-theorem context_support (old new pre oldTail newTail : Program)
- (ho : old=pre++oldTail) (hn : new=pre++newTail) (ht : wires newTail⊆wires oldTail) :
- wires new⊆wires old := by
- rw [ho,hn]
- simp only [wires_append]
- exact Finset.union_subset_union (Finset.Subset.refl _) ht
+
+
+
+
+
+
 
 theorem tail_physical (old pre tail : Program) (hs : old=pre++tail)
  (hp : GatePhysical old) : GatePhysical tail := by
  rw [hs,gatePhysical_append] at hp
  exact hp.2
 
-theorem context_physical (old new pre oldTail newTail : Program)
- (ho : old=pre++oldTail) (hn : new=pre++newTail) (hp : GatePhysical old)
- (ht : GatePhysical newTail) : GatePhysical new := by
- rw [hn,gatePhysical_append]
- rw [ho,gatePhysical_append] at hp
- exact ⟨hp.1,ht⟩
+
+
+
+
+
+
 
 theorem original_physical : GatePhysical loop :=
  tail_physical SixCarryLoopAnchor.originalBody (FullBTemp.prefixP SixCarryLoopAnchor.L) loop
@@ -35353,17 +35353,17 @@ theorem repair_literal11959 : wires repair11959⊆wires SixCarryPrefixData.progr
   apply (hasWire_iff SixCarryPrefixData.program _).mp
   decide +kernel
 
-theorem support1 : wires p1⊆wires loop := by
- delta SixCarryAllPatch.p1
- exact patch_upper_support loop repair11959 11959 (wires loop)
-  (Finset.Subset.refl _)
-  (repair_literal11959.trans SixCarryPatchSupport.literal_support)
 
-theorem physical1 : GatePhysical p1 := by
- delta SixCarryAllPatch.p1
- exact SixCarryPatchSupport.physical loop 11959 (.CCX 4664 4407 4408) repair11959
-  lookup1 original_physical
-  (physicalGateCheck_correct repair11959 (by decide +kernel))
+
+
+
+
+
+
+
+
+
+
 
 theorem repair_literal11953 : wires repair11953⊆wires SixCarryPrefixData.program := by
  have hw : wires repair11953={4117,4342,4407,4632,4664} := by decide +kernel
@@ -35375,17 +35375,17 @@ theorem repair_literal11953 : wires repair11953⊆wires SixCarryPrefixData.progr
   apply (hasWire_iff SixCarryPrefixData.program _).mp
   decide +kernel
 
-theorem support2 : wires p2⊆wires loop := by
- delta SixCarryAllPatch.p2
- exact patch_upper_support p1 repair11953 11953 (wires loop)
-  support1
-  (repair_literal11953.trans SixCarryPatchSupport.literal_support)
 
-theorem physical2 : GatePhysical p2 := by
- delta SixCarryAllPatch.p2
- exact SixCarryPatchSupport.physical p1 11953 (.CCX 4663 4406 4407) repair11953
-  lookup2 physical1
-  (physicalGateCheck_correct repair11953 (by decide +kernel))
+
+
+
+
+
+
+
+
+
+
 
 theorem repair_literal11947 : wires repair11947⊆wires SixCarryPrefixData.program := by
  have hw : wires repair11947={4116,4341,4406,4631,4663} := by decide +kernel
@@ -35397,17 +35397,17 @@ theorem repair_literal11947 : wires repair11947⊆wires SixCarryPrefixData.progr
   apply (hasWire_iff SixCarryPrefixData.program _).mp
   decide +kernel
 
-theorem support3 : wires p3⊆wires loop := by
- delta SixCarryAllPatch.p3
- exact patch_upper_support p2 repair11947 11947 (wires loop)
-  support2
-  (repair_literal11947.trans SixCarryPatchSupport.literal_support)
 
-theorem physical3 : GatePhysical p3 := by
- delta SixCarryAllPatch.p3
- exact SixCarryPatchSupport.physical p2 11947 (.CCX 4662 4405 4406) repair11947
-  lookup3 physical2
-  (physicalGateCheck_correct repair11947 (by decide +kernel))
+
+
+
+
+
+
+
+
+
+
 
 theorem repair_literal11941 : wires repair11941⊆wires SixCarryPrefixData.program := by
  have hw : wires repair11941={4340,4372,4405,4630,4662} := by decide +kernel
@@ -35419,17 +35419,17 @@ theorem repair_literal11941 : wires repair11941⊆wires SixCarryPrefixData.progr
   apply (hasWire_iff SixCarryPrefixData.program _).mp
   decide +kernel
 
-theorem support4 : wires p4⊆wires loop := by
- delta SixCarryAllPatch.p4
- exact patch_upper_support p3 repair11941 11941 (wires loop)
-  support3
-  (repair_literal11941.trans SixCarryPatchSupport.literal_support)
 
-theorem physical4 : GatePhysical p4 := by
- delta SixCarryAllPatch.p4
- exact SixCarryPatchSupport.physical p3 11941 (.CCX 4661 4404 4405) repair11941
-  lookup4 physical3
-  (physicalGateCheck_correct repair11941 (by decide +kernel))
+
+
+
+
+
+
+
+
+
+
 
 theorem repair_literal11935 : wires repair11935⊆wires SixCarryPrefixData.program := by
  have hw : wires repair11935={4339,4370,4404,4629,4661,4760} := by decide +kernel
@@ -35441,17 +35441,17 @@ theorem repair_literal11935 : wires repair11935⊆wires SixCarryPrefixData.progr
   apply (hasWire_iff SixCarryPrefixData.program _).mp
   decide +kernel
 
-theorem support5 : wires p5⊆wires loop := by
- delta SixCarryAllPatch.p5
- exact patch_upper_support p4 repair11935 11935 (wires loop)
-  support4
-  (repair_literal11935.trans SixCarryPatchSupport.literal_support)
 
-theorem physical5 : GatePhysical p5 := by
- delta SixCarryAllPatch.p5
- exact SixCarryPatchSupport.physical p4 11935 (.CCX 4660 4403 4404) repair11935
-  lookup5 physical4
-  (physicalGateCheck_correct repair11935 (by decide +kernel))
+
+
+
+
+
+
+
+
+
+
 
 theorem repair_literal4913 : wires repair4913⊆wires SixCarryPrefixData.program := by
  have hw : wires repair4913={4407,4408} := by decide +kernel
@@ -35463,26 +35463,26 @@ theorem repair_literal4913 : wires repair4913⊆wires SixCarryPrefixData.program
   apply (hasWire_iff SixCarryPrefixData.program _).mp
   decide +kernel
 
-theorem support6 : wires p6⊆wires loop := by
- delta SixCarryAllPatch.p6
- exact patch_upper_support p5 repair4913 4913 (wires loop)
-  support5
-  (repair_literal4913.trans SixCarryPatchSupport.literal_support)
 
-theorem physical6 : GatePhysical p6 := by
- delta SixCarryAllPatch.p6
- exact SixCarryPatchSupport.physical p5 4913 (.CCX 4664 4407 4408) repair4913
-  lookup6 physical5
-  (physicalGateCheck_correct repair4913 (by decide +kernel))
 
-theorem support : wires body⊆wires SixCarryLoopAnchor.originalBody :=
- context_support SixCarryLoopAnchor.originalBody body (FullBTemp.prefixP SixCarryLoopAnchor.L)
-  loop p6 SixCarryLoopAnchor.body_shape (by unfold body;rfl) support6
 
-theorem physical : GatePhysical body :=
- context_physical SixCarryLoopAnchor.originalBody body (FullBTemp.prefixP SixCarryLoopAnchor.L)
-  loop p6 SixCarryLoopAnchor.body_shape (by unfold body;rfl)
-  SixCarryOriginal.physical physical6
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.SixCarryAllSupport
 
 end
@@ -35507,59 +35507,59 @@ theorem original_gate : loop[4907]?=some (.CCX 4663 4406 4407) := by
  have h := lookup_context SixCarryPrefixData.program before38 SixCarryPrefixData.chunk38 after38 4864 43 shape38 before_len38 (by rw [len38];decide +kernel)
  exact h.trans (by decide +kernel)
 
-theorem prefix_eq : SixCarryAllPatch.p6.take 4907=loop.take 4907 := by
- have h1 : SixCarryAllPatch.p1.take 4907=loop.take 4907 := by
-  delta SixCarryAllPatch.p1
-  exact (SixCarryPatchPrefix.take_before loop 11959 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair11959 4907 SixCarryAllPatch.lookup1 (by decide +kernel)).trans (Eq.refl _)
- have h2 : SixCarryAllPatch.p2.take 4907=loop.take 4907 := by
-  delta SixCarryAllPatch.p2
-  exact (SixCarryPatchPrefix.take_before SixCarryAllPatch.p1 11953 (.CCX 4663 4406 4407) SixCarryGateRepairs.repair11953 4907 SixCarryAllPatch.lookup2 (by decide +kernel)).trans h1
- have h3 : SixCarryAllPatch.p3.take 4907=loop.take 4907 := by
-  delta SixCarryAllPatch.p3
-  exact (SixCarryPatchPrefix.take_before SixCarryAllPatch.p2 11947 (.CCX 4662 4405 4406) SixCarryGateRepairs.repair11947 4907 SixCarryAllPatch.lookup3 (by decide +kernel)).trans h2
- have h4 : SixCarryAllPatch.p4.take 4907=loop.take 4907 := by
-  delta SixCarryAllPatch.p4
-  exact (SixCarryPatchPrefix.take_before SixCarryAllPatch.p3 11941 (.CCX 4661 4404 4405) SixCarryGateRepairs.repair11941 4907 SixCarryAllPatch.lookup4 (by decide +kernel)).trans h3
- have h5 : SixCarryAllPatch.p5.take 4907=loop.take 4907 := by
-  delta SixCarryAllPatch.p5
-  exact (SixCarryPatchPrefix.take_before SixCarryAllPatch.p4 11935 (.CCX 4660 4403 4404) SixCarryGateRepairs.repair11935 4907 SixCarryAllPatch.lookup5 (by decide +kernel)).trans h4
- have h6 : SixCarryAllPatch.p6.take 4907=loop.take 4907 := by
-  delta SixCarryAllPatch.p6
-  exact (SixCarryPatchPrefix.take_before SixCarryAllPatch.p5 4913 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair4913 4907 SixCarryAllPatch.lookup6 (by decide +kernel)).trans h5
- exact h6
 
-theorem gate_lookup : SixCarryAllPatch.p6[4907]?=some (.CCX 4663 4406 4407) := by
- have h1 : SixCarryAllPatch.p1[4907]?=some (.CCX 4663 4406 4407) := by
-  delta SixCarryAllPatch.p1
-  exact (SixCarryPatchPrefix.lookup_before loop 11959 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair11959 4907 SixCarryAllPatch.lookup1 (by decide +kernel)).trans original_gate
- have h2 : SixCarryAllPatch.p2[4907]?=some (.CCX 4663 4406 4407) := by
-  delta SixCarryAllPatch.p2
-  exact (SixCarryPatchPrefix.lookup_before SixCarryAllPatch.p1 11953 (.CCX 4663 4406 4407) SixCarryGateRepairs.repair11953 4907 SixCarryAllPatch.lookup2 (by decide +kernel)).trans h1
- have h3 : SixCarryAllPatch.p3[4907]?=some (.CCX 4663 4406 4407) := by
-  delta SixCarryAllPatch.p3
-  exact (SixCarryPatchPrefix.lookup_before SixCarryAllPatch.p2 11947 (.CCX 4662 4405 4406) SixCarryGateRepairs.repair11947 4907 SixCarryAllPatch.lookup3 (by decide +kernel)).trans h2
- have h4 : SixCarryAllPatch.p4[4907]?=some (.CCX 4663 4406 4407) := by
-  delta SixCarryAllPatch.p4
-  exact (SixCarryPatchPrefix.lookup_before SixCarryAllPatch.p3 11941 (.CCX 4661 4404 4405) SixCarryGateRepairs.repair11941 4907 SixCarryAllPatch.lookup4 (by decide +kernel)).trans h3
- have h5 : SixCarryAllPatch.p5[4907]?=some (.CCX 4663 4406 4407) := by
-  delta SixCarryAllPatch.p5
-  exact (SixCarryPatchPrefix.lookup_before SixCarryAllPatch.p4 11935 (.CCX 4660 4403 4404) SixCarryGateRepairs.repair11935 4907 SixCarryAllPatch.lookup5 (by decide +kernel)).trans h4
- have h6 : SixCarryAllPatch.p6[4907]?=some (.CCX 4663 4406 4407) := by
-  delta SixCarryAllPatch.p6
-  exact (SixCarryPatchPrefix.lookup_before SixCarryAllPatch.p5 4913 (.CCX 4664 4407 4408) SixCarryGateRepairs.repair4913 4907 SixCarryAllPatch.lookup6 (by decide +kernel)).trans h5
- exact h6
 
-theorem clean (b : BasisState) (hc : ExtraCarryDomain.Clean b) : ExtraCarryBridge4907.Clean b :=
- ⟨ExtraCarryDomain.zero b hc 4372 (by decide +kernel),ExtraCarryDomain.zero b hc 4469 (by decide +kernel),ExtraCarryDomain.zero b hc 4470 (by decide +kernel),ExtraCarryDomain.zero b hc 4474 (by decide +kernel),ExtraCarryDomain.zero b hc 4475 (by decide +kernel),ExtraCarryDomain.zero b hc 4476 (by decide +kernel),ExtraCarryDomain.zero b hc 4477 (by decide +kernel),ExtraCarryDomain.zero b hc 4478 (by decide +kernel),ExtraCarryDomain.zero b hc 4479 (by decide +kernel),ExtraCarryDomain.zero b hc 4480 (by decide +kernel),ExtraCarryDomain.zero b hc 4481 (by decide +kernel),ExtraCarryDomain.zero b hc 4482 (by decide +kernel),ExtraCarryDomain.zero b hc 4483 (by decide +kernel),ExtraCarryDomain.zero b hc 4484 (by decide +kernel),ExtraCarryDomain.zero b hc 4485 (by decide +kernel),ExtraCarryDomain.zero b hc 4486 (by decide +kernel),ExtraCarryDomain.zero b hc 4487 (by decide +kernel),ExtraCarryDomain.zero b hc 4488 (by decide +kernel),ExtraCarryDomain.zero b hc 4489 (by decide +kernel),ExtraCarryDomain.zero b hc 4490 (by decide +kernel),ExtraCarryDomain.zero b hc 4491 (by decide +kernel),ExtraCarryDomain.zero b hc 4492 (by decide +kernel),ExtraCarryDomain.zero b hc 4607 (by decide +kernel),ExtraCarryDomain.zero b hc 4608 (by decide +kernel),ExtraCarryDomain.zero b hc 4609 (by decide +kernel),ExtraCarryDomain.zero b hc 4613 (by decide +kernel),ExtraCarryDomain.zero b hc 4614 (by decide +kernel),ExtraCarryDomain.zero b hc 4615 (by decide +kernel),ExtraCarryDomain.zero b hc 4616 (by decide +kernel),ExtraCarryDomain.zero b hc 4617 (by decide +kernel),ExtraCarryDomain.zero b hc 4618 (by decide +kernel),ExtraCarryDomain.zero b hc 4619 (by decide +kernel),ExtraCarryDomain.zero b hc 4620 (by decide +kernel),ExtraCarryDomain.zero b hc 4621 (by decide +kernel),ExtraCarryDomain.zero b hc 4622 (by decide +kernel),ExtraCarryDomain.zero b hc 4623 (by decide +kernel),ExtraCarryDomain.zero b hc 4624 (by decide +kernel),ExtraCarryDomain.zero b hc 4625 (by decide +kernel),ExtraCarryDomain.zero b hc 4626 (by decide +kernel),ExtraCarryDomain.zero b hc 4627 (by decide +kernel),ExtraCarryDomain.zero b hc 4628 (by decide +kernel),ExtraCarryDomain.zero b hc 4629 (by decide +kernel),ExtraCarryDomain.zero b hc 4630 (by decide +kernel),ExtraCarryDomain.zero b hc 4631 (by decide +kernel),ExtraCarryDomain.zero b hc 4662 (by decide +kernel),ExtraCarryDomain.zero b hc 4663 (by decide +kernel),ExtraCarryDomain.zero b hc 4825 (by decide +kernel),ExtraCarryDomain.zero b hc 4826 (by decide +kernel)⟩
 
-theorem run_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.basis) :
- run SixCarryAllPatch.p6 m s=run improved m s := by
- delta ExtraCarryLoop4907.improved
- apply SixCarryPatchGeneric.run_eq SixCarryAllPatch.p6 4907 4663 4406 4407 ExtraCarryGateRepairs.repair4907 gate_lookup (by decide +kernel) s m
- apply ExtraCarryGateRepairs.gate4907
- simp only [prefix_eq]
- rw [SixCarryBasisTransfer.actual_prefix_basis 4907 (by decide +kernel)]
- exact ExtraCarryCondition4907.condition s.basis (clean s.basis hc)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.ExtraCarryLoop4907
 
 end
@@ -35574,15 +35574,15 @@ set_option Elab.async false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots SixCarryAllBody.body SixCarryLoopAnchor.originalBody
- theorem costs :
- toffoliCount SixCarryAllBody.body+94≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount SixCarryAllBody.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- Challenge.gateSlots SixCarryAllBody.body+251≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
- have old := SixCarryOriginal.resources
- have ht := toffoli
- have hm := measurements
- have hs := slots
- exact ⟨by omega,hm.trans old.2.1,by omega⟩
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.SixCarryAllResources
 namespace ECDSAAdd.Entrant.FullB94SixOptTemp
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
@@ -35593,146 +35593,146 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 attribute [local irreducible] ZeroSetDevelop.compileS? ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots
 
-theorem actual_resources :
- toffoliCount SixCarryAllBody.body+94≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount SixCarryAllBody.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- Challenge.gateSlots SixCarryAllBody.body+251≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
- SixCarryAllResources.costs
-
-theorem actual_subset : wires SixCarryAllBody.body⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
- SixCarryAllSupport.support.trans SixCarryOriginal.support
-
-theorem actual_physical : GatePhysical SixCarryAllBody.body := SixCarryAllSupport.physical
-
-theorem actual_frame (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
- (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base LowAccCarryDevelop.c=false → M=0)
- (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
- Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) SixCarryAllBody.body
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) :=
- SixCarryAllBody.frame base M hM hP hc hsum O hO hg hSource
-
-def selectedBody (K : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
- match FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse _ => FullB88OptTemp.selectedBody K g
- | isTrue _ => if g=LowAccCarryDevelop.c then SixCarryAllBody.body else FullB88OptTemp.selectedBody K g
-
-theorem selected_body_transport (K K' : CuccaroStreamedSquareWideLayout) (g g' : Wire)
- (he : K=K') (hg : g=g') : selectedBody K g=selectedBody K' g' := by
- cases he
- cases hg
- rfl
-
-def hostedSelectedBody (L : CuccaroStreamedSquareWideLayout) (rho : Equiv.Perm Wire) (c : Wire) : Program :=
- selectedBody (ParkCarryDevelop.hostLayout L rho) c
-
-theorem selected_subset (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
- wires (selectedBody K g)⊆wires (ParkCarry10Develop.body K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact FullB88OptTemp.selected_subset K hw g
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g;exact actual_subset
-  · exact FullB88OptTemp.selected_subset K hw g
-
-theorem selected_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (hn : L.wires.Nodup) (c : Wire) : wires (selectedBody L c)⊆(c::L.wires).toFinset :=
- (selected_subset L hw c).trans (ParkCarry10Develop.body_support L hw hn c)
-
-theorem selected_physical (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths)
- (g : Wire) (nd : (g::K.wires).Nodup) : GatePhysical (selectedBody K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact FullB88OptTemp.selected_physical K hw g nd
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g;exact actual_physical
-  · exact FullB88OptTemp.selected_physical K hw g nd
-
-theorem selected_frame (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (hn : K.wires.Nodup)
- (g : Wire) (hcw : g∉K.wires) (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue K.core.product base=M^2) (hc : K.PairClean base)
- (hsum : base K.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base g=false → M=0) (hSource : M=if base g then regValue K.core.high base else 0) :
- Triple (SquareFrame K.core.out base O) (selectedBody K g)
-  (SquareFrame K.core.out base (bO4 (M^2) (base g) O)) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hne => exact FullB88OptTemp.selected_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hgc;subst K;subst g;exact actual_frame base M hM hP hc hsum O hO hg hSource
-  · exact FullB88OptTemp.selected_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
-
-theorem selected_resources (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
- toffoliCount (selectedBody K g)≤toffoliCount (ParkCarry10Develop.body K g) ∧
- measurementCount (selectedBody K g)=measurementCount (ParkCarry10Develop.body K g) ∧
- Challenge.gateSlots (selectedBody K g)≤Challenge.gateSlots (ParkCarry10Develop.body K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact FullB88OptTemp.selected_resources K hw g
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g
-    have h:=actual_resources
-    exact ⟨by omega,h.2.1,by omega⟩
-  · exact FullB88OptTemp.selected_resources K hw g
-
-theorem hostedSelectedBody_eq (L : CuccaroStreamedSquareWideLayout) (rho : Equiv.Perm Wire)
- (c : Wire) (fixed : rho L.core.sumCarry=L.core.sumCarry) :
- hostedSelectedBody L rho c=selectedBody L c :=
- congrArg (fun K=>selectedBody K c) (ParkCarryDevelop.host_eq L rho fixed)
-
-theorem hosted_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (rho : Equiv.Perm Wire) (c : Wire) :
- toffoliCount (hostedSelectedBody L rho c)≤toffoliCount (ParkCarry10Develop.hostedBody L rho c) ∧
- measurementCount (hostedSelectedBody L rho c)=measurementCount (ParkCarry10Develop.hostedBody L rho c) ∧
- Challenge.gateSlots (hostedSelectedBody L rho c)≤Challenge.gateSlots (ParkCarry10Develop.hostedBody L rho c) :=
- selected_resources (ParkCarryDevelop.hostLayout L rho) (ParkCarryDevelop.host_widths L hw rho) c
-
-theorem hosted_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (rho : Equiv.Perm Wire) (c : Wire) :
- wires (hostedSelectedBody L rho c)⊆wires (ParkCarry10Develop.hostedBody L rho c) :=
- selected_subset (ParkCarryDevelop.hostLayout L rho) (ParkCarryDevelop.host_widths L hw rho) c
-
-theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (hn : L.wires.Nodup) (ext : List Wire) (c : Wire) (hlen : 300≤ext.length)
- (away : ∀q∈ext,q∉L.wires) :
- wires (hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset := by
- rw [hostedSelectedBody_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
- exact selected_support L hw hn c
-
-abbrev actualLayout := FullB88OptTemp.actualLayout
-abbrev actualControl := FullB88OptTemp.actualControl
-abbrev actualExt := FullB88OptTemp.actualExt
-abbrev actualFoldPerm := FullB88OptTemp.actualFoldPerm
-
-theorem selected_actual : selectedBody LowAccCarryDevelop.L LowAccCarryDevelop.c=SixCarryAllBody.body := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq LowAccCarryDevelop.L LowAccCarryDevelop.L with
- | isFalse hn => exact False.elim (hn rfl)
- | isTrue hl => exact if_pos rfl
-
-theorem ranked_selected_exact : hostedSelectedBody actualLayout actualFoldPerm actualControl=SixCarryAllBody.body := by
- have he : ParkCarryDevelop.hostLayout actualLayout actualFoldPerm=actualLayout :=
-  FullBOptTemp.actualHostedLayout_eq
- exact (congrArg (fun K=>selectedBody K actualControl) he).trans
-  ((selected_body_transport actualLayout LowAccCarryDevelop.L actualControl LowAccCarryDevelop.c rfl rfl).trans selected_actual)
 
 
-theorem ranked_certified_gain :
- toffoliCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)+94≤4762 ∧
- measurementCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)=5924 := by
- rw [ranked_selected_exact]
- have h:=actual_resources
- have old:=ParkCarry10Develop.body_counts LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths LowAccCarryDevelop.c
- exact ⟨h.1.trans old.1.le,h.2.1.trans old.2⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.FullB94SixOptTemp
 
@@ -35753,110 +35753,110 @@ attribute [local irreducible] SixCarryAllBody.body SixCarryAllPatch.p6 ExtraCarr
 def body : Program := FullBTemp.prefixP LowAccCarryDevelop.L++ExtraCarryLoop4907.improved
 attribute [local irreducible] body
 
-theorem old_shape : SixCarryAllBody.body=FullBTemp.prefixP LowAccCarryDevelop.L++SixCarryAllPatch.p6 := by
- delta SixCarryAllBody.body
- rfl
 
-theorem new_shape : body=FullBTemp.prefixP LowAccCarryDevelop.L++ExtraCarryLoop4907.improved := by
- delta ExtraCarryBody4907.body
- rfl
 
-theorem context_run (old new pre oldTail newTail : Program)
- (ho : old=pre++oldTail) (hn : new=pre++newTail) (s : State) (m : List Bool)
- (he : run oldTail (m.drop (measurementCount pre)) (run pre (m.take (measurementCount pre)) s)=
-       run newTail (m.drop (measurementCount pre)) (run pre (m.take (measurementCount pre)) s)) :
- run new m s=run old m s := by
- calc run new m s=run (pre++newTail) m s := congrArg (fun p=>run p m s) hn
-      _ = run (pre++oldTail) m s := by rw [run_append,run_append];exact he.symm
-      _ = run old m s := congrArg (fun p=>run p m s) ho.symm
 
-theorem run_eq (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
- (O : Nat) (hO : O<SquareReduction.p) (s : State) (m : List Bool)
- (hs : SquareFrame LowAccCarryDevelop.L.core.out base O s.basis) :
- run body m s=run SixCarryAllBody.body m s := by
- have prefSpec := SixCarryPrefixSpec.prefix_spec LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths LowAccCarryDevelop.layout_nodup base M hM hP hc O hO
- have hp := (prefSpec s (m.take (measurementCount (FullBTemp.prefixP LowAccCarryDevelop.L))) hs).2
- have hdomain : ExtraCarryDomain.Clean (run (FullBTemp.prefixP LowAccCarryDevelop.L) (m.take (measurementCount (FullBTemp.prefixP LowAccCarryDevelop.L))) s).basis := ⟨hp.1,hp.2⟩
- exact context_run SixCarryAllBody.body body (FullBTemp.prefixP LowAccCarryDevelop.L)
-  SixCarryAllPatch.p6 ExtraCarryLoop4907.improved old_shape new_shape s m
-  (ExtraCarryLoop4907.run_eq _ _ hdomain)
 
-theorem frame (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
- (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base LowAccCarryDevelop.c=false → M=0)
- (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
- Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) body
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) :=
- SixCarryAllBody.conditional_transfer (SquareFrame LowAccCarryDevelop.L.core.out base O)
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O))
-  SixCarryAllBody.body body (run_eq base M hM hP hc O hO)
-  (SixCarryAllBody.frame base M hM hP hc hsum O hO hg hSource)
 
-theorem improved_eq : ExtraCarryLoop4907.improved=
- SixCarryPatchGeneric.patch SixCarryAllPatch.p6 4907 ExtraCarryGateRepairs.repair4907 := by
- delta ExtraCarryLoop4907.improved
- rfl
 
-theorem loop_toffoli : toffoliCount ExtraCarryLoop4907.improved+1=toffoliCount SixCarryAllPatch.p6 :=
- Eq.mp (congrArg (fun p=>toffoliCount p+1=toffoliCount SixCarryAllPatch.p6) improved_eq.symm)
-  (SixCarryPatchResources.toffoli SixCarryAllPatch.p6 4907 4663 4406 4407 ExtraCarryGateRepairs.repair4907 ExtraCarryLoop4907.gate_lookup (by decide +kernel))
 
-theorem loop_measurements : measurementCount ExtraCarryLoop4907.improved=measurementCount SixCarryAllPatch.p6 :=
- Eq.mp (congrArg (fun p=>measurementCount p=measurementCount SixCarryAllPatch.p6) improved_eq.symm)
-  (SixCarryPatchResources.measurements SixCarryAllPatch.p6 4907 4663 4406 4407 ExtraCarryGateRepairs.repair4907 ExtraCarryLoop4907.gate_lookup (by decide +kernel))
 
-theorem loop_slots : Challenge.gateSlots ExtraCarryLoop4907.improved=Challenge.gateSlots SixCarryAllPatch.p6 :=
- Eq.mp (congrArg (fun p=>Challenge.gateSlots p=Challenge.gateSlots SixCarryAllPatch.p6) improved_eq.symm)
-  (ExtraCarryResourceGeneric.patch_slots_zero SixCarryAllPatch.p6 4907 4663 4406 4407 ExtraCarryGateRepairs.repair4907 ExtraCarryLoop4907.gate_lookup (by decide +kernel))
 
-theorem toffoli : toffoliCount body+1=toffoliCount SixCarryAllBody.body :=
- SixCarryContextResources.toffoli SixCarryAllBody.body body (FullBTemp.prefixP LowAccCarryDevelop.L)
-  SixCarryAllPatch.p6 ExtraCarryLoop4907.improved old_shape new_shape loop_toffoli
 
-theorem measurements : measurementCount body=measurementCount SixCarryAllBody.body :=
- SixCarryContextResources.measurements SixCarryAllBody.body body (FullBTemp.prefixP LowAccCarryDevelop.L)
-  SixCarryAllPatch.p6 ExtraCarryLoop4907.improved old_shape new_shape loop_measurements
 
-theorem slots : Challenge.gateSlots body=Challenge.gateSlots SixCarryAllBody.body :=
- ExtraCarryResourceGeneric.context_slots_zero SixCarryAllBody.body body (FullBTemp.prefixP LowAccCarryDevelop.L)
-  SixCarryAllPatch.p6 ExtraCarryLoop4907.improved old_shape new_shape loop_slots
 
-theorem repair_in_loop : wires ExtraCarryGateRepairs.repair4907⊆wires SixCarryAllPatch.p6 := by
- have small : wires ExtraCarryGateRepairs.repair4907⊆wires [.CCX 4663 4406 4407] := by decide +kernel
- have shape := SixCarryReplace.old_shape_of_lookup SixCarryAllPatch.p6 4907 (.CCX 4663 4406 4407) ExtraCarryLoop4907.gate_lookup
- have h : wires ExtraCarryGateRepairs.repair4907⊆wires (SixCarryAllPatch.p6.take 4907++([.CCX 4663 4406 4407]++SixCarryAllPatch.p6.drop 4908)) := by
-  rw [wires_append,wires_append]
-  exact small.trans (Finset.subset_union_left.trans Finset.subset_union_right)
- exact Eq.mp (congrArg (fun p=>wires ExtraCarryGateRepairs.repair4907⊆wires p) shape.symm) h
 
-theorem loop_support : wires ExtraCarryLoop4907.improved⊆wires SixCarryAllPatch.p6 :=
- Eq.mp (congrArg (fun p=>wires p⊆wires SixCarryAllPatch.p6) improved_eq.symm)
-  (SixCarryPatchSupport.support SixCarryAllPatch.p6 4907 (.CCX 4663 4406 4407) ExtraCarryGateRepairs.repair4907 ExtraCarryLoop4907.gate_lookup repair_in_loop)
 
-theorem support : wires body⊆wires SixCarryAllBody.body :=
- SixCarryAllSupport.context_support SixCarryAllBody.body body (FullBTemp.prefixP LowAccCarryDevelop.L)
-  SixCarryAllPatch.p6 ExtraCarryLoop4907.improved old_shape new_shape loop_support
 
-theorem loop_physical : GatePhysical ExtraCarryLoop4907.improved :=
- Eq.mp (congrArg GatePhysical improved_eq.symm)
-  (SixCarryPatchSupport.physical SixCarryAllPatch.p6 4907 (.CCX 4663 4406 4407) ExtraCarryGateRepairs.repair4907 ExtraCarryLoop4907.gate_lookup SixCarryAllSupport.physical6
-   (physicalGateCheck_correct ExtraCarryGateRepairs.repair4907 (by decide +kernel)))
 
-theorem physical : GatePhysical body :=
- SixCarryAllSupport.context_physical SixCarryAllBody.body body (FullBTemp.prefixP LowAccCarryDevelop.L)
-  SixCarryAllPatch.p6 ExtraCarryLoop4907.improved old_shape new_shape SixCarryAllSupport.physical loop_physical
 
-theorem costs :
- toffoliCount body+95≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- Challenge.gateSlots body+251≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) := by
- have old := FullB94SixOptTemp.actual_resources
- have ht := toffoli
- have hm := measurements
- have hs := slots
- exact ⟨by omega,hm.trans old.2.1,by omega⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 end ECDSAAdd.Entrant.ExtraCarryBody4907
 
 end
@@ -35874,146 +35874,146 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 attribute [local irreducible] ZeroSetDevelop.compileS? ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots
 
-theorem actual_resources :
- toffoliCount ExtraCarryBody4907.body+95≤toffoliCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- measurementCount ExtraCarryBody4907.body=measurementCount (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) ∧
- Challenge.gateSlots ExtraCarryBody4907.body+251≤Challenge.gateSlots (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
- ExtraCarryBody4907.costs
-
-theorem actual_subset : wires ExtraCarryBody4907.body⊆wires (ParkCarry10Develop.body LowAccCarryDevelop.L LowAccCarryDevelop.c) :=
- ExtraCarryBody4907.support.trans FullB94SixOptTemp.actual_subset
-
-theorem actual_physical : GatePhysical ExtraCarryBody4907.body := ExtraCarryBody4907.physical
-
-theorem actual_frame (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue LowAccCarryDevelop.L.core.product base=M^2) (hc : LowAccCarryDevelop.L.PairClean base)
- (hsum : base LowAccCarryDevelop.L.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base LowAccCarryDevelop.c=false → M=0)
- (hSource : M=if base LowAccCarryDevelop.c then regValue LowAccCarryDevelop.L.core.high base else 0) :
- Triple (SquareFrame LowAccCarryDevelop.L.core.out base O) ExtraCarryBody4907.body
-  (SquareFrame LowAccCarryDevelop.L.core.out base (bO4 (M^2) (base LowAccCarryDevelop.c) O)) :=
- ExtraCarryBody4907.frame base M hM hP hc hsum O hO hg hSource
-
-def selectedBody (K : CuccaroStreamedSquareWideLayout) (g : Wire) : Program :=
- match FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse _ => FullB94SixOptTemp.selectedBody K g
- | isTrue _ => if g=LowAccCarryDevelop.c then ExtraCarryBody4907.body else FullB94SixOptTemp.selectedBody K g
-
-theorem selected_body_transport (K K' : CuccaroStreamedSquareWideLayout) (g g' : Wire)
- (he : K=K') (hg : g=g') : selectedBody K g=selectedBody K' g' := by
- cases he
- cases hg
- rfl
-
-def hostedSelectedBody (L : CuccaroStreamedSquareWideLayout) (rho : Equiv.Perm Wire) (c : Wire) : Program :=
- selectedBody (ParkCarryDevelop.hostLayout L rho) c
-
-theorem selected_subset (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
- wires (selectedBody K g)⊆wires (ParkCarry10Develop.body K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact FullB94SixOptTemp.selected_subset K hw g
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g;exact actual_subset
-  · exact FullB94SixOptTemp.selected_subset K hw g
-
-theorem selected_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (hn : L.wires.Nodup) (c : Wire) : wires (selectedBody L c)⊆(c::L.wires).toFinset :=
- (selected_subset L hw c).trans (ParkCarry10Develop.body_support L hw hn c)
-
-theorem selected_physical (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths)
- (g : Wire) (nd : (g::K.wires).Nodup) : GatePhysical (selectedBody K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact FullB94SixOptTemp.selected_physical K hw g nd
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g;exact actual_physical
-  · exact FullB94SixOptTemp.selected_physical K hw g nd
-
-theorem selected_frame (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (hn : K.wires.Nodup)
- (g : Wire) (hcw : g∉K.wires) (base : BasisState) (M : Nat) (hM : M<2^128)
- (hP : regValue K.core.product base=M^2) (hc : K.PairClean base)
- (hsum : base K.core.sumCarry=false) (O : Nat) (hO : O<SquareReduction.p)
- (hg : base g=false → M=0) (hSource : M=if base g then regValue K.core.high base else 0) :
- Triple (SquareFrame K.core.out base O) (selectedBody K g)
-  (SquareFrame K.core.out base (bO4 (M^2) (base g) O)) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hne => exact FullB94SixOptTemp.selected_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hgc;subst K;subst g;exact actual_frame base M hM hP hc hsum O hO hg hSource
-  · exact FullB94SixOptTemp.selected_frame K hw hn g hcw base M hM hP hc hsum O hO hg hSource
-
-theorem selected_resources (K : CuccaroStreamedSquareWideLayout) (hw : K.Widths) (g : Wire) :
- toffoliCount (selectedBody K g)≤toffoliCount (ParkCarry10Develop.body K g) ∧
- measurementCount (selectedBody K g)=measurementCount (ParkCarry10Develop.body K g) ∧
- Challenge.gateSlots (selectedBody K g)≤Challenge.gateSlots (ParkCarry10Develop.body K g) := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq K LowAccCarryDevelop.L with
- | isFalse hn => exact FullB94SixOptTemp.selected_resources K hw g
- | isTrue hl =>
-  dsimp only
-  split
-  · rename_i hg;subst K;subst g
-    have h:=actual_resources
-    exact ⟨by omega,h.2.1,by omega⟩
-  · exact FullB94SixOptTemp.selected_resources K hw g
-
-theorem hostedSelectedBody_eq (L : CuccaroStreamedSquareWideLayout) (rho : Equiv.Perm Wire)
- (c : Wire) (fixed : rho L.core.sumCarry=L.core.sumCarry) :
- hostedSelectedBody L rho c=selectedBody L c :=
- congrArg (fun K=>selectedBody K c) (ParkCarryDevelop.host_eq L rho fixed)
-
-theorem hosted_resources (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (rho : Equiv.Perm Wire) (c : Wire) :
- toffoliCount (hostedSelectedBody L rho c)≤toffoliCount (ParkCarry10Develop.hostedBody L rho c) ∧
- measurementCount (hostedSelectedBody L rho c)=measurementCount (ParkCarry10Develop.hostedBody L rho c) ∧
- Challenge.gateSlots (hostedSelectedBody L rho c)≤Challenge.gateSlots (ParkCarry10Develop.hostedBody L rho c) :=
- selected_resources (ParkCarryDevelop.hostLayout L rho) (ParkCarryDevelop.host_widths L hw rho) c
-
-theorem hosted_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (rho : Equiv.Perm Wire) (c : Wire) :
- wires (hostedSelectedBody L rho c)⊆wires (ParkCarry10Develop.hostedBody L rho c) :=
- selected_subset (ParkCarryDevelop.hostLayout L rho) (ParkCarryDevelop.host_widths L hw rho) c
-
-theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
- (hn : L.wires.Nodup) (ext : List Wire) (c : Wire) (hlen : 300≤ext.length)
- (away : ∀q∈ext,q∉L.wires) :
- wires (hostedSelectedBody L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset := by
- rw [hostedSelectedBody_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
- exact selected_support L hw hn c
-
-abbrev actualLayout := FullB94SixOptTemp.actualLayout
-abbrev actualControl := FullB94SixOptTemp.actualControl
-abbrev actualExt := FullB94SixOptTemp.actualExt
-abbrev actualFoldPerm := FullB94SixOptTemp.actualFoldPerm
-
-theorem selected_actual : selectedBody LowAccCarryDevelop.L LowAccCarryDevelop.c=ExtraCarryBody4907.body := by
- unfold selectedBody
- cases he : FastGuardResearch.wideEq LowAccCarryDevelop.L LowAccCarryDevelop.L with
- | isFalse hn => exact False.elim (hn rfl)
- | isTrue hl => exact if_pos rfl
-
-theorem ranked_selected_exact : hostedSelectedBody actualLayout actualFoldPerm actualControl=ExtraCarryBody4907.body := by
- have he : ParkCarryDevelop.hostLayout actualLayout actualFoldPerm=actualLayout :=
-  FullBOptTemp.actualHostedLayout_eq
- exact (congrArg (fun K=>selectedBody K actualControl) he).trans
-  ((selected_body_transport actualLayout LowAccCarryDevelop.L actualControl LowAccCarryDevelop.c rfl rfl).trans selected_actual)
 
 
-theorem ranked_certified_gain :
- toffoliCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)+95≤4762 ∧
- measurementCount (hostedSelectedBody actualLayout actualFoldPerm actualControl)=5924 := by
- rw [ranked_selected_exact]
- have h:=actual_resources
- have old:=ParkCarry10Develop.body_counts LowAccCarryDevelop.L LowAccCarryDevelop.layout_widths LowAccCarryDevelop.c
- exact ⟨h.1.trans old.1.le,h.2.1.trans old.2⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.FullB95OptTemp
 

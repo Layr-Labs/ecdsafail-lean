@@ -12489,21 +12489,21 @@ theorem shape2 : SixCarryPrefixData.program=before2++(SixCarryPrefixData.chunk2+
 
 def before3 : Program := (chunks.take 3).flatten
 def after3 : Program := (chunks.drop 4).flatten
-theorem before_len3 : before3.length=384 := by
- rw [before3,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape3 : SixCarryPrefixData.program=before3++(SixCarryPrefixData.chunk3++after3) := by
- rw [flattened]
- exact split_flatten chunks 3 SixCarryPrefixData.chunk3 (by rfl)
+
+
+
+
+
+
 
 def before4 : Program := (chunks.take 4).flatten
 def after4 : Program := (chunks.drop 5).flatten
-theorem before_len4 : before4.length=512 := by
- rw [before4,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape4 : SixCarryPrefixData.program=before4++(SixCarryPrefixData.chunk4++after4) := by
- rw [flattened]
- exact split_flatten chunks 4 SixCarryPrefixData.chunk4 (by rfl)
+
+
+
+
+
+
 
 def before5 : Program := (chunks.take 5).flatten
 def after5 : Program := (chunks.drop 6).flatten
@@ -12822,12 +12822,12 @@ theorem shape39 : SixCarryPrefixData.program=before39++(SixCarryPrefixData.chunk
 
 def before40 : Program := (chunks.take 40).flatten
 def after40 : Program := (chunks.drop 41).flatten
-theorem before_len40 : before40.length=5120 := by
- rw [before40,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape40 : SixCarryPrefixData.program=before40++(SixCarryPrefixData.chunk40++after40) := by
- rw [flattened]
- exact split_flatten chunks 40 SixCarryPrefixData.chunk40 (by rfl)
+
+
+
+
+
+
 
 def before41 : Program := (chunks.take 41).flatten
 def after41 : Program := (chunks.drop 42).flatten
@@ -12840,120 +12840,120 @@ theorem shape41 : SixCarryPrefixData.program=before41++(SixCarryPrefixData.chunk
 
 def before42 : Program := (chunks.take 42).flatten
 def after42 : Program := (chunks.drop 43).flatten
-theorem before_len42 : before42.length=5376 := by
- rw [before42,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape42 : SixCarryPrefixData.program=before42++(SixCarryPrefixData.chunk42++after42) := by
- rw [flattened]
- exact split_flatten chunks 42 SixCarryPrefixData.chunk42 (by rfl)
+
+
+
+
+
+
 
 def before43 : Program := (chunks.take 43).flatten
 def after43 : Program := (chunks.drop 44).flatten
-theorem before_len43 : before43.length=5504 := by
- rw [before43,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape43 : SixCarryPrefixData.program=before43++(SixCarryPrefixData.chunk43++after43) := by
- rw [flattened]
- exact split_flatten chunks 43 SixCarryPrefixData.chunk43 (by rfl)
+
+
+
+
+
+
 
 def before44 : Program := (chunks.take 44).flatten
 def after44 : Program := (chunks.drop 45).flatten
-theorem before_len44 : before44.length=5632 := by
- rw [before44,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape44 : SixCarryPrefixData.program=before44++(SixCarryPrefixData.chunk44++after44) := by
- rw [flattened]
- exact split_flatten chunks 44 SixCarryPrefixData.chunk44 (by rfl)
+
+
+
+
+
+
 
 def before45 : Program := (chunks.take 45).flatten
 def after45 : Program := (chunks.drop 46).flatten
-theorem before_len45 : before45.length=5760 := by
- rw [before45,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape45 : SixCarryPrefixData.program=before45++(SixCarryPrefixData.chunk45++after45) := by
- rw [flattened]
- exact split_flatten chunks 45 SixCarryPrefixData.chunk45 (by rfl)
+
+
+
+
+
+
 
 def before46 : Program := (chunks.take 46).flatten
 def after46 : Program := (chunks.drop 47).flatten
-theorem before_len46 : before46.length=5888 := by
- rw [before46,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape46 : SixCarryPrefixData.program=before46++(SixCarryPrefixData.chunk46++after46) := by
- rw [flattened]
- exact split_flatten chunks 46 SixCarryPrefixData.chunk46 (by rfl)
+
+
+
+
+
+
 
 def before47 : Program := (chunks.take 47).flatten
 def after47 : Program := (chunks.drop 48).flatten
-theorem before_len47 : before47.length=6016 := by
- rw [before47,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape47 : SixCarryPrefixData.program=before47++(SixCarryPrefixData.chunk47++after47) := by
- rw [flattened]
- exact split_flatten chunks 47 SixCarryPrefixData.chunk47 (by rfl)
+
+
+
+
+
+
 
 def before48 : Program := (chunks.take 48).flatten
 def after48 : Program := (chunks.drop 49).flatten
-theorem before_len48 : before48.length=6144 := by
- rw [before48,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape48 : SixCarryPrefixData.program=before48++(SixCarryPrefixData.chunk48++after48) := by
- rw [flattened]
- exact split_flatten chunks 48 SixCarryPrefixData.chunk48 (by rfl)
+
+
+
+
+
+
 
 def before49 : Program := (chunks.take 49).flatten
 def after49 : Program := (chunks.drop 50).flatten
-theorem before_len49 : before49.length=6272 := by
- rw [before49,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape49 : SixCarryPrefixData.program=before49++(SixCarryPrefixData.chunk49++after49) := by
- rw [flattened]
- exact split_flatten chunks 49 SixCarryPrefixData.chunk49 (by rfl)
+
+
+
+
+
+
 
 def before50 : Program := (chunks.take 50).flatten
 def after50 : Program := (chunks.drop 51).flatten
-theorem before_len50 : before50.length=6400 := by
- rw [before50,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape50 : SixCarryPrefixData.program=before50++(SixCarryPrefixData.chunk50++after50) := by
- rw [flattened]
- exact split_flatten chunks 50 SixCarryPrefixData.chunk50 (by rfl)
+
+
+
+
+
+
 
 def before51 : Program := (chunks.take 51).flatten
 def after51 : Program := (chunks.drop 52).flatten
-theorem before_len51 : before51.length=6528 := by
- rw [before51,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape51 : SixCarryPrefixData.program=before51++(SixCarryPrefixData.chunk51++after51) := by
- rw [flattened]
- exact split_flatten chunks 51 SixCarryPrefixData.chunk51 (by rfl)
+
+
+
+
+
+
 
 def before52 : Program := (chunks.take 52).flatten
 def after52 : Program := (chunks.drop 53).flatten
-theorem before_len52 : before52.length=6656 := by
- rw [before52,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape52 : SixCarryPrefixData.program=before52++(SixCarryPrefixData.chunk52++after52) := by
- rw [flattened]
- exact split_flatten chunks 52 SixCarryPrefixData.chunk52 (by rfl)
+
+
+
+
+
+
 
 def before53 : Program := (chunks.take 53).flatten
 def after53 : Program := (chunks.drop 54).flatten
-theorem before_len53 : before53.length=6784 := by
- rw [before53,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape53 : SixCarryPrefixData.program=before53++(SixCarryPrefixData.chunk53++after53) := by
- rw [flattened]
- exact split_flatten chunks 53 SixCarryPrefixData.chunk53 (by rfl)
+
+
+
+
+
+
 
 def before54 : Program := (chunks.take 54).flatten
 def after54 : Program := (chunks.drop 55).flatten
-theorem before_len54 : before54.length=6912 := by
- rw [before54,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape54 : SixCarryPrefixData.program=before54++(SixCarryPrefixData.chunk54++after54) := by
- rw [flattened]
- exact split_flatten chunks 54 SixCarryPrefixData.chunk54 (by rfl)
+
+
+
+
+
+
 
 def before55 : Program := (chunks.take 55).flatten
 def after55 : Program := (chunks.drop 56).flatten
@@ -12966,156 +12966,156 @@ theorem shape55 : SixCarryPrefixData.program=before55++(SixCarryPrefixData.chunk
 
 def before56 : Program := (chunks.take 56).flatten
 def after56 : Program := (chunks.drop 57).flatten
-theorem before_len56 : before56.length=7168 := by
- rw [before56,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape56 : SixCarryPrefixData.program=before56++(SixCarryPrefixData.chunk56++after56) := by
- rw [flattened]
- exact split_flatten chunks 56 SixCarryPrefixData.chunk56 (by rfl)
+
+
+
+
+
+
 
 def before57 : Program := (chunks.take 57).flatten
 def after57 : Program := (chunks.drop 58).flatten
-theorem before_len57 : before57.length=7296 := by
- rw [before57,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape57 : SixCarryPrefixData.program=before57++(SixCarryPrefixData.chunk57++after57) := by
- rw [flattened]
- exact split_flatten chunks 57 SixCarryPrefixData.chunk57 (by rfl)
+
+
+
+
+
+
 
 def before58 : Program := (chunks.take 58).flatten
 def after58 : Program := (chunks.drop 59).flatten
-theorem before_len58 : before58.length=7424 := by
- rw [before58,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape58 : SixCarryPrefixData.program=before58++(SixCarryPrefixData.chunk58++after58) := by
- rw [flattened]
- exact split_flatten chunks 58 SixCarryPrefixData.chunk58 (by rfl)
+
+
+
+
+
+
 
 def before59 : Program := (chunks.take 59).flatten
 def after59 : Program := (chunks.drop 60).flatten
-theorem before_len59 : before59.length=7552 := by
- rw [before59,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape59 : SixCarryPrefixData.program=before59++(SixCarryPrefixData.chunk59++after59) := by
- rw [flattened]
- exact split_flatten chunks 59 SixCarryPrefixData.chunk59 (by rfl)
+
+
+
+
+
+
 
 def before60 : Program := (chunks.take 60).flatten
 def after60 : Program := (chunks.drop 61).flatten
-theorem before_len60 : before60.length=7680 := by
- rw [before60,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape60 : SixCarryPrefixData.program=before60++(SixCarryPrefixData.chunk60++after60) := by
- rw [flattened]
- exact split_flatten chunks 60 SixCarryPrefixData.chunk60 (by rfl)
+
+
+
+
+
+
 
 def before61 : Program := (chunks.take 61).flatten
 def after61 : Program := (chunks.drop 62).flatten
-theorem before_len61 : before61.length=7808 := by
- rw [before61,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape61 : SixCarryPrefixData.program=before61++(SixCarryPrefixData.chunk61++after61) := by
- rw [flattened]
- exact split_flatten chunks 61 SixCarryPrefixData.chunk61 (by rfl)
+
+
+
+
+
+
 
 def before62 : Program := (chunks.take 62).flatten
 def after62 : Program := (chunks.drop 63).flatten
-theorem before_len62 : before62.length=7936 := by
- rw [before62,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape62 : SixCarryPrefixData.program=before62++(SixCarryPrefixData.chunk62++after62) := by
- rw [flattened]
- exact split_flatten chunks 62 SixCarryPrefixData.chunk62 (by rfl)
+
+
+
+
+
+
 
 def before63 : Program := (chunks.take 63).flatten
 def after63 : Program := (chunks.drop 64).flatten
-theorem before_len63 : before63.length=8064 := by
- rw [before63,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape63 : SixCarryPrefixData.program=before63++(SixCarryPrefixData.chunk63++after63) := by
- rw [flattened]
- exact split_flatten chunks 63 SixCarryPrefixData.chunk63 (by rfl)
+
+
+
+
+
+
 
 def before64 : Program := (chunks.take 64).flatten
 def after64 : Program := (chunks.drop 65).flatten
-theorem before_len64 : before64.length=8192 := by
- rw [before64,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape64 : SixCarryPrefixData.program=before64++(SixCarryPrefixData.chunk64++after64) := by
- rw [flattened]
- exact split_flatten chunks 64 SixCarryPrefixData.chunk64 (by rfl)
+
+
+
+
+
+
 
 def before65 : Program := (chunks.take 65).flatten
 def after65 : Program := (chunks.drop 66).flatten
-theorem before_len65 : before65.length=8320 := by
- rw [before65,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape65 : SixCarryPrefixData.program=before65++(SixCarryPrefixData.chunk65++after65) := by
- rw [flattened]
- exact split_flatten chunks 65 SixCarryPrefixData.chunk65 (by rfl)
+
+
+
+
+
+
 
 def before66 : Program := (chunks.take 66).flatten
 def after66 : Program := (chunks.drop 67).flatten
-theorem before_len66 : before66.length=8448 := by
- rw [before66,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape66 : SixCarryPrefixData.program=before66++(SixCarryPrefixData.chunk66++after66) := by
- rw [flattened]
- exact split_flatten chunks 66 SixCarryPrefixData.chunk66 (by rfl)
+
+
+
+
+
+
 
 def before67 : Program := (chunks.take 67).flatten
 def after67 : Program := (chunks.drop 68).flatten
-theorem before_len67 : before67.length=8576 := by
- rw [before67,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape67 : SixCarryPrefixData.program=before67++(SixCarryPrefixData.chunk67++after67) := by
- rw [flattened]
- exact split_flatten chunks 67 SixCarryPrefixData.chunk67 (by rfl)
+
+
+
+
+
+
 
 def before68 : Program := (chunks.take 68).flatten
 def after68 : Program := (chunks.drop 69).flatten
-theorem before_len68 : before68.length=8704 := by
- rw [before68,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape68 : SixCarryPrefixData.program=before68++(SixCarryPrefixData.chunk68++after68) := by
- rw [flattened]
- exact split_flatten chunks 68 SixCarryPrefixData.chunk68 (by rfl)
+
+
+
+
+
+
 
 def before69 : Program := (chunks.take 69).flatten
 def after69 : Program := (chunks.drop 70).flatten
-theorem before_len69 : before69.length=8832 := by
- rw [before69,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape69 : SixCarryPrefixData.program=before69++(SixCarryPrefixData.chunk69++after69) := by
- rw [flattened]
- exact split_flatten chunks 69 SixCarryPrefixData.chunk69 (by rfl)
+
+
+
+
+
+
 
 def before70 : Program := (chunks.take 70).flatten
 def after70 : Program := (chunks.drop 71).flatten
-theorem before_len70 : before70.length=8960 := by
- rw [before70,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape70 : SixCarryPrefixData.program=before70++(SixCarryPrefixData.chunk70++after70) := by
- rw [flattened]
- exact split_flatten chunks 70 SixCarryPrefixData.chunk70 (by rfl)
+
+
+
+
+
+
 
 def before71 : Program := (chunks.take 71).flatten
 def after71 : Program := (chunks.drop 72).flatten
-theorem before_len71 : before71.length=9088 := by
- rw [before71,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape71 : SixCarryPrefixData.program=before71++(SixCarryPrefixData.chunk71++after71) := by
- rw [flattened]
- exact split_flatten chunks 71 SixCarryPrefixData.chunk71 (by rfl)
+
+
+
+
+
+
 
 def before72 : Program := (chunks.take 72).flatten
 def after72 : Program := (chunks.drop 73).flatten
-theorem before_len72 : before72.length=9216 := by
- rw [before72,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape72 : SixCarryPrefixData.program=before72++(SixCarryPrefixData.chunk72++after72) := by
- rw [flattened]
- exact split_flatten chunks 72 SixCarryPrefixData.chunk72 (by rfl)
+
+
+
+
+
+
 
 def before73 : Program := (chunks.take 73).flatten
 def after73 : Program := (chunks.drop 74).flatten
@@ -13128,12 +13128,12 @@ theorem shape73 : SixCarryPrefixData.program=before73++(SixCarryPrefixData.chunk
 
 def before74 : Program := (chunks.take 74).flatten
 def after74 : Program := (chunks.drop 75).flatten
-theorem before_len74 : before74.length=9472 := by
- rw [before74,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape74 : SixCarryPrefixData.program=before74++(SixCarryPrefixData.chunk74++after74) := by
- rw [flattened]
- exact split_flatten chunks 74 SixCarryPrefixData.chunk74 (by rfl)
+
+
+
+
+
+
 
 def before75 : Program := (chunks.take 75).flatten
 def after75 : Program := (chunks.drop 76).flatten
@@ -13146,129 +13146,129 @@ theorem shape75 : SixCarryPrefixData.program=before75++(SixCarryPrefixData.chunk
 
 def before76 : Program := (chunks.take 76).flatten
 def after76 : Program := (chunks.drop 77).flatten
-theorem before_len76 : before76.length=9728 := by
- rw [before76,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape76 : SixCarryPrefixData.program=before76++(SixCarryPrefixData.chunk76++after76) := by
- rw [flattened]
- exact split_flatten chunks 76 SixCarryPrefixData.chunk76 (by rfl)
+
+
+
+
+
+
 
 def before77 : Program := (chunks.take 77).flatten
 def after77 : Program := (chunks.drop 78).flatten
-theorem before_len77 : before77.length=9856 := by
- rw [before77,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape77 : SixCarryPrefixData.program=before77++(SixCarryPrefixData.chunk77++after77) := by
- rw [flattened]
- exact split_flatten chunks 77 SixCarryPrefixData.chunk77 (by rfl)
+
+
+
+
+
+
 
 def before78 : Program := (chunks.take 78).flatten
 def after78 : Program := (chunks.drop 79).flatten
-theorem before_len78 : before78.length=9984 := by
- rw [before78,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape78 : SixCarryPrefixData.program=before78++(SixCarryPrefixData.chunk78++after78) := by
- rw [flattened]
- exact split_flatten chunks 78 SixCarryPrefixData.chunk78 (by rfl)
+
+
+
+
+
+
 
 def before79 : Program := (chunks.take 79).flatten
 def after79 : Program := (chunks.drop 80).flatten
-theorem before_len79 : before79.length=10112 := by
- rw [before79,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape79 : SixCarryPrefixData.program=before79++(SixCarryPrefixData.chunk79++after79) := by
- rw [flattened]
- exact split_flatten chunks 79 SixCarryPrefixData.chunk79 (by rfl)
+
+
+
+
+
+
 
 def before80 : Program := (chunks.take 80).flatten
 def after80 : Program := (chunks.drop 81).flatten
-theorem before_len80 : before80.length=10240 := by
- rw [before80,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape80 : SixCarryPrefixData.program=before80++(SixCarryPrefixData.chunk80++after80) := by
- rw [flattened]
- exact split_flatten chunks 80 SixCarryPrefixData.chunk80 (by rfl)
+
+
+
+
+
+
 
 def before81 : Program := (chunks.take 81).flatten
 def after81 : Program := (chunks.drop 82).flatten
-theorem before_len81 : before81.length=10368 := by
- rw [before81,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape81 : SixCarryPrefixData.program=before81++(SixCarryPrefixData.chunk81++after81) := by
- rw [flattened]
- exact split_flatten chunks 81 SixCarryPrefixData.chunk81 (by rfl)
+
+
+
+
+
+
 
 def before82 : Program := (chunks.take 82).flatten
 def after82 : Program := (chunks.drop 83).flatten
-theorem before_len82 : before82.length=10496 := by
- rw [before82,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape82 : SixCarryPrefixData.program=before82++(SixCarryPrefixData.chunk82++after82) := by
- rw [flattened]
- exact split_flatten chunks 82 SixCarryPrefixData.chunk82 (by rfl)
+
+
+
+
+
+
 
 def before83 : Program := (chunks.take 83).flatten
 def after83 : Program := (chunks.drop 84).flatten
-theorem before_len83 : before83.length=10624 := by
- rw [before83,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape83 : SixCarryPrefixData.program=before83++(SixCarryPrefixData.chunk83++after83) := by
- rw [flattened]
- exact split_flatten chunks 83 SixCarryPrefixData.chunk83 (by rfl)
+
+
+
+
+
+
 
 def before84 : Program := (chunks.take 84).flatten
 def after84 : Program := (chunks.drop 85).flatten
-theorem before_len84 : before84.length=10752 := by
- rw [before84,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape84 : SixCarryPrefixData.program=before84++(SixCarryPrefixData.chunk84++after84) := by
- rw [flattened]
- exact split_flatten chunks 84 SixCarryPrefixData.chunk84 (by rfl)
+
+
+
+
+
+
 
 def before85 : Program := (chunks.take 85).flatten
 def after85 : Program := (chunks.drop 86).flatten
-theorem before_len85 : before85.length=10880 := by
- rw [before85,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape85 : SixCarryPrefixData.program=before85++(SixCarryPrefixData.chunk85++after85) := by
- rw [flattened]
- exact split_flatten chunks 85 SixCarryPrefixData.chunk85 (by rfl)
+
+
+
+
+
+
 
 def before86 : Program := (chunks.take 86).flatten
 def after86 : Program := (chunks.drop 87).flatten
-theorem before_len86 : before86.length=11008 := by
- rw [before86,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape86 : SixCarryPrefixData.program=before86++(SixCarryPrefixData.chunk86++after86) := by
- rw [flattened]
- exact split_flatten chunks 86 SixCarryPrefixData.chunk86 (by rfl)
+
+
+
+
+
+
 
 def before87 : Program := (chunks.take 87).flatten
 def after87 : Program := (chunks.drop 88).flatten
-theorem before_len87 : before87.length=11136 := by
- rw [before87,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape87 : SixCarryPrefixData.program=before87++(SixCarryPrefixData.chunk87++after87) := by
- rw [flattened]
- exact split_flatten chunks 87 SixCarryPrefixData.chunk87 (by rfl)
+
+
+
+
+
+
 
 def before88 : Program := (chunks.take 88).flatten
 def after88 : Program := (chunks.drop 89).flatten
-theorem before_len88 : before88.length=11264 := by
- rw [before88,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape88 : SixCarryPrefixData.program=before88++(SixCarryPrefixData.chunk88++after88) := by
- rw [flattened]
- exact split_flatten chunks 88 SixCarryPrefixData.chunk88 (by rfl)
+
+
+
+
+
+
 
 def before89 : Program := (chunks.take 89).flatten
 def after89 : Program := (chunks.drop 90).flatten
-theorem before_len89 : before89.length=11392 := by
- rw [before89,List.length_flatten,List.map_take,lengths]
- decide +kernel
-theorem shape89 : SixCarryPrefixData.program=before89++(SixCarryPrefixData.chunk89++after89) := by
- rw [flattened]
- exact split_flatten chunks 89 SixCarryPrefixData.chunk89 (by rfl)
+
+
+
+
+
+
 
 def before90 : Program := (chunks.take 90).flatten
 def after90 : Program := (chunks.drop 91).flatten
@@ -15495,9 +15495,9 @@ theorem nw_4826_0_158 : noWriteBetween SixCarryPrefixData.program 0 158 4826=tru
  have h := noWrite_shift SixCarryPrefixData.program before0 (SixCarryPrefixData.chunk0++after0) 0 0 158 4826 shape0 before_len0
  exact h.trans (by decide +kernel)
 
-theorem frame_2_9387_9387 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9387 basis 2=prefixState SixCarryPrefixData.program 9387 basis 2 := by
- rfl
+
+
+
 
 theorem frame_2_9387_9388 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9388 basis 2=prefixState SixCarryPrefixData.program 9387 basis 2 := by
@@ -15511,65 +15511,65 @@ theorem frame_2_9387_9392 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9392 basis 2=prefixState SixCarryPrefixData.program 9387 basis 2 := by
  exact at_between SixCarryPrefixData.program 9387 9392 2 (by decide +kernel) nw_2_9387_9392 basis
 
-theorem frame_3_9395_9395 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9395 basis 3=prefixState SixCarryPrefixData.program 9395 basis 3 := by
- rfl
+
+
+
 
 theorem frame_3_9395_9400 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9400 basis 3=prefixState SixCarryPrefixData.program 9395 basis 3 := by
  exact at_between SixCarryPrefixData.program 9395 9400 3 (by decide +kernel) nw_3_9395_9400 basis
 
-theorem frame_4_9403_9403 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9403 basis 4=prefixState SixCarryPrefixData.program 9403 basis 4 := by
- rfl
+
+
+
 
 theorem frame_4_9403_9408 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9408 basis 4=prefixState SixCarryPrefixData.program 9403 basis 4 := by
  exact at_between SixCarryPrefixData.program 9403 9408 4 (by decide +kernel) nw_4_9403_9408 basis
 
-theorem frame_5_9411_9411 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9411 basis 5=prefixState SixCarryPrefixData.program 9411 basis 5 := by
- rfl
+
+
+
 
 theorem frame_5_9411_9416 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9416 basis 5=prefixState SixCarryPrefixData.program 9411 basis 5 := by
  exact at_between SixCarryPrefixData.program 9411 9416 5 (by decide +kernel) nw_5_9411_9416 basis
 
-theorem frame_33_9635_9635 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9635 basis 33=prefixState SixCarryPrefixData.program 9635 basis 33 := by
- rfl
+
+
+
 
 theorem frame_33_9635_9640 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9640 basis 33=prefixState SixCarryPrefixData.program 9635 basis 33 := by
  exact at_between SixCarryPrefixData.program 9635 9640 33 (by decide +kernel) nw_33_9635_9640 basis
 
-theorem frame_34_9643_9643 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9643 basis 34=prefixState SixCarryPrefixData.program 9643 basis 34 := by
- rfl
+
+
+
 
 theorem frame_34_9643_9648 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9648 basis 34=prefixState SixCarryPrefixData.program 9643 basis 34 := by
  exact at_between SixCarryPrefixData.program 9643 9648 34 (by decide +kernel) nw_34_9643_9648 basis
 
-theorem frame_35_9651_9651 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9651 basis 35=prefixState SixCarryPrefixData.program 9651 basis 35 := by
- rfl
+
+
+
 
 theorem frame_35_9651_9656 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9656 basis 35=prefixState SixCarryPrefixData.program 9651 basis 35 := by
  exact at_between SixCarryPrefixData.program 9651 9656 35 (by decide +kernel) nw_35_9651_9656 basis
 
-theorem frame_36_9659_9659 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9659 basis 36=prefixState SixCarryPrefixData.program 9659 basis 36 := by
- rfl
+
+
+
 
 theorem frame_36_9659_9664 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9664 basis 36=prefixState SixCarryPrefixData.program 9659 basis 36 := by
  exact at_between SixCarryPrefixData.program 9659 9664 36 (by decide +kernel) nw_36_9659_9664 basis
 
-theorem frame_37_9667_9667 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 9667 basis 37=prefixState SixCarryPrefixData.program 9667 basis 37 := by
- rfl
+
+
+
 
 theorem frame_37_9667_9672 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9672 basis 37=prefixState SixCarryPrefixData.program 9667 basis 37 := by
@@ -15579,25 +15579,25 @@ theorem frame_4115_4031_4034 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4034 basis 4115=prefixState SixCarryPrefixData.program 4031 basis 4115 := by
  exact at_between SixCarryPrefixData.program 4031 4034 4115 (by decide +kernel) nw_4115_4031_4034 basis
 
-theorem frame_4115_4035_4035 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4035 basis 4115=prefixState SixCarryPrefixData.program 4035 basis 4115 := by
- rfl
+
+
+
 
 theorem frame_4116_4014_4017 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4017 basis 4116=prefixState SixCarryPrefixData.program 4014 basis 4116 := by
  exact at_between SixCarryPrefixData.program 4014 4017 4116 (by decide +kernel) nw_4116_4014_4017 basis
 
-theorem frame_4116_4018_4018 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4018 basis 4116=prefixState SixCarryPrefixData.program 4018 basis 4116 := by
- rfl
+
+
+
 
 theorem frame_4116_4019_4024 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4024 basis 4116=prefixState SixCarryPrefixData.program 4019 basis 4116 := by
  exact at_between SixCarryPrefixData.program 4019 4024 4116 (by decide +kernel) nw_4116_4019_4024 basis
 
-theorem frame_4116_4025_4025 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4025 basis 4116=prefixState SixCarryPrefixData.program 4025 basis 4116 := by
- rfl
+
+
+
 
 theorem frame_4116_4025_4027 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4027 basis 4116=prefixState SixCarryPrefixData.program 4025 basis 4116 := by
@@ -15619,17 +15619,17 @@ theorem frame_4117_4010_4025 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4025 basis 4117=prefixState SixCarryPrefixData.program 4010 basis 4117 := by
  exact at_between SixCarryPrefixData.program 4010 4025 4117 (by decide +kernel) nw_4117_4010_4025 basis
 
-theorem frame_4117_4026_4026 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4026 basis 4117=prefixState SixCarryPrefixData.program 4026 basis 4117 := by
- rfl
+
+
+
 
 theorem frame_4117_4027_4033 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4033 basis 4117=prefixState SixCarryPrefixData.program 4027 basis 4117 := by
  exact at_between SixCarryPrefixData.program 4027 4033 4117 (by decide +kernel) nw_4117_4027_4033 basis
 
-theorem frame_4117_4034_4034 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4034 basis 4117=prefixState SixCarryPrefixData.program 4034 basis 4117 := by
- rfl
+
+
+
 
 theorem frame_4117_4034_4036 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4036 basis 4117=prefixState SixCarryPrefixData.program 4034 basis 4117 := by
@@ -16583,9 +16583,9 @@ theorem frame_4372_4012_4016 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4016 basis 4372=prefixState SixCarryPrefixData.program 4012 basis 4372 := by
  exact at_between SixCarryPrefixData.program 4012 4016 4372 (by decide +kernel) nw_4372_4012_4016 basis
 
-theorem frame_4372_4017_4017 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4017 basis 4372=prefixState SixCarryPrefixData.program 4017 basis 4372 := by
- rfl
+
+
+
 
 theorem frame_4372_4017_4019 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4019 basis 4372=prefixState SixCarryPrefixData.program 4017 basis 4372 := by
@@ -16659,25 +16659,25 @@ theorem frame_4379_4560_4631 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4631 basis 4379=prefixState SixCarryPrefixData.program 4560 basis 4379 := by
  exact at_between SixCarryPrefixData.program 4560 4631 4379 (by decide +kernel) nw_4379_4560_4631 basis
 
-theorem frame_4379_4632_4632 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4632 basis 4379=prefixState SixCarryPrefixData.program 4632 basis 4379 := by
- rfl
 
-theorem frame_4379_4633_4633 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4633 basis 4379=prefixState SixCarryPrefixData.program 4633 basis 4379 := by
- rfl
 
-theorem frame_4379_4634_4634 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4634 basis 4379=prefixState SixCarryPrefixData.program 4634 basis 4379 := by
- rfl
+
+
+
+
+
+
+
+
+
 
 theorem frame_4379_4635_4653 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4653 basis 4379=prefixState SixCarryPrefixData.program 4635 basis 4379 := by
  exact at_between SixCarryPrefixData.program 4635 4653 4379 (by decide +kernel) nw_4379_4635_4653 basis
 
-theorem frame_4380_4386_4386 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4386 basis 4380=prefixState SixCarryPrefixData.program 4386 basis 4380 := by
- rfl
+
+
+
 
 theorem frame_4380_4386_4388 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4388 basis 4380=prefixState SixCarryPrefixData.program 4386 basis 4380 := by
@@ -16691,17 +16691,17 @@ theorem frame_4380_4557_4635 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4635 basis 4380=prefixState SixCarryPrefixData.program 4557 basis 4380 := by
  exact at_between SixCarryPrefixData.program 4557 4635 4380 (by decide +kernel) nw_4380_4557_4635 basis
 
-theorem frame_4380_4636_4636 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4636 basis 4380=prefixState SixCarryPrefixData.program 4636 basis 4380 := by
- rfl
 
-theorem frame_4380_4637_4637 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4637 basis 4380=prefixState SixCarryPrefixData.program 4637 basis 4380 := by
- rfl
 
-theorem frame_4380_4638_4638 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4638 basis 4380=prefixState SixCarryPrefixData.program 4638 basis 4380 := by
- rfl
+
+
+
+
+
+
+
+
+
 
 theorem frame_4380_4639_4650 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4650 basis 4380=prefixState SixCarryPrefixData.program 4639 basis 4380 := by
@@ -16711,17 +16711,17 @@ theorem frame_4381_4247_4386 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4386 basis 4381=prefixState SixCarryPrefixData.program 4247 basis 4381 := by
  exact at_between SixCarryPrefixData.program 4247 4386 4381 (by decide +kernel) nw_4381_4247_4386 basis
 
-theorem frame_4381_4387_4387 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4387 basis 4381=prefixState SixCarryPrefixData.program 4387 basis 4381 := by
- rfl
+
+
+
 
 theorem frame_4381_4388_4391 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4391 basis 4381=prefixState SixCarryPrefixData.program 4388 basis 4381 := by
  exact at_between SixCarryPrefixData.program 4388 4391 4381 (by decide +kernel) nw_4381_4388_4391 basis
 
-theorem frame_4381_4392_4392 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4392 basis 4381=prefixState SixCarryPrefixData.program 4392 basis 4381 := by
- rfl
+
+
+
 
 theorem frame_4381_4392_4394 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4394 basis 4381=prefixState SixCarryPrefixData.program 4392 basis 4381 := by
@@ -16735,13 +16735,13 @@ theorem frame_4381_4554_4639 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4639 basis 4381=prefixState SixCarryPrefixData.program 4554 basis 4381 := by
  exact at_between SixCarryPrefixData.program 4554 4639 4381 (by decide +kernel) nw_4381_4554_4639 basis
 
-theorem frame_4381_4640_4640 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4640 basis 4381=prefixState SixCarryPrefixData.program 4640 basis 4381 := by
- rfl
 
-theorem frame_4381_4641_4641 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4641 basis 4381=prefixState SixCarryPrefixData.program 4641 basis 4381 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4381_4642_4647 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4647 basis 4381=prefixState SixCarryPrefixData.program 4642 basis 4381 := by
@@ -16751,9 +16751,9 @@ theorem frame_4382_4244_4392 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4392 basis 4382=prefixState SixCarryPrefixData.program 4244 basis 4382 := by
  exact at_between SixCarryPrefixData.program 4244 4392 4382 (by decide +kernel) nw_4382_4244_4392 basis
 
-theorem frame_4382_4393_4393 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4393 basis 4382=prefixState SixCarryPrefixData.program 4393 basis 4382 := by
- rfl
+
+
+
 
 theorem frame_4382_4394_4396 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4396 basis 4382=prefixState SixCarryPrefixData.program 4394 basis 4382 := by
@@ -16763,13 +16763,13 @@ theorem frame_4382_4551_4642 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4642 basis 4382=prefixState SixCarryPrefixData.program 4551 basis 4382 := by
  exact at_between SixCarryPrefixData.program 4551 4642 4382 (by decide +kernel) nw_4382_4551_4642 basis
 
-theorem frame_4382_4643_4643 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4643 basis 4382=prefixState SixCarryPrefixData.program 4643 basis 4382 := by
- rfl
 
-theorem frame_4382_4644_4644 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4644 basis 4382=prefixState SixCarryPrefixData.program 4644 basis 4382 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4388_4226_4326 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4326 basis 4388=prefixState SixCarryPrefixData.program 4226 basis 4388 := by
@@ -16787,33 +16787,33 @@ theorem frame_4395_3941_4145 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4145 basis 4395=prefixState SixCarryPrefixData.program 3941 basis 4395 := by
  exact at_between SixCarryPrefixData.program 3941 4145 4395 (by decide +kernel) nw_4395_3941_4145 basis
 
-theorem frame_4395_4146_4146 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4146 basis 4395=prefixState SixCarryPrefixData.program 4146 basis 4395 := by
- rfl
 
-theorem frame_4395_4147_4147 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4147 basis 4395=prefixState SixCarryPrefixData.program 4147 basis 4395 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4395_4148_4203 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4203 basis 4395=prefixState SixCarryPrefixData.program 4148 basis 4395 := by
  exact at_between SixCarryPrefixData.program 4148 4203 4395 (by decide +kernel) nw_4395_4148_4203 basis
 
-theorem frame_4395_4841_4841 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4841 basis 4395=prefixState SixCarryPrefixData.program 4841 basis 4395 := by
- rfl
+
+
+
 
 theorem frame_4396_3938_4148 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4148 basis 4396=prefixState SixCarryPrefixData.program 3938 basis 4396 := by
  exact at_between SixCarryPrefixData.program 3938 4148 4396 (by decide +kernel) nw_4396_3938_4148 basis
 
-theorem frame_4396_4149_4149 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4149 basis 4396=prefixState SixCarryPrefixData.program 4149 basis 4396 := by
- rfl
 
-theorem frame_4396_4150_4150 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4150 basis 4396=prefixState SixCarryPrefixData.program 4150 basis 4396 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4396_4151_4200 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4200 basis 4396=prefixState SixCarryPrefixData.program 4151 basis 4396 := by
@@ -16835,9 +16835,9 @@ theorem frame_4396_4384_4404 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4404 basis 4396=prefixState SixCarryPrefixData.program 4384 basis 4396 := by
  exact at_between SixCarryPrefixData.program 4384 4404 4396 (by decide +kernel) nw_4396_4384_4404 basis
 
-theorem frame_4396_4405_4405 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4405 basis 4396=prefixState SixCarryPrefixData.program 4405 basis 4396 := by
- rfl
+
+
+
 
 theorem frame_4396_4406_4603 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4603 basis 4396=prefixState SixCarryPrefixData.program 4406 basis 4396 := by
@@ -16851,9 +16851,9 @@ theorem frame_4396_4604_4652 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4652 basis 4396=prefixState SixCarryPrefixData.program 4604 basis 4396 := by
  exact at_between SixCarryPrefixData.program 4604 4652 4396 (by decide +kernel) nw_4396_4604_4652 basis
 
-theorem frame_4396_4653_4653 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4653 basis 4396=prefixState SixCarryPrefixData.program 4653 basis 4396 := by
- rfl
+
+
+
 
 theorem frame_4396_4654_4682 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4682 basis 4396=prefixState SixCarryPrefixData.program 4654 basis 4396 := by
@@ -16867,29 +16867,29 @@ theorem frame_4396_4695_4841 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4841 basis 4396=prefixState SixCarryPrefixData.program 4695 basis 4396 := by
  exact at_between SixCarryPrefixData.program 4695 4841 4396 (by decide +kernel) nw_4396_4695_4841 basis
 
-theorem frame_4396_4842_4842 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4842 basis 4396=prefixState SixCarryPrefixData.program 4842 basis 4396 := by
- rfl
+
+
+
 
 theorem frame_4396_4843_4846 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4846 basis 4396=prefixState SixCarryPrefixData.program 4843 basis 4396 := by
  exact at_between SixCarryPrefixData.program 4843 4846 4396 (by decide +kernel) nw_4396_4843_4846 basis
 
-theorem frame_4396_4847_4847 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4847 basis 4396=prefixState SixCarryPrefixData.program 4847 basis 4396 := by
- rfl
+
+
+
 
 theorem frame_4397_3935_4151 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4151 basis 4397=prefixState SixCarryPrefixData.program 3935 basis 4397 := by
  exact at_between SixCarryPrefixData.program 3935 4151 4397 (by decide +kernel) nw_4397_3935_4151 basis
 
-theorem frame_4397_4152_4152 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4152 basis 4397=prefixState SixCarryPrefixData.program 4152 basis 4397 := by
- rfl
 
-theorem frame_4397_4153_4153 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4153 basis 4397=prefixState SixCarryPrefixData.program 4153 basis 4397 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4397_4154_4197 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4197 basis 4397=prefixState SixCarryPrefixData.program 4154 basis 4397 := by
@@ -16915,9 +16915,9 @@ theorem frame_4397_4390_4401 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4401 basis 4397=prefixState SixCarryPrefixData.program 4390 basis 4397 := by
  exact at_between SixCarryPrefixData.program 4390 4401 4397 (by decide +kernel) nw_4397_4390_4401 basis
 
-theorem frame_4397_4402_4402 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4402 basis 4397=prefixState SixCarryPrefixData.program 4402 basis 4397 := by
- rfl
+
+
+
 
 theorem frame_4397_4403_4604 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4604 basis 4397=prefixState SixCarryPrefixData.program 4403 basis 4397 := by
@@ -16931,9 +16931,9 @@ theorem frame_4397_4605_4649 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4649 basis 4397=prefixState SixCarryPrefixData.program 4605 basis 4397 := by
  exact at_between SixCarryPrefixData.program 4605 4649 4397 (by decide +kernel) nw_4397_4605_4649 basis
 
-theorem frame_4397_4650_4650 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4650 basis 4397=prefixState SixCarryPrefixData.program 4650 basis 4397 := by
- rfl
+
+
+
 
 theorem frame_4397_4651_4683 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4683 basis 4397=prefixState SixCarryPrefixData.program 4651 basis 4397 := by
@@ -16947,29 +16947,29 @@ theorem frame_4397_4696_4847 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4847 basis 4397=prefixState SixCarryPrefixData.program 4696 basis 4397 := by
  exact at_between SixCarryPrefixData.program 4696 4847 4397 (by decide +kernel) nw_4397_4696_4847 basis
 
-theorem frame_4397_4848_4848 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4848 basis 4397=prefixState SixCarryPrefixData.program 4848 basis 4397 := by
- rfl
+
+
+
 
 theorem frame_4397_4849_4852 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4852 basis 4397=prefixState SixCarryPrefixData.program 4849 basis 4397 := by
  exact at_between SixCarryPrefixData.program 4849 4852 4397 (by decide +kernel) nw_4397_4849_4852 basis
 
-theorem frame_4397_4853_4853 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4853 basis 4397=prefixState SixCarryPrefixData.program 4853 basis 4397 := by
- rfl
+
+
+
 
 theorem frame_4398_3932_4154 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4154 basis 4398=prefixState SixCarryPrefixData.program 3932 basis 4398 := by
  exact at_between SixCarryPrefixData.program 3932 4154 4398 (by decide +kernel) nw_4398_3932_4154 basis
 
-theorem frame_4398_4155_4155 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4155 basis 4398=prefixState SixCarryPrefixData.program 4155 basis 4398 := by
- rfl
 
-theorem frame_4398_4156_4156 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4156 basis 4398=prefixState SixCarryPrefixData.program 4156 basis 4398 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4398_4157_4194 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4194 basis 4398=prefixState SixCarryPrefixData.program 4157 basis 4398 := by
@@ -16991,9 +16991,9 @@ theorem frame_4398_4396_4398 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4398 basis 4398=prefixState SixCarryPrefixData.program 4396 basis 4398 := by
  exact at_between SixCarryPrefixData.program 4396 4398 4398 (by decide +kernel) nw_4398_4396_4398 basis
 
-theorem frame_4398_4399_4399 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4399 basis 4398=prefixState SixCarryPrefixData.program 4399 basis 4398 := by
- rfl
+
+
+
 
 theorem frame_4398_4400_4605 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4605 basis 4398=prefixState SixCarryPrefixData.program 4400 basis 4398 := by
@@ -17007,9 +17007,9 @@ theorem frame_4398_4606_4646 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4646 basis 4398=prefixState SixCarryPrefixData.program 4606 basis 4398 := by
  exact at_between SixCarryPrefixData.program 4606 4646 4398 (by decide +kernel) nw_4398_4606_4646 basis
 
-theorem frame_4398_4647_4647 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4647 basis 4398=prefixState SixCarryPrefixData.program 4647 basis 4398 := by
- rfl
+
+
+
 
 theorem frame_4398_4648_4684 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4684 basis 4398=prefixState SixCarryPrefixData.program 4648 basis 4398 := by
@@ -17019,29 +17019,29 @@ theorem frame_4398_4685_4853 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4853 basis 4398=prefixState SixCarryPrefixData.program 4685 basis 4398 := by
  exact at_between SixCarryPrefixData.program 4685 4853 4398 (by decide +kernel) nw_4398_4685_4853 basis
 
-theorem frame_4398_4854_4854 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4854 basis 4398=prefixState SixCarryPrefixData.program 4854 basis 4398 := by
- rfl
+
+
+
 
 theorem frame_4398_4855_4858 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4858 basis 4398=prefixState SixCarryPrefixData.program 4855 basis 4398 := by
  exact at_between SixCarryPrefixData.program 4855 4858 4398 (by decide +kernel) nw_4398_4855_4858 basis
 
-theorem frame_4398_4859_4859 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4859 basis 4398=prefixState SixCarryPrefixData.program 4859 basis 4398 := by
- rfl
+
+
+
 
 theorem frame_4399_3929_4157 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4157 basis 4399=prefixState SixCarryPrefixData.program 3929 basis 4399 := by
  exact at_between SixCarryPrefixData.program 3929 4157 4399 (by decide +kernel) nw_4399_3929_4157 basis
 
-theorem frame_4399_4158_4158 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4158 basis 4399=prefixState SixCarryPrefixData.program 4158 basis 4399 := by
- rfl
 
-theorem frame_4399_4159_4159 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4159 basis 4399=prefixState SixCarryPrefixData.program 4159 basis 4399 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4399_4160_4191 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4191 basis 4399=prefixState SixCarryPrefixData.program 4160 basis 4399 := by
@@ -17071,29 +17071,29 @@ theorem frame_4399_4686_4859 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4859 basis 4399=prefixState SixCarryPrefixData.program 4686 basis 4399 := by
  exact at_between SixCarryPrefixData.program 4686 4859 4399 (by decide +kernel) nw_4399_4686_4859 basis
 
-theorem frame_4399_4860_4860 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4860 basis 4399=prefixState SixCarryPrefixData.program 4860 basis 4399 := by
- rfl
+
+
+
 
 theorem frame_4399_4861_4864 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4864 basis 4399=prefixState SixCarryPrefixData.program 4861 basis 4399 := by
  exact at_between SixCarryPrefixData.program 4861 4864 4399 (by decide +kernel) nw_4399_4861_4864 basis
 
-theorem frame_4399_4865_4865 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4865 basis 4399=prefixState SixCarryPrefixData.program 4865 basis 4399 := by
- rfl
+
+
+
 
 theorem frame_4400_3926_4160 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4160 basis 4400=prefixState SixCarryPrefixData.program 3926 basis 4400 := by
  exact at_between SixCarryPrefixData.program 3926 4160 4400 (by decide +kernel) nw_4400_3926_4160 basis
 
-theorem frame_4400_4161_4161 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4161 basis 4400=prefixState SixCarryPrefixData.program 4161 basis 4400 := by
- rfl
 
-theorem frame_4400_4162_4162 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4162 basis 4400=prefixState SixCarryPrefixData.program 4162 basis 4400 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4400_4163_4188 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4188 basis 4400=prefixState SixCarryPrefixData.program 4163 basis 4400 := by
@@ -17103,29 +17103,29 @@ theorem frame_4400_4190_4865 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4865 basis 4400=prefixState SixCarryPrefixData.program 4190 basis 4400 := by
  exact at_between SixCarryPrefixData.program 4190 4865 4400 (by decide +kernel) nw_4400_4190_4865 basis
 
-theorem frame_4400_4866_4866 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4866 basis 4400=prefixState SixCarryPrefixData.program 4866 basis 4400 := by
- rfl
+
+
+
 
 theorem frame_4400_4867_4870 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4870 basis 4400=prefixState SixCarryPrefixData.program 4867 basis 4400 := by
  exact at_between SixCarryPrefixData.program 4867 4870 4400 (by decide +kernel) nw_4400_4867_4870 basis
 
-theorem frame_4400_4871_4871 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4871 basis 4400=prefixState SixCarryPrefixData.program 4871 basis 4400 := by
- rfl
+
+
+
 
 theorem frame_4401_3923_4163 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4163 basis 4401=prefixState SixCarryPrefixData.program 3923 basis 4401 := by
  exact at_between SixCarryPrefixData.program 3923 4163 4401 (by decide +kernel) nw_4401_3923_4163 basis
 
-theorem frame_4401_4164_4164 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4164 basis 4401=prefixState SixCarryPrefixData.program 4164 basis 4401 := by
- rfl
 
-theorem frame_4401_4165_4165 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4165 basis 4401=prefixState SixCarryPrefixData.program 4165 basis 4401 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4401_4166_4185 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4185 basis 4401=prefixState SixCarryPrefixData.program 4166 basis 4401 := by
@@ -17135,29 +17135,29 @@ theorem frame_4401_4187_4871 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4871 basis 4401=prefixState SixCarryPrefixData.program 4187 basis 4401 := by
  exact at_between SixCarryPrefixData.program 4187 4871 4401 (by decide +kernel) nw_4401_4187_4871 basis
 
-theorem frame_4401_4872_4872 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4872 basis 4401=prefixState SixCarryPrefixData.program 4872 basis 4401 := by
- rfl
+
+
+
 
 theorem frame_4401_4873_4876 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4876 basis 4401=prefixState SixCarryPrefixData.program 4873 basis 4401 := by
  exact at_between SixCarryPrefixData.program 4873 4876 4401 (by decide +kernel) nw_4401_4873_4876 basis
 
-theorem frame_4401_4877_4877 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4877 basis 4401=prefixState SixCarryPrefixData.program 4877 basis 4401 := by
- rfl
+
+
+
 
 theorem frame_4402_3920_4166 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4166 basis 4402=prefixState SixCarryPrefixData.program 3920 basis 4402 := by
  exact at_between SixCarryPrefixData.program 3920 4166 4402 (by decide +kernel) nw_4402_3920_4166 basis
 
-theorem frame_4402_4167_4167 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4167 basis 4402=prefixState SixCarryPrefixData.program 4167 basis 4402 := by
- rfl
 
-theorem frame_4402_4168_4168 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4168 basis 4402=prefixState SixCarryPrefixData.program 4168 basis 4402 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4402_4169_4182 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4182 basis 4402=prefixState SixCarryPrefixData.program 4169 basis 4402 := by
@@ -17167,29 +17167,29 @@ theorem frame_4402_4184_4877 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4877 basis 4402=prefixState SixCarryPrefixData.program 4184 basis 4402 := by
  exact at_between SixCarryPrefixData.program 4184 4877 4402 (by decide +kernel) nw_4402_4184_4877 basis
 
-theorem frame_4402_4878_4878 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4878 basis 4402=prefixState SixCarryPrefixData.program 4878 basis 4402 := by
- rfl
+
+
+
 
 theorem frame_4402_4879_4882 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4882 basis 4402=prefixState SixCarryPrefixData.program 4879 basis 4402 := by
  exact at_between SixCarryPrefixData.program 4879 4882 4402 (by decide +kernel) nw_4402_4879_4882 basis
 
-theorem frame_4402_4883_4883 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4883 basis 4402=prefixState SixCarryPrefixData.program 4883 basis 4402 := by
- rfl
+
+
+
 
 theorem frame_4403_3917_4169 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4169 basis 4403=prefixState SixCarryPrefixData.program 3917 basis 4403 := by
  exact at_between SixCarryPrefixData.program 3917 4169 4403 (by decide +kernel) nw_4403_3917_4169 basis
 
-theorem frame_4403_4170_4170 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4170 basis 4403=prefixState SixCarryPrefixData.program 4170 basis 4403 := by
- rfl
 
-theorem frame_4403_4171_4171 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4171 basis 4403=prefixState SixCarryPrefixData.program 4171 basis 4403 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4403_4172_4179 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4179 basis 4403=prefixState SixCarryPrefixData.program 4172 basis 4403 := by
@@ -17199,17 +17199,17 @@ theorem frame_4403_4181_4883 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4883 basis 4403=prefixState SixCarryPrefixData.program 4181 basis 4403 := by
  exact at_between SixCarryPrefixData.program 4181 4883 4403 (by decide +kernel) nw_4403_4181_4883 basis
 
-theorem frame_4403_4884_4884 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4884 basis 4403=prefixState SixCarryPrefixData.program 4884 basis 4403 := by
- rfl
+
+
+
 
 theorem frame_4403_4885_4888 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4888 basis 4403=prefixState SixCarryPrefixData.program 4885 basis 4403 := by
  exact at_between SixCarryPrefixData.program 4885 4888 4403 (by decide +kernel) nw_4403_4885_4888 basis
 
-theorem frame_4403_4889_4889 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4889 basis 4403=prefixState SixCarryPrefixData.program 4889 basis 4403 := by
- rfl
+
+
+
 
 theorem frame_4403_4889_4891 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4891 basis 4403=prefixState SixCarryPrefixData.program 4889 basis 4403 := by
@@ -17223,33 +17223,33 @@ theorem frame_4403_11663_11930 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11930 basis 4403=prefixState SixCarryPrefixData.program 11663 basis 4403 := by
  exact at_between SixCarryPrefixData.program 11663 11930 4403 (by decide +kernel) nw_4403_11663_11930 basis
 
-theorem frame_4403_11931_11931 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11931 basis 4403=prefixState SixCarryPrefixData.program 11931 basis 4403 := by
- rfl
 
-theorem frame_4403_11932_11932 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11932 basis 4403=prefixState SixCarryPrefixData.program 11932 basis 4403 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4403_11933_11934 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11934 basis 4403=prefixState SixCarryPrefixData.program 11933 basis 4403 := by
  exact at_between SixCarryPrefixData.program 11933 11934 4403 (by decide +kernel) nw_4403_11933_11934 basis
 
-theorem frame_4403_11935_11935 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11935 basis 4403=prefixState SixCarryPrefixData.program 11935 basis 4403 := by
- rfl
+
+
+
 
 theorem frame_4404_3914_4172 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4172 basis 4404=prefixState SixCarryPrefixData.program 3914 basis 4404 := by
  exact at_between SixCarryPrefixData.program 3914 4172 4404 (by decide +kernel) nw_4404_3914_4172 basis
 
-theorem frame_4404_4173_4173 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4173 basis 4404=prefixState SixCarryPrefixData.program 4173 basis 4404 := by
- rfl
 
-theorem frame_4404_4174_4174 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4174 basis 4404=prefixState SixCarryPrefixData.program 4174 basis 4404 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4404_4175_4176 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4176 basis 4404=prefixState SixCarryPrefixData.program 4175 basis 4404 := by
@@ -17259,17 +17259,17 @@ theorem frame_4404_4178_4889 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4889 basis 4404=prefixState SixCarryPrefixData.program 4178 basis 4404 := by
  exact at_between SixCarryPrefixData.program 4178 4889 4404 (by decide +kernel) nw_4404_4178_4889 basis
 
-theorem frame_4404_4890_4890 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4890 basis 4404=prefixState SixCarryPrefixData.program 4890 basis 4404 := by
- rfl
+
+
+
 
 theorem frame_4404_4891_4894 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4894 basis 4404=prefixState SixCarryPrefixData.program 4891 basis 4404 := by
  exact at_between SixCarryPrefixData.program 4891 4894 4404 (by decide +kernel) nw_4404_4891_4894 basis
 
-theorem frame_4404_4895_4895 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4895 basis 4404=prefixState SixCarryPrefixData.program 4895 basis 4404 := by
- rfl
+
+
+
 
 theorem frame_4404_4895_4897 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4897 basis 4404=prefixState SixCarryPrefixData.program 4895 basis 4404 := by
@@ -17283,33 +17283,33 @@ theorem frame_4404_11660_11935 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11935 basis 4404=prefixState SixCarryPrefixData.program 11660 basis 4404 := by
  exact at_between SixCarryPrefixData.program 11660 11935 4404 (by decide +kernel) nw_4404_11660_11935 basis
 
-theorem frame_4404_11936_11936 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11936 basis 4404=prefixState SixCarryPrefixData.program 11936 basis 4404 := by
- rfl
+
+
+
 
 theorem frame_4404_11937_11940 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11940 basis 4404=prefixState SixCarryPrefixData.program 11937 basis 4404 := by
  exact at_between SixCarryPrefixData.program 11937 11940 4404 (by decide +kernel) nw_4404_11937_11940 basis
 
-theorem frame_4404_11941_11941 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11941 basis 4404=prefixState SixCarryPrefixData.program 11941 basis 4404 := by
- rfl
+
+
+
 
 theorem frame_4405_3911_4895 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4895 basis 4405=prefixState SixCarryPrefixData.program 3911 basis 4405 := by
  exact at_between SixCarryPrefixData.program 3911 4895 4405 (by decide +kernel) nw_4405_3911_4895 basis
 
-theorem frame_4405_4896_4896 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4896 basis 4405=prefixState SixCarryPrefixData.program 4896 basis 4405 := by
- rfl
+
+
+
 
 theorem frame_4405_4897_4900 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4900 basis 4405=prefixState SixCarryPrefixData.program 4897 basis 4405 := by
  exact at_between SixCarryPrefixData.program 4897 4900 4405 (by decide +kernel) nw_4405_4897_4900 basis
 
-theorem frame_4405_4901_4901 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4901 basis 4405=prefixState SixCarryPrefixData.program 4901 basis 4405 := by
- rfl
+
+
+
 
 theorem frame_4405_4901_4903 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4903 basis 4405=prefixState SixCarryPrefixData.program 4901 basis 4405 := by
@@ -17323,33 +17323,33 @@ theorem frame_4405_11657_11941 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11941 basis 4405=prefixState SixCarryPrefixData.program 11657 basis 4405 := by
  exact at_between SixCarryPrefixData.program 11657 11941 4405 (by decide +kernel) nw_4405_11657_11941 basis
 
-theorem frame_4405_11942_11942 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11942 basis 4405=prefixState SixCarryPrefixData.program 11942 basis 4405 := by
- rfl
+
+
+
 
 theorem frame_4405_11943_11946 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11946 basis 4405=prefixState SixCarryPrefixData.program 11943 basis 4405 := by
  exact at_between SixCarryPrefixData.program 11943 11946 4405 (by decide +kernel) nw_4405_11943_11946 basis
 
-theorem frame_4405_11947_11947 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11947 basis 4405=prefixState SixCarryPrefixData.program 11947 basis 4405 := by
- rfl
+
+
+
 
 theorem frame_4406_3908_4901 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4901 basis 4406=prefixState SixCarryPrefixData.program 3908 basis 4406 := by
  exact at_between SixCarryPrefixData.program 3908 4901 4406 (by decide +kernel) nw_4406_3908_4901 basis
 
-theorem frame_4406_4902_4902 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4902 basis 4406=prefixState SixCarryPrefixData.program 4902 basis 4406 := by
- rfl
+
+
+
 
 theorem frame_4406_4903_4906 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4906 basis 4406=prefixState SixCarryPrefixData.program 4903 basis 4406 := by
  exact at_between SixCarryPrefixData.program 4903 4906 4406 (by decide +kernel) nw_4406_4903_4906 basis
 
-theorem frame_4406_4907_4907 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4907 basis 4406=prefixState SixCarryPrefixData.program 4907 basis 4406 := by
- rfl
+
+
+
 
 theorem frame_4406_4907_4909 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4909 basis 4406=prefixState SixCarryPrefixData.program 4907 basis 4406 := by
@@ -17363,33 +17363,33 @@ theorem frame_4406_11654_11947 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11947 basis 4406=prefixState SixCarryPrefixData.program 11654 basis 4406 := by
  exact at_between SixCarryPrefixData.program 11654 11947 4406 (by decide +kernel) nw_4406_11654_11947 basis
 
-theorem frame_4406_11948_11948 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11948 basis 4406=prefixState SixCarryPrefixData.program 11948 basis 4406 := by
- rfl
+
+
+
 
 theorem frame_4406_11949_11952 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11952 basis 4406=prefixState SixCarryPrefixData.program 11949 basis 4406 := by
  exact at_between SixCarryPrefixData.program 11949 11952 4406 (by decide +kernel) nw_4406_11949_11952 basis
 
-theorem frame_4406_11953_11953 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11953 basis 4406=prefixState SixCarryPrefixData.program 11953 basis 4406 := by
- rfl
+
+
+
 
 theorem frame_4407_3905_4907 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4907 basis 4407=prefixState SixCarryPrefixData.program 3905 basis 4407 := by
  exact at_between SixCarryPrefixData.program 3905 4907 4407 (by decide +kernel) nw_4407_3905_4907 basis
 
-theorem frame_4407_4908_4908 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4908 basis 4407=prefixState SixCarryPrefixData.program 4908 basis 4407 := by
- rfl
+
+
+
 
 theorem frame_4407_4909_4912 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4912 basis 4407=prefixState SixCarryPrefixData.program 4909 basis 4407 := by
  exact at_between SixCarryPrefixData.program 4909 4912 4407 (by decide +kernel) nw_4407_4909_4912 basis
 
-theorem frame_4407_4913_4913 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4913 basis 4407=prefixState SixCarryPrefixData.program 4913 basis 4407 := by
- rfl
+
+
+
 
 theorem frame_4407_4913_4915 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4915 basis 4407=prefixState SixCarryPrefixData.program 4913 basis 4407 := by
@@ -17403,17 +17403,17 @@ theorem frame_4407_11651_11953 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11953 basis 4407=prefixState SixCarryPrefixData.program 11651 basis 4407 := by
  exact at_between SixCarryPrefixData.program 11651 11953 4407 (by decide +kernel) nw_4407_11651_11953 basis
 
-theorem frame_4407_11954_11954 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11954 basis 4407=prefixState SixCarryPrefixData.program 11954 basis 4407 := by
- rfl
+
+
+
 
 theorem frame_4407_11955_11958 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11958 basis 4407=prefixState SixCarryPrefixData.program 11955 basis 4407 := by
  exact at_between SixCarryPrefixData.program 11955 11958 4407 (by decide +kernel) nw_4407_11955_11958 basis
 
-theorem frame_4407_11959_11959 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 11959 basis 4407=prefixState SixCarryPrefixData.program 11959 basis 4407 := by
- rfl
+
+
+
 
 theorem frame_4423_3857_4306 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4306 basis 4423=prefixState SixCarryPrefixData.program 3857 basis 4423 := by
@@ -17707,9 +17707,9 @@ theorem frame_4436_11564_11958 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 11958 basis 4436=prefixState SixCarryPrefixData.program 11564 basis 4436 := by
  exact at_between SixCarryPrefixData.program 11564 11958 4436 (by decide +kernel) nw_4436_11564_11958 basis
 
-theorem frame_4468_3433_3433 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3433 basis 4468=prefixState SixCarryPrefixData.program 3433 basis 4468 := by
- rfl
+
+
+
 
 theorem frame_4468_3433_3435 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3435 basis 4468=prefixState SixCarryPrefixData.program 3433 basis 4468 := by
@@ -17723,17 +17723,17 @@ theorem frame_4469_2432_3433 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3433 basis 4469=prefixState SixCarryPrefixData.program 2432 basis 4469 := by
  exact at_between SixCarryPrefixData.program 2432 3433 4469 (by decide +kernel) nw_4469_2432_3433 basis
 
-theorem frame_4469_3434_3434 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3434 basis 4469=prefixState SixCarryPrefixData.program 3434 basis 4469 := by
- rfl
+
+
+
 
 theorem frame_4469_3435_3438 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3438 basis 4469=prefixState SixCarryPrefixData.program 3435 basis 4469 := by
  exact at_between SixCarryPrefixData.program 3435 3438 4469 (by decide +kernel) nw_4469_3435_3438 basis
 
-theorem frame_4469_3439_3439 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3439 basis 4469=prefixState SixCarryPrefixData.program 3439 basis 4469 := by
- rfl
+
+
+
 
 theorem frame_4469_3439_3441 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3441 basis 4469=prefixState SixCarryPrefixData.program 3439 basis 4469 := by
@@ -17747,17 +17747,17 @@ theorem frame_4470_2429_3439 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3439 basis 4470=prefixState SixCarryPrefixData.program 2429 basis 4470 := by
  exact at_between SixCarryPrefixData.program 2429 3439 4470 (by decide +kernel) nw_4470_2429_3439 basis
 
-theorem frame_4470_3440_3440 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3440 basis 4470=prefixState SixCarryPrefixData.program 3440 basis 4470 := by
- rfl
+
+
+
 
 theorem frame_4470_3441_3444 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3444 basis 4470=prefixState SixCarryPrefixData.program 3441 basis 4470 := by
  exact at_between SixCarryPrefixData.program 3441 3444 4470 (by decide +kernel) nw_4470_3441_3444 basis
 
-theorem frame_4470_3445_3445 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3445 basis 4470=prefixState SixCarryPrefixData.program 3445 basis 4470 := by
- rfl
+
+
+
 
 theorem frame_4470_3445_3447 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3447 basis 4470=prefixState SixCarryPrefixData.program 3445 basis 4470 := by
@@ -17771,17 +17771,17 @@ theorem frame_4471_2426_3445 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3445 basis 4471=prefixState SixCarryPrefixData.program 2426 basis 4471 := by
  exact at_between SixCarryPrefixData.program 2426 3445 4471 (by decide +kernel) nw_4471_2426_3445 basis
 
-theorem frame_4471_3446_3446 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3446 basis 4471=prefixState SixCarryPrefixData.program 3446 basis 4471 := by
- rfl
+
+
+
 
 theorem frame_4471_3447_3450 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3450 basis 4471=prefixState SixCarryPrefixData.program 3447 basis 4471 := by
  exact at_between SixCarryPrefixData.program 3447 3450 4471 (by decide +kernel) nw_4471_3447_3450 basis
 
-theorem frame_4471_3451_3451 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3451 basis 4471=prefixState SixCarryPrefixData.program 3451 basis 4471 := by
- rfl
+
+
+
 
 theorem frame_4471_3451_3453 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3453 basis 4471=prefixState SixCarryPrefixData.program 3451 basis 4471 := by
@@ -17795,13 +17795,13 @@ theorem frame_4472_2423_3451 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3451 basis 4472=prefixState SixCarryPrefixData.program 2423 basis 4472 := by
  exact at_between SixCarryPrefixData.program 2423 3451 4472 (by decide +kernel) nw_4472_2423_3451 basis
 
-theorem frame_4472_3452_3452 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3452 basis 4472=prefixState SixCarryPrefixData.program 3452 basis 4472 := by
- rfl
 
-theorem frame_4488_857_857 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 857 basis 4488=prefixState SixCarryPrefixData.program 857 basis 4488 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4488_857_859 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 859 basis 4488=prefixState SixCarryPrefixData.program 857 basis 4488 := by
@@ -17815,17 +17815,17 @@ theorem frame_4489_0_857 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 857 basis 4489=prefixState SixCarryPrefixData.program 0 basis 4489 := by
  exact at_between SixCarryPrefixData.program 0 857 4489 (by decide +kernel) nw_4489_0_857 basis
 
-theorem frame_4489_858_858 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 858 basis 4489=prefixState SixCarryPrefixData.program 858 basis 4489 := by
- rfl
+
+
+
 
 theorem frame_4489_859_862 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 862 basis 4489=prefixState SixCarryPrefixData.program 859 basis 4489 := by
  exact at_between SixCarryPrefixData.program 859 862 4489 (by decide +kernel) nw_4489_859_862 basis
 
-theorem frame_4489_863_863 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 863 basis 4489=prefixState SixCarryPrefixData.program 863 basis 4489 := by
- rfl
+
+
+
 
 theorem frame_4489_863_865 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 865 basis 4489=prefixState SixCarryPrefixData.program 863 basis 4489 := by
@@ -17839,17 +17839,17 @@ theorem frame_4490_0_863 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 863 basis 4490=prefixState SixCarryPrefixData.program 0 basis 4490 := by
  exact at_between SixCarryPrefixData.program 0 863 4490 (by decide +kernel) nw_4490_0_863 basis
 
-theorem frame_4490_864_864 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 864 basis 4490=prefixState SixCarryPrefixData.program 864 basis 4490 := by
- rfl
+
+
+
 
 theorem frame_4490_865_868 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 868 basis 4490=prefixState SixCarryPrefixData.program 865 basis 4490 := by
  exact at_between SixCarryPrefixData.program 865 868 4490 (by decide +kernel) nw_4490_865_868 basis
 
-theorem frame_4490_869_869 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 869 basis 4490=prefixState SixCarryPrefixData.program 869 basis 4490 := by
- rfl
+
+
+
 
 theorem frame_4490_869_871 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 871 basis 4490=prefixState SixCarryPrefixData.program 869 basis 4490 := by
@@ -17863,17 +17863,17 @@ theorem frame_4491_0_869 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 869 basis 4491=prefixState SixCarryPrefixData.program 0 basis 4491 := by
  exact at_between SixCarryPrefixData.program 0 869 4491 (by decide +kernel) nw_4491_0_869 basis
 
-theorem frame_4491_870_870 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 870 basis 4491=prefixState SixCarryPrefixData.program 870 basis 4491 := by
- rfl
+
+
+
 
 theorem frame_4491_871_874 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 874 basis 4491=prefixState SixCarryPrefixData.program 871 basis 4491 := by
  exact at_between SixCarryPrefixData.program 871 874 4491 (by decide +kernel) nw_4491_871_874 basis
 
-theorem frame_4491_875_875 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 875 basis 4491=prefixState SixCarryPrefixData.program 875 basis 4491 := by
- rfl
+
+
+
 
 theorem frame_4491_875_877 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 877 basis 4491=prefixState SixCarryPrefixData.program 875 basis 4491 := by
@@ -17883,25 +17883,25 @@ theorem frame_4491_878_955 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 955 basis 4491=prefixState SixCarryPrefixData.program 878 basis 4491 := by
  exact at_between SixCarryPrefixData.program 878 955 4491 (by decide +kernel) nw_4491_878_955 basis
 
-theorem frame_4491_3571_3571 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3571 basis 4491=prefixState SixCarryPrefixData.program 3571 basis 4491 := by
- rfl
+
+
+
 
 theorem frame_4492_0_875 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 875 basis 4492=prefixState SixCarryPrefixData.program 0 basis 4492 := by
  exact at_between SixCarryPrefixData.program 0 875 4492 (by decide +kernel) nw_4492_0_875 basis
 
-theorem frame_4492_876_876 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 876 basis 4492=prefixState SixCarryPrefixData.program 876 basis 4492 := by
- rfl
+
+
+
 
 theorem frame_4492_877_880 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 880 basis 4492=prefixState SixCarryPrefixData.program 877 basis 4492 := by
  exact at_between SixCarryPrefixData.program 877 880 4492 (by decide +kernel) nw_4492_877_880 basis
 
-theorem frame_4492_881_881 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 881 basis 4492=prefixState SixCarryPrefixData.program 881 basis 4492 := by
- rfl
+
+
+
 
 theorem frame_4492_881_883 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 883 basis 4492=prefixState SixCarryPrefixData.program 881 basis 4492 := by
@@ -17911,17 +17911,17 @@ theorem frame_4492_884_952 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 952 basis 4492=prefixState SixCarryPrefixData.program 884 basis 4492 := by
  exact at_between SixCarryPrefixData.program 884 952 4492 (by decide +kernel) nw_4492_884_952 basis
 
-theorem frame_4492_2257_2257 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2257 basis 4492=prefixState SixCarryPrefixData.program 2257 basis 4492 := by
- rfl
+
+
+
 
 theorem frame_4492_2363_3571 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3571 basis 4492=prefixState SixCarryPrefixData.program 2363 basis 4492 := by
  exact at_between SixCarryPrefixData.program 2363 3571 4492 (by decide +kernel) nw_4492_2363_3571 basis
 
-theorem frame_4492_3572_3572 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3572 basis 4492=prefixState SixCarryPrefixData.program 3572 basis 4492 := by
- rfl
+
+
+
 
 theorem frame_4492_3573_3576 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3576 basis 4492=prefixState SixCarryPrefixData.program 3573 basis 4492 := by
@@ -17939,17 +17939,17 @@ theorem frame_4493_0_881 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 881 basis 4493=prefixState SixCarryPrefixData.program 0 basis 4493 := by
  exact at_between SixCarryPrefixData.program 0 881 4493 (by decide +kernel) nw_4493_0_881 basis
 
-theorem frame_4493_882_882 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 882 basis 4493=prefixState SixCarryPrefixData.program 882 basis 4493 := by
- rfl
+
+
+
 
 theorem frame_4493_883_886 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 886 basis 4493=prefixState SixCarryPrefixData.program 883 basis 4493 := by
  exact at_between SixCarryPrefixData.program 883 886 4493 (by decide +kernel) nw_4493_883_886 basis
 
-theorem frame_4493_887_887 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 887 basis 4493=prefixState SixCarryPrefixData.program 887 basis 4493 := by
- rfl
+
+
+
 
 theorem frame_4493_887_889 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 889 basis 4493=prefixState SixCarryPrefixData.program 887 basis 4493 := by
@@ -17963,21 +17963,21 @@ theorem frame_4493_951_2257 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2257 basis 4493=prefixState SixCarryPrefixData.program 951 basis 4493 := by
  exact at_between SixCarryPrefixData.program 951 2257 4493 (by decide +kernel) nw_4493_951_2257 basis
 
-theorem frame_4493_2258_2258 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2258 basis 4493=prefixState SixCarryPrefixData.program 2258 basis 4493 := by
- rfl
+
+
+
 
 theorem frame_4493_2259_2262 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2262 basis 4493=prefixState SixCarryPrefixData.program 2259 basis 4493 := by
  exact at_between SixCarryPrefixData.program 2259 2262 4493 (by decide +kernel) nw_4493_2259_2262 basis
 
-theorem frame_4493_2263_2263 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2263 basis 4493=prefixState SixCarryPrefixData.program 2263 basis 4493 := by
- rfl
 
-theorem frame_4493_3583_3583 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3583 basis 4493=prefixState SixCarryPrefixData.program 3583 basis 4493 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4493_3583_3585 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3585 basis 4493=prefixState SixCarryPrefixData.program 3583 basis 4493 := by
@@ -17991,33 +17991,33 @@ theorem frame_4494_0_887 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 887 basis 4494=prefixState SixCarryPrefixData.program 0 basis 4494 := by
  exact at_between SixCarryPrefixData.program 0 887 4494 (by decide +kernel) nw_4494_0_887 basis
 
-theorem frame_4494_888_888 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 888 basis 4494=prefixState SixCarryPrefixData.program 888 basis 4494 := by
- rfl
+
+
+
 
 theorem frame_4494_889_892 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 892 basis 4494=prefixState SixCarryPrefixData.program 889 basis 4494 := by
  exact at_between SixCarryPrefixData.program 889 892 4494 (by decide +kernel) nw_4494_889_892 basis
 
-theorem frame_4494_893_893 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 893 basis 4494=prefixState SixCarryPrefixData.program 893 basis 4494 := by
- rfl
+
+
+
 
 theorem frame_4494_948_2263 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2263 basis 4494=prefixState SixCarryPrefixData.program 948 basis 4494 := by
  exact at_between SixCarryPrefixData.program 948 2263 4494 (by decide +kernel) nw_4494_948_2263 basis
 
-theorem frame_4494_2264_2264 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2264 basis 4494=prefixState SixCarryPrefixData.program 2264 basis 4494 := by
- rfl
+
+
+
 
 theorem frame_4494_2265_2268 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2268 basis 4494=prefixState SixCarryPrefixData.program 2265 basis 4494 := by
  exact at_between SixCarryPrefixData.program 2265 2268 4494 (by decide +kernel) nw_4494_2265_2268 basis
 
-theorem frame_4494_2269_2269 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2269 basis 4494=prefixState SixCarryPrefixData.program 2269 basis 4494 := by
- rfl
+
+
+
 
 theorem frame_4494_2269_2271 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2271 basis 4494=prefixState SixCarryPrefixData.program 2269 basis 4494 := by
@@ -18031,17 +18031,17 @@ theorem frame_4494_2357_3583 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3583 basis 4494=prefixState SixCarryPrefixData.program 2357 basis 4494 := by
  exact at_between SixCarryPrefixData.program 2357 3583 4494 (by decide +kernel) nw_4494_2357_3583 basis
 
-theorem frame_4494_3584_3584 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3584 basis 4494=prefixState SixCarryPrefixData.program 3584 basis 4494 := by
- rfl
+
+
+
 
 theorem frame_4494_3585_3588 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3588 basis 4494=prefixState SixCarryPrefixData.program 3585 basis 4494 := by
  exact at_between SixCarryPrefixData.program 3585 3588 4494 (by decide +kernel) nw_4494_3585_3588 basis
 
-theorem frame_4494_3589_3589 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3589 basis 4494=prefixState SixCarryPrefixData.program 3589 basis 4494 := by
- rfl
+
+
+
 
 theorem frame_4494_3589_3591 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3591 basis 4494=prefixState SixCarryPrefixData.program 3589 basis 4494 := by
@@ -18055,33 +18055,33 @@ theorem frame_4495_0_893 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 893 basis 4495=prefixState SixCarryPrefixData.program 0 basis 4495 := by
  exact at_between SixCarryPrefixData.program 0 893 4495 (by decide +kernel) nw_4495_0_893 basis
 
-theorem frame_4495_894_894 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 894 basis 4495=prefixState SixCarryPrefixData.program 894 basis 4495 := by
- rfl
+
+
+
 
 theorem frame_4495_895_898 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 898 basis 4495=prefixState SixCarryPrefixData.program 895 basis 4495 := by
  exact at_between SixCarryPrefixData.program 895 898 4495 (by decide +kernel) nw_4495_895_898 basis
 
-theorem frame_4495_899_899 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 899 basis 4495=prefixState SixCarryPrefixData.program 899 basis 4495 := by
- rfl
+
+
+
 
 theorem frame_4495_945_2269 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2269 basis 4495=prefixState SixCarryPrefixData.program 945 basis 4495 := by
  exact at_between SixCarryPrefixData.program 945 2269 4495 (by decide +kernel) nw_4495_945_2269 basis
 
-theorem frame_4495_2270_2270 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2270 basis 4495=prefixState SixCarryPrefixData.program 2270 basis 4495 := by
- rfl
+
+
+
 
 theorem frame_4495_2271_2274 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2274 basis 4495=prefixState SixCarryPrefixData.program 2271 basis 4495 := by
  exact at_between SixCarryPrefixData.program 2271 2274 4495 (by decide +kernel) nw_4495_2271_2274 basis
 
-theorem frame_4495_2275_2275 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2275 basis 4495=prefixState SixCarryPrefixData.program 2275 basis 4495 := by
- rfl
+
+
+
 
 theorem frame_4495_2275_2277 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2277 basis 4495=prefixState SixCarryPrefixData.program 2275 basis 4495 := by
@@ -18095,17 +18095,17 @@ theorem frame_4495_2354_3589 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3589 basis 4495=prefixState SixCarryPrefixData.program 2354 basis 4495 := by
  exact at_between SixCarryPrefixData.program 2354 3589 4495 (by decide +kernel) nw_4495_2354_3589 basis
 
-theorem frame_4495_3590_3590 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3590 basis 4495=prefixState SixCarryPrefixData.program 3590 basis 4495 := by
- rfl
+
+
+
 
 theorem frame_4495_3591_3594 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3594 basis 4495=prefixState SixCarryPrefixData.program 3591 basis 4495 := by
  exact at_between SixCarryPrefixData.program 3591 3594 4495 (by decide +kernel) nw_4495_3591_3594 basis
 
-theorem frame_4495_3595_3595 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3595 basis 4495=prefixState SixCarryPrefixData.program 3595 basis 4495 := by
- rfl
+
+
+
 
 theorem frame_4495_3595_3597 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3597 basis 4495=prefixState SixCarryPrefixData.program 3595 basis 4495 := by
@@ -18119,25 +18119,25 @@ theorem frame_4496_0_899 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 899 basis 4496=prefixState SixCarryPrefixData.program 0 basis 4496 := by
  exact at_between SixCarryPrefixData.program 0 899 4496 (by decide +kernel) nw_4496_0_899 basis
 
-theorem frame_4496_900_900 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 900 basis 4496=prefixState SixCarryPrefixData.program 900 basis 4496 := by
- rfl
+
+
+
 
 theorem frame_4496_942_2275 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2275 basis 4496=prefixState SixCarryPrefixData.program 942 basis 4496 := by
  exact at_between SixCarryPrefixData.program 942 2275 4496 (by decide +kernel) nw_4496_942_2275 basis
 
-theorem frame_4496_2276_2276 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2276 basis 4496=prefixState SixCarryPrefixData.program 2276 basis 4496 := by
- rfl
+
+
+
 
 theorem frame_4496_2277_2280 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2280 basis 4496=prefixState SixCarryPrefixData.program 2277 basis 4496 := by
  exact at_between SixCarryPrefixData.program 2277 2280 4496 (by decide +kernel) nw_4496_2277_2280 basis
 
-theorem frame_4496_2281_2281 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2281 basis 4496=prefixState SixCarryPrefixData.program 2281 basis 4496 := by
- rfl
+
+
+
 
 theorem frame_4496_2281_2283 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2283 basis 4496=prefixState SixCarryPrefixData.program 2281 basis 4496 := by
@@ -18151,17 +18151,17 @@ theorem frame_4496_2351_3595 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3595 basis 4496=prefixState SixCarryPrefixData.program 2351 basis 4496 := by
  exact at_between SixCarryPrefixData.program 2351 3595 4496 (by decide +kernel) nw_4496_2351_3595 basis
 
-theorem frame_4496_3596_3596 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3596 basis 4496=prefixState SixCarryPrefixData.program 3596 basis 4496 := by
- rfl
+
+
+
 
 theorem frame_4496_3597_3600 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3600 basis 4496=prefixState SixCarryPrefixData.program 3597 basis 4496 := by
  exact at_between SixCarryPrefixData.program 3597 3600 4496 (by decide +kernel) nw_4496_3597_3600 basis
 
-theorem frame_4496_3601_3601 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3601 basis 4496=prefixState SixCarryPrefixData.program 3601 basis 4496 := by
- rfl
+
+
+
 
 theorem frame_4496_3601_3603 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3603 basis 4496=prefixState SixCarryPrefixData.program 3601 basis 4496 := by
@@ -18175,9 +18175,9 @@ theorem frame_4497_939_2281 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2281 basis 4497=prefixState SixCarryPrefixData.program 939 basis 4497 := by
  exact at_between SixCarryPrefixData.program 939 2281 4497 (by decide +kernel) nw_4497_939_2281 basis
 
-theorem frame_4497_2282_2282 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2282 basis 4497=prefixState SixCarryPrefixData.program 2282 basis 4497 := by
- rfl
+
+
+
 
 theorem frame_4497_2283_2286 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2286 basis 4497=prefixState SixCarryPrefixData.program 2283 basis 4497 := by
@@ -18195,17 +18195,17 @@ theorem frame_4497_2348_3601 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3601 basis 4497=prefixState SixCarryPrefixData.program 2348 basis 4497 := by
  exact at_between SixCarryPrefixData.program 2348 3601 4497 (by decide +kernel) nw_4497_2348_3601 basis
 
-theorem frame_4497_3602_3602 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3602 basis 4497=prefixState SixCarryPrefixData.program 3602 basis 4497 := by
- rfl
+
+
+
 
 theorem frame_4497_3603_3606 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3606 basis 4497=prefixState SixCarryPrefixData.program 3603 basis 4497 := by
  exact at_between SixCarryPrefixData.program 3603 3606 4497 (by decide +kernel) nw_4497_3603_3606 basis
 
-theorem frame_4497_3607_3607 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3607 basis 4497=prefixState SixCarryPrefixData.program 3607 basis 4497 := by
- rfl
+
+
+
 
 theorem frame_4497_3607_3609 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3609 basis 4497=prefixState SixCarryPrefixData.program 3607 basis 4497 := by
@@ -18219,17 +18219,17 @@ theorem frame_4498_2345_3607 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3607 basis 4498=prefixState SixCarryPrefixData.program 2345 basis 4498 := by
  exact at_between SixCarryPrefixData.program 2345 3607 4498 (by decide +kernel) nw_4498_2345_3607 basis
 
-theorem frame_4498_3608_3608 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3608 basis 4498=prefixState SixCarryPrefixData.program 3608 basis 4498 := by
- rfl
+
+
+
 
 theorem frame_4498_3609_3612 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3612 basis 4498=prefixState SixCarryPrefixData.program 3609 basis 4498 := by
  exact at_between SixCarryPrefixData.program 3609 3612 4498 (by decide +kernel) nw_4498_3609_3612 basis
 
-theorem frame_4498_3613_3613 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3613 basis 4498=prefixState SixCarryPrefixData.program 3613 basis 4498 := by
- rfl
+
+
+
 
 theorem frame_4498_3613_3615 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3615 basis 4498=prefixState SixCarryPrefixData.program 3613 basis 4498 := by
@@ -18243,17 +18243,17 @@ theorem frame_4499_2342_3613 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3613 basis 4499=prefixState SixCarryPrefixData.program 2342 basis 4499 := by
  exact at_between SixCarryPrefixData.program 2342 3613 4499 (by decide +kernel) nw_4499_2342_3613 basis
 
-theorem frame_4499_3614_3614 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3614 basis 4499=prefixState SixCarryPrefixData.program 3614 basis 4499 := by
- rfl
+
+
+
 
 theorem frame_4499_3615_3618 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3618 basis 4499=prefixState SixCarryPrefixData.program 3615 basis 4499 := by
  exact at_between SixCarryPrefixData.program 3615 3618 4499 (by decide +kernel) nw_4499_3615_3618 basis
 
-theorem frame_4499_3619_3619 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3619 basis 4499=prefixState SixCarryPrefixData.program 3619 basis 4499 := by
- rfl
+
+
+
 
 theorem frame_4499_3619_3621 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3621 basis 4499=prefixState SixCarryPrefixData.program 3619 basis 4499 := by
@@ -18267,9 +18267,9 @@ theorem frame_4500_2339_3619 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3619 basis 4500=prefixState SixCarryPrefixData.program 2339 basis 4500 := by
  exact at_between SixCarryPrefixData.program 2339 3619 4500 (by decide +kernel) nw_4500_2339_3619 basis
 
-theorem frame_4500_3620_3620 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3620 basis 4500=prefixState SixCarryPrefixData.program 3620 basis 4500 := by
- rfl
+
+
+
 
 theorem frame_4500_3621_3624 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3624 basis 4500=prefixState SixCarryPrefixData.program 3621 basis 4500 := by
@@ -18295,9 +18295,9 @@ theorem frame_4627_861_963 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 963 basis 4627=prefixState SixCarryPrefixData.program 861 basis 4627 := by
  exact at_between SixCarryPrefixData.program 861 963 4627 (by decide +kernel) nw_4627_861_963 basis
 
-theorem frame_4627_964_964 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 964 basis 4627=prefixState SixCarryPrefixData.program 964 basis 4627 := by
- rfl
+
+
+
 
 theorem frame_4627_965_1433 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1433 basis 4627=prefixState SixCarryPrefixData.program 965 basis 4627 := by
@@ -18331,9 +18331,9 @@ theorem frame_4628_867_960 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 960 basis 4628=prefixState SixCarryPrefixData.program 867 basis 4628 := by
  exact at_between SixCarryPrefixData.program 867 960 4628 (by decide +kernel) nw_4628_867_960 basis
 
-theorem frame_4628_961_961 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 961 basis 4628=prefixState SixCarryPrefixData.program 961 basis 4628 := by
- rfl
+
+
+
 
 theorem frame_4628_962_1434 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1434 basis 4628=prefixState SixCarryPrefixData.program 962 basis 4628 := by
@@ -18367,9 +18367,9 @@ theorem frame_4629_873_957 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 957 basis 4629=prefixState SixCarryPrefixData.program 873 basis 4629 := by
  exact at_between SixCarryPrefixData.program 873 957 4629 (by decide +kernel) nw_4629_873_957 basis
 
-theorem frame_4629_958_958 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 958 basis 4629=prefixState SixCarryPrefixData.program 958 basis 4629 := by
- rfl
+
+
+
 
 theorem frame_4629_959_1435 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1435 basis 4629=prefixState SixCarryPrefixData.program 959 basis 4629 := by
@@ -18391,9 +18391,9 @@ theorem frame_4629_2273_2354 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2354 basis 4629=prefixState SixCarryPrefixData.program 2273 basis 4629 := by
  exact at_between SixCarryPrefixData.program 2273 2354 4629 (by decide +kernel) nw_4629_2273_2354 basis
 
-theorem frame_4629_2355_2355 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2355 basis 4629=prefixState SixCarryPrefixData.program 2355 basis 4629 := by
- rfl
+
+
+
 
 theorem frame_4629_2356_2844 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2844 basis 4629=prefixState SixCarryPrefixData.program 2356 basis 4629 := by
@@ -18415,17 +18415,17 @@ theorem frame_4629_3437_3719 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3719 basis 4629=prefixState SixCarryPrefixData.program 3437 basis 4629 := by
  exact at_between SixCarryPrefixData.program 3437 3719 4629 (by decide +kernel) nw_4629_3437_3719 basis
 
-theorem frame_4629_3720_3720 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3720 basis 4629=prefixState SixCarryPrefixData.program 3720 basis 4629 := by
- rfl
+
+
+
 
 theorem frame_4629_3721_4010 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4010 basis 4629=prefixState SixCarryPrefixData.program 3721 basis 4629 := by
  exact at_between SixCarryPrefixData.program 3721 4010 4629 (by decide +kernel) nw_4629_3721_4010 basis
 
-theorem frame_4629_4011_4011 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4011 basis 4629=prefixState SixCarryPrefixData.program 4011 basis 4629 := by
- rfl
+
+
+
 
 theorem frame_4629_4011_4012 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4012 basis 4629=prefixState SixCarryPrefixData.program 4011 basis 4629 := by
@@ -18439,13 +18439,13 @@ theorem frame_4629_4040_4271 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4271 basis 4629=prefixState SixCarryPrefixData.program 4040 basis 4629 := by
  exact at_between SixCarryPrefixData.program 4040 4271 4629 (by decide +kernel) nw_4629_4040_4271 basis
 
-theorem frame_4629_4272_4272 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4272 basis 4629=prefixState SixCarryPrefixData.program 4272 basis 4629 := by
- rfl
 
-theorem frame_4629_4273_4273 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4273 basis 4629=prefixState SixCarryPrefixData.program 4273 basis 4629 := by
- rfl
+
+
+
+
+
+
 
 theorem frame_4629_4274_4306 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4306 basis 4629=prefixState SixCarryPrefixData.program 4274 basis 4629 := by
@@ -18455,9 +18455,9 @@ theorem frame_4629_4274_5079 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5079 basis 4629=prefixState SixCarryPrefixData.program 4274 basis 4629 := by
  exact at_between SixCarryPrefixData.program 4274 5079 4629 (by decide +kernel) nw_4629_4274_5079 basis
 
-theorem frame_4629_5080_5080 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 5080 basis 4629=prefixState SixCarryPrefixData.program 5080 basis 4629 := by
- rfl
+
+
+
 
 theorem frame_4629_5081_5344 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5344 basis 4629=prefixState SixCarryPrefixData.program 5081 basis 4629 := by
@@ -18503,9 +18503,9 @@ theorem frame_4630_879_954 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 954 basis 4630=prefixState SixCarryPrefixData.program 879 basis 4630 := by
  exact at_between SixCarryPrefixData.program 879 954 4630 (by decide +kernel) nw_4630_879_954 basis
 
-theorem frame_4630_955_955 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 955 basis 4630=prefixState SixCarryPrefixData.program 955 basis 4630 := by
- rfl
+
+
+
 
 theorem frame_4630_956_1436 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1436 basis 4630=prefixState SixCarryPrefixData.program 956 basis 4630 := by
@@ -18527,9 +18527,9 @@ theorem frame_4630_2279_2351 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2351 basis 4630=prefixState SixCarryPrefixData.program 2279 basis 4630 := by
  exact at_between SixCarryPrefixData.program 2279 2351 4630 (by decide +kernel) nw_4630_2279_2351 basis
 
-theorem frame_4630_2352_2352 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2352 basis 4630=prefixState SixCarryPrefixData.program 2352 basis 4630 := by
- rfl
+
+
+
 
 theorem frame_4630_2353_2845 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2845 basis 4630=prefixState SixCarryPrefixData.program 2353 basis 4630 := by
@@ -18551,17 +18551,17 @@ theorem frame_4630_3443_3716 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3716 basis 4630=prefixState SixCarryPrefixData.program 3443 basis 4630 := by
  exact at_between SixCarryPrefixData.program 3443 3716 4630 (by decide +kernel) nw_4630_3443_3716 basis
 
-theorem frame_4630_3717_3717 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3717 basis 4630=prefixState SixCarryPrefixData.program 3717 basis 4630 := by
- rfl
+
+
+
 
 theorem frame_4630_3718_4014 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4014 basis 4630=prefixState SixCarryPrefixData.program 3718 basis 4630 := by
  exact at_between SixCarryPrefixData.program 3718 4014 4630 (by decide +kernel) nw_4630_3718_4014 basis
 
-theorem frame_4630_4015_4015 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4015 basis 4630=prefixState SixCarryPrefixData.program 4015 basis 4630 := by
- rfl
+
+
+
 
 theorem frame_4630_4016_4017 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4017 basis 4630=prefixState SixCarryPrefixData.program 4016 basis 4630 := by
@@ -18571,9 +18571,9 @@ theorem frame_4630_4016_4020 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4020 basis 4630=prefixState SixCarryPrefixData.program 4016 basis 4630 := by
  exact at_between SixCarryPrefixData.program 4016 4020 4630 (by decide +kernel) nw_4630_4016_4020 basis
 
-theorem frame_4630_4021_4021 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4021 basis 4630=prefixState SixCarryPrefixData.program 4021 basis 4630 := by
- rfl
+
+
+
 
 theorem frame_4630_4022_4040 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4040 basis 4630=prefixState SixCarryPrefixData.program 4022 basis 4630 := by
@@ -18583,9 +18583,9 @@ theorem frame_4630_4041_4268 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4268 basis 4630=prefixState SixCarryPrefixData.program 4041 basis 4630 := by
  exact at_between SixCarryPrefixData.program 4041 4268 4630 (by decide +kernel) nw_4630_4041_4268 basis
 
-theorem frame_4630_4269_4269 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4269 basis 4630=prefixState SixCarryPrefixData.program 4269 basis 4630 := by
- rfl
+
+
+
 
 theorem frame_4630_4270_4274 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4274 basis 4630=prefixState SixCarryPrefixData.program 4270 basis 4630 := by
@@ -18599,9 +18599,9 @@ theorem frame_4630_4275_5076 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5076 basis 4630=prefixState SixCarryPrefixData.program 4275 basis 4630 := by
  exact at_between SixCarryPrefixData.program 4275 5076 4630 (by decide +kernel) nw_4630_4275_5076 basis
 
-theorem frame_4630_5077_5077 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 5077 basis 4630=prefixState SixCarryPrefixData.program 5077 basis 4630 := by
- rfl
+
+
+
 
 theorem frame_4630_5078_9395 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9395 basis 4630=prefixState SixCarryPrefixData.program 5078 basis 4630 := by
@@ -18639,9 +18639,9 @@ theorem frame_4631_885_951 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 951 basis 4631=prefixState SixCarryPrefixData.program 885 basis 4631 := by
  exact at_between SixCarryPrefixData.program 885 951 4631 (by decide +kernel) nw_4631_885_951 basis
 
-theorem frame_4631_952_952 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 952 basis 4631=prefixState SixCarryPrefixData.program 952 basis 4631 := by
- rfl
+
+
+
 
 theorem frame_4631_953_1437 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1437 basis 4631=prefixState SixCarryPrefixData.program 953 basis 4631 := by
@@ -18663,9 +18663,9 @@ theorem frame_4631_2285_2348 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2348 basis 4631=prefixState SixCarryPrefixData.program 2285 basis 4631 := by
  exact at_between SixCarryPrefixData.program 2285 2348 4631 (by decide +kernel) nw_4631_2285_2348 basis
 
-theorem frame_4631_2349_2349 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2349 basis 4631=prefixState SixCarryPrefixData.program 2349 basis 4631 := by
- rfl
+
+
+
 
 theorem frame_4631_2350_2846 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2846 basis 4631=prefixState SixCarryPrefixData.program 2350 basis 4631 := by
@@ -18687,17 +18687,17 @@ theorem frame_4631_3449_3713 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3713 basis 4631=prefixState SixCarryPrefixData.program 3449 basis 4631 := by
  exact at_between SixCarryPrefixData.program 3449 3713 4631 (by decide +kernel) nw_4631_3449_3713 basis
 
-theorem frame_4631_3714_3714 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3714 basis 4631=prefixState SixCarryPrefixData.program 3714 basis 4631 := by
- rfl
+
+
+
 
 theorem frame_4631_3715_4022 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4022 basis 4631=prefixState SixCarryPrefixData.program 3715 basis 4631 := by
  exact at_between SixCarryPrefixData.program 3715 4022 4631 (by decide +kernel) nw_4631_3715_4022 basis
 
-theorem frame_4631_4023_4023 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4023 basis 4631=prefixState SixCarryPrefixData.program 4023 basis 4631 := by
- rfl
+
+
+
 
 theorem frame_4631_4024_4025 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4025 basis 4631=prefixState SixCarryPrefixData.program 4024 basis 4631 := by
@@ -18707,9 +18707,9 @@ theorem frame_4631_4024_4028 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4028 basis 4631=prefixState SixCarryPrefixData.program 4024 basis 4631 := by
  exact at_between SixCarryPrefixData.program 4024 4028 4631 (by decide +kernel) nw_4631_4024_4028 basis
 
-theorem frame_4631_4029_4029 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4029 basis 4631=prefixState SixCarryPrefixData.program 4029 basis 4631 := by
- rfl
+
+
+
 
 theorem frame_4631_4030_4041 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4041 basis 4631=prefixState SixCarryPrefixData.program 4030 basis 4631 := by
@@ -18719,9 +18719,9 @@ theorem frame_4631_4042_4265 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4265 basis 4631=prefixState SixCarryPrefixData.program 4042 basis 4631 := by
  exact at_between SixCarryPrefixData.program 4042 4265 4631 (by decide +kernel) nw_4631_4042_4265 basis
 
-theorem frame_4631_4266_4266 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4266 basis 4631=prefixState SixCarryPrefixData.program 4266 basis 4631 := by
- rfl
+
+
+
 
 theorem frame_4631_4267_4275 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4275 basis 4631=prefixState SixCarryPrefixData.program 4267 basis 4631 := by
@@ -18735,9 +18735,9 @@ theorem frame_4631_4276_5073 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5073 basis 4631=prefixState SixCarryPrefixData.program 4276 basis 4631 := by
  exact at_between SixCarryPrefixData.program 4276 5073 4631 (by decide +kernel) nw_4631_4276_5073 basis
 
-theorem frame_4631_5074_5074 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 5074 basis 4631=prefixState SixCarryPrefixData.program 5074 basis 4631 := by
- rfl
+
+
+
 
 theorem frame_4631_5075_9403 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9403 basis 4631=prefixState SixCarryPrefixData.program 5075 basis 4631 := by
@@ -18775,9 +18775,9 @@ theorem frame_4632_891_948 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 948 basis 4632=prefixState SixCarryPrefixData.program 891 basis 4632 := by
  exact at_between SixCarryPrefixData.program 891 948 4632 (by decide +kernel) nw_4632_891_948 basis
 
-theorem frame_4632_949_949 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 949 basis 4632=prefixState SixCarryPrefixData.program 949 basis 4632 := by
- rfl
+
+
+
 
 theorem frame_4632_950_1438 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1438 basis 4632=prefixState SixCarryPrefixData.program 950 basis 4632 := by
@@ -18795,9 +18795,9 @@ theorem frame_4632_2291_2345 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2345 basis 4632=prefixState SixCarryPrefixData.program 2291 basis 4632 := by
  exact at_between SixCarryPrefixData.program 2291 2345 4632 (by decide +kernel) nw_4632_2291_2345 basis
 
-theorem frame_4632_2346_2346 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2346 basis 4632=prefixState SixCarryPrefixData.program 2346 basis 4632 := by
- rfl
+
+
+
 
 theorem frame_4632_2347_2847 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2847 basis 4632=prefixState SixCarryPrefixData.program 2347 basis 4632 := by
@@ -18819,17 +18819,17 @@ theorem frame_4632_3455_3710 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3710 basis 4632=prefixState SixCarryPrefixData.program 3455 basis 4632 := by
  exact at_between SixCarryPrefixData.program 3455 3710 4632 (by decide +kernel) nw_4632_3455_3710 basis
 
-theorem frame_4632_3711_3711 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3711 basis 4632=prefixState SixCarryPrefixData.program 3711 basis 4632 := by
- rfl
+
+
+
 
 theorem frame_4632_3712_4031 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4031 basis 4632=prefixState SixCarryPrefixData.program 3712 basis 4632 := by
  exact at_between SixCarryPrefixData.program 3712 4031 4632 (by decide +kernel) nw_4632_3712_4031 basis
 
-theorem frame_4632_4032_4032 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4032 basis 4632=prefixState SixCarryPrefixData.program 4032 basis 4632 := by
- rfl
+
+
+
 
 theorem frame_4632_4033_4034 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4034 basis 4632=prefixState SixCarryPrefixData.program 4033 basis 4632 := by
@@ -18839,9 +18839,9 @@ theorem frame_4632_4033_4037 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4037 basis 4632=prefixState SixCarryPrefixData.program 4033 basis 4632 := by
  exact at_between SixCarryPrefixData.program 4033 4037 4632 (by decide +kernel) nw_4632_4033_4037 basis
 
-theorem frame_4632_4038_4038 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4038 basis 4632=prefixState SixCarryPrefixData.program 4038 basis 4632 := by
- rfl
+
+
+
 
 theorem frame_4632_4039_4042 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4042 basis 4632=prefixState SixCarryPrefixData.program 4039 basis 4632 := by
@@ -18851,9 +18851,9 @@ theorem frame_4632_4043_4262 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4262 basis 4632=prefixState SixCarryPrefixData.program 4043 basis 4632 := by
  exact at_between SixCarryPrefixData.program 4043 4262 4632 (by decide +kernel) nw_4632_4043_4262 basis
 
-theorem frame_4632_4263_4263 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4263 basis 4632=prefixState SixCarryPrefixData.program 4263 basis 4632 := by
- rfl
+
+
+
 
 theorem frame_4632_4264_4276 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4276 basis 4632=prefixState SixCarryPrefixData.program 4264 basis 4632 := by
@@ -18867,9 +18867,9 @@ theorem frame_4632_4277_5070 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 5070 basis 4632=prefixState SixCarryPrefixData.program 4277 basis 4632 := by
  exact at_between SixCarryPrefixData.program 4277 5070 4632 (by decide +kernel) nw_4632_4277_5070 basis
 
-theorem frame_4632_5071_5071 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 5071 basis 4632=prefixState SixCarryPrefixData.program 5071 basis 4632 := by
- rfl
+
+
+
 
 theorem frame_4632_5072_9411 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9411 basis 4632=prefixState SixCarryPrefixData.program 5072 basis 4632 := by
@@ -18931,9 +18931,9 @@ theorem frame_4652_4063_4202 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4202 basis 4652=prefixState SixCarryPrefixData.program 4063 basis 4652 := by
  exact at_between SixCarryPrefixData.program 4063 4202 4652 (by decide +kernel) nw_4652_4063_4202 basis
 
-theorem frame_4652_4203_4203 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4203 basis 4652=prefixState SixCarryPrefixData.program 4203 basis 4652 := by
- rfl
+
+
+
 
 theorem frame_4652_4204_4296 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4296 basis 4652=prefixState SixCarryPrefixData.program 4204 basis 4652 := by
@@ -18963,9 +18963,9 @@ theorem frame_4653_3581_3647 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3647 basis 4653=prefixState SixCarryPrefixData.program 3581 basis 4653 := by
  exact at_between SixCarryPrefixData.program 3581 3647 4653 (by decide +kernel) nw_4653_3581_3647 basis
 
-theorem frame_4653_3648_3648 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3648 basis 4653=prefixState SixCarryPrefixData.program 3648 basis 4653 := by
- rfl
+
+
+
 
 theorem frame_4653_3649_4063 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4063 basis 4653=prefixState SixCarryPrefixData.program 3649 basis 4653 := by
@@ -18979,9 +18979,9 @@ theorem frame_4653_4064_4199 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4199 basis 4653=prefixState SixCarryPrefixData.program 4064 basis 4653 := by
  exact at_between SixCarryPrefixData.program 4064 4199 4653 (by decide +kernel) nw_4653_4064_4199 basis
 
-theorem frame_4653_4200_4200 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4200 basis 4653=prefixState SixCarryPrefixData.program 4200 basis 4653 := by
- rfl
+
+
+
 
 theorem frame_4653_4201_4297 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4297 basis 4653=prefixState SixCarryPrefixData.program 4201 basis 4653 := by
@@ -19015,9 +19015,9 @@ theorem frame_4654_3587_3644 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3644 basis 4654=prefixState SixCarryPrefixData.program 3587 basis 4654 := by
  exact at_between SixCarryPrefixData.program 3587 3644 4654 (by decide +kernel) nw_4654_3587_3644 basis
 
-theorem frame_4654_3645_3645 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3645 basis 4654=prefixState SixCarryPrefixData.program 3645 basis 4654 := by
- rfl
+
+
+
 
 theorem frame_4654_3646_4064 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4064 basis 4654=prefixState SixCarryPrefixData.program 3646 basis 4654 := by
@@ -19031,9 +19031,9 @@ theorem frame_4654_4065_4196 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4196 basis 4654=prefixState SixCarryPrefixData.program 4065 basis 4654 := by
  exact at_between SixCarryPrefixData.program 4065 4196 4654 (by decide +kernel) nw_4654_4065_4196 basis
 
-theorem frame_4654_4197_4197 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4197 basis 4654=prefixState SixCarryPrefixData.program 4197 basis 4654 := by
- rfl
+
+
+
 
 theorem frame_4654_4198_4298 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4298 basis 4654=prefixState SixCarryPrefixData.program 4198 basis 4654 := by
@@ -19067,9 +19067,9 @@ theorem frame_4655_3593_3641 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3641 basis 4655=prefixState SixCarryPrefixData.program 3593 basis 4655 := by
  exact at_between SixCarryPrefixData.program 3593 3641 4655 (by decide +kernel) nw_4655_3593_3641 basis
 
-theorem frame_4655_3642_3642 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3642 basis 4655=prefixState SixCarryPrefixData.program 3642 basis 4655 := by
- rfl
+
+
+
 
 theorem frame_4655_3643_4065 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4065 basis 4655=prefixState SixCarryPrefixData.program 3643 basis 4655 := by
@@ -19083,9 +19083,9 @@ theorem frame_4655_4066_4193 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4193 basis 4655=prefixState SixCarryPrefixData.program 4066 basis 4655 := by
  exact at_between SixCarryPrefixData.program 4066 4193 4655 (by decide +kernel) nw_4655_4066_4193 basis
 
-theorem frame_4655_4194_4194 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4194 basis 4655=prefixState SixCarryPrefixData.program 4194 basis 4655 := by
- rfl
+
+
+
 
 theorem frame_4655_4195_4299 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4299 basis 4655=prefixState SixCarryPrefixData.program 4195 basis 4655 := by
@@ -19119,9 +19119,9 @@ theorem frame_4656_3599_3638 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3638 basis 4656=prefixState SixCarryPrefixData.program 3599 basis 4656 := by
  exact at_between SixCarryPrefixData.program 3599 3638 4656 (by decide +kernel) nw_4656_3599_3638 basis
 
-theorem frame_4656_3639_3639 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3639 basis 4656=prefixState SixCarryPrefixData.program 3639 basis 4656 := by
- rfl
+
+
+
 
 theorem frame_4656_3640_4066 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4066 basis 4656=prefixState SixCarryPrefixData.program 3640 basis 4656 := by
@@ -19135,9 +19135,9 @@ theorem frame_4656_4067_4190 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4190 basis 4656=prefixState SixCarryPrefixData.program 4067 basis 4656 := by
  exact at_between SixCarryPrefixData.program 4067 4190 4656 (by decide +kernel) nw_4656_4067_4190 basis
 
-theorem frame_4656_4191_4191 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4191 basis 4656=prefixState SixCarryPrefixData.program 4191 basis 4656 := by
- rfl
+
+
+
 
 theorem frame_4656_4192_4300 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4300 basis 4656=prefixState SixCarryPrefixData.program 4192 basis 4656 := by
@@ -19171,9 +19171,9 @@ theorem frame_4657_3605_3635 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3635 basis 4657=prefixState SixCarryPrefixData.program 3605 basis 4657 := by
  exact at_between SixCarryPrefixData.program 3605 3635 4657 (by decide +kernel) nw_4657_3605_3635 basis
 
-theorem frame_4657_3636_3636 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3636 basis 4657=prefixState SixCarryPrefixData.program 3636 basis 4657 := by
- rfl
+
+
+
 
 theorem frame_4657_3637_4067 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4067 basis 4657=prefixState SixCarryPrefixData.program 3637 basis 4657 := by
@@ -19187,9 +19187,9 @@ theorem frame_4657_4068_4187 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4187 basis 4657=prefixState SixCarryPrefixData.program 4068 basis 4657 := by
  exact at_between SixCarryPrefixData.program 4068 4187 4657 (by decide +kernel) nw_4657_4068_4187 basis
 
-theorem frame_4657_4188_4188 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4188 basis 4657=prefixState SixCarryPrefixData.program 4188 basis 4657 := by
- rfl
+
+
+
 
 theorem frame_4657_4189_4301 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4301 basis 4657=prefixState SixCarryPrefixData.program 4189 basis 4657 := by
@@ -19223,9 +19223,9 @@ theorem frame_4658_3611_3632 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3632 basis 4658=prefixState SixCarryPrefixData.program 3611 basis 4658 := by
  exact at_between SixCarryPrefixData.program 3611 3632 4658 (by decide +kernel) nw_4658_3611_3632 basis
 
-theorem frame_4658_3633_3633 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3633 basis 4658=prefixState SixCarryPrefixData.program 3633 basis 4658 := by
- rfl
+
+
+
 
 theorem frame_4658_3634_4068 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4068 basis 4658=prefixState SixCarryPrefixData.program 3634 basis 4658 := by
@@ -19239,9 +19239,9 @@ theorem frame_4658_4069_4184 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4184 basis 4658=prefixState SixCarryPrefixData.program 4069 basis 4658 := by
  exact at_between SixCarryPrefixData.program 4069 4184 4658 (by decide +kernel) nw_4658_4069_4184 basis
 
-theorem frame_4658_4185_4185 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4185 basis 4658=prefixState SixCarryPrefixData.program 4185 basis 4658 := by
- rfl
+
+
+
 
 theorem frame_4658_4186_4302 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4302 basis 4658=prefixState SixCarryPrefixData.program 4186 basis 4658 := by
@@ -19275,9 +19275,9 @@ theorem frame_4659_3617_3629 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3629 basis 4659=prefixState SixCarryPrefixData.program 3617 basis 4659 := by
  exact at_between SixCarryPrefixData.program 3617 3629 4659 (by decide +kernel) nw_4659_3617_3629 basis
 
-theorem frame_4659_3630_3630 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3630 basis 4659=prefixState SixCarryPrefixData.program 3630 basis 4659 := by
- rfl
+
+
+
 
 theorem frame_4659_3631_4069 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4069 basis 4659=prefixState SixCarryPrefixData.program 3631 basis 4659 := by
@@ -19291,9 +19291,9 @@ theorem frame_4659_4070_4181 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4181 basis 4659=prefixState SixCarryPrefixData.program 4070 basis 4659 := by
  exact at_between SixCarryPrefixData.program 4070 4181 4659 (by decide +kernel) nw_4659_4070_4181 basis
 
-theorem frame_4659_4182_4182 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4182 basis 4659=prefixState SixCarryPrefixData.program 4182 basis 4659 := by
- rfl
+
+
+
 
 theorem frame_4659_4183_4303 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4303 basis 4659=prefixState SixCarryPrefixData.program 4183 basis 4659 := by
@@ -19327,9 +19327,9 @@ theorem frame_4660_3623_3626 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3626 basis 4660=prefixState SixCarryPrefixData.program 3623 basis 4660 := by
  exact at_between SixCarryPrefixData.program 3623 3626 4660 (by decide +kernel) nw_4660_3623_3626 basis
 
-theorem frame_4660_3627_3627 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3627 basis 4660=prefixState SixCarryPrefixData.program 3627 basis 4660 := by
- rfl
+
+
+
 
 theorem frame_4660_3628_4070 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4070 basis 4660=prefixState SixCarryPrefixData.program 3628 basis 4660 := by
@@ -19343,9 +19343,9 @@ theorem frame_4660_4071_4178 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4178 basis 4660=prefixState SixCarryPrefixData.program 4071 basis 4660 := by
  exact at_between SixCarryPrefixData.program 4071 4178 4660 (by decide +kernel) nw_4660_4071_4178 basis
 
-theorem frame_4660_4179_4179 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4179 basis 4660=prefixState SixCarryPrefixData.program 4179 basis 4660 := by
- rfl
+
+
+
 
 theorem frame_4660_4180_4304 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4304 basis 4660=prefixState SixCarryPrefixData.program 4180 basis 4660 := by
@@ -19367,9 +19367,9 @@ theorem frame_4660_4893_4986 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4986 basis 4660=prefixState SixCarryPrefixData.program 4893 basis 4660 := by
  exact at_between SixCarryPrefixData.program 4893 4986 4660 (by decide +kernel) nw_4660_4893_4986 basis
 
-theorem frame_4660_4987_4987 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4987 basis 4660=prefixState SixCarryPrefixData.program 4987 basis 4660 := by
- rfl
+
+
+
 
 theorem frame_4660_4988_9635 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9635 basis 4660=prefixState SixCarryPrefixData.program 4988 basis 4660 := by
@@ -19403,9 +19403,9 @@ theorem frame_4661_157_3623 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 3623 basis 4661=prefixState SixCarryPrefixData.program 157 basis 4661 := by
  exact at_between SixCarryPrefixData.program 157 3623 4661 (by decide +kernel) nw_4661_157_3623 basis
 
-theorem frame_4661_3624_3624 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 3624 basis 4661=prefixState SixCarryPrefixData.program 3624 basis 4661 := by
- rfl
+
+
+
 
 theorem frame_4661_3625_4071 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4071 basis 4661=prefixState SixCarryPrefixData.program 3625 basis 4661 := by
@@ -19419,9 +19419,9 @@ theorem frame_4661_4072_4175 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4175 basis 4661=prefixState SixCarryPrefixData.program 4072 basis 4661 := by
  exact at_between SixCarryPrefixData.program 4072 4175 4661 (by decide +kernel) nw_4661_4072_4175 basis
 
-theorem frame_4661_4176_4176 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4176 basis 4661=prefixState SixCarryPrefixData.program 4176 basis 4661 := by
- rfl
+
+
+
 
 theorem frame_4661_4177_4305 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4305 basis 4661=prefixState SixCarryPrefixData.program 4177 basis 4661 := by
@@ -19447,9 +19447,9 @@ theorem frame_4661_4899_4983 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4983 basis 4661=prefixState SixCarryPrefixData.program 4899 basis 4661 := by
  exact at_between SixCarryPrefixData.program 4899 4983 4661 (by decide +kernel) nw_4661_4899_4983 basis
 
-theorem frame_4661_4984_4984 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4984 basis 4661=prefixState SixCarryPrefixData.program 4984 basis 4661 := by
- rfl
+
+
+
 
 theorem frame_4661_4985_9643 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9643 basis 4661=prefixState SixCarryPrefixData.program 4985 basis 4661 := by
@@ -19499,9 +19499,9 @@ theorem frame_4662_4905_4980 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4980 basis 4662=prefixState SixCarryPrefixData.program 4905 basis 4662 := by
  exact at_between SixCarryPrefixData.program 4905 4980 4662 (by decide +kernel) nw_4662_4905_4980 basis
 
-theorem frame_4662_4981_4981 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4981 basis 4662=prefixState SixCarryPrefixData.program 4981 basis 4662 := by
- rfl
+
+
+
 
 theorem frame_4662_4982_9651 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9651 basis 4662=prefixState SixCarryPrefixData.program 4982 basis 4662 := by
@@ -19551,9 +19551,9 @@ theorem frame_4663_4911_4977 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4977 basis 4663=prefixState SixCarryPrefixData.program 4911 basis 4663 := by
  exact at_between SixCarryPrefixData.program 4911 4977 4663 (by decide +kernel) nw_4663_4911_4977 basis
 
-theorem frame_4663_4978_4978 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4978 basis 4663=prefixState SixCarryPrefixData.program 4978 basis 4663 := by
- rfl
+
+
+
 
 theorem frame_4663_4979_9659 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9659 basis 4663=prefixState SixCarryPrefixData.program 4979 basis 4663 := by
@@ -19599,9 +19599,9 @@ theorem frame_4664_4917_4974 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 4974 basis 4664=prefixState SixCarryPrefixData.program 4917 basis 4664 := by
  exact at_between SixCarryPrefixData.program 4917 4974 4664 (by decide +kernel) nw_4664_4917_4974 basis
 
-theorem frame_4664_4975_4975 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 4975 basis 4664=prefixState SixCarryPrefixData.program 4975 basis 4664 := by
- rfl
+
+
+
 
 theorem frame_4664_4976_9667 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 9667 basis 4664=prefixState SixCarryPrefixData.program 4976 basis 4664 := by
@@ -28248,9 +28248,9 @@ set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] SixCarryFrame.prefixState SixCarryPrefixData.program
 
-theorem nw_4116_4028_4073 : noWriteBetween SixCarryPrefixData.program 4028 4073 4116=true := by
- have h := noWrite_shift SixCarryPrefixData.program before31 (SixCarryPrefixData.chunk31++after31) 3968 60 105 4116 shape31 before_len31
- exact h.trans (by decide +kernel)
+
+
+
 
 theorem nw_4339_0_4011 : noWriteBetween SixCarryPrefixData.program 0 4011 4339=true := by
  have h := noWrite_shift SixCarryPrefixData.program before0 (SixCarryPrefixData.chunk0++after0) 0 0 4011 4339 shape0 before_len0
@@ -28336,25 +28336,25 @@ theorem nw_4361_0_2246 : noWriteBetween SixCarryPrefixData.program 0 2246 4361=t
  have h := noWrite_shift SixCarryPrefixData.program before0 (SixCarryPrefixData.chunk0++after0) 0 0 2246 4361 shape0 before_len0
  exact h.trans (by decide +kernel)
 
-theorem nw_4370_0_4890 : noWriteBetween SixCarryPrefixData.program 0 4890 4370=true := by
- have h := noWrite_shift SixCarryPrefixData.program before0 (SixCarryPrefixData.chunk0++after0) 0 0 4890 4370 shape0 before_len0
- exact h.trans (by decide +kernel)
 
-theorem nw_4372_4020_4072 : noWriteBetween SixCarryPrefixData.program 4020 4072 4372=true := by
- have h := noWrite_shift SixCarryPrefixData.program before31 (SixCarryPrefixData.chunk31++after31) 3968 52 104 4372 shape31 before_len31
- exact h.trans (by decide +kernel)
 
-theorem nw_4433_3827_4896 : noWriteBetween SixCarryPrefixData.program 3827 4896 4433=true := by
- have h := noWrite_shift SixCarryPrefixData.program before29 (SixCarryPrefixData.chunk29++after29) 3712 115 1184 4433 shape29 before_len29
- exact h.trans (by decide +kernel)
 
-theorem nw_4434_3824_4902 : noWriteBetween SixCarryPrefixData.program 3824 4902 4434=true := by
- have h := noWrite_shift SixCarryPrefixData.program before29 (SixCarryPrefixData.chunk29++after29) 3712 112 1190 4434 shape29 before_len29
- exact h.trans (by decide +kernel)
 
-theorem nw_4435_3821_4906 : noWriteBetween SixCarryPrefixData.program 3821 4906 4435=true := by
- have h := noWrite_shift SixCarryPrefixData.program before29 (SixCarryPrefixData.chunk29++after29) 3712 109 1194 4435 shape29 before_len29
- exact h.trans (by decide +kernel)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem nw_4469_0_737 : noWriteBetween SixCarryPrefixData.program 0 737 4469=true := by
  have h := noWrite_shift SixCarryPrefixData.program before0 (SixCarryPrefixData.chunk0++after0) 0 0 737 4469 shape0 before_len0
@@ -29268,29 +29268,29 @@ theorem nw_4626_2250_2251 : noWriteBetween SixCarryPrefixData.program 2250 2251 
  have h := noWrite_shift SixCarryPrefixData.program before17 (SixCarryPrefixData.chunk17++after17) 2176 74 75 4626 shape17 before_len17
  exact h.trans (by decide +kernel)
 
-theorem nw_4630_4275_4307 : noWriteBetween SixCarryPrefixData.program 4275 4307 4630=true := by
- have h := noWrite_shift SixCarryPrefixData.program before33 (SixCarryPrefixData.chunk33++after33) 4224 51 83 4630 shape33 before_len33
- exact h.trans (by decide +kernel)
 
-theorem nw_4631_4276_4308 : noWriteBetween SixCarryPrefixData.program 4276 4308 4631=true := by
- have h := noWrite_shift SixCarryPrefixData.program before33 (SixCarryPrefixData.chunk33++after33) 4224 52 84 4631 shape33 before_len33
- exact h.trans (by decide +kernel)
 
-theorem nw_4660_4888_4889 : noWriteBetween SixCarryPrefixData.program 4888 4889 4660=true := by
- have h := noWrite_shift SixCarryPrefixData.program before38 (SixCarryPrefixData.chunk38++after38) 4864 24 25 4660 shape38 before_len38
- exact h.trans (by decide +kernel)
 
-theorem nw_4661_4894_4895 : noWriteBetween SixCarryPrefixData.program 4894 4895 4661=true := by
- have h := noWrite_shift SixCarryPrefixData.program before38 (SixCarryPrefixData.chunk38++after38) 4864 30 31 4661 shape38 before_len38
- exact h.trans (by decide +kernel)
 
-theorem nw_4662_4900_4901 : noWriteBetween SixCarryPrefixData.program 4900 4901 4662=true := by
- have h := noWrite_shift SixCarryPrefixData.program before38 (SixCarryPrefixData.chunk38++after38) 4864 36 37 4662 shape38 before_len38
- exact h.trans (by decide +kernel)
 
-theorem nw_4663_4906_4907 : noWriteBetween SixCarryPrefixData.program 4906 4907 4663=true := by
- have h := noWrite_shift SixCarryPrefixData.program before38 (SixCarryPrefixData.chunk38++after38) 4864 42 43 4663 shape38 before_len38
- exact h.trans (by decide +kernel)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 theorem frame_4339_0_735 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 735 basis 4339=prefixState SixCarryPrefixData.program 0 basis 4339 := by
@@ -29988,25 +29988,25 @@ theorem frame_4364_0_121 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 121 basis 4364=prefixState SixCarryPrefixData.program 0 basis 4364 := by
  exact at_between SixCarryPrefixData.program 0 121 4364 (by decide +kernel) (noWrite_mono_end SixCarryPrefixData.program 0 4854 121 4364 (by decide +kernel) nw_4364_0_4854) basis
 
-theorem frame_4468_737_737 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 737 basis 4468=prefixState SixCarryPrefixData.program 737 basis 4468 := by
- rfl
+
+
+
 
 theorem frame_4469_0_737 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 737 basis 4469=prefixState SixCarryPrefixData.program 0 basis 4469 := by
  exact at_between SixCarryPrefixData.program 0 737 4469 (by decide +kernel) nw_4469_0_737 basis
 
-theorem frame_4469_738_738 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 738 basis 4469=prefixState SixCarryPrefixData.program 738 basis 4469 := by
- rfl
+
+
+
 
 theorem frame_4469_739_742 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 742 basis 4469=prefixState SixCarryPrefixData.program 739 basis 4469 := by
  exact at_between SixCarryPrefixData.program 739 742 4469 (by decide +kernel) nw_4469_739_742 basis
 
-theorem frame_4469_743_743 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 743 basis 4469=prefixState SixCarryPrefixData.program 743 basis 4469 := by
- rfl
+
+
+
 
 theorem frame_4469_743_745 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 745 basis 4469=prefixState SixCarryPrefixData.program 743 basis 4469 := by
@@ -30020,9 +30020,9 @@ theorem frame_4470_0_743 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 743 basis 4470=prefixState SixCarryPrefixData.program 0 basis 4470 := by
  exact at_between SixCarryPrefixData.program 0 743 4470 (by decide +kernel) nw_4470_0_743 basis
 
-theorem frame_4470_744_744 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 744 basis 4470=prefixState SixCarryPrefixData.program 744 basis 4470 := by
- rfl
+
+
+
 
 theorem frame_4470_745_748 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 748 basis 4470=prefixState SixCarryPrefixData.program 745 basis 4470 := by
@@ -30036,9 +30036,9 @@ theorem frame_4470_752_1018 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1018 basis 4470=prefixState SixCarryPrefixData.program 752 basis 4470 := by
  exact at_between SixCarryPrefixData.program 752 1018 4470 (by decide +kernel) nw_4470_752_1018 basis
 
-theorem frame_4473_767_767 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 767 basis 4473=prefixState SixCarryPrefixData.program 767 basis 4473 := by
- rfl
+
+
+
 
 theorem frame_4473_767_769 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 769 basis 4473=prefixState SixCarryPrefixData.program 767 basis 4473 := by
@@ -30048,25 +30048,25 @@ theorem frame_4473_770_1009 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1009 basis 4473=prefixState SixCarryPrefixData.program 770 basis 4473 := by
  exact at_between SixCarryPrefixData.program 770 1009 4473 (by decide +kernel) nw_4473_770_1009 basis
 
-theorem frame_4473_2143_2143 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2143 basis 4473=prefixState SixCarryPrefixData.program 2143 basis 4473 := by
- rfl
+
+
+
 
 theorem frame_4474_0_767 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 767 basis 4474=prefixState SixCarryPrefixData.program 0 basis 4474 := by
  exact at_between SixCarryPrefixData.program 0 767 4474 (by decide +kernel) nw_4474_0_767 basis
 
-theorem frame_4474_768_768 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 768 basis 4474=prefixState SixCarryPrefixData.program 768 basis 4474 := by
- rfl
+
+
+
 
 theorem frame_4474_769_772 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 772 basis 4474=prefixState SixCarryPrefixData.program 769 basis 4474 := by
  exact at_between SixCarryPrefixData.program 769 772 4474 (by decide +kernel) nw_4474_769_772 basis
 
-theorem frame_4474_773_773 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 773 basis 4474=prefixState SixCarryPrefixData.program 773 basis 4474 := by
- rfl
+
+
+
 
 theorem frame_4474_773_775 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 775 basis 4474=prefixState SixCarryPrefixData.program 773 basis 4474 := by
@@ -30080,33 +30080,33 @@ theorem frame_4474_1008_2143 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2143 basis 4474=prefixState SixCarryPrefixData.program 1008 basis 4474 := by
  exact at_between SixCarryPrefixData.program 1008 2143 4474 (by decide +kernel) nw_4474_1008_2143 basis
 
-theorem frame_4474_2144_2144 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2144 basis 4474=prefixState SixCarryPrefixData.program 2144 basis 4474 := by
- rfl
+
+
+
 
 theorem frame_4474_2145_2148 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2148 basis 4474=prefixState SixCarryPrefixData.program 2145 basis 4474 := by
  exact at_between SixCarryPrefixData.program 2145 2148 4474 (by decide +kernel) nw_4474_2145_2148 basis
 
-theorem frame_4474_2149_2149 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2149 basis 4474=prefixState SixCarryPrefixData.program 2149 basis 4474 := by
- rfl
+
+
+
 
 theorem frame_4475_0_773 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 773 basis 4475=prefixState SixCarryPrefixData.program 0 basis 4475 := by
  exact at_between SixCarryPrefixData.program 0 773 4475 (by decide +kernel) nw_4475_0_773 basis
 
-theorem frame_4475_774_774 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 774 basis 4475=prefixState SixCarryPrefixData.program 774 basis 4475 := by
- rfl
+
+
+
 
 theorem frame_4475_775_778 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 778 basis 4475=prefixState SixCarryPrefixData.program 775 basis 4475 := by
  exact at_between SixCarryPrefixData.program 775 778 4475 (by decide +kernel) nw_4475_775_778 basis
 
-theorem frame_4475_779_779 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 779 basis 4475=prefixState SixCarryPrefixData.program 779 basis 4475 := by
- rfl
+
+
+
 
 theorem frame_4475_779_781 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 781 basis 4475=prefixState SixCarryPrefixData.program 779 basis 4475 := by
@@ -30120,33 +30120,33 @@ theorem frame_4475_1005_2149 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2149 basis 4475=prefixState SixCarryPrefixData.program 1005 basis 4475 := by
  exact at_between SixCarryPrefixData.program 1005 2149 4475 (by decide +kernel) nw_4475_1005_2149 basis
 
-theorem frame_4475_2150_2150 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2150 basis 4475=prefixState SixCarryPrefixData.program 2150 basis 4475 := by
- rfl
+
+
+
 
 theorem frame_4475_2151_2154 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2154 basis 4475=prefixState SixCarryPrefixData.program 2151 basis 4475 := by
  exact at_between SixCarryPrefixData.program 2151 2154 4475 (by decide +kernel) nw_4475_2151_2154 basis
 
-theorem frame_4475_2155_2155 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2155 basis 4475=prefixState SixCarryPrefixData.program 2155 basis 4475 := by
- rfl
+
+
+
 
 theorem frame_4476_0_779 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 779 basis 4476=prefixState SixCarryPrefixData.program 0 basis 4476 := by
  exact at_between SixCarryPrefixData.program 0 779 4476 (by decide +kernel) nw_4476_0_779 basis
 
-theorem frame_4476_780_780 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 780 basis 4476=prefixState SixCarryPrefixData.program 780 basis 4476 := by
- rfl
+
+
+
 
 theorem frame_4476_781_784 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 784 basis 4476=prefixState SixCarryPrefixData.program 781 basis 4476 := by
  exact at_between SixCarryPrefixData.program 781 784 4476 (by decide +kernel) nw_4476_781_784 basis
 
-theorem frame_4476_785_785 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 785 basis 4476=prefixState SixCarryPrefixData.program 785 basis 4476 := by
- rfl
+
+
+
 
 theorem frame_4476_785_787 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 787 basis 4476=prefixState SixCarryPrefixData.program 785 basis 4476 := by
@@ -30160,33 +30160,33 @@ theorem frame_4476_1002_2155 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2155 basis 4476=prefixState SixCarryPrefixData.program 1002 basis 4476 := by
  exact at_between SixCarryPrefixData.program 1002 2155 4476 (by decide +kernel) nw_4476_1002_2155 basis
 
-theorem frame_4476_2156_2156 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2156 basis 4476=prefixState SixCarryPrefixData.program 2156 basis 4476 := by
- rfl
+
+
+
 
 theorem frame_4476_2157_2160 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2160 basis 4476=prefixState SixCarryPrefixData.program 2157 basis 4476 := by
  exact at_between SixCarryPrefixData.program 2157 2160 4476 (by decide +kernel) nw_4476_2157_2160 basis
 
-theorem frame_4476_2161_2161 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2161 basis 4476=prefixState SixCarryPrefixData.program 2161 basis 4476 := by
- rfl
+
+
+
 
 theorem frame_4477_0_785 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 785 basis 4477=prefixState SixCarryPrefixData.program 0 basis 4477 := by
  exact at_between SixCarryPrefixData.program 0 785 4477 (by decide +kernel) nw_4477_0_785 basis
 
-theorem frame_4477_786_786 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 786 basis 4477=prefixState SixCarryPrefixData.program 786 basis 4477 := by
- rfl
+
+
+
 
 theorem frame_4477_787_790 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 790 basis 4477=prefixState SixCarryPrefixData.program 787 basis 4477 := by
  exact at_between SixCarryPrefixData.program 787 790 4477 (by decide +kernel) nw_4477_787_790 basis
 
-theorem frame_4477_791_791 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 791 basis 4477=prefixState SixCarryPrefixData.program 791 basis 4477 := by
- rfl
+
+
+
 
 theorem frame_4477_791_793 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 793 basis 4477=prefixState SixCarryPrefixData.program 791 basis 4477 := by
@@ -30200,33 +30200,33 @@ theorem frame_4477_999_2161 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2161 basis 4477=prefixState SixCarryPrefixData.program 999 basis 4477 := by
  exact at_between SixCarryPrefixData.program 999 2161 4477 (by decide +kernel) nw_4477_999_2161 basis
 
-theorem frame_4477_2162_2162 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2162 basis 4477=prefixState SixCarryPrefixData.program 2162 basis 4477 := by
- rfl
+
+
+
 
 theorem frame_4477_2163_2166 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2166 basis 4477=prefixState SixCarryPrefixData.program 2163 basis 4477 := by
  exact at_between SixCarryPrefixData.program 2163 2166 4477 (by decide +kernel) nw_4477_2163_2166 basis
 
-theorem frame_4477_2167_2167 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2167 basis 4477=prefixState SixCarryPrefixData.program 2167 basis 4477 := by
- rfl
+
+
+
 
 theorem frame_4478_0_791 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 791 basis 4478=prefixState SixCarryPrefixData.program 0 basis 4478 := by
  exact at_between SixCarryPrefixData.program 0 791 4478 (by decide +kernel) nw_4478_0_791 basis
 
-theorem frame_4478_792_792 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 792 basis 4478=prefixState SixCarryPrefixData.program 792 basis 4478 := by
- rfl
+
+
+
 
 theorem frame_4478_793_796 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 796 basis 4478=prefixState SixCarryPrefixData.program 793 basis 4478 := by
  exact at_between SixCarryPrefixData.program 793 796 4478 (by decide +kernel) nw_4478_793_796 basis
 
-theorem frame_4478_797_797 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 797 basis 4478=prefixState SixCarryPrefixData.program 797 basis 4478 := by
- rfl
+
+
+
 
 theorem frame_4478_797_799 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 799 basis 4478=prefixState SixCarryPrefixData.program 797 basis 4478 := by
@@ -30240,33 +30240,33 @@ theorem frame_4478_996_2167 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2167 basis 4478=prefixState SixCarryPrefixData.program 996 basis 4478 := by
  exact at_between SixCarryPrefixData.program 996 2167 4478 (by decide +kernel) nw_4478_996_2167 basis
 
-theorem frame_4478_2168_2168 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2168 basis 4478=prefixState SixCarryPrefixData.program 2168 basis 4478 := by
- rfl
+
+
+
 
 theorem frame_4478_2169_2172 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2172 basis 4478=prefixState SixCarryPrefixData.program 2169 basis 4478 := by
  exact at_between SixCarryPrefixData.program 2169 2172 4478 (by decide +kernel) nw_4478_2169_2172 basis
 
-theorem frame_4478_2173_2173 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2173 basis 4478=prefixState SixCarryPrefixData.program 2173 basis 4478 := by
- rfl
+
+
+
 
 theorem frame_4479_0_797 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 797 basis 4479=prefixState SixCarryPrefixData.program 0 basis 4479 := by
  exact at_between SixCarryPrefixData.program 0 797 4479 (by decide +kernel) nw_4479_0_797 basis
 
-theorem frame_4479_798_798 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 798 basis 4479=prefixState SixCarryPrefixData.program 798 basis 4479 := by
- rfl
+
+
+
 
 theorem frame_4479_799_802 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 802 basis 4479=prefixState SixCarryPrefixData.program 799 basis 4479 := by
  exact at_between SixCarryPrefixData.program 799 802 4479 (by decide +kernel) nw_4479_799_802 basis
 
-theorem frame_4479_803_803 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 803 basis 4479=prefixState SixCarryPrefixData.program 803 basis 4479 := by
- rfl
+
+
+
 
 theorem frame_4479_803_805 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 805 basis 4479=prefixState SixCarryPrefixData.program 803 basis 4479 := by
@@ -30280,33 +30280,33 @@ theorem frame_4479_993_2173 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2173 basis 4479=prefixState SixCarryPrefixData.program 993 basis 4479 := by
  exact at_between SixCarryPrefixData.program 993 2173 4479 (by decide +kernel) nw_4479_993_2173 basis
 
-theorem frame_4479_2174_2174 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2174 basis 4479=prefixState SixCarryPrefixData.program 2174 basis 4479 := by
- rfl
+
+
+
 
 theorem frame_4479_2175_2178 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2178 basis 4479=prefixState SixCarryPrefixData.program 2175 basis 4479 := by
  exact at_between SixCarryPrefixData.program 2175 2178 4479 (by decide +kernel) nw_4479_2175_2178 basis
 
-theorem frame_4479_2179_2179 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2179 basis 4479=prefixState SixCarryPrefixData.program 2179 basis 4479 := by
- rfl
+
+
+
 
 theorem frame_4480_0_803 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 803 basis 4480=prefixState SixCarryPrefixData.program 0 basis 4480 := by
  exact at_between SixCarryPrefixData.program 0 803 4480 (by decide +kernel) nw_4480_0_803 basis
 
-theorem frame_4480_804_804 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 804 basis 4480=prefixState SixCarryPrefixData.program 804 basis 4480 := by
- rfl
+
+
+
 
 theorem frame_4480_805_808 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 808 basis 4480=prefixState SixCarryPrefixData.program 805 basis 4480 := by
  exact at_between SixCarryPrefixData.program 805 808 4480 (by decide +kernel) nw_4480_805_808 basis
 
-theorem frame_4480_809_809 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 809 basis 4480=prefixState SixCarryPrefixData.program 809 basis 4480 := by
- rfl
+
+
+
 
 theorem frame_4480_809_811 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 811 basis 4480=prefixState SixCarryPrefixData.program 809 basis 4480 := by
@@ -30320,33 +30320,33 @@ theorem frame_4480_990_2179 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2179 basis 4480=prefixState SixCarryPrefixData.program 990 basis 4480 := by
  exact at_between SixCarryPrefixData.program 990 2179 4480 (by decide +kernel) nw_4480_990_2179 basis
 
-theorem frame_4480_2180_2180 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2180 basis 4480=prefixState SixCarryPrefixData.program 2180 basis 4480 := by
- rfl
+
+
+
 
 theorem frame_4480_2181_2184 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2184 basis 4480=prefixState SixCarryPrefixData.program 2181 basis 4480 := by
  exact at_between SixCarryPrefixData.program 2181 2184 4480 (by decide +kernel) nw_4480_2181_2184 basis
 
-theorem frame_4480_2185_2185 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2185 basis 4480=prefixState SixCarryPrefixData.program 2185 basis 4480 := by
- rfl
+
+
+
 
 theorem frame_4481_0_809 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 809 basis 4481=prefixState SixCarryPrefixData.program 0 basis 4481 := by
  exact at_between SixCarryPrefixData.program 0 809 4481 (by decide +kernel) nw_4481_0_809 basis
 
-theorem frame_4481_810_810 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 810 basis 4481=prefixState SixCarryPrefixData.program 810 basis 4481 := by
- rfl
+
+
+
 
 theorem frame_4481_811_814 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 814 basis 4481=prefixState SixCarryPrefixData.program 811 basis 4481 := by
  exact at_between SixCarryPrefixData.program 811 814 4481 (by decide +kernel) nw_4481_811_814 basis
 
-theorem frame_4481_815_815 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 815 basis 4481=prefixState SixCarryPrefixData.program 815 basis 4481 := by
- rfl
+
+
+
 
 theorem frame_4481_815_817 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 817 basis 4481=prefixState SixCarryPrefixData.program 815 basis 4481 := by
@@ -30360,33 +30360,33 @@ theorem frame_4481_987_2185 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2185 basis 4481=prefixState SixCarryPrefixData.program 987 basis 4481 := by
  exact at_between SixCarryPrefixData.program 987 2185 4481 (by decide +kernel) nw_4481_987_2185 basis
 
-theorem frame_4481_2186_2186 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2186 basis 4481=prefixState SixCarryPrefixData.program 2186 basis 4481 := by
- rfl
+
+
+
 
 theorem frame_4481_2187_2190 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2190 basis 4481=prefixState SixCarryPrefixData.program 2187 basis 4481 := by
  exact at_between SixCarryPrefixData.program 2187 2190 4481 (by decide +kernel) nw_4481_2187_2190 basis
 
-theorem frame_4481_2191_2191 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2191 basis 4481=prefixState SixCarryPrefixData.program 2191 basis 4481 := by
- rfl
+
+
+
 
 theorem frame_4482_0_815 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 815 basis 4482=prefixState SixCarryPrefixData.program 0 basis 4482 := by
  exact at_between SixCarryPrefixData.program 0 815 4482 (by decide +kernel) nw_4482_0_815 basis
 
-theorem frame_4482_816_816 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 816 basis 4482=prefixState SixCarryPrefixData.program 816 basis 4482 := by
- rfl
+
+
+
 
 theorem frame_4482_817_820 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 820 basis 4482=prefixState SixCarryPrefixData.program 817 basis 4482 := by
  exact at_between SixCarryPrefixData.program 817 820 4482 (by decide +kernel) nw_4482_817_820 basis
 
-theorem frame_4482_821_821 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 821 basis 4482=prefixState SixCarryPrefixData.program 821 basis 4482 := by
- rfl
+
+
+
 
 theorem frame_4482_821_823 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 823 basis 4482=prefixState SixCarryPrefixData.program 821 basis 4482 := by
@@ -30400,33 +30400,33 @@ theorem frame_4482_984_2191 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2191 basis 4482=prefixState SixCarryPrefixData.program 984 basis 4482 := by
  exact at_between SixCarryPrefixData.program 984 2191 4482 (by decide +kernel) nw_4482_984_2191 basis
 
-theorem frame_4482_2192_2192 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2192 basis 4482=prefixState SixCarryPrefixData.program 2192 basis 4482 := by
- rfl
+
+
+
 
 theorem frame_4482_2193_2196 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2196 basis 4482=prefixState SixCarryPrefixData.program 2193 basis 4482 := by
  exact at_between SixCarryPrefixData.program 2193 2196 4482 (by decide +kernel) nw_4482_2193_2196 basis
 
-theorem frame_4482_2197_2197 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2197 basis 4482=prefixState SixCarryPrefixData.program 2197 basis 4482 := by
- rfl
+
+
+
 
 theorem frame_4483_0_821 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 821 basis 4483=prefixState SixCarryPrefixData.program 0 basis 4483 := by
  exact at_between SixCarryPrefixData.program 0 821 4483 (by decide +kernel) nw_4483_0_821 basis
 
-theorem frame_4483_822_822 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 822 basis 4483=prefixState SixCarryPrefixData.program 822 basis 4483 := by
- rfl
+
+
+
 
 theorem frame_4483_823_826 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 826 basis 4483=prefixState SixCarryPrefixData.program 823 basis 4483 := by
  exact at_between SixCarryPrefixData.program 823 826 4483 (by decide +kernel) nw_4483_823_826 basis
 
-theorem frame_4483_827_827 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 827 basis 4483=prefixState SixCarryPrefixData.program 827 basis 4483 := by
- rfl
+
+
+
 
 theorem frame_4483_827_829 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 829 basis 4483=prefixState SixCarryPrefixData.program 827 basis 4483 := by
@@ -30440,33 +30440,33 @@ theorem frame_4483_981_2197 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2197 basis 4483=prefixState SixCarryPrefixData.program 981 basis 4483 := by
  exact at_between SixCarryPrefixData.program 981 2197 4483 (by decide +kernel) nw_4483_981_2197 basis
 
-theorem frame_4483_2198_2198 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2198 basis 4483=prefixState SixCarryPrefixData.program 2198 basis 4483 := by
- rfl
+
+
+
 
 theorem frame_4483_2199_2202 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2202 basis 4483=prefixState SixCarryPrefixData.program 2199 basis 4483 := by
  exact at_between SixCarryPrefixData.program 2199 2202 4483 (by decide +kernel) nw_4483_2199_2202 basis
 
-theorem frame_4483_2203_2203 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2203 basis 4483=prefixState SixCarryPrefixData.program 2203 basis 4483 := by
- rfl
+
+
+
 
 theorem frame_4484_0_827 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 827 basis 4484=prefixState SixCarryPrefixData.program 0 basis 4484 := by
  exact at_between SixCarryPrefixData.program 0 827 4484 (by decide +kernel) nw_4484_0_827 basis
 
-theorem frame_4484_828_828 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 828 basis 4484=prefixState SixCarryPrefixData.program 828 basis 4484 := by
- rfl
+
+
+
 
 theorem frame_4484_829_832 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 832 basis 4484=prefixState SixCarryPrefixData.program 829 basis 4484 := by
  exact at_between SixCarryPrefixData.program 829 832 4484 (by decide +kernel) nw_4484_829_832 basis
 
-theorem frame_4484_833_833 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 833 basis 4484=prefixState SixCarryPrefixData.program 833 basis 4484 := by
- rfl
+
+
+
 
 theorem frame_4484_833_835 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 835 basis 4484=prefixState SixCarryPrefixData.program 833 basis 4484 := by
@@ -30480,33 +30480,33 @@ theorem frame_4484_978_2203 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2203 basis 4484=prefixState SixCarryPrefixData.program 978 basis 4484 := by
  exact at_between SixCarryPrefixData.program 978 2203 4484 (by decide +kernel) nw_4484_978_2203 basis
 
-theorem frame_4484_2204_2204 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2204 basis 4484=prefixState SixCarryPrefixData.program 2204 basis 4484 := by
- rfl
+
+
+
 
 theorem frame_4484_2205_2208 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2208 basis 4484=prefixState SixCarryPrefixData.program 2205 basis 4484 := by
  exact at_between SixCarryPrefixData.program 2205 2208 4484 (by decide +kernel) nw_4484_2205_2208 basis
 
-theorem frame_4484_2209_2209 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2209 basis 4484=prefixState SixCarryPrefixData.program 2209 basis 4484 := by
- rfl
+
+
+
 
 theorem frame_4485_0_833 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 833 basis 4485=prefixState SixCarryPrefixData.program 0 basis 4485 := by
  exact at_between SixCarryPrefixData.program 0 833 4485 (by decide +kernel) nw_4485_0_833 basis
 
-theorem frame_4485_834_834 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 834 basis 4485=prefixState SixCarryPrefixData.program 834 basis 4485 := by
- rfl
+
+
+
 
 theorem frame_4485_835_838 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 838 basis 4485=prefixState SixCarryPrefixData.program 835 basis 4485 := by
  exact at_between SixCarryPrefixData.program 835 838 4485 (by decide +kernel) nw_4485_835_838 basis
 
-theorem frame_4485_839_839 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 839 basis 4485=prefixState SixCarryPrefixData.program 839 basis 4485 := by
- rfl
+
+
+
 
 theorem frame_4485_839_841 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 841 basis 4485=prefixState SixCarryPrefixData.program 839 basis 4485 := by
@@ -30520,33 +30520,33 @@ theorem frame_4485_975_2209 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2209 basis 4485=prefixState SixCarryPrefixData.program 975 basis 4485 := by
  exact at_between SixCarryPrefixData.program 975 2209 4485 (by decide +kernel) nw_4485_975_2209 basis
 
-theorem frame_4485_2210_2210 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2210 basis 4485=prefixState SixCarryPrefixData.program 2210 basis 4485 := by
- rfl
+
+
+
 
 theorem frame_4485_2211_2214 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2214 basis 4485=prefixState SixCarryPrefixData.program 2211 basis 4485 := by
  exact at_between SixCarryPrefixData.program 2211 2214 4485 (by decide +kernel) nw_4485_2211_2214 basis
 
-theorem frame_4485_2215_2215 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2215 basis 4485=prefixState SixCarryPrefixData.program 2215 basis 4485 := by
- rfl
+
+
+
 
 theorem frame_4486_0_839 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 839 basis 4486=prefixState SixCarryPrefixData.program 0 basis 4486 := by
  exact at_between SixCarryPrefixData.program 0 839 4486 (by decide +kernel) nw_4486_0_839 basis
 
-theorem frame_4486_840_840 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 840 basis 4486=prefixState SixCarryPrefixData.program 840 basis 4486 := by
- rfl
+
+
+
 
 theorem frame_4486_841_844 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 844 basis 4486=prefixState SixCarryPrefixData.program 841 basis 4486 := by
  exact at_between SixCarryPrefixData.program 841 844 4486 (by decide +kernel) nw_4486_841_844 basis
 
-theorem frame_4486_845_845 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 845 basis 4486=prefixState SixCarryPrefixData.program 845 basis 4486 := by
- rfl
+
+
+
 
 theorem frame_4486_845_847 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 847 basis 4486=prefixState SixCarryPrefixData.program 845 basis 4486 := by
@@ -30560,33 +30560,33 @@ theorem frame_4486_972_2215 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2215 basis 4486=prefixState SixCarryPrefixData.program 972 basis 4486 := by
  exact at_between SixCarryPrefixData.program 972 2215 4486 (by decide +kernel) nw_4486_972_2215 basis
 
-theorem frame_4486_2216_2216 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2216 basis 4486=prefixState SixCarryPrefixData.program 2216 basis 4486 := by
- rfl
+
+
+
 
 theorem frame_4486_2217_2220 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2220 basis 4486=prefixState SixCarryPrefixData.program 2217 basis 4486 := by
  exact at_between SixCarryPrefixData.program 2217 2220 4486 (by decide +kernel) nw_4486_2217_2220 basis
 
-theorem frame_4486_2221_2221 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2221 basis 4486=prefixState SixCarryPrefixData.program 2221 basis 4486 := by
- rfl
+
+
+
 
 theorem frame_4487_0_845 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 845 basis 4487=prefixState SixCarryPrefixData.program 0 basis 4487 := by
  exact at_between SixCarryPrefixData.program 0 845 4487 (by decide +kernel) nw_4487_0_845 basis
 
-theorem frame_4487_846_846 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 846 basis 4487=prefixState SixCarryPrefixData.program 846 basis 4487 := by
- rfl
+
+
+
 
 theorem frame_4487_847_850 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 850 basis 4487=prefixState SixCarryPrefixData.program 847 basis 4487 := by
  exact at_between SixCarryPrefixData.program 847 850 4487 (by decide +kernel) nw_4487_847_850 basis
 
-theorem frame_4487_851_851 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 851 basis 4487=prefixState SixCarryPrefixData.program 851 basis 4487 := by
- rfl
+
+
+
 
 theorem frame_4487_851_853 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 853 basis 4487=prefixState SixCarryPrefixData.program 851 basis 4487 := by
@@ -30600,25 +30600,25 @@ theorem frame_4487_969_2221 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2221 basis 4487=prefixState SixCarryPrefixData.program 969 basis 4487 := by
  exact at_between SixCarryPrefixData.program 969 2221 4487 (by decide +kernel) nw_4487_969_2221 basis
 
-theorem frame_4487_2222_2222 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2222 basis 4487=prefixState SixCarryPrefixData.program 2222 basis 4487 := by
- rfl
+
+
+
 
 theorem frame_4487_2223_2226 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2226 basis 4487=prefixState SixCarryPrefixData.program 2223 basis 4487 := by
  exact at_between SixCarryPrefixData.program 2223 2226 4487 (by decide +kernel) nw_4487_2223_2226 basis
 
-theorem frame_4487_2227_2227 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2227 basis 4487=prefixState SixCarryPrefixData.program 2227 basis 4487 := by
- rfl
+
+
+
 
 theorem frame_4488_0_851 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 851 basis 4488=prefixState SixCarryPrefixData.program 0 basis 4488 := by
  exact at_between SixCarryPrefixData.program 0 851 4488 (by decide +kernel) nw_4488_0_851 basis
 
-theorem frame_4488_852_852 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 852 basis 4488=prefixState SixCarryPrefixData.program 852 basis 4488 := by
- rfl
+
+
+
 
 theorem frame_4488_853_856 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 856 basis 4488=prefixState SixCarryPrefixData.program 853 basis 4488 := by
@@ -30628,73 +30628,73 @@ theorem frame_4488_966_2227 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2227 basis 4488=prefixState SixCarryPrefixData.program 966 basis 4488 := by
  exact at_between SixCarryPrefixData.program 966 2227 4488 (by decide +kernel) nw_4488_966_2227 basis
 
-theorem frame_4488_2228_2228 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2228 basis 4488=prefixState SixCarryPrefixData.program 2228 basis 4488 := by
- rfl
+
+
+
 
 theorem frame_4488_2229_2232 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2232 basis 4488=prefixState SixCarryPrefixData.program 2229 basis 4488 := by
  exact at_between SixCarryPrefixData.program 2229 2232 4488 (by decide +kernel) nw_4488_2229_2232 basis
 
-theorem frame_4488_2233_2233 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2233 basis 4488=prefixState SixCarryPrefixData.program 2233 basis 4488 := by
- rfl
+
+
+
 
 theorem frame_4489_963_2233 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2233 basis 4489=prefixState SixCarryPrefixData.program 963 basis 4489 := by
  exact at_between SixCarryPrefixData.program 963 2233 4489 (by decide +kernel) nw_4489_963_2233 basis
 
-theorem frame_4489_2234_2234 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2234 basis 4489=prefixState SixCarryPrefixData.program 2234 basis 4489 := by
- rfl
+
+
+
 
 theorem frame_4489_2235_2238 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2238 basis 4489=prefixState SixCarryPrefixData.program 2235 basis 4489 := by
  exact at_between SixCarryPrefixData.program 2235 2238 4489 (by decide +kernel) nw_4489_2235_2238 basis
 
-theorem frame_4489_2239_2239 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2239 basis 4489=prefixState SixCarryPrefixData.program 2239 basis 4489 := by
- rfl
+
+
+
 
 theorem frame_4490_960_2239 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2239 basis 4490=prefixState SixCarryPrefixData.program 960 basis 4490 := by
  exact at_between SixCarryPrefixData.program 960 2239 4490 (by decide +kernel) nw_4490_960_2239 basis
 
-theorem frame_4490_2240_2240 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2240 basis 4490=prefixState SixCarryPrefixData.program 2240 basis 4490 := by
- rfl
+
+
+
 
 theorem frame_4490_2241_2244 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2244 basis 4490=prefixState SixCarryPrefixData.program 2241 basis 4490 := by
  exact at_between SixCarryPrefixData.program 2241 2244 4490 (by decide +kernel) nw_4490_2241_2244 basis
 
-theorem frame_4490_2245_2245 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2245 basis 4490=prefixState SixCarryPrefixData.program 2245 basis 4490 := by
- rfl
+
+
+
 
 theorem frame_4491_957_2245 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2245 basis 4491=prefixState SixCarryPrefixData.program 957 basis 4491 := by
  exact at_between SixCarryPrefixData.program 957 2245 4491 (by decide +kernel) nw_4491_957_2245 basis
 
-theorem frame_4491_2246_2246 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2246 basis 4491=prefixState SixCarryPrefixData.program 2246 basis 4491 := by
- rfl
+
+
+
 
 theorem frame_4491_2247_2250 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2250 basis 4491=prefixState SixCarryPrefixData.program 2247 basis 4491 := by
  exact at_between SixCarryPrefixData.program 2247 2250 4491 (by decide +kernel) nw_4491_2247_2250 basis
 
-theorem frame_4491_2251_2251 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2251 basis 4491=prefixState SixCarryPrefixData.program 2251 basis 4491 := by
- rfl
+
+
+
 
 theorem frame_4492_954_2251 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2251 basis 4492=prefixState SixCarryPrefixData.program 954 basis 4492 := by
  exact at_between SixCarryPrefixData.program 954 2251 4492 (by decide +kernel) nw_4492_954_2251 basis
 
-theorem frame_4492_2252_2252 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 2252 basis 4492=prefixState SixCarryPrefixData.program 2252 basis 4492 := by
- rfl
+
+
+
 
 theorem frame_4492_2253_2256 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 2256 basis 4492=prefixState SixCarryPrefixData.program 2253 basis 4492 := by
@@ -30732,9 +30732,9 @@ theorem frame_4608_747_1020 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1020 basis 4608=prefixState SixCarryPrefixData.program 747 basis 4608 := by
  exact at_between SixCarryPrefixData.program 747 1020 4608 (by decide +kernel) nw_4608_747_1020 basis
 
-theorem frame_4608_1021_1021 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 1021 basis 4608=prefixState SixCarryPrefixData.program 1021 basis 4608 := by
- rfl
+
+
+
 
 theorem frame_4608_1022_1414 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1414 basis 4608=prefixState SixCarryPrefixData.program 1022 basis 4608 := by
@@ -30764,9 +30764,9 @@ theorem frame_4609_753_1017 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1017 basis 4609=prefixState SixCarryPrefixData.program 753 basis 4609 := by
  exact at_between SixCarryPrefixData.program 753 1017 4609 (by decide +kernel) nw_4609_753_1017 basis
 
-theorem frame_4609_1018_1018 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 1018 basis 4609=prefixState SixCarryPrefixData.program 1018 basis 4609 := by
- rfl
+
+
+
 
 theorem frame_4609_1019_1415 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1415 basis 4609=prefixState SixCarryPrefixData.program 1019 basis 4609 := by
@@ -30800,9 +30800,9 @@ theorem frame_4612_771_1008 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1008 basis 4612=prefixState SixCarryPrefixData.program 771 basis 4612 := by
  exact at_between SixCarryPrefixData.program 771 1008 4612 (by decide +kernel) nw_4612_771_1008 basis
 
-theorem frame_4612_1009_1009 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 1009 basis 4612=prefixState SixCarryPrefixData.program 1009 basis 4612 := by
- rfl
+
+
+
 
 theorem frame_4612_1010_1418 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1418 basis 4612=prefixState SixCarryPrefixData.program 1010 basis 4612 := by
@@ -30836,9 +30836,9 @@ theorem frame_4613_777_1005 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1005 basis 4613=prefixState SixCarryPrefixData.program 777 basis 4613 := by
  exact at_between SixCarryPrefixData.program 777 1005 4613 (by decide +kernel) nw_4613_777_1005 basis
 
-theorem frame_4613_1006_1006 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 1006 basis 4613=prefixState SixCarryPrefixData.program 1006 basis 4613 := by
- rfl
+
+
+
 
 theorem frame_4613_1007_1419 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1419 basis 4613=prefixState SixCarryPrefixData.program 1007 basis 4613 := by
@@ -30872,9 +30872,9 @@ theorem frame_4614_783_1002 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1002 basis 4614=prefixState SixCarryPrefixData.program 783 basis 4614 := by
  exact at_between SixCarryPrefixData.program 783 1002 4614 (by decide +kernel) nw_4614_783_1002 basis
 
-theorem frame_4614_1003_1003 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 1003 basis 4614=prefixState SixCarryPrefixData.program 1003 basis 4614 := by
- rfl
+
+
+
 
 theorem frame_4614_1004_1420 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1420 basis 4614=prefixState SixCarryPrefixData.program 1004 basis 4614 := by
@@ -30908,9 +30908,9 @@ theorem frame_4615_789_999 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 999 basis 4615=prefixState SixCarryPrefixData.program 789 basis 4615 := by
  exact at_between SixCarryPrefixData.program 789 999 4615 (by decide +kernel) nw_4615_789_999 basis
 
-theorem frame_4615_1000_1000 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 1000 basis 4615=prefixState SixCarryPrefixData.program 1000 basis 4615 := by
- rfl
+
+
+
 
 theorem frame_4615_1001_1421 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1421 basis 4615=prefixState SixCarryPrefixData.program 1001 basis 4615 := by
@@ -30944,9 +30944,9 @@ theorem frame_4616_795_996 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 996 basis 4616=prefixState SixCarryPrefixData.program 795 basis 4616 := by
  exact at_between SixCarryPrefixData.program 795 996 4616 (by decide +kernel) nw_4616_795_996 basis
 
-theorem frame_4616_997_997 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 997 basis 4616=prefixState SixCarryPrefixData.program 997 basis 4616 := by
- rfl
+
+
+
 
 theorem frame_4616_998_1422 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1422 basis 4616=prefixState SixCarryPrefixData.program 998 basis 4616 := by
@@ -30980,9 +30980,9 @@ theorem frame_4617_801_993 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 993 basis 4617=prefixState SixCarryPrefixData.program 801 basis 4617 := by
  exact at_between SixCarryPrefixData.program 801 993 4617 (by decide +kernel) nw_4617_801_993 basis
 
-theorem frame_4617_994_994 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 994 basis 4617=prefixState SixCarryPrefixData.program 994 basis 4617 := by
- rfl
+
+
+
 
 theorem frame_4617_995_1423 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1423 basis 4617=prefixState SixCarryPrefixData.program 995 basis 4617 := by
@@ -31016,9 +31016,9 @@ theorem frame_4618_807_990 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 990 basis 4618=prefixState SixCarryPrefixData.program 807 basis 4618 := by
  exact at_between SixCarryPrefixData.program 807 990 4618 (by decide +kernel) nw_4618_807_990 basis
 
-theorem frame_4618_991_991 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 991 basis 4618=prefixState SixCarryPrefixData.program 991 basis 4618 := by
- rfl
+
+
+
 
 theorem frame_4618_992_1424 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1424 basis 4618=prefixState SixCarryPrefixData.program 992 basis 4618 := by
@@ -31052,9 +31052,9 @@ theorem frame_4619_813_987 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 987 basis 4619=prefixState SixCarryPrefixData.program 813 basis 4619 := by
  exact at_between SixCarryPrefixData.program 813 987 4619 (by decide +kernel) nw_4619_813_987 basis
 
-theorem frame_4619_988_988 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 988 basis 4619=prefixState SixCarryPrefixData.program 988 basis 4619 := by
- rfl
+
+
+
 
 theorem frame_4619_989_1425 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1425 basis 4619=prefixState SixCarryPrefixData.program 989 basis 4619 := by
@@ -31088,9 +31088,9 @@ theorem frame_4620_819_984 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 984 basis 4620=prefixState SixCarryPrefixData.program 819 basis 4620 := by
  exact at_between SixCarryPrefixData.program 819 984 4620 (by decide +kernel) nw_4620_819_984 basis
 
-theorem frame_4620_985_985 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 985 basis 4620=prefixState SixCarryPrefixData.program 985 basis 4620 := by
- rfl
+
+
+
 
 theorem frame_4620_986_1426 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1426 basis 4620=prefixState SixCarryPrefixData.program 986 basis 4620 := by
@@ -31124,9 +31124,9 @@ theorem frame_4621_825_981 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 981 basis 4621=prefixState SixCarryPrefixData.program 825 basis 4621 := by
  exact at_between SixCarryPrefixData.program 825 981 4621 (by decide +kernel) nw_4621_825_981 basis
 
-theorem frame_4621_982_982 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 982 basis 4621=prefixState SixCarryPrefixData.program 982 basis 4621 := by
- rfl
+
+
+
 
 theorem frame_4621_983_1427 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1427 basis 4621=prefixState SixCarryPrefixData.program 983 basis 4621 := by
@@ -31160,9 +31160,9 @@ theorem frame_4622_831_978 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 978 basis 4622=prefixState SixCarryPrefixData.program 831 basis 4622 := by
  exact at_between SixCarryPrefixData.program 831 978 4622 (by decide +kernel) nw_4622_831_978 basis
 
-theorem frame_4622_979_979 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 979 basis 4622=prefixState SixCarryPrefixData.program 979 basis 4622 := by
- rfl
+
+
+
 
 theorem frame_4622_980_1428 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1428 basis 4622=prefixState SixCarryPrefixData.program 980 basis 4622 := by
@@ -31196,9 +31196,9 @@ theorem frame_4623_837_975 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 975 basis 4623=prefixState SixCarryPrefixData.program 837 basis 4623 := by
  exact at_between SixCarryPrefixData.program 837 975 4623 (by decide +kernel) nw_4623_837_975 basis
 
-theorem frame_4623_976_976 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 976 basis 4623=prefixState SixCarryPrefixData.program 976 basis 4623 := by
- rfl
+
+
+
 
 theorem frame_4623_977_1429 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1429 basis 4623=prefixState SixCarryPrefixData.program 977 basis 4623 := by
@@ -31232,9 +31232,9 @@ theorem frame_4624_843_972 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 972 basis 4624=prefixState SixCarryPrefixData.program 843 basis 4624 := by
  exact at_between SixCarryPrefixData.program 843 972 4624 (by decide +kernel) nw_4624_843_972 basis
 
-theorem frame_4624_973_973 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 973 basis 4624=prefixState SixCarryPrefixData.program 973 basis 4624 := by
- rfl
+
+
+
 
 theorem frame_4624_974_1430 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1430 basis 4624=prefixState SixCarryPrefixData.program 974 basis 4624 := by
@@ -31268,9 +31268,9 @@ theorem frame_4625_849_969 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 969 basis 4625=prefixState SixCarryPrefixData.program 849 basis 4625 := by
  exact at_between SixCarryPrefixData.program 849 969 4625 (by decide +kernel) nw_4625_849_969 basis
 
-theorem frame_4625_970_970 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 970 basis 4625=prefixState SixCarryPrefixData.program 970 basis 4625 := by
- rfl
+
+
+
 
 theorem frame_4625_971_1431 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1431 basis 4625=prefixState SixCarryPrefixData.program 971 basis 4625 := by
@@ -31304,9 +31304,9 @@ theorem frame_4626_855_966 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 966 basis 4626=prefixState SixCarryPrefixData.program 855 basis 4626 := by
  exact at_between SixCarryPrefixData.program 855 966 4626 (by decide +kernel) nw_4626_855_966 basis
 
-theorem frame_4626_967_967 (basis : BasisState) :
- prefixState SixCarryPrefixData.program 967 basis 4626=prefixState SixCarryPrefixData.program 967 basis 4626 := by
- rfl
+
+
+
 
 theorem frame_4626_968_1432 (basis : BasisState) :
  prefixState SixCarryPrefixData.program 1432 basis 4626=prefixState SixCarryPrefixData.program 968 basis 4626 := by
