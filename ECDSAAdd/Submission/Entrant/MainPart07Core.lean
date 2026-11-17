@@ -10,7 +10,7 @@ section
 /-! Private finite four-bit tail52 source draft. No258-bit splice, MF or score claim.
 The preceding low prefix has254 bits0..253. Its carry253 is1793; the three
 initially-clean work targets are1794/1795/1796. No phase restriction is imposed. -/
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -92,13 +92,13 @@ private theorem majority_nd (p : Ports) (nd : (wireList p).Nodup) :
       [p.a2,p.b2,p.z1,p.z2].Nodup := by
   simp only [wireList,List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
     not_or,not_false_eq_true,and_true] at nd ⊢
-  tauto
+  itauto
 
 private theorem scratch_ne (p : Ports) (nd : (wireList p).Nodup) :
     p.z1≠p.z0 ∧ p.z2≠p.z0 ∧ p.z2≠p.z1 := by
   simp only [wireList,List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
     not_or,not_false_eq_true,and_true,ne_comm] at nd ⊢
-  tauto
+  itauto
 
 
 
@@ -565,7 +565,7 @@ end ECDSAAdd.Entrant.AffineCarryTail52Research
 /-! SOURCE ONLY. Exact syntax/footprint bridge at the254-bit boundary.
 No MF, phase replacement, complete-candidate or resource claim is made here.
 The imported tail52 source has its own separate qualification obligation. -/
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -752,7 +752,7 @@ end ECDSAAdd.Entrant.E1CarrySplice52Research
 Only high carry254/255/256 (physical1794/1795/1796) start clean. The real
 old literal program supplies the high-output promise; no MF/postWord,
 all257-carry clean premise, or global wire-map injectivity is assumed. -/
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -1012,7 +1012,7 @@ end ECDSAAdd.Entrant.E1WholeKAdd52Research
 This file has not been compiled or replayed. It leaves every imported ancestor
 unchanged and keeps the254-bit prefix/suffix opaque. The three descending
 measurements are retained. No qubit-retirement or whole-candidate claim. -/
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -1234,7 +1234,7 @@ end ECDSAAdd.Entrant.E1ResourceBridge52Research
 
 /-! SOURCE ONLY in this independent import context. Existing39 ValueFacts remains
 byte-identical. The new proof bodies are copied from separately qualified v7. -/
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -1285,7 +1285,7 @@ end ECDSAAdd.Entrant.E1CallerValueFactsResearch
 /-! SOURCE ONLY: ordinary E1Merge actual-MF semantic wrappers for tail52.
 No caller instantiation, resource propagation, strong physicality, or candidate
 qualification is asserted. H/X are the real MF register values, not D/2 aliases. -/
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -1383,6 +1383,7 @@ theorem forward_outputs_from_postWord52 (w : Nat → Wire) (s : State)
 
 
 
+
 /-- Ordinary actual MF Triple, transported from the ORIGINAL stepKAdd.
 The caller must still prove its actual word and parity equations. -/
 theorem stepKAddFlag52 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
@@ -1430,7 +1431,7 @@ end ECDSAAdd.Entrant.ActualMF52Research
 /-! SOURCE-ONLY actual ordinary/exit endpoints. Old39 ancestors are unchanged.
 Only the selected kAdd sites use the checked52 whole program and real ordinary MF bridge.
 Proofs have not been elaborated in this new module; no reflected/global certificate claim. -/
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -2000,7 +2001,7 @@ end
 -- Consolidated source module: MainPart07
 section
 
-set_option Elab.async false
+
 -- Synthetic: reopen the inherited anonymous MainC section; no local context commands.
 section
 
@@ -2245,6 +2246,7 @@ section Entry
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
 
+
 /-- Physical form: the merged entry equals the compare-first constant addition followed by the
 renamed direct first tick, on every pair of measurement records. -/
 theorem entry_eq (k : Fp) (s : State) (X : Nat) (hX : X<p) (G : Bool)
@@ -2420,6 +2422,7 @@ theorem lay (q : Wire) :
        simp only [dialogUsedWires,inPlaceFlags,PointAddLayout.pointWires,
          List.count_append,List.count_cons,List.count_nil,beq_self_eq_true,if_true] at h
        omega)
+
 
 /-- The y-side fused offset commutes with the x-side constant addition, so the merged x entry
 can run after it. -/
@@ -4828,6 +4831,7 @@ theorem entry_split (L : ControlledPointLayout) :
     renameProgram,List.map_append,List.append_assoc] at tick ⊢
   rw [tick]
 
+
 theorem exit_split (L : ControlledPointLayout) :
     FrontierEntry1591Callers.exit Rolling1588.exitKernel L=E1QubitPlacement.tickF L++restX L := by
   have tick:=E1QubitPlacement.tick_eq L
@@ -4955,6 +4959,7 @@ def mid (L : ControlledPointLayout) (cx cy : Fp) : Program :=
 
 def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   zrep L++mid L cx cy++zrep L
+
 
 theorem gen_shape (L : ControlledPointLayout) (cx cy : Fp) :
     gen L cx cy=GenericQ5Geometry.wrapG L (generic L cx cy) := rfl
@@ -5118,10 +5123,11 @@ private theorem envelopes_of_shapes (A0 Y T E S R A1 X EY N M RF New Old : Progr
   constructor
   · intro i hi
     simp only [List.mem_append] at hi ⊢
-    tauto
+    itauto
   · intro q hq
     simp only [wires_append,Finset.mem_union] at hq ⊢
-    tauto
+    itauto
+
 
 private theorem envelopes (L : ControlledPointLayout) (cx cy : Fp) :
     generic L cx cy⊆baselineGeneric L cx cy++E1QubitPlacement.entryM L (-cx)++
@@ -5144,11 +5150,13 @@ theorem instructions_subset (L : ControlledPointLayout) (cx cy : Fp) :
       E1ReflectedPlacement.entryR L (correction cx) :=
   (envelopes L cx cy).1
 
+
 theorem support_envelope (L : ControlledPointLayout) (cx cy : Fp) :
     wires (generic L cx cy)⊆wires (baselineGeneric L cx cy)∪
       wires (E1QubitPlacement.entryM L (-cx))∪
         wires (E1ReflectedPlacement.entryR L (correction cx)) :=
   (envelopes L cx cy).2
+
 
 theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : wires (generic L cx cy)⊆(OB5Support.sites L).toFinset :=
@@ -5156,6 +5164,7 @@ theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
     (Finset.union_subset (Rolling1588BFFinal.generic_support L hw hn cx cy)
       (E1QubitPlacement.entryM_sites L hw (-cx)))
     (E1ReflectedPlacement.entryR_sites L hw (correction cx)))
+
 
 theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : GatePhysical (generic L cx cy) := by
@@ -5235,6 +5244,7 @@ private theorem reflected_free (L : ControlledPointLayout) (hw : L.Widths) (hn :
   simpa only [E1ReflectedPlacement.entryR,renameProgram_comp,E1QubitPlacement.pmapR,
     E1QubitPlacement.pmap,Function.comp_def] using h
 
+
 private theorem kernel_free (entrySide : Bool) (i : Nat)
     (hi : i∈[2312,766,765,767,1026,1541,1542,1797,768,718,719]) :
     base i∉wires (if entrySide then Rolling1588.entryKernel else Rolling1588.exitKernel) := by
@@ -5252,10 +5262,11 @@ private theorem kernel_free (entrySide : Bool) (i : Nat)
     · exact Rolling1588.entryKernel_719_free
   have old : i∈logicalOmissions := by
     simp only [logicalOmissions,List.mem_cons,List.not_mem_nil,or_false] at hi ⊢
-    tauto
+    itauto
   cases entrySide
   · exact Rolling1588.exitKernel_free i old
   · exact Rolling1588.entryKernel_free i old
+
 
 theorem baseline_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
@@ -5279,6 +5290,7 @@ theorem baseline_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
   simp only [division,FrontierEntry1591Callers.entry,wires_append,Finset.mem_union,not_or]
   exact ⟨fun used=>constant (fusedY_support L hw k used),en⟩
 
+
 theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
     L.core.poolWire i∉wires (generic L cx cy) := by
@@ -5289,6 +5301,7 @@ theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
   · exact baseline_free L hw hn cx cy i hi old
   · exact entry_free L hw hn (-cx) i hi ordinary
   · exact reflected_free L hw hn (correction cx) i hi reflected
+
 
 theorem generic_counts_delta (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (generic L cx cy)+759=toffoliCount (baselineGeneric L cx cy) ∧
@@ -5303,6 +5316,7 @@ theorem generic_counts_delta (L : ControlledPointLayout) (hw : L.Widths) (cx cy 
     toffoliCount_append,measurementCount_append,correction,SquareCarryLoan719BF.K,
     ControlLoan1589BFFinal.Offset.K,ControlLoan1589BFSquare.K] at first second ordinary reflected square ⊢
   constructor <;> omega
+
 
 theorem generic_slots_delta (L : ControlledPointLayout) (cx cy : Fp) :
     gateSlots (generic L cx cy)≤ gateSlots (baselineGeneric L cx cy)+50000 := by
@@ -5325,11 +5339,13 @@ private theorem wrap_counts_delta (L : ControlledPointLayout) (A B : Program)
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
   constructor <;> omega
 
+
 theorem gen_counts_delta (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (gen L cx cy)+759=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)+751=measurementCount (Rolling1588BFFinal.gen L cx cy) := by
   rw [gen_shape,baseline_gen_shape]
   exact wrap_counts_delta L _ _ (generic_counts_delta L hw cx cy)
+
 
 theorem gen_slots_delta (L : ControlledPointLayout) (cx cy : Fp) :
     gateSlots (gen L cx cy)≤ gateSlots (Rolling1588BFFinal.gen L cx cy)+50000 := by
@@ -5383,12 +5399,14 @@ private theorem wrapper_counts_delta (L : ControlledPointLayout) (C : Point) (cy
                                                        
        
 
+
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
     measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499214 := by
   have diff:=(wrapper_counts_delta layout (.some hc) cy _ _
     (gen_counts_delta layout layout_widths cx cy)).2
   have old:=Rolling1588BFFinal.wrapper_measurements cx cy hc
   omega
+
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
     gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50189199+Rolling1588.slotGrowth := by
@@ -5798,7 +5816,7 @@ theorem narrowTop_eq (n : Nat) (L : NarrowSignedRecordLayout) (hw : L.Widths (n+
     exact regValue_congr _ _ _ (fun w hw => f.2.1 w (hr w hw))
   have xaway : ∀w∈L.xp,w∉L.yhigh := by
     intro w hw'
-    exact L.other_away_high hn w (by simp only [NarrowSignedRecordLayout.x,List.mem_append] at *; tauto)
+    exact L.other_away_high hn w (by simp only [NarrowSignedRecordLayout.x,List.mem_append] at *; itauto)
   have yaway : ∀w∈L.yp,w∉L.yhigh := by
     intro w hw'
     exact L.other_away_high hn w (by simp [hw'])
@@ -5843,7 +5861,7 @@ theorem signedAddTop_support (q : Wire) (x y cs : List Wire)
     intro w hw
     have h := signComplement_wires_subset q x hw
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
-    tauto
+    itauto
   simp only [signedAddTop,wires_append,Finset.union_subset_iff]
   exact ⟨⟨fan,TopCarry.addInPlaceTop_wires x y cs q⟩,fan⟩
 
@@ -6058,7 +6076,7 @@ theorem repairedRoute_small_support (L : SkywalkIntegerLayout) (hv : L.Valid) (h
     intro q hq
     have h := lo hq
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh] at h ⊢
-    tauto
+    itauto
   have ss : wires (W.signRepair L.aSign L.bSign L.previous (L.bMid.getD (L.bMid.length-1) 0)) ⊆
       (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
     intro q hq
@@ -6067,12 +6085,12 @@ theorem repairedRoute_small_support (L : SkywalkIntegerLayout) (hv : L.Valid) (h
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh,
       List.not_mem_nil,or_false]
     have ht : q=L.bMid.getD (L.bMid.length-1) 0 → q∈L.bMid := fun he => he ▸ tm
-    tauto
+    itauto
   have cx : wires [.CX L.a0 L.b0] ⊆ (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
     intro q hq
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false] at hq
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append]
-    tauto
+    itauto
   simp only [W.repairedRoute,W.repairedSwap,wires_append,Finset.union_subset_iff]
   exact ⟨⟨ls,ss⟩,cx⟩
 
@@ -6101,21 +6119,21 @@ theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolW
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
       intro a ha
       simp only [List.mem_toFinset,List.mem_cons] at ha ⊢
-      tauto
+      itauto
     have repair := (repairedRoute_small_support L hv hpos).trans inc
     have full : wires (skywalkRoute L.a0 L.b0 L.ah L.bh) ⊆
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
       intro a ha
       have h := skywalkRoute_wires_subset L.a0 L.b0 L.ah L.bh (L.high_lengths hv) ha
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
-      tauto
+      itauto
     have half : wires (skywalkSignedHalf L.aSign L.ext) ⊆
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
       intro a ha
       simp only [skywalkSignedHalf,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
         Finset.mem_singleton,Finset.notMem_empty,or_false] at ha
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,List.mem_singleton]
-      tauto
+      itauto
     simp only [head,wires_append,Finset.union_subset_iff]
     split_ifs  <;> exact ⟨by assumption,half⟩
   exact run_preserves_outside _ _ _ _ (fun h => qaway (List.mem_toFinset.mp (sup h)))
@@ -6380,7 +6398,7 @@ end -- original module boundary
 end
 
 
-set_option Elab.async false
+
 -- Synthetic: reopen the inherited anonymous MainC section; no local context commands.
 section
 
@@ -6939,7 +6957,7 @@ theorem narrowCopy_eq (n : Nat) (L : NarrowSignedRecordLayout) (hw : L.Widths (n
     exact regValue_congr _ _ _ (fun w hw => f.2.1 w (hr w hw))
   have xaway : ∀w∈L.xp,w∉L.yhigh := by
     intro w hw'
-    exact L.other_away_high hn w (by simp only [NarrowSignedRecordLayout.x,List.mem_append] at *; tauto)
+    exact L.other_away_high hn w (by simp only [NarrowSignedRecordLayout.x,List.mem_append] at *; itauto)
   have yaway : ∀w∈L.yp,w∉L.yhigh := by
     intro w hw'
     exact L.other_away_high hn w (by simp [hw'])
@@ -6991,7 +7009,7 @@ theorem addCopy_wires (x y carry : List Wire) (cin : Wire) :
           simp only [addCopy, wires, Instr.wires, Finset.mem_union, Finset.mem_insert,
             Finset.mem_singleton, Finset.notMem_empty, or_false] at hw
           simp only [List.mem_toFinset, List.mem_cons, List.mem_append]
-          tauto
+          itauto
         | cons b' bs => simp [addCopy, wires]
     | cons a' as =>
       cases y with
@@ -7005,7 +7023,7 @@ theorem addCopy_wires (x y carry : List Wire) (cin : Wire) :
           | cons c cs =>
             have hr := ih (b' :: bs) cs c
             have hm : wires (majority a b cin c) = {a, b, cin, c} := by
-              ext w; simp [majority, wires, Instr.wires]; tauto
+              ext w; simp [majority, wires, Instr.wires]; itauto
             have he := eraseCarry_wires a b cin c
             intro w hw
             simp only [addCopy, wires_append, Finset.mem_union, he] at hw
@@ -7014,18 +7032,18 @@ theorem addCopy_wires (x y carry : List Wire) (cin : Wire) :
             · split_ifs at h
               · simp only [wires, Instr.wires, Finset.mem_union, Finset.mem_insert,
                   Finset.mem_singleton, Finset.notMem_empty, or_false] at h
-                tauto
+                itauto
               · rw [hm] at h
                 simp only [Finset.mem_insert, Finset.mem_singleton] at h
-                tauto
+                itauto
             · have := hr h
               simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at this
-              tauto
+              itauto
             · simp only [Finset.mem_insert, Finset.mem_singleton] at h
-              tauto
+              itauto
             · simp only [wires, Instr.wires, Finset.mem_union, Finset.mem_insert,
                 Finset.mem_singleton, Finset.notMem_empty, or_false] at h
-              tauto
+              itauto
 
 theorem addCopy_physical (x y carry : List Wire) (cin : Wire)
     (hn : (cin :: x ++ y ++ carry).Nodup) : GatePhysical (addCopy x y carry cin) := by
@@ -7094,7 +7112,7 @@ theorem signedAddCopy_support (q : Wire) (x y cs : List Wire)
     intro w hw
     have h := signComplement_wires_subset q x hw
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
-    tauto
+    itauto
   simp only [signedAddCopy,wires_append,Finset.union_subset_iff]
   exact ⟨⟨fan,addCopy_wires x y cs q⟩,fan⟩
 
@@ -7215,7 +7233,7 @@ theorem repairedRoute_small_support (L : SkywalkIntegerLayout) (hv : L.Valid) (h
     intro q hq
     have h := lo hq
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh] at h ⊢
-    tauto
+    itauto
   have ss : wires (W.signRepair L.aSign L.bSign L.previous (L.bMid.getD (L.bMid.length-1) 0)) ⊆
       (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
     intro q hq
@@ -7224,12 +7242,12 @@ theorem repairedRoute_small_support (L : SkywalkIntegerLayout) (hv : L.Valid) (h
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,SkywalkIntegerLayout.bh,
       List.not_mem_nil,or_false]
     have ht : q=L.bMid.getD (L.bMid.length-1) 0 → q∈L.bMid := fun he => he ▸ tm
-    tauto
+    itauto
   have cx : wires [.CX L.a0 L.b0] ⊆ (L.previous::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
     intro q hq
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false] at hq
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append]
-    tauto
+    itauto
   simp only [W.repairedRoute,W.repairedSwap,wires_append,Finset.union_subset_iff]
   exact ⟨⟨ls,ss⟩,cx⟩
 
@@ -7258,21 +7276,21 @@ theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolW
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
       intro a ha
       simp only [List.mem_toFinset,List.mem_cons] at ha ⊢
-      tauto
+      itauto
     have repair := (repairedRoute_small_support L hv hpos).trans inc
     have full : wires (skywalkRoute L.a0 L.b0 L.ah L.bh) ⊆
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
       intro a ha
       have h := skywalkRoute_wires_subset L.a0 L.b0 L.ah L.bh (L.high_lengths hv) ha
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
-      tauto
+      itauto
     have half : wires (skywalkSignedHalf L.aSign L.ext) ⊆
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
       intro a ha
       simp only [skywalkSignedHalf,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
         Finset.mem_singleton,Finset.notMem_empty,or_false] at ha
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,List.mem_singleton]
-      tauto
+      itauto
     simp only [head,wires_append,Finset.union_subset_iff]
     split_ifs  <;> exact ⟨by assumption,half⟩
   exact run_preserves_outside _ _ _ _ (fun h => qaway (List.mem_toFinset.mp (sup h)))
@@ -7745,9 +7763,6 @@ theorem tick_eq5 (x : Nat) (hx0 : 0 < x) (hx : x < p) (i : Nat) (hi : i < 512)
 
 
 
-def forward (i : Nat) : Nat → Program
-  | 0 => []
-  | n+1 => renameProgram (sig i) (tick base i++FirstNonzeroCodec.pack8first base i)++forward (i+1) n
 
 
 
@@ -7782,9 +7797,12 @@ def forward (i : Nat) : Nat → Program
 
 
 
-def count (i : Nat) : Nat → Nat
-  | 0 => 0
-  | n+1 => due i+count (i+1) n
+
+
+
+
+
+
 
 
 
@@ -8486,80 +8504,80 @@ theorem releasedA507 : base 513 ∈ (W.compactSkywalkSignPoolA base 507).release
 attribute [local irreducible] run W.compactSkywalkStageVirtual SkywalkTrace.next Nat.iterate
   W.compactSkywalkTick History5.encodePrefix
 
-theorem raw507 (x : Nat) (hx0 : 0<x) (hx : x<p) (raw : State)
-    (hraw : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 507 raw.basis) :
-    ∃ g s : Bool, ∃ uv∈pairs, ∀ q∈sites, raw.basis q = pre507 g s uv.1 uv.2 q := by
-  have hp0 : 0<p := by norm_num [p]
-  have hpo : p%2=1 := by norm_num [p]
-  have hp : p<2^256 := by norm_num [p]
-  have cop := (StackOB5.prime_facts x hx0 hx).2.2.2
-  have fields := (W.compactSkywalkStage_fields_iff base _ 507 (by omega) base_pool_nodup raw.basis).mp hraw
-  obtain ⟨readA, readB, prev, -, future, carry, -, cleanA, -⟩ := fields
-  obtain ⟨G, S, encoded⟩ := SkywalkTrace.iter_encoded 507 false false (SkywalkNat.init x p) hp0 hpo
-  have sum := W.iter_sum_width x p 507 hp0 hx0 hpo hp hx cop (by omega)
-  have valid := SkywalkNat.iter_valid 507 (SkywalkNat.init x p) hp0 hpo
-  have term := (SkywalkNat.terminates_511 p x hp0 hx0 hpo hp hx cop).1
-  have split : SkywalkNat.step^[511] (SkywalkNat.init x p) =
-      SkywalkNat.step^[4] (SkywalkNat.step^[507] (SkywalkNat.init x p)) := by
-    rw [← Function.iterate_add_apply]
-  rw [split] at term
-  change (SkywalkNat.step^[507] (SkywalkNat.init x p)).u+
-    (SkywalkNat.step^[507] (SkywalkNat.init x p)).v ≤ 2^(511-507) at sum
-  change SkywalkTrace.next^[507] (SkywalkRails.encode false false (x : Int) (p : Int)) =
-    SkywalkRails.encode G S ((SkywalkNat.step^[507] (SkywalkNat.init x p)).u : Int)
-      ((SkywalkNat.step^[507] (SkywalkNat.init x p)).v : Int) at encoded
-  generalize SkywalkNat.step^[507] (SkywalkNat.init x p) = z at encoded sum valid term
-  have sixteen : (2:Nat)^(511-507) = 16 := by norm_num
-  rw [sixteen] at sum
-  have mem := pairs_of z sum valid.1 valid.2.1 (valid.2.2.trans cop) term
-  rw [encoded, retainedA507] at readA
-  rw [encoded, retainedB507] at readB
-  rw [encoded] at prev
-  have bA := signed6_cases _ _ _ _ _ _ raw.basis _ readA
-  have bB := signed6_cases _ _ _ _ _ _ raw.basis _ readB
-  have f7 := future 507 (le_refl _) (by omega)
-  have f8 := future 508 (by omega) (by omega)
-  have f9 := future 509 (by omega) (by omega)
-  have f10 := future 510 (by omega) (by omega)
-  have c1540 : raw.basis (base 1540) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1540, by simp, rfl⟩)
-  have c1541 : raw.basis (base 1541) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1541, by simp, rfl⟩)
-  have c1542 : raw.basis (base 1542) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1542, by simp, rfl⟩)
-  have c1543 : raw.basis (base 1543) = false :=
-    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1543, by simp, rfl⟩)
-  have c513 : raw.basis (base 513) = false := cleanA _ releasedA507
-  have prev' : raw.basis (base 506) = G := by
-    have h : skywalkPoolPreviousId 507 = 506 := rfl
-    rw [h] at prev
-    cases G <;> simpa [SkywalkRails.encode] using prev
-  refine ⟨G,S,_,mem,?_⟩
-  intro q hq
-  simp only [sites,List.mem_cons,List.not_mem_nil,or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact prev'
-  · simpa [pre507] using bA.1
-  · exact bA.2.1
-  · exact bA.2.2.1
-  · exact bA.2.2.2.1
-  · exact bA.2.2.2.2.1
-  · exact bA.2.2.2.2.2
-  · exact c513
-  · simpa [pre507] using bB.1
-  · exact bB.2.1
-  · exact bB.2.2.1
-  · exact bB.2.2.2.1
-  · exact bB.2.2.2.2.1
-  · exact bB.2.2.2.2.2
-  · exact f7.2
-  · exact f8.2
-  · exact f9.2
-  · exact f10.2
-  · exact c1540
-  · exact c1541
-  · exact c1542
-  · exact c1543
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.MorningFour
 
@@ -17697,7 +17715,7 @@ def rowFast (r : Bool × Bool × Nat × Nat) : Bool :=
 theorem rowFast_sound (r : Bool × Bool × Nat × Nat) (h : rowFast r = true) : r ∈ rows := by
   simp only [rowFast, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq] at h
   simp only [rows, List.mem_append]
-  tauto
+  itauto
 
 def cv (v : Nat) : Bool :=
   (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
