@@ -22,7 +22,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -64,7 +64,7 @@ theorem rawI_off(q:Wire)(hq:q∈hosts):q∉wires rawI:=by
   apply List.mem_toFinset.mpr
   have hy:w∈ys:=List.mem_toFinset.mp hw
   simp only [domain,List.mem_cons,List.mem_append]
-  tauto
+  itauto
  have support:wires rawI⊆domain.toFinset:=by
   simp only [rawI,ReorderedConsumedSub.plain,wires_append,notRegister_wires]
   change (ys.toFinset∪wires rawF)∪ys.toFinset⊆domain.toFinset
@@ -117,7 +117,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop MixedLiteralAdderDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -159,7 +159,7 @@ theorem forward_frame(s:State)(m:List Bool)(H:Nat)
  run newF m s=scatterState hosts (ReorderedCacheBits.values 4 95 H (976*H/1024)) (run F m s):=by
  have h:=CacheBetweenFrameResearch.forward (head++B95LowEraseResearch.clear) top 95 xs ys cs hosts cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
-  geometry.1 (fun q hq bad=>geometry.2.2 q hq (by simp only [List.mem_cons,List.mem_append];tauto))
+  geometry.1 (fun q hq bad=>geometry.2.2 q hq (by simp only [List.mem_cons,List.mem_append];itauto))
   rawF_off top_off s m zero
  rw [values] at h
  exact h
@@ -181,7 +181,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -254,7 +254,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -317,7 +317,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -388,7 +388,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -448,7 +448,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -482,7 +482,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -536,7 +536,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -556,7 +556,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -577,7 +577,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -608,7 +608,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -641,7 +641,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -684,7 +684,7 @@ namespace ECDSAAdd.Entrant.B95Research
 open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
  ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -745,7 +745,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ReorderedBPrefixResearch InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -799,7 +799,7 @@ namespace ECDSAAdd.Entrant.B95BodyResearch
 open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
  ReorderedBPrefixResearch ReorderedBSupportResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -860,7 +860,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -916,7 +916,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -950,7 +950,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.BGhostOldPortsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.wires
@@ -974,7 +974,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 attribute [local irreducible] ECDSAAdd.wires
@@ -995,7 +995,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1043,7 +1043,7 @@ theorem clear_support:wires B95LowEraseResearch.clear⊆S:=by
  have eq:wires B95LowEraseResearch.clear=([4243,4505,4244,4506,4245,4507]:List Wire).toFinset:=by
   ext q
   simp [B95LowEraseResearch.clear,wires,Instr.wires,correctionWires]
-  tauto
+  itauto
  rw [eq]
  intro q hq
  have sub:([4243,4505,4244,4506,4245,4507]:List Wire)⊆ports:=by decide
@@ -1088,7 +1088,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1134,7 +1134,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95PaddedResearch
 open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ReorderedBPrefixResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 attribute [local irreducible] ECDSAAdd.run ECDSAAdd.measurementCount B95BodyResearch.body
@@ -1166,7 +1166,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95PaddedResearch
 open ReorderedBPrefixResearch ControlLoan1589BFFold Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -1216,7 +1216,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95SelectorResearch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 set_option linter.unusedSimpArgs false
@@ -1940,7 +1940,7 @@ section
 namespace ECDSAAdd.Entrant.B95CoreResearch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
  ThirdSavedCarryDevelop InverseCarryDevelop ZeroReadDevelop FullASelectedDevelop R2SqEp760
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -2081,7 +2081,7 @@ section
 namespace ECDSAAdd.Entrant.B95SquareResearch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout Secp256k1
  ControlLoan1589BFFold CompressedPointDialog
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -2261,7 +2261,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 section
 namespace ECDSAAdd.Entrant.B95EntryResearch
 open Arithmetic Secp256k1 ControlledPointLayout CompressedPointDialog
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -2354,7 +2354,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95ProgramBalanceResearch
 open Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout Challenge Baselines ControlLoan1589BFFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2434,7 +2434,7 @@ section
 namespace ECDSAAdd.Entrant.B95ProgramPhysicalResearch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout R2SqEp760
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -2446,7 +2446,7 @@ theorem withLowK2S_replace (L:CuccaroStreamedSquareWideLayout) (ext:List Wire) (
  have pb:GatePhysical (ParkCopyS.pB L ext P):=
   gatePhysical_rename _ (LowZero18Square.foldPerm L ext).injective _ new
  simp only [ParkCopyS.withLowK2S,gatePhysical_append] at old ⊢
- tauto
+ itauto
 
 theorem branch_physical (L:CuccaroStreamedSquareWideLayout) (ext:List Wire) (control:Wire)
  (C:Program) (old:GatePhysical (branchCK760 L ext control)) (new:GatePhysical C):
@@ -2484,7 +2484,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95ProgramActualResearch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout Challenge Baselines
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2552,7 +2552,7 @@ section
 namespace ECDSAAdd.Entrant.AC109105ProgramResearch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout Challenge Baselines
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -2656,7 +2656,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ABC10995105ProgramResearch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout Challenge Baselines
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2733,7 +2733,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumInnerSparseB95Core
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
  ThirdSavedCarryDevelop InverseCarryDevelop ZeroReadDevelop FullASelectedDevelop R2SqEp760
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -2871,7 +2871,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumInnerSparseB95Square
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout Secp256k1
  ControlLoan1589BFFold CompressedPointDialog
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -3048,7 +3048,7 @@ section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumInnerSparseB95Entry
 open Arithmetic Secp256k1 ControlledPointLayout CompressedPointDialog
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -3308,7 +3308,7 @@ theorem free(i:Nat)(hi:i∈[1800,766,765,767,770,1285,1286,769,768,718,719]):
  have h:=SumInnerSparseB95Ledger.program_support layout layout_widths layout_nodup A109SignResearch.body C105SignResearch.body
  have hret:i∈SumInnerSparseExtraFacts.retired:=by
   simp only [SumInnerSparseExtraFacts.retired,List.mem_cons,List.not_mem_nil,or_false]at hi ⊢
-  tauto
+  itauto
  intro hq
  rcases Finset.mem_union.mp (h hq) with used|extra
  · exact ABC10995105ProgramResearch.free i hi used
@@ -3581,7 +3581,7 @@ theorem transfer_loaded (a b cin c saved : Wire) (nd : [a,b,cin,c,saved].Nodup)
  have neq : a≠saved ∧ b≠saved ∧ cin≠saved ∧ c≠saved := by
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
    not_or,not_false_eq_true,and_true] at nd
-  tauto
+  itauto
  have h := SavedCarryHead.transfer_run a b cin c saved nd
   ⟨s.phase,writeBit s.basis saved v⟩ m n
   (by simpa [writeBit,Function.update,neq.2.2.2] using clean)
@@ -3858,7 +3858,7 @@ theorem restored (K : KG) (w : K.R.W) (hn : K.all.Nodup) (s : State) (m : List B
   have x2 {q : Wire} (h : q∈K.X2) : q∈K.X := by simp [X,h]
   have x5 {q : Wire} (h : q∈K.X5) : q∈K.X := by simp [X,h]
   have xo (q : Wire) (h : q∈K.R.bank ∨ q∈K.R.z ∨ q∈K.R.pad ∨ q∈K.R.carry ∨ q=K.R.cin) : q∉K.X := by
-    apply K.rX hn q; simp only [KRegs.all,List.mem_cons,List.mem_append]; tauto
+    apply K.rX hn q; simp only [KRegs.all,List.mem_cons,List.mem_append]; itauto
   have outV (t : State) (G : ∀q,q∉K.R.dst → q∉K.R.S → q∉K.R.T → q∉K.X → t.basis q=s.basis q) (r : List Wire)
       (hr : ∀q∈r,q∈K.R.bank ∨ q∈K.R.z ∨ q∈K.R.pad ∨ q∈K.R.carry ∨ q=K.R.cin) :
       regValue r t.basis=regValue r s.basis :=
@@ -4311,14 +4311,14 @@ theorem rebuild_run (R inner : KRegs) (w : R.W) (hn : R.all.Nodup)
       have ne : c≠saved R := by
        have nd:=ndH
        simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at nd
-       tauto
+       itauto
       simpa [writeBit,Function.update,ne] using uc)
   (by
    have h := SavedCarryInput.transfer_loaded a b R.cin c (saved R) ndH u k [] [] usaved uc kval
    have neq : a≠saved R ∧ b≠saved R ∧ R.cin≠saved R := by
     have nd:=ndH
     simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at nd
-    tauto
+    itauto
    simpa [actual,writeBit,Function.update,neq.1,neq.2.1,neq.2.2] using kval)
   clean ready
  change run (SavedCarrySparseAdder.program ((patches R inner).drop 1) (saved R) a b R.cin c (a'::as) (b'::bs) cs) m actual =
@@ -4385,7 +4385,7 @@ theorem head_nodup (R : KRegs) (w : R.W) (hn : R.all.Nodup)
  have nd5 : [a,b,R.cin,c,saved R].Nodup := by
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
    not_or,not_false_eq_true,and_true] at nd4 ⊢
-  tauto
+  itauto
  have qC : firstCarry R=c := by rw [firstCarry,eC];rfl
  simpa only [qC,eX,eY,List.getD_cons_zero] using nd5
 
@@ -5289,19 +5289,19 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 private theorem allB (R : KRegs) (q : Wire) (h : q∈R.bank) : q∈R.all := by
  simp only [KRegs.all,List.mem_cons,List.mem_append]
- tauto
+ itauto
 private theorem allS (R : KRegs) (q : Wire) (h : q∈R.S) : q∈R.all := by
  simp only [KRegs.all,List.mem_cons,List.mem_append]
- tauto
+ itauto
 private theorem allT (R : KRegs) (q : Wire) (h : q∈R.T) : q∈R.all := by
  simp only [KRegs.all,List.mem_cons,List.mem_append]
- tauto
+ itauto
 private theorem allZ (R : KRegs) (q : Wire) (h : q∈R.z) : q∈R.all := by
  simp only [KRegs.all,List.mem_cons,List.mem_append]
- tauto
+ itauto
 private theorem allC (R : KRegs) (q : Wire) (h : q∈R.carry) : q∈R.all := by
  simp only [KRegs.all,List.mem_cons,List.mem_append]
- tauto
+ itauto
 private theorem allX (R : KRegs) (q : Wire) (h : q∈R.hi++R.zS) : q∈R.all := by
  rcases List.mem_append.mp h with h|h
  · exact allB R q (List.mem_of_mem_drop h)
@@ -5366,7 +5366,7 @@ theorem rebuild_support (R inner : KRegs) (w : R.W) (rh : R.h=64) (rb : R.bank.l
    ext q
    simp only [SavedCarryHead.transfer,wires,Instr.wires,Finset.mem_union,
     Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false]
-   tauto
+   itauto
   rw [shape,Finset.insert_subset_iff,Finset.singleton_subset_iff]
   exact ⟨Finset.mem_union_left _ (List.mem_toFinset.mpr (allS R _ (saved_mem R w rh rb))),
    Finset.mem_union_left _ (List.mem_toFinset.mpr (allC R _ cmem))⟩
@@ -5461,7 +5461,7 @@ theorem clear_free (L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(control:Wire
    apply noKG
    simp only [KG.all,KG.X,List.mem_append,x5]
    have hh:=List.mem_append.mp h
-   tauto
+   itauto
 
 end ECDSAAdd.Entrant.SumSavedSwap
 
@@ -5472,7 +5472,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumSavedCBranch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout R2SqEp760
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -5797,7 +5797,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumSavedB95Core
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
  ThirdSavedCarryDevelop InverseCarryDevelop ZeroReadDevelop FullASelectedDevelop R2SqEp760
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -5935,7 +5935,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumSavedB95Square
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout Secp256k1
  ControlLoan1589BFFold CompressedPointDialog
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -6003,7 +6003,7 @@ theorem fastCore_correct (L : ControlledPointLayout) (hw : L.Widths)
     · apply (regValue_zero _ _).mpr
       intro q hq
       simp only [CuccaroStreamedSquareWideLayout.foldPad,List.mem_append] at hq
-      exact auxZero q (by simp; tauto)
+      exact auxZero q (by simp; itauto)
     · apply (regValue_zero _ _).mpr
       intro q hq
       exact auxZero q (by simp [hq])
@@ -6067,7 +6067,7 @@ theorem pool_away_x (L : ControlledPointLayout) (hn : L.wires.Nodup)
   intro hx
   have resident : q∈CompressedPointSquare.residents L := by
     simp only [CompressedPointSquare.residents,PointAddLayout.pointWires,List.mem_append,List.mem_cons]
-    tauto
+    itauto
   exact List.disjoint_left.mp dis resident hq
 
 theorem boundary (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -6112,7 +6112,7 @@ section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumSavedB95Entry
 open Arithmetic Secp256k1 ControlledPointLayout CompressedPointDialog
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -6249,7 +6249,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumSavedSlotLedger
 open Challenge KRegs SumSavedGeometry SumSavedRebuild
 set_option maxHeartbeats 4000000
-set_option Elab.async false
+
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 
@@ -6542,7 +6542,7 @@ theorem witnesses_covers (ps : List (Option (List Wire))) (xs ys cs : List Wire)
        rw [wc] at hq
        simp only [Finset.mem_union] at hq
        simp only [program,wires_append,Finset.mem_union]
-       tauto
+       itauto
 #print axioms load_covers
 #print axioms ordinary_covers
 #print axioms witnesses_covers
@@ -6597,7 +6597,7 @@ theorem add3h_covers_y (xs ys cs : List Wire) (cin : Wire)
          simp only [wires,Instr.wires,eraseCarry_wires,Finset.mem_union,
           Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false,
           List.mem_toFinset,List.mem_cons,List.mem_append]
-         tauto
+         itauto
 
 theorem c6h_covers_T (R : KRegs) (w : R.W) : R.T.toFinset⊆wires R.c6h := by
  obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
@@ -6687,14 +6687,14 @@ theorem old_S (R inner : KRegs) (w : R.W) (rh : R.h=64) (rb : R.bank.length=129)
  (q : Wire) (hq : q∈R.S) : q∈wires (SumInnerSparseRebuild.rebuild R inner) := by
  apply old_inputs R inner w rh rb
  simp only [List.mem_toFinset,List.mem_cons,List.mem_append]
- tauto
+ itauto
 
 theorem old_C (R inner : KRegs) (w : R.W) (rh : R.h=64) (rb : R.bank.length=129)
  (q : Wire) (hq : q∈R.carry.take (R.S.length-1)) :
  q∈wires (SumInnerSparseRebuild.rebuild R inner) := by
  apply old_inputs R inner w rh rb
  simp only [List.mem_toFinset,List.mem_cons,List.mem_append]
- tauto
+ itauto
 
 theorem witness_support (R inner : KRegs) (w : R.W) (rh : R.h=64) (rb : R.bank.length=129) :
  (witnesses ((patches R inner).drop 1)).toFinset⊆
@@ -6733,7 +6733,7 @@ theorem rebuild_support (R inner : KRegs) (w : R.W) (rh : R.h=64) (rb : R.bank.l
    ext q
    simp only [SavedCarryHead.transfer,wires,Instr.wires,Finset.mem_union,
     Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty,or_false]
-   tauto
+   itauto
   rw [shape,Finset.insert_subset_iff,Finset.singleton_subset_iff]
   exact ⟨Finset.mem_union_left _ (old_S R inner w rh rb _ (saved_mem R w rh rb)),
    Finset.mem_union_left _ (old_C R inner w rh rb c (by rw [eC];simp))⟩
@@ -7043,7 +7043,7 @@ end
 
 namespace ECDSAAdd.Entrant.KnownSelect
 open Arithmetic Secp256k1 ControlledPointLayout CompressedPointDialog
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires List.toFinset
@@ -7107,7 +7107,7 @@ end ECDSAAdd.Entrant.KnownSelect
 namespace ECDSAAdd.Entrant.KnownStageProps
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout Secp256k1 CompressedPointDialog
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -7163,7 +7163,7 @@ end
 section
 namespace ECDSAAdd.Entrant.KnownStageCounts
 open Arithmetic Secp256k1 ControlledPointLayout CompressedPointDialog Challenge Baselines
-set_option Elab.async false
+
 set_option autoImplicit false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
@@ -7258,7 +7258,7 @@ end
 section
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 namespace ECDSAAdd.Entrant.A161Generic
@@ -7269,8 +7269,8 @@ attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
  KnownStageCounts.saved KnownSelect.squareEntry A161Square.program B3CarryPort.program761
  E1ReflectedPlacement.entryR
 def squareEntry (L : ControlledPointLayout) (k : Fp) : Program := KnownSelect.squareEntry L k
-def secondStage (L : ControlledPointLayout) (k cy : Fp) : Program :=
-  squareEntry L k++ReflectionE1TickGap.restX L++exitY L cy
+
+
 theorem squareEntry_base (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
  (k X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m1 m2 : List Bool)
  (v : PointDialogValues L X Y G origin s.basis) :
@@ -7281,6 +7281,7 @@ section CorrectStages
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
 end CorrectStages
+
 /-- The second stage with the last reverse tick and the trailing constant negation merged. -/
 def secondStageX (L : ControlledPointLayout) (k cy cx : Fp) : Program :=
   squareEntry L k++ExitMergeKernel.restXX L cx.val++exitY L cy
@@ -7317,6 +7318,7 @@ def mid (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   clrF L++renameProgram (swapF L) (generic L cx cy)++clrF L
 def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   zrep L++mid L cx cy++zrep L
+
 theorem gen_shape (L : ControlledPointLayout) (cx cy : Fp) :
     gen L cx cy=GenericQ5Geometry.wrapG L (generic L cx cy) := rfl
 section Correct
@@ -7357,7 +7359,7 @@ theorem generic_false (X Y cx cy : Fp) (origin : BasisState) (hX : X≠0) :
   rw [back] at second
   exact first.seq second
 end Correct
-attribute [local irreducible] squareEntry secondStage generic mid gen
+attribute [local irreducible] squareEntry generic mid gen
   ReflectionE1.squareEntry ReflectionE1Square.program ReflectionE1Low48Square.program
   ReflectionE1TickGap.entryStage ReflectionE1TickGap.secondStage ReflectionE1TickGap.restX
   ReflectionE1TickGap.generic ReflectionE1TickGap.gen
@@ -7393,6 +7395,7 @@ private theorem generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
  (squareEntry L (ReflectionE1.correction cx)) (suffixX L cx cy) := by
  unfold generic secondStageX context suffixX
  simp only [List.append_assoc]
+
 private theorem suffix_facts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (suffixX L cx cy)+252=toffoliCount (suffix L cx cy) ∧
     measurementCount (suffixX L cx cy)+248=measurementCount (suffix L cx cy) ∧
@@ -7411,6 +7414,7 @@ private theorem generic_facts (L : ControlledPointLayout) (hw : L.Widths) (cx cy
  exact relation_of_shapes (Facts (KnownStageCounts.saved L)) _ _ _ _ (generic_shape L cx cy) (old_generic_shape L cx cy)
   (context_facts2 (KnownStageCounts.saved L) (ReflectionE1TickGap.entryStage L (-cx) (-cy)) _ _ (suffixX L cx cy) (suffix L cx cy)
    (by simpa only [squareEntry] using KnownStageCounts.diff L hw (ReflectionE1.correction cx)) (suffix_facts L hw cx cy))
+
 /-- The new square adds its host site; the merged exit adds only its placed circuit. -/
 theorem generic_support_envelope (L : ControlledPointLayout) (cx cy : Fp) :
  wires (generic L cx cy)⊆wires (ReflectionE1TickGap.generic L cx cy)∪wires (squareEntry L (ReflectionE1.correction cx))∪
@@ -7460,11 +7464,13 @@ private theorem placedX1_free (L : ControlledPointLayout) (hw : L.Widths) (hn : 
   rw [back] at hq
   obtain ⟨j,e,hj⟩ := ExitMergeKernel.hostedX1_labels k _ hq
   exact E1QubitPlacement.sw_avoid j hj (base_injective e ▸ target)
+
 theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
  (cx cy : Fp) : wires (generic L cx cy)⊆(OB5Support.sites L).toFinset :=
  (generic_support_envelope L cx cy).trans (Finset.union_subset (Finset.union_subset
   (ReflectionE1TickGap.generic_sites L hw hn cx cy) (by simpa only [squareEntry] using KnownStageProps.sites L hw hn (ReflectionE1.correction cx)))
   (ExitMergeKernel.placedX1_sites L hw cx.val))
+
 theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
     L.core.poolWire i∉wires (generic L cx cy) := by
@@ -7474,6 +7480,7 @@ theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     · exact ReflectionE1TickGap.generic_free L hw hn cx cy i hi old
     · exact KnownStageProps.free L hw hn (ReflectionE1.correction cx) i hi (by simpa only [squareEntry] using sq)
   · exact placedX1_free L hw hn cx.val i hi x
+
 theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
  (cx cy : Fp) : GatePhysical (generic L cx cy) := by
  have old:=fact_of_shape GatePhysical _ _ (old_generic_shape L cx cy).symm
@@ -7501,6 +7508,7 @@ private theorem gen_facts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : F
   · unfold ReflectionE1TickGap.gen ReflectionE1TickGap.mid wrapContext
     rfl
   · exact wrap_facts _ _ _ _ _ _ (generic_facts L hw cx cy)
+
 theorem gen_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : wires (gen L cx cy)⊆(OB5Support.genericSites L).toFinset := by
   rw [gen_shape]
@@ -7514,18 +7522,22 @@ private theorem wrapper_facts (d : Nat) (L : ControlledPointLayout) (C : Point) 
   simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,measurementCount_append,
     gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
-private theorem toffoli_of_saved (x y s : Nat) (h : x+3316+s=y) (hs : 359≤s) (hy : y≤2151272) :
-    x≤2147597 := by
+
+private theorem toffoli_of_saved (x y s : Nat) (h : x+3316+s=y) (hs : 359≤s) (hy : y≤2149240) :
+    x≤2145565 := by
   omega
+
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2147597 :=
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2145565 :=
   toffoli_of_saved _ _ _ (wrapper_facts _ layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
     KnownStageCounts.saved_actual (ReflectionE1TickGap.wrapper_toffoli cx cy hc)
+
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
     measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1498893 := by
   have diff:=(wrapper_facts _ layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).2.1
   have old:=ReflectionE1TickGap.wrapper_measurements cx cy hc
   omega
+
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
     gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50463355+Rolling1588.slotGrowth := by
   have diff:=(wrapper_facts _ layout C cy _ _ (gen_facts layout layout_widths cx cy)).2.2
@@ -7619,6 +7631,7 @@ private theorem suffix_free (P Q R : Program) (q : Wire) (shape : P=Q++R) (free 
   rw [shape,wires_append] at free
   exact fun h => free (Finset.mem_union_right _ h)
 
+
 theorem restE_760_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (kernel : base 760∉wires Rolling1588TickGap.entryKernel) :
     L.core.poolWire 760∉wires (ReflectionE1TickGap.restE L) :=
@@ -7641,6 +7654,7 @@ theorem selected_square_760_free (L : ControlledPointLayout) (hw : L.Widths) (hn
    exact ⟨KnownStageProps.actual_program_retired,entryR_760_free _ hw hn _⟩
  · simp only [KnownSelect.squareEntry,if_neg h,wires_append,Finset.mem_union,not_or]
    exact ⟨B3CarryPort.square761_free L hw hn,entryR_760_free L hw hn k⟩
+
 
 theorem generic_760_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (entryK : base 760∉wires Rolling1588TickGap.entryKernel)
@@ -7667,6 +7681,7 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
   BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
 attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+
 
 theorem generic_760_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : L.core.poolWire 760∉wires (generic L cx cy) :=
@@ -8179,7 +8194,7 @@ theorem old_clrF_support : wires (ECDSAAdd.Entrant.clrF L) =
     List.mem_toFinset,List.mem_cons] at *
   rw [hp]
   simp only [List.mem_append] at *
-  tauto
+  itauto
 
 include hw in
 theorem zrep_support_old : wires (zrep L) ⊆ wires (ECDSAAdd.Entrant.clrF L) := by
@@ -8191,7 +8206,7 @@ theorem zrep_support_old : wires (zrep L) ⊆ wires (ECDSAAdd.Entrant.clrF L) :=
     simp [eq]
   · have h' := List.mem_toFinset.mp (maskedConstant_wires_subset _ _ _ h)
     simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h' ⊢
-    tauto
+    itauto
   · have eq : q = L.point.finite := by simpa [wires,Instr.wires] using h
     simp [eq]
 
@@ -8388,6 +8403,7 @@ attribute [local irreducible] run wires
 abbrev generic := A161Generic.generic
 def mid (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   clearF L ++ renameProgram (swapF L) (generic L cx cy) ++ clrF L
+
 def gen (L : ControlledPointLayout) (cx cy : Fp) : Program := zrep L ++ mid L cx cy ++ zrep L
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
@@ -8508,6 +8524,7 @@ attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
                                                                                 
                                                                                           
 
+
 theorem gen_counts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (gen L cx cy)+17 = toffoliCount (A161Generic.gen L cx cy) ∧
     measurementCount (gen L cx cy)+16 = measurementCount (A161Generic.gen L cx cy) ∧
@@ -8542,6 +8559,7 @@ theorem gen_counts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
                                      
                                      
 
+
 theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (cx cy : Fp) :
     toffoliCount (Edges.wrapper L C cy (gen L cx cy))+17 =
       toffoliCount (Edges.wrapper L C cy (A161Generic.gen L cx cy)) ∧
@@ -8566,17 +8584,20 @@ theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (
                                                                                              
                                                                        
 
+
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2147580 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤2145548 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := A161Generic.wrapper_toffoli cx cy hc
   omega
+
 
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
     measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 1498877 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).2.1
   have old := A161Generic.wrapper_measurements cx cy hc
   omega
+
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
     gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50464717+Rolling1588.slotGrowth := by
@@ -8928,6 +8949,7 @@ theorem excluded_nonresidue (v : Nat) (hv : excluded v) :
   · exact transport _ _ hp nonresidue_4
   · exact transport _ _ hp nonresidue_5
   · exact transport _ _ hp nonresidue_6
+
 
 theorem curve_x_not_matches {x y : Fp} (hc : curve.toAffine.Nonsingular x y) :
     ¬ matchesX x.val := by
@@ -10228,7 +10250,7 @@ theorem fan_support (xs : List Wire) (b : Wire) :
     · simp
     · have h := ih hq
       simp only [List.mem_toFinset, List.mem_cons] at h ⊢
-      tauto
+      itauto
 
 
 
@@ -10422,7 +10444,7 @@ theorem program_support (xs : List Wire) (b f : Wire) (r work : List Wire) (k : 
   have hsmall (q : Wire) (hq : q ∈ (b :: xs).toFinset) :
       q ∈ (b :: f :: (xs ++ (r ++ work))).toFinset := by
     simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at hq ⊢
-    tauto
+    itauto
   intro q hq
   simp only [program, core, wires_append, Finset.mem_union] at hq
   rcases hq with (hq | (hq | hq)) | hq
@@ -10434,7 +10456,7 @@ theorem program_support (xs : List Wire) (b f : Wire) (r work : List Wire) (k : 
     simp only [equalConstant_wires, Finset.mem_union, Finset.mem_insert,
       Finset.mem_singleton, List.mem_toFinset, List.mem_cons, List.mem_append, hp] at hq
     simp only [List.mem_toFinset, List.mem_cons, List.mem_append]
-    tauto
+    itauto
   · exact hsmall q (restore_support xs b hq)
 
 theorem clearProgram_support (xs : List Wire) (b f : Wire) (r work : List Wire) (k : Nat) :
@@ -10689,6 +10711,7 @@ theorem parity_value (s : BasisState) :
   norm_num
 
 include hw in
+
 theorem hit (s : BasisState) :
     (!(s (b L) ^^ CodexYParityGadget.parity (xs L) s) &&
       decide (regValue (rest L) s=literal)) =
@@ -10752,6 +10775,7 @@ theorem probe_support_old (L : ControlledPointLayout) (hw : L.Widths)
                                                                               
                                                              
 
+
 /-- Apply to the new clearF and clrF after unfolding only the two small wrappers. -/
 theorem gen_support_old (L : ControlledPointLayout) (hw : L.Widths)
     (cx cy : Fp) (Clear Restore : Program)
@@ -10771,14 +10795,15 @@ theorem gen_support_old (L : ControlledPointLayout) (hw : L.Widths)
   simp only [Finset.mem_union] at heq hcq
   simp only [A161Generic.gen, A161Generic.mid,
     wires_append, Finset.mem_union] at used ⊢
-  tauto
+  itauto
 
 theorem point_y_generic (L : ControlledPointLayout) :
     L.point.y.toFinset ⊆ (OB5Support.genericSites L).toFinset := by
   intro q hq
   simp only [OB5Support.genericSites, PointAddLayout.pointWires,
     List.mem_toFinset, List.mem_append, List.mem_cons] at hq ⊢
-  tauto
+  itauto
+
 
 theorem gen_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) (P : Program)
@@ -10821,7 +10846,7 @@ theorem wrapper_support_extra (L : ControlledPointLayout) (C : Point) (cy : Fp)
       fun hh => d hh
     simp only [Finset.mem_union] at hd
     simp only [Edges.finiteProgram, wires_append, Finset.mem_union] at hq ⊢
-    tauto
+    itauto
   simpa only [Edges.wrapper] using rename_support_extra (Wrapper5.U L) _ _ S finite hU
 
 /-- The concrete public y register is already counted even if idle. -/
@@ -11045,6 +11070,7 @@ theorem midFFused_values (cx cy : Fp) (X Y X' Y' : Fp) (G : Bool) (base : BasisS
   exact (c1.seq sw).seq c2
 
 
+
 theorem genFFused_ok {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     GenericOK L hc (gen L cx cy) := by
   intro R b f hg s m v
@@ -11113,16 +11139,19 @@ omit hw hn
 attribute [local irreducible] toffoliCount measurementCount gateSlots A161Generic.generic
 
 include hw in
+
 theorem gen_support_subset (cx cy : Fp) :
     wires (gen L cx cy) ⊆ wires (A161Generic.gen L cx cy) ∪ L.point.y.toFinset := by
   exact CodexYParitySupport.gen_support_old L hw cx cy (clearF L) (clrF L)
     (clearF_support_old L hw) (clrF_support_old L hw)
 
 include hw hn in
+
 theorem gen_sites (cx cy : Fp) : wires (gen L cx cy) ⊆ (OB5Support.genericSites L).toFinset :=
   CodexYParitySupport.gen_sites L hw hn cx cy (gen L cx cy) (gen_support_subset L hw cx cy)
 
 include hw in
+
 theorem gen_counts (cx cy : Fp) :
     toffoliCount (gen L cx cy)+4=toffoliCount (FiniteFlagInterval.gen L cx cy) ∧
     measurementCount (gen L cx cy)+4=measurementCount (FiniteFlagInterval.gen L cx cy) := by
@@ -11135,6 +11164,7 @@ theorem gen_counts (cx cy : Fp) :
   omega
 
 include hw in
+
 theorem gen_slots (cx cy : Fp) : gateSlots (gen L cx cy)≤gateSlots (FiniteFlagInterval.gen L cx cy) := by
   have hl := (lengths L hw).1.trans (lengths L hw).2.symm
   have n := CodexYParityGadget.program_slots (xs L) (b L) L.point.finite (rest L) (work L) literal hl
@@ -11160,6 +11190,7 @@ theorem gen_slots (cx cy : Fp) : gateSlots (gen L cx cy)≤gateSlots (FiniteFlag
 
 
 include hw in
+
 theorem wrapper_counts (C : Point) (cx cy : Fp) :
     toffoliCount (Edges.wrapper L C cy (gen L cx cy))+4=
       toffoliCount (Edges.wrapper L C cy (FiniteFlagInterval.gen L cx cy)) ∧
@@ -11203,15 +11234,17 @@ def program (C : Point) : Program :=
                                                                   
                                                                     
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2147568 := by
+
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2145536 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2147568
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2145536
     omega
+
 
 theorem program_measurements (C : Point) : measurementCount (program C)≤1498871 := by
   cases C with
@@ -11237,6 +11270,7 @@ theorem program_measurements (C : Point) : measurementCount (program C)≤149887
                      
                                                                               
                                                             
+
 
 theorem program_gateSlots (C : Point) : gateSlots (program C)≤50489632 := by
   cases C with
@@ -11652,13 +11686,13 @@ section
 namespace ECDSAAdd.Entrant.TerminalBitSlice104
 open ECDSAAdd Arithmetic
 abbrev Cols := @_root_.ECDSAAdd.Entrant.CodecBitSliceVerify.Cols
-abbrev get := @_root_.ECDSAAdd.Entrant.CodecBitSliceVerify.get
+
 abbrev eval := @_root_.ECDSAAdd.Entrant.CodecBitSliceVerify.eval
-abbrev Rel := @_root_.ECDSAAdd.Entrant.CodecBitSliceVerify.Rel
-abbrev target := @_root_.ECDSAAdd.Entrant.CodecBitSliceVerify.target
-abbrev packBits := @_root_.ECDSAAdd.Entrant.CodecBitSliceVerify.packBits
-abbrev pack_rows := @_root_.ECDSAAdd.Entrant.CodecBitSliceVerify.pack_rows
-abbrev eval_sound := @_root_.ECDSAAdd.Entrant.CodecBitSliceVerify.eval_sound
+
+
+
+
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 16000000
 set_option linter.unusedSimpArgs false
@@ -11707,7 +11741,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic Challenge
 namespace ECDSAAdd.Entrant.TerminalInverse23
 open MeasuredCodec5
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 32000000
 set_option linter.unusedSimpArgs false
@@ -13810,7 +13844,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic Challenge
 namespace ECDSAAdd.Entrant.TerminalInverse23
 open MeasuredCodec5
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 16000000
 set_option linter.unusedSimpArgs false
@@ -16221,8 +16255,8 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 attribute [local irreducible] run wires
 
-def liveCheck (i : Instr) : Bool :=
-  decide (i.wires ⊆ ((Finset.range 40).erase 38).erase 39)
+
+
 
 theorem program_live : wires TerminalInverse23.program ⊆ ((Finset.range 40).erase 38).erase 39 := TerminalInverse23.live_support
 
@@ -16534,7 +16568,7 @@ theorem stack_subset (isA : Bool) : wires (stackReverse15 isA)⊆wires (InverseF
   rw [stackReverse15,reverseTail15] at hq
   rw [TerminalFivePlacement.reverse_shape]
   simp only [ren,wires_append,Finset.mem_union] at hq ⊢
-  tauto
+  itauto
 
 open Arithmetic.DirectSkywalk
 
@@ -16546,7 +16580,7 @@ theorem last_subset (isA : Bool) : wires (lastPhase15 isA)⊆wires (InverseFour1
   have sub:=stack_subset isA
   simp only [lastPhase15,InverseFour15.lastPhase15,wires_append,Finset.mem_union] at hq ⊢
   have move : q∈wires (stackReverse15 isA) → q∈wires (InverseFour15.stackReverse15 isA) := fun used=>sub used
-  tauto
+  itauto
 
 theorem last_pool15 (isA : Bool) : wires (lastPhase15 isA)⊆(skywalkPoolWires base).toFinset :=
   (last_subset isA).trans (InverseFour15.last_pool15 isA)
@@ -16560,7 +16594,7 @@ theorem last_extra15 (isA : Bool) : wires (lastPhase15 isA)⊆wires (Rolling1588
 theorem stack_physical (isA : Bool) : GatePhysical (stackReverse15 isA) := by
   have old:=InverseFour15.last_physical15 isA
   simp only [InverseFour15.lastPhase15,gatePhysical_append] at old
-  have stack : GatePhysical (InverseFour15.stackReverse15 isA) := by tauto
+  have stack : GatePhysical (InverseFour15.stackReverse15 isA) := by itauto
   rw [TerminalFivePlacement.reverse_shape] at stack
   have ren (P Q : Program) : renameProgram (sig 510) (P++Q)=
       renameProgram (sig 510) P++renameProgram (sig 510) Q := by
@@ -16572,14 +16606,14 @@ theorem stack_physical (isA : Bool) : GatePhysical (stackReverse15 isA) := by
   have fresh:=gatePhysical_rename (sig 510) inj candidate15 candidate_physical
   simp only [ren,gatePhysical_append] at stack
   simp only [stackReverse15,reverseTail15,ren,gatePhysical_append]
-  tauto
+  itauto
 
 theorem last_physical15 (isA : Bool) : GatePhysical (lastPhase15 isA) := by
   have old:=InverseFour15.last_physical15 isA
   have stack:=stack_physical isA
   simp only [InverseFour15.lastPhase15,gatePhysical_append] at old
   simp only [lastPhase15,gatePhysical_append]
-  tauto
+  itauto
 
                                           
                                                                                      
@@ -16600,7 +16634,7 @@ namespace ECDSAAdd.Entrant.InverseFiveEntry23
 open ECDSAAdd Arithmetic MappedCompressed Challenge History5 OB5
 open Rolling1588.Integer FrontierEntry1591Callers DirectSkywalk
 open InverseFive23
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -16645,7 +16679,7 @@ private theorem phase_sites_split :
   ext q
   simp only [phaseSites,phaseHosts,FrontierEntry1591Native.workSites,Finset.mem_union,
     List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false]
-  tauto
+  itauto
 
 private theorem phase_kernel_rebind (P F Q : Program) (s : State) (m : List Bool)
     (input : ∀q∈phaseSites,s.basis q=false)
@@ -16821,6 +16855,7 @@ theorem kernel_physical15 (a b : Bool) (F : Program) (field : GatePhysical F) :
     And.intro (Rolling1588Lifetime.phase_physical _ (Rolling1588TickGap.first_physical a))
       (And.intro field (Rolling1588Lifetime.phase_physical _ (last_physical15 b)))
 
+
 theorem entry_physical15 : GatePhysical entryKernel15 := by
   simpa only [entryKernel15] using
     kernel_physical15 true false Rolling1588.entryFieldHosted Rolling1588.entryFieldHosted_physical
@@ -16863,6 +16898,7 @@ theorem extra_logical530 : (530:Wire) ∈ OB5Support.logicalSites := by
   apply List.mem_map.mpr
   refine ⟨514,?_,by decide +kernel⟩
   simp [OB5Support.logicalIndices]
+
 
 theorem entry_support530 : wires entryKernel15 ⊆ OB5Support.logicalSites := by
   intro q hq
@@ -17792,7 +17828,7 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
   BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
   ReflectionE1TickGap OB5 Rolling1588Lifetime ParityCarry ParityConvert
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -17888,6 +17924,7 @@ def entryStageOpt (L : ControlledPointLayout) (kx ky : Fp) : Program :=
 
 
 
+
 def secondStageOpt (L : ControlledPointLayout) (k cy cx : Fp) : Program :=
   A161Generic.squareEntry L k++ExitMergeKernel.restXX L cx.val++exitYOpt L cy
 
@@ -17920,6 +17957,7 @@ open A161Generic
 
 
 end
+
 
 def genericOpt (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   entryStageOpt L (-cx) (-cy)++secondStageOpt L (ReflectionE1.correction cx) cy cx
@@ -19236,12 +19274,12 @@ theorem compareChainCached_wires (a b c:Wire) (as bs cs:List Wire) (cin target h
     simp [majority,wires,Instr.wires]
     intro q H
     simp only [Finset.mem_insert,Finset.mem_singleton] at H ⊢
-    tauto
+    itauto
   simp only [compareChainCached,compareChain,wires_append]
   intro q H
   have S:=head (a:=q)
   simp only [Finset.mem_union] at H S ⊢
-  tauto
+  itauto
 
 theorem compareLtCached_wires (a b c:Wire) (as bs cs:List Wire) (cin target h:Wire) :
     wires (compareLtCached (a::as) (b::bs) (c::cs) cin target h)⊆
@@ -19251,7 +19289,7 @@ theorem compareLtCached_wires (a b c:Wire) (as bs cs:List Wire) (cin target h:Wi
   intro q H
   have S:=core (a:=q)
   simp only [Finset.mem_union] at H S ⊢
-  tauto
+  itauto
 
 theorem eraseLtMoved_wires (a a' b b' c:Wire) (as bs cs:List Wire) (cin target h:Wire) :
     wires (eraseLtMoved (a::a'::as) (b::b'::bs) (c::cs) cin target h)⊆
@@ -19262,7 +19300,7 @@ theorem eraseLtMoved_wires (a a' b b' c:Wire) (as bs cs:List Wire) (cin target h
   intro q H
   have S:=head (a:=q)
   simp only [Finset.mem_union] at H S ⊢
-  tauto
+  itauto
 
 theorem comparePrefixCached_wires (g a b c cin flag h:Wire) (as bs cs:List Wire) (v:Nat) :
     wires (comparePrefixCached g h (a::as) (b::bs) (c::cs) cin flag v)⊆
@@ -19272,7 +19310,7 @@ theorem comparePrefixCached_wires (g a b c cin flag h:Wire) (as bs cs:List Wire)
   intro q H
   have S:=core (a:=q)
   simp only [Finset.mem_union] at H S ⊢
-  tauto
+  itauto
 
 theorem erasePrefixMoved_wires (g a a' b b' c cin flag h:Wire) (as bs cs:List Wire) (v:Nat) :
     wires (erasePrefixMoved g h (a::a'::as) (b::b'::bs) (c::cs) cin flag v)⊆
@@ -19282,7 +19320,7 @@ theorem erasePrefixMoved_wires (g a a' b b' c cin flag h:Wire) (as bs cs:List Wi
   intro q H
   have S:=core (a:=q)
   simp only [Finset.mem_union] at H S ⊢
-  tauto
+  itauto
 
 theorem compareCached_layout_wires (K:MeasuredCanonicalModLayout) (g:Wire) (hw:K.Widths 256) (v:Nat) :
     wires (comparePrefixCached g K.high K.src K.out K.carry K.cin K.flag v)⊆
@@ -19309,18 +19347,18 @@ theorem evenBody_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat)
     simp [moveCached,makeFlags,wires,Instr.wires]
     intro q H
     simp only [Finset.mem_insert,Finset.mem_singleton] at H ⊢
-    tauto
+    itauto
   have flags:wires [.CX K.flag (alpha K),.CCX K.flag (sign K) K.high]⊆wires (makeFlags K g):=by
     simp [makeFlags,wires,Instr.wires]
     intro q H
     simp only [Finset.mem_insert,Finset.mem_singleton] at H ⊢
-    tauto
+    itauto
   simp only [evenBody,entryBody,entryMiddle,middle,wires_append,ExitFusionProof.signStage_eq K g k rest hout]
   intro q H
   have M:=move (a:=q)
   have F:=flags (a:=q)
   simp only [Finset.mem_union] at H M F ⊢
-  tauto
+  itauto
 
 theorem body_control_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat) (rest:List Wire) :
     ({g,lowBit K,K.high}:Finset Wire)⊆wires (entryBody K g k rest) := by
@@ -19329,7 +19367,7 @@ theorem body_control_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat) (rest
   simp only [Finset.mem_insert,Finset.mem_singleton] at H
   simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
     Finset.notMem_empty,or_false]
-  tauto
+  itauto
 
 theorem entryEven_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat) (hw:K.Widths 256) :
     wires (entryEven K g k)⊆wires (EntryFuse.entry K g complement k) := by
@@ -19350,7 +19388,7 @@ theorem entryEven_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat) (hw:K.Wi
   have hi:q=K.high→q∈wires (entryBody K g k K.out.tail):=by
     intro e;apply C; simp [e]
   simp only [Finset.mem_union,Finset.mem_singleton] at H bb pp pr ⊢
-  tauto
+  itauto
 
 theorem undoMiddleKeep_wires (K:MeasuredCanonicalModLayout) (g:Wire) (c k:Nat) :
     wires (undoMiddleKeep K g c k)⊆wires (ExitFusionResearch.undoMiddle K g c k) := by
@@ -19360,7 +19398,7 @@ theorem undoMiddleKeep_wires (K:MeasuredCanonicalModLayout) (g:Wire) (c k:Nat) :
     simp [wires,Instr.wires,correctionWires]
     intro q H
     simp only [Finset.mem_insert,Finset.mem_singleton] at H ⊢
-    tauto
+    itauto
   simp only [undoMiddleKeep,ExitFusionResearch.undoMiddle,wires_append,
     ExitFusionResearch.lowSrc,ExitFusionResearch.lowOut,EntryFuse.lowSrc,EntryFuse.lowOut]
   exact Finset.union_subset_union (Finset.Subset.refl _) tail
@@ -19372,7 +19410,7 @@ theorem undoMiddle_control_wires (K:MeasuredCanonicalModLayout) (g:Wire) (c k:Na
   simp only [Finset.mem_insert,Finset.mem_singleton] at H
   simp only [wires,Instr.wires,correctionWires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
     Finset.notMem_empty,or_false]
-  tauto
+  itauto
 
 theorem eraseInputMoved_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat) (hw:K.Widths 256) :
     wires (eraseInputMoved K g k)⊆wires (ExitFusionResearch.eraseInputWrap K g complement k)∪{alpha K,K.high} := by
@@ -19388,7 +19426,7 @@ theorem eraseInputMoved_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat) (h
   have M:=move (a:=q)
   have C:=core (a:=q)
   simp only [Finset.mem_union,Finset.mem_insert,Finset.mem_singleton] at H M C ⊢
-  tauto
+  itauto
 
 theorem exitEven_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat) (hw:K.Widths 256) :
     wires (exitEven K g k)⊆wires (ExitFusionResearch.exit K g complement k) := by
@@ -19401,7 +19439,7 @@ theorem exitEven_wires (K:MeasuredCanonicalModLayout) (g:Wire) (k:Nat) (hw:K.Wid
   have d:=D (a:=q)
   have e:=E (a:=q)
   simp only [Finset.mem_union,Finset.mem_insert,Finset.mem_singleton] at H b d e ⊢
-  tauto
+  itauto
 
 end ECDSAAdd.Entrant.ParityEven
 end
@@ -19411,7 +19449,7 @@ end
 section
 namespace ECDSAAdd.Entrant.ParityUniform
 open Arithmetic Challenge Secp256k1 ControlledPointLayout BalancedField ParityCarry ParityConvert ParityEven EntryFuseArithmetic
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -19569,7 +19607,7 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
   BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
   ReflectionE1TickGap OB5 Rolling1588Lifetime ParityCarry ParityConvert ParityUniform
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -19666,6 +19704,7 @@ def entryStageAll (L : ControlledPointLayout) (kx ky : Fp) : Program :=
 
 
 
+
 def secondStageAll (L : ControlledPointLayout) (k cy cx : Fp) : Program :=
   A161Generic.squareEntry L k++ExitMergeKernel.restXX L cx.val++exitYAll L cy
 
@@ -19698,6 +19737,7 @@ open A161Generic
 
 
 end
+
 
 def genericAll (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   entryStageAll L (-cx) (-cy)++secondStageAll L (ReflectionE1.correction cx) cy cx
@@ -19792,7 +19832,7 @@ section
 namespace ECDSAAdd.Entrant.ParityXEntry
 open Arithmetic Challenge RecordedQuantum NativeFirstDirect MappedCompressed
   E1Merge ParityCarry ParityConvert ParityEven EntryFuseArithmetic E1WholeKAdd52Research
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -20066,12 +20106,12 @@ theorem evenTail_wires (k:Nat) : wires (evenTail k)⊆wires (tailX base (base 24
     simp [prodPart,wires,Instr.wires]
     intro q H
     simp only [Finset.mem_insert,Finset.mem_singleton] at H ⊢
-    tauto
+    itauto
   simp only [evenTail,tailX,parStage,wires_append]
   intro q H
   have F:=flags (a:=q)
   simp only [Finset.mem_union] at H F ⊢
-  tauto
+  itauto
 
 theorem tail_control_wires (k:Nat) : ({base 2400,base 770,base 721}:Finset Wire)⊆
     wires (tailX base (base 2400) k) := by
@@ -20080,7 +20120,7 @@ theorem tail_control_wires (k:Nat) : ({base 2400,base 770,base 721}:Finset Wire)
   simp only [Finset.mem_insert,Finset.mem_singleton] at H
   simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
     Finset.notMem_empty,or_false]
-  tauto
+  itauto
 
 theorem mergedEven_wires (k:Nat) : wires (mergedEven k)⊆
     wires (E1AffineEndpoints52Research.Forward.merged base (base 2400) k) := by
@@ -20101,7 +20141,7 @@ theorem mergedEven_wires (k:Nat) : wires (mergedEven k)⊆
   have e:=pre (a:=q)
   have a:q=base 721→q∈wires (tailX base (base 2400) k):=by intro e;apply E;simp [e]
   simp only [Finset.mem_union,Finset.mem_singleton] at H c b e ⊢
-  tauto
+  itauto
 
 theorem evenTail_physical (k:Nat) (old:GatePhysical (tailX base (base 2400) k)) :
     GatePhysical (evenTail k) := by
@@ -20253,7 +20293,7 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
   BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
   ReflectionE1TickGap OB5 Rolling1588Lifetime ParityCarry ParityConvert ParityUniform ParityXEntry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -20361,6 +20401,7 @@ def entryStageAll (L : ControlledPointLayout) (kx ky : Fp) : Program :=
 
 
 
+
 def secondStageAll (L : ControlledPointLayout) (k cy cx : Fp) : Program :=
   A161Generic.squareEntry L k++ExitMergeKernel.restXX L cx.val++exitYAll L cy
 
@@ -20393,6 +20434,7 @@ open A161Generic
 
 
 end
+
 
 def genericAll (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   entryStageAll L (-cx) (-cy)++secondStageAll L (ReflectionE1.correction cx) cy cx
@@ -20487,7 +20529,7 @@ end
 section
 namespace ECDSAAdd.Entrant.ParityXExit
 open Arithmetic Challenge RecordedQuantum NativeFirstDirect MappedCompressed E1Merge ExitMerge ParityCarry ParityConvert ParityEven
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -21079,7 +21121,7 @@ theorem addPartKeep_wires (w:Nat→Wire) (g:Wire) (k:Nat) :
   have tail:wires A⊆wires B:=by
     intro a H
     simp [A,B,wires,Instr.wires,correctionWires] at H ⊢
-    tauto
+    itauto
   have whole:wires (P++A)⊆wires (P++B):=by
     rw [show wires (P++A)=wires P∪wires A from wires_append P A,
       show wires (P++B)=wires P∪wires B from wires_append P B]
@@ -21105,8 +21147,8 @@ theorem programAll_wires (w:Nat→Wire) (g:Wire) (k:Nat) :
     have E:=even (a:=q)
     simp only [Finset.mem_union,Finset.mem_singleton] at h C E ⊢
     by_cases e:q=w 721
-    · subst q;tauto
-    · tauto
+    · subst q;itauto
+    · itauto
 
 theorem eraseOdd_physical (k:Nat) (h:GatePhysical (eraseF base (base 2400) k)) :
     GatePhysical (eraseOdd base (base 2400) k) := by
@@ -21126,7 +21168,7 @@ theorem addPartKeep_physical (k:Nat) (old:GatePhysical (addPart base (base 2400)
     simp [GatePhysical,PhysicalInstr,ProperGate,base]
   simp only [addPart,gatePhysical_append] at old
   simp only [addPartKeep,gatePhysical_append] at tail ⊢
-  tauto
+  itauto
 
 theorem programAll_physical (k:Nat) : GatePhysical (programAll base (base 2400) k) := by
   have old:=ExitMerge.program_physical base (base 2400) base_pool_nodup E1QubitPlacement.g2400 k
@@ -21139,9 +21181,9 @@ theorem programAll_physical (k:Nat) : GatePhysical (programAll base (base 2400) 
   unfold programAll
   split_ifs
   · simp only [programOdd,gatePhysical_append]
-    tauto
+    itauto
   · simp only [programEven,gatePhysical_append]
-    tauto
+    itauto
 
 end ECDSAAdd.Entrant.ParityXExit
 end
@@ -21149,7 +21191,7 @@ end
 
 -- Consolidated source module: ParityXExitKernel
 section
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -21162,9 +21204,9 @@ attribute [local irreducible] run wires
 
 def pi : Equiv.Perm Wire := E1QubitPlacement.rho.trans E1QubitPlacement.nativeSwap
 
-def piN (i : Nat) : Nat :=
-  if E1QubitPlacement.rhoN i=1797 then 511 else if E1QubitPlacement.rhoN i=511 then 1797
-  else E1QubitPlacement.rhoN i
+
+
+
 
 
 
@@ -21195,7 +21237,7 @@ def lastX (k : Nat) : Program :=
 
 
 
-def negDiv (k x : Nat) (G : Bool) : Nat := if G then (k+p-x)%p else x
+
 
 
 
@@ -21261,8 +21303,8 @@ def negDiv (k x : Nat) (G : Bool) : Nat := if G then (k+p-x)%p else x
 Every state comparison below goes through `pull_basis`/`pull_phase` rewrites, so the kernel never
 has to evaluate a concrete program to see through `pullState`. -/
 
-theorem pull_basis (f : Wire → Wire) (t : State) (q : Wire) : (pullState f t).basis q=t.basis (f q) := rfl
-theorem pull_phase (f : Wire → Wire) (t : State) : (pullState f t).phase=t.phase := rfl
+
+
 
 
 
@@ -21608,18 +21650,18 @@ theorem pull_phase (f : Wire → Wire) (t : State) : (pullState f t).phase=t.pha
 
 
 
-set_option linter.unusedVariables false in
-def ExitNegCorrect (K : Program) (k : Nat) : Prop := ∀
-    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
-    (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
-    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410) (mixedTranscriptTape base))
-    (x : Nat) (Y : Fp) (hx0 : 0 < x) (hx : x < p) (s : State) (m : List Bool)
-    (input : SkywalkArithmeticInput base x Y.val s.basis)
-    (hg0 : s.basis (base 2409)=false) (hs0 : s.basis (base 2410)=false),
-    let out := run K m s
-    out.phase=s.phase ∧ regValue (skywalkArithmeticNumerator base) out.basis=centerWord (Y*(x:Fp)/2) ∧
-      regValue (skywalkArithmeticDivisor base) out.basis=negDiv k x (s.basis (base 2400)) ∧
-      ∀q,q∉skywalkArithmeticNumerator base → q∉skywalkArithmeticDivisor base → out.basis q=s.basis q
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -21908,6 +21950,7 @@ def ExitNegCorrect (K : Program) (k : Nat) : Prop := ∀
 
 
 
+
 def restXX (L : ControlledPointLayout) (k : Nat) : Program :=
   renameProgram (wireFn2 L)
     (renameProgram phaseHost (Rolling1588TickGap.tailPhase false)++
@@ -22065,7 +22108,7 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
   BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
   ReflectionE1TickGap OB5 Rolling1588Lifetime ParityCarry ParityConvert ParityUniform ParityXEntry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -22173,6 +22216,7 @@ def entryStageAll (L : ControlledPointLayout) (kx ky : Fp) : Program :=
 
 
 
+
 def secondStageAll (L : ControlledPointLayout) (k cy cx : Fp) : Program :=
   A161Generic.squareEntry L k++ParityXExitKernel.restXX L cx.val++exitYAll L cy
 
@@ -22205,6 +22249,7 @@ open A161Generic
 
 
 end
+
 
 def genericAll (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   entryStageAll L (-cx) (-cy)++secondStageAll L (ReflectionE1.correction cx) cy cx
@@ -22300,7 +22345,7 @@ end
 -- Consolidated source module: Main
 section
 
-set_option Elab.async false
+
 -- Synthetic: reopen the inherited anonymous MainC section; no local context commands.
 
 -- ===== merged module ECDSAAdd.Submission.Entrant.InputSentinel =====
@@ -22544,6 +22589,7 @@ theorem remapBit_run (v : t.Valid) (xr1 xr2 w : Wire) (i : Nat) (h1 : w ≠ xr1)
     simp only [run] <;> congr 1 <;> funext q <;> by_cases hq : q = w <;>
     simp [writeBit, Function.update, hq, w1, w2, Bool.and_false, Bool.and_true, Bool.xor_false,
       Bool.false_xor, Bool.xor_true, Bool.true_xor]
+
 
 theorem remapList_run (v : t.Valid) (xr1 xr2 : Wire) (w : Nat → Wire) (l : List Nat)
     (hnd : (l.map w).Nodup) (h1 : xr1 ∉ l.map w) (h2 : xr2 ∉ l.map w) (m : List Bool) (s : State) :
@@ -22938,7 +22984,7 @@ theorem idx_facts (v : t.Valid) :
     simp only [idx, List.mem_filter, List.mem_reverse, List.mem_range] at hi; exact hi.1⟩
   have e : t.idx.toFinset = Finset.range 256 \ {t.r1, t.r2} := by
     ext i; simp only [idx, List.mem_toFinset, List.mem_filter, List.mem_reverse, List.mem_range, Finset.mem_sdiff,
-      Finset.mem_range, Finset.mem_insert, Finset.mem_singleton, decide_eq_true_eq]; tauto
+      Finset.mem_range, Finset.mem_insert, Finset.mem_singleton, decide_eq_true_eq]; itauto
   rw [← List.toFinset_card_of_nodup hnd, e, Finset.card_sdiff]
   have hsub : ({t.r1, t.r2} : Finset Nat) ∩ Finset.range 256 = {t.r1, t.r2} := by
     apply Finset.inter_eq_left.mpr
@@ -22973,6 +23019,7 @@ theorem tailEff_apply (tr : Tri) (yb : Bool) (xr1 xr2 y0 c f g : Wire) (hfg : f 
     · subst hf; simp [writeBit, Function.update, hg]
     · simp [writeBit, Function.update, hg, hf]
 
+
 theorem shape_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xr1 xr2 y0 c f g g1 wB t : Wire)
     (w : Nat → Wire) (i0 : Nat) (it : List Nat) (work : List Wire)
     (hPn : ((i0 :: it).map w).Nodup) (x1P : xr1 ∉ (i0 :: it).map w) (x2P : xr2 ∉ (i0 :: it).map w)
@@ -22998,7 +23045,7 @@ theorem shape_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xr1 xr2 y0 c f g g1 wB 
     rcases hq with rfl | rfl | hq
     · exact x1P
     · exact x2P
-    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)
+    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)
   have itNe : ∀ i ∈ it, w i ≠ w i0 := by
     intro i hi e
     rw [hlw] at hPn
@@ -23153,6 +23200,7 @@ def classifier (tr : Tri) (yb : Bool) (xs work : List Wire) (y0 c f g g1 wB t : 
 def matchBit (tr : Tri) (xs : List Wire) (st : BasisState) : Bool :=
   tr.idx.all (fun i => st (xs.getD i 0) == tr.tgt i (st (xs.getD tr.r1 0), st (xs.getD tr.r2 0)))
 
+
 theorem classifier_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wire)
     (y0 c f g g1 wB t : Wire)
     (hxs : xs.Nodup) (hlen : xs.length = 256) (hwl : work.length = 253) (hwn : work.Nodup)
@@ -23237,7 +23285,7 @@ theorem classifier_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wir
     rintro (e | e | e)
     · exact hdisj q hq (e ▸ wmem _ pv.1)
     · exact hdisj q hq (e ▸ wmem _ pv.2.1)
-    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)).2 hq
+    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)).2 hq
   have hmb : matchBit tr xs s.basis =
       ((i0 :: it).all fun i => s.basis (w i) == tr.tgt i (s.basis xr1, s.basis xr2)) := by
     simp only [matchBit, hidx]; rfl
@@ -23653,6 +23701,7 @@ theorem y_not_x (L : ControlledPointLayout) (hn : L.wires.Nodup) :
   have c2 : 1 ≤ L.point.x.count q := List.count_pos_iff.mpr h2
   split_ifs at h <;> omega
 
+
 theorem stage_mid [DecidableEq Point] (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s : State) (m : List Bool) (hs : PointDialogBoundary L R b (fun _ => false) s.basis) :
@@ -23888,7 +23937,7 @@ theorem sitesN_used (L : ControlledPointLayout) (hw : L.Widths) :
   · left; right
     simp only [flagsN, List.mem_cons, List.not_mem_nil, or_false] at h
     simp only [ControlledPointLayout.inPlaceFlags, List.mem_cons, List.not_mem_nil, or_false]
-    tauto
+    itauto
   · right
     simp only [sharedPoolF, wireBlock, List.mem_append, List.mem_map, List.mem_range'_1] at h
     rcases h with (⟨i, hi, rfl⟩ | ⟨i, hi, rfl⟩) | ⟨i, hi, rfl⟩ <;> exact pool i (by omega)
@@ -23904,6 +23953,7 @@ theorem dialogFlagState_other (L : ControlledPointLayout) (G : Bool) (q : Wire) 
   split_ifs <;> simp_all
 
 open Classical in
+
 theorem oldStage_mid (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s : State) (m : List Bool) (hs : PointDialogBoundary L R b (fun _ => false) s.basis) :
@@ -23913,7 +23963,7 @@ theorem oldStage_mid (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
   have hpl := dialogPool_length L hw
   have used_mem : ∀ q, q ∈ L.dialogUsedWires ↔ q ∈ PointAddLayout.pointWires L.point ∨ q = L.control ∨
       q ∈ L.inPlaceFlags ∨ q ∈ L.dialogPool := by
-    intro q; simp only [ControlledPointLayout.dialogUsedWires, List.mem_append, List.mem_singleton]; tauto
+    intro q; simp only [ControlledPointLayout.dialogUsedWires, List.mem_append, List.mem_singleton]; itauto
   -- support of the record prefix
   have supp : ∀ q, q ∉ L.dialogUsedWires →
       q ∉ wires (inputClass L (.some hc) cy ++ FusedFlags.prefixProgram L (.some hc)) := by
@@ -23929,15 +23979,15 @@ theorem oldStage_mid (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
         List.mem_cons, List.mem_singleton, ControlledPointLayout.inPlaceFlags, List.not_mem_nil, or_false]
       rcases h1 with rfl | rfl | rfl | rfl | rfl | rfl | h1 | h1
       · tauto
+      · itauto
       · tauto
       · tauto
       · tauto
-      · tauto
-      · tauto
+      · itauto
       · have : q ∈ L.point.x := h1
-        tauto
+        itauto
       · have : q ∈ L.dialogPool := List.mem_of_mem_take h1
-        tauto
+        itauto
     · have h2 := (FusedFlags.part_support L hc).1 h
       rw [wires_append, Finset.mem_union] at h2
       rcases h2 with h3 | h3
@@ -24038,6 +24088,7 @@ theorem oldStage_mid (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
     · exact t1out q hu
 
 open Classical in
+
 /-- The merged stage and the record stage agree on every dialog boundary state, whatever the
 measurement records. -/
 theorem stage_run_eq (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -24647,9 +24698,9 @@ theorem fix_sub (P : Program)
       layout.point.y) := by
     intro w hw
     rcases Finset.mem_union.mp (h hw) with a | a
-    · simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at a ⊢; tauto
+    · simp only [List.mem_toFinset, List.mem_cons, List.mem_append] at a ⊢; itauto
     · simp only [List.mem_toFinset] at a
-      simp only [List.mem_cons, List.mem_append]; tauto
+      simp only [List.mem_cons, List.mem_append]; itauto
   have hU : renameProgram (Wrapper5.U layout) P = P :=
     rename_fix _ P (fun w hw => (fix_maps w (mem w hw)).1)
   have hM : renameProgram (tauM layout) P = P :=
@@ -24688,6 +24739,7 @@ theorem old_split {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
   simp only [FusedFlags.finiteProgram, oldStage, shared, FusedFlags.rename_append, hz, hf,
     List.append_assoc]
 
+
 theorem new_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s : State) (m' : List Bool)
     (hs : PointDialogBoundary layout R b (fun _ => false) s.basis) :
@@ -24704,6 +24756,7 @@ theorem new_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) 
     stage_run_eq layout layout_widths layout_nodup hc b R s
       (List.replicate (measurementCount (oldStage layout (.some hc) cy)) false ++
         m'.drop (measurementCount (stage layout (.some hc)))) m' hs]
+
 
 theorem wrapper'_eq {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s : State) (m' : List Bool) (hs : PointDialogBoundary layout R b (fun _ => false) s.basis) :
@@ -24747,6 +24800,7 @@ theorem full_spec' {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Boo
   exact FusedFlags.full_spec layout layout_widths layout_nodup R hc b _
     (CodexYParityProbe.genFFused_ok layout layout_widths layout_nodup hc)
     (CodexYParityProbe.gen_sites layout layout_widths layout_nodup cx cy) s _ hs
+
 
 theorem counts_rel {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) +
@@ -24893,6 +24947,7 @@ theorem io_not_pool (w : Wire) (h : w ∈ PointAddLayout.pointWires layout.point
   simp only [ControlledPointLayout.dialogUsedWires, List.count_append] at c c1
   omega
 
+
 theorem finite_sub {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (finiteProgram' layout (.some hc) (renameProgram (Wrapper5.U layout) (tailGen layout cx cy))) ⊆
       wires (FusedFlags.finiteProgram layout (.some hc) cy
@@ -24914,6 +24969,7 @@ theorem finite_sub {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
           (InputSentinelAux.inputClass_pool_mem layout layout_widths _ cy w (List.mem_toFinset.mp hp))))
   · exact fun w h => Finset.mem_union_left _ (Finset.mem_union_right _ h)
 
+
 theorem wrapper'_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapper' layout (.some hc) (tailGen layout cx cy)) ⊆
       wires (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ∪
@@ -24927,6 +24983,7 @@ theorem wrapper'_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
   · apply Finset.mem_union_right
     rw [Wrapper5.U_outside layout layout_widths w (io_not_pool w (List.mem_toFinset.mp h))]
     exact h
+
 
 theorem support_used' {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapper' layout (.some hc) (tailGen layout cx cy)) ⊆ layout.dialogUsedWires.toFinset := by
@@ -24970,7 +25027,8 @@ def program (C : Point) : Program :=
                      
                                                                                   
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2147321 := by
+
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤2145289 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -24978,10 +25036,10 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤ 2147321 := by
     have o := (oldStage_counts hc).1
     have st := (stage_counts hc).1
     have old := CodexYParityProbe.program_toffoli (.some hc)
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤
-      2147568 at old
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147321
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤2145536 at old
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤2145289
     omega
+
 
 theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498624 := by
   cases C with
@@ -25017,6 +25075,7 @@ theorem program_measurements (C : Point) : measurementCount (program C) ≤ 1498
               
                                         
                                                 
+
 
 theorem program_gateSlots (C : Point) : gateSlots (program C) ≤ 50493251 := by
   cases C with
@@ -25832,6 +25891,7 @@ theorem ochain_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xr1 xr2 y0 c f g
 
 /-! ### Remap, zero test with the output tail, undo -/
 
+
 theorem oshape_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xr1 xr2 y0 c f g O D H t1 t2 u : Wire)
     (w : Nat → Wire) (i0 : Nat) (it : List Nat) (work : List Wire)
     (hPn : ((i0 :: it).map w).Nodup) (x1P : xr1 ∉ (i0 :: it).map w) (x2P : xr2 ∉ (i0 :: it).map w)
@@ -25856,7 +25916,7 @@ theorem oshape_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xr1 xr2 y0 c f g
     rcases hq with rfl | rfl | hq
     · exact x1P
     · exact x2P
-    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)
+    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)
   have itNe : ∀ i ∈ it, w i ≠ w i0 := by
     intro i hi heq
     rw [hlw] at hPn
@@ -26093,7 +26153,7 @@ theorem oclassifier_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : L
     rintro (heq | heq | heq)
     · exact hdisj q hq (heq ▸ wmem _ pv.1)
     · exact hdisj q hq (heq ▸ wmem _ pv.2.1)
-    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)).2 hq
+    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)).2 hq
   have hmb : matchBit tr xs s.basis =
       ((i0 :: it).all fun i => s.basis (w i) == tr.tgt i (s.basis xr1, s.basis xr2)) := by
     simp only [matchBit, hidx]; rfl
@@ -27331,6 +27391,7 @@ theorem code_back (S : Point) :
     simp [hne, codeX_finite hne]
 
 open Classical in
+
 /-- The merged output stage takes the post-generic state to the output boundary. -/
 theorem outStage_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s0 : State) (hs : PointDialogBoundary layout R b (fun _ => false) s0.basis) (t : State) (m : List Bool)
@@ -27844,6 +27905,7 @@ theorem outStage_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     · exact Finset.mem_union_left _ (io_x _ h)
     · exact st _ (sw.1 _ (tk 255 (by decide) _ h))
 
+
 theorem finite2_sub {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (finiteProgram2 layout (.some hc) cx cy) ⊆
       wires (finiteProgram' layout (.some hc) (renameProgram (Wrapper5.U layout) (tailGen layout cx cy))) ∪
@@ -27877,6 +27939,7 @@ theorem finite2_sub {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
       · exact Finset.mem_union_left _ (hst h)
       · exact Finset.mem_union_left _ (hsu h)
 
+
 theorem wrapper2_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapper2 layout (.some hc) cx cy) ⊆
       wires (wrapper' layout (.some hc) (tailGen layout cx cy)) ∪
@@ -27890,6 +27953,7 @@ theorem wrapper2_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
   · apply Finset.mem_union_right
     rw [Wrapper5.U_outside layout layout_widths w (io_not_pool w (List.mem_toFinset.mp h))]
     exact h
+
 
 theorem support2_used {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapper2 layout (.some hc) cx cy) ⊆ layout.dialogUsedWires.toFinset := by
@@ -27930,6 +27994,7 @@ def oldOut (L : ControlledPointLayout) (C : Point) : Program :=
   FusedFlags.suffixProgram L C ++
   renameProgram (sigP L) (corners2 L C ++ Edges.sharedM L C) ++
   chainErase L.control L.point.finite L.genericSelect
+
 
 theorem counts2_rel {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     toffoliCount (wrapper2 layout (.some hc) cx cy) + toffoliCount (oldOut layout (.some hc)) =
@@ -28034,7 +28099,8 @@ def program2 (C : Point) : Program :=
                      
                                                                                   
 
-theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2147077 := by
+
+theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤2145045 := by
   cases C with
   | zero => simp [program2, toffoliCount]
   | @some cx cy hc =>
@@ -28042,9 +28108,10 @@ theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤ 2147077 := 
     have o : 504 ≤ toffoliCount (oldOut layout (.some hc)) := (old_out_counts hc).1
     have st := (outStage_counts hc).1
     have old := program_toffoli (.some hc)
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤ 2147321 at old
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2147077
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤2145289 at old
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤2145045
     omega
+
 
 theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 1498380 := by
   cases C with
@@ -28079,6 +28146,7 @@ theorem program2_measurements (C : Point) : measurementCount (program2 C) ≤ 14
               
                                          
                                                 
+
 
 theorem program2_gateSlots (C : Point) : gateSlots (program2 C) ≤ 50498912 := by
   cases C with
@@ -28140,6 +28208,7 @@ theorem entry_split530 (L : ControlledPointLayout) :
     Rolling1588TickGap.firstPhase,restE530,renameProgram,List.map_append,List.append_assoc] at tick ⊢
   rw [tick]
 
+
 theorem entryStage_step530 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y kx ky : Fp) (G : Bool) (origin : BasisState)
     (hx : X+(if G then kx else 0)≠0) :
@@ -28163,6 +28232,7 @@ theorem entryStage_step530 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
   · simpa only [entryStage530,division,entry_split530,List.append_assoc] using prior
 
 open A161Generic
+
 
 def generic530 (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   entryStage530 L (-cx) (-cy) ++ A161Generic.secondStageX L (ReflectionE1.correction cx) cy cx
@@ -28194,6 +28264,7 @@ theorem generic_true (X Y cx cy : Fp) (origin : BasisState) (hX : X≠cx)
     show a*d-cy=genericY X Y cx cy from hv.2.2] at second
   exact first.seq second
 
+
 theorem generic_false (X Y cx cy : Fp) (origin : BasisState) (hX : X≠0) :
     Triple (PointDialogValues L X Y false origin) (generic530 L cx cy)
       (PointDialogValues L X Y false origin) := by
@@ -28215,7 +28286,7 @@ end ECDSAAdd.Entrant.Entry530
 
 open ECDSAAdd.Entrant.InverseFour15
 
-set_option Elab.async false
+
 
 namespace ECDSAAdd.Entrant.InputSentinel530
 open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout
@@ -28225,6 +28296,7 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] run wires Entry530.generic530
+
 
 theorem gen_block_run530 {cx cy : Fp} (X Y X' Y' : Fp) (G : Bool)
     (hP : ∀ base' : BasisState, Triple (PointDialogValues layout X Y G base')
@@ -28386,6 +28458,7 @@ def wrapper530 (L : ControlledPointLayout) (C : Point) (cx cy : Fp) : Program :=
   renameProgram (Wrapper5.U L) (finiteProgram530 L C cx cy)
 
 open Classical in
+
 theorem finite530_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s : State) (m : List Bool) (hs : PointDialogBoundary layout R b (fun _ => false) s.basis) :
     (run (finiteProgram530 layout (.some hc) cx cy) m s).phase = s.phase ∧
@@ -28474,6 +28547,7 @@ theorem finite530_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : 
       exact ⟨g.1, g.2.1, g.2.2.1, g.2.2.2⟩
 
 open Classical in
+
 theorem wrapper530_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point) :
     Triple (PointDialogBoundary layout R b (fun _ => false)) (wrapper530 layout (.some hc) cx cy)
       (PointDialogBoundary layout (if b then R + .some hc else R) b (fun _ => false)) := by
@@ -28514,6 +28588,7 @@ theorem out_wire530 (C : Point) : parkWire layout ∈ wires (InputSentinel.outSt
   apply Finset.mem_union_left
   exact predec_wire530 _ _ _ _ _ _ _ _ _ _
 
+
 theorem wrapper_wire530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     (4629:Wire) ∈ wires (wrapper2 layout (.some hc) cx cy) := by
   unfold wrapper2
@@ -28537,6 +28612,7 @@ set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
   InverseFour15.lastPhase15 Rolling1588.lastPhase Rolling1588TickGap.tailPhase
+
 
 theorem restE_extra530 (L : ControlledPointLayout) :
     wires (restE530 L) ⊆ wires (ReflectionE1TickGap.restE L) ∪ {wireFn2 L 530} := by
@@ -28566,6 +28642,7 @@ theorem restE_extra530 (L : ControlledPointLayout) :
     · simp only [Finset.mem_singleton] at extra
       subst v
       exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
+
 
 theorem generic_extra530 (L : ControlledPointLayout) (cx cy : Fp) :
     wires (generic530 L cx cy) ⊆
@@ -28615,6 +28692,7 @@ theorem last_metrics530 (isA : Bool) :
   simp only [InverseFour15.lastPhase15,Rolling1588.lastPhase,toffoliCount_append,measurementCount_append,gateSlots_append]
   omega
 
+
 theorem restE_metrics530 (L : ControlledPointLayout) :
     toffoliCount (restE530 L) + 2 = toffoliCount (ReflectionE1TickGap.restE L) ∧
     measurementCount (restE530 L) = measurementCount (ReflectionE1TickGap.restE L) ∧
@@ -28623,6 +28701,7 @@ theorem restE_metrics530 (L : ControlledPointLayout) :
   simp only [restE530,ReflectionE1TickGap.restE,toffoliCount_append,measurementCount_append,
     gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   omega
+
 
 theorem generic_metrics530 (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (generic530 L cx cy) + 2 = toffoliCount (A161Generic.generic L cx cy) ∧
@@ -28645,6 +28724,7 @@ set_option linter.unusedSimpArgs false
 attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
   InverseFour15.lastPhase15 Rolling1588.lastPhase Rolling1588TickGap.tailPhase
 
+
 theorem restE_physical530 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
     GatePhysical (restE530 L) := by
   have p := placed_physical InverseFour15.entryKernel15 InverseFour15.entry_support530 InverseFour15.entry_physical15 L hw hn
@@ -28652,6 +28732,7 @@ theorem restE_physical530 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wi
     simpa only [FrontierEntry1591Callers.entry] using p
   rw [entry_split530,gatePhysical_append] at entryP
   exact entryP.2
+
 
 theorem generic_physical530 (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : GatePhysical (generic530 L cx cy) := by
@@ -28695,6 +28776,7 @@ private theorem context_extra530 (A P Q B : Program) (e : Wire)
     · exact Or.inr he
   · exact Or.inl (Or.inr hb)
 
+
 theorem wrapper_extra530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapper530 layout (.some hc) cx cy) ⊆
       wires (wrapper2 layout (.some hc) cx cy) ∪ {4629} := by
@@ -28711,6 +28793,7 @@ theorem wrapper_extra530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
       (Wrapper5.U layout (swapF layout (wireFn2 layout 530)))))) = 4629 := by decide +kernel
   simpa only [wrapper530,finiteProgram530,genBlock530,wrapper2,finiteProgram2,genBlock,e] using h7
 
+
 theorem wrapper_support530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapper530 layout (.some hc) cx cy) ⊆ wires (wrapper2 layout (.some hc) cx cy) := by
   intro q hq
@@ -28719,6 +28802,7 @@ theorem wrapper_support530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) 
   · simp only [Finset.mem_singleton] at extra
     subst q
     exact wrapper_wire530 hc
+
 
 theorem support_used530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapper530 layout (.some hc) cx cy) ⊆ layout.dialogUsedWires.toFinset :=
@@ -28735,6 +28819,7 @@ set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
   Entry530.generic530 A161Generic.generic
+
 
 theorem wrapper_metrics530 {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     toffoliCount (wrapper530 layout (.some hc) cx cy) + 2 = toffoliCount (wrapper2 layout (.some hc) cx cy) ∧
@@ -28824,15 +28909,17 @@ def program530 (C : Point) : Program :=
                      
                                                                                       
 
-theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤ 2147075 := by
+
+theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤2145043 := by
   cases C with
   | zero => simp [program530, toffoliCount]
   | @some cx cy hc =>
     have old := InputSentinel.program2_toffoli (.some hc)
     have delta := (wrapper_metrics530 hc).1
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤ 2147077 at old
-    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤ 2147075
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤2145045 at old
+    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤2145043
     omega
+
 
 theorem program_measurements530 (C : Point) : measurementCount (program530 C) ≤ 1498380 := by
   cases C with
@@ -28859,6 +28946,7 @@ theorem program_measurements530 (C : Point) : measurementCount (program530 C) �
               
                                           
                                                   
+
 
 theorem program_slots530 (C : Point) : gateSlots (program530 C) ≤ 50499996 := by
   cases C with
@@ -28892,7 +28980,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
   InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
   EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
   Challenge ParityCarry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -29306,7 +29394,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
   InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
   EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
   Challenge ParityCarry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -29720,7 +29808,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
   InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
   EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
   Challenge ParityCarry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -30133,7 +30221,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
   InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
   EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
   Challenge ParityCarry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -30545,7 +30633,7 @@ end ECDSAAdd.Entrant.ParityFinalXY
 section
 namespace ECDSAAdd.Entrant.OutputOpt
 open Arithmetic Challenge RecordedQuantum MeasuredCodec5 Baselines InputSentinel
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 12000000
 set_option linter.unusedSimpArgs false
@@ -30644,7 +30732,7 @@ end
 section
 namespace ECDSAAdd.Entrant.OutputOpt
 open Arithmetic Challenge RecordedQuantum MeasuredCodec5 Baselines InputSentinel
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 12000000
 set_option linter.unusedSimpArgs false
@@ -30672,7 +30760,7 @@ end
 section
 namespace ECDSAAdd.Entrant.OutputOpt
 open Arithmetic Challenge RecordedQuantum MeasuredCodec5 Baselines InputSentinel Secp256k1 ControlledPointLayout
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 12000000
 set_option linter.unusedSimpArgs false
@@ -30987,6 +31075,7 @@ theorem ochain_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xr1 xr2 y0 c f g
 
 /-! ### Remap, zero test with the output tail, undo -/
 
+
 theorem oshape_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xr1 xr2 y0 c f g O D H t1 t2 u : Wire)
     (w : Nat → Wire) (i0 : Nat) (it : List Nat) (work : List Wire)
     (hPn : ((i0 :: it).map w).Nodup) (x1P : xr1 ∉ (i0 :: it).map w) (x2P : xr2 ∉ (i0 :: it).map w)
@@ -31011,7 +31100,7 @@ theorem oshape_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xr1 xr2 y0 c f g
     rcases hq with rfl | rfl | hq
     · exact x1P
     · exact x2P
-    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)
+    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)
   have itNe : ∀ i ∈ it, w i ≠ w i0 := by
     intro i hi heq
     rw [hlw] at hPn
@@ -31245,7 +31334,7 @@ theorem oclassifier_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : L
     rintro (heq | heq | heq)
     · exact hdisj q hq (heq ▸ wmem _ pv.1)
     · exact hdisj q hq (heq ▸ wmem _ pv.2.1)
-    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)).2 hq
+    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)).2 hq
   have hmb : matchBit tr xs s.basis =
       ((i0 :: it).all fun i => s.basis (w i) == tr.tgt i (s.basis xr1, s.basis xr2)) := by
     simp only [matchBit, hidx]; rfl
@@ -31465,6 +31554,7 @@ def outStage (L : ControlledPointLayout) (C : Point) : Program :=
   FiniteFlagInterval.zrep L
 
 open Classical in
+
 theorem outStage_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s0 : State) (hs : PointDialogBoundary layout R b (fun _ => false) s0.basis) (t : State) (m : List Bool)
     (htx : regValue layout.point.x t.basis =
@@ -31746,7 +31836,7 @@ end
 section
 namespace ECDSAAdd.Entrant.OutputOpt
 open Arithmetic Challenge RecordedQuantum MeasuredCodec5 Baselines InputSentinel Secp256k1 ControlledPointLayout
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 200000
 set_option linter.unusedSimpArgs false
@@ -31923,6 +32013,7 @@ theorem old_parts (L:ControlledPointLayout) (C:Point) (h:GatePhysical (InputSent
   simp only [gatePhysical_append] at h
   exact ⟨h.1.1.1,h.1.1.2,h.2⟩
 
+
 theorem outStage_physical {cx cy:Fp} (hc:curve.toAffine.Nonsingular cx cy) :
     GatePhysical (outStage layout (.some hc)) := by
   have old:=old_parts layout (.some hc) (InputSentinel.outStage_physical hc)
@@ -31945,7 +32036,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
   InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
   EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
   Challenge ParityCarry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -33120,7 +33211,7 @@ end
 
 -- Adapted public peer module: ParityXExitInverse23Kernel
 section
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -33161,7 +33252,7 @@ theorem x1_has530x (k:Nat) : (530:Wire)∈wires (x1 k) := by
       right
       simp [wires,Instr.wires]
     unfold ParityXExit.programAll
-    split_ifs <;> simp only [ParityXExit.programOdd,ParityXExit.programEven,wires_append,Finset.mem_union] <;> tauto
+    split_ifs <;> simp only [ParityXExit.programOdd,ParityXExit.programEven,wires_append,Finset.mem_union] <;> itauto
   · rw [pi_base]
     decide +kernel
 
@@ -33439,7 +33530,7 @@ private theorem phase_sites_split' : phaseSites=FrontierEntry1591Native.workSite
   ext q
   simp only [phaseSites,phaseHosts,FrontierEntry1591Native.workSites,Finset.mem_union,
     List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false]
-  tauto
+  itauto
 
 private theorem rebind (P F Q : Program) (s : State) (m : List Bool)
     (input : ∀q∈phaseSites,s.basis q=false)
@@ -33593,6 +33684,7 @@ private theorem append_run_eq' (P Q R : Program) (s : State) (m : List Bool)
     run (P++R) m s=run (Q++R) m s := by
   rw [run_append,run_append,records,same]
 
+
 theorem kernelX_correct (k : Nat) (hk : k < p) : ExitNegCorrect (kernelX k) k := by
   intro hn hlo ho hf x Y hx0 hx s m input hg hs
   have records : measurementCount (renameProgram phaseHost (Rolling1588TickGap.firstPhase false))=
@@ -33745,6 +33837,7 @@ theorem hostedX1_logical (k : Nat) :
   rw [host_pi,E1QubitPlacement.rho_base,E1QubitPlacement.sig_base]
   exact E1QubitPlacement.sw_logical _ (E1QubitPlacement.rhoN_range i hi)
 
+
 theorem kernelX_support (k : Nat) : wires (kernelX k)⊆OB5Support.logicalSites := by
   have old := Rolling1588TickGap.exitKernel_support
   intro q hq
@@ -33766,6 +33859,7 @@ def HalfMultiplyNegCorrect (L : ControlledPointLayout) (P : Program) (k : Nat) :
     regValue L.point.y (run P m s).basis=centerWord (((Y:Fp)*(X:Fp))/2) ∧
     regValue L.point.x (run P m s).basis=negDiv k X (s.basis L.core.generic) ∧
     ∀q,q∉L.point.y → q∉L.point.x → (run P m s).basis q=s.basis q
+
 
 theorem exitX_correct (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (k : Nat) (hk : k < p) :
@@ -33907,6 +34001,7 @@ theorem x1_physical (k : Nat) : GatePhysical (x1 k) := by
 
 
 
+
 theorem kernelX_physical (k : Nat) : GatePhysical (kernelX k) := by
   have old := Rolling1588TickGap.exitKernel_physical
   simp only [Rolling1588TickGap.exitKernel,Rolling1588TickGap.kernel,gatePhysical_append] at old
@@ -33917,6 +34012,7 @@ theorem kernelX_physical (k : Nat) : GatePhysical (kernelX k) := by
   simp only [kernelX,gatePhysical_append]
   exact ⟨old.1,old.2.1,gatePhysical_rename phaseHost phaseHost.injective _ lx⟩
 
+
 theorem restXX_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) (k : Nat) :
     GatePhysical (restXX L k) := by
   have physical := FrontierEntry1591Native.placed_physical L hw hn (kernelX k) (kernelX_support k)
@@ -33925,6 +34021,7 @@ theorem restXX_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
     unfold FrontierEntry1591Callers.exit; exact physical
   rw [exit_splitX,gatePhysical_append] at e
   exact e.2
+
 
 
 
@@ -33941,6 +34038,7 @@ theorem restXX_delta (L:ControlledPointLayout) (k:Nat) :
     toffoliCount_append,measurementCount_append,Challenge.gateSlots_append,
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots]
   omega
+
 
 theorem restXX_subset (L:ControlledPointLayout) (k:Nat) :
     wires (restXX L k)⊆wires (ExitMergeKernel.restXX L k) := by
@@ -33973,7 +34071,7 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
   BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
   ReflectionE1TickGap OB5 Rolling1588Lifetime ParityCarry ParityConvert ParityUniform ParityXEntry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -33983,6 +34081,7 @@ def restEntry (L : ControlledPointLayout) : Program :=
   renameProgram (wireFn2 L)
     (renameProgram phaseHost (Rolling1588TickGap.tailPhase true) ++
       (Rolling1588.entryFieldHosted ++ renameProgram phaseHost (InverseFour15.lastPhase15 false)))
+
 
 def entryRef (L : ControlledPointLayout) (kx ky : Fp) : Program :=
   fusedY L ky ++ E1QubitPlacement.entryM L kx ++ restEntry L
@@ -34174,7 +34273,7 @@ open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompre
   CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
   BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
   ReflectionE1TickGap OB5 Rolling1588Lifetime ParityCarry ParityConvert ParityUniform ParityXEntry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -34199,6 +34298,7 @@ theorem entry_split_ref (L : ControlledPointLayout) :
   simp only [FrontierEntry1591Callers.entry,InverseFiveEntry23.entryKernel15,InverseFiveEntry23.kernel15,
     Rolling1588TickGap.firstPhase,restEntry,renameProgram,List.map_append,List.append_assoc] at tick ⊢
   rw [tick]
+
 
 theorem entryRef_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y kx ky : Fp) (G : Bool) (origin : BasisState)
@@ -34226,6 +34326,7 @@ theorem entryRef_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
 def entryStageAll (L : ControlledPointLayout) (kx ky : Fp) : Program :=
   entryYAll L ky++entryXAll L kx++restEntry L
 
+
 theorem entryStageAll_eq (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y kx ky : Fp) (s : State) (m : List Bool) (hX:regValue L.point.x s.basis=X.val)
     (hY:regValue L.point.y s.basis=Y.val) (hc : regValue L.dialogPool s.basis=0) :
@@ -34246,6 +34347,7 @@ theorem entryStageAll_eq (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
   change run ((entryYAll L ky++entryXAll L kx)++restEntry L) m s=_
   rw [List.append_assoc,first]
   simpa only [entryRef,List.append_assoc,run_append,t] using second
+
 
 theorem entryStageAll_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y kx ky : Fp) (G : Bool) (origin : BasisState) (hx : X+(if G then kx else 0)≠0) :
@@ -34285,6 +34387,7 @@ theorem multiplyExitAll_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L
   rw [multiplyExitAll_eq L hw hn P cx correct X Y k G origin hX s m hs]
   exact ParityXExitInverse23Kernel.fusedMultiplyX_step L hw hn P cx correct X Y k G origin hX s m hs
 
+
 def secondStageAll (L : ControlledPointLayout) (k cy cx : Fp) : Program :=
   A161Generic.squareEntry L k++ParityXExitInverse23Kernel.restXX L cx.val++exitYAll L cy
 
@@ -34320,6 +34423,7 @@ end
 
 def genericAll (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   entryStageAll L (-cx) (-cy)++secondStageAll L (ReflectionE1.correction cx) cy cx
+
 
 def genericRef (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   ParityStageXInverse23.entryRef L (-cx) (-cy)++A161Generic.secondStageX L (ReflectionE1.correction cx) cy cx
@@ -34377,6 +34481,7 @@ theorem last_delta (b : Bool) :
     measurementCount_append,gateSlots_append]
   omega
 
+
 theorem rest_delta (L : ControlledPointLayout) :
     toffoliCount (restEntry L)+2=toffoliCount (ParityStageXInverse23.restEntry L) ∧
     measurementCount (restEntry L)=measurementCount (ParityStageXInverse23.restEntry L) ∧
@@ -34394,11 +34499,13 @@ theorem nested_support (f g : Wire→Wire) (P Q R S : Program) (h : wires R⊆wi
   exact Finset.image_mono f (Finset.union_subset_union (Finset.Subset.refl _)
     (Finset.union_subset_union (Finset.Subset.refl _) (Finset.image_mono g h)))
 
+
 theorem rest_subset (L : ControlledPointLayout) :
     wires (restEntry L)⊆wires (ParityStageXInverse23.restEntry L) :=
   nested_support (wireFn2 L) phaseHost
     (renameProgram phaseHost (Rolling1588TickGap.tailPhase true)) Rolling1588.entryFieldHosted
     (InverseFive23.lastPhase15 false) (InverseFour15.lastPhase15 false) (InverseFive23.last_subset false)
+
 
 theorem rest_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
     GatePhysical (restEntry L) := by
@@ -34408,6 +34515,7 @@ theorem rest_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
     simpa only [FrontierEntry1591Callers.entry] using p
   rw [entry_split_ref,gatePhysical_append] at entryP
   exact entryP.2
+
 
 theorem generic_counts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (genericAll L cx cy)+8=toffoliCount (genericRef L cx cy) ∧
@@ -34424,10 +34532,12 @@ theorem generic_counts (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) 
     A161Generic.secondStageX,toffoliCount_append,measurementCount_append,gateSlots_append]
   omega
 
+
 theorem generic_toffoli (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (genericAll L cx cy)+8=toffoliCount (genericRef L cx cy) := by
   have h:=generic_counts L hw cx cy
   omega
+
 
 theorem generic_wires (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     wires (genericAll L cx cy)⊆wires (genericRef L cx cy) := by
@@ -34439,6 +34549,7 @@ theorem generic_wires (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
   exact Finset.union_subset_union
     (Finset.union_subset_union (Finset.union_subset_union a (entryXAll_wires L (-cx))) (rest_subset L))
     (Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) r) b)
+
 
 theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) (cx cy : Fp)
     (h : GatePhysical (genericRef L cx cy)) : GatePhysical (genericAll L cx cy) := by
@@ -34459,7 +34570,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
   InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
   EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
   Challenge ParityCarry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -34718,6 +34829,7 @@ def wrapperOpt (L : ControlledPointLayout) (C : Point) (cx cy : Fp) : Program :=
 
 
 
+
 theorem wrapper_metrics {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     toffoliCount (wrapperOpt layout (.some hc) cx cy)+8=
       toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy) ∧
@@ -34771,7 +34883,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
   InputSentinel CompressedPointDialog CompressedAllocation CompressedFieldSupport
   EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers BalancedField
   Challenge ParityCarry
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -34792,6 +34904,7 @@ def wrapperOpt (L : ControlledPointLayout) (C : Point) (cx cy : Fp) : Program :=
   renameProgram (Wrapper5.U L) (finiteProgramOpt L C cx cy)
 
 open Classical in
+
 theorem finite_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s : State) (m : List Bool) (hs : PointDialogBoundary layout R b (fun _ => false) s.basis) :
     (run (finiteProgramOpt layout (.some hc) cx cy) m s).phase = s.phase ∧
@@ -34888,6 +35001,7 @@ theorem rename_wires_sub (f : Wire → Wire) (P Q : Program) (h : wires P⊆wire
   simp only [renameProgram_support]
   exact Finset.image_subset_image h
 
+
 theorem wrapper_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapperOpt layout (.some hc) cx cy)⊆wires (InputSentinel530.wrapper530 layout (.some hc) cx cy) := by
   have h:=ParityStageBothInverse23.generic_wires layout layout_widths cx cy
@@ -34900,6 +35014,7 @@ theorem wrapper_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
   simp only [finiteProgramOpt,InputSentinel530.finiteProgram530,wires_append]
   exact Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) m)
     (OutputOpt.outStage_subset layout (.some hc))
+
 
 
 
@@ -34932,15 +35047,17 @@ def programOpt (C : Point) : Program :=
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2147066 := by
+
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2145034 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2147075 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2147066
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2145043 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2145034
     omega
+
 
 theorem program_measurements (C : Point) : measurementCount (programOpt C)≤1498380 := by
   cases C with
@@ -34951,6 +35068,7 @@ theorem program_measurements (C : Point) : measurementCount (programOpt C)≤149
     change measurementCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤1498380 at old
     change measurementCount (wrapperOpt layout (.some hc) cx cy)≤1498380
     omega
+
 
 
 
@@ -35408,7 +35526,7 @@ theorem zeroWith_fill (T : Wire → Program) (c : Wire) (bs : List ZeroBit)
       apply hkeep w
       simp only [List.mem_cons, List.flatMap_cons, List.mem_append, ZeroBit.wires] at hw ⊢
       simp only [List.not_mem_nil, or_false]
-      tauto
+      itauto
     have ihr : ∀ m', run (zeroWith T b.work bs) m' t = ⟨B.phase, clear bs B.basis⟩ :=
       fun m' => ih b.work hchild t m' hz' hB' hkeep'
     have hF : ∀ w, (w = c ∨ w = b.input ∨ w = b.work) →
@@ -35638,6 +35756,7 @@ theorem muxAnd_mc (aL : Bool) (e x u v : Wire) : measurementCount (muxAnd aL e x
 theorem pre_bool (A L C M E T : Bool) :
     (((A && ((L ^^ C) ^^ M)) ^^ E) ^^ T) = ((A && (L ^^ M ^^ C)) ^^ T ^^ E) := by
   cases A <;> cases L <;> cases C <;> cases M <;> cases E <;> cases T <;> rfl
+
 
 /-- Value of `F` after `pre`, read off the state with `one` set. -/
 theorem pre_F (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
@@ -35935,7 +36054,7 @@ theorem shape_state (tr : Tri) (v : tr.Valid) (yb : Bool) (xr1 xr2 y0 c f g g1 w
     rcases hq with rfl | rfl | hq
     · exact x1P
     · exact x2P
-    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)
+    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)
   have itNe : ∀ i ∈ it, w i ≠ w i0 := by
     intro i hi e
     rw [hlw] at hPn
@@ -36116,6 +36235,7 @@ theorem pre_proper (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     mux _ _ _ _ _ heU hlV hUV, xorAcc_proper _ _ _ (fun x h => (hT x (mm x h)).2.1),
     mux _ _ _ _ _ hEV hhF hVF, xorAcc_proper _ _ _ (fun x h => (hT x (mt x h)).2.2)⟩
 
+
 theorem pre_not (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     (top mid low : List (Nat × Wire × Wire)) (q : Wire)
     (h : q ≠ one ∧ q ≠ U ∧ q ≠ V ∧ q ≠ F ∧ q ≠ xlo ∧ q ≠ xhi ∧ q ≠ el ∧ q ≠ eh)
@@ -36293,6 +36413,7 @@ theorem xorAcc_slots (a : Nat) (acc : Wire) (T : List (Nat × Wire × Wire)) :
     obtain ⟨i, p, c⟩ := x
     simp only [xorAcc, Challenge.gateSlots_append, List.length_cons]
     split_ifs <;> simp [Challenge.gateSlots, Challenge.instructionSlots] at ih ⊢ <;> omega
+
 theorem pre_counts (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     (top mid low : List (Nat × Wire × Wire)) :
     toffoliCount (pre a aL aH one U V F xlo xhi el eh top mid low) ≤ 2 ∧
@@ -36582,6 +36703,7 @@ def clearFV (a : Nat) (aL aH : Bool) (U V F xlo xhi el eh : Wire)
   [.measureX F [] (compareCorrections aH xhi V eh (correctionWires a top)),
    .measureX V [] (compareCorrections aL xlo U el (correctionWires a mid))]
 
+
 theorem clearFV_counts (a : Nat) (aL aH : Bool) (U V F xlo xhi el eh : Wire)
     (top mid : List (Nat × Wire × Wire)) :
     toffoliCount (clearFV a aL aH U V F xlo xhi el eh top mid) = 0 ∧
@@ -36761,6 +36883,7 @@ def fastExtract (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
   pre a aL aH one U V F xlo xhi el eh top mid low ++
     ([.CCX g F pk] ++ clearFV a aL aH U V F xlo xhi el eh top mid ++ finishUOne a one U low)
 
+
 theorem fastExtract_counts (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
     (top mid low : List (Nat × Wire × Wire)) :
     toffoliCount (fastExtract a aL aH one U V F xlo xhi el eh g pk top mid low) ≤ 3 ∧
@@ -36771,6 +36894,7 @@ theorem fastExtract_counts (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g p
   simp only [fastExtract, toffoliCount_append, measurementCount_append, toffoliCount, measurementCount,
     hc.1, hc.2, hf.1, hf.2]
   omega
+
 theorem fastExtract_post (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh : Wire)
     (top mid low : List (Nat × Wire × Wire)) (g pk : Wire)
     (hFp : F ≠ pk) (hVp : V ≠ pk) (hUp : U ≠ pk)
@@ -36895,6 +37019,7 @@ theorem proper_gatePhysical_research (p : Program) (hp : ProperProgram p) : Arit
   have h := hp i hi
   cases i <;> simp_all [RecordedQuantum.PhysicalInstr, ProperGate]
 
+
 theorem fastExtract_physical (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
     (top mid low : List (Nat × Wire × Wire))
     (hPre : ProperProgram (pre a aL aH one U V F xlo xhi el eh top mid low))
@@ -36929,6 +37054,7 @@ theorem compareCorrections_length_research (bit : Bool) (x v e : Wire) (ws : Lis
   cases bit <;> simp [compareCorrections]
   omega
 
+
 theorem clearFV_slots_research (a : Nat) (aL aH : Bool) (U V F xlo xhi el eh : Wire)
     (top mid : List (Nat × Wire × Wire)) :
     Challenge.gateSlots (clearFV a aL aH U V F xlo xhi el eh top mid) ≤ 8 + 2 * (top.length + mid.length) := by
@@ -36948,6 +37074,7 @@ theorem finishUOne_slots_research (a : Nat) (one U : Wire) (low : List (Nat × W
   have hx : Challenge.gateSlots [.X one] = 1 := rfl
   rw [hx]
   omega
+
 
 theorem fastExtract_slots_research (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
     (top mid low : List (Nat × Wire × Wire)) :
@@ -36995,6 +37122,7 @@ theorem compareCorrections_sub_research (bit : Bool) (x v e : Wire) (ws : List W
   have hz := zCorrections_sub_research ws W hws
   cases bit <;> simp [compareCorrections, ECDSAAdd.correctionWires, Finset.union_subset_iff,
     Finset.insert_subset_iff, hx, hv, he, hz]
+
 
 theorem clearFV_sub_research (a : Nat) (aL aH : Bool) (U V F xlo xhi el eh : Wire)
     (top mid : List (Nat × Wire × Wire)) (W : Finset Wire)
@@ -37044,6 +37172,7 @@ def outputFastExtract (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : W
   pre a aL aH one U V F xlo xhi el eh top mid low ++
     ([.measureX pk [] [.CZ g F]] ++ clearFV a aL aH U V F xlo xhi el eh top mid ++ finishUOne a one U low)
 
+
 theorem outputFastExtract_equiv (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
     (top mid low : List (Nat × Wire × Wire)) (gp : g ≠ pk) (fp : F ≠ pk)
     (s : State) (m : List Bool)
@@ -37062,6 +37191,7 @@ theorem outputFastExtract_equiv (a : Nat) (aL aH : Bool) (one U V F xlo xhi el e
     rw [eraseKnownProduct_eq g F pk gp fp (run P [] s) (m.take 1) known, run_cat [Instr.CCX g F pk] Z rfl]
   simpa only [P, Z, outputFastExtract, fastExtract, List.append_assoc] using eq
 
+
 theorem outputFastExtract_counts (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
     (top mid low : List (Nat × Wire × Wire)) :
     toffoliCount (outputFastExtract a aL aH one U V F xlo xhi el eh g pk top mid low) ≤ 2 ∧
@@ -37073,6 +37203,7 @@ theorem outputFastExtract_counts (a : Nat) (aL aH : Bool) (one U V F xlo xhi el 
     measurementCount, hc.1, hc.2, hf.1, hf.2]
   omega
 
+
 theorem outputFastExtract_slots (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
     (top mid low : List (Nat × Wire × Wire)) :
     Challenge.gateSlots (outputFastExtract a aL aH one U V F xlo xhi el eh g pk top mid low) =
@@ -37080,6 +37211,7 @@ theorem outputFastExtract_slots (a : Nat) (aL aH : Bool) (one U V F xlo xhi el e
   simp [outputFastExtract, fastExtract, Challenge.gateSlots_append, Challenge.gateSlots,
     Challenge.instructionSlots]
   omega
+
 
 theorem outputFastExtract_wires (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
     (top mid low : List (Nat × Wire × Wire)) :
@@ -37089,7 +37221,8 @@ theorem outputFastExtract_wires (a : Nat) (aL aH : Bool) (one U V F xlo xhi el e
   ext q
   simp only [wires_append, wires, Instr.wires, ECDSAAdd.correctionWires, Finset.mem_union,
     Finset.mem_singleton, Finset.mem_insert, Finset.notMem_empty, or_false]
-  tauto
+  itauto
+
 
 theorem outputFastExtract_physical (a : Nat) (aL aH : Bool) (one U V F xlo xhi el eh g pk : Wire)
     (top mid low : List (Nat × Wire × Wire))
@@ -37157,6 +37290,7 @@ theorem remapList_not (t : Tri) (xr1 xr2 : Wire) (w : Nat → Wire) (l : List Na
       refine ⟨?_, ?_, ?_⟩ <;> split_ifs <;> simp [wires, Instr.wires, h1, h2, h3.1]
     simp only [Tri.remapList, List.flatMap_cons, wires_append, Finset.mem_union, not_or] at hr ⊢
     exact ⟨hb, hr⟩
+
 
 theorem classifierF_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wire)
     (y0 c f g g1 wB t one U V F pk : Wire)
@@ -37252,7 +37386,7 @@ theorem classifierF_run (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wi
     rintro (e | e | e)
     · exact hdisj q hq (e ▸ wmem _ pv.1)
     · exact hdisj q hq (e ▸ wmem _ pv.2.1)
-    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)).2 hq
+    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)).2 hq
   have hmb : matchBit tr xs s.basis =
       ((i0 :: it).all fun i => s.basis (w i) == tr.tgt i (s.basis xr1, s.basis xr2)) := by
     simp only [matchBit, hidx]; rfl
@@ -37608,6 +37742,7 @@ theorem extract_counts (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V 
       run (extract tr xs work one U V F pk g) (m.drop 1) s := by
   exact MeasuredFV.outputFastExtract_equiv _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ gp fp s m known
 
+
 theorem extractOutput_counts (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F pk g : Wire) :
     toffoliCount (extractOutput tr xs work one U V F pk g) ≤ 2 ∧
     measurementCount (extractOutput tr xs work one U V F pk g) = 3 ∧
@@ -37632,6 +37767,7 @@ theorem extractOutput_counts (tr : Tri) (v : tr.Valid) (xs work : List Wire) (on
   change Challenge.gateSlots (extractOutput tr xs work one U V F pk g) =
     Challenge.gateSlots (extract tr xs work one U V F pk g) + 1 at he
   exact ⟨hc.1, hc.2, by omega⟩
+
 
 
 theorem classifierF_counts (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wire)
@@ -37762,6 +37898,7 @@ theorem preOf_proper (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F 
       ⟨Ne.symm (v1 y (memT y hy)).1, Ne.symm (v1 y (memT y hy)).2⟩,
       ⟨Ne.symm (f1 y (memT y hy)).1, Ne.symm (f1 y (memT y hy)).2⟩⟩)
 
+
 theorem preOf_sub (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F : Wire)
     (hlen : xs.length = 256) (W : Finset Wire) (hx : ∀ q ∈ xs, q ∈ W) (hw : ∀ q ∈ work, q ∈ W)
     (h1 : one ∈ W) (h2 : U ∈ W) (h3 : V ∈ W) (h4 : F ∈ W) :
@@ -37786,6 +37923,7 @@ theorem preOf_sub (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F : W
   exact pre_not _ _ _ _ _ _ _ _ _ _ _ _ _ _ q
     ⟨no, fun e => hn (e ▸ h2), fun e => hn (e ▸ h3), fun e => hn (e ▸ h4), o4, o5, o3, o2⟩
     (fun y hy => o1 y (memT y hy)) hq
+
 
 theorem extract_sub (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F pk g : Wire)
     (hlen : xs.length = 256) (W : Finset Wire) (hx : ∀ q ∈ xs, q ∈ W) (hw : ∀ q ∈ work, q ∈ W)
@@ -37841,6 +37979,7 @@ theorem extract_sub (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F p
   simp only [MeasuredFV.fastExtract, wires_append, Finset.union_subset_iff]
   exact ⟨hpre, ⟨⟨hcc, hclear⟩, hfinish⟩⟩
 
+
 theorem extractOutput_sub (tr : Tri) (v : tr.Valid) (xs work : List Wire) (one U V F pk g : Wire)
     (hlen : xs.length = 256) (W : Finset Wire) (hx : ∀ q ∈ xs, q ∈ W) (hw : ∀ q ∈ work, q ∈ W)
     (h1 : one ∈ W) (h2 : U ∈ W) (h3 : V ∈ W) (h4 : F ∈ W) (h5 : pk ∈ W) (h6 : g ∈ W) :
@@ -37882,7 +38021,8 @@ theorem zeroWith_app_wires (T : Wire → Program) (E : Program) :
     intro q hq
     have i := ih b.work (a := q)
     simp only [Finset.mem_union] at hq i ⊢
-    tauto
+    itauto
+
 
 theorem extract_physical (tr : Tri) (v : tr.Valid) (xs work : List Wire)
     (one U V F pk g : Wire) (hlen : xs.length = 256)
@@ -37906,6 +38046,7 @@ theorem extract_physical (tr : Tri) (v : tr.Valid) (xs work : List Wire)
     (xs.getD tr.lo 0) (xs.getD tr.hi 0) (endW (endW one Tt) Tm) (endW one Tt) g pk Tt Tm Tl)
   exact MeasuredFV.fastExtract_physical _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hPre gp Fp hLow
 
+
 theorem extractOutput_physical (tr : Tri) (v : tr.Valid) (xs work : List Wire)
     (one U V F pk g : Wire) (hlen : xs.length = 256)
     (hU : U ∉ xs ∧ U ∉ work ∧ U ≠ one) (hV : V ∉ xs ∧ V ∉ work ∧ V ≠ one)
@@ -37928,6 +38069,7 @@ theorem extractOutput_physical (tr : Tri) (v : tr.Valid) (xs work : List Wire)
     (xs.getD tr.lo 0) (xs.getD tr.hi 0) (endW (endW one Tt) Tm) (endW one Tt) g pk Tt Tm Tl)
   exact MeasuredFV.outputFastExtract_physical _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hPre gp Fp hLow
 
+
 theorem classifierF_physical (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wire)
     (y0 c f g g1 wB t one U V F pk : Wire) (hlen : xs.length = 256)
     (hU : U ∉ xs ∧ U ∉ work ∧ U ≠ one) (hV : V ∉ xs ∧ V ∉ work ∧ V ≠ one)
@@ -37940,6 +38082,7 @@ theorem classifierF_physical (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : Li
   unfold classifierF
   simp only [gatePhysical_append]
   exact ⟨old.1, old.2.1, zeroWith_app_physical _ _ hE _ _ old.2.2.1, old.2.2.2⟩
+
 
 theorem classifierF_wires (tr : Tri) (v : tr.Valid) (yb : Bool) (xs work : List Wire)
     (y0 c f g g1 wB t one U V F pk : Wire) (hlen : xs.length = 256) (W : Finset Wire)
@@ -38161,6 +38304,7 @@ theorem compare_rename (X k : Fp) (u : State) (hx : regValue L.point.x u.basis =
     have ne : q ≠ F (base 514) := fun e => im (e ▸ Finset.mem_image_of_mem F s514)
     simp [put, writeBit, F] at ne ⊢
     simp [ne]
+
 
 theorem entryXNew_run (pk : Wire) (X k : Fp) (u : State)
     (hx : regValue L.point.x u.basis = X.val) (hc : regValue L.dialogPool u.basis = 0)
@@ -38591,7 +38735,7 @@ theorem rho_generic : rho layout layout.core.generic = layout.genericSelect := b
     if_neg (gp _ (finSpare_pool layout hw)),
     U_apply, if_neg (gp _ (Square5Placement.pool_member layout hw 684 (by omega))),
     if_neg (gp _ (Square5Placement.pool_member layout hw 717 (by omega))),
-    tauM_apply, if_pos rfl, E_apply, if_neg (by tauto), if_neg (sp _ (spare_pool layout hw)),
+    tauM_apply, if_pos rfl, E_apply, if_neg (by itauto), if_neg (sp _ (spare_pool layout hw)),
     D_apply, if_neg (by tauto), if_neg (sp _ (spareD_pool layout hw))]
 
 /-- Pool sites pull back to the clean flags and pool sites. -/
@@ -38975,6 +39119,7 @@ theorem entryXNew_wires (L : ControlledPointLayout) (k : Fp) :
     rw [pk_eq L]
     exact img _ (inc f.2)
 
+
 theorem genericNew_wires (L : ControlledPointLayout) (cx cy : Fp) :
     wires (genericNew L cx cy) ⊆ wires (ParityStageBothInverse23.genericAll L cx cy) := by
   simp only [genericNew, ParityStageBothInverse23.genericAll, ParityStageBothInverse23.entryStageAll,
@@ -39055,6 +39200,7 @@ theorem entryXNew_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
 
 abbrev ioSet : Finset Wire := (PointAddLayout.pointWires layout.point ++ [layout.control]).toFinset
 
+
 theorem finiteOpt_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (finiteProgramOpt layout (.some hc) cx cy) =
       wires (stage layout (.some hc)) ∪
@@ -39062,6 +39208,7 @@ theorem finiteOpt_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
         wires (OutputOpt.outStage layout (.some hc)) := by
   unfold finiteProgramOpt genBlockOpt
   rw [ren_eq, wires_append, wires_append]
+
 
 /-- Every wire of the new input stage is an input wire or already in the old program. -/
 theorem stageNew_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
@@ -39147,6 +39294,7 @@ theorem stageNew_physical {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
 
 
 
+
 theorem genericNew_counts (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (genericNew L cx cy) + 255 = toffoliCount (ParityStageBothInverse23.genericAll L cx cy) ∧
     measurementCount (genericNew L cx cy) ≤ measurementCount (ParityStageBothInverse23.genericAll L cx cy) ∧
@@ -39195,7 +39343,7 @@ set_option linter.unusedSimpArgs false
 section
 namespace ECDSAAdd.Entrant.ParityXExit
 open Arithmetic Challenge RecordedQuantum NativeFirstDirect MappedCompressed E1Merge ExitMerge ParityCarry ParityConvert ParityEven
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -39391,7 +39539,7 @@ theorem fin_add {P M X Y G : Finset Wire} (m : M ⊆ (X ∪ Y) ∪ G) : P ∪ M 
   intro q h
   have m' := @m q
   simp only [Finset.mem_union] at h m' ⊢
-  tauto
+  itauto
 
 theorem fin_pre {A B C D E K R G : Finset Wire} (a : C ⊆ K ∪ G) (z : G ⊆ A) :
     (((A ∪ B) ∪ C) ∪ D) ∪ E ⊆ ((((A ∪ B) ∪ K) ∪ D) ∪ E) ∪ R := by
@@ -39406,7 +39554,7 @@ theorem meas_sub (a b c d g : Wire) :
       (wires [Instr.measureX a [] [Correction.CZ b c]] ∪ wires [Instr.CX b d, Instr.measureX a [] []]) ∪ {g} := by
   intro q h
   simp [wires,Instr.wires,correctionWires] at h ⊢
-  tauto
+  itauto
 
 theorem addPart_sub (w : Nat → Wire) (g : Wire) (k : Nat) :
     wires (ExitMerge.addPart w g k) ⊆ wires (addPartKeep w g k) ∪ {g} := by
@@ -39464,7 +39612,7 @@ end ECDSAAdd.Entrant.ParityXExit
 end
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -39651,6 +39799,7 @@ def kernelXN (k : Nat) : Program :=
   renameProgram phaseHost (Rolling1588TickGap.firstPhase false)++
     (Rolling1588.exitFieldHosted++renameProgram phaseHost (lastXN k))
 
+
 theorem kernelXN_sub (k : Nat) : wires (kernelXN k) ⊆ wires (kernelX k) := by
   simp only [kernelXN,kernelX,wires_append]
   exact Finset.union_subset_union (Finset.Subset.refl _)
@@ -39665,7 +39814,7 @@ private theorem phase_sites_splitN : phaseSites=FrontierEntry1591Native.workSite
   ext q
   simp only [phaseSites,phaseHosts,FrontierEntry1591Native.workSites,Finset.mem_union,
     List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false]
-  tauto
+  itauto
 
 private theorem rebindN (P F Q : Program) (s : State) (m : List Bool)
     (input : ∀q∈phaseSites,s.basis q=false)
@@ -39760,6 +39909,7 @@ private theorem append_run_eqN (P Q R : Program) (s : State) (m : List Bool)
     run (P++R) m s=run (Q++R) m s := by
   rw [run_append,run_append,records,same]
 
+
 theorem kernelXN_pw (k : Nat) (hk : k < p) (hn : (skywalkSharedWires base).Nodup)
     (hlo : History5.HistoryAbove base)
     (ho : ∀q∈[base 2400,base 2409,base 2410],q∉skywalkSharedWires base)
@@ -39782,6 +39932,7 @@ theorem kernelXN_pw (k : Nat) (hk : k < p) (hn : (skywalkSharedWires base).Nodup
     (fun mp mf => Rolling1588.exit_boundary hn hlo ho hf x Y hx0 hx s mp mf input hg hs)
   rw [kernelXN,kernelX,eqN,eqO]
   exact res
+
 
 theorem kernelXN_support (k : Nat) : wires (kernelXN k)⊆OB5Support.logicalSites :=
   (kernelXN_sub k).trans (kernelX_support k)
@@ -39852,6 +40003,7 @@ theorem wordTransferN (L : ControlledPointLayout) (f : Wire → Wire) (k : Nat)
       rw [run_rename_pool_outside f domain PN supN m s q image]
       simp only [put,writeBit,Function.update_apply,if_neg ne]
       rw [run_rename_pool_outside f domain PO supO m s q image]
+
 
 theorem exitN_pw (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (k : Nat) (hk : k < p) (X Y : Nat) (hX : X < p) (hX0 : 0 < X) (hY : Y < p)
@@ -39931,6 +40083,7 @@ theorem x1N_counts (k : Nat) :
   simp only [x1N,x1,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots]
   exact h
 
+
 theorem restXXN_counts (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (restXXN L k) + 254 = toffoliCount (restXX L k) ∧
     measurementCount (restXXN L k) ≤ measurementCount (restXX L k) ∧
@@ -39940,6 +40093,7 @@ theorem restXXN_counts (L : ControlledPointLayout) (k : Nat) :
     Challenge.gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,
     Baselines.rename_gateSlots]
   omega
+
 
 theorem restXXN_sub (L : ControlledPointLayout) (k : Nat) : wires (restXXN L k) ⊆ wires (restXX L k) := by
   simp only [restXXN,restXX,wires_append,renameProgram_support]
@@ -39951,6 +40105,7 @@ theorem restXXN_sub (L : ControlledPointLayout) (k : Nat) : wires (restXXN L k) 
 theorem x1N_physical (k : Nat) : GatePhysical (x1N k) :=
   gatePhysical_rename pi pi.injective _ (ParityXExit.programN_physical k)
 
+
 theorem kernelXN_physical (k : Nat) : GatePhysical (kernelXN k) := by
   have old := Rolling1588TickGap.exitKernel_physical
   simp only [Rolling1588TickGap.exitKernel,Rolling1588TickGap.kernel,gatePhysical_append] at old
@@ -39960,6 +40115,7 @@ theorem kernelXN_physical (k : Nat) : GatePhysical (kernelXN k) := by
     simp only [lastXN,gatePhysical_append]; exact ⟨last.1,x1N_physical k⟩
   simp only [kernelXN,gatePhysical_append]
   exact ⟨old.1,old.2.1,gatePhysical_rename phaseHost phaseHost.injective _ lx⟩
+
 
 theorem restXXN_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) (k : Nat) :
     GatePhysical (restXXN L k) := by
@@ -39974,7 +40130,7 @@ end ECDSAAdd.Entrant.ParityXExitInverse23Kernel
 end
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -40186,6 +40342,7 @@ theorem pk_not_exitY (k : Fp) (hg : pkW L ≠ L.core.generic) : pkW L ∉ wires 
   · exact hg e
   · exact pk_not_K L hw hn e
 
+
 theorem rest_pw (k cx X Y : Fp) (G : Bool) (origin : BasisState) (s : State)
     (hs : PointDialogValues L X Y G origin s.basis)
     (hx : X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)+
@@ -40209,11 +40366,13 @@ theorem rest_pw (k cx X Y : Fp) (G : Bool) (origin : BasisState) (s : State)
   rw [exit_splitN,exit_splitX,run_pre,run_pre,← eu,vW.generic,pk_wire] at e1
   exact e1
 
+
 def restPad (L : ControlledPointLayout) (k : Nat) : List Bool → List Bool :=
   fun r => pfx (measurementCount (restXX L k)) r ++ r.drop (measurementCount (restXXN L k))
 
 def secondStageN (L : ControlledPointLayout) (k cy cx : Fp) : Program :=
   squareEntry L k ++ restXXN L cx.val ++ exitYAll L cy
+
 
 def padS (L : ControlledPointLayout) (k cx : Fp) : List Bool → List Bool :=
   fun d => pfx (measurementCount (squareEntry L k)) d ++
@@ -40239,6 +40398,7 @@ def padE (L : ControlledPointLayout) (cy cx : Fp) : List Bool → List Bool :=
   fun d => pfx (measurementCount (entryYAll L (-cy))) d ++
     (List.replicate (measurementCount (E1Merge.comparePart MappedCompressed.base (MappedCompressed.base 2400) (-cx).val)) false ++
       d.drop (measurementCount (entryYAll L (-cy))))
+
 
 theorem head_pad (cx cy X Y : Fp) (s : State)
     (hX : regValue L.point.x s.basis = X.val) (hY : regValue L.point.y s.basis = Y.val)
@@ -40272,6 +40432,7 @@ theorem head_pad (cx cy X Y : Fp) (s : State)
       · intro d'
         rw [entryXNew_measure L (pkW L) (-cx), ← List.drop_drop, List.drop_left' (by simp)])
   exact inner.append _
+
 
 def padG (L : ControlledPointLayout) (cx cy : Fp) : List Bool → List Bool :=
   fun d => pfx (measurementCount (entryStageAll L (-cx) (-cy))) (padE L cy cx d) ++
@@ -40340,7 +40501,7 @@ end ECDSAAdd.Entrant.FlagExit
 end
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -40418,7 +40579,7 @@ theorem oshape_state (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xr1 xr2 y0 c f
     rcases hq with rfl | rfl | hq
     · exact x1P
     · exact x2P
-    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)
+    · exact hextP q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)
   have itNe : ∀ i ∈ it, w i ≠ w i0 := by
     intro i hi e
     rw [hlw] at hPn
@@ -40660,7 +40821,7 @@ theorem oclassifierF_run (tr : Tri) (v : tr.Valid) (yc y2c e : Bool) (xs work : 
     rintro (heq | heq | heq)
     · exact hdisj q hq (heq ▸ wmem _ pv.1)
     · exact hdisj q hq (heq ▸ wmem _ pv.2.1)
-    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; tauto)).2 hq
+    · exact (hextx q (by simp only [List.mem_cons, List.not_mem_nil, or_false]; itauto)).2 hq
   have hmb : matchBit tr xs s.basis =
       ((i0 :: it).all fun i => s.basis (w i) == tr.tgt i (s.basis xr1, s.basis xr2)) := by
     simp only [matchBit, hidx]; rfl
@@ -41053,6 +41214,7 @@ theorem out_flag_wires :
   decide +kernel
 
 open Classical in
+
 /-- The state the old output stage hands to its classifier. -/
 theorem out_mid {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s0 : State) (hs : PointDialogBoundary layout R b (fun _ => false) s0.basis) (t : State) (m : List Bool)
@@ -41352,6 +41514,7 @@ def outMeasPad (L : ControlledPointLayout) (C : Point) (d : List Bool) : List Bo
   FlagEntry.pfx (measurementCount (OutputOpt.outStage L C)) d ++ d.drop (measurementCount (outNew L C))
 
 open Classical in
+
 theorem out_pad {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s0 : State) (hs : PointDialogBoundary layout R b (fun _ => false) s0.basis) (t : State)
     (htx : regValue layout.point.x t.basis =
@@ -41559,7 +41722,7 @@ end ECDSAAdd.Entrant.OutFlag
 end
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -41647,6 +41810,7 @@ theorem blk_values {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Boo
       exact ⟨g.1, g.2.1, g.2.2.1, g.2.2.2⟩
 
 open Classical in
+
 theorem finite_padN {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
     (s : State) (hs : PointDialogBoundary layout R b (fun _ => false) s.basis) :
     ∃ pad, Pad (finiteN layout (.some hc) cx cy) (finiteProgramOpt layout (.some hc) cx cy) s s pad := by
@@ -41782,7 +41946,7 @@ section
 set_option linter.unusedVariables false
 set_option linter.unusedSimpArgs false
 section
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -41814,13 +41978,13 @@ theorem zeroWith_pre_wires (T : Wire → Program) (E : Program) :
     simp only [zeroWith, wires_append]
     intro q hq
     simp only [Finset.mem_union] at hq ⊢
-    tauto
+    itauto
   | cons b bs ih =>
     simp only [zeroWith, wires_append]
     intro q hq
     have i := @ih b.work q
     simp only [Finset.mem_union] at hq i ⊢
-    tauto
+    itauto
 
 theorem Gc_physical (c g O D H W : Wire) (h1 : c ≠ W) (h2 : g ≠ W) (h3 : O ≠ W) (h4 : D ≠ W) (h5 : H ≠ W) :
     GatePhysical (Gc c g O D H W) := by
@@ -41935,6 +42099,7 @@ theorem outNew_counts {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
   simp only [toffoliCount_append, measurementCount_append, Challenge.gateSlots_append]
   omega
 
+
 theorem outNew_physical {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     GatePhysical (outNew layout (.some hc)) := by
   have old := OutputOpt.outStage_physical hc
@@ -41959,7 +42124,7 @@ end ECDSAAdd.Entrant.OutFlag
 end
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -42000,6 +42165,7 @@ theorem entryX_W (L : ControlledPointLayout) (k : Fp) : wW L ∈ wires (entryXAl
     rw [wires_append]
     exact Finset.mem_union_right _ (evenTail_721 k.val)
 
+
 theorem generic_W (cx cy : Fp) : wW layout ∈ wires (ParityStageBothInverse23.genericAll layout cx cy) := by
   have h := entryX_W layout (-cx)
   simp only [ParityStageBothInverse23.genericAll, ParityStageBothInverse23.entryStageAll, wires_append,
@@ -42027,12 +42193,14 @@ theorem rho_W : rho layout (wW layout) = wW layout := by
   · exact W_flag _ (by simp [ControlledPointLayout.inPlaceFlags])
   · exact W_ne_pool 1540 (by omega) (by omega)
 
+
 theorem genericN_wires (L : ControlledPointLayout) (cx cy : Fp) :
     wires (genericN L cx cy) ⊆ wires (genericNew L cx cy) := by
   simp only [genericN, genericNew, secondStageN, ParityStageBothInverse23.secondStageAll, wires_append]
   exact Finset.union_subset_union (Finset.Subset.refl _)
     (Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _)
       (ParityXExitInverse23Kernel.restXXN_sub L _)) (Finset.Subset.refl _))
+
 
 theorem genericN_counts (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (genericN L cx cy) + 254 = toffoliCount (genericNew L cx cy) ∧
@@ -42042,6 +42210,7 @@ theorem genericN_counts (L : ControlledPointLayout) (cx cy : Fp) :
   simp only [genericN, genericNew, secondStageN, ParityStageBothInverse23.secondStageAll,
     toffoliCount_append, measurementCount_append, Challenge.gateSlots_append]
   omega
+
 
 theorem genericN_physical (cx cy : Fp) : GatePhysical (genericN layout cx cy) := by
   have old : GatePhysical (ParityStageBothInverse23.genericRef layout cx cy) := by
@@ -42054,6 +42223,7 @@ theorem genericN_physical (cx cy : Fp) : GatePhysical (genericN layout cx cy) :=
   exact ⟨⟨⟨p0.1.1.1, entryXNew_physical layout layout_widths layout_nodup _ _
       (pk_ne_flag layout layout_widths layout_nodup)⟩, p0.1.2⟩,
     ⟨p0.2.1.1, ParityXExitInverse23Kernel.restXXN_physical layout layout_widths layout_nodup _⟩, p0.2.2⟩
+
 
 theorem outNew_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (outNew layout (.some hc)) ⊆ ioSet ∪ wires (finiteProgramOpt layout (.some hc) cx cy) := by
@@ -42113,6 +42283,7 @@ theorem outNew_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     (pool256 _ (pool_take_mem 255 (by omega))) (Finset.mem_union_left _ mf) pkIn wIn
     (hA n2) (hA n1) (hA n3) (hA n4) (hA n5)
 
+
 theorem finiteN_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (finiteN layout (.some hc) cx cy) ⊆ ioSet ∪ wires (finiteProgramOpt layout (.some hc) cx cy) := by
   have s := stageNew_wires (cx := cx) (cy := cy) hc
@@ -42128,6 +42299,7 @@ theorem finiteN_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
   refine Or.inr (Or.inl (Or.inr ?_))
   rw [renameProgram_support]
   exact Finset.mem_image_of_mem _ (genericNew_wires layout cx cy (genericN_wires layout cx cy ha))
+
 
 theorem wrapperN_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapperN layout (.some hc) cx cy) ⊆ ioSet ∪ wires (wrapperOpt layout (.some hc) cx cy) := by
@@ -42149,6 +42321,7 @@ theorem wrapperN_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
   rcases Finset.mem_union.mp (k ha) with h | h
   · rw [fixIO a h]; exact Finset.mem_union_left _ h
   · exact Finset.mem_union_right _ (Finset.mem_image_of_mem _ h)
+
 
 
 
@@ -42183,15 +42356,17 @@ def programB (C : Point) : Program :=
 
 
 
-theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2146562 := by
+
+theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2144530 := by
   cases C with
   | zero=>simp [programB,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperN_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146562
+    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2144530
     omega
+
 
 theorem program_measurements_B (C : Point) : measurementCount (programB C)≤1498385 := by
   cases C with
@@ -42202,6 +42377,7 @@ theorem program_measurements_B (C : Point) : measurementCount (programB C)≤149
     change measurementCount (wrapperOpt layout (.some hc) cx cy)≤1498380 at old
     change measurementCount (wrapperN layout (.some hc) cx cy)≤1498385
     omega
+
 
 
 
@@ -42252,29 +42428,29 @@ def generic (C : Point) (b : Bool) (R : Point) : Bool := b && !decide (corner C 
                                                          
                                       
 
-def marker (x y : Nat) : Bool := decide (y=0) && !x.testBit 255
- def recover (g : Bool) (x y : Nat) : Bool := g ^^ marker x y
+
+
 
 theorem tag_pos (C R : Point) : 1≤tag C R := by unfold tag;split_ifs <;> omega
  theorem tag_le7 (C R : Point) : tag C R≤7 := by unfold tag;split_ifs <;> omega
- theorem tag_msb (C R : Point) : (tag C R).testBit 255=false :=
- Nat.testBit_lt_two_pow (lt_of_le_of_lt (tag_le7 C R) (by decide))
- theorem sentinel_msb : (p-1).testBit 255=true := by decide +kernel
 
-theorem pointY_ne_zero (R : Point) (hR : R≠0) : pointY R≠0 := by
- cases R with
- | zero=>exact False.elim (hR rfl)
- | @some x y h=>
-   change y.val≠0
-   intro hy
-   apply curve_y_ne_zero h
-   simpa using congrArg (fun n : Nat=>(n:Fp)) hy
 
-theorem ordinary_marker (R : Point) : marker (ordinaryX R) (pointY R)=false := by
- by_cases h:R=0
- · subst R
-   simp [marker,ordinaryX,sentinel_msb]
- · simp [marker,pointY_ne_zero R h]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -42776,76 +42952,76 @@ theorem all_write (bs : List ZeroBit) (s : BasisState) (w : Wire) (v : Bool)
  simp only [List.all_eq_true]
  constructor <;> intro h q hq <;> simpa [writeBit,Function.update_apply,ha q hq] using h q hq
 
-theorem eraseControl_run (b g x c : Wire) (hxb:x≠b) (hcb:c≠b) (hcx:c≠x)
- (bs : List ZeroBit) (hnd:(c::bs.flatMap ZeroBit.wires).Nodup)
- (hdis:∀q∈bs,q.input∉[b,x] ∧ q.work∉[b,x])
- (hoff:∀q∈bs,q.input≠c ∧ q.work≠c)
- (s : State) (m : List Bool) (hc:s.basis c=false)
- (hs:s.basis b=(s.basis g ^^ (bs.all (fun q=>!s.basis q.input) && !s.basis x)))
- (hz:∀q∈bs,s.basis q.work=false) :
- run (eraseControl b g x c bs) m s=⟨s.phase,writeBit s.basis b false⟩ := by
- let t:State:=⟨s.phase,writeBit (writeBit s.basis b (s.basis b ^^ s.basis g)) c true⟩
- have ib (q : ZeroBit) (hq:q∈bs) : q.input≠b ∧ q.work≠b := by
-  have h:=hdis q hq
-  constructor
-  · intro he;exact h.1 (by simp [he])
-  · intro he;exact h.2 (by simp [he])
- have hh:run [.CX g b,.X c] m s=t := by simp [run,t,writeBit,Function.update_apply,hcb,hc]
- have hall:bs.all (fun q=>!t.basis q.input)=bs.all (fun q=>!s.basis q.input) := by
-  simp only [t]
-  rw [all_write _ _ c true (fun q hq=>(hoff q hq).1),all_write _ _ b _ (fun q hq=>(ib q hq).1)]
- have ht: t.basis b=(t.basis c && bs.all (fun q=>!t.basis q.input) && !t.basis x) := by
-  rw [hall]
-  simp only [t,writeBit,Function.update_apply,if_pos rfl,Ne.symm hcb,hxb,Ne.symm hcx,if_false,Bool.true_and]
-  rw [hs]
-  cases s.basis g <;> simp
- have htz:∀q∈bs,t.basis q.work=false := by
-  intro q hq
-  simp [t,writeBit,Function.update_apply,(hoff q hq).2,(ib q hq).2,hz q hq]
- have he:=erase_run b x c hxb bs (by simp [hcb,hcx]) hnd hdis t m ht htz
- unfold eraseControl
- rw [run_append,run_take,run_append,run_take]
- simp only [show measurementCount [.CX g b,.X c]=0 from rfl,List.drop_zero]
- rw [hh,he]
- simp only [run]
- apply congrArg (State.mk s.phase)
- funext w
- by_cases hb:w=b
- · subst w;simp [t,writeBit,Function.update_apply,Ne.symm hcb,hcb]
- by_cases hcc:w=c
- · subst w;simp [t,writeBit,Function.update_apply,hcb,hc]
- simp [t,writeBit,Function.update_apply,hb,hcc]
 
-theorem loadControl_run (b g x c : Wire) (hxb:x≠b) (hcb:c≠b) (hcx:c≠x)
- (hgb:g≠b) (hgc:g≠c)
- (bs : List ZeroBit) (hnd:(c::bs.flatMap ZeroBit.wires).Nodup)
- (hdis:∀q∈bs,q.input∉[b,x] ∧ q.work∉[b,x])
- (hoff:∀q∈bs,q.input≠c ∧ q.work≠c)
- (s : State) (m : List Bool) (hc:s.basis c=false)
- (hz:∀q∈bs,s.basis q.work=false) :
- run (loadControl b g x c bs) m s=
-  ⟨s.phase,writeBit s.basis b ((s.basis b ^^ (bs.all (fun q=>!s.basis q.input) && !s.basis x)) ^^ s.basis g)⟩ := by
- let t:State:=⟨s.phase,writeBit s.basis c true⟩
- have hh:run [.X c] m s=t := by simp [run,t,hc]
- have hall:bs.all (fun q=>!t.basis q.input)=bs.all (fun q=>!s.basis q.input) := by
-  exact all_write bs s.basis c true (fun q hq=>(hoff q hq).1)
- have htz:∀q∈bs,t.basis q.work=false := by
-  intro q hq
-  simp [t,writeBit,Function.update_apply,(hoff q hq).2,hz q hq]
- have hl:=load_run b x c hxb bs (by simp [hcb,hcx]) hnd hdis t m htz
- rw [hall] at hl
- unfold loadControl
- rw [run_append,run_take,run_append,run_take]
- simp only [show measurementCount [.X c]=0 from rfl,List.drop_zero]
- rw [hh,hl]
- simp only [run]
- apply congrArg (State.mk s.phase)
- funext w
- by_cases hb:w=b
- · subst w;simp [t,writeBit,Function.update_apply,Ne.symm hcb,hcb,hgb,hgc,Ne.symm hcx]
- by_cases hcc:w=c
- · subst w;simp [t,writeBit,Function.update_apply,hcb,hc]
- simp [t,writeBit,Function.update_apply,hb,hcc]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 theorem control_counts (b g x c : Wire) (bs : List ZeroBit) :
@@ -42931,6 +43107,7 @@ def isB (t : Tri) (X : Nat) : Bool := if t.role1 then branch1 t X else !branch1 
  def isS (t : Tri) (X : Nat) : Bool := if t.role1 then !branch1 t X && branch2 t X else branch1 t X
  def isA (t : Tri) (X : Nat) : Bool := !branch1 t X && !branch2 t X
 
+
 theorem decoded (t : Tri) (v : t.Valid) (X : Nat) (hX : X=t.A ∨ X=t.B ∨ X=t.S) :
  isA t X=decide (X=t.A) ∧ isB t X=decide (X=t.B) ∧ isS t X=decide (X=t.S) := by
  have a:=branches_A t
@@ -42960,7 +43137,7 @@ end
 section
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 8192
 set_option maxHeartbeats 150000
 set_option linter.unusedSimpArgs false
@@ -42970,6 +43147,7 @@ open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout
 attribute [local irreducible] layout wires FlagExit.genericN FlagEntry.genericNew
  ParityStageBothInverse23.genericAll ParityStageBothInverse23.genericRef
  Entry530.generic530 A161Generic.generic
+
 
 theorem generic530_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : wires (Entry530.generic530 L cx cy)⊆(OB5Support.sites L).toFinset := by
@@ -42982,6 +43160,7 @@ theorem generic530_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
    wires_append,Finset.union_subset_iff] at old
  simp only [Entry530.generic530,Entry530.entryStage530,wires_append,Finset.union_subset_iff]
  exact ⟨⟨old.1.1,en.2⟩,old.2⟩
+
 
 theorem genericN_control (cx cy : Fp) :
     layout.control∉wires (FlagExit.genericN layout cx cy) := by
@@ -43012,6 +43191,7 @@ theorem genericN_control (cx cy : Fp) :
 
  exact fun hx=>h (sub hx)
 
+
 theorem generic_block_control (cx cy : Fp) :
     layout.control∉wires (renameProgram (FlagTop.rho layout) (FlagExit.genericN layout cx cy)) := by
  rw [renameProgram_support]
@@ -43029,7 +43209,7 @@ end
 section
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 8192
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
@@ -43102,7 +43282,7 @@ theorem output_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
    rcases hq with (hq|hq)|hq
    · exact mx q hq
    · exact my q hq
-   · exact mf q (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢;tauto)
+   · exact mf q (by simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢;itauto)
  · exact oclassifierF_wires tr hv _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
      layout_widths.inputX ports oldsub mx mw (mh 253 (by omega)) (mh 254 (by omega))
      (mh 255 (by omega)) (mf _ (by simp)) (mf _ (by simp)) (mf _ (by simp))
@@ -43119,6 +43299,7 @@ theorem output_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     simpa [wires,Instr.wires] using mf layout.point.finite (by simp)
    exact ⟨⟨zx,zm⟩,zx⟩
 
+
 theorem spare_free {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  layout.core.poolWire 511∉wires (outNew layout (.some hc)) := by
  have h:layout.core.poolWire 511∉ports:=by
@@ -43134,7 +43315,7 @@ end
 section
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 8192
 set_option maxHeartbeats 500000
 set_option linter.unusedSimpArgs false
@@ -43158,6 +43339,7 @@ theorem put_same (s : State) (q : Wire) : put s q (s.basis q)=s := by
  funext w
  simp [put,writeBit,Function.update_apply]
 
+
 theorem raw_false (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (X Y cx cy : Fp) (s : State) (m : List Bool)
     (hv : PointDialogValues L X Y false s.basis s.basis) (hx : X≠0)
@@ -43173,6 +43355,7 @@ theorem raw_false (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodu
  have hid:=values_identity L X Y false s _ hv ho.2 ho.1
  rw [hid,hput] at hrun
  exact hrun
+
 
 theorem mapped_false (X Y cx cy : Fp) (s : State) (m : List Bool)
     (hx : regValue layout.point.x s.basis=X.val) (hy : regValue layout.point.y s.basis=Y.val)
@@ -43205,7 +43388,7 @@ end
 section
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 8192
 set_option maxHeartbeats 500000
 set_option linter.unusedSimpArgs false
@@ -43307,21 +43490,21 @@ theorem chain_zero (c : Wire) (bs : List ZeroBit) (s : BasisState) :
      intro b hb
      simpa using hz b.input (List.mem_cons_of_mem _ (List.mem_map.mpr ⟨b,hb,rfl⟩))
 
-theorem all_zero (bs : List ZeroBit) (s : BasisState) :
- bs.all (fun q=>!s q.input)=decide (regValue (bs.map ZeroBit.input) s=0) := by
- apply Bool.eq_iff_iff.mpr
- simp only [decide_eq_true_eq]
- constructor
- · intro ht
-   apply (regValue_zero _ _).mpr
-   intro q hq
-   obtain ⟨b,hb,rfl⟩:=List.mem_map.mp hq
-   simpa using List.all_eq_true.mp ht b hb
- · intro h
-   have hz:=(regValue_zero _ _).mp h
-   apply List.all_eq_true.mpr
-   intro b hb
-   simpa using hz b.input (List.mem_map.mpr ⟨b,hb,rfl⟩)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -43400,7 +43583,7 @@ theorem support (p : Program) (q z : Wire) (S : Finset Wire)
 end ECDSAAdd.Entrant.FreshSwapDevelop
 end
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
@@ -43528,7 +43711,7 @@ theorem copyBit_physical (a b : Wire) (hne:a≠b) (f : Bool) : GatePhysical (cop
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 500000
 set_option linter.unusedSimpArgs false
@@ -43690,7 +43873,7 @@ theorem pointY_low (R : Point) : (pointY R).testBit 0=yBit R := by
 end
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 8192
 set_option maxHeartbeats 500000
 namespace ECDSAAdd.Entrant.ControlConjugationDevelop
@@ -43780,7 +43963,7 @@ theorem sample_tagClear (P : Program) (hp:ProperProgram P)
 
 end ECDSAAdd.Entrant.ControlConjugationDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -43872,7 +44055,7 @@ theorem copyTag_run (s : State) (m : List Bool) :
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -43955,7 +44138,7 @@ theorem x_nodup : layout.point.x.Nodup := by
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44051,7 +44234,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44188,7 +44371,7 @@ theorem reg_read (r : List Wire) (s : BasisState) (X i : Nat) (hx:regValue r s=X
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44287,7 +44470,7 @@ theorem tagNumber_values (n : Fin 32) (b g : Bool) (X : Nat)
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44388,7 +44571,7 @@ theorem masks_I (C : Point) (s : State) (m : List Bool) (h0:s.basis (w 0)=false)
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44486,7 +44669,7 @@ theorem masks_inverse_image_I (C : Point) (s : State) (m : List Bool)
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44594,7 +44777,7 @@ theorem raw_match {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44741,7 +44924,7 @@ theorem masks_decode_point {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
 end
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44800,7 +44983,7 @@ theorem patch_clear {s : State} (role : Bool) (i : Fin 4) :
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -44832,13 +45015,14 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel OneHotCornersDevelop
 attribute [local irreducible] layout wires run
+
 
 theorem encode_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
  (b g : Bool) (R : Point) (s : State) (m : List Bool)
@@ -44881,6 +45065,7 @@ theorem encode_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
  change XYResult s (run tagClearFragment mr t) _ _ ∧ _
  rw [hclear]
  exact hfinish
+
 
 theorem decode_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
  (b g : Bool) (R : Point) (s : State) (m : List Bool)
@@ -44926,7 +45111,7 @@ theorem decode_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
@@ -44934,73 +45119,73 @@ namespace ECDSAAdd.Entrant.ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel ControlMarkerDevelop
 attribute [local irreducible] layout wires run
 
-def markerWork : List Wire := (List.range 256).map w
-def markerBits : List ZeroBit := zeroPorts layout.point.y markerWork
-def markerMSB : Wire := layout.point.x.getD 255 0
-def eraseB : Program := eraseControl layout.control layout.genericSelect markerMSB layout.point.finite markerBits
-def loadB : Program := loadControl layout.control layout.genericSelect markerMSB layout.point.finite markerBits
-
-theorem marker_maps : markerBits.map ZeroBit.input=layout.point.y ∧ markerBits.map ZeroBit.work=markerWork := by
- exact zeroPorts_maps _ _ (by decide +kernel)
-theorem marker_nd : (layout.point.finite::markerBits.flatMap ZeroBit.wires).Nodup := by
- apply (List.Perm.cons _ (zeroPorts_perm _ _ (by decide +kernel))).nodup_iff.mpr
- have he : markerWork=layout.core.pool.take 256 := by
-  change wireBlock layout.core.poolWire 0 256=layout.core.pool.take 256
-  exact layout.core.pool_prefix layout_widths 256 (by decide)
- rw [he]
- apply List.nodup_iff_count_le_one.mpr
- intro q
- have h:=List.nodup_iff_count_le_one.mp (ControlledPointLayout.core_nodup layout layout_nodup) q
- have sub: (layout.core.pool.take 256).count q≤layout.core.pool.count q :=
-  (List.take_sublist 256 layout.core.pool).count_le q
- simp only [PointAddLayout.wires,PointAddLayout.pointWires,PointAddLayout.work,
-  ControlledPointLayout.point,List.count_append,List.count_cons,List.count_nil]at h ⊢
- omega
-
-theorem marker_disjoint : ∀q∈markerBits,q.input∉[layout.control,markerMSB] ∧ q.work∉[layout.control,markerMSB] := by decide +kernel
-theorem marker_off_finite : ∀q∈markerBits,q.input≠layout.point.finite ∧ q.work≠layout.point.finite := by decide +kernel
 
 
-theorem marker_all (s : BasisState) : markerBits.all (fun q=>!s q.input)=decide (regValue layout.point.y s=0) := by
- rw [ZeroRegisterMarkerDevelop.all_zero,marker_maps.1]
-theorem marker_predicate (s : State) (X Y : Nat)
- (hx:regValue layout.point.x s.basis=X) (hy:regValue layout.point.y s.basis=Y) :
- (markerBits.all (fun q=>!s.basis q.input) && !s.basis markerMSB)=ControlSentinelDevelop.marker X Y := by
- rw [marker_all,hy]
- have hmsb:=reg_read layout.point.x s.basis X 255 hx (by decide +kernel)
- change (decide (Y=0) && !(s.basis (layout.point.x.getD 255 0)))=_
- rw [hmsb]
- rfl
 
-theorem eraseB_run (s : State) (m : List Bool) (X Y : Nat)
- (hx:regValue layout.point.x s.basis=X) (hy:regValue layout.point.y s.basis=Y)
- (hf:s.basis layout.point.finite=false)
- (hz:∀q∈markerBits,s.basis q.work=false)
- (hb:s.basis layout.control=ControlSentinelDevelop.recover (s.basis layout.genericSelect) X Y) :
- run eraseB m s=⟨s.phase,writeBit s.basis layout.control false⟩ := by
- apply eraseControl_run _ _ _ _ (by decide +kernel) (by decide +kernel) (by decide +kernel)
-  markerBits marker_nd marker_disjoint marker_off_finite s m hf ?_ hz
- rw [marker_predicate s X Y hx hy]
- exact hb
 
-theorem loadB_run (s : State) (m : List Bool) (X Y : Nat)
- (hx:regValue layout.point.x s.basis=X) (hy:regValue layout.point.y s.basis=Y)
- (hf:s.basis layout.point.finite=false)
- (hz:∀q∈markerBits,s.basis q.work=false) (hb:s.basis layout.control=false) :
- run loadB m s=⟨s.phase,writeBit s.basis layout.control (ControlSentinelDevelop.recover (s.basis layout.genericSelect) X Y)⟩ := by
- have h:=loadControl_run layout.control layout.genericSelect markerMSB layout.point.finite
-  (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)
-  markerBits marker_nd marker_disjoint marker_off_finite s m hf hz
- change run loadB m s=_ at h
- rw [hb,marker_predicate s X Y hx hy] at h
- simpa only [Bool.false_xor,ControlSentinelDevelop.recover,Bool.xor_comm] using h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -45087,6 +45272,7 @@ namespace ECDSAAdd.Entrant.ControlGenericPointDevelop
 open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPointLayout InputSentinel Challenge ParityCarry FlagEntry FlagTop FlagExit FlagTop2 ParityEven
 attribute [local irreducible] layout run
 open Classical in
+
 theorem generic_point_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
  (s : State) (m : List Bool)
  (hx : regValue layout.point.x s.basis = codeX R)
@@ -45131,7 +45317,7 @@ theorem generic_point_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (
 
 end ECDSAAdd.Entrant.ControlGenericPointDevelop
 
-set_option Elab.async false
+
 set_option maxHeartbeats 1000000
 namespace ECDSAAdd.Entrant.ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel
@@ -45147,17 +45333,17 @@ end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
 namespace ECDSAAdd.Entrant.ControlPointEncodingDevelop
 open Arithmetic Secp256k1 InputSentinel
- theorem format_recover (C : Point) (b g : Bool) (R : Point) (hg:g=true→b=true) :
- ControlSentinelDevelop.recover g (formatX C b g R) (formatY C b g R)=b := by
- cases b <;> cases g
- · simpa [formatX,formatY,ControlSentinelDevelop.recover] using ControlSentinelDevelop.ordinary_marker R
- · exact False.elim (Bool.noConfusion (hg rfl))
- · simp [formatX,formatY,ControlSentinelDevelop.recover,ControlSentinelDevelop.marker,ControlSentinelDevelop.tag_msb]
- · simp [formatX,formatY,ControlSentinelDevelop.recover,ControlSentinelDevelop.ordinary_marker]
+
+
+
+
+
+
+
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
@@ -45221,7 +45407,7 @@ def ports : Finset Wire :=
 
 end ECDSAAdd.Entrant.ControlStageSupportDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
@@ -45272,7 +45458,7 @@ theorem copyBit_slots (a b : Wire) (f : Bool) : gateSlots (copyBit a b f)≤2 :=
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -45320,7 +45506,7 @@ theorem formatX_fp_ne_zero (C : Point) (b g : Bool) (R : Point) : (formatX C b g
 end
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -45329,6 +45515,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
  ParityCarry FlagEntry FlagTop FlagExit FlagTop2 ParityEven
 attribute [local irreducible] layout run
 open Classical in
+
 theorem generic_parked_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
  (s : State) (m : List Bool)
  (hx : regValue layout.point.x s.basis = codeX R)
@@ -45376,7 +45563,7 @@ theorem generic_parked_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) 
 
 end ECDSAAdd.Entrant.ControlGenericPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -45387,6 +45574,7 @@ attribute [local irreducible] layout wires run
 def genericBlock (cx cy : Fp) : Program := renameProgram (rho layout) (genericN layout cx cy)
 def borrowGeneric (cx cy : Fp) : Program := renameProgram (Equiv.swap layout.doubleSelect layout.control) (genericBlock cx cy)
 def borrowOut (C : Point) : Program := renameProgram (Equiv.swap layout.doubleSelect (layout.core.poolWire 511)) (outNew layout C)
+
 
 theorem generic_control_free (cx cy : Fp) : layout.control∉wires (genericBlock cx cy) :=
  ControlSupportDevelop.generic_block_control cx cy
@@ -45403,14 +45591,18 @@ theorem borrowOut_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (s : 
  run (borrowOut (.some hc)) m s=run (outNew layout (.some hc)) m s :=
  FreshSwapDevelop.rename_swap_zero_eq _ _ _ (OutSpareDevelop.spare_free hc) s m hd hz ho
 
+
 theorem borrowGeneric_retired (cx cy : Fp) : layout.doubleSelect∉wires (borrowGeneric cx cy) :=
  FreshSwapDevelop.retired _ _ _ (generic_control_free cx cy)
+
 theorem borrowOut_retired {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  layout.doubleSelect∉wires (borrowOut (.some hc)) :=
  FreshSwapDevelop.retired _ _ _ (OutSpareDevelop.spare_free hc)
+
 theorem borrowGeneric_physical (cx cy : Fp) : GatePhysical (borrowGeneric cx cy) :=
  gatePhysical_rename _ (Equiv.swap _ _).injective _
   (gatePhysical_rename _ rho_injective _ (FlagTop2.genericN_physical cx cy))
+
 theorem borrowOut_physical {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) : GatePhysical (borrowOut (.some hc)) :=
  gatePhysical_rename _ (Equiv.swap _ _).injective _ (OutFlag.outNew_physical hc)
 
@@ -45420,67 +45612,67 @@ theorem borrowOut_physical {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) 
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 ParityEven ControlGenericPointDevelop
 attribute [local irreducible] layout run
-open Classical in
-theorem generic_format_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
- (s : State) (m : List Bool)
- (hx : regValue layout.point.x s.basis = formatX (.some hc) b (dialogOrdinary b R (.some hc)) R)
- (hy : regValue layout.point.y s.basis = formatY (.some hc) b (dialogOrdinary b R (.some hc)) R)
- (hf : s.basis layout.point.finite = false)
- (hg : s.basis layout.genericSelect = dialogOrdinary b R (.some hc))
- (he : s.basis layout.core.equalNegY = false) (hd : s.basis layout.doubleSelect = false)
- (hz : ∀q∈layout.dialogPool,q≠FlagEntry.pkW layout→s.basis q=false)
- (hpk:s.basis (FlagEntry.pkW layout)=(dialogOrdinary b R (.some hc) && decide ((triOf (.some hc)).A < ControlSentinelDevelop.ordinaryX R))) :
- let G:=dialogOrdinary b R (.some hc)
- let O:=if G then R+.some hc else R
- let t:=run (genericBlock cx cy) m s
- t.phase=s.phase ∧
- regValue layout.point.x t.basis=formatX (.some hc) b G O ∧
- regValue layout.point.y t.basis=formatY (.some hc) b G O ∧
- t.basis (FlagEntry.pkW layout)=vB hc b R ∧
- ∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q := by
- cases hG:dialogOrdinary b R (.some hc)
- · have hpk0:s.basis (FlagEntry.pkW layout)=false:=by simpa only [hG,Bool.false_and] using hpk
-   have hclean:regValue layout.dialogPool s.basis=0:=by
-    apply (regValue_zero _ _).mpr
-    intro q hq
-    by_cases hp:q=FlagEntry.pkW layout
-    · simpa only [hp] using hpk0
-    · exact hz q hq hp
-   let X: Fp:=formatX (.some hc) b false R
-   let Y: Fp:=formatY (.some hc) b false R
-   have hXv:X.val=formatX (.some hc) b false R:=ZMod.val_natCast_of_lt (format_bounds (.some hc) b false R).1
-   have hYv:Y.val=formatY (.some hc) b false R:=ZMod.val_natCast_of_lt (format_bounds (.some hc) b false R).2
-   have hid:=GenericFalseDevelop.mapped_false X Y cx cy s m
-    (by simpa only [hXv,hG] using hx) (by simpa only [hYv,hG] using hy) hf
-    (hg.trans hG) he hd hclean (formatX_fp_ne_zero (.some hc) b false R)
-   change run (genericBlock cx cy) m s=s at hid
-   dsimp only
-   rw [hid]
-   simp only [hG,Bool.false_eq_true,if_false]
-   exact ⟨True.intro,by simpa only [hG] using hx,by simpa only [hG] using hy,
-    by simpa only [vB,hG,Bool.false_and] using hpk0,fun _ _ _=>True.intro⟩
- · have hx':regValue layout.point.x s.basis=codeX R:=by
-    rw [codeX_ordinary]
-    simpa only [formatX,hG,Bool.not_true,Bool.and_false,Bool.false_eq_true,if_false] using hx
-   have hy':regValue layout.point.y s.basis=pointY R:=by
-    simpa only [formatY,hG,Bool.not_true,Bool.and_false,Bool.false_eq_true,if_false] using hy
-   have hpk':s.basis (FlagEntry.pkW layout)=(dialogOrdinary b R (.some hc) && decide ((triOf (.some hc)).A < codeX R)):=by
-    simpa only [codeX_ordinary] using hpk
-   have h:=generic_parked_run hc b R s m hx' hy' hf hg he hd hz hpk'
-   dsimp only at h ⊢
-   simpa [hG,formatX,formatY,codeX_ordinary] using h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
@@ -45492,12 +45684,12 @@ theorem pool_off_xy (q : Wire) (hq:q∈layout.dialogPool) : q∉layout.point.x++
  theorem pool_off_control : ∀q∈layout.dialogPool,q≠layout.control := by decide +kernel
  theorem work_pool (i : Fin 9) : w i.val∈layout.dialogPool := Square5Placement.pool_member layout layout_widths _ (lt_trans i.isLt (by decide))
  theorem work_off_pk : ∀i:Fin 9,w i.val≠pkW layout := by decide +kernel
- theorem marker_work_pool (q : ZeroBit) (hq:q∈markerBits) : q.work∈layout.dialogPool := by
- have hw:q.work∈markerWork:=by rw [←marker_maps.2];exact List.mem_map.mpr ⟨q,hq,rfl⟩
- obtain ⟨i,hi,he⟩:=List.mem_map.mp hw
- rw [←he]
- exact Square5Placement.pool_member layout layout_widths _ (lt_trans (List.mem_range.mp hi) (by decide))
- theorem marker_work_off_pk : ∀q∈markerBits,q.work≠pkW layout := by decide +kernel
+
+
+
+
+
+
  theorem finite_off_xy : layout.point.finite∉layout.point.x++layout.point.y := by decide +kernel
  theorem eneg_off_xy : layout.core.equalNegY∉layout.point.x++layout.point.y := by decide +kernel
  theorem double_off_xy : layout.doubleSelect∉layout.point.x++layout.point.y := by decide +kernel
@@ -45516,7 +45708,7 @@ theorem pool_off_xy (q : Wire) (hq:q∈layout.dialogPool) : q∉layout.point.x++
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -45526,154 +45718,154 @@ attribute [local irreducible] layout run
 noncomputable section
 open Classical
 
-structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
- phase:t.phase=s.phase
- x:regValue layout.point.x t.basis=X
- y:regValue layout.point.y t.basis=Y
- parked:t.basis (FlagEntry.pkW layout)=pk
- rest:∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q
 
-theorem middleResult_unique {s t u : State} {X Y : Nat} {pk : Bool}
- (h:MiddleResult s t X Y pk) (k:MiddleResult s u X Y pk) : t=u := by
- apply State.extensionality _ _ (h.phase.trans k.phase.symm)
- funext q
- by_cases hp:q=FlagEntry.pkW layout
- · subst q;exact h.parked.trans k.parked.symm
- by_cases hx:q∈layout.point.x
- · exact (regValue_eq_iff _ _ _).mp (h.x.trans k.x.symm) q hx
- by_cases hy:q∈layout.point.y
- · exact (regValue_eq_iff _ _ _).mp (h.y.trans k.y.symm) q hy
- have hq:q∉layout.point.x++layout.point.y:=by simp [hx,hy]
- exact (h.rest q hq hp).trans (k.rest q hq hp).symm
 
- def middle (C : Point) (cx cy : Fp) : Program :=
- encode C ++ eraseB ++ borrowGeneric cx cy ++ loadB ++ decode C
 
-theorem middle_sequence {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
- (s : State) (me ma mg ml md : List Bool)
- (hx : regValue layout.point.x s.basis = ControlSentinelDevelop.ordinaryX R)
- (hy : regValue layout.point.y s.basis = pointY R)
- (hb:s.basis layout.control=b)
- (hf : s.basis layout.point.finite = false)
- (hg : s.basis layout.genericSelect = dialogOrdinary b R (.some hc))
- (he : s.basis layout.core.equalNegY = false) (hd : s.basis layout.doubleSelect = false)
- (hz : ∀q∈layout.dialogPool,q≠FlagEntry.pkW layout→s.basis q=false)
- (hpk:s.basis (FlagEntry.pkW layout)=(dialogOrdinary b R (.some hc) && decide ((triOf (.some hc)).A < ControlSentinelDevelop.ordinaryX R))) :
- let C:Point:=.some hc
- let G:=dialogOrdinary b R C
- let O:=if G then R+C else R
- let a:=run (encode C) me s
- let u:=put a layout.control false
- let t:=run (borrowGeneric cx cy) mg u
- let v:=put t layout.control b
- let z:=run (decode C) md v
- run eraseB ma a=u ∧ run loadB ml t=v ∧
- MiddleResult s z (ControlSentinelDevelop.ordinaryX O) (pointY O) (vB hc b R) := by
- let C:Point:=.some hc
- let G:=dialogOrdinary b R C
- let O:=if G then R+C else R
- have hG:G=ControlSentinelDevelop.generic C b R:=ControlSentinelDevelop.generic_agrees C R b (WeierstrassCurve.Affine.Point.some_ne_zero hc)
- have hcorner:(b && !G)=true→ControlSentinelDevelop.corner C R:=by
-  rw [hG]
-  cases b <;> by_cases hr:ControlSentinelDevelop.corner C R <;> simp [ControlSentinelDevelop.generic,hr]
- have hgb:G=true→b=true:=by
-  rw [hG]
-  cases b <;> simp [ControlSentinelDevelop.generic]
- let a:=run (encode C) me s
- have hp:=encode_spec hc b G R s me hcorner hx hy hb hg
-  (fun i=>hz _ (work_pool i) (work_off_pk i))
- have ha:XYResult s a (formatX C b G R) (formatY C b G R):=hp.1
- have apool:∀q∈layout.dialogPool,q≠FlagEntry.pkW layout→a.basis q=false:=by
-  intro q hq hpq
-  exact (ha.rest q (pool_off_xy q hq)).trans (hz q hq hpq)
- have af:a.basis layout.point.finite=false:=(ha.rest _ finite_off_xy).trans hf
- have ag:a.basis layout.genericSelect=G:=(ha.rest _ generic_off_xy).trans hg
- have ab:a.basis layout.control=b:=(ha.rest _ control_off_xy).trans hb
- have ae:a.basis layout.core.equalNegY=false:=(ha.rest _ eneg_off_xy).trans he
- have ad:a.basis layout.doubleSelect=false:=(ha.rest _ double_off_xy).trans hd
- have apk:a.basis (FlagEntry.pkW layout)=(G && decide ((triOf C).A < ControlSentinelDevelop.ordinaryX R)):=
-  (ha.rest _ (pool_off_xy _ (FlagEntry.pk_pool layout layout_widths))).trans hpk
- let u:=put a layout.control false
- have erase:run eraseB ma a=u:=by
-  apply eraseB_run a ma (formatX C b G R) (formatY C b G R) ha.x ha.y af
-   (fun q hq=>apool _ (marker_work_pool q hq) (marker_work_off_pk q hq))
-  rw [ag,format_recover C b G R hgb]
-  exact ab
- have ux:regValue layout.point.x u.basis=formatX C b G R:=
-  (put_reg _ _ _ _ (by decide +kernel)).trans ha.x
- have uy:regValue layout.point.y u.basis=formatY C b G R:=
-  (put_reg _ _ _ _ (by decide +kernel)).trans ha.y
- have uf:u.basis layout.point.finite=false:=(put_away a _ _ false finite_off_control).trans af
- have ug:u.basis layout.genericSelect=G:=(put_away a _ _ false generic_off_control).trans ag
- have ue:u.basis layout.core.equalNegY=false:=(put_away a _ _ false eneg_off_control).trans ae
- have ud:u.basis layout.doubleSelect=false:=(put_away a _ _ false double_off_control).trans ad
- have ub:u.basis layout.control=false:=put_at _ _ _
- have upool:∀q∈layout.dialogPool,q≠FlagEntry.pkW layout→u.basis q=false:=by
-  intro q hq hpq
-  exact (put_away a _ _ false (pool_off_control q hq)).trans (apool q hq hpq)
- have upk:u.basis (FlagEntry.pkW layout)=(G && decide ((triOf C).A < ControlSentinelDevelop.ordinaryX R)):=
-  (put_away a _ _ false pk_off_control).trans apk
- have gt:=generic_format_run hc b R u mg ux uy uf ug ue ud upool upk
- have gd:(run (genericBlock cx cy) mg u).basis layout.doubleSelect=false:=
-  (gt.2.2.2.2 _ double_off_xy double_off_pk).trans ud
- have eqg:=borrowGeneric_run cx cy u mg ub ud gd
- let t:=run (borrowGeneric cx cy) mg u
- have ht:t.phase=u.phase ∧ regValue layout.point.x t.basis=formatX C b G O ∧
-  regValue layout.point.y t.basis=formatY C b G O ∧ t.basis (FlagEntry.pkW layout)=vB hc b R ∧
-  ∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=u.basis q:=by
-  dsimp only [t]
-  rw [eqg]
-  exact gt
- have tf:t.basis layout.point.finite=false:=(ht.2.2.2.2 _ finite_off_xy finite_off_pk).trans uf
- have tg:t.basis layout.genericSelect=G:=(ht.2.2.2.2 _ generic_off_xy generic_off_pk).trans ug
- have tb':t.basis layout.control=false:=by
-  change (run (borrowGeneric cx cy) mg u).basis layout.control=false
-  rw [eqg]
-  exact (run_preserves_outside _ _ _ _ (generic_control_free cx cy)).trans ub
- have tpool:∀q∈layout.dialogPool,q≠FlagEntry.pkW layout→t.basis q=false:=by
-  intro q hq hpq
-  exact (ht.2.2.2.2 q (pool_off_xy q hq) hpq).trans (upool q hq hpq)
- let v:=put t layout.control b
- have load:run loadB ml t=v:=by
-  have h:=loadB_run t ml (formatX C b G O) (formatY C b G O) ht.2.1 ht.2.2.1 tf
-   (fun q hq=>tpool _ (marker_work_pool q hq) (marker_work_off_pk q hq)) tb'
-  rw [tg,format_recover C b G O hgb] at h
-  exact h
- have vx:regValue layout.point.x v.basis=formatX C b G O:=
-  (put_reg _ _ _ _ (by decide +kernel)).trans ht.2.1
- have vy:regValue layout.point.y v.basis=formatY C b G O:=
-  (put_reg _ _ _ _ (by decide +kernel)).trans ht.2.2.1
- have vg:v.basis layout.genericSelect=G:=(put_away t _ _ b generic_off_control).trans tg
- have vb:v.basis layout.control=b:=put_at _ _ _
- have vz:∀i:Fin 9,v.basis (w i.val)=false:=by
-  intro i
-  exact (put_away t _ _ b (work_off_control i)).trans (tpool _ (work_pool i) (work_off_pk i))
- have houtcorner:(b && !G)=true→ControlSentinelDevelop.corner C O:=by
-  intro h
-  have hh:∀b g:Bool,(b && !g)=true→g=false:=by decide
-  have hg0:G=false:=hh b G h
-  simpa only [O,hg0,Bool.false_eq_true,if_false] using hcorner h
- have hout:=decode_spec hc b G O v md houtcorner vx vy vb vg vz
- let z:=run (decode C) md v
- have hzout:XYResult v z (ControlSentinelDevelop.ordinaryX O) (pointY O):=hout.1
- refine ⟨erase,load,?_,?_,?_,?_,?_⟩
- · exact hzout.phase.trans (ht.1.trans ha.phase)
- · exact hzout.x
- · exact hzout.y
- · exact (hzout.rest _ (pool_off_xy _ (FlagEntry.pk_pool layout layout_widths))).trans
-    ((put_away t _ _ b pk_off_control).trans ht.2.2.2.1)
- · intro q hq hpq
-   rw [hzout.rest q hq]
-   by_cases hqb:q=layout.control
-   · subst q;exact vb.trans hb.symm
-   · exact (put_away t _ _ b hqb).trans ((ht.2.2.2.2 q hq hpq).trans
-      ((put_away a _ _ false hqb).trans (ha.rest q hq)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 end
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -45698,7 +45890,7 @@ theorem run_three_tapes (P Q R : Program) (a b c : List Bool) (s : State) :
 
 end ECDSAAdd.Entrant.ControlTapeDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -45713,7 +45905,7 @@ attribute [local irreducible] layout run
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -45793,30 +45985,30 @@ def auxPorts : Finset Wire := ControlStageSupportDevelop.ports ∪ layout.point.
  have htc:wires tagClassify⊆auxPorts:=aux_placed _ (by simp [tagPorts]) aux_tag_ports _ OneHotCornersDevelop.programs_support.2.2.1
  have hte:wires tagClear⊆auxPorts:=aux_placed _ (by simp [tagPorts]) aux_tag_ports _ OneHotCornersDevelop.programs_support.2.2.2
  simp only [encode,decode,wires_append,wires_reverse,Finset.union_subset_iff]
- tauto
+ itauto
 
- theorem aux_marker_bits : ∀q∈markerBits,q.input∈auxPorts ∧ q.work∈auxPorts := by
-  intro q hq
-  have hp:=zeroPorts_mem layout.point.y markerWork q hq
-  have hw:markerWork=layout.dialogPool.take 256:=by decide +kernel
-  exact ⟨aux_y _ hp.1,Finset.mem_union_left _ (ControlStageSupportDevelop.mp _ (hw ▸ hp.2))⟩
- theorem aux_marker_flags : layout.control∈auxPorts ∧ layout.genericSelect∈auxPorts ∧ markerMSB∈auxPorts ∧ layout.point.finite∈auxPorts :=
-  ⟨aux_flag _ (by simp),aux_flag _ (by simp),aux_x_get 255 (by decide),aux_flag _ (by simp)⟩
- theorem marker_support : wires eraseB⊆auxPorts ∧ wires loadB⊆auxPorts := by
- have hb:=aux_marker_flags.1
- have hg:=aux_marker_flags.2.1
- have hx:=aux_marker_flags.2.2.1
- have hf:=aux_marker_flags.2.2.2
- have he:wires (zeroWith (eraseTail layout.control markerMSB) layout.point.finite markerBits)⊆auxPorts:=by
-  apply zeroWith_sub _ auxPorts ?_ _ _ hf aux_marker_bits
-  intro h hh
-  simp [eraseTail,wires,Instr.wires,correctionWires,Finset.insert_subset_iff,hb,hx,hh]
- have hl:wires (zeroWith (loadTail layout.control markerMSB) layout.point.finite markerBits)⊆auxPorts:=by
-  apply zeroWith_sub _ auxPorts ?_ _ _ hf aux_marker_bits
-  intro h hh
-  simp [loadTail,wires,Instr.wires,Finset.insert_subset_iff,hb,hx,hh]
- simp only [eraseB,loadB,eraseControl,loadControl,wires_append,Finset.union_subset_iff]
- constructor <;> simp [wires,Instr.wires,Finset.insert_subset_iff,hb,hg,hf,he,hl]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
  theorem aux_double_free : layout.doubleSelect∉auxPorts := by
   unfold auxPorts ControlStageSupportDevelop.ports
@@ -45832,67 +46024,68 @@ def auxPorts : Finset Wire := ControlStageSupportDevelop.ports ∪ layout.point.
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 ParityEven ControlGenericPointDevelop
 attribute [local irreducible] layout run
-open Classical in
-theorem middle_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
- (s : State) (m : List Bool)
- (hx : regValue layout.point.x s.basis = ControlSentinelDevelop.ordinaryX R)
- (hy : regValue layout.point.y s.basis = pointY R)
- (hb:s.basis layout.control=b)
- (hf : s.basis layout.point.finite = false)
- (hg : s.basis layout.genericSelect = dialogOrdinary b R (.some hc))
- (he : s.basis layout.core.equalNegY = false) (hd : s.basis layout.doubleSelect = false)
- (hz : ∀q∈layout.dialogPool,q≠FlagEntry.pkW layout→s.basis q=false)
- (hpk:s.basis (FlagEntry.pkW layout)=(dialogOrdinary b R (.some hc) && decide ((triOf (.some hc)).A < ControlSentinelDevelop.ordinaryX R))) :
- let O:=if dialogOrdinary b R (.some hc) then R+.some hc else R
- MiddleResult s (run (middle (.some hc) cx cy) m s) (ControlSentinelDevelop.ordinaryX O) (pointY O) (vB hc b R) := by
- let C:Point:=.some hc
- let d1:=m.drop (measurementCount (encode C))
- let d2:=d1.drop (measurementCount eraseB)
- let d3:=d2.drop (measurementCount (borrowGeneric cx cy))
- let d4:=d3.drop (measurementCount loadB)
- let me:=m.take (measurementCount (encode C))
- let ma:=d1.take (measurementCount eraseB)
- let mg:=d2.take (measurementCount (borrowGeneric cx cy))
- let ml:=d3.take (measurementCount loadB)
- have h:=middle_sequence hc b R s me ma mg ml d4 hx hy hb hf hg he hd hz hpk
- dsimp only at h
- obtain ⟨her,hload,hout⟩:=h
- unfold middle
- simp only [List.append_assoc]
- rw [run_append,run_append,run_append,run_append]
- rw [her,hload]
- exact hout
 
-open Classical in
-theorem middle_eq_generic {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
- (s : State) (m n : List Bool)
- (hx : regValue layout.point.x s.basis = ControlSentinelDevelop.ordinaryX R)
- (hy : regValue layout.point.y s.basis = pointY R)
- (hb:s.basis layout.control=b)
- (hf : s.basis layout.point.finite = false)
- (hg : s.basis layout.genericSelect = dialogOrdinary b R (.some hc))
- (he : s.basis layout.core.equalNegY = false) (hd : s.basis layout.doubleSelect = false)
- (hz : ∀q∈layout.dialogPool,q≠FlagEntry.pkW layout→s.basis q=false)
- (hpk:s.basis (FlagEntry.pkW layout)=(dialogOrdinary b R (.some hc) && decide ((triOf (.some hc)).A < ControlSentinelDevelop.ordinaryX R))) :
- run (middle (.some hc) cx cy) m s=run (genericBlock cx cy) n s := by
- have hm:=middle_run hc b R s m hx hy hb hf hg he hd hz hpk
- have hg:=generic_parked_run hc b R s n (by simpa only [codeX_ordinary] using hx) hy hf hg he hd hz
-  (by simpa only [codeX_ordinary] using hpk)
- apply middleResult_unique hm
- exact ⟨hg.1,by simpa only [codeX_ordinary] using hg.2.1,hg.2.2.1,hg.2.2.2.1,hg.2.2.2.2⟩
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -45960,7 +46153,7 @@ structure Staged (C R : Point) (b : Bool) (t : State) : Prop where
 end
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -45970,46 +46163,47 @@ attribute [local irreducible] layout run
 noncomputable section
 open Classical
 
-def finiteBorrow (C : Point) (cx cy : Fp) : Program :=
- stageNew layout C (pkW layout) ++ middle C cx cy ++ borrowOut C
- def wrapperBorrow (C : Point) (cx cy : Fp) : Program :=
- renameProgram (Wrapper5.U layout) (finiteBorrow C cx cy)
 
-theorem finiteBorrow_correct {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
- (s : State) (m : List Bool) (hs:PointDialogBoundary layout R b (fun _=>false) s.basis) :
- (run (finiteBorrow (.some hc) cx cy) m s).phase=s.phase ∧
- PointDialogBoundary layout (if b then R+.some hc else R) b (fun _=>false)
-  (run (finiteBorrow (.some hc) cx cy) m s).basis := by
- let C:Point:=.some hc
- let P:=stageNew layout C (pkW layout)
- let ds:=m.take (measurementCount P)
- let d1:=m.drop (measurementCount P)
- let dm:=d1.take (measurementCount (middle C cx cy))
- let dout:=d1.drop (measurementCount (middle C cx cy))
- let s1:=run P ds s
- let q:=run (genericBlock cx cy) [] s1
- have hv:=stage_values hc b R s ds hs
- have eqmid:=middle_eq_generic hc b R s1 dm [] hv.x hv.y hv.control hv.finite hv.generic hv.eneg hv.double hv.clean hv.parked
- let oldTape:=pfx (measurementCount P) ds++(pfx (measurementCount (genericBlock cx cy)) []++dout)
- have hold:run (finiteN layout C cx cy) oldTape s=run (OutFlag.outNew layout C) dout q:=by
-  simpa only [finiteN,genericBlock,List.append_assoc] using
-   run_three_tapes P (genericBlock cx cy) (OutFlag.outNew layout C) ds [] dout s
- have ho:=finite_run_N hc b R s oldTape hs
- rw [hold] at ho
- have hq:=generic_parked_run hc b R s1 [] (by simpa only [codeX_ordinary] using hv.x) hv.y hv.finite hv.generic hv.eneg hv.double hv.clean
-  (by simpa only [codeX_ordinary] using hv.parked)
- have qD:q.basis layout.doubleSelect=false:=(hq.2.2.2.2 _ double_off_xy double_off_pk).trans hv.double
- have qp:q.basis (layout.core.poolWire 511)=false:=by
-  have hm:layout.core.poolWire 511∈layout.dialogPool:=Square5Placement.pool_member layout layout_widths 511 (by decide)
-  have hn:layout.core.poolWire 511≠pkW layout:=by decide +kernel
-  exact (hq.2.2.2.2 _ (pool_off_xy _ hm) hn).trans (hv.clean _ hm hn)
- have hD:(run (OutFlag.outNew layout C) dout q).basis layout.doubleSelect=false:=ho.2.flags _ (by simp [flags_list])
- have hout:=borrowOut_run hc q dout qD qp hD
- unfold finiteBorrow
- rw [List.append_assoc,run_append,run_append]
- change (run (borrowOut C) dout (run (middle C cx cy) dm s1)).phase=s.phase ∧ _
- rw [eqmid,hout]
- exact ho
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -46018,7 +46212,7 @@ theorem finiteBorrow_correct {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy
 end
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -46030,6 +46224,7 @@ attribute [local irreducible] layout wires
 def envelope (C : Point) (cx cy : Fp) : Program := Edges.wrapper layout C cy (A161Generic.gen layout cx cy)
 def omissions : List Nat := [1400,1800,766,765,767,1540,770,1285,1286,769,768,718,719,760]
 
+
 theorem envelope_sites (C : Point) (cx cy : Fp) :
  ioWires∪wires (envelope C cx cy)⊆(WrapperOB5.sites layout).toFinset := by
  have hs:=Edges.wrapper_support layout layout_widths layout_nodup C cy
@@ -46040,6 +46235,7 @@ theorem envelope_sites (C : Point) (cx cy : Fp) :
   rw [A161Generic.gen_shape]
  rw [he]
  exact Finset.union_subset FiniteHostStack.io_support_original hs
+
 
 theorem envelope_free (C : Point) (cx cy : Fp) : ∀k∈omissions,layout.core.poolWire k∉wires (envelope C cx cy) := by
  let G:=A161Generic.generic layout cx cy
@@ -46092,13 +46288,14 @@ theorem envelope_free (C : Point) (cx cy : Fp) : ∀k∈omissions,layout.core.po
 
 end ECDSAAdd.Entrant.ControlOldInventoryDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.ControlOldInventoryDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel CompressedPointDialog
 attribute [local irreducible] layout wires
+
 
 theorem old_wrapper_envelope {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  wires (FlagTop2.wrapperN layout (.some hc) cx cy)⊆ioWires∪wires (envelope (.some hc) cx cy) := by
@@ -46123,9 +46320,11 @@ theorem old_wrapper_envelope {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy
    · exact Finset.mem_union_left _ (io_mem q (List.mem_toFinset.mp io))
  · exact Finset.mem_union_left _ (io_mem q (List.mem_toFinset.mp io))
 
+
 theorem old_wrapper_sites {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  wires (FlagTop2.wrapperN layout (.some hc) cx cy)⊆(WrapperOB5.sites layout).toFinset :=
  (old_wrapper_envelope hc).trans (envelope_sites (.some hc) cx cy)
+
 
 theorem old_wrapper_free {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (k : Nat) (hk:k∈omissions) :
  layout.core.poolWire k∉wires (FlagTop2.wrapperN layout (.some hc) cx cy) := by
@@ -46139,7 +46338,7 @@ theorem old_wrapper_free {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (k
 
 end ECDSAAdd.Entrant.ControlOldInventoryDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -46188,54 +46387,55 @@ theorem aux_swap_free : layout.core.poolWire 684∉auxPorts ∧ layout.core.pool
  have hs:=FreshSwapDevelop.support P q z (insert z (wires P)) (Finset.subset_insert _ _) hz (Finset.mem_insert_self _ _)
  exact hs.trans (Finset.erase_subset _ _)
 
- theorem finiteBorrow_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
- wires (finiteBorrow (.some hc) cx cy)⊆wires (finiteN layout (.some hc) cx cy)∪auxPorts∪{layout.core.poolWire 511} := by
- have he:=encoding_support hc
- have hm:=marker_support
- have hg:=(rename_swap_sub (genericBlock cx cy) layout.doubleSelect layout.control (generic_control_free cx cy))
- have ho:=(rename_swap_sub (OutFlag.outNew layout (.some hc)) layout.doubleSelect (layout.core.poolWire 511) (OutSpareDevelop.spare_free hc))
- have hb:layout.control∈auxPorts:=aux_flag _ (by simp)
- let S:=wires (finiteN layout (.some hc) cx cy)∪auxPorts∪{layout.core.poolWire 511}
- have aux:auxPorts⊆S:=fun q hq=>Finset.mem_union_left _ (Finset.mem_union_right _ hq)
- have old:wires (finiteN layout (.some hc) cx cy)⊆S:=fun q hq=>Finset.mem_union_left _ (Finset.mem_union_left _ hq)
- have st:wires (stageNew layout (.some hc) (pkW layout))⊆S:=by
-  intro q hq
-  apply old
-  simp only [finiteN,wires_append,Finset.mem_union]
-  exact Or.inl (Or.inl hq)
- have gen:wires (genericBlock cx cy)⊆S:=by
-  intro q hq
-  apply old
-  simp only [finiteN,wires_append,Finset.mem_union]
-  exact Or.inl (Or.inr hq)
- have out:wires (OutFlag.outNew layout (.some hc))⊆S:=by
-  intro q hq
-  apply old
-  simp only [finiteN,wires_append,Finset.mem_union]
-  exact Or.inr hq
- have gn:wires (borrowGeneric cx cy)⊆S:=by
-  intro q hq
-  rcases Finset.mem_insert.mp (hg hq) with rfl|hq
-  · exact aux hb
-  · exact gen hq
- have on:wires (borrowOut (.some hc))⊆S:=by
-  intro q hq
-  rcases Finset.mem_insert.mp (ho hq) with rfl|hq
-  · exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
-  · exact out hq
- change wires (finiteBorrow (.some hc) cx cy)⊆S
- simp only [finiteBorrow,middle,wires_append,Finset.union_subset_iff]
- have en:=he.1.trans aux
- have de:=he.2.trans aux
- have er:=hm.1.trans aux
- have ld:=hm.2.trans aux
- tauto
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -46243,60 +46443,64 @@ namespace ECDSAAdd.Entrant.ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 FlagEntry ParityEven ControlOldInventoryDevelop
 attribute [local irreducible] layout wires run
 
-theorem wrapperBorrow_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
- wires (wrapperBorrow (.some hc) cx cy)⊆wires (wrapperN layout (.some hc) cx cy)∪auxPorts∪{layout.core.poolWire 511} := by
- intro q hq
- rw [wrapperBorrow,renameProgram_support] at hq
- obtain ⟨a,ha,rfl⟩:=Finset.mem_image.mp hq
- rcases Finset.mem_union.mp (finiteBorrow_support hc ha) with ha|ha
- · rcases Finset.mem_union.mp ha with ha|ha
-   · apply Finset.mem_union_left
-     apply Finset.mem_union_left
-     rw [wrapperN,renameProgram_support]
-     exact Finset.mem_image.mpr ⟨a,ha,rfl⟩
-   · rw [aux_U a ha]
-     exact Finset.mem_union_left _ (Finset.mem_union_right _ ha)
- · simp only [Finset.mem_singleton] at ha
-   subst a
-   have hU:Wrapper5.U layout (layout.core.poolWire 511)=layout.core.poolWire 511:=by decide +kernel
-   rw [hU]
-   exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
-
-theorem finiteBorrow_retired {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
- layout.doubleSelect∉wires (finiteBorrow (.some hc) cx cy) := by
- have st:=ControlStageSupportDevelop.double_free hc
- have en:layout.doubleSelect∉wires (encode (.some hc)):=fun h=>aux_double_free ((encoding_support hc).1 h)
- have de:layout.doubleSelect∉wires (decode (.some hc)):=fun h=>aux_double_free ((encoding_support hc).2 h)
- have er:layout.doubleSelect∉wires eraseB:=fun h=>aux_double_free (marker_support.1 h)
- have ld:layout.doubleSelect∉wires loadB:=fun h=>aux_double_free (marker_support.2 h)
- have gn:=borrowGeneric_retired cx cy
- have ot:=borrowOut_retired hc
- simp only [finiteBorrow,middle,wires_append,Finset.mem_union,not_or]
- tauto
-
-theorem wrapperBorrow_retired {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
- layout.doubleSelect∉wires (wrapperBorrow (.some hc) cx cy) := by
- rw [wrapperBorrow,renameProgram_support]
- intro hq
- obtain ⟨a,ha,he⟩:=Finset.mem_image.mp hq
- have hfix:Wrapper5.U layout layout.doubleSelect=layout.doubleSelect:=by decide +kernel
- have hd: a=layout.doubleSelect:=(Wrapper5.U layout).injective (he.trans hfix.symm)
- exact finiteBorrow_retired hc (hd ▸ ha)
 
 
 
-theorem wrapperBorrow_free {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (k : Nat) (hk:k∈omissions) :
- layout.core.poolWire k∉wires (wrapperBorrow (.some hc) cx cy) := by
- intro hq
- rcases Finset.mem_union.mp (wrapperBorrow_support hc hq) with hq|hq
- · rcases Finset.mem_union.mp hq with hq|hq
-   · exact old_wrapper_free hc k hk hq
-   · exact aux_old_free k hk hq
- · simp only [Finset.mem_singleton] at hq
-   have kb:k<2613:=by simp only [omissions,List.mem_cons,List.not_mem_nil,or_false] at hk;omega
-   have he:=pool_inj layout layout_widths layout_nodup k 511 kb (by decide) hq
-   simp only [omissions,List.mem_cons,List.not_mem_nil,or_false] at hk
-   omega
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -46305,7 +46509,7 @@ theorem wrapperBorrow_free {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) 
 
 end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -46341,7 +46545,7 @@ end ECDSAAdd.Entrant.ControlPointEncodingDevelop
 
 
 -- Linearized exceptional-control classifiers.
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -46475,7 +46679,7 @@ end ECDSAAdd.Entrant.LinearCornerHeadDevelop
 
 
 -- Linearized exceptional-control classifiers.
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -46533,7 +46737,7 @@ end ECDSAAdd.Entrant.LinearCornerPlacedDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -46713,7 +46917,7 @@ end ECDSAAdd.Entrant.LinearPointEncodingDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -46841,7 +47045,7 @@ attribute [local irreducible] layout wires run
  have hte:=placed_physical _ tag_nd (by simp [tagPorts]) _ linear_physical.2.2.2
   (linear_support.2.2.2.trans OneHotCornersDevelop.programs_support.2.2.2)
  simp only [encode,decode,firstFragment,undoFragment,tagClassFragment,tagClearFragment,classify,undo,tagClassify,tagClear,gatePhysical_append]
- tauto
+ itauto
 
  theorem encode_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
  (b g : Bool) (R : Point) (s : State) (m : List Bool) (hgb:g=true→b=true)
@@ -46876,7 +47080,7 @@ end ECDSAAdd.Entrant.LinearPointEncodingDevelop
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -46887,12 +47091,12 @@ attribute [local irreducible] layout run
 noncomputable section
 open Classical
 
-structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
- phase:t.phase=s.phase
- x:regValue layout.point.x t.basis=X
- y:regValue layout.point.y t.basis=Y
- parked:t.basis (FlagEntry.pkW layout)=pk
- rest:∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q
+
+
+
+
+
+
 
 
 
@@ -46905,7 +47109,7 @@ structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
 end
 end ECDSAAdd.Entrant.LinearPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -46921,7 +47125,7 @@ attribute [local irreducible] layout run
 
 end ECDSAAdd.Entrant.LinearPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -46937,7 +47141,7 @@ attribute [local irreducible] layout run
 
 end ECDSAAdd.Entrant.LinearPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -46965,7 +47169,7 @@ end ECDSAAdd.Entrant.LinearPointEncodingDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -46981,7 +47185,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.LinearPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -47019,7 +47223,7 @@ end ECDSAAdd.Entrant.LinearPointEncodingDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -47104,7 +47308,7 @@ end ECDSAAdd.Entrant.YControlMarkerDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
@@ -47167,7 +47371,7 @@ end ECDSAAdd.Entrant.YHeadPointEncodingDevelop
 
 set_option autoImplicit false
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -47178,12 +47382,12 @@ attribute [local irreducible] layout run
 noncomputable section
 open Classical
 
-structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
- phase:t.phase=s.phase
- x:regValue layout.point.x t.basis=X
- y:regValue layout.point.y t.basis=Y
- parked:t.basis (FlagEntry.pkW layout)=pk
- rest:∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q
+
+
+
+
+
+
 
 
 
@@ -47196,7 +47400,7 @@ structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
 end
 end ECDSAAdd.Entrant.YHeadPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -47212,7 +47416,7 @@ attribute [local irreducible] layout run
 
 end ECDSAAdd.Entrant.YHeadPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -47228,7 +47432,7 @@ attribute [local irreducible] layout run
 
 end ECDSAAdd.Entrant.YHeadPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -47256,7 +47460,7 @@ end ECDSAAdd.Entrant.YHeadPointEncodingDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -47267,7 +47471,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.YHeadPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -47293,7 +47497,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.YHeadPointEncodingDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -47330,7 +47534,7 @@ end ECDSAAdd.Entrant.YHeadPointEncodingDevelop
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 namespace ECDSAAdd.Entrant.CurveBucketDevelop
 open Secp256k1
@@ -47355,13 +47559,13 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 20000
 namespace ECDSAAdd.Entrant.CurveBucketDevelop
 open Arithmetic Secp256k1
 
-def tagY : Nat := 2500416
+
 
 
 
@@ -47395,7 +47599,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -47403,20 +47607,20 @@ set_option linter.unusedVariables false
 namespace ECDSAAdd.Entrant.BucketPointDevelop
 open Arithmetic Challenge Secp256k1 ControlPointEncodingDevelop
 
-def formatY (C : Point) (b g : Bool) (R : Point) : Nat :=
-  if b && !g then CurveBucketDevelop.tagY else pointY R
 
 
 
 
-theorem format_bounds (C : Point) (b g : Bool) (R : Point) :
-    formatX C b g R<p ∧ formatY C b g R<p := by
-  refine ⟨(ControlPointEncodingDevelop.format_bounds C b g R).1,?_⟩
-  unfold formatY
-  split
-  · norm_num [CurveBucketDevelop.tagY,p]
-  · simpa only [ControlPointEncodingDevelop.formatY,Bool.false_and,Bool.false_eq_true,if_false] using
-      (ControlPointEncodingDevelop.format_bounds C false false R).2
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -47440,7 +47644,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -47490,7 +47694,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -47518,7 +47722,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 20000
 set_option linter.unusedSimpArgs false
@@ -47572,7 +47776,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -47645,62 +47849,63 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.BucketPointDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 ParityEven ControlGenericPointDevelop ControlPointEncodingDevelop
 attribute [local irreducible] layout run
-open Classical in
-theorem generic_format_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
- (s : State) (m : List Bool)
- (hx : regValue layout.point.x s.basis = formatX (.some hc) b (dialogOrdinary b R (.some hc)) R)
- (hy : regValue layout.point.y s.basis = formatY (.some hc) b (dialogOrdinary b R (.some hc)) R)
- (hf : s.basis layout.point.finite = false)
- (hg : s.basis layout.genericSelect = dialogOrdinary b R (.some hc))
- (he : s.basis layout.core.equalNegY = false) (hd : s.basis layout.doubleSelect = false)
- (hz : ∀q∈layout.dialogPool,q≠FlagEntry.pkW layout→s.basis q=false)
- (hpk:s.basis (FlagEntry.pkW layout)=(dialogOrdinary b R (.some hc) && decide ((triOf (.some hc)).A < ControlSentinelDevelop.ordinaryX R))) :
- let G:=dialogOrdinary b R (.some hc)
- let O:=if G then R+.some hc else R
- let t:=run (genericBlock cx cy) m s
- t.phase=s.phase ∧
- regValue layout.point.x t.basis=formatX (.some hc) b G O ∧
- regValue layout.point.y t.basis=formatY (.some hc) b G O ∧
- t.basis (FlagEntry.pkW layout)=vB hc b R ∧
- ∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q := by
- cases hG:dialogOrdinary b R (.some hc)
- · have hpk0:s.basis (FlagEntry.pkW layout)=false:=by simpa only [hG,Bool.false_and] using hpk
-   have hclean:regValue layout.dialogPool s.basis=0:=by
-    apply (regValue_zero _ _).mpr
-    intro q hq
-    by_cases hp:q=FlagEntry.pkW layout
-    · simpa only [hp] using hpk0
-    · exact hz q hq hp
-   let X: Fp:=formatX (.some hc) b false R
-   let Y: Fp:=formatY (.some hc) b false R
-   have hXv:X.val=formatX (.some hc) b false R:=ZMod.val_natCast_of_lt (format_bounds (.some hc) b false R).1
-   have hYv:Y.val=formatY (.some hc) b false R:=ZMod.val_natCast_of_lt (format_bounds (.some hc) b false R).2
-   have hid:=GenericFalseDevelop.mapped_false X Y cx cy s m
-    (by simpa only [hXv,hG] using hx) (by simpa only [hYv,hG] using hy) hf
-    (hg.trans hG) he hd hclean (formatX_fp_ne_zero (.some hc) b false R)
-   change run (genericBlock cx cy) m s=s at hid
-   dsimp only
-   rw [hid]
-   simp only [hG,Bool.false_eq_true,if_false]
-   exact ⟨True.intro,by simpa only [hG] using hx,by simpa only [hG] using hy,
-    by simpa only [vB,hG,Bool.false_and] using hpk0,fun _ _ _=>True.intro⟩
- · have hx':regValue layout.point.x s.basis=codeX R:=by
-    rw [codeX_ordinary]
-    simpa only [formatX,hG,Bool.not_true,Bool.and_false,Bool.false_eq_true,if_false] using hx
-   have hy':regValue layout.point.y s.basis=pointY R:=by
-    simpa only [formatY,hG,Bool.not_true,Bool.and_false,Bool.false_eq_true,if_false] using hy
-   have hpk':s.basis (FlagEntry.pkW layout)=(dialogOrdinary b R (.some hc) && decide ((triOf (.some hc)).A < codeX R)):=by
-    simpa only [codeX_ordinary] using hpk
-   have h:=generic_parked_run hc b R s m hx' hy' hf hg he hd hz hpk'
-   dsimp only at h ⊢
-   simpa [hG,formatX,formatY,codeX_ordinary] using h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -47709,7 +47914,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 6000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -47788,7 +47993,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -47799,12 +48004,12 @@ attribute [local irreducible] layout run
 noncomputable section
 open Classical
 
-structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
- phase:t.phase=s.phase
- x:regValue layout.point.x t.basis=X
- y:regValue layout.point.y t.basis=Y
- parked:t.basis (FlagEntry.pkW layout)=pk
- rest:∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q
+
+
+
+
+
+
 
 
 
@@ -47817,7 +48022,7 @@ structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
 end
 end ECDSAAdd.Entrant.BucketPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -47837,7 +48042,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -47853,7 +48058,7 @@ attribute [local irreducible] layout run
 
 end ECDSAAdd.Entrant.BucketPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -47881,7 +48086,7 @@ end ECDSAAdd.Entrant.BucketPointDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -47892,7 +48097,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.BucketPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -47918,7 +48123,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.BucketPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -47967,7 +48172,7 @@ end ECDSAAdd.Entrant.BucketPointDevelop
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -48034,7 +48239,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -48076,7 +48281,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -48087,12 +48292,12 @@ attribute [local irreducible] layout run
 noncomputable section
 open Classical
 
-structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
- phase:t.phase=s.phase
- x:regValue layout.point.x t.basis=X
- y:regValue layout.point.y t.basis=Y
- parked:t.basis (FlagEntry.pkW layout)=pk
- rest:∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q
+
+
+
+
+
+
 
 
 
@@ -48105,7 +48310,7 @@ structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
 end
 end ECDSAAdd.Entrant.BucketTailPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -48125,7 +48330,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -48141,7 +48346,7 @@ attribute [local irreducible] layout run
 
 end ECDSAAdd.Entrant.BucketTailPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -48169,7 +48374,7 @@ end ECDSAAdd.Entrant.BucketTailPointDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -48180,7 +48385,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.BucketTailPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -48206,7 +48411,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.BucketTailPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -48256,7 +48461,7 @@ end ECDSAAdd.Entrant.BucketTailPointDevelop
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 20000
 namespace ECDSAAdd.Entrant.CurveAffineBucketDevelop
@@ -48278,7 +48483,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 namespace ECDSAAdd.Entrant.AffineYProjectionDevelop
 open Arithmetic
@@ -48296,7 +48501,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 namespace ECDSAAdd.Entrant.AffineYProjectionDevelop
 open Arithmetic Secp256k1 BucketPointDevelop
@@ -48314,7 +48519,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -48392,7 +48597,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -48427,7 +48632,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -48453,7 +48658,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -48495,7 +48700,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -48506,12 +48711,12 @@ attribute [local irreducible] layout run
 noncomputable section
 open Classical
 
-structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
- phase:t.phase=s.phase
- x:regValue layout.point.x t.basis=X
- y:regValue layout.point.y t.basis=Y
- parked:t.basis (FlagEntry.pkW layout)=pk
- rest:∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q
+
+
+
+
+
+
 
 
 
@@ -48524,7 +48729,7 @@ structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
 end
 end ECDSAAdd.Entrant.BucketAffinePointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -48544,7 +48749,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -48560,7 +48765,7 @@ attribute [local irreducible] layout run
 
 end ECDSAAdd.Entrant.BucketAffinePointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -48588,7 +48793,7 @@ end ECDSAAdd.Entrant.BucketAffinePointDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -48599,7 +48804,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.BucketAffinePointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -48625,7 +48830,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.BucketAffinePointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -48676,7 +48881,7 @@ end ECDSAAdd.Entrant.BucketAffinePointDevelop
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50137026
 set_option maxRecDepth 30000
 namespace ECDSAAdd.Entrant.CurveAffineBucket8Develop
@@ -48811,7 +49016,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50137026
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -49025,7 +49230,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 namespace ECDSAAdd.Entrant.AffineYProjection8Develop
 open Arithmetic Secp256k1 BucketPointDevelop
@@ -49067,7 +49272,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -49203,7 +49408,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -49353,7 +49558,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -49419,7 +49624,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -49542,7 +49747,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -49553,12 +49758,12 @@ attribute [local irreducible] layout run
 noncomputable section
 open Classical
 
-structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
- phase:t.phase=s.phase
- x:regValue layout.point.x t.basis=X
- y:regValue layout.point.y t.basis=Y
- parked:t.basis (FlagEntry.pkW layout)=pk
- rest:∀q,q∉layout.point.x++layout.point.y→q≠FlagEntry.pkW layout→t.basis q=s.basis q
+
+
+
+
+
+
 
 
 
@@ -49700,7 +49905,7 @@ structure MiddleResult (s t : State) (X Y : Nat) (pk : Bool) : Prop where
 end
 end ECDSAAdd.Entrant.BucketAffine8PointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -49765,7 +49970,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -49797,7 +50002,7 @@ attribute [local irreducible] layout run
                              
 end ECDSAAdd.Entrant.BucketAffine8PointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -49867,7 +50072,7 @@ end ECDSAAdd.Entrant.BucketAffine8PointDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -49919,7 +50124,7 @@ attribute [local irreducible] layout wires run
 
 end ECDSAAdd.Entrant.BucketAffine8PointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -50009,7 +50214,7 @@ attribute [local irreducible] layout wires run
                                   
 end ECDSAAdd.Entrant.BucketAffine8PointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -50140,7 +50345,7 @@ end ECDSAAdd.Entrant.BucketAffine8PointDevelop
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50137000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -50154,7 +50359,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -50190,7 +50395,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -50215,6 +50420,7 @@ theorem tagShift_spec (s : State) (m : List Bool) (X Y : Nat) (b g : Bool)
 def encode (C : Point) : Program := LinearPointEncodingDevelop.encode C++tagShift
 def decode (C : Point) : Program := tagShift++LinearPointEncodingDevelop.decode C
 
+
 theorem encode_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
  (b g : Bool) (R : Point) (s : State) (m : List Bool) (hgb:g=true→b=true)
  (hR:(b && !g)=true→ControlSentinelDevelop.corner (.some hc) R)
@@ -50234,6 +50440,7 @@ theorem encode_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
   unfold encode
   rw [run_append]
   exact ⟨full,fun i=>(full.rest _ (pool_off_xy _ (work_pool i))).trans (hz i)⟩
+
 
 theorem decode_spec {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
  (b g : Bool) (R : Point) (s : State) (m : List Bool) (hgb:g=true→b=true)
@@ -50263,7 +50470,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
@@ -50271,6 +50478,7 @@ namespace ECDSAAdd.Entrant.AboveFieldTagDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 ParityEven ControlGenericPointDevelop ControlPointEncodingDevelop
 attribute [local irreducible] layout run
 open Classical in
+
 theorem generic_format_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
  (s : State) (m : List Bool)
  (hx : regValue layout.point.x s.basis = formatX (.some hc) b (dialogOrdinary b R (.some hc)) R)
@@ -50327,7 +50535,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 6000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -50406,7 +50614,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -50480,6 +50688,7 @@ def eraseB : Program :=
 def loadB : Program :=
  prep++ControlMarkerDevelop.loadControl layout.control layout.genericSelect markerLast markerHead markerBits++prep
 
+
 theorem eraseB_run (s : State) (m : List Bool) (X Y : Nat)
  (hx:regValue layout.point.x s.basis=X) (hy:regValue layout.point.y s.basis=Y)
  (hf:s.basis layout.point.finite=false) (hz:∀q∈markerBits,s.basis q.work=false)
@@ -50500,6 +50709,7 @@ theorem eraseB_run (s : State) (m : List Bool) (X Y : Nat)
  change run prep _ (run (ControlMarkerDevelop.eraseControl layout.control layout.genericSelect markerLast markerHead markerBits) records a)=_
  rw [inner]
  exact undo_prep s false _
+
 
 theorem loadB_run (s : State) (m : List Bool) (X Y : Nat)
  (hx:regValue layout.point.x s.basis=X) (hy:regValue layout.point.y s.basis=Y)
@@ -50532,7 +50742,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 5000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -50574,6 +50784,7 @@ theorem format_recover (C : Point) (b g : Bool) (R : Point) (hg : g=true→b=tru
  unfold recover
  rw [format_pred]
  cases b <;> cases g <;> simp_all
+
 abbrev generic_format_run := @AboveFieldTagDevelop.generic_format_run
 attribute [local irreducible] layout run wires
 
@@ -50653,7 +50864,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -50811,7 +51022,7 @@ theorem middle_sequence {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b 
 end
 end ECDSAAdd.Entrant.AboveFieldPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -50820,6 +51031,7 @@ open ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 ParityEven ControlGenericPointDevelop
 attribute [local irreducible] layout run
 open Classical in
+
 theorem middle_run {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
  (s : State) (m : List Bool)
  (hx : regValue layout.point.x s.basis = ControlSentinelDevelop.ordinaryX R)
@@ -50876,7 +51088,7 @@ end
 
 section
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -50884,6 +51096,7 @@ namespace ECDSAAdd.Entrant.AboveFieldPointDevelop
 open ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel
 attribute [local irreducible] layout run
+
 
 theorem middle_metrics (C : Point) (cx cy : Fp) :
  toffoliCount (middle C cx cy)=toffoliCount (genericBlock cx cy)+495 ∧
@@ -50897,18 +51110,19 @@ theorem middle_metrics (C : Point) (cx cy : Fp) :
   (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
  simp only [encode,decode] at h he ⊢
  omega
+
  theorem middle_physical (C : Point) (cx cy : Fp) : GatePhysical (middle C cx cy) := by
  have he:=physical C
  have hm:=marker_physical
  have hg:=borrowGeneric_physical cx cy
  simp only [middle,gatePhysical_append]
- tauto
+ itauto
 
 
 
 end ECDSAAdd.Entrant.AboveFieldPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -50923,6 +51137,7 @@ def finiteBorrow (C : Point) (cx cy : Fp) : Program :=
  stageNew layout C (pkW layout) ++ middle C cx cy ++ borrowOut C
  def wrapperBorrow (C : Point) (cx cy : Fp) : Program :=
  renameProgram (Wrapper5.U layout) (finiteBorrow C cx cy)
+
 
 theorem finiteBorrow_correct {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point)
  (s : State) (m : List Bool) (hs:PointDialogBoundary layout R b (fun _=>false) s.basis) :
@@ -50960,6 +51175,7 @@ theorem finiteBorrow_correct {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy
  rw [eqmid,hout]
  exact ho
 
+
 theorem wrapperBorrow_correct {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b : Bool) (R : Point) :
  Triple (PointDialogBoundary layout R b (fun _=>false)) (wrapperBorrow (.some hc) cx cy)
   (PointDialogBoundary layout (if b then R+.some hc else R) b (fun _=>false)) := by
@@ -50978,13 +51194,14 @@ end ECDSAAdd.Entrant.AboveFieldPointDevelop
 
 -- Linearized exceptional-control classifiers.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.AboveFieldPointDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 FlagEntry ParityEven ControlPointEncodingDevelop
 attribute [local irreducible] layout wires run
+
  theorem finiteBorrow_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  wires (finiteBorrow (.some hc) cx cy)⊆wires (finiteN layout (.some hc) cx cy)∪auxPorts∪{layout.core.poolWire 511} := by
  have he:=encoding_support hc
@@ -51026,11 +51243,11 @@ attribute [local irreducible] layout wires run
  have de:=he.2.trans aux
  have er:=hm.1.trans aux
  have ld:=hm.2.trans aux
- tauto
+ itauto
 
 end ECDSAAdd.Entrant.AboveFieldPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
@@ -51038,6 +51255,7 @@ namespace ECDSAAdd.Entrant.AboveFieldPointDevelop
 open ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 FlagEntry ParityEven ControlOldInventoryDevelop
 attribute [local irreducible] layout wires run
+
 
 theorem wrapperBorrow_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  wires (wrapperBorrow (.some hc) cx cy)⊆wires (wrapperN layout (.some hc) cx cy)∪auxPorts∪{layout.core.poolWire 511} := by
@@ -51058,6 +51276,7 @@ theorem wrapperBorrow_support {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx c
    rw [hU]
    exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
 
+
 theorem finiteBorrow_retired {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  layout.doubleSelect∉wires (finiteBorrow (.some hc) cx cy) := by
  have st:=ControlStageSupportDevelop.double_free hc
@@ -51068,7 +51287,8 @@ theorem finiteBorrow_retired {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy
  have gn:=borrowGeneric_retired cx cy
  have ot:=borrowOut_retired hc
  simp only [finiteBorrow,middle,wires_append,Finset.mem_union,not_or]
- tauto
+ itauto
+
 
 theorem wrapperBorrow_retired {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  layout.doubleSelect∉wires (wrapperBorrow (.some hc) cx cy) := by
@@ -51078,6 +51298,7 @@ theorem wrapperBorrow_retired {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx c
  have hfix:Wrapper5.U layout layout.doubleSelect=layout.doubleSelect:=by decide +kernel
  have hd: a=layout.doubleSelect:=(Wrapper5.U layout).injective (he.trans hfix.symm)
  exact finiteBorrow_retired hc (hd ▸ ha)
+
 
 theorem wrapperBorrow_sites {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  ioWires∪wires (wrapperBorrow (.some hc) cx cy)⊆(WrapperOB5.sites layout).toFinset := by
@@ -51090,6 +51311,7 @@ theorem wrapperBorrow_sites {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy)
  · simp only [Finset.mem_singleton] at hq
    subst q
    exact sites_pool 511 (Or.inl (by decide))
+
 
 theorem wrapperBorrow_free {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (k : Nat) (hk:k∈omissions) :
  layout.core.poolWire k∉wires (wrapperBorrow (.some hc) cx cy) := by
@@ -51104,6 +51326,7 @@ theorem wrapperBorrow_free {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) 
    simp only [omissions,List.mem_cons,List.not_mem_nil,or_false] at hk
    omega
 
+
 theorem wrapperBorrow_qubits {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  qubits (wrapperBorrow (.some hc) cx cy)≤1586 := by
  apply RetireDoubleInventoryDevelop.qubits_fifteen _ (wrapperBorrow_sites hc) ?_
@@ -51113,14 +51336,14 @@ theorem wrapperBorrow_qubits {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy
  intro k hk
  apply wrapperBorrow_free hc k
  simp only [omissions,List.mem_cons,List.not_mem_nil,or_false] at hk ⊢
- tauto
+ itauto
 
 
 
 
 end ECDSAAdd.Entrant.AboveFieldPointDevelop
 
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -51128,6 +51351,7 @@ namespace ECDSAAdd.Entrant.AboveFieldPointDevelop
 open ControlPointEncodingDevelop
 open Arithmetic Challenge Secp256k1 Baselines ControlledPointLayout InputSentinel FlagTop FlagExit FlagTop2 FlagEntry ParityEven
 attribute [local irreducible] layout wires run
+
 
 theorem support_used_borrow {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  wires (wrapperBorrow (.some hc) cx cy)⊆layout.dialogUsedWires.toFinset := by
@@ -51151,11 +51375,13 @@ theorem full_spec_borrow {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (b
   s m _ b a.2 old.2 (a.1.trans old.1.symm)]
  exact InputSentinel530.full_spec530 hc b R s m hs
 
+
 theorem wrapperBorrow_physical {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) : GatePhysical (wrapperBorrow (.some hc) cx cy) := by
  unfold wrapperBorrow
  apply gatePhysical_rename _ (Wrapper5.U layout).injective
  simp only [finiteBorrow,gatePhysical_append]
  exact ⟨⟨FlagTop.stageNew_physical hc,middle_physical (.some hc) cx cy⟩,borrowOut_physical hc⟩
+
 
 theorem wrapperBorrow_metrics {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
  toffoliCount (wrapperBorrow (.some hc) cx cy)=toffoliCount (wrapperN layout (.some hc) cx cy)+495 ∧
@@ -51183,7 +51409,9 @@ def programQ (C : Point) : Program :=
  | .zero=>[]
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
- def boundsQ : Challenge.Bounds :=⟨2147057,1498884,1586,50515743⟩
+
+ def boundsQ : Challenge.Bounds :=⟨2145025,1498884,1586,50515743⟩
+
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
  Triple (encodes b R) (programQ C) (encodes b (if b then R+C else R)) := by
@@ -51192,15 +51420,17 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   intro s m hs
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2147057 := by
+
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2145025 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2146562 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2147057
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2144530 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2145025
   omega
+
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498884 := by
  cases C with
  | zero=>simp [programQ,measurementCount]
@@ -51210,14 +51440,17 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change measurementCount (wrapperN layout (.some hc) cx cy)≤1498385 at h
   change measurementCount (wrapperBorrow (.some hc) cx cy)≤1498884
   omega
+
  theorem program_qubits_Q (C : Point) : qubits (programQ C)≤1586 := by
  cases C with
  | zero=>change qubits []≤1586;rw [qubits_empty];decide
  | @some cx cy hc=>exact wrapperBorrow_qubits hc
+
  theorem program_physical_Q (C : Point) : GatePhysical (programQ C) := by
  cases C with
  | zero=>simp [programQ,GatePhysical]
  | @some cx cy hc=>exact wrapperBorrow_physical hc
+
  theorem program_slots_Q (C : Point) : gateSlots (programQ C)≤50515743 := by
  cases C with
  | zero=>simp [programQ,gateSlots]
@@ -51227,6 +51460,7 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   change gateSlots (wrapperN layout (.some hc) cx cy)≤50506584 at h
   change gateSlots (wrapperBorrow (.some hc) cx cy)≤50515743
   omega
+
  theorem certificateQ : Challenge.Certificate entryQ boundsQ where
  correct C b R:=(normalize_triple _ _ _).mpr (program_correct_Q C b R)
  physical C:=Baselines.normalize_physical _ (by simpa only [GatePhysical] using program_physical_Q C)
@@ -51254,6 +51488,7 @@ namespace ECDSAAdd.Entrant
                                               
 def entry := AboveFieldPointDevelop.entryQ
 def bounds := AboveFieldPointDevelop.boundsQ
+
 theorem certificate : Challenge.Certificate entry bounds := AboveFieldPointDevelop.certificateQ
 
 end ECDSAAdd.Entrant
