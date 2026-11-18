@@ -46,7 +46,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95PlacedWindowResearch
 open B95FiniteWindowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -99,7 +99,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95RetimeResearch
 open ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -159,7 +159,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95RetimeResearch
 open ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -197,7 +197,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Q0BaseResearch
 open BShortGhostFactsResearch BShortGhostProgramsResearch InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -280,7 +280,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ListWindowPartsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 
 theorem split3(P:Program)(a b:Nat):P=P.take a++(P.drop a).take b++P.drop (a+b):=by
@@ -307,7 +307,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95FactsResearch
 open BShortGhostFactsResearch BShortGhostProgramsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -341,7 +341,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95FactsResearch
 open BShortGhostFactsResearch BShortGhostProgramsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -377,7 +377,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95FactsResearch
 open BShortGhostFactsResearch BShortGhostProgramsResearch B95RetimeResearch ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -409,7 +409,7 @@ end ECDSAAdd.Entrant.B95FactsResearch
 namespace ECDSAAdd.Entrant.B95RetimeResearch
 open InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 attribute [local irreducible] ECDSAAdd.run
@@ -435,7 +435,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95MiddleResearch
 open BShortGhostFactsResearch BShortGhostProgramsResearch B95FactsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -465,7 +465,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95MiddleResearch
 open BShortGhostFactsResearch BShortGhostProgramsResearch B95FactsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -540,7 +540,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95MiddleResearch
 open BShortGhostFactsResearch BShortGhostProgramsResearch B95FactsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -589,7 +589,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95MiddleResearch
 open BShortGhostFactsResearch BShortGhostProgramsResearch B95FactsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -640,7 +640,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95AliasesResearch
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -665,7 +665,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95AliasesResearch
 open BShortGhostProgramsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -706,7 +706,7 @@ theorem low6_free:4507∉wires program:=by
 
 theorem ghost_free(q:Wire)(hq:q∈([4757,4758,4759]:List Wire)):q∉wires program:=by
  have p:q∈([4757,4758,4759,4243,4244,4245]:List Wire):=by
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢;tauto
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢;itauto
  have off:q∉wires single:=B95MiddleResearch.fresh q p
  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
  rcases hq with rfl|rfl|rfl <;>
@@ -741,7 +741,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95Research
 open ReorderedBPrefixResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -792,7 +792,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ClearContextResearch
 open InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -823,7 +823,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ClearContextResearch
 open ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 attribute [local irreducible] ECDSAAdd.run
 
 theorem append_at(P Q R:Program)(s:State)(m:List Bool)
@@ -843,7 +843,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ClearContextResearch
 open InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 attribute [local irreducible] ECDSAAdd.run
@@ -867,7 +867,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CacheFromCleanForwardResearch
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -907,7 +907,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CacheBetweenFrameResearch
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop MixedLiteralAdderDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -942,7 +942,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ReorderedHeadArithmeticResearch
 open InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -993,7 +993,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ReorderedPreInverseArithmeticResearch
 open InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1046,7 +1046,7 @@ namespace ECDSAAdd.Entrant.BRelocatedReadyResearch
 open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold ReorderedBPrefixResearch
  ReorderedBRetapeResearch InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1070,7 +1070,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ACFiniteWindowResearch
 open MeasuredCodec5
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 8000000
 
@@ -1104,7 +1104,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ACFiniteWindowResearch
 open MeasuredCodec5
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -1151,7 +1151,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ACPlacedWindowResearch
 open ACFiniteWindowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -1203,7 +1203,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.RelocateMembershipResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1262,7 +1262,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.AShortGhostFactsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -1303,7 +1303,7 @@ namespace ECDSAAdd.Entrant.AShortGhostProgramsResearch
 open AShortGhostFactsResearch
 abbrev old:Program:=AShortGhostFactsResearch.p
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1397,7 +1397,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.AQ0BaseResearch
 open AShortGhostFactsResearch AShortGhostProgramsResearch InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1481,7 +1481,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ARetimeFactsResearch
 open AShortGhostFactsResearch AShortGhostProgramsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -1514,7 +1514,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ListAWindowPartsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 
 theorem split3(P:Program)(a b:Nat):P=P.take a++(P.drop a).take b++P.drop (a+b):=by
@@ -1541,7 +1541,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ARetimeFactsResearch
 open AShortGhostFactsResearch AShortGhostProgramsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1577,7 +1577,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.ARetimeFactsResearch
 open AShortGhostFactsResearch AShortGhostProgramsResearch B95RetimeResearch ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1614,7 +1614,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.AMiddleResearch
 open AShortGhostFactsResearch AShortGhostProgramsResearch ARetimeFactsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1679,7 +1679,7 @@ abbrev pad:List Wire:=ReorderedAFixed.pad
 abbrev bank:List Wire:=ReorderedAFixed.bank
 abbrev cin:Wire:=ReorderedAFixed.L.core.cin
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1719,7 +1719,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.AAliasesResearch
 open AMiddleResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1809,7 +1809,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.AMiddleResearch
 open AShortGhostFactsResearch AShortGhostProgramsResearch ARetimeFactsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1884,7 +1884,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.AMiddleResearch
 open AShortGhostFactsResearch AShortGhostProgramsResearch ARetimeFactsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1936,7 +1936,7 @@ namespace ECDSAAdd.Entrant.AMiddleResearch
 open ThirdSavedCarryDevelop
 open AShortGhostFactsResearch AShortGhostProgramsResearch ARetimeFactsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -1993,7 +1993,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.AAliasesResearch
 open AShortGhostProgramsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2034,7 +2034,7 @@ theorem low6_free:4507∉wires program:=by
 
 theorem ghost_free(q:Wire)(hq:q∈([4757,4758,4759]:List Wire)):q∉wires program:=by
  have p:q∈([4757,4758,4759,4243,4244,4245]:List Wire):=by
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢;tauto
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢;itauto
  have off:q∉wires single:=AMiddleResearch.fresh q p
  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
  rcases hq with rfl|rfl|rfl <;>
@@ -2076,7 +2076,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKShortGhostFactsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -2117,7 +2117,7 @@ namespace ECDSAAdd.Entrant.CKShortGhostProgramsResearch
 open CKShortGhostFactsResearch
 abbrev old:Program:=CKShortGhostFactsResearch.p
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2211,7 +2211,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKQ0BaseResearch
 open CKShortGhostFactsResearch CKShortGhostProgramsResearch InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2295,7 +2295,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKRetimeFactsResearch
 open CKShortGhostFactsResearch CKShortGhostProgramsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -2328,7 +2328,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ListCKWindowPartsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 
 theorem split3(P:Program)(a b:Nat):P=P.take a++(P.drop a).take b++P.drop (a+b):=by
@@ -2355,7 +2355,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKRetimeFactsResearch
 open CKShortGhostFactsResearch CKShortGhostProgramsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2391,7 +2391,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKRetimeFactsResearch
 open CKShortGhostFactsResearch CKShortGhostProgramsResearch B95RetimeResearch ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2428,7 +2428,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKMiddleResearch
 open CKShortGhostFactsResearch CKShortGhostProgramsResearch CKRetimeFactsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2493,7 +2493,7 @@ abbrev pad:List Wire:=C163Low4Middle.pad
 abbrev bank:List Wire:=C163Low4Middle.bank
 abbrev cin:Wire:=C163Low4Middle.L.core.cin
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2533,7 +2533,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKAliasesResearch
 open CKMiddleResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2623,7 +2623,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKMiddleResearch
 open CKShortGhostFactsResearch CKShortGhostProgramsResearch CKRetimeFactsResearch B95RetimeResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2698,7 +2698,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKMiddleResearch
 open CKShortGhostFactsResearch CKShortGhostProgramsResearch CKRetimeFactsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2750,7 +2750,7 @@ namespace ECDSAAdd.Entrant.CKMiddleResearch
 open ThirdSavedCarryDevelop
 open CKShortGhostFactsResearch CKShortGhostProgramsResearch CKRetimeFactsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2802,7 +2802,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.CKAliasesResearch
 open CKShortGhostProgramsResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2843,7 +2843,7 @@ theorem low6_free:4507∉wires program:=by
 
 theorem ghost_free(q:Wire)(hq:q∈([4757,4758,4759]:List Wire)):q∉wires program:=by
  have p:q∈([4757,4758,4759,4243,4244,4245]:List Wire):=by
-  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢;tauto
+  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢;itauto
  have off:q∉wires single:=CKMiddleResearch.fresh q p
  simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
  rcases hq with rfl|rfl|rfl <;>
@@ -2879,7 +2879,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -2931,7 +2931,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 20000000
 set_option linter.unusedSimpArgs false
@@ -3082,7 +3082,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3142,7 +3142,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109LowEraseResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3214,7 +3214,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109LowEraseResearch
 open InverseCarryDevelop ReorderedBPrefixResearch ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3263,7 +3263,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3306,7 +3306,7 @@ theorem rawI_off(q:Wire)(hq:q∈hosts):q∉wires rawI:=by
   apply List.mem_toFinset.mpr
   have hy:w∈ys:=List.mem_toFinset.mp hw
   simp only [domain,List.mem_cons,List.mem_append]
-  tauto
+  itauto
  have support:wires rawI⊆domain.toFinset:=by
   simp only [rawI,ReorderedConsumedSub.plain,wires_append,notRegister_wires]
   change (ys.toFinset∪wires rawF)∪ys.toFinset⊆domain.toFinset
@@ -3359,7 +3359,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop MixedLiteralAdderDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3423,7 +3423,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3496,7 +3496,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3576,7 +3576,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3647,7 +3647,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3707,7 +3707,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3741,7 +3741,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3795,7 +3795,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3815,7 +3815,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3836,7 +3836,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3867,7 +3867,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3900,7 +3900,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3942,7 +3942,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.AKnownMiddleResearch
 open ReorderedAFixed InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -3981,7 +3981,7 @@ namespace ECDSAAdd.Entrant.A109Research
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed A161Low4Ghost
  ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -4067,7 +4067,7 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed A161L
  ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -4161,7 +4161,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109SignResearch
 open ReorderedBPrefixResearch A109Research Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -4215,7 +4215,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109SignResearch
 open ReorderedBPrefixResearch A109Research Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -4275,7 +4275,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -4290,7 +4290,7 @@ theorem old_prefix_support:wires oldPrefix⊆S:=by
  change q∈wires HighSignAResearch.body
  simp only [HighSignAResearch.body,HighSignAResearch.rawBody,HighSignAResearch.fold,
   HighSignAResearch.loop,HighSignAResearch.suffix,wires_append,Finset.mem_union]
- tauto
+ itauto
 
 theorem old_middle_support:wires GhostRelocatedKnown.A.program⊆S:=by
  intro q h
@@ -4736,7 +4736,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -4783,7 +4783,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
 open ReorderedBPrefixResearch ControlLoan1589BFFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -4793,7 +4793,7 @@ theorem clear_support:wires A109LowEraseResearch.clear⊆S:=by
  have eq:wires A109LowEraseResearch.clear=([4243,4505,4244,4506,4245,4507]:List Wire).toFinset:=by
   ext q
   simp [A109LowEraseResearch.clear,wires,Instr.wires,correctionWires]
-  tauto
+  itauto
  rw [eq]
  intro q hq
  have sub:([4243,4505,4244,4506,4245,4507]:List Wire)⊆ports:=by decide
@@ -4857,7 +4857,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C105PrefixResearch
 open InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 abbrev L:=C163Low4Middle.L
@@ -4879,7 +4879,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C105Research
 open C105PrefixResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -4931,7 +4931,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 20000000
 set_option linter.unusedSimpArgs false
@@ -5082,7 +5082,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -5142,7 +5142,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C105LowEraseResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -5214,7 +5214,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C105LowEraseResearch
 open InverseCarryDevelop C105PrefixResearch ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -5263,7 +5263,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C105Research
 open C105PrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -5308,7 +5308,7 @@ theorem rawI_off(q:Wire)(hq:q∈hosts):q∉wires rawI:=by
   apply List.mem_toFinset.mpr
   have hy:w∈ys:=List.mem_toFinset.mp hw
   simp only [domain,List.mem_cons,List.mem_append]
-  tauto
+  itauto
  have support:wires rawI⊆domain.toFinset:=by
   simp only [rawI,ReorderedConsumedSub.plain,wires_append,notRegister_wires]
   change (ys.toFinset∪wires rawF)∪ys.toFinset⊆domain.toFinset

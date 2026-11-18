@@ -10,7 +10,7 @@ section
 
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 set_option linter.unusedVariables false
@@ -51,7 +51,7 @@ section
 open ECDSAAdd Lean
 namespace ECDSAAdd.Entrant.LocalEFoldTrace
 open SixCarryTrace SixCarryFrame
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 def chunk0 : Program := [
@@ -4007,7 +4007,7 @@ section
 -- Preserved checked proof component: LocalEFoldRelations
 namespace ECDSAAdd.Entrant.LocalEFoldRelations
 open ECDSAAdd SixCarryTrace SixCarryFrame LocalEFoldTrace
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] LocalEFoldTrace.program prefixState
@@ -4053,7 +4053,7 @@ section
 -- Preserved checked proof component: LocalEFoldAnchor
 namespace ECDSAAdd.Entrant.LocalEFoldAnchor
 open ECDSAAdd SixCarryTrace SixCarryFrame
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 def actual : Program := ControlLoan1589BFFold.eFoldTq LowAccCarryDevelop.L LowAccCarryDevelop.c
@@ -4075,7 +4075,7 @@ section
 -- Preserved checked proof component: LocalEFoldOptimize
 namespace ECDSAAdd.Entrant.LocalEFoldOptimize
 open ECDSAAdd SixCarryTrace SixCarryFrame LocalEFoldAnchor SixCarryPatchGeneric
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] actual run prefixState
@@ -4151,7 +4151,7 @@ section
 -- Preserved checked proof component: LocalEFoldResources
 namespace ECDSAAdd.Entrant.LocalEFoldResources
 open ECDSAAdd Arithmetic Challenge LocalEFoldOptimize LocalEFoldAnchor SixCarryPatchGeneric
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] actual late improved toffoliCount measurementCount gateSlots wires
@@ -4187,7 +4187,7 @@ theorem repair_subset (p : Program) (i a b t : Nat) (hg : p[i]?=some (.CCX a b t
  have small : wires [.CX a t]⊆wires [.CCX a b t] := by
   intro w hw
   simp [wires,Instr.wires] at hw ⊢
-  tauto
+  itauto
  exact Finset.mem_union_right _ (Finset.mem_union_left _ (small hq))
 
 theorem support : wires improved⊆wires actual := by
@@ -4212,7 +4212,7 @@ section
 namespace ECDSAAdd.Entrant.LocalEFoldInputs
 open ECDSAAdd Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 open ControlLoan1589BFFold LocalEFoldOptimize
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 abbrev L := LowAccCarryDevelop.L
@@ -4280,7 +4280,7 @@ open InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
 open ManyACarryDevelop FullBTemp ZeroReadDevelop FourthASavedCarryDevelop LowAccCarryDevelop
 open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
 open LowBitCarryDevelop ParkCarry7Develop ParkCarry10Develop
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
@@ -4529,7 +4529,7 @@ section
 -- Preserved checked proof component: LocalEFoldLift
 namespace ECDSAAdd.Entrant.LocalEFoldLift
 open ECDSAAdd Arithmetic ControlLoan1589BFFold LocalEFoldOptimize LocalEFoldAnchor
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 abbrev L := LowAccCarryDevelop.L
@@ -4556,7 +4556,7 @@ section
 namespace ECDSAAdd.Entrant.LocalEFoldBody90
 open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold
 open LocalEFoldOptimize LocalEFoldAnchor LocalEFoldBody
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 abbrev L := LowAccCarryDevelop.L
@@ -4588,7 +4588,7 @@ section
 -- Preserved checked proof component: LocalEFoldBody90Costs
 namespace ECDSAAdd.Entrant.LocalEFoldBody90Costs
 open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold LocalEFoldOptimize LocalEFoldAnchor LocalEFoldBody90
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] toffoliCount measurementCount gateSlots wires actual improved
@@ -4647,7 +4647,7 @@ section
 -- Preserved checked proof component: LocalEFoldSelector90
 namespace ECDSAAdd.Entrant.LocalEFoldBody90Costs
 open ECDSAAdd
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 
@@ -4658,7 +4658,7 @@ namespace ECDSAAdd.Entrant.FullB90FoldOptTemp
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run ECDSAAdd.Arithmetic.GatePhysical
 attribute [local irreducible] ZeroSetDevelop.compileS? ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots ECDSAAdd.regValue
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 set_option linter.unusedSimpArgs false
@@ -4845,7 +4845,7 @@ section
 -- Preserved checked rebuild component: LocalRebuild
 namespace ECDSAAdd.Entrant.LocalRebuild
 open ECDSAAdd Arithmetic SixCarryTrace SixCarryFrame SixCarryReplacement
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 def chunk0 : Program := [
@@ -7201,7 +7201,7 @@ section
 -- Preserved checked rebuild component: LocalRebuildResources
 namespace ECDSAAdd.Entrant.LocalRebuildResources
 open ECDSAAdd Arithmetic Challenge LocalRebuild SixCarryPatchGeneric
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] actual improved toffoliCount measurementCount gateSlots wires
@@ -7219,7 +7219,7 @@ attribute [local irreducible] actual improved toffoliCount measurementCount gate
   have small : wires repair⊆wires window := by
    intro q hq
    simp [repair,window,wires,Instr.wires,correctionWires] at hq ⊢
-   tauto
+   itauto
   have shapeWindow : actual=actual.take 764++(window++actual.drop 771) := by
    calc actual=actual.take 771++actual.drop 771 := (List.take_append_drop 771 actual).symm
         _ =(actual.take 764++window)++actual.drop 771 := by
@@ -7248,7 +7248,7 @@ section
 -- Preserved checked rebuild component: LocalRebuildLift
 namespace ECDSAAdd.Entrant.LocalRebuildLift
 open ECDSAAdd Arithmetic ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 abbrev L := LowAccCarryDevelop.L
@@ -7282,7 +7282,7 @@ open InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
 open ManyACarryDevelop FullBTemp ZeroReadDevelop FourthASavedCarryDevelop LowAccCarryDevelop
 open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
 open LowBitCarryDevelop ParkCarry7Develop ParkCarry10Develop
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
@@ -7538,7 +7538,7 @@ section
 -- Preserved checked rebuild component: LocalRebuildBody91
 namespace ECDSAAdd.Entrant.LocalRebuildBody91
 open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 abbrev L := LowAccCarryDevelop.L
@@ -7571,7 +7571,7 @@ section
 -- Preserved checked rebuild component: LocalRebuildBody91Costs
 namespace ECDSAAdd.Entrant.LocalRebuildBody91Costs
 open ECDSAAdd Arithmetic Challenge LocalRebuildBody91
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] toffoliCount measurementCount gateSlots wires
@@ -7635,7 +7635,7 @@ namespace ECDSAAdd.Entrant.FullB91FoldOptTemp
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run ECDSAAdd.Arithmetic.GatePhysical
 attribute [local irreducible] ZeroSetDevelop.compileS? ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.Challenge.gateSlots ECDSAAdd.regValue
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 set_option linter.unusedSimpArgs false
@@ -7823,7 +7823,7 @@ section
 namespace ECDSAAdd.Entrant.LocalSevenCore
 open ECDSAAdd SixCarryTrace SixCarryFrame SixCarryLoopAnchor SixCarryBasisTransfer
 open SixCarryLookupTransfer SixCarryGateRepairs SixCarryPatchGeneric SixCarryPatchPrefix SixCarryChunkViews
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.run SixCarryLoopAnchor.loop SixCarryPrefixData.program
@@ -8078,7 +8078,7 @@ section
 -- Preserved checked B98 component: LocalSevenExtra
 namespace ECDSAAdd.Entrant.LocalSevenExtra
 open ECDSAAdd SixCarryLoopAnchor SixCarryChunkViews
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.run ZeroSetDevelop.compileS? SixCarryLoopAnchor.loop SixCarryPrefixData.program
@@ -8157,7 +8157,7 @@ section
 -- Preserved checked B98 component: LocalSevenResources
 namespace ECDSAAdd.Entrant.LocalSevenResources
 open ECDSAAdd Challenge SixCarryPatchGeneric
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots LocalSevenCore.core LocalSevenCore.p1 LocalSevenCore.p2 LocalSevenCore.p3 LocalSevenCore.p4 LocalSevenCore.p5 LocalSevenCore.p6 LocalSevenExtra.improved SixCarryLoopAnchor.loop SixCarryPrefixData.program
@@ -8269,7 +8269,7 @@ section
 -- Preserved checked B98 component: LocalSevenOutputLength
 namespace ECDSAAdd.Entrant.LocalSevenOutputLength
 open ECDSAAdd
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] SixCarryLoopAnchor.output ZeroSetDevelop.compileS?
@@ -8288,7 +8288,7 @@ section
 -- Preserved checked B98 component: LocalSevenShape
 namespace ECDSAAdd.Entrant.LocalSevenShape
 open ECDSAAdd
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ZeroSetDevelop.compileS? SixCarryLoopAnchor.loop SixCarryLoopAnchor.build SixCarryLoopAnchor.output LocalSevenCore.core
@@ -8314,7 +8314,7 @@ section
 -- Preserved checked B98 component: LocalSevenWitness
 namespace ECDSAAdd.Entrant.LocalSevenWitness
 open ECDSAAdd
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ZeroSetDevelop.compileS?
@@ -8332,7 +8332,7 @@ end ECDSAAdd.Entrant.LocalSevenWitness
 end
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 set_option linter.unusedSimpArgs false
@@ -8407,7 +8407,7 @@ section
 namespace ECDSAAdd.Entrant.LocalEightLoop
 open ECDSAAdd Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 open ControlLoan1589BFFold ManyACarryDevelop FullBTemp LowAccCarryDevelop
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 abbrev CM := ZeroSetDevelop.CheckedS LowAccCarryDevelop.hosts88 (FullBTemp.middle LowAccCarryDevelop.L LowAccCarryDevelop.c)
@@ -8474,7 +8474,7 @@ open InverseCarryDevelop ThirdSavedCarryDevelop ControlLoan1589BFFold
 open ManyACarryDevelop FullBTemp ZeroReadDevelop FourthASavedCarryDevelop LowAccCarryDevelop
 open CarryWindowCache SecondCarryLoan ThirdCarryLoanDevelop FourthCarryLoanDevelop
 open LowBitCarryDevelop ParkCarry7Develop ParkCarry10Develop
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
@@ -8736,7 +8736,7 @@ section
 -- Preserved checked B98 component: LocalEightBody99
 namespace ECDSAAdd.Entrant.LocalEightBody99
 open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 def body : Program :=
@@ -8769,7 +8769,7 @@ section
 -- Preserved checked B98 component: LocalSevenSupport
 namespace ECDSAAdd.Entrant.LocalSevenSupport
 open ECDSAAdd Arithmetic SixCarryLoopAnchor SixCarryPatchGeneric
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires Arithmetic.GatePhysical LocalSevenCore.core LocalSevenCore.p1 LocalSevenCore.p2 LocalSevenCore.p3 LocalSevenCore.p4 LocalSevenCore.p5 LocalSevenCore.p6 LocalSevenExtra.improved SixCarryLoopAnchor.loop SixCarryPrefixData.program
@@ -8852,7 +8852,7 @@ end ECDSAAdd.Entrant.LocalSevenSupport
 end
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 namespace ECDSAAdd.Entrant.EightCarryPrefixSupport
@@ -8881,7 +8881,7 @@ section
 -- Preserved checked B98 component: LocalEightLoopResources
 namespace ECDSAAdd.Entrant.LocalEightLoopResources
 open ECDSAAdd Arithmetic Challenge
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots Arithmetic.GatePhysical LowAccCarryDevelop.loopWith LocalEightLoop.improved LocalEightLoop.unbuild LocalSevenCore.core EightCarryPrefix.improved
@@ -8953,7 +8953,7 @@ section
 -- Preserved checked B98 component: LocalEightBody99Costs
 namespace ECDSAAdd.Entrant.LocalEightBody99Costs
 open ECDSAAdd Arithmetic Challenge ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots Arithmetic.GatePhysical LocalEightBody99.body LocalRebuildBody91.bodyWith LocalEightLoop.improved LowAccCarryDevelop.loopWith LocalEFoldOptimize.improved LocalRebuild.improved
@@ -9050,7 +9050,7 @@ section
 -- Preserved checked B98 component: LocalSevenSelector98
 namespace ECDSAAdd.Entrant.FullB99OptTemp
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 set_option linter.unusedSimpArgs false
@@ -9233,7 +9233,7 @@ end
 section
 -- Adapted from the retained NarrowAcc proof in QTop: outer accumulator width161.
 -- This is scratch proof development, not an entrant replacement.
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.C163NarrowAcc
@@ -9389,7 +9389,7 @@ end
 section
 -- Width161 specializations of the retained QTop SourceTail/SourceAddFour proofs.
 -- Existing bit/arithmetic protocols are reused, not claimed as newly invented.
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -9614,7 +9614,7 @@ namespace ECDSAAdd.Entrant.C163Carry
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop FourthASavedCarryDevelop ManyACarryDevelop ControlLoan1589BFFold ZeroReadDevelop CodexNarrowTail
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -10517,7 +10517,7 @@ section
 namespace ECDSAAdd.Entrant.C163Carry
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop FourthASavedCarryDevelop ManyACarryDevelop ControlLoan1589BFFold ZeroReadDevelop CodexNarrowTail
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -11058,7 +11058,7 @@ end
 section
 -- Width161 specialization of retained CodexNarrowTail resource proofs.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option linter.unusedSimpArgs false
 namespace ECDSAAdd.Entrant.C163KnownTail
@@ -11384,7 +11384,7 @@ end
 section
 -- Width161 specializations of retained optimized inverse resource proofs.
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 30000
 set_option maxHeartbeats 10000000
 set_option linter.unusedSimpArgs false
@@ -11647,7 +11647,7 @@ namespace ECDSAAdd.Entrant.C163Carry
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop FourthASavedCarryDevelop ManyACarryDevelop ControlLoan1589BFFold ZeroReadDevelop CodexNarrowTail
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -11953,7 +11953,7 @@ section
 namespace ECDSAAdd.Entrant.C163Fold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 def acc (L:CuccaroStreamedSquareWideLayout) := L.core.work.take 163
@@ -12044,7 +12044,7 @@ section
 namespace ECDSAAdd.Entrant.C163Fold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -12114,7 +12114,7 @@ section
 namespace ECDSAAdd.Entrant.C163Fold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -12172,7 +12172,7 @@ theorem other_away (L:CuccaroStreamedSquareWideLayout) (hn:L.wires.Nodup) (q:Wir
   · simp [h]
   · simp only [List.mem_cons,List.not_mem_nil,or_false] at h
     simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false]
-    tauto
+    itauto
  refine ⟨?_,off⟩
  rcases h with h|h|h|h
  · exact fun ho=>List.disjoint_left.mp (L.product_out_disjoint hn) (hiReg_product L q h) ho
@@ -12187,7 +12187,7 @@ end
 section
 namespace ECDSAAdd.Entrant.C163Carry
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop ZeroReadDevelop
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -12265,7 +12265,7 @@ section
 namespace ECDSAAdd.Entrant.C163Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 abbrev L:=Baselines.layout.dialogStreamedSquareWide
@@ -12296,7 +12296,7 @@ namespace ECDSAAdd.Entrant.C163Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop ZeroSetDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.wires List.toFinset
@@ -12335,7 +12335,7 @@ section
 namespace ECDSAAdd.Entrant.C163Fold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 theorem payload_spec (K:CuccaroStreamedSquareWideLayout) (base:BasisState) :
@@ -12353,7 +12353,7 @@ namespace ECDSAAdd.Entrant.C163Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop ZeroSetDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -12393,7 +12393,7 @@ end
 section
 namespace ECDSAAdd.Entrant.C163Touch
 open Arithmetic
-set_option Elab.async false
+
 set_option autoImplicit false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
@@ -12447,7 +12447,7 @@ section
 namespace ECDSAAdd.Entrant.C163CoverFast
 open C163Middle Arithmetic OwnDiagAll12Square
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run List.toFinset
@@ -12924,7 +12924,7 @@ namespace ECDSAAdd.Entrant.C163Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout OwnDiagAll12Square
  InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -12944,7 +12944,7 @@ namespace ECDSAAdd.Entrant.C163FineFast
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout OwnDiagAll12Square
  InverseCarryDevelop ThirdSavedCarryDevelop FourthASavedCarryDevelop C163Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 set_option linter.unusedSimpArgs false
@@ -13174,7 +13174,7 @@ end
 section
 namespace ECDSAAdd.Entrant.C163Low4Domains
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout C163Low4Ghost
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 
@@ -13266,7 +13266,7 @@ end
 section
 namespace ECDSAAdd.Entrant.C163Low4Structural
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout C163Low4Ghost
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -13322,7 +13322,7 @@ section
 section
 namespace ECDSAAdd.Entrant.C163Low4Facts
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 500000000
 set_option linter.unusedSimpArgs false
@@ -13398,7 +13398,7 @@ section
 namespace ECDSAAdd.Entrant.C163Low4Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 abbrev L:=C163Middle.L
@@ -13435,7 +13435,7 @@ section
 namespace ECDSAAdd.Entrant.C163Low4Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] specialChecked
@@ -13470,7 +13470,7 @@ section
 namespace ECDSAAdd.Entrant.C163Low4Fold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout C163Fold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 abbrev accReg:=C163Fold.accReg
@@ -13509,7 +13509,7 @@ namespace ECDSAAdd.Entrant.C163Low4Fold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ControlLoan1589BFFold ThirdSavedCarryDevelop ZeroReadDevelop C163Fold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -13889,7 +13889,7 @@ section
 namespace ECDSAAdd.Entrant.C163Low4Fold
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ZeroSetDevelop ZeroReadDevelop C163Fold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -14001,7 +14001,7 @@ section
 namespace ECDSAAdd.Entrant.C163Low4Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ZeroSetDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -14089,7 +14089,7 @@ namespace ECDSAAdd.Entrant.C163Low4Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop ZeroSetDevelop ZeroReadDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -14194,7 +14194,7 @@ namespace ECDSAAdd.Entrant.C163Low4Body
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout OwnDiagAll12Square
  InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -14283,7 +14283,7 @@ section
 namespace ECDSAAdd.Entrant.C163Low4Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout OwnDiagAll12Square ThirdSavedCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedVariables false
@@ -14341,7 +14341,7 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop ZeroSetDevelop ZeroReadDevelop
 set_option autoImplicit false
 set_option linter.unusedSimpArgs false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots specialChecked bankChecked
@@ -14394,7 +14394,7 @@ namespace ECDSAAdd.Entrant.C163Low4Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop ZeroSetDevelop ZeroReadDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -14449,7 +14449,7 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop
  ThirdSavedCarryDevelop ZeroSetDevelop ZeroReadDevelop
 set_option autoImplicit false
 set_option linter.unusedSimpArgs false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run specialChecked bankChecked
@@ -14509,7 +14509,7 @@ namespace ECDSAAdd.Entrant.C163Low4Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout OwnDiagAll12Square
  InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -14554,7 +14554,7 @@ section
 namespace ECDSAAdd.Entrant.C163Low4Middle
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop ZeroSetDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -14603,7 +14603,7 @@ section
 namespace ECDSAAdd.Entrant.C163Low4Fine
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout OwnDiagAll12Square C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.wires List.toFinset
@@ -15008,7 +15008,7 @@ end
 section
 
 section
-set_option Elab.async false
+
 
 set_option maxRecDepth 100000
 
@@ -15141,7 +15141,7 @@ end ECDSAAdd.Entrant.AWideSteps
 end
 
 section
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 500000000
 namespace ECDSAAdd.Entrant.AWideStaged
@@ -15172,7 +15172,7 @@ end ECDSAAdd.Entrant.AWideStaged
 end
 
 section
-set_option Elab.async false
+
 set_option maxHeartbeats 6000000
 namespace ECDSAAdd.Entrant.AWideTemp
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop InverseCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
@@ -15220,7 +15220,7 @@ section
 
 open ECDSAAdd ECDSAAdd.Entrant ZeroReadDevelop
 
-set_option Elab.async false
+
 
 set_option maxRecDepth 100000
 
@@ -15341,7 +15341,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.RepadAReady
 open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ZeroReadDevelop
 open ECDSAAdd.Entrant.AltASelectedDevelop
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 500000000
 
@@ -15417,7 +15417,7 @@ end
 -- Checked finite support witnesses with direct Boolean membership.
 namespace ECDSAAdd.Entrant.A161SupportCover
 open Arithmetic FourthASavedCarryDevelop A161FixedFold
-set_option Elab.async false
+
 set_option autoImplicit false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
