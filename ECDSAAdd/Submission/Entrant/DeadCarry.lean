@@ -97035,14 +97035,17 @@ def mend (retired : Wire) (w : Nat → Wire) (sign : Wire) : Program :=
     junctionStdRest retired L ++ [.X sign]
 
 
+/-- The flag-controlled offset `2^31+488 = 8*(2^28+61)` has three zero low bits and the
+carry-in is clean, so only bits `3..254` of the low register take part in the add. -/
 def centerOddBits (L : BalancedConvert.Layout) : List MappedBit :=
-  (List.range 255).map fun i =>
-    ⟨if (2^31+488 : Nat).testBit i then some L.flag else none, false⟩
+  (List.range 252).map fun i =>
+    ⟨if (2^28+61 : Nat).testBit i then some L.flag else none, false⟩
 
 
 def centerOdd (L : BalancedConvert.Layout) : Program :=
   [.CX (HalfConvert.lowBit L) L.flag, .CX L.flag (HalfConvert.lowBit L), .X L.flag] ++
-    rotateRight L.word ++ mappedAdd (centerOddBits L) L.low (L.carry.take 254) L.cin ++
+    rotateRight L.word ++
+    mappedAdd (centerOddBits L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin ++
     [.CX L.flag L.msb, .CX L.msb L.flag]
 
 end ECDSAAdd.Entrant.P1Life
@@ -105466,10 +105469,10 @@ theorem mend_counts (retired : Wire) (w : Nat→Wire) (sign : Wire)
 
 
 theorem centerOdd_counts (L : BalancedConvert.Layout) (hw : L.Widths) :
-    toffoliCount (centerOdd L)=254 ∧ measurementCount (centerOdd L)=254 := by
-  have a := mappedAdd_counts (centerOddBits L) L.low (L.carry.take 254) L.cin
+    toffoliCount (centerOdd L)=251 ∧ measurementCount (centerOdd L)=251 := by
+  have a := mappedAdd_counts (centerOddBits L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin
     (by simp [centerOddBits,hw.1]) (by simp [List.length_take,hw.1,hw.2])
-  rw [hw.1] at a
+  rw [List.length_drop,hw.1] at a
   have rot := rotate_counts L.word
   simp only [centerOdd,toffoliCount_append,measurementCount_append,a.1,a.2,rot.1,rot.2.1,
     toffoliCount,measurementCount]
@@ -107226,13 +107229,13 @@ theorem junction_mask_sources (n k flag q : Nat)
 
 
 theorem center_odd_bits_value (L : BalancedConvert.Layout) (s : BasisState) :
-    mappedValue (centerOddBits L) s=if s L.flag then 2^31+488 else 0 :=
-  junction_mask_value 255 (2^31+488) L.flag s (by norm_num)
+    mappedValue (centerOddBits L) s=if s L.flag then 2^28+61 else 0 :=
+  junction_mask_value 252 (2^28+61) L.flag s (by norm_num)
 
 
 theorem center_odd_bits_sources (L : BalancedConvert.Layout) (q : Wire)
     (hq : q∈mappedWires (centerOddBits L)) : q=L.flag :=
-  junction_mask_sources 255 (2^31+488) L.flag q hq
+  junction_mask_sources 252 (2^28+61) L.flag q hq
 
 
 /-- Scalar converter arithmetic, abstracting the prime before case splitting. -/
@@ -107340,6 +107343,23 @@ theorem center_odd_low_away (L : BalancedConvert.Layout) (hn : L.wires.Nodup) :
   omega
 
 
+/-- The adder ports of `centerOdd` (bits `3..254` and their carries) are a sublist of the
+full low-register ports. -/
+theorem center_odd_high_sub (L : BalancedConvert.Layout) :
+    (L.cin::(L.low.drop 3++(L.carry.take 254).drop 3)).Sublist (L.cin::(L.low++L.carry.take 254)) :=
+  List.Sublist.cons₂ L.cin ((List.drop_sublist 3 L.low).append (List.drop_sublist 3 _))
+
+
+theorem center_odd_high_nodup (L : BalancedConvert.Layout) (hn : L.wires.Nodup) :
+    (L.cin::(L.low.drop 3++(L.carry.take 254).drop 3)).Nodup :=
+  (center_odd_high_sub L).nodup (center_odd_low_nodup L hn)
+
+
+theorem center_odd_high_away (L : BalancedConvert.Layout) (hn : L.wires.Nodup) :
+    L.flag∉L.cin::(L.low.drop 3++(L.carry.take 254).drop 3) :=
+  fun h => center_odd_low_away L hn ((center_odd_high_sub L).subset h)
+
+
 theorem center_odd_msb_away (L : BalancedConvert.Layout) (hn : L.wires.Nodup) : L.msb∉L.low := by
   intro bad
   have h := List.nodup_iff_count.mp hn L.msb
@@ -107389,14 +107409,15 @@ theorem centerOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : L.w
   dsimp only
   obtain ⟨m1,m2,m3,m4,e⟩ := HalfConvert.run_four
     [.CX a L.flag,.CX L.flag a,.X L.flag] (rotateRight L.word)
-    (mappedAdd (centerOddBits L) L.low (L.carry.take 254) L.cin)
+    (mappedAdd (centerOddBits L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin)
     [.CX L.flag L.msb,.CX L.msb L.flag] m s
   rw [show centerOdd L=[.CX a L.flag,.CX L.flag a,.X L.flag]++rotateRight L.word++
-      mappedAdd (centerOddBits L) L.low (L.carry.take 254) L.cin++
+      mappedAdd (centerOddBits L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin++
       [.CX L.flag L.msb,.CX L.msb L.flag] by rw [centerOdd,hlow],e]
   generalize e1 : run [.CX a L.flag,.CX L.flag a,.X L.flag] m1 s=s1
   generalize e2 : run (rotateRight L.word) m2 s1=s2
-  generalize e3 : run (mappedAdd (centerOddBits L) L.low (L.carry.take 254) L.cin) m3 s2=s3
+  generalize e3 : run (mappedAdd (centerOddBits L) (L.low.drop 3) ((L.carry.take 254).drop 3)
+    L.cin) m3 s2=s3
   generalize e4 : run [.CX L.flag L.msb,.CX L.msb L.flag] m4 s3=s4
   have h1 := junction_swap_in_mode true a L.flag fa s m1 hflag
   simp only [if_true,Bool.xor_true,List.cons_append,List.nil_append] at h1
@@ -107436,21 +107457,38 @@ theorem centerOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : L.w
     rw [msb2] at split2
     simp only [Bool.false_eq_true,if_false,Nat.mul_zero,Nat.add_zero] at split2
     omega
-  have p3 := mappedAdd_correct (centerOddBits L) L.low (L.carry.take 254) L.cin
-    (center_odd_low_nodup L hn)
-    (fun q hq => (center_odd_bits_sources L q hq).symm ▸ center_odd_low_away L hn)
-    (by simp [centerOddBits,hw.1]) (HalfConvert.low_widths L hw).2 s2 m3
-    (fun q hq => clean2 q (by simp [BalancedConvert.scratch,List.mem_of_mem_take hq]))
+  have p3 := mappedAdd_correct (centerOddBits L) (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin
+    (center_odd_high_nodup L hn)
+    (fun q hq => (center_odd_bits_sources L q hq).symm ▸ center_odd_high_away L hn)
+    (by simp [centerOddBits,hw.1]) (by simp [List.length_take,hw.1,hw.2]) s2 m3
+    (fun q hq => clean2 q (by
+      simp [BalancedConvert.scratch,List.mem_of_mem_take (List.mem_of_mem_drop hq)]))
   rw [e3] at p3
+  -- Bits 0..2 of the low register are untouched; bits 3..254 receive `f*(2^28+61)`.
+  have lowSplit (t : BasisState) :
+      regValue L.low t=regValue (L.low.take 3) t+8*regValue (L.low.drop 3) t := by
+    have h := regValue_append (L.low.take 3) (L.low.drop 3) t
+    rw [List.take_append_drop,List.length_take,hw.1] at h
+    exact h
+  have lowDisjoint : ∀q∈L.low.take 3,q∉L.low.drop 3 := by
+    have nd3 : (L.low.take 3++L.low.drop 3).Nodup := by
+      rw [List.take_append_drop]
+      exact (List.nodup_append'.mp (center_odd_word_nodup L hn)).1
+    exact fun q hq hd => List.disjoint_left.mp (List.nodup_append'.mp nd3).2.2 hq hd
+  have head3 : regValue (L.low.take 3) s3.basis=regValue (L.low.take 3) s2.basis :=
+    regValue_congr _ _ _ (fun q hq => p3.2.1 q (lowDisjoint q hq))
   have v3 : regValue L.low s3.basis=(if s.basis a then 0 else 2^31+488)+R := by
-    rw [p3.2.2,center_odd_bits_value,flag2,low2,
-      clean2 _ (by simp [BalancedConvert.scratch]),hw.1]
+    have old := lowSplit s2.basis
+    rw [low2] at old
+    rw [lowSplit,head3,p3.2.2,center_odd_bits_value,flag2,
+      clean2 _ (by simp [BalancedConvert.scratch]),List.length_drop,hw.1]
     cases hk : s.basis a <;> simp only [hk,Bool.not_false,Bool.not_true,Bool.false_eq_true,
       if_false,if_true,Bool.toNat_false,Nat.add_zero,Nat.zero_add] at hxv ⊢ <;>
       norm_num only [Nat.reducePow] <;> omega
   have flag3 : s3.basis L.flag= !s.basis a :=
-    (p3.2.1 _ (fun h => flagWord (lowWord _ h))).trans flag2
-  have msb3 : s3.basis L.msb=false := (p3.2.1 _ msbLow).trans msb2
+    (p3.2.1 _ (fun h => flagWord (lowWord _ (List.mem_of_mem_drop h)))).trans flag2
+  have msb3 : s3.basis L.msb=false :=
+    (p3.2.1 _ (fun h => msbLow (List.mem_of_mem_drop h))).trans msb2
   have h4 := junction_swap_in_mode false L.flag L.msb fm s3 m4 msb3
   simp only [Bool.false_eq_true,if_false,List.append_nil,Bool.xor_false] at h4
   rw [e4] at h4
@@ -107463,7 +107501,8 @@ theorem centerOdd_correct (L : BalancedConvert.Layout) (hw : L.Widths) (hn : L.w
       rw [h4.2.2.1,hflag]
     · have qa : q≠a := fun e => hq (e ▸ aw)
       have qm : q≠L.msb := fun e => hq (e ▸ msbWord)
-      rw [h4.2.2.2 q hf qm,p3.2.1 q (fun h => hq (lowWord q h)),f2 q hq,h1.2.2.2 q qa hf]
+      rw [h4.2.2.2 q hf qm,p3.2.1 q (fun h => hq (lowWord q (List.mem_of_mem_drop h))),
+        f2 q hq,h1.2.2.2 q qa hf]
   refine ⟨h4.1.trans (p3.1.trans (r2.1.trans h1.1)),?_,
     BalancedConvert.work_of_frame L hn s s4 hc frame,frame⟩
   rw [HalfConvert.word_split L hw,low4,v3,h4.2.1,flag3,center_odd_word_value]
@@ -107909,11 +107948,13 @@ theorem slot_recode (retired : Wire) (toOdd : Bool) (L : Layout) (hw : L.Widths)
 
 
 theorem slot_center (L : BalancedConvert.Layout) (hw : L.Widths) :
-    gateSlots (P1Life.centerOdd L)=1835 := by
-  have bl : (P1Life.centerOddBits L).length=L.low.length := by simp [P1Life.centerOddBits,hw.1]
-  have cl : (L.carry.take 254).length+1=(P1Life.centerOddBits L).length := by simp [P1Life.centerOddBits,List.length_take,hw.2]
-  have add := mapped_add_slots _ L.low (L.carry.take 254) L.cin bl.symm cl
-  have cost : mappedSlots (P1Life.centerOddBits L)=1065 := by
+    gateSlots (P1Life.centerOdd L)=1823 := by
+  have bl : (P1Life.centerOddBits L).length=(L.low.drop 3).length := by
+    simp [P1Life.centerOddBits,hw.1]
+  have cl : ((L.carry.take 254).drop 3).length+1=(P1Life.centerOddBits L).length := by
+    simp [P1Life.centerOddBits,List.length_take,hw.2]
+  have add := mapped_add_slots _ (L.low.drop 3) ((L.carry.take 254).drop 3) L.cin bl.symm cl
+  have cost : mappedSlots (P1Life.centerOddBits L)=1053 := by
     rw [mapped_slots_shape]
     simp only [P1Life.centerOddBits,List.map_map,Function.comp_def,mapped_option_if]
     decide +kernel

@@ -7523,12 +7523,12 @@ private theorem wrapper_facts (d : Nat) (L : ControlledPointLayout) (C : Point) 
     gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
   exact ⟨by omega,by omega,by omega⟩
 
-private theorem toffoli_of_saved (x y s : Nat) (h : x+3316+s=y) (hs : 359≤s) (hy : y≤2149240) :
-    x≤2145565 := by
+private theorem toffoli_of_saved (x y s : Nat) (h : x+3316+s=y) (hs : 359≤s) (hy : y≤2149237) :
+    x≤2145562 := by
   omega
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2145565 :=
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2145562 :=
   toffoli_of_saved _ _ _ (wrapper_facts _ layout (.some hc) cy _ _ (gen_facts layout layout_widths cx cy)).1
     KnownStageCounts.saved_actual (ReflectionE1TickGap.wrapper_toffoli cx cy hc)
 
@@ -8586,7 +8586,7 @@ theorem wrapper_counts (L : ControlledPointLayout) (hw : L.Widths) (C : Point) (
 
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤2145548 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤2145545 := by
   have h := (wrapper_counts layout layout_widths (.some hc) cx cy).1
   have old := A161Generic.wrapper_toffoli cx cy hc
   omega
@@ -11235,14 +11235,14 @@ def program (C : Point) : Program :=
                                                                     
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C)≤2145536 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C)≤2145533 := by
   cases C with
   | zero => simp [program,toffoliCount]
   | @some cx cy hc =>
     have f := (FusedFlags.wrapper_counts layout (gen layout cx cy) hc).1
     have delta := (wrapper_counts layout layout_widths (.some hc) cx cy).1
     have old := FiniteFlagInterval.wrapper_toffoli cx cy hc
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2145536
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (gen layout cx cy))≤2145533
     omega
 
 
@@ -25028,7 +25028,7 @@ def program (C : Point) : Program :=
                                                                                   
 
 
-theorem program_toffoli (C : Point) : toffoliCount (program C) ≤2145289 := by
+theorem program_toffoli (C : Point) : toffoliCount (program C) ≤2145286 := by
   cases C with
   | zero => simp [program, toffoliCount]
   | @some cx cy hc =>
@@ -25036,8 +25036,8 @@ theorem program_toffoli (C : Point) : toffoliCount (program C) ≤2145289 := by
     have o := (oldStage_counts hc).1
     have st := (stage_counts hc).1
     have old := CodexYParityProbe.program_toffoli (.some hc)
-    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤2145536 at old
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤2145289
+    change toffoliCount (FusedFlags.wrapper layout (.some hc) cy (CodexYParityProbe.gen layout cx cy)) ≤2145533 at old
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤2145286
     omega
 
 
@@ -28100,7 +28100,7 @@ def program2 (C : Point) : Program :=
                                                                                   
 
 
-theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤2145045 := by
+theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤2145042 := by
   cases C with
   | zero => simp [program2, toffoliCount]
   | @some cx cy hc =>
@@ -28108,8 +28108,8 @@ theorem program2_toffoli (C : Point) : toffoliCount (program2 C) ≤2145045 := b
     have o : 504 ≤ toffoliCount (oldOut layout (.some hc)) := (old_out_counts hc).1
     have st := (outStage_counts hc).1
     have old := program_toffoli (.some hc)
-    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤2145289 at old
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤2145045
+    change toffoliCount (wrapper' layout (.some hc) (tailGen layout cx cy)) ≤2145286 at old
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤2145042
     omega
 
 
@@ -28910,14 +28910,14 @@ def program530 (C : Point) : Program :=
                                                                                       
 
 
-theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤2145043 := by
+theorem program_toffoli530 (C : Point) : toffoliCount (program530 C) ≤2145040 := by
   cases C with
   | zero => simp [program530, toffoliCount]
   | @some cx cy hc =>
     have old := InputSentinel.program2_toffoli (.some hc)
     have delta := (wrapper_metrics530 hc).1
-    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤2145045 at old
-    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤2145043
+    change toffoliCount (wrapper2 layout (.some hc) cx cy) ≤2145042 at old
+    change toffoliCount (wrapper530 layout (.some hc) cx cy) ≤2145040
     omega
 
 
@@ -35048,14 +35048,14 @@ def programOpt (C : Point) : Program :=
 
 
 
-theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2145034 := by
+theorem program_toffoli (C : Point) : toffoliCount (programOpt C)≤2145031 := by
   cases C with
   | zero=>simp [programOpt,toffoliCount]
   | @some cx cy hc=>
     have old:=InputSentinel530.program_toffoli530 (.some hc)
     have delta:=(wrapper_metrics hc).1
-    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2145043 at old
-    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2145034
+    change toffoliCount (InputSentinel530.wrapper530 layout (.some hc) cx cy)≤2145040 at old
+    change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤2145031
     omega
 
 
@@ -42357,14 +42357,14 @@ def programB (C : Point) : Program :=
 
 
 
-theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2144530 := by
+theorem program_toffoli_B (C : Point) : toffoliCount (programB C)≤2144527 := by
   cases C with
   | zero=>simp [programB,toffoliCount]
   | @some cx cy hc=>
     have old:=ParityFinalBothInverse23Out.program_toffoli (.some hc)
     have delta:=(wrapperN_metrics hc).1
     change toffoliCount (wrapperOpt layout (.some hc) cx cy)≤_ at old
-    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2144530
+    change toffoliCount (wrapperN layout (.some hc) cx cy)≤2144527
     omega
 
 
@@ -51410,7 +51410,7 @@ def programQ (C : Point) : Program :=
  | @WeierstrassCurve.Affine.Point.some _ _ _ cx cy _=>wrapperBorrow C cx cy
  def entryQ : Challenge.Entry :=fun C=>normalizeProgram (programQ C)
 
- def boundsQ : Challenge.Bounds :=⟨2145025,1498884,1586,50515743⟩
+ def boundsQ : Challenge.Bounds :=⟨2145022,1498884,1586,50515743⟩
 
 
 theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
@@ -51421,14 +51421,14 @@ theorem program_correct_Q (C : Point) (b : Bool) (R : Point) :
   simpa only [programQ,run,←WeierstrassCurve.Affine.Point.zero_def,add_zero,ite_self] using And.intro (Eq.refl s.phase) hs
  | @some cx cy hc=>exact fixed_correct _ b R _ (full_spec_borrow hc b R) (support_used_borrow hc)
 
- theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2145025 := by
+ theorem program_toffoli_Q (C : Point) : toffoliCount (programQ C)≤2145022 := by
  cases C with
  | zero=>simp [programQ,toffoliCount]
  | @some cx cy hc=>
   have h:=program_toffoli_B (.some hc)
   have d:=(wrapperBorrow_metrics hc).1
-  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2144530 at h
-  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2145025
+  change toffoliCount (wrapperN layout (.some hc) cx cy)≤2144527 at h
+  change toffoliCount (wrapperBorrow (.some hc) cx cy)≤2145022
   omega
 
  theorem program_measurements_Q (C : Point) : measurementCount (programQ C)≤1498884 := by

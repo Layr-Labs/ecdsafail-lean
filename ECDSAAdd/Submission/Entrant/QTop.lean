@@ -29224,7 +29224,8 @@ def centerPortFootprint (L : BalancedConvert.Layout) : Finset Wire :=
 theorem center_odd_support_into (L : BalancedConvert.Layout) (hw : L.Widths) (W : Finset Wire)
     (word_sub : ∀q∈L.word,q∈W) (carry_sub : ∀q∈L.carry.take 254,q∈W)
     (cin : L.cin∈W) (flag : L.flag∈W) : wires (P1Life.centerOdd L)⊆W := by
-  have add := mappedAdd_wires_subset (P1Life.centerOddBits L) L.low (L.carry.take 254) L.cin
+  have add := mappedAdd_wires_subset (P1Life.centerOddBits L) (L.low.drop 3)
+    ((L.carry.take 254).drop 3) L.cin
   have rotation := rotate_wires L.word
   obtain ⟨a,rest,lowBit,wordShape⟩ := P1Life.center_odd_word_shape L hw
   have lb : HalfConvert.lowBit L∈W := by
@@ -29232,13 +29233,13 @@ theorem center_odd_support_into (L : BalancedConvert.Layout) (hw : L.Widths) (W 
     rw [lowBit,wordShape]
     exact List.mem_cons_self
   have msb : L.msb∈W := word_sub _ (by simp [BalancedConvert.Layout.word])
-  have mapped (q : Wire) (used : q∈
-      (mappedWires (P1Life.centerOddBits L)++L.low++L.carry.take 254++[L.cin]).toFinset) : q∈W := by
+  have mapped (q : Wire) (used : q∈(mappedWires (P1Life.centerOddBits L)++L.low.drop 3++
+      (L.carry.take 254).drop 3++[L.cin]).toFinset) : q∈W := by
     simp only [List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil,or_false,or_assoc] at used
     rcases used with source|low|carry|eq
     · exact (P1Life.center_odd_bits_sources L q source).symm ▸ flag
-    · exact word_sub q (List.mem_append_left _ low)
-    · exact carry_sub q carry
+    · exact word_sub q (List.mem_append_left _ (List.mem_of_mem_drop low))
+    · exact carry_sub q (List.mem_of_mem_drop carry)
     · rw [eq]; exact cin
   have rot (q : Wire) (used : q∈(if L.word.length<2 then ∅ else L.word.toFinset)) : q∈W := by
     split at used
@@ -32734,12 +32735,12 @@ attribute [local irreducible] JointForward1588.paddedGD JointInverse1588.paddedD
 
 theorem centerOdd_physical (L : BalancedConvert.Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
     GatePhysical (P1Life.centerOdd L) := by
-  have mapped := mappedAdd_physical (P1Life.centerOddBits L) L.low (L.carry.take 254) L.cin
-    (P1Life.center_odd_low_nodup L hn) (by
+  have mapped := mappedAdd_physical (P1Life.centerOddBits L) (L.low.drop 3)
+    ((L.carry.take 254).drop 3) L.cin (P1Life.center_odd_high_nodup L hn) (by
       intro b hb q hq
       have source : q∈mappedWires (P1Life.centerOddBits L) := List.mem_flatMap.mpr ⟨b,hb,by simpa using hq⟩
       rw [P1Life.center_odd_bits_sources L q source]
-      exact P1Life.center_odd_low_away L hn)
+      exact P1Life.center_odd_high_away L hn)
   have rotation := rotate_physical L.word (P1Life.center_odd_word_nodup L hn)
   have flagLow : HalfConvert.lowBit L≠L.flag := by
     have a := P1Life.center_odd_word_shape L hw
@@ -40096,7 +40097,7 @@ attribute [local irreducible] ECDSAAdd.Entrant.Rolling1588.cell ECDSAAdd.Entrant
 attribute [local irreducible] ECDSAAdd.Entrant.Rolling1588.groups ECDSAAdd.Entrant.Rolling1588.entryField ECDSAAdd.Entrant.Rolling1588.exitField
 
 
-theorem center760_counts : toffoliCount RouteA.center760=254 ∧ measurementCount RouteA.center760=254 := by
+theorem center760_counts : toffoliCount RouteA.center760=251 ∧ measurementCount RouteA.center760=251 := by
   simpa only [RouteA.center760,RouteA.centerT,renameProgram_counts] using
     P1Life.centerOdd_counts HalfField.tgt (balancedSharedTargetConvert_widths base)
 
@@ -40453,12 +40454,14 @@ attribute [local irreducible] ECDSAAdd.Entrant.Rolling1588.entryTail ECDSAAdd.En
 attribute [local irreducible] RouteA.endPacket760 RouteA.center760 R2SqEp760.endPacket760 R2SqEp760.center760
 
 
-theorem center_count_shift : CountShift RouteA.center760 R2SqEp760.center760 0 0 0 0 := by
+theorem center_count_shift : CountShift RouteA.center760 R2SqEp760.center760 3 0 3 0 := by
   have g := R2SqEp760.center760_counts
   have old := OwnQ5Endpoint.endpoint_counts
   have backward : toffoliCount Rolling1588Lifetime.center=254 ∧ measurementCount Rolling1588Lifetime.center=254 := by
     simpa only [Rolling1588Lifetime.center,renameProgram_counts] using And.intro old.1 old.2.1
-  exact CountShift.same_counts RouteA.center760 R2SqEp760.center760 254 254 center760_counts ⟨g.1.trans backward.1,g.2.trans backward.2⟩
+  have fresh := center760_counts
+  have record := And.intro (g.1.trans backward.1) (g.2.trans backward.2)
+  exact CountShift.of RouteA.center760 R2SqEp760.center760 3 0 3 0 ⟨by omega,by omega⟩
 
 
 end ECDSAAdd.Entrant.RouteA.Rolling1588
@@ -40511,10 +40514,10 @@ theorem entryTail_count_shift : CountShift entryTail ECDSAAdd.Entrant.Rolling158
   exact whole.program_eq (P:=entryTail) (Q:=ECDSAAdd.Entrant.Rolling1588.entryTail) resource_entryTail_shape resource_record_entryTail_shape
 
 
-theorem exitHead_count_shift : CountShift exitHead ECDSAAdd.Entrant.Rolling1588.exitHead 1515 251 2020 252 := by
-  have first := center_count_shift.app_as (CountShift.ident HalfFieldOB5.copyN) 0 0 0 0 (by decide) (by decide) (by decide) (by decide)
+theorem exitHead_count_shift : CountShift exitHead ECDSAAdd.Entrant.Rolling1588.exitHead 1518 251 2023 252 := by
+  have first := center_count_shift.app_as (CountShift.ident HalfFieldOB5.copyN) 3 0 3 0 (by decide) (by decide) (by decide) (by decide)
   have joined := endpoint_count_shift.app_as exitGroups_count_shift 1515 251 2020 252 (by decide) (by decide) (by decide) (by decide)
-  have whole := first.app_as (joined.ren (OB5.sig 511)) 1515 251 2020 252 (by decide) (by decide) (by decide) (by decide)
+  have whole := first.app_as (joined.ren (OB5.sig 511)) 1518 251 2023 252 (by decide) (by decide) (by decide) (by decide)
   exact whole.program_eq (P:=exitHead) (Q:=ECDSAAdd.Entrant.Rolling1588.exitHead) resource_exitHead_shape resource_record_exitHead_shape
 
 
@@ -40525,20 +40528,20 @@ theorem entryField_count_shift : CountShift entryField ECDSAAdd.Entrant.Rolling1
   exact whole.program_eq (P:=entryField) (Q:=ECDSAAdd.Entrant.Rolling1588.entryField) resource_entryField_shape resource_record_entryField_shape
 
 
-theorem exitField_count_shift : CountShift exitField ECDSAAdd.Entrant.Rolling1588.exitField 1524 505 2032 506 := by
-  have first := (CountShift.ident FourScratchWindow.clearProgram).app_as (exitHead_count_shift.ren Prefix1590.borrow) 1515 251 2020 252 (by decide) (by decide) (by decide) (by decide)
-  have joined := first.app_as (CountShift.ident FourScratchWindow.unprefix) 1515 251 2020 252 (by decide) (by decide) (by decide) (by decide)
-  have whole := joined.app_as firstExit_count_shift 1524 505 2032 506 (by decide) (by decide) (by decide) (by decide)
+theorem exitField_count_shift : CountShift exitField ECDSAAdd.Entrant.Rolling1588.exitField 1527 505 2035 506 := by
+  have first := (CountShift.ident FourScratchWindow.clearProgram).app_as (exitHead_count_shift.ren Prefix1590.borrow) 1518 251 2023 252 (by decide) (by decide) (by decide) (by decide)
+  have joined := first.app_as (CountShift.ident FourScratchWindow.unprefix) 1518 251 2023 252 (by decide) (by decide) (by decide) (by decide)
+  have whole := joined.app_as firstExit_count_shift 1527 505 2035 506 (by decide) (by decide) (by decide) (by decide)
   exact whole.program_eq (P:=exitField) (Q:=ECDSAAdd.Entrant.Rolling1588.exitField) resource_exitField_shape resource_record_exitField_shape
 
 
 theorem field_count_delta :
     toffoliCount entryField+1013=toffoliCount ECDSAAdd.Entrant.Rolling1588.entryField ∧
     measurementCount entryField+1521=measurementCount ECDSAAdd.Entrant.Rolling1588.entryField ∧
-    toffoliCount exitField+1019=toffoliCount ECDSAAdd.Entrant.Rolling1588.exitField ∧
-    measurementCount exitField+1526=measurementCount ECDSAAdd.Entrant.Rolling1588.exitField :=
+    toffoliCount exitField+1022=toffoliCount ECDSAAdd.Entrant.Rolling1588.exitField ∧
+    measurementCount exitField+1529=measurementCount ECDSAAdd.Entrant.Rolling1588.exitField :=
   ⟨(entryField_count_shift.saving 1013 1521 (by decide) (by decide)).1,(entryField_count_shift.saving 1013 1521 (by decide) (by decide)).2,
-    (exitField_count_shift.saving 1019 1526 (by decide) (by decide)).1,(exitField_count_shift.saving 1019 1526 (by decide) (by decide)).2⟩
+    (exitField_count_shift.saving 1022 1529 (by decide) (by decide)).1,(exitField_count_shift.saving 1022 1529 (by decide) (by decide)).2⟩
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end -- ticket 8 pasted module
 
@@ -40883,7 +40886,7 @@ theorem record_center_slot_cost (L : BalancedConvert.Layout) (hw : L.Widths) :
     gateSlots_cons,gateSlots_nil,instructionSlots]
 
 
-theorem center_control_slots : gateSlots RouteA.center760+7=gateSlots ControlLoan1589.center := by
+theorem center_control_slots : gateSlots RouteA.center760+19=gateSlots ControlLoan1589.center := by
   have new := slot_center HalfField.tgt (balancedSharedTargetConvert_widths base)
   have old := record_center_slot_cost HalfField.tgt (balancedSharedTargetConvert_widths base)
   simp only [RouteA.center760,RouteA.centerT,ControlLoan1589.center,OwnQ5Endpoint.centerT,
@@ -40965,7 +40968,8 @@ attribute [local irreducible] ECDSAAdd.Entrant.Rolling1588.entryField ECDSAAdd.E
 attribute [local irreducible] ControlLoan1589.groups ControlLoan1589.placedFirstPacket ControlLoan1589.entryField ControlLoan1589.exitField
 
 theorem center_slot_bound : SlotBound RouteA.center760 ControlLoan1589.center 7 0 := by
-  have cs := (SlotShift.shrink RouteA.center760 ControlLoan1589.center 7 center_control_slots).upper
+  have cs := ((SlotShift.shrink RouteA.center760 ControlLoan1589.center 19 center_control_slots).upper).normalize
+    7 0 (by decide)
   exact cs
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end -- ticket 8 pasted module
@@ -41112,7 +41116,7 @@ theorem field_resource_bounds :
     (toffoliCount entryField+1508=toffoliCount ControlLoan1589.entryField ∧
       measurementCount entryField≤measurementCount ControlLoan1589.entryField+106 ∧
       gateSlots entryField≤gateSlots ControlLoan1589.entryField+(50196+509*halfExtra true+9969)) ∧
-    (toffoliCount exitField+1258=toffoliCount ControlLoan1589.exitField ∧
+    (toffoliCount exitField+1261=toffoliCount ControlLoan1589.exitField ∧
       measurementCount exitField≤measurementCount ControlLoan1589.exitField+106 ∧
       gateSlots exitField≤gateSlots ControlLoan1589.exitField+(51299+509*halfExtra false+9969)) := by
   have d := field_count_delta
@@ -41121,7 +41125,7 @@ theorem field_resource_bounds :
   have a := count_retarget_as entryField ECDSAAdd.Entrant.Rolling1588.entryField ControlLoan1589.entryField
     1013 495 1521 106 1508 ⟨d.1,d.2.1⟩ ⟨oa.1,oa.2.1⟩ (by decide)
   have b := count_retarget_as exitField ECDSAAdd.Entrant.Rolling1588.exitField ControlLoan1589.exitField
-    1019 239 1526 106 1258 ⟨d.2.2.1,d.2.2.2⟩ ⟨ob.1,ob.2.1⟩ (by decide)
+    1022 239 1529 106 1261 ⟨d.2.2.1,d.2.2.2⟩ ⟨ob.1,ob.2.1⟩ (by decide)
   exact ⟨⟨a.1,a.2,field_slot_bounds.1⟩,⟨b.1,b.2,field_slot_bounds.2⟩⟩
 end ECDSAAdd.Entrant.RouteA.Rolling1588
 end -- ticket 8 pasted module
@@ -41172,11 +41176,11 @@ theorem entryFieldHosted_resource_delta :
 
 
 theorem exitFieldHosted_resource_delta :
-    toffoliCount exitFieldHosted+1258=toffoliCount ControlLoan1589.exitFieldHosted ∧
+    toffoliCount exitFieldHosted+1261=toffoliCount ControlLoan1589.exitFieldHosted ∧
     measurementCount exitFieldHosted≤measurementCount ControlLoan1589.exitFieldHosted+106 ∧
     gateSlots exitFieldHosted≤gateSlots ControlLoan1589.exitFieldHosted+(51299+509*halfExtra false+9969) :=
   RouteA.hosted_resource_bound RouteA.Rolling1588.exitField ControlLoan1589.exitField
-    exitFieldHosted ControlLoan1589.exitFieldHosted 1258 106 (51299+509*halfExtra false+9969) rfl rfl
+    exitFieldHosted ControlLoan1589.exitFieldHosted 1261 106 (51299+509*halfExtra false+9969) rfl rfl
     RouteA.Rolling1588.field_resource_bounds.2
 
 end ECDSAAdd.Entrant.Rolling1588
@@ -41623,7 +41627,7 @@ theorem entryKernel_resource_delta :
 
 
 private theorem exitKernel_resource_delta_num :
-    toffoliCount exitKernel+1268=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+1271=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel≤measurementCount ControlLoan1589.exitKernel+106 ∧
     gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+11699) := by
   have first := firstPhase_metrics false
@@ -41639,7 +41643,7 @@ private theorem exitKernel_resource_delta_num :
 
 
 theorem exitKernel_resource_delta :
-    toffoliCount exitKernel+1268=toffoliCount ControlLoan1589.exitKernel ∧
+    toffoliCount exitKernel+1271=toffoliCount ControlLoan1589.exitKernel ∧
     measurementCount exitKernel≤measurementCount ControlLoan1589.exitKernel+106 ∧
     gateSlots exitKernel≤gateSlots ControlLoan1589.exitKernel+(64865+exitSlotGrowth) := by
   rw [exitSlotGrowth_eq]
@@ -45072,8 +45076,8 @@ private theorem division_delta (K K0 : Program) (h : DeltaSub K K0 1518 106 (637
   exact ⟨by omega,by omega,by omega⟩
 
 
-private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 1268 106 (64865+Rolling1588.exitSlotGrowth))
-    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 1268 106 (64865+Rolling1588.exitSlotGrowth) := by
+private theorem exit_delta (K K0 : Program) (h : DeltaSub K K0 1271 106 (64865+Rolling1588.exitSlotGrowth))
+    (L : ControlledPointLayout) : DeltaSub (exit K L) (exit K0 L) 1271 106 (64865+Rolling1588.exitSlotGrowth) := by
   simpa only [DeltaSub,exit,renameProgram_counts,rename_gateSlots] using h
 
 
@@ -45081,8 +45085,8 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
     (D D0 : Fp→Program) (S S0 P P0 G G0 : Program) (cx cy : Fp)
     (hG : G=Offset.gen L D S P cx cy) (hG0 : G0=Offset.gen L D0 S0 P0 cx cy)
     (hd : ∀c,DeltaSub (D c) (D0 c) 1518 106 (63762+Rolling1588.entrySlotGrowth))
-    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 1268 106 (64865+Rolling1588.exitSlotGrowth)) :
-    DeltaSub G G0 2786 212 (128627+Rolling1588.slotGrowth) := by
+    (hs : Delta S S0 0 0 0) (hp : DeltaSub P P0 1271 106 (64865+Rolling1588.exitSlotGrowth)) :
+    DeltaSub G G0 2789 212 (128627+Rolling1588.slotGrowth) := by
   subst G G0
   have d:=hd (-cy)
   simp only [Delta,DeltaLe,DeltaSub,Offset.gen,Offset.mid,Offset.generic,toffoliCount_append,
@@ -45092,7 +45096,7 @@ private theorem gen_delta_of_shapes (L : ControlledPointLayout)
 
 
 private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
-    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 2786 212 (128627+Rolling1588.slotGrowth) := by
+    DeltaSub (gen L cx cy) (ControlLoan1589BFFinal.gen L cx cy) 2789 212 (128627+Rolling1588.slotGrowth) := by
   have squareCounts:=SquareCarryLoan719BF.counts_eq L
   have squareSlots:=SquareCarryLoan719BF.slots_eq L
   exact gen_delta_of_shapes L
@@ -45117,8 +45121,8 @@ private theorem gen_delta (L : ControlledPointLayout) (cx cy : Fp) :
 
 
 private theorem wrapper_delta (L : ControlledPointLayout) (C : Point) (cy : Fp)
-    (P Q : Program) (h : DeltaSub P Q 2786 212 (128627+Rolling1588.slotGrowth)) :
-    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 2786 212 (128627+Rolling1588.slotGrowth) := by
+    (P Q : Program) (h : DeltaSub P Q 2789 212 (128627+Rolling1588.slotGrowth)) :
+    DeltaSub (Edges.wrapper L C cy P) (Edges.wrapper L C cy Q) 2789 212 (128627+Rolling1588.slotGrowth) := by
   simp only [DeltaSub,Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
     measurementCount_append,gateSlots_append,renameProgram_counts,rename_gateSlots] at h ⊢
   exact ⟨by omega,by omega,by omega⟩
@@ -45270,7 +45274,7 @@ theorem generic_support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wire
 
 
 theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
-    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2150137 := by
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤2150134 := by
   have diff:=(wrapper_delta layout (.some hc) cy _ _ (gen_delta layout cx cy)).1
   have old:=ControlLoan1589BFFinal.wrapper_toffoli cx cy hc
   omega
