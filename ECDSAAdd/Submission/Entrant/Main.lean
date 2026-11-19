@@ -73547,11 +73547,15 @@ namespace ECDSAAdd.Entrant
 def entry : Challenge.Entry :=
   StairCertificate.stairEntry StairConcreteAssembly.concreteAssembly
 
-/-- Literal bounds ⟨T, M, Q, slots⟩. -/
-def bounds : Challenge.Bounds := ⟨2170000, 1521500, 1547, 51155937⟩
+/-- Literal bounds ⟨T, M, Q, slots⟩; T is the exact total of `StairCountsHosted.count_totals`. -/
+def bounds : Challenge.Bounds := ⟨2169965, 1521500, 1547, 51155937⟩
 
-theorem certificate : Challenge.Certificate entry bounds :=
-  StairOpenWiring.certificate_of_remaining 1547 (by decide) StairOpenWiring.remaining
+theorem certificate : Challenge.Certificate entry bounds := by
+  have c := StairOpenWiring.certificate_of_remaining 1547 (by decide) StairOpenWiring.remaining
+  exact ⟨c.correct, c.physical,
+    fun C => (ECDSAAdd.Baselines.normalize_toffoli
+      (StairConcreteAssembly.concreteAssembly.program C)).trans (StairCountsHosted.count_totals C).1,
+    c.measurements_le, c.qubits_le, c.gateSlots_le⟩
 
 end ECDSAAdd.Entrant
 

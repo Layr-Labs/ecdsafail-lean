@@ -283,7 +283,10 @@ theorem tail_physical(u v:Program)(h:GatePhysical u→GatePhysical v)(hp:GatePhy
 theorem toffoli:toffoliCount HighSignAResearch.body+3=toffoliCount Ghost3SignA.body:=by
  have a:=congrArg toffoliCount new_shape
  have b:=congrArg toffoliCount old_shape
- have e:toffoliCount newU+3=toffoliCount oldU:=HighUnbuildAResearch.toffoli acc rfl
+ have e:toffoliCount newU+3=toffoliCount oldU:=by
+  have e0:=HighUnbuildAResearch.toffoli acc rfl
+  rw [show newU=HighUnbuildAResearch.unbuild acc from rfl,show oldU=ReorderedAUnbuild.unbuild 106 acc pad bank L.core.cin src Ghost3CacheA.hosts from rfl]
+  exact e0
  have q:=tail_toffoli newU oldU e
  omega
 
@@ -297,7 +300,10 @@ theorem measurements:measurementCount HighSignAResearch.body=measurementCount Gh
 theorem slots:Challenge.gateSlots HighSignAResearch.body+3=Challenge.gateSlots Ghost3SignA.body:=by
  have a:=congrArg Challenge.gateSlots new_shape
  have b:=congrArg Challenge.gateSlots old_shape
- have e:Challenge.gateSlots newU+3=Challenge.gateSlots oldU:=HighUnbuildAResearch.slots acc rfl
+ have e:Challenge.gateSlots newU+3=Challenge.gateSlots oldU:=by
+  have e0:=HighUnbuildAResearch.slots acc rfl
+  rw [show newU=HighUnbuildAResearch.unbuild acc from rfl,show oldU=ReorderedAUnbuild.unbuild 106 acc pad bank L.core.cin src Ghost3CacheA.hosts from rfl]
+  exact e0
  have q:=tail_slots newU oldU e
  omega
 
@@ -374,7 +380,10 @@ theorem tail_physical(u v:Program)(h:GatePhysical u→GatePhysical v)(hp:GatePhy
 theorem toffoli:toffoliCount HighSignCResearch.body+3=toffoliCount Ghost3SignC.body:=by
  have a:=congrArg toffoliCount new_shape
  have b:=congrArg toffoliCount old_shape
- have e:toffoliCount newU+3=toffoliCount oldU:=HighUnbuildCResearch.toffoli ga rfl
+ have e:toffoliCount newU+3=toffoliCount oldU:=by
+  have e0:=HighUnbuildCResearch.toffoli ga rfl
+  rw [show newU=HighUnbuildCResearch.unbuild ga from rfl,show oldU=ReorderedCUnbuild.unbuild 102 ga pad bank L.core.cin src Ghost3CacheC.hosts from rfl]
+  exact e0
  have q:=tail_toffoli newU oldU e
  omega
 
@@ -388,7 +397,10 @@ theorem measurements:measurementCount HighSignCResearch.body=measurementCount Gh
 theorem slots:Challenge.gateSlots HighSignCResearch.body+3=Challenge.gateSlots Ghost3SignC.body:=by
  have a:=congrArg Challenge.gateSlots new_shape
  have b:=congrArg Challenge.gateSlots old_shape
- have e:Challenge.gateSlots newU+3=Challenge.gateSlots oldU:=HighUnbuildCResearch.slots ga rfl
+ have e:Challenge.gateSlots newU+3=Challenge.gateSlots oldU:=by
+  have e0:=HighUnbuildCResearch.slots ga rfl
+  rw [show newU=HighUnbuildCResearch.unbuild ga from rfl,show oldU=ReorderedCUnbuild.unbuild 102 ga pad bank L.core.cin src Ghost3CacheC.hosts from rfl]
+  exact e0
  have q:=tail_slots newU oldU e
  omega
 
@@ -17755,7 +17767,7 @@ theorem toffoli:toffoliCount output+8=toffoliCount SixCarryLoopAnchor.output:=by
  have h:=EightCarryPrefix.toffoli
  rw [shape8,LocalSevenShape.core_shape] at h
  simp only [toffoliCount_append] at h
- change toffoliCount p8+8=toffoliCount SixCarryLoopAnchor.output
+ rw [show output=p8 from rfl]
  omega
 
 theorem measurements:measurementCount output=measurementCount SixCarryLoopAnchor.output:=by
@@ -17946,14 +17958,14 @@ theorem shape:old=pre++PlacedUniformAdder4Research.originalAt ports++post:=by
 theorem pre_measurements:measurementCount pre=0:=by decide +kernel
 
 theorem pre_fresh:∀q∈UniformAdderSpliceResearch.cs ports,q∉wires pre:=by
+ have rs4_h:(UniformAdderSpliceResearch.cs ports).all (fun q=>!C163Touch.touched pre q)=true:=by decide +kernel
  intro q hq
- simp only [UniformAdderSpliceResearch.cs,List.mem_cons,List.not_mem_nil,or_false] at hq
- rcases hq with rfl|rfl|rfl <;>apply HighConsumedStreamResearch.untouched <;>decide +kernel
+ exact HighConsumedStreamResearch.untouched _ _ (by simpa using List.all_eq_true.mp rs4_h q hq)
 
 theorem post_fresh:∀q∈UniformAdderSpliceResearch.ys ports,q∉wires post:=by
+ have rs4_h:(UniformAdderSpliceResearch.ys ports).all (fun q=>!C163Touch.touched post q)=true:=by decide +kernel
  intro q hq
- simp only [UniformAdderSpliceResearch.ys,List.mem_cons,List.not_mem_nil,or_false] at hq
- rcases hq with rfl|rfl|rfl|rfl <;>apply HighConsumedStreamResearch.untouched <;>decide +kernel
+ exact HighConsumedStreamResearch.untouched _ _ (by simpa using List.all_eq_true.mp rs4_h q hq)
 
 theorem toffoli:toffoliCount fast+3=toffoliCount old:=by
  have h:=congrArg toffoliCount shape
@@ -18709,6 +18721,7 @@ theorem savings_exact:savings initial original=3:=by decide +kernel
 theorem toffoli:toffoliCount output+3=toffoliCount original:=by
  have h:=compile_toffoli initial original
  rw [savings_exact] at h
+ rw [show output=compile initial original from rfl]
  exact h
 
 theorem measurements:measurementCount output=measurementCount original:=compile_measurements initial original

@@ -7266,7 +7266,8 @@ theorem transfer (base outBase : BasisState) (clean : L.PairClean base) (O E B :
  rw [Nat.div_eq_of_lt hb] at bit
  have z:(run (ParkCarry10Develop.rebuild L) m s).basis 4371=false := by
   cases h:(run (ParkCarry10Develop.rebuild L) m s).basis 4371 <;> simp_all
- have eq:=LocalRebuild.run_eq s m ht hv z
+ have z':(run LocalRebuild.actual m s).basis 4371=false := by rw [LocalRebuild.actual];exact z
+ have eq:=LocalRebuild.run_eq s m ht hv z'
  rw [←eq]
  simpa only [LocalRebuild.actual] using out
 
@@ -8382,10 +8383,10 @@ theorem run_core_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.b
  (LocalSevenExtra.run_core_eq s m hc).trans (run_eq s m hc)
 
 theorem toffoli : toffoliCount improved+8=toffoliCount LocalSevenCore.core := by
- have h:=SixCarryPatchResources.toffoli LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
- change toffoliCount improved+1=toffoliCount LocalSevenExtra.improved at h
+ have h:toffoliCount improved+1=toffoliCount LocalSevenExtra.improved :=
+  SixCarryPatchResources.toffoli LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
  have old:=LocalSevenResources.toffoli
- omega
+ rw [← old, ← h, Nat.add_assoc]
 
 theorem measurements : measurementCount improved=measurementCount LocalSevenCore.core := by
  have h:=SixCarryPatchResources.measurements LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
@@ -14059,8 +14060,9 @@ theorem fixed_middle:middle=C163Low4Fold.fullMiddle L g:=by
 theorem special_middle_state(s:State)(m:List Bool)(hq:s.basis q=false)(hr:s.basis r=false):
  middleState (C163Fold.build L) specialChecked.out s m=middleState (C163Fold.build L) middle s m:=by
  rcases C163Middle.geometry with ⟨_,_,_,_,_,fq,fr,_,_,_,_⟩
- have qf:=(C163Middle.off_base q fq).1
- have rf:=(C163Middle.off_base r fr).1
+ have be:C163NarrowAcc.build8 ga pad bank L.core.cin src=C163Fold.build L:=C163Low4Structural.build_eq L pad bank src L.core.cin
+ have qf:q∉wires (C163Fold.build L):=by rw [← be];exact (C163Middle.off_base q fq).1
+ have rf:r∉wires (C163Fold.build L):=by rw [← be];exact (C163Middle.off_base r fr).1
  simp only [middleState,run_take]
  apply special_run
  · exact (run_preserves_outside _ _ s q qf).trans hq

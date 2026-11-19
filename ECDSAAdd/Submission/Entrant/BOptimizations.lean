@@ -29,6 +29,7 @@ import ECDSAAdd.Arithmetic.SwapRegisters
 import ECDSAAdd.Arithmetic.RecordedRailVentedProof
 import ECDSAAdd.Framework.WireRenameEquivalence
 import ECDSAAdd.Framework.WireRenameComposition
+import ECDSAAdd.Submission.Entrant.StairSideA
 
 -- Rebalanced closed source chunks; all ordinary declarations and circuit literals retained.
 section
@@ -987,10 +988,35 @@ theorem loop_counts:toffoliCount loop+3=toffoliCount HighSignCResearch.loop ∧
  simp only [ReorderedCUnbuild.unbuild,ReorderedConsumedSub.consumed,toffoliCount_append,measurementCount_append] at oi om
  simp only [loop,suffix,newI,preInv,top,tail,M,HighSignCResearch.loop,HighSignCResearch.suffix,
   toffoliCount_append,measurementCount_append,C105LowEraseResearch.counts.1,C105LowEraseResearch.counts.2.1]
- simp only [xs,ys,cs,HighConsumedC105Research.xs,HighConsumedC105Research.ys,
-  HighConsumedC105Research.cs,HighConsumedC105Research.cin,HighConsumedC105Research.hs,
-  C105PrefixResearch.cin,CKAliasesResearch.original,Ghost3CacheC.middle,
-  GhostRelocatedKnown.C.original,HighSignCResearch.hosts,C105SignResearch.hosts,aa,ap,ab,ax,ai] at *
+ try rw [xs] at *
+ try rw [ys] at *
+ try rw [cs] at *
+ try rw [HighConsumedC105Research.xs] at *
+ try rw [HighConsumedC105Research.ys] at *
+ try rw [HighConsumedC105Research.cs] at *
+ try rw [HighConsumedC105Research.cin] at *
+ try rw [HighConsumedC105Research.hs] at *
+ try rw [C105PrefixResearch.cin] at *
+ try rw [CKAliasesResearch.original] at *
+ try rw [Ghost3CacheC.middle] at *
+ try rw [GhostRelocatedKnown.C.original] at *
+ try rw [HighSignCResearch.hosts] at *
+ try rw [C105SignResearch.hosts] at *
+ try rw [xs] at *
+ try rw [ys] at *
+ try rw [cs] at *
+ try rw [HighConsumedC105Research.xs] at *
+ try rw [HighConsumedC105Research.ys] at *
+ try rw [HighConsumedC105Research.cs] at *
+ try rw [HighConsumedC105Research.cin] at *
+ try rw [HighConsumedC105Research.hs] at *
+ try rw [C105PrefixResearch.cin] at *
+ try rw [CKAliasesResearch.original] at *
+ try rw [Ghost3CacheC.middle] at *
+ try rw [GhostRelocatedKnown.C.original] at *
+ try rw [HighSignCResearch.hosts] at *
+ try rw [C105SignResearch.hosts] at *
+ simp only [aa,ap,ab,ax,ai] at *
  exact ⟨by omega,by omega⟩
 
  theorem body_counts:toffoliCount body+3=toffoliCount HighSignCResearch.body ∧
@@ -1034,10 +1060,37 @@ attribute [local irreducible] Challenge.gateSlots
  simp only [ReorderedCUnbuild.unbuild,ReorderedConsumedSub.consumed,gateSlots_append] at oi
  simp only [loop,suffix,newI,preInv,top,tail,M,HighSignCResearch.loop,HighSignCResearch.suffix,
   gateSlots_append,C105LowEraseResearch.counts.2.2]
- simp only [xs,ys,cs,HighConsumedC105Research.xs,HighConsumedC105Research.ys,
-  HighConsumedC105Research.cs,HighConsumedC105Research.cin,HighConsumedC105Research.hs,
-  C105PrefixResearch.cin,CKAliasesResearch.original,Ghost3CacheC.middle,
-  GhostRelocatedKnown.C.program,GhostRelocatedKnown.C.original,HighSignCResearch.hosts,C105SignResearch.hosts,aa,ap,ab,ax,ai] at *
+ try rw [xs] at *
+ try rw [ys] at *
+ try rw [cs] at *
+ try rw [HighConsumedC105Research.xs] at *
+ try rw [HighConsumedC105Research.ys] at *
+ try rw [HighConsumedC105Research.cs] at *
+ try rw [HighConsumedC105Research.cin] at *
+ try rw [HighConsumedC105Research.hs] at *
+ try rw [C105PrefixResearch.cin] at *
+ try rw [CKAliasesResearch.original] at *
+ try rw [Ghost3CacheC.middle] at *
+ try rw [GhostRelocatedKnown.C.program] at *
+ try rw [GhostRelocatedKnown.C.original] at *
+ try rw [HighSignCResearch.hosts] at *
+ try rw [C105SignResearch.hosts] at *
+ try rw [xs] at *
+ try rw [ys] at *
+ try rw [cs] at *
+ try rw [HighConsumedC105Research.xs] at *
+ try rw [HighConsumedC105Research.ys] at *
+ try rw [HighConsumedC105Research.cs] at *
+ try rw [HighConsumedC105Research.cin] at *
+ try rw [HighConsumedC105Research.hs] at *
+ try rw [C105PrefixResearch.cin] at *
+ try rw [CKAliasesResearch.original] at *
+ try rw [Ghost3CacheC.middle] at *
+ try rw [GhostRelocatedKnown.C.program] at *
+ try rw [GhostRelocatedKnown.C.original] at *
+ try rw [HighSignCResearch.hosts] at *
+ try rw [C105SignResearch.hosts] at *
+ simp only [aa,ap,ab,ax,ai] at *
  omega
  theorem body_slots:gateSlots body+12=gateSlots HighSignCResearch.body:=by
  have h:=loop_slots
@@ -3882,14 +3935,14 @@ theorem shape:old=pre++PlacedUniformAdder4Research.originalAt ports++post:=by
 theorem pre_measurements:measurementCount pre=0:=by decide +kernel
 
 theorem pre_fresh:∀q∈UniformAdderSpliceResearch.cs ports,q∉wires pre:=by
+ have rs4_h:(UniformAdderSpliceResearch.cs ports).all (fun q=>!C163Touch.touched pre q)=true:=by decide +kernel
  intro q hq
- simp only [UniformAdderSpliceResearch.cs,List.mem_cons,List.not_mem_nil,or_false] at hq
- rcases hq with rfl|rfl|rfl <;>apply HighConsumedStreamResearch.untouched <;>decide +kernel
+ exact HighConsumedStreamResearch.untouched _ _ (by simpa using List.all_eq_true.mp rs4_h q hq)
 
 theorem post_fresh:∀q∈UniformAdderSpliceResearch.ys ports,q∉wires post:=by
+ have rs4_h:(UniformAdderSpliceResearch.ys ports).all (fun q=>!C163Touch.touched post q)=true:=by decide +kernel
  intro q hq
- simp only [UniformAdderSpliceResearch.ys,List.mem_cons,List.not_mem_nil,or_false] at hq
- rcases hq with rfl|rfl|rfl|rfl <;>apply HighConsumedStreamResearch.untouched <;>decide +kernel
+ exact HighConsumedStreamResearch.untouched _ _ (by simpa using List.all_eq_true.mp rs4_h q hq)
 
 theorem toffoli:toffoliCount fast+3=toffoliCount old:=by
  have h:=congrArg toffoliCount shape

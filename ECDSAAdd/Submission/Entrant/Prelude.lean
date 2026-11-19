@@ -565,7 +565,7 @@ theorem prepareSign_biased (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have n0 : L.toLayout.wires.Nodup := (List.nodup_append'.mp hn).2.1
   have dr := (List.nodup_append'.mp (L.toLayout.dataND n0)).1
   have sign := biased_sign L hw R hr s.basis hv
-  have first (ms : List Bool) : run [.CX L.rmsb L.lower] ms s=c := by
+  have first (ms : List Bool) : run [ECDSAAdd.Instr.CX L.rmsb L.lower] ms s=c := by
     simp [run,c,writeBit,hl,sign]
   have body := signComplement_correct L.lower L.r dr la c m
   have before : regValue L.r c.basis=encodeWord 256 (biasedValue R) := by
@@ -1275,7 +1275,7 @@ theorem physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) : GatePhysica
       by simp [GatePhysical,PhysicalInstr,ProperGate]⟩
   have cmp := compareLt_physical none L.y L.r L.carry L.one L.parity
     (L.toLayout.compareND n0) (by simp)
-  have last : GatePhysical [.CX L.ymsb L.sourceGuard] := by
+  have last : GatePhysical [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] := by
     have nd := BalancedCircuit.scalarND L hn
     simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
       not_or,not_false_eq_true,and_true] at nd
@@ -1789,7 +1789,7 @@ theorem unbiasView_correct (L : Layout) (hw : L.Widths) (hn : L.toLayout.wires.N
   have lowR : regValue L.low s.basis=encodeWord 255 (normalizedR R) := by
     rw [BalancedCleanup.Layout.r,regValue_append] at hR
     simpa [regValue,rms] using hR
-  let u := run [.X bit] m s
+  let u := run [ECDSAAdd.Instr.X bit] m s
   have uf (a : Wire) (ha : a≠bit) : u.basis a=s.basis a := by simp [u,run,writeBit,ha]
   have vb := BalancedCleanup.bias_value (L.r.take 254) bit
     (by rw [←shape]; exact lowND) s m
@@ -1807,7 +1807,7 @@ theorem unbiasView_correct (L : Layout) (hw : L.Widths) (hn : L.toLayout.wires.N
     rw [cv.2.2,uR,uL,w.2.1,biased_from_magnitude R hr]
   have vL : v.basis L.lower=negative R := (cv.2.1 _ la).trans uL
   have vm : v.basis L.rmsb=negative R := biased_msb L hw R hr v.basis vR
-  have actual : run (unbiasView L) m s=run [.CX L.rmsb L.lower] m v := by
+  have actual : run (unbiasView L) m s=run [ECDSAAdd.Instr.CX L.rmsb L.lower] m v := by
     simp only [unbiasView,BalancedCleanup.prepareSign,List.reverse_append,
       List.reverse_singleton,List.append_assoc,run_append,run_take,measurementCount,
       List.drop_zero,measurementCount_reverse,(signComplement_counts L.lower L.r).2]
@@ -2433,7 +2433,7 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L) ⊆ L.wires.toF
       List.mem_cons,List.not_mem_nil,or_false,or_assoc] at ha
     simp only [member,List.mem_cons,List.not_mem_nil,or_false]
     tauto
-  have flip : wires [.X (L.r.getD 254 0)] ⊆ L.wires.toFinset := by
+  have flip : wires [ECDSAAdd.Instr.X (L.r.getD 254 0)] ⊆ L.wires.toFinset := by
     have w := BalancedCleanup.widths L.toLayout hw
     have idx : 254<L.r.length := by omega
     have bit : L.r.getD 254 0∈L.r := by
@@ -2467,7 +2467,7 @@ theorem support (L : Layout) (hw : L.Widths) : wires (program L) ⊆ L.wires.toF
     apply small
     simp only [List.mem_cons,List.not_mem_nil]
     tauto
-  have ins : wires [.CX L.parity L.r0] ⊆ L.wires.toFinset := by
+  have ins : wires [ECDSAAdd.Instr.CX L.parity L.r0] ⊆ L.wires.toFinset := by
     intro a ha
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty] at ha
     apply small
@@ -3445,7 +3445,7 @@ theorem restoreRaw_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   let z := run (release L) m1 v
   let m2 := m1.drop 1
   let rot := run (rotateLeft (rawTarget L)) m2 z
-  let out := run [.CX L.parity L.r0] m2 rot
+  let out := run [ECDSAAdd.Instr.CX L.parity L.r0] m2 rot
   have sd := scalarND L hn
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
     not_or,not_false_eq_true,and_true] at sd
@@ -3540,10 +3540,10 @@ theorem restoreRaw_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     rw [run_append,run_take]
     simp only [show measurementCount (selectors L)=0 from rfl,List.drop_zero]
     rw [sel,run_append,run_take]
-    change run (release L ++ (rotateLeft (rawTarget L) ++ [.CX L.parity L.r0])) m1 v=out
+    change run (release L ++ (rotateLeft (rawTarget L) ++ [ECDSAAdd.Instr.CX L.parity L.r0])) m1 v=out
     rw [run_append,run_take]
     simp only [show measurementCount (release L)=1 from rfl]
-    change run (rotateLeft (rawTarget L) ++ [.CX L.parity L.r0]) m2 z=out
+    change run (rotateLeft (rawTarget L) ++ [ECDSAAdd.Instr.CX L.parity L.r0]) m2 z=out
     rw [run_append,run_take,(rotate_counts (rawTarget L)).2.2.2,List.drop_zero]
   rw [actual]
   have of (a : Wire) (ar : a∉rawTarget L) : out.basis a=z.basis a := by
@@ -3574,7 +3574,7 @@ theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   let X := BalancedInverse.result B R Y
   let T := rawSum B X Y
   let P := originalParity T
-  let u0 := run [.CX L.ymsb L.sourceGuard] m s
+  let u0 := run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] m s
   let u1 := run (recoverPrefix L) m u0
   let m1 := m.drop (measurementCount (recoverPrefix L))
   let u2 := run (unbiasView L) m1 u1
@@ -3799,7 +3799,7 @@ theorem program_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have actual : run (program L) m s=out := by
     simp only [program,List.append_assoc]
     rw [run_append,run_take]
-    simp only [show measurementCount [.CX L.ymsb L.sourceGuard]=0 from by simp only [measurementCount],List.drop_zero]
+    simp only [show measurementCount [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]=0 from by simp only [measurementCount],List.drop_zero]
     change run (recoverPrefix L ++ (unbiasView L ++ (restoreRaw L ++
       (BalancedInverse.rawSubtract L ++ (seedViews L).reverse)))) m u0=out
     rw [run_append,run_take]
@@ -3919,7 +3919,7 @@ theorem body_support (divide : Bool) (L : Layout) (eff : Wire) (hw : L.Widths)
       else swapRegisters eff L.r L.y++([.X L.sign]++P++[.X L.sign])) ⊆ (eff::L.wires).toFinset := by
   have hk : wires P ⊆ (eff::L.wires).toFinset :=
     hP.trans (by simp only [List.toFinset_cons]; exact Finset.subset_insert _ _)
-  have hx : wires [.X L.sign] ⊆ (eff::L.wires).toFinset := by
+  have hx : wires [ECDSAAdd.Instr.X L.sign] ⊆ (eff::L.wires).toFinset := by
     intro q hq
     have eq : q=L.sign := by simpa [wires,Instr.wires] using hq
     subst q
@@ -4111,14 +4111,14 @@ theorem cleanup_physical (L : BalancedCleanup.Layout) (_hw : L.Widths) (hn : L.w
   have sc := signComplement_physical L.lower L.r (fun h => L.flagAway hn L.lower (by simp) (by simp [h]))
   have sy := signComplement_physical L.sign L.y (fun h => L.flagAway hn L.sign (by simp) (by simp [h]))
   have ly := signComplement_physical L.lower L.y (fun h => L.flagAway hn L.lower (by simp) (by simp [h]))
-  have seed : GatePhysical [.CX L.rmsb L.lower] := by
+  have seed : GatePhysical [ECDSAAdd.Instr.CX L.rmsb L.lower] := by
     simp [GatePhysical,PhysicalInstr,ProperGate]
     tauto
-  have packet : GatePhysical [.X L.r0,.CX L.sign L.r0,.CX L.lower L.r0] := by
+  have packet : GatePhysical [ECDSAAdd.Instr.X L.r0,.CX L.sign L.r0,.CX L.lower L.r0] := by
     simp [GatePhysical,PhysicalInstr,ProperGate]
     tauto
-  have xs : GatePhysical [.X L.rmsb,.X L.ymsb] := by simp [GatePhysical,PhysicalInstr,ProperGate]
-  have x : GatePhysical [.X L.lower] := by simp [GatePhysical,PhysicalInstr,ProperGate]
+  have xs : GatePhysical [ECDSAAdd.Instr.X L.rmsb,.X L.ymsb] := by simp [GatePhysical,PhysicalInstr,ProperGate]
+  have x : GatePhysical [ECDSAAdd.Instr.X L.lower] := by simp [GatePhysical,PhysicalInstr,ProperGate]
   have a := literalAdd_physical L.low (L.carry.take 254) L.lower L.one BalancedCleanup.negativeLiteral low
   have b := literalAdd_physical L.low (L.carry.take 254) L.lower L.one BalancedCleanup.positiveLiteral low
   have cmp := compareLt_physical none L.y L.r L.carry L.one L.parity cmpND (by simp)
@@ -4225,7 +4225,7 @@ theorem physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) : GatePhysica
   have view : GatePhysical (unbiasView L) := by
     simp only [unbiasView,gatePhysical_append]
     exact ⟨by simp [GatePhysical,PhysicalInstr,ProperGate],by tauto⟩
-  have small : GatePhysical (selectors L++release L++[.CX L.parity L.r0]) := by
+  have small : GatePhysical (selectors L++release L++[ECDSAAdd.Instr.CX L.parity L.r0]) := by
     have nd:=BalancedCircuit.scalarND L hn
     simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
       not_or,not_false_eq_true,and_true] at nd
@@ -4335,7 +4335,7 @@ theorem narrow_physical (L : Layout) (hn : L.wires.Nodup) :
   have ms : GatePhysical (mappedSub (ShortBiasedFold.lowBits L) L.low (L.carry.take 254) L.minus) := by
     have nt := notRegister_physical L.low
     simpa only [mappedSub,gatePhysical_append] using And.intro (And.intro nt ma) nt
-  have cx : GatePhysical [.CX L.parity L.rmsb] := by
+  have cx : GatePhysical [ECDSAAdd.Instr.CX L.parity L.rmsb] := by
     simp_all [GatePhysical,PhysicalInstr,ProperGate,ne_comm]
   simp only [ShortBiasedFold.shortFold,ShortBiasedFold.shortUnfold,gatePhysical_append]
   exact ⟨⟨ma,cx⟩,⟨ms,cx⟩⟩
@@ -4748,16 +4748,16 @@ theorem center_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have xv : x.val<p := ZMod.val_lt x
   have hp := p_eq
   dsimp only
-  obtain ⟨m1,m2,m3,m4,e⟩ := run_four [.CX (lowBit L) L.flag,.CX L.flag (lowBit L)]
+  obtain ⟨m1,m2,m3,m4,e⟩ := run_four [ECDSAAdd.Instr.CX (lowBit L) L.flag,.CX L.flag (lowBit L)]
     (rotateRight L.word) (mappedAdd (lowCorrection L) L.low (L.carry.take 254) L.cin)
-    [.CX L.flag L.msb,.CX L.msb L.flag] m s
-  rw [show center L=[.CX (lowBit L) L.flag,.CX L.flag (lowBit L)]++rotateRight L.word++
-    mappedAdd (lowCorrection L) L.low (L.carry.take 254) L.cin++[.CX L.flag L.msb,.CX L.msb L.flag]
+    [ECDSAAdd.Instr.CX L.flag L.msb,.CX L.msb L.flag] m s
+  rw [show center L=[ECDSAAdd.Instr.CX (lowBit L) L.flag,.CX L.flag (lowBit L)]++rotateRight L.word++
+    mappedAdd (lowCorrection L) L.low (L.carry.take 254) L.cin++[ECDSAAdd.Instr.CX L.flag L.msb,.CX L.msb L.flag]
     from rfl,e,hlow]
-  generalize e1 : run [.CX a L.flag,.CX L.flag a] m1 s=s1
+  generalize e1 : run [ECDSAAdd.Instr.CX a L.flag,.CX L.flag a] m1 s=s1
   generalize e2 : run (rotateRight L.word) m2 s1=s2
   generalize e3 : run (mappedAdd (lowCorrection L) L.low (L.carry.take 254) L.cin) m3 s2=s3
-  generalize e4 : run [.CX L.flag L.msb,.CX L.msb L.flag] m4 s3=s4
+  generalize e4 : run [ECDSAAdd.Instr.CX L.flag L.msb,.CX L.msb L.flag] m4 s3=s4
   -- stage one: the low bit moves into the flag
   have h1 := swap_in a L.flag fa s m1 hflag
   rw [e1] at h1
@@ -4875,16 +4875,16 @@ theorem canonical_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     · simp only [h,decide_true,if_true]; omega
     · simp only [h,decide_false,Bool.false_eq_true,if_false]; omega
   dsimp only
-  obtain ⟨m1,m2,m3,m4,e⟩ := run_four [.CX L.msb L.flag,.CX L.flag L.msb]
+  obtain ⟨m1,m2,m3,m4,e⟩ := run_four [ECDSAAdd.Instr.CX L.msb L.flag,.CX L.flag L.msb]
     (mappedSub (lowCorrection L) L.low (L.carry.take 254) L.cin) (rotateLeft L.word)
-    [.CX L.flag (lowBit L),.CX (lowBit L) L.flag] m s
-  rw [show canonical L=[.CX L.msb L.flag,.CX L.flag L.msb]++
+    [ECDSAAdd.Instr.CX L.flag (lowBit L),.CX (lowBit L) L.flag] m s
+  rw [show canonical L=[ECDSAAdd.Instr.CX L.msb L.flag,.CX L.flag L.msb]++
     mappedSub (lowCorrection L) L.low (L.carry.take 254) L.cin++
-    rotateLeft L.word++[.CX L.flag (lowBit L),.CX (lowBit L) L.flag] from rfl,e,hlow]
-  generalize e1 : run [.CX L.msb L.flag,.CX L.flag L.msb] m1 s=s1
+    rotateLeft L.word++[ECDSAAdd.Instr.CX L.flag (lowBit L),.CX (lowBit L) L.flag] from rfl,e,hlow]
+  generalize e1 : run [ECDSAAdd.Instr.CX L.msb L.flag,.CX L.flag L.msb] m1 s=s1
   generalize e2 : run (mappedSub (lowCorrection L) L.low (L.carry.take 254) L.cin) m2 s1=s2
   generalize e3 : run (rotateLeft L.word) m3 s2=s3
-  generalize e4 : run [.CX L.flag a,.CX a L.flag] m4 s3=s4
+  generalize e4 : run [ECDSAAdd.Instr.CX L.flag a,.CX a L.flag] m4 s3=s4
   -- stage one: the sign bit moves into the flag, clearing bit 255
   have sm : s.basis L.msb=threshold x := word_msb L hw s.basis _ (threshold x) hx (center_threshold x)
   have hk : threshold x=k := by rw [←hy,threshold_half]
@@ -5005,7 +5005,7 @@ theorem support (L : Layout) (hw : L.Widths) :
     · simp at hq
     · exact word_sub L q (List.mem_toFinset.mp hq)
   have cxs (a b : Wire) (ha : a∈L.wires.toFinset) (hb : b∈L.wires.toFinset) :
-      wires [.CX a b,.CX b a]⊆L.wires.toFinset := by
+      wires [ECDSAAdd.Instr.CX a b,.CX b a]⊆L.wires.toFinset := by
     intro q hq
     have h : q=a ∨ q=b := by simp [wires,Instr.wires] at hq; itauto
     rcases h with rfl|rfl <;> assumption
@@ -5035,13 +5035,13 @@ theorem physical (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
     exact low_away L hn
   have mf : L.msb≠L.flag := fun e => layout_away L hn L.flag (by simp) (e ▸ (by simp [Layout.word]))
   have lf : lowBit L≠L.flag := fun e => layout_away L hn L.flag (by simp) (e ▸ lowBit_mem L hw)
-  have top : GatePhysical [.CX L.flag L.msb,.CX L.msb L.flag] := by
+  have top : GatePhysical [ECDSAAdd.Instr.CX L.flag L.msb,.CX L.msb L.flag] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,mf,Ne.symm mf]
-  have top' : GatePhysical [.CX L.msb L.flag,.CX L.flag L.msb] := by
+  have top' : GatePhysical [ECDSAAdd.Instr.CX L.msb L.flag,.CX L.flag L.msb] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,mf,Ne.symm mf]
-  have sin : GatePhysical [.CX (lowBit L) L.flag,.CX L.flag (lowBit L)] := by
+  have sin : GatePhysical [ECDSAAdd.Instr.CX (lowBit L) L.flag,.CX L.flag (lowBit L)] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,lf,Ne.symm lf]
-  have sout : GatePhysical [.CX L.flag (lowBit L),.CX (lowBit L) L.flag] := by
+  have sout : GatePhysical [ECDSAAdd.Instr.CX L.flag (lowBit L),.CX (lowBit L) L.flag] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,lf,Ne.symm lf]
   have ma := mappedAdd_physical _ _ _ _ nd src
   have nt := notRegister_physical L.low
@@ -8217,7 +8217,7 @@ theorem invProgramI_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   let m₂ := m₁.drop (measurementCount (undoFoldI L))
   let m₃ := m₂.drop (measurementCount (undoPreparation L))
   let m₄ := m₃.drop (measurementCount (rawSubtract L))
-  generalize e₀ : run [.CX L.ymsb L.sourceGuard] m s=u₀
+  generalize e₀ : run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] m s=u₀
   generalize e₁ : run (recoverParity L) m u₀=u₁
   generalize e₂ : run (recoverSelectors L) m₁ u₁=u₂
   generalize e₃ : run (rotateLeft (rawTarget L)) m₁ u₂=u₃
@@ -8395,7 +8395,7 @@ theorem invProgramI_correct (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   have actual : run (invProgramI L) m s=t := by
     simp only [invProgramI,List.append_assoc]
     rw [run_append,run_take]
-    simp only [show measurementCount [.CX L.ymsb L.sourceGuard]=0 from rfl,List.drop_zero]
+    simp only [show measurementCount [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]=0 from rfl,List.drop_zero]
     rw [e₀,run_append,run_take,e₁,run_append,run_take]
     simp only [show measurementCount (recoverSelectors L)=0 from rfl,List.drop_zero]
     rw [e₂,run_append,run_take,(rotate_counts (rawTarget L)).2.2.2,List.drop_zero,
@@ -8551,7 +8551,7 @@ private theorem run_prefix (a b : Wire) (oracle rest : Program) (m : List Bool) 
       run rest (m.drop (measurementCount oracle))
         (run oracle m (run [.CX a b] m s)) := by
   rw [List.append_assoc,run_append,run_take]
-  change run (oracle++rest) m (run [.CX a b] m s)=_
+  change run (oracle++rest) m (run [ECDSAAdd.Instr.CX a b] m s)=_
   rw [run_append,run_take]
 
 private theorem guard_records (a b : Wire) (m n : List Bool) (s : State) :
@@ -8603,7 +8603,7 @@ theorem invField_equivI (w : Nat → Wire) (sign : Wire)
         (List.replicate 254 false++m) s := by
   let L := balancedSharedPorts w sign
   let n := List.replicate 254 false++m
-  let u := run [.CX L.ymsb L.sourceGuard] m s
+  let u := run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] m s
   have own : sign∉balancedSharedIds.map w := by
     intro hm
     obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hm
@@ -8649,7 +8649,7 @@ theorem invField_equivI (w : Nat → Wire) (sign : Wire)
     simpa only [recoverParity] using (BalancedCleanupOffsetZero.counts
       (OffsetCleanupBorrowedCaller.layout w sign) (OffsetCleanupBorrowedCaller.widths w sign)).2
   have align : n.drop 764=m.drop 510 := by simp [n,List.drop_append]
-  have oldGuard : run [.CX L.ymsb L.sourceGuard] n s=u := guard_records _ _ n m s
+  have oldGuard : run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] n s=u := guard_records _ _ n m s
   have freshRun : run (invFieldProgramI w sign) m s=
       run (tailI L) (m.drop 510) (run (recoverParity w sign) m u) := by
     rw [invFieldProgramI,run_prefix,freshCount]
@@ -9519,8 +9519,8 @@ theorem xwrap_forward_eq (w : Nat → Wire) (sign : Wire) (hn : (skywalkSharedWi
   have sa : sign∉L.r ∧ sign∉L.y := ⟨fun h => aw (by simp [h]),fun h => aw (by simp [h])⟩
   have se := pair_env w sign hn base s.basis _ _ he h
   apply seq_eq _ _ _ _ s m rfl rfl
-  generalize eu : run [.X sign] (m.take (measurementCount [.X sign])) s=u
-  have us := BalancedCleanupOffset.x_run sign s (m.take (measurementCount [.X sign]))
+  generalize eu : run [ECDSAAdd.Instr.X sign] (m.take (measurementCount [ECDSAAdd.Instr.X sign])) s=u
+  have us := BalancedCleanupOffset.x_run sign s (m.take (measurementCount [ECDSAAdd.Instr.X sign]))
   rw [eu] at us
   have uf (q : Wire) (hq : q≠sign) : u.basis q=s.basis q := by
     rw [us]
@@ -9559,8 +9559,8 @@ theorem xwrap_inverse_eq (w : Nat → Wire) (sign : Wire) (hn : (skywalkSharedWi
   have sa : sign∉L.r ∧ sign∉L.y := ⟨fun h => aw (by simp [h]),fun h => aw (by simp [h])⟩
   have se := pair_env w sign hn base s.basis _ _ he h
   apply seq_eq _ _ _ _ s m rfl rfl
-  generalize eu : run [.X sign] (m.take (measurementCount [.X sign])) s=u
-  have us := BalancedCleanupOffset.x_run sign s (m.take (measurementCount [.X sign]))
+  generalize eu : run [ECDSAAdd.Instr.X sign] (m.take (measurementCount [ECDSAAdd.Instr.X sign])) s=u
+  have us := BalancedCleanupOffset.x_run sign s (m.take (measurementCount [ECDSAAdd.Instr.X sign]))
   rw [eu] at us
   have uf (q : Wire) (hq : q≠sign) : u.basis q=s.basis q := by
     rw [us]
@@ -9859,17 +9859,17 @@ theorem trim_counts (w : Nat → Wire) (b g flag : Wire) (ig : Bool) :
     toffoliCount (trimII w b g flag ig)+1=toffoliCount (EndpointSwapTrim.inverse w b g flag ig) := by
   have f := fieldProgramI_counts w flag
   have i := invFieldProgramI_counts w flag
-  have a : measurementCount ([.X flag]++fieldProgramI w flag++[.X flag])=
-      measurementCount ([.X flag]++OffsetBorrowedField.program w flag++[.X flag]) := by
+  have a : measurementCount ([ECDSAAdd.Instr.X flag]++fieldProgramI w flag++[ECDSAAdd.Instr.X flag])=
+      measurementCount ([ECDSAAdd.Instr.X flag]++OffsetBorrowedField.program w flag++[ECDSAAdd.Instr.X flag]) := by
     simp only [measurementCount_append]; omega
-  have b' : toffoliCount ([.X flag]++fieldProgramI w flag++[.X flag])+1=
-      toffoliCount ([.X flag]++OffsetBorrowedField.program w flag++[.X flag]) := by
+  have b' : toffoliCount ([ECDSAAdd.Instr.X flag]++fieldProgramI w flag++[ECDSAAdd.Instr.X flag])+1=
+      toffoliCount ([ECDSAAdd.Instr.X flag]++OffsetBorrowedField.program w flag++[ECDSAAdd.Instr.X flag]) := by
     simp only [toffoliCount_append]; omega
-  have c : measurementCount ([.X flag]++invFieldProgramI w flag++[.X flag])=
-      measurementCount ([.X flag]++OffsetBorrowedInverse.program w flag++[.X flag]) := by
+  have c : measurementCount ([ECDSAAdd.Instr.X flag]++invFieldProgramI w flag++[ECDSAAdd.Instr.X flag])=
+      measurementCount ([ECDSAAdd.Instr.X flag]++OffsetBorrowedInverse.program w flag++[ECDSAAdd.Instr.X flag]) := by
     simp only [measurementCount_append]; omega
-  have d : toffoliCount ([.X flag]++invFieldProgramI w flag++[.X flag])+1=
-      toffoliCount ([.X flag]++OffsetBorrowedInverse.program w flag++[.X flag]) := by
+  have d : toffoliCount ([ECDSAAdd.Instr.X flag]++invFieldProgramI w flag++[ECDSAAdd.Instr.X flag])+1=
+      toffoliCount ([ECDSAAdd.Instr.X flag]++OffsetBorrowedInverse.program w flag++[ECDSAAdd.Instr.X flag]) := by
     simp only [toffoliCount_append]; omega
   exact ⟨window_counts_eq _ _ _ _ _ _ a,window_toffoli _ _ _ _ _ _ 1 b',
     window_counts_eq _ _ _ _ _ _ c,window_toffoli _ _ _ _ _ _ 1 d⟩
@@ -9901,12 +9901,12 @@ theorem trim_eq (divide : Bool) (w : Nat → Wire) (b g swap sign effS : Wire) (
   have sg : [b,g,sign].Nodup := by simp [List.nodup_cons]; tauto
   have ge : Env w bg := env_write w sign ho base _ he
   have tc := trim_counts w b g sign ig
-  have ci : measurementCount ([.X sign]++invFieldProgramI w sign++[.X sign])=
-      measurementCount ([.X sign]++OffsetBorrowedInverse.program w sign++[.X sign]) := by
+  have ci : measurementCount ([ECDSAAdd.Instr.X sign]++invFieldProgramI w sign++[ECDSAAdd.Instr.X sign])=
+      measurementCount ([ECDSAAdd.Instr.X sign]++OffsetBorrowedInverse.program w sign++[ECDSAAdd.Instr.X sign]) := by
     have i := invFieldProgramI_counts w sign
     simp only [measurementCount_append]; omega
-  have cf : measurementCount ([.X sign]++fieldProgramI w sign++[.X sign])=
-      measurementCount ([.X sign]++OffsetBorrowedField.program w sign++[.X sign]) := by
+  have cf : measurementCount ([ECDSAAdd.Instr.X sign]++fieldProgramI w sign++[ECDSAAdd.Instr.X sign])=
+      measurementCount ([ECDSAAdd.Instr.X sign]++OffsetBorrowedField.program w sign++[ECDSAAdd.Instr.X sign]) := by
     have i := fieldProgramI_counts w sign
     simp only [measurementCount_append]; omega
   cases divide
@@ -10288,15 +10288,15 @@ theorem rawEnd_support (divide : Bool) :
   let W := (sharedSites base (base 2409)).toFinset∪{base 2400,base 510}
   have shared : (sharedSites base (base 2409)).toFinset⊆W := Finset.subset_union_left
   have sign : base 2409∈W := shared (by simp [sharedSites])
-  have x : wires [.X (base 2409)]⊆W := by simpa [wires,Instr.wires] using sign
+  have x : wires [ECDSAAdd.Instr.X (base 2409)]⊆W := by simpa [wires,Instr.wires] using sign
   have f := (LaneI.fieldProgramI_sub base (base 2409)).wires_sub.trans
     (kernels_support base (base 2409)).1
   have i := (LaneI.invFieldProgramI_sub base (base 2409)).wires_sub.trans
     (kernels_support base (base 2409)).2
-  have fw : wires ([.X (base 2409)]++LaneI.fieldProgramI base (base 2409)++[.X (base 2409)])⊆W := by
+  have fw : wires ([ECDSAAdd.Instr.X (base 2409)]++LaneI.fieldProgramI base (base 2409)++[ECDSAAdd.Instr.X (base 2409)])⊆W := by
     simp only [wires_append,Finset.union_subset_iff]
     exact ⟨⟨x,f.trans shared⟩,x⟩
-  have iv : wires ([.X (base 2409)]++LaneI.invFieldProgramI base (base 2409)++[.X (base 2409)])⊆W := by
+  have iv : wires ([ECDSAAdd.Instr.X (base 2409)]++LaneI.invFieldProgramI base (base 2409)++[ECDSAAdd.Instr.X (base 2409)])⊆W := by
     simp only [wires_append,Finset.union_subset_iff]
     exact ⟨⟨x,i.trans shared⟩,x⟩
   have hb : base 2400∈W := by simp [W]
@@ -14323,7 +14323,7 @@ theorem accB_view (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (t : Bas
       List.filter_cons] at hval ⊢
     have hU := regValue_lt (hiReg L) t'
     rw [hl] at hU
-    norm_num at r4 r6 r10 r32 hH hU ⊢
+    norm_num [-Nat.sub_eq_zero_of_le] at r4 r6 r10 r32 hH hU ⊢
     generalize regValue (hiReg L) t'=U at *
     generalize regValue (L.core.product.drop 128) t=D at *
     generalize regValue (topSlice L 4) t=a at *
@@ -15048,7 +15048,7 @@ theorem drop2_run (a y y' c cin : Wire) (b' : MappedBit) (bits : List MappedBit)
     run (drop2 ({wire:=some a,flip:=false}::b'::bits) (y::y'::ys) (c::cs) cin) rX s=
       run (mappedAdd ({wire:=some a,flip:=false}::b'::bits) (y::y'::ys) (c::cs) cin)
         (insF (measurementCount (mappedAdd (b'::bits) (y'::ys) cs c)) rX) s := by
-  have hm : run (majority a y cin c) [] s=run [.CX a c] [] s := by
+  have hm : run (majority a y cin c) [] s=run [ECDSAAdd.Instr.CX a c] [] s := by
     rw [majority_correct a y cin c hnd,cx_run,carryBit_of_copy _ _ _ hcopy]
   have m0 : measurementCount (majority a y cin c)=0 := by simp [majority,measurementCount]
   have m1 : measurementCount [Instr.CX a c]=0 := rfl
@@ -15081,7 +15081,7 @@ theorem drop2_run (a y y' c cin : Wire) (b' : MappedBit) (bits : List MappedBit)
   have wc : w.basis c=s.basis a := by
     rw [← hw,pres c (by simp at hrec ⊢; tauto),uc]
   have wa : w.basis a=s.basis a := by rw [← hw,pres a ha,ua]
-  have e1 : eraseCarry a y cin c=[.measureX c [] [.CZ a y,.CZ a cin,.CZ y cin]] := rfl
+  have e1 : eraseCarry a y cin c=[ECDSAAdd.Instr.measureX c [] [.CZ a y,.CZ a cin,.CZ y cin]] := rfl
   rw [e1]
   simp only [List.cons_append,List.nil_append,run,List.headD_cons,List.tail_cons,measureAndCorrect,
     correct,Bool.false_and,Bool.xor_false]
@@ -17478,7 +17478,7 @@ theorem qprog_frame (K : MeasuredCanonicalModLayout) (n c p : Nat) (hw : K.Width
   have s1 := not_frame K n hw hn base X
   have s2 := K.sum_frame n hw hn base A (2^n-1-X) ha sumBound hc hi
   rw [hr] at s2
-  have s3 : Triple (K.Frame base ((A+(2^n-1-X))%2^n) r false) [.CX K.high K.flag]
+  have s3 : Triple (K.Frame base ((A+(2^n-1-X))%2^n) r false) [ECDSAAdd.Instr.CX K.high K.flag]
       (K.Frame base ((A+(2^n-1-X))%2^n) r r) := by
     simpa using K.cx_flag_frame hn base ((A+(2^n-1-X))%2^n) r false
   have s4 := x_flag_frame K hn base ((A+(2^n-1-X))%2^n) r r
@@ -31044,8 +31044,8 @@ theorem affineInputWith_counts (y t₁ t₂ t₃ wb : Wire) (e₁ a₁ e₂ a₂
   | nil => simpa [affineInputWith,Nat.add_comm] using
       affineClassSameTail_counts y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c
   | cons q qs ih =>
-    have hf : toffoliCount (if a % 2 = 1 then [.X q.input] else []) = 0 ∧
-        measurementCount (if a % 2 = 1 then [.X q.input] else []) = 0 := by
+    have hf : toffoliCount (if a % 2 = 1 then [ECDSAAdd.Instr.X q.input] else []) = 0 ∧
+        measurementCount (if a % 2 = 1 then [ECDSAAdd.Instr.X q.input] else []) = 0 := by
       split_ifs <;> exact ⟨rfl,rfl⟩
     have hi := ih q.work (a/2) (b/2)
     have hs := affineInputSuffix_counts c q.input y t₁ t₂ t₃ q.work wb e₁ a₁ e₂ a₂ a₃ qs (a/2) (b/2)
@@ -31251,7 +31251,7 @@ theorem affineInputWith_run (y t₁ t₂ t₃ wb : Wire) (e₁ a₁ e₂ a₂ a�
     have hrw : q.work ∉ qs.flatMap ZeroBit.wires := by tauto
     have ha' : a/2 < 2^qs.length := by simp only [List.length_cons,Nat.pow_succ] at ha; omega
     have hb' : b/2 < 2^qs.length := by simp only [List.length_cons,Nat.pow_succ] at hb; omega
-    let flip : Program := if a%2=1 then [.X q.input] else []
+    let flip : Program := if a%2=1 then [ECDSAAdd.Instr.X q.input] else []
     let pre : State := ⟨s.phase,writeBit s.basis q.input (s.basis q.input ^^ decide (a%2=1))⟩
     have hf : run flip m s = pre := by
       by_cases he : a%2=1
@@ -32118,10 +32118,10 @@ set_option linter.unreachableTactic false in
 set_option linter.unnecessarySeqFocus false in
 set_option linter.unusedSimpArgs false in
 set_option maxHeartbeats 20000000 in
-theorem gadget_run_k0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+theorem rs1_gadget_run_k0_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
     (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
     (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
-    (hsel : (enD, enH, cx, cy) = (false, false, false, false)) :
+    (hsel : (enD, enH, cx, cy) = (false, false, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) :
     run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
       if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
         (s.basis xk == cx) && (s.basis y0 == cy))
@@ -32183,7 +32183,602 @@ theorem gadget_run_k0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k0_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k0_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k0_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem gadget_run_k0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, false, false)) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false
+  · exact rs1_gadget_run_k0_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k0_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k0_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k0_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k1_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k1_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k1_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k1_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32208,6 +32803,26 @@ theorem gadget_run_k1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false
+  · exact rs1_gadget_run_k1_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k1_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k1_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k1_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k2_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32264,7 +32879,254 @@ theorem gadget_run_k1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k2_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k2_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k2_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32289,6 +33151,26 @@ theorem gadget_run_k2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false
+  · exact rs1_gadget_run_k2_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k2_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k2_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k2_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k3_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32345,7 +33227,254 @@ theorem gadget_run_k2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k3_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k3_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k3_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, false, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32370,6 +33499,26 @@ theorem gadget_run_k3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false
+  · exact rs1_gadget_run_k3_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k3_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k3_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k3_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k4_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32426,7 +33575,254 @@ theorem gadget_run_k3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k4_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k4_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k4_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32451,6 +33847,26 @@ theorem gadget_run_k4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false
+  · exact rs1_gadget_run_k4_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k4_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k4_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k4_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k5_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32507,7 +33923,254 @@ theorem gadget_run_k4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k5_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k5_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k5_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32532,6 +34195,26 @@ theorem gadget_run_k5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false
+  · exact rs1_gadget_run_k5_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k5_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k5_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k5_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k6_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32588,7 +34271,254 @@ theorem gadget_run_k5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k6_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k6_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k6_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32613,6 +34543,26 @@ theorem gadget_run_k6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false
+  · exact rs1_gadget_run_k6_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k6_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k6_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k6_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k7_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32669,7 +34619,254 @@ theorem gadget_run_k6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k7_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k7_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k7_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (false, true, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32694,6 +34891,26 @@ theorem gadget_run_k7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false
+  · exact rs1_gadget_run_k7_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k7_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k7_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+  · exact rs1_gadget_run_k7_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k8_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32750,7 +34967,582 @@ theorem gadget_run_k7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k8_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k8_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k8_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k8_m4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k8_m5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k8_m6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k8_m7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32775,6 +35567,30 @@ theorem gadget_run_k8 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false <;> cases h3 : m.tail.tail.headD false
+  · exact rs1_gadget_run_k8_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k8_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k8_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k8_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k8_m4 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k8_m5 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k8_m6 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k8_m7 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k9_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32831,7 +35647,582 @@ theorem gadget_run_k8 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k9_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k9_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k9_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k9_m4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k9_m5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k9_m6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k9_m7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32856,6 +36247,30 @@ theorem gadget_run_k9 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false <;> cases h3 : m.tail.tail.headD false
+  · exact rs1_gadget_run_k9_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k9_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k9_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k9_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k9_m4 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k9_m5 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k9_m6 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k9_m7 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k10_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32912,7 +36327,582 @@ theorem gadget_run_k9 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k10_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k10_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k10_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k10_m4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k10_m5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k10_m6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k10_m7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -32937,6 +36927,30 @@ theorem gadget_run_k10 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false <;> cases h3 : m.tail.tail.headD false
+  · exact rs1_gadget_run_k10_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k10_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k10_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k10_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k10_m4 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k10_m5 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k10_m6 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k10_m7 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k11_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -32993,7 +37007,582 @@ theorem gadget_run_k10 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k11_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k11_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k11_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k11_m4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k11_m5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k11_m6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k11_m7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, false, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -33018,6 +37607,30 @@ theorem gadget_run_k11 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false <;> cases h3 : m.tail.tail.headD false
+  · exact rs1_gadget_run_k11_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k11_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k11_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k11_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k11_m4 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k11_m5 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k11_m6 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k11_m7 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k12_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -33074,7 +37687,582 @@ theorem gadget_run_k11 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k12_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k12_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k12_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k12_m4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k12_m5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k12_m6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k12_m7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -33099,6 +38287,30 @@ theorem gadget_run_k12 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false <;> cases h3 : m.tail.tail.headD false
+  · exact rs1_gadget_run_k12_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k12_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k12_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k12_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k12_m4 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k12_m5 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k12_m6 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k12_m7 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k13_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -33155,7 +38367,582 @@ theorem gadget_run_k12 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k13_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k13_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k13_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k13_m4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k13_m5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k13_m6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k13_m7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, false, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -33180,6 +38967,30 @@ theorem gadget_run_k13 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false <;> cases h3 : m.tail.tail.headD false
+  · exact rs1_gadget_run_k13_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k13_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k13_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k13_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k13_m4 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k13_m5 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k13_m6 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k13_m7 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k14_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
   simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
   obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
     ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
@@ -33236,7 +39047,582 @@ theorem gadget_run_k13 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k14_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k14_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k14_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, false)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k14_m4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k14_m5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k14_m6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k14_m7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, false)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -33261,82 +39647,25 @@ theorem gadget_run_k14 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
         (s.basis xk == cx) && (s.basis y0 == cy))
       else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
       else s.basis q⟩ := by
-  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
-    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
-  have n1' := Ne.symm n1
-  have n2' := Ne.symm n2
-  have n3' := Ne.symm n3
-  have n4' := Ne.symm n4
-  have n5' := Ne.symm n5
-  have n6' := Ne.symm n6
-  have n7' := Ne.symm n7
-  have n8' := Ne.symm n8
-  have n9' := Ne.symm n9
-  have m1' := Ne.symm m1
-  have m2' := Ne.symm m2
-  have m3' := Ne.symm m3
-  have m4' := Ne.symm m4
-  have m5' := Ne.symm m5
-  have m6' := Ne.symm m6
-  have m7' := Ne.symm m7
-  have m8' := Ne.symm m8
-  have k1' := Ne.symm k1
-  have k2' := Ne.symm k2
-  have k3' := Ne.symm k3
-  have k4' := Ne.symm k4
-  have k5' := Ne.symm k5
-  have k6' := Ne.symm k6
-  have k7' := Ne.symm k7
-  have l1' := Ne.symm l1
-  have l2' := Ne.symm l2
-  have l3' := Ne.symm l3
-  have l4' := Ne.symm l4
-  have l5' := Ne.symm l5
-  have l6' := Ne.symm l6
-  have p1' := Ne.symm p1
-  have p2' := Ne.symm p2
-  have p3' := Ne.symm p3
-  have p4' := Ne.symm p4
-  have p5' := Ne.symm p5
-  have q1' := Ne.symm q1
-  have q2' := Ne.symm q2
-  have q3' := Ne.symm q3
-  have q4' := Ne.symm q4
-  have r1' := Ne.symm r1
-  have r2' := Ne.symm r2
-  have r3' := Ne.symm r3
-  have t1' := Ne.symm t1
-  have t2' := Ne.symm t2
-  have t3' := Ne.symm t3
-  obtain ⟨ph, bs⟩ := s
-  simp only at z1 z2 z3 ⊢
-  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
-  first
-  | exact absurd hsel (by decide)
-  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
-        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
-      simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
-      all_goals
-        by_cases e1 : q = d
-        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
-            cases bs xk <;> cases bs y0 <;> simp_all
-        by_cases e2 : q = h
-        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
-            cases bs xk <;> simp_all
-        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
-          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false <;> cases h3 : m.tail.tail.headD false
+  · exact rs1_gadget_run_k14_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k14_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k14_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k14_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k14_m4 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k14_m5 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k14_m6 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k14_m7 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
 
 set_option linter.unusedTactic false in
 set_option linter.unreachableTactic false in
 set_option linter.unnecessarySeqFocus false in
 set_option linter.unusedSimpArgs false in
 set_option maxHeartbeats 20000000 in
-theorem gadget_run_k15 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+theorem rs1_gadget_run_k15_m0 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
     (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
     (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
-    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) :
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
     run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
       if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
         (s.basis xk == cx) && (s.basis y0 == cy))
@@ -33398,7 +39727,8 @@ theorem gadget_run_k15 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
   | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
         Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
       simp only [measureAndCorrect]
-      split_ifs <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
       all_goals
         by_cases e1 : q = d
         · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
@@ -33408,6 +39738,604 @@ theorem gadget_run_k15 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
             cases bs xk <;> simp_all
         simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
           cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k15_m1 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k15_m2 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k15_m3 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) (h1 : m.headD false = false) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k15_m4 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k15_m5 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = false) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k15_m6 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = false) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem rs1_gadget_run_k15_m7 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) (h1 : m.headD false = true) (h2 : m.tail.headD false = true) (h3 : m.tail.tail.headD false = true) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
+  obtain ⟨⟨n1,n2,n3,n4,n5,n6,n7,n8,n9⟩,⟨m1,m2,m3,m4,m5,m6,m7,m8⟩,⟨k1,k2,k3,k4,k5,k6,k7⟩,
+    ⟨l1,l2,l3,l4,l5,l6⟩,⟨p1,p2,p3,p4,p5⟩,⟨q1,q2,q3,q4⟩,⟨r1,r2,r3⟩,⟨t1,t2⟩,t3,-⟩ := hn
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have n5' := Ne.symm n5
+  have n6' := Ne.symm n6
+  have n7' := Ne.symm n7
+  have n8' := Ne.symm n8
+  have n9' := Ne.symm n9
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have m4' := Ne.symm m4
+  have m5' := Ne.symm m5
+  have m6' := Ne.symm m6
+  have m7' := Ne.symm m7
+  have m8' := Ne.symm m8
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have k3' := Ne.symm k3
+  have k4' := Ne.symm k4
+  have k5' := Ne.symm k5
+  have k6' := Ne.symm k6
+  have k7' := Ne.symm k7
+  have l1' := Ne.symm l1
+  have l2' := Ne.symm l2
+  have l3' := Ne.symm l3
+  have l4' := Ne.symm l4
+  have l5' := Ne.symm l5
+  have l6' := Ne.symm l6
+  have p1' := Ne.symm p1
+  have p2' := Ne.symm p2
+  have p3' := Ne.symm p3
+  have p4' := Ne.symm p4
+  have p5' := Ne.symm p5
+  have q1' := Ne.symm q1
+  have q2' := Ne.symm q2
+  have q3' := Ne.symm q3
+  have q4' := Ne.symm q4
+  have r1' := Ne.symm r1
+  have r2' := Ne.symm r2
+  have r3' := Ne.symm r3
+  have t1' := Ne.symm t1
+  have t2' := Ne.symm t2
+  have t3' := Ne.symm t3
+  obtain ⟨ph, bs⟩ := s
+  simp only at z1 z2 z3 ⊢
+  cases enD <;> cases enH <;> cases cx <;> cases cy <;>
+  first
+  | exact absurd hsel (by decide)
+  | · simp only [gadget, flipIf, if_true, if_false, Bool.not_true, Bool.not_false,
+        Bool.false_eq_true, List.nil_append, List.append_nil, List.cons_append, List.singleton_append, run, writeBit]
+      simp only [measureAndCorrect]
+      simp only [h1, h2, h3, ↓reduceIte, Bool.false_eq_true]
+      (try split_ifs) <;> simp_all [correct, writeBit, Function.update_apply] <;> congr 1 <;> funext q
+      all_goals
+        by_cases e1 : q = d
+        · rw [e1]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> cases bs y0 <;> simp_all
+        by_cases e2 : q = h
+        · rw [e2]; simp [Function.update_apply, *] <;> cases bs c <;> cases bs f <;> cases bs g <;>
+            cases bs xk <;> simp_all
+        simp [Function.update_apply, *] <;> (try split_ifs) <;> simp_all <;> cases bs c <;> cases bs f <;>
+          cases bs g <;> cases bs xk <;> cases bs y0 <;> simp_all
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option linter.unnecessarySeqFocus false in
+set_option linter.unusedSimpArgs false in
+set_option maxHeartbeats 20000000 in
+theorem gadget_run_k15 (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
+    (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
+    (z1 : s.basis a1 = false) (z2 : s.basis a2 = false) (z3 : s.basis a3 = false)
+    (hsel : (enD, enH, cx, cy) = (true, true, true, true)) :
+    run (gadget c f g d h xk y0 a1 a2 a3 enD enH cx cy) m s = ⟨s.phase, fun q =>
+      if q = d then s.basis d ^^ (enD && s.basis c && s.basis f && !s.basis g &&
+        (s.basis xk == cx) && (s.basis y0 == cy))
+      else if q = h then s.basis h ^^ (enH && s.basis c && s.basis f && !s.basis g && (s.basis xk != cx))
+      else s.basis q⟩ := by
+  cases h1 : m.headD false <;> cases h2 : m.tail.headD false <;> cases h3 : m.tail.tail.headD false
+  · exact rs1_gadget_run_k15_m0 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k15_m1 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k15_m2 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k15_m3 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k15_m4 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k15_m5 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k15_m6 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
+  · exact rs1_gadget_run_k15_m7 c f g d h xk y0 a1 a2 a3 enD enH cx cy hn s m z1 z2 z3 hsel h1 h2 h3
 
 theorem gadget_run (c f g d h xk y0 a1 a2 a3 : Wire) (enD enH cx cy : Bool)
     (hn : [f,xk,y0,c,d,g,h,a1,a2,a3].Nodup) (s : State) (m : List Bool)
@@ -42523,7 +49451,7 @@ theorem repairedRoute_support (L : SkywalkIntegerLayout) (hv : L.Valid)
       rw [e]
       exact tmem
     itauto
-  have cx : wires [.CX L.a0 L.b0] ⊆ L.wires.toFinset := by
+  have cx : wires [ECDSAAdd.Instr.CX L.a0 L.b0] ⊆ L.wires.toFinset := by
     intro q hq
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
       Finset.notMem_empty,or_false] at hq
@@ -42827,7 +49755,7 @@ theorem fwd_eq (xlo ylo carry : List Wire) (lx ly sx sy cin : Wire)
             exact h.1 (by simp [hw])
           simpa [t,writeBit,wk] using hclean w (by simp [hw])
         have away (q : Wire) (hq : q = sy ∨ q = ly) :
-            q ∉ wires (eraseCarry a b cin k ++ [.CX a b, .CX cin b]) := by
+            q ∉ wires (eraseCarry a b cin k ++ [ECDSAAdd.Instr.CX a b, .CX cin b]) := by
           have h6 : [a,b,cin,k,sy,ly].Nodup := by
             apply List.nodup_iff_count.mpr
             intro q
@@ -42854,13 +49782,13 @@ theorem fwd_eq (xlo ylo carry : List Wire) (lx ly sx sy cin : Wire)
           rw [h1] at this
           simp at this
         have horig : run (addInPlace (a :: (as ++ [lx, sx])) (b :: (bs ++ [ly, sy])) (k::ks) cin) m s =
-            run (eraseCarry a b cin k ++ [.CX a b, .CX cin b])
+            run (eraseCarry a b cin k ++ [ECDSAAdd.Instr.CX a b, .CX cin b])
               (m.drop (measurementCount (addInPlace (as ++ [lx, sx]) (bs ++ [ly, sy]) ks k)))
               (run (addInPlace (as ++ [lx, sx]) (bs ++ [ly, sy]) ks k) m t) := by
           rw [hx0, hy0]
           simp only [addInPlace,List.append_assoc,run_append,run_take,mt,List.drop_zero,first]
         have hnew : run (addInPlaceF (a :: (as ++ [lx, sx])) (b :: (bs ++ [ly, sy])) (k::ks) cin) m s =
-            run (eraseCarry a b cin k ++ [.CX a b, .CX cin b])
+            run (eraseCarry a b cin k ++ [ECDSAAdd.Instr.CX a b, .CX cin b])
               (m.drop (measurementCount (addInPlaceF (as ++ [lx, sx]) (bs ++ [ly, sy]) ks k)))
               (run (addInPlaceF (as ++ [lx, sx]) (bs ++ [ly, sy]) ks k) m t) := by
           rw [hx0, hy0]
@@ -43667,18 +50595,18 @@ theorem two_receiver (a b c k y x : Wire) (s : State) (m : List Bool)
       run (addInPlace [a,x] [b,y] [k] c) m s := by
   have hy := two_carry a b c k y x s m hnd hk hs
   have h := topReceiver_correct a b c k y x s m hnd hk hy
-  change run ((eraseCarry a b c y ++ [.CX x y]) ++ [.CX a b, .CX c b]) m s =
-    run ((majority a b c k ++ [.CX x y, .CX k y] ++ eraseCarry a b c k) ++
-      [.CX a b, .CX c b]) m s
-  have hr : measurementCount (eraseCarry a b c y ++ [.CX x y]) = 1 := by
+  change run ((eraseCarry a b c y ++ [ECDSAAdd.Instr.CX x y]) ++ [ECDSAAdd.Instr.CX a b, .CX c b]) m s =
+    run ((majority a b c k ++ [ECDSAAdd.Instr.CX x y, .CX k y] ++ eraseCarry a b c k) ++
+      [ECDSAAdd.Instr.CX a b, .CX c b]) m s
+  have hr : measurementCount (eraseCarry a b c y ++ [ECDSAAdd.Instr.CX x y]) = 1 := by
     simp [eraseCarry,measurementCount_append,measurementCount]
-  have ho : measurementCount (majority a b c k ++ [.CX x y, .CX k y] ++ eraseCarry a b c k) = 1 := by
+  have ho : measurementCount (majority a b c k ++ [ECDSAAdd.Instr.CX x y, .CX k y] ++ eraseCarry a b c k) = 1 := by
     simp [majority,eraseCarry,measurementCount_append,measurementCount]
   calc
-    _ = run [.CX a b, .CX c b] (m.drop 1) (run (eraseCarry a b c y ++ [.CX x y]) m s) := by
+    _ = run [ECDSAAdd.Instr.CX a b, .CX c b] (m.drop 1) (run (eraseCarry a b c y ++ [ECDSAAdd.Instr.CX x y]) m s) := by
       rw [run_append, run_take, hr]
-    _ = run [.CX a b, .CX c b] (m.drop 1)
-      (run (majority a b c k ++ [.CX x y, .CX k y] ++ eraseCarry a b c k) m s) := by rw [h]
+    _ = run [ECDSAAdd.Instr.CX a b, .CX c b] (m.drop 1)
+      (run (majority a b c k ++ [ECDSAAdd.Instr.CX x y, .CX k y] ++ eraseCarry a b c k) m s) := by rw [h]
     _ = _ := by
       symm
       rw [run_append, run_take, ho]
@@ -43788,14 +50716,14 @@ theorem receiver_eq (xlo ylo carry : List Wire) (sx sy cin : Wire)
                   have h := List.nodup_cons.mp hnd'
                   exact h.1 (by simp [hw])
                 simpa [t,writeBit,wk] using hclean w (by simp [hw])
-              have hsy : sy ∉ wires (eraseCarry a b cin k ++ [.CX a b, .CX cin b]) := by
+              have hsy : sy ∉ wires (eraseCarry a b cin k ++ [ECDSAAdd.Instr.CX a b, .CX cin b]) := by
                 simp only [List.nodup_cons, List.mem_cons, List.not_mem_nil, List.nodup_nil,
                   not_or, not_false_eq_true, and_true] at h6
                 simp [wires_append,eraseCarry,wires,Instr.wires,correctionWires]
                 tauto
               have mt : measurementCount (majority a b cin k) = 0 := rfl
               have horig : run (addInPlace ((a::a'::as') ++ [sx]) ((b::b'::bs') ++ [sy]) (k::ks) cin) m s =
-                  run (eraseCarry a b cin k ++ [.CX a b, .CX cin b])
+                  run (eraseCarry a b cin k ++ [ECDSAAdd.Instr.CX a b, .CX cin b])
                     (m.drop (measurementCount (addInPlace ((a'::as') ++ [sx]) ((b'::bs') ++ [sy]) ks k)))
                     (run (addInPlace ((a'::as') ++ [sx]) ((b'::bs') ++ [sy]) ks k) m t) := by
                 simp only [List.cons_append,addInPlace,List.append_assoc,run_append,run_take,
@@ -44144,7 +51072,7 @@ private theorem tick_run (L : SkywalkIntegerLayout) (hv : L.Valid) (n : Nat) (s 
   have hh := (skywalkSignedHalf_counts L.aSign L.ext).2
   simp only [narrowSkywalkTick,List.append_assoc]
   rw [prefix_no_measure _ _ hr,prefix_no_measure _ _ hh,
-    suffix_no_measure _ _ (by rfl : measurementCount [.CX L.previous L.a0]=0)]
+    suffix_no_measure _ _ (by rfl : measurementCount [ECDSAAdd.Instr.CX L.previous L.a0]=0)]
 
 
 /-- Full-State equality of independently measured wide and retained-prefix
@@ -44198,7 +51126,7 @@ private theorem route_roundtrip (L : SkywalkIntegerLayout) (hv : L.Valid)
   have hne : L.a0≠L.b0 := fun h => (List.nodup_cons.mp (L.route_nodup hv)).1 (by simp [h])
   have hm := (swapRegisters_resources L.a0 L.ah L.bh hl hn).2.1
   rw [skywalkRoute,prefix_no_measure _ _ hm,
-    prefix_no_measure _ _ (by rfl : measurementCount [.CX L.a0 L.b0]=0)]
+    prefix_no_measure _ _ (by rfl : measurementCount [ECDSAAdd.Instr.CX L.a0 L.b0]=0)]
   rw [cx_twice L.a0 L.b0 hne]
   exact swap_twice L.a0 L.ah L.bh hl hn s m₁ m₂
 
@@ -44218,10 +51146,10 @@ private theorem untick_run (L : SkywalkIntegerLayout) (hv : L.Valid) (n : Nat) (
   have hs := (swapRegisters_resources L.a0 L.ah L.bh hl hn).2.1
   have hh := (skywalkSignedHalf_counts L.aSign L.ext).2
   have ht : measurementCount (skywalkSignedHalf L.aSign L.ext++
-      ([.CX L.a0 L.b0]++swapRegisters L.a0 L.ah L.bh))=0 := by
+      ([ECDSAAdd.Instr.CX L.a0 L.b0]++swapRegisters L.a0 L.ah L.bh))=0 := by
     simp [measurementCount_append,hh,hs,measurementCount]
   simp only [receiverUntick,List.append_assoc]
-  rw [prefix_no_measure _ _ (by rfl : measurementCount [.CX L.previous L.a0]=0),
+  rw [prefix_no_measure _ _ (by rfl : measurementCount [ECDSAAdd.Instr.CX L.previous L.a0]=0),
     suffix_no_measure _ _ ht,prefix_no_measure _ _ hh]
 
 /-- The separately emitted inverse restores the entire physical State with
@@ -44256,7 +51184,7 @@ theorem receiverTick_roundtrip (L : SkywalkIntegerLayout) (hv : L.Valid) (n : Na
       skywalkSignedHalf_twice L.aSign L.ext (ext_sign_ne L hv) t m₁
   rw [tick_run L hv n s m₁,untick_run L hv n _ m₂,
     cx_twice L.previous L.a0 (previous_low_ne L hv)]
-  change run ([.CX L.a0 L.b0]++swapRegisters L.a0 L.ah L.bh) m₂
+  change run ([ECDSAAdd.Instr.CX L.a0 L.b0]++swapRegisters L.a0 L.ah L.bh) m₂
     (run (skywalkSignedHalf L.aSign L.ext) m₂
       (run (narrowReceiver (narrowSkywalkRecordLayout L n) n) m₂
         (run (narrowSignedRecord (narrowSkywalkRecordLayout L n) n) m₁ u)))=s
@@ -44288,8 +51216,8 @@ theorem receiverTickT_roundtrip (L : SkywalkIntegerLayout) (hv : L.Valid) (n : N
   have eA : L.ah=am++[al,L.aSign] := by simp [SkywalkIntegerLayout.ah,hA]
   have eB : L.bh=bm++[bl,L.bSign] := by simp [SkywalkIntegerLayout.bh,hB]
   have hlen' : am.length=bm.length := by rw [eA,eB] at hlen; simpa using hlen
-  let P : Program := [.CX L.previous L.a0] ++ narrowReceiver (narrowSkywalkRecordLayout L n) n ++
-    skywalkSignedHalf L.aSign L.ext ++ [.CX L.a0 L.b0]
+  let P : Program := [ECDSAAdd.Instr.CX L.previous L.a0] ++ narrowReceiver (narrowSkywalkRecordLayout L n) n ++
+    skywalkSignedHalf L.aSign L.ext ++ [ECDSAAdd.Instr.CX L.a0 L.b0]
   have eU : receiverUntick L n=P++swapRegisters L.a0 L.ah L.bh := rfl
   have eT : receiverUntickT L n am bm al bl=P++swapTrim L.a0 am bm al bl L.aSign L.bSign := rfl
   rw [eU,run_append] at old
@@ -44481,10 +51409,10 @@ theorem receiverUntick_physical (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Val
     intro eq
     exact (List.nodup_cons.mp hv.nodup).1 (by simp [eq])
   have sw := swapRegisters_physical L.a0 L.ah L.bh swnd
-  have cx : GatePhysical [.CX L.a0 L.b0] := by simp [GatePhysical,PhysicalInstr,ProperGate,ab]
+  have cx : GatePhysical [ECDSAAdd.Instr.CX L.a0 L.b0] := by simp [GatePhysical,PhysicalInstr,ProperGate,ab]
   have half : GatePhysical (skywalkSignedHalf L.aSign L.ext) := by
     simp [skywalkSignedHalf,GatePhysical,PhysicalInstr,ProperGate,se]
-  have prev : GatePhysical [.CX L.previous L.a0] := by simp [GatePhysical,PhysicalInstr,ProperGate,pa]
+  have prev : GatePhysical [ECDSAAdd.Instr.CX L.previous L.a0] := by simp [GatePhysical,PhysicalInstr,ProperGate,pa]
   have recs := narrowReceiver_physical (narrowSkywalkRecordLayout L n) n
     (narrowSkywalkRecord_widths L hv n hn hle) (narrowSkywalkRecord_nodup L hv n hn hle)
   simp only [receiverUntick,gatePhysical_append]
@@ -44673,9 +51601,9 @@ theorem receiverUntick_support (L : SkywalkIntegerLayout) (n : Nat) (hv : L.Vali
     simp only [SkywalkIntegerLayout.wires,SkywalkIntegerLayout.half,SkywalkIntegerLayout.b,
       List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at hq ⊢
     itauto
-  have hprevious : wires [.CX L.previous L.a0]⊆L.wires.toFinset := by
+  have hprevious : wires [ECDSAAdd.Instr.CX L.previous L.a0]⊆L.wires.toFinset := by
     simp [SkywalkIntegerLayout.wires,wires,Instr.wires]
-  have hlow : wires [.CX L.a0 L.b0]⊆L.wires.toFinset := by
+  have hlow : wires [ECDSAAdd.Instr.CX L.a0 L.b0]⊆L.wires.toFinset := by
     intro q hq
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
       Finset.mem_singleton,Finset.notMem_empty,or_false] at hq
@@ -45502,11 +52430,11 @@ theorem otherEncode_body_disjoint (w : Nat → Wire) (b sign eff : Wire)
   apply Finset.disjoint_left.mpr
   intro q hq used
   rcases Finset.mem_union.mp (support used) with h|h
-  · have one : wires [.X q]⊆History5.groupReadSites w b sign eff (5*j) := by
+  · have one : wires [ECDSAAdd.Instr.X q]⊆History5.groupReadSites w b sign eff (5*j) := by
       intro t ht
       have same : t=q := by simpa [wires,Instr.wires] using ht
       exact same ▸ h
-    exact Finset.disjoint_left.mp (old [.X q] one) hq (by simp [wires,Instr.wires])
+    exact Finset.disjoint_left.mp (old [ECDSAAdd.Instr.X q] one) hq (by simp [wires,Instr.wires])
   · have same : q=w 2312 := Finset.mem_singleton.mp h
     exact otherEncode_parity_away w hn n j bound (same ▸ hq)
 
@@ -47596,7 +54524,7 @@ theorem copy_sandwich_cancel (a b : Wire) (P : Program)
     (free : b∉wires P) (s : State) (m : List Bool)
     (stable : (run P m (run [.CX a b] [] s)).basis a=s.basis a) :
     run ([.CX a b]++P++[.CX a b]) m s=run P m s := by
-  let c:=run [.CX a b] [] s
+  let c:=run [ECDSAAdd.Instr.CX a b] [] s
   let u:=run P m c
   let t:=run P m s
   have read (q : Wire) (hq : q∈wires P) : c.basis q=s.basis q := by
@@ -47619,8 +54547,8 @@ theorem copy_sandwich_cancel (a b : Wire) (P : Program)
     exact (run_preserves_outside P m c b free).trans cb
   have tb:t.basis b=s.basis b:=run_preserves_outside P m s b free
   have ua:u.basis a=s.basis a:=stable
-  have actual : run ([.CX a b]++P++[.CX a b]) m s=
-      run [.CX a b] (m.drop (measurementCount P)) u := by
+  have actual : run ([ECDSAAdd.Instr.CX a b]++P++[ECDSAAdd.Instr.CX a b]) m s=
+      run [ECDSAAdd.Instr.CX a b] (m.drop (measurementCount P)) u := by
     simp only [List.append_assoc,run_append,show measurementCount [Instr.CX a b]=0 from rfl,
       List.take_zero,List.drop_zero,run_take]
     rfl
@@ -47682,7 +54610,7 @@ theorem old_forward_sandwich (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (s : State) (m : List Bool) (hc : ∀q∈BalancedCircuit.work L,s.basis q=false) :
     run (ShortBiasedFold.program L) m s=
       run ([.CX L.ymsb L.sourceGuard]++forward L++[.CX L.ymsb L.sourceGuard]) m s := by
-  let tail:=ShortBiasedFold.remainder L++cleanup L++[.CX L.ymsb L.sourceGuard]
+  let tail:=ShortBiasedFold.remainder L++cleanup L++[ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]
   have eq : run (seedViews L++(BalancedCircuit.rawAdd L++tail)) m s=
       run (seedViews L++(rawAdd L++tail)) m s := by
     simp only [run_append,run_take,show measurementCount (seedViews L)=0 from rfl,List.drop_zero]
@@ -47713,9 +54641,9 @@ theorem forward_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     have hy:L.ymsb∈BalancedCircuit.rawSource L:=by simp [BalancedCircuit.rawSource,BalancedCleanup.Layout.y]
     have ht:L.ymsb∈rawTarget L++L.carry:=by simp [rawTarget,h]
     exact List.disjoint_left.mp split.2.2 hy ht
-  have out : (run ([.CX L.ymsb L.sourceGuard]++forward L++[.CX L.ymsb L.sourceGuard]) m s).basis L.ymsb=
+  have out : (run ([ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]++forward L++[ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]) m s).basis L.ymsb=
       s.basis L.ymsb := by rw [←same]; exact old.2.2.2 _ notR
-  have stable : (run (forward L) m (run [.CX L.ymsb L.sourceGuard] [] s)).basis L.ymsb=s.basis L.ymsb := by
+  have stable : (run (forward L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)).basis L.ymsb=s.basis L.ymsb := by
     rw [←copy_sandwich_source L.ymsb L.sourceGuard ne]
     exact out
   exact (copy_sandwich_cancel L.ymsb L.sourceGuard (forward L) free s m stable).symm.trans same.symm
@@ -47739,12 +54667,12 @@ theorem inverse_prefix_ready (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (s : State) (m : List Bool) (hs : s.basis L.sign=B)
     (hR : signedRegValue L.r s.basis=R) (hY : signedRegValue L.y s.basis=Y)
     (hc : ∀a∈work L,s.basis a=false) :
-    let t:=run (inversePrefix L) m (run [.CX L.ymsb L.sourceGuard] [] s)
+    let t:=run (inversePrefix L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)
     regValue L.carry t.basis=0 ∧ t.basis L.sourceGuard=t.basis L.ymsb := by
   let X := BalancedInverse.result B R Y
   let T := rawSum B X Y
   let P := originalParity T
-  let u0 := run [.CX L.ymsb L.sourceGuard] m s
+  let u0 := run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] m s
   let u1 := run (recoverPrefix L) m u0
   let m1 := m.drop (measurementCount (recoverPrefix L))
   let u2 := run (unbiasView L) m1 u1
@@ -47882,11 +54810,11 @@ theorem inverse_prefix_ready (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     exact (f3 a (away a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
       (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
       (z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp)))
-  have actual : run (inversePrefix L) m (run [.CX L.ymsb L.sourceGuard] [] s)=u3 := by
+  have actual : run (inversePrefix L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)=u3 := by
     simp only [inversePrefix,List.append_assoc,run_append,run_take]
     change run (ShortBiasedInverse.restoreRaw L) m2 (run (unbiasView L) m1
-      (run (recoverPrefix L) m (run [.CX L.ymsb L.sourceGuard] [] s)))=u3
-    have ce : run [.CX L.ymsb L.sourceGuard] [] s=u0:=by simp only [u0,run]
+      (run (recoverPrefix L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)))=u3
+    have ce : run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s=u0:=by simp only [u0,run]
     rw [ce]
   rw [actual]
   exact ⟨carry3,g3⟩
@@ -47918,10 +54846,10 @@ theorem old_inverse_sandwich (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (hc : ∀a∈work L,s.basis a=false) :
     run (ShortBiasedInverse.program L) m s=
       run ([.CX L.ymsb L.sourceGuard]++inverse L++[.CX L.ymsb L.sourceGuard]) m s := by
-  let lead:Program:=[.CX L.ymsb L.sourceGuard]++inversePrefix L
-  let tail:Program:=(seed L).reverse++[.CX L.ymsb L.sourceGuard]
+  let lead:Program:=[ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]++inversePrefix L
+  let tail:Program:=(seed L).reverse++[ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]
   have ready:=inverse_prefix_ready L hw hn B R Y hr hy s m hs hR hY hc
-  have prefixState : run lead m s=run (inversePrefix L) m (run [.CX L.ymsb L.sourceGuard] [] s) := by
+  have prefixState : run lead m s=run (inversePrefix L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s) := by
     simp only [lead,run_append,show measurementCount [Instr.CX L.ymsb L.sourceGuard]=0 from rfl,
       List.take_zero,List.drop_zero]
   have eq : run (lead++BalancedInverse.rawSubtract L++tail) m s=
@@ -47929,7 +54857,7 @@ theorem old_inverse_sandwich (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     apply replace_middle _ _ _ _ sameM.symm
     rw [prefixState]
     exact (rawSub_eq L hw hn _ _ ready.1 ready.2).symm
-  have oldSeed : seedViews L=[.CX L.ymsb L.sourceGuard]++seed L:=by rfl
+  have oldSeed : seedViews L=[ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]++seed L:=by rfl
   simpa only [ShortBiasedInverse.program,inverse,inversePrefix,lead,tail,oldSeed,
     List.reverse_append,List.reverse_cons,List.reverse_nil,List.nil_append,List.append_assoc] using eq
 
@@ -47954,9 +54882,9 @@ theorem inverse_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     have hy:L.ymsb∈BalancedCircuit.rawSource L:=by simp [BalancedCircuit.rawSource,BalancedCleanup.Layout.y]
     have ht:L.ymsb∈rawTarget L++L.carry:=by simp [rawTarget,h]
     exact List.disjoint_left.mp split.2.2 hy ht
-  have out : (run ([.CX L.ymsb L.sourceGuard]++inverse L++[.CX L.ymsb L.sourceGuard]) m s).basis L.ymsb=
+  have out : (run ([ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]++inverse L++[ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]) m s).basis L.ymsb=
       s.basis L.ymsb := by rw [←same]; exact old.2.2.2 _ notR
-  have stable : (run (inverse L) m (run [.CX L.ymsb L.sourceGuard] [] s)).basis L.ymsb=s.basis L.ymsb := by
+  have stable : (run (inverse L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)).basis L.ymsb=s.basis L.ymsb := by
     rw [←copy_sandwich_source L.ymsb L.sourceGuard ne]
     exact out
   exact (copy_sandwich_cancel L.ymsb L.sourceGuard (inverse L) free s m stable).symm.trans same.symm
@@ -48540,7 +55468,7 @@ theorem window_restored (a n h b c : Wire) (Q : Program)
     (run (window a n h b c Q) m s).basis b=false := by
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,
     not_or,not_false_eq_true,and_true] at nd
-  let t := run [.CX a b,.CX n b] m s
+  let t := run [ECDSAAdd.Instr.CX a b,.CX n b] m s
   let u := run Q m t
   have ta : t.basis a=s.basis a := by simp_all [t,run,writeBit,Function.update,ne_comm]
   have th : t.basis h=s.basis n := by simp_all [t,run,writeBit,Function.update,ne_comm]
@@ -48548,9 +55476,9 @@ theorem window_restored (a n h b c : Wire) (Q : Program)
   have ua : u.basis a=s.basis a := (run_preserves_outside Q m t a fa).trans ta
   have uh : u.basis h=s.basis n := (run_preserves_outside Q m t h fh).trans th
   have ub : u.basis b= (s.basis a ^^ s.basis n) := (run_preserves_outside Q m t b fb).trans tb
-  have pre (v : List Bool) : run [.CX a b,.CX n b] v s=t := by simp [t,run]
+  have pre (v : List Bool) : run [ECDSAAdd.Instr.CX a b,.CX n b] v s=t := by simp [t,run]
   have split : run (window a n h b c Q) m s=
-      run [.CX a h,.CX a n,.CX h n,.CX h b,.measureX c [] [.Z a,.CZ a h]]
+      run [ECDSAAdd.Instr.CX a h,.CX a n,.CX h n,.CX h b,.measureX c [] [.Z a,.CZ a h]]
         (m.drop (measurementCount Q)) u := by
     simp only [window,run_append,measurementCount_append]
     simp only [measurementCount,List.drop_zero,Nat.zero_add,run_take]
@@ -48607,8 +55535,8 @@ theorem window_legal (a n h b c : Wire) (Q : Program)
 theorem window_reset (a n h b c : Wire) (Q : Program) (s : State) (m : List Bool) :
     (run (window a n h b c Q) m s).basis c=false := by
   have eq : window a n h b c Q=
-      ([.CX a b,.CX n b]++Q++[.CX a h,.CX a n,.CX h n,.CX h b])++
-        [.measureX c [] [.Z a,.CZ a h]] := by simp [window,List.append_assoc]
+      ([ECDSAAdd.Instr.CX a b,.CX n b]++Q++[ECDSAAdd.Instr.CX a h,.CX a n,.CX h n,.CX h b])++
+        [ECDSAAdd.Instr.measureX c [] [.Z a,.CZ a h]] := by simp [window,List.append_assoc]
   rw [eq,run_append]
   simp [run,measureAndCorrect,writeBit]
 
@@ -48762,7 +55690,7 @@ theorem ccx_commute_free (a b c : Wire) (P : Program)
     (fa : a∉wires P) (fb : b∉wires P) (fc : c∉wires P)
     (s : State) (m : List Bool) :
     run P m (run [.CCX a b c] [] s)=run [.CCX a b c] [] (run P m s) := by
-  let t:=run [.CCX a b c] [] s
+  let t:=run [ECDSAAdd.Instr.CCX a b c] [] s
   have agree : Apart c s t := by
     refine ⟨by simp [t,run],?_⟩
     intro q hq
@@ -48813,7 +55741,7 @@ theorem inverseWindow_restored (a n h b c : Wire) (Q : Program)
   have ca : c≠a := by tauto
   have ch : c≠h := by tauto
   have cn : c≠n := by tauto
-  let pre : Program := [.CX a n,.CX h n,.CX h b,.CCX a n c]
+  let pre : Program := [ECDSAAdd.Instr.CX a n,.CX h n,.CX h b,.CCX a n c]
   let t := run pre m s
   let u := run Q m t
   have ta : t.basis a=s.basis a := by simp [t,pre,run,writeBit,Function.update,zero,an,ab,hb,nb,cb,ah,nh,ca,ch,cn,Ne.symm an,Ne.symm ab,Ne.symm hb,Ne.symm nb,Ne.symm cb,Ne.symm ah,Ne.symm nh,Ne.symm ca,Ne.symm ch,Ne.symm cn]
@@ -48824,11 +55752,11 @@ theorem inverseWindow_restored (a n h b c : Wire) (Q : Program)
   have ub : u.basis b=s.basis h := (run_preserves_outside Q m t b fb).trans tb
   have preEq (v : List Bool) : run pre v s=t := by simp [t,pre,run]
   have split : run (inverseWindow a n h b c Q) m s=
-      run [.CX a h,.CX h n,.CX a b,.CX h b,.measureX c [] [.CZ a h]]
+      run [ECDSAAdd.Instr.CX a h,.CX h n,.CX a b,.CX h b,.measureX c [] [.CZ a h]]
         (m.drop (measurementCount Q)) u := by
     simp only [inverseWindow,run_append,measurementCount_append]
     simp only [measurementCount,List.drop_zero,Nat.zero_add,run_take]
-    rw [show run [.CX a n,.CX h n,.CX h b,.CCX a n c]
+    rw [show run [ECDSAAdd.Instr.CX a n,.CX h n,.CX h b,.CCX a n c]
       (List.take 0 (List.take (measurementCount Q) m)) s=t from preEq _]
   rw [split]
   cases ha:s.basis a <;> cases hh:s.basis h
@@ -48884,8 +55812,8 @@ theorem inverseWindow_legal (a n h b c : Wire) (Q : Program)
 theorem inverseWindow_reset (a n h b c : Wire) (Q : Program) (s : State) (m : List Bool) :
     (run (inverseWindow a n h b c Q) m s).basis c=false := by
   have eq : inverseWindow a n h b c Q=
-      ([.CX a n,.CX h n,.CX h b,.CCX a n c]++Q++[.CX a h,.CX h n,.CX a b,.CX h b])++
-        [.measureX c [] [.CZ a h]] := by simp [inverseWindow,List.append_assoc]
+      ([ECDSAAdd.Instr.CX a n,.CX h n,.CX h b,.CCX a n c]++Q++[ECDSAAdd.Instr.CX a h,.CX h n,.CX a b,.CX h b])++
+        [ECDSAAdd.Instr.measureX c [] [.CZ a h]] := by simp [inverseWindow,List.append_assoc]
   rw [eq,run_append]
   simp [run,measureAndCorrect,writeBit]
 
@@ -48996,8 +55924,8 @@ theorem foldWindow_shape (L : Layout) (hn : L.wires.Nodup) :
   have free:= (actual_low_free L hn L.one (by simp)).1
   have same : erase L.one (addBody L)=addBody L := erase_eq_of_free _ _ free
   have e : erase L.one (carryWindow L.parity L.lower L.rmsb L.one L.minus (addBody L))=
-      [.CCX L.parity L.lower L.minus]++addBody L++
-        [.CX L.parity L.rmsb,.CX L.parity L.lower,.CX L.rmsb L.lower,
+      [ECDSAAdd.Instr.CCX L.parity L.lower L.minus]++addBody L++
+        [ECDSAAdd.Instr.CX L.parity L.rmsb,.CX L.parity L.lower,.CX L.rmsb L.lower,
           .measureX L.minus [] [.Z L.parity,.CZ L.parity L.rmsb]] := by
     have sq : (addBody L).filter (fun i=>decide (L.one∉i.wires))=addBody L := same
     simp only [carryWindow,window,erase,List.filter_append]
@@ -49018,8 +55946,8 @@ theorem unfoldWindow_shape (L : Layout) (hn : L.wires.Nodup) :
   have free:= (actual_low_free L hn L.one (by simp)).2
   have same : erase L.one (subBody L)=subBody L := erase_eq_of_free _ _ free
   have e : erase L.one (inverseWindow L.parity L.lower L.rmsb L.one L.minus (subBody L))=
-      [.CX L.parity L.lower,.CX L.rmsb L.lower,.CCX L.parity L.lower L.minus]++subBody L++
-        [.CX L.parity L.rmsb,.CX L.rmsb L.lower,.measureX L.minus [] [.CZ L.parity L.rmsb]] := by
+      [ECDSAAdd.Instr.CX L.parity L.lower,.CX L.rmsb L.lower,.CCX L.parity L.lower L.minus]++subBody L++
+        [ECDSAAdd.Instr.CX L.parity L.rmsb,.CX L.rmsb L.lower,.measureX L.minus [] [.CZ L.parity L.rmsb]] := by
     have sq : (subBody L).filter (fun i=>decide (L.one∉i.wires))=subBody L := same
     simp only [inverseWindow,erase,List.filter_append]
     rw [sq]
@@ -49106,7 +56034,7 @@ def rawPrefix (L : Layout) : Program := GuardCompression.seed L++GuardCompressio
 theorem rawPrefix_apart (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (s : State) (m : List Bool) (hc : ∀q∈work L,s.basis q=false) :
     Apart L.sourceGuard (run (rawPrefix L) m s) (run (seedViews L++BalancedCircuit.rawAdd L) m s) := by
-  let t:=run [.CX L.ymsb L.sourceGuard] [] s
+  let t:=run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s
   have agree : Apart L.sourceGuard s t := by
     refine ⟨by simp [t,run],?_⟩
     intro q hq
@@ -49127,10 +56055,10 @@ theorem rawPrefix_apart (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     rw [show run (seedViews L) (m.take 0) s=run (seedViews L) m s by simp [seedViews,run]]
     exact (GuardCompression.seeded_raw_eq L hw hn s m hc).symm
   have shape : seedViews L++GuardCompression.rawAdd L=
-      [.CX L.ymsb L.sourceGuard]++rawPrefix L := by rfl
+      [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]++rawPrefix L := by rfl
   have old : run (seedViews L++BalancedCircuit.rawAdd L) m s=run (rawPrefix L) m t := by
     rw [a,shape,run_append]
-    simp only [show measurementCount [.CX L.ymsb L.sourceGuard]=0 from rfl,List.drop_zero]
+    simp only [show measurementCount [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard]=0 from rfl,List.drop_zero]
     rfl
   rw [old]
   exact away_congr L.sourceGuard (rawPrefix L) free s t m agree
@@ -49314,7 +56242,7 @@ theorem prepare_order (L : Layout) (hn : L.wires.Nodup) (s : State) (m : List Bo
     simp only [List.count_cons,List.count_nil] at h ⊢
     omega
   have eq:=OneReuseCommute.ccx_cx_shared L.parity L.lower L.minus L.r0 nd
-    (run [.CX L.one L.lower] [] s) []
+    (run [ECDSAAdd.Instr.CX L.one L.lower] [] s) []
   simpa only [BiasedCircuit.prepareFold,newPrepare,run] using eq
 
 theorem prepare_rotate_order (L : Layout) (hn : L.wires.Nodup)
@@ -49424,18 +56352,18 @@ theorem remainder_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
       rw [run_append,run_take,pn,List.drop_zero]
     rw [actual]
     exact ⟨h.1,h.2.1,h.2.2.1⟩
-  have old : run op m s=run [.CCX L.parity L.lower L.minus] [] a := by
+  have old : run op m s=run [ECDSAAdd.Instr.CCX L.parity L.lower L.minus] [] a := by
     dsimp only [op,a,np]
     rw [run_append,run_take,po,List.drop_zero,run_append,run_take,pn,List.drop_zero]
     exact prepare_rotate_order L hn s m m
-  have combine : run ([.CCX L.parity L.lower L.minus]++mid) m a=
-      run mid m (run [.CCX L.parity L.lower L.minus] [] a) := by
+  have combine : run ([ECDSAAdd.Instr.CCX L.parity L.lower L.minus]++mid) m a=
+      run mid m (run [ECDSAAdd.Instr.CCX L.parity L.lower L.minus] [] a) := by
     rw [run_append]
-    simp only [show measurementCount [.CCX L.parity L.lower L.minus]=0 from rfl,List.drop_zero]
+    simp only [show measurementCount [ECDSAAdd.Instr.CCX L.parity L.lower L.minus]=0 from rfl,List.drop_zero]
     rfl
-  have me : run (foldWindow L) m a=run mid m (run [.CCX L.parity L.lower L.minus] [] a) := by
+  have me : run (foldWindow L) m a=run mid m (run [ECDSAAdd.Instr.CCX L.parity L.lower L.minus] [] a) := by
     have eq:=foldWindow_eq L hn a m ready.1 ready.2.1 ready.2.2
-    change run (foldWindow L) m a=run ([.CCX L.parity L.lower L.minus]++mid) m a at eq
+    change run (foldWindow L) m a=run ([ECDSAAdd.Instr.CCX L.parity L.lower L.minus]++mid) m a at eq
     exact eq.trans combine
   have mc : measurementCount (foldWindow L)=measurementCount mid := by
     have n:=(window_counts L hw).2.1
@@ -49513,10 +56441,10 @@ theorem restoreRaw_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     simp only [measurementCount_append,old,unfold_measurements L hw]
     norm_num [BiasedInverse.selectors,BiasedInverse.release,measurementCount]
   have same : restoreRaw L=unfoldWindow L++
-      (rotateLeft (rawTarget L)++[.CX L.parity L.r0]) := by simp [restoreRaw,List.append_assoc]
+      (rotateLeft (rawTarget L)++[ECDSAAdd.Instr.CX L.parity L.r0]) := by simp [restoreRaw,List.append_assoc]
   have old : ShortBiasedInverse.restoreRaw L=
       (BiasedInverse.selectors L++ShortBiasedFold.shortUnfold L++BiasedInverse.release L)++
-      (rotateLeft (rawTarget L)++[.CX L.parity L.r0]) := by
+      (rotateLeft (rawTarget L)++[ECDSAAdd.Instr.CX L.parity L.r0]) := by
     simp [ShortBiasedInverse.restoreRaw,ShortBiasedInverse.unfoldBias,List.append_assoc]
   rw [same,old]
   conv_lhs => rw [run_append,run_take]
@@ -49734,17 +56662,17 @@ private theorem mapped_support (L : Layout) (P : Program)
     wires (foldWindow L) ⊆ L.wires.toFinset ∧ wires (unfoldWindow L) ⊆ L.wires.toFinset := by
   have a:=mapped_support L _ (mappedAdd_wires_subset (ShortBiasedFold.lowBits L) L.low (L.carry.take 254) L.one)
   have b:=mapped_support L _ (mappedSub_wires_subset (ShortBiasedFold.lowBits L) L.low (L.carry.take 254) L.one)
-  have c : wires [.CCX L.parity L.lower L.one]⊆L.wires.toFinset := by
+  have c : wires [ECDSAAdd.Instr.CCX L.parity L.lower L.one]⊆L.wires.toFinset := by
     intro q h; simp [wires,Instr.wires] at h
     rcases h with rfl|rfl|rfl <;> simp [Layout.wires,BalancedCleanup.Layout.wires]
-  have d : wires [.CX L.parity L.rmsb,.CX L.parity L.lower,.CX L.rmsb L.lower,
+  have d : wires [ECDSAAdd.Instr.CX L.parity L.rmsb,.CX L.parity L.lower,.CX L.rmsb L.lower,
       .measureX L.one [] [.Z L.parity,.CZ L.parity L.rmsb]]⊆L.wires.toFinset := by
     intro q h; simp [wires,Instr.wires,correctionWires] at h
     rcases h with rfl|rfl|rfl|rfl <;> simp [Layout.wires,BalancedCleanup.Layout.wires]
-  have e : wires [.CX L.parity L.lower,.CX L.rmsb L.lower,.CCX L.parity L.lower L.one]⊆L.wires.toFinset := by
+  have e : wires [ECDSAAdd.Instr.CX L.parity L.lower,.CX L.rmsb L.lower,.CCX L.parity L.lower L.one]⊆L.wires.toFinset := by
     intro q h; simp [wires,Instr.wires] at h
     rcases h with rfl|rfl|rfl|rfl <;> simp [Layout.wires,BalancedCleanup.Layout.wires]
-  have f : wires [.CX L.parity L.rmsb,.CX L.rmsb L.lower,.measureX L.one [] [.CZ L.parity L.rmsb]]⊆L.wires.toFinset := by
+  have f : wires [ECDSAAdd.Instr.CX L.parity L.rmsb,.CX L.rmsb L.lower,.measureX L.one [] [.CZ L.parity L.rmsb]]⊆L.wires.toFinset := by
     intro q h; simp [wires,Instr.wires,correctionWires] at h
     rcases h with rfl|rfl|rfl|rfl <;> simp [Layout.wires,BalancedCleanup.Layout.wires]
   simp only [foldWindow,unfoldWindow,wires_append,Finset.union_subset_iff]
@@ -49761,7 +56689,7 @@ private theorem mapped_support (L : Layout) (P : Program)
  theorem inverse_support (L : Layout) (hw : L.Widths) : wires (inverse L)⊆L.wires.toFinset := by
   have old:=GuardCompression.inverse_support L hw
   have w:=(window_support L).2
-  have p : wires [.CX L.parity L.r0]⊆L.wires.toFinset := by
+  have p : wires [ECDSAAdd.Instr.CX L.parity L.r0]⊆L.wires.toFinset := by
     intro q h; simp [wires,Instr.wires] at h
     rcases h with rfl|rfl <;> simp [Layout.wires,BalancedCleanup.Layout.wires,BalancedCleanup.Layout.low]
   simp only [GuardCompression.inverse,ShortBiasedInverse.restoreRaw,wires_append,Finset.union_subset_iff] at old
@@ -50165,7 +57093,7 @@ theorem shifted (x y carry : List Wire) (a t z last cin : Wire)
           (addPrefix_counts xs ys ks a t z k hy' hc').2
         have shape : addInPlace ((b::xs)++[a,a]) ((d::ys)++[t,z]) ((k::ks)++[last]) cin=
             majority b d cin k++addInPlace (xs++[a,a]) (ys++[t,z]) (ks++[last]) k++
-              eraseCarry b d cin k++[.CX b d,.CX cin d] := by
+              eraseCarry b d cin k++[ECDSAAdd.Instr.CX b d,.CX cin d] := by
           cases xs <;> cases ys <;> rfl
         rw [shape]
         simp only [addPrefix,q5_ShiftedTail_append_run,measurementCount_append]
@@ -50875,7 +57803,7 @@ attribute [local irreducible] run wires
 theorem x_commute_free (b : Wire) (P : Program) (free : b∉wires P)
     (s : State) (m : List Bool) :
     run P m (run [.X b] [] s)=run [.X b] [] (run P m s) := by
-  let t:=run [.X b] [] s
+  let t:=run [ECDSAAdd.Instr.X b] [] s
   have agree : OneReuse.Apart b s t := by
     refine ⟨by simp [t,run],?_⟩
     intro q hq
@@ -50897,20 +57825,20 @@ def borrow (b c : Wire) (P : Program) : Program :=
 theorem borrow_eq (b c : Wire) (P : Program) (free : b∉wires P) (ne : b≠c)
     (s : State) (m : List Bool) (hb : s.basis b=true) (hc : s.basis c=false)
     (reset : (run P m s).basis c=false) : run (borrow b c P) m s=run P m s := by
-  let t:=run [.X b] [] s
+  let t:=run [ECDSAAdd.Instr.X b] [] s
   have tb : t.basis b=false := by simp [t,run,writeBit,hb]
   have tc : t.basis c=false := by simp [t,run,writeBit,Function.update,Ne.symm ne,hc]
   have otb : (run P m t).basis b=false := (run_preserves_outside P m t b free).trans tb
   have otc : (run P m t).basis c=false := by
-    rw [show run P m t=run [.X b] [] (run P m s) from x_commute_free b P free s m]
+    rw [show run P m t=run [ECDSAAdd.Instr.X b] [] (run P m s) from x_commute_free b P free s m]
     simp [run,writeBit,Function.update,Ne.symm ne,reset]
   have eq:=FieldFrameOB5.rebind_swap_run b c P t m tb tc otb otc
-  have actual : run (borrow b c P) m s=run [.X b] [] (run (renameProgram (Equiv.swap b c) P) m t) := by
-    simp only [borrow,run_append,run_take,show measurementCount [.X b]=0 from rfl,List.drop_zero]
+  have actual : run (borrow b c P) m s=run [ECDSAAdd.Instr.X b] [] (run (renameProgram (Equiv.swap b c) P) m t) := by
+    simp only [borrow,run_append,run_take,show measurementCount [ECDSAAdd.Instr.X b]=0 from rfl,List.drop_zero]
     simp [t,run]
   rw [actual,eq]
   have comm:=x_commute_free b P free s m
-  rw [show run P m t=run [.X b] [] (run P m s) from comm]
+  rw [show run P m t=run [ECDSAAdd.Instr.X b] [] (run P m s) from comm]
   apply State.extensionality
   · simp [run]
   · funext q
@@ -52858,9 +59786,9 @@ theorem compareChainTop_eq (x y carry : List Wire) (cin target : Wire)
       have hK : carryBit (s.basis a) (s.basis b) (s.basis cin) = !s.basis target := by
         rw [htop, Bool.not_not, regValue_single a, regValue_single b, List.length_singleton]
         exact topcarry_PublicTopCarry_carry_decide _ _ _
-      have hm1 : measurementCount ([.X target, .CX target c, .CX c target] : Program) = 0 := rfl
+      have hm1 : measurementCount ([ECDSAAdd.Instr.X target, .CX target c, .CX c target] : Program) = 0 := rfl
       have hm2 : measurementCount (majority a b cin c ++ flipBelow none c target) = 0 := rfl
-      have hmid : run ([.X target, .CX target c, .CX c target] : Program) [] s =
+      have hmid : run ([ECDSAAdd.Instr.X target, .CX target c, .CX c target] : Program) [] s =
           run (majority a b cin c ++ flipBelow none c target) [] s := by
         rw [run_append, majority_correct _ _ _ _ h4]
         simp only [flipBelow, run]
@@ -53074,9 +60002,9 @@ theorem addInPlaceTop_eq : ∀ (n : Nat) (x y carry : List Wire) (cin : Wire),
       apply topcarry_PublicTopCarry_top_affine _ (s.basis a') _ _ _
       · simpa [regValue_cons', regValue_nil'] using hX
       · simpa [regValue_cons', regValue_nil'] using hS
-    have hm1 : measurementCount ([.CX b c, .CX b' c, .CX cin c] : Program) = 0 := rfl
+    have hm1 : measurementCount ([ECDSAAdd.Instr.CX b c, .CX b' c, .CX cin c] : Program) = 0 := rfl
     have hm2 : measurementCount (majority a b cin c) = 0 := rfl
-    have hmid : run ([.CX b c, .CX b' c, .CX cin c] : Program) [] s = run (majority a b cin c) [] s := by
+    have hmid : run ([ECDSAAdd.Instr.CX b c, .CX b' c, .CX cin c] : Program) [] s = run (majority a b cin c) [] s := by
       rw [majority_correct _ _ _ _ h4]
       simp only [run]
       apply State.extensionality
@@ -53563,9 +60491,9 @@ theorem addInPlaceTop_ro_eq : ∀ (n : Nat) (x y carry : List Wire) (cin : Wire)
       apply topcarry_PublicRawTop_gt_top_affine _ (s.basis a') _ _ _
       · simpa [TopCarry.regValue_cons', TopCarry.regValue_nil'] using hX
       · simpa [TopCarry.regValue_cons', TopCarry.regValue_nil'] using hS
-    have hm1 : measurementCount ([.CX b c, .CX b' c, .CX cin c] : Program) = 0 := rfl
+    have hm1 : measurementCount ([ECDSAAdd.Instr.CX b c, .CX b' c, .CX cin c] : Program) = 0 := rfl
     have hm2 : measurementCount (majority a b cin c) = 0 := rfl
-    have hmid : run ([.CX b c, .CX b' c, .CX cin c] : Program) [] s = run (majority a b cin c) [] s := by
+    have hmid : run ([ECDSAAdd.Instr.CX b c, .CX b' c, .CX cin c] : Program) [] s = run (majority a b cin c) [] s := by
       rw [majority_correct _ _ _ _ h4]
       simp only [run]
       apply State.extensionality
@@ -53817,7 +60745,7 @@ theorem early_clear_tail (P : Program) (a y p last : Wire) (s : State) (m : List
     (oldClears : (run [.CX a p,.CX y p] [] (run P m s)).basis p=false) :
     run (renameProgram (Equiv.swap last p) P) m (run [.CX a p] [] s)=
       run [.CX a p,.CX y p] [] (run P m s) := by
-  obtain ⟨c,hc⟩ : ∃c : State,run [.CX a p] [] s=c := ⟨_,rfl⟩
+  obtain ⟨c,hc⟩ : ∃c : State,run [ECDSAAdd.Instr.CX a p] [] s=c := ⟨_,rfl⟩
   have cp : c.basis p=false := by
     rw [←hc]
     simp [run,writeBit,same]
@@ -53860,13 +60788,13 @@ theorem inverse_prefix_parity_ready (L : Layout) (hw : L.Widths) (hn : L.wires.N
     (s : State) (m : List Bool) (hs : s.basis L.sign=B)
     (hR : signedRegValue L.r s.basis=R) (hY : signedRegValue L.y s.basis=Y)
     (hc : ∀a∈work L,s.basis a=false) :
-    let t:=run (inversePrefix L) m (run [.CX L.ymsb L.sourceGuard] [] s)
+    let t:=run (inversePrefix L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)
     regValue L.carry t.basis=0 ∧ t.basis L.sourceGuard=t.basis L.ymsb ∧
     t.basis L.parity=t.basis L.r0 := by
   let X := BalancedInverse.result B R Y
   let T := rawSum B X Y
   let P := originalParity T
-  let u0 := run [.CX L.ymsb L.sourceGuard] m s
+  let u0 := run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] m s
   let u1 := run (recoverPrefix L) m u0
   let m1 := m.drop (measurementCount (recoverPrefix L))
   let u2 := run (unbiasView L) m1 u1
@@ -54004,11 +60932,11 @@ theorem inverse_prefix_parity_ready (L : Layout) (hw : L.Widths) (hn : L.wires.N
     exact (f3 a (away a (by simp [ha])) (neq a (by simp [ha]) _ (by simp))
       (neq a (by simp [ha]) _ (by simp)) (neq a (by simp [ha]) _ (by simp))).trans
       (z0 a (by simp [work,ha]) (neq a (by simp [ha]) _ (by simp)))
-  have actual : run (inversePrefix L) m (run [.CX L.ymsb L.sourceGuard] [] s)=u3 := by
+  have actual : run (inversePrefix L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)=u3 := by
     simp only [inversePrefix,List.append_assoc,run_append,run_take]
     change run (ShortBiasedInverse.restoreRaw L) m2 (run (unbiasView L) m1
-      (run (recoverPrefix L) m (run [.CX L.ymsb L.sourceGuard] [] s)))=u3
-    have ce : run [.CX L.ymsb L.sourceGuard] [] s=u0:=by simp only [u0,run]
+      (run (recoverPrefix L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)))=u3
+    have ce : run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s=u0:=by simp only [u0,run]
     rw [ce]
   have p3 : u3.basis L.parity=P :=
     (restore.2.2.2.2 _ (away _ (by simp)) (by assumption) (by assumption)).trans p2
@@ -54054,7 +60982,7 @@ theorem inverse_prefix_parity_unseeded (L : Layout) (hw : L.Widths) (hn : L.wire
       simp only [Finset.mem_union] at hq ⊢
       tauto
     exact sub bad
-  have apart : OneReuse.Apart L.sourceGuard s (run [.CX L.ymsb L.sourceGuard] [] s) := by
+  have apart : OneReuse.Apart L.sourceGuard s (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s) := by
     refine ⟨by simp [run],?_⟩
     intro q hq
     simp [run,writeBit,Function.update_of_ne hq]
@@ -54066,7 +60994,7 @@ theorem inverse_prefix_parity_unseeded (L : Layout) (hw : L.Widths) (hn : L.wire
     intro eq
     exact flagAway L hn L.sourceGuard (by simp) (by simp [←eq,ha])
   have reg : regValue L.carry (run (inversePrefix L) m s).basis=
-      regValue L.carry (run (inversePrefix L) m (run [.CX L.ymsb L.sourceGuard] [] s)).basis :=
+      regValue L.carry (run (inversePrefix L) m (run [ECDSAAdd.Instr.CX L.ymsb L.sourceGuard] [] s)).basis :=
     regValue_congr _ _ _ (fun a ha=>out.2 a (cp a ha))
   refine ⟨reg.trans ready.1,?_⟩
   exact (out.2 _ (by tauto)).trans (ready.2.2.trans (out.2 _ (by tauto)).symm)
@@ -54101,9 +61029,9 @@ theorem inverse_tail_eq (L : BalancedCircuit.Layout) (last : Wire) (s : State) (
     run (rawSubT L ++ (seed L).reverse) m s := by
   have eq := early_clear_tail (rawSubT L) L.r0 (L.ylow.getD 0 0) L.parity last
     s m free same lp last0 lastout oldClears
-  have lift := congrArg (fun t=>run [.CX L.rmsb L.one] [] t) eq
+  have lift := congrArg (fun t=>run [ECDSAAdd.Instr.CX L.rmsb L.one] [] t) eq
   simpa only [List.append_assoc,run_append,run_take,show measurementCount
-    [.CX L.r0 L.parity]=0 from rfl,List.take_zero,List.drop_zero,
+    [ECDSAAdd.Instr.CX L.r0 L.parity]=0 from rfl,List.take_zero,List.drop_zero,
     seed,List.reverse_cons,List.reverse_nil,List.nil_append,List.cons_append,
     List.singleton_append,run] using lift
 end ECDSAAdd.Entrant.BigABorrowParity
@@ -54205,22 +61133,22 @@ theorem inverseBorrow_eq (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wi
   have lastAfter : (run (rawSubT L) r v).basis last=false := by
     rw [topEq]
     exact ((rawSub_correct L hw hn v r ready.1).2.1 last lastT).trans last0
-  have apart : OneReuse.Apart L.parity (run [.CX L.r0 L.parity] [] v) v := by
+  have apart : OneReuse.Apart L.parity (run [ECDSAAdd.Instr.CX L.r0 L.parity] [] v) v := by
     refine ⟨by simp [run],?_⟩
     intro q hq
     simp [run,writeBit,Function.update_of_ne hq]
   have rel:=OneReuse.away_congr L.parity (rawSubT L) free _ v r apart
-  have lastout : (run (rawSubT L) r (run [.CX L.r0 L.parity] [] v)).basis last=false :=
+  have lastout : (run (rawSubT L) r (run [ECDSAAdd.Instr.CX L.r0 L.parity] [] v)).basis last=false :=
     (rel.2 last lp).trans lastAfter
-  have oldClears : (run [.CX L.r0 L.parity,.CX (L.ylow.getD 0 0) L.parity] []
+  have oldClears : (run [ECDSAAdd.Instr.CX L.r0 L.parity,.CX (L.ylow.getD 0 0) L.parity] []
       (run (rawSubT L) r v)).basis L.parity=false := by
     rw [topEq]
     have par:=old.2.2.1 L.parity (by simp [work])
     simpa only [run_append,run_take,seed,List.reverse_cons,List.reverse_nil,List.nil_append,
       List.cons_append,List.singleton_append,run,writeBit,Function.update_of_ne parOne] using par
   have eq:=inverse_tail_eq L last v r free ready.2 lp last0 lastout oldClears
-  have shape : inverseBorrow L last=inversePrefix L++([.CX L.r0 L.parity] ++
-      renameProgram (Equiv.swap last L.parity) (rawSubT L) ++ [.CX L.rmsb L.one]) := by
+  have shape : inverseBorrow L last=inversePrefix L++([ECDSAAdd.Instr.CX L.r0 L.parity] ++
+      renameProgram (Equiv.swap last L.parity) (rawSubT L) ++ [ECDSAAdd.Instr.CX L.rmsb L.one]) := by
     simp only [inverseBorrow,List.append_assoc]
   rw [shape,run_append,run_take,hv,eq,actual]
   simp only [run_append,run_take]
@@ -55365,7 +62293,7 @@ theorem forward_physical (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wi
   have cmp:=TopCarryBorrow.program_physical L hw hn
   simp only [FifthCarry.forward,CarryBorrow.cleanup,gatePhysical_append] at old
   simp only [forward,forwardCore,forwardPrefix,cleanup,cleanupRest,gatePhysical_append]
-  have pad : GatePhysical ([.measureX L.one [] []]:Program) := by simp [GatePhysical,PhysicalInstr]
+  have pad : GatePhysical ([ECDSAAdd.Instr.measureX L.one [] []]:Program) := by simp [GatePhysical,PhysicalInstr]
   tauto
 
 theorem inverse_physical (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wires.Nodup) :
@@ -55377,8 +62305,8 @@ theorem inverse_physical (L : BalancedCircuit.Layout) (hw : L.Widths) (hn : L.wi
     not_or,not_false_eq_true,and_true] at nd
   have p:L.r0≠L.parity := by tauto
   have q:L.rmsb≠L.one := by tauto
-  have c1:GatePhysical ([.CX L.r0 L.parity]:Program) := by simp [GatePhysical,PhysicalInstr,ProperGate,p]
-  have c2:GatePhysical ([.CX L.rmsb L.one]:Program) := by simp [GatePhysical,PhysicalInstr,ProperGate,q]
+  have c1:GatePhysical ([ECDSAAdd.Instr.CX L.r0 L.parity]:Program) := by simp [GatePhysical,PhysicalInstr,ProperGate,p]
+  have c2:GatePhysical ([ECDSAAdd.Instr.CX L.rmsb L.one]:Program) := by simp [GatePhysical,PhysicalInstr,ProperGate,q]
   simp only [FifthCarry.inverse,gatePhysical_append] at old
   simp only [inverse,gatePhysical_append]
   tauto
@@ -55451,13 +62379,13 @@ theorem inverse_support (L : BalancedCircuit.Layout) (hw : L.Widths) : wires (in
     intro q hq;apply old
     simp only [FifthCarry.inverse,wires_append,Finset.mem_union]
     itauto
-  have c1:wires ([.CX L.r0 L.parity]:Program)⊆L.wires.toFinset := by
+  have c1:wires ([ECDSAAdd.Instr.CX L.r0 L.parity]:Program)⊆L.wires.toFinset := by
     intro q hq
     simp [wires,Instr.wires] at hq
     simp only [List.mem_toFinset,BalancedCircuit.Layout.wires,BalancedCleanup.Layout.wires,
       BalancedCleanup.Layout.r,BalancedCleanup.Layout.low,List.mem_cons,List.mem_append,List.not_mem_nil,or_false]
     itauto
-  have c2:wires ([.CX L.rmsb L.one]:Program)⊆L.wires.toFinset := by
+  have c2:wires ([ECDSAAdd.Instr.CX L.rmsb L.one]:Program)⊆L.wires.toFinset := by
     intro q hq
     simp [wires,Instr.wires] at hq
     simp only [List.mem_toFinset,BalancedCircuit.Layout.wires,BalancedCleanup.Layout.wires,
@@ -55651,8 +62579,8 @@ theorem half_eq (divide : Bool) (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup
   unfold half oldHalf
   rw [List.append_assoc,List.append_assoc]
   apply LaneI.seq_eq _ _ _ _ s m rfl rfl
-  generalize eu : run [.X L.sign] (m.take (measurementCount [.X L.sign])) s=u
-  have us := BalancedCleanupOffset.x_run L.sign s (m.take (measurementCount [.X L.sign]))
+  generalize eu : run [ECDSAAdd.Instr.X L.sign] (m.take (measurementCount [ECDSAAdd.Instr.X L.sign])) s=u
+  have us := BalancedCleanupOffset.x_run L.sign s (m.take (measurementCount [ECDSAAdd.Instr.X L.sign]))
   rw [eu] at us
   have uf (q : Wire) (hq : q≠L.sign) : u.basis q=s.basis q := by
     rw [us]
@@ -55795,12 +62723,12 @@ theorem prepareCompare_low_relation (L : Layout) (hw : L.Widths) (hn : L.wires.N
     let t := run (prepareCompare L) m s
     t.basis L.r0=!(t.basis L.sign ^^ t.basis L.lower) := by
   let v1 := run (rotateLeft L.r) m s
-  let ins : Program := [.X L.r0,.CX L.sign L.r0,.CX L.lower L.r0]
+  let ins : Program := [ECDSAAdd.Instr.X L.r0,.CX L.sign L.r0,.CX L.lower L.r0]
   let v2 := run ins m v1
   let v3 := run (signComplement L.sign L.y) m v2
   let v4 := run (signComplement L.lower L.y) m v3
-  let v5 := run [.X L.rmsb] m v4
-  let v6 := run [.X L.ymsb] m v5
+  let v5 := run [ECDSAAdd.Instr.X L.rmsb] m v4
+  let v6 := run [ECDSAAdd.Instr.X L.ymsb] m v5
   have w := widths L hw
   have d := List.nodup_append'.mp (L.dataND hn)
   have dr := d.1
@@ -56469,7 +63397,7 @@ theorem inverse_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
     (hc : ∀q∈work L,s.basis q=false) :
     run (inverse L a) m s=run (FifthCarry2.inverse L) m s := by
   let v:=run (FifthCarry.inversePrefix L) m s
-  let u:=run [.CX L.r0 L.parity] [] v
+  let u:=run [ECDSAAdd.Instr.CX L.r0 L.parity] [] v
   let records:=m.drop (measurementCount (FifthCarry.inversePrefix L))
   have preEq:=inversePrefix_eq L hw hn a ha R hr s m hR hc
   have oldEq:=FifthCarry.inverse_prefix_eq L hw hn s m hc
@@ -56524,8 +63452,8 @@ theorem inverse_eq (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup)
   simp only [inverse,FifthCarry2.inverse,List.append_assoc,run_append,run_take,
     (inversePrefix_counts L a).2,rawCount,measurementCount,List.drop_zero]
   rw [preTake,preEq]
-  change run [.CX L.rmsb L.one] _ (run (rawSub L a) (records.take _) u)=
-    run [.CX L.rmsb L.one] _ (run (FifthCarry2.rawSub L) records u)
+  change run [ECDSAAdd.Instr.CX L.rmsb L.one] _ (run (rawSub L a) (records.take _) u)=
+    run [ECDSAAdd.Instr.CX L.rmsb L.one] _ (run (FifthCarry2.rawSub L) records u)
   rw [rawTake,rawEq]
 end ECDSAAdd.Entrant.Q6Cell
 
@@ -57277,8 +64205,8 @@ theorem half_eq (divide : Bool) (L : Layout) (hw : L.Widths) (hn : L.wires.Nodup
   unfold half oldHalf
   rw [List.append_assoc,List.append_assoc]
   apply LaneI.seq_eq _ _ _ _ s m rfl rfl
-  generalize eu : run [.X L.sign] (m.take (measurementCount [.X L.sign])) s=u
-  have us := BalancedCleanupOffset.x_run L.sign s (m.take (measurementCount [.X L.sign]))
+  generalize eu : run [ECDSAAdd.Instr.X L.sign] (m.take (measurementCount [ECDSAAdd.Instr.X L.sign])) s=u
+  have us := BalancedCleanupOffset.x_run L.sign s (m.take (measurementCount [ECDSAAdd.Instr.X L.sign]))
   rw [eu] at us
   have uf (q : Wire) (hq : q≠L.sign) : u.basis q=s.basis q := by
     rw [us]
@@ -65393,13 +72321,13 @@ theorem Sel.window {b : Wire} {k : Nat} {Q' Q : Program} (source flag : Wire) (c
     have tailEq := fun (u : State) (r : List Bool) (hu : u.basis b=true) =>
       sel_tail b source flag c hn u r hu
     rw [window_split b source flag c Q,
-      show selW source flag Q'=[.CX source flag]++(Q'++[.measureX flag [] [.Z source]]) by
+      show selW source flag Q'=[ECDSAAdd.Instr.CX source flag]++(Q'++[ECDSAAdd.Instr.measureX flag [] [.Z source]]) by
         simp only [selW,List.append_assoc]]
     generalize hA : transcriptSelectCompute b source flag c++transcriptSelectExpose flag c=A at m0 head ⊢
     generalize hB : transcriptSelectExpose flag c++transcriptSelectErase b source flag c=B at tailEq ⊢
     simp only [run_append,m0,m1,List.take_zero,List.drop_zero,h.mc]
     rw [head]
-    have u1 : (run [.CX source flag] [] s).basis b=true :=
+    have u1 : (run [ECDSAAdd.Instr.CX source flag] [] s).basis b=true :=
       (sel_head_keep source flag b hbf s _).trans hs
     obtain ⟨eQ,bQ⟩ := h.eq (m.take (measurementCount Q)) _ u1
     rw [eQ,tailEq _ _ bQ]
@@ -70116,7 +77044,7 @@ theorem clrF_run (s : State) (m : List Bool) (hz : regValue (L.dialogPool.take 2
       beq_self_eq_true, if_true] at hh
     omega
   let s1 : State := ⟨s.phase, writeBit s.basis L.point.finite (!s.basis L.point.finite)⟩
-  have h1 : run [.X L.point.finite] [] s = s1 := rfl
+  have h1 : run [ECDSAAdd.Instr.X L.point.finite] [] s = s1 := rfl
   have hz1 : regValue (L.dialogPool.take 255) s1.basis = 0 := by
     rw [← hz]; apply regValue_congr; intro q hq
     have : q ≠ L.point.finite := fun e => hfp (e ▸ hq)
@@ -70152,7 +77080,7 @@ theorem zrep_run (s : State) (m : List Bool) :
   have hfx := fin_not_x L hn
   have hnd := finX_nodup L hn
   let s1 : State := ⟨s.phase, writeBit s.basis L.point.finite (!s.basis L.point.finite)⟩
-  have h1 : run [.X L.point.finite] [] s = s1 := rfl
+  have h1 : run [ECDSAAdd.Instr.X L.point.finite] [] s = s1 := rfl
   have hm0 : measurementCount [Instr.X L.point.finite] = 0 := rfl
   have hmc := (maskedConstant_counts L.point.finite L.point.x 5).2
   have hk : 5 < 2 ^ L.point.x.length := by
@@ -72391,10 +79319,13 @@ def affineClassSameTailM (y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : B
 set_option linter.unusedTactic false in
 set_option linter.unreachableTactic false in
 set_option maxHeartbeats 20000000 in
-theorem affineSameTailM_run (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+theorem rs1_affineSameTailM_run_k0 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
     (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
     (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
-    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃))) :
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁) = (false, false, false)) :
     run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
       ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
@@ -72412,23 +79343,358 @@ theorem affineSameTailM_run (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a�
   have l1' := Ne.symm l1
   obtain ⟨ph, bs⟩ := s
   simp only at hp1 hp3 ⊢
-  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;> cases a₃ <;>
-  cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
-  simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
-    beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
-  · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
-      inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
-    all_goals
-      funext q
-      by_cases e1 : q = t₁
-      · subst e1; simp [Function.update_apply, *]
-      by_cases e2 : q = t₂
-      · subst e2; simp [Function.update_apply, *]
-      by_cases e3 : q = t₃
-      · subst e3; simp [Function.update_apply, *]
-      by_cases e4 : q = y
-      · subst e4; simp [Function.update_apply, *]
-      simp [Function.update_apply, *]
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases a₂ <;> cases a₃ <;>
+    cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+theorem rs1_affineSameTailM_run_k1 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
+    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁) = (false, false, true)) :
+    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
+      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
+    not_false_eq_true,and_true] at hnd
+  obtain ⟨⟨n1,n2,n3,n4⟩,⟨m1,m2,m3⟩,⟨k1,k2⟩,l1⟩ := hnd
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have l1' := Ne.symm l1
+  obtain ⟨ph, bs⟩ := s
+  simp only at hp1 hp3 ⊢
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases a₂ <;> cases a₃ <;>
+    cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+theorem rs1_affineSameTailM_run_k2 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
+    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁) = (false, true, false)) :
+    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
+      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
+    not_false_eq_true,and_true] at hnd
+  obtain ⟨⟨n1,n2,n3,n4⟩,⟨m1,m2,m3⟩,⟨k1,k2⟩,l1⟩ := hnd
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have l1' := Ne.symm l1
+  obtain ⟨ph, bs⟩ := s
+  simp only at hp1 hp3 ⊢
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases a₂ <;> cases a₃ <;>
+    cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+theorem rs1_affineSameTailM_run_k3 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
+    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁) = (false, true, true)) :
+    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
+      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
+    not_false_eq_true,and_true] at hnd
+  obtain ⟨⟨n1,n2,n3,n4⟩,⟨m1,m2,m3⟩,⟨k1,k2⟩,l1⟩ := hnd
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have l1' := Ne.symm l1
+  obtain ⟨ph, bs⟩ := s
+  simp only at hp1 hp3 ⊢
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases a₂ <;> cases a₃ <;>
+    cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+theorem rs1_affineSameTailM_run_k4 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
+    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁) = (true, false, false)) :
+    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
+      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
+    not_false_eq_true,and_true] at hnd
+  obtain ⟨⟨n1,n2,n3,n4⟩,⟨m1,m2,m3⟩,⟨k1,k2⟩,l1⟩ := hnd
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have l1' := Ne.symm l1
+  obtain ⟨ph, bs⟩ := s
+  simp only at hp1 hp3 ⊢
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases a₂ <;> cases a₃ <;>
+    cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+theorem rs1_affineSameTailM_run_k5 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
+    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁) = (true, false, true)) :
+    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
+      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
+    not_false_eq_true,and_true] at hnd
+  obtain ⟨⟨n1,n2,n3,n4⟩,⟨m1,m2,m3⟩,⟨k1,k2⟩,l1⟩ := hnd
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have l1' := Ne.symm l1
+  obtain ⟨ph, bs⟩ := s
+  simp only at hp1 hp3 ⊢
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases a₂ <;> cases a₃ <;>
+    cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+theorem rs1_affineSameTailM_run_k6 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
+    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁) = (true, true, false)) :
+    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
+      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
+    not_false_eq_true,and_true] at hnd
+  obtain ⟨⟨n1,n2,n3,n4⟩,⟨m1,m2,m3⟩,⟨k1,k2⟩,l1⟩ := hnd
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have l1' := Ne.symm l1
+  obtain ⟨ph, bs⟩ := s
+  simp only at hp1 hp3 ⊢
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases a₂ <;> cases a₃ <;>
+    cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+theorem rs1_affineSameTailM_run_k7 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
+    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁) = (true, true, true)) :
+    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
+      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,not_or,or_false,List.nodup_nil,
+    not_false_eq_true,and_true] at hnd
+  obtain ⟨⟨n1,n2,n3,n4⟩,⟨m1,m2,m3⟩,⟨k1,k2⟩,l1⟩ := hnd
+  have n1' := Ne.symm n1
+  have n2' := Ne.symm n2
+  have n3' := Ne.symm n3
+  have n4' := Ne.symm n4
+  have m1' := Ne.symm m1
+  have m2' := Ne.symm m2
+  have m3' := Ne.symm m3
+  have k1' := Ne.symm k1
+  have k2' := Ne.symm k2
+  have l1' := Ne.symm l1
+  obtain ⟨ph, bs⟩ := s
+  simp only at hp1 hp3 ⊢
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases a₂ <;> cases a₃ <;>
+    cases hc : bs c <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        inputClassEffect, pairEffect, run, writeBit, Function.update_apply, DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+theorem affineSameTailM_run (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
+    (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
+    (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = (s.basis c && (s.basis y == a₃))) :
+    run (affineClassSameTailM y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ c) m s =
+      ⟨s.phase,inputClassEffect y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis c) (s.basis c) s.basis⟩ := by
+  cases e₁ <;> cases e₂ <;> cases a₁ <;>
+  first
+  | exact rs1_affineSameTailM_run_k0 c y t₁ t₂ t₃ _ _ _ a₂ a₃ hnd s m hp1 hp3 rfl
+  | exact rs1_affineSameTailM_run_k1 c y t₁ t₂ t₃ _ _ _ a₂ a₃ hnd s m hp1 hp3 rfl
+  | exact rs1_affineSameTailM_run_k2 c y t₁ t₂ t₃ _ _ _ a₂ a₃ hnd s m hp1 hp3 rfl
+  | exact rs1_affineSameTailM_run_k3 c y t₁ t₂ t₃ _ _ _ a₂ a₃ hnd s m hp1 hp3 rfl
+  | exact rs1_affineSameTailM_run_k4 c y t₁ t₂ t₃ _ _ _ a₂ a₃ hnd s m hp1 hp3 rfl
+  | exact rs1_affineSameTailM_run_k5 c y t₁ t₂ t₃ _ _ _ a₂ a₃ hnd s m hp1 hp3 rfl
+  | exact rs1_affineSameTailM_run_k6 c y t₁ t₂ t₃ _ _ _ a₂ a₃ hnd s m hp1 hp3 rfl
+  | exact rs1_affineSameTailM_run_k7 c y t₁ t₂ t₃ _ _ _ a₂ a₃ hnd s m hp1 hp3 rfl
 /-- `affineInputSuffix` with the measured class tail. -/
 def affineInputSuffixM (c r y t₁ t₂ t₃ wa wb : Wire)
     (e₁ a₁ e₂ a₂ a₃ : Bool) (bs : List ZeroBit) (a b : Nat) : Program :=
@@ -72524,13 +79790,13 @@ theorem zeroWith_effect_runQ (used : List Wire) (P : Bool → BasisState → Pro
 set_option linter.unusedTactic false in
 set_option linter.unreachableTactic false in
 set_option maxHeartbeats 40000000 in
-theorem affineClassTailM_run_k0 (r y t₁ t₂ t₃ wa wb : Wire)
+theorem rs1_affineClassTailM_run_k0_m0 (r y t₁ t₂ t₃ wa wb : Wire)
     (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
     (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
     (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
     (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
     (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
-    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) :
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
@@ -72546,12 +79812,846 @@ theorem affineClassTailM_run_k0 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k0_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k0_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k0_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k0_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k0_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k0_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k0_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem affineClassTailM_run_k0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, false)) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k0_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k0_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k0_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k0_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k0_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k0_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k0_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k0_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k1_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k1_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k1_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k1_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k1_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k1_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k1_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k1_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -72587,6 +80687,30 @@ theorem affineClassTailM_run_k1 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (false, false, false, true)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k1_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k1_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k1_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k1_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k1_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k1_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k1_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k1_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k2_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -72600,12 +80724,390 @@ theorem affineClassTailM_run_k1 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k2_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k2_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k2_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k2_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k2_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k2_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k2_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -72641,6 +81143,30 @@ theorem affineClassTailM_run_k2 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, false)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k2_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k2_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k2_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k2_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k2_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k2_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k2_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k2_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k3_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -72654,12 +81180,390 @@ theorem affineClassTailM_run_k2 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k3_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k3_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k3_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k3_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k3_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k3_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k3_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -72695,6 +81599,30 @@ theorem affineClassTailM_run_k3 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (false, false, true, true)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k3_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k3_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k3_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k3_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k3_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k3_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k3_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k3_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k4_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -72708,12 +81636,390 @@ theorem affineClassTailM_run_k3 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k4_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k4_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k4_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k4_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k4_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k4_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k4_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -72749,6 +82055,30 @@ theorem affineClassTailM_run_k4 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, false)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k4_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k4_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k4_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k4_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k4_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k4_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k4_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k4_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k5_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -72762,12 +82092,390 @@ theorem affineClassTailM_run_k4 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k5_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k5_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k5_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k5_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k5_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k5_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k5_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -72803,6 +82511,30 @@ theorem affineClassTailM_run_k5 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (false, true, false, true)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k5_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k5_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k5_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k5_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k5_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k5_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k5_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k5_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k6_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -72816,12 +82548,390 @@ theorem affineClassTailM_run_k5 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k6_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k6_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k6_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k6_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k6_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k6_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k6_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -72857,6 +82967,30 @@ theorem affineClassTailM_run_k6 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, false)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k6_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k6_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k6_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k6_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k6_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k6_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k6_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k6_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k7_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -72870,12 +83004,390 @@ theorem affineClassTailM_run_k6 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k7_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k7_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k7_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k7_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k7_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k7_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k7_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -72911,6 +83423,30 @@ theorem affineClassTailM_run_k7 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (false, true, true, true)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k7_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k7_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k7_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k7_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k7_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k7_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k7_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k7_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k8_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -72924,12 +83460,390 @@ theorem affineClassTailM_run_k7 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k8_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k8_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k8_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k8_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k8_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k8_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k8_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -72965,6 +83879,30 @@ theorem affineClassTailM_run_k8 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, false)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k8_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k8_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k8_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k8_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k8_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k8_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k8_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k8_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k9_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -72978,12 +83916,390 @@ theorem affineClassTailM_run_k8 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k9_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k9_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k9_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k9_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k9_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k9_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k9_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -73019,6 +84335,30 @@ theorem affineClassTailM_run_k9 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (true, false, false, true)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k9_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k9_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k9_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k9_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k9_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k9_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k9_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k9_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k10_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -73032,12 +84372,390 @@ theorem affineClassTailM_run_k9 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k10_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k10_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k10_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k10_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k10_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k10_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k10_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -73073,6 +84791,30 @@ theorem affineClassTailM_run_k10 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, false)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k10_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k10_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k10_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k10_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k10_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k10_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k10_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k10_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k11_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -73086,12 +84828,390 @@ theorem affineClassTailM_run_k10 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k11_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k11_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k11_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k11_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k11_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k11_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k11_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -73127,6 +85247,30 @@ theorem affineClassTailM_run_k11 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (true, false, true, true)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k11_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k11_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k11_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k11_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k11_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k11_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k11_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k11_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k12_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -73140,12 +85284,390 @@ theorem affineClassTailM_run_k11 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k12_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k12_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k12_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k12_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k12_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k12_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k12_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -73181,6 +85703,30 @@ theorem affineClassTailM_run_k12 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, false)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k12_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k12_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k12_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k12_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k12_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k12_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k12_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k12_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k13_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -73194,12 +85740,390 @@ theorem affineClassTailM_run_k12 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k13_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k13_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k13_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k13_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k13_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k13_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k13_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -73235,6 +86159,30 @@ theorem affineClassTailM_run_k13 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (true, true, false, true)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k13_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k13_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k13_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k13_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k13_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k13_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k13_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k13_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k14_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -73248,12 +86196,390 @@ theorem affineClassTailM_run_k13 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k14_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k14_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k14_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k14_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k14_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k14_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k14_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -73289,6 +86615,30 @@ theorem affineClassTailM_run_k14 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, false)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k14_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k14_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k14_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k14_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k14_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k14_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k14_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k14_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k15_m0 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
   have hn := hnd
   simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
   obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
@@ -73302,12 +86652,390 @@ theorem affineClassTailM_run_k14 (r y t₁ t₂ t₃ wa wb : Wire)
   have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
   have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
   obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
   cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
   first
   | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k15_m1 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) (hA3 : a₃ = false) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k15_m2 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k15_m3 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) (hA3 : a₃ = false) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k15_m4 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k15_m5 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) (hA3 : a₃ = true) (hc : s.basis h = false) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k15_m6 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = false) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
+    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
+      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
+    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
+        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
+        DHGadget.measure_erase, *]
+      all_goals
+        funext q
+        by_cases e1 : q = t₁
+        · subst e1; simp [Function.update_apply, *]
+        by_cases e2 : q = t₂
+        · subst e2; simp [Function.update_apply, *]
+        by_cases e3 : q = t₃
+        · subst e3; simp [Function.update_apply, *]
+        by_cases e4 : q = y
+        · subst e4; simp [Function.update_apply, *]
+        by_cases e5 : q = wa
+        · subst e5; simp [Function.update_apply, *]
+        by_cases e6 : q = wb
+        · subst e6; simp [Function.update_apply, *]
+        by_cases e7 : q = r
+        · subst e7; simp [Function.update_apply, *]
+        simp [Function.update_apply, *]
+
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
+set_option maxHeartbeats 40000000 in
+theorem rs1_affineClassTailM_run_k15_m7 (r y t₁ t₂ t₃ wa wb : Wire)
+    (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
+    (hnd : [h,r,y,t₁,t₂,t₃,wa,wb].Nodup)
+    (s : State) (m : List Bool) (ha : s.basis wa = false) (hb : s.basis wb = false)
+    (hp1 : s.basis t₁ = (e₁ && (s.basis h && !s.basis r) && (s.basis y == a₁)))
+    (hp3 : s.basis t₃ = ((s.basis h && s.basis r) && (s.basis y == a₃)))
+    (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) (hA3 : a₃ = true) (hc : s.basis h = true) (hr : s.basis r = true) :
+    run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
+      ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
+  have hn := hnd
+  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
+  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
+    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
+    ⟨h3A,h3B⟩,hAB⟩ := hn
+  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
+  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
+  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
+  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
+  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
+  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
+  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
+  obtain ⟨ph, bs⟩ := s
+  simp only at ha hb hp1 hp3 hc hr ⊢
+  subst hA3
+  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
+  first
+  | exact absurd hsel (by decide)
+  | cases hy : bs y <;> cases h2 : bs t₂ <;>
     simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
       beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
     · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
@@ -73343,47 +87071,17 @@ theorem affineClassTailM_run_k15 (r y t₁ t₂ t₃ wa wb : Wire)
     (hsel : (e₁, e₂, a₁, a₂) = (true, true, true, true)) :
     run (affineClassTailM r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ a₃ h) m s =
       ⟨s.phase,affineClassEffect r y t₁ t₂ t₃ e₁ a₁ e₂ a₂ a₃ (s.basis h) s.basis⟩ := by
-  have hn := hnd
-  simp only [List.nodup_cons,List.mem_cons,List.not_mem_nil,List.nodup_nil,not_or,not_false_eq_true,and_true] at hn
-  obtain ⟨⟨hhr,hhy,hh1,hh2,hh3,hhA,hhB⟩,⟨hry,hr1,hr2,hr3,hrA,hrB⟩,
-    ⟨hy1,hy2,hy3,hyA,hyB⟩,⟨h12,h13,h1A,h1B⟩,⟨h23,h2A,h2B⟩,
-    ⟨h3A,h3B⟩,hAB⟩ := hn
-  have := Ne.symm hhr; have := Ne.symm hhy; have := Ne.symm hh1; have := Ne.symm hh2
-  have := Ne.symm hh3; have := Ne.symm hhA; have := Ne.symm hhB; have := Ne.symm hry
-  have := Ne.symm hr1; have := Ne.symm hr2; have := Ne.symm hr3; have := Ne.symm hrA
-  have := Ne.symm hrB; have := Ne.symm hy1; have := Ne.symm hy2; have := Ne.symm hy3
-  have := Ne.symm hyA; have := Ne.symm hyB; have := Ne.symm h12; have := Ne.symm h13
-  have := Ne.symm h1A; have := Ne.symm h1B; have := Ne.symm h23; have := Ne.symm h2A
-  have := Ne.symm h2B; have := Ne.symm h3A; have := Ne.symm h3B; have := Ne.symm hAB
-  obtain ⟨ph, bs⟩ := s
-  simp only at ha hb hp1 hp3 ⊢
-  cases e₁ <;> cases e₂ <;> cases a₁ <;> cases a₂ <;>
-  first
-  | exact absurd hsel (by decide)
-  | cases a₃ <;>
-    cases hc : bs h <;> cases hr : bs r <;> cases hy : bs y <;> cases h2 : bs t₂ <;>
-    simp only [hc, hr, hy, Bool.true_and, Bool.false_and, Bool.and_true, Bool.and_false,
-      beq_self_eq_true, Bool.true_beq, Bool.false_beq, Bool.not_true, Bool.not_false] at hp1 hp3 <;>
-    · simp [affineClassTailM, pairTailM, fusedTailM, plainTailM, tailFused, bitTestM, bitTest, zeroFlag,
-        chainAnd, chainErase, affineClassEffect, pairEffect, run, writeBit, Function.update_apply,
-        DHGadget.measure_erase, *]
-      all_goals
-        funext q
-        by_cases e1 : q = t₁
-        · subst e1; simp [Function.update_apply, *]
-        by_cases e2 : q = t₂
-        · subst e2; simp [Function.update_apply, *]
-        by_cases e3 : q = t₃
-        · subst e3; simp [Function.update_apply, *]
-        by_cases e4 : q = y
-        · subst e4; simp [Function.update_apply, *]
-        by_cases e5 : q = wa
-        · subst e5; simp [Function.update_apply, *]
-        by_cases e6 : q = wb
-        · subst e6; simp [Function.update_apply, *]
-        by_cases e7 : q = r
-        · subst e7; simp [Function.update_apply, *]
-        simp [Function.update_apply, *]
+  cases a₃ <;> rcases Bool.eq_false_or_eq_true (s.basis h) with hc | hc <;>
+    rcases Bool.eq_false_or_eq_true (s.basis r) with hr | hr <;>
+    first
+    | exact rs1_affineClassTailM_run_k15_m0 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k15_m1 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k15_m2 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k15_m3 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k15_m4 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k15_m5 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k15_m6 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
+    | exact rs1_affineClassTailM_run_k15_m7 r y t₁ t₂ t₃ wa wb e₁ a₁ e₂ a₂ _ h hnd s m ha hb hp1 hp3 hsel rfl hc hr
 
 theorem affineClassTailM_run (r y t₁ t₂ t₃ wa wb : Wire)
     (e₁ a₁ e₂ a₂ a₃ : Bool) (h : Wire)
@@ -73563,7 +87261,7 @@ theorem affineInputWithM_run (y t₁ t₂ t₃ wb : Wire) (e₁ a₁ e₂ a₂ a
     have hrw : q.work ∉ qs.flatMap ZeroBit.wires := by itauto
     have ha' : a/2 < 2^qs.length := by simp only [List.length_cons,Nat.pow_succ] at ha; omega
     have hb' : b/2 < 2^qs.length := by simp only [List.length_cons,Nat.pow_succ] at hb; omega
-    let flip : Program := if a%2=1 then [.X q.input] else []
+    let flip : Program := if a%2=1 then [ECDSAAdd.Instr.X q.input] else []
     let pre : State := ⟨s.phase,writeBit s.basis q.input (s.basis q.input ^^ decide (a%2=1))⟩
     have hf : run flip m s = pre := by
       by_cases he : a%2=1
@@ -73829,8 +87527,8 @@ theorem affineInputWithM_counts (y t₁ t₂ t₃ wb : Wire) (a₁ e₂ a₂ a�
       simp [affineInputWithM, affineClassSameTailM, pairTailM, fusedTailM, plainTailM, tailFused, tailCost,
         bitTestM, bitTest, zeroFlag, toffoliCount, measurementCount]
   | cons q qs ih =>
-    have hf : toffoliCount (if a % 2 = 1 then [.X q.input] else []) = 0 ∧
-        measurementCount (if a % 2 = 1 then [.X q.input] else []) = 0 := by
+    have hf : toffoliCount (if a % 2 = 1 then [ECDSAAdd.Instr.X q.input] else []) = 0 ∧
+        measurementCount (if a % 2 = 1 then [ECDSAAdd.Instr.X q.input] else []) = 0 := by
       split_ifs <;> exact ⟨rfl,rfl⟩
     have hi := ih q.work (a/2) (b/2)
     have ht : ∀ h, toffoliCount (affineClassTailM q.input y t₁ t₂ t₃ q.work wb true a₁ e₂ a₂ a₃ h) + 2 =
@@ -75345,7 +89043,7 @@ attribute [local irreducible] field5 field5S hostField5 hostField5S
 
 theorem host_physical (P : Program) (hp : GatePhysical P) :
     GatePhysical ([.X (base 511)] ++ (renameProgram HostOB5.hostSwap P ++ [.X (base 511)])) := by
-  have x : GatePhysical [.X (base 511)] := by
+  have x : GatePhysical [ECDSAAdd.Instr.X (base 511)] := by
     intro i hi
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
     subst hi
@@ -76006,7 +89704,7 @@ theorem erase_and (a b t : Wire) (ha : a≠t) (hb : b≠t)
 
 /-- A classically selected CX changes only its target and never changes phase. -/
 theorem conditional_cx (a t : Wire) (b : Bool) (s : State) (m : List Bool) :
-    let u := run (if b then [.CX a t] else []) m s
+    let u := run (if b then [ECDSAAdd.Instr.CX a t] else []) m s
     u.phase=s.phase ∧ u.basis t=(s.basis t ^^ (if b then s.basis a else false)) ∧
       ∀q,q≠t → u.basis q=s.basis q := by
   cases b <;> simp [run,writeBit,Function.update_apply]
@@ -76030,7 +89728,7 @@ theorem move_low (a t : Wire) (hat : a≠t) (s : State) (m : List Bool)
 /-- Save the low bit and rotate a word so that it contains its integer half. -/
 theorem move_and_rotate (a t : Wire) (rest : List Wire) (hn : (a::rest).Nodup)
     (ht : t∉a::rest) (s : State) (m : List Bool) (hz : s.basis t=false) :
-    let r := run ([.CX a t,.CX t a] ++ rotateRight (a::rest)) m s
+    let r := run ([ECDSAAdd.Instr.CX a t,.CX t a] ++ rotateRight (a::rest)) m s
     r.phase=s.phase ∧ regValue (a::rest) r.basis=regValue (a::rest) s.basis/2 ∧
     r.basis t=s.basis a ∧
     ∀q,q∉a::rest → q≠t → r.basis q=s.basis q := by
@@ -76038,7 +89736,7 @@ theorem move_and_rotate (a t : Wire) (rest : List Wire) (hn : (a::rest).Nodup)
   have hta : t≠a := Ne.symm hat
   have ha : a∉rest := (List.nodup_cons.mp hn).1
   have htr : t∉rest := fun h => ht (by simp [h])
-  let u := run [.CX a t,.CX t a] m s
+  let u := run [ECDSAAdd.Instr.CX a t,.CX t a] m s
   have mv := move_low a t hat s m hz
   have rv : regValue rest u.basis=regValue rest s.basis := by
     apply regValue_congr
@@ -76054,7 +89752,7 @@ theorem move_and_rotate (a t : Wire) (rest : List Wire) (hn : (a::rest).Nodup)
   have rt := rotateRight_spec (a::rest) hn (2*regValue rest s.basis) (by omega) u m vu
   have rf := rotate_frame (a::rest) u m
   dsimp only
-  rw [run_append,run_take,show measurementCount [.CX a t,.CX t a]=0 from rfl,List.drop_zero]
+  rw [run_append,run_take,show measurementCount [ECDSAAdd.Instr.CX a t,.CX t a]=0 from rfl,List.drop_zero]
   change (run (rotateRight (a::rest)) m u).phase=s.phase ∧ _
   refine ⟨rt.1.trans mv.1,?_,?_,?_⟩
   · rw [vhalf]
@@ -76072,8 +89770,8 @@ theorem move_and_rotate (a t : Wire) (rest : List Wire) (hn : (a::rest).Nodup)
 theorem prepare_sign (g d t b : Wire) (k : Nat) (s : State) (m : List Bool)
     (hgb : g≠b) (hdb : d≠b) (htb : t≠b) (hgt : g≠t) (hdt : d≠t)
     (hb : s.basis b=false) :
-    let P := [.CX t b] ++ parityControl g b k ++ [.CX d b,.CX b t] ++
-      parityControl g t k ++ [.CX d t]
+    let P := [ECDSAAdd.Instr.CX t b] ++ parityControl g b k ++ [ECDSAAdd.Instr.CX d b,.CX b t] ++
+      parityControl g t k ++ [ECDSAAdd.Instr.CX d t]
     let r := run P m s
     r.phase=s.phase ∧
     r.basis b=(s.basis t ^^ (if k%2=1 then s.basis g else false) ^^ s.basis d) ∧
@@ -76819,7 +90517,7 @@ theorem clearWrap_correct (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Nat
   let B := highCorrection K c k
   let C := eraseLtChain (lowOut K) (lowSrc K) (K.carry.take 254) K.cin K.flag
   let D := unthreshold K g c k
-  let E : Program := [.measureX (alpha K) [] [.CZ g (sign K)]]
+  let E : Program := [ECDSAAdd.Instr.measureX (alpha K) [] [.CZ g (sign K)]]
   obtain ⟨m1,m2,m3,m4,m5,he⟩ := run_five A B C D E m s
   let s1 := run A m1 s
   let s2 := run B m2 s1
@@ -77310,16 +91008,16 @@ theorem entry_physical (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Nat)
   have er := eraseLtChain_physical (lowOut K) (lowSrc K) (K.carry.take 254) K.cin K.flag
     (List.nodup_cons.mp (erase_nodup K g hn hw)).2
   have rot := (rotate_physical K.out (FastConst.out_nodup hn)).1
-  have moveP : GatePhysical [.CX (lowBit K) K.high,.CX K.high (lowBit K)] := by
+  have moveP : GatePhysical [ECDSAAdd.Instr.CX (lowBit K) K.high,.CX K.high (lowBit K)] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,bitHigh,Ne.symm bitHigh]
-  have signP : GatePhysical [.CX K.high (sign K)] := by
+  have signP : GatePhysical [ECDSAAdd.Instr.CX K.high (sign K)] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,hhS]
   have parity (q : Wire) (hq : g≠q) : GatePhysical (parityControl g q k) := by
     unfold parityControl
     split <;> simp [GatePhysical,PhysicalInstr,ProperGate,hq]
-  have pairP : GatePhysical [.CX K.flag (sign K),.CX (sign K) K.high] := by
+  have pairP : GatePhysical [ECDSAAdd.Instr.CX K.flag (sign K),.CX (sign K) K.high] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,hfS,Ne.symm hhS]
-  have flagsP : GatePhysical [.CX K.flag K.high,.CCX g (sign K) (alpha K),
+  have flagsP : GatePhysical [ECDSAAdd.Instr.CX K.flag K.high,.CCX g (sign K) (alpha K),
       .CCX K.flag (sign K) K.high] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,hfH,hgA,Ne.symm haS,Ne.symm hhS]
   have tableP : GatePhysical (table K g c k) := by
@@ -77334,11 +91032,11 @@ theorem entry_physical (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Nat)
   have unthresholdP : GatePhysical (unthreshold K g c k) := by
     simp only [unthreshold,gatePhysical_append]
     exact ⟨masked _ (by simp [controls]) _,masked _ (by simp [controls]) _⟩
-  have highP : GatePhysical (if 2^255≤k/2+(c+1)/2 then [.CX (alpha K) K.flag] else []) := by
+  have highP : GatePhysical (if 2^255≤k/2+(c+1)/2 then [ECDSAAdd.Instr.CX (alpha K) K.flag] else []) := by
     split <;> simp [GatePhysical,PhysicalInstr,ProperGate,Ne.symm hfA]
-  have betaP : GatePhysical [.measureX K.high [] [.CZ K.flag (sign K)]] := by
+  have betaP : GatePhysical [ECDSAAdd.Instr.measureX K.high [] [.CZ K.flag (sign K)]] := by
     simp [GatePhysical,PhysicalInstr]
-  have alphaP : GatePhysical [.measureX (alpha K) [] [.CZ g (sign K)]] := by
+  have alphaP : GatePhysical [ECDSAAdd.Instr.measureX (alpha K) [] [.CZ g (sign K)]] := by
     simp [GatePhysical,PhysicalInstr]
   have ps := parity _ hgS
   have ph := parity _ hgH
@@ -77421,12 +91119,12 @@ theorem entry_support (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Nat)
     · exact hf
   have small (q : Wire) (h : q=g ∨ q=K.flag ∨ q=K.high ∨ q=lowBit K ∨ q=sign K ∨ q=alpha K) : q∈site := by
     rcases h with rfl|rfl|rfl|rfl|rfl|rfl <;> assumption
-  have moveS : wires [.CX (lowBit K) K.high,.CX K.high (lowBit K)]⊆site := by
+  have moveS : wires [ECDSAAdd.Instr.CX (lowBit K) K.high,.CX K.high (lowBit K)]⊆site := by
     intro q hq; apply small q
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
       Finset.notMem_empty,or_false] at hq
     itauto
-  have signS : wires [.CX K.high (sign K)]⊆site := by
+  have signS : wires [ECDSAAdd.Instr.CX K.high (sign K)]⊆site := by
     intro q hq; apply small q
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
       Finset.notMem_empty,or_false] at hq
@@ -77439,12 +91137,12 @@ theorem entry_support (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Nat)
         Finset.notMem_empty,or_false] at hw'
       rcases hw' with rfl|rfl <;> assumption
     · simp [wires]
-  have pairS : wires [.CX K.flag (sign K),.CX (sign K) K.high]⊆site := by
+  have pairS : wires [ECDSAAdd.Instr.CX K.flag (sign K),.CX (sign K) K.high]⊆site := by
     intro q hq; apply small q
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
       Finset.notMem_empty,or_false] at hq
     itauto
-  have flagsS : wires [.CX K.flag K.high,.CCX g (sign K) (alpha K),
+  have flagsS : wires [ECDSAAdd.Instr.CX K.flag K.high,.CCX g (sign K) (alpha K),
       .CCX K.flag (sign K) K.high]⊆site := by
     intro q hq; apply small q
     simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
@@ -77462,19 +91160,19 @@ theorem entry_support (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Nat)
   have unthresholdS : wires (unthreshold K g c k)⊆site := by
     simp only [unthreshold,wires_append,Finset.union_subset_iff]
     exact ⟨maskA _,maskG _⟩
-  have highS : wires (if 2^255≤k/2+(c+1)/2 then [.CX (alpha K) K.flag] else [])⊆site := by
+  have highS : wires (if 2^255≤k/2+(c+1)/2 then [ECDSAAdd.Instr.CX (alpha K) K.flag] else [])⊆site := by
     split
     · intro q hq; apply small q
       simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
         Finset.notMem_empty,or_false] at hq
       itauto
     · simp [wires]
-  have betaS : wires [.measureX K.high [] [.CZ K.flag (sign K)]]⊆site := by
+  have betaS : wires [ECDSAAdd.Instr.measureX K.high [] [.CZ K.flag (sign K)]]⊆site := by
     intro q hq; apply small q
     simp only [wires,Instr.wires,correctionWires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
       Finset.notMem_empty,or_false] at hq
     itauto
-  have alphaS : wires [.measureX (alpha K) [] [.CZ g (sign K)]]⊆site := by
+  have alphaS : wires [ECDSAAdd.Instr.measureX (alpha K) [] [.CZ g (sign K)]]⊆site := by
     intro q hq; apply small q
     simp only [wires,Instr.wires,correctionWires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
       Finset.notMem_empty,or_false] at hq
@@ -77516,7 +91214,7 @@ theorem entry_gateSlots_le (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Na
     split <;> simp [gateSlots_cons,gateSlots_nil,instructionSlots]
   have ps := parity (sign K)
   have ph := parity K.high
-  have hi : gateSlots (if 2^255≤k/2+(c+1)/2 then [.CX (alpha K) K.flag] else [])≤1 := by
+  have hi : gateSlots (if 2^255≤k/2+(c+1)/2 then [ECDSAAdd.Instr.CX (alpha K) K.flag] else [])≤1 := by
     split <;> simp [gateSlots_cons,gateSlots_nil,instructionSlots]
   have low := low_widths K hw
   simp only [low.1,hw.src] at full a b d e f t
@@ -77808,7 +91506,7 @@ theorem kernel5_counts :
   have cv := OwnQ5Endpoint.endpoint_counts
   have renNew := renameProgram_counts HostOB5.hostSwap field5
   have renOld := renameProgram_counts HostOB5.hostSwap (SegmentOB5.program true)
-  have x : toffoliCount [.X (base 511)]=0 ∧ measurementCount [.X (base 511)]=0 := ⟨rfl,rfl⟩
+  have x : toffoliCount [ECDSAAdd.Instr.X (base 511)]=0 ∧ measurementCount [ECDSAAdd.Instr.X (base 511)]=0 := ⟨rfl,rfl⟩
   simp only [KernelOB5.program,KernelOB5.segH,toffoliCount_append,measurementCount_append,
     renOld.1,renOld.2,x.1,x.2] at old
   simp only [SegmentOB5.program,if_true,toffoliCount_append,measurementCount_append,
@@ -79936,16 +93634,16 @@ theorem exit_physical (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Nat)
     omega
   have eraseP := eraseLtChain_physical K.src K.out (K.carry.take 255) K.cin K.flag ndErase
   have rot := (rotate_physical K.out (FastConst.out_nodup hn)).1
-  have moveP : GatePhysical [.CX (lowBit K) K.high,.CX K.high (lowBit K)] := by
+  have moveP : GatePhysical [ECDSAAdd.Instr.CX (lowBit K) K.high,.CX K.high (lowBit K)] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,bitHigh,Ne.symm bitHigh]
-  have signP : GatePhysical [.CX K.high (sign K)] := by
+  have signP : GatePhysical [ECDSAAdd.Instr.CX K.high (sign K)] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,hhS]
   have parity (q : Wire) (hq : g≠q) : GatePhysical (parityControl g q k) := by
     unfold parityControl
     split <;> simp [GatePhysical,PhysicalInstr,ProperGate,hq]
-  have pairP : GatePhysical [.CX K.flag (sign K),.CX (sign K) K.high] := by
+  have pairP : GatePhysical [ECDSAAdd.Instr.CX K.flag (sign K),.CX (sign K) K.high] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,hfS,Ne.symm hhS]
-  have flagsP : GatePhysical [.CX K.flag K.high,.CCX g (sign K) (alpha K),
+  have flagsP : GatePhysical [ECDSAAdd.Instr.CX K.flag K.high,.CCX g (sign K) (alpha K),
       .CCX K.flag (sign K) K.high] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,hfH,hgA,Ne.symm haS,Ne.symm hhS]
   have tableP : GatePhysical (table K g c k) := by
@@ -79960,27 +93658,27 @@ theorem exit_physical (K : MeasuredCanonicalModLayout) (g : Wire) (c k : Nat)
   have unthresholdP : GatePhysical (unthreshold K g c k) := by
     simp only [unthreshold,gatePhysical_append]
     exact ⟨masked _ (by simp [controls,sign,alpha,EntryFuse.sign,EntryFuse.alpha]) _,masked _ (by simp [controls,sign,alpha,EntryFuse.sign,EntryFuse.alpha]) _⟩
-  have highP : GatePhysical (if 2^255≤k/2+(c+1)/2 then [.CX (alpha K) K.flag] else []) := by
+  have highP : GatePhysical (if 2^255≤k/2+(c+1)/2 then [ECDSAAdd.Instr.CX (alpha K) K.flag] else []) := by
     split <;> simp [GatePhysical,PhysicalInstr,ProperGate,Ne.symm hfA]
-  have betaP : GatePhysical [.measureX K.high [] [.CZ K.flag (sign K)]] := by
+  have betaP : GatePhysical [ECDSAAdd.Instr.measureX K.high [] [.CZ K.flag (sign K)]] := by
     simp [GatePhysical,PhysicalInstr]
-  have alphaP : GatePhysical [.measureX (alpha K) [] [.CZ g (sign K)]] := by
+  have alphaP : GatePhysical [ECDSAAdd.Instr.measureX (alpha K) [] [.CZ g (sign K)]] := by
     simp [GatePhysical,PhysicalInstr]
   have ps := parity _ hgS
   have ph := parity _ hgH
   have signPAll : GatePhysical (signStage K g k) := by
     simpa only [signStage,gatePhysical_append] using
       And.intro (And.intro (And.intro (And.intro (And.intro (And.intro moveP rot) signP) ps) pairP) ph)
-        (show GatePhysical [.CX K.flag K.high] by simp [GatePhysical,PhysicalInstr,ProperGate,hfH])
+        (show GatePhysical [ECDSAAdd.Instr.CX K.flag K.high] by simp [GatePhysical,PhysicalInstr,ProperGate,hfH])
   have reverseP : GatePhysical (signStage K g k).reverse := by
     intro i hi
     exact signPAll i (List.mem_reverse.mp hi)
-  have alphaCC : GatePhysical [.CCX g (sign K) (alpha K)] := by
+  have alphaCC : GatePhysical [ECDSAAdd.Instr.CCX g (sign K) (alpha K)] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,hgA,Ne.symm haS]
-  have betaCC : GatePhysical [.CCX K.flag (sign K) K.high] := by
+  have betaCC : GatePhysical [ECDSAAdd.Instr.CCX K.flag (sign K) K.high] := by
     simp [GatePhysical,PhysicalInstr,ProperGate,hfH,Ne.symm hhS]
-  have fH : GatePhysical [.CX K.flag K.high] := by simp [GatePhysical,PhysicalInstr,ProperGate,hfH]
-  have measP : GatePhysical [.measureX K.high [] [.CZ K.flag (sign K)], .measureX (alpha K) [] [.CZ g (sign K)]] := by
+  have fH : GatePhysical [ECDSAAdd.Instr.CX K.flag K.high] := by simp [GatePhysical,PhysicalInstr,ProperGate,hfH]
+  have measP : GatePhysical [ECDSAAdd.Instr.measureX K.high [] [.CZ K.flag (sign K)], .measureX (alpha K) [] [.CZ g (sign K)]] := by
     intro i hi
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hi
     rcases hi with rfl|rfl
@@ -80389,10 +94087,10 @@ theorem cleanup_makeFlags_inverse (K : MeasuredCanonicalModLayout) (g : Wire)
   have alphaKnown : u.basis (alpha K)=(u.basis g && u.basis (sign K)) := by
     rw [keep _ haH,keep _ hgH,keep _ hsH,mf.2.1,tg,ts]
   have erA := erase_and g (sign K) (alpha K) hgA hsA u l alphaKnown
-  change run [.measureX (alpha K) [] [.CZ g (sign K)]] l
-    (run [.measureX K.high [] [.CZ K.flag (sign K)]] n t)=s
+  change run [ECDSAAdd.Instr.measureX (alpha K) [] [.CZ g (sign K)]] l
+    (run [ECDSAAdd.Instr.measureX K.high [] [.CZ K.flag (sign K)]] n t)=s
   rw [erB]
-  change run [.measureX (alpha K) [] [.CZ g (sign K)]] l u=s
+  change run [ECDSAAdd.Instr.measureX (alpha K) [] [.CZ g (sign K)]] l u=s
   rw [erA]
   apply State.extensionality
   · exact mf.1
@@ -80435,7 +94133,7 @@ theorem undoMiddle_middle_inverse (K : MeasuredCanonicalModLayout) (g : Wire) (c
     simpa only [mappedRead_wires] using src_away K g hn hw
   let M := makeFlags K g
   let T := tableAdd K g c k
-  let E : Program := [.measureX K.high [] [.CZ K.flag (sign K)]]
+  let E : Program := [ECDSAAdd.Instr.measureX K.high [] [.CZ K.flag (sign K)]]
   obtain ⟨m1,m2,m3,forward⟩ := run_three M T E m s
   have mf := makeFlags_correct K g hgA (Ne.symm haS) hfA (Ne.symm hhA) s m1 ha0 hh0
   let s1 := run M m1 s
@@ -80456,10 +94154,10 @@ theorem undoMiddle_middle_inverse (K : MeasuredCanonicalModLayout) (g : Wire) (c
     (ad.2.2 _ (co _ (by simp [controls]))).trans (frame _ (Ne.symm haS) (Ne.symm hhS))
   have beta : s2.basis K.high=(s2.basis K.flag && s2.basis (sign K)) := by
     rw [ad.2.2 _ (co _ (by simp [controls])),mf.2.2.1,f2,sg2]
-  let A : Program := [.CCX K.flag (sign K) K.high]
+  let A : Program := [ECDSAAdd.Instr.CCX K.flag (sign K) K.high]
   let B := tableSub K g c k
-  let C : Program := [.measureX K.high [] [.CZ K.flag (sign K)]]
-  let D : Program := [.measureX (alpha K) [] [.CZ g (sign K)]]
+  let C : Program := [ECDSAAdd.Instr.measureX K.high [] [.CZ K.flag (sign K)]]
+  let D : Program := [ECDSAAdd.Instr.measureX (alpha K) [] [.CZ g (sign K)]]
   obtain ⟨n1,n2,n3,n4,inverse⟩ := run_four A B C D n s3
   have restore : run A n1 s3=s2 := recompute_measured_and K.flag (sign K) K.high hfH
     (Ne.symm hhS) s2 m3 n1 beta
@@ -80510,7 +94208,7 @@ theorem recover_clearWrap_inverse (K : MeasuredCanonicalModLayout) (g : Wire) (c
   have uf : u.basis K.flag=false := by simp [u,writeBit]
   have tg : t.basis g=s.basis g := old.2.2.2 g hgFlag hgAlpha
   have ts : t.basis (sign K)=s.basis (sign K) := old.2.2.2 _ hsFlag hsAlpha
-  have initial (record : List Bool) : run [.CCX g (sign K) (alpha K)] record t=u := by
+  have initial (record : List Bool) : run [ECDSAAdd.Instr.CCX g (sign K) (alpha K)] record t=u := by
     simp only [run]
     apply State.extensionality
     · exact old.1
@@ -80614,7 +94312,7 @@ theorem recover_clearWrap_inverse (K : MeasuredCanonicalModLayout) (g : Wire) (c
   have zA : measurementCount A=0 := by simp [A,threshold,measurementCount_append,(maskedConstant_counts _ _ _).2]
   have zC : measurementCount C=0 := by unfold C highCorrection; split_ifs <;> rfl
   have zD : measurementCount D=0 := by simp [D,unthreshold,measurementCount_append,(maskedConstant_counts _ _ _).2]
-  change run ([.CCX g (sign K) (alpha K)]++A++B++C++D) n t=s
+  change run ([ECDSAAdd.Instr.CCX g (sign K) (alpha K)]++A++B++C++D) n t=s
   simp only [List.append_assoc,run_append,run_take,measurementCount,List.take_zero,List.drop_zero]
   rw [initial]
   rw [zA,List.drop_zero,zC,List.drop_zero]
@@ -81756,7 +95454,7 @@ theorem hostMul_counts_diff :
   have c := fieldMul_counts_diff
   have r := renameProgram_counts HostOB5.hostSwap fieldMul
   have o := renameProgram_counts HostOB5.hostSwap (SegmentOB5.program false)
-  have x : toffoliCount [.X (base 511)]=0 ∧ measurementCount [.X (base 511)]=0 := by
+  have x : toffoliCount [ECDSAAdd.Instr.X (base 511)]=0 ∧ measurementCount [ECDSAAdd.Instr.X (base 511)]=0 := by
     simp only [toffoliCount,measurementCount]
     trivial
   simp only [hostMul,KernelOB5.segH,toffoliCount_append,measurementCount_append,
