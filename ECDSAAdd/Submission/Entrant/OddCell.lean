@@ -11377,3 +11377,305 @@ theorem SlotBound.bound {P Q : Program} {a b : Nat} (x : SlotBound P Q a b)
     (n : Nat) (h : b≤a+n) : gateSlots P≤gateSlots Q+n := by unfold SlotBound at x;omega
 end ECDSAAdd.Entrant.RouteA
 end -- ticket 8 pasted module
+
+-- ===== P1MStart (build-odd: multiplication-start junction, standard words in, odd words out) =====
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.P1Life
+open Arithmetic BalancedCircuit BalancedField
+
+
+/-- Inverse of `emitStandard`: a standard output register enters the odd inverse half's
+comparison frame (the literal is added before the sign flag is flipped back). -/
+def acceptStandard (retired : Wire) (L : Layout) : Program :=
+  [.CX L.rmsb L.lower] ++ signComplement L.lower L.r ++
+    Q6LifetimeResearch.move retired L.rmsb
+      (literalConstAdd L.low (L.carry.take 254) L.lower L.one BalancedCleanup.negativeLiteral) ++
+    [.X L.lower] ++ notRegister L.low
+
+
+/-- The odd inverse half after its sign view and normalisation (`inverse` minus its first two passes). -/
+def junctionOddRest (retired : Wire) (L : Layout) : Program :=
+  prepareCompare L++exposure L++compare retired false L++(exposure L).reverse++
+    (prepareCompare L).reverse++BiasedInverse.unbiasView L++unfoldStep retired L++
+    rotateLeft (rawTarget L)++[.CX L.parity L.r0]++rawSub retired L
+
+
+/-- Multiplication start: standard words in, odd words out. -/
+def mstart (retired : Wire) (w : Nat → Wire) (sign : Wire) : Program :=
+  let L := Q6EndpointCell.ports w sign
+  [.X sign] ++ recode retired true L L.y ++ acceptStandard retired L ++
+    junctionOddRest retired L ++ [.X sign]
+
+
+theorem junction_accept_standard_value (R : Int) (hr : Centered R) :
+    2^255-1-(encodeWord 255 (magnitude R)+BalancedCleanup.negativeLiteral+(negative R).toNat)%2^255=
+      encodeWord 255 (magnitude (junctionToOdd R)-h) := by
+  have e1 : (encodeWord 255 (magnitude R)+BalancedCleanup.negativeLiteral+(negative R).toNat)%2^255=
+      encodeWord 255 (magnitude R+(-h)+(((negative R).toNat : Nat) : Int)) := by
+    rw [←DirectPass.encoded_add_nat,←DirectPass.encoded_add_encoded,Nat.mod_add_mod]
+    rfl
+  rw [e1,junction_complement_encoded]
+  congr 1
+  have c := constants
+  have sg := junction_to_odd_sign R hr
+  unfold Centered at hr
+  unfold magnitude
+  rw [sg]
+  by_cases rn : R<0 <;> simp [negative,rn,junctionToOdd] <;> omega
+
+
+theorem accept_standard_boundary (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈(L.carry.take 254).drop 1)
+    (origin : BasisState) (R Y : Int) (hr : Centered R) :
+    Triple (DirectPass.AfterHalf L retired origin R Y) (acceptStandard retired L)
+      (DirectPass.AfterComparison DirectPass.oddEncoding L retired origin (junctionToOdd R) Y) := by
+  have range : -((2^255 : Nat) : Int)≤R ∧ R<((2^255 : Nat) : Int) := by
+    have hp := constants
+    unfold Centered at hr
+    omega
+  have a := DirectPass.prepare_sign_boundary_wide retired L hw hn origin R Y range
+  have b := junction_literal_boundary retired L hw hn (List.mem_of_mem_drop member) origin
+    (encodeWord 255 (magnitude R)) (encodeWord 256 Y) BalancedCleanup.negativeLiteral false (negative R)
+  have c := junction_flip_lower retired L hn origin
+    ((encodeWord 255 (magnitude R)+BalancedCleanup.negativeLiteral+(negative R).toNat)%2^255)
+    (encodeWord 256 Y) false (negative R)
+  have d := junction_not_low retired L hw hn origin
+    ((encodeWord 255 (magnitude R)+BalancedCleanup.negativeLiteral+(negative R).toNat)%2^255)
+    (encodeWord 256 Y) false (!negative R)
+  rw [junction_accept_standard_value R hr,←junction_to_odd_sign R hr] at d
+  rw [←junction_to_odd_sign R hr] at c
+  simpa only [acceptStandard,BalancedCleanup.prepareSign,List.append_assoc] using
+    Triple.seq a (Triple.seq b (Triple.seq c d))
+
+
+theorem junction_odd_rest_boundary (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈(L.carry.take 254).drop 1)
+    (origin : BasisState) (F Y : Int) (hf : OddDomain F) (hy : OddDomain Y) :
+    Triple (DirectPass.AfterComparison DirectPass.oddEncoding L retired origin F Y)
+      (junctionOddRest retired L)
+      (DirectPass.AfterHalf L retired origin (oddInverse (origin L.sign) F Y) Y) := by
+  let B := origin L.sign
+  let R := oddInverse B F Y
+  let T := oddSum B R Y
+  have hr : OddDomain R := oddRep_bounds _
+  have ht := oddSum_bounds B R Y hr hy
+  have result : oddFold T=F := oddForward_inverse B F Y hf hy
+  have interval : originalParity T=decide (oddComparisonLeft F<oddComparisonY B F Y) := by
+    have h := oddComparison_parity B R Y hr hy
+    rw [result] at h
+    exact h
+  have mt : retired∈L.carry.take 254 := List.mem_of_mem_drop member
+  have c := comparison_to_fold retired L hw hn member origin T F Y hf hy interval
+  have d := fold_to_raw retired L hw hn mt origin T Y ht
+  rw [result] at d
+  have e := rawSub_boundary retired L hw hn member origin B R Y hr hy rfl
+  have shape : junctionOddRest retired L=
+      (prepareCompare L++exposure L++compare retired false L++(exposure L).reverse++
+        (prepareCompare L).reverse++BiasedInverse.unbiasView L)++
+      ((unfoldStep retired L++rotateLeft (rawTarget L)++[.CX L.parity L.r0])++rawSub retired L) := by
+    simp only [junctionOddRest,List.append_assoc]
+  rw [shape]
+  exact Triple.seq c (Triple.seq d e)
+
+
+theorem junction_gos_boundary (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈(L.carry.take 254).drop 1)
+    (origin : BasisState) (R Y : Int) (hr : Centered R) (hy : OddDomain Y) :
+    Triple (DirectPass.AfterHalf L retired origin R Y) (acceptStandard retired L++junctionOddRest retired L)
+      (DirectPass.AfterHalf L retired origin (oddInverse (origin L.sign) (junctionToOdd R) Y) Y) :=
+  Triple.seq (accept_standard_boundary retired L hw hn member origin R Y hr)
+    (junction_odd_rest_boundary retired L hw hn member origin _ Y (junction_to_odd_bounds R hr) hy)
+
+
+theorem junction_gos_frame (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈(L.carry.take 254).drop 1)
+    (X Y : Fp) (s : State) (m : List Bool)
+    (rv : regValue L.r s.basis=centerWord X) (yv : regValue L.y s.basis=oddWord Y)
+    (flags : DirectPass.LiveFlags L false false false s.basis)
+    (clean : DirectPass.CleanExcept (L.carry.take 254) retired s.basis) :
+    let p := acceptStandard retired L++junctionOddRest retired L
+    (run p m s).phase=s.phase ∧ DirectPass.WordFrame L.r s.basis
+      (oddWord (2*X+(if !s.basis L.sign then -Y else Y))) (run p m s).basis := by
+  have b := junction_gos_boundary retired L hw hn member s.basis
+    (centerFp X) (oddRep Y) (centerFp_bounds X) (oddRep_bounds Y)
+  have h := DirectPass.kernel_frame_of_boundary retired L (centerFp X) (oddRep Y) _ _
+    s m rv yv flags clean b
+  have field := kernel_field false (!s.basis L.sign) X Y
+  simp only [kernelResult,Bool.false_eq_true,if_false,Bool.not_not] at field
+  rw [←junction_to_odd_rep (centerFp X) (centerFp_bounds X),centerFp_cast,field] at h
+  exact h
+
+
+theorem mstart_frame (retired : Wire) (w : Nat→Wire) (sign : Wire)
+    (hn : (Q6EndpointCell.ports w sign).wires.Nodup)
+    (member : retired∈((Q6EndpointCell.ports w sign).carry.take 254).drop 1)
+    (origin : BasisState) (clean : Q6EndpointCell.Clean w origin) (X Y : Fp) :
+    Triple (PairFrame (Q6EndpointCell.ports w sign).r (Q6EndpointCell.ports w sign).y
+      origin (centerWord X) (centerWord Y)) (mstart retired w sign)
+      (PairFrame (Q6EndpointCell.ports w sign).r (Q6EndpointCell.ports w sign).y origin
+        (oddWord (2*X+(if origin sign then -Y else Y))) (oddWord Y)) := by
+  let L := Q6EndpointCell.ports w sign
+  have hw := Q6EndpointCell.ports_widths w sign
+  apply DirectPass.half_frame_from_pair_kernel retired w sign hn origin clean (centerWord X) (centerWord Y)
+    (fun B => oddWord (2*X+(if B then -Y else Y))) (oddWord Y) (mstart retired w sign)
+    (recode retired true L L.y++(acceptStandard retired L++junctionOddRest retired L))
+    (by simp only [mstart,L,List.append_assoc])
+  intro s m rv yv flags carry
+  have h := junction_recode_before retired true L hw hn (List.mem_of_mem_drop member)
+    (acceptStandard retired L++junctionOddRest retired L) (centerWord X) (centerWord Y)
+    (fun B => oddWord (2*X+(if !B then -Y else Y))) s m rv yv flags carry (by
+      intro u tape ur uy uf uc
+      have uy' : regValue L.y u.basis=oddWord Y := by
+        simpa only [if_true,←recode_odd_word,oddWord] using uy
+      exact junction_gos_frame retired L hw hn member X Y u tape ur uy' uf uc)
+  simpa only [if_true,←recode_odd_word,oddWord] using h
+
+
+theorem junction_accept_standard_counts (retired : Wire) (L : Layout) (hw : L.Widths) :
+    toffoliCount (acceptStandard retired L)=254 ∧ measurementCount (acceptStandard retired L)=254 := by
+  have lowlen : L.low.length=255 := by simp [BalancedCleanup.Layout.low,hw.1]
+  have a := literalConstAdd_counts L.low (L.carry.take 254) L.lower L.one BalancedCleanup.negativeLiteral
+    (by simp [List.length_take,hw.2.2,lowlen])
+  rw [lowlen] at a
+  simp only [acceptStandard,toffoliCount_append,measurementCount_append,Q6LifetimeResearch.move,
+    (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,a.1,a.2,
+    (notRegister_counts L.low).1,(notRegister_counts L.low).2,
+    (signComplement_counts L.lower L.r).1,(signComplement_counts L.lower L.r).2,
+    toffoliCount,measurementCount]
+  exact ⟨True.intro,True.intro⟩
+
+
+theorem junction_odd_rest_counts (retired : Wire) (L : Layout) (hw : L.Widths) :
+    toffoliCount (junctionOddRest retired L)=766 ∧ measurementCount (junctionOddRest retired L)=766 := by
+  have b := p1_compare_counts false retired L hw
+  have c := p1_fold_counts true retired L hw
+  have d := p1_raw_sub_counts retired L hw
+  have pc := p1_compare_view_counts L
+  have ub := p1_unbias_view_counts L
+  have rot := rotate_counts (rawTarget L)
+  simp only [Bool.false_eq_true,if_false,if_true] at b c
+  simp only [junctionOddRest,toffoliCount_append,measurementCount_append,toffoliCount_reverse,
+    measurementCount_reverse,b.1,b.2,c.1,c.2,d.1,d.2,pc.1,pc.2,ub.1,ub.2,rot.2.2.1,rot.2.2.2,
+    exposure,toffoliCount,measurementCount]
+  exact ⟨True.intro,True.intro⟩
+
+
+theorem mstart_counts (retired : Wire) (w : Nat→Wire) (sign : Wire)
+    (hn : (Q6EndpointCell.ports w sign).wires.Nodup)
+    (member : retired∈(Q6EndpointCell.ports w sign).carry.take 254) :
+    toffoliCount (mstart retired w sign)=1274 ∧ measurementCount (mstart retired w sign)=1274 := by
+  let L := Q6EndpointCell.ports w sign
+  have hw := Q6EndpointCell.ports_widths w sign
+  have a := recode_counts retired true L hw hn member
+  have b := junction_accept_standard_counts retired L hw
+  have c := junction_odd_rest_counts retired L hw
+  dsimp only [L] at a b c
+  simp only [mstart,toffoliCount_append,measurementCount_append,a.1,a.2,b.1,b.2,c.1,c.2,
+    toffoliCount,measurementCount]
+  exact ⟨True.intro,True.intro⟩
+
+
+theorem junction_accept_standard_resources (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈L.carry.take 254) :
+    JunctionSafe ((junctionFootprint L).erase retired) (acceptStandard retired L) := by
+  have nt := junction_not_resources retired L hn member L.low (by
+    intro q hq
+    simp [BalancedCleanup.Layout.r,hq])
+  have lit := junction_literal_resources retired L hn BalancedCleanup.negativeLiteral
+  have lower := junction_small_resources retired L hw hn member [.X L.lower]
+    (by simp [junctionCliffordPieces])
+  have top := junction_small_resources retired L hw hn member [.CX L.rmsb L.lower]
+    (by simp [junctionCliffordPieces])
+  have sc := junction_sign_resources retired L hn member L.lower L.r
+    (by simp) (by intro q hq; simp [hq]) (by
+      intro bad; exact BalancedCircuit.flagAway L hn L.lower (by simp) (by simp [bad]))
+  simp only [acceptStandard,junction_safe_append]
+  exact ⟨⟨⟨⟨top,sc⟩,lit⟩,lower⟩,nt⟩
+
+
+theorem mstart_resources (retired : Wire) (w : Nat→Wire) (sign : Wire)
+    (hn : (Q6EndpointCell.ports w sign).wires.Nodup)
+    (member : retired∈((Q6EndpointCell.ports w sign).carry.take 254).drop 1) :
+    GatePhysical (mstart retired w sign) ∧ wires (mstart retired w sign)⊆
+      (junctionFootprint (Q6EndpointCell.ports w sign)).erase retired := by
+  let L := Q6EndpointCell.ports w sign
+  have hw := Q6EndpointCell.ports_widths w sign
+  have mt := List.mem_of_mem_drop member
+  have accept := junction_accept_standard_resources retired L hw hn mt
+  have recoder := recode_y_resources retired true L hw hn mt
+  have rest := junction_rest_resources true retired L hw hn member
+  have flip := junction_small_resources retired L hw hn mt [.X L.sign]
+    (by simp [junctionCliffordPieces])
+  change JunctionSafe ((junctionFootprint L).erase retired) (mstart retired w sign)
+  have shape : mstart retired w sign=[.X sign]++recode retired true L L.y++
+      acceptStandard retired L++junctionOddRest retired L++[.X sign] := rfl
+  rw [shape]
+  simp only [junction_safe_append]
+  exact ⟨⟨⟨⟨flip,recoder⟩,accept⟩,rest⟩,flip⟩
+
+end ECDSAAdd.Entrant.P1Life
+
+end -- build-odd
+
+-- ===== RouteASlotMStart (build-odd) =====
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+set_option linter.unreachableTactic false
+set_option linter.unusedTactic false
+namespace ECDSAAdd.Entrant.RouteA
+open Arithmetic BalancedCircuit BalancedField Challenge Baselines MappedCompressed
+attribute [local irreducible] P1Life.half P1Life.forward P1Life.inverse P1Life.dstart P1Life.dend P1Life.mend
+attribute [local irreducible] Q6LifetimeResearch.half Q6LifetimeResearch.forward Q6LifetimeResearch.inverse
+
+
+theorem slot_accept_standard (retired : Wire) (L : Layout) (hw : L.Widths) :
+    gateSlots (P1Life.acceptStandard retired L)=2323 := by
+  have len := slot_layout_lengths L hw
+  have cl : (L.carry.take 254).length+1=L.low.length := by simp [List.length_take,hw.2.2,len.1]
+  have lit := literal_slots L.low (L.carry.take 254) L.lower L.one BalancedCleanup.negativeLiteral cl
+  have cost : literalSlots 255 BalancedCleanup.negativeLiteral=1810 := by decide +kernel
+  rw [len.1,cost] at lit
+  simp only [P1Life.acceptStandard,
+    gateSlots_append,Q6LifetimeResearch.move,rename_gateSlots,notRegister_gateSlots,
+    signComplement_gateSlots,len.1,len.2.1,lit,
+    gateSlots_cons,gateSlots_nil,instructionSlots,List.length_nil]
+  all_goals first | omega | exact True.intro
+
+
+theorem slot_junction_odd_rest (retired : Wire) (L : Layout) (hw : L.Widths) :
+    gateSlots (P1Life.junctionOddRest retired L)=14371 := by
+  have len := slot_layout_lengths L hw
+  have e := slot_views L hw
+  have f := slot_fold true true retired L hw
+  have g := slot_compare true false retired L hw
+  have i := slot_raw_sub true retired L hw
+  have rt := rotate_slots (rawTarget L)
+  simp only [if_true,Bool.false_eq_true,if_false] at f g i
+  simp only [P1Life.junctionOddRest,gateSlots_append,reverse_gateSlots,
+    f,g,i,e.2.1,e.2.2.2,rt.2,len.2.2.2.1,
+    P1Life.exposure,gateSlots_cons,gateSlots_nil,instructionSlots,List.length_nil]
+  all_goals first | omega | exact True.intro
+
+
+theorem slot_mstart (retired : Wire) (w : Nat→Wire) (sign : Wire)
+    (hn : (Q6EndpointCell.ports w sign).wires.Nodup)
+    (member : retired∈(Q6EndpointCell.ports w sign).carry.take 254) :
+    gateSlots (P1Life.mstart retired w sign)=19777 := by
+  let L := Q6EndpointCell.ports w sign
+  have hw := Q6EndpointCell.ports_widths w sign
+  have a := slot_accept_standard retired L hw
+  have r := slot_junction_odd_rest retired L hw
+  have odd := slot_recode retired true L hw hn member
+  simp only [if_true] at odd
+  dsimp only [L] at a r odd
+  simp only [P1Life.mstart,gateSlots_append,a,r,odd,
+    gateSlots_cons,gateSlots_nil,instructionSlots,List.length_nil]
+  all_goals first | omega | exact True.intro
+end ECDSAAdd.Entrant.RouteA
+end -- build-odd
