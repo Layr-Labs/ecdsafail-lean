@@ -88,7 +88,7 @@ theorem run_eq(f:Fin 12→Wire)(hf:Function.Injective f)(s:State)(m:List Bool)
      have eb:=run_preserves_outside (originalAt f) m s q (fun h=>hq (sb h))
      exact ea.trans eb.symm
 
-#print axioms run_eq
+
 end ECDSAAdd.Entrant.B95PlacedWindowResearch
 
 end
@@ -147,8 +147,8 @@ theorem erase_eq(q:Wire)(s:State)(hz:s.basis q=false):erase q s=s:=by
    · subst w;simp [erase,EraseListProof.basis,hz]
    · simp [erase,EraseListProof.basis,h]
 
-#print axioms exchange_copy
-#print axioms erase_cleanup
+
+
 end ECDSAAdd.Entrant.B95RetimeResearch
 
 end
@@ -186,7 +186,7 @@ theorem retime(B C D:Program)(q z:Wire)(ne:q≠z)
   commute_erase C q cq,commute_erase D q dq]
  rw [cleanup_context D q z dq]
  rw [zero_records (copy q z) mc (run B m s) (m.drop (measurementCount B))]
-#print axioms retime
+
 end ECDSAAdd.Entrant.B95RetimeResearch
 
 end
@@ -270,7 +270,7 @@ theorem equivalent(s:State)(m:List Bool)(q0:s.basis 4757=false)
   _=run ((a++b++c++d++e)++f0++g) m s:=by simp only [List.append_assoc]
   _=run ((a++b++c++d++e)++f++g) m s:=ef.symm
   _=run old m s:=by rw [←shape]
-#print axioms equivalent
+
 end ECDSAAdd.Entrant.B95Q0BaseResearch
 
 end
@@ -330,7 +330,7 @@ theorem checked:
  C163Touch.touched center 4758=false ∧ C163Touch.touched suffix 4758=false ∧
  ([a,fastWindow,gap,center,suffix]:List Program).all (fun P=>
   ([4757,4758,4759,4243,4244,4245]:List Wire).all (fun q=>!C163Touch.touched P q))=true:=by decide +kernel
-#print axioms checked
+
 end ECDSAAdd.Entrant.B95FactsResearch
 
 end
@@ -366,7 +366,7 @@ theorem gap_fresh:4758∉wires gap ∧ 4762∉wires gap:=
 theorem center_fresh:4758∉wires center:=not_wire _ _ checked.2.2.2.2.2.2.1
 
 theorem suffix_fresh:4758∉wires suffix:=not_wire _ _ checked.2.2.2.2.2.2.2.1
-#print axioms old_shape
+
 end ECDSAAdd.Entrant.B95FactsResearch
 
 end
@@ -403,7 +403,7 @@ theorem window_eq(s:State)(m:List Bool)
   exact zero_records _ (by simp [exchange,measurementCount]) _ _
  exact eq.trans (refEq.trans (congrArg (fun t=>run (exchange 4758 4762) [] t)
   (congrArg (fun P=>run P m s) checked.1.symm)))
-#print axioms window_eq
+
 end ECDSAAdd.Entrant.B95FactsResearch
 
 namespace ECDSAAdd.Entrant.B95RetimeResearch
@@ -424,7 +424,7 @@ theorem window_context(A W V B C D:Program)(q z:Wire)(ne:q≠z)
  rw [run_three A V (B++C++D) s m,run_three A W (B++copy q z++C++cleanup q z++D) s m]
  rw [mc,eq]
  exact retime B C D q z ne bq bz cq dq _ _ (hz _)
-#print axioms window_context
+
 end ECDSAAdd.Entrant.B95RetimeResearch
 
 end
@@ -454,7 +454,7 @@ theorem fresh(q:Wire)(hq:q∈([4757,4758,4759,4243,4244,4245]:List Wire)):
  simp only [program,wires_append,Finset.mem_union,not_or]
  exact ⟨⟨⟨⟨off a (by simp),off fastWindow (by simp)⟩,off gap (by simp)⟩,off center (by simp)⟩,off suffix (by simp)⟩
 
-#print axioms fresh
+
 end ECDSAAdd.Entrant.B95MiddleResearch
 
 end
@@ -529,7 +529,7 @@ theorem counts:toffoliCount program=toffoliCount ReorderedBMiddlePatchesResearch
  simp only [program,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
  exact ⟨by omega,by omega,by omega⟩
 
-#print axioms counts
+
 end ECDSAAdd.Entrant.B95MiddleResearch
 
 end
@@ -629,7 +629,7 @@ theorem fresh_of_old(q:Wire)(off:q∉wires ReorderedBMiddlePatchesResearch.outpu
   exact ⟨⟨slice 5376 1596,fOff⟩,fun h=>off (drop_subset _ 6982 h)⟩
  simp only [program,wires_append,Finset.mem_union,not_or]
  exact ⟨⟨⟨⟨aOff,fastOff⟩,slice 2435 676⟩,cOff⟩,sOff⟩
-#print axioms fresh_of_old
+
 end ECDSAAdd.Entrant.B95MiddleResearch
 
 end
@@ -728,8 +728,8 @@ theorem physical:GatePhysical program:=by
  have c:GatePhysical aliased:=gatePhysical_rename _ (Equiv.swap 4507 4245).injective second b
  simp only [program,gatePhysical_append]
  exact ⟨⟨pp,c⟩,pp⟩
-#print axioms counts
-#print axioms ghost_free
+
+
 
 end ECDSAAdd.Entrant.B95AliasesResearch
 
@@ -781,7 +781,7 @@ theorem middle_fresh(q:Wire)(hq:q∈hosts):q∉wires B95AliasesResearch.program:
    · exact B95AliasesResearch.low4_free
    · exact B95AliasesResearch.low5_free
    · exact B95AliasesResearch.low6_free
-#print axioms middle_fresh
+
 end ECDSAAdd.Entrant.B95Research
 
 end
@@ -812,7 +812,7 @@ theorem middle_context(F M G N J K:Program)(s:State)(m:List Bool)
  run (F++M++J) m s=run (G++N++K) m s:=by
  rw [run_three,run_three]
  exact eq
-#print axioms middle_context
+
 end ECDSAAdd.Entrant.ClearContextResearch
 
 end
@@ -896,7 +896,7 @@ theorem equivalent(F newF M I newI:Program)(hs:List Wire)(vs:List Bool)
  change run newI (tape.drop (measurementCount F+measurementCount M)) (scatterState hs vs (middleState F M s tape))=last
  rw [inverse,run_scatter I hs vs _ _ offI]
  exact scatter_clear_overlay hs vs last nd lastZero
-#print axioms equivalent
+
 end ECDSAAdd.Entrant.CacheFromCleanForwardResearch
 
 end
@@ -931,7 +931,7 @@ theorem forward(head post:Program)(k:Nat)(xs ys cs hs:List Wire)(cin:Wire)
  have eq:=ReorderedGenericCache.cachedAdd_frame k xs ys cs hs cin hx hy hc nd fresh off t r zero
  simp only [run_three,same]
  rw [eq,run_scatter post hs _ _ _ postOff]
-#print axioms forward
+
 end ECDSAAdd.Entrant.CacheBetweenFrameResearch
 
 end
@@ -982,7 +982,7 @@ theorem ready(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
  · exact regValue_congr _ _ _ (fun q hq=>same q (Or.inl (by simp [hq])))
  · rw [CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by rw [len];decide),pref.1]
    rfl
-#print axioms ready
+
 end ECDSAAdd.Entrant.ReorderedHeadArithmeticResearch
 
 end
@@ -1034,7 +1034,7 @@ theorem ready(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
  · exact regValue_congr _ _ _ (fun q hq=>same q (Or.inl (by simp [hq])))
  · rw [CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by rw [len];decide),pref.1]
    rfl
-#print axioms ready
+
 end ECDSAAdd.Entrant.ReorderedPreInverseArithmeticResearch
 
 end
@@ -1091,9 +1091,9 @@ theorem modeled(x:Nat)(hx:x<32)(m:List Bool)(ph:Bool):
 
 theorem counts:toffoliCount fast=toffoliCount original ∧ measurementCount fast=measurementCount original ∧
  Challenge.gateSlots fast+2=Challenge.gateSlots original:=by decide +kernel
-#print axioms finite
-#print axioms modeled
-#print axioms counts
+
+
+
 end ECDSAAdd.Entrant.ACFiniteWindowResearch
 
 end
@@ -1140,7 +1140,7 @@ theorem run_eq(s:State)(m:List Bool)
    · exact (a.2 q hq).trans ((congrArg (fun t:State=>t.basis q) eq).trans (b.2 q hq).symm)
    · exact (run_preserves_outside fast m s q (fun h=>hq (support.1 h))).trans
       (run_preserves_outside reference m s q (fun h=>hq (support.2 h))).symm
-#print axioms run_eq
+
 end ECDSAAdd.Entrant.ACFiniteWindowResearch
 
 end
@@ -1193,7 +1193,7 @@ theorem run_eq(f:Fin 12→Wire)(hf:Function.Injective f)(s:State)(m:List Bool)
      have eb:=run_preserves_outside (originalAt f) m s q (fun h=>hq (sb h))
      exact ea.trans eb.symm
 
-#print axioms run_eq
+
 end ECDSAAdd.Entrant.ACPlacedWindowResearch
 
 end
@@ -1229,7 +1229,7 @@ theorem kept(w:Fin 9→Wire)(P:Program)(q:Wire)(away:∀i,q≠w i)
  apply xor _ _ _ _ _ q (fix 2 5)
  apply copy _ _ _ _ q (fix 1 4)
  exact copy _ _ _ _ q (fix 0 3) hq
-#print axioms kept
+
 end ECDSAAdd.Entrant.RelocateMembershipResearch
 
 end
@@ -1291,7 +1291,7 @@ theorem checked:
  C163Touch.touched b 4760=false ∧ C163Touch.touched b 4762=false ∧
  C163Touch.touched d 4760=false ∧ C163Touch.touched f 4760=false ∧
  5940≤p.length:=by decide +kernel
-#print axioms checked
+
 end ECDSAAdd.Entrant.AShortGhostFactsResearch
 
 end
@@ -1386,7 +1386,7 @@ theorem f0_eq(s:State)(m:List Bool)(h0:s.basis 4757=false)(hc:s.basis 4760=false
   (h0.trans hc.symm) ((ZeroAfterWriteResearch.erased 4757 f qf s m).trans h0.symm)
 
 
-#print axioms old_shape
+
 end ECDSAAdd.Entrant.AShortGhostProgramsResearch
 
 end
@@ -1470,7 +1470,7 @@ theorem equivalent(s:State)(m:List Bool)(q0:s.basis 4757=false)
   _=run ((a++b++c++d++e)++f0++g) m s:=by simp only [List.append_assoc]
   _=run ((a++b++c++d++e)++f++g) m s:=ef.symm
   _=run old m s:=by rw [←shape]
-#print axioms equivalent
+
 end ECDSAAdd.Entrant.AQ0BaseResearch
 
 end
@@ -1504,7 +1504,7 @@ theorem checked:
  C163Touch.touched center 4758=false ∧ C163Touch.touched suffix 4758=false ∧
  ([a,fastWindow,gap,center,suffix]:List Program).all (fun P=>
   ([4757,4758,4759,4243,4244,4245]:List Wire).all (fun q=>!C163Touch.touched P q))=true:=by decide +kernel
-#print axioms checked
+
 end ECDSAAdd.Entrant.ARetimeFactsResearch
 
 end
@@ -1566,7 +1566,7 @@ theorem gap_fresh:4758∉wires gap ∧ 4762∉wires gap:=
 theorem center_fresh:4758∉wires center:=not_wire _ _ checked.2.2.2.2.2.2.1
 
 theorem suffix_fresh:4758∉wires suffix:=not_wire _ _ checked.2.2.2.2.2.2.2.1
-#print axioms old_shape
+
 end ECDSAAdd.Entrant.ARetimeFactsResearch
 
 end
@@ -1603,7 +1603,7 @@ theorem window_eq(s:State)(m:List Bool)
   exact zero_records _ (by simp [exchange,measurementCount]) _ _
  exact eq.trans (refEq.trans (congrArg (fun t=>run (exchange 4758 4762) [] t)
   (congrArg (fun P=>run P m s) checked.1.symm)))
-#print axioms window_eq
+
 end ECDSAAdd.Entrant.ARetimeFactsResearch
 
 end
@@ -1662,8 +1662,8 @@ theorem fresh(q:Wire)(hq:q∈([4757,4758,4759,4243,4244,4245]:List Wire)):
   simp only [yes,Bool.not_true,Bool.false_eq_true] at h
  simp only [program,wires_append,Finset.mem_union,not_or]
  exact ⟨⟨⟨⟨off a (by simp),off fastWindow (by simp)⟩,off gap (by simp)⟩,off center (by simp)⟩,off suffix (by simp)⟩
-#print axioms equivalent
-#print axioms fresh
+
+
 end ECDSAAdd.Entrant.AMiddleResearch
 
 end
@@ -1708,7 +1708,7 @@ theorem ready_eq(H:Nat)(s:State)(m:List Bool)
  · exact before.2.2.2.2
  · exact flag
  · exact out
-#print axioms ready_eq
+
 end ECDSAAdd.Entrant.AMiddleResearch
 
 end
@@ -1798,7 +1798,7 @@ theorem equivalent(H:Nat)(s:State)(m:List Bool)
  change run prep (m.drop (measurementCount aliased)) (run aliased m t)=_
  rw [e6,commute]
  exact (FreshCXResearch.twice 4243 4245 (by decide) (run single m s) m _).trans eq
-#print axioms equivalent
+
 end ECDSAAdd.Entrant.AAliasesResearch
 
 end
@@ -1873,7 +1873,7 @@ theorem counts:toffoliCount program=toffoliCount KnownAMidStaged.body ∧
  simp only [program,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
  exact ⟨by omega,by omega,by omega⟩
 
-#print axioms counts
+
 end ECDSAAdd.Entrant.AMiddleResearch
 
 end
@@ -1924,7 +1924,7 @@ theorem fresh_of_old(q:Wire)(off:q∉wires KnownAMidStaged.body)
   exact ⟨⟨slice 4385 1545,fOff⟩,fun h=>off (drop_subset _ 5940 h)⟩
  simp only [program,wires_append,Finset.mem_union,not_or]
  exact ⟨⟨⟨⟨aOff,fastOff⟩,slice 1454 666⟩,cOff⟩,sOff⟩
-#print axioms fresh_of_old
+
 end ECDSAAdd.Entrant.AMiddleResearch
 
 end
@@ -2056,8 +2056,8 @@ theorem physical:GatePhysical program:=by
  have c:GatePhysical aliased:=gatePhysical_rename _ (Equiv.swap 4507 4245).injective second b
  simp only [program,gatePhysical_append]
  exact ⟨⟨pp,c⟩,pp⟩
-#print axioms counts
-#print axioms ghost_free
+
+
 
 end ECDSAAdd.Entrant.AAliasesResearch
 
@@ -2105,7 +2105,7 @@ theorem checked:
  C163Touch.touched b 4760=false ∧ C163Touch.touched b 4762=false ∧
  C163Touch.touched d 4760=false ∧ C163Touch.touched f 4760=false ∧
  6272≤p.length:=by decide +kernel
-#print axioms checked
+
 end ECDSAAdd.Entrant.CKShortGhostFactsResearch
 
 end
@@ -2200,7 +2200,7 @@ theorem f0_eq(s:State)(m:List Bool)(h0:s.basis 4757=false)(hc:s.basis 4760=false
   (h0.trans hc.symm) ((ZeroAfterWriteResearch.erased 4757 f qf s m).trans h0.symm)
 
 
-#print axioms old_shape
+
 end ECDSAAdd.Entrant.CKShortGhostProgramsResearch
 
 end
@@ -2284,7 +2284,7 @@ theorem equivalent(s:State)(m:List Bool)(q0:s.basis 4757=false)
   _=run ((a++b++c++d++e)++f0++g) m s:=by simp only [List.append_assoc]
   _=run ((a++b++c++d++e)++f++g) m s:=ef.symm
   _=run old m s:=by rw [←shape]
-#print axioms equivalent
+
 end ECDSAAdd.Entrant.CKQ0BaseResearch
 
 end
@@ -2318,7 +2318,7 @@ theorem checked:
  C163Touch.touched center 4758=false ∧ C163Touch.touched suffix 4758=false ∧
  ([a,fastWindow,gap,center,suffix]:List Program).all (fun P=>
   ([4757,4758,4759,4243,4244,4245]:List Wire).all (fun q=>!C163Touch.touched P q))=true:=by decide +kernel
-#print axioms checked
+
 end ECDSAAdd.Entrant.CKRetimeFactsResearch
 
 end
@@ -2380,7 +2380,7 @@ theorem gap_fresh:4758∉wires gap ∧ 4762∉wires gap:=
 theorem center_fresh:4758∉wires center:=not_wire _ _ checked.2.2.2.2.2.2.1
 
 theorem suffix_fresh:4758∉wires suffix:=not_wire _ _ checked.2.2.2.2.2.2.2.1
-#print axioms old_shape
+
 end ECDSAAdd.Entrant.CKRetimeFactsResearch
 
 end
@@ -2417,7 +2417,7 @@ theorem window_eq(s:State)(m:List Bool)
   exact zero_records _ (by simp [exchange,measurementCount]) _ _
  exact eq.trans (refEq.trans (congrArg (fun t=>run (exchange 4758 4762) [] t)
   (congrArg (fun P=>run P m s) checked.1.symm)))
-#print axioms window_eq
+
 end ECDSAAdd.Entrant.CKRetimeFactsResearch
 
 end
@@ -2476,8 +2476,8 @@ theorem fresh(q:Wire)(hq:q∈([4757,4758,4759,4243,4244,4245]:List Wire)):
   simp only [yes,Bool.not_true,Bool.false_eq_true] at h
  simp only [program,wires_append,Finset.mem_union,not_or]
  exact ⟨⟨⟨⟨off a (by simp),off fastWindow (by simp)⟩,off gap (by simp)⟩,off center (by simp)⟩,off suffix (by simp)⟩
-#print axioms equivalent
-#print axioms fresh
+
+
 end ECDSAAdd.Entrant.CKMiddleResearch
 
 end
@@ -2522,7 +2522,7 @@ theorem ready_eq(H:Nat)(s:State)(m:List Bool)
  · exact before.2.2.2.2
  · exact flag
  · exact out
-#print axioms ready_eq
+
 end ECDSAAdd.Entrant.CKMiddleResearch
 
 end
@@ -2612,7 +2612,7 @@ theorem equivalent(H:Nat)(s:State)(m:List Bool)
  change run prep (m.drop (measurementCount aliased)) (run aliased m t)=_
  rw [e6,commute]
  exact (FreshCXResearch.twice 4243 4245 (by decide) (run single m s) m _).trans eq
-#print axioms equivalent
+
 end ECDSAAdd.Entrant.CKAliasesResearch
 
 end
@@ -2687,7 +2687,7 @@ theorem counts:toffoliCount program=toffoliCount KnownCMidStaged.body ∧
  simp only [program,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
  exact ⟨by omega,by omega,by omega⟩
 
-#print axioms counts
+
 end ECDSAAdd.Entrant.CKMiddleResearch
 
 end
@@ -2738,7 +2738,7 @@ theorem fresh_of_old(q:Wire)(off:q∉wires KnownCMidStaged.body)
   exact ⟨⟨slice 4707 1555,fOff⟩,fun h=>off (drop_subset _ 6272 h)⟩
  simp only [program,wires_append,Finset.mem_union,not_or]
  exact ⟨⟨⟨⟨aOff,fastOff⟩,slice 1774 668⟩,cOff⟩,sOff⟩
-#print axioms fresh_of_old
+
 end ECDSAAdd.Entrant.CKMiddleResearch
 
 end
@@ -2791,7 +2791,7 @@ theorem physical:GatePhysical program:=by
   exact ⟨⟨physical_slice CKRetimeFactsResearch.old 4707 1555 p,fP⟩,physical_drop CKRetimeFactsResearch.old 6272 p⟩
  simp only [program,gatePhysical_append]
  exact ⟨⟨⟨⟨aP,fast_physical⟩,physical_slice CKRetimeFactsResearch.old 1774 668 p⟩,cP⟩,sP⟩
-#print axioms physical
+
 end ECDSAAdd.Entrant.CKMiddleResearch
 
 end
@@ -2865,9 +2865,9 @@ theorem physical:GatePhysical program:=by
  have c:GatePhysical aliased:=gatePhysical_rename _ (Equiv.swap 4507 4245).injective second b
  simp only [program,gatePhysical_append]
  exact ⟨⟨pp,c⟩,pp⟩
-#print axioms counts
-#print axioms ghost_free
-#print axioms physical
+
+
+
 end ECDSAAdd.Entrant.CKAliasesResearch
 
 end
@@ -2922,7 +2922,7 @@ theorem middle_fresh(q:Wire)(hq:q∈hosts):q∉wires AAliasesResearch.program:=b
    · exact AAliasesResearch.low4_free
    · exact AAliasesResearch.low5_free
    · exact AAliasesResearch.low6_free
-#print axioms middle_fresh
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -2983,8 +2983,8 @@ theorem measurements:measurementCount fast=measurementCount old:=by
  have g:measurementCount fast=measurementCount pre+measurementCount (PlacedUniformAdder4Research.fastAt ports)+measurementCount post:=by
   simp only [fast,measurementCount_append]
  omega
-#print axioms toffoli
-#print axioms pre_fresh
+
+
 end ECDSAAdd.Entrant.HighConsumedA109Research
 
 
@@ -3070,9 +3070,9 @@ theorem sub_run_eq (s:State)
  have eq:=CodexKnownOnesTail.Helpers.run_mid_congr (notRegister ys) fast old (notRegister ys) m s
   (notRegister_counts ys).2 measurements (fun r=>inner_run_eq s hn nd len fresh hz hi H hH source target saved r)
  simpa only [sub,ReorderedConsumedSub.consumed,old] using eq
-#print axioms high_word
-#print axioms inner_run_eq
-#print axioms sub_run_eq
+
+
+
 end ECDSAAdd.Entrant.HighConsumedA109Research
 
 
@@ -3202,8 +3202,8 @@ theorem zero(s:State)(q:Wire)(hq:q∈low):(erase s).basis q=false:=by
 theorem counts:toffoliCount clear=0 ∧ measurementCount clear=0 ∧ Challenge.gateSlots clear=4:=by decide +kernel
 
 theorem physical:GatePhysical clear:=by simp [GatePhysical,clear,RecordedQuantum.PhysicalInstr,ProperGate]
-#print axioms restore
-#print axioms clear_eq_erase
+
+
 end ECDSAAdd.Entrant.A109LowEraseResearch
 
 end
@@ -3251,8 +3251,8 @@ theorem suffix(P:Program)(s:State)(m:List Bool)(off:∀q∈low,q∉wires P)
  run (P++clear) m (erase s)=run P m s:=by
  rw [run_cat,commute P m s off]
  exact restore _ _ h4 h5 h6
-#print axioms forward_erased
-#print axioms aliases_erased
+
+
 end ECDSAAdd.Entrant.A109LowEraseResearch
 
 end
@@ -3347,8 +3347,8 @@ theorem I_off(q:Wire)(hq:q∈hosts):q∉wires I:=by
 theorem low_hosts(q:Wire)(hq:q∈A109LowEraseResearch.low):q∈hosts:=by
  simp only [A109LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at hq
  rcases hq with rfl|rfl|rfl <;>decide +kernel
-#print axioms I_off
-#print axioms rawF_off
+
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3411,8 +3411,8 @@ theorem forward_measurements:measurementCount newF=measurementCount F:=by
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)).2.1
  simp only [newF,F,rawF,measurementCount_append]
  rw [h]
-#print axioms sub_frame
-#print axioms forward_frame
+
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3485,7 +3485,7 @@ theorem forward_erased(s:State)(m:List Bool)
  have cp:=head_copies s m hz hb hi ha
  have eq:=A109LowEraseResearch.forward_erased head (rawF++top) s m rest_off cp.1 cp.2.1 cp.2.2
  simpa only [F,plain_split,List.append_assoc] using eq
-#print axioms forward_erased
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3565,7 +3565,7 @@ theorem prefix_zero(s:State)(m:List Bool)
   rw [partition,run_cat]
   exact run_preserves_outside _ _ _ q off
  exact eq.symm.trans (clean q hq)
-#print axioms forward_zero
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3636,7 +3636,7 @@ theorem forward_values(s:State)(m:List Bool)
   (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
    simpa only [show 128+10=138 by decide] using
     ReorderedCacheArithmetic.high_add_low 128 (4+j+1) H (by omega) hH)
-#print axioms forward_values
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3696,7 +3696,7 @@ theorem inverse_ready(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin
  · rw [regs ys y_in]
    exact rr.2.2.2
  · exact saved
-#print axioms inverse_ready
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3730,7 +3730,7 @@ theorem middle_erased(s:State)(m:List Bool)
  rw [measurements,AAliasesResearch.counts.2.1,forward_erased s _ hz hb hi ha]
  exact A109LowEraseResearch.aliases_erased (regValue src s.basis) _ _
   (BRelocatedReadyResearch.plain_before s _ hz hb hi ha) after flag
-#print axioms middle_erased
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3784,7 +3784,7 @@ theorem restored(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src 
    exact cp.2.1
  · rw [low 4507 (by decide),source 4245 (by decide +kernel),source 4243 (by decide +kernel)]
    exact cp.2.2
-#print axioms restored
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3825,7 +3825,7 @@ theorem erased_suffix(H:Nat)(u:State)(m:List Bool)(ready:WReady acc pad bank cin
  exact ClearContextResearch.suffix I A109LowEraseResearch.clear tail A109LowEraseResearch.counts.2.1
   (A109LowEraseResearch.erase u) u m (restored H u m ready)
 
-#print axioms erased_suffix
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3856,7 +3856,7 @@ theorem plain_loop(s:State)(m:List Bool)
   (congrArg (fun P=>run P (m.drop (measurementCount oldF+measurementCount oldM))
    (middleState oldF oldM s m)) unbuild_split.symm)
 
-#print axioms plain_loop
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3889,7 +3889,7 @@ theorem cache_loop(s:State)(m:List Bool)
   (forward_zero s _ hz hb hi ha zero) forward
  rw [mid]
  exact inverse_ready H (middleState oldF oldM s m) _ after
-#print axioms cache_loop
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3931,7 +3931,7 @@ theorem core_plain(s:State)(m:List Bool)
   have g(A B C D E:Program):(A++B++C)++(D++E)=A++B++(C++D++E):=by simp only [List.append_assoc]
   exact g F M I A109LowEraseResearch.clear tail
  exact eq.trans ((congrArg (fun P=>run P m s) shape).trans (plain_loop s m hz hb hi ha after flag))
-#print axioms core_plain
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -3968,8 +3968,8 @@ theorem middle_eq(s:State)(m:List Bool)
  unfold middleState
  rw [measurements]
  exact equivalent _ _ _ (Ghost3CacheA.plain_ready s _ hz hb hi ha)
-#print axioms equivalent
-#print axioms middle_eq
+
+
 end ECDSAAdd.Entrant.AKnownMiddleResearch
 
 end
@@ -4054,7 +4054,7 @@ theorem core_frame(base:BasisState)(hc:L.PairClean base)(hsum:base q=false)(hV:b
  exact transport _ s _ _ eq (plain_frame base hc O hO s m hf)
 
 
-#print axioms core_frame
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -4149,8 +4149,8 @@ theorem body_frame (base:BasisState) (M:Nat) (hM:M<2^128)
  have eq:run body m s=run rawBody (m.take (measurementCount rawBody)) s:=by
   rw [body,run_append,ReorderedRecordPadding.run_zero 7 L.core.cin _ _ hz]
  exact ReorderedAFixed.transport _ s _ _ eq f
-#print axioms loop_eq
-#print axioms body_frame
+
+
 end ECDSAAdd.Entrant.A109SignResearch
 
 end
@@ -4203,8 +4203,8 @@ theorem loop_counts:toffoliCount loop+3=toffoliCount HighSignAResearch.loop ∧
  simp only [body,rawBody,fold,HighSignAResearch.body,HighSignAResearch.rawBody,HighSignAResearch.fold,
   toffoliCount_append,measurementCount_append]
  exact ⟨by omega,by omega⟩
-#print axioms loop_counts
-#print axioms body_counts
+
+
 end ECDSAAdd.Entrant.A109SignResearch
 
 end
@@ -4263,8 +4263,8 @@ attribute [local irreducible] Challenge.gateSlots
  have h:=loop_slots
  simp only [body,rawBody,fold,HighSignAResearch.body,HighSignAResearch.rawBody,HighSignAResearch.fold,gateSlots_append]
  omega
-#print axioms loop_slots
-#print axioms body_slots
+
+
 end ECDSAAdd.Entrant.A109SignResearch
 
 end
@@ -4724,8 +4724,8 @@ theorem middle_support:wires M⊆S:=by
   (fix q 4507 4245 (ne _ (by decide)) (ne _ (by decide)))
   (ne _ (by decide)) (ne _ (by decide))
  exact two hq
-#print axioms checked
-#print axioms middle_support
+
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -4772,7 +4772,7 @@ theorem body_physical:GatePhysical A109SignResearch.body:=by
  simp only [HighSignAResearch.body,HighSignAResearch.rawBody,HighSignAResearch.fold,gatePhysical_append] at old
  simp only [A109SignResearch.body,A109SignResearch.rawBody,A109SignResearch.fold,gatePhysical_append]
  exact ⟨⟨old.1.1,⟨old.1.2.1,loop_physical⟩⟩,old.2⟩
-#print axioms body_physical
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -4846,7 +4846,7 @@ theorem body_support:wires A109SignResearch.body⊆S:=by
   (ReorderedRecordPadding.program 7 ReorderedAFixed.L.core.cin) loop_support
  exact h
 
-#print axioms body_support
+
 end ECDSAAdd.Entrant.A109Research
 
 end
@@ -4922,7 +4922,7 @@ theorem middle_fresh(q:Wire)(hq:q∈hosts):q∉wires CKAliasesResearch.program:=
    · exact CKAliasesResearch.low4_free
    · exact CKAliasesResearch.low5_free
    · exact CKAliasesResearch.low6_free
-#print axioms middle_fresh
+
 end ECDSAAdd.Entrant.C105Research
 
 end
@@ -4983,8 +4983,8 @@ theorem measurements:measurementCount fast=measurementCount old:=by
  have g:measurementCount fast=measurementCount pre+measurementCount (PlacedUniformAdder4Research.fastAt ports)+measurementCount post:=by
   simp only [fast,measurementCount_append]
  omega
-#print axioms toffoli
-#print axioms pre_fresh
+
+
 end ECDSAAdd.Entrant.HighConsumedC105Research
 
 
@@ -5070,9 +5070,9 @@ theorem sub_run_eq (s:State)
  have eq:=CodexKnownOnesTail.Helpers.run_mid_congr (notRegister ys) fast old (notRegister ys) m s
   (notRegister_counts ys).2 measurements (fun r=>inner_run_eq s hn nd len fresh hz hi H hH source target saved r)
  simpa only [sub,ReorderedConsumedSub.consumed,old] using eq
-#print axioms high_word
-#print axioms inner_run_eq
-#print axioms sub_run_eq
+
+
+
 end ECDSAAdd.Entrant.HighConsumedC105Research
 
 
@@ -5202,8 +5202,8 @@ theorem zero(s:State)(q:Wire)(hq:q∈low):(erase s).basis q=false:=by
 theorem counts:toffoliCount clear=0 ∧ measurementCount clear=0 ∧ Challenge.gateSlots clear=4:=by decide +kernel
 
 theorem physical:GatePhysical clear:=by simp [GatePhysical,clear,RecordedQuantum.PhysicalInstr,ProperGate]
-#print axioms restore
-#print axioms clear_eq_erase
+
+
 end ECDSAAdd.Entrant.C105LowEraseResearch
 
 end
@@ -5251,8 +5251,8 @@ theorem suffix(P:Program)(s:State)(m:List Bool)(off:∀q∈low,q∉wires P)
  run (P++clear) m (erase s)=run P m s:=by
  rw [run_cat,commute P m s off]
  exact restore _ _ h4 h5 h6
-#print axioms forward_erased
-#print axioms aliases_erased
+
+
 end ECDSAAdd.Entrant.C105LowEraseResearch
 
 end
@@ -5349,8 +5349,8 @@ theorem I_off(q:Wire)(hq:q∈hosts):q∉wires I:=by
 theorem low_hosts(q:Wire)(hq:q∈C105LowEraseResearch.low):q∈hosts:=by
  simp only [C105LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at hq
  rcases hq with rfl|rfl|rfl <;>decide +kernel
-#print axioms I_off
-#print axioms rawF_off
+
+
 end ECDSAAdd.Entrant.C105Research
 
 end
