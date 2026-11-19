@@ -21050,14 +21050,67 @@ open ECDSAAdd Arithmetic Challenge
 /-! ## Any sub-list of the 44 physical holes (LT6) -/
 
 
-/-! ## 39 holes: exclusive pool sites minus 720 … 724 (Q = 1,547)
 
-LT1 (18:36 touch map): the record caller also uses pool 723 (`borrowOut`,
-`FlagEntry.entryXNew`), so 723 cannot be a hole of the unmodified caller.  This
-is the fallback list if 723 is not re-hosted. -/
+section T72xPlumbing
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+def memB (q : Nat) : List Nat → Bool
+  | [] => false
+  | a :: l => Nat.beq q a || memB q l
+
+theorem memB_iff (q : Nat) : ∀ l : List Nat, memB q l = true ↔ q ∈ l
+  | [] => by simp [memB]
+  | a :: l => by simp [memB, Nat.beq_eq, memB_iff q l]
+
+theorem memB_false_iff (q : Nat) (l : List Nat) : memB q l = false ↔ q ∉ l := by
+  rw [← memB_iff]; simp
+
+theorem win_spec {x lo hi : Nat} {l : List Nat}
+    (h : (Nat.blt x lo || Nat.ble hi x || !memB x l) = true) :
+    x < lo ∨ hi ≤ x ∨ memB x l = false := by
+  simp only [Bool.or_eq_true, Nat.blt_eq, Nat.ble_eq, Bool.not_eq_true'] at h
+  rcases h with (h | h) | h
+  · exact Or.inl h
+  · exact Or.inr (Or.inl h)
+  · exact Or.inr (Or.inr h)
+
+theorem memB_of_win {x lo hi : Nat} {l : List Nat} (hl : ∀ e ∈ l, lo ≤ e ∧ e < hi)
+    (h : x < lo ∨ hi ≤ x ∨ memB x l = false) : memB x l = false := by
+  rcases h with h | h | h
+  · rw [memB_false_iff]; intro hm; have := hl x hm; omega
+  · rw [memB_false_iff]; intro hm; have := hl x hm; omega
+  · exact h
+
+def extraIdx : List Nat := [723]
+
+def extraW : List Nat := extraIdx.map (fun i => 4115 + i)
+
+def extraPPL : List Nat := [739]
+
+def extraTPL : List Nat := [739]
+
+theorem extraIdx_window : ∀ i ∈ extraIdx, 720 ≤ i ∧ i < 725 := by decide
+theorem extraW_window : ∀ q ∈ extraW, 4835 ≤ q ∧ q < 4840 := by decide
+theorem extraPPL_window : ∀ x ∈ extraPPL, 736 ≤ x ∧ x < 741 := by decide
+theorem extraTPL_window : ∀ x ∈ extraTPL, 736 ≤ x ∧ x < 741 := by decide
+
+theorem extraIdx_pool : extraIdx.map Baselines.layout.core.poolWire = extraW := by
+  unfold extraW
+  apply List.map_congr_left
+  intro i hi
+  exact StairHoleSupport.poolWire_eq i (by have := extraIdx_window i hi; omega)
+
+theorem extraW_not_mem {q : Nat} (h : q < 4835 ∨ 4840 ≤ q) : q ∉ extraW := by
+  intro hm
+  have := extraW_window q hm
+  omega
+
+end T72xPlumbing
+
 
 def holeIndices39 : List Nat :=
-  List.range' 725 35 ++ List.range' 761 4
+  List.range' 725 35 ++ List.range' 761 4 ++ extraIdx
 
 def holes39 : List Wire := holeIndices39.map Baselines.layout.core.poolWire
 
@@ -23142,11 +23195,10 @@ namespace ECDSAAdd.Entrant.StairSquareBEFold
 open ECDSAAdd ECDSAAdd.Entrant Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout RecordedQuantum
 open StairSquareBMapped ControlLoan1589BFFold
 
-/-- Carry bank of the new middle: `foldCarry` with positions 204..238 and 240..243 replaced by
-`work[163..197]` and `work[198..201]`. -/
 def carryB (L : CuccaroStreamedSquareWideLayout) : List Wire :=
-  L.foldPad.take 204++((L.core.work.drop 163).take 35++((L.foldPad.drop 239).take 1++
-    (((L.core.work.drop 163).drop 35).take 4++(L.foldPad.drop 244++[L.core.productHigh,L.core.workHigh]))))
+  L.foldPad.take 202++((((L.core.work.drop 163).drop 39).take 1)++((L.foldPad.drop 203).take 1++
+    ((L.core.work.drop 163).take 35++((L.foldPad.drop 239).take 1++
+    (((L.core.work.drop 163).drop 35).take 4++(L.foldPad.drop 244++[L.core.productHigh,L.core.workHigh]))))))
 
 /-- The adder layout (its `src` field is a dummy; `qprogM` does not use it). -/
 def coreB (L : CuccaroStreamedSquareWideLayout) : MeasuredCanonicalModLayout :=
@@ -23167,8 +23219,10 @@ def eFoldB (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
 theorem carryB_mem (L : CuccaroStreamedSquareWideLayout) (q : Wire) (hq : q∈carryB L) :
     q∈L.foldPad ∨ q∈L.core.work.drop 163 ∨ q=L.core.productHigh ∨ q=L.core.workHigh := by
   simp only [carryB,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-  rcases hq with h|h|h|h|h|h|h
+  rcases hq with h|h|h|h|h|h|h|h|h
   · exact Or.inl (List.mem_of_mem_take h)
+  · exact Or.inr (Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take h)))
+  · exact Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take h))
   · exact Or.inr (Or.inl (List.mem_of_mem_take h))
   · exact Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take h))
   · exact Or.inr (Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take h)))
@@ -23427,7 +23481,8 @@ namespace ECDSAAdd.Entrant.StairSquareBChecks
 open ECDSAAdd ECDSAAdd.Entrant Arithmetic ControlLoan1589BFFold StairSquareBMapped StairSquareBEFold
 
 
-def holesB : List Wire := (List.range' 725 35++List.range' 761 4).map Baselines.layout.core.poolWire
+def holesB : List Wire :=
+  (List.range' 725 35++List.range' 761 4++StairCertificate.extraIdx).map Baselines.layout.core.poolWire
 
 
 
@@ -23455,13 +23510,13 @@ theorem mr (a n : Nat) : (List.range n).map (· + a) = List.range' a n := by
   rw [List.range'_eq_map_range]
   exact List.map_congr_left (fun x _ => Nat.add_comm x a)
 
-theorem holesB_eq : holesB = List.range' 4840 35 ++ List.range' 4876 4 := by
+theorem holesB_eq : holesB = List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW := by
   have b1 : (List.range' 725 35).map Baselines.layout.core.poolWire = List.range' 4840 35 :=
     blk 725 35 (by decide)
   have b2 : (List.range' 761 4).map Baselines.layout.core.poolWire = List.range' 4876 4 :=
     blk 761 4 (by decide)
   unfold holesB
-  rw [List.map_append, b1, b2]
+  rw [List.map_append, List.map_append, b1, b2, StairCertificate.extraIdx_pool]
 
 /-- `LB` with its fields as intervals. -/
 def LBF : CuccaroStreamedSquareWideLayout :=
@@ -23485,7 +23540,7 @@ kernel never walks the deep `++` nest of the 14,196 gates of `mid_slots_le`. -/
 namespace LT48B
 open Challenge
 
-def forbidNat : List Nat := List.range' 4840 35 ++ List.range' 4876 4 ++ [4761]
+def forbidNat : List Nat := List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW ++ [4761]
 
 
 def maskL : List Nat → Nat
@@ -23806,8 +23861,10 @@ theorem K4DQ.mid_wires (L : CuccaroStreamedSquareWideLayout) :
     · rcases List.mem_append.mp hq with hq | hq
       · exact so q hq
       · simp only [coreB, carryB, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hq
-        rcases hq with h | h | h | h | h | h | h
+        rcases hq with h | h | h | h | h | h | h | h | h
         · exact sf q (List.mem_of_mem_take h)
+        · exact sw q (List.mem_of_mem_drop (List.mem_of_mem_drop (List.mem_of_mem_take h)))
+        · exact sf q (List.mem_of_mem_drop (List.mem_of_mem_take h))
         · exact sw q (List.mem_of_mem_drop (List.mem_of_mem_take h))
         · exact sf q (List.mem_of_mem_drop (List.mem_of_mem_take h))
         · exact sw q (List.mem_of_mem_drop (List.mem_of_mem_drop (List.mem_of_mem_take h)))
@@ -24675,7 +24732,8 @@ set_option linter.unusedSimpArgs false
 attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
 /-- The 39 hole sites; the same term as `StairCertificate.holes39`. -/
-def holes:List Wire:=(List.range' 725 35++List.range' 761 4).map Baselines.layout.core.poolWire
+def holes:List Wire:=
+  (List.range' 725 35++List.range' 761 4++StairCertificate.extraIdx).map Baselines.layout.core.poolWire
 
 
 
@@ -24696,18 +24754,18 @@ theorem blk (a n : Nat) (h : a + n ≤ 5699) :
   rw [List.mem_range'_1] at hx
   exact pw_lt x (by omega)
 
-def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4
+def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW
 
 theorem holes_eq : holes = holesN := by
   have b1 : (List.range' 725 35).map Baselines.layout.core.poolWire = List.range' 4840 35 :=
     blk 725 35 (by decide)
   have b2 : (List.range' 761 4).map Baselines.layout.core.poolWire = List.range' 4876 4 :=
     blk 761 4 (by decide)
-  show (List.range' 725 35 ++ List.range' 761 4).map Baselines.layout.core.poolWire =
-    List.range' 4840 35 ++ List.range' 4876 4
-  rw [List.map_append, b1, b2]
+  show (List.range' 725 35 ++ List.range' 761 4 ++ StairCertificate.extraIdx).map
+      Baselines.layout.core.poolWire = List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW
+  rw [List.map_append, List.map_append, b1, b2, StairCertificate.extraIdx_pool]
 
-theorem holes_len : holes.length = 39 := by
+theorem holes_len : holes.length = 39 + StairCertificate.extraIdx.length := by
   rw [holes_eq]
   decide
 
@@ -24889,8 +24947,8 @@ theorem allK_take (c : Wire → Bool) (P : Program) (i : Nat) (h : allK c P = tr
 theorem allK_drop (c : Wire → Bool) (P : Program) (i : Nat) (h : allK c P = true) : allK c (P.drop i) = true :=
   List.all_eq_true.mpr (fun x hx => List.all_eq_true.mp h x (List.mem_of_mem_drop hx))
 
-/-- Off the 39 holes (`[4840, 4875) ∪ [4876, 4880)`). -/
-def holeB (x : Nat) : Bool := Nat.blt x 4840 || Nat.ble 4880 x || Nat.beq x 4875
+def holeB (x : Nat) : Bool := (Nat.blt x 4840 || Nat.ble 4880 x || Nat.beq x 4875) &&
+  (Nat.blt x 4835 || Nat.ble 4840 x || !StairCertificate.memB x StairCertificate.extraW)
 
 end K4DE
 
@@ -24959,15 +25017,15 @@ theorem subTop_support (h r cs : List Wire) (cin z u v k : Wire) (hl : (h++[z]).
 end
 
 /-- The 39 hole sites as plain numbers (evaluating `poolWire` once, not once per check). -/
-theorem holes_nat : holes=List.range' 4840 35++List.range' 4876 4 := by
+theorem holes_nat : holes=List.range' 4840 35++List.range' 4876 4++StairCertificate.extraW := by
   -- K4-D (replay budget): symbolic (was a pool walk per hole)
   have b1 : (List.range' 725 35).map Baselines.layout.core.poolWire = List.range' 4840 35 :=
     K4DE.blk 725 35 (by decide)
   have b2 : (List.range' 761 4).map Baselines.layout.core.poolWire = List.range' 4876 4 :=
     K4DE.blk 761 4 (by decide)
-  show (List.range' 725 35 ++ List.range' 761 4).map Baselines.layout.core.poolWire =
-    List.range' 4840 35 ++ List.range' 4876 4
-  rw [List.map_append, b1, b2]
+  show (List.range' 725 35 ++ List.range' 761 4 ++ StairCertificate.extraIdx).map
+      Baselines.layout.core.poolWire = List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW
+  rw [List.map_append, List.map_append, b1, b2, StairCertificate.extraIdx_pool]
 
 
 end K2
@@ -25100,16 +25158,16 @@ theorem blk (a n : Nat) (h : a + n ≤ 5699) :
   rw [List.mem_range'_1] at hx
   exact pw_lt x (by omega)
 
-def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4
+def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW
 
 theorem holes_eq : holes = holesN := by
   have b1 : (List.range' 725 35).map Baselines.layout.core.poolWire = List.range' 4840 35 :=
     blk 725 35 (by decide)
   have b2 : (List.range' 761 4).map Baselines.layout.core.poolWire = List.range' 4876 4 :=
     blk 761 4 (by decide)
-  show (List.range' 725 35 ++ List.range' 761 4).map Baselines.layout.core.poolWire =
-    List.range' 4840 35 ++ List.range' 4876 4
-  rw [List.map_append, b1, b2]
+  show (List.range' 725 35 ++ List.range' 761 4 ++ StairCertificate.extraIdx).map
+      Baselines.layout.core.poolWire = List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW
+  rw [List.map_append, List.map_append, b1, b2, StairCertificate.extraIdx_pool]
 
 
 
@@ -25492,18 +25550,18 @@ theorem blk (a n : Nat) (h : a + n ≤ 5699) :
   rw [List.mem_range'_1] at hx
   exact pw_lt x (by omega)
 
-def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4
+def holesN : List Wire := List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW
 
 theorem holes_eq : holes = holesN := by
   have b1 : (List.range' 725 35).map Baselines.layout.core.poolWire = List.range' 4840 35 :=
     blk 725 35 (by decide)
   have b2 : (List.range' 761 4).map Baselines.layout.core.poolWire = List.range' 4876 4 :=
     blk 761 4 (by decide)
-  show (List.range' 725 35 ++ List.range' 761 4).map Baselines.layout.core.poolWire =
-    List.range' 4840 35 ++ List.range' 4876 4
-  rw [List.map_append, b1, b2]
+  show (List.range' 725 35 ++ List.range' 761 4 ++ StairCertificate.extraIdx).map
+      Baselines.layout.core.poolWire = List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW
+  rw [List.map_append, List.map_append, b1, b2, StairCertificate.extraIdx_pool]
 
-theorem holes_len : holes.length = 39 := by
+theorem holes_len : holes.length = 39 + StairCertificate.extraIdx.length := by
   rw [holes_eq]
   decide
 
@@ -26298,7 +26356,8 @@ theorem pool_getD_of (L : ControlledPointLayout) (hw : L.Widths) (n : Nat) (hi :
 /-! ## the square instance -/
 
 /-- The 39 hole sites; the same term as `StairCertificate.holes39` (and `StairSqLoopA.holes`). -/
-def holes39 : List Wire := (List.range' 725 35++List.range' 761 4).map Baselines.layout.core.poolWire
+def holes39 : List Wire :=
+  (List.range' 725 35++List.range' 761 4++StairCertificate.extraIdx).map Baselines.layout.core.poolWire
 
 theorem hw0 : L0.Widths := Baselines.layout_widths
 theorem hn0 : L0.wires.Nodup := Baselines.layout_nodup
@@ -36228,8 +36287,8 @@ def Arena39 (q : Nat) : Prop :=
   q ≤ 513 ∨ q = 4112 ∨ (4115 ≤ q ∧ q < 4630) ∨ (4833 ≤ q ∧ q < 5144) ∨
     (5399 ≤ q ∧ q < 5656) ∨ q = 5915 ∨ q = 9814 ∨ q = 9815
 
-/-- The 39 holes (`holes39`) as intervals. -/
-def Hole39 (q : Nat) : Prop := (4840 ≤ q ∧ q < 4875) ∨ (4876 ≤ q ∧ q < 4880)
+def Hole39 (q : Nat) : Prop :=
+  (4840 ≤ q ∧ q < 4875) ∨ (4876 ≤ q ∧ q < 4880) ∨ q ∈ StairCertificate.extraW
 
 /-- A good physical site for the 39-hole certificate. -/
 def Good39 (q : Nat) : Prop := Arena39 q ∧ q ∉ oldHolesNat ∧ ¬ Hole39 q
@@ -36237,7 +36296,8 @@ def Good39 (q : Nat) : Prop := Arena39 q ∧ q ∉ oldHolesNat ∧ ¬ Hole39 q
 
 
 
-theorem holes39_eq : StairCertificate.holes39 = List.range' 4840 35 ++ List.range' 4876 4 := by
+theorem holes39_eq : StairCertificate.holes39 =
+    List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW := by
   -- K4-B (replay budget): pool wires in closed form (`poolWire_eq`) instead of list lookups
   have e : StairCertificate.holes39 = StairCertificate.holeIndices39.map (fun i => 4115 + i) := by
     unfold StairCertificate.holes39
@@ -36245,7 +36305,9 @@ theorem holes39_eq : StairCertificate.holes39 = List.range' 4840 35 ++ List.rang
     intro i hi
     apply StairHoleSupport.poolWire_eq
     simp only [StairCertificate.holeIndices39, List.mem_append, List.mem_range'_1] at hi
-    omega
+    rcases hi with hi | hi
+    · omega
+    · have := StairCertificate.extraIdx_window i hi; omega
   rw [e]
   decide +kernel
 
@@ -36259,7 +36321,9 @@ theorem hole39_of_mem {q : Nat} (h : q ∈ StairCertificate.holes39) : Hole39 q 
   rw [holes39_eq] at h
   simp only [List.mem_append, List.mem_range'_1] at h
   unfold Hole39
-  omega
+  rcases h with h | h
+  · omega
+  · exact Or.inr (Or.inr h)
 
 theorem good39_spec {q : Wire} (h : Good39 q) :
     q ∈ StairHoleSupport.recordArena ∧ q ∉ StairHoleSupport.oldHoles ∧
@@ -36286,15 +36350,25 @@ def good39B (q : Nat) : Bool :=
       (Nat.ble 4835 q && Nat.blt q 5144) || (Nat.ble 5399 q && Nat.blt q 5656) ||
       Nat.beq q 9814) &&
     !(Nat.beq q 5515 || Nat.beq q 5655 || Nat.beq q 5400 || Nat.beq q 5401 ||
-      (Nat.ble 4840 q && Nat.blt q 4886))
+      (Nat.ble 4840 q && Nat.blt q 4886)) &&
+    (Nat.blt q 4835 || Nat.ble 4840 q || !StairCertificate.memB q StairCertificate.extraW)
 
 theorem good39_of_B {q : Nat} (h : good39B q = true) : Good39 q := by
-  simp only [good39B, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', Bool.eq_false_iff,
+  unfold good39B at h
+  rw [Bool.and_eq_true] at h
+  obtain ⟨h, hx⟩ := h
+  have hw := StairCertificate.win_spec hx
+  simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', Bool.eq_false_iff,
     ne_eq, Nat.ble_eq, Nat.blt_eq, Nat.beq_eq] at h
   refine ⟨?_, ?_, ?_⟩
   · unfold Arena39; omega
   · simp only [oldHolesNat, List.mem_cons, List.not_mem_nil, or_false]; omega
-  · unfold Hole39; omega
+  · unfold Hole39
+    rintro (hh | hh | hh)
+    · omega
+    · omega
+    · exact (StairCertificate.memB_false_iff q _).mp
+        (StairCertificate.memB_of_win StairCertificate.extraW_window hw) hh
 
 
 
@@ -36371,7 +36445,7 @@ theorem kbG_lo {w : Nat} (h : w ≤ 513) : good39B w = true := by
     ne_eq, Nat.ble_eq, Nat.blt_eq, Nat.beq_eq]
   omega
 
-theorem kbG_in {w a b : Nat} (hab : (4115 ≤ a ∧ b ≤ 4630) ∨ (4835 ≤ a ∧ b ≤ 4840) ∨
+theorem kbG_in {w a b : Nat} (hab : (4115 ≤ a ∧ b ≤ 4630) ∨ (4835 ≤ a ∧ b ≤ 4835) ∨
     (4886 ≤ a ∧ b ≤ 5144) ∨ (5402 ≤ a ∧ b ≤ 5515) ∨ (5516 ≤ a ∧ b ≤ 5655))
     (h1 : a ≤ w) (h2 : w < b) : good39B w = true := by
   simp only [good39B, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', Bool.eq_false_iff,
@@ -36451,8 +36525,9 @@ theorem kbPPm (x : Nat) (h1 : 2330 ≤ x) (h2 : x < 2417) :
 
 /-- Labels whose phase placement `PP` is 39-good (intervals). -/
 def PPI (x : Nat) : Prop :=
-  x < 531 ∨ x = 733 ∨ (739 ≤ x ∧ x < 741) ∨ (786 ≤ x ∧ x < 1301) ∨
-    (1556 ≤ x ∧ x < 1813) ∨ (2072 ≤ x ∧ x < 2328) ∨ (2330 ≤ x ∧ x < 2417)
+  (x < 531 ∨ x = 733 ∨ (739 ≤ x ∧ x < 741) ∨ (786 ≤ x ∧ x < 1301) ∨
+    (1556 ≤ x ∧ x < 1813) ∨ (2072 ≤ x ∧ x < 2328) ∨ (2330 ≤ x ∧ x < 2417)) ∧
+  (x < 736 ∨ 741 ≤ x ∨ StairCertificate.memB x StairCertificate.extraPPL = false)
 
 
 def ppList : List Nat :=
@@ -36462,45 +36537,52 @@ def ppList : List Nat :=
 /-- LT46 (replay budget): decided on the closed-form phase placement
 (`StairPlaceFast.phasePlace_eqB`; 58 s → ≈ 2 s).  K4-B: symbolic on the affine intervals
 (`kbPP*`), only the exceptional labels are evaluated. -/
-theorem ppList_good : ∀ x ∈ ppList, Good39 (PP x) := by
+theorem ppList_good : ∀ x ∈ ppList, StairCertificate.memB x StairCertificate.extraPPL = false →
+    Good39 (PP x) := by
   have low : ∀ x, x < 16 → good39B (StairPlaceFast.phasePlaceB x) = true := by
     decide +kernel
-  have key : ∀ x ∈ ppList, good39B (StairPlaceFast.phasePlaceB x) = true := by
+  have orR : ∀ b c : Bool, c = true → (b || c) = true := by
+    intro b c h; rw [h, Bool.or_true]
+  have key : ∀ x ∈ ppList,
+      (StairCertificate.memB x StairCertificate.extraPPL ||
+        good39B (StairPlaceFast.phasePlaceB x)) = true := by
     intro x hx
     simp only [ppList, List.mem_append, List.mem_range'_1, List.mem_cons, List.not_mem_nil,
       or_false] at hx
     rcases hx with ((((hA | hB) | hC) | hD) | hE) | hF
     · rcases Nat.lt_or_ge x 16 with h | h
-      · exact low x h
-      · exact kbPP1 x h (by omega)
+      · exact orR _ _ (low x h)
+      · exact orR _ _ (kbPP1 x h (by omega))
     · rcases hB with rfl | rfl | rfl <;> decide
     · rcases Nat.lt_or_ge x 1042 with h | h
-      · exact kbPP3 x (by omega) h
+      · exact orR _ _ (kbPP3 x (by omega) h)
       · rcases Nat.lt_or_ge x 1043 with h' | h'
         · obtain rfl : x = 1042 := by omega
           decide
-        · exact kbPP4 x h' (by omega)
+        · exact orR _ _ (kbPP4 x h' (by omega))
     · rcases Nat.lt_or_ge x 1559 with h | h
       · have : x = 1556 ∨ x = 1557 ∨ x = 1558 := by omega
         rcases this with rfl | rfl | rfl <;> decide
       · rcases Nat.lt_or_ge x 1672 with h' | h'
-        · exact kbPP6 x h h'
+        · exact orR _ _ (kbPP6 x h h')
         · rcases Nat.lt_or_ge x 1673 with h'' | h''
           · obtain rfl : x = 1672 := by omega
             decide
           · rcases Nat.lt_or_ge x 1812 with h3 | h3
-            · exact kbPP7 x h'' h3
+            · exact orR _ _ (kbPP7 x h'' h3)
             · obtain rfl : x = 1812 := by omega
               decide
-    · exact kbPP8 x (by omega) (by omega)
-    · exact kbPPm x (by omega) (by omega)
-  intro x hx
-  have h := good39_of_B (key x hx)
+    · exact orR _ _ (kbPP8 x (by omega) (by omega))
+    · exact orR _ _ (kbPPm x (by omega) (by omega))
+  intro x hx hm
+  have k := key x hx
+  rw [hm, Bool.false_or] at k
+  have h := good39_of_B k
   rwa [← StairPlaceFast.phasePlace_eqB] at h
 
 theorem ppi_good {x : Nat} (h : PPI x) : Good39 (PP x) := by
-  apply ppList_good
-  unfold PPI at h
+  obtain ⟨h, hw⟩ := h
+  refine ppList_good x ?_ (StairCertificate.memB_of_win StairCertificate.extraPPL_window hw)
   simp only [ppList, List.mem_append, List.mem_range'_1, List.mem_cons, List.not_mem_nil,
     or_false]
   omega
@@ -36641,16 +36723,19 @@ open StairConcreteAssembly StairSiteAvoidance
 phase relabelling on its closed forms. -/
 
 def kbPpiB (x : Nat) : Bool :=
-  Nat.blt x 531 || Nat.beq x 733 || (Nat.ble 739 x && Nat.blt x 741) ||
+  (Nat.blt x 531 || Nat.beq x 733 || (Nat.ble 739 x && Nat.blt x 741) ||
     (Nat.ble 786 x && Nat.blt x 1301) || (Nat.ble 1556 x && Nat.blt x 1813) ||
-    (Nat.ble 2072 x && Nat.blt x 2328) || (Nat.ble 2330 x && Nat.blt x 2417)
+    (Nat.ble 2072 x && Nat.blt x 2328) || (Nat.ble 2330 x && Nat.blt x 2417)) &&
+  (Nat.blt x 736 || Nat.ble 741 x || !StairCertificate.memB x StairCertificate.extraPPL)
 
 theorem kbPpiB_ppi {x : Nat} (h : kbPpiB x = true) : PPI x := by
   unfold kbPpiB at h
+  rw [Bool.and_eq_true] at h
+  obtain ⟨h, hw⟩ := h
   simp only [Bool.or_eq_true, Bool.and_eq_true, Nat.blt_eq, Nat.ble_eq, Nat.beq_eq] at h
   unfold PPI
   simp only [or_assoc] at h
-  exact h
+  exact ⟨h, StairCertificate.win_spec hw⟩
 
 theorem kbOk39_of_ppiAllB {P : Program} (h : allSites kbPpiB P = true) :
     PieceOK StairCertificate.holes39 PP P :=
@@ -59942,7 +60027,7 @@ namespace K4DB
 
 
 
-theorem holes_len : holes.length = 39 := by
+theorem holes_len : holes.length = 39 + StairCertificate.extraIdx.length := by
   rw [holes_eq]
   decide
 
@@ -73622,9 +73707,10 @@ instance instDecPPI (x : Nat) : Decidable (PPI x) := by
 
 /-- Labels whose field-tail placement `TP` is 39-good (intervals). -/
 def TPI (x : Nat) : Prop :=
-  x < 16 ∨ (17 ≤ x ∧ x < 527) ∨ (528 ≤ x ∧ x < 531) ∨ x = 733 ∨ (736 ≤ x ∧ x < 741) ∨
+  (x < 16 ∨ (17 ≤ x ∧ x < 527) ∨ (528 ≤ x ∧ x < 531) ∨ x = 733 ∨ (736 ≤ x ∧ x < 741) ∨
     x = 784 ∨ (786 ≤ x ∧ x < 1042) ∨ (1043 ≤ x ∧ x < 1301) ∨ x = 1556 ∨
-    (1560 ≤ x ∧ x < 1814) ∨ (2072 ≤ x ∧ x < 2328) ∨ (2330 ≤ x ∧ x < 2417) ∨ x = 2425
+    (1560 ≤ x ∧ x < 1814) ∨ (2072 ≤ x ∧ x < 2328) ∨ (2330 ≤ x ∧ x < 2417) ∨ x = 2425) ∧
+  (x < 736 ∨ 741 ≤ x ∨ StairCertificate.memB x StairCertificate.extraTPL = false)
 
 instance instDecTPI (x : Nat) : Decidable (TPI x) := by
   unfold TPI; infer_instance
@@ -73637,41 +73723,48 @@ def tpList : List Nat :=
 /-- LT46 (replay budget): decided on the closed-form field-tail placement
 (`StairPlaceFast.outerPlace_eqB`; 53 s → ≈ 2.5 s).  K4-B: symbolic on the affine intervals
 (`kbTP*`), only the exceptional labels are evaluated. -/
-theorem tpList_good : ∀ x ∈ tpList, Good39 (TP x) := by
+theorem tpList_good : ∀ x ∈ tpList, StairCertificate.memB x StairCertificate.extraTPL = false →
+    Good39 (TP x) := by
   have low : ∀ x, x < 16 → good39B (StairPlaceFast.outerPlaceB x) = true := by
     decide +kernel
-  have key : ∀ x ∈ tpList, good39B (StairPlaceFast.outerPlaceB x) = true := by
+  have orR : ∀ b c : Bool, c = true → (b || c) = true := by
+    intro b c h; rw [h, Bool.or_true]
+  have key : ∀ x ∈ tpList,
+      (StairCertificate.memB x StairCertificate.extraTPL ||
+        good39B (StairPlaceFast.outerPlaceB x)) = true := by
     intro x hx
     simp only [tpList, List.mem_append, List.mem_range'_1, List.mem_cons, List.not_mem_nil,
       or_false] at hx
     rcases hx with ((((((((hA | hB) | hC) | hD) | hE) | hF) | hG) | hH) | hI) | hJ
-    · exact low x (by omega)
-    · exact kbTP1 x (by omega) (by omega)
+    · exact orR _ _ (low x (by omega))
+    · exact orR _ _ (kbTP1 x (by omega) (by omega))
     · rcases hC with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    · exact kbTP4 x (by omega) (by omega)
-    · exact kbTP5 x (by omega) (by omega)
+    · exact orR _ _ (kbTP4 x (by omega) (by omega))
+    · exact orR _ _ (kbTP5 x (by omega) (by omega))
     · rw [hF]
       decide
     · rcases Nat.lt_or_ge x 1672 with h | h
-      · exact kbTP7 x (by omega) h
+      · exact orR _ _ (kbTP7 x (by omega) h)
       · rcases Nat.lt_or_ge x 1673 with h' | h'
         · obtain rfl : x = 1672 := by omega
           decide
         · rcases Nat.lt_or_ge x 1812 with h'' | h''
-          · exact kbTP8 x h' h''
+          · exact orR _ _ (kbTP8 x h' h'')
           · have : x = 1812 ∨ x = 1813 := by omega
             rcases this with rfl | rfl <;> decide
-    · exact kbTP9 x (by omega) (by omega)
-    · exact kbTPm x (by omega) (by omega)
+    · exact orR _ _ (kbTP9 x (by omega) (by omega))
+    · exact orR _ _ (kbTPm x (by omega) (by omega))
     · rw [hJ]
       decide
-  intro x hx
-  have h := good39_of_B (key x hx)
+  intro x hx hm
+  have k := key x hx
+  rw [hm, Bool.false_or] at k
+  have h := good39_of_B k
   rwa [← StairPlaceFast.outerPlace_eqB] at h
 
 theorem tpi_good {x : Nat} (h : TPI x) : Good39 (TP x) := by
-  apply tpList_good
-  unfold TPI at h
+  obtain ⟨h, hw⟩ := h
+  refine tpList_good x ?_ (StairCertificate.memB_of_win StairCertificate.extraTPL_window hw)
   simp only [tpList, List.mem_append, List.mem_range'_1, List.mem_cons, List.not_mem_nil,
     or_false]
   omega
@@ -74440,15 +74533,17 @@ theorem k6_ex_eq (y : Nat) : decide (y ∈ StairSchedule.exclusiveRoles) = k6exB
     Nat.blt_eq]
 
 def k6TPIB (x : Nat) : Bool :=
-  Nat.blt x 16 || Nat.ble 17 x && Nat.blt x 527 || Nat.ble 528 x && Nat.blt x 531 || Nat.beq x 733 ||
+  (Nat.blt x 16 || Nat.ble 17 x && Nat.blt x 527 || Nat.ble 528 x && Nat.blt x 531 || Nat.beq x 733 ||
     Nat.ble 736 x && Nat.blt x 741 || Nat.beq x 784 || Nat.ble 786 x && Nat.blt x 1042 ||
     Nat.ble 1043 x && Nat.blt x 1301 || Nat.beq x 1556 || Nat.ble 1560 x && Nat.blt x 1814 ||
-    Nat.ble 2072 x && Nat.blt x 2328 || Nat.ble 2330 x && Nat.blt x 2417 || Nat.beq x 2425
+    Nat.ble 2072 x && Nat.blt x 2328 || Nat.ble 2330 x && Nat.blt x 2417 || Nat.beq x 2425) &&
+  (Nat.blt x 736 || Nat.ble 741 x || !StairCertificate.memB x StairCertificate.extraTPL)
 
 theorem k6_TPI_eq (x : Nat) : decide (TPI x) = k6TPIB x := by
   rw [Bool.eq_iff_iff, decide_eq_true_iff]
   unfold TPI k6TPIB
-  simp only [Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq, Nat.beq_eq, or_assoc]
+  simp only [Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq, Nat.beq_eq, or_assoc,
+    Bool.not_eq_true']
 
 def k6GCB (y : Nat) : Bool := !k6exB y && k6TPIB y
 
@@ -74841,18 +74936,21 @@ theorem schedule_bounds : ∀ g ∈ schedule, g.1 ≤ 44 ∧ 1 ≤ g.2.1 ∧ g.2
 
 /-- K4-B (replay budget): `TPI` with kernel-primitive tests only. -/
 def kbTpiB (x : Nat) : Bool :=
-  Nat.blt x 16 || (Nat.ble 17 x && Nat.blt x 527) || (Nat.ble 528 x && Nat.blt x 531) ||
+  (Nat.blt x 16 || (Nat.ble 17 x && Nat.blt x 527) || (Nat.ble 528 x && Nat.blt x 531) ||
     Nat.beq x 733 || (Nat.ble 736 x && Nat.blt x 741) || Nat.beq x 784 ||
     (Nat.ble 786 x && Nat.blt x 1042) || (Nat.ble 1043 x && Nat.blt x 1301) || Nat.beq x 1556 ||
     (Nat.ble 1560 x && Nat.blt x 1814) || (Nat.ble 2072 x && Nat.blt x 2328) ||
-    (Nat.ble 2330 x && Nat.blt x 2417) || Nat.beq x 2425
+    (Nat.ble 2330 x && Nat.blt x 2417) || Nat.beq x 2425) &&
+  (Nat.blt x 736 || Nat.ble 741 x || !StairCertificate.memB x StairCertificate.extraTPL)
 
 theorem kbTpiB_tpi {x : Nat} (h : kbTpiB x = true) : TPI x := by
   unfold kbTpiB at h
+  rw [Bool.and_eq_true] at h
+  obtain ⟨h, hw⟩ := h
   simp only [Bool.or_eq_true, Bool.and_eq_true, Nat.blt_eq, Nat.ble_eq, Nat.beq_eq] at h
   unfold TPI
   simp only [or_assoc] at h
-  exact h
+  exact ⟨h, StairCertificate.win_spec hw⟩
 
 /-- K4-B (replay budget): the host facts of one scheduled group as one linear Boolean pass
 (bit masks instead of quadratic membership / `Nodup` decisions). -/
@@ -75000,11 +75098,12 @@ def k5roleB (q : Nat) : Bool :=
   (Nat.ble 736 q && Nat.blt q 776) || (Nat.ble 777 q && Nat.blt q 781)
 
 def k5tpiB (x : Nat) : Bool :=
-  Nat.blt x 16 || (Nat.ble 17 x && Nat.blt x 527) || (Nat.ble 528 x && Nat.blt x 531) ||
+  (Nat.blt x 16 || (Nat.ble 17 x && Nat.blt x 527) || (Nat.ble 528 x && Nat.blt x 531) ||
     Nat.beq x 733 || (Nat.ble 736 x && Nat.blt x 741) || Nat.beq x 784 ||
     (Nat.ble 786 x && Nat.blt x 1042) || (Nat.ble 1043 x && Nat.blt x 1301) || Nat.beq x 1556 ||
     (Nat.ble 1560 x && Nat.blt x 1814) || (Nat.ble 2072 x && Nat.blt x 2328) ||
-    (Nat.ble 2330 x && Nat.blt x 2417) || Nat.beq x 2425
+    (Nat.ble 2330 x && Nat.blt x 2417) || Nat.beq x 2425) &&
+  (Nat.blt x 736 || Nat.ble 741 x || !StairCertificate.memB x StairCertificate.extraTPL)
 
 theorem k5_roleB (q : Nat) (h : k5roleB q = true) : RoleI q := by
   unfold k5roleB at h
@@ -75014,9 +75113,11 @@ theorem k5_roleB (q : Nat) (h : k5roleB q = true) : RoleI q := by
 
 theorem k5_tpiB (x : Nat) (h : k5tpiB x = true) : TPI x := by
   unfold k5tpiB at h
+  rw [Bool.and_eq_true] at h
+  obtain ⟨h, hw⟩ := h
   simp only [Bool.or_eq_true, Bool.and_eq_true, Nat.ble_eq, Nat.blt_eq, Nat.beq_eq] at h
   unfold TPI
-  omega
+  exact ⟨by omega, StairCertificate.win_spec hw⟩
 
 theorem k5_tab_conv (l : List Nat) (g : Nat → Nat)
     (h : l.all (fun y => k5roleB y || k5tpiB (g y)) = true) :
@@ -75995,7 +76096,7 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
 /-! ## Field-12 piece fact -/
 
-def holes39Nat : List Wire := List.range' 4840 35 ++ List.range' 4876 4
+def holes39Nat : List Wire := List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW
 
 theorem holes39_eq : StairCertificate.holes39 = holes39Nat := by
   -- K4-B (replay budget): pool wires in closed form (`poolWire_eq`) instead of list lookups
@@ -76005,7 +76106,9 @@ theorem holes39_eq : StairCertificate.holes39 = holes39Nat := by
     intro i hi
     apply StairHoleSupport.poolWire_eq
     simp only [StairCertificate.holeIndices39, List.mem_append, List.mem_range'_1] at hi
-    omega
+    rcases hi with hi | hi
+    · omega
+    · have := StairCertificate.extraIdx_window i hi; omega
   rw [e]
   decide +kernel
 
@@ -77898,7 +78001,7 @@ proved list changes (any duplicate-free sub-list of the 44 physical holes
 `720 … 764` without `760`; `finalHoles_sub` / `finalHoles_nodup` re-check it by
 kernel evaluation).  Now: the 39 sites 725..759, 761..764 (coordinator 18:37);
 Q = 1586 − length is passed to `certificate_of_remaining` and checked by `decide`. -/
-def finalHoleIndices : List Nat := List.range' 725 35 ++ List.range' 761 4
+def finalHoleIndices : List Nat := List.range' 725 35 ++ List.range' 761 4 ++ StairCertificate.extraIdx
 
 def finalHoles : List Wire := finalHoleIndices.map Baselines.layout.core.poolWire
 
@@ -77909,7 +78012,9 @@ theorem finalHoles_sub : ∀ q ∈ finalHoles, q ∈ StairPhysicalInventory.phys
   obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq
   apply List.mem_map_of_mem
   simp only [finalHoleIndices, List.mem_append, List.mem_range'_1] at hi ⊢
-  omega
+  rcases hi with hi | hi
+  · omega
+  · have := StairCertificate.extraIdx_window i hi; omega
 
 theorem finalHoles_nodup : finalHoles.Nodup := by
   -- K4-B (replay budget): pool wires in closed form, then one linear bit-mask scan
@@ -77919,7 +78024,9 @@ theorem finalHoles_nodup : finalHoles.Nodup := by
     intro i hi
     apply StairHoleSupport.poolWire_eq
     simp only [finalHoleIndices, List.mem_append, List.mem_range'_1] at hi
-    omega
+    rcases hi with hi | hi
+    · omega
+    · have := StairCertificate.extraIdx_window i hi; omega
   rw [e]
   exact StairLoan.nodup_of_mask _ (by decide +kernel)
 

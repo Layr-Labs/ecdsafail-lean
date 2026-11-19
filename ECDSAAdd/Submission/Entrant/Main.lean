@@ -38240,6 +38240,141 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 4000000
 set_option linter.unusedSimpArgs false
 
+namespace ECDSAAdd.Entrant.StairSiteEasy
+open ECDSAAdd Arithmetic Challenge RecordedQuantum NativeFirstDirect
+open MappedCompressed Secp256k1 BalancedField
+open E1Merge E1WholeKAdd52Research
+
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
+/-- The record's `merged_support`, restricted to the tail and to the tail's labels. -/
+theorem tailX_tight (w : Nat → Wire) (g : Wire) (k : Nat) :
+    wires (ParityXEntry.tailX w g k) ⊆ (tSites w g).toFinset := by
+  have B := blk_tSites w g
+  have I := in_tSites w g
+  have G := g_tSites w g
+  have mskH (c : Wire) (hc : c∈tSites w g) (v : Nat) : wires (maskedConstant c (hR w) v)⊆(tSites w g).toFinset :=
+    (maskedConstant_wires_subset c (hR w) v).trans (tl_sub w g _ (fun q hq => by
+      rcases List.mem_cons.mp hq with rfl|hq
+      · exact hc
+      · exact B 0 258 (by omega) q hq))
+  have mskT (c : Wire) (hc : c∈tSites w g) (v : Nat) : wires (maskedConstant c (tR w) v)⊆(tSites w g).toFinset :=
+    (maskedConstant_wires_subset c (tR w) v).trans (tl_sub w g _ (fun q hq => by
+      rcases List.mem_cons.mp hq with rfl|hq
+      · exact hc
+      · exact B 1029 256 (by omega) q hq))
+  have cx (a b : Nat) (ha : a < 258 ∨ (770 ≤ a ∧ a < 1285) ∨ (1540 ≤ a ∧ a < 1798) ∨ a = 514 ∨ a = 721 ∨ a = 722)
+      (hb : b < 258 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 514 ∨ b = 721 ∨ b = 722) :
+      wires [.CX (w a) (w b)]⊆(tSites w g).toFinset := tgate_sub w g _ (by
+    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+    rcases hq with rfl|rfl
+    · exact I a ha
+    · exact I b hb)
+  have cxg (b : Nat) (hb : b < 258 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 514 ∨ b = 721 ∨ b = 722) :
+      wires [.CX g (w b)]⊆(tSites w g).toFinset := tgate_sub w g _ (by
+    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
+    rcases hq with rfl|rfl
+    · exact G
+    · exact I b hb)
+  have hP : wires (parGates w g k)⊆(tSites w g).toFinset := by
+    unfold parGates
+    split_ifs <;> simp only [wires_append,Finset.union_subset_iff] <;>
+      refine ⟨⟨⟨⟨⟨?_,?_⟩,?_⟩,?_⟩,?_⟩,?_⟩ <;>
+      first | exact cx _ _ (by omega) (by omega) | exact cxg _ (by omega) | simp [wires]
+  have hR' : wires (rotateRight (kR w))⊆(tSites w g).toFinset := by
+    rw [(rotate_wires (kR w)).1]
+    simp only [kR,wireBlock_length,show ¬(258<2) by omega,if_false]
+    exact tl_sub w g _ (B 770 258 (by omega))
+  have hPr : wires (prodPart w g)⊆(tSites w g).toFinset := by
+    unfold prodPart
+    rw [show ([.CCX g (w 1028) (w 721),.CCX (w 514) (w 1028) (w 722)] : Program)=
+      [.CCX g (w 1028) (w 721)]++[.CCX (w 514) (w 1028) (w 722)] from rfl,wires_append,Finset.union_subset_iff]
+    constructor <;> apply tgate_sub <;> intro q hq <;>
+      simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq <;>
+      rcases hq with rfl|rfl|rfl <;> first | exact G | exact I _ (by omega)
+  have hL : wires (loadK w g k)⊆(tSites w g).toFinset := by
+    simp only [loadK,wires_append,Finset.union_subset_iff]
+    refine ⟨⟨⟨⟨⟨?_,mskH g G _⟩,mskH _ (I 514 (by omega)) _⟩,mskH _ (I 1028 (by omega)) _⟩,
+      mskH _ (I 721 (by omega)) _⟩,mskH _ (I 722 (by omega)) _⟩
+    exact (xorConstant_wires_subset (hR w) _).trans (tl_sub w g _ (B 0 258 (by omega)))
+  have hKOld : wires (kAddM w)⊆(tSites w g).toFinset := by
+    apply (mappedAdd_wires_subset _ _ _ _).trans
+    apply tl_sub; intro q hq
+    simp only [mappedRead_wires,List.mem_append,List.mem_singleton] at hq
+    rcases hq with ((hq|hq)|hq)|rfl
+    · exact B 0 258 (by omega) q hq
+    · exact B 770 258 (by omega) q hq
+    · exact B 1540 257 (by omega) q hq
+    · exact I 1797 (by omega)
+  have hK : wires (E1WholeKAdd52Research.flagKAdd52 w)⊆(tSites w g).toFinset := by
+    apply (E1ResourceBridge52Research.flag_support52 w).trans
+    simp only [Finset.union_subset_iff]
+    constructor
+    · exact hKOld
+    · intro q hq
+      have eq : q=w 1028 := Finset.mem_singleton.mp hq
+      rw [eq]
+      exact List.mem_toFinset.mpr (I 1028 (by omega))
+  have hM1 : wires [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]⊆(tSites w g).toFinset := by
+    apply tgate_sub; intro q hq
+    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
+      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
+    rcases hq with rfl|rfl|rfl <;> exact I _ (by omega)
+  have hM2 : wires [.measureX (w 721) [] [.CZ g (w 1028)]]⊆(tSites w g).toFinset := by
+    apply tgate_sub; intro q hq
+    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
+      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
+    rcases hq with rfl|rfl|rfl
+    · exact I _ (by omega)
+    · exact G
+    · exact I _ (by omega)
+  have hCp : wires (copyRegister none (wireBlock w 770 257) (hpR w))⊆(tSites w g).toFinset := by
+    rw [copyRegister_wires none _ _ (by simp [hpR,wireBlock_length])]
+    split
+    · exact Finset.empty_subset _
+    · apply tl_sub; intro q hq
+      simp only [Option.toList_none,List.nil_append,List.mem_append] at hq
+      rcases hq with hq|hq
+      · exact B 770 257 (by omega) q hq
+      · exact B 1 257 (by omega) q hq
+  have hH : wires (hAddM w)⊆(tSites w g).toFinset := by
+    apply (mappedAdd_wires_subset _ _ _ _).trans
+    apply tl_sub; intro q hq
+    simp only [List.mem_append,List.mem_singleton] at hq
+    rcases hq with ((hq|hq)|hq)|rfl
+    · rw [dBits_wire w q hq]; exact I 1028 (by omega)
+    · exact B 1 257 (by omega) q hq
+    · exact B 1540 256 (by omega) q hq
+    · exact I 1797 (by omega)
+  have hW : wires [.CX (w 1028) (w 0),.X (w 0)]⊆(tSites w g).toFinset := by
+    rw [show ([.CX (w 1028) (w 0),.X (w 0)] : Program)=[.CX (w 1028) (w 0)]++[.X (w 0)] from rfl,
+      wires_append,Finset.union_subset_iff]
+    refine ⟨cx 1028 0 (by omega) (by omega),tgate_sub w g _ ?_⟩
+    intro q hq; simp only [Instr.wires,Finset.mem_singleton] at hq; rw [hq]; exact I 0 (by omega)
+  have hT : wires (loadT w g k)⊆(tSites w g).toFinset := by
+    simp only [loadT,wires_append,Finset.union_subset_iff]
+    exact ⟨mskT g G _,mskT _ (I 721 (by omega)) _⟩
+  have hE : wires (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514))⊆(tSites w g).toFinset := by
+    apply (eraseLtChain_wires_subset _ _ _ _ _).trans
+    apply tl_sub; intro q hq
+    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
+    rcases hq with ((hq|hq)|hq)|rfl|rfl
+    · exact B 1 256 (by omega) q hq
+    · exact B 1029 256 (by omega) q hq
+    · exact B 1540 255 (by omega) q hq
+    · exact I 1797 (by omega)
+    · exact I 514 (by omega)
+  have hHT : wires (hAddT w)⊆(tSites w g).toFinset := (hAddT_wires w).trans hH
+  simp only [ParityXEntry.tailX, ParityXEntry.postX, wires_append, Finset.union_subset_iff]
+  exact ⟨⟨⟨⟨⟨hP, hR'⟩, hPr⟩, hL⟩, hK⟩, ⟨⟨⟨⟨⟨⟨⟨⟨hL, hM1⟩, hCp⟩, hHT⟩, hW⟩, hT⟩, hE⟩, hT⟩, hM2⟩⟩
+
+theorem evenTail_tight (k : Nat) :
+    wires (ParityXEntry.evenTail k) ⊆ (tSites base (base 2400)).toFinset :=
+  (ParityXEntry.evenTail_wires k).trans (tailX_tight base (base 2400) k)
+
+end ECDSAAdd.Entrant.StairSiteEasy
+
 namespace ECDSAAdd.Entrant.FlagEntry
 open Arithmetic Challenge RecordedQuantum NativeFirstDirect MappedCompressed
 open ParityXEntry E1Merge E1WholeKAdd52Research Secp256k1 ControlledPointLayout
@@ -38319,8 +38454,7 @@ theorem compare_post (k X : Nat) (hk : k < ECDSAAdd.p) (hX : X < ECDSAAdd.p) (s 
       simp only [FastConst.mutable, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨⟨q2, q3⟩, q1⟩
 
-/-- The X entry with the comparison replaced by reading the flag from `pk`. -/
-def entryXNew (L : ControlledPointLayout) (pk : Wire) (k : Fp) : Program :=
+def entryXNew0 (L : ControlledPointLayout) (pk : Wire) (k : Fp) : Program :=
   if k.val % 2 = 1 then
     swp pk (E1QubitPlacement.pmapR L (base 514)) ++
       renameProgram (E1QubitPlacement.pmapR L) (tailX base (base 2400) k.val)
@@ -38328,6 +38462,10 @@ def entryXNew (L : ControlledPointLayout) (pk : Wire) (k : Fp) : Program :=
     renameProgram (E1QubitPlacement.pmapR L) [.CCX (base 2400) (base 770) (base 721)] ++
       (swp pk (E1QubitPlacement.pmapR L (base 514)) ++
         renameProgram (E1QubitPlacement.pmapR L) (evenTail k.val))
+
+def entryXNew (L : ControlledPointLayout) (pk : Wire) (k : Fp) : Program :=
+  renameProgram (Equiv.swap (E1QubitPlacement.pmapR L (base 721)) (E1QubitPlacement.pmapR L (base 300)))
+    (entryXNew0 L pk k)
 
 /-- Facts about the pulled state that the X entry needs. -/
 structure Pulled (t : State) (X : Nat) : Prop where
@@ -38435,13 +38573,13 @@ theorem compare_rename (X k : Fp) (u : State) (hx : regValue L.point.x u.basis =
     simp [put, writeBit, F] at ne ⊢
     simp [ne]
 
-theorem entryXNew_run (pk : Wire) (X k : Fp) (u : State)
+theorem entryXNew0_run (pk : Wire) (X k : Fp) (u : State)
     (hx : regValue L.point.x u.basis = X.val) (hc : regValue L.dialogPool u.basis = 0)
     (hpk : pk ∈ L.dialogPool) (h514 : pk ≠ E1QubitPlacement.pmapR L (base 514))
     (h721 : pk ≠ E1QubitPlacement.pmapR L (base 721))
     (h770 : pk ≠ E1QubitPlacement.pmapR L (base 770))
     (h2400 : pk ≠ E1QubitPlacement.pmapR L (base 2400)) (m : List Bool) :
-    run (entryXNew L pk k) m
+    run (entryXNew0 L pk k) m
         (put u pk (if u.basis L.core.generic then decide (prime ≤ X.val + k.val) else false)) =
       run (entryXAll L k)
         (List.replicate (measurementCount (comparePart base (base 2400) k.val)) false ++ m) u := by
@@ -38485,7 +38623,7 @@ theorem entryXNew_run (pk : Wire) (X k : Fp) (u : State)
     rw [cnt] at pad
     rw [pad, compare_rename L hw hn X k u hx hc]
   rw [old]
-  unfold entryXNew
+  unfold entryXNew0
   simp only [← hFdef]
   have mz : measurementCount (swp pk (F (base 514))) = 0 := by simp [swp, measurementCount]
   by_cases he : k.val % 2 = 1
@@ -38578,6 +38716,137 @@ theorem entryXNew_run (pk : Wire) (X k : Fp) (u : State)
     · intro q hq
       have ne : q ≠ F (base 721) := fun e => hq (e ▸ Finset.mem_image_of_mem F s721)
       simp [put, writeBit, ne]
+
+end
+
+
+theorem pmapR_300 (L : ControlledPointLayout) :
+    E1QubitPlacement.pmapR L (base 300) = L.core.poolWire 300 := by
+  unfold E1QubitPlacement.pmapR E1QubitPlacement.pmap
+  rw [E1QubitPlacement.rho_base, E1QubitPlacement.sig_base]
+  rfl
+
+theorem s300 : base 300 ∈ E1QubitPlacement.S :=
+  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 300 (by omega))
+
+def tailXInit (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
+  (parGates w g k ++ rotateRight (kR w)) ++ prodPart w g ++ loadK w g k ++ flagKAdd52 w ++
+    (loadK w g k ++ [.measureX (w 722) [] [.CZ (w 514) (w 1028)]] ++
+      copyRegister none (wireBlock w 770 257) (hpR w) ++ hAddT w ++ [.CX (w 1028) (w 0), .X (w 0)] ++
+      loadT w g k ++ eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514) ++ loadT w g k)
+
+theorem tailX_split (w : Nat → Wire) (g : Wire) (k : Nat) :
+    tailX w g k = tailXInit w g k ++ [.measureX (w 721) [] [.CZ g (w 1028)]] := by
+  unfold tailX postX tailXInit
+  simp only [List.append_assoc, List.cons_append, List.singleton_append, List.nil_append]
+
+def evenTailInit (k : Nat) : Program :=
+  parStage k ++ [.CX (base 514) (base 721), .CCX (base 514) (base 1028) (base 722)] ++
+    loadK base (base 2400) k ++ flagKAdd52 base ++
+    (loadK base (base 2400) k ++ [.measureX (base 722) [] [.CZ (base 514) (base 1028)]] ++
+      copyRegister none (wireBlock base 770 257) (hpR base) ++ hAddT base ++
+      [.CX (base 1028) (base 0), .X (base 0)] ++
+      loadT base (base 2400) k ++ eraseLtChain (hp8 base) (tR base) (hC3 base) (base 1797) (base 514) ++
+      loadT base (base 2400) k)
+
+theorem evenTail_split (k : Nat) :
+    evenTail k = evenTailInit k ++ [.measureX (base 721) [] [.CZ (base 2400) (base 1028)]] := by
+  unfold evenTail postX evenTailInit
+  simp only [List.append_assoc, List.cons_append, List.singleton_append, List.nil_append]
+
+theorem entryXNew0_out (L : ControlledPointLayout) (pk : Wire) (k : Fp) (m : List Bool) (s : State) :
+    (run (entryXNew0 L pk k) m s).basis (E1QubitPlacement.pmapR L (base 721)) = false := by
+  unfold entryXNew0
+  split_ifs
+  · rw [tailX_split, T723Core.rename_snoc, ← List.append_assoc]
+    exact T723Core.run_measure_last _ _ _ _ _ _
+  · rw [evenTail_split, T723Core.rename_snoc, ← List.append_assoc, ← List.append_assoc]
+    exact T723Core.run_measure_last _ _ _ _ _ _
+
+section
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+
+theorem host300_fresh (pk : Wire) (h300 : pk ≠ E1QubitPlacement.pmapR L (base 300)) (k : Fp) :
+    E1QubitPlacement.pmapR L (base 300) ∉ wires (entryXNew0 L pk k) := by
+  have inj := E1QubitPlacement.pmap_inj L hw hn
+  have s514 : base 514 ∈ E1QubitPlacement.S :=
+    List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 514 (by omega))
+  have h514 : E1QubitPlacement.pmapR L (base 514) ≠ E1QubitPlacement.pmapR L (base 300) :=
+    fun E => absurd (base_injective (inj _ s514 _ s300 E)) (by omega)
+  have tl : ∀ P : Program, wires P ⊆ E1QubitPlacement.S →
+      wires P ⊆ (StairSiteEasy.tSites base (base 2400)).toFinset →
+      E1QubitPlacement.pmapR L (base 300) ∉ wires (renameProgram (E1QubitPlacement.pmapR L) P) := by
+    intro P hS hT h
+    rw [renameProgram_support] at h
+    obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
+    have := inj _ (hS hy) _ s300 e
+    subst this
+    exact T723Core.base300_not_tSites (List.mem_toFinset.mp (hT hy))
+  have sw : E1QubitPlacement.pmapR L (base 300) ∉ wires (swp pk (E1QubitPlacement.pmapR L (base 514))) := by
+    intro h
+    simp only [swp, wires, Instr.wires, Finset.union_empty, Finset.mem_union, Finset.mem_insert,
+      Finset.mem_singleton] at h
+    rcases h with (h | h) | (h | h)
+    · exact h300 h.symm
+    · exact h514 h.symm
+    · exact h514 h.symm
+    · exact h300 h.symm
+  unfold entryXNew0
+  split_ifs
+  · rw [wires_append, Finset.mem_union]
+    rintro (h | h)
+    · exact sw h
+    · exact tl _ (tailX_S k.val) (StairSiteEasy.tailX_tight base (base 2400) k.val) h
+  · rw [wires_append, wires_append, Finset.mem_union, Finset.mem_union]
+    rintro (h | h | h)
+    · have cS : wires [Instr.CCX (base 2400) (base 770) (base 721)] ⊆ E1QubitPlacement.S := by
+        simp only [wires, Instr.wires, Finset.union_empty]
+        exact (tail_control_wires k.val).trans (tailX_S k.val)
+      have cT : wires [Instr.CCX (base 2400) (base 770) (base 721)] ⊆
+          (StairSiteEasy.tSites base (base 2400)).toFinset := by
+        apply StairSiteEasy.tgate_sub
+        intro q hq
+        simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+        rcases hq with rfl | rfl | rfl
+        · exact StairSiteEasy.g_tSites _ _
+        · exact StairSiteEasy.in_tSites _ _ 770 (by omega)
+        · exact StairSiteEasy.in_tSites _ _ 721 (by omega)
+      exact tl _ cS cT h
+    · exact sw h
+    · exact tl _ (evenTail_S k.val) (StairSiteEasy.evenTail_tight k.val) h
+
+theorem entryXNew_run (pk : Wire) (X k : Fp) (u : State)
+    (hx : regValue L.point.x u.basis = X.val) (hc : regValue L.dialogPool u.basis = 0)
+    (hpk : pk ∈ L.dialogPool) (h514 : pk ≠ E1QubitPlacement.pmapR L (base 514))
+    (h721 : pk ≠ E1QubitPlacement.pmapR L (base 721))
+    (h770 : pk ≠ E1QubitPlacement.pmapR L (base 770))
+    (h2400 : pk ≠ E1QubitPlacement.pmapR L (base 2400))
+    (h300 : pk ≠ E1QubitPlacement.pmapR L (base 300)) (m : List Bool) :
+    run (entryXNew L pk k) m
+        (put u pk (if u.basis L.core.generic then decide (prime ≤ X.val + k.val) else false)) =
+      run (entryXAll L k)
+        (List.replicate (measurementCount (comparePart base (base 2400) k.val)) false ++ m) u := by
+  have P := pulled_facts L hw hn X u hx hc
+  have z721 : u.basis (E1QubitPlacement.pmapR L (base 721)) = false := P.f721
+  have z300 : u.basis (E1QubitPlacement.pmapR L (base 300)) = false := by
+    apply (regValue_zero _ _).mp hc
+    apply E1QubitPlacement.pmap_pool L hw hn _ s300
+    · intro h
+      obtain ⟨j, hj, e⟩ := List.mem_map.mp h
+      have := base_injective e
+      simp only [List.mem_range'_1] at hj
+      omega
+    · intro e
+      have := base_injective e
+      omega
+  refine Eq.trans ?_ (entryXNew0_run L hw hn pk X k u hx hc hpk h514 h721 h770 h2400 m)
+  unfold entryXNew
+  apply EqualSourceSwapResearch.rename_swap_equal_eq
+  · exact host300_fresh L hw hn pk h300 k
+  · simp [put, writeBit, Function.update_apply, Ne.symm h721, Ne.symm h300, z721, z300]
+  · rw [entryXNew0_out]
+    simp [put, writeBit, Function.update_apply, Ne.symm h721, z721]
 
 end
 
@@ -38683,22 +38952,29 @@ def genericNew (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   ((entryYAll L (-cy) ++ entryXNew L (pkW L) (-cx)) ++ ParityStageBothInverse23.restEntry L) ++
     ParityStageBothInverse23.secondStageAll L (ReflectionE1.correction cx) cy cx
 
-theorem entryXNew_measure (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+theorem entryXNew0_measure (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
     measurementCount (entryXAll L k) =
-      measurementCount (comparePart base (base 2400) k.val) + measurementCount (entryXNew L pk k) := by
+      measurementCount (comparePart base (base 2400) k.val) + measurementCount (entryXNew0 L pk k) := by
   have o := (entryXAll_counts L k).2.1
   have e : measurementCount (E1QubitPlacement.entryM L k) =
       measurementCount (E1AffineEndpoints52Research.Forward.merged base (base 2400) k.val) := by
     unfold E1QubitPlacement.entryM
     exact (renameProgram_counts _ _).2
   rw [o, e, merged_split, measurementCount_append]
-  unfold entryXNew
+  unfold entryXNew0
   have sw0 : ∀ a, measurementCount (swp pk a) = 0 := by intro a; simp [swp, measurementCount]
   split_ifs
   · rw [measurementCount_append, sw0, (renameProgram_counts _ _).2]; omega
   · rw [measurementCount_append, measurementCount_append, sw0, (renameProgram_counts _ _).2,
       (renameProgram_counts _ _).2, (evenTail_counts _).2.1]
     simp [measurementCount]
+
+theorem entryXNew_measure (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+    measurementCount (entryXAll L k) =
+      measurementCount (comparePart base (base 2400) k.val) + measurementCount (entryXNew L pk k) := by
+  unfold entryXNew
+  rw [(renameProgram_counts _ _).2]
+  exact entryXNew0_measure L pk k
 
 section
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
@@ -38760,6 +39036,10 @@ theorem pk_ne_high : pkW L ≠ E1QubitPlacement.pmapR L (base 721) := by
     rfl
   rw [e]
   exact fun E => absurd (pool_inj L hw hn 724 723 (by omega) (by omega) E) (by omega)
+
+theorem pk_ne_300 : pkW L ≠ E1QubitPlacement.pmapR L (base 300) := by
+  rw [pmapR_300 L]
+  exact fun E => absurd (pool_inj L hw hn 724 300 (by omega) (by omega) E) (by omega)
 
 theorem pk_ne_x : pkW L ≠ E1QubitPlacement.pmapR L (base 770) := by
   have hp := pk_pool L hw
@@ -39151,14 +39431,22 @@ theorem stageNew_counts {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) (pk
 
 
 
-theorem pk_wires (cx cy : Fp) : pkW layout ∈ wires (genericNew layout cx cy) := by
-  have h : pkW layout ∈ wires (entryXNew layout (pkW layout) (-cx)) := by
-    unfold entryXNew
+theorem pkW_entryXNew (k : Fp) : pkW layout ∈ wires (entryXNew layout (pkW layout) k) := by
+  have h : pkW layout ∈ wires (entryXNew0 layout (pkW layout) k) := by
+    unfold entryXNew0
     split_ifs
     · rw [wires_append]
       exact Finset.mem_union_left _ (by simp [swp, wires, Instr.wires])
     · rw [wires_append, wires_append]
       exact Finset.mem_union_right _ (Finset.mem_union_left _ (by simp [swp, wires, Instr.wires]))
+  unfold entryXNew
+  rw [renameProgram_support]
+  refine Finset.mem_image.mpr ⟨_, h, ?_⟩
+  exact Equiv.swap_apply_of_ne_of_ne (pk_ne_high layout layout_widths layout_nodup)
+    (pk_ne_300 layout layout_widths layout_nodup)
+
+theorem pk_wires (cx cy : Fp) : pkW layout ∈ wires (genericNew layout cx cy) := by
+  have h : pkW layout ∈ wires (entryXNew layout (pkW layout) (-cx)) := pkW_entryXNew (-cx)
   unfold genericNew
   simp only [wires_append, Finset.mem_union]
   exact Or.inl (Or.inl (Or.inr h))
@@ -39201,8 +39489,8 @@ theorem evenTail_flags (k : Nat) : base 514 ∈ wires (evenTail k) ∧ base 722 
   simp only [evenTail, wires_append, Finset.mem_union]
   simp [wires, Instr.wires]
 
-theorem entryXNew_wires (L : ControlledPointLayout) (k : Fp) :
-    wires (entryXNew L (pkW L) k) ⊆ wires (entryXAll L k) := by
+theorem entryXNew0_wires (L : ControlledPointLayout) (k : Fp) :
+    wires (entryXNew0 L (pkW L) k) ⊆ wires (entryXAll L k) := by
   set F := E1QubitPlacement.pmapR L with hF
   have img : ∀ a, a ∈ wires (mergedAll k.val) → F a ∈ wires (entryXAll L k) := by
     intro a ha
@@ -39219,7 +39507,7 @@ theorem entryXNew_wires (L : ControlledPointLayout) (k : Fp) :
       wires (swp a b) ⊆ wires (entryXAll L k) := by
     intro a b ha hb
     simp [swp, wires, Instr.wires, Finset.insert_subset_iff, ha, hb]
-  unfold entryXNew
+  unfold entryXNew0
   split_ifs with he
   · have inc : wires (tailX base (base 2400) k.val) ⊆ wires (mergedAll k.val) := by
       unfold mergedAll mergedOdd
@@ -39248,16 +39536,56 @@ theorem entryXNew_wires (L : ControlledPointLayout) (k : Fp) :
     rw [pk_eq L]
     exact img _ (inc f.2)
 
+theorem entryXAll_721 (L : ControlledPointLayout) (k : Fp) :
+    E1QubitPlacement.pmapR L (base 721) ∈ wires (entryXAll L k) := by
+  unfold entryXAll
+  rw [renameProgram_support]
+  apply Finset.mem_image_of_mem
+  unfold mergedAll
+  split_ifs with he
+  · unfold mergedOdd
+    rw [if_pos he, wires_append]
+    apply Finset.mem_union_right
+    simp only [tailX, prodPart, wires_append, Finset.mem_union]
+    simp [wires, Instr.wires]
+  · unfold mergedEven
+    rw [wires_append]
+    apply Finset.mem_union_right
+    simp only [evenTail, wires_append, Finset.mem_union]
+    simp [wires, Instr.wires]
+
+theorem entryXNew_wires (L : ControlledPointLayout) (k : Fp) :
+    wires (entryXNew L (pkW L) k) ⊆ wires (entryXAll L k) ∪ {E1QubitPlacement.pmapR L (base 300)} := by
+  intro x hx
+  unfold entryXNew at hx
+  rw [renameProgram_support] at hx
+  obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
+  by_cases e1 : y = E1QubitPlacement.pmapR L (base 721)
+  · rw [e1, Equiv.swap_apply_left]
+    exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
+  · by_cases e2 : y = E1QubitPlacement.pmapR L (base 300)
+    · rw [e2, Equiv.swap_apply_right]
+      exact Finset.mem_union_left _ (entryXAll_721 L k)
+    · rw [Equiv.swap_apply_of_ne_of_ne e1 e2]
+      exact Finset.mem_union_left _ (entryXNew0_wires L k hy)
+
 theorem genericNew_wires (L : ControlledPointLayout) (cx cy : Fp) :
-    wires (genericNew L cx cy) ⊆ wires (ParityStageBothInverse23.genericAll L cx cy) := by
+    wires (genericNew L cx cy) ⊆
+      wires (ParityStageBothInverse23.genericAll L cx cy) ∪ {E1QubitPlacement.pmapR L (base 300)} := by
   simp only [genericNew, ParityStageBothInverse23.genericAll, ParityStageBothInverse23.entryStageAll,
     wires_append]
-  exact Finset.union_subset_union (Finset.union_subset_union
-    (Finset.union_subset_union (Finset.Subset.refl _) (entryXNew_wires L (-cx))) (Finset.Subset.refl _))
-    (Finset.Subset.refl _)
+  intro q hq
+  simp only [Finset.mem_union] at hq ⊢
+  rcases hq with ((h | h) | h) | h
+  · exact Or.inl (Or.inl (Or.inl (Or.inl h)))
+  · rcases Finset.mem_union.mp (entryXNew_wires L (-cx) h) with h' | h'
+    · exact Or.inl (Or.inl (Or.inl (Or.inr h')))
+    · exact Or.inr h'
+  · exact Or.inl (Or.inl (Or.inr h))
+  · exact Or.inl (Or.inr h)
 
-theorem entryXNew_toffoli (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
-    toffoliCount (entryXNew L pk k) + 255 = toffoliCount (entryXAll L k) := by
+theorem entryXNew0_toffoli (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+    toffoliCount (entryXNew0 L pk k) + 255 = toffoliCount (entryXAll L k) := by
   have o := (entryXAll_counts L k).1
   have e : toffoliCount (E1QubitPlacement.entryM L k) =
       toffoliCount (E1AffineEndpoints52Research.Forward.merged base (base 2400) k.val) := by
@@ -39274,7 +39602,7 @@ theorem entryXNew_toffoli (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
   rw [e, merged_split, toffoliCount_append, cp] at o
   have sw0 : toffoliCount (swp pk (E1QubitPlacement.pmapR L (base 514))) = 0 := by
     simp [swp, toffoliCount]
-  unfold entryXNew
+  unfold entryXNew0
   split_ifs
   · rw [toffoliCount_append, sw0, (renameProgram_counts _ _).1]; omega
   · rw [toffoliCount_append, toffoliCount_append, sw0, (renameProgram_counts _ _).1,
@@ -39283,15 +39611,15 @@ theorem entryXNew_toffoli (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
     have c1 : toffoliCount [Instr.CCX (base 2400) (base 770) (base 721)] = 1 := by simp [toffoliCount]
     omega
 
-theorem entryXNew_slots (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
-    Challenge.gateSlots (entryXNew L pk k) ≤ Challenge.gateSlots (entryXAll L k) + 2 := by
+theorem entryXNew0_slots (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+    Challenge.gateSlots (entryXNew0 L pk k) ≤ Challenge.gateSlots (entryXAll L k) + 2 := by
   have sw2 : Challenge.gateSlots (swp pk (E1QubitPlacement.pmapR L (base 514))) = 2 := by
     simp [swp, Challenge.gateSlots, Challenge.instructionSlots]
   have eo : Challenge.gateSlots (entryXAll L k) = Challenge.gateSlots (mergedAll k.val) := by
     unfold entryXAll
     exact rename_gateSlots _ _
   rw [eo]
-  unfold entryXNew mergedAll
+  unfold entryXNew0 mergedAll
   split_ifs with he
   · unfold mergedOdd
     rw [if_pos he, Challenge.gateSlots_append, Challenge.gateSlots_append, sw2, rename_gateSlots]
@@ -39301,9 +39629,9 @@ theorem entryXNew_slots (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
       Challenge.gateSlots_append, sw2, rename_gateSlots, rename_gateSlots]
     omega
 
-theorem entryXNew_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+theorem entryXNew0_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (pk : Wire) (k : Fp) (h514 : pk ≠ E1QubitPlacement.pmapR L (base 514)) :
-    GatePhysical (entryXNew L pk k) := by
+    GatePhysical (entryXNew0 L pk k) := by
   have inj := E1QubitPlacement.pmap_inj L hw hn
   have old := E1AffineEndpoints52Research.Forward.merged_physical base (base 2400)
     base_pool_nodup E1QubitPlacement.g2400 k.val
@@ -39316,7 +39644,7 @@ theorem entryXNew_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
     intro P hP hp
     exact gatePhysical_rename_support _ P (fun a ha b hb e => inj a (hP ha) b (hP hb) e) hp
   have ctl := (tail_control_wires k.val).trans (tailX_S k.val)
-  unfold entryXNew
+  unfold entryXNew0
   split_ifs
   · rw [gatePhysical_append]
     exact ⟨swP, lift _ (tailX_S k.val) tP⟩
@@ -39325,6 +39653,25 @@ theorem entryXNew_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.w
     · simp only [wires, Instr.wires, Finset.union_empty]
       exact ctl
     · simp [GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate, base]
+
+
+theorem entryXNew_toffoli (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+    toffoliCount (entryXNew L pk k) + 255 = toffoliCount (entryXAll L k) := by
+  unfold entryXNew
+  rw [(renameProgram_counts _ _).1]
+  exact entryXNew0_toffoli L pk k
+
+theorem entryXNew_slots (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+    Challenge.gateSlots (entryXNew L pk k) ≤ Challenge.gateSlots (entryXAll L k) + 2 := by
+  unfold entryXNew
+  rw [rename_gateSlots]
+  exact entryXNew0_slots L pk k
+
+theorem entryXNew_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (pk : Wire) (k : Fp) (h514 : pk ≠ E1QubitPlacement.pmapR L (base 514)) :
+    GatePhysical (entryXNew L pk k) := by
+  unfold entryXNew
+  exact gatePhysical_rename _ (Equiv.swap _ _).injective _ (entryXNew0_physical L hw hn pk k h514)
 
 abbrev ioSet : Finset Wire := (PointAddLayout.pointWires layout.point ++ [layout.control]).toFinset
 
@@ -39352,7 +39699,8 @@ theorem stageNew_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     simp only [Finset.mem_union]
     refine Or.inr (Or.inl (Or.inr ?_))
     rw [renameProgram_support]
-    exact Finset.mem_image.mpr ⟨_, Finset.mem_of_subset (genericNew_wires layout cx cy) (pk_wires cx cy), rho_pk⟩
+    exact Finset.mem_image.mpr ⟨_, (Finset.mem_union.mp (genericNew_wires layout cx cy (pk_wires cx cy))).resolve_right
+      (fun h => FlagEntry.pk_ne_300 layout layout_widths layout_nodup (Finset.mem_singleton.mp h)), rho_pk⟩
   have mx : ∀ q ∈ layout.point.x, q ∈ ioSet := by
     intro q hq
     simp [ioSet, PointAddLayout.pointWires, hq]
@@ -39742,13 +40090,28 @@ set_option maxRecDepth 30000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
+namespace ECDSAAdd.Entrant.ExitMerge
+open ECDSAAdd ECDSAAdd.Arithmetic NativeFirstDirect RecordedQuantum E1Merge
+
+def addPartInit (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
+  FastConst.maskedNot g (kR w)++loadKX w g k++Verifier.Leaf4.zero4KAdd w++loadKX w g k++
+  [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]
+
+theorem addPart_split (w : Nat → Wire) (g : Wire) (k : Nat) :
+    addPart w g k = addPartInit w g k ++ [.measureX (w 721) [] [.CZ g (w 1028)]] := by
+  unfold addPart addPartInit
+  simp only [List.append_assoc, List.cons_append, List.singleton_append, List.nil_append]
+
+end ECDSAAdd.Entrant.ExitMerge
+
 namespace ECDSAAdd.Entrant.ParityXExitInverse23Kernel
 open Arithmetic MappedCompressed DirectSkywalk Secp256k1 Rolling1588Lifetime BalancedField
   ControlledPointLayout CompressedPointDialog ParityEven
 attribute [local irreducible] run wires InverseFive23.stackReverse15 InverseFour15.stackReverse15 InverseFive23.lastPhase15
 
-/-- The merged exit with the flag parked, placed like `x1`. -/
-def x1N (k : Nat) : Program := renameProgram pi (ParityXExit.programN base (base 2400) k)
+def x1N0 (k : Nat) : Program := renameProgram pi (ParityXExit.programN base (base 2400) k)
+
+def x1N (k : Nat) : Program := renameProgram (Equiv.swap (base 723) (base 300)) (x1N0 k)
 
 def lastXN (k : Nat) : Program :=
   skywalkArithmeticClear base ++ InverseFive23.stackReverse15 true ++ x1N k
@@ -39759,11 +40122,11 @@ def pkP : Wire := base 724
 theorem pi_722 : pi (base 722) = pkP := by
   rw [pi_base]; rfl
 
-theorem x1N_pw (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn r r' : List Bool)
+theorem x1N0_pw (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn r r' : List Bool)
     (input : SkywalkArithmeticInput base x y s.basis)
     (hphase : v.phase=(run (FrontierEntry1591Native.forward base) mn s).phase)
     (hpool : ∀q∈skywalkPoolWires base,v.basis q=(run (FrontierEntry1591Native.forward base) mn s).basis q) :
-    run (x1N k) r v = put (run (x1 k) r' v) pkP (v.basis (base 2400) && decide (k<x)) := by
+    run (x1N0 k) r v = put (run (x1 k) r' v) pkP (v.basis (base 2400) && decide (k<x)) := by
   have fr := run_rename pi pi.injective (NativeFirstDirect.forward base) mn s
   rw [←forward_placed] at fr
   have sh : (i : Nat) → (hi : i < 2314) → (hdx : ¬(770 ≤ i ∧ i < 1026)) → (hdy : ¬(2056 ≤ i ∧ i < 2312)) →
@@ -39814,7 +40177,7 @@ theorem x1N_pw (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn
   have rrN := run_rename pi pi.injective (ParityXExit.programN base (base 2400) k) r v
   have rrO := run_rename pi pi.injective (ParityXExit.programAll base (base 2400) k) r' v
   rw [←rrN,←rrO,pull_basis,pi_fix 2400 (by omega)] at pr
-  change pullState pi (run (x1N k) r v) = put (pullState pi (run (x1 k) r' v)) (base 722) _ at pr
+  change pullState pi (run (x1N0 k) r v) = put (pullState pi (run (x1 k) r' v)) (base 722) _ at pr
   apply State.extensionality
   · have h0 := congrArg State.phase pr
     exact h0
@@ -39828,6 +40191,145 @@ theorem x1N_pw (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn
       simp [put,writeBit,e2]
     · have e2 : pi.symm q ≠ base 722 := fun h' => e (by rw [←pi_722,←h']; simp)
       simp [put,writeBit,e,e2,pull_basis]
+
+
+theorem x1N_entry (x y : Nat) (hx : x < p) (s v : State) (mn : List Bool)
+    (input : SkywalkArithmeticInput base x y s.basis)
+    (hpool : ∀q∈skywalkPoolWires base,v.basis q=(run (FrontierEntry1591Native.forward base) mn s).basis q) :
+    v.basis (base 723) = false ∧ v.basis (base 300) = false := by
+  have fr := run_rename pi pi.injective (NativeFirstDirect.forward base) mn s
+  rw [←forward_placed] at fr
+  have sh : (i : Nat) → (hi : i < 2314) → (hdx : ¬(770 ≤ i ∧ i < 1026)) → (hdy : ¬(2056 ≤ i ∧ i < 2312)) →
+      s.basis (base i)=false := by
+    intro i hi hdx hdy
+    apply input.2.2
+    · exact List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩
+    · intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
+      simp only [List.mem_range'_1] at hj
+      have := base_injective e; omega
+    · intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
+      simp only [List.mem_range'_1] at hj
+      have := base_injective e; omega
+  have izero (i : Nat) (hi : i < 1798) (hx' : ¬(770 ≤ i ∧ i < 1026)) : (pullState pi s).basis (base i)=false := by
+    rw [pull_basis,pi_base]
+    have h1 := piN_lt i hi
+    apply sh _ (by omega) _ (by omega)
+    unfold piN E1QubitPlacement.rhoN; split_ifs <;> omega
+  have blk0 (a n : Nat) (h : a+n ≤ 1798) (hd : a+n ≤ 770 ∨ 1026 ≤ a) :
+      regValue (wireBlock base a n) (pullState pi s).basis=0 := by
+    apply (regValue_zero _ _).mpr
+    intro q hq
+    obtain ⟨i,hi,rfl⟩ := List.mem_map.mp hq
+    simp only [List.mem_range'_1] at hi
+    exact izero i (by omega) (by omega)
+  have hxr : regValue (wireBlock base 770 256) (pullState pi s).basis=x := by
+    rw [regValue_congr _ _ s.basis (fun q hq => by
+      rw [pull_basis,pi_kR q (E1Merge.blk_sub base 770 256 770 258 (by omega) (by omega) q hq)])]
+    exact input.1
+  have seed : LiteralSkywalkSeedValues (literalSkywalkPoolSeed base) 0 x (pullState pi s).basis := by
+    refine ⟨blk0 0 258 (by omega) (by omega),?_,blk0 1540 257 (by omega) (by omega),
+      izero 1797 (by omega) (by omega),izero 1028 (by omega) (by omega),izero 1797 (by omega) (by omega)⟩
+    change regValue (E1Merge.kR base) (pullState pi s).basis=x
+    rw [E1Merge.kR_x base base_pool_nodup,show E1Merge.xR base=wireBlock base 770 256 from rfl,hxr,
+      blk0 1026 2 (by omega) (by omega)]
+    simp
+  have fpool : ∀q∈skywalkPoolWires base,
+      (pullState pi v).basis q=(run (NativeFirstDirect.forward base) mn (pullState pi s)).basis q := by
+    intro q hq
+    rw [←fr,pull_basis,pull_basis]
+    exact hpool _ (pi_pool q hq)
+  obtain ⟨-,-,-,-,-,zrest⟩ := NativeFirstDirect.forward_spec base base_pool_nodup x hx (pullState pi s) mn seed
+  have keep (i : Nat) (hi : i < 1798) (h1 : 257 ≤ i) (h2 : i < 770) :
+      (pullState pi v).basis (base i) = (pullState pi s).basis (base i) := by
+    have wP : base i ∈ skywalkPoolWires base :=
+      List.mem_map.mpr ⟨i,by simp only [List.mem_range'_1]; omega,rfl⟩
+    rw [fpool _ wP]
+    apply zrest
+    simp only [NativeFirstDirect.mutable,List.mem_append,List.mem_singleton,not_or]
+    refine ⟨⟨?_,?_⟩,?_⟩
+    · intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
+      simp only [List.mem_range'_1] at hj
+      have := base_injective e; omega
+    · intro h; obtain ⟨j,hj,e⟩ := List.mem_map.mp h
+      simp only [List.mem_range'_1] at hj
+      have := base_injective e; omega
+    · intro e; have := base_injective e; omega
+  have e723 : (pullState pi v).basis (base 721) = v.basis (base 723) := by
+    rw [pull_basis, pi_base]; rfl
+  have e300 : (pullState pi v).basis (base 300) = v.basis (base 300) := by
+    rw [pull_basis, pi_base]; rfl
+  constructor
+  · rw [← e723, keep 721 (by omega) (by omega) (by omega)]
+    exact izero 721 (by omega) (by omega)
+  · rw [← e300, keep 300 (by omega) (by omega) (by omega)]
+    exact izero 300 (by omega) (by omega)
+
+theorem x1N0_out (k : Nat) (r : List Bool) (v : State) : (run (x1N0 k) r v).basis (base 723) = false := by
+  have e := run_rename pi pi.injective (ParityXExit.programN base (base 2400) k) r v
+  have h1 : (run (x1N0 k) r v).basis (base 723) =
+      (run (ParityXExit.programN base (base 2400) k) r (pullState pi v)).basis (base 721) := by
+    rw [← e, pull_basis, pi_base]; rfl
+  rw [h1]
+  have key : ∀ (F E A R P S : Program) (i : Instr),
+      F ++ E ++ (A ++ [i]) ++ R ++ P ++ S = (F ++ E ++ A) ++ [i] ++ (R ++ P ++ S) := by
+    intros; simp only [List.append_assoc]
+  unfold ParityXExit.programN ParityXExit.prefixAll
+  rw [ExitMerge.addPart_split, key]
+  apply T723Core.run_measure_before
+  rw [wires_append, wires_append, Finset.mem_union, Finset.mem_union, not_or, not_or]
+  refine ⟨⟨?_, ?_⟩, ?_⟩
+  · rw [(rotate_wires (E1Merge.kR base)).2]
+    split_ifs
+    · exact Finset.notMem_empty _
+    · intro h
+      obtain ⟨j, hj, e⟩ := List.mem_map.mp (List.mem_toFinset.mp h)
+      simp only [List.mem_range'_1] at hj
+      have := base_injective e; omega
+  · unfold ExitMerge.parBack
+    split_ifs <;> simp [wires, Instr.wires, MappedCompressed.base]
+  · simp [FlagEntry.swp, wires, Instr.wires, MappedCompressed.base]
+
+theorem x1N0_host_fresh (k : Nat) : base 300 ∉ wires (x1N0 k) := by
+  intro h
+  unfold x1N0 at h
+  rw [renameProgram_support] at h
+  obtain ⟨b, hb, e⟩ := Finset.mem_image.mp h
+  have hb300 : b = base 300 := by
+    apply pi.injective
+    rw [e, pi_base]; rfl
+  subst hb300
+  unfold ParityXExit.programN at hb
+  rw [wires_append, Finset.mem_union] at hb
+  rcases hb with hb | hb
+  · have t := StairSiteEasy.exitMerge_tight base (base 2400) k
+      (ParityXExit.programAll_wires _ _ k (ParityXExit.prefix_sub _ _ k hb))
+    exact T723Core.base300_not_tSites (List.mem_toFinset.mp t)
+  · simp [FlagEntry.swp, wires, Instr.wires, MappedCompressed.base] at hb
+
+theorem x1N_pw (k : Nat) (hk : k < p) (x y : Nat) (hx : x < p) (s v : State) (mn r r' : List Bool)
+    (input : SkywalkArithmeticInput base x y s.basis)
+    (hphase : v.phase=(run (FrontierEntry1591Native.forward base) mn s).phase)
+    (hpool : ∀q∈skywalkPoolWires base,v.basis q=(run (FrontierEntry1591Native.forward base) mn s).basis q) :
+    run (x1N k) r v = put (run (x1 k) r' v) pkP (v.basis (base 2400) && decide (k<x)) := by
+  obtain ⟨z723, z300⟩ := x1N_entry x y hx s v mn input hpool
+  rw [← x1N0_pw k hk x y hx s v mn r r' input hphase hpool]
+  unfold x1N
+  apply EqualSourceSwapResearch.rename_swap_equal_eq
+  · exact x1N0_host_fresh k
+  · rw [z723, z300]
+  · rw [x1N0_out, z723]
+
+theorem x1N_sub0 (k : Nat) : wires (x1N k) ⊆ wires (x1N0 k) ∪ {base 300} := by
+  intro q hq
+  unfold x1N at hq
+  rw [renameProgram_support] at hq
+  obtain ⟨b, hb, rfl⟩ := Finset.mem_image.mp hq
+  by_cases h1 : b = base 723
+  · subst h1
+    exact Finset.mem_union_right _ (by simp)
+  · have h2 : b ≠ base 300 := fun e => x1N0_host_fresh k (e ▸ hb)
+    rw [Equiv.swap_apply_of_ne_of_ne h1 h2]
+    exact Finset.mem_union_left _ hb
 
 theorem rawN (F : Program) (k : Nat) (hk : k < p) (hn : (skywalkSharedWires base).Nodup)
     (hlo : History5.HistoryAbove base) (x y : Nat) (hx0 : 0 < x) (hx : x < p)
@@ -39907,27 +40409,48 @@ theorem programN_sub (k : Nat) :
   · exact pre (fp f722)
   · exact pre (fp f514)
 
-theorem x1N_sub (k : Nat) : wires (x1N k) ⊆ wires (x1 k) := by
-  rw [x1N,x1,renameProgram_support,renameProgram_support]
+theorem x1N0_sub (k : Nat) : wires (x1N0 k) ⊆ wires (x1 k) := by
+  rw [x1N0,x1,renameProgram_support,renameProgram_support]
   exact Finset.image_subset_image (programN_sub k)
 
-theorem lastXN_sub (k : Nat) : wires (lastXN k) ⊆ wires (lastX k) := by
+theorem x1N_sub (k : Nat) : wires (x1N k) ⊆ wires (x1 k) ∪ {base 300} :=
+  (x1N_sub0 k).trans (Finset.union_subset_union (x1N0_sub k) (Finset.Subset.refl _))
+
+theorem lastXN_sub (k : Nat) : wires (lastXN k) ⊆ wires (lastX k) ∪ {base 300} := by
   simp only [lastXN,lastX,wires_append]
-  exact Finset.union_subset_union (Finset.Subset.refl _) (x1N_sub k)
+  intro q hq
+  rcases Finset.mem_union.mp hq with h | h
+  · exact Finset.mem_union_left _ (Finset.mem_union_left _ h)
+  · rcases Finset.mem_union.mp (x1N_sub k h) with h' | h'
+    · exact Finset.mem_union_left _ (Finset.mem_union_right _ h')
+    · exact Finset.mem_union_right _ h'
+
+theorem phaseHost_300 : phaseHost (base 300) = base 300 := by decide
 
 theorem kernelXN_sub_aux (k : Nat) :
-    wires (renameProgram phaseHost (lastXN k)) ⊆ wires (renameProgram phaseHost (lastX k)) := by
+    wires (renameProgram phaseHost (lastXN k)) ⊆ wires (renameProgram phaseHost (lastX k)) ∪ {base 300} := by
   rw [renameProgram_support,renameProgram_support]
-  exact Finset.image_subset_image (lastXN_sub k)
+  intro q hq
+  obtain ⟨b, hb, rfl⟩ := Finset.mem_image.mp hq
+  rcases Finset.mem_union.mp (lastXN_sub k hb) with h | h
+  · exact Finset.mem_union_left _ (Finset.mem_image_of_mem _ h)
+  · rw [Finset.mem_singleton.mp h, phaseHost_300]
+    exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
 
 def kernelXN (k : Nat) : Program :=
   renameProgram phaseHost (Rolling1588TickGap.firstPhase false)++
     (Rolling1588.exitFieldHosted++renameProgram phaseHost (lastXN k))
 
-theorem kernelXN_sub (k : Nat) : wires (kernelXN k) ⊆ wires (kernelX k) := by
+theorem kernelXN_sub (k : Nat) : wires (kernelXN k) ⊆ wires (kernelX k) ∪ {base 300} := by
   simp only [kernelXN,kernelX,wires_append]
-  exact Finset.union_subset_union (Finset.Subset.refl _)
-    (Finset.union_subset_union (Finset.Subset.refl _) (kernelXN_sub_aux k))
+  intro q hq
+  simp only [Finset.mem_union] at hq ⊢
+  rcases hq with h | h | h
+  · exact Or.inl (Or.inl h)
+  · exact Or.inl (Or.inr (Or.inl h))
+  · rcases Finset.mem_union.mp (kernelXN_sub_aux k h) with h' | h'
+    · exact Or.inl (Or.inr (Or.inr h'))
+    · exact Or.inr h'
 
 theorem pk_not_sites : pkP∉phaseSites := by
   intro hq
@@ -40024,7 +40547,11 @@ theorem hostedN (F : Program) (k : Nat) (hk : k < p) (hn : (skywalkSharedWires b
     fieldFree (lastX_hosts_free k) output
   have sameN := rebindN (Rolling1588.firstPhase false) F (lastXN k) s m clean (first_hosts_free false)
     (fun records => first_clean_of_boundary false hn x y hx0 hx s records input integerBoundary)
-    fieldFree (fun q hq h => lastX_hosts_free k q hq (lastXN_sub k h)) outputN
+    fieldFree (fun q hq h => by
+      rcases Finset.mem_union.mp (lastXN_sub k h) with h' | h'
+      · exact lastX_hosts_free k q hq h'
+      · rw [Finset.mem_singleton.mp h'] at hq
+        simp [phaseHosts, MappedCompressed.base] at hq) outputN
   rw [sameN,sameO,rn]
 
 private theorem append_run_eqN (P Q R : Program) (s : State) (m : List Bool)
@@ -40056,8 +40583,13 @@ theorem kernelXN_pw (k : Nat) (hk : k < p) (hn : (skywalkSharedWires base).Nodup
   rw [kernelXN,kernelX,eqN,eqO]
   exact res
 
-theorem kernelXN_support (k : Nat) : wires (kernelXN k)⊆OB5Support.logicalSites :=
-  (kernelXN_sub k).trans (kernelX_support k)
+theorem kernelXN_support (k : Nat) : wires (kernelXN k)⊆OB5Support.logicalSites := by
+  intro q hq
+  rcases Finset.mem_union.mp (kernelXN_sub k hq) with h | h
+  · exact kernelX_support k h
+  · rw [Finset.mem_singleton.mp h]
+    simp only [OB5Support.logicalSites, List.mem_toFinset, List.mem_map]
+    exact ⟨300, by simp [OB5Support.logicalIndices], rfl⟩
 
 theorem wordTransferN (L : ControlledPointLayout) (f : Wire → Wire) (k : Nat)
     (domain : Finset Wire)
@@ -40201,7 +40733,7 @@ theorem x1N_counts (k : Nat) :
     toffoliCount (x1N k) + 254 = toffoliCount (x1 k) ∧ measurementCount (x1N k) ≤ measurementCount (x1 k) ∧
     Challenge.gateSlots (x1N k) ≤ Challenge.gateSlots (x1 k) + 2 := by
   have h := ParityXExit.programN_counts base (base 2400) k
-  simp only [x1N,x1,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots]
+  simp only [x1N,x1N0,x1,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots]
   exact h
 
 theorem restXXN_counts (L : ControlledPointLayout) (k : Nat) :
@@ -40214,15 +40746,25 @@ theorem restXXN_counts (L : ControlledPointLayout) (k : Nat) :
     Baselines.rename_gateSlots]
   omega
 
-theorem restXXN_sub (L : ControlledPointLayout) (k : Nat) : wires (restXXN L k) ⊆ wires (restXX L k) := by
+theorem restXXN_sub (L : ControlledPointLayout) (k : Nat) :
+    wires (restXXN L k) ⊆ wires (restXX L k) ∪ {wireFn2 L (base 300)} := by
   simp only [restXXN,restXX,wires_append,renameProgram_support]
-  apply Finset.image_subset_image
-  apply Finset.union_subset_union (Finset.Subset.refl _)
-  apply Finset.union_subset_union (Finset.Subset.refl _)
-  exact Finset.image_subset_image (lastXN_sub k)
+  intro q hq
+  obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hq
+  simp only [Finset.mem_union] at hy
+  rcases hy with h | h | h
+  · exact Finset.mem_union_left _ (Finset.mem_image_of_mem _ (Finset.mem_union_left _ h))
+  · exact Finset.mem_union_left _ (Finset.mem_image_of_mem _ (Finset.mem_union_right _ (Finset.mem_union_left _ h)))
+  · obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp h
+    rcases Finset.mem_union.mp (lastXN_sub k hz) with h' | h'
+    · exact Finset.mem_union_left _ (Finset.mem_image_of_mem _
+        (Finset.mem_union_right _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ h'))))
+    · rw [Finset.mem_singleton.mp h', phaseHost_300]
+      exact Finset.mem_union_right _ (Finset.mem_singleton_self _)
 
 theorem x1N_physical (k : Nat) : GatePhysical (x1N k) :=
-  gatePhysical_rename pi pi.injective _ (ParityXExit.programN_physical k)
+  gatePhysical_rename _ (Equiv.swap _ _).injective _
+    (gatePhysical_rename pi pi.injective _ (ParityXExit.programN_physical k))
 
 theorem kernelXN_physical (k : Nat) : GatePhysical (kernelXN k) := by
   have old := Rolling1588TickGap.exitKernel_physical
@@ -40541,7 +41083,7 @@ theorem head_pad (cx cy X Y : Fp) (s : State)
       · intro d'
         exact entryXNew_run L hw hn (pkW L) X (-cx) u tx tc (pk_pool L hw) (pk_ne_flag L hw hn)
           (pk_ne_high L hw hn) (pk_ne_x L hw hn)
-          (by rw [E1QubitPlacement.pmap_g L hw hn]; exact hg) d'
+          (by rw [E1QubitPlacement.pmap_g L hw hn]; exact hg) (pk_ne_300 L hw hn) d'
       · intro d'
         rw [entryXNew_measure L (pkW L) (-cx), ← List.drop_drop, List.drop_left' (by simp)])
   exact inner.append _
@@ -41304,8 +41846,7 @@ theorem pf_sum (tr : Tri) (yc n r1 r2 y0 : Bool) :
     generalize (y0 == yc) = c
     cases n <;> cases a <;> cases b <;> cases c <;> rfl
 
-/-- The pool site that carries the generic flag while the wrap flag is cleared. -/
-def wW (L : ControlledPointLayout) : Wire := L.core.poolWire 723
+def wW (L : ControlledPointLayout) : Wire := L.core.poolWire 300
 
 theorem out_flag_wires :
     [layout.dialogPool.getD 253 0, layout.dialogPool.getD 254 0, layout.dialogPool.getD 255 0,
@@ -41852,13 +42393,7 @@ def wrapperN (L : ControlledPointLayout) (C : Point) (cx cy : Fp) : Program :=
   renameProgram (Wrapper5.U L) (finiteN L C cx cy)
 
 theorem pkN_wires (cx cy : Fp) : pkW layout ∈ wires (genericN layout cx cy) := by
-  have h : pkW layout ∈ wires (entryXNew layout (pkW layout) (-cx)) := by
-    unfold entryXNew
-    split_ifs
-    · rw [wires_append]
-      exact Finset.mem_union_left _ (by simp [swp, wires, Instr.wires])
-    · rw [wires_append, wires_append]
-      exact Finset.mem_union_right _ (Finset.mem_union_left _ (by simp [swp, wires, Instr.wires]))
+  have h : pkW layout ∈ wires (entryXNew layout (pkW layout) (-cx)) := pkW_entryXNew (-cx)
   unfold genericN
   simp only [wires_append, Finset.mem_union]
   exact Or.inl (Or.inl (Or.inr h))
@@ -42246,7 +42781,7 @@ open Arithmetic RecordedQuantum MeasuredCodec5 Baselines Secp256k1 ControlledPoi
 
 attribute [local irreducible] layout
 
-theorem wW_eq (L : ControlledPointLayout) : wW L = E1QubitPlacement.pmapR L (base 721) := by
+theorem wW_eq (L : ControlledPointLayout) : wW L = E1QubitPlacement.pmapR L (base 300) := by
   unfold E1QubitPlacement.pmapR E1QubitPlacement.pmap
   rw [E1QubitPlacement.rho_base, E1QubitPlacement.sig_base]
   rfl
@@ -42259,8 +42794,40 @@ theorem evenTail_721 (k : Nat) : base 721 ∈ wires (evenTail k) := by
   simp only [evenTail, wires_append, Finset.mem_union]
   simp [wires, Instr.wires]
 
-theorem entryX_W (L : ControlledPointLayout) (k : Fp) : wW L ∈ wires (entryXAll L k) := by
-  rw [wW_eq L]
+def hitB (q : Wire) : Instr → Bool
+  | .X t => t == q
+  | .CX c t => c == q || t == q
+  | .CCX a b t => a == q || b == q || t == q
+  | .measureX t _ _ => t == q
+
+theorem mem_instr_of_hit (q : Wire) (i : Instr) (h : hitB q i = true) : q ∈ i.wires := by
+  cases i with
+  | X t =>
+    simp only [hitB, beq_iff_eq] at h
+    subst h
+    simp [Instr.wires]
+  | CX c t =>
+    simp only [hitB, Bool.or_eq_true, beq_iff_eq] at h
+    rcases h with rfl | rfl <;> simp [Instr.wires]
+  | CCX a b t =>
+    simp only [hitB, Bool.or_eq_true, beq_iff_eq] at h
+    rcases h with (rfl | rfl) | rfl <;> simp [Instr.wires]
+  | measureX t c0 c1 =>
+    simp only [hitB, beq_iff_eq] at h
+    subst h
+    simp [Instr.wires]
+
+theorem mem_wires_of_hit (q : Wire) : ∀ P : Program, P.any (hitB q) = true → q ∈ wires P
+  | [], h => by simp at h
+  | i :: P, h => by
+    simp only [List.any_cons, Bool.or_eq_true] at h
+    rw [show wires (i :: P) = i.wires ∪ wires P from rfl, Finset.mem_union]
+    rcases h with h | h
+    · exact Or.inl (mem_instr_of_hit q i h)
+    · exact Or.inr (mem_wires_of_hit q P h)
+
+theorem entryX_W (k : Fp) : wW layout ∈ wires (entryXAll layout k) := by
+  rw [wW_eq layout]
   unfold entryXAll
   rw [renameProgram_support]
   apply Finset.mem_image_of_mem
@@ -42268,22 +42835,29 @@ theorem entryX_W (L : ControlledPointLayout) (k : Fp) : wW L ∈ wires (entryXAl
   split_ifs with he
   · unfold mergedOdd
     rw [if_pos he, wires_append]
-    exact Finset.mem_union_right _ (tailX_721 k.val)
+    apply Finset.mem_union_left
+    unfold compareOdd comparePrefixNew
+    rw [wires_append, wires_append]
+    exact Finset.mem_union_left _ (Finset.mem_union_right _ (mem_wires_of_hit _ _ (by decide +kernel)))
   · unfold mergedEven
-    rw [wires_append]
-    exact Finset.mem_union_right _ (evenTail_721 k.val)
+    rw [wires_append, wires_append]
+    apply Finset.mem_union_left
+    apply Finset.mem_union_right
+    unfold comparePrefixCached
+    rw [wires_append, wires_append]
+    exact Finset.mem_union_left _ (Finset.mem_union_right _ (mem_wires_of_hit _ _ (by decide +kernel)))
 
 theorem generic_W (cx cy : Fp) : wW layout ∈ wires (ParityStageBothInverse23.genericAll layout cx cy) := by
-  have h := entryX_W layout (-cx)
+  have h := entryX_W (-cx)
   simp only [ParityStageBothInverse23.genericAll, ParityStageBothInverse23.entryStageAll, wires_append,
     Finset.mem_union]
   exact Or.inl (Or.inl (Or.inr h))
 
 theorem W_pool : wW layout ∈ layout.dialogPool :=
-  Square5Placement.pool_member layout layout_widths 723 (by omega)
+  Square5Placement.pool_member layout layout_widths 300 (by omega)
 
-theorem W_ne_pool (i : Nat) (hi : i < 2613) (hne : i ≠ 723) : wW layout ≠ layout.core.poolWire i :=
-  fun e => hne (pool_inj layout layout_widths layout_nodup i 723 hi (by omega) e.symm)
+theorem W_ne_pool (i : Nat) (hi : i < 2613) (hne : i ≠ 300) : wW layout ≠ layout.core.poolWire i :=
+  fun e => hne (pool_inj layout layout_widths layout_nodup i 300 hi (by omega) e.symm)
 
 theorem W_flag (b : Wire) (hb : b ∈ layout.inPlaceFlags) : wW layout ≠ b :=
   fun e => pool_not_flag _ W_pool (e ▸ hb)
@@ -42301,11 +42875,17 @@ theorem rho_W : rho layout (wW layout) = wW layout := by
   · exact W_ne_pool 1540 (by omega) (by omega)
 
 theorem genericN_wires (L : ControlledPointLayout) (cx cy : Fp) :
-    wires (genericN L cx cy) ⊆ wires (genericNew L cx cy) := by
+    wires (genericN L cx cy) ⊆ wires (genericNew L cx cy) ∪ {wireFn2 L (base 300)} := by
   simp only [genericN, genericNew, secondStageN, ParityStageBothInverse23.secondStageAll, wires_append]
-  exact Finset.union_subset_union (Finset.Subset.refl _)
-    (Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _)
-      (ParityXExitInverse23Kernel.restXXN_sub L _)) (Finset.Subset.refl _))
+  intro q hq
+  simp only [Finset.mem_union] at hq ⊢
+  rcases hq with h | (h | h) | h
+  · exact Or.inl (Or.inl h)
+  · exact Or.inl (Or.inr (Or.inl (Or.inl h)))
+  · rcases Finset.mem_union.mp (ParityXExitInverse23Kernel.restXXN_sub L _ h) with h' | h'
+    · exact Or.inl (Or.inr (Or.inl (Or.inr h')))
+    · exact Or.inr h'
+  · exact Or.inl (Or.inr (Or.inr h))
 
 theorem genericN_counts (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (genericN L cx cy) + 254 = toffoliCount (genericNew L cx cy) ∧
@@ -42347,7 +42927,8 @@ theorem outNew_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     simp only [Finset.mem_union]
     refine Or.inr (Or.inl (Or.inr ?_))
     rw [renameProgram_support]
-    exact Finset.mem_image.mpr ⟨_, genericNew_wires layout cx cy (pk_wires cx cy), rho_pk⟩
+    exact Finset.mem_image.mpr ⟨_, (Finset.mem_union.mp (genericNew_wires layout cx cy (pk_wires cx cy))).resolve_right
+      (fun h => FlagEntry.pk_ne_300 layout layout_widths layout_nodup (Finset.mem_singleton.mp h)), rho_pk⟩
   have wIn : wW layout ∈ ioSet ∪ wires (finiteProgramOpt layout (.some hc) cx cy) := by
     rw [finiteOpt_wires hc]
     simp only [Finset.mem_union]
@@ -42400,7 +42981,16 @@ theorem finiteN_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
   simp only [Finset.mem_union]
   refine Or.inr (Or.inl (Or.inr ?_))
   rw [renameProgram_support]
-  exact Finset.mem_image_of_mem _ (genericNew_wires layout cx cy (genericN_wires layout cx cy ha))
+  have ha' : a ∈ wires (ParityStageBothInverse23.genericAll layout cx cy) := by
+    have w300 : E1QubitPlacement.pmapR layout (base 300) ∈
+        wires (ParityStageBothInverse23.genericAll layout cx cy) := by
+      rw [← wW_eq layout]; exact generic_W cx cy
+    rcases Finset.mem_union.mp (genericN_wires layout cx cy ha) with h | h
+    · rcases Finset.mem_union.mp (genericNew_wires layout cx cy h) with h' | h'
+      · exact h'
+      · rw [Finset.mem_singleton.mp h']; exact w300
+    · rw [Finset.mem_singleton.mp h]; exact w300
+  exact Finset.mem_image_of_mem _ ha'
 
 theorem wrapperN_wires {cx cy : Fp} (hc : curve.toAffine.Nonsingular cx cy) :
     wires (wrapperN layout (.some hc) cx cy) ⊆ ioSet ∪ wires (wrapperOpt layout (.some hc) cx cy) := by
@@ -43256,10 +43846,9 @@ theorem generic530_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wir
  simp only [Entry530.generic530,Entry530.entryStage530,wires_append,Finset.union_subset_iff]
  exact ⟨⟨old.1.1,en.2⟩,old.2⟩
 
-theorem genericN_control (cx cy : Fp) :
-    layout.control∉wires (FlagExit.genericN layout cx cy) := by
- have sub:=(FlagTop2.genericN_wires layout cx cy).trans (FlagTop.genericNew_wires layout cx cy)
- have sub:=sub.trans (ParityStageBothInverse23.generic_wires layout layout_widths cx cy)
+theorem genericAll_control (cx cy : Fp) :
+    layout.control∉wires (ParityStageBothInverse23.genericAll layout cx cy) := by
+ have sub:=ParityStageBothInverse23.generic_wires layout layout_widths cx cy
  have hs : wires (ParityStageBothInverse23.genericRef layout cx cy)⊆(OB5Support.sites layout).toFinset := by
   rw [ParityFinalBothInverse23XY.reference_eq]
   exact generic530_sites layout layout_widths layout_nodup cx cy
@@ -43284,6 +43873,23 @@ theorem genericN_control (cx cy : Fp) :
     exact Square5Placement.pool_member layout layout_widths i (by omega)
 
  exact fun hx=>h (sub hx)
+
+theorem genericN_control (cx cy : Fp) :
+    layout.control∉wires (FlagExit.genericN layout cx cy) := by
+ have c300 : layout.control ≠ E1QubitPlacement.pmapR layout (MappedCompressed.base 300) := by
+  rw [← FlagTop2.wW_eq layout]
+  show layout.control ≠ layout.core.poolWire 300
+  decide +kernel
+ have c300' : layout.control ≠ wireFn2 layout (MappedCompressed.base 300) := by
+  have e : wireFn2 layout (MappedCompressed.base 300) = layout.core.poolWire 300 := rfl
+  rw [e]
+  decide +kernel
+ intro hc
+ rcases Finset.mem_union.mp (FlagTop2.genericN_wires layout cx cy hc) with h | h
+ · rcases Finset.mem_union.mp (FlagTop.genericNew_wires layout cx cy h) with h' | h'
+   · exact genericAll_control cx cy h'
+   · exact c300 (Finset.mem_singleton.mp h')
+ · exact c300' (Finset.mem_singleton.mp h)
 
 theorem generic_block_control (cx cy : Fp) :
     layout.control∉wires (renameProgram (FlagTop.rho layout) (FlagExit.genericN layout cx cy)) := by
@@ -53839,9 +54445,12 @@ theorem holes_geometry:(holes++holes.map hostOf).Nodup ∧ (∀q∈holes,q∈L.f
     rw [K4DB.holes_eq] at hq
     rw [K4DB.foldPad_eq]
     simp only [K4DB.holesN, List.mem_append, List.mem_range'_1] at hq ⊢
-    exact Or.inr ⟨by omega, by omega⟩
+    rcases hq with hq | hq
+    · exact Or.inr ⟨by omega, by omega⟩
+    · have := StairCertificate.extraW_window q hq
+      exact Or.inr ⟨by omega, by omega⟩
   · intro q hq
-    have hi : holes.idxOf q < 39 := by
+    have hi : holes.idxOf q < 39 + StairCertificate.extraIdx.length := by
       have h := List.idxOf_lt_length_of_mem hq
       rwa [K4DB.holes_len] at h
     have hl := K4DB.hs_len
@@ -66871,7 +67480,7 @@ theorem head_pad_rest (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
       · intro d'
         exact entryXNew_run L hw hn (pkW L) X (-cx) u tx tc (pk_pool L hw) (pk_ne_flag L hw hn)
           (pk_ne_high L hw hn) (pk_ne_x L hw hn)
-          (by rw [E1QubitPlacement.pmap_g L hw hn]; exact hg) d'
+          (by rw [E1QubitPlacement.pmap_g L hw hn]; exact hg) (pk_ne_300 L hw hn) d'
       · intro d'
         rw [entryXNew_measure L (pkW L) (-cx), ← List.drop_drop, List.drop_left' (by simp)])
   exact inner.append _
@@ -71050,130 +71659,6 @@ open E1Merge E1WholeKAdd52Research
 
 
 
-/-- The record's `merged_support`, restricted to the tail and to the tail's labels. -/
-theorem tailX_tight (w : Nat → Wire) (g : Wire) (k : Nat) :
-    wires (ParityXEntry.tailX w g k) ⊆ (tSites w g).toFinset := by
-  have B := blk_tSites w g
-  have I := in_tSites w g
-  have G := g_tSites w g
-  have mskH (c : Wire) (hc : c∈tSites w g) (v : Nat) : wires (maskedConstant c (hR w) v)⊆(tSites w g).toFinset :=
-    (maskedConstant_wires_subset c (hR w) v).trans (tl_sub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 0 258 (by omega) q hq))
-  have mskT (c : Wire) (hc : c∈tSites w g) (v : Nat) : wires (maskedConstant c (tR w) v)⊆(tSites w g).toFinset :=
-    (maskedConstant_wires_subset c (tR w) v).trans (tl_sub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 1029 256 (by omega) q hq))
-  have cx (a b : Nat) (ha : a < 258 ∨ (770 ≤ a ∧ a < 1285) ∨ (1540 ≤ a ∧ a < 1798) ∨ a = 514 ∨ a = 721 ∨ a = 722)
-      (hb : b < 258 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 514 ∨ b = 721 ∨ b = 722) :
-      wires [.CX (w a) (w b)]⊆(tSites w g).toFinset := tgate_sub w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact I a ha
-    · exact I b hb)
-  have cxg (b : Nat) (hb : b < 258 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 514 ∨ b = 721 ∨ b = 722) :
-      wires [.CX g (w b)]⊆(tSites w g).toFinset := tgate_sub w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact G
-    · exact I b hb)
-  have hP : wires (parGates w g k)⊆(tSites w g).toFinset := by
-    unfold parGates
-    split_ifs <;> simp only [wires_append,Finset.union_subset_iff] <;>
-      refine ⟨⟨⟨⟨⟨?_,?_⟩,?_⟩,?_⟩,?_⟩,?_⟩ <;>
-      first | exact cx _ _ (by omega) (by omega) | exact cxg _ (by omega) | simp [wires]
-  have hR' : wires (rotateRight (kR w))⊆(tSites w g).toFinset := by
-    rw [(rotate_wires (kR w)).1]
-    simp only [kR,wireBlock_length,show ¬(258<2) by omega,if_false]
-    exact tl_sub w g _ (B 770 258 (by omega))
-  have hPr : wires (prodPart w g)⊆(tSites w g).toFinset := by
-    unfold prodPart
-    rw [show ([.CCX g (w 1028) (w 721),.CCX (w 514) (w 1028) (w 722)] : Program)=
-      [.CCX g (w 1028) (w 721)]++[.CCX (w 514) (w 1028) (w 722)] from rfl,wires_append,Finset.union_subset_iff]
-    constructor <;> apply tgate_sub <;> intro q hq <;>
-      simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq <;>
-      rcases hq with rfl|rfl|rfl <;> first | exact G | exact I _ (by omega)
-  have hL : wires (loadK w g k)⊆(tSites w g).toFinset := by
-    simp only [loadK,wires_append,Finset.union_subset_iff]
-    refine ⟨⟨⟨⟨⟨?_,mskH g G _⟩,mskH _ (I 514 (by omega)) _⟩,mskH _ (I 1028 (by omega)) _⟩,
-      mskH _ (I 721 (by omega)) _⟩,mskH _ (I 722 (by omega)) _⟩
-    exact (xorConstant_wires_subset (hR w) _).trans (tl_sub w g _ (B 0 258 (by omega)))
-  have hKOld : wires (kAddM w)⊆(tSites w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply tl_sub; intro q hq
-    simp only [mappedRead_wires,List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · exact B 0 258 (by omega) q hq
-    · exact B 770 258 (by omega) q hq
-    · exact B 1540 257 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hK : wires (E1WholeKAdd52Research.flagKAdd52 w)⊆(tSites w g).toFinset := by
-    apply (E1ResourceBridge52Research.flag_support52 w).trans
-    simp only [Finset.union_subset_iff]
-    constructor
-    · exact hKOld
-    · intro q hq
-      have eq : q=w 1028 := Finset.mem_singleton.mp hq
-      rw [eq]
-      exact List.mem_toFinset.mpr (I 1028 (by omega))
-  have hM1 : wires [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]⊆(tSites w g).toFinset := by
-    apply tgate_sub; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl <;> exact I _ (by omega)
-  have hM2 : wires [.measureX (w 721) [] [.CZ g (w 1028)]]⊆(tSites w g).toFinset := by
-    apply tgate_sub; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl
-    · exact I _ (by omega)
-    · exact G
-    · exact I _ (by omega)
-  have hCp : wires (copyRegister none (wireBlock w 770 257) (hpR w))⊆(tSites w g).toFinset := by
-    rw [copyRegister_wires none _ _ (by simp [hpR,wireBlock_length])]
-    split
-    · exact Finset.empty_subset _
-    · apply tl_sub; intro q hq
-      simp only [Option.toList_none,List.nil_append,List.mem_append] at hq
-      rcases hq with hq|hq
-      · exact B 770 257 (by omega) q hq
-      · exact B 1 257 (by omega) q hq
-  have hH : wires (hAddM w)⊆(tSites w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply tl_sub; intro q hq
-    simp only [List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · rw [dBits_wire w q hq]; exact I 1028 (by omega)
-    · exact B 1 257 (by omega) q hq
-    · exact B 1540 256 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hW : wires [.CX (w 1028) (w 0),.X (w 0)]⊆(tSites w g).toFinset := by
-    rw [show ([.CX (w 1028) (w 0),.X (w 0)] : Program)=[.CX (w 1028) (w 0)]++[.X (w 0)] from rfl,
-      wires_append,Finset.union_subset_iff]
-    refine ⟨cx 1028 0 (by omega) (by omega),tgate_sub w g _ ?_⟩
-    intro q hq; simp only [Instr.wires,Finset.mem_singleton] at hq; rw [hq]; exact I 0 (by omega)
-  have hT : wires (loadT w g k)⊆(tSites w g).toFinset := by
-    simp only [loadT,wires_append,Finset.union_subset_iff]
-    exact ⟨mskT g G _,mskT _ (I 721 (by omega)) _⟩
-  have hE : wires (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514))⊆(tSites w g).toFinset := by
-    apply (eraseLtChain_wires_subset _ _ _ _ _).trans
-    apply tl_sub; intro q hq
-    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with ((hq|hq)|hq)|rfl|rfl
-    · exact B 1 256 (by omega) q hq
-    · exact B 1029 256 (by omega) q hq
-    · exact B 1540 255 (by omega) q hq
-    · exact I 1797 (by omega)
-    · exact I 514 (by omega)
-  have hHT : wires (hAddT w)⊆(tSites w g).toFinset := (hAddT_wires w).trans hH
-  simp only [ParityXEntry.tailX, ParityXEntry.postX, wires_append, Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨hP, hR'⟩, hPr⟩, hL⟩, hK⟩, ⟨⟨⟨⟨⟨⟨⟨⟨hL, hM1⟩, hCp⟩, hHT⟩, hW⟩, hT⟩, hE⟩, hT⟩, hM2⟩⟩
-
-theorem evenTail_tight (k : Nat) :
-    wires (ParityXEntry.evenTail k) ⊆ (tSites base (base 2400)).toFinset :=
-  (ParityXEntry.evenTail_wires k).trans (tailX_tight base (base 2400) k)
 
 
 
@@ -71204,9 +71689,10 @@ so goodness is proved symbolically; only a dozen exceptional labels are evaluate
 
 /-- LT46 (replay budget): decided on the closed form (43 s → ≈ 2 s).  K4-B: symbolic on the
 affine intervals (`kbXI1` .. `kbXI5`), only the exceptional labels are evaluated. -/
-theorem xList_good : ∀ q ∈ xList, Good39 (UG (E1QubitPlacement.pmapR Baselines.layout q)) := by
-  have key : ∀ q ∈ xList, good39B (StairPlaceFast.kernelPlaceB (e1B q)) = true := by
-    intro q hq
+theorem xList_good : ∀ q ∈ xList, q ≠ base 721 →
+    Good39 (UG (E1QubitPlacement.pmapR Baselines.layout q)) := by
+  have key : ∀ q ∈ xList, q ≠ base 721 → good39B (StairPlaceFast.kernelPlaceB (e1B q)) = true := by
+    intro q hq hq721
     unfold xList tSites at hq
     rcases List.mem_append.mp hq with hq | hq
     · rcases List.mem_append.mp hq with hq | hq
@@ -71237,10 +71723,14 @@ theorem xList_good : ∀ q ∈ xList, Good39 (UG (E1QubitPlacement.pmapR Baselin
               · have : i = 1796 ∨ i = 1797 := by omega
                 rcases this with rfl | rfl <;> decide
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-      rcases hq with rfl | rfl | rfl | rfl <;> decide
-  intro q hq
+      rcases hq with rfl | rfl | rfl | rfl
+      · decide
+      · exact absurd rfl hq721
+      · decide
+      · decide
+  intro q hq hq721
   rw [xplace_fast]
-  exact good39_of_B (key q hq)
+  exact good39_of_B (key q hq hq721)
 
 theorem pk_good : Good39 (UG (FlagEntry.pkW Baselines.layout)) := by
   -- K4-B (replay budget): on the closed form `ugB`
@@ -71250,17 +71740,19 @@ theorem pk_good : Good39 (UG (FlagEntry.pkW Baselines.layout)) := by
   exact good39_of_B (by decide +kernel)
 
 theorem placed_good {P : Program} (h : wires P ⊆ (tSites base (base 2400)).toFinset) :
-    ∀ x ∈ wires (renameProgram (E1QubitPlacement.pmapR Baselines.layout) P), Good39 (UG x) := by
-  intro x hx
+    ∀ x ∈ wires (renameProgram (E1QubitPlacement.pmapR Baselines.layout) P),
+      x ≠ E1QubitPlacement.pmapR Baselines.layout (base 721) → Good39 (UG x) := by
+  intro x hx hne
   rw [renameProgram_support] at hx
   obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
-  exact xList_good y (List.mem_toFinset.mp (h hy))
+  exact xList_good y (List.mem_toFinset.mp (h hy)) (fun e => hne (e ▸ rfl))
 
 theorem swp_good : ∀ x ∈ wires (FlagEntry.swp (FlagEntry.pkW Baselines.layout)
     (E1QubitPlacement.pmapR Baselines.layout (base 514))), Good39 (UG x) := by
   intro x hx
   have h514 : Good39 (UG (E1QubitPlacement.pmapR Baselines.layout (base 514))) :=
     xList_good _ (in_tSites base (base 2400) 514 (by omega))
+      (fun e => by have := base_injective e; omega)
   simp only [FlagEntry.swp, wires, Instr.wires, Finset.union_empty, Finset.mem_union,
     Finset.mem_insert, Finset.mem_singleton] at hx
   rcases hx with (rfl | rfl) | (rfl | rfl)
@@ -71281,18 +71773,36 @@ theorem ccx_tight : wires [Instr.CCX (base 2400) (base 770) (base 721)] ⊆
 
 theorem entryX39 (c : Fp) : PieceOK StairCertificate.holes39 UG
     (FlagEntry.entryXNew Baselines.layout (FlagEntry.pkW Baselines.layout) c) := by
+  have g0 : ∀ y ∈ wires (FlagEntry.entryXNew0 Baselines.layout (FlagEntry.pkW Baselines.layout) c),
+      y ≠ E1QubitPlacement.pmapR Baselines.layout (base 721) → Good39 (UG y) := by
+    intro y hy hne
+    unfold FlagEntry.entryXNew0 at hy
+    split_ifs at hy
+    · rw [wires_append, Finset.mem_union] at hy
+      rcases hy with hy | hy
+      · exact swp_good y hy
+      · exact placed_good (tailX_tight base (base 2400) c.val) y hy hne
+    · rw [wires_append, wires_append, Finset.mem_union, Finset.mem_union] at hy
+      rcases hy with hy | hy | hy
+      · exact placed_good ccx_tight y hy hne
+      · exact swp_good y hy
+      · exact placed_good (evenTail_tight c.val) y hy hne
+  have h300 : Good39 (UG (E1QubitPlacement.pmapR Baselines.layout (base 300))) := by
+    rw [xplace_fast]
+    exact good39_of_B (by decide +kernel)
   refine ok39_of_good (fun x hx => ?_)
   unfold FlagEntry.entryXNew at hx
-  split_ifs at hx
-  · rw [wires_append, Finset.mem_union] at hx
-    rcases hx with hx | hx
-    · exact swp_good x hx
-    · exact placed_good (tailX_tight base (base 2400) c.val) x hx
-  · rw [wires_append, wires_append, Finset.mem_union, Finset.mem_union] at hx
-    rcases hx with hx | hx | hx
-    · exact placed_good ccx_tight x hx
-    · exact swp_good x hx
-    · exact placed_good (evenTail_tight c.val) x hx
+  rw [renameProgram_support] at hx
+  obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
+  by_cases e1 : y = E1QubitPlacement.pmapR Baselines.layout (base 721)
+  · rw [e1, Equiv.swap_apply_left]
+    exact h300
+  · by_cases e2 : y = E1QubitPlacement.pmapR Baselines.layout (base 300)
+    · exact absurd (e2 ▸ hy) (FlagEntry.host300_fresh Baselines.layout Baselines.layout_widths
+        Baselines.layout_nodup _ (FlagEntry.pk_ne_300 Baselines.layout Baselines.layout_widths
+          Baselines.layout_nodup) c)
+    · rw [Equiv.swap_apply_of_ne_of_ne e1 e2]
+      exact g0 y hy e1
 
 end ECDSAAdd.Entrant.StairSiteEasy
 
@@ -72064,6 +72574,8 @@ end Merge_StairSiteEasyPhase_at_Main
 
 /-! ### merged from `ECDSAAdd.Submission.Entrant.StairSiteEasyX1N_at_Main` -/
 section Merge_StairSiteEasyX1N_at_Main
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
 
 /-!
 # Field 12 on CANON 1945: the exit x-tail `x1N k` for every `k` (LT35)
@@ -72127,8 +72639,9 @@ theorem kbPi_id {x : Nat} (h : x < 527 ∨ (528 ≤ x ∧ x < 737) ∨ (742 ≤ 
 
 /-- The tail labels, placed by `pi`, are good phase labels (one cheap check, ≈ 1,000 labels).
 K4-B (replay budget): symbolic on the three label blocks (`kbPi_id`), five labels evaluated. -/
-theorem tSites_pi : ∀ q ∈ tSites base (base 2400), PPI (ParityXExitInverse23Kernel.pi q) := by
-  intro q hq
+theorem tSites_pi : ∀ q ∈ tSites base (base 2400), q ≠ base 721 →
+    PPI (ParityXExitInverse23Kernel.pi q) := by
+  intro q hq hq721
   unfold tSites at hq
   rcases List.mem_append.mp hq with hq | hq
   · rcases List.mem_append.mp hq with hq | hq
@@ -72159,12 +72672,16 @@ theorem tSites_pi : ∀ q ∈ tSites base (base 2400), PPI (ParityXExitInverse23
       · obtain rfl : i = 1797 := by omega
         decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl <;> decide
+    rcases hq with rfl | rfl | rfl | rfl
+    · decide
+    · exact absurd rfl hq721
+    · decide
+    · decide
 
-/-- LT46 (replay budget): structural (`exitMerge_tight` + `tSites_pi`); no program is
-evaluated (was ≈ 85 s of kernel time for the fixed leaves). -/
-theorem exitMerge_piOK (k : Nat) : PiOK (ExitMerge.program base (base 2400) k) :=
-  fun b hb => tSites_pi b (List.mem_toFinset.mp (exitMerge_tight base (base 2400) k hb))
+theorem exitMerge_piOK (k : Nat) :
+    ∀ b ∈ wires (ExitMerge.program base (base 2400) k), b ≠ base 721 →
+      PPI (ParityXExitInverse23Kernel.pi b) :=
+  fun b hb hne => tSites_pi b (List.mem_toFinset.mp (exitMerge_tight base (base 2400) k hb)) hne
 
 theorem x1N39 (k : Nat) :
     PieceOK StairCertificate.holes39 PP (ParityXExitInverse23Kernel.x1N k) := by
@@ -72172,14 +72689,30 @@ theorem x1N39 (k : Nat) :
   intro x hx
   unfold ParityXExitInverse23Kernel.x1N at hx
   rw [renameProgram_support] at hx
-  obtain ⟨b, hb, rfl⟩ := Finset.mem_image.mp hx
-  unfold ParityXExit.programN at hb
-  rw [wires_append, Finset.mem_union] at hb
-  rcases hb with hb | hb
-  · exact exitMerge_piOK k b
-      (ParityXExit.programAll_wires _ _ k (ParityXExit.prefix_sub _ _ k hb))
-  · have sw : PiOK (FlagEntry.swp (base 514) (base 722)) := piOK_of_all (by decide +kernel)
-    exact sw b hb
+  obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
+  by_cases e1 : y = base 723
+  · rw [e1, Equiv.swap_apply_left]
+    unfold PPI
+    simp only [MappedCompressed.base]
+    omega
+  · by_cases e2 : y = base 300
+    · exact absurd (e2 ▸ hy) (ParityXExitInverse23Kernel.x1N0_host_fresh k)
+    · rw [Equiv.swap_apply_of_ne_of_ne e1 e2]
+      unfold ParityXExitInverse23Kernel.x1N0 at hy
+      rw [renameProgram_support] at hy
+      obtain ⟨b, hb, rfl⟩ := Finset.mem_image.mp hy
+      have hb721 : b ≠ base 721 := by
+        intro e
+        apply e1
+        rw [e, ParityXExitInverse23Kernel.pi_base]
+        rfl
+      unfold ParityXExit.programN at hb
+      rw [wires_append, Finset.mem_union] at hb
+      rcases hb with hb | hb
+      · exact exitMerge_piOK k b
+          (ParityXExit.programAll_wires _ _ k (ParityXExit.prefix_sub _ _ k hb)) hb721
+      · have sw : PiOK (FlagEntry.swp (base 514) (base 722)) := piOK_of_all (by decide +kernel)
+        exact sw b hb
 
 end ECDSAAdd.Entrant.StairSiteEasy
 
@@ -72593,7 +73126,9 @@ private def goodSqB (y : Nat) : Bool :=
       (Nat.ble 4835 q && Nat.blt q 5144) || (Nat.ble 5399 q && Nat.blt q 5656) ||
       Nat.beq q 9814) &&
     !(Nat.beq q 5515 || Nat.beq q 5655 || Nat.beq q 5400 || Nat.beq q 5401 ||
-      (Nat.ble 4840 q && Nat.blt q 4886))) (StairPlaceFast.ugB y)
+      (Nat.ble 4840 q && Nat.blt q 4886)) &&
+    (Nat.blt q 4835 || Nat.ble 4840 q || !StairCertificate.memB q StairCertificate.extraW))
+    (StairPlaceFast.ugB y)
 
 private theorem goodSq_of_B {y : Wire} (h : goodSqB y = true) : goodSq y = true := by
   have hu : StairSiteAvoidance.UG y = StairPlaceFast.ugB y := StairPlaceFast.ug_eqB y
@@ -72601,6 +73136,9 @@ private theorem goodSq_of_B {y : Wire} (h : goodSqB y = true) : goodSq y = true 
   rw [hu]
   unfold goodSqB at h
   generalize StairPlaceFast.ugB y = q at h ⊢
+  simp only [Bool.and_eq_true] at h
+  obtain ⟨h, hx⟩ := h
+  have hw := StairCertificate.win_spec hx
   simp only [Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true', Bool.eq_false_iff,
     ne_eq, Nat.ble_eq, Nat.blt_eq, Nat.beq_eq, not_or] at h
   obtain ⟨ha, h1, h2, h3, h4, h5⟩ : (q ≤ 513 ∨ q = 4112 ∨ (4115 ≤ q ∧ q < 4630) ∨
@@ -72616,9 +73154,12 @@ private theorem goodSq_of_B {y : Wire} (h : goodSqB y = true) : goodSq y = true 
       4875, 9815] : List Nat)
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     omega
-  · show q ∉ (List.range' 4840 35 ++ List.range' 4876 4 : List Nat)
+  · show q ∉ (List.range' 4840 35 ++ List.range' 4876 4 ++ StairCertificate.extraW : List Nat)
     simp only [List.mem_append, List.mem_range'_1]
-    omega
+    rintro (hh | hh)
+    · omega
+    · exact (StairCertificate.memB_false_iff q _).mp
+        (StairCertificate.memB_of_win StairCertificate.extraW_window hw) hh
 
 
 /-! K4-B (replay budget): `entryR_sites_goodB` by affine intervals.  On each interval of the
@@ -72695,7 +73236,7 @@ private theorem kbRGood_in {y a b : Nat} (hab : (4115 ≤ a ∧ b ≤ 4630) ∨ 
 
 
 private theorem kbRI1 (i : Nat) (h1 : 0 ≤ i) (h2 : i < 511) :
-    (Nat.beq (pmB (base i)) 4840 || goodSqB (pmB (base i))) = true := by
+    (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = 4115 + i := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inl (by omega)),
@@ -72705,7 +73246,7 @@ private theorem kbRI1 (i : Nat) (h1 : 0 ≤ i) (h2 : i < 511) :
   exact Or.inr (kbRGood_in (a := 4115) (b := 4626) (Or.inl ⟨by omega, by omega⟩) (by omega) (by omega))
 
 private theorem kbRI2 (i : Nat) (h1 : 770 ≤ i) (h2 : i < 1026) :
-    (Nat.beq (pmB (base i)) 4840 || goodSqB (pmB (base i))) = true := by
+    (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = i - 768 := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inr (Or.inl ⟨by omega, by omega⟩)),
@@ -72715,7 +73256,7 @@ private theorem kbRI2 (i : Nat) (h1 : 770 ≤ i) (h2 : i < 1026) :
   exact Or.inr (kbRGood_lo (by omega) (by omega))
 
 private theorem kbRI3 (i : Nat) (h1 : 1027 ≤ i) (h2 : i < 1285) :
-    (Nat.beq (pmB (base i)) 4840 || goodSqB (pmB (base i))) = true := by
+    (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = 4115 + (i - 256) := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inr (Or.inr (Or.inl ⟨by omega, by omega⟩))),
@@ -72725,7 +73266,7 @@ private theorem kbRI3 (i : Nat) (h1 : 1027 ≤ i) (h2 : i < 1285) :
   exact Or.inr (kbRGood_in (a := 4886) (b := 5144) (Or.inr (Or.inl ⟨by omega, by omega⟩)) (by omega) (by omega))
 
 private theorem kbRI4 (i : Nat) (h1 : 1543 ≤ i) (h2 : i < 1656) :
-    (Nat.beq (pmB (base i)) 4840 || goodSqB (pmB (base i))) = true := by
+    (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = 4115 + (i - 256) := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inr (Or.inr (Or.inr (⟨by omega, by omega⟩)))),
@@ -72735,7 +73276,7 @@ private theorem kbRI4 (i : Nat) (h1 : 1543 ≤ i) (h2 : i < 1656) :
   exact Or.inr (kbRGood_in (a := 5402) (b := 5515) (Or.inr (Or.inr (Or.inl ⟨by omega, by omega⟩))) (by omega) (by omega))
 
 private theorem kbRI5 (i : Nat) (h1 : 1657 ≤ i) (h2 : i < 1796) :
-    (Nat.beq (pmB (base i)) 4840 || goodSqB (pmB (base i))) = true := by
+    (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = 4115 + (i - 256) := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inr (Or.inr (Or.inr (⟨by omega, by omega⟩)))),
@@ -72749,7 +73290,7 @@ private theorem kbRI5 (i : Nat) (h1 : 1657 ≤ i) (h2 : i < 1796) :
 `kbRI5`), only the exceptional labels are evaluated. -/
 private theorem entryR_sites_goodB :
     (E1Reflected.mS5 base (base 2400)).all
-      (fun q => Nat.beq (pmB q) 4840 || goodSqB (pmB q)) = true := by
+      (fun q => Nat.beq (pmB q) 4840 || Nat.beq (pmB q) 4838 || goodSqB (pmB q)) = true := by
   rw [List.all_eq_true]
   intro q hq
   unfold E1Reflected.mS5 at hq
@@ -72792,17 +73333,21 @@ private theorem entryR_sites_goodB :
 
 theorem entryR_sites_good :
     ((E1Reflected.mS5 base (base 2400)).map (pmapR L0)).all
-      (fun y => y == hole725 || goodSq y) = true := by
+      (fun y => y == hole725 || y == hole723 || goodSq y) = true := by
   rw [List.all_eq_true]
   intro y hy
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hy
   have h := List.all_eq_true.mp entryR_sites_goodB q hq
-  rw [Bool.or_eq_true] at h ⊢
-  rw [pmapR_fast]
-  rcases h with e | e
-  · left
-    have h725 : hole725 = 4840 := StairHoleSupport.poolWire_eq 725 (by omega)
-    rw [h725, Nat.eq_of_beq_eq_true e]
+  have h725 : hole725 = 4840 := StairHoleSupport.poolWire_eq 725 (by omega)
+  have h723 : hole723 = 4838 := StairHoleSupport.poolWire_eq 723 (by omega)
+  rw [Bool.or_eq_true, Bool.or_eq_true] at h ⊢
+  rw [pmapR_fast, h725, h723]
+  rcases h with (e | e) | e
+  · left; left
+    rw [Nat.eq_of_beq_eq_true e]
+    rfl
+  · left; right
+    rw [Nat.eq_of_beq_eq_true e]
     rfl
   · exact Or.inr (goodSq_of_B e)
 
@@ -72811,21 +73356,28 @@ theorem host_good : goodSq host512 = true :=
   goodSq_of_B (by decide +kernel)
 
 theorem entryRH_good (k : Fp) : ∀ x ∈ wires (entryRH k), goodSq x = true := by
-  have sup : wires (entryRH k) ⊆ (wires (entryR L0 k) \ (holesOf entryPairs).toFinset) ∪
+  have sup : wires (entryRH k) ⊆ (wires (entryR2 k) \ (holesOf entryPairs).toFinset) ∪
       (hostsOf entryPairs).toFinset :=
-    hostRename_support entryPairs (entryR L0 k) entryPairs_nodup (entryPairs_hostFree k)
+    hostRename_support entryPairs (entryR2 k) entryPairs_nodup (entryPairs_hostFree k)
+  have g300 : goodSq (pmapR L0 (base 300)) = true := by
+    have e : pmapR L0 (base 300) = 4415 := by rw [pmapR_fast]; decide
+    rw [e]
+    exact goodSq_of_B (by decide +kernel)
   intro x hx
   rcases Finset.mem_union.mp (sup hx) with h | h
   · obtain ⟨h1, h2⟩ := Finset.mem_sdiff.mp h
-    have hm := entryR_support k h1
-    have t := List.all_eq_true.mp entryR_sites_good x (List.mem_toFinset.mp hm)
-    have hne : x ≠ hole725 := by
-      intro e
-      apply h2
-      rw [e]
-      exact List.mem_toFinset.mpr (List.mem_singleton_self _)
-    rw [beq_false_of_ne hne, Bool.false_or] at t
-    exact t
+    obtain ⟨n723, hw⟩ := entryR2_wires k x h1
+    rcases hw with hw | rfl
+    · have hm := entryR_support k hw
+      have t := List.all_eq_true.mp entryR_sites_good x (List.mem_toFinset.mp hm)
+      have hne : x ≠ hole725 := by
+        intro e
+        apply h2
+        rw [e]
+        exact List.mem_toFinset.mpr (List.mem_singleton_self _)
+      rw [beq_false_of_ne hne, beq_false_of_ne n723, Bool.false_or, Bool.false_or] at t
+      exact t
+    · exact g300
   · have hm : x ∈ hostsOf entryPairs := List.mem_toFinset.mp h
     simp only [hostsOf, entryPairs, List.map_cons, List.map_nil, List.mem_singleton] at hm
     subst hm
@@ -72852,7 +73404,10 @@ theorem UG_fixes_holes39 : ∀ q ∈ holes39Nat, StairSiteAvoidance.UG q = q := 
   have hu : StairSiteAvoidance.UG q = StairPlaceFast.ugB q := StairPlaceFast.ug_eqB q
   rw [hu]
   simp only [holes39Nat, List.mem_append, List.mem_range'_1] at hq
-  exact kbRUG (Or.inr (Or.inr (Or.inl ⟨by omega, by omega⟩)))
+  rcases hq with hq | hq
+  · exact kbRUG (Or.inr (Or.inr (Or.inl ⟨by omega, by omega⟩)))
+  · have := StairCertificate.extraW_window q hq
+    exact kbRUG (Or.inr (Or.inr (Or.inl ⟨by omega, by omega⟩)))
 
 
 end ECDSAAdd.Entrant.StairSquareEntryR
@@ -73023,7 +73578,7 @@ def hostGoodB (n : Nat) : Bool :=
     decide (StairSiteAvoidance.UG (placeFn (L0.core.poolWire n)) ∉ StairPhysicalLayout.oldHolesNat)
 
 
-theorem hosts_all : (List.range' 654 26).all hostGoodB = true := by
+theorem hosts_all : (List.range' 654 28).all hostGoodB = true := by
   rw [show hostGoodB = LT48K.hostGoodF from funext fun n => by
     simp only [hostGoodB, LT48K.hostGoodF, LT48K.pw_eq, LT48K.placeFn_eq, LT48K.UG_eq, LT48K.arena_dec]]
   decide +kernel
@@ -73204,7 +73759,7 @@ theorem bodyB_image_good (B : Program) (hsup : wires B ⊆ (G0 :: K0.wires).toFi
   rw [StairPhysicalLayout.recordArena_eq, StairPhysicalLayout.oldHoles_eq]
   exact t
 
-theorem host_good (n : Nat) (h1 : 654 ≤ n) (h2 : n < 680) :
+theorem host_good (n : Nat) (h1 : 654 ≤ n) (h2 : n < 682) :
     StairSiteAvoidance.UG (placeFn (L0.core.poolWire n)) ∈ StairHoleSupport.recordArena ∧
       StairSiteAvoidance.UG (placeFn (L0.core.poolWire n)) ∉ StairHoleSupport.oldHoles := by
   have t := List.all_eq_true.mp hosts_all n (by simp only [List.mem_range'_1]; omega)
@@ -73543,9 +74098,6 @@ theorem stairOpen_of_remaining (h : Remaining) :
     StairCertificate.StairOpen StairConcreteAssembly.concreteAssembly finalHoles :=
   stairOpenFor finalHoles_sub finalHoles_sub39 h
 
-/-- The entry certificate with literal bounds ⟨2,170,000, 1,521,500, q, 51,155,937⟩
-for `q = 1586 − finalHoles.length` (the final `Main` passes `1547 (by decide)` today),
-conditional only on what is still open. -/
 theorem certificate_of_remaining (q : Nat) (hq : 1586 - finalHoles.length = q)
     (h : Remaining) :
     Challenge.Certificate
@@ -73578,15 +74130,14 @@ staircase entry, its literal bounds and its certificate are declared below.
 
 namespace ECDSAAdd.Entrant
 
-/-- The staircase checkpoint entry (Q 1547). -/
 def entry : Challenge.Entry :=
   StairCertificate.stairEntry StairConcreteAssembly.concreteAssembly
 
 /-- Literal bounds ⟨T, M, Q, slots⟩; T is the exact total of `StairCountsHosted.count_totals`. -/
-def bounds : Challenge.Bounds := ⟨2168165, 1521500, 1547, 51155937⟩
+def bounds : Challenge.Bounds := ⟨2168165, 1521500, 1546, 51155937⟩
 
 theorem certificate : Challenge.Certificate entry bounds := by
-  have c := StairOpenWiring.certificate_of_remaining 1547 (by decide) StairOpenWiring.remaining
+  have c := StairOpenWiring.certificate_of_remaining 1546 (by decide) StairOpenWiring.remaining
   exact ⟨c.correct, c.physical,
     fun C => (ECDSAAdd.Baselines.normalize_toffoli
       (StairConcreteAssembly.concreteAssembly.program C)).trans (StairCountsHosted.count_totals C).1,
