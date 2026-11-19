@@ -16746,7 +16746,7 @@ def placedEndPacket (loans : StairLoans) (divide : Bool) (deficit : Nat) : Progr
 
 /-- Division suffix after the moved parity setup and hosted-X. -/
 def entryTailSuffix (loans : StairLoans) : Program :=
-  placedGroups loans true 41 100 2 ++
+  placedGroups loans true 42 100 2 ++
     renameProgram (OB5.sig 511) loans.divEndpoint ++
     HalfFieldOB5.copyN ++ loans.canon
 
@@ -16756,7 +16756,7 @@ hosted-X occur immediately after this program and before `RSegLast`. -/
 def exitHeadPrefix (loans : StairLoans) : Program :=
   loans.center ++ HalfFieldOB5.copyN ++
     placedEndPacket loans false 68 ++
-    placedGroups loans false 41 100 2
+    placedGroups loans false 42 100 2
 
 
 
@@ -21183,7 +21183,7 @@ theorem memB_of_win {x lo hi : Nat} {l : List Nat} (hl : ∀ e ∈ l, lo ≤ e �
   · exact h
 
 /-- ★ Pool indices of the holes beyond the record's 39 (inside `[720, 725)`). -/
-def extraIdx : List Nat := [723, 724]
+def extraIdx : List Nat := [723, 724, 722]
 
 /-- Their physical wires (`poolWire i = 4115 + i`). -/
 def extraW : List Nat := extraIdx.map (fun i => 4115 + i)
@@ -21192,7 +21192,7 @@ def extraW : List Nat := extraIdx.map (fun i => 4115 + i)
 def extraPPL : List Nat := [739, 740]
 
 /-- Labels (inside `[736, 741)`) whose field-tail placement `TP` is an extra hole. -/
-def extraTPL : List Nat := [739, 740]
+def extraTPL : List Nat := [739, 740, 738]
 
 theorem extraIdx_window : ∀ i ∈ extraIdx, 720 ≤ i ∧ i < 725 := by decide
 theorem extraW_window : ∀ q ∈ extraW, 4835 ≤ q ∧ q < 4840 := by decide
@@ -21201,7 +21201,7 @@ theorem extraTPL_window : ∀ x ∈ extraTPL, 736 ≤ x ∧ x < 741 := by decide
 
 /-- v2: labels in the walk range `[1556, 1814)` whose phase placement `PP` is an extra hole
 (e.g. `PP 1557 = 4837` = pool 722, `PP 1558 = 4835` = pool 720). -/
-def extraPPLx : List Nat := []
+def extraPPLx : List Nat := [1557]
 
 /-- v2: labels in `[1556, 1814)` whose field-tail placement `TP` is an extra hole. -/
 def extraTPLx : List Nat := []
@@ -21331,8 +21331,8 @@ abbrev HalfReplayHypothesis := StairLoanReplay.HalfReplayHypothesis
 
 /-- Division slices `(deficit, first packet, count)` in schedule order (v3, k = 44). -/
 def entrySliceList : List (Nat × Nat × Nat) :=
-  [(0, 1, 84), (11, 85, 5), (20, 90, 3), (28, 93, 3), (34, 96, 2),
-   (39, 98, 2), (41, 100, 2)]
+  [(0, 1, 84), (12, 85, 5), (21, 90, 3), (29, 93, 3), (35, 96, 2),
+   (40, 98, 2), (42, 100, 2)]
 
 
 def slices (loans : StairSchedule.StairLoans) (divide : Bool) :
@@ -21850,7 +21850,7 @@ LT21's exit chain cuts the multiplication field after packets 101–100: its hea
 head equals the record head on the record's canonical input frame (logical level, the
 same frame as `StairLoanRecordExit.exitHead_run_eq`):
 
-* `exitLogicalHead_run_eq` — endpoint + the first backward slice `[(41, 100, 2)]`;
+* `exitLogicalHead_run_eq` — endpoint + the first backward slice `[(42, 100, 2)]`;
 * `headPrefix_run_eq` — `center · copyN · rename (OB5.sig 511) (endpoint ++ slice)`.
 
 Step 2 of the `ExitHeadTransport` plan (REPORT_LT10 handoff); steps 1/3 (frame at the
@@ -21872,8 +21872,8 @@ open StairLoanRecordShape
 
 attribute [local irreducible] wires run
 
-/-- The first backward slice (packets 101, 100 at deficit 41). -/
-def headSlices : List (Nat × Nat × Nat) := [(41, 100, 2)]
+/-- The first backward slice (packets 101, 100 at deficit 42). -/
+def headSlices : List (Nat × Nat × Nat) := [(42, 100, 2)]
 
 theorem headSlices_chain : BackwardChain 102 100 headSlices := by
   simp [BackwardChain, headSlices]
@@ -23321,12 +23321,13 @@ namespace ECDSAAdd.Entrant.StairSquareBEFold
 open ECDSAAdd ECDSAAdd.Entrant Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout RecordedQuantum
 open StairSquareBMapped ControlLoan1589BFFold
 
-/-- Carry bank of the new middle: `foldCarry` with positions 202..203, 204..238 and 240..243 replaced by
-`work[202..203]`, `work[163..197]` and `work[198..201]` (T723/T724: positions 202, 203 = pools 723, 724). -/
+/-- Carry bank of the new middle: `foldCarry` with positions 201, 202..203, 204..238 and 240..243 replaced by
+`work[204]`, `work[202..203]`, `work[163..197]` and `work[198..201]` (T723/T724: positions 202, 203 = pools 723, 724;
+C': position 201 = pool 722). -/
 def carryB (L : CuccaroStreamedSquareWideLayout) : List Wire :=
-  L.foldPad.take 202++((((L.core.work.drop 163).drop 39).take 2)++
+  L.foldPad.take 201++((((L.core.work.drop 163).drop 41).take 1)++((((L.core.work.drop 163).drop 39).take 2)++
     ((L.core.work.drop 163).take 35++((L.foldPad.drop 239).take 1++
-    (((L.core.work.drop 163).drop 35).take 4++(L.foldPad.drop 244++[L.core.productHigh,L.core.workHigh])))))
+    (((L.core.work.drop 163).drop 35).take 4++(L.foldPad.drop 244++[L.core.productHigh,L.core.workHigh]))))))
 
 /-- The adder layout (its `src` field is a dummy; `qprogM` does not use it). -/
 def coreB (L : CuccaroStreamedSquareWideLayout) : MeasuredCanonicalModLayout :=
@@ -23347,8 +23348,9 @@ def eFoldB (L : CuccaroStreamedSquareWideLayout) (c : Wire) : Program :=
 theorem carryB_mem (L : CuccaroStreamedSquareWideLayout) (q : Wire) (hq : q∈carryB L) :
     q∈L.foldPad ∨ q∈L.core.work.drop 163 ∨ q=L.core.productHigh ∨ q=L.core.workHigh := by
   simp only [carryB,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-  rcases hq with h|h|h|h|h|h|h|h
+  rcases hq with h|h|h|h|h|h|h|h|h
   · exact Or.inl (List.mem_of_mem_take h)
+  · exact Or.inr (Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take h)))
   · exact Or.inr (Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take h)))
   · exact Or.inr (Or.inl (List.mem_of_mem_take h))
   · exact Or.inl (List.mem_of_mem_drop (List.mem_of_mem_take h))
@@ -23988,8 +23990,9 @@ theorem K4DQ.mid_wires (L : CuccaroStreamedSquareWideLayout) :
     · rcases List.mem_append.mp hq with hq | hq
       · exact so q hq
       · simp only [coreB, carryB, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hq
-        rcases hq with h | h | h | h | h | h | h | h
+        rcases hq with h | h | h | h | h | h | h | h | h
         · exact sf q (List.mem_of_mem_take h)
+        · exact sw q (List.mem_of_mem_drop (List.mem_of_mem_drop (List.mem_of_mem_take h)))
         · exact sw q (List.mem_of_mem_drop (List.mem_of_mem_drop (List.mem_of_mem_take h)))
         · exact sw q (List.mem_of_mem_drop (List.mem_of_mem_take h))
         · exact sf q (List.mem_of_mem_drop (List.mem_of_mem_take h))
@@ -33665,7 +33668,7 @@ def headEL (loans : StairSchedule.StairLoans) : Program :=
     StairSchedule.fieldRename FourScratchWindow.clearProgram ++
     liftF (loans.center ++ HalfFieldOB5.copyN ++
       StairSchedule.placedEndPacket loans false 68) ++
-    grpFL loans 41 100 2
+    grpFL loans 42 100 2
 
 theorem grpFL_record (d j n : Nat) : grpFL StairSchedule.recordLoans d j n = grpF j n := rfl
 
@@ -34451,11 +34454,11 @@ attribute [local irreducible] wires run
 
 /-! ## The head with an extended backward slice list -/
 
-/-- LT10's `headPrefixShape` with the slice list `(41, 100, 2) :: M`. -/
+/-- LT10's `headPrefixShape` with the slice list `(42, 100, 2) :: M`. -/
 def headShapeL (loans : StairSchedule.StairLoans) (M : List (Nat × Nat × Nat)) : Program :=
   loans.center ++ HalfFieldOB5.copyN ++
     renameProgram (OB5.sig 511)
-      (loans.endPacket false 68 ++ slices loans false ((41, 100, 2) :: M))
+      (loans.endPacket false 68 ++ slices loans false ((42, 100, 2) :: M))
 
 /-- The loaned multiplication head followed by the placed slices `M`. -/
 def headELL (loans : StairSchedule.StairLoans) (M : List (Nat × Nat × Nat)) : Program :=
@@ -34464,8 +34467,8 @@ def headELL (loans : StairSchedule.StairLoans) (M : List (Nat × Nat × Nat)) : 
   liftF (headShapeL loans M)
 
 theorem chain_cons (M : List (Nat × Nat × Nat)) (low : Nat) (h : BackwardChain 100 low M) :
-    BackwardChain 102 low ((41, 100, 2) :: M) := by
-  show 100 + 2 = 102 ∧ 41 ≤ 68 ∧ 1 ≤ 100 ∧ 100 + 2 ≤ 102 ∧ BackwardChain 100 low M
+    BackwardChain 102 low ((42, 100, 2) :: M) := by
+  show 100 + 2 = 102 ∧ 42 ≤ 68 ∧ 1 ≤ 100 ∧ 100 + 2 ≤ 102 ∧ BackwardChain 100 low M
   exact ⟨rfl, by omega, by omega, by omega, h⟩
 
 private theorem slicesX_cons (loans : StairSchedule.StairLoans) (divide : Bool) (d j n : Nat)
@@ -34527,10 +34530,10 @@ theorem headShapeL_record_sub (M : List (Nat × Nat × Nat)) (low : Nat)
     (chain : BackwardChain 100 low M) (hlow : 1 ≤ low) :
     wires (headShapeL StairSchedule.recordLoans M) ⊆ wires Rolling1588.exitHead := by
   have le := backward_chain_low M 100 low chain
-  have c2 : BackwardChain (low + (102 - low)) low ((41, 100, 2) :: M) := by
+  have c2 : BackwardChain (low + (102 - low)) low ((42, 100, 2) :: M) := by
     rw [show low + (102 - low) = 102 by omega]
     exact chain_cons M low chain
-  have hs := backward_slices_record ((41, 100, 2) :: M) low (102 - low) c2
+  have hs := backward_slices_record ((42, 100, 2) :: M) low (102 - low) c2
   have hg : Rolling1588.groups false 1 101 =
       Rolling1588.groups false low (102 - low) ++ Rolling1588.groups false 1 (low - 1) := by
     unfold Rolling1588.groups
@@ -34540,7 +34543,7 @@ theorem headShapeL_record_sub (M : List (Nat × Nat × Nat)) (low : Nat)
   have e : headShapeL StairSchedule.recordLoans M =
       R2SqEp760.center760 ++ HalfFieldOB5.copyN ++
         renameProgram (OB5.sig 511) (R2SqEp760.endPacket760 false ++
-          slices StairSchedule.recordLoans false ((41, 100, 2) :: M)) := rfl
+          slices StairSchedule.recordLoans false ((42, 100, 2) :: M)) := rfl
   rw [e, hs]
   unfold Rolling1588.exitHead
   rw [hg]
@@ -34557,9 +34560,9 @@ theorem exitLogicalHeadL_run_eq (half : HalfReplayHypothesis)
     (M : List (Nat × Nat × Nat)) (low : Nat) (chain : BackwardChain 100 low M)
     (fresh old : List Bool) :
     run (StairConcrete.bestLoans.endPacket false 68 ++
-        slices StairConcrete.bestLoans false ((41, 100, 2) :: M)) fresh s =
+        slices StairConcrete.bestLoans false ((42, 100, 2) :: M)) fresh s =
       run (R2SqEp760.endPacket760 false ++
-        slices StairSchedule.recordLoans false ((41, 100, 2) :: M)) old s := by
+        slices StairSchedule.recordLoans false ((42, 100, 2) :: M)) old s := by
   rw [run_append, run_append]
   rw [hEnd origin ctx enabled X Y hXY s _
     (old.take (measurementCount (R2SqEp760.endPacket760 false))) input]
@@ -34567,7 +34570,7 @@ theorem exitLogicalHeadL_run_eq (half : HalfReplayHypothesis)
     (fun bad => absurd bad (by decide)) (fun _ => hXY) s
     (old.take (measurementCount (R2SqEp760.endPacket760 false))) input
   have cut := (Rolling1588.cutFrame_end origin _ _ _).mpr ending.2
-  exact backward_slices_run_eq half ((41, 100, 2) :: M) 102 low (chain_cons M low chain)
+  exact backward_slices_run_eq half ((42, 100, 2) :: M) 102 low (chain_cons M low chain)
     origin ctx enabled _ _ _ cut _ _
 
 theorem headShapeL_run_eq (half : HalfReplayHypothesis)
@@ -34601,10 +34604,10 @@ theorem headShapeL_run_eq (half : HalfReplayHypothesis)
     exact (Rolling1588HalfFieldOB5.copy_fill ctx.hn origin _ _ _ (centerAt _).2).2
   show run (StairConcrete.bestLoans.center ++ HalfFieldOB5.copyN ++
       renameProgram (OB5.sig 511) (StairConcrete.bestLoans.endPacket false 68 ++
-        slices StairConcrete.bestLoans false ((41, 100, 2) :: M))) fresh state =
+        slices StairConcrete.bestLoans false ((42, 100, 2) :: M))) fresh state =
     run (R2SqEp760.center760 ++ HalfFieldOB5.copyN ++
       renameProgram (OB5.sig 511) (R2SqEp760.endPacket760 false ++
-        slices StairSchedule.recordLoans false ((41, 100, 2) :: M))) old state
+        slices StairSchedule.recordLoans false ((42, 100, 2) :: M))) old state
   apply StairLoanRecordShape.both_replace _ _ _ _ state headEq
   intro b a c
   have w := wAll b
@@ -34641,7 +34644,7 @@ theorem shape_snoc (loans : StairSchedule.StairLoans) (M : List (Nat × Nat × N
     | cons a A ih =>
         obtain ⟨d', j', n'⟩ := a
         simp only [List.cons_append, slices, ih, List.append_assoc]
-  have sl' := sl ((41, 100, 2) :: M)
+  have sl' := sl ((42, 100, 2) :: M)
   rw [List.cons_append] at sl'
   simp only [headELL, headShapeL, sl', StairLoanField7Transport.grpFL,
     StairSchedule.placedGroups, liftF, StairSchedule.fieldRename, StairSchedule.parityRename,
@@ -34655,36 +34658,36 @@ theorem bestEnd : EndpointReplay StairConcrete.bestLoans :=
 
 /-- The loaned reference prefixes of the multiplication chain (left-nested). -/
 def ZH : Program := StairLoanField7Transport.headEL StairConcrete.bestLoans
-def ZA : Program := ZH ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 39 98 2
-def ZB : Program := ZA ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 34 96 2
-def ZC : Program := ZB ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 28 93 3
-def ZD : Program := ZC ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 20 90 3
-def ZE : Program := ZD ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 11 85 5
+def ZA : Program := ZH ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 40 98 2
+def ZB : Program := ZA ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 35 96 2
+def ZC : Program := ZB ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 29 93 3
+def ZD : Program := ZC ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 21 90 3
+def ZE : Program := ZD ++ StairLoanField7Transport.grpFL StairConcrete.bestLoans 12 85 5
 
-def MA : List (Nat × Nat × Nat) := [(39, 98, 2)]
-def MB : List (Nat × Nat × Nat) := [(39, 98, 2), (34, 96, 2)]
-def MC : List (Nat × Nat × Nat) := [(39, 98, 2), (34, 96, 2), (28, 93, 3)]
-def MD : List (Nat × Nat × Nat) := [(39, 98, 2), (34, 96, 2), (28, 93, 3), (20, 90, 3)]
+def MA : List (Nat × Nat × Nat) := [(40, 98, 2)]
+def MB : List (Nat × Nat × Nat) := [(40, 98, 2), (35, 96, 2)]
+def MC : List (Nat × Nat × Nat) := [(40, 98, 2), (35, 96, 2), (29, 93, 3)]
+def MD : List (Nat × Nat × Nat) := [(40, 98, 2), (35, 96, 2), (29, 93, 3), (21, 90, 3)]
 def ME : List (Nat × Nat × Nat) :=
-  [(39, 98, 2), (34, 96, 2), (28, 93, 3), (20, 90, 3), (11, 85, 5)]
+  [(40, 98, 2), (35, 96, 2), (29, 93, 3), (21, 90, 3), (12, 85, 5)]
 
 theorem zA (loans : StairSchedule.StairLoans) :
-    StairLoanField7Transport.headEL loans ++ StairLoanField7Transport.grpFL loans 39 98 2 =
+    StairLoanField7Transport.headEL loans ++ StairLoanField7Transport.grpFL loans 40 98 2 =
       headELL loans MA := by
   rw [shape0]
-  exact (shape_snoc loans [] 39 98 2).trans rfl
+  exact (shape_snoc loans [] 40 98 2).trans rfl
 theorem zB (loans : StairSchedule.StairLoans) :
-    headELL loans MA ++ StairLoanField7Transport.grpFL loans 34 96 2 = headELL loans MB :=
-  (shape_snoc loans MA 34 96 2).trans rfl
+    headELL loans MA ++ StairLoanField7Transport.grpFL loans 35 96 2 = headELL loans MB :=
+  (shape_snoc loans MA 35 96 2).trans rfl
 theorem zC (loans : StairSchedule.StairLoans) :
-    headELL loans MB ++ StairLoanField7Transport.grpFL loans 28 93 3 = headELL loans MC :=
-  (shape_snoc loans MB 28 93 3).trans rfl
+    headELL loans MB ++ StairLoanField7Transport.grpFL loans 29 93 3 = headELL loans MC :=
+  (shape_snoc loans MB 29 93 3).trans rfl
 theorem zD (loans : StairSchedule.StairLoans) :
-    headELL loans MC ++ StairLoanField7Transport.grpFL loans 20 90 3 = headELL loans MD :=
-  (shape_snoc loans MC 20 90 3).trans rfl
+    headELL loans MC ++ StairLoanField7Transport.grpFL loans 21 90 3 = headELL loans MD :=
+  (shape_snoc loans MC 21 90 3).trans rfl
 theorem zE (loans : StairSchedule.StairLoans) :
-    headELL loans MD ++ StairLoanField7Transport.grpFL loans 11 85 5 = headELL loans ME :=
-  (shape_snoc loans MD 11 85 5).trans rfl
+    headELL loans MD ++ StairLoanField7Transport.grpFL loans 12 85 5 = headELL loans ME :=
+  (shape_snoc loans MD 12 85 5).trans rfl
 
 theorem ZA_eq : ZA = headELL StairConcrete.bestLoans MA := zA _
 theorem ZB_eq : ZB = headELL StairConcrete.bestLoans MB := by rw [ZB, ZA_eq, zB]
@@ -34776,16 +34779,16 @@ def headShape (loans : StairSchedule.StairLoans) (L : List (Nat × Nat × Nat)) 
   loans.center ++ HalfFieldOB5.copyN ++
     renameProgram (OB5.sig 511) (loans.endPacket false 68 ++ slices loans false L)
 
-def SlH : List (Nat × Nat × Nat) := [(41, 100, 2)]
-def SlA : List (Nat × Nat × Nat) := [(41, 100, 2), (39, 98, 2)]
-def SlB : List (Nat × Nat × Nat) := [(41, 100, 2), (39, 98, 2), (34, 96, 2)]
-def SlC : List (Nat × Nat × Nat) := [(41, 100, 2), (39, 98, 2), (34, 96, 2), (28, 93, 3)]
+def SlH : List (Nat × Nat × Nat) := [(42, 100, 2)]
+def SlA : List (Nat × Nat × Nat) := [(42, 100, 2), (40, 98, 2)]
+def SlB : List (Nat × Nat × Nat) := [(42, 100, 2), (40, 98, 2), (35, 96, 2)]
+def SlC : List (Nat × Nat × Nat) := [(42, 100, 2), (40, 98, 2), (35, 96, 2), (29, 93, 3)]
 def SlD : List (Nat × Nat × Nat) :=
-  [(41, 100, 2), (39, 98, 2), (34, 96, 2), (28, 93, 3), (20, 90, 3)]
+  [(42, 100, 2), (40, 98, 2), (35, 96, 2), (29, 93, 3), (21, 90, 3)]
 def SlE : List (Nat × Nat × Nat) :=
-  [(41, 100, 2), (39, 98, 2), (34, 96, 2), (28, 93, 3), (20, 90, 3), (11, 85, 5)]
+  [(42, 100, 2), (40, 98, 2), (35, 96, 2), (29, 93, 3), (21, 90, 3), (12, 85, 5)]
 def SlF : List (Nat × Nat × Nat) :=
-  [(41, 100, 2), (39, 98, 2), (34, 96, 2), (28, 93, 3), (20, 90, 3), (11, 85, 5), (0, 1, 84)]
+  [(42, 100, 2), (40, 98, 2), (35, 96, 2), (29, 93, 3), (21, 90, 3), (12, 85, 5), (0, 1, 84)]
 
 theorem SlH_chain : BackwardChain 102 100 SlH := by simp [BackwardChain, SlH]
 theorem SlA_chain : BackwardChain 102 98 SlA := by simp [BackwardChain, SlA]
@@ -34797,11 +34800,11 @@ theorem SlF_chain : BackwardChain 102 1 SlF := by simp [BackwardChain, SlF]
 
 /-! ## Loaned reference prefixes (left-nested, as produced by `crel_track`) -/
 
-def YAL (loans : StairSchedule.StairLoans) : Program := headEL loans ++ grpFL loans 39 98 2
-def YBL (loans : StairSchedule.StairLoans) : Program := YAL loans ++ grpFL loans 34 96 2
-def YCL (loans : StairSchedule.StairLoans) : Program := YBL loans ++ grpFL loans 28 93 3
-def YDL (loans : StairSchedule.StairLoans) : Program := YCL loans ++ grpFL loans 20 90 3
-def YEL (loans : StairSchedule.StairLoans) : Program := YDL loans ++ grpFL loans 11 85 5
+def YAL (loans : StairSchedule.StairLoans) : Program := headEL loans ++ grpFL loans 40 98 2
+def YBL (loans : StairSchedule.StairLoans) : Program := YAL loans ++ grpFL loans 35 96 2
+def YCL (loans : StairSchedule.StairLoans) : Program := YBL loans ++ grpFL loans 29 93 3
+def YDL (loans : StairSchedule.StairLoans) : Program := YCL loans ++ grpFL loans 21 90 3
+def YEL (loans : StairSchedule.StairLoans) : Program := YDL loans ++ grpFL loans 12 85 5
 def YGL (loans : StairSchedule.StairLoans) : Program := YEL loans ++ grpFL loans 0 1 84
 def YFL (loans : StairSchedule.StairLoans) : Program := YGL loans ++ lowTail
 
@@ -36875,13 +36878,105 @@ theorem kbOk39_of_ppiAllB {P : Program} (h : allSites kbPpiB P = true) :
   ok39_of_ppi (fun x hx => kbPpiB_ppi (allSites_sound h x hx))
 
 
-/-- Every record integer-walk label is a good phase label. -/
-theorem ppi_of_int {q : Wire} (h : StackOB5Base.Good q) : PPI q := by
+/-- Every record integer-walk label but the walk carry `base 1541` is a good phase label
+(C': `PP (base 1541)` = pool 722 is a hole; the phase pieces carry that label on `base 717`). -/
+theorem ppi_of_int {q : Wire} (h : StackOB5Base.Good q) (h1541 : q ≠ base 1541) : PPI q := by
   obtain ⟨l, rfl, hl⟩ := (StackOB5Base.integerSites_mem q).mp h
+  have hl' : l + 16 ≠ 1557 := fun e => h1541 (by simp only [MappedCompressed.base]; omega)
   unfold PPI
   simp only [MappedCompressed.base]
-  exact ⟨by omega, by omega,
-    Or.inr (Or.inr (by simp [StairCertificate.extraPPLx, StairCertificate.memB]))⟩
+  refine ⟨by omega, by omega, Or.inr (Or.inr ?_)⟩
+  simp only [StairCertificate.extraPPLx, StairCertificate.memB, Bool.or_false]
+  cases hb : Nat.beq (l + 16) 1557
+  · rfl
+  · exact absurd (Nat.eq_of_beq_eq_true hb) hl'
+
+/-- The C' exchange of the walk carry `base 1541` with `base 717` (`StairHostsSchedule.cHost`). -/
+theorem cHost_rename (X : Program) :
+    StairLoan.rebindMany [base 1541] [base 717] X =
+      renameProgram (Equiv.swap (base 1541) (base 717)) X := rfl
+
+/-- C': a phase piece whose labels other than `base 1541` are phase-good, and which does not use
+`base 717`, is hole-free once `base 1541` is exchanged with `base 717` (`PP (base 717) = 4112`). -/
+theorem ok39_cHost {X : Program} (h : ∀ x ∈ wires X, x ≠ base 1541 → PPI x)
+    (h717 : base 717 ∉ wires X) :
+    PieceOK StairCertificate.holes39 PP (StairLoan.rebindMany [base 1541] [base 717] X) := by
+  apply ok39_of_ppi
+  intro y hy
+  rw [cHost_rename, renameProgram_support] at hy
+  obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hy
+  by_cases e : x = base 1541
+  · subst e
+    rw [Equiv.swap_apply_left]
+    exact kbPpiB_ppi (by decide)
+  · have e2 : x ≠ base 717 := fun e' => h717 (e' ▸ hx)
+    rw [Equiv.swap_apply_of_ne_of_ne e e2]
+    exact h x hx e
+
+/-- C': a phase piece that uses neither `base 1541` nor `base 717` is unchanged by the exchange. -/
+theorem ok39_cHost_of {X : Program} (h : PieceOK StairCertificate.holes39 PP X)
+    (h1541 : base 1541 ∉ wires X) (h717 : base 717 ∉ wires X) :
+    PieceOK StairCertificate.holes39 PP (StairLoan.rebindMany [base 1541] [base 717] X) := by
+  have w : wires (renameProgram (Equiv.swap (base 1541) (base 717)) X) = wires X := by
+    rw [renameProgram_support]
+    ext y
+    constructor
+    · intro hy
+      obtain ⟨x, hx, rfl⟩ := Finset.mem_image.mp hy
+      have n1 : x ≠ base 1541 := fun e => h1541 (e ▸ hx)
+      have n2 : x ≠ base 717 := fun e => h717 (e ▸ hx)
+      rwa [Equiv.swap_apply_of_ne_of_ne n1 n2]
+    · intro hy
+      have n1 : y ≠ base 1541 := fun e => h1541 (e ▸ hy)
+      have n2 : y ≠ base 717 := fun e => h717 (e ▸ hy)
+      exact Finset.mem_image.mpr ⟨y, hy, Equiv.swap_apply_of_ne_of_ne n1 n2⟩
+  rw [cHost_rename]
+  exact ⟨fun x hx => h.1 x (w ▸ hx), fun x hx => h.2 x (w ▸ hx)⟩
+
+/-- `base 717` is not a record integer-walk label. -/
+theorem int_717 : ¬ StackOB5Base.Good (base 717) := by
+  intro h
+  obtain ⟨l, e, hl⟩ := (StackOB5Base.integerSites_mem _).mp h
+  have := base_injective e
+  omega
+
+/-- A label test that admits the walk carry `base 1541` (label 1557) gives phase-goodness of the
+other labels. -/
+theorem ppiX_of_allB {P : Program}
+    (h : allSites (fun x => Nat.beq x 1557 || kbPpiB x) P = true) :
+    ∀ x ∈ wires P, x ≠ base 1541 → PPI x := by
+  intro x hx hne
+  have t := allSites_sound h x hx
+  rw [Bool.or_eq_true] at t
+  rcases t with t | t
+  · exact absurd (Nat.eq_of_beq_eq_true t) hne
+  · exact kbPpiB_ppi t
+
+theorem ne733 {x : Wire} (h : (!Nat.beq x 733) = true) : x ≠ base 717 := by
+  intro e
+  subst e
+  exact absurd h (by decide)
+
+theorem allSites_717 {P : Program} (h : allSites (fun x => !Nat.beq x 733) P = true) :
+    base 717 ∉ wires P :=
+  fun hm => ne733 (allSites_sound h _ hm) rfl
+
+theorem allSites_1541 {P : Program} (h : allSites (fun x => !Nat.beq x 1557) P = true) :
+    base 1541 ∉ wires P := by
+  intro hm
+  have t := allSites_sound h _ hm
+  exact absurd t (by decide)
+
+theorem native_717_free : base 717 ∉ FrontierEntry1591Native.sites base := by
+  intro used
+  simp only [FrontierEntry1591Native.sites, Finset.mem_erase, Finset.mem_insert, List.mem_toFinset,
+    NativeFirstDirect.prefixSites, List.mem_append, wireBlock, List.mem_map, List.mem_range'_1,
+    List.mem_cons, List.not_mem_nil, or_false, base_injective.eq_iff] at used
+  simp only [exists_eq_right] at used
+  omega
+
+theorem clear_717_free : base 717 ∉ wires (skywalkArithmeticClear base) := by
+  simp [skywalkArithmeticClear, skywalkTerminalClear, wires, Instr.wires, base]
 
 
 
@@ -45514,14 +45609,14 @@ theorem chk_half_false_0 : ztAll 736 45 false (rolesL.drop 0)
   k3_half_false 0 (by decide)
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_false`. -/
-theorem chk_half_false_11 : ztAll 736 45 false (rolesL.drop 11)
-    (StairLoan.half760Loan 11 false) = true :=
-  k3_half_false 11 (by decide)
+theorem chk_half_false_12 : ztAll 736 45 false (rolesL.drop 12)
+    (StairLoan.half760Loan 12 false) = true :=
+  k3_half_false 12 (by decide)
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_false`. -/
-theorem chk_half_false_20 : ztAll 736 45 false (rolesL.drop 20)
-    (StairLoan.half760Loan 20 false) = true :=
-  k3_half_false 20 (by decide)
+theorem chk_half_false_21 : ztAll 736 45 false (rolesL.drop 21)
+    (StairLoan.half760Loan 21 false) = true :=
+  k3_half_false 21 (by decide)
 
 end ECDSAAdd.Entrant.StairField13V3Clean
 
@@ -45551,24 +45646,24 @@ namespace ECDSAAdd.Entrant.StairField13V3Clean
 open ECDSAAdd Arithmetic Challenge MappedCompressed
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_false`. -/
-theorem chk_half_false_28 : ztAll 736 45 false (rolesL.drop 28)
-    (StairLoan.half760Loan 28 false) = true :=
-  k3_half_false 28 (by decide)
+theorem chk_half_false_29 : ztAll 736 45 false (rolesL.drop 29)
+    (StairLoan.half760Loan 29 false) = true :=
+  k3_half_false 29 (by decide)
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_false`. -/
-theorem chk_half_false_34 : ztAll 736 45 false (rolesL.drop 34)
-    (StairLoan.half760Loan 34 false) = true :=
-  k3_half_false 34 (by decide)
+theorem chk_half_false_35 : ztAll 736 45 false (rolesL.drop 35)
+    (StairLoan.half760Loan 35 false) = true :=
+  k3_half_false 35 (by decide)
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_false`. -/
-theorem chk_half_false_39 : ztAll 736 45 false (rolesL.drop 39)
-    (StairLoan.half760Loan 39 false) = true :=
-  k3_half_false 39 (by decide)
+theorem chk_half_false_40 : ztAll 736 45 false (rolesL.drop 40)
+    (StairLoan.half760Loan 40 false) = true :=
+  k3_half_false 40 (by decide)
 
-/-- K3 (replay budget): instance of the d-generic `k3_half_false` (terminal group, depth 41). -/
-theorem chk_half_false_41 : ztAll 736 45 false (rolesL.drop 41)
-    (StairLoan.half760Loan 41 false) = true :=
-  k3_half_false 41 (by decide)
+/-- K3 (replay budget): instance of the d-generic `k3_half_false` (terminal group, depth 42). -/
+theorem chk_half_false_42 : ztAll 736 45 false (rolesL.drop 42)
+    (StairLoan.half760Loan 42 false) = true :=
+  k3_half_false 42 (by decide)
 
 end ECDSAAdd.Entrant.StairField13V3Clean
 
@@ -45624,14 +45719,14 @@ theorem chk_half_true_0 : ztAll 736 45 false (rolesL.drop 0)
     (k3_avoid _ _ (by decide +kernel))
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_true`. -/
-theorem chk_half_true_11 : ztAll 736 45 false (rolesL.drop 11)
-    (StairLoan.half760Loan 11 true) = true :=
-  k3_half_true 11 (by decide) (by decide)
+theorem chk_half_true_12 : ztAll 736 45 false (rolesL.drop 12)
+    (StairLoan.half760Loan 12 true) = true :=
+  k3_half_true 12 (by decide) (by decide)
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_true`. -/
-theorem chk_half_true_20 : ztAll 736 45 false (rolesL.drop 20)
-    (StairLoan.half760Loan 20 true) = true :=
-  k3_half_true 20 (by decide) (by decide)
+theorem chk_half_true_21 : ztAll 736 45 false (rolesL.drop 21)
+    (StairLoan.half760Loan 21 true) = true :=
+  k3_half_true 21 (by decide) (by decide)
 
 end ECDSAAdd.Entrant.StairField13V3Clean
 
@@ -45661,24 +45756,24 @@ namespace ECDSAAdd.Entrant.StairField13V3Clean
 open ECDSAAdd Arithmetic Challenge MappedCompressed
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_true`. -/
-theorem chk_half_true_28 : ztAll 736 45 false (rolesL.drop 28)
-    (StairLoan.half760Loan 28 true) = true :=
-  k3_half_true 28 (by decide) (by decide)
+theorem chk_half_true_29 : ztAll 736 45 false (rolesL.drop 29)
+    (StairLoan.half760Loan 29 true) = true :=
+  k3_half_true 29 (by decide) (by decide)
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_true`. -/
-theorem chk_half_true_34 : ztAll 736 45 false (rolesL.drop 34)
-    (StairLoan.half760Loan 34 true) = true :=
-  k3_half_true 34 (by decide) (by decide)
+theorem chk_half_true_35 : ztAll 736 45 false (rolesL.drop 35)
+    (StairLoan.half760Loan 35 true) = true :=
+  k3_half_true 35 (by decide) (by decide)
 
 /-- K3 (replay budget): instance of the d-generic `k3_half_true`. -/
-theorem chk_half_true_39 : ztAll 736 45 false (rolesL.drop 39)
-    (StairLoan.half760Loan 39 true) = true :=
-  k3_half_true 39 (by decide) (by decide)
+theorem chk_half_true_40 : ztAll 736 45 false (rolesL.drop 40)
+    (StairLoan.half760Loan 40 true) = true :=
+  k3_half_true 40 (by decide) (by decide)
 
-/-- K3 (replay budget): instance of the d-generic `k3_half_true` (terminal group, depth 41). -/
-theorem chk_half_true_41 : ztAll 736 45 false (rolesL.drop 41)
-    (StairLoan.half760Loan 41 true) = true :=
-  k3_half_true 41 (by decide) (by decide)
+/-- K3 (replay budget): instance of the d-generic `k3_half_true` (terminal group, depth 42). -/
+theorem chk_half_true_42 : ztAll 736 45 false (rolesL.drop 42)
+    (StairLoan.half760Loan 42 true) = true :=
+  k3_half_true 42 (by decide) (by decide)
 
 end ECDSAAdd.Entrant.StairField13V3Clean
 
@@ -56050,13 +56145,13 @@ def hostedEndpoint (_h : HostPlan) (divide : Bool) (deficit : Nat) : Program :=
 
 /-- v3: copy/canon (record programs; OPEN: loans or hosts, LT13 finding B). -/
 def entryTailSuffix (h : HostPlan) : Program :=
-  hostedGroup h true 41 100 2 ++
+  hostedGroup h true 42 100 2 ++
     renameProgram (OB5.sig 511) StairConcrete.bestLoans.divEndpoint ++
     HalfFieldOB5.copyN ++ StairConcrete.bestLoans.canon
 
 def exitHeadPrefix (h : HostPlan) : Program :=
   StairConcrete.bestLoans.center ++ HalfFieldOB5.copyN ++
-    hostedEndpoint h false 68 ++ hostedGroup h false 41 100 2
+    hostedEndpoint h false 68 ++ hostedGroup h false 42 100 2
 
 
 
@@ -56711,8 +56806,8 @@ open MappedCompressed Secp256k1 BalancedField
 
 /-- Multiplication slices in schedule order (packets descend). -/
 def exitSliceList : List (Nat × Nat × Nat) :=
-  [(41, 100, 2), (39, 98, 2), (34, 96, 2), (28, 93, 3), (20, 90, 3),
-   (11, 85, 5), (0, 1, 84)]
+  [(42, 100, 2), (40, 98, 2), (35, 96, 2), (29, 93, 3), (21, 90, 3),
+   (12, 85, 5), (0, 1, 84)]
 
 
 
@@ -59644,11 +59739,11 @@ def Plan.slotDelta (P : Plan) (c : Costs) (b : Boundary) : Nat :=
 
 def v3Plan : Plan where
   rows := [(425, 87), (450, 62), (465, 47), (480, 32), (490, 22), (500, 12)]
-  groups := [(0, 1, 84), (11, 85, 5), (20, 90, 3), (28, 93, 3), (34, 96, 2),
-    (39, 98, 2), (41, 100, 2)]
+  groups := [(0, 1, 84), (12, 85, 5), (21, 90, 3), (29, 93, 3), (35, 96, 2),
+    (40, 98, 2), (42, 100, 2)]
   window := 767
 
-theorem v3Plan_loanUnits : v3Plan.loanUnits = 427 := by decide
+theorem v3Plan_loanUnits : v3Plan.loanUnits = 444 := by decide
 
 /-- Exact checkpoint slot costs on LT13's `physicalLayout`: generated-codec
 pack+unpack totals (`5412, 3656, 2725, 1757, 1173, 582`) plus two sign
@@ -59688,7 +59783,7 @@ def v3Boundary1806 : Boundary where
   multEnd := 30000
   center := 440
 
-theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 316176 := by
+theorem v3_slotDelta_1806 : v3Plan.slotDelta v3Costs v3Boundary1806 = 325696 := by
   decide
 
 /-! ### Cross-check: the superseded eight-row plan reproduces 639,954 -/
@@ -59979,7 +60074,7 @@ attribute [local irreducible] gateSlots
 /-! ## Slot facts of groups and boundary programs -/
 
 structure GroupFacts (h : StairHostsSchedule.HostPlan) (c : Costs) : Prop where
-  group : ∀ (divide : Bool) (d first count : Nat), d ≤ 68 →
+  group : ∀ (divide : Bool) (d first count : Nat), (d, first, count) ∈ v3Plan.groups →
     gateSlots (StairHostsSchedule.hostedGroup h divide d first count) ≤
       gateSlots (Rolling1588.groups divide first count) + c.groupRole * (d * count)
 
@@ -60040,7 +60135,7 @@ theorem exitFieldRecord_slots :
 
 theorem entryTailSuffix_slots (h : StairHostsSchedule.HostPlan) :
     gateSlots (StairHostsSchedule.entryTailSuffix h) =
-      gateSlots (StairHostsSchedule.hostedGroup h true 41 100 2) +
+      gateSlots (StairHostsSchedule.hostedGroup h true 42 100 2) +
         gateSlots StairConcrete.bestLoans.divEndpoint +
         gateSlots HalfFieldOB5.copyN + gateSlots StairConcrete.bestLoans.canon := by
   rw [StairHostsSchedule.entryTailSuffix]
@@ -60050,7 +60145,7 @@ theorem exitHeadPrefix_slots (h : StairHostsSchedule.HostPlan) :
     gateSlots (StairHostsSchedule.exitHeadPrefix h) =
       gateSlots StairConcrete.bestLoans.center + gateSlots HalfFieldOB5.copyN +
         gateSlots (StairHostsSchedule.hostedEndpoint h false 68) +
-        gateSlots (StairHostsSchedule.hostedGroup h false 41 100 2) := by
+        gateSlots (StairHostsSchedule.hostedGroup h false 42 100 2) := by
   rw [StairHostsSchedule.exitHeadPrefix]
   simp only [gateSlots_append]
 
@@ -61263,19 +61358,19 @@ def firstUnpack : Program :=
 /-- The row (budget) whose stored checkpoint is live while groups run at
 deficit `d` (groups after a segment use the deficit of the row it packed). -/
 def budgetOfDeficit (d : Nat) : Nat :=
-  if d = 0 then 87 else if d = 11 then 62 else if d = 20 then 47
-  else if d = 28 then 32 else if d = 34 then 22 else 12
+  if d = 0 then 87 else if d = 12 then 62 else if d = 21 then 47
+  else if d = 29 then 32 else if d = 35 then 22 else 12
 
-/-- k41: the three pool sites `base 720 .. 722` (clean during both field passes: the integer
+/-- k41: the two pool sites `base 720, 721` (clean during both field passes: the integer
 phases measure their work wires back to zero) join the hosts of every loaned tail group. -/
-def poolHosts : List Wire := [MappedCompressed.base 720, MappedCompressed.base 721, MappedCompressed.base 722]
+def poolHosts : List Wire := [MappedCompressed.base 720, MappedCompressed.base 721]
 
 /-- k41: the hosts of a group at loan depth `d < 44`. The loan depth of a loaned tail group is
-three below the row's host shortfall `deficitFor B`, so the row's `hosts B` plus `poolHosts`
-are exactly `44 - d` sites.  The terminal group runs at loan depth 41 on `poolHosts` alone
-(exactly `44 - 41` sites, no row hosts). -/
+two below the row's host shortfall `deficitFor B`, so the row's `hosts B` plus `poolHosts`
+are exactly `44 - d` sites.  The terminal group runs at loan depth 42 on `poolHosts` alone
+(exactly `44 - 42` sites, no row hosts). -/
 def groupHosts (d : Nat) : List Wire :=
-  if d = 0 then hosts 87 else if d = 41 then poolHosts else hosts (budgetOfDeficit d) ++ poolHosts
+  if d = 0 then hosts 87 else if d = 42 then poolHosts else hosts (budgetOfDeficit d) ++ poolHosts
 
 /-- v3 hosts: groups at deficit `d < 44` rebind the `44 - d` not-yet-loaned
 exclusive roles onto LT13's `hosts` of the live row (future payload letters);
@@ -61730,7 +61825,7 @@ section Merge_StairCountsHostedTail_at_StairSideA
 Group deficits 0/14/23/31/37/42 and terminal 44 on the record packet runs
 1–84, 85–89, 90–92, 93–95, 96–97, 98–99, 100–101.  Loans cost
 `20·deficit·count` per run (`StairConcrete.placedGroups_counts`):
-6900 before the terminal group and 1640 in it (loan depth 41), 8540 per kernel.
+7200 before the terminal group and 1680 in it (loan depth 42), 8880 per kernel.
 The four boundary components are kept as atoms here; their deltas are the
 separate `v3_boundary_counts` (the one place that changes when the boundary
 loans are replaced).
@@ -61814,15 +61909,15 @@ theorem v3_groups_split_counts (divide : Bool) :
 
 theorem v3_entryTailSuffix_counts :
     toffoliCount (StairHostsSchedule.entryTailSuffix hostPlan) =
-      toffoliCount (Rolling1588.groups true 100 2) + 1640 +
+      toffoliCount (Rolling1588.groups true 100 2) + 1680 +
       toffoliCount (renameProgram (OB5.sig 511) StairConcrete.bestLoans.divEndpoint) +
       toffoliCount HalfFieldOB5.copyN + toffoliCount StairConcrete.bestLoans.canon ∧
     measurementCount (StairHostsSchedule.entryTailSuffix hostPlan) =
-      measurementCount (Rolling1588.groups true 100 2) + 1640 +
+      measurementCount (Rolling1588.groups true 100 2) + 1680 +
       measurementCount (renameProgram (OB5.sig 511) StairConcrete.bestLoans.divEndpoint) +
       measurementCount HalfFieldOB5.copyN +
       measurementCount StairConcrete.bestLoans.canon := by
-  obtain ⟨g6, g6'⟩ := v3_group_counts true 41 100 2 (by norm_num) (by decide)
+  obtain ⟨g6, g6'⟩ := v3_group_counts true 42 100 2 (by norm_num) (by decide)
   rw [StairHostsSchedule.entryTailSuffix]
   simp only [StairHostsSchedule.hostedGroup, toffoliCount_append, measurementCount_append,
     StairLoan.rebindMany_counts]
@@ -61832,13 +61927,13 @@ theorem v3_exitHeadPrefix_counts :
     toffoliCount (StairHostsSchedule.exitHeadPrefix hostPlan) =
       toffoliCount StairConcrete.bestLoans.center + toffoliCount HalfFieldOB5.copyN +
       toffoliCount (StairSchedule.placedEndPacket StairConcrete.bestLoans false 68) +
-      toffoliCount (Rolling1588.groups false 100 2) + 1640 ∧
+      toffoliCount (Rolling1588.groups false 100 2) + 1680 ∧
     measurementCount (StairHostsSchedule.exitHeadPrefix hostPlan) =
       measurementCount StairConcrete.bestLoans.center +
       measurementCount HalfFieldOB5.copyN +
       measurementCount (StairSchedule.placedEndPacket StairConcrete.bestLoans false 68) +
-      measurementCount (Rolling1588.groups false 100 2) + 1640 := by
-  obtain ⟨g6, g6'⟩ := v3_group_counts false 41 100 2 (by norm_num) (by decide)
+      measurementCount (Rolling1588.groups false 100 2) + 1680 := by
+  obtain ⟨g6, g6'⟩ := v3_group_counts false 42 100 2 (by norm_num) (by decide)
   rw [StairHostsSchedule.exitHeadPrefix, StairHostsSchedule.hostedEndpoint]
   simp only [StairHostsSchedule.hostedGroup, toffoliCount_append, measurementCount_append,
     StairLoan.rebindMany_counts]
@@ -68782,20 +68877,20 @@ theorem away_of_sub (Δ : Finset Wire) (A B : Program) (sub : wires A ⊆ wires 
 `structure`: the kernel's positivity check would evaluate the closed group programs). -/
 def EntryGroupSub (loans : StairSchedule.StairLoans) : Prop :=
   (wires (grpL loans 0 1 84) ⊆ wires (grp 1 84)) ∧
-  (wires (grpL loans 11 85 5) ⊆ wires (grp 85 5)) ∧
-  (wires (grpL loans 20 90 3) ⊆ wires (grp 90 3)) ∧
-  (wires (grpL loans 28 93 3) ⊆ wires (grp 93 3)) ∧
-  (wires (grpL loans 34 96 2) ⊆ wires (grp 96 2)) ∧
-  (wires (grpL loans 39 98 2) ⊆ wires (grp 98 2))
+  (wires (grpL loans 12 85 5) ⊆ wires (grp 85 5)) ∧
+  (wires (grpL loans 21 90 3) ⊆ wires (grp 90 3)) ∧
+  (wires (grpL loans 29 93 3) ⊆ wires (grp 93 3)) ∧
+  (wires (grpL loans 35 96 2) ⊆ wires (grp 96 2)) ∧
+  (wires (grpL loans 40 98 2) ⊆ wires (grp 98 2))
 
 theorem entryGroupSub_best : EntryGroupSub StairConcrete.bestLoans := by
   unfold EntryGroupSub grpL grp liftF
   exact ⟨StairLoanGroupSupport.liftedGroups_sub true 0 (by omega) 1 84,
-    StairLoanGroupSupport.liftedGroups_sub true 11 (by omega) 85 5,
-    StairLoanGroupSupport.liftedGroups_sub true 20 (by omega) 90 3,
-    StairLoanGroupSupport.liftedGroups_sub true 28 (by omega) 93 3,
-    StairLoanGroupSupport.liftedGroups_sub true 34 (by omega) 96 2,
-    StairLoanGroupSupport.liftedGroups_sub true 39 (by omega) 98 2⟩
+    StairLoanGroupSupport.liftedGroups_sub true 12 (by omega) 85 5,
+    StairLoanGroupSupport.liftedGroups_sub true 21 (by omega) 90 3,
+    StairLoanGroupSupport.liftedGroups_sub true 29 (by omega) 93 3,
+    StairLoanGroupSupport.liftedGroups_sub true 35 (by omega) 96 2,
+    StairLoanGroupSupport.liftedGroups_sub true 40 (by omega) 98 2⟩
 
 
 
@@ -68822,20 +68917,20 @@ theorem entryGroupSub_best : EntryGroupSub StairConcrete.bestLoans := by
 
 /-- Wires-only input: the six loaned multiplication groups inside LT21's `grpF`. -/
 def ExitGroupSub (loans : StairSchedule.StairLoans) : Prop :=
-  (wires (grpFL loans 39 98 2) ⊆ wires (grpF 98 2)) ∧
-  (wires (grpFL loans 34 96 2) ⊆ wires (grpF 96 2)) ∧
-  (wires (grpFL loans 28 93 3) ⊆ wires (grpF 93 3)) ∧
-  (wires (grpFL loans 20 90 3) ⊆ wires (grpF 90 3)) ∧
-  (wires (grpFL loans 11 85 5) ⊆ wires (grpF 85 5)) ∧
+  (wires (grpFL loans 40 98 2) ⊆ wires (grpF 98 2)) ∧
+  (wires (grpFL loans 35 96 2) ⊆ wires (grpF 96 2)) ∧
+  (wires (grpFL loans 29 93 3) ⊆ wires (grpF 93 3)) ∧
+  (wires (grpFL loans 21 90 3) ⊆ wires (grpF 90 3)) ∧
+  (wires (grpFL loans 12 85 5) ⊆ wires (grpF 85 5)) ∧
   (wires (grpFL loans 0 1 84) ⊆ wires (grpF 1 84))
 
 theorem exitGroupSub_best : ExitGroupSub StairConcrete.bestLoans := by
   unfold ExitGroupSub grpFL grpF liftF
-  exact ⟨StairLoanGroupSupport.liftedGroups_sub false 39 (by omega) 98 2,
-    StairLoanGroupSupport.liftedGroups_sub false 34 (by omega) 96 2,
-    StairLoanGroupSupport.liftedGroups_sub false 28 (by omega) 93 3,
-    StairLoanGroupSupport.liftedGroups_sub false 20 (by omega) 90 3,
-    StairLoanGroupSupport.liftedGroups_sub false 11 (by omega) 85 5,
+  exact ⟨StairLoanGroupSupport.liftedGroups_sub false 40 (by omega) 98 2,
+    StairLoanGroupSupport.liftedGroups_sub false 35 (by omega) 96 2,
+    StairLoanGroupSupport.liftedGroups_sub false 29 (by omega) 93 3,
+    StairLoanGroupSupport.liftedGroups_sub false 21 (by omega) 90 3,
+    StairLoanGroupSupport.liftedGroups_sub false 12 (by omega) 85 5,
     StairLoanGroupSupport.liftedGroups_sub false 0 (by omega) 1 84⟩
 
 
@@ -69263,8 +69358,8 @@ abbrev LoanHyp : Prop :=
 
 /-- The v3 table's group runs `(deficit, first, count)`. -/
 def v3Groups : List (Nat × Nat × Nat) :=
-  [(0, 1, 84), (11, 85, 5), (20, 90, 3), (28, 93, 3), (34, 96, 2), (39, 98, 2),
-    (41, 100, 2), (44, 100, 2)]
+  [(0, 1, 84), (12, 85, 5), (21, 90, 3), (29, 93, 3), (35, 96, 2), (40, 98, 2),
+    (42, 100, 2), (44, 100, 2)]
 
 /-- The v3 table's nonterminal segments `(start, finish)`. -/
 def v3Segments : List (Nat × Nat) :=
@@ -69571,7 +69666,7 @@ theorem groupHosts_indom (B : Nat) (hB : B ∈ StairPhysicalLayout.budgets) (q :
   rcases hq with hq | hq
   · exact hosts_indom B hB q hq
   · simp only [StairV3Primitives.poolHosts, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl <;> decide
+    rcases hq with rfl | rfl <;> decide
 
 theorem hostSlots_v3 : HostSlots StairConcreteAssembly.hostPlan where
   group := by
@@ -72177,27 +72272,27 @@ theorem half_keeps_44 (divide : Bool) :
     simp at hw)
 
 /-- Half keeping facts at the deficits of both kernels. -/
-theorem half_keeps_at (divide : Bool) (d : Nat) (hd : d ∈ [0, 11, 20, 28, 34, 39, 41, 44]) :
+theorem half_keeps_at (divide : Bool) (d : Nat) (hd : d ∈ [0, 12, 21, 29, 35, 40, 42, 44]) :
     ∀ w ∈ StairSchedule.exclusiveRoles, Keeps w (StairLoan.half760Loan d divide) := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
   cases divide
   · rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact half_keeps false 0 (by decide) (half_reset_of false 0 chk_half_false_0)
-    · exact half_keeps false 11 (by decide) (half_reset_of false 11 chk_half_false_11)
-    · exact half_keeps false 20 (by decide) (half_reset_of false 20 chk_half_false_20)
-    · exact half_keeps false 28 (by decide) (half_reset_of false 28 chk_half_false_28)
-    · exact half_keeps false 34 (by decide) (half_reset_of false 34 chk_half_false_34)
-    · exact half_keeps false 39 (by decide) (half_reset_of false 39 chk_half_false_39)
-    · exact half_keeps false 41 (by decide) (half_reset_of false 41 chk_half_false_41)
+    · exact half_keeps false 12 (by decide) (half_reset_of false 12 chk_half_false_12)
+    · exact half_keeps false 21 (by decide) (half_reset_of false 21 chk_half_false_21)
+    · exact half_keeps false 29 (by decide) (half_reset_of false 29 chk_half_false_29)
+    · exact half_keeps false 35 (by decide) (half_reset_of false 35 chk_half_false_35)
+    · exact half_keeps false 40 (by decide) (half_reset_of false 40 chk_half_false_40)
+    · exact half_keeps false 42 (by decide) (half_reset_of false 42 chk_half_false_42)
     · exact half_keeps_44 false
   · rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exact half_keeps true 0 (by decide) (half_reset_of true 0 chk_half_true_0)
-    · exact half_keeps true 11 (by decide) (half_reset_of true 11 chk_half_true_11)
-    · exact half_keeps true 20 (by decide) (half_reset_of true 20 chk_half_true_20)
-    · exact half_keeps true 28 (by decide) (half_reset_of true 28 chk_half_true_28)
-    · exact half_keeps true 34 (by decide) (half_reset_of true 34 chk_half_true_34)
-    · exact half_keeps true 39 (by decide) (half_reset_of true 39 chk_half_true_39)
-    · exact half_keeps true 41 (by decide) (half_reset_of true 41 chk_half_true_41)
+    · exact half_keeps true 12 (by decide) (half_reset_of true 12 chk_half_true_12)
+    · exact half_keeps true 21 (by decide) (half_reset_of true 21 chk_half_true_21)
+    · exact half_keeps true 29 (by decide) (half_reset_of true 29 chk_half_true_29)
+    · exact half_keeps true 35 (by decide) (half_reset_of true 35 chk_half_true_35)
+    · exact half_keeps true 40 (by decide) (half_reset_of true 40 chk_half_true_40)
+    · exact half_keeps true 42 (by decide) (half_reset_of true 42 chk_half_true_42)
     · exact half_keeps_44 true
 
 end ECDSAAdd.Entrant.StairField13V3Clean
@@ -72563,7 +72658,7 @@ theorem fieldCommon_keeps {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (
   exact keeps_rename _ (fieldMap_pre hw) (keeps_of_ztAll h (fun _ x => x) w hw)
 
 theorem group_keeps {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (divide : Bool)
-    (d first count : Nat) (hd : d ∈ [0, 11, 20, 28, 34, 39, 41, 44]) (hr : first + count ≤ 102) :
+    (d first count : Nat) (hd : d ∈ [0, 12, 21, 29, 35, 40, 42, 44]) (hr : first + count ≤ 102) :
     Keeps w (groupSlot hp divide d first count).L :=
   groupSlot_keeps hp divide d first count hr hw (half_keeps_at divide d hd w hw)
 
@@ -72828,24 +72923,24 @@ theorem hp_group (dv : Bool) (d f c : Nat) (hd : d ≠ 44) :
   rw [if_neg hd]
 
 /-- k41: at a loaned depth the hosts are the row's payload hosts followed by `poolHosts`. -/
-theorem hp_group_loaned (dv : Bool) (d f c : Nat) (hd : d ≠ 44) (h0 : d ≠ 0) (h41 : d ≠ 41) :
+theorem hp_group_loaned (dv : Bool) (d f c : Nat) (hd : d ≠ 44) (h0 : d ≠ 0) (h42 : d ≠ 42) :
     hp.group dv d f c = StairPhysicalLayout.hosts (StairV3Primitives.budgetOfDeficit d) ++
       StairV3Primitives.poolHosts := by
   rw [hp_group dv d f c hd]
-  show (if d = 0 then _ else if d = 41 then _ else _) = _
-  rw [if_neg h0, if_neg h41]
+  show (if d = 0 then _ else if d = 42 then _ else _) = _
+  rw [if_neg h0, if_neg h42]
 
-theorem hp_group_row (dv : Bool) (d f c B : Nat) (hd : d ≠ 44) (h0 : d ≠ 0) (h41 : d ≠ 41)
+theorem hp_group_row (dv : Bool) (d f c B : Nat) (hd : d ≠ 44) (h0 : d ≠ 0) (h42 : d ≠ 42)
     (hB : StairV3Primitives.budgetOfDeficit d = B) :
     hp.group dv d f c = StairPhysicalLayout.hosts B ++ StairV3Primitives.poolHosts := by
-  rw [hp_group_loaned dv d f c hd h0 h41, hB]
+  rw [hp_group_loaned dv d f c hd h0 h42, hB]
 
 theorem hp_group_zero (dv : Bool) (f c : Nat) :
     hp.group dv 0 f c = StairPhysicalLayout.hosts 87 := rfl
 
-/-- The terminal group (loan depth 41) is hosted on `poolHosts` alone. -/
-theorem hp_group41 (dv : Bool) (f c : Nat) :
-    hp.group dv 41 f c = StairV3Primitives.poolHosts := rfl
+/-- The terminal group (loan depth 42) is hosted on `poolHosts` alone. -/
+theorem hp_group42 (dv : Bool) (f c : Nat) :
+    hp.group dv 42 f c = StairV3Primitives.poolHosts := rfl
 
 theorem hp_first (dv : Bool) : hp.firstPacket dv = StairPhysicalLayout.hosts 87 := rfl
 
@@ -73245,10 +73340,9 @@ theorem budgetOfDeficit_mem (d : Nat) :
 theorem poolHosts_caller : ∀ x ∈ StairV3Primitives.poolHosts, x ∈ callerDomain := by
   intro x hx
   simp only [StairV3Primitives.poolHosts, List.mem_cons, List.not_mem_nil, or_false] at hx
-  rcases hx with rfl | rfl | rfl
+  rcases hx with rfl | rfl
   · exact base_mem_caller 720 (Or.inl (by decide))
   · exact base_mem_caller 721 (Or.inl (by decide))
-  · exact base_mem_caller 722 (Or.inl (by decide))
 
 theorem hostPlan_group_caller (divide : Bool) (d first count : Nat) :
     ∀ x ∈ StairConcreteAssembly.hostPlan.group divide d first count, x ∈ callerDomain := by
@@ -73257,7 +73351,7 @@ theorem hostPlan_group_caller (divide : Bool) (d first count : Nat) :
   split_ifs at hx with h44
   · simp at hx
   · unfold StairV3Primitives.groupHosts at hx
-    split_ifs at hx with h0 h41
+    split_ifs at hx with h0 h42
     · exact hosts_caller 87 (by decide) x hx
     · exact poolHosts_caller x hx
     · rcases List.mem_append.mp hx with hx | hx
@@ -73330,7 +73424,7 @@ theorem entryTailSuffixV3_caller :
     wires (StairHostsSchedule.entryTailSuffix StairConcreteAssembly.hostPlan) ⊆ callerDomain := by
   unfold StairHostsSchedule.entryTailSuffix
   exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _ (wires_sub_of_parts _ _
-    (hostedGroupV3_caller true 41 100 2 (by omega) (by omega))
+    (hostedGroupV3_caller true 42 100 2 (by omega) (by omega))
     (rename_caller _ (preserves_sig 511 (by omega)) _ divEndpointV3_own)) copyN_own)
     canon760Loan_own
 
@@ -73352,7 +73446,7 @@ theorem exitHeadPrefixV3_caller :
   unfold StairHostsSchedule.exitHeadPrefix StairHostsSchedule.hostedEndpoint
   exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _ (wires_sub_of_parts _ _
     center760Loan_own copyN_own) (placedEndPacket_caller _ false 68 multEndpointV3_own))
-    (hostedGroupV3_caller false 41 100 2 (by omega) (by omega))
+    (hostedGroupV3_caller false 42 100 2 (by omega) (by omega))
 
 theorem exitLowPrefixV3_caller :
     wires (StairHostsSchedule.exitLowPrefix StairConcreteAssembly.hostPlan) ⊆ callerDomain := by
@@ -73508,10 +73602,10 @@ abbrev hp : StairHostsSchedule.HostPlan := hostPlan
 
 /-- The scheduled hosted groups (division then multiplication). -/
 def entryGroups : List (Nat × Nat × Nat) :=
-  [(0, 1, 84), (11, 85, 5), (20, 90, 3), (28, 93, 3), (34, 96, 2), (39, 98, 2), (41, 100, 2)]
+  [(0, 1, 84), (12, 85, 5), (21, 90, 3), (29, 93, 3), (35, 96, 2), (40, 98, 2), (42, 100, 2)]
 
 def exitGroups : List (Nat × Nat × Nat) :=
-  [(41, 100, 2), (39, 98, 2), (34, 96, 2), (28, 93, 3), (20, 90, 3), (11, 85, 5), (0, 1, 84)]
+  [(42, 100, 2), (40, 98, 2), (35, 96, 2), (29, 93, 3), (21, 90, 3), (12, 85, 5), (0, 1, 84)]
 
 /-! ## Named pieces still owned by other workers -/
 
@@ -75192,9 +75286,9 @@ theorem basePacket_tgt (divide : Bool) (d j : Nat) (hj : j ∈ List.range' 1 101
 
 end
 
-/-- k41 lemma P: a placed group at loan depth `3 ≤ d ≤ 44` never touches `poolHosts`
-(`base 720 .. 722` are the first three lent roles of every such loan). -/
-theorem poolHosts_fresh (divide : Bool) (d f c : Nat) (h3 : 3 ≤ d) (hd : d ≤ 44) (hf : 1 ≤ f)
+/-- k41 lemma P: a placed group at loan depth `2 ≤ d ≤ 44` never touches `poolHosts`
+(`base 720, 721` are the first two lent roles of every such loan). -/
+theorem poolHosts_fresh (divide : Bool) (d f c : Nat) (h2 : 2 ≤ d) (hd : d ≤ 44) (hf : 1 ≤ f)
     (hfc : f + c ≤ 102) :
     ∀ q ∈ StairV3Primitives.poolHosts,
       q ∉ wires (StairSchedule.placedGroups StairConcrete.bestLoans divide d f c) := by
@@ -75214,18 +75308,18 @@ theorem poolHosts_fresh (divide : Bool) (d f c : Nat) (h3 : 3 ≤ d) (hd : d ≤
   apply nt
   have hmj : Mj j z = q := hwq
   rw [hmj]
-  have h3q : q ∈ StairSchedule.exclusiveRoles.take 3 := by
+  have h3q : q ∈ StairSchedule.exclusiveRoles.take 2 := by
     simp only [StairV3Primitives.poolHosts, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl <;> decide
-  have e : d = 3 + (d - 3) := by omega
+    rcases hq with rfl | rfl <;> decide
+  have e : d = 2 + (d - 2) := by omega
   rw [e, List.take_add]
   exact List.mem_append_left _ h3q
 
 /-- The concrete plan's group hosts are fresh for their own logical group, at
 every scheduled deficit below 44 (k41: the row hosts and `poolHosts`). -/
 theorem _root_.ECDSAAdd.Entrant.StairField13V3Fresh.hostPlan_group_fresh (divide : Bool) (d f c : Nat)
-    (hsched : (d, f, c) ∈ [(0, 1, 84), (11, 85, 5), (20, 90, 3), (28, 93, 3),
-      (34, 96, 2), (39, 98, 2)]) :
+    (hsched : (d, f, c) ∈ [(0, 1, 84), (12, 85, 5), (21, 90, 3), (29, 93, 3),
+      (35, 96, 2), (40, 98, 2)]) :
     ∀ q ∈ StairConcreteAssembly.hostPlan.group divide d f c,
       q ∉ wires (StairSchedule.placedGroups StairConcrete.bestLoans divide d f c) := by
   simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hsched
@@ -75240,18 +75334,18 @@ theorem _root_.ECDSAAdd.Entrant.StairField13V3Fresh.hostPlan_group_fresh (divide
         (by decide) q hq
     · exact StairSiteEasy.poolHosts_fresh divide _ _ _ (by decide) (by decide) (by decide) (by decide) q hq
 
-/-- The terminal group (loan depth 41) is hosted on `poolHosts` alone; they are fresh for it. -/
-theorem _root_.ECDSAAdd.Entrant.StairField13V3Fresh.hostPlan_group41_fresh (divide : Bool)
+/-- The terminal group (loan depth 42) is hosted on `poolHosts` alone; they are fresh for it. -/
+theorem _root_.ECDSAAdd.Entrant.StairField13V3Fresh.hostPlan_group42_fresh (divide : Bool)
     (f c : Nat) (hf : 1 ≤ f) (hfc : f + c ≤ 102) :
-    ∀ q ∈ StairConcreteAssembly.hostPlan.group divide 41 f c,
-      q ∉ wires (StairSchedule.placedGroups StairConcrete.bestLoans divide 41 f c) :=
-  StairSiteEasy.poolHosts_fresh divide 41 f c (by decide) (by decide) hf hfc
+    ∀ q ∈ StairConcreteAssembly.hostPlan.group divide 42 f c,
+      q ∉ wires (StairSchedule.placedGroups StairConcrete.bestLoans divide 42 f c) :=
+  StairSiteEasy.poolHosts_fresh divide 42 f c (by decide) (by decide) hf hfc
 
 /-! ## The hosted groups -/
 
-/-- The scheduled groups of both directions (terminal group at depth 41 or 44). -/
+/-- The scheduled groups of both directions (terminal group at depth 42; dead depth-44 row kept). -/
 def schedule : List (Nat × Nat × Nat) :=
-  [(0, 1, 84), (11, 85, 5), (20, 90, 3), (28, 93, 3), (34, 96, 2), (39, 98, 2), (41, 100, 2),
+  [(0, 1, 84), (12, 85, 5), (21, 90, 3), (29, 93, 3), (35, 96, 2), (40, 98, 2), (42, 100, 2),
     (44, 100, 2)]
 
 theorem schedule_bounds : ∀ g ∈ schedule, g.1 ≤ 44 ∧ 1 ≤ g.2.1 ∧ g.2.1 + g.2.2 ≤ 102 := by
@@ -75317,16 +75411,16 @@ theorem hostsFresh (divide : Bool) (d f c : Nat) (hg : (d, f, c) ∈ schedule) :
   · subst h44
     intro q hq
     simp [hp, StairConcreteAssembly.hostPlan, StairV3Primitives.hostPlan] at hq
-  by_cases h41 : d = 41
-  · subst h41
+  by_cases h42 : d = 42
+  · subst h42
     obtain ⟨-, hf, hc⟩ := schedule_bounds _ hg
-    exact StairField13V3Fresh.hostPlan_group41_fresh divide f c hf hc
+    exact StairField13V3Fresh.hostPlan_group42_fresh divide f c hf hc
   · -- K4-B (replay budget): case split on the schedule instead of one large `omega`
     apply StairField13V3Fresh.hostPlan_group_fresh divide d f c
     simp only [schedule, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hg
     rcases hg with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ |
       ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩
-    all_goals first | decide | exact absurd rfl h44 | exact absurd rfl h41
+    all_goals first | decide | exact absurd rfl h44 | exact absurd rfl h42
 
 theorem hostedGroup39 (divide : Bool) (d f c : Nat) (hg : (d, f, c) ∈ schedule) :
     PieceOK StairCertificate.holes39 TP (StairHostsSchedule.hostedGroup hp divide d f c) := by
@@ -75843,10 +75937,16 @@ theorem kbRelabel_eqB (q : Wire) : StairPhysicalLayout.phaseRelabel q =
 
 
 theorem reverse_ppi (isA : Bool) (n : Nat) (hn : n ≤ 511) :
-    ∀ x ∈ wires (Rolling1588.reverse isA 1 n), PPI x := by
-  intro x hx
+    ∀ x ∈ wires (Rolling1588.reverse isA 1 n), x ≠ base 1541 → PPI x := by
+  intro x hx h1541
   rw [Rolling1588.reverse_support_eq, NewStackOB5.reverse_support_eq] at hx
-  exact ppi_of_int ((StackOB5.support_gen 1 n (by omega) (by omega)).2 x hx)
+  exact ppi_of_int ((StackOB5.support_gen 1 n (by omega) (by omega)).2 x hx) h1541
+
+theorem reverse_717 (isA : Bool) (n : Nat) (hn : n ≤ 511) :
+    base 717 ∉ wires (Rolling1588.reverse isA 1 n) := by
+  intro hx
+  rw [Rolling1588.reverse_support_eq, NewStackOB5.reverse_support_eq] at hx
+  exact int_717 ((StackOB5.support_gen 1 n (by omega) (by omega)).2 _ hx)
 
 section
 /- K4C (build budget): without these the elaborator unfolds the native inverse programs (and
@@ -75857,18 +75957,19 @@ set_option exponentiation.threshold 600 in
 /-- The record native inverse (end of `lastPhase15`).  (Unifying the record's
 pool-nodup premise evaluates a 258-bit power; the threshold is raised locally.) -/
 theorem nativeInverse_ppi :
-    ∀ x ∈ wires (FrontierEntry1591NativeH.inverse base), PPI x := by
-  have pre : ∀ x ∈ NativeFirstDirect.prefixSites base, x ≠ base 1797 → PPI x := by
+    ∀ x ∈ wires (FrontierEntry1591NativeH.inverse base), x ≠ base 1541 → PPI x := by
+  have pre : ∀ x ∈ NativeFirstDirect.prefixSites base, x ≠ base 1797 → x ≠ base 1541 → PPI x := by
     have hB : (NativeFirstDirect.prefixSites base).all
-        (fun x => Nat.beq x (base 1797) || kbPpiB x) = true := by
+        (fun x => Nat.beq x (base 1797) || Nat.beq x (base 1541) || kbPpiB x) = true := by
       decide +kernel
-    intro x hx hne
+    intro x hx hne h1541
     have h := List.all_eq_true.mp hB x hx
-    rw [Bool.or_eq_true, Nat.beq_eq] at h
-    rcases h with h | h
-    · exact absurd h hne
+    rw [Bool.or_eq_true, Bool.or_eq_true] at h
+    rcases h with (h | h) | h
+    · exact absurd (Nat.eq_of_beq_eq_true h) hne
+    · exact absurd (Nat.eq_of_beq_eq_true h) h1541
     · exact kbPpiB_ppi h
-  intro x hx
+  intro x hx h1541
   have h := (FrontierEntry1591Native.support base base_pool_nodup).2
     (FrontierEntry1591NativeH.wires_sub base base_pool_nodup hx)
   have h2 : x ≠ base 1797 ∧ x ∈ insert (base 511) (NativeFirstDirect.prefixSites base).toFinset :=
@@ -75878,7 +75979,7 @@ theorem nativeInverse_ppi :
     show PPI (511 + 16)
     unfold PPI
     omega
-  · exact pre x (List.mem_toFinset.mp h3) h2.1
+  · exact pre x (List.mem_toFinset.mp h3) h2.1 h1541
 
 end
 
@@ -75892,8 +75993,9 @@ labels) are checked once. -/
 
 
 theorem exitTicks39 :
-    PieceOK StairCertificate.holes39 PP (Rolling1588.reverse true 1 424) :=
-  ok39_of_ppi (reverse_ppi true 424 (by omega))
+    PieceOK StairCertificate.holes39 PP
+      (StairLoan.rebindMany [base 1541] [base 717] (Rolling1588.reverse true 1 424)) :=
+  ok39_cHost (reverse_ppi true 424 (by omega)) (reverse_717 true 424 (by omega))
 
 
 
@@ -75977,6 +76079,161 @@ theorem phaseBMove39 : PieceOK StairCertificate.holes39 PP StairPhysicalLayout.p
 
 theorem phaseBReturn39 : PieceOK StairCertificate.holes39 PP StairPhysicalPhase.phaseBReturn :=
   kbOk39_of_ppiAllB (by decide +kernel)
+
+/-! ### C': supports of the first-row pieces (`base 717`, `base 1541`)
+
+The row support bound `rowSitesL 87` contains the spare `zeroWire = base 717`, so the codec programs
+`pack 87` / `unpack 87` are scanned (≈ 5 s each). -/
+
+theorem relabel717 : StairPhysicalLayout.phaseRelabel (base 717) = base 717 := by
+  rw [kbRelabel_eqB]
+  decide
+
+theorem relabel1541 : StairPhysicalLayout.phaseRelabel (base 1541) = base 722 := by
+  rw [kbRelabel_eqB]
+  decide
+
+theorem relabel_injective : Function.Injective StairPhysicalLayout.phaseRelabel :=
+  fun _ _ h => StairOuterPlacement.fieldPlace_injective (Rolling1588Lifetime.phaseHost.injective h)
+
+theorem pack87_717 : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 738)
+    (StairPhysicalPrimitives.pack 87) = true := by
+  decide +kernel
+
+theorem unpack87_717 : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 738)
+    (StairPhysicalPrimitives.unpack 87) = true := by
+  decide +kernel
+
+/-- A relabelled first-row codec program uses neither `base 717` nor `base 1541`
+(the preimages under `phaseRelabel` are `base 717` and `base 722`). -/
+theorem row_free {P : Program}
+    (h : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 738) P = true) :
+    base 717 ∉ wires (renameProgram StairPhysicalLayout.phaseRelabel P) ∧
+      base 1541 ∉ wires (renameProgram StairPhysicalLayout.phaseRelabel P) := by
+  have hh : ∀ y ∈ wires P, y ≠ base 717 ∧ y ≠ base 722 := by
+    intro y hy
+    have t := allSites_sound h y hy
+    rw [Bool.and_eq_true] at t
+    exact ⟨fun e => absurd t.1 (by rw [e]; decide), fun e => absurd t.2 (by rw [e]; decide)⟩
+  constructor
+  · rw [renameProgram_support]
+    intro hm
+    obtain ⟨y, hy, e⟩ := Finset.mem_image.mp hm
+    exact (hh y hy).1 (relabel_injective (e.trans relabel717.symm))
+  · rw [renameProgram_support]
+    intro hm
+    obtain ⟨y, hy, e⟩ := Finset.mem_image.mp hm
+    have e2 : StairPhysicalLayout.phaseRelabel y = StairPhysicalLayout.phaseRelabel (base 722) := by
+      rw [e]
+      rw [kbRelabel_eqB]
+      decide
+    exact (hh y hy).2 (relabel_injective e2)
+
+theorem bSite_717 : (List.range 88).all
+    (fun k => !Nat.beq (StairPhysicalLayout.bSite k) 733 && !Nat.beq (StairPhysicalLayout.bSite k) 1557) =
+      true := by
+  decide +kernel
+
+theorem orientSites_717 : kbOrientSites.all
+    (fun q => !Nat.beq (StairPlaceFast.phaseHostB (StairPlaceFast.fieldPlaceB q)) 733 &&
+      !Nat.beq (StairPlaceFast.phaseHostB (StairPlaceFast.fieldPlaceB q)) 1557) = true := by
+  decide +kernel
+
+/-- The relabelled first-row orientation uses neither `base 717` nor `base 1541`. -/
+theorem orient_free (q : Wire) (hq : q = base 717 ∨ q = base 1541) :
+    q ∉ wires (renameProgram StairV3Primitives.xRelabel (StairV3Primitives.orient 425)) := by
+  have hq' : ∀ v : Nat, (!Nat.beq v 733 && !Nat.beq v 1557) = true → v ≠ q := by
+    intro v hv e
+    subst e
+    rw [Bool.and_eq_true] at hv
+    rcases hq with rfl | rfl
+    · exact absurd hv.1 (by decide)
+    · exact absurd hv.2 (by decide)
+  rw [renameProgram_support]
+  intro hm
+  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp hm
+  have hsup : wires (StairV3Primitives.orient 425) ⊆ (StairPhysicalLayout.letterSite 424 ::
+      ((StairCodec.reg (StairPhysicalLayout.physicalLayout 87).S 87 ++ [base 512]) ++
+        (StairCodec.reg (StairPhysicalLayout.physicalLayout 87).D 87 ++
+          [StairPhysicalLayout.bSite 87]))).toFinset :=
+    swapRegisters_wires _ _ _ (by simp [StairCodec.reg])
+  have hyL : y ∈ kbOrientSites := List.mem_toFinset.mp (hsup hy)
+  change StairV3Primitives.xSwap (StairPhysicalLayout.phaseRelabel y) = q at e
+  rcases StairV3Primitives.xSwap_cases (StairPhysicalLayout.phaseRelabel y) with
+    ⟨k, hk, -, e2⟩ | ⟨k, hk, -, e2⟩ | e2
+  · rw [e2] at e
+    exact hq' _ (List.all_eq_true.mp bSite_717 k hk) e
+  · rw [e2] at e
+    have hk' := List.mem_range.mp hk
+    subst e
+    rcases hq with h | h
+    · have := base_injective h; omega
+    · have := base_injective h; omega
+  · rw [e2, kbRelabel_eqB] at e
+    exact hq' _ (List.all_eq_true.mp orientSites_717 y hyL) e
+
+theorem firstPack_717 : base 717 ∉ wires StairV3Primitives.firstPack ∧
+    base 1541 ∉ wires StairV3Primitives.firstPack := by
+  have r := row_free pack87_717
+  have a : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 1557)
+      (renameProgram (OB5.sig 425) (Rolling1588.Integer.packFirst base true 425)) = true := by
+    decide +kernel
+  have b : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 1557) StairPhysicalLayout.phaseBMove = true := by
+    decide +kernel
+  have fa (P : Program) (h : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 1557) P = true) :
+      base 717 ∉ wires P ∧ base 1541 ∉ wires P := by
+    constructor
+    · intro hm
+      have t := allSites_sound h _ hm
+      exact absurd t (by decide)
+    · intro hm
+      have t := allSites_sound h _ hm
+      exact absurd t (by decide)
+  unfold StairV3Primitives.firstPack
+  simp only [wires_append, Finset.mem_union, not_or]
+  exact ⟨⟨⟨⟨orient_free _ (Or.inl rfl), (fa _ a).1⟩, (fa _ b).1⟩, r.1⟩,
+    ⟨⟨⟨orient_free _ (Or.inr rfl), (fa _ a).2⟩, (fa _ b).2⟩, r.2⟩⟩
+
+theorem firstUnpack_717 : base 717 ∉ wires StairV3Primitives.firstUnpack ∧
+    base 1541 ∉ wires StairV3Primitives.firstUnpack := by
+  have r := row_free unpack87_717
+  have a : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 1557)
+      (renameProgram (OB5.sig 425) (Rolling1588.unpackAtTick true 425)) = true := by
+    decide +kernel
+  have b : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 1557) StairPhysicalPhase.phaseBReturn = true := by
+    decide +kernel
+  have fa (P : Program) (h : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 1557) P = true) :
+      base 717 ∉ wires P ∧ base 1541 ∉ wires P := by
+    constructor
+    · intro hm
+      have t := allSites_sound h _ hm
+      exact absurd t (by decide)
+    · intro hm
+      have t := allSites_sound h _ hm
+      exact absurd t (by decide)
+  unfold StairV3Primitives.firstUnpack
+  simp only [wires_append, Finset.mem_union, not_or]
+  exact ⟨⟨⟨⟨r.1, (fa _ b).1⟩, (fa _ a).1⟩, orient_free _ (Or.inl rfl)⟩,
+    ⟨⟨⟨r.2, (fa _ b).2⟩, (fa _ a).2⟩, orient_free _ (Or.inr rfl)⟩⟩
+
+/-- `base 717` is not an X-tail label. -/
+theorem base717_not_tSites : base 717 ∉ tSites base (base 2400) := by
+  intro h
+  simp only [tSites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with ((h | h) | h) | h | h | h | h
+  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
+    have := base_injective e
+    simp only [List.mem_range'_1] at hj
+    omega
+  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
+    have := base_injective e
+    simp only [List.mem_range'_1] at hj
+    omega
+  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
+    have := base_injective e
+    simp only [List.mem_range'_1] at hj
+    omega
+  all_goals (have := base_injective h; omega)
 
 
 
@@ -76275,9 +76532,9 @@ theorem v3_groups_le68 (d first count : Nat) (hg : (d, first, count) ∈ v3Plan.
 
 theorem v3GroupFacts (h : StairHostsSchedule.HostPlan) : GroupFacts h v3Costs where
   group := by
-    intro divide d first count hd
+    intro divide d first count hg
     rw [StairHostsSchedule.hostedGroup, StairSchedule.placedGroups]
-    exact hostedGroup_slots_le _ _ divide d first count hd
+    exact hostedGroup_slots_le _ _ divide d first count (v3_groups_le68 d first count hg)
 
 /-! ## Boundary programs -/
 

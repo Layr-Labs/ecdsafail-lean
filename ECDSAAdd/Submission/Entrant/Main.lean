@@ -39075,6 +39075,215 @@ theorem entryXNew_run (pk : Wire) (X k : Fp) (u : State)
 
 end
 
+/-! ### C': E1's walk carry `base 1541` (pool 722) hosted on pool 302 -/
+
+/-- C' X entry: the walk carry of the fused first tick, `pmapR (base 1541)` = pool 722, exchanged
+for `pmapR (base 302)` = pool 302 for the whole entry (outside the T723/T724 exchanges). -/
+def entryXNewC (L : ControlledPointLayout) (pk : Wire) (k : Fp) : Program :=
+  renameProgram (Equiv.swap (E1QubitPlacement.pmapR L (base 1541)) (E1QubitPlacement.pmapR L (base 302)))
+    (entryXNew L pk k)
+
+theorem pmapR_302 (L : ControlledPointLayout) :
+    E1QubitPlacement.pmapR L (base 302) = L.core.poolWire 302 := by
+  unfold E1QubitPlacement.pmapR E1QubitPlacement.pmap
+  rw [E1QubitPlacement.rho_base, E1QubitPlacement.sig_base]
+  rfl
+
+theorem pmapR_1541 (L : ControlledPointLayout) :
+    E1QubitPlacement.pmapR L (base 1541) = L.core.poolWire 722 := by
+  unfold E1QubitPlacement.pmapR E1QubitPlacement.pmap
+  rw [E1QubitPlacement.rho_base, E1QubitPlacement.sig_base]
+  rfl
+
+theorem s302 : base 302 ∈ E1QubitPlacement.S :=
+  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 302 (by omega))
+
+theorem s1541 : base 1541 ∈ E1QubitPlacement.S :=
+  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 1541 (by omega))
+
+theorem loadT_1541 (k : Nat) : base 1541 ∉ wires (loadT base (base 2400) k) := by
+  simp only [loadT, wires_append, Finset.mem_union, not_or]
+  exact ⟨CPrimeCore.maskT_1541 _ (by decide) _, CPrimeCore.maskT_1541 _ (by decide) _⟩
+
+theorem tailX_1541 (k : Nat) (m : List Bool) (s : State) :
+    (run (tailX base (base 2400) k) m s).basis (base 1541) = false := by
+  rw [tailX_split, run_append, run_preserves_outside _ _ _ _
+    (by simp [wires, Instr.wires, correctionWires, base])]
+  unfold tailXInit
+  rw [run_append, run_append, run_preserves_outside _ _ _ _ (loadT_1541 k),
+    run_append]
+  exact CPrimeCore.chainW_1541 _ _
+
+theorem evenTail_1541 (k : Nat) (m : List Bool) (s : State) :
+    (run (evenTail k) m s).basis (base 1541) = false := by
+  rw [evenTail_split, run_append, run_preserves_outside _ _ _ _
+    (by simp [wires, Instr.wires, correctionWires, base])]
+  unfold evenTailInit
+  rw [run_append, run_append, run_preserves_outside _ _ _ _ (loadT_1541 k),
+    run_append]
+  exact CPrimeCore.chainW_1541 _ _
+
+section
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+
+/-- The record X entry leaves E1's walk carry (pool 722) zero. -/
+theorem entryXNew0_1541 (pk : Wire) (k : Fp) (m : List Bool) (s : State) :
+    (run (entryXNew0 L pk k) m s).basis (E1QubitPlacement.pmapR L (base 1541)) = false := by
+  have inj := E1QubitPlacement.pmap_inj L hw hn
+  have tl : ∀ (P : Program) (hP : wires P ⊆ E1QubitPlacement.S),
+      (∀ m' t, (run P m' t).basis (base 1541) = false) → ∀ m' t,
+      (run (renameProgram (E1QubitPlacement.pmapR L) P) m' t).basis
+        (E1QubitPlacement.pmapR L (base 1541)) = false := by
+    intro P hP hz m' t
+    have rr := run_rename_pool (E1QubitPlacement.pmapR L) E1QubitPlacement.S inj P hP m'
+      (pullState (E1QubitPlacement.pmapR L) t) t rfl (fun q _ => rfl)
+    rw [rr.2 _ s1541]
+    exact hz _ _
+  unfold entryXNew0
+  split_ifs
+  · rw [run_append]
+    exact tl _ (tailX_S k.val) (fun m' t => tailX_1541 k.val m' t) _ _
+  · rw [run_append, run_append]
+    exact tl _ (evenTail_S k.val) (fun m' t => evenTail_1541 k.val m' t) _ _
+
+/-- The 724 X entry (two exchanges, neither moves pool 722) leaves E1's walk carry zero. -/
+theorem entryXNew_1541 (pk : Wire) (k : Fp) (m : List Bool) (s : State) :
+    (run (entryXNew L pk k) m s).basis (E1QubitPlacement.pmapR L (base 1541)) = false := by
+  have inj := E1QubitPlacement.pmap_inj L hw hn
+  have s721 : base 721 ∈ E1QubitPlacement.S :=
+    List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 721 (by omega))
+  have ne (i : Nat) (hi : base i ∈ E1QubitPlacement.S) (h : i ≠ 1541) :
+      E1QubitPlacement.pmapR L (base 1541) ≠ E1QubitPlacement.pmapR L (base i) :=
+    fun E => h (base_injective (inj _ hi _ s1541 E.symm))
+  have fx (a b : Wire) (ha : E1QubitPlacement.pmapR L (base 1541) ≠ a)
+      (hb : E1QubitPlacement.pmapR L (base 1541) ≠ b) (P : Program) (m' : List Bool) (t : State) :
+      (run (renameProgram (Equiv.swap a b) P) m' t).basis (E1QubitPlacement.pmapR L (base 1541)) =
+        (run P m' (pullState (Equiv.swap a b) t)).basis (E1QubitPlacement.pmapR L (base 1541)) := by
+    rw [← run_rename _ (Equiv.swap a b).injective]
+    show _ = (run (renameProgram (Equiv.swap a b) P) m' t).basis
+      (Equiv.swap a b (E1QubitPlacement.pmapR L (base 1541)))
+    rw [Equiv.swap_apply_of_ne_of_ne ha hb]
+  unfold entryXNew
+  rw [fx _ _ (ne 722 s722 (by omega)) (ne 301 s301 (by omega)),
+    fx _ _ (ne 721 s721 (by omega)) (ne 300 s300 (by omega))]
+  exact entryXNew0_1541 L hw hn pk k _ _
+
+/-- The C' host `pmapR (base 302)` is not a wire of the record X entry. -/
+theorem host302_fresh0 (pk : Wire) (h302 : pk ≠ E1QubitPlacement.pmapR L (base 302)) (k : Fp) :
+    E1QubitPlacement.pmapR L (base 302) ∉ wires (entryXNew0 L pk k) := by
+  have inj := E1QubitPlacement.pmap_inj L hw hn
+  have s514 : base 514 ∈ E1QubitPlacement.S :=
+    List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 514 (by omega))
+  have h514 : E1QubitPlacement.pmapR L (base 514) ≠ E1QubitPlacement.pmapR L (base 302) :=
+    fun E => absurd (base_injective (inj _ s514 _ s302 E)) (by omega)
+  have tl : ∀ P : Program, wires P ⊆ E1QubitPlacement.S →
+      wires P ⊆ (StairSiteEasy.tSites base (base 2400)).toFinset →
+      E1QubitPlacement.pmapR L (base 302) ∉ wires (renameProgram (E1QubitPlacement.pmapR L) P) := by
+    intro P hS hT h
+    rw [renameProgram_support] at h
+    obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
+    have := inj _ (hS hy) _ s302 e
+    subst this
+    exact T724Core.base_not_tSites (j := 302) (by omega) (by omega) (List.mem_toFinset.mp (hT hy))
+  have sw : E1QubitPlacement.pmapR L (base 302) ∉ wires (swp pk (E1QubitPlacement.pmapR L (base 514))) := by
+    intro h
+    simp only [swp, wires, Instr.wires, Finset.union_empty, Finset.mem_union, Finset.mem_insert,
+      Finset.mem_singleton] at h
+    rcases h with (h | h) | (h | h)
+    · exact h302 h.symm
+    · exact h514 h.symm
+    · exact h514 h.symm
+    · exact h302 h.symm
+  unfold entryXNew0
+  split_ifs
+  · rw [wires_append, Finset.mem_union]
+    rintro (h | h)
+    · exact sw h
+    · exact tl _ (tailX_S k.val) (StairSiteEasy.tailX_tight base (base 2400) k.val) h
+  · rw [wires_append, wires_append, Finset.mem_union, Finset.mem_union]
+    rintro (h | h | h)
+    · have cS : wires [Instr.CCX (base 2400) (base 770) (base 721)] ⊆ E1QubitPlacement.S := by
+        simp only [wires, Instr.wires, Finset.union_empty]
+        exact (tail_control_wires k.val).trans (tailX_S k.val)
+      have cT : wires [Instr.CCX (base 2400) (base 770) (base 721)] ⊆
+          (StairSiteEasy.tSites base (base 2400)).toFinset := by
+        apply StairSiteEasy.tgate_sub
+        intro q hq
+        simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton] at hq
+        rcases hq with rfl | rfl | rfl
+        · exact StairSiteEasy.g_tSites _ _
+        · exact StairSiteEasy.in_tSites _ _ 770 (by omega)
+        · exact StairSiteEasy.in_tSites _ _ 721 (by omega)
+      exact tl _ cS cT h
+    · exact sw h
+    · exact tl _ (evenTail_S k.val) (StairSiteEasy.evenTail_tight k.val) h
+
+/-- The C' host is not a wire of the 724 X entry either (its exchanges fix pool 302). -/
+theorem host302_fresh (pk : Wire) (h302 : pk ≠ E1QubitPlacement.pmapR L (base 302)) (k : Fp) :
+    E1QubitPlacement.pmapR L (base 302) ∉ wires (entryXNew L pk k) := by
+  have inj := E1QubitPlacement.pmap_inj L hw hn
+  have s721 : base 721 ∈ E1QubitPlacement.S :=
+    List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 721 (by omega))
+  have ne (i : Nat) (hi : base i ∈ E1QubitPlacement.S) (h : i ≠ 302) :
+      E1QubitPlacement.pmapR L (base 302) ≠ E1QubitPlacement.pmapR L (base i) :=
+    fun E => h (base_injective (inj _ s302 _ hi E)).symm
+  have fix (a b : Wire) (ha : E1QubitPlacement.pmapR L (base 302) ≠ a)
+      (hb : E1QubitPlacement.pmapR L (base 302) ≠ b) (P : Program)
+      (hP : E1QubitPlacement.pmapR L (base 302) ∉ wires P) :
+      E1QubitPlacement.pmapR L (base 302) ∉ wires (renameProgram (Equiv.swap a b) P) := by
+    intro h
+    rw [renameProgram_support] at h
+    obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
+    have ey : y = E1QubitPlacement.pmapR L (base 302) := by
+      have := congrArg (Equiv.swap a b) e
+      rwa [Equiv.swap_apply_self, Equiv.swap_apply_of_ne_of_ne ha hb] at this
+    subst ey
+    exact hP hy
+  unfold entryXNew
+  exact fix _ _ (ne 722 s722 (by omega)) (ne 301 s301 (by omega)) _
+    (fix _ _ (ne 721 s721 (by omega)) (ne 300 s300 (by omega)) _ (host302_fresh0 L hw hn pk h302 k))
+
+/-- C': the X entry with the walk carry on pool 302 runs exactly like the record X entry (the 724
+statement plus `pk ≠` the walk carry and its host). -/
+theorem entryXNewC_run (pk : Wire) (X k : Fp) (u : State)
+    (hx : regValue L.point.x u.basis = X.val) (hc : regValue L.dialogPool u.basis = 0)
+    (hpk : pk ∈ L.dialogPool) (h514 : pk ≠ E1QubitPlacement.pmapR L (base 514))
+    (h721 : pk ≠ E1QubitPlacement.pmapR L (base 721))
+    (h770 : pk ≠ E1QubitPlacement.pmapR L (base 770))
+    (h2400 : pk ≠ E1QubitPlacement.pmapR L (base 2400))
+    (h300 : pk ≠ E1QubitPlacement.pmapR L (base 300))
+    (h722 : pk ≠ E1QubitPlacement.pmapR L (base 722)) (h301 : pk ≠ E1QubitPlacement.pmapR L (base 301))
+    (h302 : pk ≠ E1QubitPlacement.pmapR L (base 302))
+    (h1541 : pk ≠ E1QubitPlacement.pmapR L (base 1541)) (m : List Bool) :
+    run (entryXNewC L pk k) m
+        (put u pk (if u.basis L.core.generic then decide (prime ≤ X.val + k.val) else false)) =
+      run (entryXAll L k)
+        (List.replicate (measurementCount (comparePart base (base 2400) k.val)) false ++ m) u := by
+  have zpool (i : Nat) (hi : base i ∈ E1QubitPlacement.S) (hx' : i < 770 ∨ 1026 ≤ i) (hg : i ≠ 2400) :
+      u.basis (E1QubitPlacement.pmapR L (base i)) = false := by
+    apply (regValue_zero _ _).mp hc
+    apply E1QubitPlacement.pmap_pool L hw hn _ hi
+    · intro h
+      obtain ⟨j, hj, e⟩ := List.mem_map.mp h
+      have := base_injective e
+      simp only [List.mem_range'_1] at hj
+      omega
+    · intro e
+      have := base_injective e
+      omega
+  have z1541 := zpool 1541 s1541 (by omega) (by omega)
+  have z302 := zpool 302 s302 (by omega) (by omega)
+  refine Eq.trans ?_ (entryXNew_run L hw hn pk X k u hx hc hpk h514 h721 h770 h2400 h300 h722 h301 m)
+  unfold entryXNewC
+  apply EqualSourceSwapResearch.rename_swap_equal_eq
+  · exact host302_fresh L hw hn pk h302 k
+  · simp [put, writeBit, Function.update_apply, Ne.symm h1541, Ne.symm h302, z1541, z302]
+  · rw [entryXNew_1541 L hw hn]
+    simp [put, writeBit, Function.update_apply, Ne.symm h1541, z1541]
+
+end
+
 /-- The new program from `s'` tracks the old one from `s` under the padded measurement list. -/
 structure Pad (P' P : Program) (s' s : State) (pad : List Bool → List Bool) : Prop where
   run_eq : ∀ d, run P' d s' = run P (pad d) s
@@ -39201,6 +39410,24 @@ theorem entryXNew_measure (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
   rw [(renameProgram_counts _ _).2, (renameProgram_counts _ _).2]
   exact entryXNew0_measure L pk k
 
+/-- C': the X entry's measurement count (a renaming). -/
+theorem entryXNewC_measure (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+    measurementCount (entryXAll L k) =
+      measurementCount (comparePart base (base 2400) k.val) + measurementCount (entryXNewC L pk k) := by
+  unfold entryXNewC
+  rw [(renameProgram_counts _ _).2]
+  exact entryXNew_measure L pk k
+
+/-- C': the X entry's counts and slots are those of the 724 X entry (a renaming). -/
+theorem entryXNewC_counts (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+    toffoliCount (entryXNewC L pk k) = toffoliCount (entryXNew L pk k) ∧
+      measurementCount (entryXNewC L pk k) = measurementCount (entryXNew L pk k) :=
+  renameProgram_counts _ _
+
+theorem entryXNewC_slots (L : ControlledPointLayout) (pk : Wire) (k : Fp) :
+    gateSlots (entryXNewC L pk k) = gateSlots (entryXNew L pk k) :=
+  Baselines.rename_gateSlots _ _
+
 section
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
@@ -39284,6 +39511,15 @@ theorem pk_ne_301 : pkW L ≠ E1QubitPlacement.pmapR L (base 301) := by
     rfl
   rw [e]
   exact fun E => absurd (pool_inj L hw hn 773 301 (by omega) (by omega) E) (by omega)
+
+/-- C': the parked flag is neither the X entry's walk carry (pool 722) nor its host (pool 302). -/
+theorem pk_ne_302 : pkW L ≠ E1QubitPlacement.pmapR L (base 302) := by
+  rw [pmapR_302 L]
+  exact fun E => absurd (pool_inj L hw hn 773 302 (by omega) (by omega) E) (by omega)
+
+theorem pk_ne_1541 : pkW L ≠ E1QubitPlacement.pmapR L (base 1541) := by
+  rw [pmapR_1541 L]
+  exact fun E => absurd (pool_inj L hw hn 773 722 (by omega) (by omega) E) (by omega)
 
 theorem pk_ne_x : pkW L ≠ E1QubitPlacement.pmapR L (base 770) := by
   have hp := pk_pool L hw
@@ -53108,15 +53344,15 @@ hosted-X intentionally do not occur in this prefix. -/
 def entryTailPrefix (p : StairPrimitives) (loans : StairLoans) : Program :=
   placedGroups loans true 0 1 84 ++
     forwardSegment p 87 62 425 450 ++
-    placedGroups loans true 11 85 5 ++
+    placedGroups loans true 12 85 5 ++
     forwardSegment p 62 47 450 465 ++
-    placedGroups loans true 20 90 3 ++
+    placedGroups loans true 21 90 3 ++
     forwardSegment p 47 32 465 480 ++
-    placedGroups loans true 28 93 3 ++
+    placedGroups loans true 29 93 3 ++
     forwardSegment p 32 22 480 490 ++
-    placedGroups loans true 34 96 2 ++
+    placedGroups loans true 35 96 2 ++
     forwardSegment p 22 12 490 500 ++
-    placedGroups loans true 39 98 2 ++
+    placedGroups loans true 40 98 2 ++
     forwardLast p
 
 
@@ -53126,15 +53362,15 @@ def entryTailPrefix (p : StairPrimitives) (loans : StairLoans) : Program :=
 reverse staircase and packets 76 down to 1. -/
 def exitHeadSuffix (p : StairPrimitives) (loans : StairLoans) : Program :=
   reverseLast p ++
-    placedGroups loans false 39 98 2 ++
+    placedGroups loans false 40 98 2 ++
     reverseSegment p 22 12 490 500 ++
-    placedGroups loans false 34 96 2 ++
+    placedGroups loans false 35 96 2 ++
     reverseSegment p 32 22 480 490 ++
-    placedGroups loans false 28 93 3 ++
+    placedGroups loans false 29 93 3 ++
     reverseSegment p 47 32 465 480 ++
-    placedGroups loans false 20 90 3 ++
+    placedGroups loans false 21 90 3 ++
     reverseSegment p 62 47 450 465 ++
-    placedGroups loans false 11 85 5 ++
+    placedGroups loans false 12 85 5 ++
     reverseSegment p 87 62 425 450 ++
     placedGroups loans false 0 1 84
 
@@ -53452,30 +53688,30 @@ def entryTailPrefix (p : StairSchedule.StairPrimitives)
     (h : HostPlan) : Program :=
   hostedGroup h true 0 1 84 ++
     StairSchedule.forwardSegment p 87 62 425 450 ++
-    hostedGroup h true 11 85 5 ++
+    hostedGroup h true 12 85 5 ++
     StairSchedule.forwardSegment p 62 47 450 465 ++
-    hostedGroup h true 20 90 3 ++
+    hostedGroup h true 21 90 3 ++
     StairSchedule.forwardSegment p 47 32 465 480 ++
-    hostedGroup h true 28 93 3 ++
+    hostedGroup h true 29 93 3 ++
     StairSchedule.forwardSegment p 32 22 480 490 ++
-    hostedGroup h true 34 96 2 ++
+    hostedGroup h true 35 96 2 ++
     StairSchedule.forwardSegment p 22 12 490 500 ++
-    hostedGroup h true 39 98 2 ++ StairSchedule.forwardLast p
+    hostedGroup h true 40 98 2 ++ StairSchedule.forwardLast p
 
 
 
 def exitHeadSuffix (p : StairSchedule.StairPrimitives)
     (h : HostPlan) : Program :=
   StairSchedule.reverseLast p ++
-    hostedGroup h false 39 98 2 ++
+    hostedGroup h false 40 98 2 ++
     StairSchedule.reverseSegment p 22 12 490 500 ++
-    hostedGroup h false 34 96 2 ++
+    hostedGroup h false 35 96 2 ++
     StairSchedule.reverseSegment p 32 22 480 490 ++
-    hostedGroup h false 28 93 3 ++
+    hostedGroup h false 29 93 3 ++
     StairSchedule.reverseSegment p 47 32 465 480 ++
-    hostedGroup h false 20 90 3 ++
+    hostedGroup h false 21 90 3 ++
     StairSchedule.reverseSegment p 62 47 450 465 ++
-    hostedGroup h false 11 85 5 ++
+    hostedGroup h false 12 85 5 ++
     StairSchedule.reverseSegment p 87 62 425 450 ++
     hostedGroup h false 0 1 84
 
@@ -53516,21 +53752,48 @@ def lastXN (p : StairSchedule.StairPrimitives)
   StairSchedule.stackReverse15 p ++ ParityXExitInverse23Kernel.x1N k
 
 /-- Division kernel with every assigned site-sensitive component replaced by
-its role-aware hosted version. -/
-def entryKernel (p : StairSchedule.StairPrimitives) (h : HostPlan) : Program :=
+its role-aware hosted version (record placement of the walk carry `base 1541`). -/
+def entryKernel0 (p : StairSchedule.StairPrimitives) (h : HostPlan) : Program :=
   renameProgram Rolling1588Lifetime.phaseHost (StairSchedule.firstPhase p) ++
     entryFieldHosted p h ++
     renameProgram Rolling1588Lifetime.phaseHost
       (InverseFive23.lastPhase15 false)
 
 /-- Multiplication kernel with every assigned site-sensitive component
-replaced, including the selected `x1N` tail. -/
-def exitKernel (p : StairSchedule.StairPrimitives)
+replaced, including the selected `x1N` tail (record placement of `base 1541`). -/
+def exitKernel0 (p : StairSchedule.StairPrimitives)
     (h : HostPlan) (k : Nat) : Program :=
   renameProgram Rolling1588Lifetime.phaseHost
       (Rolling1588TickGap.firstPhase false) ++
     exitFieldHosted p h ++
     renameProgram Rolling1588Lifetime.phaseHost (lastXN p h k)
+
+/-- C': the walk carry `base 1541` (phase host `base 722` = pool 722) re-hosted on `base 717`
+(physical 4112, clean at both field cuts) inside a walk phase. -/
+def cHost (P : Program) : Program := StairLoan.rebindMany [base 1541] [base 717] P
+
+theorem cHost_eq (P : Program) :
+    cHost P = renameProgram (Equiv.swap (base 1541) (base 717)) P := rfl
+
+theorem cHost_append (P Q : Program) : cHost (P ++ Q) = cHost P ++ cHost Q := by
+  simp only [cHost_eq, renameProgram, List.map_append]
+
+/-- C' division kernel: the seed tick, then the walk / first pack and the last phase with
+`base 1541` on `base 717`. -/
+def entryKernel (p : StairSchedule.StairPrimitives) (h : HostPlan) : Program :=
+  renameProgram Rolling1588Lifetime.phaseHost (FrontierEntry1591Native.forward base) ++
+    renameProgram Rolling1588Lifetime.phaseHost (cHost (StairSchedule.stackForward6 p)) ++
+    entryFieldHosted p h ++
+    renameProgram Rolling1588Lifetime.phaseHost (cHost (InverseFive23.lastPhase15 false))
+
+/-- C' multiplication kernel: the seed tick, then the tail phase and `lastXN` with `base 1541`
+on `base 717`. -/
+def exitKernel (p : StairSchedule.StairPrimitives)
+    (h : HostPlan) (k : Nat) : Program :=
+  renameProgram Rolling1588Lifetime.phaseHost (FrontierEntry1591Native.forward base) ++
+    renameProgram Rolling1588Lifetime.phaseHost (cHost (Rolling1588TickGap.tailPhase false)) ++
+    exitFieldHosted p h ++
+    renameProgram Rolling1588Lifetime.phaseHost (cHost (lastXN p h k))
 
 end ECDSAAdd.Entrant.StairHostsSchedule
 end Merge_StairHostsSchedule_at_Main
@@ -53610,6 +53873,20 @@ def HostReplaySpec (A : Assembly) : Prop :=
         StairConcrete.bestLoans) logical s) ∧
   (∀ k s, A.exitPre k s → ∀ hosted logical,
     run (StairHostsSchedule.exitKernel A.primitives
+        A.hostPlan k) hosted s =
+      run (StairSchedule.exitKernel A.primitives
+        StairConcrete.bestLoans k) logical s)
+
+/-- C': field 13 of the record hosted kernels (`entryKernel0` / `exitKernel0`); the C' kernels
+replay these (`CPrimeHost.hostReplaySpec_C`). -/
+def HostReplaySpec0 (A : Assembly) : Prop :=
+  (∀ s, A.entryPre s → ∀ hosted logical,
+    run (StairHostsSchedule.entryKernel0 A.primitives
+        A.hostPlan) hosted s =
+      run (StairSchedule.entryKernel A.primitives
+        StairConcrete.bestLoans) logical s) ∧
+  (∀ k s, A.exitPre k s → ∀ hosted logical,
+    run (StairHostsSchedule.exitKernel0 A.primitives
         A.hostPlan k) hosted s =
       run (StairSchedule.exitKernel A.primitives
         StairConcrete.bestLoans k) logical s)
@@ -54470,19 +54747,19 @@ def entryRestOf (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.Host
     (L : ControlledPointLayout) : Program :=
   renameProgram (wireFn2 L)
     (renameProgram Rolling1588Lifetime.phaseHost
-        (StairSchedule.stackForward6 p) ++
+        (StairHostsSchedule.cHost (StairSchedule.stackForward6 p)) ++
       StairHostsSchedule.entryFieldHosted p h ++
       renameProgram Rolling1588Lifetime.phaseHost
-        (InverseFive23.lastPhase15 false))
+        (StairHostsSchedule.cHost (InverseFive23.lastPhase15 false)))
 
 def exitRestOf (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan)
     (L : ControlledPointLayout) (k : Nat) : Program :=
   renameProgram (wireFn2 L)
     (renameProgram Rolling1588Lifetime.phaseHost
-        (Rolling1588TickGap.tailPhase false) ++
+        (StairHostsSchedule.cHost (Rolling1588TickGap.tailPhase false)) ++
       StairHostsSchedule.exitFieldHosted p h ++
       renameProgram Rolling1588Lifetime.phaseHost
-        (StairHostsSchedule.lastXN p h k))
+        (StairHostsSchedule.cHost (StairHostsSchedule.lastXN p h k)))
 
 /-! ## Shapes (each one rewrite, then the append/rename laws) -/
 
@@ -54514,7 +54791,7 @@ theorem entryRestOf_slots (p : StairSchedule.StairPrimitives)
         gateSlots (StairHostsSchedule.entryFieldHosted p h) +
         gateSlots (InverseFive23.lastPhase15 false) := by
   rw [entryRestOf]
-  simp only [gateSlots_append, rename_gateSlots]
+  simp only [gateSlots_append, rename_gateSlots, StairHostsSchedule.cHost_eq]
 
 theorem exitRestOf_slots (p : StairSchedule.StairPrimitives)
     (h : StairHostsSchedule.HostPlan) (L : ControlledPointLayout) (k : Nat) :
@@ -54524,7 +54801,7 @@ theorem exitRestOf_slots (p : StairSchedule.StairPrimitives)
         gateSlots (StairSchedule.stackReverse15 p) +
         gateSlots (ParityXExitInverse23Kernel.x1N k) := by
   rw [exitRestOf, StairHostsSchedule.lastXN]
-  simp only [gateSlots_append, rename_gateSlots]
+  simp only [gateSlots_append, rename_gateSlots, StairHostsSchedule.cHost_eq]
   omega
 
 
@@ -54570,15 +54847,15 @@ theorem entryTailPrefix_slots (p : StairSchedule.StairPrimitives)
     gateSlots (StairHostsSchedule.entryTailPrefix p h) =
       gateSlots (StairHostsSchedule.hostedGroup h true 0 1 84) +
         gateSlots (StairSchedule.forwardSegment p 87 62 425 450) +
-        gateSlots (StairHostsSchedule.hostedGroup h true 11 85 5) +
+        gateSlots (StairHostsSchedule.hostedGroup h true 12 85 5) +
         gateSlots (StairSchedule.forwardSegment p 62 47 450 465) +
-        gateSlots (StairHostsSchedule.hostedGroup h true 20 90 3) +
+        gateSlots (StairHostsSchedule.hostedGroup h true 21 90 3) +
         gateSlots (StairSchedule.forwardSegment p 47 32 465 480) +
-        gateSlots (StairHostsSchedule.hostedGroup h true 28 93 3) +
+        gateSlots (StairHostsSchedule.hostedGroup h true 29 93 3) +
         gateSlots (StairSchedule.forwardSegment p 32 22 480 490) +
-        gateSlots (StairHostsSchedule.hostedGroup h true 34 96 2) +
+        gateSlots (StairHostsSchedule.hostedGroup h true 35 96 2) +
         gateSlots (StairSchedule.forwardSegment p 22 12 490 500) +
-        gateSlots (StairHostsSchedule.hostedGroup h true 39 98 2) +
+        gateSlots (StairHostsSchedule.hostedGroup h true 40 98 2) +
         gateSlots (StairSchedule.forwardLast p) := by
   rw [StairHostsSchedule.entryTailPrefix]
   simp only [gateSlots_append]
@@ -54589,15 +54866,15 @@ theorem exitHeadSuffix_slots (p : StairSchedule.StairPrimitives)
     (h : StairHostsSchedule.HostPlan) :
     gateSlots (StairHostsSchedule.exitHeadSuffix p h) =
       gateSlots (StairSchedule.reverseLast p) +
-        gateSlots (StairHostsSchedule.hostedGroup h false 39 98 2) +
+        gateSlots (StairHostsSchedule.hostedGroup h false 40 98 2) +
         gateSlots (StairSchedule.reverseSegment p 22 12 490 500) +
-        gateSlots (StairHostsSchedule.hostedGroup h false 34 96 2) +
+        gateSlots (StairHostsSchedule.hostedGroup h false 35 96 2) +
         gateSlots (StairSchedule.reverseSegment p 32 22 480 490) +
-        gateSlots (StairHostsSchedule.hostedGroup h false 28 93 3) +
+        gateSlots (StairHostsSchedule.hostedGroup h false 29 93 3) +
         gateSlots (StairSchedule.reverseSegment p 47 32 465 480) +
-        gateSlots (StairHostsSchedule.hostedGroup h false 20 90 3) +
+        gateSlots (StairHostsSchedule.hostedGroup h false 21 90 3) +
         gateSlots (StairSchedule.reverseSegment p 62 47 450 465) +
-        gateSlots (StairHostsSchedule.hostedGroup h false 11 85 5) +
+        gateSlots (StairHostsSchedule.hostedGroup h false 12 85 5) +
         gateSlots (StairSchedule.reverseSegment p 87 62 425 450) +
         gateSlots (StairHostsSchedule.hostedGroup h false 0 1 84) := by
   rw [StairHostsSchedule.exitHeadSuffix]
@@ -54621,17 +54898,17 @@ theorem entryRestOf_slots_le (p : StairSchedule.StairPrimitives)
   have w := forwardWalk_slots p c hw
   have rg := recordGroups_v3 true
   have g1 := hg.group true 0 1 84 (by decide)
-  have g2 := hg.group true 11 85 5 (by decide)
-  have g3 := hg.group true 20 90 3 (by decide)
-  have g4 := hg.group true 28 93 3 (by decide)
-  have g5 := hg.group true 34 96 2 (by decide)
-  have g6 := hg.group true 39 98 2 (by decide)
-  have g7 := hg.group true 41 100 2 (by decide)
+  have g2 := hg.group true 12 85 5 (by decide)
+  have g3 := hg.group true 21 90 3 (by decide)
+  have g4 := hg.group true 29 93 3 (by decide)
+  have g5 := hg.group true 35 96 2 (by decide)
+  have g6 := hg.group true 40 98 2 (by decide)
+  have g7 := hg.group true 42 100 2 (by decide)
   have d1 := hb.divEnd
   have d2 := hb.canon
   have ws := window_slots
   have de : v3Plan.entryDelta c b = v3Plan.checkpointSlots c + c.firstMove +
-      c.forwardTerminal + c.groupRole * 427 + b.divEnd + b.canon + v3Plan.window := by
+      c.forwardTerminal + c.groupRole * 444 + b.divEnd + b.canon + v3Plan.window := by
     rw [Plan.entryDelta, v3Plan_loanUnits]
   have vw : v3Plan.window = 767 := rfl
   rw [de]
@@ -54652,17 +54929,17 @@ theorem exitRestOf_slots_le (p : StairSchedule.StairPrimitives)
   have w := reverseWalk_slots p c hw
   have rg := recordGroups_v3 false
   have g1 := hg.group false 0 1 84 (by decide)
-  have g2 := hg.group false 11 85 5 (by decide)
-  have g3 := hg.group false 20 90 3 (by decide)
-  have g4 := hg.group false 28 93 3 (by decide)
-  have g5 := hg.group false 34 96 2 (by decide)
-  have g6 := hg.group false 39 98 2 (by decide)
-  have g7 := hg.group false 41 100 2 (by decide)
+  have g2 := hg.group false 12 85 5 (by decide)
+  have g3 := hg.group false 21 90 3 (by decide)
+  have g4 := hg.group false 29 93 3 (by decide)
+  have g5 := hg.group false 35 96 2 (by decide)
+  have g6 := hg.group false 40 98 2 (by decide)
+  have g7 := hg.group false 42 100 2 (by decide)
   have d1 := hb.multEnd
   have d2 := hb.center
   have ws := window_slots
   have de : v3Plan.exitDelta c b = v3Plan.checkpointSlots c + c.firstReturn +
-      c.reverseTerminal + c.groupRole * 427 + b.multEnd + b.center + v3Plan.window := by
+      c.reverseTerminal + c.groupRole * 444 + b.multEnd + b.center + v3Plan.window := by
     rw [Plan.exitDelta, v3Plan_loanUnits]
   have vw : v3Plan.window = 767 := rfl
   rw [de]
@@ -58414,19 +58691,19 @@ abbrev checkpointPrimitives : StairSchedule.StairPrimitives :=
 def hostedEntryRest (L : ControlledPointLayout) : Program :=
   renameProgram (wireFn2 L)
     (renameProgram Rolling1588Lifetime.phaseHost
-        (StairSchedule.stackForward6 checkpointPrimitives) ++
+        (StairHostsSchedule.cHost (StairSchedule.stackForward6 checkpointPrimitives)) ++
       StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan ++
       renameProgram Rolling1588Lifetime.phaseHost
-        (InverseFive23.lastPhase15 false))
+        (StairHostsSchedule.cHost (InverseFive23.lastPhase15 false)))
 
 /-- Multiplication rest after the caller's already-fused first tick. -/
 def hostedExitRest (L : ControlledPointLayout) (k : Nat) : Program :=
   renameProgram (wireFn2 L)
     (renameProgram Rolling1588Lifetime.phaseHost
-        (Rolling1588TickGap.tailPhase false) ++
+        (StairHostsSchedule.cHost (Rolling1588TickGap.tailPhase false)) ++
       StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan ++
       renameProgram Rolling1588Lifetime.phaseHost
-        (StairHostsSchedule.lastXN checkpointPrimitives hostPlan k))
+        (StairHostsSchedule.cHost (StairHostsSchedule.lastXN checkpointPrimitives hostPlan k)))
 
 /-- Multiplication stage: LT40's hole-free square (`StairSquareFinal.squareEntryHL`, = the
 record square `A161Generic.squareEntry L k` on every layout except `Baselines.layout`,
@@ -58438,7 +58715,7 @@ def hostedSecondStage (L : ControlledPointLayout)
 
 def hostedGeneric (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   ((ParityUniform.entryYAll L (-cy) ++
-      FlagEntry.entryXNew L (FlagEntry.pkW L) (-cx)) ++
+      FlagEntry.entryXNewC L (FlagEntry.pkW L) (-cx)) ++
     hostedEntryRest L) ++
     hostedSecondStage L (ReflectionE1.correction cx) cy cx
 
@@ -59114,7 +59391,7 @@ section Merge_StairCountsHostedTail_at_Main
 Group deficits 0/14/23/31/37/42 and terminal 44 on the record packet runs
 1–84, 85–89, 90–92, 93–95, 96–97, 98–99, 100–101.  Loans cost
 `20·deficit·count` per run (`StairConcrete.placedGroups_counts`):
-6900 before the terminal group and 1640 in it (loan depth 41), 8540 per kernel.
+7200 before the terminal group and 1680 in it (loan depth 42), 8880 per kernel.
 The four boundary components are kept as atoms here; their deltas are the
 separate `v3_boundary_counts` (the one place that changes when the boundary
 loans are replaced).
@@ -59140,7 +59417,7 @@ theorem v3_entryTailPrefix_counts :
       toffoliCount (Rolling1588.groups true 90 3) +
       toffoliCount (Rolling1588.groups true 93 3) +
       toffoliCount (Rolling1588.groups true 96 2) +
-      toffoliCount (Rolling1588.groups true 98 2) + 6900 +
+      toffoliCount (Rolling1588.groups true 98 2) + 7200 +
       toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450) +
       toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465) +
       toffoliCount (StairSchedule.forwardSegment checkpointPrimitives 47 32 465 480) +
@@ -59153,7 +59430,7 @@ theorem v3_entryTailPrefix_counts :
       measurementCount (Rolling1588.groups true 90 3) +
       measurementCount (Rolling1588.groups true 93 3) +
       measurementCount (Rolling1588.groups true 96 2) +
-      measurementCount (Rolling1588.groups true 98 2) + 6900 +
+      measurementCount (Rolling1588.groups true 98 2) + 7200 +
       measurementCount (StairSchedule.forwardSegment checkpointPrimitives 87 62 425 450) +
       measurementCount (StairSchedule.forwardSegment checkpointPrimitives 62 47 450 465) +
       measurementCount (StairSchedule.forwardSegment checkpointPrimitives 47 32 465 480) +
@@ -59161,11 +59438,11 @@ theorem v3_entryTailPrefix_counts :
       measurementCount (StairSchedule.forwardSegment checkpointPrimitives 22 12 490 500) +
       measurementCount (StairSchedule.forwardLast checkpointPrimitives) := by
   obtain ⟨g0, g0'⟩ := v3_oddGroup_counts
-  obtain ⟨g1, g1'⟩ := v3_group_counts true 11 85 5 (by norm_num) (by decide)
-  obtain ⟨g2, g2'⟩ := v3_group_counts true 20 90 3 (by norm_num) (by decide)
-  obtain ⟨g3, g3'⟩ := v3_group_counts true 28 93 3 (by norm_num) (by decide)
-  obtain ⟨g4, g4'⟩ := v3_group_counts true 34 96 2 (by norm_num) (by decide)
-  obtain ⟨g5, g5'⟩ := v3_group_counts true 39 98 2 (by norm_num) (by decide)
+  obtain ⟨g1, g1'⟩ := v3_group_counts true 12 85 5 (by norm_num) (by decide)
+  obtain ⟨g2, g2'⟩ := v3_group_counts true 21 90 3 (by norm_num) (by decide)
+  obtain ⟨g3, g3'⟩ := v3_group_counts true 29 93 3 (by norm_num) (by decide)
+  obtain ⟨g4, g4'⟩ := v3_group_counts true 35 96 2 (by norm_num) (by decide)
+  obtain ⟨g5, g5'⟩ := v3_group_counts true 40 98 2 (by norm_num) (by decide)
   rw [StairHostsSchedule.entryTailPrefix]
   simp only [StairHostsSchedule.hostedGroup, toffoliCount_append, measurementCount_append,
     StairLoan.rebindMany_counts]
@@ -59181,7 +59458,7 @@ theorem v3_exitHeadSuffix_counts :
       toffoliCount (Rolling1588.groups false 93 3) +
       toffoliCount (Rolling1588.groups false 90 3) +
       toffoliCount (Rolling1588.groups false 85 5) +
-      toffoliCount (Rolling1588.groups false 1 84) + 6900 +
+      toffoliCount (Rolling1588.groups false 1 84) + 7200 +
       toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 22 12 490 500) +
       toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 32 22 480 490) +
       toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480) +
@@ -59194,18 +59471,18 @@ theorem v3_exitHeadSuffix_counts :
       measurementCount (Rolling1588.groups false 93 3) +
       measurementCount (Rolling1588.groups false 90 3) +
       measurementCount (Rolling1588.groups false 85 5) +
-      measurementCount (Rolling1588.groups false 1 84) + 6900 +
+      measurementCount (Rolling1588.groups false 1 84) + 7200 +
       measurementCount (StairSchedule.reverseSegment checkpointPrimitives 22 12 490 500) +
       measurementCount (StairSchedule.reverseSegment checkpointPrimitives 32 22 480 490) +
       measurementCount (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480) +
       measurementCount (StairSchedule.reverseSegment checkpointPrimitives 62 47 450 465) +
       measurementCount (StairSchedule.reverseSegment checkpointPrimitives 87 62 425 450) := by
   obtain ⟨g0, g0'⟩ := v3_group_counts false 0 1 84 (by norm_num) (by decide)
-  obtain ⟨g1, g1'⟩ := v3_group_counts false 11 85 5 (by norm_num) (by decide)
-  obtain ⟨g2, g2'⟩ := v3_group_counts false 20 90 3 (by norm_num) (by decide)
-  obtain ⟨g3, g3'⟩ := v3_group_counts false 28 93 3 (by norm_num) (by decide)
-  obtain ⟨g4, g4'⟩ := v3_group_counts false 34 96 2 (by norm_num) (by decide)
-  obtain ⟨g5, g5'⟩ := v3_group_counts false 39 98 2 (by norm_num) (by decide)
+  obtain ⟨g1, g1'⟩ := v3_group_counts false 12 85 5 (by norm_num) (by decide)
+  obtain ⟨g2, g2'⟩ := v3_group_counts false 21 90 3 (by norm_num) (by decide)
+  obtain ⟨g3, g3'⟩ := v3_group_counts false 29 93 3 (by norm_num) (by decide)
+  obtain ⟨g4, g4'⟩ := v3_group_counts false 35 96 2 (by norm_num) (by decide)
+  obtain ⟨g5, g5'⟩ := v3_group_counts false 40 98 2 (by norm_num) (by decide)
   rw [StairHostsSchedule.exitHeadSuffix]
   simp only [StairHostsSchedule.hostedGroup, toffoliCount_append, measurementCount_append,
     StairLoan.rebindMany_counts]
@@ -59225,7 +59502,7 @@ section Merge_StairCountsHostedRest_at_Main
 # Hosted arithmetic rests against the record rests (field 10 ledger, CANON v3)
 
 Per kernel: walk +1585 T / +1317 M (`v3_entryWalk_counts`, `v3_exitWalk_counts`),
-group loans +8540 T / +8540 M (`v3_entryTailPrefix_counts` …), plus the boundary
+group loans +8880 T / +8880 M (`v3_entryTailPrefix_counts` …), plus the boundary
 delta `δ` of the two boundary components of that kernel.  The `_of` forms are
 PARAMETRIC in `δ` (any boundary loan design); the plain forms instantiate the
 current boundary (`v3_boundary_counts`: division +88, multiplication +176).
@@ -59255,9 +59532,9 @@ theorem hostedEntryRest_counts_of (δT δM : Nat)
           measurementCount R2SqEp760.canon760 + δM)
     (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 9389 + δT ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 9729 + δT ∧
       measurementCount (hostedEntryRest L) =
-        measurementCount (ParityStageBothInverse23.restEntry L) + 8699 + δM := by
+        measurementCount (ParityStageBothInverse23.restEntry L) + 9039 + δM := by
   obtain ⟨b1, b2⟩ := boundary
   obtain ⟨w1, w2⟩ := v3_entryWalk_counts
   obtain ⟨p1, p2⟩ := v3_entryTailPrefix_counts
@@ -59272,7 +59549,8 @@ theorem hostedEntryRest_counts_of (δT δM : Nat)
   obtain ⟨-, k2, k3, -, k5, k6⟩ := FourScratchWindow.counts
   rw [hostedEntryRest, ParityStageBothInverse23.restEntry, Rolling1588TickGap.tailPhase,
     Rolling1588TickGap.stackForward]
-  simp only [toffoliCount_append, measurementCount_append, renameProgram_counts]
+  simp only [toffoliCount_append, measurementCount_append, renameProgram_counts,
+    StairHostsSchedule.cHost_eq]
   constructor <;> linarith
 
 /-- Multiplication rest, parametric in the multiplication boundary delta `δ`. -/
@@ -59287,9 +59565,9 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
           measurementCount (R2SqEp760.endPacket760 false) + δM)
     (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10138 + δT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10478 + δT ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9868 + δM := by
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10208 + δM := by
   obtain ⟨b1, b2⟩ := boundary
   obtain ⟨w1, w2⟩ := v3_exitWalk_counts
   obtain ⟨p1, p2⟩ := v3_exitHeadPrefix_counts
@@ -59304,22 +59582,23 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
   obtain ⟨-, k2, k3, -, k5, k6⟩ := FourScratchWindow.counts
   rw [hostedExitRest, ParityXExitInverse23Kernel.restXXN, ParityXExitInverse23Kernel.lastXN,
     StairHostsSchedule.lastXN]
-  simp only [toffoliCount_append, measurementCount_append, renameProgram_counts]
+  simp only [toffoliCount_append, measurementCount_append, renameProgram_counts,
+    StairHostsSchedule.cHost_eq]
   constructor <;> linarith
 
 theorem hostedEntryRest_counts (L : ControlledPointLayout) :
     toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 9477 ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 9817 ∧
       measurementCount (hostedEntryRest L) =
-        measurementCount (ParityStageBothInverse23.restEntry L) + 8787 := by
+        measurementCount (ParityStageBothInverse23.restEntry L) + 9127 := by
   obtain ⟨h1, h2⟩ := hostedEntryRest_counts_of 88 88 v3_boundary_counts.1 L
   constructor <;> omega
 
 theorem hostedExitRest_counts (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10314 ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10654 ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10044 := by
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10384 := by
   obtain ⟨h1, h2⟩ := hostedExitRest_counts_of 176 176 v3_boundary_counts.2 L k
   constructor <;> omega
 
@@ -59336,8 +59615,8 @@ section Merge_StairCountsHosted_at_Main
 with the two arithmetic rests of `FlagExit.genericN` replaced by the hosted
 staircase rests.  Counts are wire-blind, so for the k = 44 plan
 
-  T(concreteProgram C) = T(programQ C) + 2·(1585 + 8660) + δE_T + δX_T,
-  M(concreteProgram C) = M(programQ C) + 2·(1317 + 8660) + δE_M + δX_M,
+  T(concreteProgram C) = T(programQ C) + 2·(1585 + 8960) + δE_T + δX_T,
+  M(concreteProgram C) = M(programQ C) + 2·(1317 + 8960) + δE_M + δX_M,
 
 where δE / δX are the division / multiplication boundary deltas (endpoint +
 converter).  The `_of` theorems are parametric in them; the plain theorems
@@ -59363,42 +59642,42 @@ attribute [local irreducible] toffoliCount measurementCount
     parametric in the two boundary deltas. -/
 theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 9389 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 9729 + δET ∧
       measurementCount (hostedEntryRest L) =
-        measurementCount (ParityStageBothInverse23.restEntry L) + 8699 + δEM)
+        measurementCount (ParityStageBothInverse23.restEntry L) + 9039 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10138 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10478 + δXT ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9868 + δXM)
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10208 + δXM)
     (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (hostedGeneric L cx cy) ≤
-        toffoliCount (FlagExit.genericN L cx cy) + 19527 + 328 + δET + δXT ∧
+        toffoliCount (FlagExit.genericN L cx cy) + 20207 + 328 + δET + δXT ∧
       measurementCount (hostedGeneric L cx cy) =
-        measurementCount (FlagExit.genericN L cx cy) + 18567 + δEM + δXM := by
+        measurementCount (FlagExit.genericN L cx cy) + 19247 + δEM + δXM := by
   obtain ⟨e1, e2⟩ := hE L
   obtain ⟨x1, x2⟩ := hX L cx.val
   obtain ⟨q1, q2⟩ := StairSquareFinal.squareEntryHL_counts StairSqLoopA.holes L
     (ReflectionE1.correction cx)
   rw [hostedGeneric, hostedSecondStage, FlagExit.genericN, FlagExit.secondStageN]
-  simp only [toffoliCount_append, measurementCount_append]
+  simp only [toffoliCount_append, measurementCount_append, FlagEntry.entryXNewC_counts]
   constructor <;> omega
 
 /-- The whole hosted program against the record program, for every point,
     parametric in the two boundary deltas. -/
 theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 9389 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 9729 + δET ∧
       measurementCount (hostedEntryRest L) =
-        measurementCount (ParityStageBothInverse23.restEntry L) + 8699 + δEM)
+        measurementCount (ParityStageBothInverse23.restEntry L) + 9039 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10138 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10478 + δXT ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9868 + δXM)
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10208 + δXM)
     (C : Point) :
     toffoliCount (concreteProgram C) ≤
-        toffoliCount (AboveFieldPointDevelop.programQ C) + 19527 + 328 + δET + δXT ∧
+        toffoliCount (AboveFieldPointDevelop.programQ C) + 20207 + 328 + δET + δXT ∧
       measurementCount (concreteProgram C) ≤
-        measurementCount (AboveFieldPointDevelop.programQ C) + 18567 + δEM + δXM := by
+        measurementCount (AboveFieldPointDevelop.programQ C) + 19247 + δEM + δXM := by
   cases C with
   | zero =>
     have z1 : toffoliCount (concreteProgram .zero) = 0 := by
@@ -59417,19 +59696,19 @@ theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
     constructor <;> omega
 
 /-- Exact v3 totals, parametric in the boundary deltas: the record bounds
-    plus `20276 + δ` Toffoli and `19736 + δ` measurements. -/
+    plus `20956 + δ` Toffoli and `20416 + δ` measurements. -/
 theorem count_totals_of (δET δEM δXT δXM : Nat)
     (hE : ∀ L, toffoliCount (hostedEntryRest L) =
-        toffoliCount (ParityStageBothInverse23.restEntry L) + 9389 + δET ∧
+        toffoliCount (ParityStageBothInverse23.restEntry L) + 9729 + δET ∧
       measurementCount (hostedEntryRest L) =
-        measurementCount (ParityStageBothInverse23.restEntry L) + 8699 + δEM)
+        measurementCount (ParityStageBothInverse23.restEntry L) + 9039 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10138 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10478 + δXT ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9868 + δXM)
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10208 + δXM)
     (C : Point) :
-    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 19527 + 328 + δET + δXT ∧
-      measurementCount (concreteAssembly.program C) ≤ 1498884 + 18567 + δEM + δXM := by
+    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 20207 + 328 + δET + δXT ∧
+      measurementCount (concreteAssembly.program C) ≤ 1498884 + 19247 + δEM + δXM := by
   obtain ⟨c1, c2⟩ := concreteProgram_counts_of δET δEM δXT δXM hE hX C
   have qT := AboveFieldPointDevelop.program_toffoli_Q C
   have qM := AboveFieldPointDevelop.program_measurements_Q C
@@ -59439,7 +59718,7 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
 /-- Exact v3 totals for the current boundary (frozen program + LT19 endpoint: δE = 88, δX = 176;
     + LT40's hole-free square, +328 T): **T ≤ 2,169,965, M ≤ 1,520,924**. -/
 theorem count_totals : ∀ C,
-    toffoliCount (concreteAssembly.program C) ≤ 2167176 ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2167856 ∧
       measurementCount (concreteAssembly.program C) ≤ 1519755 := by
   intro C
   have h := count_totals_of 88 88 176 176
@@ -59554,19 +59833,19 @@ def entryPieces (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.Host
    common (StairSchedule.fieldRename FourScratchWindow.clearProgram),
    groupSlot h true 0 1 84,
    lowCommon (StairSchedule.forwardSegment p 87 62 425 450),
-   groupSlot h true 11 85 5,
+   groupSlot h true 12 85 5,
    lowCommon (StairSchedule.forwardSegment p 62 47 450 465),
-   groupSlot h true 20 90 3,
+   groupSlot h true 21 90 3,
    lowCommon (StairSchedule.forwardSegment p 47 32 465 480),
-   groupSlot h true 28 93 3,
+   groupSlot h true 29 93 3,
    lowCommon (StairSchedule.forwardSegment p 32 22 480 490),
-   groupSlot h true 34 96 2,
+   groupSlot h true 35 96 2,
    lowCommon (StairSchedule.forwardSegment p 22 12 490 500),
-   groupSlot h true 39 98 2,
+   groupSlot h true 40 98 2,
    lowCommon (StairSchedule.forwardLast p),
    common (StairSchedule.fieldRename FourScratchWindow.unprefix ++ StairSchedule.paritySetup),
    common (StairSchedule.hostedX ++ StairSchedule.fieldRename FourScratchWindow.clearProgram),
-   groupSlot h true 41 100 2,
+   groupSlot h true 42 100 2,
    lowCommon (renameProgram (OB5.sig 511) StairConcrete.bestLoans.divEndpoint),
    lowCommon HalfFieldOB5.copyN,
    lowCommon StairConcrete.bestLoans.canon,
@@ -59594,19 +59873,19 @@ def exitPieces (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostP
    lowCommon StairConcrete.bestLoans.center,
    lowCommon HalfFieldOB5.copyN,
    lowCommon (StairSchedule.placedEndPacket StairConcrete.bestLoans false 68),
-   groupSlot h false 41 100 2,
+   groupSlot h false 42 100 2,
    common (StairSchedule.fieldRename FourScratchWindow.unprefix ++ StairSchedule.paritySetup),
    common (StairSchedule.hostedX ++ StairSchedule.fieldRename FourScratchWindow.clearProgram),
    lowCommon (StairSchedule.reverseLast p),
-   groupSlot h false 39 98 2,
+   groupSlot h false 40 98 2,
    lowCommon (StairSchedule.reverseSegment p 22 12 490 500),
-   groupSlot h false 34 96 2,
+   groupSlot h false 35 96 2,
    lowCommon (StairSchedule.reverseSegment p 32 22 480 490),
-   groupSlot h false 28 93 3,
+   groupSlot h false 29 93 3,
    lowCommon (StairSchedule.reverseSegment p 47 32 465 480),
-   groupSlot h false 20 90 3,
+   groupSlot h false 21 90 3,
    lowCommon (StairSchedule.reverseSegment p 62 47 450 465),
-   groupSlot h false 11 85 5,
+   groupSlot h false 12 85 5,
    lowCommon (StairSchedule.reverseSegment p 87 62 425 450),
    groupSlot h false 0 1 84,
    common (StairSchedule.fieldRename FourScratchWindow.unprefix),
@@ -59640,10 +59919,10 @@ theorem exitPieces_local (p : StairSchedule.StairPrimitives) (h : StairHostsSche
 /-! ## The piece lists concatenate to the kernels (any primitives, any plan) -/
 
 theorem entryPieces_hosted (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) :
-    ((entryPieces p h).map Piece.H).flatten = StairHostsSchedule.entryKernel p h := by
+    ((entryPieces p h).map Piece.H).flatten = StairHostsSchedule.entryKernel0 p h := by
   simp only [entryPieces, groupSlot, firstSlot, lowCommon, common,
     List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
-    List.append_nil, StairHostsSchedule.entryKernel,
+    List.append_nil, StairHostsSchedule.entryKernel0,
     StairHostsSchedule.entryFieldHosted, StairHostsSchedule.entryLowPrefix,
     StairHostsSchedule.entryTailPrefix, StairHostsSchedule.entryLowSuffix,
     StairHostsSchedule.entryTailSuffix, fieldRename_append, rename_append,
@@ -59662,10 +59941,10 @@ theorem entryPieces_logical (p : StairSchedule.StairPrimitives) (h : StairHostsS
 
 theorem exitPieces_hosted (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan)
     (k : Nat) :
-    ((exitPieces p h k).map Piece.H).flatten = StairHostsSchedule.exitKernel p h k := by
+    ((exitPieces p h k).map Piece.H).flatten = StairHostsSchedule.exitKernel0 p h k := by
   simp only [exitPieces, groupSlot, firstSlot, lowCommon, common, lastXNPiece,
     List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
-    List.append_nil, StairHostsSchedule.exitKernel,
+    List.append_nil, StairHostsSchedule.exitKernel0,
     StairHostsSchedule.exitFieldHosted, StairHostsSchedule.exitLowPrefix,
     StairHostsSchedule.exitHeadPrefix, StairHostsSchedule.exitLowSuffix,
     StairHostsSchedule.exitHeadSuffix, StairHostsSchedule.hostedEndpoint,
@@ -59715,7 +59994,7 @@ def ExitSlotsClean (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.H
 theorem entry_sameTape (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan)
     (pre : State → Prop) (c : EntrySlotsClean p h pre) :
     ∀ s, pre s → ∀ m : List Bool,
-      run (StairHostsSchedule.entryKernel p h) m s =
+      run (StairHostsSchedule.entryKernel0 p h) m s =
         run (StairSchedule.entryKernel p StairConcrete.bestLoans) m s := by
   intro s hs m
   rw [← entryPieces_hosted p h, ← entryPieces_logical p h]
@@ -59724,7 +60003,7 @@ theorem entry_sameTape (p : StairSchedule.StairPrimitives) (h : StairHostsSchedu
 theorem exit_sameTape (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan)
     (k : Nat) (pre : State → Prop) (c : ExitSlotsClean p h k pre) :
     ∀ s, pre s → ∀ m : List Bool,
-      run (StairHostsSchedule.exitKernel p h k) m s =
+      run (StairHostsSchedule.exitKernel0 p h k) m s =
         run (StairSchedule.exitKernel p StairConcrete.bestLoans k) m s := by
   intro s hs m
   rw [← exitPieces_hosted p h k, ← exitPieces_logical p h k]
@@ -59737,16 +60016,16 @@ theorem hostReplaySpec_of_slots
     (entry : EntrySlotsClean checkpointPrimitives hostPlan EntryPre)
     (exit : ∀ k, ExitSlotsClean checkpointPrimitives hostPlan k (ExitPre k))
     (loan : StairCertificate.LoanReplaySpec concreteAssembly) :
-    StairCertificate.HostReplaySpec concreteAssembly := by
-  unfold StairCertificate.HostReplaySpec
+    StairCertificate.HostReplaySpec0 concreteAssembly := by
+  unfold StairCertificate.HostReplaySpec0
   refine ⟨fun s hs fresh old => ?_, fun k s hs fresh old => ?_⟩
   · have hs' : EntryPre s := hs
-    show run (StairHostsSchedule.entryKernel checkpointPrimitives hostPlan) fresh s =
+    show run (StairHostsSchedule.entryKernel0 checkpointPrimitives hostPlan) fresh s =
       run (StairSchedule.entryKernel checkpointPrimitives StairConcrete.bestLoans) old s
     rw [entry_sameTape checkpointPrimitives hostPlan EntryPre entry s hs' fresh]
     exact ((loan 0).entry s hs fresh []).trans ((loan 0).entry s hs old []).symm
   · have hs' : ExitPre k s := hs
-    show run (StairHostsSchedule.exitKernel checkpointPrimitives hostPlan k) fresh s =
+    show run (StairHostsSchedule.exitKernel0 checkpointPrimitives hostPlan k) fresh s =
       run (StairSchedule.exitKernel checkpointPrimitives StairConcrete.bestLoans k) old s
     rw [exit_sameTape checkpointPrimitives hostPlan k (ExitPre k) (exit k) s hs' fresh]
     exact ((loan k).exit s hs fresh []).trans ((loan k).exit s hs old []).symm
@@ -59766,35 +60045,35 @@ structure EntrySlots (p : StairSchedule.StairPrimitives)
     CutClean pre (entryCut p h 2) (firstSlot h true).moved
   g0 : CutClean pre (entryCut p h 3) (groupSlot h true 0 1 84).moved ∧
     CutClean pre (entryCut p h 4) (groupSlot h true 0 1 84).moved
-  g14 : CutClean pre (entryCut p h 5) (groupSlot h true 11 85 5).moved ∧
-    CutClean pre (entryCut p h 6) (groupSlot h true 11 85 5).moved
-  g23 : CutClean pre (entryCut p h 7) (groupSlot h true 20 90 3).moved ∧
-    CutClean pre (entryCut p h 8) (groupSlot h true 20 90 3).moved
-  g31 : CutClean pre (entryCut p h 9) (groupSlot h true 28 93 3).moved ∧
-    CutClean pre (entryCut p h 10) (groupSlot h true 28 93 3).moved
-  g37 : CutClean pre (entryCut p h 11) (groupSlot h true 34 96 2).moved ∧
-    CutClean pre (entryCut p h 12) (groupSlot h true 34 96 2).moved
-  g42 : CutClean pre (entryCut p h 13) (groupSlot h true 39 98 2).moved ∧
-    CutClean pre (entryCut p h 14) (groupSlot h true 39 98 2).moved
-  g44 : CutClean pre (entryCut p h 17) (groupSlot h true 41 100 2).moved ∧
-    CutClean pre (entryCut p h 18) (groupSlot h true 41 100 2).moved
+  g14 : CutClean pre (entryCut p h 5) (groupSlot h true 12 85 5).moved ∧
+    CutClean pre (entryCut p h 6) (groupSlot h true 12 85 5).moved
+  g23 : CutClean pre (entryCut p h 7) (groupSlot h true 21 90 3).moved ∧
+    CutClean pre (entryCut p h 8) (groupSlot h true 21 90 3).moved
+  g31 : CutClean pre (entryCut p h 9) (groupSlot h true 29 93 3).moved ∧
+    CutClean pre (entryCut p h 10) (groupSlot h true 29 93 3).moved
+  g37 : CutClean pre (entryCut p h 11) (groupSlot h true 35 96 2).moved ∧
+    CutClean pre (entryCut p h 12) (groupSlot h true 35 96 2).moved
+  g42 : CutClean pre (entryCut p h 13) (groupSlot h true 40 98 2).moved ∧
+    CutClean pre (entryCut p h 14) (groupSlot h true 40 98 2).moved
+  g44 : CutClean pre (entryCut p h 17) (groupSlot h true 42 100 2).moved ∧
+    CutClean pre (entryCut p h 18) (groupSlot h true 42 100 2).moved
 
 /-- Multiplication kernel: groups at deficits 44, 42, 37, 31, 23, 14, 0
 (positions 7, 11, 13, 15, 17, 19, 21) and the first packet (position 23). -/
 structure ExitSlots (p : StairSchedule.StairPrimitives)
     (h : StairHostsSchedule.HostPlan) (k : Nat) (pre : State → Prop) : Prop where
-  g44 : CutClean pre (exitCut p h k 7) (groupSlot h false 41 100 2).moved ∧
-    CutClean pre (exitCut p h k 8) (groupSlot h false 41 100 2).moved
-  g42 : CutClean pre (exitCut p h k 11) (groupSlot h false 39 98 2).moved ∧
-    CutClean pre (exitCut p h k 12) (groupSlot h false 39 98 2).moved
-  g37 : CutClean pre (exitCut p h k 13) (groupSlot h false 34 96 2).moved ∧
-    CutClean pre (exitCut p h k 14) (groupSlot h false 34 96 2).moved
-  g31 : CutClean pre (exitCut p h k 15) (groupSlot h false 28 93 3).moved ∧
-    CutClean pre (exitCut p h k 16) (groupSlot h false 28 93 3).moved
-  g23 : CutClean pre (exitCut p h k 17) (groupSlot h false 20 90 3).moved ∧
-    CutClean pre (exitCut p h k 18) (groupSlot h false 20 90 3).moved
-  g14 : CutClean pre (exitCut p h k 19) (groupSlot h false 11 85 5).moved ∧
-    CutClean pre (exitCut p h k 20) (groupSlot h false 11 85 5).moved
+  g44 : CutClean pre (exitCut p h k 7) (groupSlot h false 42 100 2).moved ∧
+    CutClean pre (exitCut p h k 8) (groupSlot h false 42 100 2).moved
+  g42 : CutClean pre (exitCut p h k 11) (groupSlot h false 40 98 2).moved ∧
+    CutClean pre (exitCut p h k 12) (groupSlot h false 40 98 2).moved
+  g37 : CutClean pre (exitCut p h k 13) (groupSlot h false 35 96 2).moved ∧
+    CutClean pre (exitCut p h k 14) (groupSlot h false 35 96 2).moved
+  g31 : CutClean pre (exitCut p h k 15) (groupSlot h false 29 93 3).moved ∧
+    CutClean pre (exitCut p h k 16) (groupSlot h false 29 93 3).moved
+  g23 : CutClean pre (exitCut p h k 17) (groupSlot h false 21 90 3).moved ∧
+    CutClean pre (exitCut p h k 18) (groupSlot h false 21 90 3).moved
+  g14 : CutClean pre (exitCut p h k 19) (groupSlot h false 12 85 5).moved ∧
+    CutClean pre (exitCut p h k 20) (groupSlot h false 12 85 5).moved
   g0 : CutClean pre (exitCut p h k 21) (groupSlot h false 0 1 84).moved ∧
     CutClean pre (exitCut p h k 22) (groupSlot h false 0 1 84).moved
   first : CutClean pre (exitCut p h k 23) (firstSlot h false).moved ∧
@@ -59882,8 +60161,8 @@ structure EntrySlotsV3 : Prop where
     CutClean StairConcreteAssembly.EntryPre
       (entryCut StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan 2)
       (firstSlot StairConcreteAssembly.hostPlan true).moved
-  groups : ∀ jdfc ∈ [(3, 0, 1, 84), (5, 11, 85, 5), (7, 20, 90, 3), (9, 28, 93, 3),
-      (11, 34, 96, 2), (13, 39, 98, 2), (17, 41, 100, 2)],
+  groups : ∀ jdfc ∈ [(3, 0, 1, 84), (5, 12, 85, 5), (7, 21, 90, 3), (9, 29, 93, 3),
+      (11, 35, 96, 2), (13, 40, 98, 2), (17, 42, 100, 2)],
     CutClean StairConcreteAssembly.EntryPre
       (entryCut StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan
         jdfc.1)
@@ -59896,8 +60175,8 @@ structure EntrySlotsV3 : Prop where
 /-- Concrete multiplication obligations: groups at deficits 42..0 and the first
 packet (the deficit-44 group is discharged). -/
 structure ExitSlotsV3 (k : Nat) : Prop where
-  groups : ∀ jdfc ∈ [(7, 41, 100, 2), (11, 39, 98, 2), (13, 34, 96, 2), (15, 28, 93, 3),
-      (17, 20, 90, 3), (19, 11, 85, 5), (21, 0, 1, 84)],
+  groups : ∀ jdfc ∈ [(7, 42, 100, 2), (11, 40, 98, 2), (13, 35, 96, 2), (15, 29, 93, 3),
+      (17, 21, 90, 3), (19, 12, 85, 5), (21, 0, 1, 84)],
     CutClean (StairConcreteAssembly.ExitPre k)
       (exitCut StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan k
         jdfc.1)
@@ -59918,22 +60197,22 @@ theorem entrySlots_of_v3 (c : EntrySlotsV3) :
       StairConcreteAssembly.EntryPre where
   first := c.first
   g0 := c.groups (3, 0, 1, 84) (by simp)
-  g14 := c.groups (5, 11, 85, 5) (by simp)
-  g23 := c.groups (7, 20, 90, 3) (by simp)
-  g31 := c.groups (9, 28, 93, 3) (by simp)
-  g37 := c.groups (11, 34, 96, 2) (by simp)
-  g42 := c.groups (13, 39, 98, 2) (by simp)
-  g44 := c.groups (17, 41, 100, 2) (by simp)
+  g14 := c.groups (5, 12, 85, 5) (by simp)
+  g23 := c.groups (7, 21, 90, 3) (by simp)
+  g31 := c.groups (9, 29, 93, 3) (by simp)
+  g37 := c.groups (11, 35, 96, 2) (by simp)
+  g42 := c.groups (13, 40, 98, 2) (by simp)
+  g44 := c.groups (17, 42, 100, 2) (by simp)
 
 theorem exitSlots_of_v3 (k : Nat) (c : ExitSlotsV3 k) :
     ExitSlots StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan k
       (StairConcreteAssembly.ExitPre k) where
-  g44 := c.groups (7, 41, 100, 2) (by simp)
-  g42 := c.groups (11, 39, 98, 2) (by simp)
-  g37 := c.groups (13, 34, 96, 2) (by simp)
-  g31 := c.groups (15, 28, 93, 3) (by simp)
-  g23 := c.groups (17, 20, 90, 3) (by simp)
-  g14 := c.groups (19, 11, 85, 5) (by simp)
+  g44 := c.groups (7, 42, 100, 2) (by simp)
+  g42 := c.groups (11, 40, 98, 2) (by simp)
+  g37 := c.groups (13, 35, 96, 2) (by simp)
+  g31 := c.groups (15, 29, 93, 3) (by simp)
+  g23 := c.groups (17, 21, 90, 3) (by simp)
+  g14 := c.groups (19, 12, 85, 5) (by simp)
   g0 := c.groups (21, 0, 1, 84) (by simp)
   first := c.first
 
@@ -59941,7 +60220,7 @@ theorem exitSlots_of_v3 (k : Nat) (c : ExitSlotsV3 k) :
 facts of the logical kernels (field 2 / row invariants) and field 7. -/
 theorem hostReplaySpec_v3 (entry : EntrySlotsV3) (exit : ∀ k, ExitSlotsV3 k)
     (loan : StairCertificate.LoanReplaySpec StairConcreteAssembly.concreteAssembly) :
-    StairCertificate.HostReplaySpec StairConcreteAssembly.concreteAssembly :=
+    StairCertificate.HostReplaySpec0 StairConcreteAssembly.concreteAssembly :=
   hostReplaySpec_of_slots
     (entrySlotsClean_of _ _ _ (entrySlots_of_v3 entry))
     (fun k => exitSlotsClean_of _ _ _ _ (exitSlots_of_v3 k (exit k))) loan
@@ -59982,21 +60261,21 @@ structure EntrySlotsV3Parts : Prop where
     StairSchedule.exclusiveRoles (StairConcreteAssembly.hostPlan.firstPacket true) fieldMap
     (Rolling1588.placedFirstPacket true)
   g0 : EntryGroupParts 3 0 1 84
-  g14 : EntryGroupParts 5 11 85 5
-  g23 : EntryGroupParts 7 20 90 3
-  g31 : EntryGroupParts 9 28 93 3
-  g37 : EntryGroupParts 11 34 96 2
-  g42 : EntryGroupParts 13 39 98 2
-  g44 : EntryGroupParts 17 41 100 2
+  g14 : EntryGroupParts 5 12 85 5
+  g23 : EntryGroupParts 7 21 90 3
+  g31 : EntryGroupParts 9 29 93 3
+  g37 : EntryGroupParts 11 35 96 2
+  g42 : EntryGroupParts 13 40 98 2
+  g44 : EntryGroupParts 17 42 100 2
 
 /-- Finer concrete multiplication obligations. -/
 structure ExitSlotsV3Parts (k : Nat) : Prop where
-  g44 : ExitGroupParts k 7 41 100 2
-  g42 : ExitGroupParts k 11 39 98 2
-  g37 : ExitGroupParts k 13 34 96 2
-  g31 : ExitGroupParts k 15 28 93 3
-  g23 : ExitGroupParts k 17 20 90 3
-  g14 : ExitGroupParts k 19 11 85 5
+  g44 : ExitGroupParts k 7 42 100 2
+  g42 : ExitGroupParts k 11 40 98 2
+  g37 : ExitGroupParts k 13 35 96 2
+  g31 : ExitGroupParts k 15 29 93 3
+  g23 : ExitGroupParts k 17 21 90 3
+  g14 : ExitGroupParts k 19 12 85 5
   g0 : ExitGroupParts k 21 0 1 84
   first : SlotParts (StairConcreteAssembly.ExitPre k)
     (exitPieces StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan k) 23
@@ -60051,7 +60330,7 @@ theorem exitSlotsV3_of_parts (k : Nat) (c : ExitSlotsV3Parts k) : ExitSlotsV3 k 
 theorem hostReplaySpec_v3_parts (entry : EntrySlotsV3Parts)
     (exit : ∀ k, ExitSlotsV3Parts k)
     (loan : StairCertificate.LoanReplaySpec StairConcreteAssembly.concreteAssembly) :
-    StairCertificate.HostReplaySpec StairConcreteAssembly.concreteAssembly :=
+    StairCertificate.HostReplaySpec0 StairConcreteAssembly.concreteAssembly :=
   hostReplaySpec_v3 (entrySlotsV3_of_parts entry) (fun k => exitSlotsV3_of_parts k (exit k)) loan
 
 end ECDSAAdd.Entrant.StairField13V3
@@ -66538,7 +66817,7 @@ open StairField2V3Replay StairField2V3Couple StairField2V3Entry StairField2V3Exi
 
 theorem selArithL_shape (loans : StairSchedule.StairLoans) :
     StairLoanField7Cores.entrySelectedArithmeticFor loans =
-      prefixW ++ (selJ0 StairConcreteAssembly.checkpointPrimitives ++ (firstPkt ++ (grpL loans 0 1 84 ++ (seg StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++ (grpL loans 11 85 5 ++ (seg StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++ (grpL loans 20 90 3 ++ (seg StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++ (grpL loans 28 93 3 ++ (seg StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++ (grpL loans 34 96 2 ++ (seg StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++ (grpL loans 39 98 2 ++ (lastSeg StairConcreteAssembly.checkpointPrimitives ++ tailPL loans)))))))))))))) := by
+      prefixW ++ (selJ0 StairConcreteAssembly.checkpointPrimitives ++ (firstPkt ++ (grpL loans 0 1 84 ++ (seg StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++ (grpL loans 12 85 5 ++ (seg StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++ (grpL loans 21 90 3 ++ (seg StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++ (grpL loans 29 93 3 ++ (seg StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++ (grpL loans 35 96 2 ++ (seg StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++ (grpL loans 40 98 2 ++ (lastSeg StairConcreteAssembly.checkpointPrimitives ++ tailPL loans)))))))))))))) := by
   simp only [StairLoanField7Cores.entrySelectedArithmeticFor, StairSchedule.firstPhase,
     StairSchedule.stackForward6, StairSchedule.entryFieldHosted,
     StairSchedule.entryLowPrefix, StairSchedule.entryLowSuffix,
@@ -66581,7 +66860,7 @@ theorem refArith_best_tapeFree (half : StairLoanRecordShape.HalfReplayHypothesis
 
 theorem selRemL_shape (loans : StairSchedule.StairLoans) (k : Nat) :
     StairLoanField7Cores.exitSelectedRemainderFor loans k =
-      headEL loans ++ (firstSel StairConcreteAssembly.checkpointPrimitives ++ (grpFL loans 39 98 2 ++ (rseg StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++ (grpFL loans 34 96 2 ++ (rseg StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++ (grpFL loans 28 93 3 ++ (rseg StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++ (grpFL loans 20 90 3 ++ (rseg StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++ (grpFL loans 11 85 5 ++ (rseg StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++ (grpFL loans 0 1 84 ++ (lowTail ++ (closeSel StairConcreteAssembly.checkpointPrimitives ++ closeTail k)))))))))))))) := by
+      headEL loans ++ (firstSel StairConcreteAssembly.checkpointPrimitives ++ (grpFL loans 40 98 2 ++ (rseg StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++ (grpFL loans 35 96 2 ++ (rseg StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++ (grpFL loans 29 93 3 ++ (rseg StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++ (grpFL loans 21 90 3 ++ (rseg StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++ (grpFL loans 12 85 5 ++ (rseg StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++ (grpFL loans 0 1 84 ++ (lowTail ++ (closeSel StairConcreteAssembly.checkpointPrimitives ++ closeTail k)))))))))))))) := by
   simp only [StairLoanField7Cores.exitSelectedRemainderFor, StairSchedule.exitFieldHosted,
     StairSchedule.exitLowPrefix, StairSchedule.exitLowSuffix, StairSchedule.exitHeadPrefix,
     StairSchedule.exitHeadSuffix, StairSchedule.placedGroups, StairSchedule.placedEndPacket,
@@ -66591,7 +66870,7 @@ theorem selRemL_shape (loans : StairSchedule.StairLoans) (k : Nat) :
 
 theorem refRemL_shape (loans : StairSchedule.StairLoans) (k : Nat) :
     StairLoanField7Cores.exitReferenceRemainderFor loans k =
-      headEL loans ++ (grpFL loans 39 98 2 ++ (grpFL loans 34 96 2 ++ (grpFL loans 28 93 3 ++ (grpFL loans 20 90 3 ++ (grpFL loans 11 85 5 ++ (grpFL loans 0 1 84 ++ (lowTail ++ (closeRef ++ closeTail k)))))))) := by
+      headEL loans ++ (grpFL loans 40 98 2 ++ (grpFL loans 35 96 2 ++ (grpFL loans 29 93 3 ++ (grpFL loans 21 90 3 ++ (grpFL loans 12 85 5 ++ (grpFL loans 0 1 84 ++ (lowTail ++ (closeRef ++ closeTail k)))))))) := by
   simp only [StairLoanField7Cores.exitReferenceRemainderFor,
     StairLoanRecordExit.exitFieldHostedShape, ParityField1591.program,
     ParityHostTransport5.program, FrontierEntry1591Field.hosted,
@@ -66740,29 +67019,29 @@ theorem chainXLR_of_planR (loans : StairSchedule.StairLoans) (k x : Nat)
     (plan : ExitPlanR StairConcreteAssembly.checkpointPrimitives k x)
     (V : ExitReachTransportR loans k x) (sub : ExitGroupSub loans) :
     CRel (fun s t => ExitMiddleX k x s ∧ s = t) Eq
-      (headEL loans ++ (firstSel StairConcreteAssembly.checkpointPrimitives ++ (grpFL loans 39 98 2 ++ (rseg StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++ (grpFL loans 34 96 2 ++ (rseg StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++ (grpFL loans 28 93 3 ++ (rseg StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++ (grpFL loans 20 90 3 ++ (rseg StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++ (grpFL loans 11 85 5 ++ (rseg StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++ (grpFL loans 0 1 84 ++ (lowTail ++ (closeSel StairConcreteAssembly.checkpointPrimitives ++ closeTail k)))))))))))))))
-      (headEL loans ++ (grpFL loans 39 98 2 ++ (grpFL loans 34 96 2 ++ (grpFL loans 28 93 3 ++ (grpFL loans 20 90 3 ++ (grpFL loans 11 85 5 ++ (grpFL loans 0 1 84 ++ (lowTail ++ (closeRef ++ closeTail k))))))))) := by
+      (headEL loans ++ (firstSel StairConcreteAssembly.checkpointPrimitives ++ (grpFL loans 40 98 2 ++ (rseg StairConcreteAssembly.checkpointPrimitives 22 12 490 500 ++ (grpFL loans 35 96 2 ++ (rseg StairConcreteAssembly.checkpointPrimitives 32 22 480 490 ++ (grpFL loans 29 93 3 ++ (rseg StairConcreteAssembly.checkpointPrimitives 47 32 465 480 ++ (grpFL loans 21 90 3 ++ (rseg StairConcreteAssembly.checkpointPrimitives 62 47 450 465 ++ (grpFL loans 12 85 5 ++ (rseg StairConcreteAssembly.checkpointPrimitives 87 62 425 450 ++ (grpFL loans 0 1 84 ++ (lowTail ++ (closeSel StairConcreteAssembly.checkpointPrimitives ++ closeTail k)))))))))))))))
+      (headEL loans ++ (grpFL loans 40 98 2 ++ (grpFL loans 35 96 2 ++ (grpFL loans 29 93 3 ++ (grpFL loans 21 90 3 ++ (grpFL loans 12 85 5 ++ (grpFL loans 0 1 84 ++ (lowTail ++ (closeRef ++ closeTail k))))))))) := by
   have junction : CRel (JEXL loans k x) (RelX x 12)
       (firstSel StairConcreteAssembly.checkpointPrimitives) [] :=
     crel_mono (fun s _ hst => ⟨hst.1, V.head s hst.2⟩) (fun _ _ y => y) plan.junction
-  have r4 : CRel (RowRelE k x 12 (headEL loans ++ grpFL loans 39 98 2))
-      (RowRelE k x 22 (headEL loans ++ grpFL loans 39 98 2))
+  have r4 : CRel (RowRelE k x 12 (headEL loans ++ grpFL loans 40 98 2))
+      (RowRelE k x 22 (headEL loans ++ grpFL loans 40 98 2))
       (rseg StairConcreteAssembly.checkpointPrimitives 22 12 490 500) [] :=
     stepL V.a plan.rseg4
-  have r3 : CRel (RowRelE k x 22 (YAL loans ++ grpFL loans 34 96 2))
-      (RowRelE k x 32 (YAL loans ++ grpFL loans 34 96 2))
+  have r3 : CRel (RowRelE k x 22 (YAL loans ++ grpFL loans 35 96 2))
+      (RowRelE k x 32 (YAL loans ++ grpFL loans 35 96 2))
       (rseg StairConcreteAssembly.checkpointPrimitives 32 22 480 490) [] :=
     stepL V.b plan.rseg3
-  have r2 : CRel (RowRelE k x 32 (YBL loans ++ grpFL loans 28 93 3))
-      (RowRelE k x 47 (YBL loans ++ grpFL loans 28 93 3))
+  have r2 : CRel (RowRelE k x 32 (YBL loans ++ grpFL loans 29 93 3))
+      (RowRelE k x 47 (YBL loans ++ grpFL loans 29 93 3))
       (rseg StairConcreteAssembly.checkpointPrimitives 47 32 465 480) [] :=
     stepL V.c plan.rseg2
-  have r1 : CRel (RowRelE k x 47 (YCL loans ++ grpFL loans 20 90 3))
-      (RowRelE k x 62 (YCL loans ++ grpFL loans 20 90 3))
+  have r1 : CRel (RowRelE k x 47 (YCL loans ++ grpFL loans 21 90 3))
+      (RowRelE k x 62 (YCL loans ++ grpFL loans 21 90 3))
       (rseg StairConcreteAssembly.checkpointPrimitives 62 47 450 465) [] :=
     stepL V.d plan.rseg1
-  have r0 : CRel (RowRelE k x 62 (YDL loans ++ grpFL loans 11 85 5))
-      (RowRelE k x 87 (YDL loans ++ grpFL loans 11 85 5))
+  have r0 : CRel (RowRelE k x 62 (YDL loans ++ grpFL loans 12 85 5))
+      (RowRelE k x 87 (YDL loans ++ grpFL loans 12 85 5))
       (rseg StairConcreteAssembly.checkpointPrimitives 87 62 425 450) [] :=
     stepL V.e plan.rseg0
   have cl : CRel (RowRelE k x 87 ((YEL loans ++ grpFL loans 0 1 84) ++ lowTail)) Eq
@@ -66873,24 +67152,24 @@ abbrev P : StairSchedule.StairPrimitives := StairConcreteAssembly.checkpointPrim
 theorem chainLR_of_planR (loans : StairSchedule.StairLoans) (x : Nat)
     (plan : EntryPlanR P x) (V : EntryReachTransportR loans x) (sub : EntryGroupSub loans) :
     CRel (fun s t => EntryPreX x s ∧ s = t) Eq
-      (prefixW ++ (selJ0 P ++ (firstPkt ++ (grpL loans 0 1 84 ++ (seg P 87 62 425 450 ++ (grpL loans 11 85 5 ++ (seg P 62 47 450 465 ++ (grpL loans 20 90 3 ++ (seg P 47 32 465 480 ++ (grpL loans 28 93 3 ++ (seg P 32 22 480 490 ++ (grpL loans 34 96 2 ++ (seg P 22 12 490 500 ++ (grpL loans 39 98 2 ++ (lastSeg P ++ tailPL loans)))))))))))))))
-      (prefixW ++ (refJ0 ++ (firstPkt ++ (grpL loans 0 1 84 ++ (grpL loans 11 85 5 ++ (grpL loans 20 90 3 ++ (grpL loans 28 93 3 ++ (grpL loans 34 96 2 ++ (grpL loans 39 98 2 ++ tailPL loans))))))))) := by
+      (prefixW ++ (selJ0 P ++ (firstPkt ++ (grpL loans 0 1 84 ++ (seg P 87 62 425 450 ++ (grpL loans 12 85 5 ++ (seg P 62 47 450 465 ++ (grpL loans 21 90 3 ++ (seg P 47 32 465 480 ++ (grpL loans 29 93 3 ++ (seg P 32 22 480 490 ++ (grpL loans 35 96 2 ++ (seg P 22 12 490 500 ++ (grpL loans 40 98 2 ++ (lastSeg P ++ tailPL loans)))))))))))))))
+      (prefixW ++ (refJ0 ++ (firstPkt ++ (grpL loans 0 1 84 ++ (grpL loans 12 85 5 ++ (grpL loans 21 90 3 ++ (grpL loans 29 93 3 ++ (grpL loans 35 96 2 ++ (grpL loans 40 98 2 ++ tailPL loans))))))))) := by
   have s0 : CRel (RowRelEn x 87 ((R0 ++ firstPkt) ++ grpL loans 0 1 84))
       (RowRelEn x 62 ((R0 ++ firstPkt) ++ grpL loans 0 1 84)) (seg P 87 62 425 450) [] :=
     stepLn V.r1 plan.seg0
-  have s1 : CRel (RowRelEn x 62 (R1L loans ++ grpL loans 11 85 5))
-      (RowRelEn x 47 (R1L loans ++ grpL loans 11 85 5)) (seg P 62 47 450 465) [] :=
+  have s1 : CRel (RowRelEn x 62 (R1L loans ++ grpL loans 12 85 5))
+      (RowRelEn x 47 (R1L loans ++ grpL loans 12 85 5)) (seg P 62 47 450 465) [] :=
     stepLn V.r2 plan.seg1
-  have s2 : CRel (RowRelEn x 47 (R2L loans ++ grpL loans 20 90 3))
-      (RowRelEn x 32 (R2L loans ++ grpL loans 20 90 3)) (seg P 47 32 465 480) [] :=
+  have s2 : CRel (RowRelEn x 47 (R2L loans ++ grpL loans 21 90 3))
+      (RowRelEn x 32 (R2L loans ++ grpL loans 21 90 3)) (seg P 47 32 465 480) [] :=
     stepLn V.r3 plan.seg2
-  have s3 : CRel (RowRelEn x 32 (R3L loans ++ grpL loans 28 93 3))
-      (RowRelEn x 22 (R3L loans ++ grpL loans 28 93 3)) (seg P 32 22 480 490) [] :=
+  have s3 : CRel (RowRelEn x 32 (R3L loans ++ grpL loans 29 93 3))
+      (RowRelEn x 22 (R3L loans ++ grpL loans 29 93 3)) (seg P 32 22 480 490) [] :=
     stepLn V.r4 plan.seg3
-  have s4 : CRel (RowRelEn x 22 (R4L loans ++ grpL loans 34 96 2))
-      (RowRelEn x 12 (R4L loans ++ grpL loans 34 96 2)) (seg P 22 12 490 500) [] :=
+  have s4 : CRel (RowRelEn x 22 (R4L loans ++ grpL loans 35 96 2))
+      (RowRelEn x 12 (R4L loans ++ grpL loans 35 96 2)) (seg P 22 12 490 500) [] :=
     stepLn V.r5 plan.seg4
-  have ls : CRel (RowRelEn x 12 (R5L loans ++ grpL loans 39 98 2)) Eq (lastSeg P) [] :=
+  have ls : CRel (RowRelEn x 12 (R5L loans ++ grpL loans 40 98 2)) Eq (lastSeg P) [] :=
     crel_mono (fun _ t hst => ⟨hst.1, V.r6 t hst.2⟩) (fun _ _ y => y) plan.lastStep
   refine crel_append (crel_prefixX x) (crel_append (junctionEn plan.junction)
     (crel_append (sharedEn x 87 firstPkt R0 fp_awayX)
@@ -67277,11 +67556,11 @@ theorem sound_reverseLast (P : PrimitiveSlots p) :
 theorem sound_entryTailPrefix (H : LoanHyp) (P : PrimitiveSlots p) (hs : HostSlots h) :
     Sound (StairHostsSchedule.entryTailPrefix p h) := by
   have g0 := sound_hostedGroup H hs true 0 1 84 (by decide) (by omega) (by omega) (by omega)
-  have g14 := sound_hostedGroup H hs true 11 85 5 (by decide) (by omega) (by omega) (by omega)
-  have g23 := sound_hostedGroup H hs true 20 90 3 (by decide) (by omega) (by omega) (by omega)
-  have g31 := sound_hostedGroup H hs true 28 93 3 (by decide) (by omega) (by omega) (by omega)
-  have g37 := sound_hostedGroup H hs true 34 96 2 (by decide) (by omega) (by omega) (by omega)
-  have g42 := sound_hostedGroup H hs true 39 98 2 (by decide) (by omega) (by omega) (by omega)
+  have g14 := sound_hostedGroup H hs true 12 85 5 (by decide) (by omega) (by omega) (by omega)
+  have g23 := sound_hostedGroup H hs true 21 90 3 (by decide) (by omega) (by omega) (by omega)
+  have g31 := sound_hostedGroup H hs true 29 93 3 (by decide) (by omega) (by omega) (by omega)
+  have g37 := sound_hostedGroup H hs true 35 96 2 (by decide) (by omega) (by omega) (by omega)
+  have g42 := sound_hostedGroup H hs true 40 98 2 (by decide) (by omega) (by omega) (by omega)
   have s1 := sound_forwardSegment P 87 62 425 450 (by decide) (by decide) (by decide)
     (by decide) (by decide) (by omega) (by omega)
   have s2 := sound_forwardSegment P 62 47 450 465 (by decide) (by decide) (by decide)
@@ -67301,11 +67580,11 @@ theorem sound_entryTailPrefix (H : LoanHyp) (P : PrimitiveSlots p) (hs : HostSlo
 theorem sound_exitHeadSuffix (H : LoanHyp) (P : PrimitiveSlots p) (hs : HostSlots h) :
     Sound (StairHostsSchedule.exitHeadSuffix p h) := by
   have g0 := sound_hostedGroup H hs false 0 1 84 (by decide) (by omega) (by omega) (by omega)
-  have g14 := sound_hostedGroup H hs false 11 85 5 (by decide) (by omega) (by omega) (by omega)
-  have g23 := sound_hostedGroup H hs false 20 90 3 (by decide) (by omega) (by omega) (by omega)
-  have g31 := sound_hostedGroup H hs false 28 93 3 (by decide) (by omega) (by omega) (by omega)
-  have g37 := sound_hostedGroup H hs false 34 96 2 (by decide) (by omega) (by omega) (by omega)
-  have g42 := sound_hostedGroup H hs false 39 98 2 (by decide) (by omega) (by omega) (by omega)
+  have g14 := sound_hostedGroup H hs false 12 85 5 (by decide) (by omega) (by omega) (by omega)
+  have g23 := sound_hostedGroup H hs false 21 90 3 (by decide) (by omega) (by omega) (by omega)
+  have g31 := sound_hostedGroup H hs false 29 93 3 (by decide) (by omega) (by omega) (by omega)
+  have g37 := sound_hostedGroup H hs false 35 96 2 (by decide) (by omega) (by omega) (by omega)
+  have g42 := sound_hostedGroup H hs false 40 98 2 (by decide) (by omega) (by omega) (by omega)
   have s5 := sound_reverseSegment P 22 12 490 500 (by decide) (by decide) (by decide)
     (by decide) (by decide) (by omega) (by omega)
   have s4 := sound_reverseSegment P 32 22 480 490 (by decide) (by decide) (by decide)
@@ -67332,7 +67611,7 @@ theorem sound_entryFieldHosted (H : LoanHyp) (P : PrimitiveSlots p) (B : Boundar
     exact sound_append (sound_append (sound_append first sound_clearProgram)
       (sound_borrow (sound_entryTailPrefix H P hs))) sound_unprefix
   have tail : Sound (StairHostsSchedule.entryTailSuffix h) := by
-    have g := sound_hostedGroup H hs true 41 100 2 (by decide) (by omega) (by omega)
+    have g := sound_hostedGroup H hs true 42 100 2 (by decide) (by omega) (by omega)
       (by omega)
     unfold StairHostsSchedule.entryTailSuffix
     exact sound_append (sound_append (sound_append g
@@ -67349,7 +67628,7 @@ theorem sound_exitFieldHosted (H : LoanHyp) (P : PrimitiveSlots p) (B : Boundary
     (hs : HostSlots h) :
     Sound (StairHostsSchedule.exitFieldHosted p h) := by
   have head : Sound (StairHostsSchedule.exitHeadPrefix h) := by
-    have g := sound_hostedGroup H hs false 41 100 2 (by decide) (by omega) (by omega)
+    have g := sound_hostedGroup H hs false 42 100 2 (by decide) (by omega) (by omega)
       (by omega)
     unfold StairHostsSchedule.exitHeadPrefix StairHostsSchedule.hostedEndpoint
       StairSchedule.placedEndPacket
@@ -67404,6 +67683,39 @@ theorem exitLocal_sound (H : LoanHyp) (P : PrimitiveSlots p) (B : BoundarySlots)
   exact sound_append (sound_append (sound_phaseHost sound_tailPhase)
     (sound_exitFieldHosted H P B hs)) (sound_phaseHost last)
 
+/-- C': the exchange `base 1541 ↔ base 717` keeps soundness. -/
+theorem sound_cHost {Q : Program} (hQ : Sound Q) : Sound (StairHostsSchedule.cHost Q) :=
+  sound_rebindMany _ _ (by decide) (by decide) hQ
+
+/-- C': the division local rest with the walk carry on `base 717`. -/
+theorem entryLocalC_sound (H : LoanHyp) (P : PrimitiveSlots p) (B : BoundarySlots) (hs : HostSlots h) :
+    Sound (renameProgram Rolling1588Lifetime.phaseHost
+        (StairHostsSchedule.cHost (StairSchedule.stackForward6 p)) ++
+      StairHostsSchedule.entryFieldHosted p h ++
+      renameProgram Rolling1588Lifetime.phaseHost
+        (StairHostsSchedule.cHost (InverseFive23.lastPhase15 false))) := by
+  have stack : Sound (StairSchedule.stackForward6 p) := by
+    unfold StairSchedule.stackForward6
+    exact sound_append sound_forward424 P.firstPack
+  exact sound_append (sound_append (sound_phaseHost (sound_cHost stack))
+    (sound_entryFieldHosted H P B hs)) (sound_phaseHost (sound_cHost sound_lastPhase15))
+
+/-- C': the multiplication local rest with the walk carry on `base 717`. -/
+theorem exitLocalC_sound (H : LoanHyp) (P : PrimitiveSlots p) (B : BoundarySlots) (hs : HostSlots h)
+    (k : Nat) : Sound (renameProgram Rolling1588Lifetime.phaseHost
+        (StairHostsSchedule.cHost (Rolling1588TickGap.tailPhase false)) ++
+      StairHostsSchedule.exitFieldHosted p h ++
+      renameProgram Rolling1588Lifetime.phaseHost
+        (StairHostsSchedule.cHost (StairHostsSchedule.lastXN p h k))) := by
+  have stack : Sound (StairSchedule.stackReverse15 p) := by
+    unfold StairSchedule.stackReverse15
+    exact sound_append P.firstUnpack sound_reverse424
+  have last : Sound (StairHostsSchedule.lastXN p h k) := by
+    unfold StairHostsSchedule.lastXN
+    exact sound_append stack (sound_x1N k)
+  exact sound_append (sound_append (sound_phaseHost (sound_cHost sound_tailPhase))
+    (sound_exitFieldHosted H P B hs)) (sound_phaseHost (sound_cHost last))
+
 end Generic
 
 /-! ## The literal outer caller chain of the v3 `concreteProgram` -/
@@ -67421,18 +67733,21 @@ theorem hostedGeneric_physical (S : V3Slots)
     GatePhysical (StairConcreteAssembly.hostedGeneric Baselines.layout cx cy) := by
   have g := FlagTop2.genericN_physical cx cy
   have hE : GatePhysical (StairConcreteAssembly.hostedEntryRest Baselines.layout) :=
-    rest_physical _ (entryLocal_sound H S.primitives S.boundary S.hosts)
+    rest_physical _ (entryLocalC_sound H S.primitives S.boundary S.hosts)
   have hX : GatePhysical
       (StairConcreteAssembly.hostedExitRest Baselines.layout cx.val) :=
-    rest_physical _ (exitLocal_sound H S.primitives S.boundary S.hosts cx.val)
+    rest_physical _ (exitLocalC_sound H S.primitives S.boundary S.hosts cx.val)
   have hQ : GatePhysical (StairSquareFinal.squareEntryHL StairSqLoopA.holes Baselines.layout
       (ReflectionE1.correction cx)) := by
     rw [StairSquareFinal.squareEntryHL_layout]
     exact StairSquareFinal.square_physical _ _
   simp only [FlagExit.genericN, FlagExit.secondStageN, gatePhysical_append] at g
+  have hXC : GatePhysical (FlagEntry.entryXNewC Baselines.layout (FlagEntry.pkW Baselines.layout) (-cx)) := by
+    unfold FlagEntry.entryXNewC
+    exact gatePhysical_rename _ (Equiv.swap _ _).injective _ g.1.1.2
   simp only [StairConcreteAssembly.hostedGeneric,
     StairConcreteAssembly.hostedSecondStage, gatePhysical_append]
-  exact ⟨⟨⟨g.1.1.1, g.1.1.2⟩, hE⟩, ⟨⟨hQ, hX⟩, g.2.2⟩⟩
+  exact ⟨⟨⟨g.1.1.1, hXC⟩, hE⟩, ⟨⟨hQ, hX⟩, g.2.2⟩⟩
 
 theorem hostedMiddle_physical (hmid : StairMiddleShape.RecordMiddleEncoding)
     (S : V3Slots)
@@ -67983,7 +68298,7 @@ theorem hosted_entry_split (L : ControlledPointLayout) :
       (renameProgram Rolling1588Lifetime.phaseHost
         (FrontierEntry1591Native.forward base)) = E1QubitPlacement.tickF L at tick
   simp only [FrontierEntry1591Callers.entry,
-    StairHostsSchedule.entryKernel, StairSchedule.firstPhase, hostedEntryRest,
+    StairHostsSchedule.entryKernel, hostedEntryRest,
     renameProgram, List.map_append, List.append_assoc] at tick ⊢
   rw [tick]
 
@@ -67995,7 +68310,7 @@ theorem hosted_exit_split (L : ControlledPointLayout) (k : Nat) :
       (renameProgram Rolling1588Lifetime.phaseHost
         (FrontierEntry1591Native.forward base)) = E1QubitPlacement.tickF L at tick
   simp only [FrontierEntry1591Callers.exit,
-    StairHostsSchedule.exitKernel, Rolling1588TickGap.firstPhase, hostedExitRest,
+    StairHostsSchedule.exitKernel, hostedExitRest,
     renameProgram, List.map_append, List.append_assoc] at tick ⊢
   rw [tick]
 
@@ -68084,12 +68399,12 @@ theorem head_pad_rest (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
     (cx cy X Y : Fp) (R : Program) (s : State)
     (hX : regValue L.point.x s.basis = X.val) (hY : regValue L.point.y s.basis = Y.val)
     (hc : regValue L.dialogPool s.basis = 0) (hg : pkW L ≠ L.core.generic) :
-    Pad ((entryYAll L (-cy) ++ entryXNew L (pkW L) (-cx)) ++ R)
+    Pad ((entryYAll L (-cy) ++ entryXNewC L (pkW L) (-cx)) ++ R)
       (entryYAll L (-cy) ++ entryXAll L (-cx) ++ R)
       (put s (pkW L) (if s.basis L.core.generic then
         decide (EntryFuseArithmetic.prime ≤ X.val + (-cx).val) else false)) s
       (padE L cy cx) := by
-  have inner := Pad.prefix (entryYAll L (-cy)) (entryYAll L (-cy)) (entryXNew L (pkW L) (-cx))
+  have inner := Pad.prefix (entryYAll L (-cy)) (entryYAll L (-cy)) (entryXNewC L (pkW L) (-cx))
     (entryXAll L (-cx))
     (put s (pkW L) (if s.basis L.core.generic then
       decide (EntryFuseArithmetic.prime ≤ X.val + (-cx).val) else false)) s
@@ -68112,12 +68427,12 @@ theorem head_pad_rest (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
       rw [← tg]
       constructor
       · intro d'
-        exact entryXNew_run L hw hn (pkW L) X (-cx) u tx tc (pk_pool L hw) (pk_ne_flag L hw hn)
+        exact entryXNewC_run L hw hn (pkW L) X (-cx) u tx tc (pk_pool L hw) (pk_ne_flag L hw hn)
           (pk_ne_high L hw hn) (pk_ne_x L hw hn)
           (by rw [E1QubitPlacement.pmap_g L hw hn]; exact hg) (pk_ne_300 L hw hn)
-          (pk_ne_722 L hw hn) (pk_ne_301 L hw hn) d'
+          (pk_ne_722 L hw hn) (pk_ne_301 L hw hn) (pk_ne_302 L hw hn) (pk_ne_1541 L hw hn) d'
       · intro d'
-        rw [entryXNew_measure L (pkW L) (-cx), ← List.drop_drop, List.drop_left' (by simp)])
+        rw [entryXNewC_measure L (pkW L) (-cx), ← List.drop_drop, List.drop_left' (by simp)])
   exact inner.append _
 
 
@@ -68639,7 +68954,7 @@ theorem entryStage_eqD
     (cx cy X Y : Fp) (G : Bool) (s : State)
     (hv : PointDialogValues L X Y G s.basis s.basis) (hg : pkW L ≠ L.core.generic)
     (hx : X+(if G then -cx else 0)≠0) (d d' : List Bool) :
-    run ((entryYAll L (-cy) ++ entryXNew L (pkW L) (-cx)) ++
+    run ((entryYAll L (-cy) ++ entryXNewC L (pkW L) (-cx)) ++
         StairConcreteAssembly.hostedEntryRest L) d
       (put s (pkW L) (if s.basis L.core.generic then
         decide (EntryFuseArithmetic.prime ≤ X.val + (-cx).val) else false)) =
@@ -69091,15 +69406,15 @@ structure EntryClean : Prop where
   firstRolesAfter : CutClean StairConcreteAssembly.EntryPre
     (cut (entryPieces StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan) 2)
     (StairSchedule.exclusiveRoles.map fieldMap)
-  groupsBefore : ∀ jdfc ∈ [(3, 0, 1, 84), (5, 11, 85, 5), (7, 20, 90, 3), (9, 28, 93, 3),
-      (11, 34, 96, 2), (13, 39, 98, 2), (17, 41, 100, 2)],
+  groupsBefore : ∀ jdfc ∈ [(3, 0, 1, 84), (5, 12, 85, 5), (7, 21, 90, 3), (9, 29, 93, 3),
+      (11, 35, 96, 2), (13, 40, 98, 2), (17, 42, 100, 2)],
     CutClean StairConcreteAssembly.EntryPre
       (cut (entryPieces StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan)
         jdfc.1)
       ((StairSchedule.exclusiveRoles.drop jdfc.2.1 ++
         StairConcreteAssembly.hostPlan.group true jdfc.2.1 jdfc.2.2.1 jdfc.2.2.2).map lowMap)
-  groupsRolesAfter : ∀ jdfc ∈ [(3, 0, 1, 84), (5, 11, 85, 5), (7, 20, 90, 3), (9, 28, 93, 3),
-      (11, 34, 96, 2), (13, 39, 98, 2), (17, 41, 100, 2)],
+  groupsRolesAfter : ∀ jdfc ∈ [(3, 0, 1, 84), (5, 12, 85, 5), (7, 21, 90, 3), (9, 29, 93, 3),
+      (11, 35, 96, 2), (13, 40, 98, 2), (17, 42, 100, 2)],
     CutClean StairConcreteAssembly.EntryPre
       (cut (entryPieces StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan)
         (jdfc.1 + 1))
@@ -69109,15 +69424,15 @@ open StairField13V3 in
 /-- Remaining multiplication obligations (groups at deficits 42..0 at
 positions 11..21, first packet at position 23). -/
 structure ExitClean (k : Nat) : Prop where
-  groupsBefore : ∀ jdfc ∈ [(7, 41, 100, 2), (11, 39, 98, 2), (13, 34, 96, 2), (15, 28, 93, 3),
-      (17, 20, 90, 3), (19, 11, 85, 5), (21, 0, 1, 84)],
+  groupsBefore : ∀ jdfc ∈ [(7, 42, 100, 2), (11, 40, 98, 2), (13, 35, 96, 2), (15, 29, 93, 3),
+      (17, 21, 90, 3), (19, 12, 85, 5), (21, 0, 1, 84)],
     CutClean (StairConcreteAssembly.ExitPre k)
       (cut (exitPieces StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan k)
         jdfc.1)
       ((StairSchedule.exclusiveRoles.drop jdfc.2.1 ++
         StairConcreteAssembly.hostPlan.group false jdfc.2.1 jdfc.2.2.1 jdfc.2.2.2).map lowMap)
-  groupsRolesAfter : ∀ jdfc ∈ [(7, 41, 100, 2), (11, 39, 98, 2), (13, 34, 96, 2), (15, 28, 93, 3),
-      (17, 20, 90, 3), (19, 11, 85, 5), (21, 0, 1, 84)],
+  groupsRolesAfter : ∀ jdfc ∈ [(7, 42, 100, 2), (11, 40, 98, 2), (13, 35, 96, 2), (15, 29, 93, 3),
+      (17, 21, 90, 3), (19, 12, 85, 5), (21, 0, 1, 84)],
     CutClean (StairConcreteAssembly.ExitPre k)
       (cut (exitPieces StairConcreteAssembly.checkpointPrimitives StairConcreteAssembly.hostPlan k)
         (jdfc.1 + 1))
@@ -69134,33 +69449,33 @@ theorem entryParts_of_clean (c : EntryClean) : EntrySlotsV3Parts where
   first := ⟨c.firstBefore, c.firstRolesAfter, hostPlan_firstPacket_fresh true⟩
   g0 := ⟨c.groupsBefore (3, 0, 1, 84) (by simp), c.groupsRolesAfter (3, 0, 1, 84) (by simp),
     hostPlan_group_fresh true 0 1 84 (by simp)⟩
-  g14 := ⟨c.groupsBefore (5, 11, 85, 5) (by simp), c.groupsRolesAfter (5, 11, 85, 5) (by simp),
-    hostPlan_group_fresh true 11 85 5 (by simp)⟩
-  g23 := ⟨c.groupsBefore (7, 20, 90, 3) (by simp), c.groupsRolesAfter (7, 20, 90, 3) (by simp),
-    hostPlan_group_fresh true 20 90 3 (by simp)⟩
-  g31 := ⟨c.groupsBefore (9, 28, 93, 3) (by simp), c.groupsRolesAfter (9, 28, 93, 3) (by simp),
-    hostPlan_group_fresh true 28 93 3 (by simp)⟩
-  g37 := ⟨c.groupsBefore (11, 34, 96, 2) (by simp), c.groupsRolesAfter (11, 34, 96, 2) (by simp),
-    hostPlan_group_fresh true 34 96 2 (by simp)⟩
-  g42 := ⟨c.groupsBefore (13, 39, 98, 2) (by simp), c.groupsRolesAfter (13, 39, 98, 2) (by simp),
-    hostPlan_group_fresh true 39 98 2 (by simp)⟩
-  g44 := ⟨c.groupsBefore (17, 41, 100, 2) (by simp), c.groupsRolesAfter (17, 41, 100, 2) (by simp),
-    hostPlan_group41_fresh true 100 2 (by decide) (by decide)⟩
+  g14 := ⟨c.groupsBefore (5, 12, 85, 5) (by simp), c.groupsRolesAfter (5, 12, 85, 5) (by simp),
+    hostPlan_group_fresh true 12 85 5 (by simp)⟩
+  g23 := ⟨c.groupsBefore (7, 21, 90, 3) (by simp), c.groupsRolesAfter (7, 21, 90, 3) (by simp),
+    hostPlan_group_fresh true 21 90 3 (by simp)⟩
+  g31 := ⟨c.groupsBefore (9, 29, 93, 3) (by simp), c.groupsRolesAfter (9, 29, 93, 3) (by simp),
+    hostPlan_group_fresh true 29 93 3 (by simp)⟩
+  g37 := ⟨c.groupsBefore (11, 35, 96, 2) (by simp), c.groupsRolesAfter (11, 35, 96, 2) (by simp),
+    hostPlan_group_fresh true 35 96 2 (by simp)⟩
+  g42 := ⟨c.groupsBefore (13, 40, 98, 2) (by simp), c.groupsRolesAfter (13, 40, 98, 2) (by simp),
+    hostPlan_group_fresh true 40 98 2 (by simp)⟩
+  g44 := ⟨c.groupsBefore (17, 42, 100, 2) (by simp), c.groupsRolesAfter (17, 42, 100, 2) (by simp),
+    hostPlan_group42_fresh true 100 2 (by decide) (by decide)⟩
 
 open StairField13V3 in
 theorem exitParts_of_clean (k : Nat) (c : ExitClean k) : ExitSlotsV3Parts k where
-  g44 := ⟨c.groupsBefore (7, 41, 100, 2) (by simp), c.groupsRolesAfter (7, 41, 100, 2) (by simp),
-    hostPlan_group41_fresh false 100 2 (by decide) (by decide)⟩
-  g42 := ⟨c.groupsBefore (11, 39, 98, 2) (by simp), c.groupsRolesAfter (11, 39, 98, 2) (by simp),
-    hostPlan_group_fresh false 39 98 2 (by simp)⟩
-  g37 := ⟨c.groupsBefore (13, 34, 96, 2) (by simp), c.groupsRolesAfter (13, 34, 96, 2) (by simp),
-    hostPlan_group_fresh false 34 96 2 (by simp)⟩
-  g31 := ⟨c.groupsBefore (15, 28, 93, 3) (by simp), c.groupsRolesAfter (15, 28, 93, 3) (by simp),
-    hostPlan_group_fresh false 28 93 3 (by simp)⟩
-  g23 := ⟨c.groupsBefore (17, 20, 90, 3) (by simp), c.groupsRolesAfter (17, 20, 90, 3) (by simp),
-    hostPlan_group_fresh false 20 90 3 (by simp)⟩
-  g14 := ⟨c.groupsBefore (19, 11, 85, 5) (by simp), c.groupsRolesAfter (19, 11, 85, 5) (by simp),
-    hostPlan_group_fresh false 11 85 5 (by simp)⟩
+  g44 := ⟨c.groupsBefore (7, 42, 100, 2) (by simp), c.groupsRolesAfter (7, 42, 100, 2) (by simp),
+    hostPlan_group42_fresh false 100 2 (by decide) (by decide)⟩
+  g42 := ⟨c.groupsBefore (11, 40, 98, 2) (by simp), c.groupsRolesAfter (11, 40, 98, 2) (by simp),
+    hostPlan_group_fresh false 40 98 2 (by simp)⟩
+  g37 := ⟨c.groupsBefore (13, 35, 96, 2) (by simp), c.groupsRolesAfter (13, 35, 96, 2) (by simp),
+    hostPlan_group_fresh false 35 96 2 (by simp)⟩
+  g31 := ⟨c.groupsBefore (15, 29, 93, 3) (by simp), c.groupsRolesAfter (15, 29, 93, 3) (by simp),
+    hostPlan_group_fresh false 29 93 3 (by simp)⟩
+  g23 := ⟨c.groupsBefore (17, 21, 90, 3) (by simp), c.groupsRolesAfter (17, 21, 90, 3) (by simp),
+    hostPlan_group_fresh false 21 90 3 (by simp)⟩
+  g14 := ⟨c.groupsBefore (19, 12, 85, 5) (by simp), c.groupsRolesAfter (19, 12, 85, 5) (by simp),
+    hostPlan_group_fresh false 12 85 5 (by simp)⟩
   g0 := ⟨c.groupsBefore (21, 0, 1, 84) (by simp), c.groupsRolesAfter (21, 0, 1, 84) (by simp),
     hostPlan_group_fresh false 0 1 84 (by simp)⟩
   first := ⟨c.firstBefore, c.firstRolesAfter, hostPlan_firstPacket_fresh false⟩
@@ -69170,7 +69485,7 @@ remaining inputs are the logical-kernel cleanliness facts `EntryClean` /
 `ExitClean k` (field 2 row invariants) and field 7. -/
 theorem hostReplaySpec_v3_final (entry : EntryClean) (exit : ∀ k, ExitClean k)
     (loan : StairCertificate.LoanReplaySpec StairConcreteAssembly.concreteAssembly) :
-    StairCertificate.HostReplaySpec StairConcreteAssembly.concreteAssembly :=
+    StairCertificate.HostReplaySpec0 StairConcreteAssembly.concreteAssembly :=
   StairField13V3.hostReplaySpec_v3_parts (entryParts_of_clean entry)
     (fun k => exitParts_of_clean k (exit k)) loan
 
@@ -69428,19 +69743,19 @@ theorem entry_roles_zero {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
     (group_keeps hw true 0 1 84 (by simp) (by decide))
   have z5 := stepK StairConcreteAssembly.EntryPre eps 4 (L 4 (by decide)) w _ rfl z4 (lowCommon_keeps hw _ chk_keep_fseg87)
   have z6 := stepK StairConcreteAssembly.EntryPre eps 5 (L 5 (by decide)) w _ rfl z5
-    (group_keeps hw true 11 85 5 (by simp) (by decide))
+    (group_keeps hw true 12 85 5 (by simp) (by decide))
   have z7 := stepK StairConcreteAssembly.EntryPre eps 6 (L 6 (by decide)) w _ rfl z6 (lowCommon_keeps hw _ chk_keep_fseg62)
   have z8 := stepK StairConcreteAssembly.EntryPre eps 7 (L 7 (by decide)) w _ rfl z7
-    (group_keeps hw true 20 90 3 (by simp) (by decide))
+    (group_keeps hw true 21 90 3 (by simp) (by decide))
   have z9 := stepK StairConcreteAssembly.EntryPre eps 8 (L 8 (by decide)) w _ rfl z8 (lowCommon_keeps hw _ chk_keep_fseg47)
   have z10 := stepK StairConcreteAssembly.EntryPre eps 9 (L 9 (by decide)) w _ rfl z9
-    (group_keeps hw true 28 93 3 (by simp) (by decide))
+    (group_keeps hw true 29 93 3 (by simp) (by decide))
   have z11 := stepK StairConcreteAssembly.EntryPre eps 10 (L 10 (by decide)) w _ rfl z10 (lowCommon_keeps hw _ chk_keep_fseg32)
   have z12 := stepK StairConcreteAssembly.EntryPre eps 11 (L 11 (by decide)) w _ rfl z11
-    (group_keeps hw true 34 96 2 (by simp) (by decide))
+    (group_keeps hw true 35 96 2 (by simp) (by decide))
   have z13 := stepK StairConcreteAssembly.EntryPre eps 12 (L 12 (by decide)) w _ rfl z12 (lowCommon_keeps hw _ chk_keep_fseg22)
   have z14 := stepK StairConcreteAssembly.EntryPre eps 13 (L 13 (by decide)) w _ rfl z13
-    (group_keeps hw true 39 98 2 (by simp) (by decide))
+    (group_keeps hw true 40 98 2 (by simp) (by decide))
   have z15 := stepK StairConcreteAssembly.EntryPre eps 14 (L 14 (by decide)) w _ rfl z14
     (lowCommon_keeps hw _ chk_keep_flast)
   have z16 := stepK StairConcreteAssembly.EntryPre eps 15 (L 15 (by decide)) w _ rfl z15
@@ -69449,7 +69764,7 @@ theorem entry_roles_zero {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
   have z17 := stepK StairConcreteAssembly.EntryPre eps 16 (L 16 (by decide)) w _ rfl z16
     (keeps_append (hostedX_keeps hw) (fieldCommon_keeps hw _ chk_keep_clear))
   have z18 := stepK StairConcreteAssembly.EntryPre eps 17 (L 17 (by decide)) w _ rfl z17
-    (group_keeps hw true 41 100 2 (by simp) (by decide))
+    (group_keeps hw true 42 100 2 (by simp) (by decide))
   intro j h1 h2
   have cases : j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨
       j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 := by omega
@@ -69552,13 +69867,13 @@ theorem x_s6 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z :
   exact endPacket_keeps hw
 
 theorem x_g (k j : Nat) (hj : j < 25) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles)
-    (d first count : Nat) (hd : d ∈ [0, 11, 20, 28, 34, 39, 41, 44]) (hr : first + count ≤ 102)
+    (d first count : Nat) (hd : d ∈ [0, 12, 21, 29, 35, 40, 42, 44]) (hr : first + count ≤ 102)
     (e : ((xps k)[j]'(xL k j hj)) = groupSlot hp false d first count) (z : XZ k j w) :
     XZ k (j + 1) w :=
   stepK _ (xps k) j (xL k j hj) w _ (congrArg Piece.L e) z (group_keeps hw false d first count hd hr)
 
 theorem x_s7 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 7 w) :
-    XZ k 8 w := x_g k 7 (by decide) hw 41 100 2 (by simp) (by decide) rfl z
+    XZ k 8 w := x_g k 7 (by decide) hw 42 100 2 (by simp) (by decide) rfl z
 
 theorem x_s8 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 8 w) :
     XZ k 9 w :=
@@ -69576,35 +69891,35 @@ theorem x_s10 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z 
   stepK _ (xps k) 10 (xL k 10 (by decide)) w _ rfl z (lowCommon_keeps hw _ chk_keep_rlast)
 
 theorem x_s11 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 11 w) :
-    XZ k 12 w := x_g k 11 (by decide) hw 39 98 2 (by simp) (by decide) rfl z
+    XZ k 12 w := x_g k 11 (by decide) hw 40 98 2 (by simp) (by decide) rfl z
 
 theorem x_s12 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 12 w) :
     XZ k 13 w :=
   stepK _ (xps k) 12 (xL k 12 (by decide)) w _ rfl z (lowCommon_keeps hw _ chk_keep_rseg22)
 
 theorem x_s13 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 13 w) :
-    XZ k 14 w := x_g k 13 (by decide) hw 34 96 2 (by simp) (by decide) rfl z
+    XZ k 14 w := x_g k 13 (by decide) hw 35 96 2 (by simp) (by decide) rfl z
 
 theorem x_s14 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 14 w) :
     XZ k 15 w :=
   stepK _ (xps k) 14 (xL k 14 (by decide)) w _ rfl z (lowCommon_keeps hw _ chk_keep_rseg32)
 
 theorem x_s15 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 15 w) :
-    XZ k 16 w := x_g k 15 (by decide) hw 28 93 3 (by simp) (by decide) rfl z
+    XZ k 16 w := x_g k 15 (by decide) hw 29 93 3 (by simp) (by decide) rfl z
 
 theorem x_s16 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 16 w) :
     XZ k 17 w :=
   stepK _ (xps k) 16 (xL k 16 (by decide)) w _ rfl z (lowCommon_keeps hw _ chk_keep_rseg47)
 
 theorem x_s17 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 17 w) :
-    XZ k 18 w := x_g k 17 (by decide) hw 20 90 3 (by simp) (by decide) rfl z
+    XZ k 18 w := x_g k 17 (by decide) hw 21 90 3 (by simp) (by decide) rfl z
 
 theorem x_s18 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 18 w) :
     XZ k 19 w :=
   stepK _ (xps k) 18 (xL k 18 (by decide)) w _ rfl z (lowCommon_keeps hw _ chk_keep_rseg62)
 
 theorem x_s19 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 19 w) :
-    XZ k 20 w := x_g k 19 (by decide) hw 11 85 5 (by simp) (by decide) rfl z
+    XZ k 20 w := x_g k 19 (by decide) hw 12 85 5 (by simp) (by decide) rfl z
 
 theorem x_s20 (k : Nat) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (z : XZ k 20 w) :
     XZ k 21 w :=
@@ -69721,16 +70036,16 @@ phase (cut 1) and before every hosted group.  (The roles at cut 1 are
 structure EntryHostsClean : Prop where
   firstHosts : CutClean StairConcreteAssembly.EntryPre (cut eps 1)
     ((hp.firstPacket true).map fieldMap)
-  hosts : ∀ jdfc ∈ [(3, 0, 1, 84), (5, 11, 85, 5), (7, 20, 90, 3), (9, 28, 93, 3),
-      (11, 34, 96, 2), (13, 39, 98, 2), (17, 41, 100, 2)],
+  hosts : ∀ jdfc ∈ [(3, 0, 1, 84), (5, 12, 85, 5), (7, 21, 90, 3), (9, 29, 93, 3),
+      (11, 35, 96, 2), (13, 40, 98, 2), (17, 42, 100, 2)],
     CutClean StairConcreteAssembly.EntryPre (cut eps jdfc.1)
       ((hp.group true jdfc.2.1 jdfc.2.2.1 jdfc.2.2.2).map lowMap)
 
 /-- Multiplication kernel: the hosts before every hosted group and before the
 first packet (cut 23). -/
 structure ExitHostsClean (k : Nat) : Prop where
-  hosts : ∀ jdfc ∈ [(7, 41, 100, 2), (11, 39, 98, 2), (13, 34, 96, 2), (15, 28, 93, 3),
-      (17, 20, 90, 3), (19, 11, 85, 5), (21, 0, 1, 84)],
+  hosts : ∀ jdfc ∈ [(7, 42, 100, 2), (11, 40, 98, 2), (13, 35, 96, 2), (15, 29, 93, 3),
+      (17, 21, 90, 3), (19, 12, 85, 5), (21, 0, 1, 84)],
     CutClean (StairConcreteAssembly.ExitPre k) (cut (xps k) jdfc.1)
       ((hp.group false jdfc.2.1 jdfc.2.2.1 jdfc.2.2.2).map lowMap)
   firstHosts : CutClean (StairConcreteAssembly.ExitPre k) (cut (xps k) 23)
@@ -69861,13 +70176,13 @@ theorem e2_L : (eps[2]'(eL 2 (by decide))).L =
     StairSchedule.fieldRename FourScratchWindow.clearProgram := rfl
 theorem e3_L : (eps[3]'(eL 3 (by decide))).L = grpL StairConcrete.bestLoans 0 1 84 := rfl
 theorem e4_L : (eps[4]'(eL 4 (by decide))).L = seg cp 87 62 425 450 := rfl
-theorem e5_L : (eps[5]'(eL 5 (by decide))).L = grpL StairConcrete.bestLoans 11 85 5 := rfl
+theorem e5_L : (eps[5]'(eL 5 (by decide))).L = grpL StairConcrete.bestLoans 12 85 5 := rfl
 theorem e6_L : (eps[6]'(eL 6 (by decide))).L = seg cp 62 47 450 465 := rfl
-theorem e7_L : (eps[7]'(eL 7 (by decide))).L = grpL StairConcrete.bestLoans 20 90 3 := rfl
+theorem e7_L : (eps[7]'(eL 7 (by decide))).L = grpL StairConcrete.bestLoans 21 90 3 := rfl
 theorem e8_L : (eps[8]'(eL 8 (by decide))).L = seg cp 47 32 465 480 := rfl
-theorem e9_L : (eps[9]'(eL 9 (by decide))).L = grpL StairConcrete.bestLoans 28 93 3 := rfl
+theorem e9_L : (eps[9]'(eL 9 (by decide))).L = grpL StairConcrete.bestLoans 29 93 3 := rfl
 theorem e10_L : (eps[10]'(eL 10 (by decide))).L = seg cp 32 22 480 490 := rfl
-theorem e11_L : (eps[11]'(eL 11 (by decide))).L = grpL StairConcrete.bestLoans 34 96 2 := rfl
+theorem e11_L : (eps[11]'(eL 11 (by decide))).L = grpL StairConcrete.bestLoans 35 96 2 := rfl
 theorem e12_L : (eps[12]'(eL 12 (by decide))).L = seg cp 22 12 490 500 := rfl
 
 /-- Selected (logical) division prefixes. -/
@@ -69875,13 +70190,13 @@ def ES1 : Program := prefixW ++ selJ0 cp
 def ES3 : Program := ES1 ++ firstPkt
 def ES4 : Program := ES3 ++ grpL StairConcrete.bestLoans 0 1 84
 def ES5 : Program := ES4 ++ seg cp 87 62 425 450
-def ES6 : Program := ES5 ++ grpL StairConcrete.bestLoans 11 85 5
+def ES6 : Program := ES5 ++ grpL StairConcrete.bestLoans 12 85 5
 def ES7 : Program := ES6 ++ seg cp 62 47 450 465
-def ES8 : Program := ES7 ++ grpL StairConcrete.bestLoans 20 90 3
+def ES8 : Program := ES7 ++ grpL StairConcrete.bestLoans 21 90 3
 def ES9 : Program := ES8 ++ seg cp 47 32 465 480
-def ES10 : Program := ES9 ++ grpL StairConcrete.bestLoans 28 93 3
+def ES10 : Program := ES9 ++ grpL StairConcrete.bestLoans 29 93 3
 def ES11 : Program := ES10 ++ seg cp 32 22 480 490
-def ES12 : Program := ES11 ++ grpL StairConcrete.bestLoans 34 96 2
+def ES12 : Program := ES11 ++ grpL StairConcrete.bestLoans 35 96 2
 def ES13 : Program := ES12 ++ seg cp 22 12 490 500
 
 theorem ecut1 : cut eps 1 = ES1 := by
@@ -69948,7 +70263,7 @@ theorem x5_L (k : Nat) : ((xps k)[5]'(xL k 5 (by decide))).L = liftF HalfFieldOB
 theorem x6_L (k : Nat) : ((xps k)[6]'(xL k 6 (by decide))).L =
     liftF (StairSchedule.placedEndPacket StairConcrete.bestLoans false 68) := rfl
 theorem x7_L (k : Nat) : ((xps k)[7]'(xL k 7 (by decide))).L =
-    grpFL StairConcrete.bestLoans 41 100 2 := rfl
+    grpFL StairConcrete.bestLoans 42 100 2 := rfl
 theorem x8_L (k : Nat) : ((xps k)[8]'(xL k 8 (by decide))).L =
     StairSchedule.fieldRename FourScratchWindow.unprefix ++ StairSchedule.paritySetup := rfl
 theorem x9_L (k : Nat) : ((xps k)[9]'(xL k 9 (by decide))).L =
@@ -69956,19 +70271,19 @@ theorem x9_L (k : Nat) : ((xps k)[9]'(xL k 9 (by decide))).L =
 theorem x10_L (k : Nat) : ((xps k)[10]'(xL k 10 (by decide))).L =
     liftF (StairSchedule.reverseLast cp) := rfl
 theorem x11_L (k : Nat) : ((xps k)[11]'(xL k 11 (by decide))).L =
-    grpFL StairConcrete.bestLoans 39 98 2 := rfl
+    grpFL StairConcrete.bestLoans 40 98 2 := rfl
 theorem x12_L (k : Nat) : ((xps k)[12]'(xL k 12 (by decide))).L = rseg cp 22 12 490 500 := rfl
 theorem x13_L (k : Nat) : ((xps k)[13]'(xL k 13 (by decide))).L =
-    grpFL StairConcrete.bestLoans 34 96 2 := rfl
+    grpFL StairConcrete.bestLoans 35 96 2 := rfl
 theorem x14_L (k : Nat) : ((xps k)[14]'(xL k 14 (by decide))).L = rseg cp 32 22 480 490 := rfl
 theorem x15_L (k : Nat) : ((xps k)[15]'(xL k 15 (by decide))).L =
-    grpFL StairConcrete.bestLoans 28 93 3 := rfl
+    grpFL StairConcrete.bestLoans 29 93 3 := rfl
 theorem x16_L (k : Nat) : ((xps k)[16]'(xL k 16 (by decide))).L = rseg cp 47 32 465 480 := rfl
 theorem x17_L (k : Nat) : ((xps k)[17]'(xL k 17 (by decide))).L =
-    grpFL StairConcrete.bestLoans 20 90 3 := rfl
+    grpFL StairConcrete.bestLoans 21 90 3 := rfl
 theorem x18_L (k : Nat) : ((xps k)[18]'(xL k 18 (by decide))).L = rseg cp 62 47 450 465 := rfl
 theorem x19_L (k : Nat) : ((xps k)[19]'(xL k 19 (by decide))).L =
-    grpFL StairConcrete.bestLoans 11 85 5 := rfl
+    grpFL StairConcrete.bestLoans 12 85 5 := rfl
 theorem x20_L (k : Nat) : ((xps k)[20]'(xL k 20 (by decide))).L = rseg cp 87 62 425 450 := rfl
 theorem x21_L (k : Nat) : ((xps k)[21]'(xL k 21 (by decide))).L =
     grpFL StairConcrete.bestLoans 0 1 84 := rfl
@@ -69978,11 +70293,11 @@ theorem x22_L (k : Nat) : ((xps k)[22]'(xL k 22 (by decide))).L =
 
 /-- Selected (logical) multiplication prefixes after the opening phase. -/
 def XS11 : Program := headEL StairConcrete.bestLoans ++ firstSel cp
-def XS13 : Program := (XS11 ++ grpFL StairConcrete.bestLoans 39 98 2) ++ rseg cp 22 12 490 500
-def XS15 : Program := (XS13 ++ grpFL StairConcrete.bestLoans 34 96 2) ++ rseg cp 32 22 480 490
-def XS17 : Program := (XS15 ++ grpFL StairConcrete.bestLoans 28 93 3) ++ rseg cp 47 32 465 480
-def XS19 : Program := (XS17 ++ grpFL StairConcrete.bestLoans 20 90 3) ++ rseg cp 62 47 450 465
-def XS21 : Program := (XS19 ++ grpFL StairConcrete.bestLoans 11 85 5) ++ rseg cp 87 62 425 450
+def XS13 : Program := (XS11 ++ grpFL StairConcrete.bestLoans 40 98 2) ++ rseg cp 22 12 490 500
+def XS15 : Program := (XS13 ++ grpFL StairConcrete.bestLoans 35 96 2) ++ rseg cp 32 22 480 490
+def XS17 : Program := (XS15 ++ grpFL StairConcrete.bestLoans 29 93 3) ++ rseg cp 47 32 465 480
+def XS19 : Program := (XS17 ++ grpFL StairConcrete.bestLoans 21 90 3) ++ rseg cp 62 47 450 465
+def XS21 : Program := (XS19 ++ grpFL StairConcrete.bestLoans 12 85 5) ++ rseg cp 87 62 425 450
 def XS23 : Program := (XS21 ++ grpFL StairConcrete.bestLoans 0 1 84) ++
   StairSchedule.fieldRename FourScratchWindow.unprefix
 
@@ -70115,7 +70430,7 @@ theorem rch13 (k x : Nat) (plan : ExitPlanR cp k x)
     (half : StairLoanRecordShape.HalfReplayHypothesis) :
     ∃ Q, CRel (XPreX k x) (RowRelL k x 22 ZA) XS13 Q := by
   obtain ⟨Q, h⟩ := rch11 k x plan half
-  exact ⟨_, crel_append (crel_append h (sharedL k x 12 (grpFL StairConcrete.bestLoans 39 98 2) ZH
+  exact ⟨_, crel_append (crel_append h (sharedL k x 12 (grpFL StairConcrete.bestLoans 40 98 2) ZH
     (away_of_sub _ _ _ exitGroupSub_best.1 (grpF_away 12 (by decide) 98 2 (by decide)))))
     (segL k x (reachX_A half k x) plan.rseg4)⟩
 
@@ -70123,7 +70438,7 @@ theorem rch15 (k x : Nat) (plan : ExitPlanR cp k x)
     (half : StairLoanRecordShape.HalfReplayHypothesis) :
     ∃ Q, CRel (XPreX k x) (RowRelL k x 32 ZB) XS15 Q := by
   obtain ⟨Q, h⟩ := rch13 k x plan half
-  exact ⟨_, crel_append (crel_append h (sharedL k x 22 (grpFL StairConcrete.bestLoans 34 96 2) ZA
+  exact ⟨_, crel_append (crel_append h (sharedL k x 22 (grpFL StairConcrete.bestLoans 35 96 2) ZA
     (away_of_sub _ _ _ exitGroupSub_best.2.1 (grpF_away 22 (by decide) 96 2 (by decide)))))
     (segL k x (reachX_B half k x) plan.rseg3)⟩
 
@@ -70131,7 +70446,7 @@ theorem rch17 (k x : Nat) (plan : ExitPlanR cp k x)
     (half : StairLoanRecordShape.HalfReplayHypothesis) :
     ∃ Q, CRel (XPreX k x) (RowRelL k x 47 ZC) XS17 Q := by
   obtain ⟨Q, h⟩ := rch15 k x plan half
-  exact ⟨_, crel_append (crel_append h (sharedL k x 32 (grpFL StairConcrete.bestLoans 28 93 3) ZB
+  exact ⟨_, crel_append (crel_append h (sharedL k x 32 (grpFL StairConcrete.bestLoans 29 93 3) ZB
     (away_of_sub _ _ _ exitGroupSub_best.2.2.1 (grpF_away 32 (by decide) 93 3 (by decide)))))
     (segL k x (reachX_C half k x) plan.rseg2)⟩
 
@@ -70139,7 +70454,7 @@ theorem rch19 (k x : Nat) (plan : ExitPlanR cp k x)
     (half : StairLoanRecordShape.HalfReplayHypothesis) :
     ∃ Q, CRel (XPreX k x) (RowRelL k x 62 ZD) XS19 Q := by
   obtain ⟨Q, h⟩ := rch17 k x plan half
-  exact ⟨_, crel_append (crel_append h (sharedL k x 47 (grpFL StairConcrete.bestLoans 20 90 3) ZC
+  exact ⟨_, crel_append (crel_append h (sharedL k x 47 (grpFL StairConcrete.bestLoans 21 90 3) ZC
     (away_of_sub _ _ _ exitGroupSub_best.2.2.2.1 (grpF_away 47 (by decide) 90 3 (by decide)))))
     (segL k x (reachX_D half k x) plan.rseg1)⟩
 
@@ -70147,7 +70462,7 @@ theorem rch21 (k x : Nat) (plan : ExitPlanR cp k x)
     (half : StairLoanRecordShape.HalfReplayHypothesis) :
     ∃ Q, CRel (XPreX k x) (RowRelL k x 87 ZE) XS21 Q := by
   obtain ⟨Q, h⟩ := rch19 k x plan half
-  exact ⟨_, crel_append (crel_append h (sharedL k x 62 (grpFL StairConcrete.bestLoans 11 85 5) ZD
+  exact ⟨_, crel_append (crel_append h (sharedL k x 62 (grpFL StairConcrete.bestLoans 12 85 5) ZD
     (away_of_sub _ _ _ exitGroupSub_best.2.2.2.2.1 (grpF_away 62 (by decide) 85 5 (by decide)))))
     (segL k x (reachX_E half k x) plan.rseg0)⟩
 
@@ -70173,7 +70488,7 @@ theorem poolHosts_cutClean_entry (j : Nat) (h2 : 2 ≤ j) (h14 : j ≤ 18) :
   obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hq
   have hre : r ∈ StairSchedule.exclusiveRoles := by
     simp only [StairV3Primitives.poolHosts, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> decide
+    rcases hr with rfl | rfl <;> decide
   rw [chk_lowMap_fix r hre]
   exact entry_roles_zero hre j h2 h14 s hs m
 
@@ -70185,7 +70500,7 @@ theorem poolHosts_cutClean_exit (k j : Nat) (h1 : 1 ≤ j) (h24 : j ≤ 24) :
   obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hq
   have hre : r ∈ StairSchedule.exclusiveRoles := by
     simp only [StairV3Primitives.poolHosts, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> decide
+    rcases hr with rfl | rfl <;> decide
   rw [chk_lowMap_fix r hre]
   exact exit_roles_zero k hre j h1 h24 s hs m
 
@@ -70196,35 +70511,35 @@ theorem exitHostsClean_of_planR (k : Nat) (plan : ∀ x, ExitPlanR cp k x)
   · intro jdfc hm
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hm
     rcases hm with rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · show CutClean _ (cut (xps k) 7) ((hp.group false 41 100 2).map lowMap)
-      rw [hp_group41 false 100 2]
+    · show CutClean _ (cut (xps k) 7) ((hp.group false 42 100 2).map lowMap)
+      rw [hp_group42 false 100 2]
       exact poolHosts_cutClean_exit k 7 (by decide) (by decide)
-    · show CutClean _ (cut (xps k) 11) ((hp.group false 39 98 2).map lowMap)
-      rw [hp_group_row false 39 98 2 12 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut (xps k) 11) ((hp.group false 40 98 2).map lowMap)
+      rw [hp_group_row false 40 98 2 12 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_exit k 11 (by decide) (by decide))
       exact cutClean_of_xchR k 12 (fun x => drop_reach (rch11 k x (plan x) half)) (xcut11 k)
         (fun x => hostsX_low x _ 5 (by decide))
-    · show CutClean _ (cut (xps k) 13) ((hp.group false 34 96 2).map lowMap)
-      rw [hp_group_row false 34 96 2 22 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut (xps k) 13) ((hp.group false 35 96 2).map lowMap)
+      rw [hp_group_row false 35 96 2 22 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_exit k 13 (by decide) (by decide))
       exact cutClean_of_xchR k 22 (fun x => drop_reach (rch13 k x (plan x) half)) (xcut13 k)
         (fun x => hostsX_low x _ 4 (by decide))
-    · show CutClean _ (cut (xps k) 15) ((hp.group false 28 93 3).map lowMap)
-      rw [hp_group_row false 28 93 3 32 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut (xps k) 15) ((hp.group false 29 93 3).map lowMap)
+      rw [hp_group_row false 29 93 3 32 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_exit k 15 (by decide) (by decide))
       exact cutClean_of_xchR k 32 (fun x => drop_reach (rch15 k x (plan x) half)) (xcut15 k)
         (fun x => hostsX_low x _ 3 (by decide))
-    · show CutClean _ (cut (xps k) 17) ((hp.group false 20 90 3).map lowMap)
-      rw [hp_group_row false 20 90 3 47 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut (xps k) 17) ((hp.group false 21 90 3).map lowMap)
+      rw [hp_group_row false 21 90 3 47 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_exit k 17 (by decide) (by decide))
       exact cutClean_of_xchR k 47 (fun x => drop_reach (rch17 k x (plan x) half)) (xcut17 k)
         (fun x => hostsX_low x _ 2 (by decide))
-    · show CutClean _ (cut (xps k) 19) ((hp.group false 11 85 5).map lowMap)
-      rw [hp_group_row false 11 85 5 62 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut (xps k) 19) ((hp.group false 12 85 5).map lowMap)
+      rw [hp_group_row false 12 85 5 62 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_exit k 19 (by decide) (by decide))
       exact cutClean_of_xchR k 62 (fun x => drop_reach (rch19 k x (plan x) half)) (xcut19 k)
@@ -70323,7 +70638,7 @@ theorem ern5 (x : Nat) (plan : EntryPlanR cp x) (V : EntryReachTransportR StairC
 theorem ern6 (x : Nat) (plan : EntryPlanR cp x) (V : EntryReachTransportR StairConcrete.bestLoans x) :
     ∃ Q, CRel (EPreX x) (RowRelEn x 62 (R2L StairConcrete.bestLoans)) ES6 Q := by
   obtain ⟨Q, h⟩ := ern5 x plan V
-  exact ⟨_, crel_append h (sharedEn x 62 (grpL StairConcrete.bestLoans 11 85 5)
+  exact ⟨_, crel_append h (sharedEn x 62 (grpL StairConcrete.bestLoans 12 85 5)
     (R1L StairConcrete.bestLoans) (away_of_sub _ _ _ entryGroupSub_best.2.1
       (grp_away 62 (by decide) 85 5 (by decide))))⟩
 
@@ -70335,7 +70650,7 @@ theorem ern7 (x : Nat) (plan : EntryPlanR cp x) (V : EntryReachTransportR StairC
 theorem ern8 (x : Nat) (plan : EntryPlanR cp x) (V : EntryReachTransportR StairConcrete.bestLoans x) :
     ∃ Q, CRel (EPreX x) (RowRelEn x 47 (R3L StairConcrete.bestLoans)) ES8 Q := by
   obtain ⟨Q, h⟩ := ern7 x plan V
-  exact ⟨_, crel_append h (sharedEn x 47 (grpL StairConcrete.bestLoans 20 90 3)
+  exact ⟨_, crel_append h (sharedEn x 47 (grpL StairConcrete.bestLoans 21 90 3)
     (R2L StairConcrete.bestLoans) (away_of_sub _ _ _ entryGroupSub_best.2.2.1
       (grp_away 47 (by decide) 90 3 (by decide))))⟩
 
@@ -70347,7 +70662,7 @@ theorem ern9 (x : Nat) (plan : EntryPlanR cp x) (V : EntryReachTransportR StairC
 theorem ern10 (x : Nat) (plan : EntryPlanR cp x) (V : EntryReachTransportR StairConcrete.bestLoans x) :
     ∃ Q, CRel (EPreX x) (RowRelEn x 32 (R4L StairConcrete.bestLoans)) ES10 Q := by
   obtain ⟨Q, h⟩ := ern9 x plan V
-  exact ⟨_, crel_append h (sharedEn x 32 (grpL StairConcrete.bestLoans 28 93 3)
+  exact ⟨_, crel_append h (sharedEn x 32 (grpL StairConcrete.bestLoans 29 93 3)
     (R3L StairConcrete.bestLoans) (away_of_sub _ _ _ entryGroupSub_best.2.2.2.1
       (grp_away 32 (by decide) 93 3 (by decide))))⟩
 
@@ -70359,7 +70674,7 @@ theorem ern11 (x : Nat) (plan : EntryPlanR cp x) (V : EntryReachTransportR Stair
 theorem ern12 (x : Nat) (plan : EntryPlanR cp x) (V : EntryReachTransportR StairConcrete.bestLoans x) :
     ∃ Q, CRel (EPreX x) (RowRelEn x 22 (R5L StairConcrete.bestLoans)) ES12 Q := by
   obtain ⟨Q, h⟩ := ern11 x plan V
-  exact ⟨_, crel_append h (sharedEn x 22 (grpL StairConcrete.bestLoans 34 96 2)
+  exact ⟨_, crel_append h (sharedEn x 22 (grpL StairConcrete.bestLoans 35 96 2)
     (R4L StairConcrete.bestLoans) (away_of_sub _ _ _ entryGroupSub_best.2.2.2.2.1
       (grp_away 22 (by decide) 96 2 (by decide))))⟩
 
@@ -70385,38 +70700,38 @@ theorem entryHostsClean_of_planR (plan : ∀ x, EntryPlanR cp x)
       rw [hp_group true 0 1 84 (by decide)]
       exact cutClean_of_echR 87 (fun x => drop_reachEn (ern3 x (plan x))) ecut3
         (fun x => hostsX_low x _ 0 (by decide))
-    · show CutClean _ (cut eps 5) ((hp.group true 11 85 5).map lowMap)
-      rw [hp_group_row true 11 85 5 62 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut eps 5) ((hp.group true 12 85 5).map lowMap)
+      rw [hp_group_row true 12 85 5 62 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_entry 5 (by decide) (by decide))
       exact cutClean_of_echR 62 (fun x => drop_reachEn (ern5 x (plan x) (V x))) ecut5
         (fun x => hostsX_low x _ 1 (by decide))
-    · show CutClean _ (cut eps 7) ((hp.group true 20 90 3).map lowMap)
-      rw [hp_group_row true 20 90 3 47 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut eps 7) ((hp.group true 21 90 3).map lowMap)
+      rw [hp_group_row true 21 90 3 47 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_entry 7 (by decide) (by decide))
       exact cutClean_of_echR 47 (fun x => drop_reachEn (ern7 x (plan x) (V x))) ecut7
         (fun x => hostsX_low x _ 2 (by decide))
-    · show CutClean _ (cut eps 9) ((hp.group true 28 93 3).map lowMap)
-      rw [hp_group_row true 28 93 3 32 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut eps 9) ((hp.group true 29 93 3).map lowMap)
+      rw [hp_group_row true 29 93 3 32 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_entry 9 (by decide) (by decide))
       exact cutClean_of_echR 32 (fun x => drop_reachEn (ern9 x (plan x) (V x))) ecut9
         (fun x => hostsX_low x _ 3 (by decide))
-    · show CutClean _ (cut eps 11) ((hp.group true 34 96 2).map lowMap)
-      rw [hp_group_row true 34 96 2 22 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut eps 11) ((hp.group true 35 96 2).map lowMap)
+      rw [hp_group_row true 35 96 2 22 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_entry 11 (by decide) (by decide))
       exact cutClean_of_echR 22 (fun x => drop_reachEn (ern11 x (plan x) (V x))) ecut11
         (fun x => hostsX_low x _ 4 (by decide))
-    · show CutClean _ (cut eps 13) ((hp.group true 39 98 2).map lowMap)
-      rw [hp_group_row true 39 98 2 12 (by decide) (by decide) (by decide) (by decide),
+    · show CutClean _ (cut eps 13) ((hp.group true 40 98 2).map lowMap)
+      rw [hp_group_row true 40 98 2 12 (by decide) (by decide) (by decide) (by decide),
         List.map_append]
       refine cutClean_append_lists _ _ _ _ ?_ (poolHosts_cutClean_entry 13 (by decide) (by decide))
       exact cutClean_of_echR 12 (fun x => drop_reachEn (ern13 x (plan x) (V x))) ecut13
         (fun x => hostsX_low x _ 5 (by decide))
-    · show CutClean _ (cut eps 17) ((hp.group true 41 100 2).map lowMap)
-      rw [hp_group41 true 100 2]
+    · show CutClean _ (cut eps 17) ((hp.group true 42 100 2).map lowMap)
+      rw [hp_group42 true 100 2]
       exact poolHosts_cutClean_entry 17 (by decide) (by decide)
 
 /-- **`EntryClean`** (field 13, division) from the pinned division plans. -/
@@ -70505,13 +70820,13 @@ theorem generic_eqD
       run (genericN L cx cy) m' (put s (pkW L) e) := by
   subst he
   have hEq := entryStage_eqD H hE L hw hn cx cy X Y G s hv hg hx1
-    (m.take (measurementCount ((entryYAll L (-cy) ++ entryXNew L (pkW L) (-cx)) ++
+    (m.take (measurementCount ((entryYAll L (-cy) ++ entryXNewC L (pkW L) (-cx)) ++
       StairConcreteAssembly.hostedEntryRest L))) []
   have w0v := entryStageAll_step L hw hn X Y (-cx) (-cy) G s.basis hx1 s (padE L cy cx []) hv
   rw [← (head_pad L hw hn cx cy X Y s hv.x hv.y hv.clean hg).run_eq []] at w0v
   obtain ⟨m2, h2⟩ := secondStage_eqD H hX L hw hn
     (ReflectionE1.correction cx) cy cx _ _ G s.basis _ w0v.2 hx2
-    (m.drop (measurementCount ((entryYAll L (-cy) ++ entryXNew L (pkW L) (-cx)) ++
+    (m.drop (measurementCount ((entryYAll L (-cy) ++ entryXNewC L (pkW L) (-cx)) ++
       StairConcreteAssembly.hostedEntryRest L)))
   refine ⟨pfx (measurementCount ((entryYAll L (-cy) ++ entryXNew L (pkW L) (-cx)) ++
     restEntry L)) [] ++ m2, ?_⟩
@@ -70766,6 +71081,46 @@ theorem hostedExitRest_controlD (hX : ExitSupportD) (k : Nat) :
   exact control_not_caller_image layout layout_widths layout_nodup q (hX k hq) he
 
 set_option maxHeartbeats 8000000 in
+open MappedCompressed in
+/-- C': the control wire is neither the X entry's walk carry (pool 722) nor its host (pool 302). -/
+theorem control_ne_c1541 : layout.control ≠ E1QubitPlacement.pmapR layout (base 1541) := by
+  intro e
+  have hp : E1QubitPlacement.pmapR layout (base 1541) ∈ layout.dialogPool := by
+    apply E1QubitPlacement.pmap_pool layout Baselines.layout_widths Baselines.layout_nodup _
+      StairSquareEntryR.base1541_S
+    · intro h
+      obtain ⟨j, hj, e2⟩ := List.mem_map.mp h
+      simp only [List.mem_range'_1] at hj
+      have := base_injective e2
+      omega
+    · intro e2
+      have := base_injective e2
+      omega
+  rw [← e] at hp
+  exact StairSquareFinal.control_not_pool hp
+
+open MappedCompressed in
+theorem control_ne_c302 : layout.control ≠ E1QubitPlacement.pmapR layout (base 302) := by
+  intro e
+  have hp := StairSquareEntryR.pool302
+  rw [← e] at hp
+  exact StairSquareFinal.control_not_pool hp
+
+open MappedCompressed in
+theorem entryXNewC_control (cx : Fp)
+    (h : layout.control ∉ wires (FlagEntry.entryXNew layout (FlagEntry.pkW layout) (-cx))) :
+    layout.control ∉ wires (FlagEntry.entryXNewC layout (FlagEntry.pkW layout) (-cx)) := by
+  intro hc
+  unfold FlagEntry.entryXNewC at hc
+  rw [renameProgram_support] at hc
+  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp hc
+  have ey : y = layout.control := by
+    apply (Equiv.swap (E1QubitPlacement.pmapR layout (base 1541))
+      (E1QubitPlacement.pmapR layout (base 302))).injective
+    rw [e, Equiv.swap_apply_of_ne_of_ne control_ne_c1541 control_ne_c302]
+  subst ey
+  exact h hy
+
 theorem hostedGeneric_controlD (hE : EntrySupportD) (hX : ExitSupportD) (cx cy : Fp) :
     layout.control ∉ wires (StairConcreteAssembly.hostedGeneric layout cx cy) := by
   have hg := ControlSupportDevelop.genericN_control cx cy
@@ -70773,7 +71128,7 @@ theorem hostedGeneric_controlD (hE : EntrySupportD) (hX : ExitSupportD) (cx cy :
     not_or] at hg
   simp only [StairConcreteAssembly.hostedGeneric, StairConcreteAssembly.hostedSecondStage,
     wires_append, Finset.mem_union, not_or]
-  exact ⟨⟨hg.1.1, hostedEntryRest_controlD hE⟩, ⟨⟨StairSquareFinal.square_control _ (List.Sublist.refl _) _, hostedExitRest_controlD hX _⟩, hg.2.2⟩⟩
+  exact ⟨⟨⟨hg.1.1.1, entryXNewC_control cx hg.1.1.2⟩, hostedEntryRest_controlD hE⟩, ⟨⟨StairSquareFinal.square_control _ (List.Sublist.refl _) _, hostedExitRest_controlD hX _⟩, hg.2.2⟩⟩
 
 set_option maxHeartbeats 8000000 in
 theorem hostedGenericBlock_controlD (hE : EntrySupportD) (hX : ExitSupportD) (cx cy : Fp) :
@@ -71320,15 +71675,15 @@ theorem entryTailPrefixV3_caller :
   simp only [wires_append, Finset.union_subset_iff, and_assoc]
   exact ⟨hostedGroupV3_caller true 0 1 84 (by omega) (by omega),
     fseg_caller 87 62 (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller true 11 85 5 (by omega) (by omega),
+    hostedGroupV3_caller true 12 85 5 (by omega) (by omega),
     fseg_caller 62 47 (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller true 20 90 3 (by omega) (by omega),
+    hostedGroupV3_caller true 21 90 3 (by omega) (by omega),
     fseg_caller 47 32 (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller true 28 93 3 (by omega) (by omega),
+    hostedGroupV3_caller true 29 93 3 (by omega) (by omega),
     fseg_caller 32 22 (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller true 34 96 2 (by omega) (by omega),
+    hostedGroupV3_caller true 35 96 2 (by omega) (by omega),
     fseg_caller 22 12 (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller true 39 98 2 (by omega) (by omega),
+    hostedGroupV3_caller true 40 98 2 (by omega) (by omega),
     forwardLastV3_caller⟩
 
 
@@ -71356,14 +71711,27 @@ theorem entryFieldHostedV3_caller :
       (fieldRename_caller _ entryLowPrefixV3_caller) glue_own.2.1) glue_own.1)
     (fieldRename_caller _ entryLowSuffixV3_caller)) glue_own.1) glue_own.2.1
 
+/-- C': the re-host exchange `base 1541 ↔ base 717` keeps the caller domain. -/
+theorem preserves_cHost : PreservesCaller (Equiv.swap (base 1541) (base 717)) :=
+  preserves_swap _ _ (base_mem_caller _ (by omega)) (base_mem_caller _ (by omega))
+
 /-- `EntrySupportD` on CANON v3. -/
 theorem entrySupportV3 : EntrySupportD := by
   show wires (StairHostsSchedule.entryKernel StairConcreteAssembly.checkpointPrimitives
     StairConcreteAssembly.hostPlan) ⊆ callerDomain
   unfold StairHostsSchedule.entryKernel
-  exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _
-    (phaseHost_caller _ firstPhaseV3_caller) entryFieldHostedV3_caller)
-    (phaseHost_caller _ lastPhase_false_own)
+  have fp := firstPhaseV3_caller
+  unfold StairSchedule.firstPhase at fp
+  rw [wires_append] at fp
+  exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _ (wires_sub_of_parts _ _
+    (phaseHost_caller _ (Finset.union_subset_left fp))
+    (phaseHost_caller _ (by
+      rw [StairHostsSchedule.cHost_eq]
+      exact rename_caller _ preserves_cHost _ (Finset.union_subset_right fp))))
+    entryFieldHostedV3_caller)
+    (phaseHost_caller _ (by
+      rw [StairHostsSchedule.cHost_eq]
+      exact rename_caller _ preserves_cHost _ lastPhase_false_own))
 
 /-! ## Multiplication kernel -/
 
@@ -71373,15 +71741,15 @@ theorem exitHeadSuffixV3_caller :
   unfold StairHostsSchedule.exitHeadSuffix
   simp only [wires_append, Finset.union_subset_iff, and_assoc]
   exact ⟨reverseLastV3_caller,
-    hostedGroupV3_caller false 39 98 2 (by omega) (by omega),
+    hostedGroupV3_caller false 40 98 2 (by omega) (by omega),
     rseg_caller 22 12 (by decide) (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller false 34 96 2 (by omega) (by omega),
+    hostedGroupV3_caller false 35 96 2 (by omega) (by omega),
     rseg_caller 32 22 (by decide) (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller false 28 93 3 (by omega) (by omega),
+    hostedGroupV3_caller false 29 93 3 (by omega) (by omega),
     rseg_caller 47 32 (by decide) (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller false 20 90 3 (by omega) (by omega),
+    hostedGroupV3_caller false 21 90 3 (by omega) (by omega),
     rseg_caller 62 47 (by decide) (by decide) (by decide) (by decide) (by decide),
-    hostedGroupV3_caller false 11 85 5 (by omega) (by omega),
+    hostedGroupV3_caller false 12 85 5 (by omega) (by omega),
     rseg_caller 87 62 (by decide) (by decide) (by decide) (by decide) (by decide),
     hostedGroupV3_caller false 0 1 84 (by omega) (by omega)⟩
 
@@ -71417,9 +71785,18 @@ theorem exitSupportV3 : ExitSupportD := by
   show wires (StairHostsSchedule.exitKernel StairConcreteAssembly.checkpointPrimitives
     StairConcreteAssembly.hostPlan k) ⊆ callerDomain
   unfold StairHostsSchedule.exitKernel
-  exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _
-    (phaseHost_caller _ (firstPhase_own false)) exitFieldHostedV3_caller)
-    (phaseHost_caller _ (lastXNV3_caller k))
+  have fp := firstPhase_own false
+  unfold Rolling1588TickGap.firstPhase at fp
+  rw [wires_append] at fp
+  exact wires_sub_of_parts _ _ (wires_sub_of_parts _ _ (wires_sub_of_parts _ _
+    (phaseHost_caller _ (Finset.union_subset_left fp))
+    (phaseHost_caller _ (by
+      rw [StairHostsSchedule.cHost_eq]
+      exact rename_caller _ preserves_cHost _ (Finset.union_subset_right fp))))
+    exitFieldHostedV3_caller)
+    (phaseHost_caller _ (by
+      rw [StairHostsSchedule.cHost_eq]
+      exact rename_caller _ preserves_cHost _ (lastXNV3_caller k)))
 
 /-- **Field 8** (`StairOpen.semantic_composition`) for the frozen v3 concrete
 assembly, from field 13 (`HostReplaySpec`, the original `HostReplay`) alone. -/
@@ -71523,15 +71900,15 @@ abbrev pr : StairSchedule.StairPrimitives := checkpointPrimitives
 
 /-- Kernel-level body of `hostedEntryRest` (argument of `wireFn2`). -/
 def entryInner : Program :=
-  renameProgram Rolling1588Lifetime.phaseHost (StairSchedule.stackForward6 pr) ++
+  renameProgram Rolling1588Lifetime.phaseHost (StairHostsSchedule.cHost (StairSchedule.stackForward6 pr)) ++
     StairHostsSchedule.entryFieldHosted pr hp ++
-    renameProgram Rolling1588Lifetime.phaseHost (InverseFive23.lastPhase15 false)
+    renameProgram Rolling1588Lifetime.phaseHost (StairHostsSchedule.cHost (InverseFive23.lastPhase15 false))
 
 /-- Kernel-level body of `hostedExitRest L k`. -/
 def exitInner (k : Nat) : Program :=
-  renameProgram Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase false) ++
+  renameProgram Rolling1588Lifetime.phaseHost (StairHostsSchedule.cHost (Rolling1588TickGap.tailPhase false)) ++
     StairHostsSchedule.exitFieldHosted pr hp ++
-    renameProgram Rolling1588Lifetime.phaseHost (StairHostsSchedule.lastXN pr hp k)
+    renameProgram Rolling1588Lifetime.phaseHost (StairHostsSchedule.cHost (StairHostsSchedule.lastXN pr hp k))
 
 theorem hostedEntryRest_eq :
     hostedEntryRest Baselines.layout = renameProgram (wireFn2 Baselines.layout) entryInner := rfl
@@ -71558,19 +71935,19 @@ structure OpenPieces (holes : List Wire) : Prop where
   /-- Record frame, generic block (`UG`); `square` = LT20 (overflowPad). -/
   entryY : ∀ c : Fp, PieceOK holes UG (ParityUniform.entryYAll Baselines.layout c)
   entryX : ∀ c : Fp,
-    PieceOK holes UG (FlagEntry.entryXNew Baselines.layout (FlagEntry.pkW Baselines.layout) c)
+    PieceOK holes UG (FlagEntry.entryXNewC Baselines.layout (FlagEntry.pkW Baselines.layout) c)
   square : ∀ k : Fp, PieceOK holes UG
     (StairSquareFinal.squareEntryHL StairSqLoopA.holes Baselines.layout k)
   exitY : ∀ c : Fp, PieceOK holes UG (ParityUniform.exitYAll Baselines.layout c)
   /-- Phase record walks (LT9: phaseHost moves phase work onto 720–722). -/
-  entryTicks : PieceOK holes PP (Rolling1588TickGap.forward true 1 424)
-  entryFirstPack : PieceOK holes PP pr.firstPack
-  entryLast : PieceOK holes PP (InverseFive23.lastPhase15 false)
-  exitTail : PieceOK holes PP (Rolling1588TickGap.tailPhase false)
-  exitFirstUnpack : PieceOK holes PP pr.firstUnpack
-  exitTicks : PieceOK holes PP (Rolling1588.reverse true 1 424)
+  entryTicks : PieceOK holes PP (StairHostsSchedule.cHost (Rolling1588TickGap.forward true 1 424))
+  entryFirstPack : PieceOK holes PP (StairHostsSchedule.cHost pr.firstPack)
+  entryLast : PieceOK holes PP (StairHostsSchedule.cHost (InverseFive23.lastPhase15 false))
+  exitTail : PieceOK holes PP (StairHostsSchedule.cHost (Rolling1588TickGap.tailPhase false))
+  exitFirstUnpack : PieceOK holes PP (StairHostsSchedule.cHost pr.firstUnpack)
+  exitTicks : PieceOK holes PP (StairHostsSchedule.cHost (Rolling1588.reverse true 1 424))
   /-- `x1N` / `kernelX` (LT9: x-flag `pkP = base 724`). -/
-  x1N : ∀ k : Nat, PieceOK holes PP (ParityXExitInverse23Kernel.x1N k)
+  x1N : ∀ k : Nat, PieceOK holes PP (StairHostsSchedule.cHost (ParityXExitInverse23Kernel.x1N k))
   /-- First packets on `hosts 87` (LT20). -/
   firstPacketEntry : PieceOK holes lowPlace
     (StairLoan.rebindMany StairSchedule.exclusiveRoles (hp.firstPacket true)
@@ -71736,15 +72113,15 @@ theorem entryTailPrefix_ok (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory
     ?_).append ?_).append ?_).append ?_).append ?_)
   · exact H.groups (0, 1, 84) (by decide)
   · exact forwardSegment_ok hsub 87 62 (by decide) (by decide) (by decide) pk.1
-  · exact H.groups (11, 85, 5) (by decide)
+  · exact H.groups (12, 85, 5) (by decide)
   · exact forwardSegment_ok hsub 62 47 (by decide) (by decide) (by decide) pk.2.1
-  · exact H.groups (20, 90, 3) (by decide)
+  · exact H.groups (21, 90, 3) (by decide)
   · exact forwardSegment_ok hsub 47 32 (by decide) (by decide) (by decide) pk.2.2.1
-  · exact H.groups (28, 93, 3) (by decide)
+  · exact H.groups (29, 93, 3) (by decide)
   · exact forwardSegment_ok hsub 32 22 (by decide) (by decide) (by decide) pk.2.2.2.1
-  · exact H.groups (34, 96, 2) (by decide)
+  · exact H.groups (35, 96, 2) (by decide)
   · exact forwardSegment_ok hsub 22 12 (by decide) (by decide) (by decide) pk.2.2.2.2
-  · exact H.groups (39, 98, 2) (by decide)
+  · exact H.groups (40, 98, 2) (by decide)
   · exact forwardLast_ok hsub
 
 theorem exitHeadSuffix_ok (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory.physicalHoles)
@@ -71755,19 +72132,19 @@ theorem exitHeadSuffix_ok (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory.
   refine (((((((((((PieceOK.append ?_ ?_).append ?_).append ?_).append ?_).append ?_).append ?_).append
     ?_).append ?_).append ?_).append ?_).append ?_)
   · exact reverseLast_ok hsub
-  · exact H.groupsExit (39, 98, 2) (by decide)
+  · exact H.groupsExit (40, 98, 2) (by decide)
   · exact reverseSegment_ok hsub 22 12 (by decide) (by decide) (by decide) (by decide)
       up.2.2.2.2
-  · exact H.groupsExit (34, 96, 2) (by decide)
+  · exact H.groupsExit (35, 96, 2) (by decide)
   · exact reverseSegment_ok hsub 32 22 (by decide) (by decide) (by decide) (by decide)
       up.2.2.2.1
-  · exact H.groupsExit (28, 93, 3) (by decide)
+  · exact H.groupsExit (29, 93, 3) (by decide)
   · exact reverseSegment_ok hsub 47 32 (by decide) (by decide) (by decide) (by decide)
       up.2.2.1
-  · exact H.groupsExit (20, 90, 3) (by decide)
+  · exact H.groupsExit (21, 90, 3) (by decide)
   · exact reverseSegment_ok hsub 62 47 (by decide) (by decide) (by decide) (by decide)
       up.2.1
-  · exact H.groupsExit (11, 85, 5) (by decide)
+  · exact H.groupsExit (12, 85, 5) (by decide)
   · exact reverseSegment_ok hsub 87 62 (by decide) (by decide) (by decide) (by decide) up.1
   · exact H.groupsExit (0, 1, 84) (by decide)
 
@@ -71779,6 +72156,7 @@ theorem entryInner_ok (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory.phys
   refine (PieceOK.append (PieceOK.append ?_ ?_) ?_)
   · apply ok_phase
     unfold StairSchedule.stackForward6
+    rw [StairHostsSchedule.cHost_append]
     exact H.entryTicks.append H.entryFirstPack
   · unfold StairHostsSchedule.entryFieldHosted
     refine ((((PieceOK.append ?_ ps).append hx).append ?_).append hx).append ps
@@ -71791,7 +72169,7 @@ theorem entryInner_ok (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory.phys
       refine (H.scratchClear.append ?_).append H.scratchUnprefix
       apply ok_borrow
       unfold StairHostsSchedule.entryTailSuffix
-      exact ((H.groups (41, 100, 2) (by decide)).append H.endpointDiv |>.append H.copyN).append
+      exact ((H.groups (42, 100, 2) (by decide)).append H.endpointDiv |>.append H.copyN).append
         H.canon
   · exact ok_phase H.entryLast
 
@@ -71810,13 +72188,14 @@ theorem exitInner_ok (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory.physi
       apply ok_borrow
       unfold StairHostsSchedule.exitHeadPrefix
       exact ((H.center.append H.copyN).append H.endpointMult).append
-        (H.groupsExit (41, 100, 2) (by decide))
+        (H.groupsExit (42, 100, 2) (by decide))
     · apply ok_field
       unfold StairHostsSchedule.exitLowSuffix
       exact ((H.scratchClear.append (ok_borrow (exitHeadSuffix_ok hsub H))).append
         H.scratchUnprefix).append H.firstPacketExit
   · apply ok_phase
     unfold StairHostsSchedule.lastXN StairSchedule.stackReverse15
+    rw [StairHostsSchedule.cHost_append, StairHostsSchedule.cHost_append]
     exact (H.exitFirstUnpack.append H.exitTicks).append (H.x1N k)
 
 /-- The whole v3 program, every point. -/
@@ -71912,17 +72291,17 @@ structure OpenPiecesRest (holes : List Wire) : Prop where
   borrowOut : ∀ C : Point, PieceOK holes U (ControlPointEncodingDevelop.borrowOut C)
   entryY : ∀ c : Fp, PieceOK holes UG (ParityUniform.entryYAll Baselines.layout c)
   entryX : ∀ c : Fp,
-    PieceOK holes UG (FlagEntry.entryXNew Baselines.layout (FlagEntry.pkW Baselines.layout) c)
+    PieceOK holes UG (FlagEntry.entryXNewC Baselines.layout (FlagEntry.pkW Baselines.layout) c)
   square : ∀ k : Fp, PieceOK holes UG
     (StairSquareFinal.squareEntryHL StairSqLoopA.holes Baselines.layout k)
   exitY : ∀ c : Fp, PieceOK holes UG (ParityUniform.exitYAll Baselines.layout c)
-  entryTicks : PieceOK holes PP (Rolling1588TickGap.forward true 1 424)
-  entryFirstPack : PieceOK holes PP pr.firstPack
-  exitFirstUnpack : PieceOK holes PP pr.firstUnpack
-  entryLast : PieceOK holes PP (InverseFive23.lastPhase15 false)
-  exitTail : PieceOK holes PP (Rolling1588TickGap.tailPhase false)
-  exitTicks : PieceOK holes PP (Rolling1588.reverse true 1 424)
-  x1N : ∀ k : Nat, PieceOK holes PP (ParityXExitInverse23Kernel.x1N k)
+  entryTicks : PieceOK holes PP (StairHostsSchedule.cHost (Rolling1588TickGap.forward true 1 424))
+  entryFirstPack : PieceOK holes PP (StairHostsSchedule.cHost pr.firstPack)
+  exitFirstUnpack : PieceOK holes PP (StairHostsSchedule.cHost pr.firstUnpack)
+  entryLast : PieceOK holes PP (StairHostsSchedule.cHost (InverseFive23.lastPhase15 false))
+  exitTail : PieceOK holes PP (StairHostsSchedule.cHost (Rolling1588TickGap.tailPhase false))
+  exitTicks : PieceOK holes PP (StairHostsSchedule.cHost (Rolling1588.reverse true 1 424))
+  x1N : ∀ k : Nat, PieceOK holes PP (StairHostsSchedule.cHost (ParityXExitInverse23Kernel.x1N k))
   firstPacketEntry : PieceOK holes lowPlace
     (StairLoan.rebindMany StairSchedule.exclusiveRoles (hp.firstPacket true)
       (Rolling1588.placedFirstPacket true))
@@ -72358,11 +72737,11 @@ so goodness is proved symbolically; only a dozen exceptional labels are evaluate
 
 /-- LT46 (replay budget): decided on the closed form (43 s → ≈ 2 s).  K4-B: symbolic on the
 affine intervals (`kbXI1` .. `kbXI5`), only the exceptional labels are evaluated. -/
-theorem xList_good : ∀ q ∈ xList, q ≠ base 721 → q ≠ base 722 →
+theorem xList_good : ∀ q ∈ xList, q ≠ base 721 → q ≠ base 722 → q ≠ base 1541 →
     Good39 (UG (E1QubitPlacement.pmapR Baselines.layout q)) := by
-  have key : ∀ q ∈ xList, q ≠ base 721 → q ≠ base 722 →
+  have key : ∀ q ∈ xList, q ≠ base 721 → q ≠ base 722 → q ≠ base 1541 →
       good39B (StairPlaceFast.kernelPlaceB (e1B q)) = true := by
-    intro q hq hq721 hq722
+    intro q hq hq721 hq722 hq1541
     unfold xList tSites at hq
     rcases List.mem_append.mp hq with hq | hq
     · rcases List.mem_append.mp hq with hq | hq
@@ -72382,7 +72761,10 @@ theorem xList_good : ∀ q ∈ xList, q ≠ base 721 → q ≠ base 722 →
         have hi' := List.mem_range'_1.mp hi
         rcases Nat.lt_or_ge i 1543 with h | h
         · have : i = 1540 ∨ i = 1541 ∨ i = 1542 := by omega
-          rcases this with rfl | rfl | rfl <;> decide
+          rcases this with rfl | rfl | rfl
+          · decide
+          · exact absurd rfl hq1541
+          · decide
         · rcases Nat.lt_or_ge i 1656 with h' | h'
           · exact kbXI4 i h h'
           · rcases Nat.lt_or_ge i 1657 with h'' | h''
@@ -72398,9 +72780,9 @@ theorem xList_good : ∀ q ∈ xList, q ≠ base 721 → q ≠ base 722 →
       · exact absurd rfl hq721
       · exact absurd rfl hq722
       · decide
-  intro q hq hq721 hq722
+  intro q hq hq721 hq722 hq1541
   rw [xplace_fast]
-  exact good39_of_B (key q hq hq721 hq722)
+  exact good39_of_B (key q hq hq721 hq722 hq1541)
 
 theorem pk_good : Good39 (UG (FlagEntry.pkW Baselines.layout)) := by
   -- K4-B (replay budget): on the closed form `ugB`
@@ -72412,11 +72794,13 @@ theorem pk_good : Good39 (UG (FlagEntry.pkW Baselines.layout)) := by
 theorem placed_good {P : Program} (h : wires P ⊆ (tSites base (base 2400)).toFinset) :
     ∀ x ∈ wires (renameProgram (E1QubitPlacement.pmapR Baselines.layout) P),
       x ≠ E1QubitPlacement.pmapR Baselines.layout (base 721) →
-      x ≠ E1QubitPlacement.pmapR Baselines.layout (base 722) → Good39 (UG x) := by
-  intro x hx hne hne2
+      x ≠ E1QubitPlacement.pmapR Baselines.layout (base 722) →
+      x ≠ E1QubitPlacement.pmapR Baselines.layout (base 1541) → Good39 (UG x) := by
+  intro x hx hne hne2 hne3
   rw [renameProgram_support] at hx
   obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
   exact xList_good y (List.mem_toFinset.mp (h hy)) (fun e => hne (e ▸ rfl)) (fun e => hne2 (e ▸ rfl))
+    (fun e => hne3 (e ▸ rfl))
 
 theorem swp_good : ∀ x ∈ wires (FlagEntry.swp (FlagEntry.pkW Baselines.layout)
     (E1QubitPlacement.pmapR Baselines.layout (base 514))), Good39 (UG x) := by
@@ -72424,6 +72808,7 @@ theorem swp_good : ∀ x ∈ wires (FlagEntry.swp (FlagEntry.pkW Baselines.layou
   have h514 : Good39 (UG (E1QubitPlacement.pmapR Baselines.layout (base 514))) :=
     xList_good _ (in_tSites base (base 2400) 514 (by omega))
       (fun e => by have := base_injective e; omega) (fun e => by have := base_injective e; omega)
+      (fun e => by have := base_injective e; omega)
   simp only [FlagEntry.swp, wires, Instr.wires, Finset.union_empty, Finset.mem_union,
     Finset.mem_insert, Finset.mem_singleton] at hx
   rcases hx with (rfl | rfl) | (rfl | rfl)
@@ -72442,24 +72827,29 @@ theorem ccx_tight : wires [Instr.CCX (base 2400) (base 770) (base 721)] ⊆
   · exact in_tSites _ _ 770 (by omega)
   · exact in_tSites _ _ 721 (by omega)
 
-/-- T723: the hosted X entry (the product bit on pool 300) avoids the 40 holes. -/
+/-- T723 / T724 / C': the hosted X entry (the product bit on pool 300, the flag on pool 301, the walk
+carry on pool 302) avoids the 42 holes. -/
 theorem entryX39 (c : Fp) : PieceOK StairCertificate.holes39 UG
-    (FlagEntry.entryXNew Baselines.layout (FlagEntry.pkW Baselines.layout) c) := by
+    (FlagEntry.entryXNewC Baselines.layout (FlagEntry.pkW Baselines.layout) c) := by
   have g0 : ∀ y ∈ wires (FlagEntry.entryXNew0 Baselines.layout (FlagEntry.pkW Baselines.layout) c),
       y ≠ E1QubitPlacement.pmapR Baselines.layout (base 721) →
-      y ≠ E1QubitPlacement.pmapR Baselines.layout (base 722) → Good39 (UG y) := by
-    intro y hy hne hne2
+      y ≠ E1QubitPlacement.pmapR Baselines.layout (base 722) →
+      y ≠ E1QubitPlacement.pmapR Baselines.layout (base 1541) → Good39 (UG y) := by
+    intro y hy hne hne2 hne3
     unfold FlagEntry.entryXNew0 at hy
     split_ifs at hy
     · rw [wires_append, Finset.mem_union] at hy
       rcases hy with hy | hy
       · exact swp_good y hy
-      · exact placed_good (tailX_tight base (base 2400) c.val) y hy hne hne2
+      · exact placed_good (tailX_tight base (base 2400) c.val) y hy hne hne2 hne3
     · rw [wires_append, wires_append, Finset.mem_union, Finset.mem_union] at hy
       rcases hy with hy | hy | hy
-      · exact placed_good ccx_tight y hy hne hne2
+      · exact placed_good ccx_tight y hy hne hne2 hne3
       · exact swp_good y hy
-      · exact placed_good (evenTail_tight c.val) y hy hne hne2
+      · exact placed_good (evenTail_tight c.val) y hy hne hne2 hne3
+  have h302 : Good39 (UG (E1QubitPlacement.pmapR Baselines.layout (base 302))) := by
+    rw [xplace_fast]
+    exact good39_of_B (by decide +kernel)
   have h300 : Good39 (UG (E1QubitPlacement.pmapR Baselines.layout (base 300))) := by
     rw [xplace_fast]
     exact good39_of_B (by decide +kernel)
@@ -72467,9 +72857,20 @@ theorem entryX39 (c : Fp) : PieceOK StairCertificate.holes39 UG
     rw [xplace_fast]
     exact good39_of_B (by decide +kernel)
   refine ok39_of_good (fun x hx => ?_)
-  unfold FlagEntry.entryXNew at hx
+  unfold FlagEntry.entryXNewC at hx
   rw [renameProgram_support] at hx
-  obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hx
+  obtain ⟨w, hw', rfl⟩ := Finset.mem_image.mp hx
+  by_cases g1 : w = E1QubitPlacement.pmapR Baselines.layout (base 1541)
+  · rw [g1, Equiv.swap_apply_left]
+    exact h302
+  by_cases g2 : w = E1QubitPlacement.pmapR Baselines.layout (base 302)
+  · exact absurd (g2 ▸ hw') (FlagEntry.host302_fresh Baselines.layout Baselines.layout_widths
+      Baselines.layout_nodup _ (FlagEntry.pk_ne_302 Baselines.layout Baselines.layout_widths
+        Baselines.layout_nodup) c)
+  rw [Equiv.swap_apply_of_ne_of_ne g1 g2]
+  unfold FlagEntry.entryXNew at hw'
+  rw [renameProgram_support] at hw'
+  obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hw'
   by_cases f1 : z = E1QubitPlacement.pmapR Baselines.layout (base 722)
   · rw [f1, Equiv.swap_apply_left]
     exact h301
@@ -72477,7 +72878,7 @@ theorem entryX39 (c : Fp) : PieceOK StairCertificate.holes39 UG
   · exact absurd (f2 ▸ hz) (FlagEntry.host301_fresh Baselines.layout Baselines.layout_widths
       Baselines.layout_nodup _ (FlagEntry.pk_ne_301 Baselines.layout Baselines.layout_widths
         Baselines.layout_nodup) c)
-  rw [Equiv.swap_apply_of_ne_of_ne f1 f2]
+  rw [Equiv.swap_apply_of_ne_of_ne f1 f2] at g1 ⊢
   rw [renameProgram_support] at hz
   obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hz
   by_cases e1 : y = E1QubitPlacement.pmapR Baselines.layout (base 721)
@@ -72487,8 +72888,8 @@ theorem entryX39 (c : Fp) : PieceOK StairCertificate.holes39 UG
     · exact absurd (e2 ▸ hy) (FlagEntry.host300_fresh Baselines.layout Baselines.layout_widths
         Baselines.layout_nodup _ (FlagEntry.pk_ne_300 Baselines.layout Baselines.layout_widths
           Baselines.layout_nodup) c)
-    · rw [Equiv.swap_apply_of_ne_of_ne e1 e2] at f1 ⊢
-      exact g0 y hy e1 f1
+    · rw [Equiv.swap_apply_of_ne_of_ne e1 e2] at f1 g1 ⊢
+      exact g0 y hy e1 f1 g1
 
 end ECDSAAdd.Entrant.StairSiteEasy
 
@@ -73209,18 +73610,64 @@ theorem kbTail15_ppi : PieceOK StairCertificate.holes39 PP
 
 /-! ## The six phase pieces -/
 
+/-- C': the terminal unpack labels other than `base 1541` are phase-good. -/
+theorem ok39_ppi_tail15 : ∀ x ∈ wires (renameProgram (OB5.sig 510)
+      (Rolling1588.unpackAtTick false 510 ++ InverseFive23.candidate15)), x ≠ base 1541 → PPI x := by
+  have hu : allSites (fun y => Nat.beq (OB5.sig 510 y) 1557 || kbPpiB (OB5.sig 510 y))
+      (Rolling1588.unpackAtTick false 510) = true := by
+    decide +kernel
+  have hc : StairTerminalV3.cand15Sites.all
+      (fun y => Nat.beq (OB5.sig 510 y) 1557 || kbPpiB (OB5.sig 510 y)) = true := by
+    decide +kernel
+  intro x hx hne
+  rw [renameProgram_support] at hx
+  obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
+  rw [wires_append, Finset.mem_union] at hy
+  have fin : (Nat.beq (OB5.sig 510 y) 1557 || kbPpiB (OB5.sig 510 y)) = true → PPI (OB5.sig 510 y) := by
+    intro t
+    rw [Bool.or_eq_true] at t
+    rcases t with t | t
+    · exact absurd (Nat.eq_of_beq_eq_true t) hne
+    · exact kbPpiB_ppi t
+  rcases hy with hy | hy
+  · exact fin (allSites_sound hu y hy)
+  · exact fin (List.all_eq_true.mp hc y (List.mem_toFinset.mp (StairTerminalV3.candidate15_support hy)))
 
+section
+/- Unifying the native support with the record's pool-nodup premise evaluates a 258-bit power;
+the native inverse programs and `wires` stay folded (as for `nativeInverse_ppi`). -/
+attribute [local irreducible] wires run FrontierEntry1591NativeH.inverse FrontierEntry1591Native.inverse
 
+set_option exponentiation.threshold 600 in
+set_option linter.constructorNameAsVariable false in
+/-- C': the record last phase never touches `base 717`. -/
+theorem last15_717 : base 717 ∉ wires (InverseFive23.lastPhase15 false) := by
+  have native := FrontierEntry1591Native.support base base_pool_nodup
+  have reverse : base 717 ∉ wires NewStackOB5.stackReverseT := fun h =>
+    int_717 (StackOB5.reverse_support (NewStackOB5.stackReverseT_subset h))
+  have raw : base 717 ∉ wires FrontierEntry1591Kernel.lastPhase := by
+    simp only [FrontierEntry1591Kernel.lastPhase, wires_append, Finset.mem_union, not_or]
+    exact ⟨clear_717_free, reverse, fun h => native_717_free (native.2 h)⟩
+  intro h
+  rcases Finset.mem_union.mp (InverseFive23.last_extra15 false h) with h | h
+  · exact raw (Rolling1588Lifetime.last_support_sub false h)
+  · exact absurd (Finset.mem_singleton.mp h) (by decide)
+
+end
 
 theorem entryLast39 :
-    PieceOK StairCertificate.holes39 PP (InverseFive23.lastPhase15 false) := by
+    PieceOK StairCertificate.holes39 PP
+      (StairHostsSchedule.cHost (InverseFive23.lastPhase15 false)) := by
+  refine ok39_cHost ?_ last15_717
   unfold InverseFive23.lastPhase15 InverseFive23.stackReverse15 InverseFive23.reverseTail15
-  refine PieceOK.append (PieceOK.append ?_ (PieceOK.append ?_ (PieceOK.append ?_ ?_))) ?_
-  · exact kbOk39_of_ppiAllB (by decide +kernel)
-  · exact kbOk39_of_ppiAllB (by decide +kernel)
-  · exact kbTail15_ppi
-  · exact ok39_of_ppi (reverse_ppi false 505 (by omega))
-  · exact ok39_of_ppi nativeInverse_ppi
+  intro x hx hne
+  simp only [wires_append, Finset.mem_union] at hx
+  rcases hx with (hx | hx | hx | hx) | hx
+  · exact ppiX_of_allB (by decide +kernel) x hx hne
+  · exact ppiX_of_allB (by decide +kernel) x hx hne
+  · exact ok39_ppi_tail15 x hx hne
+  · exact reverse_ppi false 505 (by omega) x hx hne
+  · exact nativeInverse_ppi x hx hne
 
 /-! ### The v3 first row (LT46, replay budget)
 
@@ -73240,18 +73687,26 @@ by `PieceOK.append`. -/
 
 
 
-theorem entryFirstPack39 : PieceOK StairCertificate.holes39 PP pr.firstPack := by
+theorem entryFirstPack39R : PieceOK StairCertificate.holes39 PP pr.firstPack := by
   show PieceOK StairCertificate.holes39 PP StairV3Primitives.firstPack
   unfold StairV3Primitives.firstPack
   exact PieceOK.append (PieceOK.append (PieceOK.append firstOrient39 firstPacket39) phaseBMove39)
     (phaseRows39 (StairPhysicalPrimitives.pack_rows 87 (by decide)))
 
-theorem exitFirstUnpack39 : PieceOK StairCertificate.holes39 PP pr.firstUnpack := by
+theorem exitFirstUnpack39R : PieceOK StairCertificate.holes39 PP pr.firstUnpack := by
   show PieceOK StairCertificate.holes39 PP StairV3Primitives.firstUnpack
   unfold StairV3Primitives.firstUnpack
   exact PieceOK.append (PieceOK.append (PieceOK.append
     (phaseRows39 (StairPhysicalPrimitives.unpack_rows 87 (by decide))) phaseBReturn39)
       firstUnpacket39) firstOrient39
+
+/-- C': the first row uses neither `base 1541` nor `base 717`, so the exchange keeps it. -/
+theorem entryFirstPack39 : PieceOK StairCertificate.holes39 PP (StairHostsSchedule.cHost pr.firstPack) :=
+  ok39_cHost_of entryFirstPack39R firstPack_717.2 firstPack_717.1
+
+theorem exitFirstUnpack39 :
+    PieceOK StairCertificate.holes39 PP (StairHostsSchedule.cHost pr.firstUnpack) :=
+  ok39_cHost_of exitFirstUnpack39R firstUnpack_717.2 firstUnpack_717.1
 
 end ECDSAAdd.Entrant.StairSiteEasy
 
@@ -73325,9 +73780,9 @@ theorem kbPi_id {x : Nat} (h : x < 527 ∨ (528 ≤ x ∧ x < 737) ∨ (742 ≤ 
 
 /-- The tail labels, placed by `pi`, are good phase labels (one cheap check, ≈ 1,000 labels).
 K4-B (replay budget): symbolic on the three label blocks (`kbPi_id`), five labels evaluated. -/
-theorem tSites_pi : ∀ q ∈ tSites base (base 2400), q ≠ base 721 → q ≠ base 722 →
+theorem tSites_pi : ∀ q ∈ tSites base (base 2400), q ≠ base 721 → q ≠ base 722 → q ≠ base 1541 →
     PPI (ParityXExitInverse23Kernel.pi q) := by
-  intro q hq hq721 hq722
+  intro q hq hq721 hq722 hq1541
   unfold tSites at hq
   rcases List.mem_append.mp hq with hq | hq
   · rcases List.mem_append.mp hq with hq | hq
@@ -73349,13 +73804,17 @@ theorem tSites_pi : ∀ q ∈ tSites base (base 2400), q ≠ base 721 → q ≠ 
     · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq
       have hi' := List.mem_range'_1.mp hi
       rcases Nat.lt_or_ge i 1797 with h | h
-      · rw [kbPi_id (x := base i)
+      · have hi1541 : i + 16 ≠ 1557 := fun e => hq1541 (by simp only [MappedCompressed.base]; omega)
+        rw [kbPi_id (x := base i)
           (Or.inr (Or.inr (Or.inl ⟨by simp only [MappedCompressed.base]; omega,
             by simp only [MappedCompressed.base]; omega⟩)))]
         unfold PPI
         simp only [MappedCompressed.base]
-        exact ⟨by omega, by omega,
-          Or.inr (Or.inr (by simp [StairCertificate.extraPPLx, StairCertificate.memB]))⟩
+        refine ⟨by omega, by omega, Or.inr (Or.inr ?_)⟩
+        simp only [StairCertificate.extraPPLx, StairCertificate.memB, Bool.or_false]
+        cases hb : Nat.beq (i + 16) 1557
+        · rfl
+        · exact absurd (Nat.eq_of_beq_eq_true hb) hi1541
       · obtain rfl : i = 1797 := by omega
         decide
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -73370,15 +73829,45 @@ evaluated (was ≈ 85 s of kernel time for the fixed leaves).  T723: every label
 product bit `base 721`. -/
 theorem exitMerge_piOK (k : Nat) :
     ∀ b ∈ wires (ExitMerge.program base (base 2400) k), b ≠ base 721 → b ≠ base 722 →
-      PPI (ParityXExitInverse23Kernel.pi b) :=
-  fun b hb hne hne2 =>
-    tSites_pi b (List.mem_toFinset.mp (exitMerge_tight base (base 2400) k hb)) hne hne2
+      b ≠ base 1541 → PPI (ParityXExitInverse23Kernel.pi b) :=
+  fun b hb hne hne2 h1541 =>
+    tSites_pi b (List.mem_toFinset.mp (exitMerge_tight base (base 2400) k hb)) hne hne2 h1541
 
-/-- T723: the hosted X exit (the product bit on `base 300`) avoids the 40 holes. -/
-theorem x1N39 (k : Nat) :
-    PieceOK StairCertificate.holes39 PP (ParityXExitInverse23Kernel.x1N k) := by
-  apply ok39_of_ppi
-  intro x hx
+/-- C': the hosted X exit never touches `base 717`. -/
+theorem x1N_717 (k : Nat) : base 717 ∉ wires (ParityXExitInverse23Kernel.x1N k) := by
+  have fx (a b : Wire) (ha : base 717 ≠ a) (hb : base 717 ≠ b) (P : Program) (hP : base 717 ∉ wires P) :
+      base 717 ∉ wires (renameProgram (Equiv.swap a b) P) := by
+    intro h
+    rw [renameProgram_support] at h
+    obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
+    have ey : y = base 717 := by
+      have := congrArg (Equiv.swap a b) e
+      rwa [Equiv.swap_apply_self, Equiv.swap_apply_of_ne_of_ne ha hb] at this
+    subst ey
+    exact hP hy
+  unfold ParityXExitInverse23Kernel.x1N
+  refine fx _ _ (by decide) (by decide) _ (fx _ _ (by decide) (by decide) _ ?_)
+  intro hy
+  unfold ParityXExitInverse23Kernel.x1N0 at hy
+  rw [renameProgram_support] at hy
+  obtain ⟨b, hb, e2⟩ := Finset.mem_image.mp hy
+  have hb717 : b = base 717 := by
+    apply ParityXExitInverse23Kernel.pi.injective
+    rw [e2, ParityXExitInverse23Kernel.pi_base]
+    rfl
+  subst hb717
+  unfold ParityXExit.programNX at hb
+  rw [wires_append, Finset.mem_union] at hb
+  rcases hb with hb | hb
+  · have t := exitMerge_tight base (base 2400) k
+      (ParityXExit.programAll_wires _ _ k (ParityXExit.prefix_sub _ _ k hb))
+    exact base717_not_tSites (List.mem_toFinset.mp t)
+  · simp [FlagEntry.swp, wires, Instr.wires, MappedCompressed.base] at hb
+
+/-- C': the hosted X exit's labels other than `base 1541` are phase-good. -/
+theorem x1N_ppiX (k : Nat) :
+    ∀ x ∈ wires (ParityXExitInverse23Kernel.x1N k), x ≠ base 1541 → PPI x := by
+  intro x hx hx1541
   unfold ParityXExitInverse23Kernel.x1N at hx
   rw [renameProgram_support] at hx
   obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hx
@@ -73389,7 +73878,7 @@ theorem x1N39 (k : Nat) :
     omega
   by_cases f2 : z = base 512
   · exact absurd (f2 ▸ hz) (ParityXExitInverse23Kernel.x1N_host_fresh512 k)
-  rw [Equiv.swap_apply_of_ne_of_ne f1 f2]
+  rw [Equiv.swap_apply_of_ne_of_ne f1 f2] at hx1541 ⊢
   rw [renameProgram_support] at hz
   obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hz
   by_cases e1 : y = base 723
@@ -73399,7 +73888,7 @@ theorem x1N39 (k : Nat) :
     omega
   · by_cases e2 : y = base 300
     · exact absurd (e2 ▸ hy) (ParityXExitInverse23Kernel.x1N0_host_fresh k)
-    · rw [Equiv.swap_apply_of_ne_of_ne e1 e2] at f1 ⊢
+    · rw [Equiv.swap_apply_of_ne_of_ne e1 e2] at f1 hx1541 ⊢
       unfold ParityXExitInverse23Kernel.x1N0 at hy
       rw [renameProgram_support] at hy
       obtain ⟨b, hb, rfl⟩ := Finset.mem_image.mp hy
@@ -73413,13 +73902,24 @@ theorem x1N39 (k : Nat) :
         apply f1
         rw [e, ParityXExitInverse23Kernel.pi_base]
         rfl
+      have hb1541 : b ≠ base 1541 := by
+        intro e
+        apply hx1541
+        rw [e, ParityXExitInverse23Kernel.pi_base]
+        rfl
       unfold ParityXExit.programNX at hb
       rw [wires_append, Finset.mem_union] at hb
       rcases hb with hb | hb
       · exact exitMerge_piOK k b
-          (ParityXExit.programAll_wires _ _ k (ParityXExit.prefix_sub _ _ k hb)) hb721 hb722
+          (ParityXExit.programAll_wires _ _ k (ParityXExit.prefix_sub _ _ k hb)) hb721 hb722 hb1541
       · have sw : PiOK (FlagEntry.swp (base 514) (base 1029)) := piOK_of_all (by decide +kernel)
         exact sw b hb
+
+/-- C': the hosted X exit with `base 1541` on `base 717` avoids the 42 holes. -/
+theorem x1N39 (k : Nat) :
+    PieceOK StairCertificate.holes39 PP
+      (StairHostsSchedule.cHost (ParityXExitInverse23Kernel.x1N k)) :=
+  ok39_cHost (x1N_ppiX k) (x1N_717 k)
 
 end ECDSAAdd.Entrant.StairSiteEasy
 
@@ -73474,7 +73974,7 @@ def outerGeneric (E : ControlledPointLayout → Program)
     (X : ControlledPointLayout → Nat → Program)
     (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   ((ParityUniform.entryYAll L (-cy) ++
-      FlagEntry.entryXNew L (FlagEntry.pkW L) (-cx)) ++
+      FlagEntry.entryXNewC L (FlagEntry.pkW L) (-cx)) ++
     E L) ++
     outerSecondStage X L (ReflectionE1.correction cx) cy cx
 
@@ -73528,7 +74028,7 @@ theorem outerGeneric_slots_le (E : ControlledPointLayout → Program)
   have hx := hX L cx.val
   have hq := squareEntryHL_slots_le StairSqLoopA.holes L (ReflectionE1.correction cx)
   simp only [outerGeneric, outerSecondStage, FlagExit.genericN,
-    FlagExit.secondStageN, gateSlots_append]
+    FlagExit.secondStageN, gateSlots_append, FlagEntry.entryXNewC_slots]
   omega
 
 theorem outerWrapper_slots_le (E : ControlledPointLayout → Program)
@@ -73746,7 +74246,7 @@ theorem v3WalkFacts : WalkFacts StairConcreteAssembly.checkpointPrimitives v3Cos
 /-- Exact slot overhead of the CANON v3 program over the record program. -/
 theorem slot_totals : ∀ C,
     gateSlots (StairConcreteAssembly.concreteAssembly.program C) ≤
-      gateSlots (AboveFieldPointDevelop.programQ C) + 316176 := by
+      gateSlots (AboveFieldPointDevelop.programQ C) + 325696 := by
   intro C
   have hc := slot_composition_of_rests StairConcreteAssembly.checkpointPrimitives
     StairConcreteAssembly.hostPlan v3Costs v3Boundary1806 v3WalkFacts
@@ -73944,7 +74444,7 @@ private theorem kbRGood_in {y a b : Nat} (hab : (4115 ≤ a ∧ b ≤ 4630) ∨ 
 
 private theorem kbRI1 (i : Nat) (h1 : 0 ≤ i) (h2 : i < 511) :
     (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || Nat.beq (pmB (base i)) 4839 ||
-      goodSqB (pmB (base i))) = true := by
+      Nat.beq (pmB (base i)) 4837 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = 4115 + i := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inl (by omega)),
@@ -73955,7 +74455,7 @@ private theorem kbRI1 (i : Nat) (h1 : 0 ≤ i) (h2 : i < 511) :
 
 private theorem kbRI2 (i : Nat) (h1 : 770 ≤ i) (h2 : i < 1026) :
     (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || Nat.beq (pmB (base i)) 4839 ||
-      goodSqB (pmB (base i))) = true := by
+      Nat.beq (pmB (base i)) 4837 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = i - 768 := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inr (Or.inl ⟨by omega, by omega⟩)),
@@ -73966,7 +74466,7 @@ private theorem kbRI2 (i : Nat) (h1 : 770 ≤ i) (h2 : i < 1026) :
 
 private theorem kbRI3 (i : Nat) (h1 : 1027 ≤ i) (h2 : i < 1285) :
     (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || Nat.beq (pmB (base i)) 4839 ||
-      goodSqB (pmB (base i))) = true := by
+      Nat.beq (pmB (base i)) 4837 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = 4115 + (i - 256) := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inr (Or.inr (Or.inl ⟨by omega, by omega⟩))),
@@ -73977,7 +74477,7 @@ private theorem kbRI3 (i : Nat) (h1 : 1027 ≤ i) (h2 : i < 1285) :
 
 private theorem kbRI4 (i : Nat) (h1 : 1543 ≤ i) (h2 : i < 1656) :
     (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || Nat.beq (pmB (base i)) 4839 ||
-      goodSqB (pmB (base i))) = true := by
+      Nat.beq (pmB (base i)) 4837 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = 4115 + (i - 256) := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inr (Or.inr (Or.inr (⟨by omega, by omega⟩)))),
@@ -73988,7 +74488,7 @@ private theorem kbRI4 (i : Nat) (h1 : 1543 ≤ i) (h2 : i < 1656) :
 
 private theorem kbRI5 (i : Nat) (h1 : 1657 ≤ i) (h2 : i < 1796) :
     (Nat.beq (pmB (base i)) 4840 || Nat.beq (pmB (base i)) 4838 || Nat.beq (pmB (base i)) 4839 ||
-      goodSqB (pmB (base i))) = true := by
+      Nat.beq (pmB (base i)) 4837 || goodSqB (pmB (base i))) = true := by
   have hp : pmB (base i) = 4115 + (i - 256) := by
     show StairPlaceFast.pwB (StairPlaceFast.swB 785 1813 (e1B (i + 16)) - 16) = _
     rw [kbRE1 (Or.inr (Or.inr (Or.inr (⟨by omega, by omega⟩)))),
@@ -74003,7 +74503,7 @@ private theorem kbRI5 (i : Nat) (h1 : 1657 ≤ i) (h2 : i < 1796) :
 private theorem entryR_sites_goodB :
     (E1Reflected.mS5 base (base 2400)).all
       (fun q => Nat.beq (pmB q) 4840 || Nat.beq (pmB q) 4838 || Nat.beq (pmB q) 4839 ||
-        goodSqB (pmB q)) = true := by
+        Nat.beq (pmB q) 4837 || goodSqB (pmB q)) = true := by
   rw [List.all_eq_true]
   intro q hq
   unfold E1Reflected.mS5 at hq
@@ -74046,7 +74546,7 @@ private theorem entryR_sites_goodB :
 
 theorem entryR_sites_good :
     ((E1Reflected.mS5 base (base 2400)).map (pmapR L0)).all
-      (fun y => y == hole725 || y == hole723 || y == hole724 || goodSq y) = true := by
+      (fun y => y == hole725 || y == hole723 || y == hole724 || y == hole722 || goodSq y) = true := by
   rw [List.all_eq_true]
   intro y hy
   obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hy
@@ -74054,10 +74554,14 @@ theorem entryR_sites_good :
   have h725 : hole725 = 4840 := StairHoleSupport.poolWire_eq 725 (by omega)
   have h723 : hole723 = 4838 := StairHoleSupport.poolWire_eq 723 (by omega)
   have h724 : hole724 = 4839 := StairHoleSupport.poolWire_eq 724 (by omega)
-  rw [Bool.or_eq_true, Bool.or_eq_true, Bool.or_eq_true] at h ⊢
-  rw [pmapR_fast, h725, h723, h724]
-  rcases h with ((e | e) | e) | e
-  · left; left; left
+  have h722 : hole722 = 4837 := StairHoleSupport.poolWire_eq 722 (by omega)
+  rw [Bool.or_eq_true, Bool.or_eq_true, Bool.or_eq_true, Bool.or_eq_true] at h ⊢
+  rw [pmapR_fast, h725, h723, h724, h722]
+  rcases h with (((e | e) | e) | e) | e
+  · left; left; left; left
+    rw [Nat.eq_of_beq_eq_true e]
+    rfl
+  · left; left; left; right
     rw [Nat.eq_of_beq_eq_true e]
     rfl
   · left; left; right
@@ -74084,12 +74588,16 @@ theorem entryRH_good (k : Fp) : ∀ x ∈ wires (entryRH k), goodSq x = true := 
     have e : pmapR L0 (base 301) = 4416 := by rw [pmapR_fast]; decide
     rw [e]
     exact goodSq_of_B (by decide +kernel)
+  have g302 : goodSq (pmapR L0 (base 302)) = true := by
+    have e : pmapR L0 (base 302) = 4417 := by rw [pmapR_fast]; decide
+    rw [e]
+    exact goodSq_of_B (by decide +kernel)
   intro x hx
   rcases Finset.mem_union.mp (sup hx) with h | h
   · obtain ⟨h1, h2⟩ := Finset.mem_sdiff.mp h
-    obtain ⟨n723, n724, hw⟩ := entryR2_wires k x h1
+    obtain ⟨n723, n724, n722, hw⟩ := entryR2_wires k x h1
     rw [pmapR_722] at n724
-    rcases hw with hw | rfl | rfl
+    rcases hw with hw | rfl | rfl | rfl
     · have hm := entryR_support k hw
       have t := List.all_eq_true.mp entryR_sites_good x (List.mem_toFinset.mp hm)
       have hne : x ≠ hole725 := by
@@ -74097,11 +74605,12 @@ theorem entryRH_good (k : Fp) : ∀ x ∈ wires (entryRH k), goodSq x = true := 
         apply h2
         rw [e]
         exact List.mem_toFinset.mpr (List.mem_singleton_self _)
-      rw [beq_false_of_ne hne, beq_false_of_ne n723, beq_false_of_ne n724, Bool.false_or, Bool.false_or,
-        Bool.false_or] at t
+      rw [beq_false_of_ne hne, beq_false_of_ne n723, beq_false_of_ne n724, beq_false_of_ne n722,
+        Bool.false_or, Bool.false_or, Bool.false_or, Bool.false_or] at t
       exact t
     · exact g300
     · exact g301
+    · exact g302
   · have hm : x ∈ hostsOf entryPairs := List.mem_toFinset.mp h
     simp only [hostsOf, entryPairs, List.map_cons, List.map_nil, List.mem_singleton] at hm
     subst hm
@@ -74302,7 +74811,7 @@ def hostGoodB (n : Nat) : Bool :=
     decide (StairSiteAvoidance.UG (placeFn (L0.core.poolWire n)) ∉ StairPhysicalLayout.oldHolesNat)
 
 
-theorem hosts_all : (List.range' 654 28).all hostGoodB = true := by
+theorem hosts_all : (List.range' 654 29).all hostGoodB = true := by
   rw [show hostGoodB = LT48K.hostGoodF from funext fun n => by
     simp only [hostGoodB, LT48K.hostGoodF, LT48K.pw_eq, LT48K.placeFn_eq, LT48K.UG_eq, LT48K.arena_dec]]
   decide +kernel
@@ -74483,7 +74992,7 @@ theorem bodyB_image_good (B : Program) (hsup : wires B ⊆ (G0 :: K0.wires).toFi
   rw [StairPhysicalLayout.recordArena_eq, StairPhysicalLayout.oldHoles_eq]
   exact t
 
-theorem host_good (n : Nat) (h1 : 654 ≤ n) (h2 : n < 682) :
+theorem host_good (n : Nat) (h1 : 654 ≤ n) (h2 : n < 683) :
     StairSiteAvoidance.UG (placeFn (L0.core.poolWire n)) ∈ StairHoleSupport.recordArena ∧
       StairSiteAvoidance.UG (placeFn (L0.core.poolWire n)) ∉ StairHoleSupport.oldHoles := by
   have t := List.all_eq_true.mp hosts_all n (by simp only [List.mem_range'_1]; omega)
@@ -74689,6 +75198,579 @@ end ECDSAAdd.Entrant.StairSiteOpenPieces
 end
 end Merge_StairSiteOpenPieces_at_Main
 
+/-! ### C′ (pool 722 → wire 4112): the C′ hosted kernels replay the record hosted kernels -/
+section Merge_CPrimeHost_at_Main
+
+/-!
+# C′ host replay
+
+The C′ kernels `StairHostsSchedule.entryKernel` / `exitKernel` differ from the record hosted kernels
+`entryKernel0` / `exitKernel0` only inside the walk phases, where the walk carry `base 1541` sits on
+`base 717` (physical 4112: `kernelPlace (base 717) = 4112`) instead of `base 722` (pool 722).  On every
+kernel input they run exactly as the record kernels, by the field-13 piece framework: two
+`slot phaseHost [base 1541] [base 717] _` pieces whose moved wires `base 722`, `base 717` are clean at
+the input, after the seed tick (stage-1 carry block), after the walk (`phaseRoles_clean`), right before the
+last phase (the field part never touches `base 722`; `base 717` keeps its kernel-end value since the last
+phase never touches it — the gate) and at the end (the record kernel's output equals the source off the
+arithmetic registers).
+-/
+
+section
+
+set_option autoImplicit false
+set_option maxHeartbeats 4000000
+set_option maxRecDepth 30000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+namespace ECDSAAdd.Entrant.CPrimeHost
+
+open ECDSAAdd Arithmetic MappedCompressed DirectSkywalk Secp256k1 BalancedField
+  OffsetBorrowedCanonical Rolling1588Lifetime StairField13V3 StairConcreteAssembly StairSiteEasy
+
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+theorem ph717 : phaseHost (base 717) = base 717 := by decide +kernel
+theorem ph1541 : phaseHost (base 1541) = base 722 := by decide +kernel
+
+/-- C': the division walk with its first pack never touches `base 717`. -/
+theorem stackForward6_717 :
+    base 717 ∉ wires (StairSchedule.stackForward6 checkpointPrimitives) := by
+  show base 717 ∉ wires (Rolling1588TickGap.forward true 1 424 ++ StairV3Primitives.firstPack)
+  rw [wires_append, Finset.mem_union, not_or]
+  exact ⟨tickGap_forward_717 true 424 (by omega), firstPack_717.1⟩
+theorem ph722 : phaseHost.symm (base 722) = base 1541 := by
+  rw [Equiv.symm_apply_eq, ph1541]
+
+/-- A wire fixed by a permutation that `P` does not use is not used by the renamed `P`. -/
+theorem rename_fixed_free (f : Equiv.Perm Wire) (P : Program) (q : Wire) (hf : f q = q)
+    (free : q ∉ wires P) : q ∉ wires (renameProgram f P) := by
+  rw [renameProgram_support]
+  intro used
+  obtain ⟨y, hy, eq⟩ := Finset.mem_image.mp used
+  have : y = q := f.injective (eq.trans hf.symm)
+  exact free (this ▸ hy)
+
+theorem native_717 : base 717 ∉ wires (FrontierEntry1591Native.forward base) :=
+  fun h => native_717_free ((FrontierEntry1591Native.support base base_pool_nodup).1 h)
+
+/-- The multiplication last phase never touches `base 717`. -/
+theorem lastXN_717 (k : Nat) : base 717 ∉ wires (renameProgram phaseHost
+    (StairHostsSchedule.lastXN checkpointPrimitives hostPlan k)) := by
+  apply rename_fixed_free _ _ _ ph717
+  show base 717 ∉ wires ((StairV3Primitives.firstUnpack ++ Rolling1588.reverse true 1 424) ++
+    ParityXExitInverse23Kernel.x1N k)
+  simp only [wires_append, Finset.mem_union, not_or]
+  exact ⟨⟨firstUnpack_717.1, reverse_717 true 424 (by omega)⟩, x1N_717 k⟩
+
+/-- The kernel source has the moved wires clean. -/
+theorem input_clean (i : Nat) (hi : i = 717 ∨ i = 722) {x y : Nat} {b : BasisState}
+    (input : SkywalkArithmeticInput base x y b) : b (base i) = false := by
+  rcases hi with rfl | rfl
+  all_goals
+    apply input.2.2
+    all_goals first
+      | exact arith_block_subset_shared base 0 1798 (by omega)
+          (DirectSkywalk.arith_mem base 0 1798 _ (by omega) (by omega))
+      | exact OwnPlusHost.not_block _ 770 256 (by omega)
+      | exact OwnPlusHost.not_block _ 2056 256 (by omega)
+
+/-- After the native seed tick the walk carry `base 1541` is clean (stage-1 carry block). -/
+theorem tick_1541 (hn : (skywalkSharedWires base).Nodup) (x y : Nat) (hx0 : 0 < x) (hx : x < p)
+    (s : State) (m : List Bool) (input : SkywalkArithmeticInput base x y s.basis) :
+    (run (FrontierEntry1591Native.forward base) m s).basis (base 1541) = false := by
+  have stage := FrontierEntry1591Native.caller_first_stageW base hn x y hx0 hx s m input
+  have fields := (W.compactSkywalkStage_fields_iff base _ 1 (by omega) base_pool_nodup _).mp stage
+  exact (regValue_zero _ _).mp fields.2.2.2.2.2.1 _ (by decide +kernel)
+
+/-! ## The record hosted kernels replay the record kernels -/
+
+structure HostedReplay0 (k : Nat) : Prop where
+  entry : ∀ s, EntryPre s → ∀ fresh old,
+    run (StairHostsSchedule.entryKernel0 checkpointPrimitives hostPlan) fresh s =
+      run InverseFiveEntry23.entryKernel15 old s
+  exit : ∀ s, ExitPre k s → ∀ fresh old,
+    run (StairHostsSchedule.exitKernel0 checkpointPrimitives hostPlan k) fresh s =
+      run (ParityXExitInverse23Kernel.kernelXN k) old s
+
+theorem hostedReplay0_of (host : StairCertificate.HostReplaySpec0 concreteAssembly)
+    (iface : ∀ k, StairSchedule.ReplayInterface concreteAssembly.primitives StairConcrete.bestLoans k
+      concreteAssembly.entryPre (concreteAssembly.exitPre k)) :
+    ∀ k, HostedReplay0 k := by
+  intro k
+  constructor
+  · intro s hs fresh old
+    exact (host.1 s hs fresh []).trans ((iface k).entry s hs [] old)
+  · intro s hs fresh old
+    exact (host.2 k s hs fresh []).trans ((iface k).exit s hs [] old)
+
+theorem exitKernel0_pw (H : ∀ k, HostedReplay0 k)
+    (k : Nat) (hk : k < p) (hn : (skywalkSharedWires base).Nodup)
+    (hlo : History5.HistoryAbove base)
+    (ho : ∀ q ∈ [base 2400, base 2409, base 2410], q ∉ skywalkSharedWires base)
+    (hf : MixedTranscriptReplayLayout base (base 2400) (base 2409) (base 2410)
+      (mixedTranscriptTape base))
+    (x : Nat) (Y : Fp) (hx0 : 0 < x) (hx : x < p) (s : State) (m : List Bool)
+    (input : SkywalkArithmeticInput base x Y.val s.basis)
+    (hg : s.basis (base 2409) = false) (hs : s.basis (base 2410) = false) :
+    run (StairHostsSchedule.exitKernel0 checkpointPrimitives hostPlan k) m s =
+      ParityEven.put (run (ParityXExitInverse23Kernel.kernelX k) m s)
+        ParityXExitInverse23Kernel.pkP (s.basis (base 2400) && decide (k < x)) := by
+  have frame : ExitFrame k s :=
+    { k_lt := hk, sharedNodup := hn, historyAbove := hlo, selectorsAway := ho,
+      transcript := hf, x := x, Y := Y, x_pos := hx0, x_lt := hx,
+      input := input, selectorG_zero := hg, selectorS_zero := hs }
+  rw [(H k).exit s ⟨frame⟩ m m]
+  exact ParityXExitInverse23Kernel.kernelXN_pw k hk hn hlo ho hf x Y hx0 hx s m
+    input hg hs
+
+/-- End of the record hosted division kernel: the moved wires are back to the source value `0`. -/
+theorem entryKernel0_end (H : ∀ k, HostedReplay0 k) (s : State) (hs : EntryPre s) (m : List Bool)
+    (i : Nat) (hi : i = 717 ∨ i = 722) :
+    (run (StairHostsSchedule.entryKernel0 checkpointPrimitives hostPlan) m s).basis (base i) = false := by
+  obtain ⟨f⟩ := hs
+  rw [(H 0).entry s ⟨f⟩ m m]
+  have h := InverseFiveEntry23.entry_correct15 f.sharedNodup f.historyAbove
+    f.selectorsAway f.transcript f.x f.Y f.x_pos f.x_lt f.source s m f.input
+    f.selectorG_zero f.selectorS_zero f.phase f.outsideNumerator f.numerator
+  dsimp only at h
+  rw [h.2.2 _ (OwnPlusHost.not_block _ 2056 256 (by omega))]
+  exact input_clean i hi f.input
+
+/-- End of the record hosted multiplication kernel: the moved wires are back to `0`. -/
+theorem exitKernel0_end (H : ∀ k, HostedReplay0 k) (k : Nat) (s : State) (hs : ExitPre k s)
+    (m : List Bool) (i : Nat) (hi : i = 717 ∨ i = 722) :
+    (run (StairHostsSchedule.exitKernel0 checkpointPrimitives hostPlan k) m s).basis (base i) =
+      false := by
+  obtain ⟨f⟩ := hs
+  rw [exitKernel0_pw H k f.k_lt f.sharedNodup f.historyAbove f.selectorsAway
+    f.transcript f.x f.Y f.x_pos f.x_lt s m f.input f.selectorG_zero f.selectorS_zero]
+  have h := ParityXExitInverse23Kernel.kernelX_correct k f.k_lt f.sharedNodup f.historyAbove
+    f.selectorsAway f.transcript f.x f.Y f.x_pos f.x_lt s m f.input f.selectorG_zero
+    f.selectorS_zero
+  dsimp only at h
+  have ne : base i ≠ ParityXExitInverse23Kernel.pkP := by
+    rcases hi with rfl | rfl <;> decide
+  simp only [ParityEven.put, writeBit, Function.update_apply, if_neg ne]
+  rw [h.2.2.2 _ (OwnPlusHost.not_block _ 2056 256 (by omega))
+    (OwnPlusHost.not_block _ 770 256 (by omega))]
+  exact input_clean i hi f.input
+
+/-- **Gate, division**: `base 717` (4112) is clean right before the last phase. -/
+theorem entryCut24_717 (H : ∀ k, HostedReplay0 k) (s : State) (hs : EntryPre s) (m : List Bool) :
+    (run (renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives) ++
+        StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan) m s).basis
+      (base 717) = false := by
+  have hend := entryKernel0_end H s hs m 717 (Or.inl rfl)
+  have e : StairHostsSchedule.entryKernel0 checkpointPrimitives hostPlan =
+      (renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives) ++
+        StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan) ++
+      renameProgram phaseHost (InverseFive23.lastPhase15 false) := rfl
+  rw [e, run_append, run_preserves_outside _ _ _ _
+    (rename_fixed_free _ _ _ ph717 last15_717), run_take] at hend
+  exact hend
+
+/-- **Gate, multiplication**: `base 717` (4112) is clean right before the last phase. -/
+theorem exitCut24_717 (H : ∀ k, HostedReplay0 k) (k : Nat) (s : State) (hs : ExitPre k s)
+    (m : List Bool) :
+    (run (renameProgram phaseHost (Rolling1588TickGap.firstPhase false) ++
+        StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan) m s).basis
+      (base 717) = false := by
+  have hend := exitKernel0_end H k s hs m 717 (Or.inl rfl)
+  have e : StairHostsSchedule.exitKernel0 checkpointPrimitives hostPlan k =
+      (renameProgram phaseHost (Rolling1588TickGap.firstPhase false) ++
+        StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan) ++
+      renameProgram phaseHost (StairHostsSchedule.lastXN checkpointPrimitives hostPlan k) := rfl
+  rw [e, run_append, run_preserves_outside _ _ _ _ (lastXN_717 k), run_take] at hend
+  exact hend
+
+theorem entry_moved_zero {t : State} (F : EntryFrame t) :
+    t.basis (base 722) = false ∧ t.basis (base 717) = false :=
+  ⟨StairField13V3Clean.entry_zero F 722 (by omega) (by omega) (by omega),
+    StairField13V3Clean.entry_zero F 717 (by omega) (by omega) (by omega)⟩
+
+theorem exit_moved_zero {k : Nat} {t : State} (F : ExitFrame k t) :
+    t.basis (base 722) = false ∧ t.basis (base 717) = false :=
+  ⟨StairField13V3Clean.exit_zero F 722 (by omega) (by omega) (by omega),
+    StairField13V3Clean.exit_zero F 717 (by omega) (by omega) (by omega)⟩
+
+/-! ## The bridge piece lists -/
+
+theorem slot_moved (P : Program) :
+    (slot phaseHost [base 1541] [base 717] P).moved = [base 722, base 717] := by
+  show ([base 1541] ++ [base 717]).map phaseHost = [base 722, base 717]
+  simp only [List.singleton_append, List.map_cons, List.map_nil, ph1541, ph717]
+
+theorem cuts_commons (pre : State → Prop) :
+    ∀ (cs : List Program) (X : Program) (rest : List Piece),
+      Cuts pre (X ++ cs.flatten) rest → Cuts pre X (cs.map common ++ rest)
+  | [], X, rest, h => by simpa using h
+  | c :: cs, X, rest, h => by
+    refine ⟨cutClean_nil _ _, cutClean_nil _ _, ?_⟩
+    apply cuts_commons pre cs (X ++ c) rest
+    simpa [List.append_assoc] using h
+
+/-- The 23 hosted field pieces of the record division kernel. -/
+def entryMid (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) : List Program :=
+  (((entryPieces p h).drop 1).take 23).map Piece.H
+
+theorem entryPieces_split (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) :
+    entryPieces p h = common (renameProgram phaseHost (StairSchedule.firstPhase p)) ::
+      ((((entryPieces p h).drop 1).take 23) ++
+        [common (renameProgram phaseHost (InverseFive23.lastPhase15 false))]) := rfl
+
+theorem entryMid_flatten (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) :
+    (entryMid p h).flatten = StairHostsSchedule.entryFieldHosted p h := by
+  have e := entryPieces_hosted p h
+  rw [entryPieces_split] at e
+  simp only [List.map_cons, List.map_append, List.map_nil, List.flatten_cons, List.flatten_append,
+    List.flatten_nil, List.append_nil, common] at e
+  unfold StairHostsSchedule.entryKernel0 at e
+  have e2 : renameProgram phaseHost (StairSchedule.firstPhase p) ++
+      (((((entryPieces p h).drop 1).take 23).map Piece.H).flatten ++
+        renameProgram phaseHost (InverseFive23.lastPhase15 false)) =
+      renameProgram phaseHost (StairSchedule.firstPhase p) ++
+      (StairHostsSchedule.entryFieldHosted p h ++
+        renameProgram phaseHost (InverseFive23.lastPhase15 false)) := by
+    simpa only [List.append_assoc] using e
+  exact List.append_cancel_right (List.append_cancel_left e2)
+
+def bridgeEntry (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) : List Piece :=
+  common (renameProgram phaseHost (FrontierEntry1591Native.forward base)) ::
+    slot phaseHost [base 1541] [base 717] (StairSchedule.stackForward6 p) ::
+      ((entryMid p h).map common ++
+        [slot phaseHost [base 1541] [base 717] (InverseFive23.lastPhase15 false)])
+
+theorem bridgeEntry_H (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) :
+    ((bridgeEntry p h).map Piece.H).flatten = StairHostsSchedule.entryKernel p h := by
+  have hc : ((entryMid p h).map common).map Piece.H = entryMid p h := by
+    rw [List.map_map]
+    exact List.map_id' _
+  simp only [bridgeEntry, StairHostsSchedule.entryKernel, StairHostsSchedule.cHost,
+    List.map_cons, List.map_append, List.map_nil,
+    List.flatten_cons, List.flatten_append, List.flatten_nil, hc, entryMid_flatten, common, slot,
+    List.append_nil, List.append_assoc]
+
+theorem bridgeEntry_L (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) :
+    ((bridgeEntry p h).map Piece.L).flatten = StairHostsSchedule.entryKernel0 p h := by
+  have hc : ((entryMid p h).map common).map Piece.L = entryMid p h := by
+    rw [List.map_map]
+    exact List.map_id' _
+  simp only [bridgeEntry, StairHostsSchedule.entryKernel0, StairSchedule.firstPhase, rename_append,
+    List.map_cons, List.map_append, List.map_nil, List.flatten_cons, List.flatten_append,
+    List.flatten_nil, hc, entryMid_flatten, common, slot, List.append_nil, List.append_assoc]
+
+theorem bridgeEntry_local (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) :
+    ∀ pc ∈ bridgeEntry p h, pc.Local := by
+  intro pc hpc
+  simp only [bridgeEntry, List.mem_cons, List.mem_append, List.mem_map, List.not_mem_nil,
+    or_false] at hpc
+  rcases hpc with rfl | rfl | ⟨q, -, rfl⟩ | rfl
+  · exact common_local _
+  · exact slot_local _ phaseHost.injective _ _ _
+  · exact common_local _
+  · exact slot_local _ phaseHost.injective _ _ _
+
+/-- **Bridge, division**: on every kernel input the C′ kernel runs exactly as the record hosted
+kernel (same tape). -/
+theorem entryKernel_run_eq (H : ∀ k, HostedReplay0 k)
+    (hF : base 722 ∉ wires (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan))
+    (s : State) (hs : EntryPre s) (m : List Bool) :
+    run (StairHostsSchedule.entryKernel checkpointPrimitives hostPlan) m s =
+      run (StairHostsSchedule.entryKernel0 checkpointPrimitives hostPlan) m s := by
+  rw [← bridgeEntry_H, ← bridgeEntry_L]
+  have hT717 : base 717 ∉ wires (renameProgram phaseHost (FrontierEntry1591Native.forward base)) :=
+    rename_fixed_free _ _ _ ph717 native_717
+  have hSF717 : base 717 ∉ wires (renameProgram phaseHost
+      (StairSchedule.stackForward6 checkpointPrimitives)) :=
+    rename_fixed_free _ _ _ ph717 stackForward6_717
+  have c1 : CutClean EntryPre (renameProgram phaseHost (FrontierEntry1591Native.forward base))
+      [base 722, base 717] := by
+    intro t ht r q hq
+    obtain ⟨F⟩ := ht
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · rw [StairField13V3Clean.rename_basis phaseHost _ r t (StairField13V3Clean.pull_phaseHost_entry F),
+        ph722]
+      exact tick_1541 F.sharedNodup F.x _ F.x_pos F.x_lt t r (StairField13V3Clean.entryInput F)
+    · rw [run_preserves_outside _ _ _ _ hT717]
+      exact (entry_moved_zero F).2
+  have e1 : renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (StairSchedule.stackForward6 checkpointPrimitives) =
+      cut (entryPieces checkpointPrimitives hostPlan) 1 := by
+    have t1 : List.take 1 (entryPieces checkpointPrimitives hostPlan) =
+        [common (renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives))] := rfl
+    simp only [cut, t1, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
+      List.append_nil, common, StairSchedule.firstPhase, rename_append]
+  have c2 : CutClean EntryPre (renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (StairSchedule.stackForward6 checkpointPrimitives))
+      [base 722, base 717] := by
+    intro t ht r q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · rw [e1]
+      have hr := StairField13V3Clean.phaseRoles_clean t ht r (StairField13V3.fieldMap (base 722))
+        (List.mem_map.mpr ⟨base 722, by decide, rfl⟩)
+      rwa [StairField13V3Clean.chk_fieldMap_fix _ (by decide)] at hr
+    · rw [run_append, run_preserves_outside _ _ _ _ hSF717]
+      exact c1 t ht _ _ (by simp)
+  have e2 : renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (StairSchedule.stackForward6 checkpointPrimitives) ++
+      StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan =
+      renameProgram phaseHost (StairSchedule.firstPhase checkpointPrimitives) ++
+        StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan := by
+    rw [← rename_append]
+    rfl
+  have c25 : CutClean EntryPre (renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (StairSchedule.stackForward6 checkpointPrimitives) ++
+      StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan) [base 722, base 717] := by
+    intro t ht r q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · rw [run_append, run_preserves_outside _ _ _ _ hF]
+      exact c2 t ht _ _ (by simp)
+    · rw [e2]
+      exact entryCut24_717 H t ht r
+  have e3 : renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (StairSchedule.stackForward6 checkpointPrimitives) ++
+      StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan ++
+      renameProgram phaseHost (InverseFive23.lastPhase15 false) =
+      StairHostsSchedule.entryKernel0 checkpointPrimitives hostPlan := by
+    rw [e2]
+    rfl
+  have c26 : CutClean EntryPre (renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (StairSchedule.stackForward6 checkpointPrimitives) ++
+      StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan ++
+      renameProgram phaseHost (InverseFive23.lastPhase15 false)) [base 722, base 717] := by
+    intro t ht r q hq
+    rw [e3]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact entryKernel0_end H t ht r 722 (Or.inr rfl)
+    · exact entryKernel0_end H t ht r 717 (Or.inl rfl)
+  have cuts : Cuts EntryPre [] (bridgeEntry checkpointPrimitives hostPlan) := by
+    refine ⟨cutClean_nil _ _, cutClean_nil _ _, ?_⟩
+    refine ⟨?_, ?_, ?_⟩
+    · rw [slot_moved]
+      exact c1
+    · rw [slot_moved]
+      exact c2
+    · apply cuts_commons
+      refine ⟨?_, ?_, trivial⟩
+      · rw [slot_moved, entryMid_flatten]
+        exact c25
+      · rw [slot_moved, entryMid_flatten]
+        exact c26
+  have e := run_eq_of_cuts EntryPre (bridgeEntry checkpointPrimitives hostPlan) []
+    (bridgeEntry_local _ _) cuts s hs m
+  simpa only [List.nil_append] using e
+
+/-- The 23 hosted field pieces of the record multiplication kernel. -/
+def exitMid (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) (k : Nat) :
+    List Program :=
+  (((exitPieces p h k).drop 1).take 23).map Piece.H
+
+theorem exitPieces_split (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan)
+    (k : Nat) :
+    exitPieces p h k = common (renameProgram phaseHost (Rolling1588TickGap.firstPhase false)) ::
+      ((((exitPieces p h k).drop 1).take 23) ++ [lastXNPiece p h k]) := rfl
+
+theorem exitMid_flatten (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan)
+    (k : Nat) : (exitMid p h k).flatten = StairHostsSchedule.exitFieldHosted p h := by
+  have e := exitPieces_hosted p h k
+  rw [exitPieces_split] at e
+  simp only [List.map_cons, List.map_append, List.map_nil, List.flatten_cons, List.flatten_append,
+    List.flatten_nil, List.append_nil, common, lastXNPiece] at e
+  unfold StairHostsSchedule.exitKernel0 at e
+  have e2 : renameProgram phaseHost (Rolling1588TickGap.firstPhase false) ++
+      (((((exitPieces p h k).drop 1).take 23).map Piece.H).flatten ++
+        renameProgram phaseHost (StairHostsSchedule.lastXN p h k)) =
+      renameProgram phaseHost (Rolling1588TickGap.firstPhase false) ++
+      (StairHostsSchedule.exitFieldHosted p h ++
+        renameProgram phaseHost (StairHostsSchedule.lastXN p h k)) := by
+    simpa only [List.append_assoc] using e
+  exact List.append_cancel_right (List.append_cancel_left e2)
+
+def bridgeExit (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) (k : Nat) :
+    List Piece :=
+  common (renameProgram phaseHost (FrontierEntry1591Native.forward base)) ::
+    slot phaseHost [base 1541] [base 717] (Rolling1588TickGap.tailPhase false) ::
+      ((exitMid p h k).map common ++
+        [slot phaseHost [base 1541] [base 717] (StairHostsSchedule.lastXN p h k)])
+
+theorem bridgeExit_H (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) (k : Nat) :
+    ((bridgeExit p h k).map Piece.H).flatten = StairHostsSchedule.exitKernel p h k := by
+  have hc : ((exitMid p h k).map common).map Piece.H = exitMid p h k := by
+    rw [List.map_map]
+    exact List.map_id' _
+  simp only [bridgeExit, StairHostsSchedule.exitKernel, StairHostsSchedule.cHost,
+    List.map_cons, List.map_append, List.map_nil,
+    List.flatten_cons, List.flatten_append, List.flatten_nil, hc, exitMid_flatten, common, slot,
+    List.append_nil, List.append_assoc]
+
+theorem bridgeExit_L (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan) (k : Nat) :
+    ((bridgeExit p h k).map Piece.L).flatten = StairHostsSchedule.exitKernel0 p h k := by
+  have hc : ((exitMid p h k).map common).map Piece.L = exitMid p h k := by
+    rw [List.map_map]
+    exact List.map_id' _
+  simp only [bridgeExit, StairHostsSchedule.exitKernel0, Rolling1588TickGap.firstPhase, rename_append,
+    List.map_cons, List.map_append, List.map_nil, List.flatten_cons, List.flatten_append,
+    List.flatten_nil, hc, exitMid_flatten, common, slot, List.append_nil, List.append_assoc]
+
+theorem bridgeExit_local (p : StairSchedule.StairPrimitives) (h : StairHostsSchedule.HostPlan)
+    (k : Nat) : ∀ pc ∈ bridgeExit p h k, pc.Local := by
+  intro pc hpc
+  simp only [bridgeExit, List.mem_cons, List.mem_append, List.mem_map, List.not_mem_nil,
+    or_false] at hpc
+  rcases hpc with rfl | rfl | ⟨q, -, rfl⟩ | rfl
+  · exact common_local _
+  · exact slot_local _ phaseHost.injective _ _ _
+  · exact common_local _
+  · exact slot_local _ phaseHost.injective _ _ _
+
+/-- **Bridge, multiplication**: on every kernel input the C′ kernel runs exactly as the record
+hosted kernel (same tape). -/
+theorem exitKernel_run_eq (H : ∀ k, HostedReplay0 k)
+    (hF : base 722 ∉ wires (StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan))
+    (k : Nat) (s : State) (hs : ExitPre k s) (m : List Bool) :
+    run (StairHostsSchedule.exitKernel checkpointPrimitives hostPlan k) m s =
+      run (StairHostsSchedule.exitKernel0 checkpointPrimitives hostPlan k) m s := by
+  rw [← bridgeExit_H, ← bridgeExit_L]
+  have hT717 : base 717 ∉ wires (renameProgram phaseHost (FrontierEntry1591Native.forward base)) :=
+    rename_fixed_free _ _ _ ph717 native_717
+  have hTP717 : base 717 ∉ wires (renameProgram phaseHost (Rolling1588TickGap.tailPhase false)) :=
+    rename_fixed_free _ _ _ ph717 tailPhase_717
+  have c1 : CutClean (ExitPre k) (renameProgram phaseHost (FrontierEntry1591Native.forward base))
+      [base 722, base 717] := by
+    intro t ht r q hq
+    obtain ⟨F⟩ := ht
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · rw [StairField13V3Clean.rename_basis phaseHost _ r t (StairField13V3Clean.pull_phaseHost_exit F),
+        ph722]
+      exact tick_1541 F.sharedNodup F.x _ F.x_pos F.x_lt t r F.input
+    · rw [run_preserves_outside _ _ _ _ hT717]
+      exact (exit_moved_zero F).2
+  have e1 : renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (Rolling1588TickGap.tailPhase false) =
+      cut (exitPieces checkpointPrimitives hostPlan k) 1 := by
+    have t1 : List.take 1 (exitPieces checkpointPrimitives hostPlan k) =
+        [common (renameProgram phaseHost (Rolling1588TickGap.firstPhase false))] := rfl
+    simp only [cut, t1, List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil,
+      List.append_nil, common, Rolling1588TickGap.firstPhase, rename_append]
+  have c2 : CutClean (ExitPre k) (renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (Rolling1588TickGap.tailPhase false)) [base 722, base 717] := by
+    intro t ht r q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · rw [e1]
+      have hr := StairField13V3Clean.phaseRolesX_clean k t ht r
+        (StairField13V3.fieldMap (base 722)) (List.mem_map.mpr ⟨base 722, by decide, rfl⟩)
+      rwa [StairField13V3Clean.chk_fieldMap_fix _ (by decide)] at hr
+    · rw [run_append, run_preserves_outside _ _ _ _ hTP717]
+      exact c1 t ht _ _ (by simp)
+  have e2 : renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (Rolling1588TickGap.tailPhase false) ++
+      StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan =
+      renameProgram phaseHost (Rolling1588TickGap.firstPhase false) ++
+        StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan := by
+    rw [← rename_append]
+    rfl
+  have c25 : CutClean (ExitPre k) (renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (Rolling1588TickGap.tailPhase false) ++
+      StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan) [base 722, base 717] := by
+    intro t ht r q hq
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · rw [run_append, run_preserves_outside _ _ _ _ hF]
+      exact c2 t ht _ _ (by simp)
+    · rw [e2]
+      exact exitCut24_717 H k t ht r
+  have e3 : renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (Rolling1588TickGap.tailPhase false) ++
+      StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan ++
+      renameProgram phaseHost (StairHostsSchedule.lastXN checkpointPrimitives hostPlan k) =
+      StairHostsSchedule.exitKernel0 checkpointPrimitives hostPlan k := by
+    rw [e2]
+    rfl
+  have c26 : CutClean (ExitPre k) (renameProgram phaseHost (FrontierEntry1591Native.forward base) ++
+      renameProgram phaseHost (Rolling1588TickGap.tailPhase false) ++
+      StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan ++
+      renameProgram phaseHost (StairHostsSchedule.lastXN checkpointPrimitives hostPlan k))
+      [base 722, base 717] := by
+    intro t ht r q hq
+    rw [e3]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact exitKernel0_end H k t ht r 722 (Or.inr rfl)
+    · exact exitKernel0_end H k t ht r 717 (Or.inl rfl)
+  have cuts : Cuts (ExitPre k) [] (bridgeExit checkpointPrimitives hostPlan k) := by
+    refine ⟨cutClean_nil _ _, cutClean_nil _ _, ?_⟩
+    refine ⟨?_, ?_, ?_⟩
+    · rw [slot_moved]
+      exact c1
+    · rw [slot_moved]
+      exact c2
+    · apply cuts_commons
+      refine ⟨?_, ?_, trivial⟩
+      · rw [slot_moved, exitMid_flatten]
+        exact c25
+      · rw [slot_moved, exitMid_flatten]
+        exact c26
+  have e := run_eq_of_cuts (ExitPre k) (bridgeExit checkpointPrimitives hostPlan k) []
+    (bridgeExit_local _ _ _) cuts s hs m
+  simpa only [List.nil_append] using e
+
+/-! ## The field parts avoid `base 722` (field 12: pool 722 is a hole) -/
+
+theorem kp722 : StairSiteAvoidance.KP (base 722) = 4837 := by
+  show StairOuterPlacement.kernelPlace (base 722) = 4837
+  rw [StairPlaceFast.kernelPlace_eqN]
+  decide
+
+theorem entryF_722 {holes : List Wire}
+    (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory.physicalHoles)
+    (H : StairSiteAvoidance.OpenPieces holes) (h4837 : (4837 : Wire) ∈ holes) :
+    base 722 ∉ wires (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan) := by
+  intro h
+  have hin : base 722 ∈ wires StairSiteAvoidance.entryInner := by
+    unfold StairSiteAvoidance.entryInner
+    rw [wires_append, wires_append]
+    exact Finset.mem_union_left _ (Finset.mem_union_right _ h)
+  have := (StairSiteAvoidance.entryInner_ok hsub H).2 _ hin
+  rw [kp722] at this
+  exact this h4837
+
+theorem exitF_722 {holes : List Wire}
+    (hsub : ∀ q ∈ holes, q ∈ StairPhysicalInventory.physicalHoles)
+    (H : StairSiteAvoidance.OpenPieces holes) (h4837 : (4837 : Wire) ∈ holes) :
+    base 722 ∉ wires (StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan) := by
+  intro h
+  have hin : base 722 ∈ wires (StairSiteAvoidance.exitInner 0) := by
+    unfold StairSiteAvoidance.exitInner
+    rw [wires_append, wires_append]
+    exact Finset.mem_union_left _ (Finset.mem_union_right _ h)
+  have := (StairSiteAvoidance.exitInner_ok hsub H 0).2 _ hin
+  rw [kp722] at this
+  exact this h4837
+
+/-- **Field 13 for the C′ kernels**: the record field-13 proof (record kernels) and the bridges. -/
+theorem hostReplaySpec_C (host0 : StairCertificate.HostReplaySpec0 concreteAssembly)
+    (iface : ∀ k, StairSchedule.ReplayInterface concreteAssembly.primitives StairConcrete.bestLoans k
+      concreteAssembly.entryPre (concreteAssembly.exitPre k))
+    (hF : base 722 ∉ wires (StairHostsSchedule.entryFieldHosted checkpointPrimitives hostPlan))
+    (hF' : base 722 ∉ wires (StairHostsSchedule.exitFieldHosted checkpointPrimitives hostPlan)) :
+    StairCertificate.HostReplaySpec concreteAssembly := by
+  have H0 := hostedReplay0_of host0 iface
+  refine ⟨fun s hs hosted logical => ?_, fun k s hs hosted logical => ?_⟩
+  · exact (entryKernel_run_eq H0 hF s hs hosted).trans (host0.1 s hs hosted logical)
+  · exact (exitKernel_run_eq H0 hF' k s hs hosted).trans (host0.2 k s hs hosted logical)
+
+end ECDSAAdd.Entrant.CPrimeHost
+
+end
+end Merge_CPrimeHost_at_Main
+
 /-! ### merged from `ECDSAAdd.Submission.Entrant.StairOpenWiring_at_Main` -/
 section Merge_StairOpenWiring_at_Main
 
@@ -74787,13 +75869,28 @@ theorem loan_composition_of {holes : List Wire} (_h : RemainingFor holes) :
     StairCertificate.LoanReplaySpec StairConcreteAssembly.concreteAssembly :=
   StairLoanField7RR.loan_composition_RR entryPlans exitPlans
 
-/-- Field 13 from the same two pinned plan families (host halves included). -/
+/-- C': pool 722 (wire 4837) is one of the entry's holes. -/
+theorem mem4837 : (4837 : Wire) ∈ finalHoles := by
+  unfold finalHoles
+  exact List.mem_map.mpr ⟨722, by simp [finalHoleIndices, StairCertificate.extraIdx],
+    StairHoleSupport.poolWire_eq 722 (by omega)⟩
+
+/-- Field 13 from the same two pinned plan families (host halves included); C': the record
+hosted kernels' field 13 composed with the C' bridge (`CPrimeHost.hostReplaySpec_C`). -/
 theorem host_replay_of {holes : List Wire} (h : RemainingFor holes) :
-    StairCertificate.HostReplaySpec StairConcreteAssembly.concreteAssembly :=
-  StairField13V3Fresh.hostReplaySpec_v3_final
-    (StairField13V3Clean.entryClean_of_planR entryPlans half760)
-    (StairField13V3Clean.exitClean_of_planR exitPlans half760)
-    (loan_composition_of h half760 endpoint_run)
+    StairCertificate.HostReplaySpec StairConcreteAssembly.concreteAssembly := by
+  have H := StairSiteAvoidance.openPieces_of finalHoles_sub
+    (StairSiteOpenPieces.piecesRest_of finalHoles_sub finalHoles_sub39)
+  exact CPrimeHost.hostReplaySpec_C
+    (StairField13V3Fresh.hostReplaySpec_v3_final
+      (StairField13V3Clean.entryClean_of_planR entryPlans half760)
+      (StairField13V3Clean.exitClean_of_planR exitPlans half760)
+      (loan_composition_of h half760 endpoint_run))
+    (fun k => StairReplayPlan.replayInterface_of_parts _ StairConcrete.bestLoans k _ _
+      (loan_composition_of h half760 endpoint_run k)
+      (checkpoint_composition_of h codec_functional k))
+    (CPrimeHost.entryF_722 finalHoles_sub H mem4837)
+    (CPrimeHost.exitF_722 finalHoles_sub H mem4837)
 
 /-- The official checklist for the concrete assembly and any hole list, from
 what is still open only. -/
@@ -74823,7 +75920,7 @@ theorem stairOpen_of_remaining (h : Remaining) :
   stairOpenFor finalHoles_sub finalHoles_sub39 h
 
 /-- The entry certificate with literal bounds ⟨2,170,000, 1,521,500, q, 51,155,937⟩
-for `q = 1586 − finalHoles.length` (the final `Main` passes `1545 (by decide)` today),
+for `q = 1586 − finalHoles.length` (the final `Main` passes `1544 (by decide)` today),
 conditional only on what is still open. -/
 theorem certificate_of_remaining (q : Nat) (hq : 1586 - finalHoles.length = q)
     (h : Remaining) :
@@ -74857,15 +75954,15 @@ staircase entry, its literal bounds and its certificate are declared below.
 
 namespace ECDSAAdd.Entrant
 
-/-- The staircase checkpoint entry (Q 1545: 41 retired sites, pools 723 and 724 included). -/
+/-- The staircase checkpoint entry (Q 1544: 42 retired sites, pools 723, 724 and 722 included). -/
 def entry : Challenge.Entry :=
   StairCertificate.stairEntry StairConcreteAssembly.concreteAssembly
 
 /-- Literal bounds ⟨T, M, Q, slots⟩; T is the exact total of `StairCountsHosted.count_totals`. -/
-def bounds : Challenge.Bounds := ⟨2167176, 1521500, 1545, 51155937⟩
+def bounds : Challenge.Bounds := ⟨2167856, 1521500, 1544, 51155937⟩
 
 theorem certificate : Challenge.Certificate entry bounds := by
-  have c := StairOpenWiring.certificate_of_remaining 1545 (by decide) StairOpenWiring.remaining
+  have c := StairOpenWiring.certificate_of_remaining 1544 (by decide) StairOpenWiring.remaining
   exact ⟨c.correct, c.physical,
     fun C => (ECDSAAdd.Baselines.normalize_toffoli
       (StairConcreteAssembly.concreteAssembly.program C)).trans (StairCountsHosted.count_totals C).1,
