@@ -7266,8 +7266,7 @@ theorem transfer (base outBase : BasisState) (clean : L.PairClean base) (O E B :
  rw [Nat.div_eq_of_lt hb] at bit
  have z:(run (ParkCarry10Develop.rebuild L) m s).basis 4371=false := by
   cases h:(run (ParkCarry10Develop.rebuild L) m s).basis 4371 <;> simp_all
- have z':(run LocalRebuild.actual m s).basis 4371=false := by rw [LocalRebuild.actual];exact z
- have eq:=LocalRebuild.run_eq s m ht hv z'
+ have eq:=LocalRebuild.run_eq s m ht hv z
  rw [←eq]
  simpa only [LocalRebuild.actual] using out
 
@@ -8382,11 +8381,19 @@ theorem run_core_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.b
  run LocalSevenCore.core m s=run improved m s :=
  (LocalSevenExtra.run_core_eq s m hc).trans (run_eq s m hc)
 
-theorem toffoli : toffoliCount improved+8=toffoliCount LocalSevenCore.core := by
- have h:toffoliCount improved+1=toffoliCount LocalSevenExtra.improved :=
-  SixCarryPatchResources.toffoli LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
- have old:=LocalSevenResources.toffoli
- rw [← old, ← h, Nat.add_assoc]
+private theorem twoSteps (x y z : Nat) (h : x + 1 = y) (k : y + 7 = z) : x + 8 = z :=
+  Eq.trans (congrArg (fun v : Nat => v + 7) h) k
+
+private theorem patchedCount (next p original : Program) (i a b t : Nat) (r : Program)
+    (eq : next = patch p i r) (hg : p[i]? = some (.CCX a b t)) (hr : toffoliCount r = 0)
+    (old : toffoliCount p + 7 = toffoliCount original) :
+    toffoliCount next + 8 = toffoliCount original := by
+  subst next
+  exact twoSteps _ _ _ (SixCarryPatchResources.toffoli p i a b t r hg hr) old
+
+theorem toffoli : toffoliCount improved+8=toffoliCount LocalSevenCore.core :=
+  patchedCount improved LocalSevenExtra.improved LocalSevenCore.core 4901 4662 4405 4406 repair
+    rfl gate_lookup (by decide +kernel) LocalSevenResources.toffoli
 
 theorem measurements : measurementCount improved=measurementCount LocalSevenCore.core := by
  have h:=SixCarryPatchResources.measurements LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
@@ -14060,9 +14067,8 @@ theorem fixed_middle:middle=C163Low4Fold.fullMiddle L g:=by
 theorem special_middle_state(s:State)(m:List Bool)(hq:s.basis q=false)(hr:s.basis r=false):
  middleState (C163Fold.build L) specialChecked.out s m=middleState (C163Fold.build L) middle s m:=by
  rcases C163Middle.geometry with ⟨_,_,_,_,_,fq,fr,_,_,_,_⟩
- have be:C163NarrowAcc.build8 ga pad bank L.core.cin src=C163Fold.build L:=C163Low4Structural.build_eq L pad bank src L.core.cin
- have qf:q∉wires (C163Fold.build L):=by rw [← be];exact (C163Middle.off_base q fq).1
- have rf:r∉wires (C163Fold.build L):=by rw [← be];exact (C163Middle.off_base r fr).1
+ have qf:=(C163Middle.off_base q fq).1
+ have rf:=(C163Middle.off_base r fr).1
  simp only [middleState,run_take]
  apply special_run
  · exact (run_preserves_outside _ _ s q qf).trans hq
