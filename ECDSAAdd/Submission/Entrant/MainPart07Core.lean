@@ -17714,9 +17714,24 @@ theorem rows_length : rows.length=860 := by decide +kernel
 
 def rowAt (r : Fin 860) : Bool × Bool × Nat × Nat := (rows[r.val]?).getD (false,false,0,0)
 
+private def packRow (v : Bool × Bool × Nat × Nat) : Nat :=
+ CodecBitSliceVerify.packBits (sites.map (pre505 v.1 v.2.1 v.2.2.1 v.2.2.2))
+private theorem packed : rows.map packRow = rowInputs := by decide +kernel
+private theorem code_at (r : Fin 860) : packRow (rowAt r) = rowInput r := by
+ have hr : r.val < rows.length := by rw [rows_length]; exact r.isLt
+ unfold rowAt rowInput
+ rw [←packed]
+ simp [hr]
 theorem row_compat : ∀r : Fin 860, ∀q : Fin 40,
     pre505 (rowAt r).1 (rowAt r).2.1 (rowAt r).2.2.1 (rowAt r).2.2.2 (label q.val) =
-      bitsOf (rowInput r) q.val := by decide +kernel
+      bitsOf (rowInput r) q.val := by
+  intro r q
+  rw [←code_at]
+  unfold packRow bitsOf
+  rw [CodecBitSliceVerify.pack_testBit]
+  have hsize : sites.length = 40 := by decide +kernel
+  have hq : q.val < sites.length := by rw [hsize]; exact q.isLt
+  simp [label,hq]
 
 theorem candidate_support : wires candidate ⊆ Finset.range 40 :=
   support_of_check candidate 40 (by decide +kernel)

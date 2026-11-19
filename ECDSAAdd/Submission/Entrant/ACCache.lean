@@ -231,25 +231,32 @@ theorem equivalent(s:State)(m:List Bool)(q0:s.basis 4757=false)
   simp only [d0,(renameProgram_counts _ _).2]
  have mf:measurementCount f=measurementCount f0:=by
   simp only [f0,(renameProgram_counts _ _).2]
- have paQ:(run a (m.take (measurementCount a)) s).basis 4757=false:=
+ let pa:=run a (m.take (measurementCount a)) s
+ have paQ:pa.basis 4757=false:=
   (PairedWritesResearch.preserved 4757 a qoA s _).trans q0
- have paC:(run a (m.take (measurementCount a)) s).basis 4760=false:=
+ have paC:pa.basis 4760=false:=
   (PairedWritesResearch.preserved 4760 a ciA s _).trans cin
- have hb:∀r,run b r (run a (m.take (measurementCount a)) s)=run b0 r (run a (m.take (measurementCount a)) s):=fun r=>(b0_eq (run a (m.take (measurementCount a)) s) r paQ paC).symm
- have pdQ:(run (a++b++c) (m.take (measurementCount (a++b++c))) s).basis 4757=false:=by
+ have hb:∀r,run b r pa=run b0 r pa:=fun r=>(b0_eq pa r paQ paC).symm
+ let pd:=run (a++b++c) (m.take (measurementCount (a++b++c))) s
+ have pdQ:pd.basis 4757=false:=by
+  unfold pd
   rw [prefixD]
   exact ZeroAfterWriteResearch.erased 4757 (old.take 4609) qoD s _
- have pdC:(run (a++b++c) (m.take (measurementCount (a++b++c))) s).basis 4760=false:=by
+ have pdC:pd.basis 4760=false:=by
+  unfold pd
   rw [prefixD]
   exact (PairedWritesResearch.preserved 4760 (old.take 4609) ciD s _).trans cin
- have hd:∀r,run d r (run (a++b++c) (m.take (measurementCount (a++b++c))) s)=run d0 r (run (a++b++c) (m.take (measurementCount (a++b++c))) s):=fun r=>(d0_eq (run (a++b++c) (m.take (measurementCount (a++b++c))) s) r pdQ pdC).symm
- have pfQ:(run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s).basis 4757=false:=by
+ have hd:∀r,run d r pd=run d0 r pd:=fun r=>(d0_eq pd r pdQ pdC).symm
+ let pf:=run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s
+ have pfQ:pf.basis 4757=false:=by
+  unfold pf
   rw [prefixF]
   exact ZeroAfterWriteResearch.erased 4757 (old.take 6972) qoF s _
- have pfC:(run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s).basis 4760=false:=by
+ have pfC:pf.basis 4760=false:=by
+  unfold pf
   rw [prefixF]
   exact (PairedWritesResearch.preserved 4760 (old.take 6972) ciF s _).trans cin
- have hf:∀r,run f r (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s)=run f0 r (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s):=fun r=>(f0_eq (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s) r pfQ pfC).symm
+ have hf:∀r,run f r pf=run f0 r pf:=fun r=>(f0_eq pf r pfQ pfC).symm
  have ef:=context_eq (a++b++c++d++e) f f0 g s m mf hf
  have ed:=context_eq (a++b++c) d d0 (e++f0++g) s m md hd
  have eb:=context_eq a b b0 (c++d0++e++f0++g) s m mb hb
@@ -1424,25 +1431,32 @@ theorem equivalent(s:State)(m:List Bool)(q0:s.basis 4757=false)
   simp only [d0,(renameProgram_counts _ _).2]
  have mf:measurementCount f=measurementCount f0:=by
   simp only [f0,(renameProgram_counts _ _).2]
- have paQ:(run a (m.take (measurementCount a)) s).basis 4757=false:=
+ let pa:=run a (m.take (measurementCount a)) s
+ have paQ:pa.basis 4757=false:=
   (PairedWritesResearch.preserved 4757 a qoA s _).trans q0
- have paC:(run a (m.take (measurementCount a)) s).basis 4760=false:=
+ have paC:pa.basis 4760=false:=
   (PairedWritesResearch.preserved 4760 a ciA s _).trans cin
- have hb:∀r,run b r (run a (m.take (measurementCount a)) s)=run b0 r (run a (m.take (measurementCount a)) s):=fun r=>(b0_eq (run a (m.take (measurementCount a)) s) r paQ paC).symm
- have pdQ:(run (a++b++c) (m.take (measurementCount (a++b++c))) s).basis 4757=false:=by
+ have hb:∀r,run b r pa=run b0 r pa:=fun r=>(b0_eq pa r paQ paC).symm
+ let pd:=run (a++b++c) (m.take (measurementCount (a++b++c))) s
+ have pdQ:pd.basis 4757=false:=by
+  unfold pd
   rw [prefixD]
   exact ZeroAfterWriteResearch.erased 4757 (old.take 3618) qoD s _
- have pdC:(run (a++b++c) (m.take (measurementCount (a++b++c))) s).basis 4760=false:=by
+ have pdC:pd.basis 4760=false:=by
+  unfold pd
   rw [prefixD]
   exact (PairedWritesResearch.preserved 4760 (old.take 3618) ciD s _).trans cin
- have hd:∀r,run d r (run (a++b++c) (m.take (measurementCount (a++b++c))) s)=run d0 r (run (a++b++c) (m.take (measurementCount (a++b++c))) s):=fun r=>(d0_eq (run (a++b++c) (m.take (measurementCount (a++b++c))) s) r pdQ pdC).symm
- have pfQ:(run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s).basis 4757=false:=by
+ have hd:∀r,run d r pd=run d0 r pd:=fun r=>(d0_eq pd r pdQ pdC).symm
+ let pf:=run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s
+ have pfQ:pf.basis 4757=false:=by
+  unfold pf
   rw [prefixF]
   exact ZeroAfterWriteResearch.erased 4757 (old.take 5930) qoF s _
- have pfC:(run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s).basis 4760=false:=by
+ have pfC:pf.basis 4760=false:=by
+  unfold pf
   rw [prefixF]
   exact (PairedWritesResearch.preserved 4760 (old.take 5930) ciF s _).trans cin
- have hf:∀r,run f r (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s)=run f0 r (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s):=fun r=>(f0_eq (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s) r pfQ pfC).symm
+ have hf:∀r,run f r pf=run f0 r pf:=fun r=>(f0_eq pf r pfQ pfC).symm
  have ef:=context_eq (a++b++c++d++e) f f0 g s m mf hf
  have ed:=context_eq (a++b++c) d d0 (e++f0++g) s m md hd
  have eb:=context_eq a b b0 (c++d0++e++f0++g) s m mb hb
@@ -2231,25 +2245,32 @@ theorem equivalent(s:State)(m:List Bool)(q0:s.basis 4757=false)
   simp only [d0,(renameProgram_counts _ _).2]
  have mf:measurementCount f=measurementCount f0:=by
   simp only [f0,(renameProgram_counts _ _).2]
- have paQ:(run a (m.take (measurementCount a)) s).basis 4757=false:=
+ let pa:=run a (m.take (measurementCount a)) s
+ have paQ:pa.basis 4757=false:=
   (PairedWritesResearch.preserved 4757 a qoA s _).trans q0
- have paC:(run a (m.take (measurementCount a)) s).basis 4760=false:=
+ have paC:pa.basis 4760=false:=
   (PairedWritesResearch.preserved 4760 a ciA s _).trans cin
- have hb:∀r,run b r (run a (m.take (measurementCount a)) s)=run b0 r (run a (m.take (measurementCount a)) s):=fun r=>(b0_eq (run a (m.take (measurementCount a)) s) r paQ paC).symm
- have pdQ:(run (a++b++c) (m.take (measurementCount (a++b++c))) s).basis 4757=false:=by
+ have hb:∀r,run b r pa=run b0 r pa:=fun r=>(b0_eq pa r paQ paC).symm
+ let pd:=run (a++b++c) (m.take (measurementCount (a++b++c))) s
+ have pdQ:pd.basis 4757=false:=by
+  unfold pd
   rw [prefixD]
   exact ZeroAfterWriteResearch.erased 4757 (old.take 3940) qoD s _
- have pdC:(run (a++b++c) (m.take (measurementCount (a++b++c))) s).basis 4760=false:=by
+ have pdC:pd.basis 4760=false:=by
+  unfold pd
   rw [prefixD]
   exact (PairedWritesResearch.preserved 4760 (old.take 3940) ciD s _).trans cin
- have hd:∀r,run d r (run (a++b++c) (m.take (measurementCount (a++b++c))) s)=run d0 r (run (a++b++c) (m.take (measurementCount (a++b++c))) s):=fun r=>(d0_eq (run (a++b++c) (m.take (measurementCount (a++b++c))) s) r pdQ pdC).symm
- have pfQ:(run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s).basis 4757=false:=by
+ have hd:∀r,run d r pd=run d0 r pd:=fun r=>(d0_eq pd r pdQ pdC).symm
+ let pf:=run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s
+ have pfQ:pf.basis 4757=false:=by
+  unfold pf
   rw [prefixF]
   exact ZeroAfterWriteResearch.erased 4757 (old.take 6262) qoF s _
- have pfC:(run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s).basis 4760=false:=by
+ have pfC:pf.basis 4760=false:=by
+  unfold pf
   rw [prefixF]
   exact (PairedWritesResearch.preserved 4760 (old.take 6262) ciF s _).trans cin
- have hf:∀r,run f r (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s)=run f0 r (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s):=fun r=>(f0_eq (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s) r pfQ pfC).symm
+ have hf:∀r,run f r pf=run f0 r pf:=fun r=>(f0_eq pf r pfQ pfC).symm
  have ef:=context_eq (a++b++c++d++e) f f0 g s m mf hf
  have ed:=context_eq (a++b++c) d d0 (e++f0++g) s m md hd
  have eb:=context_eq a b b0 (c++d0++e++f0++g) s m mb hb
@@ -2938,14 +2959,14 @@ theorem shape:old=pre++PlacedUniformAdder4Research.originalAt ports++post:=by
 theorem pre_measurements:measurementCount pre=0:=by decide +kernel
 
 theorem pre_fresh:∀q∈UniformAdderSpliceResearch.cs ports,q∉wires pre:=by
- have rs4_h:(UniformAdderSpliceResearch.cs ports).all (fun q=>!C163Touch.touched pre q)=true:=by decide +kernel
  intro q hq
- exact HighConsumedStreamResearch.untouched _ _ (by simpa using List.all_eq_true.mp rs4_h q hq)
+ simp only [UniformAdderSpliceResearch.cs,List.mem_cons,List.not_mem_nil,or_false] at hq
+ rcases hq with rfl|rfl|rfl <;>apply HighConsumedStreamResearch.untouched <;>decide +kernel
 
 theorem post_fresh:∀q∈UniformAdderSpliceResearch.ys ports,q∉wires post:=by
- have rs4_h:(UniformAdderSpliceResearch.ys ports).all (fun q=>!C163Touch.touched post q)=true:=by decide +kernel
  intro q hq
- exact HighConsumedStreamResearch.untouched _ _ (by simpa using List.all_eq_true.mp rs4_h q hq)
+ simp only [UniformAdderSpliceResearch.ys,List.mem_cons,List.not_mem_nil,or_false] at hq
+ rcases hq with rfl|rfl|rfl|rfl <;>apply HighConsumedStreamResearch.untouched <;>decide +kernel
 
 theorem toffoli:toffoliCount fast+3=toffoliCount old:=by
  have h:=congrArg toffoliCount shape
@@ -4170,44 +4191,10 @@ theorem loop_counts:toffoliCount loop+3=toffoliCount HighSignAResearch.loop ∧
  simp only [ReorderedAUnbuild.unbuild,ReorderedConsumedSub.consumed,toffoliCount_append,measurementCount_append] at oi om
  simp only [loop,suffix,newI,preInv,top,tail,M,HighSignAResearch.loop,HighSignAResearch.suffix,
   toffoliCount_append,measurementCount_append,A109LowEraseResearch.counts.1,A109LowEraseResearch.counts.2.1]
- try rw [xs] at *
- try rw [ys] at *
- try rw [cs] at *
- try rw [HighConsumedA109Research.xs] at *
- try rw [HighConsumedA109Research.ys] at *
- try rw [HighConsumedA109Research.cs] at *
- try rw [HighConsumedA109Research.cin] at *
- try rw [HighConsumedA109Research.hs] at *
- try rw [ReorderedBPrefixResearch.cin] at *
- try rw [AAliasesResearch.original] at *
- try rw [Ghost3CacheA.middle] at *
- try rw [GhostRelocatedKnown.A.original] at *
- try rw [HighSignAResearch.hosts] at *
- try rw [A109SignResearch.hosts] at *
- try rw [aa] at *
- try rw [ap] at *
- try rw [ab] at *
- try rw [ax] at *
- try rw [ai] at *
- try rw [xs] at *
- try rw [ys] at *
- try rw [cs] at *
- try rw [HighConsumedA109Research.xs] at *
- try rw [HighConsumedA109Research.ys] at *
- try rw [HighConsumedA109Research.cs] at *
- try rw [HighConsumedA109Research.cin] at *
- try rw [HighConsumedA109Research.hs] at *
- try rw [ReorderedBPrefixResearch.cin] at *
- try rw [AAliasesResearch.original] at *
- try rw [Ghost3CacheA.middle] at *
- try rw [GhostRelocatedKnown.A.original] at *
- try rw [HighSignAResearch.hosts] at *
- try rw [A109SignResearch.hosts] at *
- try rw [aa] at *
- try rw [ap] at *
- try rw [ab] at *
- try rw [ax] at *
- try rw [ai] at *
+ simp only [xs,ys,cs,HighConsumedA109Research.xs,HighConsumedA109Research.ys,
+  HighConsumedA109Research.cs,HighConsumedA109Research.cin,HighConsumedA109Research.hs,
+  ReorderedBPrefixResearch.cin,AAliasesResearch.original,Ghost3CacheA.middle,
+  GhostRelocatedKnown.A.original,HighSignAResearch.hosts,A109SignResearch.hosts,aa,ap,ab,ax,ai] at *
  exact ⟨by omega,by omega⟩
 
  theorem body_counts:toffoliCount body+3=toffoliCount HighSignAResearch.body ∧
@@ -4251,46 +4238,10 @@ attribute [local irreducible] Challenge.gateSlots
  simp only [ReorderedAUnbuild.unbuild,ReorderedConsumedSub.consumed,gateSlots_append] at oi
  simp only [loop,suffix,newI,preInv,top,tail,M,HighSignAResearch.loop,HighSignAResearch.suffix,
   gateSlots_append,A109LowEraseResearch.counts.2.2]
- try rw [xs] at *
- try rw [ys] at *
- try rw [cs] at *
- try rw [HighConsumedA109Research.xs] at *
- try rw [HighConsumedA109Research.ys] at *
- try rw [HighConsumedA109Research.cs] at *
- try rw [HighConsumedA109Research.cin] at *
- try rw [HighConsumedA109Research.hs] at *
- try rw [ReorderedBPrefixResearch.cin] at *
- try rw [AAliasesResearch.original] at *
- try rw [Ghost3CacheA.middle] at *
- try rw [GhostRelocatedKnown.A.program] at *
- try rw [GhostRelocatedKnown.A.original] at *
- try rw [HighSignAResearch.hosts] at *
- try rw [A109SignResearch.hosts] at *
- try rw [aa] at *
- try rw [ap] at *
- try rw [ab] at *
- try rw [ax] at *
- try rw [ai] at *
- try rw [xs] at *
- try rw [ys] at *
- try rw [cs] at *
- try rw [HighConsumedA109Research.xs] at *
- try rw [HighConsumedA109Research.ys] at *
- try rw [HighConsumedA109Research.cs] at *
- try rw [HighConsumedA109Research.cin] at *
- try rw [HighConsumedA109Research.hs] at *
- try rw [ReorderedBPrefixResearch.cin] at *
- try rw [AAliasesResearch.original] at *
- try rw [Ghost3CacheA.middle] at *
- try rw [GhostRelocatedKnown.A.program] at *
- try rw [GhostRelocatedKnown.A.original] at *
- try rw [HighSignAResearch.hosts] at *
- try rw [A109SignResearch.hosts] at *
- try rw [aa] at *
- try rw [ap] at *
- try rw [ab] at *
- try rw [ax] at *
- try rw [ai] at *
+ simp only [xs,ys,cs,HighConsumedA109Research.xs,HighConsumedA109Research.ys,
+  HighConsumedA109Research.cs,HighConsumedA109Research.cin,HighConsumedA109Research.hs,
+  ReorderedBPrefixResearch.cin,AAliasesResearch.original,Ghost3CacheA.middle,
+  GhostRelocatedKnown.A.program,GhostRelocatedKnown.A.original,HighSignAResearch.hosts,A109SignResearch.hosts,aa,ap,ab,ax,ai] at *
  generalize gateSlots (ReorderedGenericCache.cachedAdd 109 src ((acc.take 138).drop 10) (bank.take 127) A109Research.hosts L.core.cin) = count0 at *
  generalize gateSlots (ReorderedGenericCache.consumedAdd 109 src ((acc.take 138).drop 10) (bank.take 127) A109Research.hosts L.core.cin) = count1 at *
  generalize gateSlots (ReorderedGenericCache.cachedAdd 106 src ((acc.take 138).drop 10) (bank.take 127) Ghost3CacheA.hosts L.core.cin) = count2 at *
@@ -5008,14 +4959,14 @@ theorem shape:old=pre++PlacedUniformAdder4Research.originalAt ports++post:=by
 theorem pre_measurements:measurementCount pre=0:=by decide +kernel
 
 theorem pre_fresh:∀q∈UniformAdderSpliceResearch.cs ports,q∉wires pre:=by
- have rs4_h:(UniformAdderSpliceResearch.cs ports).all (fun q=>!C163Touch.touched pre q)=true:=by decide +kernel
  intro q hq
- exact HighConsumedStreamResearch.untouched _ _ (by simpa using List.all_eq_true.mp rs4_h q hq)
+ simp only [UniformAdderSpliceResearch.cs,List.mem_cons,List.not_mem_nil,or_false] at hq
+ rcases hq with rfl|rfl|rfl <;>apply HighConsumedStreamResearch.untouched <;>decide +kernel
 
 theorem post_fresh:∀q∈UniformAdderSpliceResearch.ys ports,q∉wires post:=by
- have rs4_h:(UniformAdderSpliceResearch.ys ports).all (fun q=>!C163Touch.touched post q)=true:=by decide +kernel
  intro q hq
- exact HighConsumedStreamResearch.untouched _ _ (by simpa using List.all_eq_true.mp rs4_h q hq)
+ simp only [UniformAdderSpliceResearch.ys,List.mem_cons,List.not_mem_nil,or_false] at hq
+ rcases hq with rfl|rfl|rfl|rfl <;>apply HighConsumedStreamResearch.untouched <;>decide +kernel
 
 theorem toffoli:toffoliCount fast+3=toffoliCount old:=by
  have h:=congrArg toffoliCount shape
