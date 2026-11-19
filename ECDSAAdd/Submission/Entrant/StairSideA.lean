@@ -19568,8 +19568,20 @@ def endPacket (divide : Bool) (deficit : Nat) : Program :=
   else if deficit=68 then StairEndpointLoan44.endPacket760Loan44 false
   else R2SqEp760.endPacket760 false
 
+/-- M1a: the division groups `1..84` at deficit 0 run the odd-word slice; all other groups are the
+staircase's. -/
+def groupsM1 (divide : Bool) (d j n : Nat) : Program :=
+  if divide=true ∧ d=0 ∧ j=1 ∧ n=84 then RouteA.Rolling1588.slice else StairGroups.groups divide d j n
+
+theorem groupsM1_odd : groupsM1 true 0 1 84=RouteA.Rolling1588.slice := by
+  simp only [groupsM1,and_self,if_true]
+
+theorem groupsM1_other (divide : Bool) (d j n : Nat) (h : ¬(divide=true ∧ d=0 ∧ j=1 ∧ n=84)) :
+    groupsM1 divide d j n=StairGroups.groups divide d j n := by
+  simp only [groupsM1,if_neg h]
+
 def bestLoans : StairSchedule.StairLoans where
-  groups := StairGroups.groups
+  groups := groupsM1
   endPacket := endPacket
   canon := StairBoundaryLoan.canon760Loan
   center := StairBoundaryLoan.center760Loan
@@ -20128,10 +20140,86 @@ theorem groups_sub (divide : Bool) (d : Nat) (hd : d ≤ 68) (j n : Nat) :
 
 /-! ## Provider, placed and lifted forms -/
 
+/-! ## M1a: the odd slice stays inside the record groups `1..84` -/
+
+theorem oddCell_sub (P : Program) (hP : RouteA.Rolling1588.HalfSupport P) (j active hole : Nat) :
+    wires (RouteA.Rolling1588.cellWith true P j active hole) ⊆ wires (Rolling1588.cell true j active hole) := by
+  have h : wires (RouteA.Rolling1588.halfWindowWith P j active hole) ⊆
+      wires (Rolling1588.halfWindow true j active hole) := by
+    unfold RouteA.Rolling1588.halfWindowWith Rolling1588.halfWindow
+    exact loanWindow_sub _ _ _ _ _ (rename_sub _ _ _ (hP.trans RouteA.Rolling1588.record_half_lower))
+  simp only [RouteA.Rolling1588.cellWith,Rolling1588.cell,if_true]
+  exact append_sub _ _ _ _ h (Finset.Subset.refl _)
+
+theorem oddPlainCell_sub (j active hole : Nat) :
+    wires (RouteA.Rolling1588.cell true j active hole) ⊆ wires (Rolling1588.cell true j active hole) := by
+  have h := oddCell_sub _ (RouteA.Rolling1588.half_support true) j active hole
+  simpa only [RouteA.Rolling1588.cellWith,RouteA.Rolling1588.cell,RouteA.Rolling1588.halfWindow,if_true] using h
+
+theorem oddBasePacket_sub (j : Nat) :
+    wires (RouteA.Rolling1588.basePacket true j) ⊆ wires (Rolling1588.basePacket true j) := by
+  have c := fun active hole => oddPlainCell_sub j active hole
+  have last : wires (if j=84 then RouteA.Rolling1588.cellWith true (P1Life.dend (base 760) base (base 2409)) j 4 2
+      else RouteA.Rolling1588.cell true j 4 2) ⊆ wires (Rolling1588.cell true j 4 2) := by
+    split
+    · exact oddCell_sub _ RouteA.Rolling1588.dend_support j 4 2
+    · exact c 4 2
+  simp only [RouteA.Rolling1588.basePacket,Rolling1588.basePacket,if_true]
+  refine append_sub _ _ _ _ (append_sub _ _ _ _ (Finset.Subset.refl _) ?_) (Finset.Subset.refl _)
+  exact append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _
+    (append_sub _ _ _ _ (append_sub _ _ _ _ (c 3 2) (c 4 2)) (Finset.Subset.refl _)) (c 4 2)) (c 3 2))
+    (Finset.Subset.refl _)) last
+
+theorem dstartBasePacket_sub (j : Nat) :
+    wires (RouteA.Rolling1588.dstartBasePacket j) ⊆ wires (Rolling1588.basePacket true j) := by
+  have c := fun active hole => oddPlainCell_sub j active hole
+  have hd := oddCell_sub _ RouteA.Rolling1588.dstart_support j 3 2
+  simp only [RouteA.Rolling1588.dstartBasePacket,Rolling1588.basePacket,if_true]
+  refine append_sub _ _ _ _ (append_sub _ _ _ _ (Finset.Subset.refl _) ?_) (Finset.Subset.refl _)
+  exact append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _
+    (append_sub _ _ _ _ (append_sub _ _ _ _ hd (c 4 2)) (Finset.Subset.refl _)) (c 4 2)) (c 3 2))
+    (Finset.Subset.refl _)) (c 4 2)
+
+theorem oddPacket_sub (j : Nat) :
+    wires (RouteA.Rolling1588.packet true j) ⊆ wires (Rolling1588.packet true j) := by
+  unfold RouteA.Rolling1588.packet Rolling1588.packet
+  exact rename_sub _ _ _ (oddBasePacket_sub j)
+
+theorem slice_sub : wires RouteA.Rolling1588.slice ⊆ wires (Rolling1588.groups true 1 84) := by
+  have shape : Rolling1588.groups true 1 84=
+      Rolling1588.packet true 1 ++ (Rolling1588.groups true 2 82 ++ Rolling1588.packet true 84) := by
+    show PacketSequence.program true (Rolling1588.packet true) 1 (83+1)=_
+    rw [PacketSequence.program.eq_2,if_pos rfl,
+      show (83:Nat)=82+1 from rfl,RouteA.Rolling1588.route_program_snoc]
+    rfl
+  rw [shape,RouteA.Rolling1588.slice_eq,List.append_assoc]
+  apply append_sub
+  · unfold RouteA.Rolling1588.dstartPacket Rolling1588.packet
+    exact rename_sub _ _ _ (dstartBasePacket_sub 1)
+  · apply append_sub
+    · unfold RouteA.Rolling1588.groups Rolling1588.groups
+      exact sequence_sub true _ _ (fun i => oddPacket_sub i) 2 82
+    · exact oddPacket_sub 84
+
 theorem bestGroups_sub (divide : Bool) (d : Nat) (hd : d ≤ 68) (j n : Nat) :
     wires (StairConcrete.bestLoans.groups divide d j n) ⊆
-      wires (StairSchedule.recordLoans.groups divide d j n) :=
-  groups_sub divide d hd j n
+      wires (StairSchedule.recordLoans.groups divide d j n) := by
+  change wires (StairConcrete.groupsM1 divide d j n) ⊆ wires (Rolling1588.groups divide j n)
+  by_cases hm : divide=true ∧ d=0 ∧ j=1 ∧ n=84
+  · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
+    rw [StairConcrete.groupsM1_odd]
+    exact slice_sub
+  · rw [StairConcrete.groupsM1_other divide d j n hm]
+    exact groups_sub divide d hd j n
+
+theorem bestGroups_sub_stair (divide : Bool) (d j n : Nat) :
+    wires (StairConcrete.bestLoans.groups divide d j n) ⊆ wires (StairGroups.groups divide d j n) := by
+  change wires (StairConcrete.groupsM1 divide d j n) ⊆ _
+  by_cases hm : divide=true ∧ d=0 ∧ j=1 ∧ n=84
+  · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
+    rw [StairConcrete.groupsM1_odd,StairGroups.groups_zero]
+    exact slice_sub
+  · rw [StairConcrete.groupsM1_other divide d j n hm]
 
 theorem placedGroups_sub (divide : Bool) (d : Nat) (hd : d ≤ 68) (j n : Nat) :
     wires (StairSchedule.placedGroups StairConcrete.bestLoans divide d j n) ⊆
@@ -21377,9 +21465,16 @@ theorem forward_slices_run_eq (half : HalfReplayHypothesis) :
             (StairConcrete.bestLoans.groups true d j n))) s =
         run (StairSchedule.recordLoans.groups true d j n)
           (old.take (measurementCount
-            (StairSchedule.recordLoans.groups true d j n))) s :=
-        StairLoanReplay.groups_run_eq half true d j n hd first bound origin ctx
-          enabled X Y s _ _ input
+            (StairSchedule.recordLoans.groups true d j n))) s := by
+        by_cases hm : true=true ∧ d=0 ∧ j=1 ∧ n=84
+        · obtain ⟨-,rfl,rfl,rfl⟩ := hm
+          change run (StairConcrete.groupsM1 true 0 1 84) _ s=run (StairSchedule.recordLoans.groups true 0 1 84) _ s
+          rw [StairConcrete.groupsM1_odd]
+          exact RouteA.Rolling1588.slice_run_eq origin ctx enabled X Y s _ _ input
+        · change run (StairConcrete.groupsM1 true d j n) _ s=_
+          rw [StairConcrete.groupsM1_other true d j n hm]
+          exact StairLoanReplay.groups_run_eq half true d j n hd first bound origin ctx
+            enabled X Y s _ _ input
       rw [e]
       have post := (Rolling1588.groups_cut_frame true j n first bound origin
         ctx enabled X Y s (old.take (measurementCount
@@ -55748,7 +55843,7 @@ theorem bestLoans_divEndpoint :
 
 
 theorem placedGroups_counts (divide : Bool) (deficit first count : Nat)
-    (hd : deficit≤68) :
+    (hd : deficit≤68) (hno : ¬(divide=true ∧ deficit=0 ∧ first=1 ∧ count=84)) :
     toffoliCount (StairSchedule.placedGroups bestLoans divide deficit first count)=
         toffoliCount
           (StairSchedule.placedGroups StairSchedule.recordLoans divide deficit first count)+
@@ -55759,8 +55854,16 @@ theorem placedGroups_counts (divide : Bool) (deficit first count : Nat)
           (StairSchedule.placedGroups StairSchedule.recordLoans divide deficit first count)+
           20*deficit*count := by
   simpa only [StairSchedule.placedGroups,bestLoans,StairSchedule.recordLoans,
-    renameProgram_counts] using
+    renameProgram_counts,groupsM1_other divide deficit first count hno] using
     StairGroups.groups_counts divide deficit first count hd
+
+theorem placedGroups_counts_odd :
+    toffoliCount (StairSchedule.placedGroups bestLoans true 0 1 84)+749=
+        toffoliCount (StairSchedule.placedGroups StairSchedule.recordLoans true 0 1 84) ∧
+    measurementCount (StairSchedule.placedGroups bestLoans true 0 1 84)+1169=
+        measurementCount (StairSchedule.placedGroups StairSchedule.recordLoans true 0 1 84) := by
+  simpa only [StairSchedule.placedGroups,bestLoans,StairSchedule.recordLoans,
+    renameProgram_counts,groupsM1_odd] using RouteA.Rolling1588.slice_counts
 
 theorem placedEndPacket_counts (divide : Bool) (deficit : Nat) :
     toffoliCount (StairSchedule.placedEndPacket bestLoans divide deficit)=
@@ -56962,7 +57065,9 @@ theorem slices_payload_free (half : HalfReplayHypothesis) :
   | [], _, _, _ => by simp [slices, wires]
   | (d, j, n) :: rest, c, chain, i => by
       obtain ⟨_, hd, first, bound, hr⟩ := chain
-      have head := loanGroups_payload_free half true d hd j n first bound i
+      have head : Prefix1590.payload0 i ∉ wires (StairConcrete.bestLoans.groups true d j n) :=
+        fun h => loanGroups_payload_free half true d hd j n first bound i
+          (StairLoanGroupSupport.bestGroups_sub_stair true d j n h)
       have tail := slices_payload_free half rest (j + n) hr i
       simp only [slices, wires_append, Finset.mem_union, not_or]
       exact ⟨head, tail⟩
@@ -57376,7 +57481,8 @@ theorem loanSlices_old_support (half : HalfReplayHypothesis) :
   | (d, j, n) :: rest, c, chain => by
       obtain ⟨hj, hd, _, bound, hr⟩ := chain
       subst hj
-      have head := loanGroups_old_support half true d hd j n bound
+      have head := (StairLoanGroupSupport.bestGroups_sub_stair true d j n).trans
+        (loanGroups_old_support half true d hd j n bound)
       have tail := loanSlices_old_support half rest (j + n) hr
       have split : ControlLoan1589.groups true j (n + sliceCount rest) =
           ControlLoan1589.groups true j n ++
@@ -61627,14 +61733,25 @@ theorem v3_recordGroups_counts (divide : Bool) (d first count : Nat) :
   exact renameProgram_counts _ _
 
 /-- A loan-aware group run at deficit `d`: record run plus `20·d·count`. -/
-theorem v3_group_counts (divide : Bool) (d first count : Nat) (hd : d ≤ 68) :
+theorem v3_group_counts (divide : Bool) (d first count : Nat) (hd : d ≤ 68)
+    (hno : ¬(divide=true ∧ d=0 ∧ first=1 ∧ count=84)) :
     toffoliCount (StairSchedule.placedGroups StairConcrete.bestLoans divide d first count) =
         toffoliCount (Rolling1588.groups divide first count) + 20 * d * count ∧
       measurementCount
           (StairSchedule.placedGroups StairConcrete.bestLoans divide d first count) =
         measurementCount (Rolling1588.groups divide first count) + 20 * d * count := by
-  obtain ⟨g1, g2⟩ := StairConcrete.placedGroups_counts divide d first count hd
+  obtain ⟨g1, g2⟩ := StairConcrete.placedGroups_counts divide d first count hd hno
   obtain ⟨r1, r2⟩ := v3_recordGroups_counts divide d first count
+  constructor <;> omega
+
+/-- M1a: the odd division slice (deficit 0, packets 1..84) saves 749 T and 1169 M. -/
+theorem v3_oddGroup_counts :
+    toffoliCount (StairSchedule.placedGroups StairConcrete.bestLoans true 0 1 84) + 749 =
+        toffoliCount (Rolling1588.groups true 1 84) + 20 * 0 * 84 ∧
+      measurementCount (StairSchedule.placedGroups StairConcrete.bestLoans true 0 1 84) + 1169 =
+        measurementCount (Rolling1588.groups true 1 84) + 20 * 0 * 84 := by
+  obtain ⟨g1, g2⟩ := StairConcrete.placedGroups_counts_odd
+  obtain ⟨r1, r2⟩ := v3_recordGroups_counts true 0 1 84
   constructor <;> omega
 
 /-- The record packet run `1..101` split at the v3 group boundaries. -/
@@ -61680,7 +61797,7 @@ theorem v3_entryTailSuffix_counts :
       measurementCount (renameProgram (OB5.sig 511) StairConcrete.bestLoans.divEndpoint) +
       measurementCount HalfFieldOB5.copyN +
       measurementCount StairConcrete.bestLoans.canon := by
-  obtain ⟨g6, g6'⟩ := v3_group_counts true 44 100 2 (by norm_num)
+  obtain ⟨g6, g6'⟩ := v3_group_counts true 44 100 2 (by norm_num) (by decide)
   rw [StairHostsSchedule.entryTailSuffix]
   simp only [StairHostsSchedule.hostedGroup, toffoliCount_append, measurementCount_append,
     StairLoan.rebindMany_counts]
@@ -61696,7 +61813,7 @@ theorem v3_exitHeadPrefix_counts :
       measurementCount HalfFieldOB5.copyN +
       measurementCount (StairSchedule.placedEndPacket StairConcrete.bestLoans false 68) +
       measurementCount (Rolling1588.groups false 100 2) + 1760 := by
-  obtain ⟨g6, g6'⟩ := v3_group_counts false 44 100 2 (by norm_num)
+  obtain ⟨g6, g6'⟩ := v3_group_counts false 44 100 2 (by norm_num) (by decide)
   rw [StairHostsSchedule.exitHeadPrefix, StairHostsSchedule.hostedEndpoint]
   simp only [StairHostsSchedule.hostedGroup, toffoliCount_append, measurementCount_append,
     StairLoan.rebindMany_counts]
@@ -70822,7 +70939,8 @@ theorem placedGroups_caller (divide : Bool) (d first count : Nat)
       callerDomain := by
   unfold StairSchedule.placedGroups
   exact rename_caller _ (preserves_sig 511 (by omega)) _
-    (groups_caller divide d first count hHalf hfc)
+    ((StairLoanGroupSupport.bestGroups_sub_stair divide d first count).trans
+      (groups_caller divide d first count hHalf hfc))
 
 
 
@@ -71442,8 +71560,12 @@ theorem placedGroups_sLetter_free (divide : Bool) (d j n : Nat) (hd : d ≤ 68)
     StairPhysicalLayout.sLetter t ∉ wires (StairSchedule.placedGroups StairConcrete.bestLoans
       divide d j n) := by
   intro used
-  change OB5.sig 511 (base (1028 + t)) ∈ wires (renameProgram (OB5.sig 511)
-    (StairGroups.groups divide d j n)) at used
+  replace used : OB5.sig 511 (base (1028 + t)) ∈ wires (renameProgram (OB5.sig 511)
+      (StairGroups.groups divide d j n)) := by
+    have u : OB5.sig 511 (base (1028 + t)) ∈ wires (renameProgram (OB5.sig 511)
+        (StairConcrete.bestLoans.groups divide d j n)) := used
+    rw [renameProgram_support] at u ⊢
+    exact Finset.image_subset_image (StairLoanGroupSupport.bestGroups_sub_stair divide d j n) u
   rw [renameProgram_support] at used
   obtain ⟨x, hx, eq⟩ := Finset.mem_image.mp used
   have same : x = base (1028 + t) := OB5.sig_injective 511 (by omega) eq
@@ -71869,15 +71991,140 @@ theorem packetSequence_keeps (w : Wire) (fwd : Bool) (p : Nat → Program) :
     · simp only [PacketSequence.program, if_true]
       exact keeps_append hj rest
 
+/-! ## M1a: the odd division slice keeps every role zero -/
+
+theorem odd_half_ztAll : ztAll 736 45 false StairSchedule.exclusiveRoles
+    (P1Life.half (base 760) true base (base 2409)) = true := by
+  have hr : ∀ w ∈ StairSchedule.exclusiveRoles, 736 ≤ w ∧ w < 736 + 45 := roles_window
+  simp only [P1Life.half,if_true,P1Life.forward,List.append_assoc]
+  iterate 10 apply ztAll_of_suffix 736 45 _ _ _ _ hr
+  decide +kernel
+
+theorem odd_dstart_ztAll : ztAll 736 45 false StairSchedule.exclusiveRoles
+    (P1Life.dstart (base 760) base (base 2409)) = true := by
+  have hr : ∀ w ∈ StairSchedule.exclusiveRoles, 736 ≤ w ∧ w < 736 + 45 := roles_window
+  simp only [P1Life.dstart,List.append_assoc]
+  iterate 3 apply ztAll_of_suffix 736 45 _ _ _ _ hr
+  decide +kernel
+
+theorem odd_dend_ztAll : ztAll 736 45 false StairSchedule.exclusiveRoles
+    (P1Life.dend (base 760) base (base 2409)) = true := by
+  have hr : ∀ w ∈ StairSchedule.exclusiveRoles, 736 ≤ w ∧ w < 736 + 45 := roles_window
+  simp only [P1Life.dend,List.append_assoc]
+  iterate 3 apply ztAll_of_suffix 736 45 _ _ _ _ hr
+  decide +kernel
+
+theorem keeps_of_odd_ztAll {P : Program} (h : ztAll 736 45 false StairSchedule.exclusiveRoles P = true)
+    {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) : Keeps w P :=
+  (resets_of_ztAll h (fun _ x => x) w hw).keeps
+
+theorem oddHalfWindow_keeps (P : Program) (j a h : Nat) (hj : j < 102) (ha : a < 5) (hh : h < 5)
+    {w : Wire} (hw : InWin w) (half : Keeps w P) :
+    Keeps w (RouteA.Rolling1588.halfWindowWith P j a h) := by
+  have ng : Rolling1588.g j a ≠ w :=
+    wne (by left; simp only [Rolling1588.g, base]; omega) hw
+  have nf : (base 2409 : Wire) ≠ w := wne (by right; simp only [base]; omega) hw
+  have nc : Rolling1588.packetCarry j ≠ w :=
+    wne (by left; simp only [Rolling1588.packetCarry, base]; omega) hw
+  have n719 : (base 719 : Wire) ≠ w := wne (by left; simp only [base]; omega) hw
+  have ns : Rolling1588.s j h ≠ w :=
+    wne (by right; simp only [Rolling1588.s, base]; omega) hw
+  have inner : Keeps w (renameProgram (Equiv.swap (Rolling1588.packetCarry j) (Rolling1588.g j a))
+      (renameProgram (Equiv.swap (base 719) (Rolling1588.s j h)) P)) :=
+    keeps_rename _ (pre_swap _ _ w nc ng) (keeps_rename _ (pre_swap _ _ w n719 ns) half)
+  have pre : Keeps w [Instr.CX (Rolling1588.g j a) (base 2409), Instr.CX (base 2409) (Rolling1588.g j a)] :=
+    keeps_of_tgt (by
+      intro i hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl
+      · exact nf
+      · exact ng)
+  have post : Keeps w [Instr.CX (base 2409) (Rolling1588.g j a),
+      Instr.measureX (base 2409) [] [Correction.Z (Rolling1588.g j a)]] :=
+    keeps_of_tgt (by
+      intro i hi
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+      rcases hi with rfl | rfl
+      · exact ng
+      · exact nf)
+  exact keeps_append (keeps_append pre inner) post
+
+theorem oddCell_keeps (P : Program) (j a h : Nat) (hj : j < 102) (ha : a < 5) (hh : h < 5)
+    {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (half : Keeps w P) :
+    Keeps w (RouteA.Rolling1588.cellWith true P j a h) := by
+  have win := inWin_of_role hw
+  have sw := selW_keeps j a win (keeps_of_ztAll chk_keep_swapBody (fun _ x => x) w hw)
+  have hwn := oddHalfWindow_keeps P j a h hj ha hh win half
+  simp only [RouteA.Rolling1588.cellWith, if_true]
+  exact keeps_append hwn sw
+
+theorem oddBasePacket_keeps (j : Nat) (hj : j < 102) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w (RouteA.Rolling1588.basePacket true j) := by
+  have win := inWin_of_role hw
+  have k (P : Program) (h : ztAll 736 45 true StairSchedule.exclusiveRoles P = true) :
+      Keeps w (Rolling1588.onPacket j P) :=
+    keeps_onPacket j hj win (keeps_of_ztAll h (fun _ x => x) w hw)
+  have op := k _ chk_keep_stageOpen
+  have cl := k _ chk_keep_stageClose
+  have b5 := k _ chk_keep_bridge5
+  have b7 := k _ chk_keep_bridge7
+  have hk := keeps_of_odd_ztAll odd_half_ztAll hw
+  have c3 : Keeps w (RouteA.Rolling1588.cell true j 3 2) := oddCell_keeps _ j 3 2 hj (by decide) (by decide) hw hk
+  have c4 : Keeps w (RouteA.Rolling1588.cell true j 4 2) := oddCell_keeps _ j 4 2 hj (by decide) (by decide) hw hk
+  have last : Keeps w (if j=84 then RouteA.Rolling1588.cellWith true (P1Life.dend (base 760) base (base 2409)) j 4 2
+      else RouteA.Rolling1588.cell true j 4 2) := by
+    split
+    · exact oddCell_keeps _ j 4 2 hj (by decide) (by decide) hw (keeps_of_odd_ztAll odd_dend_ztAll hw)
+    · exact c4
+  simp only [RouteA.Rolling1588.basePacket, if_true]
+  exact keeps_append (keeps_append op (keeps_append (keeps_append (keeps_append (keeps_append
+    (keeps_append (keeps_append c3 c4) b7) c4) c3) b5) last)) cl
+
+theorem dstartBasePacket_keeps (j : Nat) (hj : j < 102) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w (RouteA.Rolling1588.dstartBasePacket j) := by
+  have win := inWin_of_role hw
+  have k (P : Program) (h : ztAll 736 45 true StairSchedule.exclusiveRoles P = true) :
+      Keeps w (Rolling1588.onPacket j P) :=
+    keeps_onPacket j hj win (keeps_of_ztAll h (fun _ x => x) w hw)
+  have op := k _ chk_keep_stageOpen
+  have cl := k _ chk_keep_stageClose
+  have b5 := k _ chk_keep_bridge5
+  have b7 := k _ chk_keep_bridge7
+  have hk := keeps_of_odd_ztAll odd_half_ztAll hw
+  have c3 : Keeps w (RouteA.Rolling1588.cell true j 3 2) := oddCell_keeps _ j 3 2 hj (by decide) (by decide) hw hk
+  have c4 : Keeps w (RouteA.Rolling1588.cell true j 4 2) := oddCell_keeps _ j 4 2 hj (by decide) (by decide) hw hk
+  have d0 := oddCell_keeps _ j 3 2 hj (by decide) (by decide) hw (keeps_of_odd_ztAll odd_dstart_ztAll hw)
+  simp only [RouteA.Rolling1588.dstartBasePacket]
+  exact keeps_append (keeps_append op (keeps_append (keeps_append (keeps_append (keeps_append
+    (keeps_append (keeps_append d0 c4) b7) c4) c3) b5) c4)) cl
+
+theorem oddPacket_keeps (j : Nat) (hj : j < 102) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w (RouteA.Rolling1588.packet true j) :=
+  keeps_rename _ (pre_of_inj _ (Equiv.injective _) w (chk_shifted_fix j hj w hw))
+    (oddBasePacket_keeps j hj hw)
+
+theorem slice_keeps {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w RouteA.Rolling1588.slice := by
+  rw [RouteA.Rolling1588.slice_eq]
+  refine keeps_append (keeps_append ?_ ?_) (oddPacket_keeps 84 (by decide) hw)
+  · exact keeps_rename _ (pre_of_inj _ (Equiv.injective _) w (chk_shifted_fix 1 (by decide) w hw))
+      (dstartBasePacket_keeps 1 (by decide) hw)
+  · exact packetSequence_keeps w true _ 82 2 (fun i _ h2 => oddPacket_keeps i (by omega) hw)
+
 /-- Every logical group keeps every role zero. -/
 theorem groups_keeps (divide : Bool) (d first count : Nat) (hr : first + count ≤ 102)
     {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles)
     (half : Keeps w (StairLoan.half760Loan d divide)) :
     Keeps w (StairSchedule.placedGroups StairConcrete.bestLoans divide d first count) := by
-  show Keeps w (renameProgram (OB5.sig 511) (StairGroups.groups divide d first count))
+  show Keeps w (renameProgram (OB5.sig 511) (StairConcrete.groupsM1 divide d first count))
   apply keeps_rename (OB5.sig 511) (pre_of_inj _ (OB5.sig_injective 511 (by decide)) w (chk_sig_fix w hw))
-  exact packetSequence_keeps w divide _ count first
-    (fun i _ h2 => packet_keeps divide d i (by omega) hw half)
+  by_cases hm : divide=true ∧ d=0 ∧ first=1 ∧ count=84
+  · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
+    rw [StairConcrete.groupsM1_odd]
+    exact slice_keeps hw
+  · rw [StairConcrete.groupsM1_other divide d first count hm]
+    exact packetSequence_keeps w divide _ count first
+      (fun i _ h2 => packet_keeps divide d i (by omega) hw half)
 
 /-- The group slot's logical piece keeps every role zero. -/
 theorem groupSlot_keeps (h : StairHostsSchedule.HostPlan) (divide : Bool) (d first count : Nat)
@@ -74912,7 +75159,10 @@ theorem poolHosts_fresh (divide : Bool) (d f c : Nat) (h3 : 3 ≤ d) (hd : d ≤
     ∀ q ∈ StairV3Primitives.poolHosts,
       q ∉ wires (StairSchedule.placedGroups StairConcrete.bestLoans divide d f c) := by
   intro q hq hx
-  change q ∈ wires (renameProgram (OB5.sig 511) (StairGroups.groups divide d f c)) at hx
+  replace hx : q ∈ wires (renameProgram (OB5.sig 511) (StairGroups.groups divide d f c)) := by
+    have u : q ∈ wires (renameProgram (OB5.sig 511) (StairConcrete.bestLoans.groups divide d f c)) := hx
+    rw [renameProgram_support] at u ⊢
+    exact Finset.image_subset_image (StairLoanGroupSupport.bestGroups_sub_stair divide d f c) u
   rw [renameProgram_support] at hx
   obtain ⟨w, hw, hwq⟩ := Finset.mem_image.mp hx
   obtain ⟨j, hj1, hj2, hjw⟩ := seq_mem divide (StairGroups.packet divide d) c f w hw
@@ -75034,7 +75284,10 @@ theorem hostedGroup39 (divide : Bool) (d f c : Nat) (hg : (d, f, c) ∈ schedule
   unfold StairHostsSchedule.hostedGroup at hx
   rcases rebind_mem _ _ _ (hostsFresh divide d f c hg) disj nr nh hlen x hx with hh | ⟨hP, hnr⟩
   · exact htpi x hh
-  · change x ∈ wires (renameProgram (OB5.sig 511) (StairGroups.groups divide d f c)) at hP
+  · replace hP : x ∈ wires (renameProgram (OB5.sig 511) (StairGroups.groups divide d f c)) := by
+      have u : x ∈ wires (renameProgram (OB5.sig 511) (StairConcrete.bestLoans.groups divide d f c)) := hP
+      rw [renameProgram_support] at u ⊢
+      exact Finset.image_subset_image (StairLoanGroupSupport.bestGroups_sub_stair divide d f c) u
     rw [renameProgram_support] at hP
     obtain ⟨w, hw, rfl⟩ := Finset.mem_image.mp hP
     obtain ⟨j, hj1, hj2, hjw⟩ := seq_mem divide (StairGroups.packet divide d) c f w hw
@@ -75946,10 +76199,16 @@ theorem tickReverse_slots (i : Nat) (h0 : 425 ≤ i) (h1 : i ≤ 500)
 theorem hostedGroup_slots_le (roles hosts : List Wire) (divide : Bool)
     (d first count : Nat) (hd : d ≤ 68) :
     gateSlots (StairLoan.rebindMany roles hosts
-        (renameProgram (OB5.sig 511) (StairGroups.groups divide d first count))) ≤
+        (renameProgram (OB5.sig 511) (StairConcrete.bestLoans.groups divide d first count))) ≤
       gateSlots (Rolling1588.groups divide first count) + 280 * (d * count) := by
   rw [StairSlotsLib.rebindMany_slots, rename_gateSlots, ← Nat.mul_assoc]
-  exact StairSlotsLib.groups_slots_le divide d first count hd
+  change gateSlots (StairConcrete.groupsM1 divide d first count) ≤ _
+  by_cases hm : divide=true ∧ d=0 ∧ first=1 ∧ count=84
+  · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
+    rw [StairConcrete.groupsM1_odd]
+    exact RouteA.Rolling1588.slice_slots_le.trans (Nat.le_add_right _ _)
+  · rw [StairConcrete.groupsM1_other divide d first count hm]
+    exact StairSlotsLib.groups_slots_le divide d first count hd
 
 theorem v3_groups_le68 (d first count : Nat) (hg : (d, first, count) ∈ v3Plan.groups) :
     d ≤ 68 := by
