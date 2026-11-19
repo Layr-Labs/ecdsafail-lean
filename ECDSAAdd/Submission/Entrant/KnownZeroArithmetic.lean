@@ -19,7 +19,7 @@ section
 open ECDSAAdd
 namespace ECDSAAdd.Entrant.A161SupportCover
 open Arithmetic FourthASavedCarryDevelop A161FixedFold
-set_option Elab.async false
+
 set_option autoImplicit false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
@@ -34,15 +34,15 @@ theorem partition : A161GenericFold.ambient L g hs96 = (((A161GenericFold.ambien
 theorem all_cover : (A161GenericFold.ambient L g hs96).all cover=true := by
  rw [partition]
  simp only [List.all_append,used0,used1,used2,used3,used4,used5,used6,used7,used8,used9,used10,used11,used12,used13,used14,used15,used16,Bool.true_and]
-#print axioms witness_support
-#print axioms all_cover
+
+
 end ECDSAAdd.Entrant.A161SupportCover
 
 section
 namespace ECDSAAdd.Entrant.A161FineSupport
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  FourthASavedCarryDevelop A161FixedFold
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run List.toFinset
@@ -79,7 +79,7 @@ theorem ambient_fine : (A161GenericFold.ambient L g hs96).toFinset⊆insert d (w
 
 
 
-#print axioms ambient_fine
+
 
 end ECDSAAdd.Entrant.A161FineSupport
 end
@@ -88,7 +88,7 @@ section
 namespace ECDSAAdd.Entrant.A161Low4Fine
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ControlLoan1589BFFold
-set_option Elab.async false
+
 set_option autoImplicit false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
@@ -137,7 +137,7 @@ theorem body_fine : wires body⊆insert d (wires (aBodyTriple L g)) := by
    simp only [aBodyTriple,wires_append,Finset.mem_union]
    exact Or.inr (Or.inl hu)
  · exact fold_fine hu
-#print axioms ambient_fine
+
 
 end ECDSAAdd.Entrant.A161Low4Fine
 
@@ -170,7 +170,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.KnownSparseFold
 open Arithmetic ZeroReadDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -243,9 +243,9 @@ theorem majority_zero(K:List Wire)(a b c d:Wire)(nd:[a,b,c,d].Nodup)
  have h:=List.mem_filter.mp hq
  simpa [writeBit,Function.update_apply,of_decide_eq_true h.2,Ne.symm (of_decide_eq_true h.2)] using hz q h.1
 
-#print axioms next_zero
-#print axioms emit_eq
-#print axioms majority_zero
+
+
+
 end ECDSAAdd.Entrant.KnownSparseFold
 
 end
@@ -256,7 +256,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.KnownSparseFold
 open Arithmetic ZeroReadDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -343,10 +343,10 @@ theorem Cert.append(K Kmid Kf:List Wire)(p r p' r':Program)(n n':Nat)
  | maj K a b c d p r Kmid n nd tail ih=>
   simpa only [List.append_assoc] using Cert.maj K a b c d (p++p') (r++r') Kf (n+n') nd (ih h')
 
-#print axioms Cert.correct
-#print axioms Cert.counts
-#print axioms Cert.sublist
-#print axioms Cert.append
+
+
+
+
 end ECDSAAdd.Entrant.KnownSparseFold
 
 end
@@ -357,7 +357,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.KnownSparseFold
 open Arithmetic ZeroReadDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -428,7 +428,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.KnownSparseFold
 open Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 
@@ -466,7 +466,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.KnownSparseFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 
@@ -500,7 +500,7 @@ def normalize(K:List Wire)(p:Program)(Kf:List Wire)(n:Nat)(o:Option (Checked K p
 def ExactChecked.append(K Km Kf:List Wire)(p q:Program)(n m:Nat)
  (a:ExactChecked K p Km n)(b:ExactChecked Km q Kf m):ExactChecked K (p++q) Kf (n+m):=
  ⟨a.out++b.out,Cert.append K Km Kf p a.out q b.out n m a.proof b.proof⟩
-#print axioms normalize
+
 end ECDSAAdd.Entrant.KnownSparseFold
 
 end
@@ -511,7 +511,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.KnownCMidStaged
 open Arithmetic KnownSparseFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -8517,7 +8517,7 @@ theorem literal_verified:ParkAProgramBool.programEq literal (C163Low4Middle.bank
 theorem literal_eq:literal=C163Low4Middle.bankChecked.out:=ParkAProgramBool.programEq_sound _ _ literal_verified
 theorem cert:Cert known0 (C163Low4Middle.bankChecked.out) body known60 8:=
  Eq.mp (congrArg (fun P:Program=>Cert known0 P body known60 8) literal_eq) join0_60Opt.proof
-#print axioms cert
+
 end ECDSAAdd.Entrant.KnownCMidStaged
 
 end
@@ -8528,7 +8528,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.KnownAMidStaged
 open Arithmetic KnownSparseFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -15780,7 +15780,7 @@ theorem literal_verified:ParkAProgramBool.programEq literal (A161Low4FixedFold.c
 theorem literal_eq:literal=A161Low4FixedFold.checked.out:=ParkAProgramBool.programEq_sound _ _ literal_verified
 theorem cert:Cert known0 (A161Low4FixedFold.checked.out) body known54 8:=
  Eq.mp (congrArg (fun P:Program=>Cert known0 P body known54 8) literal_eq) join0_54Opt.proof
-#print axioms cert
+
 end ECDSAAdd.Entrant.KnownAMidStaged
 
 end
@@ -15791,7 +15791,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAcc
 open Arithmetic Acc
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -15954,7 +15954,7 @@ theorem op_mod_triple (acc Z bank : List Wire) (cin : Wire) (w : Nat) (f : Measu
     exact (frame q hy).trans (hs.2 q hq)
 
 
-#print axioms op_mod_triple
+
 end ECDSAAdd.Entrant.ReorderedAcc
 
 end
@@ -15965,7 +15965,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAcc
 open Arithmetic Acc
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -16052,7 +16052,7 @@ theorem op_mod_prefix_triple (acc Z bank : List Wire) (cin : Wire) (w n : Nat)
 
 
 
-#print axioms op_mod_prefix_triple
+
 end ECDSAAdd.Entrant.ReorderedAcc
 
 end
@@ -16063,7 +16063,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCPre
 open Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -16115,7 +16115,7 @@ theorem pre_triple(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
  change Triple _ _ (SquareFrame acc base (ReorderedAcc.valueMod ((2^140-48*H)%2^140) H 140 10 false)) at add
  rw [add_value H hH] at add
  exact (seed.seq sub).seq add
-#print axioms pre_triple
+
 end ECDSAAdd.Entrant.ReorderedCPre
 
 end
@@ -16126,7 +16126,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCHead
 open Arithmetic ReorderedCPre
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -16154,7 +16154,7 @@ theorem head_triple(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
  change Triple _ _ (SquareFrame acc base (ReorderedAcc.valueMod (16*H) H 140 6 true)) at sub
  rw [sub_value H hH] at sub
  exact seed.seq sub
-#print axioms head_triple
+
 end ECDSAAdd.Entrant.ReorderedCHead
 
 end
@@ -16165,7 +16165,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCClear
 open Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -16228,7 +16228,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedKnownTail
 open Arithmetic Arithmetic.KnownOutputAdder MixedLiteralAdderDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -16300,7 +16300,7 @@ theorem counts(src Z ys carry:List Wire)(cin:Wire)(hs:2≤src.length)(hzl:4≤Z.
  · simp only [mappedRead,List.length_map,List.length_append,List.length_take,hy,Nat.min_eq_left hzl]
  · exact (desired_length src hs).trans hy.symm
  · exact hc
-#print axioms run_eq_add
+
 end ECDSAAdd.Entrant.ReorderedKnownTail
 
 end
@@ -16310,7 +16310,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCarryDual
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 
@@ -16338,7 +16338,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedGenericCache
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop MixedLiteralAdderDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 
@@ -16451,10 +16451,10 @@ theorem count_balance (k : Nat) (xs ys cs hs : List Wire) (cin : Wire)
   tf,t4,cp.1,cp.2,mv.1,mv.2.1,carryPrefix_measurements]
  simp [Nat.add_assoc,Nat.add_comm]
 
-#print axioms count_balance
-#print axioms cached_context_frame
-#print axioms cachedAdd_frame
-#print axioms consumedAdd_frame
+
+
+
+
 end ECDSAAdd.Entrant.ReorderedGenericCache
 
 end
@@ -16465,7 +16465,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCarryValues
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 
@@ -16536,7 +16536,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCacheArithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 
 theorem high_add (M H : Nat) (hM : 0<M) (hH : H<M) :
@@ -16560,8 +16560,8 @@ theorem high_add_low (n j H : Nat) (hj : j≤n) (hH : H<2^n) :
  rw [Nat.mod_mod_of_dvd _ hd] at eq
  simpa only [Nat.pow_add,show 2^10=1024 by decide,Nat.mul_comm] using eq
 
-#print axioms high_add_low
-#print axioms high_add
+
+
 end ECDSAAdd.Entrant.ReorderedCacheArithmetic
 
 end
@@ -16572,7 +16572,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCacheBits
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 
@@ -16644,10 +16644,10 @@ theorem inverse_values (n k H C:Nat) (xs ys cs:List Wire) (cin:Wire) (s:State)
  intro j hj
  exact inverse_known (n+j) (n+k) xs ys cs cin s (by omega) hx hy hc hn hz hi H C source target
 
-#print axioms forward_values
-#print axioms inverse_values
-#print axioms forward_known
-#print axioms inverse_known
+
+
+
+
 end ECDSAAdd.Entrant.ReorderedCacheBits
 
 end
@@ -16656,7 +16656,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -16725,7 +16725,7 @@ theorem tail_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
   change run (tail acc Z bank cin src) m s=_ at e
   rw [e,←rawEq]
   exact old s m hs
-#print axioms tail_triple
+
 end ECDSAAdd.Entrant.ReorderedCTail
 
 end
@@ -16736,7 +16736,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCPlain
 open Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -16793,8 +16793,8 @@ theorem unbuild_triple(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
   (16*H) 0 (Or.inr (by simp [Acc.earlyTerm,H,Nat.mul_comm]))
  exact ((top.seq sub).seq tail).seq seed
 
-#print axioms build_triple
-#print axioms unbuild_triple
+
+
 end ECDSAAdd.Entrant.ReorderedCPlain
 
 end
@@ -16805,7 +16805,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCBuild
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -16903,8 +16903,8 @@ theorem measurement_eq(k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)
  rw [plain_split acc Z bank cin src hsrc]
  simp only [build,measurementCount_append,counts.2.1]
 
-#print axioms measurement_eq
-#print axioms build_frame
+
+
 end ECDSAAdd.Entrant.ReorderedCBuild
 
 end
@@ -16915,7 +16915,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedConsumedSub
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -17007,7 +17007,7 @@ theorem replace_middle (before after old new:Program)(hs:List Wire)(values:List 
  simp only [List.append_assoc,run_append,count]
  rw [eq,run_scatter _ hs _ _ _ off]
 
-#print axioms replace_middle
+
 
 end ECDSAAdd.Entrant.ReorderedConsumedSub
 
@@ -17019,7 +17019,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCUnbuild
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -17122,7 +17122,7 @@ theorem unbuild_frame(k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)
   hs (List.replicate hs.length false) s m count offAfter fr
  simpa only [unbuild,pre,←plain_split acc Z bank cin src hsrc] using result
 
-#print axioms unbuild_frame
+
 end ECDSAAdd.Entrant.ReorderedCUnbuild
 
 end
@@ -17133,7 +17133,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCLoop
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 
@@ -17187,7 +17187,7 @@ section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedFrameUnique
 set_option autoImplicit false
-set_option Elab.async false
+
 
 theorem unique(acc:List Wire)(base:BasisState)(V:Nat)(s t:BasisState)
  (hs:SquareFrame acc base V s)(ht:SquareFrame acc base V t):s=t:=by
@@ -17228,8 +17228,8 @@ theorem c_unbuild_eq(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
   (C163SourceAdd.unbuild_triple acc Z bank cin src hacc hsrc hf s.basis hz hb hi)
   s mp mq ⟨ha,fun _ _=>rfl⟩
 
-#print axioms c_build_eq
-#print axioms c_unbuild_eq
+
+
 end ECDSAAdd.Entrant.ReorderedFrameUnique
 
 end
@@ -17240,7 +17240,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedRetape
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 
@@ -17287,7 +17287,7 @@ theorem c_loop_eq(acc Z bank:List Wire)(cin:Wire)(src:List Wire)(middle:Program)
  rw [ready.2.1]
  exact ready.1
 
-#print axioms c_loop_eq
+
 end ECDSAAdd.Entrant.ReorderedRetape
 
 end
@@ -17299,7 +17299,7 @@ namespace ECDSAAdd.Entrant.ReorderedCFixed
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -17312,7 +17312,7 @@ def loop:Program:=ReorderedCBuild.build 99 ga pad bank L.core.cin src hosts++ban
 
 theorem host_geometry:hosts.Nodup ∧ hosts.length=99 ∧
  (∀h∈hosts,h∉L.core.cin::(src++ga++pad++bank)):=by decide +kernel
-#print axioms host_geometry
+
 end ECDSAAdd.Entrant.ReorderedCFixed
 
 end
@@ -17324,7 +17324,7 @@ namespace ECDSAAdd.Entrant.ReorderedCFixed
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -17384,7 +17384,7 @@ theorem off_plain:∀h∈hosts,h∉wires (ReorderedCPlain.build ga pad bank L.co
  · simpa only [ReorderedCPlain.unbuild,wires_append,Finset.mem_union,not_or,and_assoc] using
     And.intro preOff (And.intro (op10Off true) (And.intro tailOff seedOff))
 
-#print axioms off_plain
+
 end ECDSAAdd.Entrant.ReorderedCFixed
 
 end
@@ -17395,25 +17395,25 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedBankSupport
 open C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.wires specialChecked bankChecked
 
 theorem subset:wires bankChecked.out⊆wires specialChecked.out:=
  (ZeroSetDevelop.SRewrites.support hs specialChecked.out bankChecked.out bank_cert).1
-#print axioms subset
+
 
 theorem free:∀h∈hs,h∉wires bankChecked.out:=
  (ZeroSetDevelop.SRewrites.support hs specialChecked.out bankChecked.out bank_cert).2
-#print axioms free
+
 
 theorem q_free:C163Low4Middle.q∉wires bankChecked.out:=fun bad=>special_free.1 (subset bad)
-#print axioms q_free
+
 theorem r_free:C163Low4Middle.r∉wires bankChecked.out:=fun bad=>special_free.2 (subset bad)
-#print axioms r_free
+
 theorem p_free:C163Low4Middle.p∉wires bankChecked.out:=fun bad=>special_p_free (subset bad)
-#print axioms p_free
+
 end ECDSAAdd.Entrant.ReorderedBankSupport
 
 end
@@ -17425,7 +17425,7 @@ namespace ECDSAAdd.Entrant.ReorderedCFixed
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -17448,7 +17448,7 @@ theorem off_middle:∀h∈hosts,h∉wires bankChecked.out:=by
  rw [List.forall_mem_cons,List.forall_mem_cons,List.forall_mem_cons]
  exact ⟨ReorderedBankSupport.q_free,ReorderedBankSupport.r_free,ReorderedBankSupport.p_free,ReorderedBankSupport.free⟩
 
-#print axioms off_middle
+
 
 theorem transport(Q:BasisState→Prop)(s a b:State)(e:a=b)(hb:b.phase=s.phase ∧ Q b.basis):
  a.phase=s.phase ∧ Q a.basis:=e.symm ▸ hb
@@ -17532,7 +17532,7 @@ section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedRecordPadding
 set_option autoImplicit false
-set_option Elab.async false
+
 
 def program(n:Nat)(wire:Wire):Program:=List.replicate n (.measureX wire [] [])
 
@@ -17564,7 +17564,7 @@ theorem counts(n:Nat)(wire:Wire):toffoliCount (program n wire)=0 ∧
    List.map_cons,List.sum_cons,Challenge.instructionSlots,List.length_nil] at ih ⊢
   omega
 
-#print axioms run_zero
+
 end ECDSAAdd.Entrant.ReorderedRecordPadding
 
 end
@@ -17576,7 +17576,7 @@ namespace ECDSAAdd.Entrant.ReorderedKnownC
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle KnownSparseFold ZeroReadDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -17714,7 +17714,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedPhysical
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 
@@ -17753,8 +17753,8 @@ theorem padding(n:Nat)(wire:Wire):GatePhysical (ReorderedRecordPadding.program n
  subst i
  simp [RecordedQuantum.PhysicalInstr]
 
-#print axioms cached
-#print axioms padding
+
+
 end ECDSAAdd.Entrant.ReorderedPhysical
 
 end
@@ -17766,7 +17766,7 @@ namespace ECDSAAdd.Entrant.ReorderedCPhysical
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -17820,7 +17820,7 @@ theorem body_physical:GatePhysical ReorderedKnownC.body:=by
  simp only [ReorderedKnownC.body,ReorderedKnownC.rawBody,C163Low4Body.bodyProgram,ReorderedKnownC.loop,gatePhysical_append]
  exact ⟨⟨old.1,⟨⟨buildP,midP⟩,unbuildP⟩⟩,ReorderedPhysical.padding 4 L.core.cin⟩
 
-#print axioms body_physical
+
 end ECDSAAdd.Entrant.ReorderedCPhysical
 
 end
@@ -17832,7 +17832,7 @@ namespace ECDSAAdd.Entrant.ReorderedCCounts
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle ControlLoan1589BFFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount
@@ -17902,8 +17902,8 @@ theorem body_counts:toffoliCount ReorderedKnownC.body≤2121 ∧ measurementCoun
  simp only [hosts] at parts
  omega
 
-#print axioms pieces
-#print axioms body_counts
+
+
 end ECDSAAdd.Entrant.ReorderedCCounts
 
 end
@@ -17914,7 +17914,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCStructural
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout C163Low4Ghost C163Low4Structural
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 
@@ -17935,8 +17935,8 @@ theorem unbuild_eq(L:CuccaroStreamedSquareWideLayout)(k:Nat)(Z bank src hs:List 
   ghostAcc_take_drop L 140 6 (by decide),ty L src false 4 (by decide)]
  rfl
 
-#print axioms build_eq
-#print axioms unbuild_eq
+
+
 end ECDSAAdd.Entrant.ReorderedCStructural
 
 end
@@ -17947,7 +17947,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedSupport
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 set_option linter.unusedVariables false
@@ -18006,8 +18006,8 @@ theorem consumed(k:Nat)(xs ys cs hs:List Wire)(cin:Wire)
  simp only [ReorderedConsumedSub.consumed,wires_append]
  exact Finset.union_subset (Finset.union_subset notSub core) notSub
 
-#print axioms cached
-#print axioms consumed
+
+
 end ECDSAAdd.Entrant.ReorderedSupport
 
 end
@@ -18019,7 +18019,7 @@ namespace ECDSAAdd.Entrant.ReorderedCFine
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle OwnDiagAll12Square
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -18104,7 +18104,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedSlots
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] Challenge.gateSlots
@@ -18126,7 +18126,7 @@ theorem cache(k:Nat)(xs ys cs hs:List Wire)(cin:Wire)
   Challenge.gateSlots_append,pn,p4,cp,mv]
  constructor <;> omega
 
-#print axioms cache
+
 end ECDSAAdd.Entrant.ReorderedSlots
 
 end
@@ -18138,7 +18138,7 @@ namespace ECDSAAdd.Entrant.ReorderedCSlots
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle OwnDiagAll12Square
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] Challenge.gateSlots
@@ -18194,7 +18194,7 @@ theorem body_slots:Challenge.gateSlots ReorderedKnownC.body≤112000:=by
   ReorderedKnownC.hosts,Challenge.gateSlots_append]
  omega
 
-#print axioms body_slots
+
 end ECDSAAdd.Entrant.ReorderedCSlots
 
 end
@@ -18205,7 +18205,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedCBalance
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount
@@ -18249,7 +18249,7 @@ theorem balance:toffoliCount ReorderedKnownC.body+10=toffoliCount C163Low4Middle
   C163Low4Middle.body,C163Low4Body.bodyProgram,C163Low4Middle.loop,toffoliCount_append,measurementCount_append]
  omega
 
-#print axioms balance
+
 end ECDSAAdd.Entrant.ReorderedCBalance
 
 end
@@ -18260,7 +18260,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAPre
 open Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -18312,7 +18312,7 @@ theorem pre_triple(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
  change Triple _ _ (SquareFrame acc base (ReorderedAcc.valueMod ((2^138-48*H)%2^138) H 138 10 false)) at add
  rw [add_value H hH] at add
  exact (seed.seq sub).seq add
-#print axioms pre_triple
+
 end ECDSAAdd.Entrant.ReorderedAPre
 
 end
@@ -18323,7 +18323,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAHead
 open Arithmetic ReorderedAPre
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -18351,7 +18351,7 @@ theorem head_triple(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
  change Triple _ _ (SquareFrame acc base (ReorderedAcc.valueMod (16*H) H 138 6 true)) at sub
  rw [sub_value H hH] at sub
  exact seed.seq sub
-#print axioms head_triple
+
 end ECDSAAdd.Entrant.ReorderedAHead
 
 end
@@ -18362,7 +18362,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAClear
 open Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -18423,7 +18423,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 30000
 set_option linter.unusedSimpArgs false
@@ -18492,7 +18492,7 @@ theorem tail_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
   change run (tail acc Z bank cin src) m s=_ at e
   rw [e,←rawEq]
   exact old s m hs
-#print axioms tail_triple
+
 end ECDSAAdd.Entrant.ReorderedATail
 
 end
@@ -18503,7 +18503,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAPlain
 open Arithmetic
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -18560,8 +18560,8 @@ theorem unbuild_triple(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
   (16*H) 0 (Or.inr (by simp [Acc.earlyTerm,H,Nat.mul_comm]))
  exact ((top.seq sub).seq tail).seq seed
 
-#print axioms build_triple
-#print axioms unbuild_triple
+
+
 end ECDSAAdd.Entrant.ReorderedAPlain
 
 end
@@ -18572,7 +18572,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedABuild
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -18670,8 +18670,8 @@ theorem measurement_eq(k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)
  rw [plain_split acc Z bank cin src hsrc]
  simp only [build,measurementCount_append,counts.2.1]
 
-#print axioms measurement_eq
-#print axioms build_frame
+
+
 end ECDSAAdd.Entrant.ReorderedABuild
 
 end
@@ -18682,7 +18682,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAUnbuild
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -18785,7 +18785,7 @@ theorem unbuild_frame(k:Nat)(acc Z bank:List Wire)(cin:Wire)(src hs:List Wire)
   hs (List.replicate hs.length false) s m count offAfter fr
  simpa only [unbuild,pre,←plain_split acc Z bank cin src hsrc] using result
 
-#print axioms unbuild_frame
+
 end ECDSAAdd.Entrant.ReorderedAUnbuild
 
 end
@@ -18796,7 +18796,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedALoop
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 
@@ -18851,7 +18851,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAFrame
 open ReorderedFrameUnique
 set_option autoImplicit false
-set_option Elab.async false
+
 theorem a_build_eq(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
  (hacc:acc.length=161)(hsrc:src.length=128)
  (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 161 f)
@@ -18874,8 +18874,8 @@ theorem a_unbuild_eq(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
   (A161SourceAdd.unbuild_triple acc Z bank cin src hacc hsrc hf s.basis hz hb hi)
   s mp mq ⟨ha,fun _ _=>rfl⟩
 
-#print axioms a_build_eq
-#print axioms a_unbuild_eq
+
+
 end ECDSAAdd.Entrant.ReorderedAFrame
 
 end
@@ -18886,7 +18886,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedARetape
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ReorderedRetape
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 10000000
 set_option maxRecDepth 100000
 theorem a_middle_eq(acc Z bank:List Wire)(cin:Wire)(src:List Wire)(middle:Program)
@@ -18928,7 +18928,7 @@ theorem a_loop_eq(acc Z bank:List Wire)(cin:Wire)(src:List Wire)(middle:Program)
  rw [ready.2.1]
  exact ready.1
 
-#print axioms a_loop_eq
+
 end ECDSAAdd.Entrant.ReorderedARetape
 
 end
@@ -18940,7 +18940,7 @@ namespace ECDSAAdd.Entrant.ReorderedAFixed
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
  ThirdSavedCarryDevelop InverseCarryDevelop ManyACarryDevelop A161Low4Ghost
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires A161Low4FixedFold.checked
@@ -18989,7 +18989,7 @@ theorem good_old(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReducti
  rw [←eq]
  exact ⟨old.1,old.2.1,(fun u hu=>old.2.2.1 u ((FullPadDevelop.pad_sublist L).subset hu)),old.2.2.2⟩
 
-#print axioms good_old
+
 end ECDSAAdd.Entrant.ReorderedAFixed
 
 end
@@ -19001,7 +19001,7 @@ namespace ECDSAAdd.Entrant.ReorderedAFixed
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop ReorderedAFixed
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -19066,7 +19066,7 @@ theorem off_plain:∀h∈hosts,h∉wires (ReorderedAPlain.build acc pad bank L.c
  · simpa only [ReorderedAPlain.unbuild,wires_append,Finset.mem_union,not_or,and_assoc] using
     And.intro preOff (And.intro (op10Off true) (And.intro tailOff seedOff))
 
-#print axioms off_plain
+
 end ECDSAAdd.Entrant.ReorderedAFixed
 
 end
@@ -19078,7 +19078,7 @@ namespace ECDSAAdd.Entrant.ReorderedAFixed
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
  ThirdSavedCarryDevelop InverseCarryDevelop ManyACarryDevelop A161Low4Ghost
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
@@ -19127,7 +19127,7 @@ theorem plain_frame(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareRedu
    (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
     (SquareReduction.p-1-O))%SquareReduction.p)) s _ _ finalEq old
 
-#print axioms plain_frame
+
 end ECDSAAdd.Entrant.ReorderedAFixed
 
 end
@@ -19139,7 +19139,7 @@ namespace ECDSAAdd.Entrant.ReorderedAFixed
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
  ThirdSavedCarryDevelop InverseCarryDevelop ManyACarryDevelop A161Low4Ghost
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires A161Low4FixedFold.checked
@@ -19204,7 +19204,7 @@ theorem frame(base:BasisState)(hc:L.PairClean base)(hsum:base q=false)(hV:base r
   ReorderedAPlain.unbuild acc pad bank L.core.cin src) m s:=cached.trans middleReplace
  exact transport _ s _ _ eq (plain_frame base hc O hO s m hf)
 
-#print axioms off_middle
+
 
 end ECDSAAdd.Entrant.ReorderedAFixed
 
@@ -19217,7 +19217,7 @@ namespace ECDSAAdd.Entrant.ReorderedKnownA
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop ReorderedAFixed KnownSparseFold ZeroReadDevelop A161Low4Ghost
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -19335,7 +19335,7 @@ namespace ECDSAAdd.Entrant.ReorderedAPhysical
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop ReorderedAFixed
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -19393,7 +19393,7 @@ theorem body_physical:GatePhysical ReorderedKnownA.body:=by
   exact old.2.2.1.2 i ((KnownSparseFold.Cert.sublist _ _ _ _ _ KnownAMidStaged.cert).subset hi)
  simp only [ReorderedKnownA.body,ReorderedKnownA.rawBody,ReorderedKnownA.fold,ReorderedKnownA.loop,gatePhysical_append]
  exact ⟨⟨old.1,old.2.1,⟨⟨buildP,midP⟩,unbuildP⟩⟩,ReorderedPhysical.padding 4 L.core.cin⟩
-#print axioms body_physical
+
 end ECDSAAdd.Entrant.ReorderedAPhysical
 
 end
@@ -19405,7 +19405,7 @@ namespace ECDSAAdd.Entrant.ReorderedACounts
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop ReorderedAFixed ControlLoan1589BFFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount
@@ -19457,7 +19457,7 @@ theorem pieces:
   toffoliCount_append,measurementCount_append]
  omega
 
-#print axioms pieces
+
 end ECDSAAdd.Entrant.ReorderedACounts
 
 end
@@ -19468,7 +19468,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.ReorderedAStructural
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout A161Low4Ghost A161Low4Structural
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 
@@ -19489,8 +19489,8 @@ theorem unbuild_eq(L:CuccaroStreamedSquareWideLayout)(k:Nat)(Z bank src hs:List 
   ghostAcc_take_drop L 138 6 (by decide),ty L src false 4 (by decide)]
  rfl
 
-#print axioms build_eq
-#print axioms unbuild_eq
+
+
 end ECDSAAdd.Entrant.ReorderedAStructural
 
 end
@@ -19502,7 +19502,7 @@ namespace ECDSAAdd.Entrant.ReorderedASlots
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop ReorderedAFixed OwnDiagAll12Square
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] Challenge.gateSlots
@@ -19552,7 +19552,7 @@ theorem body_slots:Challenge.gateSlots ReorderedKnownA.body≤112000:=by
  simp only [ReorderedKnownA.body,ReorderedKnownA.rawBody,ReorderedKnownA.fold,ReorderedKnownA.loop,
   ReorderedKnownA.hosts,Challenge.gateSlots_append]
  omega
-#print axioms body_slots
+
 end ECDSAAdd.Entrant.ReorderedASlots
 
 end
@@ -19564,7 +19564,7 @@ namespace ECDSAAdd.Entrant.ReorderedABalance
 open Arithmetic InverseCarryDevelop ThirdSavedCarryDevelop ReorderedAFixed
 set_option autoImplicit false
 set_option linter.unusedSimpArgs false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount
@@ -19612,7 +19612,7 @@ theorem balance:toffoliCount ReorderedKnownA.body+10=toffoliCount A161Low4FixedF
  simp only [A161Low4FixedFold.q,A161Low4FixedFold.r,A161Low4FixedFold.p] at old
  omega
 
-#print axioms balance
+
 end ECDSAAdd.Entrant.ReorderedABalance
 
 end
@@ -19623,7 +19623,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.SignExtendThree
 set_option autoImplicit false
 set_option linter.unnecessarySeqFocus false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -19690,7 +19690,7 @@ theorem extend_frame(xs ys zs:List Wire)(q:Wire)(base:BasisState)(V:Nat)(b:Bool)
    have no:u∉ys:=fun h=>hu (List.mem_append_left _ (List.mem_append_right _ h))
    simp only [if_neg no]
    exact frame.2 u hu
-#print axioms extend_frame
+
 end ECDSAAdd.Entrant.SignExtendThree
 
 end
@@ -19701,7 +19701,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SignAHead
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed ManyACarryDevelop InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -19795,7 +19795,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SignCHead
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle ManyACarryDevelop InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -19889,7 +19889,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SignRetape
 open InverseCarryDevelop ZeroReadDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 attribute [local irreducible] ECDSAAdd.run
 
 def tape(P Q:Program)(m:List Bool):List Bool:=List.replicate (measurementCount Q) false++m.drop (measurementCount P)
@@ -19900,7 +19900,7 @@ theorem replace(P Q R:Program)(s:State)(m:List Bool)
  simp only [run_cat]
  rw [h m (tape P Q m)]
  simp [tape]
-#print axioms replace
+
 end ECDSAAdd.Entrant.SignRetape
 
 end
@@ -19913,7 +19913,7 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed A161L
  ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -20006,7 +20006,7 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163L
  ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -20106,7 +20106,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SignAHeadResources
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -20163,7 +20163,7 @@ theorem physical:GatePhysical SignAHead.head:=by
  exact ⟨⟨seed,sub⟩,ext⟩
 theorem slots:Challenge.gateSlots SignAHead.head+39=Challenge.gateSlots (ReorderedAHead.head acc pad bank L.core.cin src):=by decide +kernel
 
-#print axioms balance
+
 
 end ECDSAAdd.Entrant.SignAHeadResources
 
@@ -20175,7 +20175,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SignCHeadResources
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -20232,7 +20232,7 @@ theorem physical:GatePhysical SignCHead.head:=by
  exact ⟨⟨seed,sub⟩,ext⟩
 theorem slots:Challenge.gateSlots SignCHead.head+39=Challenge.gateSlots (ReorderedCHead.head ga pad bank L.core.cin src):=by decide +kernel
 
-#print axioms balance
+
 
 end ECDSAAdd.Entrant.SignCHeadResources
 
@@ -20244,7 +20244,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SignAHeadSupport
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -20283,7 +20283,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SignCHeadSupport
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -20685,7 +20685,7 @@ theorem decode(H:Nat):
    exact t.2.1
  · rw [show 6=2+4 from rfl,show 4=0+4 from rfl,word_low H 2 (by decide),word_low H 0 (by decide),source_low H 2 (by decide)]
    exact t.2.2
-#print axioms decode
+
 end ECDSAAdd.Entrant.LowWordRecovery
 
 end
@@ -20730,8 +20730,8 @@ theorem low_register_zero(A:List Wire)(s:BasisState)(H i:Nat)(hi:i<4)(hl:i<A.len
  (hv:regValue A s=4294968272*H):s (A.getD i 0)=false:=by
  rw [readBit A s i hl,hv]
  exact zero_low H i hi
-#print axioms copies
-#print axioms low_register_zero
+
+
 end ECDSAAdd.Entrant.LowWordRecovery
 
 end
@@ -20783,7 +20783,7 @@ theorem commute(xs:List Wire)(P:Program)(m:List Bool)(s:State)(off:∀q∈xs,q�
 
 
 
-#print axioms commute
+
 
 end ECDSAAdd.Entrant.EraseListProof
 
@@ -20908,7 +20908,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.GhostMiddleSupport
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -20971,7 +20971,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.HighBorrowArithmeticResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 1000000
 set_option linter.unusedSimpArgs false
@@ -21007,9 +21007,9 @@ theorem borrow_remainder_high (N H : Nat) (hN : 0<N) (hH : H<16*N) :
 
 
 
-#print axioms borrow_remainder_bound
-#print axioms borrow_remainder_shape
-#print axioms borrow_remainder_high
+
+
+
 
 end ECDSAAdd.Entrant.HighBorrowArithmeticResearch
 
@@ -21019,7 +21019,7 @@ section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.UniformHighAdderResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -21068,7 +21068,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.FiniteUniformAdder4Research
 open UniformHighAdderResearch MeasuredCodec5
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -21096,15 +21096,15 @@ theorem modeled (x : Nat) (hx : x<512) (hu : uniform x=true) (m : List Bool) (ph
 
 theorem counts : toffoliCount fast=0 ∧ toffoliCount original=3 ∧
  measurementCount fast=3 ∧ measurementCount original=3 := by decide +kernel
-#print axioms finite
-#print axioms modeled
-#print axioms counts
+
+
+
 end ECDSAAdd.Entrant.FiniteUniformAdder4Research
 
 namespace ECDSAAdd.Entrant.FiniteUniformAdder4Research
 open ECDSAAdd ECDSAAdd.Arithmetic MeasuredCodec5
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 20000
 set_option maxHeartbeats 8000000
 set_option linter.unusedSimpArgs false
@@ -21170,7 +21170,7 @@ theorem run_eq (s : State) (m : List Bool)
    · have ea:=run_preserves_outside fast m s q (fun h=>hq (support.1 h))
      have eb:=run_preserves_outside original m s q (fun h=>hq (support.2 h))
      exact ea.trans eb.symm
-#print axioms run_eq
+
 end ECDSAAdd.Entrant.FiniteUniformAdder4Research
 
 end
@@ -21180,7 +21180,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.PlacedUniformAdder4Research
 open FiniteUniformAdder4Research
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -21232,8 +21232,8 @@ theorem run_eq(f:Fin 12→Wire)(hf:Function.Injective f)(s:State)(m:List Bool)
 theorem counts(f:Fin 12→Wire):toffoliCount (fastAt f)=0 ∧ toffoliCount (originalAt f)=3 ∧
  measurementCount (fastAt f)=3 ∧ measurementCount (originalAt f)=3:=by
  simpa only [fastAt,originalAt,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2] using FiniteUniformAdder4Research.counts
-#print axioms run_eq
-#print axioms counts
+
+
 end ECDSAAdd.Entrant.PlacedUniformAdder4Research
 
 end
@@ -21243,7 +21243,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.UniformAdderSpliceResearch
 open PlacedUniformAdder4Research
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -21292,7 +21292,7 @@ theorem replace(f:Fin 12→Wire)(hf:Function.Injective f)(pre post:Program)(s:St
   fun r=>PlacedUniformAdder4Research.run_eq f hf u r ct ready
  exact CodexKnownOnesTail.Helpers.run_mid_congr pre (fastAt f) (originalAt f) post m s hm
   ((PlacedUniformAdder4Research.counts f).2.2.1.trans (PlacedUniformAdder4Research.counts f).2.2.2.symm) all
-#print axioms replace
+
 end ECDSAAdd.Entrant.UniformAdderSpliceResearch
 
 end
@@ -21302,7 +21302,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.HighConsumedInputsResearch
 open InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -21421,9 +21421,9 @@ theorem inner_value(k:Nat)(xs ys cs hs:List Wire)(cin:Wire)
   _=regValue ys (run (addInPlace xs ys cs cin) m u).basis:=value
   _=(H+(2^ys.length-1-C))%2^ys.length:=by
    rw [out.2.2,xu,yu,iu,Bool.toNat_false,Nat.add_zero]
-#print axioms inner_value
 
-#print axioms inner_frame
+
+
 end ECDSAAdd.Entrant.HighConsumedInputsResearch
 
 end
@@ -21431,7 +21431,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 20000000
 set_option linter.unusedSimpArgs false
@@ -21491,7 +21491,7 @@ theorem measurements:measurementCount fast=measurementCount old:=by
  have g:measurementCount fast=measurementCount pre+measurementCount (PlacedUniformAdder4Research.fastAt ports)+measurementCount post:=by
   simp only [fast,measurementCount_append]
  omega
-#print axioms toffoli
+
 
 end ECDSAAdd.Entrant.HighConsumedAResearch
 
@@ -21542,7 +21542,7 @@ theorem measurements:measurementCount fast=measurementCount old:=by
  have g:measurementCount fast=measurementCount pre+measurementCount (PlacedUniformAdder4Research.fastAt ports)+measurementCount post:=by
   simp only [fast,measurementCount_append]
  omega
-#print axioms toffoli
+
 
 end ECDSAAdd.Entrant.HighConsumedCResearch
 
@@ -21551,7 +21551,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -21746,7 +21746,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.GhostRelocatedKnown
 open Arithmetic InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -21832,7 +21832,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheC
 open Arithmetic ReorderedCFixed C163Low4Middle InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -21865,7 +21865,7 @@ theorem geometry : hosts.Nodup ∧ hosts.length=102 ∧ viewAcc.length=163 ∧
 
 
 
-#print axioms geometry
+
 end ECDSAAdd.Entrant.Ghost3CacheC
 
 end
@@ -21876,7 +21876,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheC
 open Arithmetic ReorderedCFixed C163Low4Middle InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -21957,7 +21957,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheC
 open Arithmetic ReorderedCFixed C163Low4Middle InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22025,7 +22025,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheC
 open Arithmetic ReorderedCFixed C163Low4Middle InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22092,7 +22092,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheC
 open Arithmetic ReorderedCFixed C163Low4Middle InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop FourthASavedCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22182,7 +22182,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheC
 open Arithmetic ReorderedCFixed C163Low4Middle InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22282,7 +22282,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheC
 open Arithmetic ReorderedCFixed C163Low4Middle InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22339,7 +22339,7 @@ namespace ECDSAAdd.Entrant.Ghost3CacheC
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle
  InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22444,7 +22444,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3KnownC
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle C163Low4Ghost ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22513,7 +22513,7 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163L
  ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22615,7 +22615,7 @@ namespace ECDSAAdd.Entrant.Ghost3CCounts
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle ControlLoan1589BFFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount
@@ -22678,7 +22678,7 @@ namespace ECDSAAdd.Entrant.Ghost3CPhysical
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -22734,7 +22734,7 @@ theorem body_physical:GatePhysical Ghost3KnownC.body:=by
  simp only [Ghost3KnownC.body,Ghost3KnownC.rawBody,C163Low4Body.bodyProgram,Ghost3KnownC.loop,Ghost3CacheC.loop,Ghost3CacheC.build,Ghost3CacheC.unbuild,gatePhysical_append]
  exact ⟨⟨old.1,⟨⟨buildP,midP⟩,unbuildP⟩⟩,ReorderedPhysical.padding 4 L.core.cin⟩
 
-#print axioms body_physical
+
 
 end ECDSAAdd.Entrant.Ghost3CPhysical
 
@@ -22746,7 +22746,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CBalance
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22789,7 +22789,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3BodyResources
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -22832,7 +22832,7 @@ namespace ECDSAAdd.Entrant.Ghost3CFine
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop C163Low4Middle OwnDiagAll12Square
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -22931,7 +22931,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.GhostRelocatedKnown
 open Arithmetic InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23017,7 +23017,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheA
 open Arithmetic ReorderedAFixed InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23061,7 +23061,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheA
 open Arithmetic ReorderedAFixed InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23142,7 +23142,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheA
 open Arithmetic ReorderedAFixed InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23199,7 +23199,7 @@ theorem plain_support(A:List Wire)(len:A.length=161)
    exact Finset.union_subset (Finset.union_subset (Finset.union_subset seed op6) (op10 false)) (top false)
  · simp only [ReorderedAPlain.unbuild,wires_append]
    exact Finset.union_subset (Finset.union_subset (Finset.union_subset preInv (op10 true)) tailSupport) seed
-#print axioms plain_support
+
 end ECDSAAdd.Entrant.Ghost3CacheA
 
 end
@@ -23210,7 +23210,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheA
 open Arithmetic ReorderedAFixed InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23277,7 +23277,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheA
 open Arithmetic ReorderedAFixed InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop FourthASavedCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23367,7 +23367,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheA
 open Arithmetic ReorderedAFixed InverseCarryDevelop ControlledBorrowResearch
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23467,7 +23467,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3CacheA
 open Arithmetic ReorderedAFixed InverseCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23524,7 +23524,7 @@ namespace ECDSAAdd.Entrant.Ghost3CacheA
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed A161Low4Ghost
  ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23608,7 +23608,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3KnownA
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed A161Low4Ghost ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23664,7 +23664,7 @@ open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed A161L
  ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
 set_option autoImplicit false
 set_option linter.unusedVariables false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23757,7 +23757,7 @@ namespace ECDSAAdd.Entrant.Ghost3ACounts
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop ReorderedAFixed ControlLoan1589BFFold
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 50000000
 set_option maxRecDepth 100000
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount
@@ -23809,7 +23809,7 @@ theorem pieces:
   toffoliCount_append,measurementCount_append]
  omega
 
-#print axioms pieces
+
 
 end ECDSAAdd.Entrant.Ghost3ACounts
 
@@ -23822,7 +23822,7 @@ namespace ECDSAAdd.Entrant.Ghost3APhysical
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
  ManyACarryDevelop ReorderedAFixed
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxHeartbeats 100000000
 set_option maxRecDepth 100000
 set_option linter.unusedSimpArgs false
@@ -23899,7 +23899,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3ABalance
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23942,7 +23942,7 @@ open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.Ghost3BodyResources
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout Challenge
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -23983,7 +23983,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -24184,7 +24184,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -24303,7 +24303,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant ECDSAAdd.Baselines
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 2000000
 set_option linter.unusedSimpArgs false
@@ -24424,7 +24424,7 @@ theorem slots(acc:List Wire)(targetEq:(acc.take 138).drop 10=HighConsumedAResear
  omega
 
 
-#print axioms toffoli
+
 end ECDSAAdd.Entrant.HighUnbuildAResearch
 
 namespace ECDSAAdd.Entrant.HighConsumedCResearch
@@ -24518,7 +24518,7 @@ theorem slots(acc:List Wire)(targetEq:(acc.take 140).drop 10=HighConsumedCResear
  omega
 
 
-#print axioms toffoli
+
 end ECDSAAdd.Entrant.HighUnbuildCResearch
 
 end
@@ -24526,7 +24526,7 @@ end
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 10000
 set_option maxHeartbeats 5000000
 set_option linter.unusedSimpArgs false
@@ -24891,7 +24891,7 @@ open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C163Low4Branch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout R2SqEp760
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -24979,7 +24979,7 @@ theorem physical (xs:List Wire) (t:Wire) (off:∀q∈xs,q≠t):GatePhysical (loa
  obtain ⟨q,hq,rfl⟩:=List.mem_map.mp hi
  simpa [PhysicalInstr,ProperGate] using off q hq
 
-#print axioms equivalent
+
 
 
 end ECDSAAdd.Entrant.AffineProductReplacementResearch
@@ -25018,7 +25018,7 @@ theorem invF_bits33 (R : KRegs)(hh : R.h=33)(hs : 1<R.S.length)(ht : 1<R.T.lengt
 
 
 
-#print axioms invF_bits33
+
 
 
 end ECDSAAdd.Entrant.SumInnerCarryRelations
@@ -25266,9 +25266,9 @@ theorem toffoli_eq (ps:List (Option (List Wire)))(xs ys cs:List Wire)(cin:Wire):
        simp only [program,removed,addInPlace,toffoliCount_append,old]
        omega
 
-#print axioms head_run
-#print axioms equivalent
-#print axioms toffoli_eq
+
+
+
 end ECDSAAdd.Entrant.SparseAffineCarryAdder
 end
 
@@ -25348,8 +25348,8 @@ theorem ready_of_getD (ps:List (Option (List Wire)))(ks:List Bool)(st:BasisState
    | none=>exact t
    | some qs=>exact ⟨by simpa using h 0 qs rfl,t⟩
 
-#print axioms carry_from_next_sum
-#print axioms ready_of_getD
+
+
 end ECDSAAdd.Entrant.SparseAffineCarryAdder
 end
 
@@ -25390,7 +25390,7 @@ theorem removed_eq_count (ps:List (Option (List Wire)))(xs ys cs:List Wire)
  toffoliCount (program ps xs ys cs cin)+ps.countP Option.isSome=toffoliCount (addInPlace xs ys cs cin):=by
  rw [←removed_eq_count ps xs ys cs hl hc hp]
  exact toffoli_eq ps xs ys cs cin
-#print axioms savings
+
 end ECDSAAdd.Entrant.SparseAffineCarryAdder
 end
 
@@ -25495,7 +25495,7 @@ theorem support (ps:List (Option (List Wire)))(xs ys cs:List Wire)(cin:Wire):
        simp only [Finset.mem_union] at h1 h2
        tauto
 
-#print axioms support
+
 end ECDSAAdd.Entrant.SparseAffineCarryAdder
 end
 
@@ -25641,9 +25641,9 @@ theorem ready (xs ys:List Wire)(s0 s1 t1 tq:Wire)(st:BasisState)(A B:Nat)
 
 
 
-#print axioms witness32
-#print axioms witness33
-#print axioms ready
+
+
+
 
 
 
@@ -25757,7 +25757,7 @@ def rebuild (R inner:KRegs):Program:=R.m3++add R inner
 
 
 
-#print axioms copy_frame
+
 
 
 end ECDSAAdd.Entrant.SumInnerSparseRebuild
@@ -25865,7 +25865,7 @@ theorem geometry (L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(ext src dst:Li
 
 
 
-#print axioms geometry
+
 
 
 end ECDSAAdd.Entrant.SumInnerSparseSquare
@@ -26582,7 +26582,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumInnerSparseCBranch
 open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout R2SqEp760
 set_option autoImplicit false
-set_option Elab.async false
+
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
@@ -26961,7 +26961,7 @@ theorem slots (ps:List (Option (List Wire)))(xs ys cs:List Wire)(cin:Wire)
 
 
 
-#print axioms slots
+
 
 end ECDSAAdd.Entrant.SparseAffineCarryAdder
 end
@@ -27032,7 +27032,7 @@ theorem old_slots (R:KRegs)(w:R.W):gateSlots R.smkT+5=gateSlots R.smk:=by
 
 
 
-#print axioms old_slots
+
 
 end ECDSAAdd.Entrant.SumInnerSparseSlotLedger
 end
@@ -27144,7 +27144,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.SumInnerSparseExactSupport
 open KRegs SparseAffineCarryAdder SumInnerSparseCertificate
 set_option maxHeartbeats 4000000
-set_option Elab.async false
+
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 attribute [local irreducible] run wires
@@ -27249,7 +27249,7 @@ theorem branch_support (L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(ext:List
   (OwnDiagAll12Square.gClear L) (extraL L ext L.core.sum L.core.product) cl
  simpa only [SumInnerSparseCBranch.branch,C163Low4Branch.branch] using h
 
-#print axioms branch_support
+
 
 def extraProgram (R inner:KRegs):Program:=
  (witnesses (patches (R.hi++R.zS) R.S (inner.S.getD 0 0) (inner.S.getD 1 0) (inner.T.getD 1 0) R.tq)).map Instr.X
@@ -27266,12 +27266,12 @@ theorem place_support (L:ControlledPointLayout)(P Q E:Program)(h:wires P⊆wires
  simp only [SquareCarryLoan719BF.place,renameProgram_support]
  simpa only [Finset.image_union] using Finset.image_mono (ControlLoan1589Square.swap L) (Finset.image_mono (Prefix1590Square.swap L) (Finset.image_mono (PrefixFrontierSquare1591.swap L) (Finset.image_mono (OwnDiagAll12PlacedQ7.swap L) (Finset.image_mono (OwnDiagAll12PlacedQ6.swap L) (Finset.image_mono (OwnQ5Square.swap L) (Finset.image_mono (OwnQ4Square.swap L) (Finset.image_mono (OwnGuardSquare.swap L) (Finset.image_mono (OwnPlusSquare.swap L) (Finset.image_mono (Square5Placement.blockPerm L 202) (h))))))))))
 
-#print axioms smk_subset_smkT
 
 
-#print axioms park_support
-#print axioms branch_support
-#print axioms place_support
+
+
+
+
 end ECDSAAdd.Entrant.SumInnerSparseExactSupport
 end
 
@@ -27281,7 +27281,7 @@ open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant ECDSAAdd.Baselines
 namespace ECDSAAdd.Entrant.SumInnerSparseExtraFacts
 set_option maxRecDepth 100000
 set_option maxHeartbeats 4000000
-set_option Elab.async false
+
 set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 attribute [local irreducible] run wires
@@ -27346,9 +27346,9 @@ theorem free (i:Nat)(hi:i∈retired):layout.core.poolWire i∉wires (program lay
  intro bad
  exact Finset.disjoint_left.mp disjoint_retired bad
   (List.mem_toFinset.mpr (List.mem_map.mpr ⟨i,hi,rfl⟩))
-#print axioms program_wires
-#print axioms within_sites
-#print axioms disjoint_retired
+
+
+
 end ECDSAAdd.Entrant.SumInnerSparseExtraFacts
 end
 

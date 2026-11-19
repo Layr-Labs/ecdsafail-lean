@@ -41,8 +41,8 @@ theorem gate (s : State) (m : List Bool)
  run [.CCX 4662 4405 4406] m s=run [.CX 4405 4406] m s := by
  simp only [run,h]
 
-#print axioms condition
-#print axioms gate
+
+
 end ECDSAAdd.Entrant.NewCarry4901
 end
 
@@ -4027,7 +4027,7 @@ theorem relation1064 (b : BasisState)
  have z4724 := hz 4724 (by decide +kernel)
  simp only [frame_4640_1063_1064,step_128,step_263,step_264,step_1056,step_1058,step_1059,step_1062,step_1063,initial,z4639,z4701,z4640,z4702,z4764]
  cases hu : b 4371 <;> cases hc0 : b 4113 <;> cases hv : b 4372 <;> cases hx : prefixState program 1058 b 4500 <;> simp_all
-#print axioms relation1064
+
 theorem relation3711 (b : BasisState)
  (hz : ∀q∈[4639, 4701, 4640, 4702, 4764, 4661, 4723, 4662, 4724],b q=false)
  (hc : (b 4372 && (b 4371 ^^ b 4113))=false) :
@@ -4044,7 +4044,7 @@ theorem relation3711 (b : BasisState)
  have z4724 := hz 4724 (by decide +kernel)
  simp only [frame_4662_3710_3711,step_128,step_285,step_286,step_2413,step_3703,step_3705,step_3706,step_3709,step_3710,initial,z4661,z4723,z4662,z4724]
  cases hu : b 4371 <;> cases hc0 : b 4113 <;> cases hv : b 4372 <;> cases hx : prefixState program 3705 b 4500 <;> simp_all
-#print axioms relation3711
+
 end ECDSAAdd.Entrant.LocalEFoldRelations
 
 end
@@ -4142,7 +4142,7 @@ theorem improved_eq (s : State) (m : List Bool) (hz : Clean s.basis) (ht : Top s
  rw [earlier_prefix]
  simpa only [prefixState,run_basis] using condition1064 s.basis hz ht
 
-#print axioms improved_eq
+
 end ECDSAAdd.Entrant.LocalEFoldOptimize
 
 end
@@ -4201,8 +4201,8 @@ theorem physical (hp : GatePhysical actual) : GatePhysical improved := by
  have a:GatePhysical late := by
   exact Eq.mp (congrArg (fun p : Program=>GatePhysical p) late_shape.symm) (SixCarryPatchSupport.physical actual 3711 (.CCX 4662 4764 4765) [.CX 4662 4765] gate3711 hp (physicalGateCheck_correct _ (by decide +kernel)))
  exact Eq.mp (congrArg (fun p : Program=>GatePhysical p) improved_shape.symm) (SixCarryPatchSupport.physical late 1064 (.CCX 4640 4764 4765) [.CX 4640 4765] earlier_lookup a (physicalGateCheck_correct _ (by decide +kernel)))
-#print axioms toffoli
-#print axioms support
+
+
 end ECDSAAdd.Entrant.LocalEFoldResources
 
 end
@@ -4266,8 +4266,8 @@ theorem range (A B : Nat) (ha : A<2^128) (hb : B<2^128) :
  norm_num at ha hb ⊢
  omega
 
-#print axioms top
-#print axioms clean
+
+
 end ECDSAAdd.Entrant.LocalEFoldInputs
 
 end
@@ -4546,7 +4546,7 @@ theorem transfer (base : BasisState) (clean : L.PairClean base) (O E : Nat)
  have eq:=improved_eq s m hz ht
  rw [←eq]
  simpa only [actual] using old s m hs
-#print axioms transfer
+
 end ECDSAAdd.Entrant.LocalEFoldLift
 
 end
@@ -4637,8 +4637,8 @@ theorem physical (cm : CM) : GatePhysical (bodyWith cm) := by
  rw [old_shape,gatePhysical_append,gatePhysical_append] at h
  rw [new_shape,gatePhysical_append,gatePhysical_append]
  exact ⟨h.1,LocalEFoldResources.physical h.2.1,h.2.2⟩
-#print axioms resources
-#print axioms physical
+
+
 end ECDSAAdd.Entrant.LocalEFoldBody90Costs
 
 end
@@ -7192,7 +7192,7 @@ theorem run_eq (s : State) (m : List Bool) (ht : s.basis 4500=false) (hv : s.bas
  apply SixCarryPatchGeneric.run_eq actual 764 4242 4499 4500 repair lookup (by decide +kernel) s m
  apply gate
  simpa only [prefixState,run_basis] using condition s.basis ht hv h
-#print axioms run_eq
+
 end ECDSAAdd.Entrant.LocalRebuild
 
 end
@@ -7238,8 +7238,8 @@ attribute [local irreducible] actual improved toffoliCount measurementCount gate
  Eq.mp (congrArg GatePhysical shape.symm)
   (SixCarryPatchSupport.physical actual 764 (.CCX 4242 4499 4500) repair lookup hp
    (physicalGateCheck_correct repair (by decide +kernel)))
-#print axioms toffoli
-#print axioms support
+
+
 end ECDSAAdd.Entrant.LocalRebuildResources
 
 end
@@ -7269,7 +7269,7 @@ theorem transfer (base outBase : BasisState) (clean : L.PairClean base) (O E B :
  have eq:=LocalRebuild.run_eq s m ht hv z
  rw [←eq]
  simpa only [LocalRebuild.actual] using out
-#print axioms transfer
+
 end ECDSAAdd.Entrant.LocalRebuildLift
 
 end
@@ -7623,8 +7623,8 @@ theorem physical (cm : CM) : GatePhysical (bodyWith cm) := by
  rw [old_shape,gatePhysical_append,gatePhysical_append] at h
  rw [new_shape,gatePhysical_append,gatePhysical_append]
  exact ⟨h.1,h.2.1,LocalRebuildResources.physical h.2.2⟩
-#print axioms resources
-#print axioms physical
+
+
 end ECDSAAdd.Entrant.LocalRebuildBody91Costs
 
 end
@@ -8070,7 +8070,7 @@ theorem step6 (s : State) (m : List Bool) (hz : Clean s.basis) :
 theorem run_eq (s : State) (m : List Bool) (hz : Clean s.basis) : run core m s=run p6 m s :=
  (step1 s m hz).trans ((step2 s m hz).trans ((step3 s m hz).trans ((step4 s m hz).trans ((step5 s m hz).trans (step6 s m hz)))))
 end ECDSAAdd.Entrant.LocalSevenCore
-#print axioms ECDSAAdd.Entrant.LocalSevenCore.run_eq
+
 
 end
 
@@ -8149,7 +8149,7 @@ theorem run_core_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.b
  run LocalSevenCore.core m s=run improved m s :=
  (LocalSevenCore.run_eq s m (SixCarryCleanDomain.domain s.basis hc.1 hc.2)).trans (run_eq s m hc)
 end ECDSAAdd.Entrant.LocalSevenExtra
-#print axioms ECDSAAdd.Entrant.LocalSevenExtra.run_core_eq
+
 
 end
 
@@ -8259,8 +8259,8 @@ theorem slots : gateSlots LocalSevenExtra.improved=gateSlots LocalSevenCore.core
  have h7:=s7
  omega
 
-#print axioms toffoli
-#print axioms slots
+
+
 end ECDSAAdd.Entrant.LocalSevenResources
 
 end
@@ -8279,7 +8279,7 @@ theorem shape : SixCarryLoopAnchor.output=LowAccMiddleLiteral.output := by
 theorem length : SixCarryLoopAnchor.output.length=8783 :=
  Eq.mp (congrArg (fun p : Program=>p.length=8783) shape.symm)
   (by decide +kernel : LowAccMiddleLiteral.output.length=8783)
-#print axioms length
+
 end ECDSAAdd.Entrant.LocalSevenOutputLength
 
 end
@@ -8305,7 +8305,7 @@ theorem core_shape : LocalSevenCore.core=SixCarryLoopAnchor.build++SixCarryLoopA
  rw [← h,List.take_left]
 
 
-#print axioms core_shape
+
 end ECDSAAdd.Entrant.LocalSevenShape
 
 end
@@ -8326,7 +8326,7 @@ theorem some_exists (value : ZeroSetDevelop.CheckedS LowAccCarryDevelop.hosts88 
  ∃cm : ZeroSetDevelop.CheckedS LowAccCarryDevelop.hosts88 (FullBTemp.middle LowAccCarryDevelop.L LowAccCarryDevelop.c),
  cm.out=value.out :=
  ⟨LowAccCarryDevelop.fromLiteral value,fromLiteral_out value⟩
-#print axioms some_exists
+
 end ECDSAAdd.Entrant.LocalSevenWitness
 
 end
@@ -8398,7 +8398,7 @@ theorem slots : gateSlots improved=gateSlots LocalSevenCore.core+13 := by
  have old:=LocalSevenResources.slots
  omega
 
-#print axioms run_core_eq
+
 end ECDSAAdd.Entrant.EightCarryPrefix
 end
 
@@ -8845,8 +8845,8 @@ theorem physical7 : GatePhysical LocalSevenExtra.improved :=
   (SixCarryPatchSupport.physical LocalSevenCore.p6 4907 (.CCX 4663 4406 4407) ExtraCarryGateRepairs.repair4907 LocalSevenExtra.gate_lookup physical6 (physicalGateCheck_correct ExtraCarryGateRepairs.repair4907 (by decide +kernel)))
 theorem support : wires LocalSevenExtra.improved⊆wires LocalSevenCore.core := support7
 theorem physical : GatePhysical LocalSevenExtra.improved := physical7
-#print axioms support
-#print axioms physical
+
+
 end ECDSAAdd.Entrant.LocalSevenSupport
 
 end
@@ -8942,9 +8942,9 @@ theorem unbuild_physical : GatePhysical LocalEightLoop.unbuild := by
 theorem physical : GatePhysical LocalEightLoop.improved :=
  Eq.mp (congrArg GatePhysical new_shape.symm)
   (append_physical _ _ EightCarryPrefixSupport.physical unbuild_physical)
-#print axioms toffoli
-#print axioms support
-#print axioms physical
+
+
+
 end ECDSAAdd.Entrant.LocalEightLoopResources
 
 end
@@ -9039,9 +9039,9 @@ theorem physical : GatePhysical LocalEightBody99.body := by
   Eq.mp (congrArg GatePhysical (old_shape cm)) (LocalRebuildBody91Costs.physical cm)
  exact Eq.mp (congrArg GatePhysical new_shape.symm)
   (context_physical _ _ _ _ hp LocalEightLoopResources.physical)
-#print axioms resources
 
-#print axioms physical
+
+
 end ECDSAAdd.Entrant.LocalEightBody99Costs
 
 end
@@ -9461,7 +9461,7 @@ theorem tail_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
   change run (tail acc Z bank cin src) m s=_ at e
   rw [e,←rawEq]
   exact old s m hs
-#print axioms tail_triple
+
 end ECDSAAdd.Entrant.C163SourceTail
 
 
@@ -9533,7 +9533,7 @@ theorem add_triple (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
   change run (add acc Z bank cin src) m s=_ at e
   rw [e,←rawEq]
   exact old s m hs
-#print axioms add_triple
+
 end ECDSAAdd.Entrant.C163SourceAdd
 
 
@@ -10506,8 +10506,8 @@ theorem unbuildMany_frame (k:Nat) (acc Z bank : List Wire) (cin : Wire) (src hs 
    hs (List.replicate hs.length false) count.2.1 (fun u hu=>(piecesU u hu).2.2) s m
    (by simpa only[t,run_take]using changed)
   simpa only[unbuildMany,unbuildTriple]using result
-#print axioms buildMany_frame
-#print axioms unbuildMany_frame
+
+
 end ECDSAAdd.Entrant.C163Carry
 
 end
@@ -11048,8 +11048,8 @@ theorem triple_plain_eq (acc Z bank:List Wire) (cin:Wire) (src:List Wire) (q r p
  have a:=cached_wloop_triple_eq acc Z bank cin src q r p middle hacc hsrc hf s m hz hb hi ha zero zeroR zeroP fresh freshR rq freshP pq pr offF offM offI offFR offMR offIR offFP offMP offIP good
  have b:=cached_wloop_dual_eq acc Z bank cin src q r middle hacc hsrc hf s m hz hb hi ha zero zeroR fresh freshR rq offF offM offI offFR offMR offIR good
  exact a.trans b
-#print axioms compiled_wloop_many_eq_set
-#print axioms triple_plain_eq
+
+
 end ECDSAAdd.Entrant.C163Carry
 
 end
@@ -11376,7 +11376,7 @@ theorem build8_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
 
 end ECDSAAdd.Entrant.C163KnownTail
 
-#print axioms ECDSAAdd.Entrant.C163KnownTail.build8_counts
+
 
 end
 
@@ -11509,8 +11509,8 @@ theorem add_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
   exact program_physical src Z ((acc.take 141).drop 6) (bank.take 134) cin (by omega) zl (by simp [hacc,hsrc]) (by simp [hacc,bl]) nd'
 
 
-#print axioms add_resources
-#print axioms add_physical
+
+
 end ECDSAAdd.Entrant.C163SourceAdd
 
 
@@ -11586,9 +11586,9 @@ theorem unbuild_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
   have new:=tail_physical acc Z bank cin src hacc hsrc (hf _ (C163KnownTail.terms_mem src).2.1)
   simp only [unbuild,C163KnownTail.unbuild8,gatePhysical_append] at old ⊢
   exact ⟨⟨⟨old.1.1.1,old.1.1.2⟩,new⟩,old.2⟩
-#print axioms tail_resources
-#print axioms unbuild_resources
-#print axioms unbuild_physical
+
+
+
 end ECDSAAdd.Entrant.C163SourceTail
 
 
@@ -11629,8 +11629,8 @@ theorem unbuild_physical (acc Z bank : List Wire) (cin : Wire) (src : List Wire)
   have a:=add_physical acc Z bank cin src hacc hsrc (hf _ (terms_mem src).2.2.1)
   simp only [unbuild,C163SourceTail.unbuild,gatePhysical_append] at old ⊢
   exact ⟨⟨⟨old.1.1.1,a⟩,old.1.2⟩,old.2⟩
-#print axioms unbuild_resources
-#print axioms unbuild_physical
+
+
 end ECDSAAdd.Entrant.C163SourceAdd
 
 end
@@ -11943,7 +11943,7 @@ theorem compiled_physical_set (k:Nat) (acc Z bank:List Wire) (cin:Wire) (src hs:
  exact ⟨⟨buildMany_physical k acc Z bank cin src hs q r p ha hl hz hb hk fresh physical.1.1,
  cert.physical hs middle newMiddle physical.1.2⟩,
  unbuildMany_physical k acc Z bank cin src hs q r p ha hl hb hk fresh physical.2⟩
-#print axioms compiled_physical_set
+
 end ECDSAAdd.Entrant.C163Carry
 
 end
@@ -12254,8 +12254,8 @@ attribute [local irreducible] ECDSAAdd.wires
    have h:=List.mem_toFinset.mp (oldI (unbuild.2.2.1 hw))
    simp only [List.mem_toFinset,List.mem_cons]
    exact Or.inr (Or.inr (Or.inr (by simpa only [List.mem_cons] using h)))
-#print axioms physical
-#print axioms support
+
+
 end ECDSAAdd.Entrant.C163Carry
 
 end
@@ -12911,9 +12911,9 @@ theorem partition:ambient=((ambient.drop 0).take 80) ++ ((ambient.drop 80).take 
 theorem all_cover:ambient.all cover=true:=by
  rw [partition]
  simp only [List.all_append,used0,used1,used2,used3,used4,used5,used6,used7,used8,used9,used10,used11,used12,used13,used14,used15,used16,Bool.true_and]
-#print axioms known_fast
-#print axioms copy_fast
-#print axioms all_cover
+
+
+
 end ECDSAAdd.Entrant.C163CoverFast
 
 end
@@ -13000,7 +13000,7 @@ theorem ambient_fine:ambient.toFinset⊆insert d (wires (bodyCKTq L g)):=by
    have oldMid:u∈wires (aMiddle L g):=e ▸ hm
    exact Finset.mem_insert_of_mem (middle_subset L g oldMid)
 
-#print axioms ambient_fine
+
 end ECDSAAdd.Entrant.C163FineFast
 
 end
@@ -13087,7 +13087,7 @@ theorem flip_run (r : List Wire) (hlen:r.length=163) (hn:r.Nodup)
  · simp only [if_true]
    rw [Nat.xor_comm]
    exact C163Low4Math.mask_xor_multiple _ (by simpa only [hlen] using regValue_lt r s.basis) hz
-#print axioms flip_run
+
 end ECDSAAdd.Entrant.C163Low4Facts
 end
 
@@ -13165,8 +13165,8 @@ theorem ghosts_work_free (L:CuccaroStreamedSquareWideLayout) (hn:L.wires.Nodup) 
  simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,
   List.count_cons,List.count_append,List.count_nil] at parent
  omega
-#print axioms ghostAcc_value
-#print axioms ghosts_clean
+
+
 end ECDSAAdd.Entrant.C163Low4Ghost
 end
 
@@ -13223,7 +13223,7 @@ theorem small_domain_nodup (L:CuccaroStreamedSquareWideLayout) (hn:L.wires.Nodup
 
 
 
-#print axioms small_domain_nodup
+
 
 end ECDSAAdd.Entrant.C163Low4Domains
 end
@@ -13425,7 +13425,7 @@ attribute [local irreducible] specialChecked
 
 theorem special_cert:ZeroSetDevelop.SRewrites [q,r] middle specialChecked.out:=
  Eq.mp (congrArg (fun P:Program=>ZeroSetDevelop.SRewrites [q,r] P specialChecked.out) input_eq) specialChecked.proof
-#print axioms special_cert
+
 end ECDSAAdd.Entrant.C163Low4Middle
 
 end
@@ -13990,7 +13990,7 @@ theorem ghost_middle_good (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:
   omega
  have eq:=C163Low4Ghost.ghostAcc_value L hw u.basis (268435517*regValue (src L) s.basis) val gz
  exact ⟨eq.trans h.1,h.2.1,h.2.2.1,h.2.2.2.1,h.2.2.2.2⟩
-#print axioms ghost_middle_good
+
 
 end ECDSAAdd.Entrant.C163Low4Fold
 
@@ -14078,7 +14078,7 @@ theorem good(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReduction.p
  have rz:s.basis r=false:=(regValue_zero _ _).mp clean.work r (by decide)
  rw [build_eq,special_middle_state s m qz rz,fixed_middle]
  exact C163Low4Fold.ghost_middle_good L hw hn g geometry.1 base hc O hO s m hf
-#print axioms good
+
 end ECDSAAdd.Entrant.C163Low4Middle
 
 end
@@ -14273,7 +14273,7 @@ theorem body_output (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
   simp only [Bool.false_eq_true,↓reduceIte]
   rw [←target,ZMod.val_natCast]
 
-#print axioms body_output
+
 end ECDSAAdd.Entrant.C163Low4Body
 
 end
@@ -14329,7 +14329,7 @@ theorem body_frame(base:BasisState)(M:Nat)(pv:regValue L.core.product base=M^2)
   d loop C163Low4Facts.Klow cap fold_frame M O hO s m prod dm cs hf.1 ds
  rw [gs] at out
  exact ⟨out.1,out.2.1,fun q hq=>(out.2.2 q hq).trans (hf.2 q hq)⟩
-#print axioms body_frame
+
 end ECDSAAdd.Entrant.C163Low4Middle
 
 end
@@ -14382,8 +14382,8 @@ theorem loop_counts : toffoliCount loop≤1365 ∧ measurementCount loop=1623 :=
  simp only [toffoliCount_append,measurementCount_append] at cm
  simp only [loop,toffoliCount_append,measurementCount_append]
  constructor <;> omega
-#print axioms middle_counts
-#print axioms loop_counts
+
+
 end ECDSAAdd.Entrant.C163Low4Middle
 
 end
@@ -14436,7 +14436,7 @@ theorem middle_slots : Challenge.gateSlots middle≤42000 := by
 
 
 
-#print axioms middle_slots
+
 
 end ECDSAAdd.Entrant.C163Low4Middle
 
@@ -14498,7 +14498,7 @@ theorem loop_physical : GatePhysical loop := by
   exact hfresh u hu (by simp [C163Fold.domain,hb])
  exact C163Carry.compiled_physical_set 96 ga pad bank L.core.cin src hs q r p specialChecked.out bankChecked.out
   len.1 len.2.2.2 zlen blen (by decide) fresh bank_cert tri
-#print axioms loop_physical
+
 end ECDSAAdd.Entrant.C163Low4Middle
 
 end
@@ -14542,8 +14542,8 @@ theorem body_physical : GatePhysical body:=by
 
 
 
-#print axioms body_counts
-#print axioms body_physical
+
+
 
 end ECDSAAdd.Entrant.C163Low4Middle
 

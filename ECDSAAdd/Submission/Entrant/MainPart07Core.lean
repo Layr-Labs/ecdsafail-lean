@@ -1,5 +1,351 @@
 import ECDSAAdd.Submission.Entrant.DeadCarry
-import ECDSAAdd.Submission.Entrant.FullLogic
+import ECDSAAdd.Submission.Entrant.QTop
+import ECDSAAdd.Arithmetic.MappedSignedSquare
+import ECDSAAdd.Arithmetic.MappedSquarePhysical
+import ECDSAAdd.Arithmetic.MeasuredGateSupport
+import ECDSAAdd.Arithmetic.PhysicalGateCheck
+import ECDSAAdd.Arithmetic.PointFixedPrimitivesPhysical
+import ECDSAAdd.Baselines.SlotAlgebra
+import ECDSAAdd.Baselines.SlotSignedSquare
+import ECDSAAdd.Framework.RecordPadding
+import Mathlib.Data.List.GetD
+
+-- [R1] moved from FullLogic (was nested in MainC; its active outer options restated here)
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 8000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+set_option linter.unnecessarySeqFocus false
+-- ===== ECDSAAdd.Submission.Entrant.ReflectionE1Square =====
+section
+-- consolidated import: import ECDSAAdd.Submission.Entrant.SquareCarryLoan719BFProof
+
+/-! Remove only the BF square's final reflection. All719 loans stay intact. -/
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.ReflectionE1Square
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout
+  SquareCarryLoan719BF
+attribute [local irreducible] run wires
+
+def core (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  branchCK L ext control++branchBF L ext control++branchAF L ext control
+
+def fastCore (L : ControlledPointLayout) : Program :=
+  core L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+
+def program (L : ControlledPointLayout) : Program := place L (fastCore L)
+
+def reflectedTail (L : ControlledPointLayout) : Program :=
+  place L (reflection L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L))
+
+theorem raw_split (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) :
+    raw L ext control=core L ext control++reflection L ext := rfl
+
+theorem place_append (L : ControlledPointLayout) (P Q : Program) :
+    place L (P++Q)=place L P++place L Q := by
+  simp only [place,renameProgram,List.map_append]
+
+theorem program_split (L : ControlledPointLayout) :
+    SquareCarryLoan719BF.program L=program L++reflectedTail L := by
+  simp only [SquareCarryLoan719BF.program,SquareCarryLoan719BF.fastCandidate,
+    raw_split,place_append,program,fastCore,reflectedTail]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+open Secp256k1 MappedCompressed CompressedPointDialog
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+private theorem place_relabel (L : ControlledPointLayout) (e : Equiv.Perm Wire)
+    (hp : ∀q∈L.dialogPool,e q∈L.dialogPool) (hf : ∀q,q∉L.dialogPool → e q=q)
+    (P : Program) (s : State) (m : List Bool)
+    (before : regValue L.dialogPool s.basis=0) (after : regValue L.dialogPool (run P m s).basis=0) :
+    run (renameProgram e P) m s=run P m s :=
+  Square5Placement.pool_relabel_state_eq L e hp hf P s m before after
+
+/-- Transport the complete State before taking any projection. -/
+theorem place_run_eq (L : ControlledPointLayout) (hw : L.Widths)
+    (P : Program) (s : State) (m : List Bool)
+    (before : regValue L.dialogPool s.basis=0) (after : regValue L.dialogPool (run P m s).basis=0) :
+    run (place L P) m s=run P m s := by
+  have a0:=place_relabel L (Square5Placement.blockPerm L 202)
+    (Square5Placement.block_pool L hw 202 (le_refl _))
+    (Square5Placement.block_outside L hw 202 (le_refl _)) P s m before after
+  have a1:=place_relabel L (OwnPlusSquare.swap L) (OwnPlusSquare.pool L hw) (OwnPlusSquare.outside L hw)
+    _ s m before (by rw [a0];exact after)
+  have a2:=place_relabel L (OwnGuardSquare.swap L) (OwnGuardSquare.pool L hw) (OwnGuardSquare.outside L hw)
+    _ s m before (by rw [a1,a0];exact after)
+  have a3:=place_relabel L (OwnQ4Square.swap L) (OwnQ4Square.pool L hw) (OwnQ4Square.outside L hw)
+    _ s m before (by rw [a2,a1,a0];exact after)
+  have a4:=place_relabel L (OwnQ5Square.swap L) (OwnQ5Square.pool L hw) (OwnQ5Square.outside L hw)
+    _ s m before (by rw [a3,a2,a1,a0];exact after)
+  have a5:=place_relabel L (OwnDiagAll12PlacedQ6.swap L) (OwnDiagAll12PlacedQ6.pool L hw)
+    (OwnDiagAll12PlacedQ6.outside L hw) _ s m before (by rw [a4,a3,a2,a1,a0];exact after)
+  have a6:=place_relabel L (OwnDiagAll12PlacedQ7.swap L) (OwnDiagAll12PlacedQ7.pool L hw)
+    (OwnDiagAll12PlacedQ7.outside L hw) _ s m before (by rw [a5,a4,a3,a2,a1,a0];exact after)
+  have a7:=place_relabel L (PrefixFrontierSquare1591.swap L) (PrefixFrontierSquare1591.pool L hw)
+    (PrefixFrontierSquare1591.outside L hw) _ s m before (by rw [a6,a5,a4,a3,a2,a1,a0];exact after)
+  have a8:=place_relabel L (Prefix1590Square.swap L) (Prefix1590Square.pool L hw)
+    (Prefix1590Square.outside L hw) _ s m before (by rw [a7,a6,a5,a4,a3,a2,a1,a0];exact after)
+  have a9:=place_relabel L (ControlLoan1589Square.swap L) (ControlLoan1589Square.pool L hw)
+    (ControlLoan1589Square.outside L hw) _ s m before (by rw [a8,a7,a6,a5,a4,a3,a2,a1,a0];exact after)
+  simpa only [place,a8,a7,a6,a5,a4,a3,a2,a1,a0] using a9
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+theorem support_subset (L : ControlledPointLayout) :
+    wires (program L)⊆wires (SquareCarryLoan719BF.program L) := by
+  rw [program_split,wires_append]
+  exact Finset.subset_union_left
+
+theorem support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    wires (program L)⊆(OB5Support.sites L).toFinset :=
+  (support_subset L).trans (SquareCarryLoan719BF.support L hw hn)
+
+                                                                                   
+                                  
+                                                 
+                                               
+             
+
+theorem free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
+    L.core.poolWire i∉wires (program L) := by
+  by_cases h : i=719
+  · subst i;exact fun used=>SquareCarryLoan719BF.retired_free719 L hw hn (support_subset L used)
+  · exact fun used=>SquareCarryLoan719BF.square_free L hw hn i (by
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at hi ⊢;tauto) (support_subset L used)
+
+theorem place_counts (L : ControlledPointLayout) (P : Program) :
+    toffoliCount (place L P)=toffoliCount P ∧ measurementCount (place L P)=measurementCount P := by
+  simp only [place,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,and_self]
+
+theorem reflectedTail_counts (L : ControlledPointLayout) (hw : L.Widths) :
+    toffoliCount (reflectedTail L)=255 ∧ measurementCount (reflectedTail L)=255 := by
+  have r:=(L.dialogStreamedSquareWide.measured_small_operation_counts
+    (L.dialogStreamedSquareWide_widths hw)).2.2
+  simpa only [reflectedTail,(place_counts _ _).1,(place_counts _ _).2,reflection,
+    (renameProgram_counts _ _).1,(renameProgram_counts _ _).2] using r
+
+theorem counts_delta (L : ControlledPointLayout) (hw : L.Widths) :
+    toffoliCount (program L)+255=toffoliCount (SquareCarryLoan719BF.program L) ∧
+    measurementCount (program L)+255=measurementCount (SquareCarryLoan719BF.program L) := by
+  rw [program_split,toffoliCount_append,measurementCount_append,
+    (reflectedTail_counts L hw).1,(reflectedTail_counts L hw).2]
+  exact ⟨rfl,rfl⟩
+
+                                                            
+                                                                             
+                           
+                                          
+                       
+
+                                              
+                                                                                              
+                                               
+       
+
+end ECDSAAdd.Entrant.ReflectionE1Square
+end -- original module boundary
+end
+-- [R1] end of moved block
+
 -- Consolidated source module: ForwardCarryAffine
 section
 
@@ -1383,7 +1729,6 @@ theorem forward_outputs_from_postWord52 (w : Nat → Wire) (s : State)
 
 
 
-
 /-- Ordinary actual MF Triple, transported from the ORIGINAL stepKAdd.
 The caller must still prove its actual word and parity equations. -/
 theorem stepKAddFlag52 (w : Nat → Wire) (hn : (skywalkPoolWires w).Nodup)
@@ -2246,7 +2591,6 @@ section Entry
 variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
 include hw hn
 
-
 /-- Physical form: the merged entry equals the compare-first constant addition followed by the
 renamed direct first tick, on every pair of measurement records. -/
 theorem entry_eq (k : Fp) (s : State) (X : Nat) (hX : X<p) (G : Bool)
@@ -2422,7 +2766,6 @@ theorem lay (q : Wire) :
        simp only [dialogUsedWires,inPlaceFlags,PointAddLayout.pointWires,
          List.count_append,List.count_cons,List.count_nil,beq_self_eq_true,if_true] at h
        omega)
-
 
 /-- The y-side fused offset commutes with the x-side constant addition, so the merged x entry
 can run after it. -/
@@ -4831,7 +5174,6 @@ theorem entry_split (L : ControlledPointLayout) :
     renameProgram,List.map_append,List.append_assoc] at tick ⊢
   rw [tick]
 
-
 theorem exit_split (L : ControlledPointLayout) :
     FrontierEntry1591Callers.exit Rolling1588.exitKernel L=E1QubitPlacement.tickF L++restX L := by
   have tick:=E1QubitPlacement.tick_eq L
@@ -4959,7 +5301,6 @@ def mid (L : ControlledPointLayout) (cx cy : Fp) : Program :=
 
 def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
   zrep L++mid L cx cy++zrep L
-
 
 theorem gen_shape (L : ControlledPointLayout) (cx cy : Fp) :
     gen L cx cy=GenericQ5Geometry.wrapG L (generic L cx cy) := rfl
@@ -5126,8 +5467,7 @@ private theorem envelopes_of_shapes (A0 Y T E S R A1 X EY N M RF New Old : Progr
     itauto
   · intro q hq
     simp only [wires_append,Finset.mem_union] at hq ⊢
-    itauto
-
+    tauto
 
 private theorem envelopes (L : ControlledPointLayout) (cx cy : Fp) :
     generic L cx cy⊆baselineGeneric L cx cy++E1QubitPlacement.entryM L (-cx)++
@@ -5150,13 +5490,11 @@ theorem instructions_subset (L : ControlledPointLayout) (cx cy : Fp) :
       E1ReflectedPlacement.entryR L (correction cx) :=
   (envelopes L cx cy).1
 
-
 theorem support_envelope (L : ControlledPointLayout) (cx cy : Fp) :
     wires (generic L cx cy)⊆wires (baselineGeneric L cx cy)∪
       wires (E1QubitPlacement.entryM L (-cx))∪
         wires (E1ReflectedPlacement.entryR L (correction cx)) :=
   (envelopes L cx cy).2
-
 
 theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : wires (generic L cx cy)⊆(OB5Support.sites L).toFinset :=
@@ -5164,7 +5502,6 @@ theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
     (Finset.union_subset (Rolling1588BFFinal.generic_support L hw hn cx cy)
       (E1QubitPlacement.entryM_sites L hw (-cx)))
     (E1ReflectedPlacement.entryR_sites L hw (correction cx)))
-
 
 theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) : GatePhysical (generic L cx cy) := by
@@ -5244,7 +5581,6 @@ private theorem reflected_free (L : ControlledPointLayout) (hw : L.Widths) (hn :
   simpa only [E1ReflectedPlacement.entryR,renameProgram_comp,E1QubitPlacement.pmapR,
     E1QubitPlacement.pmap,Function.comp_def] using h
 
-
 private theorem kernel_free (entrySide : Bool) (i : Nat)
     (hi : i∈[2312,766,765,767,1026,1541,1542,1797,768,718,719]) :
     base i∉wires (if entrySide then Rolling1588.entryKernel else Rolling1588.exitKernel) := by
@@ -5266,7 +5602,6 @@ private theorem kernel_free (entrySide : Bool) (i : Nat)
   cases entrySide
   · exact Rolling1588.exitKernel_free i old
   · exact Rolling1588.entryKernel_free i old
-
 
 theorem baseline_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
@@ -5290,7 +5625,6 @@ theorem baseline_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
   simp only [division,FrontierEntry1591Callers.entry,wires_append,Finset.mem_union,not_or]
   exact ⟨fun used=>constant (fusedY_support L hw k used),en⟩
 
-
 theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
     (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
     L.core.poolWire i∉wires (generic L cx cy) := by
@@ -5301,7 +5635,6 @@ theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.N
   · exact baseline_free L hw hn cx cy i hi old
   · exact entry_free L hw hn (-cx) i hi ordinary
   · exact reflected_free L hw hn (correction cx) i hi reflected
-
 
 theorem generic_counts_delta (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (generic L cx cy)+759=toffoliCount (baselineGeneric L cx cy) ∧
@@ -5316,7 +5649,6 @@ theorem generic_counts_delta (L : ControlledPointLayout) (hw : L.Widths) (cx cy 
     toffoliCount_append,measurementCount_append,correction,SquareCarryLoan719BF.K,
     ControlLoan1589BFFinal.Offset.K,ControlLoan1589BFSquare.K] at first second ordinary reflected square ⊢
   constructor <;> omega
-
 
 theorem generic_slots_delta (L : ControlledPointLayout) (cx cy : Fp) :
     gateSlots (generic L cx cy)≤ gateSlots (baselineGeneric L cx cy)+50000 := by
@@ -5339,13 +5671,11 @@ private theorem wrap_counts_delta (L : ControlledPointLayout) (A B : Program)
     (renameProgram_counts _ _).1,(renameProgram_counts _ _).2]
   constructor <;> omega
 
-
 theorem gen_counts_delta (L : ControlledPointLayout) (hw : L.Widths) (cx cy : Fp) :
     toffoliCount (gen L cx cy)+759=toffoliCount (Rolling1588BFFinal.gen L cx cy) ∧
     measurementCount (gen L cx cy)+751=measurementCount (Rolling1588BFFinal.gen L cx cy) := by
   rw [gen_shape,baseline_gen_shape]
   exact wrap_counts_delta L _ _ (generic_counts_delta L hw cx cy)
-
 
 theorem gen_slots_delta (L : ControlledPointLayout) (cx cy : Fp) :
     gateSlots (gen L cx cy)≤ gateSlots (Rolling1588BFFinal.gen L cx cy)+50000 := by
@@ -5399,14 +5729,12 @@ private theorem wrapper_counts_delta (L : ControlledPointLayout) (C : Point) (cy
                                                        
        
 
-
 theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
     measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy))≤1499214 := by
   have diff:=(wrapper_counts_delta layout (.some hc) cy _ _
     (gen_counts_delta layout layout_widths cx cy)).2
   have old:=Rolling1588BFFinal.wrapper_measurements cx cy hc
   omega
-
 
 theorem wrapper_slots (C : Point) (cx cy : Fp) :
     gateSlots (Edges.wrapper layout C cy (gen layout cx cy))≤50189199+Rolling1588.slotGrowth := by
@@ -7763,6 +8091,9 @@ theorem tick_eq5 (x : Nat) (hx0 : 0 < x) (hx : x < p) (i : Nat) (hi : i < 512)
 
 
 
+def forward (i : Nat) : Nat → Program
+  | 0 => []
+  | n+1 => renameProgram (sig i) (tick base i++FirstNonzeroCodec.pack8first base i)++forward (i+1) n
 
 
 
@@ -7797,12 +8128,9 @@ theorem tick_eq5 (x : Nat) (hx0 : 0 < x) (hx : x < p) (i : Nat) (hi : i < 512)
 
 
 
-
-
-
-
-
-
+def count (i : Nat) : Nat → Nat
+  | 0 => 0
+  | n+1 => due i+count (i+1) n
 
 
 
@@ -8504,80 +8832,80 @@ theorem releasedA507 : base 513 ∈ (W.compactSkywalkSignPoolA base 507).release
 attribute [local irreducible] run W.compactSkywalkStageVirtual SkywalkTrace.next Nat.iterate
   W.compactSkywalkTick History5.encodePrefix
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+theorem raw507 (x : Nat) (hx0 : 0<x) (hx : x<p) (raw : State)
+    (hraw : W.CompactSkywalkStage base (SkywalkRails.encode false false (x:Int) (p:Int)) 507 raw.basis) :
+    ∃ g s : Bool, ∃ uv∈pairs, ∀ q∈sites, raw.basis q = pre507 g s uv.1 uv.2 q := by
+  have hp0 : 0<p := by norm_num [p]
+  have hpo : p%2=1 := by norm_num [p]
+  have hp : p<2^256 := by norm_num [p]
+  have cop := (StackOB5.prime_facts x hx0 hx).2.2.2
+  have fields := (W.compactSkywalkStage_fields_iff base _ 507 (by omega) base_pool_nodup raw.basis).mp hraw
+  obtain ⟨readA, readB, prev, -, future, carry, -, cleanA, -⟩ := fields
+  obtain ⟨G, S, encoded⟩ := SkywalkTrace.iter_encoded 507 false false (SkywalkNat.init x p) hp0 hpo
+  have sum := W.iter_sum_width x p 507 hp0 hx0 hpo hp hx cop (by omega)
+  have valid := SkywalkNat.iter_valid 507 (SkywalkNat.init x p) hp0 hpo
+  have term := (SkywalkNat.terminates_511 p x hp0 hx0 hpo hp hx cop).1
+  have split : SkywalkNat.step^[511] (SkywalkNat.init x p) =
+      SkywalkNat.step^[4] (SkywalkNat.step^[507] (SkywalkNat.init x p)) := by
+    rw [← Function.iterate_add_apply]
+  rw [split] at term
+  change (SkywalkNat.step^[507] (SkywalkNat.init x p)).u+
+    (SkywalkNat.step^[507] (SkywalkNat.init x p)).v ≤ 2^(511-507) at sum
+  change SkywalkTrace.next^[507] (SkywalkRails.encode false false (x : Int) (p : Int)) =
+    SkywalkRails.encode G S ((SkywalkNat.step^[507] (SkywalkNat.init x p)).u : Int)
+      ((SkywalkNat.step^[507] (SkywalkNat.init x p)).v : Int) at encoded
+  generalize SkywalkNat.step^[507] (SkywalkNat.init x p) = z at encoded sum valid term
+  have sixteen : (2:Nat)^(511-507) = 16 := by norm_num
+  rw [sixteen] at sum
+  have mem := pairs_of z sum valid.1 valid.2.1 (valid.2.2.trans cop) term
+  rw [encoded, retainedA507] at readA
+  rw [encoded, retainedB507] at readB
+  rw [encoded] at prev
+  have bA := signed6_cases _ _ _ _ _ _ raw.basis _ readA
+  have bB := signed6_cases _ _ _ _ _ _ raw.basis _ readB
+  have f7 := future 507 (le_refl _) (by omega)
+  have f8 := future 508 (by omega) (by omega)
+  have f9 := future 509 (by omega) (by omega)
+  have f10 := future 510 (by omega) (by omega)
+  have c1540 : raw.basis (base 1540) = false :=
+    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1540, by simp, rfl⟩)
+  have c1541 : raw.basis (base 1541) = false :=
+    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1541, by simp, rfl⟩)
+  have c1542 : raw.basis (base 1542) = false :=
+    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1542, by simp, rfl⟩)
+  have c1543 : raw.basis (base 1543) = false :=
+    (regValue_zero _ _).mp carry _ (List.mem_map.mpr ⟨1543, by simp, rfl⟩)
+  have c513 : raw.basis (base 513) = false := cleanA _ releasedA507
+  have prev' : raw.basis (base 506) = G := by
+    have h : skywalkPoolPreviousId 507 = 506 := rfl
+    rw [h] at prev
+    cases G <;> simpa [SkywalkRails.encode] using prev
+  refine ⟨G,S,_,mem,?_⟩
+  intro q hq
+  simp only [sites,List.mem_cons,List.not_mem_nil,or_false] at hq
+  rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact prev'
+  · simpa [pre507] using bA.1
+  · exact bA.2.1
+  · exact bA.2.2.1
+  · exact bA.2.2.2.1
+  · exact bA.2.2.2.2.1
+  · exact bA.2.2.2.2.2
+  · exact c513
+  · simpa [pre507] using bB.1
+  · exact bB.2.1
+  · exact bB.2.2.1
+  · exact bB.2.2.2.1
+  · exact bB.2.2.2.2.1
+  · exact bB.2.2.2.2.2
+  · exact f7.2
+  · exact f8.2
+  · exact f9.2
+  · exact f10.2
+  · exact c1540
+  · exact c1541
+  · exact c1542
+  · exact c1543
 
 end ECDSAAdd.Entrant.MorningFour
 
