@@ -59451,7 +59451,7 @@ theorem v3_entryTailPrefix_counts :
 
 
 theorem v3_exitHeadSuffix_counts :
-    toffoliCount (StairHostsSchedule.exitHeadSuffix checkpointPrimitives hostPlan) =
+    toffoliCount (StairHostsSchedule.exitHeadSuffix checkpointPrimitives hostPlan) + 749 =
       toffoliCount (StairSchedule.reverseLast checkpointPrimitives) +
       toffoliCount (Rolling1588.groups false 98 2) +
       toffoliCount (Rolling1588.groups false 96 2) +
@@ -59464,7 +59464,7 @@ theorem v3_exitHeadSuffix_counts :
       toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480) +
       toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 62 47 450 465) +
       toffoliCount (StairSchedule.reverseSegment checkpointPrimitives 87 62 425 450) ∧
-    measurementCount (StairHostsSchedule.exitHeadSuffix checkpointPrimitives hostPlan) =
+    measurementCount (StairHostsSchedule.exitHeadSuffix checkpointPrimitives hostPlan) + 1169 =
       measurementCount (StairSchedule.reverseLast checkpointPrimitives) +
       measurementCount (Rolling1588.groups false 98 2) +
       measurementCount (Rolling1588.groups false 96 2) +
@@ -59477,7 +59477,7 @@ theorem v3_exitHeadSuffix_counts :
       measurementCount (StairSchedule.reverseSegment checkpointPrimitives 47 32 465 480) +
       measurementCount (StairSchedule.reverseSegment checkpointPrimitives 62 47 450 465) +
       measurementCount (StairSchedule.reverseSegment checkpointPrimitives 87 62 425 450) := by
-  obtain ⟨g0, g0'⟩ := v3_group_counts false 0 1 84 (by norm_num) (by decide)
+  obtain ⟨g0, g0'⟩ := v3_moddGroup_counts
   obtain ⟨g1, g1'⟩ := v3_group_counts false 12 85 5 (by norm_num) (by decide)
   obtain ⟨g2, g2'⟩ := v3_group_counts false 21 90 3 (by norm_num) (by decide)
   obtain ⟨g3, g3'⟩ := v3_group_counts false 29 93 3 (by norm_num) (by decide)
@@ -59565,9 +59565,9 @@ theorem hostedExitRest_counts_of (δT δM : Nat)
           measurementCount (R2SqEp760.endPacket760 false) + δM)
     (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10478 + δT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 9729 + δT ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10208 + δM := by
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9039 + δM := by
   obtain ⟨b1, b2⟩ := boundary
   obtain ⟨w1, w2⟩ := v3_exitWalk_counts
   obtain ⟨p1, p2⟩ := v3_exitHeadPrefix_counts
@@ -59596,9 +59596,9 @@ theorem hostedEntryRest_counts (L : ControlledPointLayout) :
 
 theorem hostedExitRest_counts (L : ControlledPointLayout) (k : Nat) :
     toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10654 ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 9905 ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10384 := by
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9215 := by
   obtain ⟨h1, h2⟩ := hostedExitRest_counts_of 176 176 v3_boundary_counts.2 L k
   constructor <;> omega
 
@@ -59646,14 +59646,14 @@ theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 9039 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10478 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 9729 + δXT ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10208 + δXM)
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9039 + δXM)
     (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (hostedGeneric L cx cy) ≤
-        toffoliCount (FlagExit.genericN L cx cy) + 20207 + 328 + δET + δXT ∧
+        toffoliCount (FlagExit.genericN L cx cy) + 19458 + 328 + δET + δXT ∧
       measurementCount (hostedGeneric L cx cy) =
-        measurementCount (FlagExit.genericN L cx cy) + 19247 + δEM + δXM := by
+        measurementCount (FlagExit.genericN L cx cy) + 18078 + δEM + δXM := by
   obtain ⟨e1, e2⟩ := hE L
   obtain ⟨x1, x2⟩ := hX L cx.val
   obtain ⟨q1, q2⟩ := StairSquareFinal.squareEntryHL_counts StairSqLoopA.holes L
@@ -59670,14 +59670,14 @@ theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 9039 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10478 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 9729 + δXT ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10208 + δXM)
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9039 + δXM)
     (C : Point) :
     toffoliCount (concreteProgram C) ≤
-        toffoliCount (AboveFieldPointDevelop.programQ C) + 20207 + 328 + δET + δXT ∧
+        toffoliCount (AboveFieldPointDevelop.programQ C) + 19458 + 328 + δET + δXT ∧
       measurementCount (concreteProgram C) ≤
-        measurementCount (AboveFieldPointDevelop.programQ C) + 19247 + δEM + δXM := by
+        measurementCount (AboveFieldPointDevelop.programQ C) + 18078 + δEM + δXM := by
   cases C with
   | zero =>
     have z1 : toffoliCount (concreteProgram .zero) = 0 := by
@@ -59703,12 +59703,12 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
       measurementCount (hostedEntryRest L) =
         measurementCount (ParityStageBothInverse23.restEntry L) + 9039 + δEM)
     (hX : ∀ L k, toffoliCount (hostedExitRest L k) =
-        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 10478 + δXT ∧
+        toffoliCount (ParityXExitInverse23Kernel.restXXN L k) + 9729 + δXT ∧
       measurementCount (hostedExitRest L k) =
-        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10208 + δXM)
+        measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 9039 + δXM)
     (C : Point) :
-    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 20207 + 328 + δET + δXT ∧
-      measurementCount (concreteAssembly.program C) ≤ 1498884 + 19247 + δEM + δXM := by
+    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 19458 + 328 + δET + δXT ∧
+      measurementCount (concreteAssembly.program C) ≤ 1498884 + 18078 + δEM + δXM := by
   obtain ⟨c1, c2⟩ := concreteProgram_counts_of δET δEM δXT δXM hE hX C
   have qT := AboveFieldPointDevelop.program_toffoli_Q C
   have qM := AboveFieldPointDevelop.program_measurements_Q C
@@ -59718,8 +59718,8 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
 /-- Exact v3 totals for the current boundary (frozen program + LT19 endpoint: δE = 88, δX = 176;
     + LT40's hole-free square, +328 T): **T ≤ 2,169,965, M ≤ 1,520,924**. -/
 theorem count_totals : ∀ C,
-    toffoliCount (concreteAssembly.program C) ≤ 2167856 ∧
-      measurementCount (concreteAssembly.program C) ≤ 1519755 := by
+    toffoliCount (concreteAssembly.program C) ≤ 2167107 ∧
+      measurementCount (concreteAssembly.program C) ≤ 1518586 := by
   intro C
   have h := count_totals_of 88 88 176 176
     (fun L => by
@@ -67461,16 +67461,55 @@ theorem _root_.ECDSAAdd.Entrant.RouteA.Rolling1588.slice_physical : GatePhysical
     RouteA.Rolling1588.groups_physical true 2 82 (by decide)⟩,RouteA.Rolling1588.packet_physical true 84 (by decide)⟩
 
 
+open ECDSAAdd.Entrant.Rolling1588 Arithmetic MappedCompressed in
+theorem _root_.ECDSAAdd.Entrant.RouteA.Rolling1588.mstartBasePacket_physical (j : Nat) (hj : j<102) : GatePhysical (RouteA.Rolling1588.mstartBasePacket j) := by
+  have opening := RouteA.Rolling1588.onPacket_physical j hj stageOpen stageOpen_support RouteA.Rolling1588.stage_physical.1
+  have closing := RouteA.Rolling1588.onPacket_physical j hj stageClose stageClose_support RouteA.Rolling1588.stage_physical.2.1
+  have t0 := RouteA.Rolling1588.onPacket_physical j hj (stageTransition false 0) (stageTransition_support false 0 (by decide))
+    (RouteA.Rolling1588.stage_physical.2.2 false 0 (by decide))
+  have t1 := RouteA.Rolling1588.onPacket_physical j hj (stageTransition false 1) (stageTransition_support false 1 (by decide))
+    (RouteA.Rolling1588.stage_physical.2.2 false 1 (by decide))
+  have c3 := RouteA.Rolling1588.cell_physical false j 3 2 hj (by decide)
+  have c4 := RouteA.Rolling1588.cell_physical false j 4 2 hj (by decide)
+  have d0 := RouteA.Rolling1588.cellWith_physical false _ RouteA.Rolling1588.mstart_physical j 4 2 hj (by decide)
+  simp only [RouteA.Rolling1588.mstartBasePacket,gatePhysical_append]
+  exact ⟨⟨opening,⟨⟨⟨⟨⟨⟨d0,t0⟩,c3⟩,c4⟩,t1⟩,c4⟩,c3⟩⟩,closing⟩
+
+open ECDSAAdd.Entrant.Rolling1588 Arithmetic MappedCompressed in
+theorem _root_.ECDSAAdd.Entrant.RouteA.Rolling1588.mendBasePacket_physical (j : Nat) (hj : j<102) : GatePhysical (RouteA.Rolling1588.mendBasePacket j) := by
+  have opening := RouteA.Rolling1588.onPacket_physical j hj stageOpen stageOpen_support RouteA.Rolling1588.stage_physical.1
+  have closing := RouteA.Rolling1588.onPacket_physical j hj stageClose stageClose_support RouteA.Rolling1588.stage_physical.2.1
+  have t0 := RouteA.Rolling1588.onPacket_physical j hj (stageTransition false 0) (stageTransition_support false 0 (by decide))
+    (RouteA.Rolling1588.stage_physical.2.2 false 0 (by decide))
+  have t1 := RouteA.Rolling1588.onPacket_physical j hj (stageTransition false 1) (stageTransition_support false 1 (by decide))
+    (RouteA.Rolling1588.stage_physical.2.2 false 1 (by decide))
+  have c3 := RouteA.Rolling1588.cell_physical false j 3 2 hj (by decide)
+  have c4 := RouteA.Rolling1588.cell_physical false j 4 2 hj (by decide)
+  have e0 := RouteA.Rolling1588.cellWith_physical false _ RouteA.Rolling1588.route_junction_physical.2.2 j 3 2 hj (by decide)
+  simp only [RouteA.Rolling1588.mendBasePacket,gatePhysical_append]
+  exact ⟨⟨opening,⟨⟨⟨⟨⟨⟨c4,t0⟩,c3⟩,c4⟩,t1⟩,c4⟩,e0⟩⟩,closing⟩
+
+open ECDSAAdd.Entrant.Rolling1588 Arithmetic MappedCompressed in
+theorem _root_.ECDSAAdd.Entrant.RouteA.Rolling1588.mslice_physical : GatePhysical RouteA.Rolling1588.mslice := by
+  rw [RouteA.Rolling1588.mslice_eq]
+  simp only [gatePhysical_append]
+  exact ⟨⟨gatePhysical_rename _ (shifted (Placement5.pi 84)).injective _ (RouteA.Rolling1588.mstartBasePacket_physical 84 (by decide)),
+    RouteA.Rolling1588.groups_physical false 2 82 (by decide)⟩,
+    gatePhysical_rename _ (shifted (Placement5.pi 1)).injective _ (RouteA.Rolling1588.mendBasePacket_physical 1 (by decide))⟩
+
 theorem sound_placedGroups (H : StairReplay.Half760LoanHypothesis
       (fun divide d => StairLoan.half760Loan d divide))
     (divide : Bool) (d f c : Nat) (hd : d ≤ 68) (hf : 1 ≤ f) (hfc : f + c ≤ 102) :
     Sound (StairSchedule.placedGroups StairConcrete.bestLoans divide d f c) :=
   ⟨gatePhysical_rename _ (OB5.sig_injective 511 (by decide)) _ (by
       change GatePhysical (StairConcrete.groupsM1 divide d f c)
-      by_cases hm : divide=true ∧ d=0 ∧ f=1 ∧ c=84
-      · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
-        rw [StairConcrete.groupsM1_odd]
-        exact RouteA.Rolling1588.slice_physical
+      by_cases hm : d=0 ∧ f=1 ∧ c=84
+      · obtain ⟨rfl,rfl,rfl⟩ := hm
+        cases divide
+        · rw [StairConcrete.groupsM1_modd]
+          exact RouteA.Rolling1588.mslice_physical
+        · rw [StairConcrete.groupsM1_odd]
+          exact RouteA.Rolling1588.slice_physical
       · rw [StairConcrete.groupsM1_other divide d f c hm]
         exact loanGroups_physical divide d f c hfc),
     good_placedGroups H divide d f c hd hf hfc⟩
@@ -75959,7 +75998,7 @@ def entry : Challenge.Entry :=
   StairCertificate.stairEntry StairConcreteAssembly.concreteAssembly
 
 /-- Literal bounds ⟨T, M, Q, slots⟩; T is the exact total of `StairCountsHosted.count_totals`. -/
-def bounds : Challenge.Bounds := ⟨2167856, 1521500, 1544, 51155937⟩
+def bounds : Challenge.Bounds := ⟨2167107, 1521500, 1544, 51155937⟩
 
 theorem certificate : Challenge.Certificate entry bounds := by
   have c := StairOpenWiring.certificate_of_remaining 1544 (by decide) StairOpenWiring.remaining
