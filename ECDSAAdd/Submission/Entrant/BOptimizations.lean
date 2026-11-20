@@ -13,7 +13,6 @@ import ECDSAAdd.Challenge.Contract
 import Mathlib.Tactic.FinCases
 import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
 import ECDSAAdd.Submission.Entrant.BOptimizationsCore
-import ECDSAAdd.Submission.Entrant.ACCache
 import ECDSAAdd.Framework.Cost
 import ECDSAAdd.Framework.PacketSequenceFrame
 import ECDSAAdd.Arithmetic.MappedCompressedAllocationSites
@@ -29,7 +28,7 @@ import ECDSAAdd.Arithmetic.SwapRegisters
 import ECDSAAdd.Arithmetic.RecordedRailVentedProof
 import ECDSAAdd.Framework.WireRenameEquivalence
 import ECDSAAdd.Framework.WireRenameComposition
-import ECDSAAdd.Submission.Entrant.StairSideA
+import ECDSAAdd.Submission.Entrant.StairSideA0
 
 -- Rebalanced closed source chunks; all ordinary declarations and circuit literals retained.
 section
@@ -988,35 +987,10 @@ theorem loop_counts:toffoliCount loop+3=toffoliCount HighSignCResearch.loop ∧
  simp only [ReorderedCUnbuild.unbuild,ReorderedConsumedSub.consumed,toffoliCount_append,measurementCount_append] at oi om
  simp only [loop,suffix,newI,preInv,top,tail,M,HighSignCResearch.loop,HighSignCResearch.suffix,
   toffoliCount_append,measurementCount_append,C105LowEraseResearch.counts.1,C105LowEraseResearch.counts.2.1]
- try rw [xs] at *
- try rw [ys] at *
- try rw [cs] at *
- try rw [HighConsumedC105Research.xs] at *
- try rw [HighConsumedC105Research.ys] at *
- try rw [HighConsumedC105Research.cs] at *
- try rw [HighConsumedC105Research.cin] at *
- try rw [HighConsumedC105Research.hs] at *
- try rw [C105PrefixResearch.cin] at *
- try rw [CKAliasesResearch.original] at *
- try rw [Ghost3CacheC.middle] at *
- try rw [GhostRelocatedKnown.C.original] at *
- try rw [HighSignCResearch.hosts] at *
- try rw [C105SignResearch.hosts] at *
- try rw [xs] at *
- try rw [ys] at *
- try rw [cs] at *
- try rw [HighConsumedC105Research.xs] at *
- try rw [HighConsumedC105Research.ys] at *
- try rw [HighConsumedC105Research.cs] at *
- try rw [HighConsumedC105Research.cin] at *
- try rw [HighConsumedC105Research.hs] at *
- try rw [C105PrefixResearch.cin] at *
- try rw [CKAliasesResearch.original] at *
- try rw [Ghost3CacheC.middle] at *
- try rw [GhostRelocatedKnown.C.original] at *
- try rw [HighSignCResearch.hosts] at *
- try rw [C105SignResearch.hosts] at *
- simp only [aa,ap,ab,ax,ai] at *
+ simp only [xs,ys,cs,HighConsumedC105Research.xs,HighConsumedC105Research.ys,
+  HighConsumedC105Research.cs,HighConsumedC105Research.cin,HighConsumedC105Research.hs,
+  C105PrefixResearch.cin,CKAliasesResearch.original,Ghost3CacheC.middle,
+  GhostRelocatedKnown.C.original,HighSignCResearch.hosts,C105SignResearch.hosts,aa,ap,ab,ax,ai] at *
  exact ⟨by omega,by omega⟩
 
  theorem body_counts:toffoliCount body+3=toffoliCount HighSignCResearch.body ∧
@@ -6550,11 +6524,6 @@ attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
 def bodyG (L : CuccaroStreamedSquareWideLayout) (fold1 fold2 loop efold rebuild : Program) : Program :=
  fold1 ++ (fold2 ++ (foldFor L loop ++ (efold ++ rebuild)))
 
-/-! K4-D (replay budget): the bit/bound facts of `frameG` as small standalone lemmas (an `omega` inside
-`frameG` works over every hypothesis of the large context, with 2^128-sized constants). -/
-namespace K4DB
-end K4DB
-
 theorem frameG
  (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (hn : L.wires.Nodup)
  (c : Wire) (hcw : c∉L.wires) (loopProgram : Program)
@@ -6600,7 +6569,10 @@ theorem frameG
     rw [Nat.div_lt_iff_lt_mul (by positivity)]
     calc P<2^256 := hb
       _ = 2^128*2^128 := by norm_num
-  have hWlt : W<2^163 := K4DB.wlt b1 hb1lt
+  have hWlt : W<2^163 := by
+    show 4294968272*b1<2^163
+    norm_num at hb1lt ⊢
+    omega
   have t1 : Triple (SquareFrame L.core.out base O) fold1 (SquareFrame L.core.out base O1) :=
     fold1Spec O hO
   have t2 : Triple (SquareFrame L.core.out base O1) fold2 (SquareFrame L.core.out base O2) :=
@@ -6633,14 +6605,18 @@ theorem frameG
     rw [Nat.div_lt_iff_lt_mul (by positivity)]
     calc b1<2^128 := hb1lt
       _ = 2^32*2^96 := by norm_num
-  have hH : H < 2^96 := K4DB.hlt b0 hb0
+  have hH : H < 2^96 := by show b0/2^32 < 2^96; omega
   have hl' : l' < 2^32 := Nat.mod_lt _ (by positivity)
-  have hK : K ≤ 1 := K4DB.kle b0 u hu32
-  have hKif : (if l' < u then 1 else 0) = K := K4DB.kif b0 u hu32
+  have hK : K ≤ 1 := by show (b0%2^32 + u)/2^32 ≤ 1; omega
+  have hKif : (if l' < u then 1 else 0) = K := by
+    show (if (b0%2^32 + u)%2^32 < u then 1 else 0) = (b0%2^32 + u)/2^32
+    by_cases hc' : (b0%2^32 + u)%2^32 < u
+    · rw [if_pos hc']; omega
+    · rw [if_neg hc']; omega
   let kap:Bool:=decide (K=1)
   let baseK:=writeBit base L.core.sumCarry kap
   have kapNat:kap.toNat=K := by
-    have kk:K=0 ∨ K=1 := Nat.le_one_iff_eq_zero_or_eq_one.mp hK
+    have kk:K=0 ∨ K=1 := by omega
     rcases kk with kk|kk <;> simp [kap,kk]
   have hcK:L.PairClean baseK := ParkCarryDevelop.base_clean L hn base hc kap
   have productOff:L.core.sumCarry∉L.core.product := by
@@ -6670,8 +6646,8 @@ theorem frameG
   have loanFact : ((2^32*H+l'+2^128*K)/2%2==1)=
       ((b1/2^96/2%2==1) ^^ (b1/2^96%2==1) ^^
         ((b1/2^96%2==1)&&((2^32*H+l'+2^128*K)%2==1))) := by
-    have low0:(2^32*H+l'+2^128*K)%2=(b0%2^32+u)%2:=K4DB.low0 H (b0%2^32+u) K
-    have low1:(2^32*H+l'+2^128*K)/2%2=(b0%2^32+u)/2%2:=K4DB.low1 H (b0%2^32+u) K
+    have low0:(2^32*H+l'+2^128*K)%2=(b0%2^32+u)%2:=by dsimp[l'];omega
+    have low1:(2^32*H+l'+2^128*K)/2%2=(b0%2^32+u)/2%2:=by dsimp[l'];omega
     rw[low0,low1]
     exact known_second_loan (b0%2^32) u squareBit
   let originalM:=regValue L.core.high base
@@ -6686,9 +6662,7 @@ theorem frameG
   have source0:base (L.core.high.headD 0)=digit originalM 0:=by
     simpa only[digit,pow_zero,Nat.div_one]using head_parity L.core.high base
       (by simp[CuccaroStreamedSquareLayout.high,hw.core.y])
-  have modE2:(2^32*H+l'+2^128*K)%2=lowSum (base c) originalM u%2:=by
-    rw [← Nat.mod_mod_of_dvd (2^32*H+l'+2^128*K) (by decide : 2 ∣ 16), modE,
-      Nat.mod_mod_of_dvd _ (by decide : 2 ∣ 16)]
+  have modE2:(2^32*H+l'+2^128*K)%2=lowSum (base c) originalM u%2:=by omega
   have loanFact0:=LowBitCarryNumbers.loan0_from_mod2 (base c) originalM u (2^32*H+l'+2^128*K)
     (by simpa only[lowSum]using modE2)
   rw[←source0]at loanFact0
@@ -6698,12 +6672,17 @@ theorem frameG
       (wMidFullCCC0 L c)
       (BState L base O3 (2^32*H+l'+2^128*K) (4294968272*regValue (hiReg L) base)) := by
     simpa only [hb1] using wm
-  have loopE : 2^32*H+l'+2^128*K<2^129 := K4DB.lt129 H l' K hH hl' hK
+  have loopE : 2^32*H+l'+2^128*K<2^129 := by
+    have h0:=hH
+    have h1:=hl'
+    have h2:=hK
+    norm_num only at h0 h1 h2 ⊢
+    omega
   have loop := loopSpec base hc hsum
     O2 (2^32*H+l'+2^128*K) O3 loopE wmBase
-  have kc:=ParkCarryDevelop.park_step L hw hn base hsum O3 (2^32*H+l') 0 (K4DB.lt128 H l' hH hl') kap
+  have kc:=ParkCarryDevelop.park_step L hw hn base hsum O3 (2^32*H+l') 0 (by omega) kap
   rw [kapNat] at kc
-  have w3 := eSubK_step L hw hn baseK hcK O3 (2^32*H + l') 0 b1 (K4DB.lt128 H l' hH hl') hb1K
+  have w3 := eSubK_step L hw hn baseK hcK O3 (2^32*H + l') 0 b1 (by omega) hb1K
   have tw : Triple (BState L base O2 b0 0) (foldFor L loopProgram) (BState L baseK O3 E1 0) :=
     by simpa only [foldFor,List.append_assoc] using k1.seq (loop.seq (kc.seq w3))
   -- new e-fold
@@ -6712,11 +6691,8 @@ theorem frameG
     rw [gc] at h
     exact h
   -- wRestoreT
-  have bk : (E1+b1)%2^130 = 2^32*H + l' :=
-    K4DB.wrap (2^32*H + l') b1 (Nat.lt_trans (K4DB.lt128 H l' hH hl') (by decide))
-      (Nat.lt_trans hb1lt (by decide))
-  have r2 := eAddB_step L hw hn baseK hcK O4 E1 0 b1 hb1K
-    (by rw [bk]; exact Nat.lt_trans (K4DB.lt128 H l' hH hl') (by decide))
+  have bk : (E1+b1)%2^130 = 2^32*H + l' := by show ((2^32*H + l' + 2^130 - b1) % 2^130 + b1) % 2^130 = _; omega
+  have r2 := eAddB_step L hw hn baseK hcK O4 E1 0 b1 hb1K (by rw [bk]; omega)
   rw [bk] at r2
   have bit32:(b0%2^32)/2%2=0 := by
     change ((M^2%2^128)%2^32)/2%2=0
@@ -6729,7 +6705,7 @@ theorem frameG
     exact Nat.mod_add_div _ _
   have r3:=ParkCarryDevelop.restore_step L hw hn baseK hcK O4 0 H l' (b0%2^32) hH hl'
     (Nat.mod_lt _ (by positivity)) bit32 total
-  have bb:2^32*H+b0%2^32=b0 := Nat.div_add_mod b0 (2^32)
+  have bb:2^32*H+b0%2^32=b0 := by dsimp [H];omega
   rw [resetBase,bb] at r3
   have rp := padM_step L hw hn base hc O4 b0 0 744
   have tr : Triple (BState L baseK O4 E1 0) (ParkCarry10Develop.rebuild L) (BState L base O4 b0 0) :=
@@ -6867,10 +6843,7 @@ namespace LT48B
 open Challenge
 
 
-theorem forbidB_eq : forbidB = forbidNat := by
-  -- K4-D (replay budget): symbolic (was a pool walk per hole)
-  unfold forbidB forbidNat
-  rw [K4DQ.holesB_eq, K4DQ.normFlag_eq]
+theorem forbidB_eq : forbidB = forbidNat := by decide +kernel
 
 
 
@@ -6894,21 +6867,18 @@ theorem forbidB_eq : forbidB = forbidNat := by
 
 end LT48B
 
-theorem coreB_nodup : (coreB LB).wires.Nodup := by
-  rw [K4DQ.LB_eq]
-  exact (LT48B.nodupMaskL_sound _ 0 (by decide +kernel)).1
+theorem coreB_nodup : (coreB LB).wires.Nodup := (LT48B.nodupMaskL_sound _ 0 (by decide +kernel)).1
 
 theorem bitsB_away : ∀q∈ECDSAAdd.Entrant.accReg LB,
-    q∉(coreB LB).out++(coreB LB).carry++[(coreB LB).high,(coreB LB).cin,(coreB LB).flag] := by
-  rw [K4DQ.LB_eq]
-  exact LT48B.disj_of_maskL _ _ (by decide +kernel)
+    q∉(coreB LB).out++(coreB LB).carry++[(coreB LB).high,(coreB LB).cin,(coreB LB).flag] :=
+  LT48B.disj_of_maskL _ _ (by decide +kernel)
 
 theorem bitsB_ok : BitsOK (coreB LB) 256 (bitsB LB) :=
   ⟨bitsB_length LB LowAccCarryDevelop.layout_widths,by rw [bitsB_wires]; exact bitsB_away⟩
 
 theorem mid_free : ∀q∈forbidB,q∉(coreB LB).out++(coreB LB).carry++
     [(coreB LB).high,(coreB LB).cin,(coreB LB).flag]++ECDSAAdd.Entrant.accReg LB := by
-  rw [LT48B.forbidB_eq, K4DQ.LB_eq]
+  rw [LT48B.forbidB_eq]
   exact LT48B.disj_of_maskL _ _ (by decide +kernel)
 
 section K2HitSec
@@ -7044,7 +7014,7 @@ theorem fillOut_free : touchedAny (SourceFourPrefix130Develop.fillOutKnown LB (e
 
 /-! The other (unchanged) e-part pieces of the B body, for the assembly. -/
 theorem eAddLo_free : touchedAny (eAddLo LB) forbidB=false := by
-  rw [LT48B.forbidB_eq, K4DQ.LB_eq]; exact K2Hit.touchedAny_of_mask _ _ (by decide +kernel)
+  rw [LT48B.forbidB_eq]; exact K2Hit.touchedAny_of_mask _ _ (by decide +kernel)
 theorem park_free : touchedAny (ParkCarryDevelop.program (eU LB) LB.core.sumCarry) forbidB=false := by
   rw [LT48B.forbidB_eq]; exact K2Hit.touchedAny_of_mask _ _ (by decide +kernel)
 -- K2 (replay budget): `eSubK_free` was a `decide +kernel` scan (13.6 s); the subtractor's support is its registers.
@@ -7074,37 +7044,14 @@ theorem rebuild_free : touchedAny LocalRebuild.improved forbidB=false := by
   rw [LocalRebuild.improved,LocalRebuild.literal,LT48B.forbidB_eq]
   exact K2Hit.touchedAny_of_mask _ _ (by decide +kernel)
 
-
 /-- Support of the new middle inside the layout (for `c :: L.wires` support statements). -/
 theorem mid_in_layout : ∀q∈(coreB LB).out++(coreB LB).carry++
     [(coreB LB).high,(coreB LB).cin,(coreB LB).flag]++ECDSAAdd.Entrant.accReg LB,q∈cB::LB.wires :=
-  fun q hq => List.mem_cons_of_mem _ (K4DQ.mid_wires LB q hq)
-
-/-! ### K4-D (replay budget): the per-bit slot counts as literals
-
-`LT48B.majS b` etc. evaluate a small program per bit; `K4DS.majC` etc. are their values by the shape of the
-bit, and `addC`/`eltC`/`elC`/`skC`/`esC` the same recursions as `addS`/... with those literals. -/
-namespace K4DS
-open LT48B
-
-
-
-
-
-
-
-
-
-
-
-
-
-end K4DS
+  LT48B.sub_of_maskL _ _ (by decide +kernel)
 
 theorem mid_slots_le : Challenge.gateSlots (midB LB)≤Challenge.gateSlots (qprog4Tq LB.measuredCore SquareReduction.p) := by
-  rw [K4DQ.LB_eq]
   simp only [midB, qprogM, qprog4Tq, mappedConstAdd, Challenge.gateSlots_append, LT48B.addS_eq, LT48B.eltS_eq,
-    LT48B.skS_eq, LT48B.esS_eq, K4DS.addC_eq, K4DS.eltC_eq, K4DS.skC_eq, K4DS.esC_eq]
+    LT48B.skS_eq, LT48B.esS_eq]
   decide +kernel
 
 end ECDSAAdd.Entrant.StairSquareBChecks
@@ -8125,514 +8072,6 @@ end ECDSAAdd.Entrant.StairSqLoopA
 
 end
 
--- PSQ-A: partial carry cache in the hole-free A square loop.
--- The 43 hole hosts `ReorderedAFixed.hs.take 43` and the three status hosts `ReorderedAFixed.hosts.take 3`
--- stay out of the cache; the other 63 of the record's 109 cache hosts keep their carries (63 T saved).
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.A109Research
-open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ControlledBorrowResearch
-set_option autoImplicit false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
-
-def keepK:List Wire:=hosts.filter (fun q=>!((ReorderedAFixed.hs.take 43).contains q) &&
- !((ReorderedAFixed.hosts.take 3).contains q))
-
-theorem keepK_geometry:keepK.Nodup ∧ keepK.length=63 ∧
- (∀i,i<43→ReorderedAFixed.hs.getD i 0∉keepK) ∧
- (∀q∈keepK,q∈ReorderedAFixed.hosts→q∈ReorderedAFixed.hs):=by decide +kernel
-
-theorem keepK_sub(q:Wire)(hq:q∈keepK):q∈hosts:=(List.mem_filter.mp hq).1
-
-def rawFK:Program:=ReorderedGenericCache.cachedAdd 63 xs ys cs keepK cin
-def newFK:Program:=head++A109LowEraseResearch.clear++ReorderedGenericCache.cachedAdd 63 xs ys cs keepK cin++top
-def newIK:Program:=preInv++ReorderedConsumedSub.consumed 63 xs ys cs keepK cin
-
-theorem inverse_frameK(s:State)(m:List Bool)(H:Nat)(hH:H<2^128)
- (hz:∀q∈cs,(run preInv m s).basis q=false)(hi:(run preInv m s).basis cin=false)
- (source:regValue xs (run preInv m s).basis=H)
- (target:regValue ys (run preInv m s).basis=976*H/1024)
- (saved:keepK.map s.basis=ReorderedCacheBits.values 4 63 H (976*H/1024)):
- run newIK m s=scatterState keepK (List.replicate keepK.length false) (run I m s):=by
- have same:keepK.map (run preInv m s).basis=keepK.map s.basis:=by
-  apply List.map_congr_left
-  intro q hq
-  exact run_preserves_outside preInv m s q (preInv_off q (keepK_sub q hq))
- simp only [newIK,I,ControlledBorrowResearch.run_cat]
- exact ReorderedConsumedSub.frame 63 xs ys cs keepK cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
-  (by rw [raw_lengths.1,raw_lengths.2.1]) (by rw [raw_lengths.2.1,raw_lengths.2.2])
-  raw_nd keepK_geometry.1 keepK_geometry.2.1 (fun q hq=>geometry.2.2 q (keepK_sub q hq))
-  (run preInv m s) _ hz hi H (976*H/1024) source target (same.trans saved)
-
-theorem forward_frameK(s:State)(m:List Bool)(H:Nat)
- (zero:∀q∈keepK,(run (head++A109LowEraseResearch.clear) (m.take (measurementCount (head++A109LowEraseResearch.clear))) s).basis q=false)
- (values:(((cs.drop 4).take 63).map (run (carryPrefix (4+63) xs ys cs cin) []
-  (run (head++A109LowEraseResearch.clear) (m.take (measurementCount (head++A109LowEraseResearch.clear))) s)).basis)=
-   ReorderedCacheBits.values 4 63 H (976*H/1024)):
- run newFK m s=scatterState keepK (ReorderedCacheBits.values 4 63 H (976*H/1024)) (run F m s):=by
- have h:=CacheBetweenFrameResearch.forward (head++A109LowEraseResearch.clear) top 63 xs ys cs keepK cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
-  keepK_geometry.1 (fun q hq bad=>geometry.2.2 q (keepK_sub q hq) (by simp only [List.mem_cons,List.mem_append];tauto))
-  (fun q hq=>rawF_off q (keepK_sub q hq)) (fun q hq=>top_off q (keepK_sub q hq)) s m zero
- rw [values] at h
- exact h
-
-theorem forward_measurementsK:measurementCount newFK=measurementCount F:=by
- have h:=(ReorderedGenericCache.count_balance 63 xs ys cs keepK cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)).2.1
- simp only [newFK,F,rawF,measurementCount_append]
- rw [h]
-
-theorem forward_zeroK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hs,s.basis q=false):
- ∀q∈keepK,(run F m s).basis q=false:=by
- rw [forward_erased s m hz hb hi ha]
- let u:=run (ReorderedAPlain.build acc pad bank cin src) m s
- have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
-  BRelocatedReadyResearch.plain_before s m hz hb hi ha
- intro q hk
- have hq:=keepK_sub q hk
- rcases List.mem_append.mp hq with hq|hq
- · rw [A109LowEraseResearch.bit_same _ q (by
-    have away:=old_away q hq
-    intro bad
-    apply away
-    simp only [A109LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at bad
-    rcases bad with rfl|rfl|rfl <;>decide)]
-   exact (run_preserves_outside _ m s q (old_plain_off398 q hq)).trans (zero q (keepK_geometry.2.2.2 q hk hq))
- · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
-   rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
-   · rw [A109LowEraseResearch.bit_same _ _ (by decide)]
-     simpa only [show acc.getD 0 0=4757 from by decide +kernel] using
-      (LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
-       (by rw [acc_length];decide) ready.1)
-   · rw [A109LowEraseResearch.bit_same _ _ (by decide)]
-     simpa only [show acc.getD 1 0=4758 from by decide +kernel] using
-      (LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
-       (by rw [acc_length];decide) ready.1)
-   · rw [A109LowEraseResearch.bit_same _ _ (by decide)]
-     simpa only [show acc.getD 2 0=4759 from by decide +kernel] using
-      (LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
-       (by rw [acc_length];decide) ready.1)
-   · exact A109LowEraseResearch.zero _ _ (by decide)
-   · exact A109LowEraseResearch.zero _ _ (by decide)
-   · exact A109LowEraseResearch.zero _ _ (by decide)
-
-theorem prefix_zeroK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hs,s.basis q=false):
- ∀q∈keepK,(run (head++A109LowEraseResearch.clear) m s).basis q=false:=by
- have clean:=forward_zeroK s m hz hb hi ha zero
- intro q hq
- have off:q∉wires (rawF++top):=by
-  simp only [wires_append,Finset.mem_union,not_or]
-  exact ⟨rawF_off q (keepK_sub q hq),top_off q (keepK_sub q hq)⟩
- have eq:(run F m s).basis q=(run (head++A109LowEraseResearch.clear) m s).basis q:=by
-  have partition:F=(head++A109LowEraseResearch.clear)++(rawF++top):=by simp only [F,List.append_assoc]
-  rw [partition,run_cat]
-  exact run_preserves_outside _ _ _ q off
- exact eq.symm.trans (clean q hq)
-
-theorem forward_valuesK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0):
- (((cs.drop 4).take 63).map (run (carryPrefix (4+63) xs ys cs cin) []
-  (run (head++A109LowEraseResearch.clear) m s)).basis)=
- ReorderedCacheBits.values 4 63 (regValue src s.basis) (976*regValue src s.basis/1024):=by
- let H:=regValue src s.basis
- let u:=run head m s
- let t:=run (head++A109LowEraseResearch.clear) m s
- have te:t=A109LowEraseResearch.erase u:=prefix_erased s m hz hb hi ha
- have hH:H<2^128:=by simpa only [H,source_length] using regValue_lt src s.basis
- have ready:(∀q∈cs,u.basis q=false) ∧ u.basis cin=false ∧ regValue xs u.basis=H ∧
-  regValue ys u.basis=((2^138-48*H)%2^138)/1024:=by
-  simpa only [cs,xs,ys,u,head,H] using
-   ReorderedHeadArithmeticResearch.ready acc pad bank cin src acc_length source_length fits s m hz hb hi ha
- have eraseBit(q:Wire)(hq:q∈domain):t.basis q=u.basis q:=by
-  rw [te]
-  exact A109LowEraseResearch.bit_same _ q (domain_away_low q hq)
- have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r t.basis=regValue r u.basis:=
-  regValue_congr _ _ _ (fun q hq=>eraseBit q (sub q hq))
- have sy:regValue ys t.basis=((2^138-48*H)%2^138)/1024:=
-  (eraseReg ys y_in).trans ready.2.2.2
- have sh:regValue xs t.basis=H:=
-  (eraseReg xs x_in).trans ready.2.2.1
- have sb:∀q∈cs,t.basis q=false:=by
-  intro q hq
-  exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
- have si:t.basis cin=false:=
-  (eraseBit cin cin_in).trans ready.2.1
- exact ReorderedCacheBits.forward_values 4 63 H (((2^138-48*H)%2^138)/1024) (976*H/1024)
-  xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
-  (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
-   simpa only [show 128+10=138 by decide] using
-    ReorderedCacheArithmetic.high_add_low 128 (4+j+1) H (by omega) hH)
-
-theorem scattered_erased_domainK(s:State)(vs:List Bool)(q:Wire)(hq:q∈domain):
- (scatterState keepK vs (A109LowEraseResearch.erase s)).basis q=s.basis q:=by
- rw [scatter_outside keepK vs _ q (by intro bad;exact geometry.2.2 q (keepK_sub q bad) hq)]
- exact A109LowEraseResearch.bit_same s q (domain_away_low q hq)
-
-theorem inverse_readyK(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
- let vs:=ReorderedCacheBits.values 4 63 H (976*H/1024)
- let t:=scatterState keepK vs (A109LowEraseResearch.erase s)
- run newIK m t=scatterState keepK (List.replicate keepK.length false) (run I m t):=by
- dsimp only
- let vs:=ReorderedCacheBits.values 4 63 H (976*H/1024)
- let t:=scatterState keepK vs (A109LowEraseResearch.erase s)
- have hH:H<2^128:=by rw [←ready.2.1];simpa only [source_length] using regValue_lt src s.basis
- have commute:run preInv m t=scatterState keepK vs (A109LowEraseResearch.erase (run preInv m s)):=by
-  rw [show t=scatterState keepK vs (A109LowEraseResearch.erase s) from rfl,
-   run_scatter preInv keepK vs _ _ (fun q hq=>preInv_off q (keepK_sub q hq)),
-   A109LowEraseResearch.commute preInv m s (fun q hq=>preInv_off q (low_hosts q hq))]
- have bits(q:Wire)(hq:q∈domain):(run preInv m t).basis q=(run preInv m s).basis q:=by
-  rw [commute]
-  exact scattered_erased_domainK _ vs q hq
- have regs(r:List Wire)(sub:∀q∈r,q∈domain):regValue r (run preInv m t).basis=regValue r (run preInv m s).basis:=
-  regValue_congr _ _ _ (fun q hq=>bits q (sub q hq))
- have rr:=pre_raw_ready H s m ready
- have saved:keepK.map t.basis=vs:=scatter_saved_map keepK vs _ keepK_geometry.1
-  (by simp only [vs,ReorderedCacheBits.values,List.length_map,keepK_geometry.2.1,List.length_range])
- apply inverse_frameK t m H hH
- · intro q hq
-   rw [bits q (c_in q hq)]
-   exact rr.1 q hq
- · rw [bits cin cin_in]
-   exact rr.2.1
- · rw [regs xs x_in]
-   exact rr.2.2.1
- · rw [regs ys y_in]
-   exact rr.2.2.2
- · exact saved
-
-theorem cache_loopK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hs,s.basis q=false)
- (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
- (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
- run (newFK++M++newIK) m s=run (F++M++I) m s:=by
- let H:=regValue src s.basis
- let vs:=ReorderedCacheBits.values 4 63 H (976*H/1024)
- have mid:=middle_erased s m hz hb hi ha after flag
- have forward:=forward_frameK s (m.take (measurementCount F)) H
-  (prefix_zeroK s _ hz hb hi ha zero) (forward_valuesK s _ hz hb hi ha)
- apply CacheFromCleanForwardResearch.equivalent F newFK M I newIK keepK vs
-  forward_measurementsK (fun q hq=>middle_fresh q (keepK_sub q hq)) (fun q hq=>I_off q (keepK_sub q hq))
-  keepK_geometry.1 s m (forward_zeroK s _ hz hb hi ha zero) forward
- rw [mid]
- exact inverse_readyK H (middleState oldF oldM s m) _ after
-
-def coreK:Program:=(newFK++M++newIK)++(A109LowEraseResearch.clear++tail)
-
-theorem inverse_measurementsK:measurementCount newIK=measurementCount I:=by
- have h:=ReorderedConsumedSub.measurement_eq 63 xs ys cs keepK cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
-  (by rw [raw_lengths.2.2];decide)
- have eq:measurementCount (ReorderedConsumedSub.consumed 63 xs ys cs keepK cin)=measurementCount rawI:=h
- simp only [newIK,I,measurementCount_append,eq]
-
-theorem prefix_measurementsK:measurementCount (newFK++M++newIK)=measurementCount (F++M++I):=by
- simp only [measurementCount_append,forward_measurementsK,inverse_measurementsK]
-
-theorem core_plainK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hs,s.basis q=false)
- (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
- (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
- run coreK m s=run (oldF++oldM++ReorderedAPlain.unbuild acc pad bank cin src) m s:=by
- have eq:=ClearContextResearch.append_at (newFK++M++newIK) (F++M++I) (A109LowEraseResearch.clear++tail)
-  s m prefix_measurementsK (cache_loopK s m hz hb hi ha zero after flag)
- have shape:(F++M++I)++(A109LowEraseResearch.clear++tail)=F++M++(I++A109LowEraseResearch.clear++tail):=by
-  have g(A B C D E:Program):(A++B++C)++(D++E)=A++B++(C++D++E):=by simp only [List.append_assoc]
-  exact g F M I A109LowEraseResearch.clear tail
- exact eq.trans ((congrArg (fun P=>run P m s) shape).trans (plain_loop s m hz hb hi ha after flag))
-
-end ECDSAAdd.Entrant.A109Research
-end
-
--- PSQ-A: the partial-cache A loop (`loopPC`) and its frame, host avoidance, counts, slots, physicality, support.
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.StairSqLoopA
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed A161Low4Ghost
- ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
-set_option autoImplicit false
-set_option linter.unusedVariables false
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-set_option linter.unusedSimpArgs false
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires A161Low4FixedFold.checked
-
-def pcCore:Program:=A109Research.coreK
-
-theorem pcCore_frame(base:BasisState)(hc:L.PairClean base)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) pcCore
-  (SquareFrame L.core.out base
-   (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have clean:=L.squareFrame_clean hn base s.basis O hf hc
- have hzFull:∀u∈accZ L,s.basis u=false:=by
-  intro u hu
-  rcases accZ_mem L u hu with hu|hu
-  · exact (regValue_zero _ _).mp clean.pad u hu
-  · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_drop hu)
- have hz:∀u∈pad,s.basis u=false:=fun u hu=>hzFull u ((FullPadDevelop.pad_sublist L).subset hu)
- have hb:∀u∈bank,s.basis u=false:=fun u hu=>(regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
- have ha:regValue acc s.basis=0:=ghostAcc_zero L s.basis clean
- have zeroU:∀u∈ReorderedAFixed.hs,s.basis u=false:=fun u hu=>
-  (hf.2 u (A161Low4FixedFold.hostClean base hc hd u hu).1).trans (A161Low4FixedFold.hostClean base hc hd u hu).2
- have offHs:∀u∈ReorderedAFixed.hs,u∉wires (ReorderedAPlain.build acc pad bank L.core.cin src):=by
-  intro u hu
-  exact (off_plain u (hosts_of_hs u hu)).1
- have goodOriginal:WReady acc pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedAPlain.build acc pad bank L.core.cin src) (A161Low4Fold.aMiddle L g) s m):=by
-  rw [ReorderedARetape.a_middle_eq acc pad bank L.core.cin src (A161Low4Fold.aMiddle L g)
-   lengths.1 lengths.2.2.2 fits s m hz hb clean.cin ha]
-  exact good_old base hc O hO s _ hf
- have middleEq:=A161Low4FixedFold.cert100.middle_eq ReorderedAFixed.hs (A161Low4Fold.aMiddle L g)
-  A161Low4FixedFold.checked.out (ReorderedAPlain.build acc pad bank L.core.cin src) s m zeroU offHs
- have good:WReady acc pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedAPlain.build acc pad bank L.core.cin src) A161Low4FixedFold.checked.out s m):=by
-  rw [middleEq]
-  exact goodOriginal
- have knownEq:=AKnownMiddleResearch.middle_eq s m hz hb clean.cin ha
- have goodKnown:WReady acc pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedAPlain.build acc pad bank L.core.cin src) KnownAMidStaged.body s m):=by
-  rw [knownEq]
-  exact good
- have buildFrame:=ReorderedAPlain.build_triple acc pad bank L.core.cin src lengths.1 lengths.2.2.2 fits
-  s.basis hz hb clean.cin s (m.take (measurementCount (ReorderedAPlain.build acc pad bank L.core.cin src)))
-  ⟨ha,fun _ _=>rfl⟩
- have flag:(run (ReorderedAPlain.build acc pad bank L.core.cin src)
-  (m.take (measurementCount (ReorderedAPlain.build acc pad bank L.core.cin src))) s).basis 4762=false:=
-  (buildFrame.2.2 4762 (by decide +kernel)).trans clean.modFlag
- have plainNew:=A109Research.core_plainK s m hz hb clean.cin ha zeroU goodKnown flag
- have midEq:run KnownAMidStaged.body (m.drop (measurementCount (ReorderedAPlain.build acc pad bank L.core.cin src)))
-  (run (ReorderedAPlain.build acc pad bank L.core.cin src) m s)=
-  run A161Low4FixedFold.checked.out (m.drop (measurementCount (ReorderedAPlain.build acc pad bank L.core.cin src)))
-  (run (ReorderedAPlain.build acc pad bank L.core.cin src) m s):=by
-  simpa only [middleState,run_take] using knownEq
- have ctxt:=ReorderedKnownA.context_eq
-  (ReorderedAPlain.build acc pad bank L.core.cin src) A161Low4FixedFold.checked.out KnownAMidStaged.body
-  (ReorderedAPlain.unbuild acc pad bank L.core.cin src) s m AKnownMiddleResearch.measurements midEq
- have plain:=plainNew.trans ctxt
- have middleReplace:=A161Low4FixedFold.cert100.surround_eq ReorderedAFixed.hs (A161Low4Fold.aMiddle L g)
-  A161Low4FixedFold.checked.out (ReorderedAPlain.build acc pad bank L.core.cin src)
-  (ReorderedAPlain.unbuild acc pad bank L.core.cin src) s m zeroU offHs
- have eq:run pcCore m s=run (ReorderedAPlain.build acc pad bank L.core.cin src++A161Low4Fold.aMiddle L g++
-  ReorderedAPlain.unbuild acc pad bank L.core.cin src) m s:=plain.trans middleReplace
- exact transport _ s _ _ eq (plain_frame base hc O hO s m hf)
-
-/-- The partial-cache loop with the record's sign head. -/
-def suffixPC:Program:=A109LowEraseResearch.clear++A109Research.rawFK++A109Research.top++A109Research.M++
- A109Research.newIK++A109LowEraseResearch.clear++A109Research.tail
-
-def loopPC:Program:=SignAHead.head++suffixPC
-
-theorem loopPC_eq(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReduction.p)
- (s:State)(m:List Bool)(hf:SquareFrame L.core.out base O s.basis):
- run loopPC m s=run pcCore
-  (SignRetape.tape SignAHead.head (ReorderedAHead.head acc pad bank L.core.cin src) m) s:=by
- have clean:=L.squareFrame_clean hn base s.basis O hf hc
- have hz:∀u∈pad,s.basis u=false:=by
-  intro u hu
-  have hu':u∈accZ L:=(FullPadDevelop.pad_sublist L).subset hu
-  rcases accZ_mem L u hu' with hu'|hu'
-  · exact (regValue_zero _ _).mp clean.pad u hu'
-  · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_drop hu')
- have hb:∀u∈bank,s.basis u=false:=fun u hu=>(regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
- have ha:regValue acc s.basis=0:=ghostAcc_zero L s.basis clean
- have h:∀a b:List Bool,run SignAHead.head a s=run (ReorderedAHead.head acc pad bank L.core.cin src) b s:=by
-  intro a b
-  exact ReorderedFrameUnique.program_eq acc s.basis 0 ((2^138-48*regValue src s.basis)%2^138) _ _
-   (SignAHead.frame s.basis hz hb clean.cin)
-   (ReorderedAHead.head_triple acc pad bank L.core.cin src lengths.1 (by decide) fits s.basis hz hb clean.cin)
-   s a b ⟨ha,fun _ _=>rfl⟩
- have eq:=SignRetape.replace SignAHead.head (ReorderedAHead.head acc pad bank L.core.cin src) suffixPC s m h
- simpa only [loopPC,suffixPC,pcCore,A109Research.coreK,A109Research.newFK,A109Research.rawFK,
-  A109Research.head,List.append_assoc] using eq
-
-theorem loopPC_frame(base:BasisState)(hc:L.PairClean base)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) loopPC
-  (SquareFrame L.core.out base
-   (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have e:=loopPC_eq base hc O hO s m hf
- have old:=pcCore_frame base hc hd O hO s
-  (SignRetape.tape SignAHead.head (ReorderedAHead.head acc pad bank L.core.cin src) m) hf
- exact ReorderedAFixed.transport _ s _ _ e old
-
-end ECDSAAdd.Entrant.StairSqLoopA
-end
-
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.StairSqLoopA
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-set_option linter.unusedSimpArgs false
-attribute [local irreducible] ECDSAAdd.wires
-
-theorem keepK_cached_wires:wires A109Research.rawFK⊆A109Research.domain.toFinset∪A109Research.keepK.toFinset:=
- (ReorderedSupport.cached 63 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin
-  (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
-  (by rw [A109Research.raw_lengths.2.2];decide)
-  (by rw [A109Research.raw_lengths.1,A109Research.raw_lengths.2.1])
-  (by rw [A109Research.raw_lengths.2.1,A109Research.raw_lengths.2.2])).1
-
-theorem keepK_consumed_wires:
- wires (ReorderedConsumedSub.consumed 63 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin)⊆
-  A109Research.domain.toFinset∪A109Research.keepK.toFinset:=
- ReorderedSupport.consumed 63 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin
-  (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
-  (by rw [A109Research.raw_lengths.2.2];decide)
-  (by rw [A109Research.raw_lengths.1,A109Research.raw_lengths.2.1])
-  (by rw [A109Research.raw_lengths.2.1,A109Research.raw_lengths.2.2])
-
-theorem keepK_out(h:Wire)(hA:h∈A109Research.hosts)(hk:h∉A109Research.keepK):
- h∉A109Research.domain.toFinset∪A109Research.keepK.toFinset:=by
- simp only [Finset.mem_union,List.mem_toFinset,not_or]
- exact ⟨A109Research.geometry.2.2 h hA,hk⟩
-
-theorem loopPC_off(h:Wire)(hh:h∈ReorderedAFixed.hosts)(hk:h∉A109Research.keepK):h∉wires loopPC:=by
- have hA:h∈A109Research.hosts:=by
-  simp only [A109Research.hosts,List.mem_append]
-  exact Or.inl hh
- have op:=off_plain h hh
- have hb:=op.1
- rw [ReorderedABuild.plain_split acc pad bank L.core.cin src lengths.2.2.2] at hb
- simp only [wires_append,Finset.mem_union,not_or] at hb
- have headOff:h∉wires SignAHead.head:=fun bad=>hb.1.1 (SignAHeadSupport.support bad)
- have clearOff:h∉wires A109LowEraseResearch.clear:=by
-  rw [clear_wires]
-  intro bad
-  have sub:([4243,4505,4244,4506,4245,4507]:List Wire)⊆A109Research.ports:=by decide
-  exact A109Research.old_away h hh (sub (List.mem_toFinset.mp bad))
- have ht:=op.2
- rw [ReorderedAUnbuild.plain_split acc pad bank L.core.cin src lengths.2.2.2] at ht
- simp only [wires_append,Finset.mem_union,not_or] at ht
- have tailOff:h∉wires A109Research.tail:=by
-  rw [tail_eq]
-  exact ht.2
- have out:=keepK_out h hA hk
- have rfOff:h∉wires A109Research.rawFK:=fun bad=>out (keepK_cached_wires bad)
- have iOff:h∉wires A109Research.newIK:=by
-  simp only [A109Research.newIK,wires_append,Finset.mem_union,not_or]
-  exact ⟨A109Research.preInv_off h hA,fun bad=>out (keepK_consumed_wires bad)⟩
- simp only [loopPC,suffixPC,wires_append,Finset.mem_union,not_or,and_assoc]
- exact ⟨headOff,clearOff,rfOff,A109Research.top_off h hA,A109Research.middle_fresh h hA,
-  iOff,clearOff,tailOff⟩
-
-end ECDSAAdd.Entrant.StairSqLoopA
-end
-
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.StairSqLoopA
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-
-section counts
-attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
-
-theorem loopPC_counts_rel:toffoliCount loopPC+63=toffoliCount loopNC ∧
- measurementCount loopPC=measurementCount loopNC:=by
- have cb:=ReorderedGenericCache.count_balance 63 A109Research.xs A109Research.ys A109Research.cs
-  A109Research.keepK ReorderedBPrefixResearch.cin
-  (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
-  (by rw [A109Research.raw_lengths.2.2];decide)
- rw [loopPC,suffixPC,loopNC,suffixNC,A109Research.newIK,A109Research.I,A109Research.rawFK,
-  A109Research.rawI,A109Research.rawF,ReorderedConsumedSub.consumed,ReorderedConsumedSub.plain]
- simp only [toffoliCount_append,measurementCount_append]
- exact ⟨by omega,by omega⟩
-
-theorem loopPC_counts:toffoliCount loopPC=toffoliCount A109SignResearch.loop+49 ∧
- measurementCount loopPC=measurementCount A109SignResearch.loop:=by
- have r:=loopPC_counts_rel
- have o:=loopNC_counts
- exact ⟨by omega,by omega⟩
-
-theorem loopPC_slots_rel:Challenge.gateSlots loopPC+189=Challenge.gateSlots loopNC:=by
- have sc:=ReorderedSlots.cache 63 A109Research.xs A109Research.ys A109Research.cs
-  A109Research.keepK ReorderedBPrefixResearch.cin
-  (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
-  (by rw [A109Research.raw_lengths.2.2];decide) A109Research.keepK_geometry.2.1
- rw [loopPC,suffixPC,loopNC,suffixNC,A109Research.newIK,A109Research.I,A109Research.rawFK,
-  A109Research.rawI,A109Research.rawF,ReorderedConsumedSub.consumed,ReorderedConsumedSub.plain]
- simp only [Challenge.gateSlots_append]
- omega
-
-theorem loopPC_slots:Challenge.gateSlots loopPC=Challenge.gateSlots A109SignResearch.loop+141:=by
- have r:=loopPC_slots_rel
- have o:=loopNC_slots
- omega
-
-end counts
-
-section physical
-attribute [local irreducible] GatePhysical ECDSAAdd.wires
-
-theorem loopPC_physical:GatePhysical loopPC:=by
- have f:=ReorderedPhysical.cached 63 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK
-  ReorderedBPrefixResearch.cin
-  (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
-  (by rw [A109Research.raw_lengths.2.2];decide)
-  A109Research.raw_nd (fun q hq bad=>A109Research.geometry.2.2 q (A109Research.keepK_sub q hq) (A109Research.c_in q bad))
- have n:=notRegister_physical A109Research.ys
- have hi:GatePhysical A109Research.newIK:=by
-  simp only [A109Research.newIK,ReorderedConsumedSub.consumed,gatePhysical_append]
-  exact ⟨A109Research.endpoint_physical.2.2.1,⟨⟨n,f.2⟩,n⟩⟩
- have hf:GatePhysical A109Research.rawFK:=f.1
- simp only [loopPC,suffixPC,gatePhysical_append]
- exact ⟨SignAHeadResources.physical,⟨⟨⟨⟨⟨⟨A109LowEraseResearch.physical,hf⟩,
-  A109Research.endpoint_physical.2.1⟩,AAliasesResearch.physical⟩,hi⟩,A109LowEraseResearch.physical⟩,
-  A109Research.endpoint_physical.2.2.2⟩⟩
-
-end physical
-
-section support
-attribute [local irreducible] ECDSAAdd.wires
-
-theorem loopPC_support:wires loopPC⊆A109Research.S:=by
- have hh:wires SignAHead.head⊆A109Research.S:=by
-  apply Finset.Subset.trans ?_ A109Research.old_prefix_support
-  rw [A109Research.oldPrefix,wires_append]
-  exact Finset.subset_union_left
- have ks:A109Research.domain.toFinset∪A109Research.keepK.toFinset⊆A109Research.S:=by
-  intro q hq
-  apply A109Research.raw_domain_in
-  simp only [Finset.mem_union,List.mem_toFinset] at hq ⊢
-  rcases hq with h|h
-  · exact Or.inl h
-  · exact Or.inr (A109Research.keepK_sub q h)
- have rf:wires A109Research.rawFK⊆A109Research.S:=keepK_cached_wires.trans ks
- have ii:wires A109Research.newIK⊆A109Research.S:=by
-  simp only [A109Research.newIK,wires_append]
-  exact Finset.union_subset A109Research.endpoint_support.2.1 (keepK_consumed_wires.trans ks)
- simp only [loopPC,suffixPC,wires_append,Finset.union_subset_iff]
- exact ⟨hh,⟨⟨⟨⟨⟨⟨A109Research.clear_support,rf⟩,A109Research.endpoint_support.1⟩,A109Research.middle_support⟩,ii⟩,
-  A109Research.clear_support⟩,A109Research.endpoint_support.2.2⟩⟩
-
-end support
-
-end ECDSAAdd.Entrant.StairSqLoopA
-end
-
 -- Hole -> host assignment and the renamed loop.
 section
 open ECDSAAdd ECDSAAdd.Entrant
@@ -8648,77 +8087,19 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
 
 /-- Host of a hole: the hole's index into `ReorderedAFixed.hs` (= `hs100`, work wires and pool 1540). -/
-def hostOf(q:Wire):Wire:=ReorderedAFixed.hs.getD (holes.idxOf q) 0
+def hostOf(q:Wire):Wire:=ReorderedAFixed.hs.getD (StairSqLoopA.hostDomain.idxOf q) 0
 
 def pairs(hl:List Wire):List (Wire×Wire):=hl.map (fun q=>(q,hostOf q))
 
 /-- The hole-free A loop for any sublist `hl` of the 39 holes. -/
-def loopA(hl:List Wire):Program:=StairSquareHolesCore.hostRename (pairs hl) loopPC
-
-/-! K4-D (replay budget): the 39 holes as explicit intervals (no `poolWire` walks), the fold-pad facts
-and host membership by symbolic lemmas, and one linear bit-mask duplicate scan for the `Nodup` part. -/
-namespace K4DA
-
-
-
-
-
-
-
-
-def hostN (q : Wire) : Wire := ReorderedAFixed.hs.getD (holesN.idxOf q) 0
-
-theorem hostOf_eq : hostOf = hostN := by
-  funext q
-  unfold hostOf hostN
-  rw [holes_eq]
-
-theorem foldPad_eq : L.foldPad = List.range' 4373 128 ++ List.range' 4764 126 := by
-  have hp : Baselines.layout.dialogPool = List.range' 4115 2613 := List.take_range'_of_length_ge (by decide)
-  have e2 : (Baselines.layout.dialogPool.drop 258).take 128 = List.range' 4373 128 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  have e4 : (Baselines.layout.dialogPool.drop 649).take 126 = List.range' 4764 126 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  show (Baselines.layout.dialogPool.drop 258).take 128 ++ (Baselines.layout.dialogPool.drop 649).take 126 = _
-  rw [e2, e4]
-
-theorem out_eq : L.core.out = List.range' 2 256 := by
-  show (List.range 256).map (· + 2) = List.range' 2 256
-  rw [List.range'_eq_map_range]
-  exact List.map_congr_left (fun x _ => Nat.add_comm x 2)
-
-theorem hs_len : 39 + StairCertificate.extraIdx.length ≤ ReorderedAFixed.hs.length := by
-  have h := ReorderedAFixed.host_geometry.2.1
-  unfold ReorderedAFixed.hosts at h
-  rw [List.length_cons, List.length_cons, List.length_cons] at h
-  have e : ReorderedAFixed.hs.length = 100 := Nat.add_right_cancel (Nat.add_right_cancel
-    (Nat.add_right_cancel (h.trans (by decide : (103 : Nat) = 100 + 1 + 1 + 1))))
-  rw [e]
-  decide
-
-end K4DA
+def loopA(hl:List Wire):Program:=StairSquareHolesCore.hostRename (pairs hl) loopNC
 
 theorem holes_geometry:(holes++holes.map hostOf).Nodup ∧ (∀q∈holes,q∈L.foldPad ∧ q∉L.core.out) ∧
- (∀q∈holes,hostOf q∈ReorderedAFixed.hs):=by
-  refine ⟨?_, ?_, ?_⟩
-  · rw [K4DA.holes_eq, K4DA.hostOf_eq]
-    exact (K4DA.nodupMask_sound _ 0 (by decide +kernel)).1
-  · intro q hq
-    rw [K4DA.holes_eq] at hq
-    rw [K4DA.foldPad_eq, K4DA.out_eq]
-    simp only [K4DA.holesN, List.mem_append, List.mem_range'_1] at hq ⊢
-    rcases hq with hq | hq
-    · refine ⟨Or.inr ⟨by omega, by omega⟩, fun h => by omega⟩
-    · have := StairCertificate.extraW_window q hq
-      refine ⟨Or.inr ⟨by omega, by omega⟩, fun h => by omega⟩
-  · intro q hq
-    have hi : holes.idxOf q < 39 + StairCertificate.extraIdx.length := by
-      have h := List.idxOf_lt_length_of_mem hq
-      rwa [K4DA.holes_len] at h
-    have hl := K4DA.hs_len
-    unfold hostOf
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
-    exact List.getElem_mem _
+ (∀q∈holes,hostOf q∈ReorderedAFixed.hs):=by decide +kernel
+
+
+theorem holes_geometry44:(StairSqLoopA.hostDomain++StairSqLoopA.hostDomain.map hostOf).Nodup ∧ (∀q∈StairSqLoopA.hostDomain,q∈L.foldPad ∧ q∉L.core.out) ∧
+ (∀q∈StairSqLoopA.hostDomain,hostOf q∈ReorderedAFixed.hs):=by decide +kernel
 
 theorem pairs_fst(hl:List Wire):StairSquareHolesCore.holesOf (pairs hl)=hl:=by
  induction hl with
@@ -8739,18 +8120,22 @@ theorem pairs_nodup(hl:List Wire)(hsub:hl.Sublist holes):
  rw [pairs_fst,pairs_snd]
  exact (hsub.append (hsub.map hostOf)).nodup holes_geometry.1
 
-theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉A109Research.keepK:=by
- unfold hostOf
- apply A109Research.keepK_geometry.2.2.1
- have h:=List.idxOf_lt_length_of_mem hq
- rw [K4DA.holes_len] at h
- have e:StairCertificate.extraIdx.length=4:=by decide
- omega
 
-theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
+theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
+ (StairSquareHolesCore.holesOf (pairs hl)++StairSquareHolesCore.hostsOf (pairs hl)).Nodup:=by
+ rw [pairs_fst,pairs_snd]
+ exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
+
+theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopNC:=by
  intro ab hab
  obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
- exact loopPC_off _ (hosts_of_hs _ (holes_geometry.2.2 y (hsub.subset hy))) (hostOf_not_keep y (hsub.subset hy))
+ exact loopNC_off _ (hosts_of_hs _ (holes_geometry.2.2 y (hsub.subset hy)))
+
+
+theorem pairs_hostFree44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):∀ab∈pairs hl,ab.2∉wires loopNC:=by
+ intro ab hab
+ obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
+ exact loopNC_off _ (hosts_of_hs _ (holes_geometry44.2.2 y (hsub.subset hy)))
 
 theorem loopA_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc:L.PairClean base)
  (hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
@@ -8759,9 +8144,9 @@ theorem loopA_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc:L.P
    (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
     (SquareReduction.p-1-O))%SquareReduction.p)):=by
  intro s m hf
- have f:=loopPC_frame base hc hd O hO s m hf
+ have f:=loopNC_frame base hc hd O hO s m hf
  have holeBase:∀q∈holes,base q=false:=fun q hq=>(regValue_zero _ _).mp hc.pad q (holes_geometry.2.1 q hq).1
- have eq:run (loopA hl) m s=run loopPC m s:=by
+ have eq:run (loopA hl) m s=run loopNC m s:=by
   rw [loopA]
   apply StairSquareHolesCore.hostRename_run_eq
   · intro ab hab
@@ -8773,13 +8158,44 @@ theorem loopA_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc:L.P
     have hcl:=A161Low4FixedFold.hostClean base hc hd (hostOf y) (holes_geometry.2.2 y (hsub.subset hy))
     exact (hf.2 _ hcl.1).trans hcl.2
   · intro ab hab
-    -- LT50: no defeq `ab.1 =?= y` under `(run loopPC m s).basis` (the kernel would evaluate `run loopPC`)
+    -- LT50: no defeq `ab.1 =?= y` under `(run loopNC m s).basis` (the kernel would evaluate `run loopNC`)
     obtain ⟨y,hy,e⟩:=List.mem_map.mp hab
     have h1:ab.1=y:=by rw [← e]
     rw [h1]
     have hyH:=hsub.subset hy
     exact (f.2.2 y (holes_geometry.2.1 y hyH).2).trans (holeBase y hyH)
   · exact pairs_hostFree hl hsub
+ exact ReorderedAFixed.transport _ s _ _ eq f
+
+
+theorem loopA_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(base:BasisState)(hc:L.PairClean base)
+ (hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) (loopA hl)
+  (SquareFrame L.core.out base
+   (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
+    (SquareReduction.p-1-O))%SquareReduction.p)):=by
+ intro s m hf
+ have f:=loopNC_frame base hc hd O hO s m hf
+ have holeBase:∀q∈StairSqLoopA.hostDomain,base q=false:=fun q hq=>(regValue_zero _ _).mp hc.pad q (holes_geometry44.2.1 q hq).1
+ have eq:run (loopA hl) m s=run loopNC m s:=by
+  rw [loopA]
+  apply StairSquareHolesCore.hostRename_run_eq
+  · intro ab hab
+    obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
+    have hyH:=hsub.subset hy
+    exact (hf.2 y (holes_geometry44.2.1 y hyH).2).trans (holeBase y hyH)
+  · intro ab hab
+    obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
+    have hcl:=A161Low4FixedFold.hostClean base hc hd (hostOf y) (holes_geometry44.2.2 y (hsub.subset hy))
+    exact (hf.2 _ hcl.1).trans hcl.2
+  · intro ab hab
+    -- LT50: no defeq `ab.1 =?= y` under `(run loopNC m s).basis` (the kernel would evaluate `run loopNC`)
+    obtain ⟨y,hy,e⟩:=List.mem_map.mp hab
+    have h1:ab.1=y:=by rw [← e]
+    rw [h1]
+    have hyH:=hsub.subset hy
+    exact (f.2.2 y (holes_geometry44.2.1 y hyH).2).trans (holeBase y hyH)
+  · exact pairs_hostFree44 hl hsub
  exact ReorderedAFixed.transport _ s _ _ eq f
 
 /-- Drop-in with the exact hypothesis list of `A109SignResearch.frame`. -/
@@ -8792,17 +8208,33 @@ theorem loopA_frame_rec(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc
     (SquareReduction.p-1-O))%SquareReduction.p)):=
  loopA_frame hl hsub base hc hd O hO
 
+
+theorem loopA_frame_rec44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(base:BasisState)(hc:L.PairClean base)
+ (hsum:base A161Low4FixedFold.q=false)(hV:base A161Low4FixedFold.r=false)(hP:base A161Low4FixedFold.p=false)
+ (hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) (loopA hl)
+  (SquareFrame L.core.out base
+   (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
+    (SquareReduction.p-1-O))%SquareReduction.p)):=
+ loopA_frame44 hl hsub base hc hd O hO
+
 theorem loopA_avoids(hl:List Wire)(hsub:hl.Sublist holes):∀q∈hl,q∉wires (loopA hl):=by
- have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
+ have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopNC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
+ rw [pairs_fst] at h
+ exact h
+
+
+theorem loopA_avoids44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):∀q∈hl,q∉wires (loopA hl):=by
+ have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopNC (pairs_nodup44 hl hsub) (pairs_hostFree44 hl hsub)
  rw [pairs_fst] at h
  exact h
 
 theorem loopA_support(hl:List Wire)(hsub:hl.Sublist holes):wires (loopA hl)⊆A109Research.S:=by
- have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
+ have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopNC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
  rw [pairs_snd] at hs
  intro x hx
  rcases Finset.mem_union.mp (hs hx) with h|h
- · exact loopPC_support (Finset.mem_sdiff.mp h).1
+ · exact loopNC_support (Finset.mem_sdiff.mp h).1
  · obtain ⟨y,hy,rfl⟩:=List.mem_map.mp (List.mem_toFinset.mp h)
    have hm:hostOf y∈A109Research.hosts:=by
     simp only [A109Research.hosts,List.mem_append]
@@ -8810,23 +8242,42 @@ theorem loopA_support(hl:List Wire)(hsub:hl.Sublist holes):wires (loopA hl)⊆A1
    apply A109Research.raw_domain_in
    exact Finset.mem_union_right _ (List.mem_toFinset.mpr hm)
 
-theorem loopA_counts(hl:List Wire):toffoliCount (loopA hl)=toffoliCount A109SignResearch.loop+49 ∧
- measurementCount (loopA hl)=measurementCount A109SignResearch.loop:=by
- have h:=StairSquareHolesCore.hostRename_counts (pairs hl) loopPC
- rw [loopA,h.1,h.2]
- exact loopPC_counts
 
-theorem loopA_slots(hl:List Wire):Challenge.gateSlots (loopA hl)=Challenge.gateSlots A109SignResearch.loop+141:=by
+theorem loopA_support44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):wires (loopA hl)⊆A109Research.S:=by
+ have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopNC (pairs_nodup44 hl hsub) (pairs_hostFree44 hl hsub)
+ rw [pairs_snd] at hs
+ intro x hx
+ rcases Finset.mem_union.mp (hs hx) with h|h
+ · exact loopNC_support (Finset.mem_sdiff.mp h).1
+ · obtain ⟨y,hy,rfl⟩:=List.mem_map.mp (List.mem_toFinset.mp h)
+   have hm:hostOf y∈A109Research.hosts:=by
+    simp only [A109Research.hosts,List.mem_append]
+    exact Or.inl (hosts_of_hs _ (holes_geometry44.2.2 y (hsub.subset hy)))
+   apply A109Research.raw_domain_in
+   exact Finset.mem_union_right _ (List.mem_toFinset.mpr hm)
+
+theorem loopA_counts(hl:List Wire):toffoliCount (loopA hl)=toffoliCount A109SignResearch.loop+112 ∧
+ measurementCount (loopA hl)=measurementCount A109SignResearch.loop:=by
+ have h:=StairSquareHolesCore.hostRename_counts (pairs hl) loopNC
+ rw [loopA,h.1,h.2]
+ exact loopNC_counts
+
+theorem loopA_slots(hl:List Wire):Challenge.gateSlots (loopA hl)=Challenge.gateSlots A109SignResearch.loop+330:=by
  rw [loopA,StairSquareHolesCore.hostRename_slots]
- exact loopPC_slots
+ exact loopNC_slots
 
 theorem loopA_physical(hl:List Wire):GatePhysical (loopA hl):=
- StairSquareHolesCore.hostRename_physical (pairs hl) loopPC loopPC_physical
+ StairSquareHolesCore.hostRename_physical (pairs hl) loopNC loopNC_physical
 
 /-- Coarse support (the `aSupport` shape of `fastCore_correct`, through `KnownProgramActual.a_coarse`). -/
 theorem loopA_coarse(hl:List Wire)(hsub:hl.Sublist holes):
  wires (loopA hl)⊆insert ReorderedAFixed.d (ReorderedAFixed.g::ReorderedAFixed.L.wires).toFinset:=
  (loopA_support hl hsub).trans KnownProgramActual.a_coarse
+
+
+theorem loopA_coarse44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
+ wires (loopA hl)⊆insert ReorderedAFixed.d (ReorderedAFixed.g::ReorderedAFixed.L.wires).toFinset:=
+ (loopA_support44 hl hsub).trans KnownProgramActual.a_coarse
 
 /-- Fine support (through `KnownProgramActual.a_fine`). -/
 theorem loopA_fine(hl:List Wire)(hsub:hl.Sublist holes):
@@ -8835,8 +8286,19 @@ theorem loopA_fine(hl:List Wire)(hsub:hl.Sublist holes):
    (LowZero18Square.foldPerm ReorderedAFixed.L (OwnDiagAll12Square.kext Baselines.layout)) ReorderedAFixed.g)):=
  (loopA_support hl hsub).trans KnownProgramActual.a_fine
 
+
+theorem loopA_fine44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
+ wires (loopA hl)⊆insert ReorderedAFixed.d
+  (wires (InverseCarryDevelop.hostedADual ReorderedAFixed.L
+   (LowZero18Square.foldPerm ReorderedAFixed.L (OwnDiagAll12Square.kext Baselines.layout)) ReorderedAFixed.g)):=
+ (loopA_support44 hl hsub).trans KnownProgramActual.a_fine
+
 theorem loopA_eU_free(hl:List Wire)(hsub:hl.Sublist holes):ControlLoan1589BFFold.eU ReorderedAFixed.L∉wires (loopA hl):=
  fun h=>KnownProgramActual.a_body_eU_free (loopA_support hl hsub h)
+
+
+theorem loopA_eU_free44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):ControlLoan1589BFFold.eU ReorderedAFixed.L∉wires (loopA hl):=
+ fun h=>KnownProgramActual.a_body_eU_free (loopA_support44 hl hsub h)
 
 end ECDSAAdd.Entrant.StairSqLoopA
 
@@ -9022,45 +8484,20 @@ theorem eSubK_support : wires (eSubK LB)⊆(eKw LB::LB.core.cin::(hiReg LB++[eZ0
 end K2
 
 theorem eAddLo_free : touchedAny (eAddLo LB) holes=false := by
-  rw [K2.holes_nat, K4DE.LB_eq]
+  rw [K2.holes_nat]
   exact K2.touchedAny_of_mask _ _ (by decide +kernel)
 theorem park_free : touchedAny (ParkCarryDevelop.program (eU LB) LB.core.sumCarry) holes=false := by
-  rw [K2.holes_nat, K4DE.LB_eq]
+  rw [K2.holes_nat]
   exact K2.touchedAny_of_mask _ _ (by decide +kernel)
 attribute [local irreducible] ECDSAAdd.wires in
 theorem eSubK_free : touchedAny (eSubK LB) holes=false := by
   apply K2.touchedAny_of_free
   intro q hq hw
   rw [K2.holes_nat] at hq
-  have hs := K2.eSubK_support hw
-  rw [K4DE.LB_eq] at hs
-  exact K2.disj_of_maskL _ _ (by decide +kernel) q hq (List.mem_toFinset.mp hs)
-theorem K4DE.holes_free_of_allK (P : Program) (h : K4DE.allK K4DE.holeB P = true) : touchedAny P holes=false := by
-  apply K2.touchedAny_of_free
-  intro q hq hw
-  have t := K4DE.allK_sound K4DE.holeB P h q hw
-  rw [K2.holes_nat] at hq
-  simp only [List.mem_append, List.mem_range'_1] at hq
-  unfold K4DE.holeB at t
-  rw [Bool.and_eq_true] at t
-  obtain ⟨t, tw⟩ := t
-  simp only [Bool.or_eq_true, Nat.blt_eq, Nat.ble_eq, Nat.beq_eq] at t
-  rcases hq with hq | hq
-  · omega
-  · exact (StairCertificate.memB_false_iff q _).mp
-      (StairCertificate.memB_of_win StairCertificate.extraW_window (StairCertificate.win_spec tw)) hq
-
+  exact K2.disj_of_maskL _ _ (by decide +kernel) q hq (List.mem_toFinset.mp (K2.eSubK_support hw))
 theorem rebuild_free : touchedAny LocalRebuild.improved holes=false := by
-  -- K4-D (replay budget): one pass over the literal chunks (split at `++`) with an interval test per wire;
-  -- the patch's `take`/`drop` are handled symbolically
-  apply K4DE.holes_free_of_allK
-  rw [LocalRebuild.improved, LocalRebuild.literal]
-  unfold SixCarryPatchGeneric.patch
-  have hp : K4DE.allK K4DE.holeB LocalRebuild.program = true := by
-    simp only [LocalRebuild.program, K4DE.allK, List.all_append]
-    decide +kernel
-  rw [K4DE.allK_append, K4DE.allK_append, K4DE.allK_take _ _ _ hp, K4DE.allK_drop _ _ _ hp]
-  decide +kernel
+  rw [LocalRebuild.improved,LocalRebuild.literal,K2.holes_nat]
+  exact K2.touchedAny_of_mask _ _ (by decide +kernel)
 
 end ECDSAAdd.Entrant.StairSqBodyBChecks
 end
@@ -9173,47 +8610,18 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
 
 /-- Host of a hole: the hole's index into `LowAccCarryDevelop.hosts88` (work wires). -/
-def hostOf(q:Wire):Wire:=LowAccCarryDevelop.hosts88.getD (holes.idxOf q) 0
+def hostOf(q:Wire):Wire:=LowAccCarryDevelop.hosts88.getD (StairSqLoopA.hostDomain.idxOf q) 0
 
 def pairs(hl:List Wire):List (Wire×Wire):=hl.map (fun q=>(q,hostOf q))
 
 
-/-! K4-D (replay budget): the 39 holes as explicit intervals (no `poolWire` walks), the fold-pad facts
-and host membership by symbolic lemmas, and one linear bit-mask duplicate scan for the `Nodup` part. -/
-namespace K4DB
+theorem holes_geometry:(holes++holes.map hostOf).Nodup ∧ (∀q∈holes,q∈L.foldPad) ∧
+ (∀q∈holes,hostOf q∈LowAccCarryDevelop.hosts88):=by decide +kernel
 
 
 
-
-
-
-
-
-def hostN (q : Wire) : Wire := LowAccCarryDevelop.hosts88.getD (holesN.idxOf q) 0
-
-theorem hostOf_eq : hostOf = hostN := by
-  funext q
-  unfold hostOf hostN
-  rw [holes_eq]
-
-theorem foldPad_eq : L.foldPad = List.range' 4373 128 ++ List.range' 4764 126 := by
-  have hp : Baselines.layout.dialogPool = List.range' 4115 2613 := List.take_range'_of_length_ge (by decide)
-  have e2 : (Baselines.layout.dialogPool.drop 258).take 128 = List.range' 4373 128 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  have e4 : (Baselines.layout.dialogPool.drop 649).take 126 = List.range' 4764 126 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  show (Baselines.layout.dialogPool.drop 258).take 128 ++ (Baselines.layout.dialogPool.drop 649).take 126 = _
-  rw [e2, e4]
-
-
-theorem hs_len : 39 + StairCertificate.extraIdx.length ≤ LowAccCarryDevelop.hosts88.length := by
-  unfold LowAccCarryDevelop.hosts88
-  rw [List.length_cons, List.length_cons, LowAccCarryDevelop.loans_length]
-  decide
-
-end K4DB
-
-
+theorem holes_geometry44:(StairSqLoopA.hostDomain++StairSqLoopA.hostDomain.map hostOf).Nodup ∧ (∀q∈StairSqLoopA.hostDomain,q∈L.foldPad) ∧
+ (∀q∈StairSqLoopA.hostDomain,hostOf q∈LowAccCarryDevelop.hosts88):=by decide +kernel
 
 theorem pairs_fst(hl:List Wire):StairSquareHolesCore.holesOf (pairs hl)=hl:=by
  induction hl with
@@ -9229,6 +8637,10 @@ theorem pairs_snd(hl:List Wire):StairSquareHolesCore.hostsOf (pairs hl)=hl.map h
    simp only [StairSquareHolesCore.hostsOf,pairs,List.map_cons] at ih ⊢
    rw [ih]
 
+theorem pairs_nodup(hl:List Wire)(hsub:hl.Sublist holes):
+ (StairSquareHolesCore.holesOf (pairs hl)++StairSquareHolesCore.hostsOf (pairs hl)).Nodup:=by
+ rw [pairs_fst,pairs_snd]
+ exact (hsub.append (hsub.map hostOf)).nodup holes_geometry.1
 
 
 
@@ -9236,6 +8648,12 @@ theorem pairs_snd(hl:List Wire):StairSquareHolesCore.hostsOf (pairs hl)=hl.map h
 
 
 
+
+
+theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
+ (StairSquareHolesCore.holesOf (pairs hl)++StairSquareHolesCore.hostsOf (pairs hl)).Nodup:=by
+ rw [pairs_fst,pairs_snd]
+ exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
 
 end ECDSAAdd.Entrant.StairSqLoopB
 
@@ -9318,7 +8736,7 @@ attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run
 theorem efold_ok : EFoldOK StairSquareBEFoldK.efold :=
   ⟨fun b hb O E hO => StairSquareBEFoldK.efold_spec b hb O E hO,
    StairSquareBEFoldK.efold_support,
-   fun q hq => StairSquareBEFoldK.efold_avoids q hq,
+   fun q hq => StairSquareBEFoldK.efold_avoids q (List.mem_append_left _ hq),
    StairSquareBEFoldK.efold_physical⟩
 
 
@@ -9966,529 +9384,6 @@ end ECDSAAdd.Entrant.StairSqLoopC
 
 end
 
--- PSQ-C: partial carry cache in the hole-free C square loop.
--- The 43 hole hosts `C163Low4Middle.hs.take 43` and the three status hosts `ReorderedCFixed.hosts.take 3`
--- stay out of the cache; the other 59 of the record's 105 cache hosts keep their carries (59 T saved).
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.C105Research
-open C105PrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ControlledBorrowResearch
-set_option autoImplicit false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
-
-def keepK:List Wire:=hosts.filter (fun q=>!((C163Low4Middle.hs.take 43).contains q) &&
- !((ReorderedCFixed.hosts.take 3).contains q))
-
-theorem keepK_geometry:keepK.Nodup ∧ keepK.length=59 ∧
- (∀i,i<43→C163Low4Middle.hs.getD i 0∉keepK) ∧
- (∀q∈keepK,q∈ReorderedCFixed.hosts→q∈C163Low4Middle.hs):=by decide +kernel
-
-theorem keepK_sub(q:Wire)(hq:q∈keepK):q∈hosts:=(List.mem_filter.mp hq).1
-
-def rawFK:Program:=ReorderedGenericCache.cachedAdd 59 xs ys cs keepK cin
-def newFK:Program:=head++C105LowEraseResearch.clear++ReorderedGenericCache.cachedAdd 59 xs ys cs keepK cin++top
-def newIK:Program:=preInv++ReorderedConsumedSub.consumed 59 xs ys cs keepK cin
-
-theorem inverse_frameK(s:State)(m:List Bool)(H:Nat)(hH:H<2^130)
- (hz:∀q∈cs,(run preInv m s).basis q=false)(hi:(run preInv m s).basis cin=false)
- (source:regValue xs (run preInv m s).basis=H)
- (target:regValue ys (run preInv m s).basis=976*H/1024)
- (saved:keepK.map s.basis=ReorderedCacheBits.values 4 59 H (976*H/1024)):
- run newIK m s=scatterState keepK (List.replicate keepK.length false) (run I m s):=by
- have same:keepK.map (run preInv m s).basis=keepK.map s.basis:=by
-  apply List.map_congr_left
-  intro q hq
-  exact run_preserves_outside preInv m s q (preInv_off q (keepK_sub q hq))
- simp only [newIK,I,ControlledBorrowResearch.run_cat]
- exact ReorderedConsumedSub.frame 59 xs ys cs keepK cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
-  (by rw [raw_lengths.1,raw_lengths.2.1]) (by rw [raw_lengths.2.1,raw_lengths.2.2])
-  raw_nd keepK_geometry.1 keepK_geometry.2.1 (fun q hq=>geometry.2.2 q (keepK_sub q hq))
-  (run preInv m s) _ hz hi H (976*H/1024) source target (same.trans saved)
-
-theorem forward_frameK(s:State)(m:List Bool)(H:Nat)
- (zero:∀q∈keepK,(run (head++C105LowEraseResearch.clear) (m.take (measurementCount (head++C105LowEraseResearch.clear))) s).basis q=false)
- (values:(((cs.drop 4).take 59).map (run (carryPrefix (4+59) xs ys cs cin) []
-  (run (head++C105LowEraseResearch.clear) (m.take (measurementCount (head++C105LowEraseResearch.clear))) s)).basis)=
-   ReorderedCacheBits.values 4 59 H (976*H/1024)):
- run newFK m s=scatterState keepK (ReorderedCacheBits.values 4 59 H (976*H/1024)) (run F m s):=by
- have h:=CacheBetweenFrameResearch.forward (head++C105LowEraseResearch.clear) top 59 xs ys cs keepK cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
-  keepK_geometry.1 (fun q hq bad=>geometry.2.2 q (keepK_sub q hq) (by simp only [List.mem_cons,List.mem_append];tauto))
-  (fun q hq=>rawF_off q (keepK_sub q hq)) (fun q hq=>top_off q (keepK_sub q hq)) s m zero
- rw [values] at h
- exact h
-
-theorem forward_measurementsK:measurementCount newFK=measurementCount F:=by
- have h:=(ReorderedGenericCache.count_balance 59 xs ys cs keepK cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)).2.1
- simp only [newFK,F,rawF,measurementCount_append]
- rw [h]
-
-theorem forward_zeroK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈C163Low4Middle.hs,s.basis q=false):
- ∀q∈keepK,(run F m s).basis q=false:=by
- rw [forward_erased s m hz hb hi ha]
- let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
- have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
-  Ghost3CacheC.plain_ready s m hz hb hi ha
- intro q hk
- have hq:=keepK_sub q hk
- rcases List.mem_append.mp hq with hq|hq
- · rw [C105LowEraseResearch.bit_same _ q (by
-    have away:=old_away q hq
-    intro bad
-    apply away
-    simp only [C105LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at bad
-    rcases bad with rfl|rfl|rfl <;>decide)]
-   exact (run_preserves_outside _ m s q (ReorderedCFixed.off_plain q hq).1).trans (zero q (keepK_geometry.2.2.2 q hk hq))
- · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
-   rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
-   · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
-      (by rw [acc_length];decide) ready.1
-   · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
-      (by rw [acc_length];decide) ready.1
-   · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
-     exact LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
-      (by rw [acc_length];decide) ready.1
-   · exact C105LowEraseResearch.zero _ _ (by decide)
-   · exact C105LowEraseResearch.zero _ _ (by decide)
-   · exact C105LowEraseResearch.zero _ _ (by decide)
-
-theorem prefix_zeroK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈C163Low4Middle.hs,s.basis q=false):
- ∀q∈keepK,(run (head++C105LowEraseResearch.clear) m s).basis q=false:=by
- have clean:=forward_zeroK s m hz hb hi ha zero
- intro q hq
- have off:q∉wires (rawF++top):=by
-  simp only [wires_append,Finset.mem_union,not_or]
-  exact ⟨rawF_off q (keepK_sub q hq),top_off q (keepK_sub q hq)⟩
- have eq:(run F m s).basis q=(run (head++C105LowEraseResearch.clear) m s).basis q:=by
-  have partition:F=(head++C105LowEraseResearch.clear)++(rawF++top):=by simp only [F,List.append_assoc]
-  rw [partition,run_cat]
-  exact run_preserves_outside _ _ _ q off
- exact eq.symm.trans (clean q hq)
-
-theorem forward_valuesK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0):
- (((cs.drop 4).take 59).map (run (carryPrefix (4+59) xs ys cs cin) []
-  (run (head++C105LowEraseResearch.clear) m s)).basis)=
- ReorderedCacheBits.values 4 59 (regValue src s.basis) (976*regValue src s.basis/1024):=by
- let H:=regValue src s.basis
- let u:=run head m s
- let t:=run (head++C105LowEraseResearch.clear) m s
- have te:t=C105LowEraseResearch.erase u:=prefix_erased s m hz hb hi ha
- have hH:H<2^130:=by simpa only [H,source_length] using regValue_lt src s.basis
- have ready:(∀q∈cs,u.basis q=false) ∧ u.basis cin=false ∧ regValue xs u.basis=H ∧
-  regValue ys u.basis=((2^140-48*H)%2^140)/1024:=by
-  simpa only [cs,xs,ys,u,head,H] using
-   CHeadArithmeticResearch.ready acc pad bank cin src acc_length source_length fits s m hz hb hi ha
- have eraseBit(q:Wire)(hq:q∈domain):t.basis q=u.basis q:=by
-  rw [te]
-  exact C105LowEraseResearch.bit_same _ q (domain_away_low q hq)
- have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r t.basis=regValue r u.basis:=
-  regValue_congr _ _ _ (fun q hq=>eraseBit q (sub q hq))
- have sy:regValue ys t.basis=((2^140-48*H)%2^140)/1024:=
-  (eraseReg ys y_in).trans ready.2.2.2
- have sh:regValue xs t.basis=H:=
-  (eraseReg xs x_in).trans ready.2.2.1
- have sb:∀q∈cs,t.basis q=false:=by
-  intro q hq
-  exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
- have si:t.basis cin=false:=
-  (eraseBit cin cin_in).trans ready.2.1
- exact ReorderedCacheBits.forward_values 4 59 H (((2^140-48*H)%2^140)/1024) (976*H/1024)
-  xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
-  (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
-   simpa only [show 130+10=140 by decide] using
-    ReorderedCacheArithmetic.high_add_low 130 (4+j+1) H (by omega) hH)
-
-theorem scattered_erased_domainK(s:State)(vs:List Bool)(q:Wire)(hq:q∈domain):
- (scatterState keepK vs (C105LowEraseResearch.erase s)).basis q=s.basis q:=by
- rw [scatter_outside keepK vs _ q (by intro bad;exact geometry.2.2 q (keepK_sub q bad) hq)]
- exact C105LowEraseResearch.bit_same s q (domain_away_low q hq)
-
-theorem inverse_readyK(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
- let vs:=ReorderedCacheBits.values 4 59 H (976*H/1024)
- let t:=scatterState keepK vs (C105LowEraseResearch.erase s)
- run newIK m t=scatterState keepK (List.replicate keepK.length false) (run I m t):=by
- dsimp only
- let vs:=ReorderedCacheBits.values 4 59 H (976*H/1024)
- let t:=scatterState keepK vs (C105LowEraseResearch.erase s)
- have hH:H<2^130:=by rw [←ready.2.1];simpa only [source_length] using regValue_lt src s.basis
- have commute:run preInv m t=scatterState keepK vs (C105LowEraseResearch.erase (run preInv m s)):=by
-  rw [show t=scatterState keepK vs (C105LowEraseResearch.erase s) from rfl,
-   run_scatter preInv keepK vs _ _ (fun q hq=>preInv_off q (keepK_sub q hq)),
-   C105LowEraseResearch.commute preInv m s (fun q hq=>preInv_off q (low_hosts q hq))]
- have bits(q:Wire)(hq:q∈domain):(run preInv m t).basis q=(run preInv m s).basis q:=by
-  rw [commute]
-  exact scattered_erased_domainK _ vs q hq
- have regs(r:List Wire)(sub:∀q∈r,q∈domain):regValue r (run preInv m t).basis=regValue r (run preInv m s).basis:=
-  regValue_congr _ _ _ (fun q hq=>bits q (sub q hq))
- have rr:=pre_raw_ready H s m ready
- have saved:keepK.map t.basis=vs:=scatter_saved_map keepK vs _ keepK_geometry.1
-  (by simp only [vs,ReorderedCacheBits.values,List.length_map,keepK_geometry.2.1,List.length_range])
- apply inverse_frameK t m H hH
- · intro q hq
-   rw [bits q (c_in q hq)]
-   exact rr.1 q hq
- · rw [bits cin cin_in]
-   exact rr.2.1
- · rw [regs xs x_in]
-   exact rr.2.2.1
- · rw [regs ys y_in]
-   exact rr.2.2.2
- · exact saved
-
-theorem cache_loopK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈C163Low4Middle.hs,s.basis q=false)
- (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
- (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
- run (newFK++M++newIK) m s=run (F++M++I) m s:=by
- let H:=regValue src s.basis
- let vs:=ReorderedCacheBits.values 4 59 H (976*H/1024)
- have mid:=middle_erased s m hz hb hi ha after flag
- have forward:=forward_frameK s (m.take (measurementCount F)) H
-  (prefix_zeroK s _ hz hb hi ha zero) (forward_valuesK s _ hz hb hi ha)
- apply CacheFromCleanForwardResearch.equivalent F newFK M I newIK keepK vs
-  forward_measurementsK (fun q hq=>middle_fresh q (keepK_sub q hq)) (fun q hq=>I_off q (keepK_sub q hq))
-  keepK_geometry.1 s m (forward_zeroK s _ hz hb hi ha zero) forward
- rw [mid]
- exact inverse_readyK H (middleState oldF oldM s m) _ after
-
-def coreK:Program:=(newFK++M++newIK)++(C105LowEraseResearch.clear++tail)
-
-theorem inverse_measurementsK:measurementCount newIK=measurementCount I:=by
- have h:=ReorderedConsumedSub.measurement_eq 59 xs ys cs keepK cin
-  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
-  (by rw [raw_lengths.2.2];decide)
- have eq:measurementCount (ReorderedConsumedSub.consumed 59 xs ys cs keepK cin)=measurementCount rawI:=h
- simp only [newIK,I,measurementCount_append,eq]
-
-theorem prefix_measurementsK:measurementCount (newFK++M++newIK)=measurementCount (F++M++I):=by
- simp only [measurementCount_append,forward_measurementsK,inverse_measurementsK]
-
-theorem core_plainK(s:State)(m:List Bool)
- (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈C163Low4Middle.hs,s.basis q=false)
- (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
- (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
- run coreK m s=run (oldF++oldM++ReorderedCPlain.unbuild acc pad bank cin src) m s:=by
- have eq:=ClearContextResearch.append_at (newFK++M++newIK) (F++M++I) (C105LowEraseResearch.clear++tail)
-  s m prefix_measurementsK (cache_loopK s m hz hb hi ha zero after flag)
- have shape:(F++M++I)++(C105LowEraseResearch.clear++tail)=F++M++(I++C105LowEraseResearch.clear++tail):=by
-  have g(A B C D E:Program):(A++B++C)++(D++E)=A++B++(C++D++E):=by simp only [List.append_assoc]
-  exact g F M I C105LowEraseResearch.clear tail
- exact eq.trans ((congrArg (fun P=>run P m s) shape).trans (plain_loop s m hz hb hi ha after flag))
-
-end ECDSAAdd.Entrant.C105Research
-end
-
--- PSQ-C: the partial-cache C loop (`loopPC`) and its frame, host avoidance, counts, slots, physicality, support.
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.StairSqLoopC
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle
- InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
-set_option autoImplicit false
-set_option linter.unusedVariables false
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-set_option linter.unusedSimpArgs false
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires C163Low4Middle.bankChecked C163Low4Middle.specialChecked
-
-def pcCore:Program:=C105Research.coreK
-
-/-- `pcCore_frame` with the partial-cache core. -/
-theorem pcCore_frame(base:BasisState)(hc:L.PairClean base)(hp:base p=false)(hd:base d=false)
- (O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) pcCore
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have len:=lengths
- have fit:=fits
- have clean:=L.squareFrame_clean hn base s.basis O hf hc
- have hz:∀u∈pad,s.basis u=false:=fun u hu=>
-  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_drop (List.mem_of_mem_take hu))
- have hb:∀u∈bank,s.basis u=false:=fun u hu=>
-  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
- have ha:regValue ga s.basis=0:=C163Low4Ghost.ghostAcc_zero L s.basis clean
- have zeroU:∀u∈C163Low4Middle.hs,s.basis u=false:=hs_zero base hc hd O s hf
- have offHs:∀u∈C163Low4Middle.hs,u∉wires (ReorderedCPlain.build ga pad bank L.core.cin src):=by
-  intro u hu
-  exact (off_plain u (hosts_of_hs u hu)).1
- have goodOld:=fun record=>good base hc O hO s record hf
- have goodSpecial:WReady ga pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedCPlain.build ga pad bank L.core.cin src) specialChecked.out s m):=by
-  rw [ReorderedRetape.c_middle_eq ga pad bank L.core.cin src specialChecked.out
-   len.1 len.2.2.2 fit s m hz hb clean.cin ha]
-  exact goodOld _
- have middleEq:=bank_cert.middle_eq C163Low4Middle.hs specialChecked.out bankChecked.out
-  (ReorderedCPlain.build ga pad bank L.core.cin src) s m zeroU offHs
- have goodBank:WReady ga pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedCPlain.build ga pad bank L.core.cin src) bankChecked.out s m):=by
-  rw [middleEq]
-  exact goodSpecial
- have knownEq:=CKKnownMiddleResearch.middle_eq s m hz hb clean.cin ha
- have goodKnown:WReady ga pad bank L.core.cin src (regValue src s.basis)
-  (middleState (ReorderedCPlain.build ga pad bank L.core.cin src) KnownCMidStaged.body s m):=by
-  rw [knownEq]
-  exact goodBank
- have buildFrame:=ReorderedCPlain.build_triple ga pad bank L.core.cin src lengths.1 lengths.2.2.2 fits
-  s.basis hz hb clean.cin s (m.take (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)))
-  ⟨ha,fun _ _=>rfl⟩
- have flag:(run (ReorderedCPlain.build ga pad bank L.core.cin src)
-  (m.take (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src))) s).basis 4762=false:=
-  (buildFrame.2.2 4762 (by decide +kernel)).trans clean.modFlag
- have plainNew:=C105Research.core_plainK s m hz hb clean.cin ha zeroU goodKnown flag
- have midEq:run KnownCMidStaged.body (m.drop (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)))
-  (run (ReorderedCPlain.build ga pad bank L.core.cin src) m s)=
-  run C163Low4Middle.bankChecked.out (m.drop (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)))
-  (run (ReorderedCPlain.build ga pad bank L.core.cin src) m s):=by
-  simpa only [middleState,run_take] using knownEq
- have ctxt:=ReorderedKnownA.context_eq
-  (ReorderedCPlain.build ga pad bank L.core.cin src) C163Low4Middle.bankChecked.out KnownCMidStaged.body
-  (ReorderedCPlain.unbuild ga pad bank L.core.cin src) s m CKKnownMiddleResearch.measurements midEq
- have plainEq0:=plainNew.trans ctxt
- have middleReplace:=bank_cert.surround_eq C163Low4Middle.hs specialChecked.out bankChecked.out
-  (ReorderedCPlain.build ga pad bank L.core.cin src) (ReorderedCPlain.unbuild ga pad bank L.core.cin src)
-  s m zeroU offHs
- have plainEq:=ReorderedRetape.c_loop_eq ga pad bank L.core.cin src specialChecked.out
-  len.1 len.2.2.2 fit s m hz hb clean.cin ha goodOld
- let record:=ReorderedRetape.tape (measurementCount (C163NarrowAcc.build8 ga pad bank L.core.cin src))
-  (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)) m
- have oldFrame:=C163Low4Middle.frame base hc hp hd O hO s record hf
- rw [eq_plain base hc hp hd O hO s record hf] at oldFrame
- have finalEq:run pcCore m s=run (C163NarrowAcc.build8 ga pad bank L.core.cin src++specialChecked.out++
-  C163SourceAdd.unbuild ga pad bank L.core.cin src) record s:=plainEq0.trans (middleReplace.trans plainEq)
- exact ReorderedCFixed.transport (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)) s _ _ finalEq oldFrame
-
-end ECDSAAdd.Entrant.StairSqLoopC
-end
-
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.StairSqLoopC
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle C163Low4Ghost
- ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
-set_option autoImplicit false
-set_option linter.unusedVariables false
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-set_option linter.unusedSimpArgs false
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
-
-def suffixPC:Program:=C105LowEraseResearch.clear++C105Research.rawFK++C105Research.top++C105Research.M++
- C105Research.newIK++C105LowEraseResearch.clear++C105Research.tail
-
-def loopPC:Program:=SignCHead.head++suffixPC
-
-theorem loopPC_eq(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReduction.p)
- (s:State)(m:List Bool)(hf:SquareFrame L.core.out base O s.basis):
- run loopPC m s=run pcCore
-  (SignRetape.tape SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) m) s:=by
- have clean:=L.squareFrame_clean hn base s.basis O hf hc
- have hz:∀u∈pad,s.basis u=false:=fun u hu=>
-  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_drop (List.mem_of_mem_take hu))
- have hb:∀u∈bank,s.basis u=false:=fun u hu=>(regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
- have ha:regValue ga s.basis=0:=ghostAcc_zero L s.basis clean
- have h:∀a b:List Bool,run SignCHead.head a s=run (ReorderedCHead.head ga pad bank L.core.cin src) b s:=by
-  intro a b
-  exact ReorderedFrameUnique.program_eq ga s.basis 0 ((2^140-48*regValue src s.basis)%2^140) _ _
-   (SignCHead.frame s.basis hz hb clean.cin)
-   (ReorderedCHead.head_triple ga pad bank L.core.cin src lengths.1 (by decide) fits s.basis hz hb clean.cin)
-   s a b ⟨ha,fun _ _=>rfl⟩
- have eq:=SignRetape.replace SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) suffixPC s m h
- simpa only [loopPC,suffixPC,pcCore,C105Research.coreK,C105Research.newFK,C105Research.rawFK,C105Research.head,List.append_assoc] using eq
-
-theorem loopPC_frame(base:BasisState)(hc:L.PairClean base)(hp:base C163Low4Middle.p=false)(hd:base d=false)
- (O:Nat)(hO:O<SquareReduction.p):
- Triple (SquareFrame L.core.out base O) loopPC
-  (SquareFrame L.core.out base
-   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
-    (SquareReduction.p-1-O))%SquareReduction.p)):=by
- intro s m hf
- have e:=loopPC_eq base hc O hO s m hf
- have old:=pcCore_frame base hc hp hd O hO s
-  (SignRetape.tape SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) m) hf
- exact ReorderedCFixed.transport _ s _ _ e old
-
-end ECDSAAdd.Entrant.StairSqLoopC
-end
-
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.StairSqLoopC
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-set_option linter.unusedSimpArgs false
-attribute [local irreducible] ECDSAAdd.wires
-
-theorem keepK_cached_wires:wires C105Research.rawFK⊆C105Research.domain.toFinset∪C105Research.keepK.toFinset:=
- (ReorderedSupport.cached 59 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin
-  (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
-  (by rw [C105Research.raw_lengths.2.2];decide)
-  (by rw [C105Research.raw_lengths.1,C105Research.raw_lengths.2.1])
-  (by rw [C105Research.raw_lengths.2.1,C105Research.raw_lengths.2.2])).1
-
-theorem keepK_consumed_wires:
- wires (ReorderedConsumedSub.consumed 59 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin)⊆
-  C105Research.domain.toFinset∪C105Research.keepK.toFinset:=
- ReorderedSupport.consumed 59 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin
-  (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
-  (by rw [C105Research.raw_lengths.2.2];decide)
-  (by rw [C105Research.raw_lengths.1,C105Research.raw_lengths.2.1])
-  (by rw [C105Research.raw_lengths.2.1,C105Research.raw_lengths.2.2])
-
-theorem keepK_out(h:Wire)(hA:h∈C105Research.hosts)(hk:h∉C105Research.keepK):
- h∉C105Research.domain.toFinset∪C105Research.keepK.toFinset:=by
- simp only [Finset.mem_union,List.mem_toFinset,not_or]
- exact ⟨C105Research.geometry.2.2 h hA,hk⟩
-
-theorem loopPC_off(h:Wire)(hh:h∈ReorderedCFixed.hosts)(hk:h∉C105Research.keepK):h∉wires loopPC:=by
- have hA:h∈C105Research.hosts:=by
-  simp only [C105Research.hosts,List.mem_append]
-  exact Or.inl hh
- have op:=off_plain h hh
- have hb:=op.1
- rw [ReorderedCBuild.plain_split ga pad bank L.core.cin src lengths.2.2.2] at hb
- simp only [wires_append,Finset.mem_union,not_or] at hb
- have headOff:h∉wires SignCHead.head:=fun bad=>hb.1.1 (SignCHeadSupport.support bad)
- have clearOff:h∉wires C105LowEraseResearch.clear:=by
-  rw [clear_wires]
-  intro bad
-  have sub:([4243,4505,4244,4506,4245,4507]:List Wire)⊆C105Research.ports:=by decide
-  exact C105Research.old_away h hh (sub (List.mem_toFinset.mp bad))
- have ht:=op.2
- rw [ReorderedCUnbuild.plain_split ga pad bank L.core.cin src lengths.2.2.2] at ht
- simp only [wires_append,Finset.mem_union,not_or] at ht
- have tailOff:h∉wires C105Research.tail:=fun bad=>ht.2 bad
- have out:=keepK_out h hA hk
- have rfOff:h∉wires C105Research.rawFK:=fun bad=>out (keepK_cached_wires bad)
- have iOff:h∉wires C105Research.newIK:=by
-  simp only [C105Research.newIK,wires_append,Finset.mem_union,not_or]
-  exact ⟨C105Research.preInv_off h hA,fun bad=>out (keepK_consumed_wires bad)⟩
- simp only [loopPC,suffixPC,wires_append,Finset.mem_union,not_or,and_assoc]
- exact ⟨headOff,clearOff,rfOff,C105Research.top_off h hA,C105Research.middle_fresh h hA,
-  iOff,clearOff,tailOff⟩
-
-end ECDSAAdd.Entrant.StairSqLoopC
-end
-
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.StairSqLoopC
-set_option autoImplicit false
-set_option Elab.async false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-
-section counts
-attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
-
-theorem loopPC_counts_rel:toffoliCount loopPC+59=toffoliCount loopNC ∧
- measurementCount loopPC=measurementCount loopNC:=by
- have cb:=ReorderedGenericCache.count_balance 59 C105Research.xs C105Research.ys C105Research.cs
-  C105Research.keepK C105PrefixResearch.cin
-  (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
-  (by rw [C105Research.raw_lengths.2.2];decide)
- rw [loopPC,suffixPC,loopNC,suffixNC,C105Research.newIK,C105Research.I,C105Research.rawFK,
-  C105Research.rawI,C105Research.rawF,ReorderedConsumedSub.consumed,ReorderedConsumedSub.plain]
- simp only [toffoliCount_append,measurementCount_append]
- exact ⟨by omega,by omega⟩
-
-theorem loopPC_counts:toffoliCount loopPC=toffoliCount C105SignResearch.loop+49 ∧
- measurementCount loopPC=measurementCount C105SignResearch.loop:=by
- have r:=loopPC_counts_rel
- have o:=loopNC_counts
- exact ⟨by omega,by omega⟩
-
-theorem loopPC_slots_rel:Challenge.gateSlots loopPC+177=Challenge.gateSlots loopNC:=by
- have sc:=ReorderedSlots.cache 59 C105Research.xs C105Research.ys C105Research.cs
-  C105Research.keepK C105PrefixResearch.cin
-  (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
-  (by rw [C105Research.raw_lengths.2.2];decide) C105Research.keepK_geometry.2.1
- rw [loopPC,suffixPC,loopNC,suffixNC,C105Research.newIK,C105Research.I,C105Research.rawFK,
-  C105Research.rawI,C105Research.rawF,ReorderedConsumedSub.consumed,ReorderedConsumedSub.plain]
- simp only [Challenge.gateSlots_append]
- omega
-
-theorem loopPC_slots:Challenge.gateSlots loopPC=Challenge.gateSlots C105SignResearch.loop+141:=by
- have r:=loopPC_slots_rel
- have o:=loopNC_slots
- omega
-
-end counts
-
-section physical
-attribute [local irreducible] GatePhysical ECDSAAdd.wires
-
-theorem loopPC_physical:GatePhysical loopPC:=by
- have f:=ReorderedPhysical.cached 59 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK
-  C105PrefixResearch.cin
-  (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
-  (by rw [C105Research.raw_lengths.2.2];decide)
-  C105Research.raw_nd (fun q hq bad=>C105Research.geometry.2.2 q (C105Research.keepK_sub q hq) (C105Research.c_in q bad))
- have n:=notRegister_physical C105Research.ys
- have hi:GatePhysical C105Research.newIK:=by
-  simp only [C105Research.newIK,ReorderedConsumedSub.consumed,gatePhysical_append]
-  exact ⟨C105Research.endpoint_physical.2.1,⟨⟨n,f.2⟩,n⟩⟩
- have hf:GatePhysical C105Research.rawFK:=f.1
- simp only [loopPC,suffixPC,gatePhysical_append]
- exact ⟨SignCHeadResources.physical,⟨⟨⟨⟨⟨⟨C105LowEraseResearch.physical,hf⟩,
-  C105Research.endpoint_physical.1⟩,CKAliasesResearch.physical⟩,hi⟩,C105LowEraseResearch.physical⟩,
-  C105Research.endpoint_physical.2.2⟩⟩
-
-end physical
-
-section support
-attribute [local irreducible] ECDSAAdd.wires
-
-theorem loopPC_support:wires loopPC⊆C105Research.S:=by
- have hh:wires SignCHead.head⊆C105Research.S:=by
-  apply Finset.Subset.trans ?_ C105Research.old_prefix_support
-  rw [C105Research.oldPrefix,wires_append]
-  exact Finset.subset_union_left
- have ks:C105Research.domain.toFinset∪C105Research.keepK.toFinset⊆C105Research.S:=by
-  intro q hq
-  apply C105Research.raw_domain_in
-  simp only [Finset.mem_union,List.mem_toFinset] at hq ⊢
-  rcases hq with h|h
-  · exact Or.inl h
-  · exact Or.inr (C105Research.keepK_sub q h)
- have rf:wires C105Research.rawFK⊆C105Research.S:=keepK_cached_wires.trans ks
- have ii:wires C105Research.newIK⊆C105Research.S:=by
-  simp only [C105Research.newIK,wires_append]
-  exact Finset.union_subset C105Research.endpoint_support.2.1 (keepK_consumed_wires.trans ks)
- simp only [loopPC,suffixPC,wires_append,Finset.union_subset_iff]
- exact ⟨hh,⟨⟨⟨⟨⟨⟨C105Research.clear_support,rf⟩,C105Research.endpoint_support.1⟩,C105Research.middle_support⟩,ii⟩,
-  C105Research.clear_support⟩,C105Research.endpoint_support.2.2⟩⟩
-
-end support
-
-end ECDSAAdd.Entrant.StairSqLoopC
-end
-
 -- Hole -> host assignment and the renamed loop.
 section
 open ECDSAAdd ECDSAAdd.Entrant
@@ -10505,77 +9400,19 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
 
 /-- Host of a hole: the hole's index into `C163Low4Middle.hs` (work wires). -/
-def hostOf(q:Wire):Wire:=C163Low4Middle.hs.getD (holes.idxOf q) 0
+def hostOf(q:Wire):Wire:=C163Low4Middle.hs.getD (StairSqLoopA.hostDomain.idxOf q) 0
 
 def pairs(hl:List Wire):List (Wire×Wire):=hl.map (fun q=>(q,hostOf q))
 
 /-- The hole-free C loop for any sublist `hl` of the 39 holes. -/
-def loopC(hl:List Wire):Program:=StairSquareHolesCore.hostRename (pairs hl) loopPC
-
-/-! K4-D (replay budget): the 39 holes as explicit intervals (no `poolWire` walks), the fold-pad facts
-and host membership by symbolic lemmas, and one linear bit-mask duplicate scan for the `Nodup` part. -/
-namespace K4DC
-
-
-
-
-
-
-
-
-def hostN (q : Wire) : Wire := C163Low4Middle.hs.getD (holesN.idxOf q) 0
-
-theorem hostOf_eq : hostOf = hostN := by
-  funext q
-  unfold hostOf hostN
-  rw [holes_eq]
-
-theorem foldPad_eq : L.foldPad = List.range' 4373 128 ++ List.range' 4764 126 := by
-  have hp : Baselines.layout.dialogPool = List.range' 4115 2613 := List.take_range'_of_length_ge (by decide)
-  have e2 : (Baselines.layout.dialogPool.drop 258).take 128 = List.range' 4373 128 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  have e4 : (Baselines.layout.dialogPool.drop 649).take 126 = List.range' 4764 126 := by
-    rw [hp, List.drop_range']; exact List.take_range'_of_length_ge (by decide)
-  show (Baselines.layout.dialogPool.drop 258).take 128 ++ (Baselines.layout.dialogPool.drop 649).take 126 = _
-  rw [e2, e4]
-
-theorem out_eq : L.core.out = List.range' 2 256 := by
-  show (List.range 256).map (· + 2) = List.range' 2 256
-  rw [List.range'_eq_map_range]
-  exact List.map_congr_left (fun x _ => Nat.add_comm x 2)
-
-theorem hs_len : 39 + StairCertificate.extraIdx.length ≤ C163Low4Middle.hs.length := by
-  have h := ReorderedCFixed.host_geometry.2.1
-  unfold ReorderedCFixed.hosts at h
-  rw [List.length_cons, List.length_cons, List.length_cons] at h
-  have e : C163Low4Middle.hs.length = 96 := Nat.add_right_cancel (Nat.add_right_cancel
-    (Nat.add_right_cancel (h.trans (by decide : (99 : Nat) = 96 + 1 + 1 + 1))))
-  rw [e]
-  decide
-
-end K4DC
+def loopC(hl:List Wire):Program:=StairSquareHolesCore.hostRename (pairs hl) loopNC
 
 theorem holes_geometry:(holes++holes.map hostOf).Nodup ∧ (∀q∈holes,q∈L.foldPad ∧ q∉L.core.out) ∧
- (∀q∈holes,hostOf q∈C163Low4Middle.hs):=by
-  refine ⟨?_, ?_, ?_⟩
-  · rw [K4DC.holes_eq, K4DC.hostOf_eq]
-    exact (K4DC.nodupMask_sound _ 0 (by decide +kernel)).1
-  · intro q hq
-    rw [K4DC.holes_eq] at hq
-    rw [K4DC.foldPad_eq, K4DC.out_eq]
-    simp only [K4DC.holesN, List.mem_append, List.mem_range'_1] at hq ⊢
-    rcases hq with hq | hq
-    · refine ⟨Or.inr ⟨by omega, by omega⟩, fun h => by omega⟩
-    · have := StairCertificate.extraW_window q hq
-      refine ⟨Or.inr ⟨by omega, by omega⟩, fun h => by omega⟩
-  · intro q hq
-    have hi : holes.idxOf q < 39 + StairCertificate.extraIdx.length := by
-      have h := List.idxOf_lt_length_of_mem hq
-      rwa [K4DC.holes_len] at h
-    have hl := K4DC.hs_len
-    unfold hostOf
-    rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (by omega), Option.getD_some]
-    exact List.getElem_mem _
+ (∀q∈holes,hostOf q∈C163Low4Middle.hs):=by decide +kernel
+
+
+theorem holes_geometry44:(StairSqLoopA.hostDomain++StairSqLoopA.hostDomain.map hostOf).Nodup ∧ (∀q∈StairSqLoopA.hostDomain,q∈L.foldPad ∧ q∉L.core.out) ∧
+ (∀q∈StairSqLoopA.hostDomain,hostOf q∈C163Low4Middle.hs):=by decide +kernel
 
 theorem pairs_fst(hl:List Wire):StairSquareHolesCore.holesOf (pairs hl)=hl:=by
  induction hl with
@@ -10596,18 +9433,22 @@ theorem pairs_nodup(hl:List Wire)(hsub:hl.Sublist holes):
  rw [pairs_fst,pairs_snd]
  exact (hsub.append (hsub.map hostOf)).nodup holes_geometry.1
 
-theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉C105Research.keepK:=by
- unfold hostOf
- apply C105Research.keepK_geometry.2.2.1
- have h:=List.idxOf_lt_length_of_mem hq
- rw [K4DC.holes_len] at h
- have e:StairCertificate.extraIdx.length=4:=by decide
- omega
 
-theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
+theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
+ (StairSquareHolesCore.holesOf (pairs hl)++StairSquareHolesCore.hostsOf (pairs hl)).Nodup:=by
+ rw [pairs_fst,pairs_snd]
+ exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
+
+theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopNC:=by
  intro ab hab
  obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
- exact loopPC_off _ (hosts_of_hs _ (holes_geometry.2.2 y (hsub.subset hy))) (hostOf_not_keep y (hsub.subset hy))
+ exact loopNC_off _ (hosts_of_hs _ (holes_geometry.2.2 y (hsub.subset hy)))
+
+
+theorem pairs_hostFree44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):∀ab∈pairs hl,ab.2∉wires loopNC:=by
+ intro ab hab
+ obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
+ exact loopNC_off _ (hosts_of_hs _ (holes_geometry44.2.2 y (hsub.subset hy)))
 
 /-- Same triple as `C105SignResearch.frame`. -/
 theorem loopC_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc:L.PairClean base)
@@ -10617,9 +9458,9 @@ theorem loopC_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc:L.P
    (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
     (SquareReduction.p-1-O))%SquareReduction.p)):=by
  intro s m hf
- have f:=loopPC_frame base hc hp hd O hO s m hf
+ have f:=loopNC_frame base hc hp hd O hO s m hf
  have holeBase:∀q∈holes,base q=false:=fun q hq=>(regValue_zero _ _).mp hc.pad q (holes_geometry.2.1 q hq).1
- have eq:run (loopC hl) m s=run loopPC m s:=by
+ have eq:run (loopC hl) m s=run loopNC m s:=by
   rw [loopC]
   apply StairSquareHolesCore.hostRename_run_eq
   · intro ab hab
@@ -10630,13 +9471,43 @@ theorem loopC_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc:L.P
     obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
     exact hs_zero base hc hd O s hf (hostOf y) (holes_geometry.2.2 y (hsub.subset hy))
   · intro ab hab
-    -- LT50: no defeq `ab.1 =?= y` under `(run loopPC m s).basis` (the kernel would evaluate `run loopPC`)
+    -- LT50: no defeq `ab.1 =?= y` under `(run loopNC m s).basis` (the kernel would evaluate `run loopNC`)
     obtain ⟨y,hy,e⟩:=List.mem_map.mp hab
     have h1:ab.1=y:=by rw [← e]
     rw [h1]
     have hyH:=hsub.subset hy
     exact (f.2.2 y (holes_geometry.2.1 y hyH).2).trans (holeBase y hyH)
   · exact pairs_hostFree hl hsub
+ exact ReorderedCFixed.transport _ s _ _ eq f
+
+
+theorem loopC_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(base:BasisState)(hc:L.PairClean base)
+ (hp:base C163Low4Middle.p=false)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) (loopC hl)
+  (SquareFrame L.core.out base
+   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
+    (SquareReduction.p-1-O))%SquareReduction.p)):=by
+ intro s m hf
+ have f:=loopNC_frame base hc hp hd O hO s m hf
+ have holeBase:∀q∈StairSqLoopA.hostDomain,base q=false:=fun q hq=>(regValue_zero _ _).mp hc.pad q (holes_geometry44.2.1 q hq).1
+ have eq:run (loopC hl) m s=run loopNC m s:=by
+  rw [loopC]
+  apply StairSquareHolesCore.hostRename_run_eq
+  · intro ab hab
+    obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
+    have hyH:=hsub.subset hy
+    exact (hf.2 y (holes_geometry44.2.1 y hyH).2).trans (holeBase y hyH)
+  · intro ab hab
+    obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
+    exact hs_zero base hc hd O s hf (hostOf y) (holes_geometry44.2.2 y (hsub.subset hy))
+  · intro ab hab
+    -- LT50: no defeq `ab.1 =?= y` under `(run loopNC m s).basis` (the kernel would evaluate `run loopNC`)
+    obtain ⟨y,hy,e⟩:=List.mem_map.mp hab
+    have h1:ab.1=y:=by rw [← e]
+    rw [h1]
+    have hyH:=hsub.subset hy
+    exact (f.2.2 y (holes_geometry44.2.1 y hyH).2).trans (holeBase y hyH)
+  · exact pairs_hostFree44 hl hsub
  exact ReorderedCFixed.transport _ s _ _ eq f
 
 /-- Same statement as `C105SignResearch.fold_frame`, for `loopC hl`. -/
@@ -10653,17 +9524,37 @@ theorem loopC_fold_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)
   (C163Fold.payload_spec L base)
  exact ⟨f.1,Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run (loopC hl) m s).basis) e) f.2⟩
 
+
+theorem loopC_fold_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(base:BasisState)
+ (hv:AccView L base (OwnDiagAll12Square.accCItem L))(hc:L.PairClean base)
+ (M:Nat)(pv:regValue L.core.product base=M^2)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) (loopC hl)
+  (SquareFrame L.core.out base
+   (((if base g then C163Low4Facts.Klow-Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec else Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec)+
+    (SquareReduction.p-1-O))%SquareReduction.p)):=by
+ intro s m hf
+ have f:=loopC_frame44 hl hsub base hc (spare_zero L hw base M pv) hd O hO s m hf
+ have e:=congrArg (fun A:Nat=>((if base g then C163Low4Facts.Klow-A else A)+(SquareReduction.p-1-O))%SquareReduction.p)
+  (C163Fold.payload_spec L base)
+ exact ⟨f.1,Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run (loopC hl) m s).basis) e) f.2⟩
+
 theorem loopC_avoids(hl:List Wire)(hsub:hl.Sublist holes):∀q∈hl,q∉wires (loopC hl):=by
- have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
+ have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopNC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
+ rw [pairs_fst] at h
+ exact h
+
+
+theorem loopC_avoids44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):∀q∈hl,q∉wires (loopC hl):=by
+ have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopNC (pairs_nodup44 hl hsub) (pairs_hostFree44 hl hsub)
  rw [pairs_fst] at h
  exact h
 
 theorem loopC_support(hl:List Wire)(hsub:hl.Sublist holes):wires (loopC hl)⊆C105Research.S:=by
- have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
+ have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopNC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
  rw [pairs_snd] at hs
  intro x hx
  rcases Finset.mem_union.mp (hs hx) with h|h
- · exact loopPC_support (Finset.mem_sdiff.mp h).1
+ · exact loopNC_support (Finset.mem_sdiff.mp h).1
  · obtain ⟨y,hy,rfl⟩:=List.mem_map.mp (List.mem_toFinset.mp h)
    have hm:hostOf y∈C105Research.hosts:=by
     simp only [C105Research.hosts,List.mem_append]
@@ -10671,28 +9562,52 @@ theorem loopC_support(hl:List Wire)(hsub:hl.Sublist holes):wires (loopC hl)⊆C1
    apply C105Research.raw_domain_in
    exact Finset.mem_union_right _ (List.mem_toFinset.mpr hm)
 
-theorem loopC_counts(hl:List Wire):toffoliCount (loopC hl)=toffoliCount C105SignResearch.loop+49 ∧
- measurementCount (loopC hl)=measurementCount C105SignResearch.loop:=by
- have h:=StairSquareHolesCore.hostRename_counts (pairs hl) loopPC
- rw [loopC,h.1,h.2]
- exact loopPC_counts
 
-theorem loopC_slots(hl:List Wire):Challenge.gateSlots (loopC hl)=Challenge.gateSlots C105SignResearch.loop+141:=by
+theorem loopC_support44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):wires (loopC hl)⊆C105Research.S:=by
+ have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopNC (pairs_nodup44 hl hsub) (pairs_hostFree44 hl hsub)
+ rw [pairs_snd] at hs
+ intro x hx
+ rcases Finset.mem_union.mp (hs hx) with h|h
+ · exact loopNC_support (Finset.mem_sdiff.mp h).1
+ · obtain ⟨y,hy,rfl⟩:=List.mem_map.mp (List.mem_toFinset.mp h)
+   have hm:hostOf y∈C105Research.hosts:=by
+    simp only [C105Research.hosts,List.mem_append]
+    exact Or.inl (hosts_of_hs _ (holes_geometry44.2.2 y (hsub.subset hy)))
+   apply C105Research.raw_domain_in
+   exact Finset.mem_union_right _ (List.mem_toFinset.mpr hm)
+
+theorem loopC_counts(hl:List Wire):toffoliCount (loopC hl)=toffoliCount C105SignResearch.loop+108 ∧
+ measurementCount (loopC hl)=measurementCount C105SignResearch.loop:=by
+ have h:=StairSquareHolesCore.hostRename_counts (pairs hl) loopNC
+ rw [loopC,h.1,h.2]
+ exact loopNC_counts
+
+theorem loopC_slots(hl:List Wire):Challenge.gateSlots (loopC hl)=Challenge.gateSlots C105SignResearch.loop+318:=by
  rw [loopC,StairSquareHolesCore.hostRename_slots]
- exact loopPC_slots
+ exact loopNC_slots
 
 theorem loopC_physical(hl:List Wire):GatePhysical (loopC hl):=
- StairSquareHolesCore.hostRename_physical (pairs hl) loopPC loopPC_physical
+ StairSquareHolesCore.hostRename_physical (pairs hl) loopNC loopNC_physical
 
 /-- Coarse support (the `cSupport` shape of `fastCore_correct`, through `KnownProgramActual.c_body_coarse`). -/
 theorem loopC_coarse(hl:List Wire)(hsub:hl.Sublist holes):
  wires (loopC hl)⊆insert C163Low4Middle.d (C163Low4Middle.g::C163Low4Middle.L.wires).toFinset:=
  (loopC_support hl hsub).trans KnownProgramActual.c_body_coarse
 
+
+theorem loopC_coarse44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
+ wires (loopC hl)⊆insert C163Low4Middle.d (C163Low4Middle.g::C163Low4Middle.L.wires).toFinset:=
+ (loopC_support44 hl hsub).trans KnownProgramActual.c_body_coarse
+
 /-- Fine support (through `KnownProgramActual.c_body_fine`). -/
 theorem loopC_fine(hl:List Wire)(hsub:hl.Sublist holes):
  wires (loopC hl)⊆insert C163Low4Middle.d (wires (OwnDiagAll12Square.bodyCKTq C163Low4Middle.L C163Low4Middle.g)):=
  (loopC_support hl hsub).trans KnownProgramActual.c_body_fine
+
+
+theorem loopC_fine44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
+ wires (loopC hl)⊆insert C163Low4Middle.d (wires (OwnDiagAll12Square.bodyCKTq C163Low4Middle.L C163Low4Middle.g)):=
+ (loopC_support44 hl hsub).trans KnownProgramActual.c_body_fine
 
 end ECDSAAdd.Entrant.StairSqLoopC
 
@@ -10786,6 +9701,11 @@ theorem loopA_directLoopFrame (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.h
  A109SignResearch.DirectLoopFrame (StairSqLoopA.loopA hl) :=
  fun base hc a b c e O hO => StairSqLoopA.loopA_frame_rec hl hsub base hc a b c e O hO
 
+
+theorem loopA_directLoopFrame44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) :
+ A109SignResearch.DirectLoopFrame (StairSqLoopA.loopA hl) :=
+ fun base hc a b c e O hO => StairSqLoopA.loopA_frame_rec44 hl hsub base hc a b c e O hO
+
 /-- Exactly the statement of `A109SignResearch.body_frame` (`bodyFrame` of `fastCore_correct`, LT40 `BodyAOK.frame`). -/
 theorem bodyA_frame (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) (base:BasisState) (M:Nat) (hM:M<2^128)
  (hP:regValue ReorderedAFixed.L.core.product base=M^2) (hc:ReorderedAFixed.L.PairClean base)
@@ -10796,18 +9716,43 @@ theorem bodyA_frame (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) (bas
  A109SignResearch.direct_body_frame _ (loopA_directLoopFrame hl hsub) base M hM hP hc hzero O hO hg hd
 
 
+
+theorem bodyA_frame44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) (base:BasisState) (M:Nat) (hM:M<2^128)
+ (hP:regValue ReorderedAFixed.L.core.product base=M^2) (hc:ReorderedAFixed.L.PairClean base)
+ (hzero:base ReorderedAFixed.q=false) (O:Nat) (hO:O<SquareReduction.p) (hg:base ReorderedAFixed.g=false → M=0)
+ (hd:base ReorderedAFixed.d=false) :
+ Triple (SquareFrame ReorderedAFixed.L.core.out base O) (bodyA hl)
+  (SquareFrame ReorderedAFixed.L.core.out base (A161Low4Offsets.resAFlow (M^2) O (base ReorderedAFixed.g))) :=
+ A109SignResearch.direct_body_frame _ (loopA_directLoopFrame44 hl hsub) base M hM hP hc hzero O hO hg hd
+
 theorem bodyA_support (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) :
  wires (bodyA hl)⊆insert (Baselines.layout.core.poolWire 1540)
    (Baselines.layout.core.generic::Baselines.layout.dialogStreamedSquareWide.wires).toFinset :=
  A109SignResearch.direct_body_support_S _ (StairSqLoopA.loopA_support hl hsub)
 
+
+theorem bodyA_support44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) :
+ wires (bodyA hl)⊆insert (Baselines.layout.core.poolWire 1540)
+   (Baselines.layout.core.generic::Baselines.layout.dialogStreamedSquareWide.wires).toFinset :=
+ A109SignResearch.direct_body_support_S _ (StairSqLoopA.loopA_support44 hl hsub)
+
 theorem bodyA_eU_free (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) :
  ControlLoan1589BFFold.eU ReorderedAFixed.L∉wires (bodyA hl) :=
  A109SignResearch.direct_body_eU_free_S _ (StairSqLoopA.loopA_support hl hsub)
 
+
+theorem bodyA_eU_free44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) :
+ ControlLoan1589BFFold.eU ReorderedAFixed.L∉wires (bodyA hl) :=
+ A109SignResearch.direct_body_eU_free_S _ (StairSqLoopA.loopA_support44 hl hsub)
+
 theorem bodyA_coarse (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) :
  wires (bodyA hl)⊆insert ReorderedAFixed.d (ReorderedAFixed.g::ReorderedAFixed.L.wires).toFinset :=
  A109SignResearch.direct_body_coarse_S _ (StairSqLoopA.loopA_support hl hsub)
+
+
+theorem bodyA_coarse44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) :
+ wires (bodyA hl)⊆insert ReorderedAFixed.d (ReorderedAFixed.g::ReorderedAFixed.L.wires).toFinset :=
+ A109SignResearch.direct_body_coarse_S _ (StairSqLoopA.loopA_support44 hl hsub)
 
 theorem bodyA_fine (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) :
  wires (bodyA hl)⊆insert ReorderedAFixed.d
@@ -10815,12 +9760,24 @@ theorem bodyA_fine (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) :
    (LowZero18Square.foldPerm ReorderedAFixed.L (OwnDiagAll12Square.kext Baselines.layout)) ReorderedAFixed.g)) :=
  A109SignResearch.direct_body_fine_S _ (StairSqLoopA.loopA_support hl hsub)
 
+
+theorem bodyA_fine44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) :
+ wires (bodyA hl)⊆insert ReorderedAFixed.d
+  (wires (InverseCarryDevelop.hostedADual ReorderedAFixed.L
+   (LowZero18Square.foldPerm ReorderedAFixed.L (OwnDiagAll12Square.kext Baselines.layout)) ReorderedAFixed.g)) :=
+ A109SignResearch.direct_body_fine_S _ (StairSqLoopA.loopA_support44 hl hsub)
+
 theorem bodyA_avoids (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) : ∀q∈hl,q∉wires (bodyA hl) :=
  A109SignResearch.direct_body_holes _ hl (fun q hq => (StairSqLoopA.holes_geometry.2.1 q (hsub.subset hq)).1)
   (StairSqLoopA.loopA_avoids hl hsub)
 
+
+theorem bodyA_avoids44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) : ∀q∈hl,q∉wires (bodyA hl) :=
+ A109SignResearch.direct_body_holes _ hl (fun q hq => (StairSqLoopA.holes_geometry44.2.1 q (hsub.subset hq)).1)
+  (StairSqLoopA.loopA_avoids44 hl hsub)
+
 theorem bodyA_counts (hl : List Wire) :
- toffoliCount (bodyA hl)=toffoliCount A109SignResearch.body+49 ∧
+ toffoliCount (bodyA hl)=toffoliCount A109SignResearch.body+112 ∧
  measurementCount (bodyA hl)=measurementCount A109SignResearch.body := by
  have h:=A109SignResearch.direct_body_counts (StairSqLoopA.loopA hl)
  have l:=StairSqLoopA.loopA_counts hl
@@ -10828,7 +9785,7 @@ theorem bodyA_counts (hl : List Wire) :
  omega
 
 theorem bodyA_slots (hl : List Wire) :
- Challenge.gateSlots (bodyA hl)+883=Challenge.gateSlots A109SignResearch.body := by
+ Challenge.gateSlots (bodyA hl)+694=Challenge.gateSlots A109SignResearch.body := by
  have h:=A109SignResearch.direct_body_slots (StairSqLoopA.loopA hl)
  have l:=StairSqLoopA.loopA_slots hl
  unfold bodyA
@@ -10914,6 +9871,11 @@ theorem loopC_directLoopFrame (hl : List Wire) (hsub : hl.Sublist StairSqLoopC.h
  C105SignResearch.DirectLoopFrame (StairSqLoopC.loopC hl) :=
  fun base hc a b O hO => StairSqLoopC.loopC_frame hl hsub base hc a b O hO
 
+
+theorem loopC_directLoopFrame44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) :
+ C105SignResearch.DirectLoopFrame (StairSqLoopC.loopC hl) :=
+ fun base hc a b O hO => StairSqLoopC.loopC_frame44 hl hsub base hc a b O hO
+
 /-- Exactly the statement of `C105SignResearch.body_frame` (`cFrame` of `fastCore_correct`, LT40 `BodyCOK.frame`). -/
 theorem bodyC_frame (hl : List Wire) (hsub : hl.Sublist StairSqLoopC.holes) (base:BasisState) (M:Nat)
  (pv:regValue C163Low4Middle.L.core.product base=M^2) (clean:C163Low4Middle.L.PairClean base)
@@ -10924,21 +9886,46 @@ theorem bodyC_frame (hl : List Wire) (hsub : hl.Sublist StairSqLoopC.holes) (bas
  C105SignResearch.direct_body_frame _ (loopC_directLoopFrame hl hsub) base M pv clean disabled hd O hO
 
 
+
+theorem bodyC_frame44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) (base:BasisState) (M:Nat)
+ (pv:regValue C163Low4Middle.L.core.product base=M^2) (clean:C163Low4Middle.L.PairClean base)
+ (disabled:base C163Low4Middle.g=false→M=0) (hd:base C163Low4Middle.d=false) (O:Nat) (hO:O<SquareReduction.p) :
+ Triple (SquareFrame C163Low4Middle.L.core.out base O) (bodyC hl)
+  (SquareFrame C163Low4Middle.L.core.out base
+   (C163Low4Body.resCFK C163Low4Facts.Klow (base C163Low4Middle.g) (M^2) O)) :=
+ C105SignResearch.direct_body_frame _ (loopC_directLoopFrame44 hl hsub) base M pv clean disabled hd O hO
+
 theorem bodyC_coarse (hl : List Wire) (hsub : hl.Sublist StairSqLoopC.holes) :
  wires (bodyC hl)⊆insert C163Low4Middle.d (C163Low4Middle.g::C163Low4Middle.L.wires).toFinset :=
  C105SignResearch.direct_body_coarse_S _ (StairSqLoopC.loopC_support hl hsub)
+
+
+theorem bodyC_coarse44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) :
+ wires (bodyC hl)⊆insert C163Low4Middle.d (C163Low4Middle.g::C163Low4Middle.L.wires).toFinset :=
+ C105SignResearch.direct_body_coarse_S _ (StairSqLoopC.loopC_support44 hl hsub)
 
 theorem bodyC_fine (hl : List Wire) (hsub : hl.Sublist StairSqLoopC.holes) :
  wires (bodyC hl)⊆insert C163Low4Middle.d
   (wires (OwnDiagAll12Square.bodyCKTq C163Low4Middle.L C163Low4Middle.g)) :=
  C105SignResearch.direct_body_fine_S _ (StairSqLoopC.loopC_support hl hsub)
 
+
+theorem bodyC_fine44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) :
+ wires (bodyC hl)⊆insert C163Low4Middle.d
+  (wires (OwnDiagAll12Square.bodyCKTq C163Low4Middle.L C163Low4Middle.g)) :=
+ C105SignResearch.direct_body_fine_S _ (StairSqLoopC.loopC_support44 hl hsub)
+
 theorem bodyC_avoids (hl : List Wire) (hsub : hl.Sublist StairSqLoopC.holes) : ∀q∈hl,q∉wires (bodyC hl) :=
  C105SignResearch.direct_body_holes _ hl (fun q hq => (StairSqLoopC.holes_geometry.2.1 q (hsub.subset hq)).1)
   (StairSqLoopC.loopC_avoids hl hsub)
 
+
+theorem bodyC_avoids44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) : ∀q∈hl,q∉wires (bodyC hl) :=
+ C105SignResearch.direct_body_holes _ hl (fun q hq => (StairSqLoopC.holes_geometry44.2.1 q (hsub.subset hq)).1)
+  (StairSqLoopC.loopC_avoids44 hl hsub)
+
 theorem bodyC_counts (hl : List Wire) :
- toffoliCount (bodyC hl)=toffoliCount C105SignResearch.body+49 ∧
+ toffoliCount (bodyC hl)=toffoliCount C105SignResearch.body+108 ∧
  measurementCount (bodyC hl)=measurementCount C105SignResearch.body := by
  have h:=C105SignResearch.direct_body_counts (StairSqLoopC.loopC hl)
  have l:=StairSqLoopC.loopC_counts hl
@@ -10946,7 +9933,7 @@ theorem bodyC_counts (hl : List Wire) :
  omega
 
 theorem bodyC_slots (hl : List Wire) :
- Challenge.gateSlots (bodyC hl)+371=Challenge.gateSlots C105SignResearch.body := by
+ Challenge.gateSlots (bodyC hl)+194=Challenge.gateSlots C105SignResearch.body := by
  have h:=C105SignResearch.direct_body_slots (StairSqLoopC.loopC hl)
  have l:=StairSqLoopC.loopC_slots hl
  unfold bodyC
@@ -10974,270 +9961,23 @@ open ECDSAAdd ECDSAAdd.Entrant StairSquareContract
 theorem bodyA_ok (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.holes) : BodyAOK (StairSquareBodyA.bodyA hl) :=
   ⟨StairSquareBodyA.bodyA_support hl hsub, StairSquareBodyA.bodyA_eU_free hl hsub, StairSquareBodyA.bodyA_frame hl hsub⟩
 
+
+theorem bodyA_ok44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) : BodyAOK (StairSquareBodyA.bodyA hl) :=
+  ⟨StairSquareBodyA.bodyA_support44 hl hsub, StairSquareBodyA.bodyA_eU_free44 hl hsub, StairSquareBodyA.bodyA_frame44 hl hsub⟩
+
 /-- The hole-free C body satisfies LT40's `BodyCOK` (= the C-body hypotheses of `fastCore_correct`). -/
 theorem bodyC_ok (hl : List Wire) (hsub : hl.Sublist StairSqLoopC.holes) : BodyCOK (StairSquareBodyC.bodyC hl) :=
   ⟨StairSquareBodyC.bodyC_coarse hl hsub, StairSquareBodyC.bodyC_frame hl hsub⟩
 
 
 
+
+theorem bodyC_ok44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDomain) : BodyCOK (StairSquareBodyC.bodyC hl) :=
+  ⟨StairSquareBodyC.bodyC_coarse44 hl hsub, StairSquareBodyC.bodyC_frame44 hl hsub⟩
+
 end ECDSAAdd.Entrant.StairSquareBodyOK
 end
 end Merge_StairSquareBodyOK_at_BOptimizations
-
-/-! ### T723 core helpers (pool 723 re-hosting) -/
-section
-
-set_option autoImplicit false
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-
-namespace ECDSAAdd.Entrant.T723Core
-open ECDSAAdd Arithmetic MappedCompressed
-
-/-- After a final `measureX q`, the wire `q` is zero. -/
-theorem run_measure_last (A : Program) (q : Wire) (c0 c1 : List Correction) (m : List Bool) (s : State) :
-    (run (A ++ [.measureX q c0 c1]) m s).basis q = false := by
-  rw [run_append]
-  simp [run, measureAndCorrect, writeBit]
-
-/-- A measured wire stays zero through a tail that does not touch it. -/
-theorem run_measure_before (A B : Program) (q : Wire) (c0 c1 : List Correction) (hB : q ∉ wires B)
-    (m : List Bool) (s : State) : (run (A ++ [.measureX q c0 c1] ++ B) m s).basis q = false := by
-  rw [run_append, run_preserves_outside _ _ _ _ hB]
-  exact run_measure_last A q c0 c1 _ s
-
-theorem rename_snoc (f : Wire → Wire) (A : Program) (i : Instr) :
-    renameProgram f (A ++ [i]) = renameProgram f A ++ [renameInstr f i] := by
-  simp [renameProgram]
-
-/-- The comparison carry `base 300` (the T723 host label) is not an X-tail label. -/
-theorem base300_not_tSites : base 300 ∉ StairSiteEasy.tSites base (base 2400) := by
-  intro h
-  simp only [StairSiteEasy.tSites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with ((h | h) | h) | h | h | h | h
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hj
-    omega
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hj
-    omega
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hj
-    omega
-  all_goals (have := base_injective h; omega)
-
-end ECDSAAdd.Entrant.T723Core
-
-/-! ### T724 helpers: the X-tail labels without `w 722`, a generic comparison-carry host, a hit scan -/
-namespace ECDSAAdd.Entrant.T724Core
-open ECDSAAdd Arithmetic MappedCompressed
-
-def tS7 (w : Nat → Wire) (g : Wire) : List Wire :=
-  wireBlock w 0 258 ++ wireBlock w 770 515 ++ wireBlock w 1540 258 ++ [w 514, w 721, g]
-
-theorem in_tS7 (w : Nat → Wire) (g : Wire) (i : Nat)
-    (hi : i < 258 ∨ (770 ≤ i ∧ i < 1285) ∨ (1540 ≤ i ∧ i < 1798) ∨ i = 514 ∨ i = 721) :
-    w i ∈ tS7 w g := by
-  simp only [tS7, List.mem_append, List.mem_cons, List.not_mem_nil, or_false]
-  rcases hi with h | h | h | h | h
-  · exact Or.inl (Or.inl (Or.inl (List.mem_map.mpr ⟨i, by simp only [List.mem_range'_1]; omega, rfl⟩)))
-  · exact Or.inl (Or.inl (Or.inr (List.mem_map.mpr ⟨i, by simp only [List.mem_range'_1]; omega, rfl⟩)))
-  · exact Or.inl (Or.inr (List.mem_map.mpr ⟨i, by simp only [List.mem_range'_1]; omega, rfl⟩))
-  · subst h; exact Or.inr (Or.inl rfl)
-  · subst h; exact Or.inr (Or.inr (Or.inl rfl))
-
-theorem blk_tS7 (w : Nat → Wire) (g : Wire) (a n : Nat)
-    (h : a + n ≤ 258 ∨ (770 ≤ a ∧ a + n ≤ 1285) ∨ (1540 ≤ a ∧ a + n ≤ 1798)) :
-    ∀ q ∈ wireBlock w a n, q ∈ tS7 w g := by
-  intro q hq
-  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq
-  simp only [List.mem_range'_1] at hi
-  exact in_tS7 w g i (by omega)
-
-theorem g_tS7 (w : Nat → Wire) (g : Wire) : g ∈ tS7 w g := by simp [tS7]
-
-theorem tl_sub7 (w : Nat → Wire) (g : Wire) (l : List Wire) (h : ∀ q ∈ l, q ∈ tS7 w g) :
-    l.toFinset ⊆ (tS7 w g).toFinset := by
-  intro q hq; exact List.mem_toFinset.mpr (h q (List.mem_toFinset.mp hq))
-
-theorem tgate_sub7 (w : Nat → Wire) (g : Wire) (i : Instr) (h : ∀ q ∈ i.wires, q ∈ tS7 w g) :
-    wires [i] ⊆ (tS7 w g).toFinset := by
-  intro q hq
-  simp only [wires, Finset.union_empty] at hq
-  exact List.mem_toFinset.mpr (h q hq)
-
-theorem base722_not_tS7 : base 722 ∉ tS7 base (base 2400) := by
-  intro h
-  simp only [tS7, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with ((h | h) | h) | h | h | h
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hj
-    omega
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hj
-    omega
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hj
-    omega
-  all_goals (have := base_injective h; omega)
-
-/-- Any E1 comparison-carry label `258 ≤ j < 514` is not an X-tail label. -/
-theorem base_not_tSites {j : Nat} (h1 : 258 ≤ j) (h2 : j < 514) :
-    base j ∉ StairSiteEasy.tSites base (base 2400) := by
-  intro h
-  simp only [StairSiteEasy.tSites, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with ((h | h) | h) | h | h | h | h
-  · obtain ⟨i, hi, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hi
-    omega
-  · obtain ⟨i, hi, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hi
-    omega
-  · obtain ⟨i, hi, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hi
-    omega
-  all_goals (have := base_injective h; omega)
-
-/-- One-instruction hit test (no `wires` recursion in the kernel). -/
-def hitB (q : Wire) : Instr → Bool
-  | .X t => t == q
-  | .CX c t => c == q || t == q
-  | .CCX a b t => a == q || b == q || t == q
-  | .measureX t _ _ => t == q
-
-theorem mem_instr_of_hit (q : Wire) (i : Instr) (h : hitB q i = true) : q ∈ i.wires := by
-  cases i with
-  | X t =>
-    simp only [hitB, beq_iff_eq] at h
-    subst h
-    simp [Instr.wires]
-  | CX c t =>
-    simp only [hitB, Bool.or_eq_true, beq_iff_eq] at h
-    rcases h with rfl | rfl <;> simp [Instr.wires]
-  | CCX a b t =>
-    simp only [hitB, Bool.or_eq_true, beq_iff_eq] at h
-    rcases h with (rfl | rfl) | rfl <;> simp [Instr.wires]
-  | measureX t c0 c1 =>
-    simp only [hitB, beq_iff_eq] at h
-    subst h
-    simp [Instr.wires]
-
-theorem mem_wires_of_hit (q : Wire) : ∀ P : Program, P.any (hitB q) = true → q ∈ wires P
-  | [], h => by simp at h
-  | i :: P, h => by
-    simp only [List.any_cons, Bool.or_eq_true] at h
-    rw [show wires (i :: P) = i.wires ∪ wires P from rfl, Finset.mem_union]
-    rcases h with h | h
-    · exact Or.inl (mem_instr_of_hit q i h)
-    · exact Or.inr (mem_wires_of_hit q P h)
-
-end ECDSAAdd.Entrant.T724Core
-
-end
-
-/-! ### C' core helpers (pool 722 re-hosting) -/
-section
-
-set_option autoImplicit false
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-
-namespace ECDSAAdd.Entrant.CPrimeCore
-open ECDSAAdd Arithmetic MappedCompressed
-
-/-- After a borrow erasure its target is zero. -/
-theorem eraseBorrow_zero (x y cin c : Wire) (hxc : x ≠ c) (m : List Bool) (s : State) :
-    (run (eraseBorrow x y cin c) m s).basis c = false := by
-  unfold eraseBorrow
-  rw [run_append, run_preserves_outside _ _ _ _ (by simp [wires, Instr.wires]; exact Ne.symm hxc)]
-  unfold eraseCarry
-  exact T723Core.run_measure_last _ _ _ _ _ _
-
-/-- The second carry of an erased borrow chain is zero after the chain ("carries never outlive
-this block"). -/
-theorem chain_c1_zero (a0 a1 a2 : Wire) (as : List Wire) (b0 b1 b2 : Wire) (bs : List Wire)
-    (c0 c1 : Wire) (cs : List Wire) (cin t : Wire)
-    (h1 : a1 ≠ c1) (h2 : c1 ∉ wires (eraseBorrow a0 b0 cin c0)) (m : List Bool) (s : State) :
-    (run (eraseLtChain (a0::a1::a2::as) (b0::b1::b2::bs) (c0::c1::cs) cin t) m s).basis c1 =
-      false := by
-  simp only [eraseLtChain]
-  rw [run_append, run_preserves_outside _ _ _ _ h2, run_append, run_append]
-  exact eraseBorrow_zero a1 b1 c0 c1 h1 _ _
-
-/-- The E1 tails' borrow chain leaves the walk carry `base 1541` zero. -/
-theorem chainW_1541 (m : List Bool) (s : State) :
-    (run (eraseLtChain (wireBlock base 1 256) (wireBlock base 1029 256) (wireBlock base 1540 255)
-      (base 1797) (base 514)) m s).basis (base 1541) = false := by
-  have e1 : wireBlock base 1 256 = base 1 :: base 2 :: base 3 :: wireBlock base 4 253 := rfl
-  have e2 : wireBlock base 1029 256 =
-      base 1029 :: base 1030 :: base 1031 :: wireBlock base 1032 253 := rfl
-  have e3 : wireBlock base 1540 255 = base 1540 :: base 1541 :: wireBlock base 1542 253 := rfl
-  rw [e1, e2, e3]
-  apply chain_c1_zero
-  · decide
-  · simp [eraseBorrow, eraseCarry, wires, Instr.wires, correctionWires, base]
-
-/-- A masked-constant load into `w 1029 …` with control `c ≠ base 1541` avoids `base 1541`. -/
-theorem maskT_1541 (c : Wire) (hc : c ≠ base 1541) (v : Nat) :
-    base 1541 ∉ wires (maskedConstant c (wireBlock base 1029 256) v) := by
-  intro h
-  rcases List.mem_cons.mp (List.mem_toFinset.mp (maskedConstant_wires_subset _ _ _ h)) with e | h
-  · exact hc e.symm
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hj
-    omega
-
-/-- The third carry of an erased borrow chain is zero after the chain (it is erased inside the second
-carry's recursion; the two outer erasures do not touch it). -/
-theorem chain_c2_zero (a0 a1 a2 a3 : Wire) (as : List Wire) (b0 b1 b2 b3 : Wire) (bs : List Wire)
-    (c0 c1 c2 : Wire) (cs : List Wire) (cin t : Wire)
-    (h1 : a2 ≠ c2) (h2 : c2 ∉ wires (eraseBorrow a1 b1 c0 c1))
-    (h3 : c2 ∉ wires (eraseBorrow a0 b0 cin c0)) (m : List Bool) (s : State) :
-    (run (eraseLtChain (a0::a1::a2::a3::as) (b0::b1::b2::b3::bs) (c0::c1::c2::cs) cin t) m s).basis c2 =
-      false := by
-  simp only [eraseLtChain]
-  rw [run_append, run_preserves_outside _ _ _ _ h3, run_append, run_append,
-    run_preserves_outside _ _ _ _ h2, run_append, run_append]
-  exact eraseBorrow_zero a2 b2 c1 c2 h1 _ _
-
-/-- The E1 tails' borrow chain leaves the second walk carry `base 1542` zero. -/
-theorem chainW_1542 (m : List Bool) (s : State) :
-    (run (eraseLtChain (wireBlock base 1 256) (wireBlock base 1029 256) (wireBlock base 1540 255)
-      (base 1797) (base 514)) m s).basis (base 1542) = false := by
-  have e1 : wireBlock base 1 256 = base 1 :: base 2 :: base 3 :: base 4 :: wireBlock base 5 252 := rfl
-  have e2 : wireBlock base 1029 256 =
-      base 1029 :: base 1030 :: base 1031 :: base 1032 :: wireBlock base 1033 252 := rfl
-  have e3 : wireBlock base 1540 255 = base 1540 :: base 1541 :: base 1542 :: wireBlock base 1543 252 := rfl
-  rw [e1, e2, e3]
-  apply chain_c2_zero
-  · decide
-  · simp [eraseBorrow, eraseCarry, wires, Instr.wires, correctionWires, base]
-  · simp [eraseBorrow, eraseCarry, wires, Instr.wires, correctionWires, base]
-
-/-- A masked-constant load into `w 1029 …` with control `c ≠ base 1542` avoids `base 1542`. -/
-theorem maskT_1542 (c : Wire) (hc : c ≠ base 1542) (v : Nat) :
-    base 1542 ∉ wires (maskedConstant c (wireBlock base 1029 256) v) := by
-  intro h
-  rcases List.mem_cons.mp (List.mem_toFinset.mp (maskedConstant_wires_subset _ _ _ h)) with e | h
-  · exact hc e.symm
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    have := base_injective e
-    simp only [List.mem_range'_1] at hj
-    omega
-
-end ECDSAAdd.Entrant.CPrimeCore
-
-end
 
 /-! ### merged from `ECDSAAdd.Submission.Entrant.StairSquareEntryR_at_BOptimizations` -/
 section Merge_StairSquareEntryR_at_BOptimizations
@@ -11412,236 +10152,6 @@ theorem merged_support512 (w : Nat → Wire) (g : Wire) (k : Nat) :
   simp only [merged,wires_append,Finset.union_subset_iff]
   exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hC,⟨hP,hR'⟩,hNot⟩,hPr⟩,hL⟩,hK⟩,hL⟩,hM1⟩,hCp⟩,hHT⟩,hW⟩,hT⟩,hE⟩,hT⟩,hM2⟩
 
-/-! T723: the reflected tick after its comparison. -/
-
-/-- The tail of `merged` after `comparePart`, without its last measurement. -/
-def mergedTailInit (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  (parGates w g k++rotateRight (kR w)++notRegister (kR w))++prodPart w g++loadK w g k++
-  E1WholeKAdd52Research.flagKAdd52 w++loadK w g k++
-  [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]++
-  copyRegister none (wireBlock w 770 257) (hpR w)++hAddT w++[.CX (w 1028) (w 0),.X (w 0)]++
-  loadT w g k++eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)++loadT w g k
-
-/-- The tail of `merged` after `comparePart`. -/
-def mergedTail (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  mergedTailInit w g k++[.measureX (w 721) [] [.CZ g (w 1028)]]
-
-theorem merged_eq_cmp_tail (w : Nat → Wire) (g : Wire) (k : Nat) :
-    merged w g k = comparePart w g k ++ mergedTail w g k := by
-  unfold merged mergedTail mergedTailInit
-  simp only [List.append_assoc, List.cons_append, List.singleton_append, List.nil_append]
-
-/-- The tail uses only the X-tail labels `tSites` (no comparison carry, no `w 512`, no `w 513`). -/
-theorem mergedTail_tight (w : Nat → Wire) (g : Wire) (k : Nat) :
-    wires (mergedTail w g k)⊆(StairSiteEasy.tSites w g).toFinset := by
-  have B := StairSiteEasy.blk_tSites w g
-  have I := StairSiteEasy.in_tSites w g
-  have G := StairSiteEasy.g_tSites w g
-  have mskH (c : Wire) (hc : c∈StairSiteEasy.tSites w g) (v : Nat) :
-      wires (maskedConstant c (hR w) v)⊆(StairSiteEasy.tSites w g).toFinset :=
-    (maskedConstant_wires_subset c (hR w) v).trans (StairSiteEasy.tl_sub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 0 258 (by omega) q hq))
-  have mskT (c : Wire) (hc : c∈StairSiteEasy.tSites w g) (v : Nat) :
-      wires (maskedConstant c (tR w) v)⊆(StairSiteEasy.tSites w g).toFinset :=
-    (maskedConstant_wires_subset c (tR w) v).trans (StairSiteEasy.tl_sub w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 1029 256 (by omega) q hq))
-  have cx (a b : Nat) (ha : a < 258 ∨ (770 ≤ a ∧ a < 1285) ∨ (1540 ≤ a ∧ a < 1798) ∨ a = 514 ∨ a = 721 ∨ a = 722)
-      (hb : b < 258 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 514 ∨ b = 721 ∨ b = 722) :
-      wires [.CX (w a) (w b)]⊆(StairSiteEasy.tSites w g).toFinset := StairSiteEasy.tgate_sub w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact I a ha
-    · exact I b hb)
-  have cxg (b : Nat) (hb : b < 258 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 514 ∨ b = 721 ∨ b = 722) :
-      wires [.CX g (w b)]⊆(StairSiteEasy.tSites w g).toFinset := StairSiteEasy.tgate_sub w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact G
-    · exact I b hb)
-  have hP : wires (parGates w g k)⊆(StairSiteEasy.tSites w g).toFinset := by
-    unfold parGates
-    split_ifs <;> simp only [wires_append,Finset.union_subset_iff] <;>
-      refine ⟨⟨⟨⟨⟨?_,?_⟩,?_⟩,?_⟩,?_⟩,?_⟩ <;>
-      first | exact cx _ _ (by omega) (by omega) | exact cxg _ (by omega) | simp [wires]
-  have hR' : wires (rotateRight (kR w))⊆(StairSiteEasy.tSites w g).toFinset := by
-    rw [(rotate_wires (kR w)).1]
-    simp only [kR,wireBlock_length,show ¬(258<2) by omega,if_false]
-    exact StairSiteEasy.tl_sub w g _ (B 770 258 (by omega))
-  have hNot : wires (notRegister (kR w))⊆(StairSiteEasy.tSites w g).toFinset := by
-    rw [notRegister_wires]
-    exact StairSiteEasy.tl_sub w g _ (B 770 258 (by omega))
-  have hPr : wires (prodPart w g)⊆(StairSiteEasy.tSites w g).toFinset := by
-    unfold prodPart
-    rw [show ([.CCX g (w 1028) (w 721),.CCX (w 514) (w 1028) (w 722)] : Program)=
-      [.CCX g (w 1028) (w 721)]++[.CCX (w 514) (w 1028) (w 722)] from rfl,wires_append,Finset.union_subset_iff]
-    constructor <;> apply StairSiteEasy.tgate_sub <;> intro q hq <;>
-      simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq <;>
-      rcases hq with rfl|rfl|rfl <;> first | exact G | exact I _ (by omega)
-  have hL : wires (loadK w g k)⊆(StairSiteEasy.tSites w g).toFinset := by
-    simp only [loadK,wires_append,Finset.union_subset_iff]
-    refine ⟨⟨⟨⟨⟨?_,mskH g G _⟩,mskH _ (I 514 (by omega)) _⟩,mskH _ (I 1028 (by omega)) _⟩,
-      mskH _ (I 721 (by omega)) _⟩,mskH _ (I 722 (by omega)) _⟩
-    exact (xorConstant_wires_subset (hR w) _).trans (StairSiteEasy.tl_sub w g _ (B 0 258 (by omega)))
-  have hKOld : wires (kAddM w)⊆(StairSiteEasy.tSites w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply StairSiteEasy.tl_sub; intro q hq
-    simp only [mappedRead_wires,List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · exact B 0 258 (by omega) q hq
-    · exact B 770 258 (by omega) q hq
-    · exact B 1540 257 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hK : wires (E1WholeKAdd52Research.flagKAdd52 w)⊆(StairSiteEasy.tSites w g).toFinset := by
-    have sub := E1ResourceBridge52Research.flag_support52 w
-    rw [← kAdd_literal w] at sub
-    apply sub.trans
-    refine Finset.union_subset hKOld ?_
-    exact Finset.singleton_subset_iff.mpr (List.mem_toFinset.mpr (I 1028 (by omega)))
-  have hM1 : wires [.measureX (w 722) [] [.CZ (w 514) (w 1028)]]⊆(StairSiteEasy.tSites w g).toFinset := by
-    apply StairSiteEasy.tgate_sub; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl <;> exact I _ (by omega)
-  have hM2 : wires [.measureX (w 721) [] [.CZ g (w 1028)]]⊆(StairSiteEasy.tSites w g).toFinset := by
-    apply StairSiteEasy.tgate_sub; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl
-    · exact I _ (by omega)
-    · exact G
-    · exact I _ (by omega)
-  have hCp : wires (copyRegister none (wireBlock w 770 257) (hpR w))⊆(StairSiteEasy.tSites w g).toFinset := by
-    rw [copyRegister_wires none _ _ (by simp [hpR,wireBlock_length])]
-    split
-    · exact Finset.empty_subset _
-    · apply StairSiteEasy.tl_sub; intro q hq
-      simp only [Option.toList_none,List.nil_append,List.mem_append] at hq
-      rcases hq with hq|hq
-      · exact B 770 257 (by omega) q hq
-      · exact B 1 257 (by omega) q hq
-  have hH : wires (hAddM w)⊆(StairSiteEasy.tSites w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply StairSiteEasy.tl_sub; intro q hq
-    simp only [List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · rw [dBits_wire w q hq]; exact I 1028 (by omega)
-    · exact B 1 257 (by omega) q hq
-    · exact B 1540 256 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hW : wires [.CX (w 1028) (w 0),.X (w 0)]⊆(StairSiteEasy.tSites w g).toFinset := by
-    rw [show ([.CX (w 1028) (w 0),.X (w 0)] : Program)=[.CX (w 1028) (w 0)]++[.X (w 0)] from rfl,
-      wires_append,Finset.union_subset_iff]
-    refine ⟨cx 1028 0 (by omega) (by omega),StairSiteEasy.tgate_sub w g _ ?_⟩
-    intro q hq; simp only [Instr.wires,Finset.mem_singleton] at hq; rw [hq]; exact I 0 (by omega)
-  have hT : wires (loadT w g k)⊆(StairSiteEasy.tSites w g).toFinset := by
-    simp only [loadT,wires_append,Finset.union_subset_iff]
-    exact ⟨mskT g G _,mskT _ (I 721 (by omega)) _⟩
-  have hE : wires (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514))⊆(StairSiteEasy.tSites w g).toFinset := by
-    apply (eraseLtChain_wires_subset _ _ _ _ _).trans
-    apply StairSiteEasy.tl_sub; intro q hq
-    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with ((hq|hq)|hq)|rfl|rfl
-    · exact B 1 256 (by omega) q hq
-    · exact B 1029 256 (by omega) q hq
-    · exact B 1540 255 (by omega) q hq
-    · exact I 1797 (by omega)
-    · exact I 514 (by omega)
-  have hHT : wires (hAddT w)⊆(StairSiteEasy.tSites w g).toFinset := (hAddT_wires w).trans hH
-  simp only [mergedTail,mergedTailInit,wires_append,Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hP,hR'⟩,hNot⟩,hPr⟩,hL⟩,hK⟩,hL⟩,hM1⟩,hCp⟩,hHT⟩,hW⟩,hT⟩,hE⟩,hT⟩,hM2⟩
-
-/-- T724: the part of `mergedTail` before its measurement of `w 722`. -/
-def mergedTailA (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  (parGates w g k++rotateRight (kR w)++notRegister (kR w))++prodPart w g++loadK w g k++
-  E1WholeKAdd52Research.flagKAdd52 w++loadK w g k
-
-/-- T724: the part of `mergedTail` after its measurement of `w 722` (never touches `w 722`). -/
-def mergedTailB (w : Nat → Wire) (g : Wire) (k : Nat) : Program :=
-  copyRegister none (wireBlock w 770 257) (hpR w)++hAddT w++[.CX (w 1028) (w 0),.X (w 0)]++
-  loadT w g k++eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514)++loadT w g k++
-  [.measureX (w 721) [] [.CZ g (w 1028)]]
-
-theorem mergedTail_split722 (w : Nat → Wire) (g : Wire) (k : Nat) :
-    mergedTail w g k = mergedTailA w g k ++ [.measureX (w 722) [] [.CZ (w 514) (w 1028)]] ++
-      mergedTailB w g k := by
-  unfold mergedTail mergedTailInit mergedTailA mergedTailB
-  simp only [List.append_assoc, List.cons_append, List.singleton_append, List.nil_append]
-
-theorem mergedTailB_tight7 (w : Nat → Wire) (g : Wire) (k : Nat) :
-    wires (mergedTailB w g k)⊆(T724Core.tS7 w g).toFinset := by
-  have B := T724Core.blk_tS7 w g
-  have I := T724Core.in_tS7 w g
-  have G := T724Core.g_tS7 w g
-  have mskT (c : Wire) (hc : c∈T724Core.tS7 w g) (v : Nat) :
-      wires (maskedConstant c (tR w) v)⊆(T724Core.tS7 w g).toFinset :=
-    (maskedConstant_wires_subset c (tR w) v).trans (T724Core.tl_sub7 w g _ (fun q hq => by
-      rcases List.mem_cons.mp hq with rfl|hq
-      · exact hc
-      · exact B 1029 256 (by omega) q hq))
-  have cx (a b : Nat) (ha : a < 258 ∨ (770 ≤ a ∧ a < 1285) ∨ (1540 ≤ a ∧ a < 1798) ∨ a = 514 ∨ a = 721)
-      (hb : b < 258 ∨ (770 ≤ b ∧ b < 1285) ∨ (1540 ≤ b ∧ b < 1798) ∨ b = 514 ∨ b = 721) :
-      wires [.CX (w a) (w b)]⊆(T724Core.tS7 w g).toFinset := T724Core.tgate_sub7 w g _ (by
-    intro q hq; simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq
-    rcases hq with rfl|rfl
-    · exact I a ha
-    · exact I b hb)
-  have hM2 : wires [.measureX (w 721) [] [.CZ g (w 1028)]]⊆(T724Core.tS7 w g).toFinset := by
-    apply T724Core.tgate_sub7; intro q hq
-    simp only [Instr.wires,correctionWires,Finset.mem_union,Finset.mem_singleton,Finset.mem_insert,
-      Finset.notMem_empty,Finset.union_empty,Finset.empty_union] at hq
-    rcases hq with rfl|rfl|rfl
-    · exact I _ (by omega)
-    · exact G
-    · exact I _ (by omega)
-  have hCp : wires (copyRegister none (wireBlock w 770 257) (hpR w))⊆(T724Core.tS7 w g).toFinset := by
-    rw [copyRegister_wires none _ _ (by simp [hpR,wireBlock_length])]
-    split
-    · exact Finset.empty_subset _
-    · apply T724Core.tl_sub7; intro q hq
-      simp only [Option.toList_none,List.nil_append,List.mem_append] at hq
-      rcases hq with hq|hq
-      · exact B 770 257 (by omega) q hq
-      · exact B 1 257 (by omega) q hq
-  have hH : wires (hAddM w)⊆(T724Core.tS7 w g).toFinset := by
-    apply (mappedAdd_wires_subset _ _ _ _).trans
-    apply T724Core.tl_sub7; intro q hq
-    simp only [List.mem_append,List.mem_singleton] at hq
-    rcases hq with ((hq|hq)|hq)|rfl
-    · rw [dBits_wire w q hq]; exact I 1028 (by omega)
-    · exact B 1 257 (by omega) q hq
-    · exact B 1540 256 (by omega) q hq
-    · exact I 1797 (by omega)
-  have hW : wires [.CX (w 1028) (w 0),.X (w 0)]⊆(T724Core.tS7 w g).toFinset := by
-    rw [show ([.CX (w 1028) (w 0),.X (w 0)] : Program)=[.CX (w 1028) (w 0)]++[.X (w 0)] from rfl,
-      wires_append,Finset.union_subset_iff]
-    refine ⟨cx 1028 0 (by omega) (by omega),T724Core.tgate_sub7 w g _ ?_⟩
-    intro q hq; simp only [Instr.wires,Finset.mem_singleton] at hq; rw [hq]; exact I 0 (by omega)
-  have hT : wires (loadT w g k)⊆(T724Core.tS7 w g).toFinset := by
-    simp only [loadT,wires_append,Finset.union_subset_iff]
-    exact ⟨mskT g G _,mskT _ (I 721 (by omega)) _⟩
-  have hE : wires (eraseLtChain (hp8 w) (tR w) (hC3 w) (w 1797) (w 514))⊆(T724Core.tS7 w g).toFinset := by
-    apply (eraseLtChain_wires_subset _ _ _ _ _).trans
-    apply T724Core.tl_sub7; intro q hq
-    simp only [List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at hq
-    rcases hq with ((hq|hq)|hq)|rfl|rfl
-    · exact B 1 256 (by omega) q hq
-    · exact B 1029 256 (by omega) q hq
-    · exact B 1540 255 (by omega) q hq
-    · exact I 1797 (by omega)
-    · exact I 514 (by omega)
-  have hHT : wires (hAddT w)⊆(T724Core.tS7 w g).toFinset := (hAddT_wires w).trans hH
-
-  simp only [mergedTailB,wires_append,Finset.union_subset_iff]
-  exact ⟨⟨⟨⟨⟨⟨hCp,hHT⟩,hW⟩,hT⟩,hE⟩,hT⟩,hM2⟩
-
-theorem mergedTailB_no722 (k : Nat) :
-    MappedCompressed.base 722 ∉ wires (mergedTailB MappedCompressed.base (MappedCompressed.base 2400) k) :=
-  fun h => T724Core.base722_not_tS7 (List.mem_toFinset.mp
-    (mergedTailB_tight7 MappedCompressed.base (MappedCompressed.base 2400) k h))
 
 end ECDSAAdd.Entrant.E1Reflected
 
@@ -11656,19 +10166,8 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
 
 
-/-- T723: the reflected tick with E1's product bit hosted on pool 300 after the comparison
-(T724: its flag on pool 301; C': its walk carry `base 1541` (pool 722) on pool 302; V1: its second walk
-carry `base 1542` (pool 720) on pool 303). -/
-def entryR2 (k : Fp) : Program :=
-  renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val) ++
-    renameProgram (Equiv.swap (pmapR L0 (base 1542)) (pmapR L0 (base 303)))
-      (renameProgram (Equiv.swap (pmapR L0 (base 1541)) (pmapR L0 (base 302)))
-        (renameProgram (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301)))
-          (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-            (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)))))
-
 /-- The new square tail. -/
-def entryRH (k : Fp) : Program := hostRename entryPairs (entryR2 k)
+def entryRH (k : Fp) : Program := hostRename entryPairs (entryR L0 k)
 
 theorem pmapR_512 : pmapR L0 (base 512) = host512 := by decide +kernel
 theorem pmapR_511 : pmapR L0 (base 511) = hole725 := by decide +kernel
@@ -11699,601 +10198,22 @@ theorem host_free (k : Fp) : host512 ∉ wires (entryR L0 k) := by
     (List.mem_toFinset.mp (E1Reflected.merged_support512 base (base 2400) k.val hy))
 
 
-/-! ## T723: the reflected tick with the product bit hosted on pool 300 -/
-
-theorem entryR_split (k : Fp) : entryR L0 k =
-    renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val) ++
-      renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val) := by
-  unfold entryR
-  rw [E1Reflected.merged_eq_cmp_tail]
-  simp [renameProgram, List.map_append]
-
-theorem base300_S : base 300 ∈ S :=
-  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 300 (by omega))
-theorem base721_S : base 721 ∈ S :=
-  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 721 (by omega))
-
-theorem cmp_S (k : Fp) : wires (E1Reflected.comparePart base (base 2400) k.val) ⊆ S := by
-  intro q hq
-  apply mergedR_S k.val
-  rw [E1Reflected.merged_eq_cmp_tail, wires_append]
-  exact Finset.mem_union_left _ hq
-
-theorem tail_S (k : Fp) : wires (E1Reflected.mergedTail base (base 2400) k.val) ⊆ S := by
-  intro q hq
-  apply mergedR_S k.val
-  rw [E1Reflected.merged_eq_cmp_tail, wires_append]
-  exact Finset.mem_union_right _ hq
-
-/-- The comparison's labels: source, x, carries, `513`, `514`, `g`. -/
-theorem cmp_labels (k : Fp) (q : Wire) (hq : q ∈ wires (E1Reflected.comparePart base (base 2400) k.val)) :
-    ∃ i, q = base i ∧ (i < 512 ∨ (770 ≤ i ∧ i < 1026) ∨ i = 513 ∨ i = 514 ∨ i = 2400) := by
-  have mskS (v : Nat) : wires (maskedConstant (base 2400) (E1Reflected.srcR base) v) ⊆
-      ((base 2400) :: E1Reflected.srcR base).toFinset := maskedConstant_wires_subset _ _ _
-  have cmp := (compareLt_wires none (E1Reflected.xR base) (E1Reflected.srcR base) (E1Reflected.cR base)
-    (base 513) (base 514) (by simp [E1Reflected.srcR, E1Reflected.xR, wireBlock_length])
-    (by simp [E1Reflected.cR, E1Reflected.srcR, E1Reflected.xR, wireBlock_length])).1
-  simp only [E1Reflected.comparePart, wires_append, Finset.mem_union] at hq
-  have blk (a n : Nat) (h : q ∈ wireBlock base a n) : ∃ i, q = base i ∧ a ≤ i ∧ i < a + n := by
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp h
-    simp only [List.mem_range'_1] at hi
-    exact ⟨i, rfl, hi⟩
-  rcases hq with (hq | hq) | hq
-  · rcases List.mem_cons.mp (List.mem_toFinset.mp (mskS _ hq)) with rfl | h
-    · exact ⟨2400, rfl, by omega⟩
-    · obtain ⟨i, rfl, h1, h2⟩ := blk 0 256 h; exact ⟨i, rfl, by omega⟩
-  · rw [cmp] at hq
-    simp only [Option.toList_none, List.nil_append, List.mem_toFinset, List.mem_cons, List.mem_append] at hq
-    rcases hq with rfl | rfl | (h | h) | h
-    · exact ⟨514, rfl, by omega⟩
-    · exact ⟨513, rfl, by omega⟩
-    · obtain ⟨i, rfl, h1, h2⟩ := blk 770 256 h; exact ⟨i, rfl, by omega⟩
-    · obtain ⟨i, rfl, h1, h2⟩ := blk 0 256 h; exact ⟨i, rfl, by omega⟩
-    · obtain ⟨i, rfl, h1, h2⟩ := blk 256 256 h; exact ⟨i, rfl, by omega⟩
-  · rcases List.mem_cons.mp (List.mem_toFinset.mp (mskS _ hq)) with rfl | h
-    · exact ⟨2400, rfl, by omega⟩
-    · obtain ⟨i, rfl, h1, h2⟩ := blk 0 256 h; exact ⟨i, rfl, by omega⟩
-
-/-- A placed label of the comparison is not the placed product bit. -/
-theorem cmp_not_721 (k : Fp) :
-    pmapR L0 (base 721) ∉ wires (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) := by
-  intro h
-  rw [renameProgram_support] at h
-  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
-  have := pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup y (cmp_S k hy) (base 721) base721_S e
-  subst this
-  obtain ⟨i, hi, hr⟩ := cmp_labels k _ hy
-  have := base_injective hi
-  omega
-
-/-- The host is not a placed label of the tail. -/
-theorem tail_host_fresh (k : Fp) :
-    pmapR L0 (base 300) ∉ wires (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)) := by
-  intro h
-  rw [renameProgram_support] at h
-  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
-  have := pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup y (tail_S k hy) (base 300) base300_S e
-  subst this
-  exact T723Core.base300_not_tSites (List.mem_toFinset.mp (E1Reflected.mergedTail_tight base (base 2400) k.val hy))
-
-theorem base301_S : base 301 ∈ S :=
-  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 301 (by omega))
-theorem base722_S : base 722 ∈ S :=
-  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 722 (by omega))
-
-/-- A placed label of the comparison is not the placed E1 flag `base 722`. -/
-theorem cmp_not_722 (k : Fp) :
-    pmapR L0 (base 722) ∉ wires (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) := by
-  intro h
-  rw [renameProgram_support] at h
-  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
-  have := pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup y (cmp_S k hy) (base 722) base722_S e
-  subst this
-  obtain ⟨i, hi, hr⟩ := cmp_labels k _ hy
-  have := base_injective hi
-  omega
-
-/-- T724: the second host is not a placed label of the (721-hosted) tail. -/
-theorem tail_host_fresh301 (k : Fp) :
-    pmapR L0 (base 301) ∉ wires (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-      (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val))) := by
-  have hw := Baselines.layout_widths
-  have hn := Baselines.layout_nodup
-  have n721 : pmapR L0 (base 301) ≠ pmapR L0 (base 721) := fun e =>
-    absurd (base_injective (pmap_inj L0 hw hn _ base301_S _ base721_S e)) (by omega)
-  have n300 : pmapR L0 (base 301) ≠ pmapR L0 (base 300) := fun e =>
-    absurd (base_injective (pmap_inj L0 hw hn _ base301_S _ base300_S e)) (by omega)
-  intro h
-  rw [renameProgram_support] at h
-  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
-  have ey : y = pmapR L0 (base 301) := by
-    by_cases e1 : y = pmapR L0 (base 721)
-    · subst e1; rw [Equiv.swap_apply_left] at e; exact absurd e.symm n300
-    · by_cases e2 : y = pmapR L0 (base 300)
-      · subst e2; rw [Equiv.swap_apply_right] at e; exact absurd e.symm n721
-      · rw [Equiv.swap_apply_of_ne_of_ne e1 e2] at e; exact e
-  subst ey
-  rw [renameProgram_support] at hy
-  obtain ⟨z, hz, ez⟩ := Finset.mem_image.mp hy
-  have := pmap_inj L0 hw hn z (tail_S k hz) (base 301) base301_S ez
-  subst this
-  exact T724Core.base_not_tSites (j := 301) (by omega) (by omega)
-    (List.mem_toFinset.mp (E1Reflected.mergedTail_tight base (base 2400) k.val hz))
-
-/-- T724: the placed tail leaves the E1 flag `base 722` at 0 (measured, never touched again). -/
-theorem tail_722_out (k : Fp) (m : List Bool) (u : State) :
-    (run (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)) m u).basis
-      (pmapR L0 (base 722)) = false := by
-  have hw := Baselines.layout_widths
-  have hn := Baselines.layout_nodup
-  rw [E1Reflected.mergedTail_split722]
-  simp only [renameProgram, List.map_append, List.map_cons, List.map_nil, renameInstr, renameCorrection]
-  apply T723Core.run_measure_before
-  intro h
-  have h' : pmapR L0 (base 722) ∈ wires (renameProgram (pmapR L0)
-      (E1Reflected.mergedTailB base (base 2400) k.val)) := h
-  rw [renameProgram_support] at h'
-  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h'
-  have yS : y ∈ S := by
-    apply tail_S k
-    rw [E1Reflected.mergedTail_split722, wires_append]
-    exact Finset.mem_union_right _ hy
-  have := pmap_inj L0 hw hn y yS (base 722) base722_S e
-  subst this
-  exact E1Reflected.mergedTailB_no722 k.val hy
-
-theorem pool300 : pmapR L0 (base 300) ∈ L0.dialogPool := by
-  apply pmap_pool L0 Baselines.layout_widths Baselines.layout_nodup _ base300_S
-  · intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-  · intro e; have := base_injective e; omega
-
-theorem pool301 : pmapR L0 (base 301) ∈ L0.dialogPool := by
-  apply pmap_pool L0 Baselines.layout_widths Baselines.layout_nodup _ base301_S
-  · intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-  · intro e; have := base_injective e; omega
-
-/-! C': the walk carry `base 1541` and its host `base 302`. -/
-
-theorem base302_S : base 302 ∈ S :=
-  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 302 (by omega))
-theorem base1541_S : base 1541 ∈ S :=
-  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 1541 (by omega))
-
-theorem pmapR_ne (i j : Nat) (hi : base i ∈ S) (hj : base j ∈ S) (h : i ≠ j) :
-    pmapR L0 (base i) ≠ pmapR L0 (base j) := fun e =>
-  h (base_injective (pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup _ hi _ hj e))
-
-/-- C': the third host is not a placed label of the (721-, 722-hosted) tail. -/
-theorem host302_fresh3 (k : Fp) :
-    pmapR L0 (base 302) ∉ wires (renameProgram (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301)))
-      (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-        (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)))) := by
-  have fix (i j : Nat) (hi : base i ∈ S) (hj : base j ∈ S) (h1 : 302 ≠ i) (h2 : 302 ≠ j) :
-      Equiv.swap (pmapR L0 (base i)) (pmapR L0 (base j)) (pmapR L0 (base 302)) = pmapR L0 (base 302) :=
-    Equiv.swap_apply_of_ne_of_ne (pmapR_ne 302 i base302_S hi h1) (pmapR_ne 302 j base302_S hj h2)
-  intro h
-  rw [renameProgram_support] at h
-  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
-  have ey : y = pmapR L0 (base 302) := by
-    have := congrArg (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301))) e
-    rwa [Equiv.swap_apply_self, fix 722 301 base722_S base301_S (by omega) (by omega)] at this
-  subst ey
-  rw [renameProgram_support] at hy
-  obtain ⟨z, hz, e2⟩ := Finset.mem_image.mp hy
-  have ez : z = pmapR L0 (base 302) := by
-    have := congrArg (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300))) e2
-    rwa [Equiv.swap_apply_self, fix 721 300 base721_S base300_S (by omega) (by omega)] at this
-  subst ez
-  rw [renameProgram_support] at hz
-  obtain ⟨x, hx, e3⟩ := Finset.mem_image.mp hz
-  have := pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup x (tail_S k hx) (base 302) base302_S e3
-  subst this
-  exact T724Core.base_not_tSites (j := 302) (by omega) (by omega)
-    (List.mem_toFinset.mp (E1Reflected.mergedTail_tight base (base 2400) k.val hx))
-
-/-- The reflected tail leaves the walk carry `base 1541` zero (it is measured in the borrow chain). -/
-theorem mergedTail_1541 (k : Nat) (m : List Bool) (s : State) :
-    (run (E1Reflected.mergedTail base (base 2400) k) m s).basis (base 1541) = false := by
-  have tail : base 1541 ∉ wires ([.measureX (base 721) [] [.CZ (base 2400) (base 1028)]] : Program) := by
-    simp [wires, Instr.wires, correctionWires, base]
-  have lt : base 1541 ∉ wires (E1Reflected.loadT base (base 2400) k) := by
-    simp only [E1Reflected.loadT, wires_append, Finset.mem_union, not_or]
-    exact ⟨CPrimeCore.maskT_1541 _ (by decide) _, CPrimeCore.maskT_1541 _ (by decide) _⟩
-  unfold E1Reflected.mergedTail
-  rw [run_append, run_preserves_outside _ _ _ _ tail]
-  unfold E1Reflected.mergedTailInit
-  rw [run_append, run_preserves_outside _ _ _ _ lt, run_append]
-  exact CPrimeCore.chainW_1541 _ _
-
-theorem pool302 : pmapR L0 (base 302) ∈ L0.dialogPool := by
-  apply pmap_pool L0 Baselines.layout_widths Baselines.layout_nodup _ base302_S
-  · intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-  · intro e; have := base_injective e; omega
-
-/-! V1: the second walk carry `base 1542` and its host `base 303`. -/
-
-theorem base303_S : base 303 ∈ S :=
-  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 303 (by omega))
-theorem base1542_S : base 1542 ∈ S :=
-  List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) 1542 (by omega))
-
-/-- V1: the fourth host is not a placed label of the (721-, 722-, 1541-hosted) tail. -/
-theorem host303_fresh4 (k : Fp) :
-    pmapR L0 (base 303) ∉ wires (renameProgram (Equiv.swap (pmapR L0 (base 1541)) (pmapR L0 (base 302)))
-      (renameProgram (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301)))
-        (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-          (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val))))) := by
-  have fix (i j : Nat) (hi : base i ∈ S) (hj : base j ∈ S) (h1 : 303 ≠ i) (h2 : 303 ≠ j) :
-      Equiv.swap (pmapR L0 (base i)) (pmapR L0 (base j)) (pmapR L0 (base 303)) = pmapR L0 (base 303) :=
-    Equiv.swap_apply_of_ne_of_ne (pmapR_ne 303 i base303_S hi h1) (pmapR_ne 303 j base303_S hj h2)
-  intro h
-  rw [renameProgram_support] at h
-  obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
-  have ey : y = pmapR L0 (base 303) := by
-    have := congrArg (Equiv.swap (pmapR L0 (base 1541)) (pmapR L0 (base 302))) e
-    rwa [Equiv.swap_apply_self, fix 1541 302 base1541_S base302_S (by omega) (by omega)] at this
-  subst ey
-  rw [renameProgram_support] at hy
-  obtain ⟨z, hz, e2⟩ := Finset.mem_image.mp hy
-  have ez : z = pmapR L0 (base 303) := by
-    have := congrArg (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301))) e2
-    rwa [Equiv.swap_apply_self, fix 722 301 base722_S base301_S (by omega) (by omega)] at this
-  subst ez
-  rw [renameProgram_support] at hz
-  obtain ⟨u, hu, e3⟩ := Finset.mem_image.mp hz
-  have eu : u = pmapR L0 (base 303) := by
-    have := congrArg (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300))) e3
-    rwa [Equiv.swap_apply_self, fix 721 300 base721_S base300_S (by omega) (by omega)] at this
-  subst eu
-  rw [renameProgram_support] at hu
-  obtain ⟨x, hx, e4⟩ := Finset.mem_image.mp hu
-  have := pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup x (tail_S k hx) (base 303) base303_S e4
-  subst this
-  exact T724Core.base_not_tSites (j := 303) (by omega) (by omega)
-    (List.mem_toFinset.mp (E1Reflected.mergedTail_tight base (base 2400) k.val hx))
-
-/-- The reflected tail leaves the second walk carry `base 1542` zero (it is measured in the borrow
-chain). -/
-theorem mergedTail_1542 (k : Nat) (m : List Bool) (s : State) :
-    (run (E1Reflected.mergedTail base (base 2400) k) m s).basis (base 1542) = false := by
-  have tail : base 1542 ∉ wires ([.measureX (base 721) [] [.CZ (base 2400) (base 1028)]] : Program) := by
-    simp [wires, Instr.wires, correctionWires, base]
-  have lt : base 1542 ∉ wires (E1Reflected.loadT base (base 2400) k) := by
-    simp only [E1Reflected.loadT, wires_append, Finset.mem_union, not_or]
-    exact ⟨CPrimeCore.maskT_1542 _ (by decide) _, CPrimeCore.maskT_1542 _ (by decide) _⟩
-  unfold E1Reflected.mergedTail
-  rw [run_append, run_preserves_outside _ _ _ _ tail]
-  unfold E1Reflected.mergedTailInit
-  rw [run_append, run_preserves_outside _ _ _ _ lt, run_append]
-  exact CPrimeCore.chainW_1542 _ _
-
-theorem pool303 : pmapR L0 (base 303) ∈ L0.dialogPool := by
-  apply pmap_pool L0 Baselines.layout_widths Baselines.layout_nodup _ base303_S
-  · intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-  · intro e; have := base_injective e; omega
-
-/-- `entryR2` runs exactly like `entryR` on every state whose dialog pool is clean. -/
-theorem entryR2_run_eq (k : Fp) (s : State) (m : List Bool) (hc : regValue L0.dialogPool s.basis = 0) :
-    run (entryR2 k) m s = run (entryR L0 k) m s := by
-  have hw := Baselines.layout_widths
-  have hn := Baselines.layout_nodup
-  have inj := pmap_inj L0 hw hn
-  have pool := pmap_pool L0 hw hn
-  have hzero := (regValue_zero _ _).mp hc
-  have notx (i : Nat) (hi : ¬ (770 ≤ i ∧ i < 1026)) : base i ∉ wireBlock base 770 256 := by
-    intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-    simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-  have inS (i : Nat) (hi : i < 515 ∨ i = 721 ∨ i = 722) : base i ∈ S :=
-    List.mem_toFinset.mpr (E1Merge.in_mSites base (base 2400) i (by omega))
-  have cl (i : Nat) (hi : i < 515 ∨ i = 721 ∨ i = 722) : s.basis (pmapR L0 (base i)) = false :=
-    hzero _ (pool _ (inS i (by omega)) (notx i (by omega)) (fun e => by have := base_injective e; omega))
-  rw [entryR_split]
-  unfold entryR2
-  rw [run_append, run_append, (renameProgram_counts _ _).2]
-  generalize m.take (measurementCount (E1Reflected.comparePart base (base 2400) k.val)) = m1
-  generalize m.drop (measurementCount (E1Reflected.comparePart base (base 2400) k.val)) = m2
-  have rr := run_rename_pool (pmapR L0) S inj (E1Reflected.comparePart base (base 2400) k.val) (cmp_S k)
-    m1 (pullState (pmapR L0) s) s rfl (fun q _ => rfl)
-  have src0 : regValue (E1Reflected.srcR base) (pullState (pmapR L0) s).basis = 0 := by
-    apply (regValue_zero _ _).mpr
-    intro q hq
-    obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq
-    simp only [List.mem_range'_1] at hi
-    exact cl i (by omega)
-  have cmp := E1Reflected.cfCompare base (base 2400) base_pool_nodup (pullState (pmapR L0) s).basis
-      ((pullState (pmapR L0) s).basis (base 514)) k.val
-      (regValue (E1Reflected.xR base) (pullState (pmapR L0) s).basis)
-      (lt_trans k.isLt (by norm_num [ECDSAAdd.p])) rfl
-      (fun q hq => by
-        obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hq
-        simp only [List.mem_range'_1] at hi
-        exact cl i (by omega))
-      (cl 513 (by omega))
-      (by
-        intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-        simp only [List.mem_range'_1] at hj; have := base_injective e; omega)
-      (by intro e; have := base_injective e; omega)
-      (pullState (pmapR L0) s) m1 ⟨src0, rfl, fun _ _ _ => rfl⟩
-  have u300 : (run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s).basis
-      (pmapR L0 (base 300)) = false := by
-    rw [rr.2 _ base300_S]
-    refine (cmp.2.2.2 _ ?_ ?_).trans (cl 300 (by omega))
-    · intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-      simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-    · intro e; have := base_injective e; omega
-  have u721 : (run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s).basis
-      (pmapR L0 (base 721)) = false := by
-    rw [run_preserves_outside _ _ _ _ (cmp_not_721 k)]
-    exact cl 721 (by omega)
-  have u301 : (run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s).basis
-      (pmapR L0 (base 301)) = false := by
-    rw [rr.2 _ base301_S]
-    refine (cmp.2.2.2 _ ?_ ?_).trans (cl 301 (by omega))
-    · intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-      simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-    · intro e; have := base_injective e; omega
-  have u722 : (run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s).basis
-      (pmapR L0 (base 722)) = false := by
-    rw [run_preserves_outside _ _ _ _ (cmp_not_722 k)]
-    exact cl 722 (by omega)
-  have u302 : (run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s).basis
-      (pmapR L0 (base 302)) = false := by
-    rw [rr.2 _ base302_S]
-    refine (cmp.2.2.2 _ ?_ ?_).trans (cl 302 (by omega))
-    · intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-      simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-    · intro e; have := base_injective e; omega
-  have u1541 : (run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s).basis
-      (pmapR L0 (base 1541)) = false := by
-    have nc : pmapR L0 (base 1541) ∉
-        wires (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) := by
-      intro h
-      rw [renameProgram_support] at h
-      obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
-      have := inj y (cmp_S k hy) (base 1541) base1541_S e
-      subst this
-      obtain ⟨i, hi, hr⟩ := cmp_labels k _ hy
-      have := base_injective hi
-      omega
-    rw [run_preserves_outside _ _ _ _ nc]
-    exact hzero _ (pool _ base1541_S (notx 1541 (by omega)) (fun e => by have := base_injective e; omega))
-  have u303 : (run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s).basis
-      (pmapR L0 (base 303)) = false := by
-    rw [rr.2 _ base303_S]
-    refine (cmp.2.2.2 _ ?_ ?_).trans (cl 303 (by omega))
-    · intro h; obtain ⟨j, hj, e⟩ := List.mem_map.mp h
-      simp only [List.mem_range'_1] at hj; have := base_injective e; omega
-    · intro e; have := base_injective e; omega
-  have u1542 : (run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s).basis
-      (pmapR L0 (base 1542)) = false := by
-    have nc : pmapR L0 (base 1542) ∉
-        wires (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) := by
-      intro h
-      rw [renameProgram_support] at h
-      obtain ⟨y, hy, e⟩ := Finset.mem_image.mp h
-      have := inj y (cmp_S k hy) (base 1542) base1542_S e
-      subst this
-      obtain ⟨i, hi, hr⟩ := cmp_labels k _ hy
-      have := base_injective hi
-      omega
-    rw [run_preserves_outside _ _ _ _ nc]
-    exact hzero _ (pool _ base1542_S (notx 1542 (by omega)) (fun e => by have := base_injective e; omega))
-  generalize run (renameProgram (pmapR L0) (E1Reflected.comparePart base (base 2400) k.val)) m1 s = u at u300 u721 u301 u722 u302 u1541 u303 u1542
-  have inner : run (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-      (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val))) m2 u =
-      run (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)) m2 u := by
-    apply EqualSourceSwapResearch.rename_swap_equal_eq
-    · exact tail_host_fresh k
-    · rw [u721, u300]
-    · rw [u721]
-      rw [show E1Reflected.mergedTail base (base 2400) k.val = E1Reflected.mergedTailInit base (base 2400) k.val ++
-        [.measureX (base 721) [] [.CZ (base 2400) (base 1028)]] from rfl, T723Core.rename_snoc]
-      exact T723Core.run_measure_last _ _ _ _ _ _
-  have mid : run (renameProgram (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301)))
-      (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-        (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)))) m2 u =
-      run (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)) m2 u := by
-    rw [← inner]
-    apply EqualSourceSwapResearch.rename_swap_equal_eq
-    · exact tail_host_fresh301 k
-    · rw [u722, u301]
-    · rw [inner, u722]
-      exact tail_722_out k m2 u
-  have mid2 : run (renameProgram (Equiv.swap (pmapR L0 (base 1541)) (pmapR L0 (base 302)))
-      (renameProgram (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301)))
-        (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-          (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val))))) m2 u =
-      run (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)) m2 u := by
-    refine Eq.trans ?_ mid
-    apply EqualSourceSwapResearch.rename_swap_equal_eq
-    · exact host302_fresh3 k
-    · rw [u1541, u302]
-    · rw [mid, u1541]
-      have rt := run_rename_pool (pmapR L0) S inj (E1Reflected.mergedTail base (base 2400) k.val) (tail_S k)
-        m2 (pullState (pmapR L0) u) u rfl (fun q _ => rfl)
-      rw [rt.2 _ base1541_S]
-      exact mergedTail_1541 _ _ _
-  refine Eq.trans ?_ mid2
-  apply EqualSourceSwapResearch.rename_swap_equal_eq
-  · exact host303_fresh4 k
-  · rw [u1542, u303]
-  · rw [mid2, u1542]
-    have rt := run_rename_pool (pmapR L0) S inj (E1Reflected.mergedTail base (base 2400) k.val) (tail_S k)
-      m2 (pullState (pmapR L0) u) u rfl (fun q _ => rfl)
-    rw [rt.2 _ base1542_S]
-    exact mergedTail_1542 _ _ _
-
-/-- T723: the product-bit hole of the reflected tick. -/
-def hole723 : Wire := L0.core.poolWire 723
-
-theorem pmapR_721 : pmapR L0 (base 721) = hole723 := by decide +kernel
-
-/-- T724: the E1 flag-bit hole of the reflected tick (`pmapR (base 722)`, pool 724). -/
-def hole724 : Wire := L0.core.poolWire 724
-
-theorem pmapR_722 : pmapR L0 (base 722) = hole724 := by decide +kernel
-
-theorem pmapR_300_ne_721 : pmapR L0 (base 300) ≠ pmapR L0 (base 721) := fun e =>
-  absurd (base_injective (pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup _ base300_S _ base721_S e))
-    (by omega)
-
-/-- C': the walk-carry hole of the reflected tick (pool 722). -/
-def hole722 : Wire := L0.core.poolWire 722
-
-theorem pmapR_1541 : pmapR L0 (base 1541) = hole722 := by decide +kernel
-
-/-- V1: the second walk-carry hole of the reflected tick (pool 720). -/
-def hole720 : Wire := L0.core.poolWire 720
-
-theorem pmapR_1542 : pmapR L0 (base 1542) = hole720 := by decide +kernel
-
-/-- The wires of the 724 tail (two swaps): those of `entryR` without the product bit and the flag,
-plus the two hosts. -/
-theorem entryR2_wires0 (k : Fp) : ∀ x ∈ wires (renameProgram (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301)))
-      (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-        (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val)))),
-    x ≠ hole723 ∧ x ≠ pmapR L0 (base 722) ∧
-      (x ∈ wires (entryR L0 k) ∨ x = pmapR L0 (base 300) ∨ x = pmapR L0 (base 301)) := by
-  have hw := Baselines.layout_widths
-  have hn := Baselines.layout_nodup
-  have d (a b : Nat) (ha : base a ∈ S) (hb : base b ∈ S) (hab : a ≠ b) : pmapR L0 (base a) ≠ pmapR L0 (base b) :=
-    fun e => hab (base_injective (pmap_inj L0 hw hn _ ha _ hb e))
-  intro x hx
-  rw [← pmapR_721]
-  · rw [renameProgram_support] at hx
-    obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
-    by_cases f1 : y = pmapR L0 (base 722)
-    · subst f1
-      rw [Equiv.swap_apply_left]
-      exact ⟨d 301 721 base301_S base721_S (by omega), d 301 722 base301_S base722_S (by omega),
-        Or.inr (Or.inr rfl)⟩
-    · by_cases f2 : y = pmapR L0 (base 301)
-      · exact absurd (f2 ▸ hy) (tail_host_fresh301 k)
-      · rw [Equiv.swap_apply_of_ne_of_ne f1 f2]
-        rw [renameProgram_support] at hy
-        obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hy
-        by_cases e1 : z = pmapR L0 (base 721)
-        · subst e1
-          rw [Equiv.swap_apply_left]
-          exact ⟨pmapR_300_ne_721, d 300 722 base300_S base722_S (by omega), Or.inr (Or.inl rfl)⟩
-        · by_cases e2 : z = pmapR L0 (base 300)
-          · exact absurd (e2 ▸ hz) (tail_host_fresh k)
-          · rw [Equiv.swap_apply_of_ne_of_ne e1 e2] at f1 ⊢
-            refine ⟨e1, f1, Or.inl ?_⟩
-            rw [entryR_split, wires_append]
-            exact Finset.mem_union_right _ hz
-
-/-- C': the wires of the three-exchange tail: those of `entryR` without the product bit, the flag and
-the walk carry, plus the three hosts (pools 300, 301, 302). -/
-theorem entryR2_wires1 (k : Fp) : ∀ x ∈ wires (renameProgram (Equiv.swap (pmapR L0 (base 1541)) (pmapR L0 (base 302)))
-      (renameProgram (Equiv.swap (pmapR L0 (base 722)) (pmapR L0 (base 301)))
-        (renameProgram (Equiv.swap (pmapR L0 (base 721)) (pmapR L0 (base 300)))
-          (renameProgram (pmapR L0) (E1Reflected.mergedTail base (base 2400) k.val))))),
-    x ≠ hole723 ∧ x ≠ pmapR L0 (base 722) ∧ x ≠ hole722 ∧
-      (x ∈ wires (entryR L0 k) ∨ x = pmapR L0 (base 300) ∨ x = pmapR L0 (base 301) ∨
-        x = pmapR L0 (base 302)) := by
-  intro x hx
-  rw [← pmapR_1541]
-  · rw [renameProgram_support] at hx
-    obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
-    have n302_1541 := pmapR_ne 302 1541 base302_S base1541_S (by omega)
-    by_cases f1 : y = pmapR L0 (base 1541)
-    · subst f1
-      rw [Equiv.swap_apply_left, ← pmapR_721]
-      exact ⟨pmapR_ne 302 721 base302_S base721_S (by omega), pmapR_ne 302 722 base302_S base722_S (by omega),
-        n302_1541, Or.inr (Or.inr (Or.inr rfl))⟩
-    · by_cases f2 : y = pmapR L0 (base 302)
-      · exact absurd (f2 ▸ hy) (host302_fresh3 k)
-      · rw [Equiv.swap_apply_of_ne_of_ne f1 f2]
-        obtain ⟨a, b, c⟩ := entryR2_wires0 k y hy
-        refine ⟨a, b, f1, ?_⟩
-        rcases c with c | c | c
-        · exact Or.inl c
-        · exact Or.inr (Or.inl c)
-        · exact Or.inr (Or.inr (Or.inl c))
-
-/-- V1: the wires of `entryR2`: those of `entryR` without the product bit, the flag and both walk
-carries, plus the four hosts (pools 300, 301, 302, 303). -/
-theorem entryR2_wires (k : Fp) : ∀ x ∈ wires (entryR2 k),
-    x ≠ hole723 ∧ x ≠ pmapR L0 (base 722) ∧ x ≠ hole722 ∧ x ≠ hole720 ∧
-      (x ∈ wires (entryR L0 k) ∨ x = pmapR L0 (base 300) ∨ x = pmapR L0 (base 301) ∨
-        x = pmapR L0 (base 302) ∨ x = pmapR L0 (base 303)) := by
-  intro x hx
-  unfold entryR2 at hx
-  rw [wires_append, Finset.mem_union] at hx
-  rcases hx with hx | hx
-  · have ncmp (i : Nat) (hi : base i ∈ S) (hr : 1026 ≤ i ∧ i < 2400) : x ≠ pmapR L0 (base i) := by
-      intro e
-      rw [e, renameProgram_support] at hx
-      obtain ⟨y, hy, e2⟩ := Finset.mem_image.mp hx
-      have := pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup y (cmp_S k hy) (base i) hi e2
-      subst this
-      obtain ⟨j, hj, hr'⟩ := cmp_labels k _ hy
-      have := base_injective hj
-      omega
-    rw [← pmapR_721, ← pmapR_1541, ← pmapR_1542]
-    refine ⟨fun e => cmp_not_721 k (e ▸ hx), fun e => cmp_not_722 k (e ▸ hx),
-      ncmp 1541 base1541_S (by omega), ncmp 1542 base1542_S (by omega), Or.inl ?_⟩
-    rw [entryR_split, wires_append]
-    exact Finset.mem_union_left _ hx
-  · rw [renameProgram_support] at hx
-    obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
-    by_cases f1 : y = pmapR L0 (base 1542)
-    · subst f1
-      rw [Equiv.swap_apply_left, ← pmapR_721, ← pmapR_1541, ← pmapR_1542]
-      exact ⟨pmapR_ne 303 721 base303_S base721_S (by omega), pmapR_ne 303 722 base303_S base722_S (by omega),
-        pmapR_ne 303 1541 base303_S base1541_S (by omega), pmapR_ne 303 1542 base303_S base1542_S (by omega),
-        Or.inr (Or.inr (Or.inr (Or.inr rfl)))⟩
-    · by_cases f2 : y = pmapR L0 (base 303)
-      · exact absurd (f2 ▸ hy) (host303_fresh4 k)
-      · rw [Equiv.swap_apply_of_ne_of_ne f1 f2]
-        obtain ⟨a, b, c, d⟩ := entryR2_wires1 k y hy
-        refine ⟨a, b, c, fun e => f1 (e.trans pmapR_1542.symm), ?_⟩
-        rcases d with d | d | d | d
-        · exact Or.inl d
-        · exact Or.inr (Or.inl d)
-        · exact Or.inr (Or.inr (Or.inl d))
-        · exact Or.inr (Or.inr (Or.inr (Or.inl d)))
-
-theorem host_free2 (k : Fp) : host512 ∉ wires (entryR2 k) := by
-  intro h
-  rcases entryR2_wires k _ h with ⟨-, -, -, -, h | h | h | h | h⟩
-  · exact host_free k h
-  · rw [← pmapR_512] at h
-    exact absurd (base_injective (pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup _ base512_S _
-      base300_S h)) (by omega)
-  · rw [← pmapR_512] at h
-    exact absurd (base_injective (pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup _ base512_S _
-      base301_S h)) (by omega)
-  · rw [← pmapR_512] at h
-    exact absurd (base_injective (pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup _ base512_S _
-      base302_S h)) (by omega)
-  · rw [← pmapR_512] at h
-    exact absurd (base_injective (pmap_inj L0 Baselines.layout_widths Baselines.layout_nodup _ base512_S _
-      base303_S h)) (by omega)
-
-theorem entryPairs_hostFree (k : Fp) : ∀ ab ∈ entryPairs, ab.2 ∉ wires (entryR2 k) := by
+theorem entryPairs_hostFree (k : Fp) : ∀ ab ∈ entryPairs, ab.2 ∉ wires (entryR L0 k) := by
   intro ab hab
   simp only [entryPairs, List.mem_singleton] at hab
   subst hab
-  exact host_free2 k
+  exact host_free k
 
 /-! ## Run equality -/
 
 theorem entryRH_run_eq (k : Fp) (s : State) (m : List Bool)
-    (hc : regValue L0.dialogPool s.basis = 0) (hole0 : s.basis hole725 = false) (host0 : s.basis host512 = false)
+    (hole0 : s.basis hole725 = false) (host0 : s.basis host512 = false)
     (holeOut : (run (entryR L0 k) m s).basis hole725 = false) :
-    run (entryRH k) m s = run (entryR L0 k) m s := by
-  rw [← entryR2_run_eq k s m hc]
-  exact hostRename_run_eq entryPairs _ s m
+    run (entryRH k) m s = run (entryR L0 k) m s :=
+  hostRename_run_eq entryPairs _ s m
     (by intro ab hab; simp only [entryPairs, List.mem_singleton] at hab; subst hab; exact hole0)
     (by intro ab hab; simp only [entryPairs, List.mem_singleton] at hab; subst hab; exact host0)
-    (by intro ab hab; simp only [entryPairs, List.mem_singleton] at hab; subst hab
-        rw [entryR2_run_eq k s m hc]; exact holeOut)
+    (by intro ab hab; simp only [entryPairs, List.mem_singleton] at hab; subst hab; exact holeOut)
     (entryPairs_hostFree k)
 
 theorem hole_pool : hole725 ∈ L0.dialogPool := by
@@ -12357,38 +10277,16 @@ theorem entryR_hole_out (k : Fp) (s r : State) (X : Nat) (hX : X < p) (G : Bool)
 
 /-! ## Counts, slots, physicality -/
 
-theorem entryR2_counts (k : Fp) :
-    toffoliCount (entryR2 k) = toffoliCount (entryR L0 k) ∧
-      measurementCount (entryR2 k) = measurementCount (entryR L0 k) := by
-  rw [entryR_split]
-  unfold entryR2
-  constructor <;> simp only [toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2]
-
 theorem entryRH_counts (k : Fp) :
     toffoliCount (entryRH k) = toffoliCount (entryR L0 k) ∧
-      measurementCount (entryRH k) = measurementCount (entryR L0 k) := by
-  rw [← (entryR2_counts k).1, ← (entryR2_counts k).2]
-  exact hostRename_counts _ _
+      measurementCount (entryRH k) = measurementCount (entryR L0 k) :=
+  hostRename_counts _ _
 
-theorem entryRH_slots (k : Fp) : Challenge.gateSlots (entryRH k) = Challenge.gateSlots (entryR L0 k) := by
-  unfold entryRH
-  rw [hostRename_slots, entryR_split]
-  unfold entryR2
-  simp only [Challenge.gateSlots_append, Baselines.rename_gateSlots]
-
-theorem entryR2_physical (k : Fp) : GatePhysical (entryR2 k) := by
-  have h := entryR_physical L0 Baselines.layout_widths Baselines.layout_nodup k
-  rw [entryR_split, gatePhysical_append] at h
-  unfold entryR2
-  rw [gatePhysical_append]
-  exact ⟨h.1, gatePhysical_rename _ (Equiv.swap _ _).injective _
-    (gatePhysical_rename _ (Equiv.swap _ _).injective _
-      (gatePhysical_rename _ (Equiv.swap _ _).injective _
-        (gatePhysical_rename _ (Equiv.swap _ _).injective _ h.2)))⟩
+theorem entryRH_slots (k : Fp) : Challenge.gateSlots (entryRH k) = Challenge.gateSlots (entryR L0 k) :=
+  hostRename_slots _ _
 
 theorem entryRH_physical (k : Fp) : GatePhysical (entryRH k) :=
-  hostRename_physical _ _ (entryR2_physical k)
+  hostRename_physical _ _ (entryR_physical L0 Baselines.layout_widths Baselines.layout_nodup k)
 
 end ECDSAAdd.Entrant.StairSquareEntryR
 
@@ -12632,7 +10530,7 @@ def TailOK (L : ControlledPointLayout) (T : Fp → Program) : Prop :=
 /-- U5 in the `TailOK` shape. -/
 theorem entryRH_tailOK : TailOK L0 StairSquareEntryR.entryRH := by
   intro k a r X hX G hx hg hc rphase rx rout m
-  exact StairSquareEntryR.entryRH_run_eq k a m hc ((regValue_zero _ _).mp hc _ StairSquareEntryR.hole_pool)
+  exact StairSquareEntryR.entryRH_run_eq k a m ((regValue_zero _ _).mp hc _ StairSquareEntryR.hole_pool)
     ((regValue_zero _ _).mp hc _ StairSquareEntryR.host_pool)
     (StairSquareEntryR.entryR_hole_out k a r X hX G hx hg hc rphase rx rout m)
 
@@ -12711,9 +10609,9 @@ section Merge_StairSquareKernel26Support_at_BOptimizations
 
 The record square's three leaves use the kernel `K := LowZero18LowK.kg L ext src dst`, whose clean-sum producer
 `Q1 = LowZero18Diagonal.makeC (iregs …)` and cleanup `Q1c = RawClearSquare.clearC (iregs …)` use the inner sum register
-`iregs.S = ktmp[66..98]`. The holes `ktmp[73..98]` (pool 725..750) are inner-S bits 7..32. The record already renamed
+`iregs.S = ktmp[66..98]`. The holes `ktmp[68..98]` (pool 720..750) are inner-S bits 2..32. The record already renamed
 `ktmp[67]` (pool 719) to `ktmp[1]` (pool 653) in `Q1`/`Q1c` (`SquareCarryLoan719.patchKG`); here the same is prepared
-for the 26 holes, hosted on the outer-S bits `ktmp[2..27]` (pool 654..679).
+for the 31 holes, hosted on the outer-S bits `ktmp[2..32]` (pool 654..684).
 
 Statements (all for variable layouts; no concrete program is evaluated):
 * `holes_mem_inner`, `holes_mem_X1`, `hosts_mem_outer` — where the two lists live;
@@ -12735,14 +10633,11 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 set_option linter.unusedSectionVars false
 
-/-- The 31 kernel hole slots: inner-S bits 2..32 = `ktmp[68..98]` (pool 720..750; T723 added 723, 724,
-C' added 722, V1 added 720; `ktmp[69]` = pool 721 is not a hole and is never hosted, see `psOf`). -/
+/-- The 31 kernel holes: inner-S bits 2..32 = `ktmp[68..98]` (pool 720..750). -/
 def holes (L : CuccaroStreamedSquareWideLayout) : List Wire := ((LowZero18LowK.ktmp L).drop 68).take 31
 
-/-- Their hosts: outer-S bits 2..31 and 33 = `ktmp[2..31] ++ [ktmp[33]]` (pool 654..683, 685; `ktmp[32]` =
-pool 684 is avoided). -/
-def hosts (L : CuccaroStreamedSquareWideLayout) : List Wire :=
-  ((LowZero18LowK.ktmp L).drop 2).take 30 ++ ((LowZero18LowK.ktmp L).drop 33).take 1
+/-- Their hosts: outer-S bits 2..32 = `ktmp[2..32]` (pool 654..684). -/
+def hosts (L : CuccaroStreamedSquareWideLayout) : List Wire := ((LowZero18LowK.ktmp L).drop 2).take 31
 
 /-- hole i ↦ host i. -/
 def pairs (L : CuccaroStreamedSquareWideLayout) : List (Wire × Wire) := (holes L).zip (hosts L)
@@ -12768,20 +10663,15 @@ theorem holes_index (q : Wire) (h : q∈holes L) :
 
 omit hw in
 theorem hosts_index (q : Wire) (h : q∈hosts L) :
-    ∃ k, k<(LowZero18LowK.ktmp L).length ∧ 2≤k ∧ (k<32 ∨ k=33) ∧ (LowZero18LowK.ktmp L).getD k 0=q := by
-  rcases List.mem_append.mp h with h | h
-  · obtain ⟨k,a,b,c,d⟩ := slice_index _ 2 30 q h
-    exact ⟨k,a,b,Or.inl (by omega),d⟩
-  · obtain ⟨k,a,b,c,d⟩ := slice_index _ 33 1 q h
-    exact ⟨k,a,by omega,Or.inr (by omega),d⟩
+    ∃ k, k<(LowZero18LowK.ktmp L).length ∧ 2≤k ∧ k<33 ∧ (LowZero18LowK.ktmp L).getD k 0=q := by
+  obtain ⟨k,a,b,c,d⟩ := slice_index _ 2 31 q h
+  exact ⟨k,a,b,by omega,d⟩
 
 theorem holes_sub_ktmp (q : Wire) (h : q∈holes L) : q∈LowZero18LowK.ktmp L :=
   List.mem_of_mem_drop (List.mem_of_mem_take h)
 
-theorem hosts_sub_ktmp (q : Wire) (h : q∈hosts L) : q∈LowZero18LowK.ktmp L := by
-  rcases List.mem_append.mp h with h | h
-  · exact List.mem_of_mem_drop (List.mem_of_mem_take h)
-  · exact List.mem_of_mem_drop (List.mem_of_mem_take h)
+theorem hosts_sub_ktmp (q : Wire) (h : q∈hosts L) : q∈LowZero18LowK.ktmp L :=
+  List.mem_of_mem_drop (List.mem_of_mem_take h)
 
 include hw in
 theorem holes_length : (holes L).length=31 := by
@@ -12792,7 +10682,7 @@ theorem holes_length : (holes L).length=31 := by
 include hw in
 theorem hosts_length : (hosts L).length=31 := by
   have len := LowZero18LowK.ktmp_length L hw
-  simp only [hosts,List.length_append,List.length_take,List.length_drop,len]
+  simp only [hosts,List.length_take,List.length_drop,len]
   decide
 
 include hw in
@@ -12936,14 +10826,7 @@ theorem holes_hosts_nodup : (holes L++hosts L).Nodup := by
   have nd := ktmp_nodup L control hn ext src dst hs hd hx hdx
   have sub (a n : Nat) : List.Sublist (((LowZero18LowK.ktmp L).drop a).take n) (LowZero18LowK.ktmp L) :=
     (List.take_sublist _ _).trans (List.drop_sublist _ _)
-  have hnd : (hosts L).Nodup := by
-    refine List.nodup_append.mpr ⟨nd.sublist (sub 2 30),nd.sublist (sub 33 1),?_⟩
-    intro a ha b hb e
-    obtain ⟨k,kl,k1,k2,rfl⟩ := slice_index _ 2 30 a ha
-    obtain ⟨j,jl,j1,j2,rfl⟩ := slice_index _ 33 1 b hb
-    have := getD_index_inj _ nd k j kl jl e
-    omega
-  refine List.nodup_append.mpr ⟨nd.sublist (sub 68 31),hnd,?_⟩
+  refine List.nodup_append.mpr ⟨nd.sublist (sub 68 31),nd.sublist (sub 2 31),?_⟩
   intro a ha b hb e
   obtain ⟨k,kl,k1,k2,rfl⟩ := holes_index L a ha
   obtain ⟨j,jl,j1,j2,rfl⟩ := hosts_index L b hb
@@ -12957,7 +10840,7 @@ theorem tmp_ne_early (q : Wire) (hq : q∈holes L ∨ q∈hosts L) :
   have nd := ktmp_nodup L control hn ext src dst hs hd hx hdx
   have len := LowZero18LowK.ktmp_length L hw
   obtain ⟨k,kl,k1,k2,rfl⟩ : ∃ k, k<(LowZero18LowK.ktmp L).length ∧
-      ((68≤k ∧ k<99) ∨ (2≤k ∧ (k<32 ∨ k=33))) ∧ True ∧ (LowZero18LowK.ktmp L).getD k 0=q := by
+      ((68≤k ∧ k<99) ∨ (2≤k ∧ k<33)) ∧ True ∧ (LowZero18LowK.ktmp L).getD k 0=q := by
     rcases hq with h|h
     · obtain ⟨k,kl,a,b,e⟩ := holes_index L q h
       exact ⟨k,kl,Or.inl ⟨a,b⟩,trivial,e⟩
@@ -12999,7 +10882,7 @@ theorem tmp_fold_fix (q : Wire) (hq : q∈holes L ∨ q∈hosts L) :
       exact ⟨k,kl,Or.inl ⟨a,b⟩,e⟩
     · obtain ⟨k,kl,a,b,e⟩ := hosts_index L q h
       exact ⟨k,kl,Or.inr ⟨a,b⟩,e⟩ :
-    ∃ k, k<(LowZero18LowK.ktmp L).length ∧ ((68≤k ∧ k<99) ∨ (2≤k ∧ (k<32 ∨ k=33))) ∧
+    ∃ k, k<(LowZero18LowK.ktmp L).length ∧ ((68≤k ∧ k<99) ∨ (2≤k ∧ k<33)) ∧
       (LowZero18LowK.ktmp L).getD k 0=q)
   obtain ⟨k,kl,kr,rfl⟩ := k
   refine ⟨?_,?_⟩
@@ -14419,17 +12302,11 @@ theorem holes_pool_of (L : ControlledPointLayout) (hw : L.Widths) (n : Nat) (h1 
   exact slice_mem _ 68 31 (n-652) (by omega) (by omega) (by omega)
 
 theorem holes39_cases_of (L : ControlledPointLayout) (hw : L.Widths) (q : Wire)
-    (hq : q∈(List.range' 725 35++List.range' 761 4++StairCertificate.extraIdx).map L.core.poolWire) :
+    (hq : q∈(List.range' 725 35++List.range' 761 4).map L.core.poolWire) :
     q∈holes L.dialogStreamedSquareWide ∨
       ∃ k, 99 ≤ k ∧ k < 123 ∧ k ≠ 108 ∧ q=(LowZero18LowK.ktmp L.dialogStreamedSquareWide).getD k 0 := by
   obtain ⟨n,hi,rfl⟩ := List.mem_map.mp hq
   simp only [List.mem_append,List.mem_range'_1] at hi
-  rcases hi with hi | hi
-  swap
-  · -- T723 / C' / V1: the extra holes 723, 722, 720 are the kernel's inner-sum bits `ktmp[71]`,
-    -- `ktmp[70]`, `ktmp[68]`, hosted like 725..750
-    simp only [StairCertificate.extraIdx, List.mem_cons, List.not_mem_nil, or_false] at hi
-    exact Or.inl (holes_pool_of L hw n (by omega) (by omega))
   by_cases c : n < 751
   · exact Or.inl (holes_pool_of L hw n (by omega) c)
   · refine Or.inr ⟨n-652,by omega,by omega,by omega,?_⟩
@@ -14438,7 +12315,7 @@ theorem holes39_cases_of (L : ControlledPointLayout) (hw : L.Widths) (q : Wire)
     omega
 
 theorem hosts_pool_of (L : ControlledPointLayout) (hw : L.Widths) :
-    ∀ q∈hosts L.dialogStreamedSquareWide, ∃ n, 654 ≤ n ∧ (n < 684 ∨ n = 685) ∧ q=L.core.poolWire n := by
+    ∀ q∈hosts L.dialogStreamedSquareWide, ∃ n, 654 ≤ n ∧ n < 685 ∧ q=L.core.poolWire n := by
   intro q hq
   have len := LowZero18LowK.ktmp_length L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
   obtain ⟨k,kl,a,b,e⟩ := hosts_index L.dialogStreamedSquareWide q hq
@@ -14459,7 +12336,7 @@ theorem holes39_cases (q : Wire) (hq : q∈holes39) :
 /-- Hosted pairs for a hole list: the kernel pairs whose hole is in `hs`. -/
 def psOf (hs : List Wire) : List (Wire × Wire) := (pairs K0).filter (fun ab => decide (ab.1∈hs))
 
-/-- The explicit host list (pool 654..683, 685). -/
+/-- The explicit host list (pool 654..679). -/
 def hostsK : List Wire := hosts K0
 
 theorem psOf_sub (hs : List Wire) : List.Sublist (psOf hs) (pairs K0) := by
@@ -14579,9 +12456,8 @@ theorem kA_support (hs : List Wire) (body : Program) :
   · exact Finset.mem_union_left _ h
   · exact Finset.mem_union_right _ (psOf_hosts hs q h)
 
-/-- The hosts are pool 654..683, 685. -/
-theorem hostsK_pool : ∀ q∈hostsK, ∃ n, 654 ≤ n ∧ (n < 684 ∨ n = 685) ∧ q=L0.core.poolWire n :=
-  hosts_pool_of L0 hw0
+/-- The hosts are pool 654..679. -/
+theorem hostsK_pool : ∀ q∈hostsK, ∃ n, 654 ≤ n ∧ n < 685 ∧ q=L0.core.poolWire n := hosts_pool_of L0 hw0
 
 end ECDSAAdd.Entrant.StairSquareKernel26C
 end Merge_StairSquareKernel26Contract_at_BOptimizations
@@ -14892,16 +12768,10 @@ theorem entryR_control (k : Fp) : L0.control ∉ wires (E1ReflectedPlacement.ent
 theorem entryRH_control (k : Fp) : L0.control ∉ wires (StairSquareEntryR.entryRH k) := by
   intro h
   have s := StairSquareHolesCore.hostRename_support StairSquareEntryR.entryPairs
-    (StairSquareEntryR.entryR2 k) StairSquareEntryR.entryPairs_nodup
+    (E1ReflectedPlacement.entryR L0 k) StairSquareEntryR.entryPairs_nodup
     (StairSquareEntryR.entryPairs_hostFree k)
   rcases Finset.mem_union.mp (s h) with h | h
-  · have h1 := (Finset.mem_sdiff.mp h).1
-    rcases StairSquareEntryR.entryR2_wires k _ h1 with ⟨-, -, -, -, h1 | h1 | h1 | h1 | h1⟩
-    · exact entryR_control k h1
-    · exact control_not_pool (h1 ▸ StairSquareEntryR.pool300)
-    · exact control_not_pool (h1 ▸ StairSquareEntryR.pool301)
-    · exact control_not_pool (h1 ▸ StairSquareEntryR.pool302)
-    · exact control_not_pool (h1 ▸ StairSquareEntryR.pool303)
+  · exact entryR_control k (Finset.mem_sdiff.mp h).1
   · simp only [StairSquareEntryR.entryPairs, StairSquareHolesCore.hostsOf, List.map_cons, List.map_nil,
       List.toFinset_cons, List.toFinset_nil, Finset.mem_insert, Finset.notMem_empty, or_false] at h
     exact control_not_pool (h ▸ StairSquareEntryR.host_pool)
@@ -18952,7 +16822,7 @@ open StairField2V3Replay StairField2V3Couple StairField2V3Entry StairField2V3Exi
 
 theorem refArithL_shape (loans : StairSchedule.StairLoans) :
     StairLoanField7Cores.entryReferenceArithmeticFor loans =
-      prefixW ++ (refJ0 ++ (firstPkt ++ (grpL loans 0 1 84 ++ (grpL loans 13 85 5 ++ (grpL loans 22 90 3 ++ (grpL loans 30 93 3 ++ (grpL loans 36 96 2 ++ (grpL loans 41 98 2 ++ tailPL loans)))))))) := by
+      prefixW ++ (refJ0 ++ (firstPkt ++ (grpL loans 0 1 84 ++ (grpL loans 14 85 5 ++ (grpL loans 23 90 3 ++ (grpL loans 31 93 3 ++ (grpL loans 37 96 2 ++ (grpL loans 42 98 2 ++ tailPL loans)))))))) := by
   simp only [StairLoanField7Cores.entryReferenceArithmeticFor,
     Rolling1588TickGap.firstPhase, Rolling1588TickGap.tailPhase,
     Rolling1588TickGap.stackForward, Six505.stackForward6, forward_504,
@@ -18968,11 +16838,11 @@ theorem refArithL_shape (loans : StairSchedule.StairLoans) :
 /-! ## Division transport -/
 
 def R1L (loans : StairSchedule.StairLoans) : Program := (R0 ++ firstPkt) ++ grpL loans 0 1 84
-def R2L (loans : StairSchedule.StairLoans) : Program := R1L loans ++ grpL loans 13 85 5
-def R3L (loans : StairSchedule.StairLoans) : Program := R2L loans ++ grpL loans 22 90 3
-def R4L (loans : StairSchedule.StairLoans) : Program := R3L loans ++ grpL loans 30 93 3
-def R5L (loans : StairSchedule.StairLoans) : Program := R4L loans ++ grpL loans 36 96 2
-def R6L (loans : StairSchedule.StairLoans) : Program := R5L loans ++ grpL loans 41 98 2
+def R2L (loans : StairSchedule.StairLoans) : Program := R1L loans ++ grpL loans 14 85 5
+def R3L (loans : StairSchedule.StairLoans) : Program := R2L loans ++ grpL loans 23 90 3
+def R4L (loans : StairSchedule.StairLoans) : Program := R3L loans ++ grpL loans 31 93 3
+def R5L (loans : StairSchedule.StairLoans) : Program := R4L loans ++ grpL loans 37 96 2
+def R6L (loans : StairSchedule.StairLoans) : Program := R5L loans ++ grpL loans 42 98 2
 
 
 
@@ -19259,7 +17129,7 @@ theorem RL_shape1 (loans : StairSchedule.StairLoans) :
 
 theorem RL_shape2 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R2L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
-      (StairLoanRecordShape.slices loans true [(0, 1, 84), (13, 85, 5)])) := by
+      (StairLoanRecordShape.slices loans true [(0, 1, 84), (14, 85, 5)])) := by
   simp only [StairLoanField7Transport.R2L, StairLoanField7Transport.R1L,
     StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -19268,7 +17138,7 @@ theorem RL_shape2 (loans : StairSchedule.StairLoans) :
 
 theorem RL_shape3 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R3L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
-      (StairLoanRecordShape.slices loans true [(0, 1, 84), (13, 85, 5), (22, 90, 3)])) := by
+      (StairLoanRecordShape.slices loans true [(0, 1, 84), (14, 85, 5), (23, 90, 3)])) := by
   simp only [StairLoanField7Transport.R3L, StairLoanField7Transport.R2L,
     StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -19278,7 +17148,7 @@ theorem RL_shape3 (loans : StairSchedule.StairLoans) :
 theorem RL_shape4 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R4L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3)])) := by
+        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3)])) := by
   simp only [StairLoanField7Transport.R4L, StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -19288,7 +17158,7 @@ theorem RL_shape4 (loans : StairSchedule.StairLoans) :
 theorem RL_shape5 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R5L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3), (36, 96, 2)])) := by
+        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3), (37, 96, 2)])) := by
   simp only [StairLoanField7Transport.R5L, StairLoanField7Transport.R4L,
     StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
@@ -19299,7 +17169,7 @@ theorem RL_shape5 (loans : StairSchedule.StairLoans) :
 theorem RL_shape6 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R6L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3), (36, 96, 2), (41, 98, 2)])) := by
+        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3), (37, 96, 2), (42, 98, 2)])) := by
   simp only [StairLoanField7Transport.R6L, StairLoanField7Transport.R5L,
     StairLoanField7Transport.R4L, StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
@@ -20878,27 +18748,11 @@ phase relabelling on its closed forms. -/
 
 
 theorem tickGap_forward_ppi (isA : Bool) (n : Nat) (hn : n ≤ 511) :
-    ∀ x ∈ wires (Rolling1588TickGap.forward isA 1 n), x ≠ base 1541 → x ≠ base 1542 → PPI x := by
-  intro x hx h1541 h1542
+    ∀ x ∈ wires (Rolling1588TickGap.forward isA 1 n), PPI x := by
+  intro x hx
   have h1 := Rolling1588TickGap.forward_support isA 1 n (by omega) hx
   rw [Rolling1588.forward_support_eq, NewStackOB5.forward_support_eq] at h1
-  exact ppi_of_int ((StackOB5.support_gen 1 n (by omega) (by omega)).1 x h1) h1541 h1542
-
-/-- C': the walk ticks never touch `base 717`. -/
-theorem tickGap_forward_717 (isA : Bool) (n : Nat) (hn : n ≤ 511) :
-    base 717 ∉ wires (Rolling1588TickGap.forward isA 1 n) := by
-  intro hx
-  have h1 := Rolling1588TickGap.forward_support isA 1 n (by omega) hx
-  rw [Rolling1588.forward_support_eq, NewStackOB5.forward_support_eq] at h1
-  exact int_717 ((StackOB5.support_gen 1 n (by omega) (by omega)).1 _ h1)
-
-/-- V1: the walk ticks `1 .. n` (`n ≤ 510`) never touch `base 514`. -/
-theorem tickGap_forward_514 (isA : Bool) (n : Nat) (hn : n ≤ 510) :
-    base 514 ∉ wires (Rolling1588TickGap.forward isA 1 n) := by
-  intro hx
-  have h1 := Rolling1588TickGap.forward_support isA 1 n (by omega) hx
-  rw [Rolling1588.forward_support_eq, NewStackOB5.forward_support_eq] at h1
-  exact (ticks_514 n hn).1 h1
+  exact ppi_of_int ((StackOB5.support_gen 1 n (by omega) (by omega)).1 x h1)
 
 
 section
@@ -20925,94 +18779,21 @@ theorem kbMerged6_ppi : PieceOK StairCertificate.holes39 PP Six505.merged6 := by
     (List.mem_toFinset.mp (StairTerminalV3.cand6_support hy)))
 
 
-/-- C': the terminal block `merged6` never touches `base 717`, and its labels other than
-`base 1541` are phase-good. -/
-theorem merged6_ppiX : ∀ x ∈ wires Six505.merged6, x ≠ base 1541 → PPI x := by
-  have hc : StairTerminalV3.cand6Sites.all
-      (fun y => Nat.beq (OB5.sig 510 y) 1557 || kbPpiB (OB5.sig 510 y)) = true := by
-    decide +kernel
-  intro x hx hne
-  unfold Six505.merged6 at hx
-  rw [renameProgram_support] at hx
-  obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
-  have t := List.all_eq_true.mp hc y (List.mem_toFinset.mp (StairTerminalV3.cand6_support hy))
-  rw [Bool.or_eq_true] at t
-  rcases t with t | t
-  · exact absurd (Nat.eq_of_beq_eq_true t) hne
-  · exact kbPpiB_ppi t
-
-/-- The terminal block `merged6` touches neither host (`base 717`, `base 514`). -/
-theorem merged6_free : base 717 ∉ wires Six505.merged6 ∧ base 514 ∉ wires Six505.merged6 := by
-  have hc : StairTerminalV3.cand6Sites.all
-      (fun y => !Nat.beq (OB5.sig 510 y) 733 && !Nat.beq (OB5.sig 510 y) 530) = true := by
-    decide +kernel
-  constructor
-  · intro hx
-    unfold Six505.merged6 at hx
-    rw [renameProgram_support] at hx
-    obtain ⟨y, hy, e⟩ := Finset.mem_image.mp hx
-    have t := List.all_eq_true.mp hc y (List.mem_toFinset.mp (StairTerminalV3.cand6_support hy))
-    rw [Bool.and_eq_true] at t
-    exact ne733 t.1 e
-  · intro hx
-    unfold Six505.merged6 at hx
-    rw [renameProgram_support] at hx
-    obtain ⟨y, hy, e⟩ := Finset.mem_image.mp hx
-    have t := List.all_eq_true.mp hc y (List.mem_toFinset.mp (StairTerminalV3.cand6_support hy))
-    rw [Bool.and_eq_true, e] at t
-    exact absurd t.2 (by decide)
-
-theorem merged6_717 : base 717 ∉ wires Six505.merged6 := merged6_free.1
-
-/-- A program none of whose wires is label 733 or 530 uses neither `base 717` nor `base 514`. -/
-theorem allSites_717_514 {P : Program}
-    (h : allSites (fun x => !Nat.beq x 733 && !Nat.beq x 530) P = true) :
-    base 717 ∉ wires P ∧ base 514 ∉ wires P := by
-  constructor
-  · intro hm
-    have t := allSites_sound h _ hm
-    exact absurd t (by decide)
-  · intro hm
-    have t := allSites_sound h _ hm
-    exact absurd t (by decide)
-
-/-- The tail phase touches neither host (`base 717`, `base 514`). -/
-theorem tailPhase_free : base 717 ∉ wires (Rolling1588TickGap.tailPhase false) ∧
-    base 514 ∉ wires (Rolling1588TickGap.tailPhase false) := by
-  have pk := allSites_717_514 (P := Six505.packP false) (by decide +kernel)
-  have af := allSites_717_514 (P := ForwardSixPlacement.after false) (by decide +kernel)
-  unfold Rolling1588TickGap.tailPhase Rolling1588TickGap.stackForward Six505.stackForward6
-  simp only [wires_append, Finset.mem_union, not_or]
-  exact ⟨⟨⟨tickGap_forward_717 false 504 (by omega), merged6_free.1, pk.1, af.1⟩, clear_717_free⟩,
-    ⟨⟨tickGap_forward_514 false 504 (by omega), merged6_free.2, pk.2, af.2⟩, clear_514_free⟩⟩
-
-/-- C': the tail phase never touches `base 717`. -/
-theorem tailPhase_717 : base 717 ∉ wires (Rolling1588TickGap.tailPhase false) := tailPhase_free.1
-
 /-! ## The six phase pieces -/
 
 theorem entryTicks39 :
-    PieceOK StairCertificate.holes39 PP
-      (StairLoan.rebindMany [base 1541, base 1542] [base 717, base 514]
-        (Rolling1588TickGap.forward true 1 424)) :=
-  ok39_vHost (tickGap_forward_ppi true 424 (by omega)) (tickGap_forward_717 true 424 (by omega))
-    (tickGap_forward_514 true 424 (by omega))
+    PieceOK StairCertificate.holes39 PP (Rolling1588TickGap.forward true 1 424) :=
+  ok39_of_ppi (tickGap_forward_ppi true 424 (by omega))
 
 
 theorem exitTail39 :
-    PieceOK StairCertificate.holes39 PP
-      (StairLoan.rebindMany [base 1541, base 1542] [base 717, base 514]
-        (Rolling1588TickGap.tailPhase false)) := by
-  refine ok39_vHost ?_ tailPhase_free.1 tailPhase_free.2
+    PieceOK StairCertificate.holes39 PP (Rolling1588TickGap.tailPhase false) := by
   unfold Rolling1588TickGap.tailPhase Rolling1588TickGap.stackForward Six505.stackForward6
-  intro x hx hne hne2
-  simp only [wires_append, Finset.mem_union] at hx
-  rcases hx with (hx | hx | hx | hx) | hx
-  · exact tickGap_forward_ppi false 504 (by omega) x hx hne hne2
-  · exact merged6_ppiX x hx hne
-  · exact ppiX_of_allB (by decide +kernel) x hx hne
-  · exact ppiX_of_allB (by decide +kernel) x hx hne
-  · exact ppiX_of_allB (by decide +kernel) x hx hne
+  refine PieceOK.append (PieceOK.append ?_ (PieceOK.append ?_ ?_)) ?_
+  · exact ok39_of_ppi (tickGap_forward_ppi false 504 (by omega))
+  · exact kbMerged6_ppi
+  · exact kbOk39_of_ppiAllB (by decide +kernel)
+  · exact kbOk39_of_ppiAllB (by decide +kernel)
 
 
 /-! ### The v3 first row (LT46, replay budget)
