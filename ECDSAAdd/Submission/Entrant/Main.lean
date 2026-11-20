@@ -4915,14 +4915,18 @@ def guarded (labels neg : List Wire) (pivot : Option Wire) : Clause :=
   let mid := (labels.drop 2).dropLast
   ⟨ph++neg.map Aff.x,labels[0]!,labels[1]!,labels.getLast!, mid.zipIdx.map (fun ⟨c,i⟩=>(c,18+i))⟩
 
+/-- The two literal words differ only along pivot 0 and its seven CX targets. -/
+def literalPair : Clause :=
+  let c := guarded (List.range' 1 15) (List.range' 1 7++List.range' 12 4) none
+  { c with prep := [1,2,3,8,9,10,11].map (Aff.cx 0) ++ c.prep }
+
 def clauses : List Clause :=
   [guarded [0,1,2,3,4,5] [4] (some 5),
    guarded [0,3,4,5,6,7,1] [] (some 1),
    guarded [0,8,9,10,11,12,1] [0,12] (some 1),
    guarded [0,1,2,3,4,12] [4,12] none,
    guarded [0,8,9,10,11,12] [0,12] none,
-   guarded (List.range 16) (List.range' 4 12) none,
-   guarded (List.range 16) (List.range 8++List.range' 12 4) none]
+   literalPair]
 
 def body (c : Clause) := affine c.prep ++ (mcx c.a c.b 17 c.last 16 c.xs ++ affine c.prep.reverse)
 end ECDSAAdd.Entrant.StairPacket.WindowParityDirty
@@ -6148,7 +6152,7 @@ open StairConcreteAssembly WindowFieldParity
 set_option maxRecDepth 16000
 set_option maxHeartbeats 1500000
 set_option linter.unusedSimpArgs false
-private theorem leaf : toffoliCount region=200 ∧ measurementCount region=0 ∧ gateSlots region=352 := by
+private theorem leaf : toffoliCount region=140 ∧ measurementCount region=0 ∧ gateSlots region=280 := by
   decide +kernel
 private theorem correction_eq (c : Cost) : c.measure correction=3*c.measure region := by
   simp only [correction,bankCorrection,c.append,c.rename]; omega
@@ -6167,8 +6171,8 @@ private theorem all (c : Cost) (C : Point) (cx cy : Fp) :
     c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+12*c.measure region := by
   simp only [finite,WindowCallerCosts.finite,borrowGeneric,WindowCallerCosts.borrowGeneric,generic,
     WindowCallerCosts.generic,c.append,c.rename,div,mul,correction_eq]; omega
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2152432 ∧
-    measurementCount (program C) ≤ 1511612 ∧ gateSlots (program C) ≤ 51931337 := by
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2151712 ∧
+    measurementCount (program C) ≤ 1511612 ∧ gateSlots (program C) ≤ 51930473 := by
   have old := WindowCallerCosts.totals C
   have sl := WindowSlots.slotBound C
   cases C with
@@ -6910,7 +6914,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2152432,1511612,1543,51931337⟩
+def bounds : Challenge.Bounds := ⟨2151712,1511612,1543,51930473⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
@@ -6927,7 +6931,7 @@ theorem certificateOfSemantics
     rw [normalize_qubits]
     exact WindowParityCaller.width C
   gateSlots_le C := by
-    change gateSlots (normalizeProgram _) ≤ 51931337
+    change gateSlots (normalizeProgram _) ≤ 51930473
     rw [normalize_slots]
     exact (WindowParityCaller.metrics C).2.2
 
@@ -7365,7 +7369,7 @@ instance dsafe (last target src : Wire) (xs : Hops) : Decidable (safe last targe
 
 theorem valid_clause (c : Clause) (hc : c∈clauses) : Good c.a c.b 17 c.last 16 c.xs ∧ ∀g∈c.prep,lawful 16 g := by
   simp only [clauses,List.mem_cons,List.mem_nil_iff,or_false] at hc
-  rcases hc with rfl|rfl|rfl|rfl|rfl|rfl|rfl
+  rcases hc with rfl|rfl|rfl|rfl|rfl|rfl
   all_goals constructor
   all_goals first | (constructor <;> decide +kernel) | decide +kernel
 
