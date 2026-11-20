@@ -119,7 +119,17 @@ theorem pad_length : (FullBTemp.pad L).length=31 := by decide +kernel
 theorem bank_length : (accBank L).length=160 := by decide +kernel
 theorem loans_length : loans88.length=86 := by decide +kernel
 theorem loans_nd : loans88.Nodup := by decide +kernel
-theorem fit_nodup : (L.core.cin::(hiReg L++ga++(FullBTemp.pad L)++accBank L)).Nodup := by decide +kernel
+private theorem rs2_nodup_of_tails : ∀ l : List Nat, (l.tails.all fun t => match t with
+  | [] => true | a :: r => r.all fun b => !(Nat.beq a b)) = true → l.Nodup
+ | [], _ => List.nodup_nil
+ | a :: r, h => by
+   simp only [List.tails_cons, List.all_cons, Bool.and_eq_true] at h
+   refine List.nodup_cons.mpr ⟨?_, rs2_nodup_of_tails r h.2⟩
+   intro hm
+   have := List.all_eq_true.mp h.1 a hm
+   simp at this
+theorem fit_nodup : (L.core.cin::(hiReg L++ga++(FullBTemp.pad L)++accBank L)).Nodup :=
+ rs2_nodup_of_tails _ (by decide +kernel)
 
 theorem fit : ∀f∈earlyHTerms (hiReg L),Acc.Fits ga (FullBTemp.pad L) (accBank L) L.core.cin 163 f := by
  intro f hf

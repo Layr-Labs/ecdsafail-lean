@@ -23391,161 +23391,101 @@ theorem physical : GatePhysical encode ∧ GatePhysical decode := by
   exact ⟨(gatePhysical_append _ _).mpr ⟨ht,MeasuredCodec5.physical.1⟩,
     (gatePhysical_append _ _).mpr ⟨MeasuredCodec5.physical.2,hu⟩⟩
 
-end ECDSAAdd.Entrant.ParityCodec5New
-
-namespace ECDSAAdd.Entrant.LegalColumnProof.Parity
-open MeasuredCodec5 (bitsOf bitRun legalNat)
-open ParityCodec5New (encode rawParity payloadParity)
-open CodecBitSliceVerify (Cols)
-private def ins := eligibleCols legalNat 0
-private def outs := play encode ins
-private def sourceBits (c:Cols) := CodecBitSliceVerify.get c 1 ^^^ CodecBitSliceVerify.get c 3 ^^^
-    CodecBitSliceVerify.get c 5 ^^^ CodecBitSliceVerify.get c 7 ^^^ CodecBitSliceVerify.get c 9
-private def destBits (c:Cols) := CodecBitSliceVerify.get c 0 ^^^ CodecBitSliceVerify.get c 1 ^^^
-    CodecBitSliceVerify.get c 2 ^^^ CodecBitSliceVerify.get c 3 ^^^ CodecBitSliceVerify.get c 4 ^^^
-    CodecBitSliceVerify.get c 6 ^^^ CodecBitSliceVerify.get c 7 ^^^ CodecBitSliceVerify.get c 8
-private theorem checked : outs.1=true ∧ sourceBits ins = destBits outs.2 := by decide +kernel
-theorem all (x : Nat) (hx : x<1024) (h : legalNat x=true) :
-    rawParity (bitsOf x)=payloadParity (bitsOf (bitRun encode x)) := by
-  have a : CodecBitSliceVerify.Rel ins x x := initial legalNat 0 x hx h
-  have b := execute encode hx a (by decide +kernel) checked.1
-  have bb : CodecBitSliceVerify.Rel outs.2 (bitRun encode x) x := b.2
-  unfold rawParity payloadParity bitsOf
-  rw [a 1,a 3,a 5,a 7,a 9,bb 0,bb 1,bb 2,bb 3,bb 4,bb 6,bb 7,bb 8]
-  simpa only [sourceBits,destBits,Nat.testBit_xor] using congrArg (fun z : Nat => z.testBit x) checked.2
-end ECDSAAdd.Entrant.LegalColumnProof.Parity
-
-namespace ECDSAAdd.Entrant.ParityCodec5New
-open Arithmetic Challenge RecordedQuantum Baselines
-open MeasuredCodec5 (bitsOf legal local_word bitRun legalNat safe run_sim sim_safe)
-
 theorem parity_block_0 : ∀ i : Fin 32, legalNat (32*0+i.val)=true → rawParity (bitsOf (32*0+i.val))=payloadParity (bitsOf (bitRun encode (32*0+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_1 : ∀ i : Fin 32, legalNat (32*1+i.val)=true → rawParity (bitsOf (32*1+i.val))=payloadParity (bitsOf (bitRun encode (32*1+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_2 : ∀ i : Fin 32, legalNat (32*2+i.val)=true → rawParity (bitsOf (32*2+i.val))=payloadParity (bitsOf (bitRun encode (32*2+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_3 : ∀ i : Fin 32, legalNat (32*3+i.val)=true → rawParity (bitsOf (32*3+i.val))=payloadParity (bitsOf (bitRun encode (32*3+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_4 : ∀ i : Fin 32, legalNat (32*4+i.val)=true → rawParity (bitsOf (32*4+i.val))=payloadParity (bitsOf (bitRun encode (32*4+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_5 : ∀ i : Fin 32, legalNat (32*5+i.val)=true → rawParity (bitsOf (32*5+i.val))=payloadParity (bitsOf (bitRun encode (32*5+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_6 : ∀ i : Fin 32, legalNat (32*6+i.val)=true → rawParity (bitsOf (32*6+i.val))=payloadParity (bitsOf (bitRun encode (32*6+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_7 : ∀ i : Fin 32, legalNat (32*7+i.val)=true → rawParity (bitsOf (32*7+i.val))=payloadParity (bitsOf (bitRun encode (32*7+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_8 : ∀ i : Fin 32, legalNat (32*8+i.val)=true → rawParity (bitsOf (32*8+i.val))=payloadParity (bitsOf (bitRun encode (32*8+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_9 : ∀ i : Fin 32, legalNat (32*9+i.val)=true → rawParity (bitsOf (32*9+i.val))=payloadParity (bitsOf (bitRun encode (32*9+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_10 : ∀ i : Fin 32, legalNat (32*10+i.val)=true → rawParity (bitsOf (32*10+i.val))=payloadParity (bitsOf (bitRun encode (32*10+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_11 : ∀ i : Fin 32, legalNat (32*11+i.val)=true → rawParity (bitsOf (32*11+i.val))=payloadParity (bitsOf (bitRun encode (32*11+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_12 : ∀ i : Fin 32, legalNat (32*12+i.val)=true → rawParity (bitsOf (32*12+i.val))=payloadParity (bitsOf (bitRun encode (32*12+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_13 : ∀ i : Fin 32, legalNat (32*13+i.val)=true → rawParity (bitsOf (32*13+i.val))=payloadParity (bitsOf (bitRun encode (32*13+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_14 : ∀ i : Fin 32, legalNat (32*14+i.val)=true → rawParity (bitsOf (32*14+i.val))=payloadParity (bitsOf (bitRun encode (32*14+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_15 : ∀ i : Fin 32, legalNat (32*15+i.val)=true → rawParity (bitsOf (32*15+i.val))=payloadParity (bitsOf (bitRun encode (32*15+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_16 : ∀ i : Fin 32, legalNat (32*16+i.val)=true → rawParity (bitsOf (32*16+i.val))=payloadParity (bitsOf (bitRun encode (32*16+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_17 : ∀ i : Fin 32, legalNat (32*17+i.val)=true → rawParity (bitsOf (32*17+i.val))=payloadParity (bitsOf (bitRun encode (32*17+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_18 : ∀ i : Fin 32, legalNat (32*18+i.val)=true → rawParity (bitsOf (32*18+i.val))=payloadParity (bitsOf (bitRun encode (32*18+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_19 : ∀ i : Fin 32, legalNat (32*19+i.val)=true → rawParity (bitsOf (32*19+i.val))=payloadParity (bitsOf (bitRun encode (32*19+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_20 : ∀ i : Fin 32, legalNat (32*20+i.val)=true → rawParity (bitsOf (32*20+i.val))=payloadParity (bitsOf (bitRun encode (32*20+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_21 : ∀ i : Fin 32, legalNat (32*21+i.val)=true → rawParity (bitsOf (32*21+i.val))=payloadParity (bitsOf (bitRun encode (32*21+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_22 : ∀ i : Fin 32, legalNat (32*22+i.val)=true → rawParity (bitsOf (32*22+i.val))=payloadParity (bitsOf (bitRun encode (32*22+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_23 : ∀ i : Fin 32, legalNat (32*23+i.val)=true → rawParity (bitsOf (32*23+i.val))=payloadParity (bitsOf (bitRun encode (32*23+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_24 : ∀ i : Fin 32, legalNat (32*24+i.val)=true → rawParity (bitsOf (32*24+i.val))=payloadParity (bitsOf (bitRun encode (32*24+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_25 : ∀ i : Fin 32, legalNat (32*25+i.val)=true → rawParity (bitsOf (32*25+i.val))=payloadParity (bitsOf (bitRun encode (32*25+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_26 : ∀ i : Fin 32, legalNat (32*26+i.val)=true → rawParity (bitsOf (32*26+i.val))=payloadParity (bitsOf (bitRun encode (32*26+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_27 : ∀ i : Fin 32, legalNat (32*27+i.val)=true → rawParity (bitsOf (32*27+i.val))=payloadParity (bitsOf (bitRun encode (32*27+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_28 : ∀ i : Fin 32, legalNat (32*28+i.val)=true → rawParity (bitsOf (32*28+i.val))=payloadParity (bitsOf (bitRun encode (32*28+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_29 : ∀ i : Fin 32, legalNat (32*29+i.val)=true → rawParity (bitsOf (32*29+i.val))=payloadParity (bitsOf (bitRun encode (32*29+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_30 : ∀ i : Fin 32, legalNat (32*30+i.val)=true → rawParity (bitsOf (32*30+i.val))=payloadParity (bitsOf (bitRun encode (32*30+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem parity_block_31 : ∀ i : Fin 32, legalNat (32*31+i.val)=true → rawParity (bitsOf (32*31+i.val))=payloadParity (bitsOf (bitRun encode (32*31+i.val))) := by
-  intro i h
-  exact LegalColumnProof.Parity.all _ (by have hi := i.isLt; omega) h
+  decide +kernel
 
 theorem finite_parity_blocks (b i : Fin 32) : legalNat (32*b.val+i.val)=true → rawParity (bitsOf (32*b.val+i.val))=payloadParity (bitsOf (bitRun encode (32*b.val+i.val))) := by
   rcases b with ⟨b,hb⟩
@@ -74037,101 +73977,6 @@ def clears (enD enH cx cy : Bool) (x : Nat) : Bool :=
   let y := bitRun (original enD enH cx cy) x
   !y.testBit 4 && !y.testBit 6
 
-end ECDSAAdd.Entrant.MeasuredDH
-
-namespace ECDSAAdd.Entrant.DHColumns
-open CodecBitSliceVerify (Cols Rel get target eval)
-open MeasuredCodec5 (safe bitRun)
-open CertificateBits (input mask)
-set_option maxRecDepth 30000
-set_option maxHeartbeats 4000000
-
-def inputs (w a : Nat) : Cols := (List.range w).map (fun q=>input w q &&& a)
-theorem inputs_rel (w a x : Nat) (hx:x<2^w) (ha:a.testBit x=true) : Rel (inputs w a) x x := by
-  intro q
-  by_cases h:q<w
-  · have eq:get (inputs w a) q=input w q &&& a:=by simp [CodecBitSliceVerify.get,inputs,h]
-    rw [eq,Nat.testBit_and,CertificateBits.input_bit w q x hx,ha,Bool.and_true]
-  · have z:get (inputs w a) q=0:=by
-      simp only [CodecBitSliceVerify.get,inputs,List.getElem?_eq_none (by simpa using Nat.le_of_not_gt h : ((List.range w).map (fun q=>input w q &&& a)).length ≤ q),Option.getD_none]
-    rw [z,Nat.zero_testBit]
-    exact Nat.testBit_lt_two_pow (lt_of_lt_of_le hx (Nat.pow_le_pow_right (by decide) (Nat.le_of_not_gt h)))
-
-def exclude (w a : Nat) := mask w ^^^ a
-def cleanCol (w : Nat) := exclude w (input w 7 ||| input w 8 ||| input w 9)
-theorem clean_bit (w x : Nat) (hx:x<2^w) : (cleanCol w).testBit x=MeasuredDH.clean x := by
-  simp only [cleanCol,exclude,MeasuredDH.clean,Nat.testBit_xor,Nat.testBit_or,CertificateBits.input_bit _ _ _ hx,CertificateBits.mask_bit _ _ hx]
-  cases x.testBit 7 <;> cases x.testBit 8 <;> cases x.testBit 9 <;> rfl
-
-def orig (w : Nat) (d h cx cy : Bool) :=
-  eval (cleanCol w) (MeasuredDH.original d h cx cy) (inputs w (cleanCol w))
-
-def OrigCheck (w : Nat) (d h cx cy : Bool) : Prop :=
-  (∀i∈MeasuredDH.original d h cx cy, target i<w) ∧ (orig w d h cx cy).1=true
-instance (w : Nat) (d h cx cy : Bool) : Decidable (OrigCheck w d h cx cy) := by unfold OrigCheck; infer_instance
-
-theorem original_result (w x : Nat) (hx:x<2^w) (c:MeasuredDH.clean x=true)
-    (d h cx cy : Bool) (ok:OrigCheck w d h cx cy) :
-  safe (MeasuredDH.original d h cx cy) x=true ∧ Rel (orig w d h cx cy).2 (bitRun (MeasuredDH.original d h cx cy) x) x := by
-  have a := (clean_bit w x hx).trans c
-  exact CodecBitSliceVerify.eval_sound _ x a _ _ x (by simpa only [inputs,List.length_map,List.length_range] using ok.1) (inputs_rel w _ x hx a) ok.2
-
-theorem oc10 : ∀d h cx cy : Bool, OrigCheck 10 d h cx cy := by decide +kernel
-theorem oc11 : ∀cx cy : Bool, OrigCheck 11 true true cx cy := by decide +kernel
-
-theorem safe10 (d h cx cy : Bool) (x : Nat) (hx:x<1024) (c:MeasuredDH.clean x=true) :
-    safe (MeasuredDH.original d h cx cy) x=true := (original_result 10 x hx c d h cx cy (oc10 d h cx cy)).1
-theorem safe11 (cx cy : Bool) (x : Fin 2048) (c:MeasuredDH.clean x.val=true) :
-    safe (MeasuredDH.original true true cx cy) x.val=true := (original_result 11 x.val x.isLt c _ _ cx cy (oc11 cx cy)).1
-
-def valid (w : Nat) (e d h cx cy : Bool) :=
-  let coverage := exclude w (input w 5) ||| (input w 3 &&& input w 0)
-  let src := if e then (orig w d h cx cy).2 else (List.range w).map (input w)
-  cleanCol w &&& coverage &&& exclude w (get src 4 ||| get src 6)
-
-theorem valid_bit (w x : Nat) (hw:6<w) (hx:x<2^w) (e d h cx cy : Bool) (ok:OrigCheck w d h cx cy)
-    (c:MeasuredDH.clean x=true) (cov:MeasuredDH.covered x=true)
-    (yes:e=true → MeasuredDH.clears d h cx cy x=true)
-    (no:e=false → x.testBit 4=false ∧ x.testBit 6=false) : (valid w e d h cx cy).testBit x=true := by
-  have o := (original_result w x hx c d h cx cy ok).2
-  have b4 : get ((List.range w).map (input w)) 4=input w 4 := by simp [CodecBitSliceVerify.get,show 4<w by omega]
-  have b6 : get ((List.range w).map (input w)) 6=input w 6 := by simp [CodecBitSliceVerify.get,hw]
-  have ac:= (clean_bit w x hx).trans c
-  cases e with
-  | false =>
-    obtain ⟨z4,z6⟩:=no rfl
-    simpa only [valid,Bool.false_eq_true,if_false,exclude,Nat.testBit_and,Nat.testBit_or,Nat.testBit_xor,CertificateBits.input_bit _ _ _ hx,CertificateBits.mask_bit _ _ hx,b4,b6,ac,Bool.true_and,z4,z6,Bool.false_or,Bool.xor_false,Bool.and_true,Bool.true_xor,MeasuredDH.covered] using cov
-  | true =>
-    have z:=yes rfl
-    simp only [MeasuredDH.clears,Bool.and_eq_true,Bool.not_eq_true'] at z
-    have z4 := (o 4).symm.trans z.1
-    have z6 := (o 6).symm.trans z.2
-    simpa only [valid,if_true,exclude,Nat.testBit_and,Nat.testBit_or,Nat.testBit_xor,CertificateBits.input_bit _ _ _ hx,CertificateBits.mask_bit _ _ hx,ac,Bool.true_and,z4,z6,Bool.false_or,Bool.xor_false,Bool.and_true,Bool.true_xor,MeasuredDH.covered] using cov
-
-def Good (w a : Nat) (p q : Program) : Prop :=
-  (∀i∈p,target i<w) ∧ (∀i∈q,target i<w) ∧
-  (eval a p (inputs w a)).1=true ∧ (eval a q (inputs w a)).1=true ∧ (eval a p (inputs w a)).2=(eval a q (inputs w a)).2
-instance (w a : Nat) (p q : Program) : Decidable (Good w a p q) := by unfold Good; infer_instance
-
-theorem result (w a x : Nat) (hx:x<2^w) (ha:a.testBit x=true) (p q : Program) (ok:Good w a p q) :
-    safe p x=true ∧ bitRun p x=bitRun q x := by
-  have r:=inputs_rel w a x hx ha
-  have l:=CodecBitSliceVerify.eval_sound _ x ha p _ x (by simpa only [inputs,List.length_map,List.length_range] using ok.1) r ok.2.2.1
-  have b:=CodecBitSliceVerify.eval_sound _ x ha q _ x (by simpa only [inputs,List.length_map,List.length_range] using ok.2.1) r ok.2.2.2.1
-  exact ⟨l.1,LegalColumnProof.row_equal l.2 b.2 ok.2.2.2.2⟩
-
-theorem same10 : ∀ e d h cx cy : Bool, Good 10 (valid 10 e d h cx cy)
-   (MeasuredDH.replacement e d h cx cy) (MeasuredDH.original d h cx cy) := by decide +kernel
-theorem equivalence10 (e d h cx cy : Bool) (x : Fin 1024) (c:MeasuredDH.clean x.val=true) (cov:MeasuredDH.covered x.val=true)
-    (yes:e=true → MeasuredDH.clears d h cx cy x.val=true) (no:e=false → x.val.testBit 4=false ∧ x.val.testBit 6=false) :
-    safe (MeasuredDH.replacement e d h cx cy) x.val=true ∧ bitRun (MeasuredDH.replacement e d h cx cy) x.val=bitRun (MeasuredDH.original d h cx cy) x.val :=
-  result 10 _ x.val x.isLt (valid_bit 10 _ (by decide) x.isLt _ _ _ _ _ (oc10 d h cx cy) c cov yes no) _ _ (same10 e d h cx cy)
-
-end ECDSAAdd.Entrant.DHColumns
-
-namespace ECDSAAdd.Entrant.MeasuredDH
-open Arithmetic RecordedQuantum Baselines
-open MeasuredCodec5 (bitRun safe)
 set_option maxRecDepth 30000 in
 set_option maxHeartbeats 8000000 in
 theorem finite_equivalence : ∀ erase enD enH cx cy : Bool, ∀ x : Fin 1024,
@@ -74139,14 +73984,14 @@ theorem finite_equivalence : ∀ erase enD enH cx cy : Bool, ∀ x : Fin 1024,
     (erase = true → clears enD enH cx cy x.val = true) →
     (erase = false → x.val.testBit 4=false ∧ x.val.testBit 6=false) →
     safe (replacement erase enD enH cx cy) x.val = true ∧
-      bitRun (replacement erase enD enH cx cy) x.val = bitRun (original enD enH cx cy) x.val :=
-  DHColumns.equivalence10
+      bitRun (replacement erase enD enH cx cy) x.val = bitRun (original enD enH cx cy) x.val := by
+  decide +kernel
 
 set_option maxRecDepth 30000 in
 set_option maxHeartbeats 8000000 in
 theorem original_safe : ∀ enD enH cx cy : Bool, ∀ x < 1024,
-    clean x = true → safe (original enD enH cx cy) x = true :=
-  DHColumns.safe10
+    clean x = true → safe (original enD enH cx cy) x = true := by
+  decide +kernel
 
                                                                       
                                              
@@ -75686,111 +75531,9 @@ theorem pre509_supp (G S : Bool) (u v : Nat) : ∀q, pre509 G S u v q=true → q
 
 def input509 (G S : Bool) (uv : Nat × Nat) : Nat := encN_t8 (pre509 G S uv.1 uv.2) sitesM
 
-end FastTickReplay
-namespace TickSignatures
-open ECDSAAdd.Entrant
-set_option maxRecDepth 30000
-set_option maxHeartbeats 1600000
-
-structure Summary where
-  bits : Nat
-  bias : Bool
-  coefficients : List Bool
-deriving DecidableEq
-
-def signature : Program → Nat → Summary
-| [],b => ⟨b,false,[]⟩
-| .X t::p,b => signature p (b ^^^ 2^t)
-| .CX a t::p,b => signature p (FastTickReplay.flipN_t8 b t (b.testBit a))
-| .CCX a c t::p,b => signature p (FastTickReplay.flipN_t8 b t (b.testBit a && b.testBit c))
-| .measureX t c0 c1::p,b =>
-  let z:=FastTickReplay.flipN_t8 b t (b.testBit t)
-  let r:=signature p z
-  let lo:=FastTickReplay.corrP_t8 c0 false z
-  let hi:=FastTickReplay.corrP_t8 c1 (b.testBit t) z
-  ⟨r.bits,lo ^^ r.bias,(lo ^^ hi)::r.coefficients⟩
-
-def dot : List Bool → List Bool → Bool
-| [],_=>false
-| c::cs,m=>(m.headD false && c) ^^ dot cs m.tail
-def read (s:Summary) (ph:Bool) (m:List Bool) : Bool×Nat := ((ph ^^ s.bias) ^^ dot s.coefficients m,s.bits)
-
-theorem corr (cs : List Correction) (a b : Bool) (x : Nat) :
-    FastTickReplay.corrP_t8 cs (a ^^ b) x = (a ^^ FastTickReplay.corrP_t8 cs b x) := by
-  induction cs generalizing b with
-  | nil => rfl
-  | cons c cs ih =>
-    cases c <;> simp only [FastTickReplay.corrP_t8,Bool.xor_assoc,ih]
-
-theorem sound (P : Program) (x : Nat) (ph : Bool) (m : List Bool) :
-    FastTickReplay.runN_t8 P m (ph,x)=read (signature P x) ph m := by
-  induction P generalizing ph x m with
-  | nil => simp [FastTickReplay.runN_t8,signature,read,dot]
-  | cons i P ih =>
-    cases i with
-    | X t => exact ih _ _ _
-    | CX a t => exact ih _ _ _
-    | CCX a b t => exact ih _ _ _
-    | measureX t c0 c1 =>
-      rw [FastTickReplay.runN_t8,ih]
-      simp only [signature,read,dot]
-      cases hm : m.headD false with
-      | false =>
-        simp only [Bool.false_and,Bool.xor_false,Bool.false_eq_true,if_false,Bool.false_xor]
-        rw [←Bool.xor_false ph, corr c0 ph false]
-        simp only [Bool.xor_false,Bool.xor_assoc]
-      | true =>
-        simp only [Bool.true_and,if_true]
-        rw [corr c1 ph (x.testBit t)]
-        generalize FastTickReplay.corrP_t8 c0 false (FastTickReplay.flipN_t8 x t (x.testBit t))=lo
-        generalize FastTickReplay.corrP_t8 c1 (x.testBit t) (FastTickReplay.flipN_t8 x t (x.testBit t))=hi
-        generalize (signature P (FastTickReplay.flipN_t8 x t (x.testBit t))).bias=bias
-        generalize dot (signature P (FastTickReplay.flipN_t8 x t (x.testBit t))).coefficients m.tail=k
-        cases ph <;> cases lo <;> cases hi <;> cases bias <;> cases k <;> rfl
-
-theorem eq_run (P Q : Program) (x : Nat)
-    (h:signature P x=signature Q x) (ph:Bool) (m:List Bool) :
-    FastTickReplay.runN_t8 P m (ph,x)=FastTickReplay.runN_t8 Q m (ph,x) := by
-  rw [sound,sound,h]
-
-/-- Tail-recursive certificate evaluator, keeping the phase coefficients in reverse order. -/
-def walk : Program → Nat → Bool → List Bool → Summary
-| [],b,ph,cs => ⟨b,ph,cs.reverse⟩
-| .X t::p,b,ph,cs => walk p (b ^^^ 2^t) ph cs
-| .CX a t::p,b,ph,cs => walk p (FastTickReplay.flipN_t8 b t (b.testBit a)) ph cs
-| .CCX a c t::p,b,ph,cs => walk p (FastTickReplay.flipN_t8 b t (b.testBit a && b.testBit c)) ph cs
-| .measureX t c0 c1::p,b,ph,cs =>
-  let z:=FastTickReplay.flipN_t8 b t (b.testBit t)
-  let lo:=FastTickReplay.corrP_t8 c0 false z
-  let hi:=FastTickReplay.corrP_t8 c1 (b.testBit t) z
-  walk p z (ph ^^ lo) ((lo ^^ hi)::cs)
-
-theorem walk_eq (P : Program) (b : Nat) (ph : Bool) (cs : List Bool) :
-  walk P b ph cs = ⟨(signature P b).bits,ph ^^ (signature P b).bias,cs.reverse ++ (signature P b).coefficients⟩ := by
-  induction P generalizing b ph cs with
-  | nil => simp [walk,signature]
-  | cons i p ih =>
-    cases i <;> simp only [walk,signature,ih,List.reverse_cons,List.append_assoc,List.singleton_append,Bool.xor_assoc]
-
-def quick (P : Program) (b : Nat) := walk P b false []
-theorem quick_eq (P : Program) (b : Nat) : quick P b=signature P b := by
-  simp [quick,walk_eq]
-theorem mf_checked : ∀g s : Bool, ∀uv∈pairs509,
-    quick (tick509ExF++tick510ExF) (FastTickReplay.input509 g s uv) =
-    quick tickMF (FastTickReplay.input509 g s uv) := by decide +kernel
 theorem checkMF : ∀G S : Bool, ∀uv∈pairs509, ∀c∈recsUpTo 5,
- FastTickReplay.runN_t8 (tick509ExF++tick510ExF) c (false,FastTickReplay.input509 G S uv)=
- FastTickReplay.runN_t8 tickMF c (false,FastTickReplay.input509 G S uv) := by
- intro g s uv huv m _
- exact eq_run _ _ _ (by simpa only [quick_eq] using mf_checked g s uv huv) false m
-
-end TickSignatures
-namespace FastTickReplay
-open Arithmetic
-
-theorem checkMF : ∀G S : Bool, ∀uv∈pairs509, ∀c∈recsUpTo 5,
- runN_t8 (tick509ExF++tick510ExF) c (false,input509 G S uv)=runN_t8 tickMF c (false,input509 G S uv) :=
-  TickSignatures.checkMF
+ runN_t8 (tick509ExF++tick510ExF) c (false,input509 G S uv)=runN_t8 tickMF c (false,input509 G S uv) := by
+ decide +kernel
 
 
 
@@ -76031,40 +75774,17 @@ theorem counts (cx cy : Bool) :
 def adapter (erase cx cy : Bool) : Program :=
   if erase then gen.reverse++clearPrefix cx cy else restoreSuffix cx cy++merge.reverse
 
-end ECDSAAdd.Entrant.FusedFlags
-
-namespace ECDSAAdd.Entrant.DHColumns
-open CodecBitSliceVerify (Cols Rel get target eval)
-open MeasuredCodec5 (safe bitRun)
-open CertificateBits (input mask)
-set_option maxRecDepth 30000
-set_option maxHeartbeats 4000000
-
-theorem same11 : ∀ e cx cy : Bool, Good 11 (valid 11 e true true cx cy)
-   (FusedFlags.adapter e cx cy) (MeasuredDH.original true true cx cy) := by decide +kernel
-
-theorem equivalence11 (e cx cy : Bool) (x : Fin 2048) (c:MeasuredDH.clean x.val=true) (cov:MeasuredDH.covered x.val=true)
-    (yes:e=true → MeasuredDH.clears true true cx cy x.val=true) (no:e=false → x.val.testBit 4=false ∧ x.val.testBit 6=false) :
-    safe (FusedFlags.adapter e cx cy) x.val=true ∧ bitRun (FusedFlags.adapter e cx cy) x.val=bitRun (MeasuredDH.original true true cx cy) x.val :=
-  result 11 _ x.val x.isLt (valid_bit 11 _ (by decide) x.isLt _ _ _ _ _ (oc11 cx cy) c cov yes no) _ _ (same11 e cx cy)
-
-end ECDSAAdd.Entrant.DHColumns
-
-namespace ECDSAAdd.Entrant.FusedFlags
-open Arithmetic RecordedQuantum MeasuredCodec5 Baselines
-set_option maxRecDepth 30000
-set_option maxHeartbeats 8000000
 theorem adapter_finite : ∀erase cx cy : Bool, ∀x : Fin 2048,
     MeasuredDH.clean x.val=true → MeasuredDH.covered x.val=true →
     (erase=true → MeasuredDH.clears true true cx cy x.val=true) →
     (erase=false → x.val.testBit 4=false ∧ x.val.testBit 6=false) →
     safe (adapter erase cx cy) x.val=true ∧
-      bitRun (adapter erase cx cy) x.val=bitRun (MeasuredDH.original true true cx cy) x.val :=
-  DHColumns.equivalence11
+      bitRun (adapter erase cx cy) x.val=bitRun (MeasuredDH.original true true cx cy) x.val := by
+  decide +kernel
 
 theorem adapter_original_safe : ∀cx cy : Bool, ∀x : Fin 2048,
-    MeasuredDH.clean x.val=true → safe (MeasuredDH.original true true cx cy) x.val=true :=
-  DHColumns.safe11
+    MeasuredDH.clean x.val=true → safe (MeasuredDH.original true true cx cy) x.val=true := by
+  decide +kernel
 
 theorem adapter_support (erase cx cy : Bool) : wires (adapter erase cx cy)⊆Finset.range 11 ∧
     wires (MeasuredDH.original true true cx cy)⊆Finset.range 11 := by
@@ -76240,30 +75960,8 @@ theorem boundary_step (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.
 
 def cycle (first : Bool) : Program := if first then gen++gen.reverse else merge.reverse++merge
 
-end ECDSAAdd.Entrant.FusedFlags
-
-namespace ECDSAAdd.Entrant.DHColumns
-open CodecBitSliceVerify (Cols Rel get target eval)
-open MeasuredCodec5 (safe bitRun)
-open CertificateBits (input mask)
-set_option maxRecDepth 30000
-set_option maxHeartbeats 4000000
-
-theorem cycle11check : ∀ b : Bool, Good 11 (mask 11) (FusedFlags.cycle b) [] := by decide +kernel
-theorem cycle11 (b : Bool) (x : Fin 2048) :
-    safe (FusedFlags.cycle b) x.val=true ∧ bitRun (FusedFlags.cycle b) x.val=x.val :=
-  result 11 _ x.val x.isLt (CertificateBits.mask_bit _ _ x.isLt) _ [] (cycle11check b)
-
-end ECDSAAdd.Entrant.DHColumns
-
-namespace ECDSAAdd.Entrant.FusedFlags
-open Arithmetic RecordedQuantum MeasuredCodec5 Baselines
-open Secp256k1 ControlledPointLayout MappedCompressed CompressedPointDialog
-set_option maxRecDepth 30000
-set_option maxHeartbeats 8000000
 theorem cycle_finite : ∀first : Bool, ∀x : Fin 2048,
-    safe (cycle first) x.val=true ∧ bitRun (cycle first) x.val=x.val :=
-  DHColumns.cycle11
+    safe (cycle first) x.val=true ∧ bitRun (cycle first) x.val=x.val := by decide +kernel
 
 theorem cycle_support (first : Bool) : wires (cycle first)⊆Finset.range 11 := by cases first <;> decide
 theorem cycle_measurements (first : Bool) : measurementCount (cycle first)=0 := by cases first <;> rfl
@@ -76951,76 +76649,20 @@ def chkPair_t8 (uv : Nat × Nat) : Bool :=
   [false, true].all fun G => [false, true].all fun S =>
     chkT_t8 tripR tickMR8 tripF (encN_t8 (pre508 G S uv.1 uv.2) sitesT8)
 
-namespace TickSignatures
-set_option maxRecDepth 30000
-set_option maxHeartbeats 1600000
-/-- Fixed ordering used by the exhaustive list, independent of the concrete instruction tree. -/
-def paths : Nat → List (List Bool)
-  | 0 => [[]]
-  | n+1 => (paths n).map (false :: ·) ++ (paths n).map (true :: ·)
-
-theorem all_map (P : Program) (s : Bool×Nat) : runAll_t8 P s =
-    (paths (measurementCount P)).map (fun r=>(r,runN_t8 P r s)) := by
-  induction P generalizing s with
-  | nil => simp [runAll_t8,runN_t8,measurementCount,paths]
-  | cons i p ih =>
-    cases i with
-    | X t => simpa only [runAll_t8,runN_t8,measurementCount] using ih (s.1,s.2 ^^^ 2^t)
-    | CX c t => simpa only [runAll_t8,runN_t8,measurementCount] using ih (s.1,flipN_t8 s.2 t (s.2.testBit c))
-    | CCX a b t => simpa only [runAll_t8,runN_t8,measurementCount] using ih (s.1,flipN_t8 s.2 t (s.2.testBit a && s.2.testBit b))
-    | measureX t c0 c1 =>
-      simp only [runAll_t8,measurementCount,Nat.add_comm 1,paths,List.map_append,List.map_map,Function.comp_def,ih,runN_t8,List.headD_cons,List.tail_cons,Bool.false_eq_true,if_false,if_true]
-
-theorem corr_same (cs : List Correction) (x : Nat) (p : Bool) :
-    corrP_t8 cs p x = FastTickReplay.corrP_t8 cs p x := by
-  induction cs generalizing p with
-  | nil => rfl
-  | cons c cs ih => cases c <;> simp only [corrP_t8,FastTickReplay.corrP_t8,ih]
-
-theorem run_same (P : Program) (m : List Bool) (s : Bool×Nat) :
-    runN_t8 P m s=FastTickReplay.runN_t8 P m s := by
-  induction P generalizing m s with
-  | nil => rfl
-  | cons i p ih =>
-    cases i <;> simp only [runN_t8,FastTickReplay.runN_t8,flipN_t8,FastTickReplay.flipN_t8,corr_same,ih]
-
-theorem chk_fast (P Q F : Program) (e : Nat) (hk : measurementCount P=measurementCount Q)
-    (ok : signature P (runN_t8 F [] (false,e)).2 = signature Q (runN_t8 F [] (false,e)).2) :
-    chkT_t8 P Q F e=true := by
-  unfold chkT_t8
-  apply decide_eq_true
-  rw [all_map,all_map,hk]
-  apply List.map_congr_left
-  intro r _
-  rw [run_same P,run_same Q,eq_run P Q _ ok false r]
-
-def tripChecked (uv : Nat × Nat) : Prop := ∀g s : Bool,
-    let e:=encN_t8 (pre508 g s uv.1 uv.2) sitesT8
-    let x:=(runN_t8 tripF [] (false,e)).2
-    quick tripR x=quick tickMR8 x
-
-instance (uv : Nat×Nat) : Decidable (tripChecked uv) := by unfold tripChecked; infer_instance
-theorem trip (uv : Nat×Nat) (h:tripChecked uv) : chkPair_t8 uv=true := by
-  simp only [chkPair_t8,List.all_eq_true]
-  intro g _ s _
-  obtain ⟨_,c2,_,c4⟩:=tickN_counts
-  exact chk_fast _ _ _ _ (c4.trans c2.symm) (by simpa only [quick_eq] using h g s)
-end TickSignatures
-
-theorem chkP_0_1 : chkPair_t8 (0, 1) = true := TickSignatures.trip (0, 1) (by decide +kernel)
-theorem chkP_1_1 : chkPair_t8 (1, 1) = true := TickSignatures.trip (1, 1) (by decide +kernel)
-theorem chkP_2_1 : chkPair_t8 (2, 1) = true := TickSignatures.trip (2, 1) (by decide +kernel)
-theorem chkP_3_1 : chkPair_t8 (3, 1) = true := TickSignatures.trip (3, 1) (by decide +kernel)
-theorem chkP_4_1 : chkPair_t8 (4, 1) = true := TickSignatures.trip (4, 1) (by decide +kernel)
-theorem chkP_5_1 : chkPair_t8 (5, 1) = true := TickSignatures.trip (5, 1) (by decide +kernel)
-theorem chkP_6_1 : chkPair_t8 (6, 1) = true := TickSignatures.trip (6, 1) (by decide +kernel)
-theorem chkP_7_1 : chkPair_t8 (7, 1) = true := TickSignatures.trip (7, 1) (by decide +kernel)
-theorem chkP_1_3 : chkPair_t8 (1, 3) = true := TickSignatures.trip (1, 3) (by decide +kernel)
-theorem chkP_2_3 : chkPair_t8 (2, 3) = true := TickSignatures.trip (2, 3) (by decide +kernel)
-theorem chkP_5_3 : chkPair_t8 (5, 3) = true := TickSignatures.trip (5, 3) (by decide +kernel)
-theorem chkP_1_5 : chkPair_t8 (1, 5) = true := TickSignatures.trip (1, 5) (by decide +kernel)
-theorem chkP_3_5 : chkPair_t8 (3, 5) = true := TickSignatures.trip (3, 5) (by decide +kernel)
-theorem chkP_1_7 : chkPair_t8 (1, 7) = true := TickSignatures.trip (1, 7) (by decide +kernel)
+theorem chkP_0_1 : chkPair_t8 (0, 1) = true := by decide +kernel
+theorem chkP_1_1 : chkPair_t8 (1, 1) = true := by decide +kernel
+theorem chkP_2_1 : chkPair_t8 (2, 1) = true := by decide +kernel
+theorem chkP_3_1 : chkPair_t8 (3, 1) = true := by decide +kernel
+theorem chkP_4_1 : chkPair_t8 (4, 1) = true := by decide +kernel
+theorem chkP_5_1 : chkPair_t8 (5, 1) = true := by decide +kernel
+theorem chkP_6_1 : chkPair_t8 (6, 1) = true := by decide +kernel
+theorem chkP_7_1 : chkPair_t8 (7, 1) = true := by decide +kernel
+theorem chkP_1_3 : chkPair_t8 (1, 3) = true := by decide +kernel
+theorem chkP_2_3 : chkPair_t8 (2, 3) = true := by decide +kernel
+theorem chkP_5_3 : chkPair_t8 (5, 3) = true := by decide +kernel
+theorem chkP_1_5 : chkPair_t8 (1, 5) = true := by decide +kernel
+theorem chkP_3_5 : chkPair_t8 (3, 5) = true := by decide +kernel
+theorem chkP_1_7 : chkPair_t8 (1, 7) = true := by decide +kernel
 
 theorem chkAll_true_t8 : pairs508.all chkPair_t8 = true := by
   simp only [pairs508, List.all_cons, List.all_nil, Bool.and_true, chkP_0_1, chkP_1_1, chkP_2_1, chkP_3_1, chkP_4_1, chkP_5_1, chkP_6_1, chkP_7_1, chkP_1_3, chkP_2_3, chkP_5_3, chkP_1_5, chkP_3_5, chkP_1_7]
@@ -86623,6 +86265,164 @@ set_option linter.unusedSimpArgs false
 set_option linter.unnecessarySimpa false
 set_option maxRecDepth 30000
 set_option maxHeartbeats 400000
+abbrev Cols := List Nat
+def get (s : Cols) (q : Wire) : Nat := (s[q]?).getD 0
+def step (mask : Nat) (i : Instr) (s : Cols) : Cols :=
+  match i with
+  | .X t => s.set t (get s t ^^^ mask)
+  | .CX c t => s.set t (get s t ^^^ get s c)
+  | .CCX a b t => s.set t (get s t ^^^ (get s a &&& get s b))
+  | .measureX t _ _ => s.set t 0
+def corr : List Correction → Cols → Nat
+  | [], _ => 0
+  | .Z t::cs, s => get s t ^^^ corr cs s
+  | .CZ a b::cs, s => (get s a &&& get s b) ^^^ corr cs s
+def safeStep (i : Instr) (s : Cols) : Bool :=
+  match i with
+  | .measureX t c0 c1 =>
+      let z := s.set t 0
+      (corr c0 z == 0) && (corr c1 z == get s t)
+  | _ => true
+def eval (mask : Nat) : Program → Cols → Bool × Cols
+  | [], s => (true,s)
+  | i::p,s => let rest:=eval mask p (step mask i s); (safeStep i s && rest.1, rest.2)
+
+
+def Rel (s : Cols) (x row : Nat) : Prop := ∀ q : Wire, x.testBit q=(get s q).testBit row
+
+theorem get_set (s : Cols) (t v : Nat) (ht : t<s.length) (q : Nat) :
+    get (s.set t v) q=if q=t then v else get s q := by
+  simp only [get,List.getElem?_set]
+  by_cases h:q=t
+  · subst q; simp [ht]
+  · simp [h,Ne.symm h]
+
+theorem flip_bit (x t q : Nat) :
+    (x ^^^ 2^t).testBit q=if q=t then !x.testBit q else x.testBit q := by
+  have h:=congrFun (MeasuredCodec5.bitsOf_flip x t) q
+  by_cases hq:q=t
+  · subst q; simpa [MeasuredCodec5.bitsOf,writeBit] using h
+  · simpa [MeasuredCodec5.bitsOf,writeBit,Function.update_of_ne hq,hq] using h
+
+theorem clear_bit (x t q : Nat) :
+    (MeasuredCodec5.clear x t).testBit q=if q=t then false else x.testBit q := by
+  have h:=congrFun (MeasuredCodec5.bitsOf_clear x t) q
+  by_cases hq:q=t
+  · subst q; simpa [MeasuredCodec5.bitsOf,writeBit] using h
+  · simpa [MeasuredCodec5.bitsOf,writeBit,Function.update_of_ne hq,hq] using h
+
+theorem rel_xor (s : Cols) (x row t v : Nat) (ht:t<s.length) (hr:Rel s x row) :
+    Rel (s.set t (get s t ^^^ v)) (if v.testBit row then x ^^^ 2^t else x) row := by
+  intro q
+  rw [get_set s t _ ht q]
+  by_cases hq:q=t
+  · subst q
+    cases hv:v.testBit row <;> simp [hv,Nat.testBit_xor,flip_bit,hr t]
+  · cases hv:v.testBit row <;> simp [hv,hq,Ne.symm hq,flip_bit,hr q]
+
+theorem rel_clear (s : Cols) (x row t : Nat) (ht:t<s.length) (hr:Rel s x row) :
+    Rel (s.set t 0) (MeasuredCodec5.clear x t) row := by
+  intro q
+  rw [get_set s t _ ht q,clear_bit]
+  by_cases hq:q=t <;> simp [hq,hr q]
+
+def target : Instr→Nat
+  | .X t => t
+  | .CX _ t => t
+  | .CCX _ _ t => t
+  | .measureX t _ _ => t
+
+theorem length_step (mask : Nat) (i : Instr) (s : Cols) : (step mask i s).length=s.length := by
+  cases i <;> simp [step]
+
+theorem step_rel (mask row : Nat) (hm:mask.testBit row=true) (i : Instr)
+    (s : Cols) (x : Nat) (ht:target i<s.length) (hr:Rel s x row) :
+    Rel (step mask i s) (MeasuredCodec5.bitStep i x) row := by
+  cases i with
+  | X t => simpa only [step,MeasuredCodec5.bitStep,hm,if_true] using rel_xor s x row t mask ht hr
+  | CX a t =>
+    simpa only [step,MeasuredCodec5.bitStep,hr a] using rel_xor s x row t (get s a) ht hr
+  | CCX a b t =>
+    simpa only [step,MeasuredCodec5.bitStep,Nat.testBit_and,hr a,hr b] using
+      rel_xor s x row t (get s a &&& get s b) ht hr
+  | measureX t c0 c1 => exact rel_clear s x row t ht hr
+
+
+
+theorem corr_rel (cs : List Correction) (s : Cols) (x row : Nat) (hr:Rel s x row) :
+    (corr cs s).testBit row=corrSim cs false x := by
+  induction cs with
+  | nil => simp [corr,MeasuredCodec5.corrSim]
+  | cons i cs ih =>
+    cases i with
+    | Z t =>
+      change (get s t ^^^ corr cs s).testBit row=corrSim cs (false ^^ x.testBit t) x
+      rw [Nat.testBit_xor,MeasuredCodec5.corrSim_xor]
+      simp only [Bool.false_xor,←hr t,ih]
+    | CZ a b =>
+      change ((get s a &&& get s b) ^^^ corr cs s).testBit row=
+        corrSim cs (false ^^ (x.testBit a && x.testBit b)) x
+      rw [Nat.testBit_xor,MeasuredCodec5.corrSim_xor,Nat.testBit_and]
+      simp only [Bool.false_xor,←hr a,←hr b,ih]
+
+theorem safeStep_sound (i : Instr) (s : Cols) (x row : Nat) (ht:target i<s.length)
+    (hr:Rel s x row) (hs:safeStep i s=true) : MeasuredCodec5.safeStep i x=true := by
+  cases i with
+  | X t => rfl
+  | CX a t => rfl
+  | CCX a b t => rfl
+  | measureX t c0 c1 =>
+    have hc:=rel_clear s x row t ht hr
+    have h0:=corr_rel c0 (s.set t 0) (MeasuredCodec5.clear x t) row hc
+    have h1:=corr_rel c1 (s.set t 0) (MeasuredCodec5.clear x t) row hc
+    have parts: corr c0 (s.set t 0)=0 ∧ corr c1 (s.set t 0)=get s t := by
+      simpa only [safeStep,Bool.and_eq_true,beq_iff_eq] using hs
+    rw [parts.1] at h0
+    rw [parts.2] at h1
+    simp only [MeasuredCodec5.safeStep,←h0,←h1,←hr t,Nat.zero_testBit,BEq.rfl,Bool.and_self]
+
+theorem eval_sound (mask row : Nat) (hm:mask.testBit row=true) (P : Program)
+    (s : Cols) (x : Nat) (bound:∀i∈P,target i<s.length) (hr:Rel s x row)
+    (hs:(eval mask P s).1=true) :
+    MeasuredCodec5.safe P x=true ∧ Rel (eval mask P s).2 (bitRun P x) row := by
+  induction P generalizing s x with
+  | nil => exact ⟨rfl,hr⟩
+  | cons i P ih =>
+    have parts:safeStep i s=true ∧ (eval mask P (step mask i s)).1=true := by
+      simpa only [eval,Bool.and_eq_true] using hs
+    have hi:=bound i (by simp)
+    have hr':=step_rel mask row hm i s x hi hr
+    have hb:∀j∈P,target j<(step mask i s).length := by
+      intro j hj
+      rw [length_step]
+      exact bound j (by simp [hj])
+    have rest:=ih (step mask i s) (MeasuredCodec5.bitStep i x) hb hr' parts.2
+    refine ⟨?_,rest.2⟩
+    simp only [MeasuredCodec5.safe,Bool.and_eq_true]
+    exact ⟨safeStep_sound i s x row hi hr parts.1,rest.1⟩
+
+
+
+def packBits : List Bool→Nat
+  | [] => 0
+  | b::bs => Nat.bit b (packBits bs)
+
+theorem pack_testBit (bs : List Bool) (r : Nat) :
+    (packBits bs).testBit r=(bs[r]?).getD false := by
+  induction bs generalizing r with
+  | nil => simp [packBits]
+  | cons b bs ih =>
+    cases r with
+    | zero => cases b <;> simp [packBits,Nat.bit,Nat.testBit_zero]
+    | succ r => simpa only [packBits,Nat.testBit_bit_succ,List.getElem?_cons_succ] using ih r
+
+theorem pack_rows (xs : List Nat) (q r : Nat) :
+    (packBits (xs.map (fun x=>x.testBit q))).testBit r=((xs[r]?).getD 0).testBit q := by
+  rw [pack_testBit,List.getElem?_map]
+  cases h:xs[r]? <;> simp
+
+
+
 def physicalCheck : Instr→Bool
   | .X _ => true
   | .CX c t => decide (c≠t)
@@ -91892,11 +91692,28 @@ theorem old3_run (a b c A B A' B' z z' : Wire)
   have q22 := Ne.symm hAB'; have q23 := Ne.symm hA'B'; have q24 := Ne.symm hBA'
   have q25 := Ne.symm hAA'; have q26 := Ne.symm hAB; have q27 := Ne.symm hBB'
   refine st_eq rfl (fun w => ?_)
-  by_cases hwz : w = z <;> by_cases hwb : w = b <;>
-    by_cases hwB : w = B <;> by_cases hwB' : w = B' <;> by_cases hwz' : w = z' <;>
-    subst_vars <;>
+  by_cases hwz : w = z
+  · subst_vars
     simp_all [writeBit,Function.update,sumBit,
       Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwb : w = b
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwB : w = B
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwB' : w = B'
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwz' : w = z'
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  simp_all [writeBit,Function.update,sumBit,
+    Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
 
 /-- **Main result.** On the restriction that output bits 256 and 257 are zero,
 the two-Toffoli three-bit leaf and the zero-Toffoli replacement agree as complete
@@ -91933,10 +91750,19 @@ theorem full_state3 (a b c A B A' B' z z' : Wire)
   have q5 := Ne.symm hB'z'; have q7 := Ne.symm hbz'; have q6 := Ne.symm hBz'
   have q8 := Ne.symm hbB; have q9 := Ne.symm hbB'; have q27 := Ne.symm hBB'
   refine st_eq rfl (fun w => ?_)
-  by_cases hwz' : w = z' <;> by_cases hwb : w = b <;>
-    by_cases hwB : w = B <;> by_cases hwB' : w = B' <;>
-    subst_vars <;>
+  by_cases hwz' : w = z'
+  · subst_vars
     simp_all [writeBit,Function.update,post3,v1,v2]
+  by_cases hwb : w = b
+  · subst_vars
+    simp_all [writeBit,Function.update,post3,v1,v2]
+  by_cases hwB : w = B
+  · subst_vars
+    simp_all [writeBit,Function.update,post3,v1,v2]
+  by_cases hwB' : w = B'
+  · subst_vars
+    simp_all [writeBit,Function.update,post3,v1,v2]
+  simp_all [writeBit,Function.update,post3,v1,v2]
 
 /-! ### Wrapper: substitution inside a surrounding program. -/
 
@@ -92718,12 +92544,32 @@ theorem old4_run (a b c A B A' B' A'' B'' z z' z'' : Wire)
   have q46 := Ne.symm hBA''; have q47 := Ne.symm hB'A''; have q48 := Ne.symm hAA'
   have q49 := Ne.symm hAA''; have q50 := Ne.symm hA'A''
   refine st_eq rfl (fun w => ?_)
-  by_cases hwz : w = z <;> by_cases hwz'' : w = z'' <;>
-    by_cases hwb : w = b <;> by_cases hwB : w = B <;>
-    by_cases hwB' : w = B' <;> by_cases hwB'' : w = B'' <;>
-    subst_vars <;>
+  by_cases hwz : w = z
+  · subst_vars
     simp_all [writeBit,Function.update,sumBit,
       Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwz'' : w = z''
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwb : w = b
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwB : w = B
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwB' : w = B'
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  by_cases hwB'' : w = B''
+  · subst_vars
+    simp_all [writeBit,Function.update,sumBit,
+      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
+  simp_all [writeBit,Function.update,sumBit,
+    Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
 
 
 
