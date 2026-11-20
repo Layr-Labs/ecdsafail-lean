@@ -6424,13 +6424,328 @@ theorem sim_safe (p : Program) (x : Nat) (h : safe p x=true) (m : List Bool) (ph
       simp only [sim,neutral]
       exact ih _ hh.2 _ _
 
+end ECDSAAdd.Entrant.MeasuredCodec5
+
+-- Bit-column semantics inherited from the integrated codec verifier (5502f192).
+section
+namespace ECDSAAdd.Entrant.CodecBitSliceVerify
+open ECDSAAdd Arithmetic
+open MeasuredCodec5 (bitsOf bitRun corrSim)
+set_option maxRecDepth 30000
+set_option maxHeartbeats 400000
+abbrev Cols := List Nat
+def get (s : Cols) (q : Wire) : Nat := (s[q]?).getD 0
+def step (mask : Nat) (i : Instr) (s : Cols) : Cols :=
+  match i with
+  | .X t => s.set t (get s t ^^^ mask)
+  | .CX c t => s.set t (get s t ^^^ get s c)
+  | .CCX a b t => s.set t (get s t ^^^ (get s a &&& get s b))
+  | .measureX t _ _ => s.set t 0
+def corr : List Correction → Cols → Nat
+  | [], _ => 0
+  | .Z t::cs, s => get s t ^^^ corr cs s
+  | .CZ a b::cs, s => (get s a &&& get s b) ^^^ corr cs s
+def safeStep (i : Instr) (s : Cols) : Bool :=
+  match i with
+  | .measureX t c0 c1 =>
+      let z := s.set t 0
+      (corr c0 z == 0) && (corr c1 z == get s t)
+  | _ => true
+def eval (mask : Nat) : Program → Cols → Bool × Cols
+  | [], s => (true,s)
+  | i::p,s => let rest:=eval mask p (step mask i s); (safeStep i s && rest.1, rest.2)
+
+
+def Rel (s : Cols) (x row : Nat) : Prop := ∀ q : Wire, x.testBit q=(get s q).testBit row
+
+theorem get_set (s : Cols) (t v : Nat) (ht : t<s.length) (q : Nat) :
+    get (s.set t v) q=if q=t then v else get s q := by
+  simp only [get,List.getElem?_set]
+  by_cases h:q=t
+  · subst q; simp [ht]
+  · simp [h,Ne.symm h]
+
+theorem flip_bit (x t q : Nat) :
+    (x ^^^ 2^t).testBit q=if q=t then !x.testBit q else x.testBit q := by
+  have h:=congrFun (MeasuredCodec5.bitsOf_flip x t) q
+  by_cases hq:q=t
+  · subst q; simp
+  · simpa [MeasuredCodec5.bitsOf,writeBit,Function.update_of_ne hq,hq] using h
+
+theorem clear_bit (x t q : Nat) :
+    (MeasuredCodec5.clear x t).testBit q=if q=t then false else x.testBit q := by
+  have h:=congrFun (MeasuredCodec5.bitsOf_clear x t) q
+  by_cases hq:q=t
+  · subst q; simpa [MeasuredCodec5.bitsOf,writeBit] using h
+  · simpa [MeasuredCodec5.bitsOf,writeBit,Function.update_of_ne hq,hq] using h
+
+theorem rel_xor (s : Cols) (x row t v : Nat) (ht:t<s.length) (hr:Rel s x row) :
+    Rel (s.set t (get s t ^^^ v)) (if v.testBit row then x ^^^ 2^t else x) row := by
+  intro q
+  rw [get_set s t _ ht q]
+  by_cases hq:q=t
+  · subst q
+    cases hv:v.testBit row <;> simp [hv,Nat.testBit_xor,flip_bit,hr t]
+  · cases hv:v.testBit row <;> simp [hv,hq,Ne.symm hq,flip_bit,hr q]
+
+theorem rel_clear (s : Cols) (x row t : Nat) (ht:t<s.length) (hr:Rel s x row) :
+    Rel (s.set t 0) (MeasuredCodec5.clear x t) row := by
+  intro q
+  rw [get_set s t _ ht q,clear_bit]
+  by_cases hq:q=t <;> simp [hq,hr q]
+
+def target : Instr→Nat
+  | .X t => t
+  | .CX _ t => t
+  | .CCX _ _ t => t
+  | .measureX t _ _ => t
+
+theorem length_step (mask : Nat) (i : Instr) (s : Cols) : (step mask i s).length=s.length := by
+  cases i <;> simp [step]
+
+theorem step_rel (mask row : Nat) (hm:mask.testBit row=true) (i : Instr)
+    (s : Cols) (x : Nat) (ht:target i<s.length) (hr:Rel s x row) :
+    Rel (step mask i s) (MeasuredCodec5.bitStep i x) row := by
+  cases i with
+  | X t => simpa only [step,MeasuredCodec5.bitStep,hm,if_true] using rel_xor s x row t mask ht hr
+  | CX a t =>
+    simpa only [step,MeasuredCodec5.bitStep,hr a] using rel_xor s x row t (get s a) ht hr
+  | CCX a b t =>
+    simpa only [step,MeasuredCodec5.bitStep,Nat.testBit_and,hr a,hr b] using
+      rel_xor s x row t (get s a &&& get s b) ht hr
+  | measureX t c0 c1 => exact rel_clear s x row t ht hr
+
+
+
+theorem corr_rel (cs : List Correction) (s : Cols) (x row : Nat) (hr:Rel s x row) :
+    (corr cs s).testBit row=corrSim cs false x := by
+  induction cs with
+  | nil => simp [corr,MeasuredCodec5.corrSim]
+  | cons i cs ih =>
+    cases i with
+    | Z t =>
+      change (get s t ^^^ corr cs s).testBit row=corrSim cs (false ^^ x.testBit t) x
+      rw [Nat.testBit_xor,MeasuredCodec5.corrSim_xor]
+      simp only [Bool.false_xor,←hr t,ih]
+    | CZ a b =>
+      change ((get s a &&& get s b) ^^^ corr cs s).testBit row=
+        corrSim cs (false ^^ (x.testBit a && x.testBit b)) x
+      rw [Nat.testBit_xor,MeasuredCodec5.corrSim_xor,Nat.testBit_and]
+      simp only [Bool.false_xor,←hr a,←hr b,ih]
+
+theorem safeStep_sound (i : Instr) (s : Cols) (x row : Nat) (ht:target i<s.length)
+    (hr:Rel s x row) (hs:safeStep i s=true) : MeasuredCodec5.safeStep i x=true := by
+  cases i with
+  | X t => rfl
+  | CX a t => rfl
+  | CCX a b t => rfl
+  | measureX t c0 c1 =>
+    have hc:=rel_clear s x row t ht hr
+    have h0:=corr_rel c0 (s.set t 0) (MeasuredCodec5.clear x t) row hc
+    have h1:=corr_rel c1 (s.set t 0) (MeasuredCodec5.clear x t) row hc
+    have parts: corr c0 (s.set t 0)=0 ∧ corr c1 (s.set t 0)=get s t := by
+      simpa only [safeStep,Bool.and_eq_true,beq_iff_eq] using hs
+    rw [parts.1] at h0
+    rw [parts.2] at h1
+    simp only [MeasuredCodec5.safeStep,←h0,←h1,←hr t,Nat.zero_testBit,BEq.rfl,Bool.and_self]
+
+theorem eval_sound (mask row : Nat) (hm:mask.testBit row=true) (P : Program)
+    (s : Cols) (x : Nat) (bound:∀i∈P,target i<s.length) (hr:Rel s x row)
+    (hs:(eval mask P s).1=true) :
+    MeasuredCodec5.safe P x=true ∧ Rel (eval mask P s).2 (bitRun P x) row := by
+  induction P generalizing s x with
+  | nil => exact ⟨rfl,hr⟩
+  | cons i P ih =>
+    have parts:safeStep i s=true ∧ (eval mask P (step mask i s)).1=true := by
+      simpa only [eval,Bool.and_eq_true] using hs
+    have hi:=bound i (by simp)
+    have hr':=step_rel mask row hm i s x hi hr
+    have hb:∀j∈P,target j<(step mask i s).length := by
+      intro j hj
+      rw [length_step]
+      exact bound j (by simp [hj])
+    have rest:=ih (step mask i s) (MeasuredCodec5.bitStep i x) hb hr' parts.2
+    refine ⟨?_,rest.2⟩
+    simp only [MeasuredCodec5.safe,Bool.and_eq_true]
+    exact ⟨safeStep_sound i s x row hi hr parts.1,rest.1⟩
+
+
+
+def packBits : List Bool→Nat
+  | [] => 0
+  | b::bs => Nat.bit b (packBits bs)
+
+theorem pack_testBit (bs : List Bool) (r : Nat) :
+    (packBits bs).testBit r=(bs[r]?).getD false := by
+  induction bs generalizing r with
+  | nil => simp [packBits]
+  | cons b bs ih =>
+    cases r with
+    | zero => cases b <;> simp [packBits,Nat.bit,Nat.testBit_zero]
+    | succ r => simpa only [packBits,Nat.testBit_bit_succ,List.getElem?_cons_succ] using ih r
+
+theorem pack_rows (xs : List Nat) (q r : Nat) :
+    (packBits (xs.map (fun x=>x.testBit q))).testBit r=((xs[r]?).getD 0).testBit q := by
+  rw [pack_testBit,List.getElem?_map]
+  cases h:xs[r]? <;> simp
+
+
+
+end ECDSAAdd.Entrant.CodecBitSliceVerify
+end
+
+namespace ECDSAAdd.Entrant.CertificateBits
+def mask (w : Nat) : Nat := 2^(2^w)-1
+
+def input : Nat → Nat → Nat
+ | 0,_=>0
+ | w+1,k=>
+   if k=w then (2^(2^w)-1) <<< (2^w)
+   else if k<w then input w k ||| (input w k <<< (2^w)) else 0
+
+theorem input_bound (w k : Nat) : input w k<2^(2^w) := by
+ induction w with
+ | zero=>simp [input]
+ | succ w ih=>
+  simp only [input]
+  split
+  · have h:(2^(2^w):Nat)-1<2^(2^w):=Nat.sub_lt (Nat.two_pow_pos _) (by decide)
+    have sh:=Nat.shiftLeft_lt (m:=2^w) h
+    simpa only [Nat.pow_succ,Nat.mul_two] using sh
+  · split
+    · have left:input w k<2^(2^w+2^w):=
+       lt_of_lt_of_le (ih) (Nat.pow_le_pow_right (by decide) (Nat.le_add_right _ _))
+      have right:=Nat.shiftLeft_lt (m:=2^w) ih
+      simpa only [Nat.pow_succ,Nat.mul_two] using Nat.or_lt_two_pow left right
+    · exact Nat.two_pow_pos _
+
+theorem input_bit (w k r : Nat) (bound : r<2^w) : (input w k).testBit r=r.testBit k := by
+ induction w generalizing k r with
+ | zero=>
+  have eq:r=0:=by simpa using bound
+  subst r
+  simp [input]
+ | succ w ih=>
+  have lim:r<2^w+2^w:=by simpa only [Nat.pow_succ,Nat.mul_two] using bound
+  simp only [input]
+  by_cases top:k=w
+  · rw [if_pos top]
+    subst k
+    by_cases low:r<2^w
+    · simp only [Nat.testBit_shiftLeft,Nat.testBit_two_pow_sub_one,
+       show ¬r≥2^w by omega,decide_false,Bool.false_and,Nat.testBit_lt_two_pow low]
+    · have ge:r≥2^w:=by omega
+      have sub:r-2^w<2^w:=by omega
+      have bit:r.testBit w=true:=Nat.testBit_of_two_pow_le_and_two_pow_add_one_gt ge bound
+      simp only [Nat.testBit_shiftLeft,Nat.testBit_two_pow_sub_one,ge,decide_true,sub,Bool.true_and,bit]
+  · rw [if_neg top]
+    by_cases small:k<w
+    · rw [if_pos small,Nat.testBit_or,Nat.testBit_shiftLeft]
+      by_cases low:r<2^w
+      · simp only [show ¬r≥2^w by omega,decide_false,Bool.false_and,Bool.or_false]
+        exact ih k r low
+      · have ge:r≥2^w:=by omega
+        have sub:r-2^w<2^w:=by omega
+        have off:(input w k).testBit r=false:=Nat.testBit_lt_two_pow
+          (lt_of_lt_of_le (input_bound w k) (Nat.pow_le_pow_right (by decide) ge))
+        rw [off]
+        simp only [ge,decide_true,Bool.true_and,Bool.false_or]
+        rw [ih k (r-2^w) sub]
+        have eq:r=2^w+(r-2^w):=by omega
+        conv_rhs=>rw [eq,Nat.testBit_two_pow_add_gt small]
+    · rw [if_neg small]
+      have le:w+1≤k:=by omega
+      have bit:r.testBit k=false:=Nat.testBit_lt_two_pow
+       (lt_of_lt_of_le bound (Nat.pow_le_pow_right (by decide) le))
+      simp only [Nat.zero_testBit,bit]
+
+theorem mask_bit (w r : Nat) (bound : r<2^w) : (mask w).testBit r=true := by
+ simp only [mask,Nat.testBit_two_pow_sub_one,bound,decide_true]
+
+end ECDSAAdd.Entrant.CertificateBits
+
+namespace ECDSAAdd.Entrant.LegalColumnProof
+open CodecBitSliceVerify (Cols Rel target)
+open MeasuredCodec5 (bitRun safe)
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+
+def accepted (good : Nat → Bool) : Nat := CodecBitSliceVerify.packBits ((List.range 1024).map good)
+theorem accepted_bit (good : Nat → Bool) (x : Nat) (hx : x < 1024) :
+    (accepted good).testBit x = good x := by
+  simp [accepted, CodecBitSliceVerify.pack_testBit, hx]
+
+def eligibleCols (good : Nat → Bool) (fallback : Nat) : Cols :=
+  (List.range 10).map (fun q =>
+    (CertificateBits.input 10 q &&& accepted good) |||
+    (if fallback.testBit q then CertificateBits.mask 10 ^^^ accepted good else 0))
+
+theorem initial (good : Nat → Bool) (fallback x : Nat) (hx : x < 1024) (h : good x = true) :
+    Rel (eligibleCols good fallback) x x := by
+  intro q
+  by_cases hq : q < 10
+  · have atq : CodecBitSliceVerify.get (eligibleCols good fallback) q =
+        (CertificateBits.input 10 q &&& accepted good) |||
+        (if fallback.testBit q then CertificateBits.mask 10 ^^^ accepted good else 0) := by
+      simp [CodecBitSliceVerify.get,eligibleCols,hq]
+    rw [atq, Nat.testBit_or, Nat.testBit_and, CertificateBits.input_bit 10 q x hx,accepted_bit good _ hx,h]
+    cases hh : fallback.testBit q <;> simp [Nat.testBit_xor,CertificateBits.mask_bit 10 x hx,accepted_bit good x hx,h]
+  · have zero : CodecBitSliceVerify.get (eligibleCols good fallback) q = 0 := by
+      unfold CodecBitSliceVerify.get
+      rw [List.getElem?_eq_none (by simpa [eligibleCols] using Nat.le_of_not_gt hq : (eligibleCols good fallback).length ≤ q)]
+      rfl
+    rw [zero,Nat.zero_testBit]
+    exact Nat.testBit_lt_two_pow (lt_of_lt_of_le (show x < 2^10 from hx) (Nat.pow_le_pow_right (by decide : 0 < (2:Nat)) (Nat.le_of_not_gt hq)))
+
+abbrev play := CodecBitSliceVerify.eval (CertificateBits.mask 10)
+
+theorem execute {s : Cols} {x k : Nat} (p : Program) (row : k<1024)
+    (rel : Rel s x k) (bounds : ∀i∈p,target i<s.length) (ok : (play p s).1=true) :
+    safe p x=true ∧ Rel (play p s).2 (bitRun p x) k :=
+  CodecBitSliceVerify.eval_sound _ k (CertificateBits.mask_bit 10 k row) p s x bounds rel ok
+
+theorem row_equal {s t : Cols} {x y k : Nat} (l : Rel s x k) (r : Rel t y k) (same : s=t) : x=y := by
+  apply Nat.eq_of_testBit_eq
+  intro q
+  exact (l q).trans ((congrArg (fun c : Cols => (CodecBitSliceVerify.get c q).testBit k) same).trans (r q).symm)
+
+namespace Ordinary
+open MeasuredCodec5 (encode decode legalNat)
+private def raw := eligibleCols legalNat 0
+private def enc := play encode raw
+private def dec := play decode enc.2
+private theorem truth :
+    enc.1=true ∧ CodecBitSliceVerify.get enc.2 5=0 ∧ CodecBitSliceVerify.get enc.2 9=0 ∧
+    dec.1=true ∧ dec.2=raw := by decide +kernel
+theorem encode_all : ∀ x<1024, legalNat x=true →
+    safe encode x=true ∧ (bitRun encode x).testBit 5=false ∧ (bitRun encode x).testBit 9=false := by
+  intro x hx h
+  have a := execute encode hx (initial legalNat 0 x hx h) (by decide +kernel) truth.1
+  have zero (q : Nat) (h0 : CodecBitSliceVerify.get enc.2 q = 0) :
+      (bitRun encode x).testBit q = false :=
+    (a.2 q).trans ((congrArg (fun c : Nat => c.testBit x) h0).trans (Nat.zero_testBit x))
+  exact ⟨a.1,zero 5 truth.2.1,zero 9 truth.2.2.1⟩
+theorem decode_all : ∀ x<1024, legalNat x=true →
+    safe decode (bitRun encode x)=true ∧ bitRun decode (bitRun encode x)=x := by
+  intro x hx h
+  have r := initial legalNat 0 x hx h
+  have a := execute encode hx r (by decide +kernel) truth.1
+  have b := execute decode hx a.2 (by decide +kernel) truth.2.2.2.1
+  exact ⟨b.1,row_equal b.2 r truth.2.2.2.2⟩
+end Ordinary
+
+end ECDSAAdd.Entrant.LegalColumnProof
+
+namespace ECDSAAdd.Entrant.MeasuredCodec5
+open Arithmetic Challenge RecordedQuantum Baselines
+
 theorem finite_encode : ∀ x<1024, legalNat x=true →
     safe encode x=true ∧ (bitRun encode x).testBit 5=false ∧ (bitRun encode x).testBit 9=false := by
-  decide +kernel
+  exact LegalColumnProof.Ordinary.encode_all
 
 theorem finite_decode : ∀ x<1024, legalNat x=true →
     safe decode (bitRun encode x)=true ∧ bitRun decode (bitRun encode x)=x := by
-  decide +kernel
+  exact LegalColumnProof.Ordinary.decode_all
 private theorem pair_false (a b : Bool) (h : a.toNat+2*b.toNat<3) : (a && b)=false := by
   cases a <;> cases b <;> simp_all
 
@@ -68328,12 +68643,45 @@ private theorem packet6_FirstNonzero_physical_of_all (p : Program) (h : p.all pa
 theorem physical : GatePhysical encodeFirst ∧ GatePhysical decodeFirst :=
   ⟨packet6_FirstNonzero_physical_of_all _ (by decide +kernel),packet6_FirstNonzero_physical_of_all _ (by decide +kernel)⟩
 
+end ECDSAAdd.Entrant.FirstNonzeroCodec
+
+namespace ECDSAAdd.Entrant.LegalColumnProof.First
+open MeasuredCodec5 (bitRun safe)
+open MeasuredCodec5 (encode decode legalNat)
+open FirstNonzeroCodec (encodeFirst decodeFirst firstNonzero)
+private def good (x : Nat) := legalNat x && firstNonzero x
+private def raw := eligibleCols good 1
+private def enc := play encode raw
+private def fst := play encodeFirst raw
+private def dec := play decode enc.2
+private def alt := play decodeFirst enc.2
+private theorem truth : enc.1=true ∧ fst.1=true ∧ fst.2=enc.2 ∧ dec.1=true ∧ alt.1=true ∧ alt.2=dec.2 := by decide +kernel
+theorem encode_all : ∀ x<1024, legalNat x=true → firstNonzero x=true →
+    safe encodeFirst x=true ∧ bitRun encodeFirst x=bitRun encode x := by
+  intro x hx h z
+  have r := initial good 1 x hx (by simp [good,h,z])
+  have a := execute encode hx r (by decide +kernel) truth.1
+  have b := execute encodeFirst hx r (by decide +kernel) truth.2.1
+  exact ⟨b.1,row_equal b.2 a.2 truth.2.2.1⟩
+theorem decode_all : ∀ x<1024, legalNat x=true → firstNonzero x=true →
+    safe decodeFirst (bitRun encode x)=true ∧ bitRun decodeFirst (bitRun encode x)=bitRun decode (bitRun encode x) := by
+  intro x hx h z
+  have r := initial good 1 x hx (by simp [good,h,z])
+  have a := execute encode hx r (by decide +kernel) truth.1
+  have b := execute decode hx a.2 (by decide +kernel) truth.2.2.2.1
+  have c := execute decodeFirst hx a.2 (by decide +kernel) truth.2.2.2.2.1
+  exact ⟨c.1,row_equal c.2 b.2 truth.2.2.2.2.2⟩
+end ECDSAAdd.Entrant.LegalColumnProof.First
+
+namespace ECDSAAdd.Entrant.FirstNonzeroCodec
+open Arithmetic Challenge RecordedQuantum Baselines MeasuredCodec5
+
 theorem finite_encode : ∀ x<1024, legalNat x=true → firstNonzero x=true →
-    safe encodeFirst x=true ∧ bitRun encodeFirst x=bitRun encode x := by decide +kernel
+    safe encodeFirst x=true ∧ bitRun encodeFirst x=bitRun encode x := LegalColumnProof.First.encode_all
 
 theorem finite_decode : ∀ x<1024, legalNat x=true → firstNonzero x=true →
     safe decodeFirst (bitRun encode x)=true ∧
-      bitRun decodeFirst (bitRun encode x)=bitRun decode (bitRun encode x) := by decide +kernel
+      bitRun decodeFirst (bitRun encode x)=bitRun decode (bitRun encode x) := LegalColumnProof.First.decode_all
 
 /-- A local state equality lifts to any ambient state with matching ten ports. -/
 theorem run_eq_of_model (P Q : Program) (hP : wires P⊆Finset.range 10)
@@ -79318,6 +79666,9 @@ def affineClassSameTailM (y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : B
 
 set_option linter.unusedTactic false in
 set_option linter.unreachableTactic false in
+set_option maxHeartbeats 20000000 in
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
 theorem rs1_affineSameTailM_run_k0 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
     (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
     (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
@@ -79676,9 +80027,6 @@ theorem rs1_affineSameTailM_run_k7 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a
         · subst e4; simp [Function.update_apply, *]
         simp [Function.update_apply, *]
 
-set_option linter.unusedTactic false in
-set_option linter.unreachableTactic false in
-set_option maxHeartbeats 20000000 in
 theorem affineSameTailM_run (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
     (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
     (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
