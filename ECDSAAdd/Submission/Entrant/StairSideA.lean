@@ -19,6 +19,870 @@ import ECDSAAdd.Arithmetic.PointSquarePhysical
 import ECDSAAdd.Framework.WireRenameComposition
 import ECDSAAdd.Framework.WireRenameEquivalence
 
+-- ===== Odd-word multiplication slice (deficit-0 head, packets 84 down to 1) =====
+-- The `mstart` junction and the odd multiplication slice are kaankolcu's (submission 76de2e84),
+-- re-indexed to this tree's 84-packet head; the odd-word cell is spariev's (63c218c5, 8572aff9).
+
+-- ===== P1MStart (build-odd: multiplication-start junction, standard words in, odd words out) =====
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.P1Life
+open Arithmetic BalancedCircuit BalancedField
+
+
+/-- Inverse of `emitStandard`: a standard output register enters the odd inverse half's
+comparison frame (the literal is added before the sign flag is flipped back). -/
+def acceptStandard (retired : Wire) (L : Layout) : Program :=
+  [.CX L.rmsb L.lower] ++ signComplement L.lower L.r ++
+    Q6LifetimeResearch.move retired L.rmsb
+      (literalConstAdd L.low (L.carry.take 254) L.lower L.one BalancedCleanup.negativeLiteral) ++
+    [.X L.lower] ++ notRegister L.low
+
+
+/-- The odd inverse half after its sign view and normalisation (`inverse` minus its first two passes). -/
+def junctionOddRest (retired : Wire) (L : Layout) : Program :=
+  prepareCompare L++exposure L++compare retired false L++(exposure L).reverse++
+    (prepareCompare L).reverse++BiasedInverse.unbiasView L++unfoldStep retired L++
+    rotateLeft (rawTarget L)++[.CX L.parity L.r0]++rawSub retired L
+
+
+/-- Multiplication start: standard words in, odd words out. -/
+def mstart (retired : Wire) (w : Nat → Wire) (sign : Wire) : Program :=
+  let L := Q6EndpointCell.ports w sign
+  [.X sign] ++ recode retired true L L.y ++ acceptStandard retired L ++
+    junctionOddRest retired L ++ [.X sign]
+
+
+theorem junction_accept_standard_value (R : Int) (hr : Centered R) :
+    2^255-1-(encodeWord 255 (magnitude R)+BalancedCleanup.negativeLiteral+(negative R).toNat)%2^255=
+      encodeWord 255 (magnitude (junctionToOdd R)-h) := by
+  have e1 : (encodeWord 255 (magnitude R)+BalancedCleanup.negativeLiteral+(negative R).toNat)%2^255=
+      encodeWord 255 (magnitude R+(-h)+(((negative R).toNat : Nat) : Int)) := by
+    rw [←DirectPass.encoded_add_nat,←DirectPass.encoded_add_encoded,Nat.mod_add_mod]
+    rfl
+  rw [e1,junction_complement_encoded]
+  congr 1
+  have c := constants
+  have sg := junction_to_odd_sign R hr
+  unfold Centered at hr
+  unfold magnitude
+  rw [sg]
+  by_cases rn : R<0 <;> simp [negative,rn,junctionToOdd] <;> omega
+
+
+theorem accept_standard_boundary (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈(L.carry.take 254).drop 1)
+    (origin : BasisState) (R Y : Int) (hr : Centered R) :
+    Triple (DirectPass.AfterHalf L retired origin R Y) (acceptStandard retired L)
+      (DirectPass.AfterComparison DirectPass.oddEncoding L retired origin (junctionToOdd R) Y) := by
+  have range : -((2^255 : Nat) : Int)≤R ∧ R<((2^255 : Nat) : Int) := by
+    have hp := constants
+    unfold Centered at hr
+    omega
+  have a := DirectPass.prepare_sign_boundary_wide retired L hw hn origin R Y range
+  have b := junction_literal_boundary retired L hw hn (List.mem_of_mem_drop member) origin
+    (encodeWord 255 (magnitude R)) (encodeWord 256 Y) BalancedCleanup.negativeLiteral false (negative R)
+  have c := junction_flip_lower retired L hn origin
+    ((encodeWord 255 (magnitude R)+BalancedCleanup.negativeLiteral+(negative R).toNat)%2^255)
+    (encodeWord 256 Y) false (negative R)
+  have d := junction_not_low retired L hw hn origin
+    ((encodeWord 255 (magnitude R)+BalancedCleanup.negativeLiteral+(negative R).toNat)%2^255)
+    (encodeWord 256 Y) false (!negative R)
+  rw [junction_accept_standard_value R hr,←junction_to_odd_sign R hr] at d
+  rw [←junction_to_odd_sign R hr] at c
+  simpa only [acceptStandard,BalancedCleanup.prepareSign,List.append_assoc] using
+    Triple.seq a (Triple.seq b (Triple.seq c d))
+
+
+theorem junction_odd_rest_boundary (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈(L.carry.take 254).drop 1)
+    (origin : BasisState) (F Y : Int) (hf : OddDomain F) (hy : OddDomain Y) :
+    Triple (DirectPass.AfterComparison DirectPass.oddEncoding L retired origin F Y)
+      (junctionOddRest retired L)
+      (DirectPass.AfterHalf L retired origin (oddInverse (origin L.sign) F Y) Y) := by
+  let B := origin L.sign
+  let R := oddInverse B F Y
+  let T := oddSum B R Y
+  have hr : OddDomain R := oddRep_bounds _
+  have ht := oddSum_bounds B R Y hr hy
+  have result : oddFold T=F := oddForward_inverse B F Y hf hy
+  have interval : originalParity T=decide (oddComparisonLeft F<oddComparisonY B F Y) := by
+    have h := oddComparison_parity B R Y hr hy
+    rw [result] at h
+    exact h
+  have mt : retired∈L.carry.take 254 := List.mem_of_mem_drop member
+  have c := comparison_to_fold retired L hw hn member origin T F Y hf hy interval
+  have d := fold_to_raw retired L hw hn mt origin T Y ht
+  rw [result] at d
+  have e := rawSub_boundary retired L hw hn member origin B R Y hr hy rfl
+  have shape : junctionOddRest retired L=
+      (prepareCompare L++exposure L++compare retired false L++(exposure L).reverse++
+        (prepareCompare L).reverse++BiasedInverse.unbiasView L)++
+      ((unfoldStep retired L++rotateLeft (rawTarget L)++[.CX L.parity L.r0])++rawSub retired L) := by
+    simp only [junctionOddRest,List.append_assoc]
+  rw [shape]
+  exact Triple.seq c (Triple.seq d e)
+
+
+theorem junction_gos_boundary (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈(L.carry.take 254).drop 1)
+    (origin : BasisState) (R Y : Int) (hr : Centered R) (hy : OddDomain Y) :
+    Triple (DirectPass.AfterHalf L retired origin R Y) (acceptStandard retired L++junctionOddRest retired L)
+      (DirectPass.AfterHalf L retired origin (oddInverse (origin L.sign) (junctionToOdd R) Y) Y) :=
+  Triple.seq (accept_standard_boundary retired L hw hn member origin R Y hr)
+    (junction_odd_rest_boundary retired L hw hn member origin _ Y (junction_to_odd_bounds R hr) hy)
+
+
+theorem junction_gos_frame (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈(L.carry.take 254).drop 1)
+    (X Y : Fp) (s : State) (m : List Bool)
+    (rv : regValue L.r s.basis=centerWord X) (yv : regValue L.y s.basis=oddWord Y)
+    (flags : DirectPass.LiveFlags L false false false s.basis)
+    (clean : DirectPass.CleanExcept (L.carry.take 254) retired s.basis) :
+    let p := acceptStandard retired L++junctionOddRest retired L
+    (run p m s).phase=s.phase ∧ DirectPass.WordFrame L.r s.basis
+      (oddWord (2*X+(if !s.basis L.sign then -Y else Y))) (run p m s).basis := by
+  have b := junction_gos_boundary retired L hw hn member s.basis
+    (centerFp X) (oddRep Y) (centerFp_bounds X) (oddRep_bounds Y)
+  have h := DirectPass.kernel_frame_of_boundary retired L (centerFp X) (oddRep Y) _ _
+    s m rv yv flags clean b
+  have field := kernel_field false (!s.basis L.sign) X Y
+  simp only [kernelResult,Bool.false_eq_true,if_false,Bool.not_not] at field
+  rw [←junction_to_odd_rep (centerFp X) (centerFp_bounds X),centerFp_cast,field] at h
+  exact h
+
+
+theorem mstart_frame (retired : Wire) (w : Nat→Wire) (sign : Wire)
+    (hn : (Q6EndpointCell.ports w sign).wires.Nodup)
+    (member : retired∈((Q6EndpointCell.ports w sign).carry.take 254).drop 1)
+    (origin : BasisState) (clean : Q6EndpointCell.Clean w origin) (X Y : Fp) :
+    Triple (PairFrame (Q6EndpointCell.ports w sign).r (Q6EndpointCell.ports w sign).y
+      origin (centerWord X) (centerWord Y)) (mstart retired w sign)
+      (PairFrame (Q6EndpointCell.ports w sign).r (Q6EndpointCell.ports w sign).y origin
+        (oddWord (2*X+(if origin sign then -Y else Y))) (oddWord Y)) := by
+  let L := Q6EndpointCell.ports w sign
+  have hw := Q6EndpointCell.ports_widths w sign
+  apply DirectPass.half_frame_from_pair_kernel retired w sign hn origin clean (centerWord X) (centerWord Y)
+    (fun B => oddWord (2*X+(if B then -Y else Y))) (oddWord Y) (mstart retired w sign)
+    (recode retired true L L.y++(acceptStandard retired L++junctionOddRest retired L))
+    (by simp only [mstart,L,List.append_assoc])
+  intro s m rv yv flags carry
+  have h := junction_recode_before retired true L hw hn (List.mem_of_mem_drop member)
+    (acceptStandard retired L++junctionOddRest retired L) (centerWord X) (centerWord Y)
+    (fun B => oddWord (2*X+(if !B then -Y else Y))) s m rv yv flags carry (by
+      intro u tape ur uy uf uc
+      have uy' : regValue L.y u.basis=oddWord Y := by
+        simpa only [if_true,←recode_odd_word,oddWord] using uy
+      exact junction_gos_frame retired L hw hn member X Y u tape ur uy' uf uc)
+  simpa only [if_true,←recode_odd_word,oddWord] using h
+
+
+theorem junction_accept_standard_counts (retired : Wire) (L : Layout) (hw : L.Widths) :
+    toffoliCount (acceptStandard retired L)=254 ∧ measurementCount (acceptStandard retired L)=254 := by
+  have lowlen : L.low.length=255 := by simp [BalancedCleanup.Layout.low,hw.1]
+  have a := literalConstAdd_counts L.low (L.carry.take 254) L.lower L.one BalancedCleanup.negativeLiteral
+    (by simp [List.length_take,hw.2.2,lowlen])
+  rw [lowlen] at a
+  simp only [acceptStandard,toffoliCount_append,measurementCount_append,Q6LifetimeResearch.move,
+    (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,a.1,a.2,
+    (notRegister_counts L.low).1,(notRegister_counts L.low).2,
+    (signComplement_counts L.lower L.r).1,(signComplement_counts L.lower L.r).2,
+    toffoliCount,measurementCount]
+  exact ⟨True.intro,True.intro⟩
+
+
+theorem junction_odd_rest_counts (retired : Wire) (L : Layout) (hw : L.Widths) :
+    toffoliCount (junctionOddRest retired L)=766 ∧ measurementCount (junctionOddRest retired L)=766 := by
+  have b := p1_compare_counts false retired L hw
+  have c := p1_fold_counts true retired L hw
+  have d := p1_raw_sub_counts retired L hw
+  have pc := p1_compare_view_counts L
+  have ub := p1_unbias_view_counts L
+  have rot := rotate_counts (rawTarget L)
+  simp only [Bool.false_eq_true,if_false,if_true] at b c
+  simp only [junctionOddRest,toffoliCount_append,measurementCount_append,toffoliCount_reverse,
+    measurementCount_reverse,b.1,b.2,c.1,c.2,d.1,d.2,pc.1,pc.2,ub.1,ub.2,rot.2.2.1,rot.2.2.2,
+    exposure,toffoliCount,measurementCount]
+  exact ⟨True.intro,True.intro⟩
+
+
+theorem mstart_counts (retired : Wire) (w : Nat→Wire) (sign : Wire)
+    (hn : (Q6EndpointCell.ports w sign).wires.Nodup)
+    (member : retired∈(Q6EndpointCell.ports w sign).carry.take 254) :
+    toffoliCount (mstart retired w sign)=1274 ∧ measurementCount (mstart retired w sign)=1274 := by
+  let L := Q6EndpointCell.ports w sign
+  have hw := Q6EndpointCell.ports_widths w sign
+  have a := recode_counts retired true L hw hn member
+  have b := junction_accept_standard_counts retired L hw
+  have c := junction_odd_rest_counts retired L hw
+  dsimp only [L] at a b c
+  simp only [mstart,toffoliCount_append,measurementCount_append,a.1,a.2,b.1,b.2,c.1,c.2,
+    toffoliCount,measurementCount]
+  exact ⟨True.intro,True.intro⟩
+
+
+theorem junction_accept_standard_resources (retired : Wire) (L : Layout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (member : retired∈L.carry.take 254) :
+    JunctionSafe ((junctionFootprint L).erase retired) (acceptStandard retired L) := by
+  have nt := junction_not_resources retired L hn member L.low (by
+    intro q hq
+    simp [BalancedCleanup.Layout.r,hq])
+  have lit := junction_literal_resources retired L hn BalancedCleanup.negativeLiteral
+  have lower := junction_small_resources retired L hw hn member [.X L.lower]
+    (by simp [junctionCliffordPieces])
+  have top := junction_small_resources retired L hw hn member [.CX L.rmsb L.lower]
+    (by simp [junctionCliffordPieces])
+  have sc := junction_sign_resources retired L hn member L.lower L.r
+    (by simp) (by intro q hq; simp [hq]) (by
+      intro bad; exact BalancedCircuit.flagAway L hn L.lower (by simp) (by simp [bad]))
+  simp only [acceptStandard,junction_safe_append]
+  exact ⟨⟨⟨⟨top,sc⟩,lit⟩,lower⟩,nt⟩
+
+
+theorem mstart_resources (retired : Wire) (w : Nat→Wire) (sign : Wire)
+    (hn : (Q6EndpointCell.ports w sign).wires.Nodup)
+    (member : retired∈((Q6EndpointCell.ports w sign).carry.take 254).drop 1) :
+    GatePhysical (mstart retired w sign) ∧ wires (mstart retired w sign)⊆
+      (junctionFootprint (Q6EndpointCell.ports w sign)).erase retired := by
+  let L := Q6EndpointCell.ports w sign
+  have hw := Q6EndpointCell.ports_widths w sign
+  have mt := List.mem_of_mem_drop member
+  have accept := junction_accept_standard_resources retired L hw hn mt
+  have recoder := recode_y_resources retired true L hw hn mt
+  have rest := junction_rest_resources true retired L hw hn member
+  have flip := junction_small_resources retired L hw hn mt [.X L.sign]
+    (by simp [junctionCliffordPieces])
+  change JunctionSafe ((junctionFootprint L).erase retired) (mstart retired w sign)
+  have shape : mstart retired w sign=[.X sign]++recode retired true L L.y++
+      acceptStandard retired L++junctionOddRest retired L++[.X sign] := rfl
+  rw [shape]
+  simp only [junction_safe_append]
+  exact ⟨⟨⟨⟨flip,recoder⟩,accept⟩,rest⟩,flip⟩
+
+end ECDSAAdd.Entrant.P1Life
+
+end -- build-odd
+
+-- ===== RouteASlotMStart (build-odd) =====
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+set_option linter.unreachableTactic false
+set_option linter.unusedTactic false
+namespace ECDSAAdd.Entrant.RouteA
+open Arithmetic BalancedCircuit BalancedField Challenge Baselines MappedCompressed
+attribute [local irreducible] P1Life.half P1Life.forward P1Life.inverse P1Life.dstart P1Life.dend P1Life.mend
+attribute [local irreducible] Q6LifetimeResearch.half Q6LifetimeResearch.forward Q6LifetimeResearch.inverse
+
+
+theorem slot_accept_standard (retired : Wire) (L : Layout) (hw : L.Widths) :
+    gateSlots (P1Life.acceptStandard retired L)=2323 := by
+  have len := slot_layout_lengths L hw
+  have cl : (L.carry.take 254).length+1=L.low.length := by simp [List.length_take,hw.2.2,len.1]
+  have lit := literal_slots L.low (L.carry.take 254) L.lower L.one BalancedCleanup.negativeLiteral cl
+  have cost : literalSlots 255 BalancedCleanup.negativeLiteral=1810 := by decide +kernel
+  rw [len.1,cost] at lit
+  simp only [P1Life.acceptStandard,
+    gateSlots_append,Q6LifetimeResearch.move,rename_gateSlots,notRegister_gateSlots,
+    signComplement_gateSlots,len.1,len.2.1,lit,
+    gateSlots_cons,gateSlots_nil,instructionSlots,List.length_nil]
+  all_goals first | omega | exact True.intro
+
+
+theorem slot_junction_odd_rest (retired : Wire) (L : Layout) (hw : L.Widths) :
+    gateSlots (P1Life.junctionOddRest retired L)=14371 := by
+  have len := slot_layout_lengths L hw
+  have e := slot_views L hw
+  have f := slot_fold true true retired L hw
+  have g := slot_compare true false retired L hw
+  have i := slot_raw_sub true retired L hw
+  have rt := rotate_slots (rawTarget L)
+  simp only [if_true,Bool.false_eq_true,if_false] at f g i
+  simp only [P1Life.junctionOddRest,gateSlots_append,reverse_gateSlots,
+    f,g,i,e.2.1,e.2.2.2,rt.2,len.2.2.2.1,
+    P1Life.exposure,gateSlots_cons,gateSlots_nil,instructionSlots,List.length_nil]
+  all_goals first | omega | exact True.intro
+
+
+theorem slot_mstart (retired : Wire) (w : Nat→Wire) (sign : Wire)
+    (hn : (Q6EndpointCell.ports w sign).wires.Nodup)
+    (member : retired∈(Q6EndpointCell.ports w sign).carry.take 254) :
+    gateSlots (P1Life.mstart retired w sign)=19777 := by
+  let L := Q6EndpointCell.ports w sign
+  have hw := Q6EndpointCell.ports_widths w sign
+  have a := slot_accept_standard retired L hw
+  have r := slot_junction_odd_rest retired L hw
+  have odd := slot_recode retired true L hw hn member
+  simp only [if_true] at odd
+  dsimp only [L] at a r odd
+  simp only [P1Life.mstart,gateSlots_append,a,r,odd,
+    gateSlots_cons,gateSlots_nil,instructionSlots,List.length_nil]
+  all_goals first | omega | exact True.intro
+end ECDSAAdd.Entrant.RouteA
+end -- build-odd
+
+-- ===== RouteAOddMultiply (build-odd: odd multiplication slice, packets 84 down to 1) =====
+section
+set_option maxRecDepth 8192
+set_option maxHeartbeats 1200000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.RouteA.Rolling1588
+open Arithmetic MappedCompressed DirectSkywalk Secp256k1 BalancedField OffsetBorrowedCanonical CompressedFieldSupport
+open ECDSAAdd.Entrant.Rolling1588
+attribute [local irreducible] run wires
+
+
+theorem mstart_law :
+    HalfLaw (P1Life.mstart (base 760) base (base 2409)) false centerWord P1Life.oddWord := by
+  intro origin clean X Y
+  simpa only [Bool.false_eq_true,if_false] using
+    P1Life.mstart_frame _ _ _ Rolling1588Lifetime.half_ports_nodup route_retired_member origin clean X Y
+
+theorem mstart_support : HalfSupport (P1Life.mstart (base 760) base (base 2409)) :=
+  (P1Life.mstart_resources _ _ _ Rolling1588Lifetime.half_ports_nodup route_retired_member).2
+
+theorem mstart_physical : GatePhysical (P1Life.mstart (base 760) base (base 2409)) :=
+  (P1Life.mstart_resources _ _ _ Rolling1588Lifetime.half_ports_nodup route_retired_member).1
+
+theorem route_mstart_counts :
+    toffoliCount (P1Life.mstart (base 760) base (base 2409))=1274 ∧
+    measurementCount (P1Life.mstart (base 760) base (base 2409))=1274 :=
+  P1Life.mstart_counts (base 760) base (base 2409) Rolling1588Lifetime.half_ports_nodup
+    (List.mem_of_mem_drop route_retired_member)
+
+/-- Multiplication packet `j` whose first multiplication cell runs `mstart` (standard words in, odd
+words out); the other four cells are ordinary odd halves. -/
+def mstartBasePacket (j : Nat) : Program :=
+  onPacket j (dp ++ ParityCodec5New.untwist) ++
+    (cellWith false (P1Life.mstart (base 760) base (base 2409)) j 4 2 ++ onPacket j bridge5 ++
+      cell false j 3 2 ++ cell false j 4 2 ++ onPacket j bridge7inv ++
+      cell false j 4 2 ++ cell false j 3 2) ++
+    onPacket j (ParityCodec5New.twist ++ ep)
+
+/-- Multiplication packet `j` whose last multiplication cell runs `mend` (odd words in, standard
+words out); the other four cells are ordinary odd halves. -/
+def mendBasePacket (j : Nat) : Program :=
+  onPacket j (dp ++ ParityCodec5New.untwist) ++
+    (cell false j 4 2 ++ onPacket j bridge5 ++
+      cell false j 3 2 ++ cell false j 4 2 ++ onPacket j bridge7inv ++
+      cell false j 4 2 ++ cellWith false (P1Life.mend (base 760) base (base 2409)) j 3 2) ++
+    onPacket j (ParityCodec5New.twist ++ ep)
+
+def mstartPacket (j : Nat) : Program :=
+  renameProgram (shifted (Placement5.pi j)) (mstartBasePacket j)
+
+def mendPacket (j : Nat) : Program :=
+  renameProgram (shifted (Placement5.pi j)) (mendBasePacket j)
+
+/-- The odd multiplication slice: `mstart` in packet 84, ordinary odd packets 83..2, `mend` in
+packet 1 (run 84 down to 1).  It replaces the record groups `1..84` of the multiplication kernel. -/
+def mslice : Program := mstartPacket 84 ++ groups false 2 82 ++ mendPacket 1
+
+theorem mslice_eq : mslice=(mstartPacket 84 ++ groups false 2 82) ++ mendPacket 1 := rfl
+
+
+theorem mstartBasePacket_frame (j : Nat) (hj : j < 102)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    StateTriple
+      (CodeFrame centerWord centerWord (codeEncodeAt false (History5.historyMap base (5*j))) origin X Y)
+      (mstartBasePacket j)
+      (fun state => let V := regularPayload false j origin (X,Y)
+        CodeFrame P1Life.oddWord P1Life.oddWord (codeEncodeAt true (History5.historyMap base (5*j))) origin V.1 V.2 state) := by
+  let Frame (d : Bool) (k : Nat) (V : Fp×Fp) :=
+    CodeFrame P1Life.oddWord P1Life.oddWord (stageCodeAt d k (History5.historyMap base (5*j))) origin V.1 V.2
+  have opening (V : Fp×Fp) : StateTriple
+      (CodeFrame centerWord centerWord (codeEncodeAt false (History5.historyMap base (5*j))) origin V.1 V.2)
+      (onPacket j stageOpen)
+      (CodeFrame centerWord centerWord (stageCodeAt false 0 (History5.historyMap base (5*j))) origin V.1 V.2) := by
+    intro state records input
+    exact regular_open_frame centerWord centerWord false j hj origin ctx V.1 V.2 state records input
+  have firstStep (V : Fp×Fp) : StateTriple
+      (CodeFrame centerWord centerWord (stageCodeAt false 0 (History5.historyMap base (5*j))) origin V.1 V.2)
+      (cellWith false (P1Life.mstart (base 760) base (base 2409)) j 4 2)
+      (Frame false 0 (regularStep false j origin 4 V)) := by
+    intro state records input
+    exact regular_cellWith_frame _ false centerWord P1Life.oddWord mstart_law mstart_support
+      j 0 4 4 hj (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
+  have step (d : Bool) (k logical physical : Nat) (hk : k < 3)
+      (used : (logical,physical)∈activeSlots d k) (V : Fp×Fp) :
+      StateTriple (Frame d k V) (cell d j physical 2)
+        (Frame d k (regularStep d j origin logical V)) := by
+    intro state records input
+    exact regular_cell_frame d j k logical physical hj hk used origin ctx enabled
+      V.1 V.2 state records input
+  have transfer (d : Bool) (k : Nat) (hk : k < 2) (V : Fp×Fp) :
+      StateTriple (Frame d k V) (onPacket j (stageTransition d k)) (Frame d (k+1) V) := by
+    intro state records input
+    exact regular_transition_frame P1Life.oddWord P1Life.oddWord d j k hj hk origin ctx V.1 V.2 state records input
+  have closing (V : Fp×Fp) : StateTriple (Frame false 2 V) (onPacket j stageClose)
+      (CodeFrame P1Life.oddWord P1Life.oddWord (codeEncodeAt (!false) (History5.historyMap base (5*j))) origin V.1 V.2) := by
+    intro state records input
+    exact regular_close_frame P1Life.oddWord P1Life.oddWord false j hj origin ctx V.1 V.2 state records input
+  let V1 := regularStep false j origin 4 (X,Y)
+  let V2 := regularStep false j origin 3 V1
+  let V3 := regularStep false j origin 2 V2
+  let V4 := regularStep false j origin 1 V3
+  let V5 := regularStep false j origin 0 V4
+  have result := (opening (X,Y)).seq
+    ((firstStep (X,Y)).seq
+    ((transfer false 0 (by decide) V1).seq
+    ((step false 1 3 3 (by decide) (by decide) V1).seq
+    ((step false 1 2 4 (by decide) (by decide) V2).seq
+    ((transfer false 1 (by decide) V3).seq
+    ((step false 2 1 4 (by decide) (by decide) V3).seq
+    ((step false 2 0 3 (by decide) (by decide) V4).seq (closing V5))))))))
+  simpa only [mstartBasePacket,stageOpen,stageClose,stageTransition,regularPayload,
+    Bool.false_eq_true,if_false,if_true,show ¬(1:Nat)=0 from by decide,List.append_assoc,Bool.not_false] using result
+
+
+theorem mendBasePacket_frame (j : Nat) (hj : j < 102)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    StateTriple
+      (CodeFrame P1Life.oddWord P1Life.oddWord (codeEncodeAt false (History5.historyMap base (5*j))) origin X Y)
+      (mendBasePacket j)
+      (fun state => let V := regularPayload false j origin (X,Y)
+        CodeFrame centerWord centerWord (codeEncodeAt true (History5.historyMap base (5*j))) origin V.1 V.2 state) := by
+  let Frame (d : Bool) (k : Nat) (V : Fp×Fp) :=
+    CodeFrame P1Life.oddWord P1Life.oddWord (stageCodeAt d k (History5.historyMap base (5*j))) origin V.1 V.2
+  have opening (V : Fp×Fp) : StateTriple
+      (CodeFrame P1Life.oddWord P1Life.oddWord (codeEncodeAt false (History5.historyMap base (5*j))) origin V.1 V.2)
+      (onPacket j stageOpen) (Frame false 0 V) := by
+    intro state records input
+    exact regular_open_frame P1Life.oddWord P1Life.oddWord false j hj origin ctx V.1 V.2 state records input
+  have step (d : Bool) (k logical physical : Nat) (hk : k < 3)
+      (used : (logical,physical)∈activeSlots d k) (V : Fp×Fp) :
+      StateTriple (Frame d k V) (cell d j physical 2)
+        (Frame d k (regularStep d j origin logical V)) := by
+    intro state records input
+    exact regular_cell_frame d j k logical physical hj hk used origin ctx enabled
+      V.1 V.2 state records input
+  have transfer (d : Bool) (k : Nat) (hk : k < 2) (V : Fp×Fp) :
+      StateTriple (Frame d k V) (onPacket j (stageTransition d k)) (Frame d (k+1) V) := by
+    intro state records input
+    exact regular_transition_frame P1Life.oddWord P1Life.oddWord d j k hj hk origin ctx V.1 V.2 state records input
+  have finalStep (V : Fp×Fp) : StateTriple (Frame false 2 V)
+      (cellWith false (P1Life.mend (base 760) base (base 2409)) j 3 2)
+      (CodeFrame centerWord centerWord (stageCodeAt false 2 (History5.historyMap base (5*j))) origin
+        (regularStep false j origin 0 V).1 (regularStep false j origin 0 V).2) := by
+    intro state records input
+    exact regular_cellWith_frame _ false P1Life.oddWord centerWord mend_law mend_support
+      j 2 0 3 hj (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
+  have closing (V : Fp×Fp) : StateTriple
+      (CodeFrame centerWord centerWord (stageCodeAt false 2 (History5.historyMap base (5*j))) origin V.1 V.2)
+      (onPacket j stageClose)
+      (CodeFrame centerWord centerWord (codeEncodeAt (!false) (History5.historyMap base (5*j))) origin V.1 V.2) := by
+    intro state records input
+    exact regular_close_frame centerWord centerWord false j hj origin ctx V.1 V.2 state records input
+  let V1 := regularStep false j origin 4 (X,Y)
+  let V2 := regularStep false j origin 3 V1
+  let V3 := regularStep false j origin 2 V2
+  let V4 := regularStep false j origin 1 V3
+  let V5 := regularStep false j origin 0 V4
+  have result := (opening (X,Y)).seq
+    ((step false 0 4 4 (by decide) (by decide) (X,Y)).seq
+    ((transfer false 0 (by decide) V1).seq
+    ((step false 1 3 3 (by decide) (by decide) V1).seq
+    ((step false 1 2 4 (by decide) (by decide) V2).seq
+    ((transfer false 1 (by decide) V3).seq
+    ((step false 2 1 4 (by decide) (by decide) V3).seq
+    ((finalStep V4).seq (closing V5))))))))
+  simpa only [mendBasePacket,stageOpen,stageClose,stageTransition,regularPayload,
+    Bool.false_eq_true,if_false,if_true,show ¬(1:Nat)=0 from by decide,List.append_assoc,Bool.not_false] using result
+
+
+theorem mstartBasePacket_read_support (j : Nat) (hj : j<102) :
+    wires (mstartBasePacket j)⊆NewHistory5.groupReadSites base (base 2400)
+      (base 2409) (base 2410) (5*j) ∪ {base 2312} := by
+  have opening := onPacket_read_support j stageOpen stageOpen_support
+  have closing := onPacket_read_support j stageClose stageClose_support
+  have transfer (d : Bool) (k : Nat) (hk : k<2) :=
+    onPacket_read_support j (stageTransition d k) (stageTransition_support d k hk)
+  have cellAt (d : Bool) (active : Nat) (ha : active<5) :=
+    cell_read_support d j active 2 hj ha (by decide)
+  have first := cellWith_read_support false _ mstart_support j 4 2 hj (by decide) (by decide)
+  have sites : wires (mstartBasePacket j)⊆FrontierReplay1591.readSites (5*j) := by
+    simp only [mstartBasePacket,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨opening,⟨⟨⟨⟨⟨⟨first,transfer false 0 (by decide)⟩,cellAt false 3 (by decide)⟩,
+      cellAt false 4 (by decide)⟩,transfer false 1 (by decide)⟩,cellAt false 4 (by decide)⟩,
+      cellAt false 3 (by decide)⟩⟩,closing⟩
+  exact sites.trans (FrontierReplay1591.readSites_sub (5*j))
+
+theorem mendBasePacket_read_support (j : Nat) (hj : j<102) :
+    wires (mendBasePacket j)⊆NewHistory5.groupReadSites base (base 2400)
+      (base 2409) (base 2410) (5*j) ∪ {base 2312} := by
+  have opening := onPacket_read_support j stageOpen stageOpen_support
+  have closing := onPacket_read_support j stageClose stageClose_support
+  have transfer (d : Bool) (k : Nat) (hk : k<2) :=
+    onPacket_read_support j (stageTransition d k) (stageTransition_support d k hk)
+  have cellAt (d : Bool) (active : Nat) (ha : active<5) :=
+    cell_read_support d j active 2 hj ha (by decide)
+  have last := cellWith_read_support false _ mend_support j 3 2 hj (by decide) (by decide)
+  have sites : wires (mendBasePacket j)⊆FrontierReplay1591.readSites (5*j) := by
+    simp only [mendBasePacket,wires_append,Finset.union_subset_iff]
+    exact ⟨⟨opening,⟨⟨⟨⟨⟨⟨cellAt false 4 (by decide),transfer false 0 (by decide)⟩,cellAt false 3 (by decide)⟩,
+      cellAt false 4 (by decide)⟩,transfer false 1 (by decide)⟩,cellAt false 4 (by decide)⟩,
+      last⟩⟩,closing⟩
+  exact sites.trans (FrontierReplay1591.readSites_sub (5*j))
+
+
+theorem mstartBasePacket_cut_frame (j : Nat) (first : 1≤j) (hj : j<102)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    StateTriple (CutFrame centerWord centerWord (j+1) origin X Y) (mstartBasePacket j)
+      (fun state => let V := directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)
+        CutFrame P1Life.oddWord P1Life.oddWord j origin V.1 V.2 state) := by
+  have nonzero : j≠0 := by omega
+  intro state records input
+  apply cut_window_frame centerWord centerWord P1Life.oddWord P1Life.oddWord (j+1) j j hj origin X Y _ _
+    (mstartBasePacket j) (otherEncodeCut_step base j 102).symm
+    (otherEncodeCut_body_disjoint (j+1) j hj origin ctx _ (mstartBasePacket_read_support j hj)) _ state records input
+  intro current tape frame
+  have normalized : CodeFrame centerWord centerWord (codeEncodeAt false (History5.historyMap base (5*j)))
+      origin X Y current := by
+    simpa [encodeGroup,nonzero,show ¬j+1≤j from by omega] using frame
+  have result := mstartBasePacket_frame j hj origin ctx enabled X Y current tape normalized
+  simpa [regularPayload_eq false j hj origin enabled,encodeGroup,nonzero,show ¬j+1≤j from by omega] using result
+
+theorem mendBasePacket_cut_frame (j : Nat) (first : 1≤j) (hj : j<102)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    StateTriple (CutFrame P1Life.oddWord P1Life.oddWord (j+1) origin X Y) (mendBasePacket j)
+      (fun state => let V := directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)
+        CutFrame centerWord centerWord j origin V.1 V.2 state) := by
+  have nonzero : j≠0 := by omega
+  intro state records input
+  apply cut_window_frame P1Life.oddWord P1Life.oddWord centerWord centerWord (j+1) j j hj origin X Y _ _
+    (mendBasePacket j) (otherEncodeCut_step base j 102).symm
+    (otherEncodeCut_body_disjoint (j+1) j hj origin ctx _ (mendBasePacket_read_support j hj)) _ state records input
+  intro current tape frame
+  have normalized : CodeFrame P1Life.oddWord P1Life.oddWord (codeEncodeAt false (History5.historyMap base (5*j)))
+      origin X Y current := by
+    simpa [encodeGroup,nonzero,show ¬j+1≤j from by omega] using frame
+  have result := mendBasePacket_frame j hj origin ctx enabled X Y current tape normalized
+  simpa [regularPayload_eq false j hj origin enabled,encodeGroup,nonzero,show ¬j+1≤j from by omega] using result
+
+theorem mstartPacket_cut_frame (j : Nat) (first : 1≤j) (hj : j<102)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    StateTriple (CutFrame centerWord centerWord (j+1) origin X Y) (mstartPacket j)
+      (fun state => let V := directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)
+        CutFrame P1Life.oddWord P1Life.oddWord j origin V.1 V.2 state) := by
+  intro state records input
+  have raw := mstartBasePacket_cut_frame j first hj origin ctx enabled X Y state records input
+  have same := Replay5.placed_eq (Placement5.pi j) (mstartBasePacket j)
+    (fun q hq => Placement5.pi_outside j q hj hq) state records
+    (cutFrame_zero_region centerWord centerWord _ origin ctx X Y state input)
+    (cutFrame_zero_region P1Life.oddWord P1Life.oddWord _ origin ctx _ _ _ raw.2)
+  change run (mstartPacket j) records state=run (mstartBasePacket j) records state at same
+  rw [same]
+  exact raw
+
+theorem mendPacket_cut_frame (j : Nat) (first : 1≤j) (hj : j<102)
+    (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    StateTriple (CutFrame P1Life.oddWord P1Life.oddWord (j+1) origin X Y) (mendPacket j)
+      (fun state => let V := directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters j)) (X,Y)
+        CutFrame centerWord centerWord j origin V.1 V.2 state) := by
+  intro state records input
+  have raw := mendBasePacket_cut_frame j first hj origin ctx enabled X Y state records input
+  have same := Replay5.placed_eq (Placement5.pi j) (mendBasePacket j)
+    (fun q hq => Placement5.pi_outside j q hj hq) state records
+    (cutFrame_zero_region P1Life.oddWord P1Life.oddWord _ origin ctx X Y state input)
+    (cutFrame_zero_region centerWord centerWord _ origin ctx _ _ _ raw.2)
+  change run (mendPacket j) records state=run (mendBasePacket j) records state at same
+  rw [same]
+  exact raw
+
+
+theorem route_program_snoc_false (P : Nat→Program) (j n : Nat) :
+    PacketSequence.program false P j (n+1)=P (j+n) ++ PacketSequence.program false P j n := by
+  induction n generalizing j with
+  | zero => simp only [PacketSequence.program,Bool.false_eq_true,if_false,List.append_nil,
+      List.nil_append,Nat.add_zero]
+  | succ n ih =>
+    rw [PacketSequence.program,if_neg (by decide),ih,PacketSequence.program,if_neg (by decide)]
+    simp only [List.append_assoc,show j+1+n=j+(n+1) from by omega]
+
+theorem route_payload_snoc_false {α : Type} (step : Nat→α→α) (j n : Nat) (V : α) :
+    PacketSequence.payload false step j (n+1) V=
+      PacketSequence.payload false step j n (step (j+n) V) := by
+  induction n generalizing j V with
+  | zero => simp only [PacketSequence.payload,Bool.false_eq_true,if_false,Nat.add_zero]
+  | succ n ih =>
+    rw [PacketSequence.payload,if_neg (by decide),ih,PacketSequence.payload,if_neg (by decide)]
+    rw [show j+1+n=j+(n+1) from by omega]
+
+theorem mslice_payload (origin : BasisState) (X Y : Fp) :
+    Replay5.groupsPayload false origin 1 84 (X,Y)=
+      directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 1))
+        (Replay5.groupsPayload false origin 2 82
+          (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 84)) (X,Y))) := by
+  have h := route_payload_snoc_false (fun k V => directionalPayload (!false)
+    (mixedTranscriptControls origin (base 2400) (Replay5.letters k)) V) 2 82 (X,Y)
+  show PacketSequence.payload false _ 1 (83+1) (X,Y)=_
+  rw [PacketSequence.payload.eq_2,if_neg (by decide)]
+  exact congrArg (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 1))) h
+
+theorem mslice_cut_frame (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) :
+    StateTriple (CutFrame centerWord centerWord 85 origin X Y) mslice
+      (fun state => let V := Replay5.groupsPayload false origin 1 84 (X,Y)
+        CutFrame centerWord centerWord 1 origin V.1 V.2 state) := by
+  have a : StateTriple (CutFrame centerWord centerWord 85 origin X Y) (mstartPacket 84)
+      (CutFrame P1Life.oddWord P1Life.oddWord 84 origin
+        (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 84)) (X,Y)).1
+        (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 84)) (X,Y)).2) := by
+    intro state records input
+    exact mstartPacket_cut_frame 84 (by decide) (by decide) origin ctx enabled X Y state records input
+  have b (V : Fp×Fp) : StateTriple (CutFrame P1Life.oddWord P1Life.oddWord 84 origin V.1 V.2) (groups false 2 82)
+      (CutFrame P1Life.oddWord P1Life.oddWord 2 origin
+        (Replay5.groupsPayload false origin 2 82 V).1 (Replay5.groupsPayload false origin 2 82 V).2) := by
+    intro state records input
+    exact groups_cut_frame false 2 82 (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
+  have c (V : Fp×Fp) : StateTriple (CutFrame P1Life.oddWord P1Life.oddWord 2 origin V.1 V.2) (mendPacket 1)
+      (CutFrame centerWord centerWord 1 origin
+        (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 1)) V).1
+        (directionalPayload true (mixedTranscriptControls origin (base 2400) (Replay5.letters 1)) V).2) := by
+    intro state records input
+    exact mendPacket_cut_frame 1 (by decide) (by decide) origin ctx enabled V.1 V.2 state records input
+  have total := (a.seq (b _)).seq (c _)
+  intro state records input
+  have r := total state records input
+  refine ⟨r.1,?_⟩
+  rw [mslice_eq]
+  show CutFrame centerWord centerWord 1 origin (Replay5.groupsPayload false origin 1 84 (X,Y)).1
+    (Replay5.groupsPayload false origin 1 84 (X,Y)).2 _
+  rw [mslice_payload origin X Y]
+  exact r.2
+
+/-- On the record cut frame at cut 85, the odd multiplication slice and the record groups `1..84`
+end in the same state (independent measurement tapes). -/
+theorem mslice_run_eq (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
+    (enabled : origin (base 2400)=true) (X Y : Fp) (s : State) (fresh old : List Bool)
+    (input : ECDSAAdd.Entrant.Rolling1588.CutFrame 85 origin X Y s) :
+    run mslice fresh s = run (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) old s := by
+  have odd := mslice_cut_frame origin ctx enabled X Y s fresh input
+  have record := ECDSAAdd.Entrant.Rolling1588.groups_cut_frame false 1 84 (by decide) (by decide)
+    origin ctx enabled X Y s old input
+  exact cutFrame_unique_route 1 origin _ _ _ _ odd.2 record.2 (odd.1.trans record.1.symm)
+
+
+theorem record_groups_shape_false : ECDSAAdd.Entrant.Rolling1588.groups false 1 84=
+    (ECDSAAdd.Entrant.Rolling1588.packet false 84 ++
+      ECDSAAdd.Entrant.Rolling1588.groups false 2 82) ++ ECDSAAdd.Entrant.Rolling1588.packet false 1 := by
+  show PacketSequence.program false (ECDSAAdd.Entrant.Rolling1588.packet false) 1 (83+1)=_
+  rw [PacketSequence.program.eq_2,if_neg (by decide),show (83:Nat)=82+1 from rfl,route_program_snoc_false]
+  rfl
+
+theorem mstartPacket_counts :
+    toffoliCount (mstartPacket 84)=toffoliCount (ECDSAAdd.Entrant.Rolling1588.packet false 84)+242 ∧
+    measurementCount (mstartPacket 84)=measurementCount (ECDSAAdd.Entrant.Rolling1588.packet false 84)+237 := by
+  have a := cell_count_delta false 84 3 2
+  have b := cell_count_delta false 84 4 2
+  have c := cellWith_counts false (P1Life.mstart (base 760) base (base 2409)) 84 4 2
+  have d := route_mstart_counts
+  have e := cell_counts false 84 4 2
+  simp only [mstartPacket,ECDSAAdd.Entrant.Rolling1588.packet,renameProgram_counts,mstartBasePacket,
+    ECDSAAdd.Entrant.Rolling1588.basePacket,Bool.false_eq_true,if_false,toffoliCount_append,measurementCount_append]
+  exact ⟨by omega,by omega⟩
+
+theorem mendPacket_counts :
+    toffoliCount (mendPacket 1)=toffoliCount (ECDSAAdd.Entrant.Rolling1588.packet false 1)+239 ∧
+    measurementCount (mendPacket 1)=measurementCount (ECDSAAdd.Entrant.Rolling1588.packet false 1)+234 := by
+  have a := cell_count_delta false 1 3 2
+  have b := cell_count_delta false 1 4 2
+  have c := cellWith_counts false (P1Life.mend (base 760) base (base 2409)) 1 3 2
+  have d := route_junction_counts
+  have e := cell_counts false 1 3 2
+  simp only [mendPacket,ECDSAAdd.Entrant.Rolling1588.packet,renameProgram_counts,mendBasePacket,
+    ECDSAAdd.Entrant.Rolling1588.basePacket,Bool.false_eq_true,if_false,toffoliCount_append,measurementCount_append]
+  exact ⟨by omega,by omega⟩
+
+/-- The odd multiplication slice has exactly 749 fewer Toffolis and 1,169 fewer measurements than
+the record groups `1..84`. -/
+theorem mslice_counts :
+    toffoliCount mslice+749=toffoliCount (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) ∧
+    measurementCount mslice+1169=measurementCount (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) := by
+  have p := mstartPacket_counts
+  have q := mendPacket_counts
+  have g := groups_count_delta false 2 82 (by decide)
+  rw [if_neg (by decide)] at g
+  rw [mslice_eq,record_groups_shape_false]
+  simp only [toffoliCount_append,measurementCount_append]
+  exact ⟨by omega,by omega⟩
+
+theorem mstartPacket_slots :
+    Challenge.gateSlots (mstartPacket 84)+112=Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.packet false 84)+3334 := by
+  have a := cell_slot_delta false 84 3 2
+  have b := cell_slot_delta false 84 4 2
+  have c := cellWith_slots false (P1Life.mstart (base 760) base (base 2409)) 84 4 2
+  have d := slot_mstart (base 760) base (base 2409) Rolling1588Lifetime.half_ports_nodup route_retired_count_member
+  have h := slot_half (base 760) false base (base 2409)
+  have regular := cellWith_slots false (P1Life.half (base 760) false base (base 2409)) 84 4 2
+  have eq : cell false 84 4 2=cellWith false (P1Life.half (base 760) false base (base 2409)) 84 4 2 := rfl
+  rw [←eq] at regular
+  simp only [Bool.false_eq_true,if_false] at h
+  simp only [mstartPacket,ECDSAAdd.Entrant.Rolling1588.packet,Baselines.rename_gateSlots,mstartBasePacket,
+    ECDSAAdd.Entrant.Rolling1588.basePacket,Bool.false_eq_true,if_false,Challenge.gateSlots_append]
+  simp only [halfSlotSaving,Bool.false_eq_true,if_false] at a b
+  omega
+
+theorem mendPacket_slots :
+    Challenge.gateSlots (mendPacket 1)+112=Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.packet false 1)+3821 := by
+  have a := cell_slot_delta false 1 3 2
+  have b := cell_slot_delta false 1 4 2
+  have c := cellWith_slots false (P1Life.mend (base 760) base (base 2409)) 1 3 2
+  have d := slot_junctions (base 760) base (base 2409) Rolling1588Lifetime.half_ports_nodup route_retired_count_member
+  have h := slot_half (base 760) false base (base 2409)
+  have regular := cellWith_slots false (P1Life.half (base 760) false base (base 2409)) 1 3 2
+  have eq : cell false 1 3 2=cellWith false (P1Life.half (base 760) false base (base 2409)) 1 3 2 := rfl
+  rw [←eq] at regular
+  simp only [Bool.false_eq_true,if_false] at h
+  simp only [mendPacket,ECDSAAdd.Entrant.Rolling1588.packet,Baselines.rename_gateSlots,mendBasePacket,
+    ECDSAAdd.Entrant.Rolling1588.basePacket,Bool.false_eq_true,if_false,Challenge.gateSlots_append]
+  simp only [halfSlotSaving,Bool.false_eq_true,if_false] at a b
+  omega
+
+/-- The odd multiplication slice uses fewer gate slots than the record groups `1..84`. -/
+theorem mslice_slots_le : Challenge.gateSlots mslice≤Challenge.gateSlots (ECDSAAdd.Entrant.Rolling1588.groups false 1 84) := by
+  have p := mstartPacket_slots
+  have q := mendPacket_slots
+  have g := groups_slot_delta false 2 82 (by decide)
+  rw [if_neg (by decide)] at g
+  simp only [halfSlotSaving,Bool.false_eq_true,if_false] at g
+  rw [mslice_eq,record_groups_shape_false]
+  simp only [Challenge.gateSlots_append]
+  omega
+
+end ECDSAAdd.Entrant.RouteA.Rolling1588
+end -- build-odd
+
+-- ===== RouteARecordHalfLowerFalse (build-odd: footprint minus 760 inside the record multiplication half) =====
+section
+set_option maxRecDepth 30000
+set_option maxHeartbeats 4000000
+set_option linter.constructorNameAsVariable false
+set_option linter.unusedVariables false
+set_option linter.unusedSimpArgs false
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+
+namespace ECDSAAdd.Entrant.RouteA.Rolling1588
+open Arithmetic BalancedCircuit MappedCompressed RecordedQuantum
+attribute [local irreducible] ECDSAAdd.wires
+
+theorem rhF_viaCompare (q : Wire) (h : q∈wires (Q6LifetimeResearch.compare (base 760) false (Q6EndpointCell.ports base (base 2409)))) :
+    q∈wires (Q6LifetimeResearch.inverse (base 760) (Q6EndpointCell.ports base (base 2409))) := by
+  simp only [Q6LifetimeResearch.inverse,wires_append,Finset.mem_union,h,true_or,or_true]
+
+theorem rhF_viaUnfold (q : Wire) (h : q∈wires (Q6LifetimeResearch.unfoldStep (base 760) (Q6EndpointCell.ports base (base 2409)))) :
+    q∈wires (Q6LifetimeResearch.inverse (base 760) (Q6EndpointCell.ports base (base 2409))) := by
+  simp only [Q6LifetimeResearch.inverse,wires_append,Finset.mem_union,h,true_or,or_true]
+
+theorem rhF_viaRawSub (q : Wire) (h : q∈wires (Q6LifetimeResearch.rawSubTail (base 760) (Q6EndpointCell.ports base (base 2409)))) :
+    q∈wires (Q6LifetimeResearch.inverse (base 760) (Q6EndpointCell.ports base (base 2409))) := by
+  simp only [Q6LifetimeResearch.inverse,wires_append,Finset.mem_union,h,true_or,or_true]
+
+theorem rhF_regs (q : Wire) (h : q∈(Q6EndpointCell.ports base (base 2409)).one::(Q6EndpointCell.ports base (base 2409)).r) :
+    q∈wires (Q6LifetimeResearch.compare (base 760) false (Q6EndpointCell.ports base (base 2409))) := by
+  have n : q∈wires (notRegister ((Q6EndpointCell.ports base (base 2409)).one::(Q6EndpointCell.ports base (base 2409)).r)) := by
+    rw [notRegister_wires]; exact List.mem_toFinset.mpr h
+  simp only [Q6LifetimeResearch.compare,wires_append,Finset.mem_union,n,true_or,or_true]
+
+theorem rhF_y (q : Wire) (h : q∈(Q6EndpointCell.ports base (base 2409)).y) :
+    q∈wires (Q6LifetimeResearch.rawSubTail (base 760) (Q6EndpointCell.ports base (base 2409))) := by
+  have n := lw_signComplement (Q6EndpointCell.ports base (base 2409)).sign q (Q6EndpointCell.ports base (base 2409)).y h
+  simp only [Q6LifetimeResearch.rawSubTail,wires_append,Finset.mem_union,n,true_or,or_true]
+
+theorem rhF_flags (q : Wire) (h : q=(Q6EndpointCell.ports base (base 2409)).parity ∨ q=(Q6EndpointCell.ports base (base 2409)).lower) :
+    q∈wires (Q6LifetimeResearch.unfoldStep (base 760) (Q6EndpointCell.ports base (base 2409))) := by
+  have n : q∈wires [Instr.CX (Q6EndpointCell.ports base (base 2409)).parity (Q6EndpointCell.ports base (base 2409)).lower,
+      Instr.CX (Q6EndpointCell.ports base (base 2409)).rmsb (Q6EndpointCell.ports base (base 2409)).lower,
+      Instr.CCX (Q6EndpointCell.ports base (base 2409)).parity (Q6EndpointCell.ports base (base 2409)).lower
+        (Q6EndpointCell.ports base (base 2409)).one,
+      Instr.CX (Q6EndpointCell.ports base (base 2409)).lower (Q6EndpointCell.ports base (base 2409)).rmsb,
+      Instr.CX (Q6EndpointCell.ports base (base 2409)).parity (Q6EndpointCell.ports base (base 2409)).rmsb] := by
+    rw [wires,Instr.wires]
+    rcases h with e | e
+    · rw [e]; exact Finset.mem_union_left _ (Finset.mem_insert_self _ _)
+    · rw [e]; exact Finset.mem_union_left _ (Finset.mem_insert_of_mem (Finset.mem_singleton_self _))
+  simp only [Q6LifetimeResearch.unfoldStep,wires_append,Finset.mem_union,n,true_or,or_true]
+
+theorem rhF_carries_gen (L : Layout) (retired q : Wire) (hne : q≠retired) (hone : q≠L.one)
+    (hlen : (L.carry.take 254).length=254) (hyl : (L.y.drop 1).length=255) (hrl : (L.r.drop 1).length=255)
+    (hc : q∈L.carry.take 254) : q∈wires (Q6LifetimeResearch.compare retired false L) := by
+  have hcs : q∈(Q6Structural.q6Carry L).take 255 := by
+    rw [Q6Structural.q6Carry,List.append_assoc,List.take_append]
+    exact List.mem_append_left _ (by rw [List.take_of_length_le (by omega)]; exact hc)
+  have hcsl : ((Q6Structural.q6Carry L).take 255).length=255 := by
+    simp only [List.length_take,Q6Structural.q6Carry,List.length_append,List.length_singleton,hlen]
+    omega
+  rcases lw_head_or_tail _ q hcs with e | tail
+  · have n : q∈wires (Arithmetic.majority (L.y.getD 0 0) (L.r.getD 0 0) L.one
+        (((Q6Structural.q6Carry L).take 255).getD 0 0)) := by
+      rw [lw_majority,e]
+      exact Finset.mem_insert_of_mem (Finset.mem_insert_of_mem (Finset.mem_insert_of_mem
+        (Finset.mem_singleton_self _)))
+    simp only [Q6LifetimeResearch.compare,wires_append,Finset.mem_union,n,true_or,or_true]
+  · have hdl : (((Q6Structural.q6Carry L).take 255).drop 1).length=254 := by
+      rw [List.length_drop,hcsl]
+    have a3 : q∈(((Q6Structural.q6Carry L).take 255).drop 1).take ((L.y.drop 1).length-1) := by
+      rw [hyl,List.take_of_length_le (by rw [hdl])]
+      exact tail
+    have chain := lw_compareChain false L.parity q (L.y.drop 1) (L.r.drop 1)
+      (((Q6Structural.q6Carry L).take 255).drop 1) (((Q6Structural.q6Carry L).take 255).getD 0 0)
+      (by rw [hyl,hrl]) (by rw [hdl,hyl]) a3
+    have n : q∈wires (Q6LifetimeResearch.move retired L.one
+        (Q6LifetimeResearch.compareChain false (L.y.drop 1) (L.r.drop 1)
+          (((Q6Structural.q6Carry L).take 255).drop 1)
+          (((Q6Structural.q6Carry L).take 255).getD 0 0) L.parity)) := by
+      rw [Q6LifetimeResearch.move,renameProgram_support]
+      exact Finset.mem_image.mpr ⟨q,chain,Equiv.swap_apply_of_ne_of_ne hne hone⟩
+    simp only [Q6LifetimeResearch.compare,wires_append,Finset.mem_union,n,true_or,or_true]
+
+theorem rhF_carries (q : Wire) (hne : q≠base 760) (hc : q∈(Q6EndpointCell.ports base (base 2409)).carry.take 254) :
+    q∈wires (Q6LifetimeResearch.compare (base 760) false (Q6EndpointCell.ports base (base 2409))) :=
+  rhF_carries_gen (Q6EndpointCell.ports base (base 2409)) (base 760) q hne (rh_not_one q hc)
+    (gen_carry_length _ (Q6EndpointCell.ports_widths base (base 2409)))
+    (by rw [List.length_drop,gen_y_length _ (Q6EndpointCell.ports_widths base (base 2409))])
+    (by rw [List.length_drop,gen_r_length _ (Q6EndpointCell.ports_widths base (base 2409))]) hc
+
+/-- Every wire of the junction footprint except the retired carry `base 760` occurs in the record
+lifetime half of the multiplication direction. -/
+theorem record_half_lower_false :
+    (P1Life.junctionFootprint (Q6EndpointCell.ports base (base 2409))).erase (base 760)⊆wires (R2Life760.half760 false) := by
+  intro q hq
+  obtain ⟨hne,hmem⟩ := Finset.mem_erase.mp hq
+  have inv : q∈wires (Q6LifetimeResearch.inverse (base 760) (Q6EndpointCell.ports base (base 2409))) ∨ q=base 2409 := by
+    simp only [P1Life.junctionFootprint,List.mem_toFinset,List.mem_cons,List.mem_append] at hmem
+    rcases hmem with e | e | e | e | (hr | hy) | hc
+    · exact Or.inr e
+    · exact Or.inl (rhF_viaUnfold q (rhF_flags q (Or.inl e)))
+    · exact Or.inl (rhF_viaUnfold q (rhF_flags q (Or.inr e)))
+    · exact Or.inl (rhF_viaCompare q (rhF_regs q (List.mem_cons.mpr (Or.inl e))))
+    · exact Or.inl (rhF_viaCompare q (rhF_regs q (List.mem_cons_of_mem _ hr)))
+    · exact Or.inl (rhF_viaRawSub q (rhF_y q hy))
+    · exact Or.inl (rhF_viaCompare q (rhF_carries q hne hc))
+  rw [R2Life760.half760_false]
+  simp only [Q6LifetimeResearch.half,Bool.false_eq_true,if_false,wires_append,Finset.mem_union]
+  rcases inv with h | e
+  · exact Or.inl (Or.inl (Or.inr h))
+  · left; left; left
+    rw [e,wires,wires,Instr.wires]
+    exact Finset.mem_union_left _ (Finset.mem_singleton_self _)
+
+end ECDSAAdd.Entrant.RouteA.Rolling1588
+end -- build-odd
+
+-- [odd multiplication slice] end
+
 -- [C9a] stair part formerly appended to QTop (moved: off the build path)
 
 /-! ## LT41 fitpack: 147 stair part(s) appended (topological order) -/
@@ -19568,17 +20432,24 @@ def endPacket (divide : Bool) (deficit : Nat) : Program :=
   else if deficit=68 then StairEndpointLoan44.endPacket760Loan44 false
   else R2SqEp760.endPacket760 false
 
-/-- M1a: the division groups `1..84` at deficit 0 run the odd-word slice; all other groups are the
-staircase's. -/
+/-- M1a/M1b: the groups `1..84` at deficit 0 run the odd-word slices (division: `slice`,
+multiplication: `mslice`); all other groups are the staircase's. -/
 def groupsM1 (divide : Bool) (d j n : Nat) : Program :=
-  if divide=true ∧ d=0 ∧ j=1 ∧ n=84 then RouteA.Rolling1588.slice else StairGroups.groups divide d j n
+  if d=0 ∧ j=1 ∧ n=84 then (if divide then RouteA.Rolling1588.slice else RouteA.Rolling1588.mslice)
+  else StairGroups.groups divide d j n
 
 theorem groupsM1_odd : groupsM1 true 0 1 84=RouteA.Rolling1588.slice := by
-  simp only [groupsM1,and_self,if_true]
+  unfold groupsM1
+  exact if_pos ⟨rfl,rfl,rfl⟩
 
-theorem groupsM1_other (divide : Bool) (d j n : Nat) (h : ¬(divide=true ∧ d=0 ∧ j=1 ∧ n=84)) :
+theorem groupsM1_oddM : groupsM1 false 0 1 84=RouteA.Rolling1588.mslice := by
+  unfold groupsM1
+  exact if_pos ⟨rfl,rfl,rfl⟩
+
+theorem groupsM1_other (divide : Bool) (d j n : Nat) (h : ¬(d=0 ∧ j=1 ∧ n=84)) :
     groupsM1 divide d j n=StairGroups.groups divide d j n := by
-  simp only [groupsM1,if_neg h]
+  unfold groupsM1
+  exact if_neg h
 
 def bestLoans : StairSchedule.StairLoans where
   groups := groupsM1
@@ -20201,25 +21072,95 @@ theorem slice_sub : wires RouteA.Rolling1588.slice ⊆ wires (Rolling1588.groups
       exact sequence_sub true _ _ (fun i => oddPacket_sub i) 2 82
     · exact oddPacket_sub 84
 
+/-! ## M1b: the odd multiplication slice stays inside the record groups `1..84` -/
+
+theorem oddCellF_sub (P : Program) (hP : RouteA.Rolling1588.HalfSupport P) (j active hole : Nat) :
+    wires (RouteA.Rolling1588.cellWith false P j active hole) ⊆ wires (Rolling1588.cell false j active hole) := by
+  have h : wires (RouteA.Rolling1588.halfWindowWith P j active hole) ⊆
+      wires (Rolling1588.halfWindow false j active hole) := by
+    unfold RouteA.Rolling1588.halfWindowWith Rolling1588.halfWindow
+    exact loanWindow_sub _ _ _ _ _ (rename_sub _ _ _ (hP.trans RouteA.Rolling1588.record_half_lower_false))
+  simp only [RouteA.Rolling1588.cellWith,Rolling1588.cell,Bool.false_eq_true,if_false]
+  exact append_sub _ _ _ _ (Finset.Subset.refl _) h
+
+theorem oddPlainCellF_sub (j active hole : Nat) :
+    wires (RouteA.Rolling1588.cell false j active hole) ⊆ wires (Rolling1588.cell false j active hole) := by
+  have h := oddCellF_sub _ (RouteA.Rolling1588.half_support false) j active hole
+  simpa only [RouteA.Rolling1588.cellWith,RouteA.Rolling1588.cell,RouteA.Rolling1588.halfWindow,
+    Bool.false_eq_true,if_false] using h
+
+theorem oddBasePacketF_sub (j : Nat) :
+    wires (RouteA.Rolling1588.basePacket false j) ⊆ wires (Rolling1588.basePacket false j) := by
+  have c := fun active hole => oddPlainCellF_sub j active hole
+  simp only [RouteA.Rolling1588.basePacket,Rolling1588.basePacket,Bool.false_eq_true,if_false]
+  refine append_sub _ _ _ _ (append_sub _ _ _ _ (Finset.Subset.refl _) ?_) (Finset.Subset.refl _)
+  exact append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _
+    (append_sub _ _ _ _ (append_sub _ _ _ _ (c 4 2) (Finset.Subset.refl _)) (c 3 2)) (c 4 2))
+    (Finset.Subset.refl _)) (c 4 2)) (c 3 2)
+
+theorem mstartBasePacket_sub (j : Nat) :
+    wires (RouteA.Rolling1588.mstartBasePacket j) ⊆ wires (Rolling1588.basePacket false j) := by
+  have c := fun active hole => oddPlainCellF_sub j active hole
+  have hs := oddCellF_sub _ RouteA.Rolling1588.mstart_support j 4 2
+  simp only [RouteA.Rolling1588.mstartBasePacket,Rolling1588.basePacket,Bool.false_eq_true,if_false]
+  refine append_sub _ _ _ _ (append_sub _ _ _ _ (Finset.Subset.refl _) ?_) (Finset.Subset.refl _)
+  exact append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _
+    (append_sub _ _ _ _ (append_sub _ _ _ _ hs (Finset.Subset.refl _)) (c 3 2)) (c 4 2))
+    (Finset.Subset.refl _)) (c 4 2)) (c 3 2)
+
+theorem mendBasePacket_sub (j : Nat) :
+    wires (RouteA.Rolling1588.mendBasePacket j) ⊆ wires (Rolling1588.basePacket false j) := by
+  have c := fun active hole => oddPlainCellF_sub j active hole
+  have he := oddCellF_sub _ RouteA.Rolling1588.mend_support j 3 2
+  simp only [RouteA.Rolling1588.mendBasePacket,Rolling1588.basePacket,Bool.false_eq_true,if_false]
+  refine append_sub _ _ _ _ (append_sub _ _ _ _ (Finset.Subset.refl _) ?_) (Finset.Subset.refl _)
+  exact append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _ (append_sub _ _ _ _
+    (append_sub _ _ _ _ (append_sub _ _ _ _ (c 4 2) (Finset.Subset.refl _)) (c 3 2)) (c 4 2))
+    (Finset.Subset.refl _)) (c 4 2)) he
+
+theorem oddPacketF_sub (j : Nat) :
+    wires (RouteA.Rolling1588.packet false j) ⊆ wires (Rolling1588.packet false j) := by
+  unfold RouteA.Rolling1588.packet Rolling1588.packet
+  exact rename_sub _ _ _ (oddBasePacketF_sub j)
+
+theorem mslice_sub : wires RouteA.Rolling1588.mslice ⊆ wires (Rolling1588.groups false 1 84) := by
+  rw [RouteA.Rolling1588.record_groups_shape_false,RouteA.Rolling1588.mslice_eq]
+  apply append_sub
+  · apply append_sub
+    · unfold RouteA.Rolling1588.mstartPacket Rolling1588.packet
+      exact rename_sub _ _ _ (mstartBasePacket_sub 84)
+    · unfold RouteA.Rolling1588.groups Rolling1588.groups
+      exact sequence_sub false _ _ (fun i => oddPacketF_sub i) 2 82
+  · unfold RouteA.Rolling1588.mendPacket Rolling1588.packet
+    exact rename_sub _ _ _ (mendBasePacket_sub 1)
+
 theorem bestGroups_sub (divide : Bool) (d : Nat) (hd : d ≤ 68) (j n : Nat) :
     wires (StairConcrete.bestLoans.groups divide d j n) ⊆
       wires (StairSchedule.recordLoans.groups divide d j n) := by
   change wires (StairConcrete.groupsM1 divide d j n) ⊆ wires (Rolling1588.groups divide j n)
-  by_cases hm : divide=true ∧ d=0 ∧ j=1 ∧ n=84
-  · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
-    rw [StairConcrete.groupsM1_odd]
-    exact slice_sub
+  by_cases hm : d=0 ∧ j=1 ∧ n=84
+  · obtain ⟨rfl,rfl,rfl⟩ := hm
+    cases divide
+    · rw [StairConcrete.groupsM1_oddM]
+      exact mslice_sub
+    · rw [StairConcrete.groupsM1_odd]
+      exact slice_sub
   · rw [StairConcrete.groupsM1_other divide d j n hm]
     exact groups_sub divide d hd j n
 
 theorem bestGroups_sub_stair (divide : Bool) (d j n : Nat) :
     wires (StairConcrete.bestLoans.groups divide d j n) ⊆ wires (StairGroups.groups divide d j n) := by
   change wires (StairConcrete.groupsM1 divide d j n) ⊆ _
-  by_cases hm : divide=true ∧ d=0 ∧ j=1 ∧ n=84
-  · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
-    rw [StairConcrete.groupsM1_odd,StairGroups.groups_zero]
-    exact slice_sub
-  · rw [StairConcrete.groupsM1_other divide d j n hm]
+  by_cases hm : d=0 ∧ j=1 ∧ n=84
+  · obtain ⟨rfl,rfl,rfl⟩ := hm
+    rw [StairGroups.groups_zero]
+    cases divide
+    · rw [StairConcrete.groupsM1_oddM]
+      exact mslice_sub
+    · rw [StairConcrete.groupsM1_odd]
+      exact slice_sub
+  · intro q hq
+    rwa [StairConcrete.groupsM1_other divide d j n hm] at hq
 
 theorem placedGroups_sub (divide : Bool) (d : Nat) (hd : d ≤ 68) (j n : Nat) :
     wires (StairSchedule.placedGroups StairConcrete.bestLoans divide d j n) ⊆
@@ -21476,8 +22417,8 @@ theorem forward_slices_run_eq (half : HalfReplayHypothesis) :
         run (StairSchedule.recordLoans.groups true d j n)
           (old.take (measurementCount
             (StairSchedule.recordLoans.groups true d j n))) s := by
-        by_cases hm : true=true ∧ d=0 ∧ j=1 ∧ n=84
-        · obtain ⟨-,rfl,rfl,rfl⟩ := hm
+        by_cases hm : d=0 ∧ j=1 ∧ n=84
+        · obtain ⟨rfl,rfl,rfl⟩ := hm
           change run (StairConcrete.groupsM1 true 0 1 84) _ s=run (StairSchedule.recordLoans.groups true 0 1 84) _ s
           rw [StairConcrete.groupsM1_odd]
           exact RouteA.Rolling1588.slice_run_eq origin ctx enabled X Y s _ _ input
@@ -21510,9 +22451,16 @@ theorem backward_slices_run_eq (half : HalfReplayHypothesis) :
             (StairConcrete.bestLoans.groups false d j n))) s =
         run (StairSchedule.recordLoans.groups false d j n)
           (old.take (measurementCount
-            (StairSchedule.recordLoans.groups false d j n))) s :=
-        StairLoanReplay.groups_run_eq half false d j n hd first bound origin
-          ctx enabled X Y s _ _ input
+            (StairSchedule.recordLoans.groups false d j n))) s := by
+        by_cases hm : d=0 ∧ j=1 ∧ n=84
+        · obtain ⟨rfl,rfl,rfl⟩ := hm
+          change run (StairConcrete.groupsM1 false 0 1 84) _ s=run (StairSchedule.recordLoans.groups false 0 1 84) _ s
+          rw [StairConcrete.groupsM1_oddM]
+          exact RouteA.Rolling1588.mslice_run_eq origin ctx enabled X Y s _ _ input
+        · change run (StairConcrete.groupsM1 false d j n) _ s=_
+          rw [StairConcrete.groupsM1_other false d j n hm]
+          exact StairLoanReplay.groups_run_eq half false d j n hd first bound origin
+            ctx enabled X Y s _ _ input
       rw [e]
       have post := (Rolling1588.groups_cut_frame false j n first bound origin
         ctx enabled X Y s (old.take (measurementCount
@@ -55962,7 +56910,7 @@ theorem bestLoans_divEndpoint :
 
 
 theorem placedGroups_counts (divide : Bool) (deficit first count : Nat)
-    (hd : deficit≤68) (hno : ¬(divide=true ∧ deficit=0 ∧ first=1 ∧ count=84)) :
+    (hd : deficit≤68) (hno : ¬(deficit=0 ∧ first=1 ∧ count=84)) :
     toffoliCount (StairSchedule.placedGroups bestLoans divide deficit first count)=
         toffoliCount
           (StairSchedule.placedGroups StairSchedule.recordLoans divide deficit first count)+
@@ -55983,6 +56931,14 @@ theorem placedGroups_counts_odd :
         measurementCount (StairSchedule.placedGroups StairSchedule.recordLoans true 0 1 84) := by
   simpa only [StairSchedule.placedGroups,bestLoans,StairSchedule.recordLoans,
     renameProgram_counts,groupsM1_odd] using RouteA.Rolling1588.slice_counts
+
+theorem placedGroups_counts_oddM :
+    toffoliCount (StairSchedule.placedGroups bestLoans false 0 1 84)+749=
+        toffoliCount (StairSchedule.placedGroups StairSchedule.recordLoans false 0 1 84) ∧
+    measurementCount (StairSchedule.placedGroups bestLoans false 0 1 84)+1169=
+        measurementCount (StairSchedule.placedGroups StairSchedule.recordLoans false 0 1 84) := by
+  simpa only [StairSchedule.placedGroups,bestLoans,StairSchedule.recordLoans,
+    renameProgram_counts,groupsM1_oddM] using RouteA.Rolling1588.mslice_counts
 
 theorem placedEndPacket_counts (divide : Bool) (deficit : Nat) :
     toffoliCount (StairSchedule.placedEndPacket bestLoans divide deficit)=
@@ -57905,7 +58861,9 @@ theorem backward_slices_payload_free (half : HalfReplayHypothesis) :
   | [], _, _, _, _ => by simp [slices, wires]
   | (d, j, n) :: rest, c, low, chain, i => by
       obtain ⟨_, hd, first, bound, hr⟩ := chain
-      have head := loanGroups_payload_free half false d hd j n first bound i
+      have head : Prefix1590.payload0 i ∉ wires (StairConcrete.bestLoans.groups false d j n) :=
+        fun h => loanGroups_payload_free half false d hd j n first bound i
+          (StairLoanGroupSupport.bestGroups_sub_stair false d j n h)
       have tail := backward_slices_payload_free half rest j low hr i
       simp only [slices, wires_append, Finset.mem_union, not_or]
       exact ⟨head, tail⟩
@@ -58045,7 +59003,8 @@ theorem loanSlicesBack_old_support (half : HalfReplayHypothesis) :
       subst hk'
       have hk : k = k' + n := by omega
       subst hk
-      have head := loanGroups_old_support half false d hd (low + k') n bound
+      have head := (StairLoanGroupSupport.bestGroups_sub_stair false d (low + k') n).trans
+        (loanGroups_old_support half false d hd (low + k') n bound)
       have tail := loanSlicesBack_old_support half rest low k' hr
       have split : ControlLoan1589.groups false low (k' + n) =
           ControlLoan1589.groups false (low + k') n ++
@@ -61854,7 +62813,7 @@ theorem v3_recordGroups_counts (divide : Bool) (d first count : Nat) :
 
 /-- A loan-aware group run at deficit `d`: record run plus `20·d·count`. -/
 theorem v3_group_counts (divide : Bool) (d first count : Nat) (hd : d ≤ 68)
-    (hno : ¬(divide=true ∧ d=0 ∧ first=1 ∧ count=84)) :
+    (hno : ¬(d=0 ∧ first=1 ∧ count=84)) :
     toffoliCount (StairSchedule.placedGroups StairConcrete.bestLoans divide d first count) =
         toffoliCount (Rolling1588.groups divide first count) + 20 * d * count ∧
       measurementCount
@@ -61872,6 +62831,16 @@ theorem v3_oddGroup_counts :
         measurementCount (Rolling1588.groups true 1 84) + 20 * 0 * 84 := by
   obtain ⟨g1, g2⟩ := StairConcrete.placedGroups_counts_odd
   obtain ⟨r1, r2⟩ := v3_recordGroups_counts true 0 1 84
+  constructor <;> omega
+
+/-- M1b: the odd multiplication slice (deficit 0, packets 84..1) saves 749 T and 1169 M. -/
+theorem v3_oddGroupM_counts :
+    toffoliCount (StairSchedule.placedGroups StairConcrete.bestLoans false 0 1 84) + 749 =
+        toffoliCount (Rolling1588.groups false 1 84) + 20 * 0 * 84 ∧
+      measurementCount (StairSchedule.placedGroups StairConcrete.bestLoans false 0 1 84) + 1169 =
+        measurementCount (Rolling1588.groups false 1 84) + 20 * 0 * 84 := by
+  obtain ⟨g1, g2⟩ := StairConcrete.placedGroups_counts_oddM
+  obtain ⟨r1, r2⟩ := v3_recordGroups_counts false 0 1 84
   constructor <;> omega
 
 /-- The record packet run `1..101` split at the v3 group boundaries. -/
@@ -72232,6 +73201,124 @@ theorem slice_keeps {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
       (dstartBasePacket_keeps 1 (by decide) hw)
   · exact packetSequence_keeps w true _ 82 2 (fun i _ h2 => oddPacket_keeps i (by omega) hw)
 
+/-! ## M1b: the odd multiplication slice keeps every role zero -/
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem odd_halfF_ztAll : ztAll 736 45 false StairSchedule.exclusiveRoles
+    (P1Life.half (base 760) false base (base 2409)) = true := by
+  have hr : ∀ w ∈ StairSchedule.exclusiveRoles, 736 ≤ w ∧ w < 736 + 45 := roles_window
+  simp only [P1Life.half,Bool.false_eq_true,if_false,P1Life.inverse,List.append_assoc]
+  iterate 12 apply ztAll_of_suffix 736 45 _ _ _ _ hr
+  decide +kernel
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem odd_mstart_ztAll : ztAll 736 45 false StairSchedule.exclusiveRoles
+    (P1Life.mstart (base 760) base (base 2409)) = true := by
+  have hr : ∀ w ∈ StairSchedule.exclusiveRoles, 736 ≤ w ∧ w < 736 + 45 := roles_window
+  simp only [P1Life.mstart,P1Life.junctionOddRest,List.append_assoc]
+  iterate 12 apply ztAll_of_suffix 736 45 _ _ _ _ hr
+  decide +kernel
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem odd_mend_ztAll : ztAll 736 45 false StairSchedule.exclusiveRoles
+    (P1Life.mend (base 760) base (base 2409)) = true := by
+  have hr : ∀ w ∈ StairSchedule.exclusiveRoles, 736 ≤ w ∧ w < 736 + 45 := roles_window
+  simp only [P1Life.mend,P1Life.junctionStdRest,List.append_assoc]
+  iterate 12 apply ztAll_of_suffix 736 45 _ _ _ _ hr
+  decide +kernel
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem oddCellF_keeps (P : Program) (j a h : Nat) (hj : j < 102) (ha : a < 5) (hh : h < 5)
+    {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) (half : Keeps w P) :
+    Keeps w (RouteA.Rolling1588.cellWith false P j a h) := by
+  have win := inWin_of_role hw
+  have sw := selW_keeps j a win (keeps_of_ztAll chk_keep_swapBody (fun _ x => x) w hw)
+  have hwn := oddHalfWindow_keeps P j a h hj ha hh win half
+  simp only [RouteA.Rolling1588.cellWith,Bool.false_eq_true,if_false]
+  exact keeps_append sw hwn
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem oddBasePacketF_keeps (j : Nat) (hj : j < 102) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w (RouteA.Rolling1588.basePacket false j) := by
+  have win := inWin_of_role hw
+  have k (P : Program) (h : ztAll 736 45 true StairSchedule.exclusiveRoles P = true) :
+      Keeps w (Rolling1588.onPacket j P) :=
+    keeps_onPacket j hj win (keeps_of_ztAll h (fun _ x => x) w hw)
+  have op := k _ chk_keep_stageOpen
+  have cl := k _ chk_keep_stageClose
+  have b5 := k _ chk_keep_bridge5
+  have b7i := k _ chk_keep_bridge7inv
+  have hk := keeps_of_odd_ztAll odd_halfF_ztAll hw
+  have c3 : Keeps w (RouteA.Rolling1588.cell false j 3 2) := oddCellF_keeps _ j 3 2 hj (by decide) (by decide) hw hk
+  have c4 : Keeps w (RouteA.Rolling1588.cell false j 4 2) := oddCellF_keeps _ j 4 2 hj (by decide) (by decide) hw hk
+  simp only [RouteA.Rolling1588.basePacket,Bool.false_eq_true,if_false]
+  exact keeps_append (keeps_append op (keeps_append (keeps_append (keeps_append (keeps_append
+    (keeps_append (keeps_append c4 b5) c3) c4) b7i) c4) c3)) cl
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem mstartBasePacket_keeps (j : Nat) (hj : j < 102) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w (RouteA.Rolling1588.mstartBasePacket j) := by
+  have win := inWin_of_role hw
+  have k (P : Program) (h : ztAll 736 45 true StairSchedule.exclusiveRoles P = true) :
+      Keeps w (Rolling1588.onPacket j P) :=
+    keeps_onPacket j hj win (keeps_of_ztAll h (fun _ x => x) w hw)
+  have op := k _ chk_keep_stageOpen
+  have cl := k _ chk_keep_stageClose
+  have b5 := k _ chk_keep_bridge5
+  have b7i := k _ chk_keep_bridge7inv
+  have hk := keeps_of_odd_ztAll odd_halfF_ztAll hw
+  have c3 : Keeps w (RouteA.Rolling1588.cell false j 3 2) := oddCellF_keeps _ j 3 2 hj (by decide) (by decide) hw hk
+  have c4 : Keeps w (RouteA.Rolling1588.cell false j 4 2) := oddCellF_keeps _ j 4 2 hj (by decide) (by decide) hw hk
+  have m0 := oddCellF_keeps _ j 4 2 hj (by decide) (by decide) hw (keeps_of_odd_ztAll odd_mstart_ztAll hw)
+  simp only [RouteA.Rolling1588.mstartBasePacket]
+  exact keeps_append (keeps_append op (keeps_append (keeps_append (keeps_append (keeps_append
+    (keeps_append (keeps_append m0 b5) c3) c4) b7i) c4) c3)) cl
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem mendBasePacket_keeps (j : Nat) (hj : j < 102) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w (RouteA.Rolling1588.mendBasePacket j) := by
+  have win := inWin_of_role hw
+  have k (P : Program) (h : ztAll 736 45 true StairSchedule.exclusiveRoles P = true) :
+      Keeps w (Rolling1588.onPacket j P) :=
+    keeps_onPacket j hj win (keeps_of_ztAll h (fun _ x => x) w hw)
+  have op := k _ chk_keep_stageOpen
+  have cl := k _ chk_keep_stageClose
+  have b5 := k _ chk_keep_bridge5
+  have b7i := k _ chk_keep_bridge7inv
+  have hk := keeps_of_odd_ztAll odd_halfF_ztAll hw
+  have c3 : Keeps w (RouteA.Rolling1588.cell false j 3 2) := oddCellF_keeps _ j 3 2 hj (by decide) (by decide) hw hk
+  have c4 : Keeps w (RouteA.Rolling1588.cell false j 4 2) := oddCellF_keeps _ j 4 2 hj (by decide) (by decide) hw hk
+  have e0 := oddCellF_keeps _ j 3 2 hj (by decide) (by decide) hw (keeps_of_odd_ztAll odd_mend_ztAll hw)
+  simp only [RouteA.Rolling1588.mendBasePacket]
+  exact keeps_append (keeps_append op (keeps_append (keeps_append (keeps_append (keeps_append
+    (keeps_append (keeps_append c4 b5) c3) c4) b7i) c4) e0)) cl
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem oddPacketF_keeps (j : Nat) (hj : j < 102) {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w (RouteA.Rolling1588.packet false j) :=
+  keeps_rename _ (pre_of_inj _ (Equiv.injective _) w (chk_shifted_fix j hj w hw))
+    (oddBasePacketF_keeps j hj hw)
+
+set_option linter.unusedSimpArgs false in
+set_option linter.unusedVariables false in
+theorem mslice_keeps {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles) :
+    Keeps w RouteA.Rolling1588.mslice := by
+  rw [RouteA.Rolling1588.mslice_eq]
+  refine keeps_append (keeps_append ?_ ?_) ?_
+  · exact keeps_rename _ (pre_of_inj _ (Equiv.injective _) w (chk_shifted_fix 84 (by decide) w hw))
+      (mstartBasePacket_keeps 84 (by decide) hw)
+  · exact packetSequence_keeps w false _ 82 2 (fun i _ h2 => oddPacketF_keeps i (by omega) hw)
+  · exact keeps_rename _ (pre_of_inj _ (Equiv.injective _) w (chk_shifted_fix 1 (by decide) w hw))
+      (mendBasePacket_keeps 1 (by decide) hw)
+
 /-- Every logical group keeps every role zero. -/
 theorem groups_keeps (divide : Bool) (d first count : Nat) (hr : first + count ≤ 102)
     {w : Wire} (hw : w ∈ StairSchedule.exclusiveRoles)
@@ -72239,10 +73326,13 @@ theorem groups_keeps (divide : Bool) (d first count : Nat) (hr : first + count �
     Keeps w (StairSchedule.placedGroups StairConcrete.bestLoans divide d first count) := by
   show Keeps w (renameProgram (OB5.sig 511) (StairConcrete.groupsM1 divide d first count))
   apply keeps_rename (OB5.sig 511) (pre_of_inj _ (OB5.sig_injective 511 (by decide)) w (chk_sig_fix w hw))
-  by_cases hm : divide=true ∧ d=0 ∧ first=1 ∧ count=84
-  · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
-    rw [StairConcrete.groupsM1_odd]
-    exact slice_keeps hw
+  by_cases hm : d=0 ∧ first=1 ∧ count=84
+  · obtain ⟨rfl,rfl,rfl⟩ := hm
+    cases divide
+    · rw [StairConcrete.groupsM1_oddM]
+      exact mslice_keeps hw
+    · rw [StairConcrete.groupsM1_odd]
+      exact slice_keeps hw
   · rw [StairConcrete.groupsM1_other divide d first count hm]
     exact packetSequence_keeps w divide _ count first
       (fun i _ h2 => packet_keeps divide d i (by omega) hw half)
@@ -76518,10 +77608,13 @@ theorem hostedGroup_slots_le (roles hosts : List Wire) (divide : Bool)
       gateSlots (Rolling1588.groups divide first count) + 280 * (d * count) := by
   rw [StairSlotsLib.rebindMany_slots, rename_gateSlots, ← Nat.mul_assoc]
   change gateSlots (StairConcrete.groupsM1 divide d first count) ≤ _
-  by_cases hm : divide=true ∧ d=0 ∧ first=1 ∧ count=84
-  · obtain ⟨rfl,rfl,rfl,rfl⟩ := hm
-    rw [StairConcrete.groupsM1_odd]
-    exact RouteA.Rolling1588.slice_slots_le.trans (Nat.le_add_right _ _)
+  by_cases hm : d=0 ∧ first=1 ∧ count=84
+  · obtain ⟨rfl,rfl,rfl⟩ := hm
+    cases divide
+    · rw [StairConcrete.groupsM1_oddM]
+      exact RouteA.Rolling1588.mslice_slots_le.trans (Nat.le_add_right _ _)
+    · rw [StairConcrete.groupsM1_odd]
+      exact RouteA.Rolling1588.slice_slots_le.trans (Nat.le_add_right _ _)
   · rw [StairConcrete.groupsM1_other divide d first count hm]
     exact StairSlotsLib.groups_slots_le divide d first count hd
 
