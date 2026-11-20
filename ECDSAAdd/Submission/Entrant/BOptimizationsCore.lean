@@ -3607,7 +3607,7 @@ theorem program760_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
         (List.nodup_cons.mp controlND).2 _ he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem _ h)))]
       exact ParkCarry10Develop.body_physical _ hw' _ controlND
     simp only [LowZero18Square.withLowK2,gatePhysical_append] at bf ⊢
-    exact ⟨⟨⟨⟨⟨⟨bf.1.1.1.1.1.1,bf.1.1.1.1.1.2⟩,bf.1.1.1.1.2⟩,hb9⟩,bf.1.1.2⟩,bf.1.2⟩,bf.2⟩
+    tauto
   have af3 : GatePhysical (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
       L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
       (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide
@@ -3620,7 +3620,7 @@ theorem program760_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.
         (List.nodup_cons.mp controlND).2 _ he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem _ h)))]
       exact FullASelectedDevelop.aBodySelected_physical _ hw' _ controlND
     simp only [LowZero18Square.withLowK2,gatePhysical_append] at af ⊢
-    exact ⟨⟨⟨⟨⟨⟨af.1.1.1.1.1.1,af.1.1.1.1.1.2⟩,af.1.1.1.1.2⟩,hb3⟩,af.1.1.2⟩,af.1.2⟩,af.2⟩
+    tauto
   simp only [fastCore760,core760,branchCK760,branchBF760,branchAF760,gatePhysical_append]
   refine ⟨⟨⟨⟨gp,withLowK2S_physical _ hw' _ controlND _ _ suC (fun _ => le_rfl) su
     (by rw [hw'.core.product,su]) _ he.nodup he.away he.len _ (swapP _ _ _ ck)⟩,gc⟩,?_⟩,?_⟩
@@ -3931,7 +3931,7 @@ theorem carry10_low_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
    rw [copyRegister_wires _ _ _ len]
    simp [nonempty,srcMem]
   simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union]
-  exact Or.inl (Or.inl (Or.inl (Or.inl (Or.inl (Or.inl cp)))))
+  tauto
  change wires (LowZero18Square.withLowK2 L ext c L.core.high (L.core.product.take 256) (bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)))⊆insert v (wires (LowZero18Square.withLowK2 L ext c L.core.high (L.core.product.take 256) (bodySwap L ext (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)))) at total
  intro q h
  rcases Finset.mem_insert.mp (total h) with e|h
@@ -3962,7 +3962,7 @@ theorem core760_ins : wires (core760 L ext control)⊆
         q∈wires (renameProgram (LowZero18Square.foldPerm L ext)
         (InverseCarryDevelop.hostedADual L (LowZero18Square.foldPerm L ext) control)) := fun h=>ren h
     simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union] at h ⊢
-    exact h.imp_left (Or.imp_left (Or.imp_left (Or.imp_right leaf)))
+    tauto
   have a := aNew.trans (Finset.insert_subset_insert (sqHost ext) aSub)
   have bOld := withLowK2_ins L hw control ext hx hdx hext L.core.high (L.core.product.take 256) _
     (ParkCarry8Develop.hosted_fold_support L hw nd ext control hext (fun q hq h=>hdx q hq (List.mem_cons_of_mem control h)))

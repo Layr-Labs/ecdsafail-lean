@@ -91692,28 +91692,11 @@ theorem old3_run (a b c A B A' B' z z' : Wire)
   have q22 := Ne.symm hAB'; have q23 := Ne.symm hA'B'; have q24 := Ne.symm hBA'
   have q25 := Ne.symm hAA'; have q26 := Ne.symm hAB; have q27 := Ne.symm hBB'
   refine st_eq rfl (fun w => ?_)
-  by_cases hwz : w = z
-  · subst_vars
+  by_cases hwz : w = z <;> by_cases hwb : w = b <;>
+    by_cases hwB : w = B <;> by_cases hwB' : w = B' <;> by_cases hwz' : w = z' <;>
+    subst_vars <;>
     simp_all [writeBit,Function.update,sumBit,
       Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwb : w = b
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwB : w = B
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwB' : w = B'
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwz' : w = z'
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  simp_all [writeBit,Function.update,sumBit,
-    Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
 
 /-- **Main result.** On the restriction that output bits 256 and 257 are zero,
 the two-Toffoli three-bit leaf and the zero-Toffoli replacement agree as complete
@@ -91750,19 +91733,10 @@ theorem full_state3 (a b c A B A' B' z z' : Wire)
   have q5 := Ne.symm hB'z'; have q7 := Ne.symm hbz'; have q6 := Ne.symm hBz'
   have q8 := Ne.symm hbB; have q9 := Ne.symm hbB'; have q27 := Ne.symm hBB'
   refine st_eq rfl (fun w => ?_)
-  by_cases hwz' : w = z'
-  · subst_vars
+  by_cases hwz' : w = z' <;> by_cases hwb : w = b <;>
+    by_cases hwB : w = B <;> by_cases hwB' : w = B' <;>
+    subst_vars <;>
     simp_all [writeBit,Function.update,post3,v1,v2]
-  by_cases hwb : w = b
-  · subst_vars
-    simp_all [writeBit,Function.update,post3,v1,v2]
-  by_cases hwB : w = B
-  · subst_vars
-    simp_all [writeBit,Function.update,post3,v1,v2]
-  by_cases hwB' : w = B'
-  · subst_vars
-    simp_all [writeBit,Function.update,post3,v1,v2]
-  simp_all [writeBit,Function.update,post3,v1,v2]
 
 /-! ### Wrapper: substitution inside a surrounding program. -/
 
@@ -92544,32 +92518,12 @@ theorem old4_run (a b c A B A' B' A'' B'' z z' z'' : Wire)
   have q46 := Ne.symm hBA''; have q47 := Ne.symm hB'A''; have q48 := Ne.symm hAA'
   have q49 := Ne.symm hAA''; have q50 := Ne.symm hA'A''
   refine st_eq rfl (fun w => ?_)
-  by_cases hwz : w = z
-  · subst_vars
+  by_cases hwz : w = z <;> by_cases hwz'' : w = z'' <;>
+    by_cases hwb : w = b <;> by_cases hwB : w = B <;>
+    by_cases hwB' : w = B' <;> by_cases hwB'' : w = B'' <;>
+    subst_vars <;>
     simp_all [writeBit,Function.update,sumBit,
       Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwz'' : w = z''
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwb : w = b
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwB : w = B
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwB' : w = B'
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  by_cases hwB'' : w = B''
-  · subst_vars
-    simp_all [writeBit,Function.update,sumBit,
-      Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
-  simp_all [writeBit,Function.update,sumBit,
-    Bool.xor_comm,Bool.xor_assoc,Bool.xor_left_comm]
 
 
 

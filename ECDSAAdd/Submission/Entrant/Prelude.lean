@@ -79318,6 +79318,9 @@ def affineClassSameTailM (y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : B
 
 set_option linter.unusedTactic false in
 set_option linter.unreachableTactic false in
+set_option maxHeartbeats 20000000 in
+set_option linter.unusedTactic false in
+set_option linter.unreachableTactic false in
 theorem rs1_affineSameTailM_run_k0 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
     (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
     (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
@@ -79676,9 +79679,6 @@ theorem rs1_affineSameTailM_run_k7 (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a
         · subst e4; simp [Function.update_apply, *]
         simp [Function.update_apply, *]
 
-set_option linter.unusedTactic false in
-set_option linter.unreachableTactic false in
-set_option maxHeartbeats 20000000 in
 theorem affineSameTailM_run (c y t₁ t₂ t₃ : Wire) (e₁ a₁ e₂ a₂ a₃ : Bool)
     (hnd : [c,y,t₁,t₂,t₃].Nodup) (s : State) (m : List Bool)
     (hp1 : s.basis t₁ = (e₁ && s.basis c && (s.basis y == a₁)))
