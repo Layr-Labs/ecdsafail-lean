@@ -1612,17 +1612,16 @@ theorem run_erased(s:State)(m:List Bool)
  (q0:s.basis 4757=false)(q1:s.basis 4758=false)(q2:s.basis 4759=false)
  (ci:s.basis 4760=false)(fl:s.basis 4762=false):
  run program m s=erase 4758 (run KnownAMidStaged.body m s):=by
- let t:=run a (m.take (measurementCount a)) s
  rcases AShortGhostFactsResearch.checked with ⟨ciA,_,_,flA,_,q2A,_,_,_,_,_,_,_,fbm,_,_,_⟩
- have tc:t.basis 4760=false:=(PairedWritesResearch.preserved 4760 a ciA s _).trans ci
- have tq1:t.basis 4758=false:=(PairedWritesResearch.preserved 4758 a ARetimeFactsResearch.checked.2.2.2.1 s _).trans q1
- have tq2:t.basis 4759=false:=(PairedWritesResearch.preserved 4759 a q2A s _).trans q2
- have tf:t.basis 4762=false:=(PairedWritesResearch.preserved 4762 a flA s _).trans fl
- have eq:∀r,run fastWindow r t=run (exchange 4758 4762) [] (run b0 r t):=
-  fun r=>window_eq t r tc tq2 tq1 tf
+ have tc:(run a (m.take (measurementCount a)) s).basis 4760=false:=(PairedWritesResearch.preserved 4760 a ciA s _).trans ci
+ have tq1:(run a (m.take (measurementCount a)) s).basis 4758=false:=(PairedWritesResearch.preserved 4758 a ARetimeFactsResearch.checked.2.2.2.1 s _).trans q1
+ have tq2:(run a (m.take (measurementCount a)) s).basis 4759=false:=(PairedWritesResearch.preserved 4759 a q2A s _).trans q2
+ have tf:(run a (m.take (measurementCount a)) s).basis 4762=false:=(PairedWritesResearch.preserved 4762 a flA s _).trans fl
+ have eq:∀r,run fastWindow r (run a (m.take (measurementCount a)) s)=run (exchange 4758 4762) [] (run b0 r (run a (m.take (measurementCount a)) s)):=
+  fun r=>window_eq (run a (m.take (measurementCount a)) s) r tc tq2 tq1 tf
  have off:4762∉wires b0:=fresh_fixed (Equiv.swap 4757 4760) (Equiv.swap 4757 4760).injective b 4762
   (by decide) (not_wire b 4762 fbm)
- have hz:∀r,(run b0 r t).basis 4762=false:=fun r=>(run_preserves_outside b0 r t 4762 off).trans tf
+ have hz:∀r,(run b0 r (run a (m.take (measurementCount a)) s)).basis 4762=false:=fun r=>(run_preserves_outside b0 r (run a (m.take (measurementCount a)) s) 4762 off).trans tf
  have h:=window_context a b0 fastWindow gap center suffix 4758 4762 (by decide)
   gap_fresh.1 gap_fresh.2 center_fresh suffix_fresh window_measurements s m eq hz
  have new_shape:program=a++fastWindow++(gap++center++suffix):=by simp only [program,List.append_assoc]
@@ -2419,17 +2418,16 @@ theorem run_erased(s:State)(m:List Bool)
  (q0:s.basis 4757=false)(q1:s.basis 4758=false)(q2:s.basis 4759=false)
  (ci:s.basis 4760=false)(fl:s.basis 4762=false):
  run program m s=erase 4758 (run KnownCMidStaged.body m s):=by
- let t:=run a (m.take (measurementCount a)) s
  rcases CKShortGhostFactsResearch.checked with ⟨ciA,_,_,flA,_,q2A,_,_,_,_,_,_,_,fbm,_,_,_⟩
- have tc:t.basis 4760=false:=(PairedWritesResearch.preserved 4760 a ciA s _).trans ci
- have tq1:t.basis 4758=false:=(PairedWritesResearch.preserved 4758 a CKRetimeFactsResearch.checked.2.2.2.1 s _).trans q1
- have tq2:t.basis 4759=false:=(PairedWritesResearch.preserved 4759 a q2A s _).trans q2
- have tf:t.basis 4762=false:=(PairedWritesResearch.preserved 4762 a flA s _).trans fl
- have eq:∀r,run fastWindow r t=run (exchange 4758 4762) [] (run b0 r t):=
-  fun r=>window_eq t r tc tq2 tq1 tf
+ have tc:(run a (m.take (measurementCount a)) s).basis 4760=false:=(PairedWritesResearch.preserved 4760 a ciA s _).trans ci
+ have tq1:(run a (m.take (measurementCount a)) s).basis 4758=false:=(PairedWritesResearch.preserved 4758 a CKRetimeFactsResearch.checked.2.2.2.1 s _).trans q1
+ have tq2:(run a (m.take (measurementCount a)) s).basis 4759=false:=(PairedWritesResearch.preserved 4759 a q2A s _).trans q2
+ have tf:(run a (m.take (measurementCount a)) s).basis 4762=false:=(PairedWritesResearch.preserved 4762 a flA s _).trans fl
+ have eq:∀r,run fastWindow r (run a (m.take (measurementCount a)) s)=run (exchange 4758 4762) [] (run b0 r (run a (m.take (measurementCount a)) s)):=
+  fun r=>window_eq (run a (m.take (measurementCount a)) s) r tc tq2 tq1 tf
  have off:4762∉wires b0:=fresh_fixed (Equiv.swap 4757 4760) (Equiv.swap 4757 4760).injective b 4762
   (by decide) (not_wire b 4762 fbm)
- have hz:∀r,(run b0 r t).basis 4762=false:=fun r=>(run_preserves_outside b0 r t 4762 off).trans tf
+ have hz:∀r,(run b0 r (run a (m.take (measurementCount a)) s)).basis 4762=false:=fun r=>(run_preserves_outside b0 r (run a (m.take (measurementCount a)) s) 4762 off).trans tf
  have h:=window_context a b0 fastWindow gap center suffix 4758 4762 (by decide)
   gap_fresh.1 gap_fresh.2 center_fresh suffix_fresh window_measurements s m eq hz
  have new_shape:program=a++fastWindow++(gap++center++suffix):=by simp only [program,List.append_assoc]
