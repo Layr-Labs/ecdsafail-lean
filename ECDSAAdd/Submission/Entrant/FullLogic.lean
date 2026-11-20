@@ -205,7 +205,7 @@ theorem smkT_support (w : R.W) (h : wires R.smk ⊆ R.all.toFinset) : wires R.sm
   subst hq
   have := R.tq_mem w
   simp only [List.mem_toFinset,all,List.mem_cons,List.mem_append]
-  itauto
+  with_reducible itauto
 
 theorem tq_mem_c8 (w : R.W) : R.tq∈wires R.c8 := by
   obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
@@ -216,7 +216,7 @@ theorem tq_mem_c8 (w : R.W) : R.tq∈wires R.c8 := by
   have m : R.tq∈wires (addInPlace (R.T++R.zM) R.dmid (R.carry.take (R.dmid.length-1)) R.cin) := by
     rw [e]; simp [R.tq_mem w]
   simp only [c8,subInPlace,wires_append,Finset.mem_union]
-  itauto
+  with_reducible itauto
 
 theorem smkT_physical (w : R.W) (hn : R.all.Nodup) (h : GatePhysical R.smk) : GatePhysical R.smkT := by
   obtain ⟨a,a',as,b,b',bs,c,cs,t0,ts,e1,e2,e3,e4,-,hc⟩ := R.m4_shape w
@@ -415,7 +415,7 @@ theorem addDrop_run (a a' b b' c cin : Wire) (as bs cs : List Wire) (hnd : [a,b,
     rw [← hu]; simp [run,writeBit,Function.update,hac]
   have ucl : ∀q∈cs,u.basis q=false := by
     intro q hq; rw [← hu]
-    have : q≠c := by intro e; subst e; simp at hrec; itauto
+    have : q≠c := by intro e; subst e; simp at hrec; with_reducible itauto
     simp [run,writeBit,Function.update,this,hclean q hq]
   have nd' : (c::((a'::as)++(b'::bs)++cs)).Nodup := hrec
   generalize hw : run REC (rX.take K) u=w
@@ -904,9 +904,9 @@ theorem addDrop_wires_gen (x y carry : List Wire) (cin : Wire) :
     intro q hq
     simp only [Finset.mem_union] at hq ⊢
     rcases hq with ((hq|hq)|hq)|hq
-    · left; left; left; simp [wires,majority,Instr.wires] at hq ⊢; itauto
+    · left; left; left; simp [wires,majority,Instr.wires] at hq ⊢; with_reducible itauto
     · exact Or.inl (Or.inl (Or.inr hq))
-    · left; left; left; simp [wires,majority,Instr.wires] at hq ⊢; itauto
+    · left; left; left; simp [wires,majority,Instr.wires] at hq ⊢; with_reducible itauto
     · exact Or.inr hq
 
 theorem addDrop_slots (x y carry : List Wire) (cin : Wire) :
@@ -4265,7 +4265,7 @@ theorem support (c t : Wire) (bs : List ZeroBit) :
       rw [zeroControlled_wires]
       intro q h
       simp [zeroClear,erase,wires,Instr.wires,correctionWires,ZeroBit.wires] at h ⊢
-      itauto
+      with_reducible itauto
     | cons d ds =>
       rw [zeroClear,old_cons,wires_append,wires_append,wires_append,wires_append]
       exact Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) (ih _))
@@ -5742,7 +5742,7 @@ theorem incr1_mem (ys carry : List Wire) (cin : Wire) :
   rw [incr1_split]
   intro i h
   simp only [incr1,List.mem_append,List.mem_cons] at h ⊢
-  itauto
+  with_reducible itauto
 
 theorem incr1_counts (ys carry : List Wire) (cin : Wire) (h2 : 2≤ys.length) (hc : 1≤carry.length) :
     toffoliCount (incr1 ys carry cin)+1=toffoliCount (mappedAdd (mappedConstant none 3 1) ys carry cin) ∧
@@ -6040,7 +6040,7 @@ theorem addHead0_mem (a : Wire) (b' : MappedBit) (bits : List MappedBit) (ys car
   rw [addHead0_split]
   intro i h
   simp only [addHead0,maj0,majority,List.mem_append,List.mem_cons] at h ⊢
-  itauto
+  with_reducible itauto
 
 theorem addHead0_mc (a : Wire) (b' : MappedBit) (bits : List MappedBit) (ys carry : List Wire) (cin : Wire) :
     measurementCount (addHead0 (⟨some a,false⟩::b'::bits) ys carry cin)=
@@ -6210,7 +6210,7 @@ theorem addHeadI_mem (x y carry : List Wire) (cin : Wire) :
   rw [addHeadI_split]
   intro i h
   simp only [addHeadI,DiagSq.maj0,majority,List.mem_append,List.mem_cons] at h ⊢
-  itauto
+  with_reducible itauto
 
 theorem addHeadI_counts (x y carry : List Wire) (cin : Wire) (hx : 2≤x.length) (hy : 2≤y.length)
     (hc : 1≤carry.length) :
@@ -7177,21 +7177,21 @@ theorem incr2_mem (ys carry : List Wire) (cin : Wire) :
     intro i h
     simp only [incr2,List.mem_append,List.mem_cons] at h ⊢
     rcases h with ((h|h|h)|h)|h
-    · itauto
+    · with_reducible itauto
     · right; exact ⟨y'',c',h,by simp,by simp⟩
-    · itauto
-    · itauto
-    · itauto
+    · with_reducible itauto
+    · with_reducible itauto
+    · with_reducible itauto
   | y::y'::y''::y3::ys', c::c'::cs =>
     rw [incr2_split]
     intro i h
     simp only [incr2,List.mem_append,List.mem_cons] at h ⊢
     rcases h with ((h|h|h)|h)|h
-    · itauto
+    · with_reducible itauto
     · right; exact ⟨y',c',h,by simp,by simp⟩
-    · itauto
-    · itauto
-    · itauto
+    · with_reducible itauto
+    · with_reducible itauto
+    · with_reducible itauto
   | [], _ => intro i h; exact Or.inl h
   | [_], _ => intro i h; exact Or.inl h
   | [_,_], _ => intro i h; exact Or.inl h
@@ -7397,29 +7397,29 @@ theorem incr2_wires_le (ys carry : List Wire) (cin : Wire) :
     rw [incr2_split] at hm ⊢
     simp only [incr2,List.mem_append,List.mem_cons] at hi
     rcases hi with ((h|h|h)|h)|h
-    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; itauto)
+    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; with_reducible itauto)
     · subst h
       show ({y'',c'} : Finset Wire)⊆_
       rw [Finset.pair_comm]
       exact instr_wires_sub hm
-    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; itauto)
-    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; itauto)
-    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; itauto)
+    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; with_reducible itauto)
+    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; with_reducible itauto)
+    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; with_reducible itauto)
   | y::y'::y''::y3::ys', c::c'::cs =>
     have hm : Instr.CCX y' c c'∈incr1 (y::y'::y''::y3::ys') (c::c'::cs) cin := by
       rw [incr2_split]; simp
     rw [incr2_split] at hm ⊢
     simp only [incr2,List.mem_append,List.mem_cons] at hi
     rcases hi with ((h|h|h)|h)|h
-    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; itauto)
+    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; with_reducible itauto)
     · subst h
       refine Finset.Subset.trans ?_ (instr_wires_sub hm)
       intro q hq
       simp only [Instr.wires,Finset.mem_insert,Finset.mem_singleton] at hq ⊢
-      itauto
-    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; itauto)
-    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; itauto)
-    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; itauto)
+      with_reducible itauto
+    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; with_reducible itauto)
+    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; with_reducible itauto)
+    · exact instr_wires_sub (by simp only [List.mem_append,List.mem_cons]; with_reducible itauto)
   | [], _ => exact instr_wires_sub hi
   | [_], _ => exact instr_wires_sub hi
   | [_,_], _ => exact instr_wires_sub hi
@@ -7501,11 +7501,11 @@ theorem makeZ_physical (R : KRegs) (w : R.W) (hn : R.all.Nodup) : GatePhysical (
   simp only [makeZ,headBlockZ,seedsT,gatePhysical_append]
   obtain ⟨⟨⟨⟨⟨⟨l1,l2⟩,⟨h1,h2⟩⟩,sm⟩,⟨s1,s2⟩⟩,⟨⟨⟨⟨o2,o3⟩,o4⟩,o5⟩,o6⟩⟩,o7⟩ := old
   have pl := ECDSAAdd.Entrant.TrimRow.physical R.lo R.dlo R.pad R.carry
-    (by rw [gatePhysical_append]; exact ⟨l1,l2⟩) (by rw [gatePhysical_append]; exact ⟨l2,by itauto⟩)
+    (by rw [gatePhysical_append]; exact ⟨l1,l2⟩) (by rw [gatePhysical_append]; exact ⟨l2,by with_reducible itauto⟩)
   have ph := ECDSAAdd.Entrant.TrimRow.physical R.hi R.dhi R.pad R.carry
-    (by rw [gatePhysical_append]; exact ⟨h1,h2⟩) (by rw [gatePhysical_append]; exact ⟨h2,by itauto⟩)
+    (by rw [gatePhysical_append]; exact ⟨h1,h2⟩) (by rw [gatePhysical_append]; exact ⟨h2,by with_reducible itauto⟩)
   have ps := ECDSAAdd.Entrant.TrimRow.physical R.S R.T R.pad R.carry
-    (by rw [gatePhysical_append]; exact ⟨s1,s2⟩) (by rw [gatePhysical_append]; exact ⟨s2,by itauto⟩)
+    (by rw [gatePhysical_append]; exact ⟨s1,s2⟩) (by rw [gatePhysical_append]; exact ⟨s2,by with_reducible itauto⟩)
   exact ⟨⟨⟨⟨⟨(ECDSAAdd.Entrant.TrimMid.P_side _ _ _ _).1.2.2 pl.1,(ECDSAAdd.Entrant.TrimMid.P_side _ _ _ _).1.2.2 ph.1⟩,sm⟩,
     (ECDSAAdd.Entrant.TrimMid.P_side _ _ _ _).1.2.2 ps.1⟩,⟨⟨⟨⟨R.m6w_physical hn,R.m7g_physical hn⟩,(corrZ2_physical R hn o4)⟩,(fun i hi => o5 i (dSubZ_mem _ _ _ _ i hi))⟩,(fun i hi => o6 i (dSubZ_mem _ _ _ _ i hi))⟩⟩,R.m8g_physical hn⟩
 
@@ -7959,7 +7959,7 @@ theorem addHead1_wires_le (bits : List MappedBit) (ys carry : List Wire) (cin : 
     have hy2 : y2∈wires (head1Post a y cin c a1 y1 c1 b'' (b3::bits') y2 (y3::ys') (c2::cs)) := by
       have h := y_mem_mappedMajority b'' y2 c1 c2
       simp only [head1Post,mappedAdd,wires_append,Finset.mem_union] at h ⊢
-      itauto
+      with_reducible itauto
     simp only [wires_append,wires,Instr.wires]
     apply Finset.union_subset_union (Finset.Subset.refl _)
     intro q hq
@@ -8517,7 +8517,7 @@ theorem drop3_wires_le (bits : List MappedBit) (ys carry : List Wire) (cin : Wir
     have hy2 : y2∈wires (d3Post a y cin c a1 y1 c1 b'' (b3::bits') y2 (y3::ys') (c2::cs)) := by
       have h := DiagSq.y_mem_mappedMajority b'' y2 c1 c2
       simp only [d3Post,mappedAdd,wires_append,Finset.mem_union] at h ⊢
-      itauto
+      with_reducible itauto
     simp only [wires_append,wires,Instr.wires]
     apply Finset.union_subset_union (Finset.Subset.refl _)
     intro q hq
@@ -9423,12 +9423,12 @@ theorem addFirst_wires_heads (u v w z a a' b b' c cin : Wire) (as bs cs : List W
     intro q hq
     simp only [xor4,wires,Instr.wires] at hq
     simp [majority,wires,Instr.wires] at *
-    itauto
+    with_reducible itauto
   simp only [addFirst,addInPlace,wires_append]
   intro q hq
   have h := @hx q
   simp only [Finset.mem_union] at h hq ⊢
-  itauto
+  with_reducible itauto
 
 theorem addFirst_wires_any (u v w z : Wire) (x y c : List Wire) (cin : Wire) :
     wires (addFirst u v w z x y c cin)⊆wires (addInPlace x y c cin)∪{u,v,w,z} := by
@@ -9444,7 +9444,7 @@ theorem addLow_wires_any (u v w z : Wire) (x y c : List Wire) (cin : Wire) :
   intro q hq
   have h' := @h q
   simp only [Finset.mem_union] at h' hq ⊢
-  itauto
+  with_reducible itauto
 
 theorem addFirst_physical_heads (u v w z a a' b b' c cin : Wire) (as bs cs : List Wire)
     (hu : u≠c) (hv : v≠c) (hw : w≠c) (hz : z≠c)
@@ -9532,7 +9532,7 @@ theorem c6_support (R : KRegs) (w : R.W) : wires (c6 R)⊆R.all.toFinset := by
   intro q hq
   simp only [Finset.mem_insert,Finset.mem_singleton] at hq
   simp only [List.mem_toFinset,KRegs.all,List.mem_cons,List.mem_append]
-  rcases hq with rfl|rfl|rfl|rfl <;> itauto
+  rcases hq with rfl|rfl|rfl|rfl <;> with_reducible itauto
 
 theorem c6_wires_extra (R : KRegs) (w : R.W) :
     wires (c6 R)⊆wires R.c6∪R.S.toFinset := by
@@ -9556,7 +9556,7 @@ theorem c6_wires_extra (R : KRegs) (w : R.W) :
   intro q hq
   simp only [Finset.mem_insert,Finset.mem_singleton] at hq
   simp only [Finset.mem_union,List.mem_toFinset,List.mem_cons,List.mem_append]
-  rcases hq with rfl|rfl|rfl|rfl <;> itauto
+  rcases hq with rfl|rfl|rfl|rfl <;> with_reducible itauto
 
 end ECDSAAdd.Entrant.RawClearCarryIntegration
 
@@ -9746,19 +9746,19 @@ theorem clear_support (R : KRegs) (w : R.W) : wires (clear R)⊆R.all.toFinset :
   clear q2 pcs
   simp only [clear,DiagSq.clear,wires_append,Finset.union_subset_iff] at old ⊢
   have rS : wires (rawClearT R.S R.T R.pad R.carry)⊆R.all.toFinset :=
-    (DiagSq.rawClearT_wires_sub _ _ _ _).trans (by itauto)
+    (DiagSq.rawClearT_wires_sub _ _ _ _).trans (by with_reducible itauto)
   have rH : wires (rawClearT R.hi R.dhi R.pad R.carry)⊆R.all.toFinset :=
-    (DiagSq.rawClearT_wires_sub _ _ _ _).trans (by itauto)
+    (DiagSq.rawClearT_wires_sub _ _ _ _).trans (by with_reducible itauto)
   have rL : wires (rawClearT R.lo R.dlo R.pad R.carry)⊆R.all.toFinset :=
-    (DiagSq.rawClearT_wires_sub _ _ _ _).trans (by itauto)
-  have cbw : wires (corrBackZ R)⊆R.all.toFinset := (DiagSq.wires_of_mem (DiagSq.corrBackZ_mem R)).trans (by itauto)
-  have daw1 : wires (dAddZ R.lo R.dlo R.carry R.cin)⊆R.all.toFinset := (DiagSq.wires_of_mem (DiagSq.dAddZ_mem _ _ _ _)).trans (by itauto)
-  have daw2 : wires (dAddZ R.hi R.dhi R.carry R.cin)⊆R.all.toFinset := (DiagSq.wires_of_mem (DiagSq.dAddZ_mem _ _ _ _)).trans (by itauto)
+    (DiagSq.rawClearT_wires_sub _ _ _ _).trans (by with_reducible itauto)
+  have cbw : wires (corrBackZ R)⊆R.all.toFinset := (DiagSq.wires_of_mem (DiagSq.corrBackZ_mem R)).trans (by with_reducible itauto)
+  have daw1 : wires (dAddZ R.lo R.dlo R.carry R.cin)⊆R.all.toFinset := (DiagSq.wires_of_mem (DiagSq.dAddZ_mem _ _ _ _)).trans (by with_reducible itauto)
+  have daw2 : wires (dAddZ R.hi R.dhi R.carry R.cin)⊆R.all.toFinset := (DiagSq.wires_of_mem (DiagSq.dAddZ_mem _ _ _ _)).trans (by with_reducible itauto)
   have dbw1 : wires (dAddZ2 R.lo R.dlo R.carry R.cin)⊆R.all.toFinset :=
     (DiagSq.dAddZ2_wires_le _ _ _ _).trans daw1
   have dbw2 : wires (dAddZ2 R.hi R.dhi R.carry R.cin)⊆R.all.toFinset :=
     (DiagSq.dAddZ2_wires_le _ _ _ _).trans daw2
-  itauto
+  with_reducible itauto
 
                                                                                     
                                                                 
@@ -9771,12 +9771,12 @@ theorem clear_physical (R : KRegs) (w : R.W) (hn : R.all.Nodup) : GatePhysical (
   have oldm := (DiagSq.steps_physical R w hn).1
   simp only [DiagSq.make,DiagSq.headBlock,DiagSq.seeds,gatePhysical_append] at oldm
   simp only [clear,DiagSq.clear,gatePhysical_append] at old ⊢
-  have rS := DiagSq.rawClearT_physical_of R.S R.T R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_append,List.count_cons] at c ⊢; omega)) (by itauto) (by itauto)
-  have rH := DiagSq.rawClearT_physical_of R.hi R.dhi R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_append,List.count_cons] at c ⊢; omega)) (by itauto) (by itauto)
-  have rL := DiagSq.rawClearT_physical_of R.lo R.dlo R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_append,List.count_cons] at c ⊢; omega)) (by itauto) (by itauto)
-  have cbp : GatePhysical (corrBackZ R) := fun i hi => (show GatePhysical (corrBack R) by itauto) i (DiagSq.corrBackZ_mem R i hi)
-  have dap1 : GatePhysical (dAddZ R.lo R.dlo R.carry R.cin) := fun i hi => (show GatePhysical (mappedDiagAdd R.lo R.dlo R.carry R.cin) by itauto) i (DiagSq.dAddZ_mem _ _ _ _ i hi)
-  have dap2 : GatePhysical (dAddZ R.hi R.dhi R.carry R.cin) := fun i hi => (show GatePhysical (mappedDiagAdd R.hi R.dhi R.carry R.cin) by itauto) i (DiagSq.dAddZ_mem _ _ _ _ i hi)
+  have rS := DiagSq.rawClearT_physical_of R.S R.T R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_append,List.count_cons] at c ⊢; omega)) (by with_reducible itauto) (by with_reducible itauto)
+  have rH := DiagSq.rawClearT_physical_of R.hi R.dhi R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_append,List.count_cons] at c ⊢; omega)) (by with_reducible itauto) (by with_reducible itauto)
+  have rL := DiagSq.rawClearT_physical_of R.lo R.dlo R.pad R.carry (knd hn (fun q => by have c := R.counts q; simp only [KRegs.all,List.count_append,List.count_cons] at c ⊢; omega)) (by with_reducible itauto) (by with_reducible itauto)
+  have cbp : GatePhysical (corrBackZ R) := fun i hi => (show GatePhysical (corrBack R) by with_reducible itauto) i (DiagSq.corrBackZ_mem R i hi)
+  have dap1 : GatePhysical (dAddZ R.lo R.dlo R.carry R.cin) := fun i hi => (show GatePhysical (mappedDiagAdd R.lo R.dlo R.carry R.cin) by with_reducible itauto) i (DiagSq.dAddZ_mem _ _ _ _ i hi)
+  have dap2 : GatePhysical (dAddZ R.hi R.dhi R.carry R.cin) := fun i hi => (show GatePhysical (mappedDiagAdd R.hi R.dhi R.carry R.cin) by with_reducible itauto) i (DiagSq.dAddZ_mem _ _ _ _ i hi)
   obtain ⟨L0,L1,L2,L3,L4,L5,L6,L7,L8,L9,L10⟩ := R.lens w
   have h4 := w.h4; have hcl := w.carry; have he5 := w.h5; have hh := w.hh
   have dc : ∀q∈R.dst,q∉R.carry := kdis hn (fun q => by simp only [KRegs.all,List.count_cons,List.count_append]; omega)
@@ -9784,7 +9784,7 @@ theorem clear_physical (R : KRegs) (w : R.W) (hn : R.all.Nodup) : GatePhysical (
     DiagSq.dAddZ2_physical _ _ _ _ (by omega) (by omega) (by omega) (fun q h => dc q (List.mem_of_mem_take h)) dap1
   have dbp2 : GatePhysical (dAddZ2 R.hi R.dhi R.carry R.cin) :=
     DiagSq.dAddZ2_physical _ _ _ _ (by omega) (by omega) (by omega) (fun q h => dc q (List.mem_of_mem_drop h)) dap2
-  itauto
+  with_reducible itauto
 
                                                                                                 
                                                
@@ -9984,7 +9984,7 @@ theorem clearC_support_subset (w : R.W) : wires (clearC R)⊆wires (FrontierSumC
     · refine Or.inr ?_
       rw [e]
       simp only [FrontierSumCleanup1591Diagonal.clear,wires_append,Finset.mem_union]
-      itauto
+      with_reducible itauto
   · exact Or.inr (c h)
 
 theorem clear_slots_old : Challenge.gateSlots (clear R)≤Challenge.gateSlots (FrontierSumCleanup1591Diagonal.clear R) := by
@@ -10142,7 +10142,7 @@ theorem mem_addInPlace2 (a0 a1 a2 b0 b1 b2 c0 c1 cin : Wire) (as bs cs : List Wi
     i ∈ addInPlace (a0 :: a1 :: a2 :: as) (b0 :: b1 :: b2 :: bs) (c0 :: c1 :: cs) cin ∨ i = .CX c0 c1 := by
   rw [addInPlace_shape3]
   simp only [addInPlace2, List.mem_append, List.mem_cons, List.not_mem_nil] at h ⊢
-  itauto
+  with_reducible itauto
 
 theorem addInPlace2_counts (a0 a1 a2 b0 b1 b2 c0 c1 cin : Wire) (as bs cs : List Wire) :
     toffoliCount (addInPlace2 (a0 :: a1 :: a2 :: as) (b0 :: b1 :: b2 :: bs) (c0 :: c1 :: cs) cin)+1 =
@@ -10162,7 +10162,7 @@ theorem addInPlace2_wires (a0 a1 a2 b0 b1 b2 c0 c1 cin : Wire) (as bs cs : List 
   have : wires [Instr.CX c0 c1] ⊆ wires (majority a1 b1 c0 c1) := by
     intro w hw
     simp [wires, Instr.wires, majority] at hw ⊢
-    itauto
+    with_reducible itauto
   intro w hw
   simp only [Finset.mem_union] at hw ⊢
   have := @this w
@@ -10333,7 +10333,7 @@ theorem mem_addInPlace3 (a0 a1 a2 b0 b1 b2 c0 c1 cin : Wire) (as bs cs : List Wi
     i ∈ addInPlace (a0 :: a1 :: a2 :: as) (b0 :: b1 :: b2 :: bs) (c0 :: c1 :: cs) cin ∨ i = .CX b1 c1 := by
   rw [addInPlace_shape3]
   simp only [addInPlace3, List.mem_append, List.mem_cons, List.not_mem_nil] at h ⊢
-  itauto
+  with_reducible itauto
 
 /-- Same run as `addInPlace` when bit 1 of `y` equals the bit-0 carry, with clean carries. -/
 theorem addInPlace3_run_list (x y carry : List Wire) (cin : Wire) (hn : (cin :: (x ++ y ++ carry)).Nodup)
@@ -10372,7 +10372,7 @@ theorem addInPlace3_wires (x y carry : List Wire) (cin : Wire)
     have : wires [Instr.CX b1 c1] ⊆ wires (majority a1 b1 c0 c1) := by
       intro w hw
       simp [wires, Instr.wires, majority] at hw ⊢
-      itauto
+      with_reducible itauto
     intro w hw
     simp only [Finset.mem_union] at hw ⊢
     have := @this w
@@ -10999,7 +10999,7 @@ theorem addKT_wires (r : Bool) : ∀ (n : Nat) (x y carry : List Wire) (cin : Wi
     intro x y carry cin hy hx hc
     obtain ⟨a, a', b, b', c, rfl, rfl, rfl⟩ := shape_two hy hx hc
     intro w hw
-    cases r <;> simp [addKT, addInPlace, wires, Instr.wires, majority, eraseCarry] at hw ⊢ <;> itauto
+    cases r <;> simp [addKT, addInPlace, wires, Instr.wires, majority, eraseCarry] at hw ⊢ <;> with_reducible itauto
   | succ n ih =>
     intro x y carry cin hy hx hc
     obtain ⟨a, a', a'', as, b, b', b'', bs, c, cs, rfl, rfl, rfl⟩ := shape_succ hy hx hc
@@ -11572,11 +11572,11 @@ theorem addInPlace2KT_res_shape (r : Bool)
       omega
     have hpt : GatePhysical (addInPlace (a2 :: a3 :: as) (b2 :: b3 :: bs) cs c1) := by
       simp only [ConstCarry.addInPlace2, gatePhysical_append] at hp
-      itauto
+      with_reducible itauto
     have hnew := KnownTop.addKT_physical r as.length (a2 :: a3 :: as)
       (b2 :: b3 :: bs) cs c1 hy' hx' hc' hnt hpt
     simp only [addInPlace2KT, ConstCarry.addInPlace2, gatePhysical_append] at hp ⊢
-    itauto
+    with_reducible itauto
 
 theorem addInPlace2KT_res (r : Bool) (x y carry : List Wire) (cin : Wire)
     (hx : x.length = y.length) (hc : carry.length + 1 = y.length) (h4 : 4 ≤ y.length) :
@@ -11608,9 +11608,9 @@ theorem subInPlace2KT_res (r : Bool) (x y carry : List Wire) (cin : Wire)
     omega
   · intro hn hp
     simp only [subInPlace2KT, ConstCarry.subInPlace2, gatePhysical_append] at hp ⊢
-    have ha : GatePhysical (ConstCarry.addInPlace2 x y carry cin) := by itauto
+    have ha : GatePhysical (ConstCarry.addInPlace2 x y carry cin) := by with_reducible itauto
     have hnw := h.2.2 hn ha
-    itauto
+    with_reducible itauto
 
 /-- Reuse the existing full-register KnownTop proof after rewriting only the
     low second majority. The final notRegister restores the subtraction domain. -/
@@ -11941,7 +11941,7 @@ theorem replaceHead_wires (a b cin c u v w : Wire) (tail : Program) :
   simp only [replaceHead_shape, wires_append]
   intro q hq
   simp [program, majority, wires, Instr.wires] at hq ⊢
-  itauto
+  with_reducible itauto
 
 theorem replaceHead_physical (a b cin c u v w : Wire) (tail : Program)
     (hu : u ≠ c) (hv : v ≠ c) (hw : w ≠ c)
@@ -12035,7 +12035,7 @@ theorem subAffine_wires (top : Bool) (u v w : Wire) (x y carry : List Wire) (cin
   intro q hq
   have hq' := @h q
   simp only [wires_append, Finset.mem_union] at hq hq' ⊢
-  itauto
+  with_reducible itauto
 
 theorem subAffine_physical (top : Bool) (u v w : Wire) (x y carry : List Wire) (cin : Wire)
     (hx : 4 ≤ x.length) (hy : 4 ≤ y.length) (hc : 2 ≤ carry.length)
@@ -12210,15 +12210,15 @@ theorem m6h_support (R : KRegs) (w : R.W) (hp : wires R.m6 ⊆ R.all.toFinset) :
     · subst q
       have hu := selected_mem R.S 1 l.1
       simp only [all, List.mem_toFinset, List.mem_cons, List.mem_append]
-      itauto
+      with_reducible itauto
     · subst q
       have hv := List.mem_of_mem_take (selected_mem R.lo 1 l.2.1)
       simp only [all, List.mem_toFinset, List.mem_cons, List.mem_append]
-      itauto
+      with_reducible itauto
     · subst q
       have hw := List.mem_of_mem_drop (selected_mem R.hi 1 l.2.2)
       simp only [all, List.mem_toFinset, List.mem_cons, List.mem_append]
-      itauto
+      with_reducible itauto
 
 end KRegs
 end ECDSAAdd.Entrant
@@ -12252,15 +12252,15 @@ theorem m6h_controls_smk (R : KRegs) (w : R.W) :
   · subst q
     have hu := selected_mem R.S 1 lc.1
     simp only [Finset.mem_union, List.mem_toFinset, List.mem_cons, List.mem_append]
-    itauto
+    with_reducible itauto
   · subst q
     have hv := selected_mem R.lo 1 lc.2.1
     simp only [Finset.mem_union, List.mem_toFinset, List.mem_cons, List.mem_append]
-    itauto
+    with_reducible itauto
   · subst q
     have hw := selected_mem R.hi 1 lc.2.2
     simp only [Finset.mem_union, List.mem_toFinset, List.mem_cons, List.mem_append]
-    itauto
+    with_reducible itauto
 
 theorem m6h_wires_smk (R : KRegs) (w : R.W) :
     wires R.m6h ⊆ wires R.m6 ∪ wires R.smk :=
@@ -12329,7 +12329,7 @@ theorem resources (x y carry : List Wire) (cin : Wire)
       intro q hq
       simp only [wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty] at hq
       simp only [majority,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,Finset.notMem_empty]
-      itauto
+      with_reducible itauto
     · simp only [add3h,ConstCarry.addInPlace3,Challenge.gateSlots_append]
       simp [majority,Challenge.gateSlots,Challenge.instructionSlots]
 
@@ -12348,7 +12348,7 @@ theorem physical (x y carry : List Wire) (cin : Wire)
     have hp' : GatePhysical [.CX b1 c0] := by
       simp [GatePhysical, RecordedQuantum.PhysicalInstr, ProperGate, hbc]
     simp only [add3h,ConstCarry.addInPlace3,gatePhysical_append] at hp ⊢
-    itauto
+    with_reducible itauto
 
 
 end ECDSAAdd.Entrant.CodexC6Head
@@ -12438,7 +12438,7 @@ theorem make_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Bool
   have x2 {q : Wire} (h : q∈K.X2) : q∈K.X := by simp [X,h]
   have x5 {q : Wire} (h : q∈K.X5) : q∈K.X := by simp [X,h]
   have xo (q : Wire) (h : q∈K.R.bank ∨ q∈K.R.z ∨ q∈K.R.pad ∨ q∈K.R.carry ∨ q=K.R.cin) : q∉K.X := by
-    apply K.rX hn q; simp only [KRegs.all,List.mem_cons,List.mem_append]; itauto
+    apply K.rX hn q; simp only [KRegs.all,List.mem_cons,List.mem_append]; with_reducible itauto
   have outV (t : State) (G : ∀q,q∉K.R.dst → q∉K.R.S → q∉K.R.T → q∉K.X → t.basis q=s.basis q) (r : List Wire)
       (hr : ∀q∈r,q∈K.R.bank ∨ q∈K.R.z ∨ q∈K.R.pad ∨ q∈K.R.carry ∨ q=K.R.cin) :
       regValue r t.basis=regValue r s.basis :=
@@ -12693,7 +12693,7 @@ theorem clear_correct (sp : K.Spec) (hn : K.all.Nodup) (s : State) (m : List Boo
   have x2 {q : Wire} (h : q∈K.X2) : q∈K.X := by simp [X,h]
   have x5 {q : Wire} (h : q∈K.X5) : q∈K.X := by simp [X,h]
   have xo (q : Wire) (h : q∈K.R.bank ∨ q∈K.R.z ∨ q∈K.R.pad ∨ q∈K.R.carry ∨ q=K.R.cin) : q∉K.X := by
-    apply K.rX hn q; simp only [KRegs.all,List.mem_cons,List.mem_append]; itauto
+    apply K.rX hn q; simp only [KRegs.all,List.mem_cons,List.mem_append]; with_reducible itauto
   have outV (t : State) (G : ∀q,q∉K.R.dst → q∉K.R.S → q∉K.R.T → q∉K.X → t.basis q=s.basis q) (r : List Wire)
       (hr : ∀q∈r,q∈K.R.bank ∨ q∈K.R.z ∨ q∈K.R.pad ∨ q∈K.R.carry ∨ q=K.R.cin) :
       regValue r t.basis=regValue r s.basis :=
@@ -14026,8 +14026,8 @@ namespace Patch
     rw [wires_append,Finset.mem_union] at hx
     rw [wires_append,Finset.mem_insert,Finset.mem_union]
     rcases hx with hx|hx
-    · have :=h.support hx;simp only [Finset.mem_insert] at this;itauto
-    · have :=g.support hx;simp only [Finset.mem_insert] at this;itauto
+    · have :=h.support hx;simp only [Finset.mem_insert] at this;with_reducible itauto
+    · have :=g.support hx;simp only [Finset.mem_insert] at this;with_reducible itauto
   · intro away hp
     rw [gatePhysical_append] at hp ⊢
     have a : cache∉wires q:=fun hm=>away (by rw [wires_append];exact Finset.mem_union_left _ hm)
@@ -14043,7 +14043,7 @@ theorem majority_patch (cache a y cin c : Wire) : Patch cache 1 [.CX cache c] (m
     or_false] at hq ⊢
    simp only [majority,ECDSAAdd.wires,Instr.wires,Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,
     or_false]
-   itauto
+   with_reducible itauto
  · intro away _
    have hc : cache≠c := by
     intro e;apply away;simp [e,majority,ECDSAAdd.wires,Instr.wires]
@@ -15751,7 +15751,7 @@ theorem ends_support (u0 u1 r0 r1 e0 cache host:Wire):
  wires (finish u0 u1 r0 r1 e0 cache host)⊆[u0,u1,r0,r1,e0,cache,host].toFinset:=by
  constructor <;> intro q h <;>
   simp[prepare,finish,prime,loan,prime2,majority,clear2,clear,restore,
-   ECDSAAdd.wires,Instr.wires,correctionWires]at h ⊢ <;> itauto
+   ECDSAAdd.wires,Instr.wires,correctionWires]at h ⊢ <;> with_reducible itauto
 
 theorem endsCC_oldE (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths):
  wires (prepare ((mU L).headD 0) (bit1 (mU L)) ((mR L).headD 0) (bit1 (mR L))
@@ -16692,7 +16692,7 @@ theorem carryPrefix_value5 (xs ys cs : List Wire) (cin : Wire)
     exact hz q (by simpa only [List.mem_cons,List.not_mem_nil,or_false] using
       (show q=c0 ∨ q=c1 ∨ q=c2 ∨ q=c3 ∨ q=c4 ∨ q∈cs from by
         simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
-        itauto))
+        with_reducible itauto))
   have v:=congrArg Bool.toNat (carryPrefix_five a0 a1 a2 a3 a4 b0 b1 b2 b3 b4 c0 c1 c2 c3 c4 cin as bs cs hn s m zeros hi)
   rw [carry5_value] at v
   simpa [regValue,word5,Bool.toNat,Bool.cond_eq_ite,Nat.mul_add,Nat.mul_assoc,Nat.add_assoc] using v
@@ -17234,11 +17234,11 @@ theorem knownPrefix_eq_mappedPrefix (extra : Wire) (bits sums : List MappedBit) 
                 have source : ∀q∈mappedWires (b'::bs),q∉c::((y'::ys)++cs) := by
                   intro q hq bad
                   exact ha q (tail_source_mem b _ q hq)
-                    (by simp only [List.mem_cons,List.mem_append] at bad ⊢; itauto)
+                    (by simp only [List.mem_cons,List.mem_append] at bad ⊢; with_reducible itauto)
                 have witness : ∀q∈mappedWires (d'::ds),q∉c::((y'::ys)++cs) := by
                   intro q hq bad
                   exact hw q (tail_source_mem d _ q hq)
-                    (by simp only [List.mem_cons,List.mem_append] at bad ⊢; itauto)
+                    (by simp only [List.mem_cons,List.mem_append] at bad ⊢; with_reducible itauto)
                 have sourceC (q : Wire) (hq : q∈mappedWires (b::b'::bs)) : q≠c := by
                   intro bad; exact ha q hq (by simp [bad])
                 have witnessC (q : Wire) (hq : q∈mappedWires (d::d'::ds)) : q≠c := by
@@ -17283,7 +17283,7 @@ theorem knownPrefix_eq_mappedPrefix (extra : Wire) (bits sums : List MappedBit) 
                   rw [keep q (fun bad => ccs (bad ▸ hq))]
                   exact hclean q (by simp [hq])
                 have tail (mm : List Bool) := ih (b'::bs) (d'::ds) cs c nd source witness
-                  (by intro bad;exact he (by simp only [List.mem_cons,List.mem_append] at bad ⊢;itauto))
+                  (by intro bad;exact he (by simp only [List.mem_cons,List.mem_append] at bad ⊢;with_reducible itauto))
                   (by simpa using hl) (by simpa using hs) (by simpa using hc) u mm clean tailReady
                 have pc := head_counts ds.isEmpty b' d' extra y' c
                 have oc := mappedBit_counts b y cin c
@@ -18595,7 +18595,7 @@ theorem a_middle_good (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.
   have offAcc (q : Wire) (hq:q∈hiReg L ∨ q∈L.foldPad ∨ q∈L.core.work.drop 163 ∨
       q∈[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉accReg L := by
     apply (other_away L hn q ?_).2.2
-    itauto
+    with_reducible itauto
   have source:regValue (hiReg L) v1.basis=regValue (hiReg L) base :=
     (regValue_congr _ _ _ (fun q hq=>frame2.2 q (offAcc q (Or.inl hq)))).trans hhi2
   have zv:∀q∈accZ L,v1.basis q=false := by
@@ -18937,7 +18937,7 @@ theorem aBodyCached_physical (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
     lens.1 (hiReg_length L hw) (by omega) off.2.2 (wUnbuildKnown_physical L hw nd)
   have old:=aBody_physicalTq L hw c hn
   simp only [aBodyCached,aFoldCached,aMiddle,aBodyTq,aFold8Tq,gatePhysical_append] at old ⊢
-  itauto
+  with_reducible itauto
 
 end ECDSAAdd.Entrant.InverseCarryDevelop
 end
@@ -19022,7 +19022,7 @@ theorem oldE_sumCarry_free (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn
  intro h;apply off
  simp only[oldE,Finset.mem_union]at h
  simp only[bBody,wFold,wRestore,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
                                                                                               
                                                                    
@@ -19379,7 +19379,7 @@ theorem carryPrefix_value6 (xs ys cs : List Wire) (cin : Wire)
     intro q hq
     apply hz q
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢
-    itauto
+    with_reducible itauto
   have v:=congrArg Bool.toNat (carryPrefix_six a0 a1 a2 a3 a4 a5 b0 b1 b2 b3 b4 b5 c0 c1 c2 c3 c4 c5 cin as bs cs hn s m zeros hi)
   rw [carry6_value] at v
   simpa [regValue,word6,Bool.toNat,Bool.cond_eq_ite,Nat.mul_add,Nat.mul_assoc,Nat.add_assoc] using v
@@ -21485,7 +21485,7 @@ theorem mapped3_read_eq (cache0 cache1 cache2 a0 a1 a2 a3 b0 b1 b2 b3 k0 k1 k2 c
   have h:=List.nodup_cons.mp hg
   apply h.1
   simp only[List.mem_cons,List.mem_singleton]at bad ⊢
-  itauto
+  with_reducible itauto
  apply cachedMapped3_eq cache0 cache1 cache2 ⟨some a0,false⟩ ⟨some a1,false⟩ ⟨some a2,false⟩ ⟨some a3,false⟩
   (mappedRead xs false) b0 b1 b2 b3 ys k0 k1 k2 ks cin hn (by simpa using ha) s m
  simpa [MappedBit.value,run,writeBit,Function.update_apply,away1,away20,away21,
@@ -21517,7 +21517,7 @@ theorem mixed3_read_eq (cache0 cache1 cache2 a0 a1 a2 a3 b0 b1 b2 b3 k0 k1 k2 ci
   have h:=List.nodup_cons.mp hg
   apply h.1
   simp only[List.mem_cons,List.mem_singleton]at bad ⊢
-  itauto
+  with_reducible itauto
  apply cachedMixed3_eq cache0 cache1 cache2 expected d ⟨some a0,false⟩ ⟨some a1,false⟩ ⟨some a2,false⟩ ⟨some a3,false⟩
   (mappedRead xs false) b0 b1 b2 b3 ys fs k0 k1 k2 ks cin hn (by simpa using ha) s m
  simpa [MappedBit.value,run,writeBit,Function.update_apply,away1,away20,away21,
@@ -22942,7 +22942,7 @@ theorem ends3_support (g v u0 u1 u2 r0 r1 r2 e0 cache h1 h2:Wire):
  constructor <;> intro q h <;>
   simp[prepare3,finish3,loan2,restore2,SecondCarryLoan.prepare,SecondCarryLoan.finish,
    SecondCarryLoan.loan,SecondCarryLoan.restore,prime,prime2,majority,clear,clear2,
-   ECDSAAdd.wires,Instr.wires,correctionWires]at h ⊢ <;> itauto
+   ECDSAAdd.wires,Instr.wires,correctionWires]at h ⊢ <;> with_reducible itauto
 
 end ECDSAAdd.Entrant.ThirdCarryLoanDevelop
 
@@ -22996,7 +22996,7 @@ theorem ends3_oldE (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g v:Wire):
   intro q h
   simp only[List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false]at h
   rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
-   simp only[Finset.mem_insert] <;> itauto
+   simp only[Finset.mem_insert] <;> with_reducible itauto
  have cap:=ends3_support g v ((mU L).headD 0) (bit1 (mU L)) (bit2 (mU L))
    ((mR L).headD 0) (bit1 (mR L)) (bit2 (mR L)) ((eReg L).headD 0)
    (cacheWire L) (hostWire L) (host2Wire L)
@@ -23314,7 +23314,7 @@ theorem body_physical (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire)
  have pad:=padM_physical L 746
  simp only[ParkCarry7Develop.body,ParkCarry7Develop.fold,ParkCarry7Develop.rebuild,gatePhysical_append]at hp
  simp only[body,fold,rebuild,gatePhysical_append]
- itauto
+ with_reducible itauto
 
 end ECDSAAdd.Entrant.ParkCarry8Develop
 
@@ -23353,7 +23353,7 @@ theorem oldE_in_oldBody (L:CuccaroStreamedSquareWideLayout)(c:Wire):oldE L⊆wir
  intro q h
  simp only[oldE,Finset.mem_union]at h
  simp only[bBody,wFold,wRestore,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem control_in_oldBody (L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(c:Wire):c∈wires (bBody L c):=by
  have len:eReg L≠[]:=by have h:=eReg_length L hw;intro e;rw[e]at h;contradiction
@@ -23401,7 +23401,7 @@ theorem bodyV_support_extra (L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(c v
   · exact endEmbed ends.1 h
   · exact oldEmbed (armsCCC_oldE L hw).1 h
   · exact same (P:=wCoreK L) (by intro q h;simp only[ParkCarry7Develop.body,ParkCarry7Develop.fold,
-      SecondCarryLoan.wMidFullCC,wires_append,Finset.mem_union];itauto) h
+      SecondCarryLoan.wMidFullCC,wires_append,Finset.mem_union];with_reducible itauto) h
   · exact oldEmbed (armsCCC_oldE L hw).2 h
   · exact endEmbed ends.2 h
  intro q h
@@ -24949,7 +24949,7 @@ theorem carryPrefix_value7 (xs ys cs : List Wire) (cin : Wire)
     intro q hq
     apply hz q
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hq ⊢
-    itauto
+    with_reducible itauto
   have v:=congrArg Bool.toNat (carryPrefix_seven a0 a1 a2 a3 a4 a5 a6 b0 b1 b2 b3 b4 b5 b6 c0 c1 c2 c3 c4 c5 c6 cin as bs cs hn s m zeros hi)
   rw [carry7_value] at v
   simpa [regValue,word7,word6,Bool.toNat,Bool.cond_eq_ite,Nat.mul_add,Nat.mul_assoc,Nat.add_assoc] using v
@@ -29263,7 +29263,7 @@ theorem mapped4_read_eq (cache0 cache1 cache2 cache3 a0 a1 a2 a3 a4 b0 b1 b2 b3 
   intro bad
   apply h.1
   simp only [List.mem_cons,List.mem_singleton] at bad ⊢
-  itauto
+  with_reducible itauto
  apply cachedMapped4_eq cache0 cache1 cache2 cache3 ⟨some a0,false⟩ ⟨some a1,false⟩ ⟨some a2,false⟩ ⟨some a3,false⟩ ⟨some a4,false⟩
   (mappedRead xs false) b0 b1 b2 b3 b4 ys k0 k1 k2 k3 ks cin hn (by simpa using ha) s m
  simp only [List.nodup_cons,List.mem_cons,List.mem_singleton,List.not_mem_nil,
@@ -29297,7 +29297,7 @@ theorem mixed4_read_eq (cache0 cache1 cache2 cache3 a0 a1 a2 a3 a4 b0 b1 b2 b3 b
   intro bad
   apply h.1
   simp only [List.mem_cons,List.mem_singleton] at bad ⊢
-  itauto
+  with_reducible itauto
  apply cachedMixed4_eq cache0 cache1 cache2 cache3 expected d ⟨some a0,false⟩ ⟨some a1,false⟩ ⟨some a2,false⟩ ⟨some a3,false⟩ ⟨some a4,false⟩
   (mappedRead xs false) b0 b1 b2 b3 b4 ys fs k0 k1 k2 k3 ks cin hn (by simpa using ha) s m
  simp only [List.nodup_cons,List.mem_cons,List.mem_singleton,List.not_mem_nil,
@@ -31680,9 +31680,9 @@ theorem old_copy (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (c : Wire
  have used : q∈wires (copyRegister none (L.core.product.take 256) (L.core.work.take 256)) := cp.symm ▸ h
  have foldUsed : q∈wires (measuredFoldQTq L (negP L)) := by
   simp only [measuredFoldQTq,negP,foldDestination,List.drop_zero,pl,wires_append,Finset.mem_union]
-  itauto
+  with_reducible itauto
  simp only [ParkCarry8Develop.body,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem old_prepare (L : CuccaroStreamedSquareWideLayout) (c : Wire) :
  [c,bit1 L.core.high,(mU L).headD 0,bit1 (mU L),bit2 (mU L),
@@ -31692,7 +31692,7 @@ theorem old_prepare (L : CuccaroStreamedSquareWideLayout) (c : Wire) :
   [g,v,u0,u1,u2,r0,r1,r2,e0,cache,h1,h2].toFinset ⊆ wires (prepare3 g v u0 u1 u2 r0 r1 r2 e0 cache h1 h2) := by
   intro q h
   simp [prepare3,loan2,SecondCarryLoan.prepare,SecondCarryLoan.loan,prime,prime2,majority,wires,Instr.wires,correctionWires] at h ⊢
-  itauto
+  with_reducible itauto
  intro q h
  have used := roles c (bit1 L.core.high) ((mU L).headD 0) (bit1 (mU L)) (bit2 (mU L))
   ((mR L).headD 0) (bit1 (mR L)) (bit2 (mR L)) ((eReg L).headD 0) (cacheWire L) (hostWire L) (host2Wire L) h
@@ -32226,7 +32226,7 @@ theorem support (g src u q : Wire) :
  wires (loan0 g src u q)⊆[g,src,u,q].toFinset ∧
  wires (restore0 g src u q)⊆[g,src,u,q].toFinset := by
  constructor <;> intro r h <;>
-  simp [loan0,restore0,wires,Instr.wires,correctionWires]at h ⊢ <;> itauto
+  simp [loan0,restore0,wires,Instr.wires,correctionWires]at h ⊢ <;> with_reducible itauto
 
 
 end LowBitCarryLoan
@@ -32290,18 +32290,18 @@ theorem ends4L_support (g v1 v0 u0 u1 u2 u3 r0 r1 r2 r3 e0 cache h1 h2 : Wire) :
  have p:wires (prime2 u3 r3 h2 e0)⊆[u3,r3,h2,e0].toFinset ∧
    wires (clear2 u3 r3 h2 e0)⊆[u3,r3,h2,e0].toFinset := by
   constructor <;> intro q h <;>
-   simp[prime2,majority,clear2,ECDSAAdd.wires,Instr.wires,correctionWires]at h ⊢ <;> itauto
+   simp[prime2,majority,clear2,ECDSAAdd.wires,Instr.wires,correctionWires]at h ⊢ <;> with_reducible itauto
  constructor <;> intro q h
  · simp only[prepare4L,wires_append,Finset.mem_union]at h
    rcases h with h|h|h
-   · have z:=b.1 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;itauto
-   · have z:=a.1 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;itauto
-   · have z:=p.1 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;itauto
+   · have z:=b.1 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;with_reducible itauto
+   · have z:=a.1 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;with_reducible itauto
+   · have z:=p.1 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;with_reducible itauto
  · simp only[finish4L,wires_append,Finset.mem_union]at h
    rcases h with h|h|h
-   · have z:=p.2 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;itauto
-   · have z:=a.2 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;itauto
-   · have z:=b.2 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;itauto
+   · have z:=p.2 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;with_reducible itauto
+   · have z:=a.2 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;with_reducible itauto
+   · have z:=b.2 h;simp only[List.mem_toFinset,List.mem_cons,List.mem_singleton]at z ⊢;with_reducible itauto
 
 
 
@@ -32622,7 +32622,7 @@ theorem ends4L_oldE (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (g v v2:Wi
   intro q h
   simp only[List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false]at h
   rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
-   simp only[Finset.mem_insert] <;> itauto
+   simp only[Finset.mem_insert] <;> with_reducible itauto
  have cap:=ends4L_support g v v2 ((mU L).headD 0) (bit1 (mU L)) (bit2 (mU L)) (bit3 (mU L))
    ((mR L).headD 0) (bit1 (mR L)) (bit2 (mR L)) (bit3 (mR L)) ((eReg L).headD 0)
    (cacheWire L) (hostWire L) (host2Wire L)
@@ -33064,7 +33064,7 @@ theorem body_physical (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (c:Wire)
  have pad:=padM_physical L 744
  simp only[ParkCarry8Develop.body,ParkCarry8Develop.fold,ParkCarry8Develop.rebuild,gatePhysical_append]at hp
  simp only[body,fold,rebuild,gatePhysical_append]
- itauto
+ with_reducible itauto
 
 
 
@@ -48316,7 +48316,7 @@ theorem step(b:MappedBit)(y cin c:Wire)(P:Program):
  all_goals
   ext u
   simp [mappedMajority,mappedEraseCarry,mappedSum,majority,borrowMajority,eraseCarry,eraseBorrow,
-   wires,Instr.wires,correctionWires] <;> itauto
+   wires,Instr.wires,correctionWires] <;> with_reducible itauto
 
 theorem exact_wires(bits:List MappedBit)(ys cs:List Wire)(cin:Wire)
  (hlen:bits.length=ys.length)(hc:cs.length+1=ys.length):
@@ -48346,7 +48346,7 @@ theorem exact_wires(bits:List MappedBit)(ys cs:List Wire)(cin:Wire)
       ext u
       simp only [mappedWires,List.flatMap_cons,List.mem_toFinset,List.mem_cons,List.mem_append,
        List.not_mem_nil,or_false,Finset.mem_union]
-      itauto
+      with_reducible itauto
 
 end ECDSAAdd.Entrant.FastMappedWires
 
@@ -48382,19 +48382,19 @@ theorem sum_wires(K:MeasuredCanonicalModLayout)(n:Nat)(hw:K.Widths n):
 theorem sum_in_q(K:MeasuredCanonicalModLayout)(p:Nat):wires K.sum⊆wires (qprogTq K p):=by
  intro u h
  simp only [qprogTq,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem q_in_fold(L:CuccaroStreamedSquareWideLayout)(f:MeasuredSquareFold):
  wires (qprogTq L.measuredCore SquareReduction.p)⊆wires (measuredFoldQTq L f):=by
  intro u h
  simp only [measuredFoldQTq,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem copy_in_fold(L:CuccaroStreamedSquareWideLayout)(f:MeasuredSquareFold):
  wires (copyRegister none f.src (L.foldDestination f))⊆wires (measuredFoldQTq L f):=by
  intro u h
  simp only [measuredFoldQTq,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 def envelope(L:CuccaroStreamedSquareWideLayout):List Wire:=
  L.core.cin::((negP L).src++L.measuredCore.src++L.measuredCore.extended++L.measuredCore.carry)
@@ -48453,7 +48453,7 @@ theorem cx_target(a q:Wire):q∈wires [.CX a q]:=by simp [wires,Instr.wires]
 theorem cached_q(xs ys cs:List Wire)(cin q:Wire):q∈wires (cachedSub xs ys cs cin q):=by
  have h:=cx_target (cs.getD 4 0) q
  simp only [cachedSub,insertCopy,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem cached_three(xs ys cs:List Wire)(cin q r p:Wire):
  q∈wires (cachedSubTriple xs ys cs cin q r p) ∧
@@ -48463,7 +48463,7 @@ theorem cached_three(xs ys cs:List Wire)(cin q r p:Wire):
  have hr:=cx_target (cs.getD 5 0) r
  have hp:=cx_target (cs.getD 6 0) p
  simp only [cachedSubTriple,secondCopy,insertCopy,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem a_hosts(L:CuccaroStreamedSquareWideLayout)(g:Wire):
  L.core.sumCarry∈wires (aBodyTriple L g) ∧ eV L∈wires (aBodyTriple L g) ∧ spare L∈wires (aBodyTriple L g):=by
@@ -48471,7 +48471,7 @@ theorem a_hosts(L:CuccaroStreamedSquareWideLayout)(g:Wire):
   (Acc.ty ((accReg L).take 139) (Acc.earlyTerm (hiReg L) true 6))
   (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry (eV L) (spare L)
  simp only [aBodyTriple,aFoldTriple,buildTriple,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem b_host(L:CuccaroStreamedSquareWideLayout)(g:Wire):
  L.core.sumCarry∈wires (ParkCarry10Develop.body L g):=by
@@ -48479,7 +48479,7 @@ theorem b_host(L:CuccaroStreamedSquareWideLayout)(g:Wire):
   (Acc.ty ((accReg L).take 139) (Acc.earlyTerm (hiReg L) true 6))
   (Acc.tc (accBank L) 139 (Acc.earlyTerm (hiReg L) true 6)) L.core.cin L.core.sumCarry
  simp only [ParkCarry10Develop.body,ParkCarry10Develop.fold,buildCached,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem envelope_a(L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(g:Wire):
  (FastSupportCore.envelope L).toFinset⊆wires (aBodyTriple L g):=by
@@ -48487,7 +48487,7 @@ theorem envelope_a(L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(g:Wire):
  intro u hu
  have hi:=h hu
  simp only [aBodyTriple,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 theorem envelope_b(L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(g:Wire):
  (FastSupportCore.envelope L).toFinset⊆wires (ParkCarry10Develop.body L g):=by
@@ -48495,7 +48495,7 @@ theorem envelope_b(L:CuccaroStreamedSquareWideLayout)(hw:L.Widths)(g:Wire):
  intro u hu
  have hi:=h hu
  simp only [ParkCarry10Develop.body,wires_append,Finset.mem_union]
- itauto
+ with_reducible itauto
 
 
 
@@ -48532,19 +48532,19 @@ theorem env_product(K:CuccaroStreamedSquareWideLayout)(u:Wire)(h:u∈K.core.prod
  u∈FastSupportCore.envelope K:=by
  simp only [FastSupportCore.envelope,measuredCore,MeasuredCanonicalModLayout.extended,foldCarry,negP,
   List.mem_cons,List.mem_append,List.mem_singleton] at *
- itauto
+ with_reducible itauto
 
 theorem env_work(K:CuccaroStreamedSquareWideLayout)(u:Wire)(h:u∈K.core.work):
  u∈FastSupportCore.envelope K:=by
  simp only [FastSupportCore.envelope,measuredCore,MeasuredCanonicalModLayout.extended,foldCarry,negP,
   List.mem_cons,List.mem_append,List.mem_singleton] at *
- itauto
+ with_reducible itauto
 
 theorem env_foldpad(K:CuccaroStreamedSquareWideLayout)(u:Wire)(h:u∈K.foldPad):
  u∈FastSupportCore.envelope K:=by
  simp only [FastSupportCore.envelope,measuredCore,MeasuredCanonicalModLayout.extended,foldCarry,negP,
   List.mem_cons,List.mem_append,List.mem_singleton] at *
- itauto
+ with_reducible itauto
 
 theorem a(K:CuccaroStreamedSquareWideLayout)(hw:K.Widths)(g:Wire):
  ∀u∈domainA K,hasWire (aBodyTriple K g) u=true:=by
@@ -51243,7 +51243,7 @@ theorem other_away (L : CuccaroStreamedSquareWideLayout) (hn : L.wires.Nodup) (q
     · exact Or.inr (Or.inr (Or.inl (List.count_pos_iff.mpr h)))
     · refine Or.inr (Or.inr (Or.inr (List.count_pos_iff.mpr ?_)))
       simp only [List.mem_cons,List.not_mem_nil,or_false] at h ⊢
-      itauto
+      with_reducible itauto
   refine ⟨fun h1 => ?_,fun h1 => ?_,fun h1 => ?_⟩
   · have a := List.count_pos_iff.mpr h1; omega
   · have a := List.count_pos_iff.mpr h1; omega
@@ -51407,7 +51407,7 @@ theorem a_middle_good (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.
   have offAcc (q : Wire) (hq:q∈hiReg L ∨ q∈L.foldPad ∨ q∈L.core.work.drop 161 ∨
       q∈[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉accReg L := by
     apply (other_away L hn q ?_).2.2
-    itauto
+    with_reducible itauto
   have source:regValue (hiReg L) v1.basis=regValue (hiReg L) base :=
     (regValue_congr _ _ _ (fun q hq=>frame2.2 q (offAcc q (Or.inl hq)))).trans hhi2
   have zv:∀q∈accZ L,v1.basis q=false := by
@@ -53494,7 +53494,7 @@ theorem ambient_sites_general (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) 
  simp only [ambient,List.mem_toFinset,List.mem_cons,List.mem_append] at hu
  simp only [List.mem_toFinset,List.mem_cons]
  rcases hu with hu|hu|hu|hu|((hu|hu)|hu)
- · itauto
+ · with_reducible itauto
  · right;right
    subst u
    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,sp]
@@ -53506,8 +53506,8 @@ theorem ambient_sites_general (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) 
  · exact Or.inr (Or.inr (domain_in L u hu))
  · have h := List.mem_toFinset.mp (measuredCore_in L g (List.mem_toFinset.mpr hu))
    simp only [List.mem_cons] at h
-   itauto
- · rcases host u hu with h|h <;> itauto
+   with_reducible itauto
+ · rcases host u hu with h|h <;> with_reducible itauto
 
 
 end ECDSAAdd.Entrant.A161GenericFold
@@ -53928,7 +53928,7 @@ theorem geometry : g∉L.wires ∧ hs100.length=100 ∧ hs100.Nodup ∧
  (∀u∈hs100,u∉domain) ∧ (∀u∈hs100,u≠q ∧ u≠r ∧ u≠p) ∧
  q∉domain ∧ r∉domain ∧ p∉domain ∧ r≠q ∧ p≠q ∧ p≠r ∧
  (∀u∈([q,r,p,d]:List Wire),u∉g::(L.core.work.take 161) ∧ u∉L.measuredCore.wires ∧ u∉L.core.out) ∧
- (∀u∈hs99,u∈L.core.work) := by decide
+ (∀u∈hs99,u∈L.core.work) := by decide +kernel
 
 
 
@@ -54300,7 +54300,7 @@ theorem a_middle_good (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.
   have offAcc (q : Wire) (hq:q∈hiReg L ∨ q∈L.foldPad ∨ q∈L.core.work.drop 161 ∨
       q∈[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉accReg L := by
     apply (other_away L hn q ?_).2.2
-    itauto
+    with_reducible itauto
   have source:regValue (hiReg L) v1.basis=regValue (hiReg L) base :=
     (regValue_congr _ _ _ (fun q hq=>frame2.2 q (offAcc q (Or.inl hq)))).trans hhi2
   have zv:∀q∈accZ L,v1.basis q=false := by
@@ -54477,7 +54477,7 @@ theorem plain_frame (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wi
   have offAcc (q : Wire) (hq:q∈hiReg L ∨ q∈L.foldPad ∨ q∈L.core.work.drop 161 ∨
       q∈[L.core.productHigh,L.core.outHigh,L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : q∉accReg L := by
     apply (other_away L hn q ?_).2.2
-    itauto
+    with_reducible itauto
   have source:regValue (hiReg L) v1.basis=regValue (hiReg L) base :=
     (regValue_congr _ _ _ (fun q hq=>frame2.2 q (offAcc q (Or.inl hq)))).trans hhi2
   have zv:∀q∈accZ L,v1.basis q=false := by
@@ -54882,7 +54882,7 @@ theorem support (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.
   u∈(ambient L g hs).toFinset := by
   simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h
   simp only [ambient,A161GenericFold.domain,List.mem_toFinset,List.mem_cons,List.mem_append]
-  itauto
+  with_reducible itauto
  intro u hu
  rcases Finset.mem_union.mp (cmp hu) with h|h
  · simp only [wires_append,Finset.mem_union] at h
@@ -54893,18 +54893,18 @@ theorem support (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.
      · have h := List.mem_toFinset.mp (maskedConstant_wires_subset _ _ _ h)
        simp only [List.mem_cons] at h
        simp only [ambient,A161GenericFold.domain,List.mem_toFinset,List.mem_cons,List.mem_append]
-       itauto
+       with_reducible itauto
      · have h := List.mem_toFinset.mp (QCore.qprog_supportTq L.measuredCore SquareReduction.p h)
        simp only [ambient,A161GenericFold.domain,List.mem_toFinset,List.mem_cons,List.mem_append]
-       itauto
+       with_reducible itauto
      · have h := List.mem_toFinset.mp (maskedConstant_wires_subset _ _ _ h)
        simp only [List.mem_cons] at h
        simp only [ambient,A161GenericFold.domain,List.mem_toFinset,List.mem_cons,List.mem_append]
-       itauto
+       with_reducible itauto
    · exact sub u (tri.2 h)
  · have h := List.mem_toFinset.mp h
    simp only [ambient,List.mem_toFinset,List.mem_cons,List.mem_append]
-   itauto
+   with_reducible itauto
 
 
 

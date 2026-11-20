@@ -15,6 +15,111 @@ import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
 import ECDSAAdd.Submission.Entrant.Fold98
 
 -- Rebalanced closed source chunks; all ordinary declarations and circuit literals retained.
+-- R6: bit-mask bridges for list Nodup / disjointness / inclusion checks (kernel-cheap `decide +kernel` targets)
+section
+namespace ECDSAAdd.Entrant
+
+theorem rs6_fold_spec:∀(l:List Nat)(b:Bool)(m:Nat),
+ (l.foldl (fun (p:Bool×Nat) (w:Nat)=>(p.1 && !(p.2.testBit w),p.2 ||| 2^w)) (b,m)).1=true →
+ b=true ∧ l.Nodup ∧ ∀w∈l,m.testBit w=false
+ | [],b,m,h=>⟨h,List.nodup_nil,fun _ hw=>absurd hw List.not_mem_nil⟩
+ | w::t,b,m,h=>by
+  rw [List.foldl_cons] at h
+  obtain ⟨h1,h2,h3⟩:=rs6_fold_spec t _ _ h
+  have hb:b=true ∧ m.testBit w=false:=by simpa only [Bool.and_eq_true,Bool.not_eq_true'] using h1
+  refine ⟨hb.1,List.nodup_cons.mpr ⟨fun hw=>?_,h2⟩,fun x hx=>?_⟩
+  · have e:=h3 w hw
+    rw [Nat.testBit_or,Nat.testBit_two_pow_self,Bool.or_true] at e
+    exact Bool.noConfusion e
+  · rcases List.mem_cons.mp hx with rfl|hx
+    · exact hb.2
+    · have e:=h3 x hx
+      rw [Nat.testBit_or,Bool.or_eq_false_iff] at e
+      exact e.1
+
+theorem rs6_nodup (l:List Nat)
+ (h:(l.foldl (fun (p:Bool×Nat) (w:Nat)=>(p.1 && !(p.2.testBit w),p.2 ||| 2^w)) (true,0)).1=true):l.Nodup:=
+ (rs6_fold_spec l true 0 h).2.1
+
+theorem rs6_mask_spec:∀(l:List Nat)(m x:Nat),
+ (l.foldl (fun (a:Nat) (w:Nat)=>a ||| 2^w) m).testBit x=true ↔ (m.testBit x=true ∨ x∈l)
+ | [],m,x=>by simp
+ | w::t,m,x=>by
+  rw [List.foldl_cons,rs6_mask_spec t,Nat.testBit_or,Nat.testBit_two_pow,List.mem_cons]
+  simp only [Bool.or_eq_true,decide_eq_true_eq]
+  constructor
+  · rintro ((h|h)|h)
+    · exact Or.inl h
+    · exact Or.inr (Or.inl h.symm)
+    · exact Or.inr (Or.inr h)
+  · rintro (h|h|h)
+    · exact Or.inl (Or.inl h)
+    · exact Or.inl (Or.inr h.symm)
+    · exact Or.inr h
+
+theorem rs6_mask_mem (l:List Nat)(x:Nat):(l.foldl (fun (a:Nat) (w:Nat)=>a ||| 2^w) 0).testBit x=true ↔ x∈l:=by
+ rw [rs6_mask_spec]
+ simp
+
+theorem rs6_disj (A B:List Nat)
+ (h:A.all (fun x=>!((B.foldl (fun (a:Nat) (w:Nat)=>a ||| 2^w) 0).testBit x))=true):∀x∈A,x∉B:=by
+ intro x hx hb
+ have e:=List.all_eq_true.mp h x hx
+ rw [(rs6_mask_mem B x).mpr hb] at e
+ exact Bool.noConfusion e
+
+theorem rs6_sub (A B:List Nat)
+ (h:A.all (fun x=>(B.foldl (fun (a:Nat) (w:Nat)=>a ||| 2^w) 0).testBit x)=true):∀x∈A,x∈B:=
+ fun x hx=>(rs6_mask_mem B x).mp (List.all_eq_true.mp h x hx)
+
+theorem rs6_slots_sublist (p q:Program) (h:p.Sublist q):Challenge.gateSlots p≤Challenge.gateSlots q:=by
+ induction h with
+ | slnil=>exact le_refl _
+ | cons a _ ih=>simp only [Challenge.gateSlots,List.map_cons,List.sum_cons] at ih ⊢; omega
+ | cons₂ a _ ih=>simp only [Challenge.gateSlots,List.map_cons,List.sum_cons] at ih ⊢; omega
+
+theorem rs6_not_slots (r:List Nat):Challenge.gateSlots (ECDSAAdd.Arithmetic.notRegister r)=r.length:=by
+ induction r with
+ | nil=>simp [ECDSAAdd.Arithmetic.notRegister,Challenge.gateSlots]
+ | cons a r ih=>
+  simp only [ECDSAAdd.Arithmetic.notRegister,Challenge.gateSlots,List.map_cons,List.sum_cons,List.length_cons] at ih ⊢
+  simp only [Challenge.instructionSlots]
+  omega
+
+theorem rs6_add_slots:∀(x y cs:List Nat)(cin:Nat),x.length=y.length → x.length≤cs.length+1 → x≠[] →
+ Challenge.gateSlots (ECDSAAdd.Arithmetic.addInPlace x y cs cin)=12*x.length-10
+ | [],_,_,_,_,_,h=>absurd rfl h
+ | [a],[b],cs,cin,_,_,_=>by
+  simp [ECDSAAdd.Arithmetic.addInPlace,Challenge.gateSlots,Challenge.instructionSlots]
+ | [a],[],cs,cin,h,_,_=>by simp at h
+ | [a],_::_::_,cs,cin,h,_,_=>by simp at h
+ | _::_::_,[],cs,cin,h,_,_=>by simp at h
+ | _::_::_,[_],cs,cin,h,_,_=>by simp at h
+ | _::_::_,_::_::_,[],cin,_,h,_=>by simp at h
+ | a::a'::as,b::b'::bs,c::cs,cin,h1,h2,_=>by
+  have ih:=rs6_add_slots (a'::as) (b'::bs) cs c (by simpa using h1) (by simp at h2 ⊢; omega) (by simp)
+  rw [ECDSAAdd.Arithmetic.addInPlace,Challenge.gateSlots_append,Challenge.gateSlots_append,Challenge.gateSlots_append,ih]
+  simp [ECDSAAdd.Arithmetic.majority,ECDSAAdd.Arithmetic.eraseCarry,Challenge.gateSlots,Challenge.instructionSlots]
+  omega
+
+theorem rs6_sub_slots (x y cs:List Nat)(cin:Nat)(h1:x.length=y.length)(h2:x.length≤cs.length+1)(h3:x≠[]):
+ Challenge.gateSlots (ECDSAAdd.Arithmetic.subInPlace x y cs cin)=2*y.length+(12*x.length-10):=by
+ rw [ECDSAAdd.Arithmetic.subInPlace,Challenge.gateSlots_append,Challenge.gateSlots_append,rs6_not_slots,
+  rs6_add_slots x y cs cin h1 h2 h3]
+ omega
+
+theorem rs6_bits_disj (bits:List ECDSAAdd.Arithmetic.MappedBit) (X:List Nat)
+ (h:bits.all (fun b=>b.wire.all (fun q=>!((X.foldl (fun (a:Nat) (w:Nat)=>a ||| 2^w) 0).testBit q)))=true):
+ ∀b∈bits,∀q∈b.wire,q∉X:=by
+ intro b hb q hq hx
+ have e:=List.all_eq_true.mp h b hb
+ rw [Option.mem_def] at hq
+ rw [hq,Option.all_some,(rs6_mask_mem X q).mpr hx] at e
+ exact Bool.noConfusion e
+
+end ECDSAAdd.Entrant
+end
+
 section
 open ECDSAAdd
 namespace ECDSAAdd.Entrant.A161SupportCover
@@ -24,12 +129,91 @@ set_option autoImplicit false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
 attribute [local irreducible] ECDSAAdd.wires
-theorem used11 : (((A161GenericFold.ambient L g hs96).drop 880).take 80).all cover=true := by decide +kernel
-theorem used12 : (((A161GenericFold.ambient L g hs96).drop 960).take 80).all cover=true := by decide +kernel
-theorem used13 : (((A161GenericFold.ambient L g hs96).drop 1040).take 80).all cover=true := by decide +kernel
-theorem used14 : (((A161GenericFold.ambient L g hs96).drop 1120).take 80).all cover=true := by decide +kernel
-theorem used15 : (((A161GenericFold.ambient L g hs96).drop 1200).take 80).all cover=true := by decide +kernel
-theorem used16 : (((A161GenericFold.ambient L g hs96).drop 1280).take 80).all cover=true := by decide +kernel
+theorem rs6_corr_spec:∀(cs:List Correction)(m q:Nat),
+ (cs.foldl (fun (a:Nat) (c:Correction)=>a ||| (match c with | .Z t=>2^t | .CZ l r=>2^l ||| 2^r)) m).testBit q=true → m.testBit q=true ∨ cs.any (correctionTouches q)=true
+ | [],m,q,h=>Or.inl h
+ | c::cs,m,q,h=>by
+  rw [List.foldl_cons] at h
+  rcases rs6_corr_spec cs _ q h with h1|h1
+  · rw [Nat.testBit_or] at h1
+    rcases Bool.or_eq_true_iff.mp h1 with h2|h2
+    · exact Or.inl h2
+    · right
+      simp only [List.any_cons,Bool.or_eq_true]
+      left
+      cases c with
+      | Z t=>simp only [Nat.testBit_two_pow,decide_eq_true_eq] at h2; simp [correctionTouches,h2]
+      | CZ l r=>
+        simp only [Nat.testBit_or,Nat.testBit_two_pow,Bool.or_eq_true,decide_eq_true_eq] at h2
+        rcases h2 with rfl|rfl <;> simp [correctionTouches]
+  · right
+    simp only [List.any_cons,Bool.or_eq_true] at h1 ⊢
+    exact Or.inr h1
+
+theorem rs6_corr_mem (cs:List Correction)(q:Nat)(h:(cs.foldl (fun (a:Nat) (c:Correction)=>a ||| (match c with | .Z t=>2^t | .CZ l r=>2^l ||| 2^r)) 0).testBit q=true):
+ cs.any (correctionTouches q)=true:=by
+ rcases rs6_corr_spec cs 0 q h with h1|h1
+ · simp at h1
+ · exact h1
+
+theorem rs6_touch_spec:∀(P:Program)(m q:Nat),
+ (P.foldl (fun (a:Nat) (i:Instr)=>a ||| (match i with
+   | .X x=>2^x | .CX x y=>2^x ||| 2^y | .CCX x y z=>2^x ||| 2^y ||| 2^z
+   | .measureX x cs ds=>2^x ||| cs.foldl (fun (a:Nat) (c:Correction)=>a ||| (match c with | .Z t=>2^t | .CZ l r=>2^l ||| 2^r)) 0 ||| ds.foldl (fun (a:Nat) (c:Correction)=>a ||| (match c with | .Z t=>2^t | .CZ l r=>2^l ||| 2^r)) 0)) m).testBit q=true →
+ m.testBit q=true ∨ touched P q=true
+ | [],m,q,h=>Or.inl h
+ | i::P,m,q,h=>by
+  rw [List.foldl_cons] at h
+  rcases rs6_touch_spec P _ q h with h1|h1
+  · rw [Nat.testBit_or] at h1
+    rcases Bool.or_eq_true_iff.mp h1 with h2|h2
+    · exact Or.inl h2
+    · right
+      simp only [touched,List.any_cons,Bool.or_eq_true]
+      left
+      cases i with
+      | X x=>simp only [Nat.testBit_two_pow,decide_eq_true_eq] at h2; simp [instructionTouches,h2]
+      | CX x y=>
+        simp only [Nat.testBit_or,Nat.testBit_two_pow,Bool.or_eq_true,decide_eq_true_eq] at h2
+        rcases h2 with rfl|rfl <;> simp [instructionTouches]
+      | CCX x y z=>
+        simp only [Nat.testBit_or,Nat.testBit_two_pow,Bool.or_eq_true,decide_eq_true_eq] at h2
+        rcases h2 with (rfl|rfl)|rfl <;> simp [instructionTouches]
+      | measureX x cs ds=>
+        simp only [Nat.testBit_or,Bool.or_eq_true] at h2
+        simp only [instructionTouches,Bool.or_eq_true]
+        rcases h2 with (h3|h3)|h3
+        · left; left
+          simp only [Nat.testBit_two_pow,decide_eq_true_eq] at h3
+          simp [h3]
+        · exact Or.inl (Or.inr (rs6_corr_mem cs q h3))
+        · exact Or.inr (rs6_corr_mem ds q h3)
+  · right
+    simp only [touched,List.any_cons,Bool.or_eq_true] at h1 ⊢
+    exact Or.inr h1
+
+theorem rs6_all_cover (A:List Wire)
+ (h:A.all (fun u=>(witnessProgram.foldl (fun (a:Nat) (i:Instr)=>a ||| (match i with
+   | .X x=>2^x | .CX x y=>2^x ||| 2^y | .CCX x y z=>2^x ||| 2^y ||| 2^z
+   | .measureX x cs ds=>2^x ||| cs.foldl (fun (a:Nat) (c:Correction)=>a ||| (match c with | .Z t=>2^t | .CZ l r=>2^l ||| 2^r)) 0 ||| ds.foldl (fun (a:Nat) (c:Correction)=>a ||| (match c with | .Z t=>2^t | .CZ l r=>2^l ||| 2^r)) 0))
+   ((d::FullPadSupport.supportDomain L).foldl (fun (a:Nat) (w:Nat)=>a ||| 2^w) 0)).testBit u)=true):
+ A.all cover=true:=by
+ rw [List.all_eq_true] at h ⊢
+ intro u hu
+ rcases rs6_touch_spec witnessProgram _ u (h u hu) with h1|h1
+ · rw [rs6_mask_mem] at h1
+   simp only [cover,Bool.or_eq_true,beq_iff_eq,List.contains_iff_mem]
+   rcases List.mem_cons.mp h1 with h2|h2
+   · exact Or.inl (Or.inl h2)
+   · exact Or.inl (Or.inr h2)
+ · simp only [cover,h1,Bool.or_true]
+
+theorem used11 : (((A161GenericFold.ambient L g hs96).drop 880).take 80).all cover=true := rs6_all_cover _ (by decide +kernel)
+theorem used12 : (((A161GenericFold.ambient L g hs96).drop 960).take 80).all cover=true := rs6_all_cover _ (by decide +kernel)
+theorem used13 : (((A161GenericFold.ambient L g hs96).drop 1040).take 80).all cover=true := rs6_all_cover _ (by decide +kernel)
+theorem used14 : (((A161GenericFold.ambient L g hs96).drop 1120).take 80).all cover=true := rs6_all_cover _ (by decide +kernel)
+theorem used15 : (((A161GenericFold.ambient L g hs96).drop 1200).take 80).all cover=true := rs6_all_cover _ (by decide +kernel)
+theorem used16 : (((A161GenericFold.ambient L g hs96).drop 1280).take 80).all cover=true := rs6_all_cover _ (by decide +kernel)
 theorem partition : A161GenericFold.ambient L g hs96 = (((A161GenericFold.ambient L g hs96).drop 0).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 80).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 160).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 240).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 320).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 400).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 480).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 560).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 640).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 720).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 800).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 880).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 960).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1040).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1120).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1200).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1280).take 80) := by decide +kernel
 theorem all_cover : (A161GenericFold.ambient L g hs96).all cover=true := by
  rw [partition]
@@ -17311,7 +17495,8 @@ def loop:Program:=ReorderedCBuild.build 99 ga pad bank L.core.cin src hosts++ban
  ReorderedCUnbuild.unbuild 99 ga pad bank L.core.cin src hosts
 
 theorem host_geometry:hosts.Nodup ∧ hosts.length=99 ∧
- (∀h∈hosts,h∉L.core.cin::(src++ga++pad++bank)):=by decide +kernel
+ (∀h∈hosts,h∉L.core.cin::(src++ga++pad++bank)):=
+ ⟨rs6_nodup _ (by decide +kernel),by decide +kernel,rs6_disj _ _ (by decide +kernel)⟩
 
 end ECDSAAdd.Entrant.ReorderedCFixed
 
@@ -17784,7 +17969,7 @@ theorem body_physical:GatePhysical ReorderedKnownC.body:=by
    ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
  have topP:=Acc.op_prefix_physical ga pad bank L.core.cin 163 163 (Acc.earlyTerm src false 32)
   (by decide) (fits _ (C163NarrowAcc.terms_mem src).2.2.2) (by decide) false
- have nd:(L.core.cin::(src++(ga.take 140).drop 10++bank.take 129)).Nodup:=by decide +kernel
+ have nd:(L.core.cin::(src++(ga.take 140).drop 10++bank.take 129)).Nodup:=rs6_nodup _ (by decide +kernel)
  have cacheP:=ReorderedPhysical.cached 99 src ((ga.take 140).drop 10) (bank.take 129) hosts L.core.cin
   (by decide) (by decide) (by decide) nd (by
    intro h hh bad
@@ -17802,9 +17987,9 @@ theorem body_physical:GatePhysical ReorderedKnownC.body:=by
   · decide +kernel
   · decide +kernel
   · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
+  · exact rs6_nodup _ (by decide +kernel)
+  · exact rs6_bits_disj _ _ (by decide +kernel)
+  · exact rs6_bits_disj _ _ (by decide +kernel)
  have oldInv:=C163SourceAdd.unbuild_physical ga pad bank L.core.cin src lengths.1 lengths.2.2.2 fits
  simp only [C163SourceAdd.unbuild,gatePhysical_append] at oldInv
  have preInv:GatePhysical (C163Carry.unbuildPre ga pad bank L.core.cin src):=oldInv.1.1.1
@@ -18962,7 +19147,8 @@ def loop:Program:=ReorderedABuild.build 103 acc pad bank L.core.cin src hosts++A
  ReorderedAUnbuild.unbuild 103 acc pad bank L.core.cin src hosts
 
 theorem host_geometry:hosts.Nodup ∧ hosts.length=103 ∧
- (∀h∈hosts,h∉L.core.cin::(src++acc++pad++bank)):=by decide +kernel
+ (∀h∈hosts,h∉L.core.cin::(src++acc++pad++bank)):=
+ ⟨rs6_nodup _ (by decide +kernel),by decide +kernel,rs6_disj _ _ (by decide +kernel)⟩
 
 theorem good_old(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReduction.p)
  (s:State)(m:List Bool)(hf:SquareFrame L.core.out base O s.basis):
@@ -19024,15 +19210,15 @@ theorem off_plain:∀h∈hosts,h∉wires (ReorderedAPlain.build acc pad bank L.c
  have small6:∀h∈hosts,h∉(L.core.cin::(Acc.tx pad 138 (Acc.earlyTerm src true 6)++
   Acc.ty (acc.take 138) (Acc.earlyTerm src true 6)++Acc.tc bank 138 (Acc.earlyTerm src true 6))).toFinset:=by
   simp only [List.mem_toFinset]
-  decide +kernel
+  exact rs6_disj _ _ (by decide +kernel)
  have small10:∀h∈hosts,h∉(L.core.cin::(Acc.tx pad 138 (Acc.earlyTerm src false 10)++
   Acc.ty (acc.take 138) (Acc.earlyTerm src false 10)++Acc.tc bank 138 (Acc.earlyTerm src false 10))).toFinset:=by
   simp only [List.mem_toFinset]
-  decide +kernel
+  exact rs6_disj _ _ (by decide +kernel)
  have small32:∀h∈hosts,h∉(L.core.cin::(Acc.tx pad 161 (Acc.earlyTerm src false 32)++
   Acc.ty (acc.take 161) (Acc.earlyTerm src false 32)++Acc.tc bank 161 (Acc.earlyTerm src false 32))).toFinset:=by
   simp only [List.mem_toFinset]
-  decide +kernel
+  exact rs6_disj _ _ (by decide +kernel)
  have seed:=Acc.seed_support acc pad bank L.core.cin 161 (Acc.earlyTerm src false 4)
   lengths.1 (fits _ (A161NarrowAcc.terms_mem src).1)
  have tailSupport:=KnownOutputAdder.program_support (mappedRead (src++pad.take 4) false)
@@ -19040,7 +19226,7 @@ theorem off_plain:∀h∈hosts,h∉wires (ReorderedAPlain.build acc pad bank L.c
  rw [mappedRead_wires,ReorderedKnownTail.desired_wires] at tailSupport
  have smallTail:∀h∈hosts,h∉((src++pad.take 4)++src.drop 2++(acc.take 138).drop 6++bank.take 131++[L.core.cin]).toFinset:=by
   simp only [List.mem_toFinset]
-  decide +kernel
+  exact rs6_disj _ _ (by decide +kernel)
  intro h hh
  have seedOff:h∉wires (Acc.seedOp acc pad 161 (Acc.earlyTerm src false 4)):=by
   intro bad
@@ -19353,7 +19539,7 @@ theorem body_physical:GatePhysical ReorderedKnownA.body:=by
    ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
  have topP:=Acc.op_prefix_physical acc pad bank L.core.cin 161 161 (Acc.earlyTerm src false 32)
   (by decide) (fits _ (A161NarrowAcc.terms_mem src).2.2.2) (by decide) false
- have nd:(L.core.cin::(src++(acc.take 138).drop 10++bank.take 127)).Nodup:=by decide +kernel
+ have nd:(L.core.cin::(src++(acc.take 138).drop 10++bank.take 127)).Nodup:=rs6_nodup _ (by decide +kernel)
  have cacheP:=ReorderedPhysical.cached 103 src ((acc.take 138).drop 10) (bank.take 127) hosts L.core.cin
   (by decide) (by decide) (by decide) nd (by
    intro h hh bad
@@ -19371,9 +19557,9 @@ theorem body_physical:GatePhysical ReorderedKnownA.body:=by
   · decide +kernel
   · decide +kernel
   · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
+  · exact rs6_nodup _ (by decide +kernel)
+  · exact rs6_bits_disj _ _ (by decide +kernel)
+  · exact rs6_bits_disj _ _ (by decide +kernel)
  have oldInv:=(A161KnownTail.build8_physical acc pad bank L.core.cin src lengths.1 (by decide) fits).2
  simp only [A161KnownTail.unbuild8,gatePhysical_append] at oldInv
  have preInv:GatePhysical (A161Carry.unbuildPre acc pad bank L.core.cin src):=oldInv.1.1.1
@@ -19543,7 +19729,10 @@ theorem pieces:
  constructor <;> omega
 
 theorem body_slots:Challenge.gateSlots ReorderedKnownA.body≤112000:=by
- have known:Challenge.gateSlots KnownAMidStaged.body≤19000:=by decide +kernel
+ have known:Challenge.gateSlots KnownAMidStaged.body≤19000:=by
+  have sub:=KnownSparseFold.Cert.sublist _ _ _ _ _ KnownAMidStaged.cert
+  rw [←KnownAMidStaged.literal_eq] at sub
+  exact le_trans (rs6_slots_sublist _ _ sub) (by decide +kernel)
  have pre1:=measuredFoldQ_gateSlotsTq L hw (negP L)
  have pre2:=measuredFoldQ_gateSlotsTq L hw (rot128F L)
  have bounds:=pieces
@@ -20161,7 +20350,24 @@ theorem physical:GatePhysical SignAHead.head:=by
    decide +kernel
  simp only [SignAHead.head,SignAHead.small,gatePhysical_append]
  exact ⟨⟨seed,sub⟩,ext⟩
-theorem slots:Challenge.gateSlots SignAHead.head+39=Challenge.gateSlots (ReorderedAHead.head acc pad bank L.core.cin src):=by decide +kernel
+theorem slots:Challenge.gateSlots SignAHead.head+39=Challenge.gateSlots (ReorderedAHead.head acc pad bank L.core.cin src):=by
+ rw [show SignAHead.head=(Acc.seedOp acc pad 161 (Acc.earlyTerm src false 4)++
+   Acc.op (acc.take 135) pad bank L.core.cin 135 true (Acc.earlyTerm src true 6))++SignAHead.extension from rfl,
+  show ReorderedAHead.head acc pad bank L.core.cin src=Acc.seedOp acc pad 161 (Acc.earlyTerm src false 4)++
+   Acc.op (acc.take 138) pad bank L.core.cin 138 true (Acc.earlyTerm src true 6) from rfl,
+  Challenge.gateSlots_append,Challenge.gateSlots_append,Challenge.gateSlots_append,extension_counts.2.2,
+  Acc.op,Acc.op,if_pos rfl,if_pos rfl]
+ have l:(Acc.tx pad 135 (Acc.earlyTerm src true 6)).length=(Acc.ty (acc.take 135) (Acc.earlyTerm src true 6)).length ∧
+  (Acc.tx pad 135 (Acc.earlyTerm src true 6)).length≤(Acc.tc bank 135 (Acc.earlyTerm src true 6)).length+1 ∧
+  (Acc.tx pad 135 (Acc.earlyTerm src true 6))≠[] ∧
+  (Acc.tx pad 138 (Acc.earlyTerm src true 6)).length=(Acc.ty (acc.take 138) (Acc.earlyTerm src true 6)).length ∧
+  (Acc.tx pad 138 (Acc.earlyTerm src true 6)).length≤(Acc.tc bank 138 (Acc.earlyTerm src true 6)).length+1 ∧
+  (Acc.tx pad 138 (Acc.earlyTerm src true 6))≠[] ∧
+  (Acc.tx pad 138 (Acc.earlyTerm src true 6)).length=(Acc.tx pad 135 (Acc.earlyTerm src true 6)).length+3:=by decide +kernel
+ rw [rs6_sub_slots _ _ _ _ l.1 l.2.1 l.2.2.1,rs6_sub_slots _ _ _ _ l.2.2.2.1 l.2.2.2.2.1 l.2.2.2.2.2.1]
+ have:=l.2.2.2.2.2.2
+ have p1:=List.length_pos_of_ne_nil l.2.2.1
+ omega
 
 
 
@@ -20230,7 +20436,24 @@ theorem physical:GatePhysical SignCHead.head:=by
    decide +kernel
  simp only [SignCHead.head,SignCHead.small,gatePhysical_append]
  exact ⟨⟨seed,sub⟩,ext⟩
-theorem slots:Challenge.gateSlots SignCHead.head+39=Challenge.gateSlots (ReorderedCHead.head ga pad bank L.core.cin src):=by decide +kernel
+theorem slots:Challenge.gateSlots SignCHead.head+39=Challenge.gateSlots (ReorderedCHead.head ga pad bank L.core.cin src):=by
+ rw [show SignCHead.head=(Acc.seedOp ga pad 163 (Acc.earlyTerm src false 4)++
+   Acc.op (ga.take 137) pad bank L.core.cin 137 true (Acc.earlyTerm src true 6))++SignCHead.extension from rfl,
+  show ReorderedCHead.head ga pad bank L.core.cin src=Acc.seedOp ga pad 163 (Acc.earlyTerm src false 4)++
+   Acc.op (ga.take 140) pad bank L.core.cin 140 true (Acc.earlyTerm src true 6) from rfl,
+  Challenge.gateSlots_append,Challenge.gateSlots_append,Challenge.gateSlots_append,extension_counts.2.2,
+  Acc.op,Acc.op,if_pos rfl,if_pos rfl]
+ have l:(Acc.tx pad 137 (Acc.earlyTerm src true 6)).length=(Acc.ty (ga.take 137) (Acc.earlyTerm src true 6)).length ∧
+  (Acc.tx pad 137 (Acc.earlyTerm src true 6)).length≤(Acc.tc bank 137 (Acc.earlyTerm src true 6)).length+1 ∧
+  (Acc.tx pad 137 (Acc.earlyTerm src true 6))≠[] ∧
+  (Acc.tx pad 140 (Acc.earlyTerm src true 6)).length=(Acc.ty (ga.take 140) (Acc.earlyTerm src true 6)).length ∧
+  (Acc.tx pad 140 (Acc.earlyTerm src true 6)).length≤(Acc.tc bank 140 (Acc.earlyTerm src true 6)).length+1 ∧
+  (Acc.tx pad 140 (Acc.earlyTerm src true 6))≠[] ∧
+  (Acc.tx pad 140 (Acc.earlyTerm src true 6)).length=(Acc.tx pad 137 (Acc.earlyTerm src true 6)).length+3:=by decide +kernel
+ rw [rs6_sub_slots _ _ _ _ l.1 l.2.1 l.2.2.1,rs6_sub_slots _ _ _ _ l.2.2.2.1 l.2.2.2.2.1 l.2.2.2.2.2.1]
+ have:=l.2.2.2.2.2.2
+ have p1:=List.length_pos_of_ne_nil l.2.2.1
+ omega
 
 
 
@@ -20264,11 +20487,11 @@ theorem support:wires SignAHead.head⊆wires (ReorderedAHead.head acc pad bank L
  have sub:wires (Acc.op (acc.take 135) pad bank L.core.cin 135 true (Acc.earlyTerm src true 6))⊆
   wires (Acc.op (acc.take 138) pad bank L.core.cin 138 true (Acc.earlyTerm src true 6)):=by
   rw [ws,wl]
-  exact list_subset _ _ (by decide +kernel)
+  exact list_subset _ _ (rs6_sub _ _ (by decide +kernel))
  have ext:=signComplement_wires_subset (acc.getD 134 0) ((acc.drop 135).take 3)
  have extSub:wires SignAHead.extension⊆wires (Acc.op (acc.take 138) pad bank L.core.cin 138 true (Acc.earlyTerm src true 6)):=by
   rw [wl]
-  exact ext.trans (list_subset _ _ (by decide +kernel))
+  exact ext.trans (list_subset _ _ (rs6_sub _ _ (by decide +kernel)))
  simp only [SignAHead.head,SignAHead.small,ReorderedAHead.head,wires_append]
  exact Finset.union_subset (Finset.union_subset Finset.subset_union_left (sub.trans Finset.subset_union_right))
   (extSub.trans Finset.subset_union_right)
@@ -20303,11 +20526,11 @@ theorem support:wires SignCHead.head⊆wires (ReorderedCHead.head ga pad bank L.
  have sub:wires (Acc.op (ga.take 137) pad bank L.core.cin 137 true (Acc.earlyTerm src true 6))⊆
   wires (Acc.op (ga.take 140) pad bank L.core.cin 140 true (Acc.earlyTerm src true 6)):=by
   rw [ws,wl]
-  exact list_subset _ _ (by decide +kernel)
+  exact list_subset _ _ (rs6_sub _ _ (by decide +kernel))
  have ext:=signComplement_wires_subset (ga.getD 136 0) ((ga.drop 137).take 3)
  have extSub:wires SignCHead.extension⊆wires (Acc.op (ga.take 140) pad bank L.core.cin 140 true (Acc.earlyTerm src true 6)):=by
   rw [wl]
-  exact ext.trans (list_subset _ _ (by decide +kernel))
+  exact ext.trans (list_subset _ _ (rs6_sub _ _ (by decide +kernel)))
  simp only [SignCHead.head,SignCHead.small,ReorderedCHead.head,wires_append]
  exact Finset.union_subset (Finset.union_subset Finset.subset_union_left (sub.trans Finset.subset_union_right))
   (extSub.trans Finset.subset_union_right)
@@ -21843,7 +22066,8 @@ def viewAcc:List Wire:=ga.map viewPerm
 def hosts : List Wire := ReorderedCFixed.hosts++spares
 
 theorem geometry : hosts.Nodup ∧ hosts.length=102 ∧ viewAcc.length=163 ∧
- (∀h∈hosts,h∉L.core.cin::(src++viewAcc++pad++bank)):=by decide +kernel
+ (∀h∈hosts,h∉L.core.cin::(src++viewAcc++pad++bank)):=
+ ⟨rs6_nodup _ (by decide +kernel),by decide +kernel,by decide +kernel,rs6_disj _ _ (by decide +kernel)⟩
 
 
 
@@ -22292,7 +22516,7 @@ theorem plain_ready(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis L.core.cin=false)(ha:regValue ga s.basis=0):
  WReady ga pad bank L.core.cin src (regValue src s.basis) (run (ReorderedCPlain.build ga pad bank L.core.cin src) m s):=by
  have f:=ReorderedCPlain.build_triple ga pad bank L.core.cin src lengths.1 lengths.2.2.2 fits s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
- have away:∀q∈src++pad++bank++[L.core.cin],q∉ga:=by decide +kernel
+ have away:∀q∈src++pad++bank++[L.core.cin],q∉ga:=rs6_disj _ _ (by decide +kernel)
  refine ⟨f.2.1,?_,?_,?_,?_⟩
  · exact regValue_congr _ _ _ (fun q hq=>f.2.2 q (away q (by simp [hq])))
  · intro q hq
@@ -22696,11 +22920,11 @@ theorem body_physical:GatePhysical Ghost3KnownC.body:=by
    ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
  have topP:=Acc.op_prefix_physical ga pad bank L.core.cin 163 163 (Acc.earlyTerm src false 32)
   (by decide) (fits _ (C163NarrowAcc.terms_mem src).2.2.2) (by decide) false
- have nd:(L.core.cin::(src++(ga.take 140).drop 10++bank.take 129)).Nodup:=by decide +kernel
+ have nd:(L.core.cin::(src++(ga.take 140).drop 10++bank.take 129)).Nodup:=rs6_nodup _ (by decide +kernel)
  have cacheP:=ReorderedPhysical.cached 102 src ((ga.take 140).drop 10) (bank.take 129) hosts L.core.cin
   (by decide) (by decide) (by decide) nd (by
    intro h hh bad
-   exact (by decide +kernel : ∀h∈hosts,h∉bank) h hh (List.mem_of_mem_take bad))
+   exact (rs6_disj _ _ (by decide +kernel) : ∀h∈hosts,h∉bank) h hh (List.mem_of_mem_take bad))
  have buildP:GatePhysical (ReorderedCBuild.build 102 ga pad bank L.core.cin src hosts):=by
   simp only [ReorderedCBuild.build,ReorderedCHead.head,C163Carry.buildPost,gatePhysical_append]
   exact ⟨⟨⟨seedP,subP⟩,cacheP.1⟩,topP⟩
@@ -22714,9 +22938,9 @@ theorem body_physical:GatePhysical Ghost3KnownC.body:=by
   · decide +kernel
   · decide +kernel
   · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
+  · exact rs6_nodup _ (by decide +kernel)
+  · exact rs6_bits_disj _ _ (by decide +kernel)
+  · exact rs6_bits_disj _ _ (by decide +kernel)
  have oldInv:=C163SourceAdd.unbuild_physical ga pad bank L.core.cin src lengths.1 lengths.2.2.2 fits
  simp only [C163SourceAdd.unbuild,gatePhysical_append] at oldInv
  have preInv:GatePhysical (C163Carry.unbuildPre ga pad bank L.core.cin src):=oldInv.1.1.1
@@ -22846,7 +23070,7 @@ theorem list_support(A B:List Wire)(h:∀q∈A,q∈B):A.toFinset⊆B.toFinset:=b
  exact List.mem_toFinset.mpr (h q (List.mem_toFinset.mp hq))
 
 theorem domain_in:domain⊆C163Middle.ambient.toFinset:=
- list_support (L.core.cin::(src++acc++pad++bank)) C163Middle.ambient (by decide +kernel)
+ list_support (L.core.cin::(src++acc++pad++bank)) C163Middle.ambient (rs6_sub _ _ (by decide +kernel))
 
 theorem loop_support:wires Ghost3KnownC.loop⊆C163Middle.ambient.toFinset:=by
  have fit:=C163Fold.terms_fits L hw hn
@@ -22860,7 +23084,7 @@ theorem loop_support:wires Ghost3KnownC.loop⊆C163Middle.ambient.toFinset:=by
    len.1 (by decide) (fit _ (C163NarrowAcc.terms_mem src).2.2.2) (by decide) neg).trans domain_in
  have cacheDomain:(L.core.cin::(src++(acc.take 140).drop 10++bank.take 129)).toFinset∪hosts.toFinset⊆
   C163Middle.ambient.toFinset:=Finset.union_subset
-   (list_support _ _ (by decide +kernel)) (list_support _ _ (by decide +kernel))
+   (list_support _ _ (rs6_sub _ _ (by decide +kernel))) (list_support _ _ (rs6_sub _ _ (by decide +kernel)))
  have cached:=ReorderedSupport.cached 102 src ((acc.take 140).drop 10) (bank.take 129) hosts L.core.cin
   (by decide) (by decide) (by decide) (by decide) (by decide)
  have build:wires (ReorderedCBuild.build 102 acc pad bank L.core.cin src hosts)⊆C163Middle.ambient.toFinset:=by
@@ -22877,7 +23101,7 @@ theorem loop_support:wires Ghost3KnownC.loop⊆C163Middle.ambient.toFinset:=by
   ((acc.take 140).drop 6) (bank.take 133) L.core.cin
  rw [mappedRead_wires,ReorderedKnownTail.desired_wires] at tail
  have tailDomain:((src++pad.take 4)++src.drop 2++(acc.take 140).drop 6++bank.take 133++[L.core.cin]).toFinset⊆
-  C163Middle.ambient.toFinset:=list_support _ _ (by decide +kernel)
+  C163Middle.ambient.toFinset:=list_support _ _ (rs6_sub _ _ (by decide +kernel))
  have unbuild:wires (ReorderedCUnbuild.unbuild 102 acc pad bank L.core.cin src hosts)⊆C163Middle.ambient.toFinset:=by
   simp only [ReorderedCUnbuild.unbuild,ReorderedCUnbuild.after,wires_append]
   exact Finset.union_subset (Finset.union_subset preInv consumed) (Finset.union_subset (tail.trans tailDomain) seed)
@@ -22895,7 +23119,7 @@ theorem loop_support:wires Ghost3KnownC.loop⊆C163Middle.ambient.toFinset:=by
 
 theorem padding_support:wires (ReorderedRecordPadding.program 4 L.core.cin)⊆C163Middle.ambient.toFinset:=by
  have sub:wires (ReorderedRecordPadding.program 4 L.core.cin)⊆[L.core.cin].toFinset:=by decide +kernel
- exact sub.trans (list_support _ _ (by decide +kernel))
+ exact sub.trans (list_support _ _ (rs6_sub _ _ (by decide +kernel)))
 
 theorem body_fine:wires Ghost3KnownC.body⊆insert d (wires (bodyCKTq L g)):=by
  intro u hu
@@ -23028,7 +23252,8 @@ def viewAcc:List Wire:=acc.map viewPerm
 def hosts : List Wire := ReorderedAFixed.hosts++spares
 
 theorem geometry : hosts.Nodup ∧ hosts.length=106 ∧ viewAcc.length=161 ∧
- (∀h∈hosts,h∉L.core.cin::(src++viewAcc++pad++bank)):=by decide +kernel
+ (∀h∈hosts,h∉L.core.cin::(src++viewAcc++pad++bank)):=
+ ⟨rs6_nodup _ (by decide +kernel),by decide +kernel,by decide +kernel,rs6_disj _ _ (by decide +kernel)⟩
 
 
 
@@ -23477,7 +23702,7 @@ theorem plain_ready(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis L.core.cin=false)(ha:regValue acc s.basis=0):
  WReady acc pad bank L.core.cin src (regValue src s.basis) (run (ReorderedAPlain.build acc pad bank L.core.cin src) m s):=by
  have f:=ReorderedAPlain.build_triple acc pad bank L.core.cin src lengths.1 lengths.2.2.2 fits s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
- have away:∀q∈src++pad++bank++[L.core.cin],q∉acc:=by decide +kernel
+ have away:∀q∈src++pad++bank++[L.core.cin],q∉acc:=rs6_disj _ _ (by decide +kernel)
  refine ⟨f.2.1,?_,?_,?_,?_⟩
  · exact regValue_congr _ _ _ (fun q hq=>f.2.2 q (away q (by simp [hq])))
  · intro q hq
@@ -23840,11 +24065,11 @@ theorem body_physical:GatePhysical Ghost3KnownA.body:=by
    ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
  have topP:=Acc.op_prefix_physical acc pad bank L.core.cin 161 161 (Acc.earlyTerm src false 32)
   (by decide) (fits _ (A161NarrowAcc.terms_mem src).2.2.2) (by decide) false
- have nd:(L.core.cin::(src++(acc.take 138).drop 10++bank.take 127)).Nodup:=by decide +kernel
+ have nd:(L.core.cin::(src++(acc.take 138).drop 10++bank.take 127)).Nodup:=rs6_nodup _ (by decide +kernel)
  have cacheP:=ReorderedPhysical.cached 106 src ((acc.take 138).drop 10) (bank.take 127) hosts L.core.cin
   (by decide) (by decide) (by decide) nd (by
    intro h hh bad
-   exact (by decide +kernel : ∀h∈hosts,h∉bank) h hh (List.mem_of_mem_take bad))
+   exact (rs6_disj _ _ (by decide +kernel) : ∀h∈hosts,h∉bank) h hh (List.mem_of_mem_take bad))
  have buildP:GatePhysical (ReorderedABuild.build 106 acc pad bank L.core.cin src hosts):=by
   simp only [ReorderedABuild.build,ReorderedAHead.head,A161Carry.buildPost,gatePhysical_append]
   exact ⟨⟨⟨seedP,subP⟩,cacheP.1⟩,topP⟩
@@ -23858,9 +24083,9 @@ theorem body_physical:GatePhysical Ghost3KnownA.body:=by
   · decide +kernel
   · decide +kernel
   · decide +kernel
-  · decide +kernel
-  · decide +kernel
-  · decide +kernel
+  · exact rs6_nodup _ (by decide +kernel)
+  · exact rs6_bits_disj _ _ (by decide +kernel)
+  · exact rs6_bits_disj _ _ (by decide +kernel)
  have oldInv:=(A161KnownTail.build8_physical acc pad bank L.core.cin src lengths.1 (by decide) fits).2
  simp only [A161KnownTail.unbuild8,gatePhysical_append] at oldInv
  have preInv:GatePhysical (A161Carry.unbuildPre acc pad bank L.core.cin src):=oldInv.1.1.1
@@ -23880,7 +24105,9 @@ theorem body_physical:GatePhysical Ghost3KnownA.body:=by
   exact old.2.2.1.2 i ((KnownSparseFold.Cert.sublist _ _ _ _ _ KnownAMidStaged.cert).subset hi)
  have midP:GatePhysical Ghost3CacheA.middle:=
   RelocateResources.physical GhostRelocatedKnown.ports GhostRelocatedKnown.ports_inj KnownAMidStaged.body midOld
- simp only [Ghost3KnownA.body,Ghost3KnownA.rawBody,Ghost3KnownA.fold,Ghost3KnownA.loop,Ghost3CacheA.loop,Ghost3CacheA.build,Ghost3CacheA.unbuild,gatePhysical_append]
+ rw [show Ghost3KnownA.body=(measuredFoldQTq L (negP L)++(measuredFoldQTq L (rot128F L)++
+  (Ghost3CacheA.build++Ghost3CacheA.middle++Ghost3CacheA.unbuild)))++ReorderedRecordPadding.program 4 L.core.cin from rfl]
+ simp only [gatePhysical_append]
  exact ⟨⟨old.1,old.2.1,⟨⟨buildP,midP⟩,unbuildP⟩⟩,ReorderedPhysical.padding 4 L.core.cin⟩
 
 
@@ -23970,9 +24197,18 @@ theorem a_physical:GatePhysical Ghost3SignA.body:=by
  have old:=Ghost3APhysical.body_physical
  have head:=SignAHeadResources.physical
  have pad:=ReorderedPhysical.padding 7 L.core.cin
- simp only [Ghost3SignA.body,Ghost3SignA.rawBody,Ghost3SignA.fold,Ghost3SignA.loop,Ghost3SignA.suffix,Ghost3SignA.hosts,
-  Ghost3KnownA.body,Ghost3KnownA.rawBody,Ghost3KnownA.fold,Ghost3KnownA.loop,Ghost3CacheA.loop,Ghost3CacheA.build,Ghost3CacheA.unbuild,Ghost3KnownA.hosts,
-  ReorderedABuild.build,gatePhysical_append] at old ⊢
+ rw [show Ghost3KnownA.body=(measuredFoldQTq L (negP L)++(measuredFoldQTq L (rot128F L)++
+  (Ghost3CacheA.build++Ghost3CacheA.middle++Ghost3CacheA.unbuild)))++ReorderedRecordPadding.program 4 L.core.cin from rfl,
+  show Ghost3CacheA.build=ReorderedAHead.head acc ReorderedAFixed.pad bank L.core.cin src++
+   ReorderedGenericCache.cachedAdd 106 src ((acc.take 138).drop 10) (bank.take 127) Ghost3CacheA.hosts L.core.cin++
+   A161Carry.buildPost acc ReorderedAFixed.pad bank L.core.cin src from rfl,
+  show Ghost3CacheA.unbuild=ReorderedAUnbuild.unbuild 106 acc ReorderedAFixed.pad bank L.core.cin src Ghost3CacheA.hosts from rfl] at old
+ rw [show Ghost3SignA.body=(measuredFoldQTq L (negP L)++(measuredFoldQTq L (rot128F L)++
+  (SignAHead.head++(ReorderedGenericCache.cachedAdd 106 src ((acc.take 138).drop 10) (bank.take 127) Ghost3CacheA.hosts L.core.cin++
+   A161Carry.buildPost acc ReorderedAFixed.pad bank L.core.cin src++Ghost3CacheA.middle++
+   ReorderedAUnbuild.unbuild 106 acc ReorderedAFixed.pad bank L.core.cin src Ghost3CacheA.hosts))))++
+  ReorderedRecordPadding.program 7 L.core.cin from rfl]
+ simp only [gatePhysical_append] at old ⊢
  tauto
 
 end ECDSAAdd.Entrant.Ghost3BodyResources

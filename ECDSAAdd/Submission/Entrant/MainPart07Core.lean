@@ -1375,17 +1375,22 @@ attribute [local irreducible] ECDSAAdd.wires
 theorem old_tail_support52 (p : Ports) :
     wires (oldTail p)=(wireList p).toFinset := by
   ext q
-  simp [oldTail,oldPrefix,commonSuffix,majority,eraseCarry,wireList,
-    wires,Instr.wires,correctionWires,or_assoc,or_left_comm,or_comm]
+  simp only [oldTail,oldPrefix,commonSuffix,majority,eraseCarry,wireList,
+    wires,Instr.wires,correctionWires,List.cons_append,List.nil_append,List.append_assoc,
+    Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,List.mem_toFinset,List.mem_cons,
+    List.not_mem_nil,or_false,Finset.notMem_empty]
+  itauto
 
 /-- The forward tail adds only the actual parity flag; all three carry
 measurement targets still occur in commonSuffix. No alias premise is needed. -/
 theorem forward_tail_support52 (p : Ports) (flag : Wire) :
     wires (forwardTail p flag)=(wireList p).toFinset ∪ {flag} := by
   ext q
-  simp [forwardTail,forwardPrefix,clone255,clone256,commonSuffix,
-    majority,eraseCarry,wireList,wires,Instr.wires,correctionWires,
-    or_assoc,or_left_comm,or_comm]
+  simp only [forwardTail,forwardPrefix,clone255,clone256,commonSuffix,
+    majority,eraseCarry,wireList,wires,Instr.wires,correctionWires,List.cons_append,List.nil_append,List.append_assoc,
+    Finset.mem_union,Finset.mem_insert,Finset.mem_singleton,List.mem_toFinset,List.mem_cons,
+    List.not_mem_nil,or_false,Finset.notMem_empty]
+  itauto
 
 
 
@@ -6447,6 +6452,7 @@ theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolW
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
       intro a ha
       simp only [List.mem_toFinset,List.mem_cons] at ha ⊢
+      clear_value L
       itauto
     have repair := (repairedRoute_small_support L hv hpos).trans inc
     have full : wires (skywalkRoute L.a0 L.b0 L.ah L.bh) ⊆
@@ -6454,6 +6460,7 @@ theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolW
       intro a ha
       have h := skywalkRoute_wires_subset L.a0 L.b0 L.ah L.bh (L.high_lengths hv) ha
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
+      clear_value L
       itauto
     have half : wires (skywalkSignedHalf L.aSign L.ext) ⊆
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
@@ -6461,6 +6468,7 @@ theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolW
       simp only [skywalkSignedHalf,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
         Finset.mem_singleton,Finset.notMem_empty,or_false] at ha
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,List.mem_singleton]
+      clear_value L
       itauto
     simp only [head,wires_append,Finset.union_subset_iff]
     split_ifs  <;> exact ⟨by assumption,half⟩
@@ -7604,6 +7612,7 @@ theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolW
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
       intro a ha
       simp only [List.mem_toFinset,List.mem_cons] at ha ⊢
+      clear_value L
       itauto
     have repair := (repairedRoute_small_support L hv hpos).trans inc
     have full : wires (skywalkRoute L.a0 L.b0 L.ah L.bh) ⊆
@@ -7611,6 +7620,7 @@ theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolW
       intro a ha
       have h := skywalkRoute_wires_subset L.a0 L.b0 L.ah L.bh (L.high_lengths hv) ha
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append] at h ⊢
+      clear_value L
       itauto
     have half : wires (skywalkSignedHalf L.aSign L.ext) ⊆
         (L.previous::L.ext::L.a0::L.b0::(L.ah++L.bh)).toFinset := by
@@ -7618,6 +7628,7 @@ theorem head_aux (w : Nat → Wire) (i : Nat) (hi : i < 512) (hn : (skywalkPoolW
       simp only [skywalkSignedHalf,wires,Instr.wires,Finset.mem_union,Finset.mem_insert,
         Finset.mem_singleton,Finset.notMem_empty,or_false] at ha
       simp only [List.mem_toFinset,List.mem_cons,List.mem_append,SkywalkIntegerLayout.ah,List.mem_singleton]
+      clear_value L
       itauto
     simp only [head,wires_append,Finset.union_subset_iff]
     split_ifs  <;> exact ⟨by assumption,half⟩
@@ -8232,6 +8243,348 @@ theorem agree508_sound (p q : Program) (b : Nat) (h : agree508 p q b = true) (m 
     have hp : phaseClean508 p b = some v := by simpa [agree508,hq] using h
     rw [phaseClean508_sound p b v hp, phaseClean508_sound q b v hq]
 
+/-! [R7] Kernel-cheap evaluators for the compact simulation: the same functions as `corrP_t8`,
+`flipN_t8`, `phaseClean508`, `agree508`, `runN_t8`, written with GMP-accelerated `Nat` primitives
+only (`Nat.testBit`/`==` cost a chain of instance unfoldings per call in the kernel). Each is proved
+equal to the original once, for all arguments; `decide +kernel` checks then run the cheap form. -/
+def rs7_tb (b t : Nat) : Bool := Nat.beq (Nat.mod (Nat.shiftRight b t) 2) 1
+
+theorem rs7_tb_eq (b t : Nat) : rs7_tb b t = b.testBit t := by
+  show Nat.beq ((b >>> t) % 2) 1 = Nat.testBit b t
+  unfold Nat.testBit
+  generalize b >>> t = x
+  rw [Nat.one_and_eq_mod_two]
+  rcases Nat.mod_two_eq_zero_or_one x with h | h <;> rw [h] <;> rfl
+
+def rs7_corr : List Correction → Bool → Nat → Bool
+  | [], ph, _ => ph
+  | .Z t :: cs, ph, b => rs7_corr cs (xor ph (rs7_tb b t)) b
+  | .CZ x y :: cs, ph, b => rs7_corr cs (xor ph (rs7_tb b x && rs7_tb b y)) b
+
+theorem rs7_corr_eq (cs : List Correction) (ph : Bool) (b : Nat) :
+    rs7_corr cs ph b = corrP_t8 cs ph b := by
+  induction cs generalizing ph with
+  | nil => rfl
+  | cons c cs ih =>
+    cases c with
+    | Z t => simp only [rs7_corr, corrP_t8, rs7_tb_eq]; exact ih _
+    | CZ x y => simp only [rs7_corr, corrP_t8, rs7_tb_eq]; exact ih _
+
+def rs7_cx : List Correction → Nat → Nat → Nat
+  | [], _, a => a
+  | .Z t :: cs, b, a => rs7_cx cs b (Nat.xor a (Nat.shiftRight b t))
+  | .CZ x y :: cs, b, a => rs7_cx cs b (Nat.xor a (Nat.land (Nat.shiftRight b x) (Nat.shiftRight b y)))
+
+theorem rs7_cx_tb (cs : List Correction) (b a : Nat) :
+    (rs7_cx cs b a).testBit 0 = corrP_t8 cs (a.testBit 0) b := by
+  induction cs generalizing a with
+  | nil => rfl
+  | cons c cs ih =>
+    cases c with
+    | Z t =>
+      show (rs7_cx cs b (a ^^^ (b >>> t))).testBit 0 = corrP_t8 cs (a.testBit 0 ^^ b.testBit t) b
+      rw [ih, Nat.testBit_xor, Nat.testBit_shiftRight, Nat.add_zero]
+    | CZ x y =>
+      show (rs7_cx cs b (a ^^^ ((b >>> x) &&& (b >>> y)))).testBit 0 =
+        corrP_t8 cs (a.testBit 0 ^^ (b.testBit x && b.testBit y)) b
+      rw [ih, Nat.testBit_xor, Nat.testBit_and, Nat.testBit_shiftRight, Nat.testBit_shiftRight,
+        Nat.add_zero, Nat.add_zero]
+
+theorem rs7_m2 (x : Nat) : Nat.beq (Nat.mod x 2) 0 = !(x.testBit 0) := by
+  rw [← rs7_tb_eq]
+  show Nat.beq (x % 2) 0 = !(Nat.beq ((x >>> 0) % 2) 1)
+  rw [Nat.shiftRight_zero]
+  rcases Nat.mod_two_eq_zero_or_one x with h | h <;> rw [h] <;> rfl
+
+/-! [R7] Branch-free controlled flips (GMP only): flip bit `t` by bit `x` (resp. bits `x ∧ y`). -/
+def rs7_fl (b t x : Nat) : Nat := Nat.xor b (Nat.shiftLeft (Nat.land (Nat.shiftRight b x) 1) t)
+def rs7_fl2 (b t x y : Nat) : Nat :=
+  Nat.xor b (Nat.shiftLeft (Nat.land (Nat.land (Nat.shiftRight b x) 1) (Nat.land (Nat.shiftRight b y) 1)) t)
+
+theorem rs7_bit (b x : Nat) : (b >>> x) &&& 1 = if b.testBit x = true then 1 else 0 := by
+  rw [Nat.and_one_is_mod]
+  have h0 : b.testBit x = (b >>> x).testBit 0 := by rw [Nat.testBit_shiftRight, Nat.add_zero]
+  rw [h0, Nat.testBit_zero]
+  rcases Nat.mod_two_eq_zero_or_one (b >>> x) with h | h <;> simp [h]
+
+theorem rs7_fl_eq (b t x : Nat) : rs7_fl b t x = flipN_t8 b t (b.testBit x) := by
+  show b ^^^ (((b >>> x) &&& 1) <<< t) = flipN_t8 b t (b.testBit x)
+  rw [rs7_bit]
+  unfold flipN_t8
+  cases b.testBit x <;> simp [Nat.shiftLeft_eq]
+
+theorem rs7_fl2_eq (b t x y : Nat) : rs7_fl2 b t x y = flipN_t8 b t (b.testBit x && b.testBit y) := by
+  show b ^^^ ((((b >>> x) &&& 1) &&& ((b >>> y) &&& 1)) <<< t) = flipN_t8 b t (b.testBit x && b.testBit y)
+  rw [rs7_bit, rs7_bit]
+  unfold flipN_t8
+  cases b.testBit x <;> cases b.testBit y <;> simp [Nat.shiftLeft_eq]
+
+def rs7_pc2 : Program → Nat → Option Nat
+  | [], b => some b
+  | .X t :: p, b => rs7_pc2 p (Nat.xor b (Nat.pow 2 t))
+  | .CX c t :: p, b => rs7_pc2 p (rs7_fl b t c)
+  | .CCX a c t :: p, b => rs7_pc2 p (rs7_fl2 b t a c)
+  | .measureX t c₀ c₁ :: p, b =>
+    cond (Nat.beq (Nat.mod (rs7_cx c₀ (rs7_fl b t t) 0) 2) 0 &&
+          Nat.beq (Nat.mod (rs7_cx c₁ (rs7_fl b t t) (Nat.shiftRight b t)) 2) 0)
+      (rs7_pc2 p (rs7_fl b t t)) none
+
+theorem rs7_pc2_eq (p : Program) (b : Nat) : rs7_pc2 p b = phaseClean508 p b := by
+  induction p generalizing b with
+  | nil => rfl
+  | cons g p ih =>
+    cases g with
+    | X t => exact ih _
+    | CX c t => simp only [rs7_pc2, phaseClean508, rs7_fl_eq]; exact ih _
+    | CCX a c t => simp only [rs7_pc2, phaseClean508, rs7_fl2_eq]; exact ih _
+    | measureX t c₀ c₁ =>
+      have e : (Nat.shiftRight b t).testBit 0 = b.testBit t := by
+        show (b >>> t).testBit 0 = b.testBit t
+        rw [Nat.testBit_shiftRight, Nat.add_zero]
+      simp only [rs7_pc2, phaseClean508, rs7_fl_eq, rs7_m2, rs7_cx_tb, Nat.zero_testBit, e, ih]
+      generalize corrP_t8 c₀ false (flipN_t8 b t (b.testBit t)) = A
+      generalize corrP_t8 c₁ (b.testBit t) (flipN_t8 b t (b.testBit t)) = B
+      cases A <;> cases B <;> simp
+
+def rs7_agree2 (p q : Program) (b : Nat) : Bool :=
+  match rs7_pc2 q b with
+  | none => false
+  | some v => decide (rs7_pc2 p b = some v)
+
+theorem rs7_agree2_eq (p q : Program) (b : Nat) : rs7_agree2 p q b = agree508 p q b := by
+  unfold rs7_agree2 agree508
+  rw [rs7_pc2_eq, rs7_pc2_eq]
+
+def rs7_run : Program → List Bool → Bool × Nat → Bool × Nat
+  | [], _, s => s
+  | .X t :: p, m, s => rs7_run p m (s.1, Nat.xor s.2 (Nat.pow 2 t))
+  | .CX c t :: p, m, s => rs7_run p m (s.1, rs7_fl s.2 t c)
+  | .CCX a b t :: p, m, s => rs7_run p m (s.1, rs7_fl2 s.2 t a b)
+  | .measureX t c₀ c₁ :: p, m, s =>
+      rs7_run p m.tail
+        (rs7_corr (cond (m.headD false) c₁ c₀) (xor s.1 (m.headD false && rs7_tb s.2 t)) (rs7_fl s.2 t t),
+         rs7_fl s.2 t t)
+
+theorem rs7_run_eq (p : Program) (m : List Bool) (s : Bool × Nat) : rs7_run p m s = runN_t8 p m s := by
+  induction p generalizing m s with
+  | nil => rfl
+  | cons g p ih =>
+    cases g with
+    | X t => exact ih _ _
+    | CX c t => simp only [rs7_run, runN_t8, rs7_fl_eq]; exact ih _ _
+    | CCX a c t => simp only [rs7_run, runN_t8, rs7_fl2_eq]; exact ih _ _
+    | measureX t c₀ c₁ =>
+      simp only [rs7_run, runN_t8, rs7_fl_eq, rs7_tb_eq, rs7_corr_eq]
+      rw [ih]
+      cases m.headD false <;> rfl
+/-! [R7] `decide` on `Nat` comparisons as the GMP-accelerated `Nat.ble`/`Nat.beq`, and list-of-rows
+membership as a scan comparing the `Nat` fields first. -/
+theorem rs7_dle (a b : Nat) : decide (a ≤ b) = Nat.ble a b := by
+  cases h : Nat.ble a b
+  · exact decide_eq_false (fun hl => by rw [Nat.ble_eq_true_of_le hl] at h; exact Bool.noConfusion h)
+  · exact decide_eq_true (Nat.le_of_ble_eq_true h)
+
+theorem rs7_deq (a b : Nat) : decide (a = b) = Nat.beq a b := by
+  cases h : Nat.beq a b
+  · exact decide_eq_false (Nat.ne_of_beq_eq_false h)
+  · exact decide_eq_true (Nat.eq_of_beq_eq_true h)
+
+def rs7_rbeq (x r : Bool × Bool × Nat × Nat) : Bool :=
+  Nat.beq x.2.2.2 r.2.2.2 && Nat.beq x.2.2.1 r.2.2.1 && decide (x.1 = r.1) && decide (x.2.1 = r.2.1)
+
+theorem rs7_rbeq_iff (x r : Bool × Bool × Nat × Nat) : rs7_rbeq x r = true ↔ x = r := by
+  obtain ⟨a, b, c, d⟩ := x
+  obtain ⟨a', b', c', d'⟩ := r
+  constructor
+  · intro h
+    simp only [rs7_rbeq, Bool.and_eq_true, decide_eq_true_eq] at h
+    obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
+    rw [Nat.eq_of_beq_eq_true h1, Nat.eq_of_beq_eq_true h2, h3, h4]
+  · intro h
+    rw [h]
+    simp [rs7_rbeq]
+
+theorem rs7_mem_eq (l : List (Bool × Bool × Nat × Nat)) (r : Bool × Bool × Nat × Nat) :
+    decide (r ∈ l) = l.any (fun x => rs7_rbeq x r) := by
+  rw [Bool.eq_iff_iff, decide_eq_true_eq, List.any_eq_true]
+  constructor
+  · intro h; exact ⟨r, h, (rs7_rbeq_iff r r).mpr rfl⟩
+  · rintro ⟨x, hx, he⟩; rw [← (rs7_rbeq_iff x r).mp he]; exact hx
+
+theorem rs7_beq_self (x : Nat) : Nat.beq x x = true := by
+  induction x with
+  | zero => rfl
+  | succ n ih => exact ih
+
+theorem rs7_memN (l : List Nat) (x : Nat) : decide (x ∈ l) = l.any (fun y => Nat.beq y x) := by
+  rw [Bool.eq_iff_iff, decide_eq_true_eq, List.any_eq_true]
+  constructor
+  · intro h; exact ⟨x, h, rs7_beq_self x⟩
+  · rintro ⟨y, hy, he⟩; rw [← Nat.eq_of_beq_eq_true he]; exact hy
+
+theorem rs7_enc_tb (f : BasisState) (l : List Wire) (q : Nat) :
+    (encN_t8 f l).testBit q = (decide (q ∈ l) && f q) := by
+  unfold encN_t8
+  rw [foldl_tb_t8]
+  simp only [Nat.zero_testBit, Bool.false_or]
+
+theorem rs7_encTB (N : Nat) (l : List Wire) :
+    encN_t8 (tbN_t8 N) l = N &&& encN_t8 (fun _ => true) l := by
+  apply Nat.eq_of_testBit_eq
+  intro q
+  rw [Nat.testBit_and, rs7_enc_tb, rs7_enc_tb]
+  simp only [tbN_t8, Bool.and_true]
+  exact Bool.and_comm _ _
+
+/-! [R7] `wires P ⊆ S` from a Bool scan of the instructions with a wire test `f` (for site lists `f` is a
+bit test of the list's mask, computed once): replaces `decide` on `Finset` subsets. -/
+def rs7_cbP (f : Nat → Bool) : List Correction → Bool
+  | [] => true
+  | .Z t :: cs => f t && rs7_cbP f cs
+  | .CZ a b :: cs => f a && f b && rs7_cbP f cs
+
+def rs7_ibP (f : Nat → Bool) : Instr → Bool
+  | .X t => f t
+  | .CX c t => f c && f t
+  | .CCX a b t => f a && f b && f t
+  | .measureX t c₀ c₁ => f t && rs7_cbP f c₀ && rs7_cbP f c₁
+
+theorem rs7_cbP_sound (f : Nat → Bool) (S : Finset Nat) (hf : ∀ w, f w = true → w ∈ S)
+    (cs : List Correction) (h : rs7_cbP f cs = true) : correctionWires cs ⊆ S := by
+  induction cs with
+  | nil => simp [correctionWires]
+  | cons c cs ih =>
+    cases c with
+    | Z t =>
+      simp only [rs7_cbP, Bool.and_eq_true] at h
+      simp only [correctionWires, Finset.union_subset_iff, Finset.singleton_subset_iff]
+      exact ⟨hf t h.1, ih h.2⟩
+    | CZ a b =>
+      simp only [rs7_cbP, Bool.and_eq_true] at h
+      simp only [correctionWires, Finset.union_subset_iff, Finset.insert_subset_iff,
+        Finset.singleton_subset_iff]
+      exact ⟨⟨hf a h.1.1, hf b h.1.2⟩, ih h.2⟩
+
+theorem rs7_ibP_sound (f : Nat → Bool) (S : Finset Nat) (hf : ∀ w, f w = true → w ∈ S)
+    (i : Instr) (h : rs7_ibP f i = true) : i.wires ⊆ S := by
+  cases i with
+  | X t =>
+    simp only [rs7_ibP] at h
+    simp only [Instr.wires, Finset.singleton_subset_iff]
+    exact hf t h
+  | CX c t =>
+    simp only [rs7_ibP, Bool.and_eq_true] at h
+    simp only [Instr.wires, Finset.insert_subset_iff, Finset.singleton_subset_iff]
+    exact ⟨hf c h.1, hf t h.2⟩
+  | CCX a b t =>
+    simp only [rs7_ibP, Bool.and_eq_true] at h
+    simp only [Instr.wires, Finset.insert_subset_iff, Finset.singleton_subset_iff]
+    exact ⟨hf a h.1.1, hf b h.1.2, hf t h.2⟩
+  | measureX t c₀ c₁ =>
+    simp only [rs7_ibP, Bool.and_eq_true] at h
+    simp only [Instr.wires, Finset.union_subset_iff, Finset.singleton_subset_iff]
+    exact ⟨⟨hf t h.1.1, rs7_cbP_sound f S hf c₀ h.1.2⟩, rs7_cbP_sound f S hf c₁ h.2⟩
+
+theorem rs7_wiresP (f : Nat → Bool) (S : Finset Nat) (hf : ∀ w, f w = true → w ∈ S)
+    (P : Program) (h : P.all (rs7_ibP f) = true) : wires P ⊆ S := by
+  induction P with
+  | nil => simp [wires]
+  | cons i P ih =>
+    simp only [List.all_cons, Bool.and_eq_true] at h
+    show i.wires ∪ wires P ⊆ S
+    exact Finset.union_subset (rs7_ibP_sound f S hf i h.1) (ih h.2)
+
+theorem rs7_maskL (L : List Nat) (w : Nat) (h : rs7_tb (encN_t8 (fun _ => true) L) w = true) :
+    w ∈ L.toFinset := by
+  rw [rs7_tb_eq, rs7_enc_tb, Bool.and_true, decide_eq_true_eq] at h
+  exact List.mem_toFinset.mpr h
+
+theorem rs7_sub (P : Program) (L : List Nat)
+    (h : P.all (rs7_ibP (fun w => rs7_tb (encN_t8 (fun _ => true) L) w)) = true) :
+    wires P ⊆ L.toFinset :=
+  rs7_wiresP _ _ (rs7_maskL L) P h
+
+theorem rs7_sub_erase (P : Program) (L : List Nat) (e : Nat)
+    (h : P.all (rs7_ibP (fun w => rs7_tb (encN_t8 (fun _ => true) L) w && !Nat.beq w e)) = true) :
+    wires P ⊆ L.toFinset.erase e :=
+  rs7_wiresP _ _ (fun w hw => by
+    simp only [Bool.and_eq_true, Bool.not_eq_true'] at hw
+    exact Finset.mem_erase.mpr ⟨Nat.ne_of_beq_eq_false hw.2, rs7_maskL L w hw.1⟩) P h
+
+/-! [R7] Bit mask of all wires of a program, with membership soundness. -/
+def rs7_cm : List Correction → Nat
+  | [] => 0
+  | .Z t :: cs => 2^t ||| rs7_cm cs
+  | .CZ a b :: cs => 2^a ||| 2^b ||| rs7_cm cs
+
+def rs7_im : Instr → Nat
+  | .X t => 2^t
+  | .CX c t => 2^c ||| 2^t
+  | .CCX a b t => 2^a ||| 2^b ||| 2^t
+  | .measureX t c₀ c₁ => 2^t ||| rs7_cm c₀ ||| rs7_cm c₁
+
+def rs7_wm : Program → Nat
+  | [] => 0
+  | i :: p => rs7_im i ||| rs7_wm p
+
+theorem rs7_cm_mem (cs : List Correction) (w : Nat) (h : (rs7_cm cs).testBit w = true) :
+    w ∈ correctionWires cs := by
+  induction cs with
+  | nil => simp [rs7_cm] at h
+  | cons c cs ih =>
+    cases c with
+    | Z t =>
+      simp only [rs7_cm, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true, decide_eq_true_eq] at h
+      simp only [correctionWires, Finset.mem_union, Finset.mem_singleton]
+      rcases h with h | h
+      · exact Or.inl h.symm
+      · exact Or.inr (ih h)
+    | CZ a b =>
+      simp only [rs7_cm, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true, decide_eq_true_eq] at h
+      simp only [correctionWires, Finset.mem_union, Finset.mem_insert, Finset.mem_singleton]
+      rcases h with (h | h) | h
+      · exact Or.inl (Or.inl h.symm)
+      · exact Or.inl (Or.inr h.symm)
+      · exact Or.inr (ih h)
+
+theorem rs7_im_mem (i : Instr) (w : Nat) (h : (rs7_im i).testBit w = true) : w ∈ i.wires := by
+  cases i with
+  | X t =>
+    simp only [rs7_im, Nat.testBit_two_pow, decide_eq_true_eq] at h
+    simp only [Instr.wires, Finset.mem_singleton]
+    exact h.symm
+  | CX c t =>
+    simp only [rs7_im, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true, decide_eq_true_eq] at h
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton]
+    rcases h with h | h
+    · exact Or.inl h.symm
+    · exact Or.inr h.symm
+  | CCX a b t =>
+    simp only [rs7_im, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true, decide_eq_true_eq] at h
+    simp only [Instr.wires, Finset.mem_insert, Finset.mem_singleton]
+    rcases h with (h | h) | h
+    · exact Or.inl h.symm
+    · exact Or.inr (Or.inl h.symm)
+    · exact Or.inr (Or.inr h.symm)
+  | measureX t c₀ c₁ =>
+    simp only [rs7_im, Nat.testBit_or, Nat.testBit_two_pow, Bool.or_eq_true, decide_eq_true_eq] at h
+    simp only [Instr.wires, Finset.mem_union, Finset.mem_singleton]
+    rcases h with (h | h) | h
+    · exact Or.inl (Or.inl h.symm)
+    · exact Or.inl (Or.inr (rs7_cm_mem c₀ w h))
+    · exact Or.inr (rs7_cm_mem c₁ w h)
+
+theorem rs7_wm_mem (P : Program) (w : Nat) (h : (rs7_wm P).testBit w = true) : w ∈ wires P := by
+  induction P with
+  | nil => simp [rs7_wm] at h
+  | cons i P ih =>
+    simp only [rs7_wm, Nat.testBit_or, Bool.or_eq_true] at h
+    show w ∈ i.wires ∪ wires P
+    rw [Finset.mem_union]
+    rcases h with h | h
+    · exact Or.inl (rs7_im_mem i w h)
+    · exact Or.inr (ih h)
+
 def forward6 : Program :=
   [.CX 525 790,
    .CX 789 790,
@@ -8324,7 +8677,8 @@ def forward6 : Program :=
 
 
 
-theorem forward6_wires : wires forward6 ⊆ sitesT8.toFinset := by decide +kernel
+theorem forward6_wires : wires forward6 ⊆ sitesT8.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 
 
 
@@ -8335,7 +8689,8 @@ def forward6_pair (uv : Nat × Nat) : Bool :=
   [false,true].all fun g => [false,true].all fun s =>
     agree508 forward6 previousForward508 (encN_t8 (pre508 g s uv.1 uv.2) sitesT8)
 
-theorem forward6_table : pairs508.all forward6_pair = true := by decide +kernel
+theorem forward6_table : pairs508.all forward6_pair = true := by
+  unfold forward6_pair; simp only [← rs7_agree2_eq]; decide +kernel
 
 theorem forward6_forced (g s : Bool) (uv : Nat × Nat) (member : uv ∈ pairs508) (m : List Bool) :
     run forward6 m ⟨false,pre508 g s uv.1 uv.2⟩ = run previousForward508 m ⟨false,pre508 g s uv.1 uv.2⟩ := by
@@ -8757,7 +9112,8 @@ theorem explicit507 : W.repairedTick base 507 = tick507 := by decide +kernel
 
 
 
-theorem support : wires forward13 ⊆ sites.toFinset ∧ wires prior ⊆ sites.toFinset := by decide +kernel
+theorem support : wires forward13 ⊆ sites.toFinset ∧ wires prior ⊆ sites.toFinset :=
+  ⟨rs7_sub _ _ (by decide +kernel), rs7_sub _ _ (by decide +kernel)⟩
 
 
 
@@ -8767,10 +9123,20 @@ theorem pre_supp (g s : Bool) (u v : Nat) : ∀ q, q ∉ sites → pre507 g s u 
   simp only [sites,List.mem_cons,List.not_mem_nil,or_false,not_or] at h
   simp_all [pre507]
 
+/-! [R7] `encN_t8 (pre507 …) sites` with the if-chain folded away (definitionally equal). -/
+def rs7_st7 (w : Nat) (c : Bool) (a : Nat) : Nat := if c = true then a ||| 2^w else a
+set_option exponentiation.threshold 2048 in
+def rs7_encE7 (g : Bool) (e : SkywalkRails.State) : Nat :=
+  rs7_st7 791 (decide (e.b < 0)) (rs7_st7 790 (decide (e.b / 16 % 2 = 1)) (rs7_st7 789 (decide (e.b / 8 % 2 = 1)) (rs7_st7 788 (decide (e.b / 4 % 2 = 1)) (rs7_st7 787 (decide (e.b / 2 % 2 = 1)) (rs7_st7 786 (decide (e.b / 1 % 2 = 1)) (rs7_st7 528 (decide (e.a < 0)) (rs7_st7 527 (decide (e.a / 16 % 2 = 1)) (rs7_st7 526 (decide (e.a / 8 % 2 = 1)) (rs7_st7 525 (decide (e.a / 4 % 2 = 1)) (rs7_st7 524 (decide (e.a / 2 % 2 = 1)) (rs7_st7 523 (decide (e.a / 1 % 2 = 1)) (rs7_st7 522 g (0)))))))))))))
+set_option exponentiation.threshold 2048 in
+theorem rs7_enc_eq7 (g s : Bool) (u v : Nat) :
+    encN_t8 (pre507 g s u v) sites = rs7_encE7 g (SkywalkRails.encode g s (u : Int) (v : Int)) := rfl
+
 def checkPair (uv : Nat × Nat) : Bool :=
   [false,true].all fun g => [false,true].all fun s =>
     agree508 forward13 prior (encN_t8 (pre507 g s uv.1 uv.2) sites)
-theorem table : pairs.all checkPair = true := by decide +kernel
+theorem table : pairs.all checkPair = true := by
+  unfold checkPair; simp only [← rs7_agree2_eq, rs7_enc_eq7]; decide +kernel
 
 theorem on_site (g s : Bool) (uv : Nat × Nat) (member : uv ∈ pairs) (st : State)
     (bits : ∀ q ∈ sites, st.basis q = pre507 g s uv.1 uv.2 q) (m : List Bool) :
@@ -8789,7 +9155,7 @@ theorem on_site (g s : Bool) (uv : Nat × Nat) (member : uv ∈ pairs) (st : Sta
     intro q hq
     by_contra hn
     rw [pre_supp g s uv.1 uv.2 q hn] at hq
-    contradiction
+    exact absurd hq Bool.false_ne_true
   have same : run forward13 tape ⟨false,pre507 g s uv.1 uv.2⟩ =
       run prior tape ⟨false,pre507 g s uv.1 uv.2⟩ := by
     rw [tb_enc_t8 (pre507 g s uv.1 uv.2) sites supp]
@@ -9639,6 +10005,15 @@ theorem odd_width (z : SkywalkNat.State) (ho : z.u%2≠0) (hv : z.v%2=1)
   · refine ⟨a,b,rfl,hu,?_⟩
     dsimp; omega
 
+/-- `orientation_width`'s parity step for an arbitrary state (keeps the kernel away from
+`SkywalkNat.step^[506]`). -/
+theorem rs7_ow_odd (G S g : Bool) (z : SkywalkNat.State)
+    (h1 : (SkywalkTrace.code (SkywalkRails.encode G S (z.u:Int) (z.v:Int))).1 = decide (z.u%2=0))
+    (hge : (SkywalkRails.step (SkywalkRails.encode G S (z.u:Int) (z.v:Int))).g = g) (hg : g = false) :
+    z.u%2≠0 := by
+  have hh : decide (z.u%2=0)=false := h1.symm.trans (hge.trans hg)
+  simpa using hh
+
 theorem orientation_width (x : Nat) (hx0 : 0<x) (hx : x<p) (g s : Bool)
     (henc : SkywalkTrace.next^[507] (SkywalkRails.encode false false (x:Int) (p:Int)) =
       SkywalkRails.encode g s ((SkywalkNat.step^[507] (SkywalkNat.init x p)).u:Int)
@@ -9659,10 +10034,8 @@ theorem orientation_width (x : Nat) (hx0 : 0<x) (hx : x<p) (g s : Bool)
   change (SkywalkRails.step (SkywalkRails.encode G S
     ((SkywalkNat.step^[506] (SkywalkNat.init x p)).u:Int)
     ((SkywalkNat.step^[506] (SkywalkNat.init x p)).v:Int))).g=g at hge
-  have ho : (SkywalkNat.step^[506] (SkywalkNat.init x p)).u%2≠0 := by
-    have hh : decide ((SkywalkNat.step^[506] (SkywalkNat.init x p)).u%2=0)=false := by
-      exact hc.1.symm.trans (hge.trans hg)
-    simpa using hh
+  have ho : (SkywalkNat.step^[506] (SkywalkNat.init x p)).u%2≠0 :=
+    rs7_ow_odd G S g _ hc.1 hge hg
   have hp : p<2^256 := by norm_num [p]
   have cop := (StackOB5.prime_facts x hx0 hx).2.2.2
   obtain ⟨a,b,h,ha,hb⟩:=iter_budget 506 256 256 (SkywalkNat.init x p) hp0 hpo cop (hx.trans hp) hp (by omega)
@@ -10899,71 +11272,104 @@ def block32 : Program := [
 def candidate : Program := block0 ++ block1 ++ block2 ++ block3 ++ block4 ++ block5 ++ block6 ++ block7 ++ block8 ++ block9 ++ block10 ++ block11 ++ block12 ++ block13 ++ block14 ++ block15 ++ block16 ++ block17 ++ block18 ++ block19 ++ block20 ++ block21 ++ block22 ++ block23 ++ block24 ++ block25 ++ block26 ++ block27 ++ block28 ++ block29 ++ block30 ++ block31 ++ block32
 
 theorem counts0 : toffoliCount block0=1 ∧ measurementCount block0=0 ∧ Challenge.gateSlots block0=32 := by decide +kernel
-theorem support0 : wires block0⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support0 : wires block0⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts1 : toffoliCount block1=1 ∧ measurementCount block1=0 ∧ Challenge.gateSlots block1=32 := by decide +kernel
-theorem support1 : wires block1⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support1 : wires block1⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts2 : toffoliCount block2=1 ∧ measurementCount block2=0 ∧ Challenge.gateSlots block2=32 := by decide +kernel
-theorem support2 : wires block2⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support2 : wires block2⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts3 : toffoliCount block3=1 ∧ measurementCount block3=0 ∧ Challenge.gateSlots block3=32 := by decide +kernel
-theorem support3 : wires block3⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support3 : wires block3⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts4 : toffoliCount block4=0 ∧ measurementCount block4=0 ∧ Challenge.gateSlots block4=32 := by decide +kernel
-theorem support4 : wires block4⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support4 : wires block4⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts5 : toffoliCount block5=1 ∧ measurementCount block5=0 ∧ Challenge.gateSlots block5=32 := by decide +kernel
-theorem support5 : wires block5⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support5 : wires block5⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts6 : toffoliCount block6=0 ∧ measurementCount block6=0 ∧ Challenge.gateSlots block6=32 := by decide +kernel
-theorem support6 : wires block6⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support6 : wires block6⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts7 : toffoliCount block7=0 ∧ measurementCount block7=0 ∧ Challenge.gateSlots block7=32 := by decide +kernel
-theorem support7 : wires block7⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support7 : wires block7⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts8 : toffoliCount block8=1 ∧ measurementCount block8=0 ∧ Challenge.gateSlots block8=32 := by decide +kernel
-theorem support8 : wires block8⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support8 : wires block8⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts9 : toffoliCount block9=0 ∧ measurementCount block9=0 ∧ Challenge.gateSlots block9=32 := by decide +kernel
-theorem support9 : wires block9⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support9 : wires block9⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts10 : toffoliCount block10=0 ∧ measurementCount block10=0 ∧ Challenge.gateSlots block10=32 := by decide +kernel
-theorem support10 : wires block10⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support10 : wires block10⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts11 : toffoliCount block11=1 ∧ measurementCount block11=0 ∧ Challenge.gateSlots block11=32 := by decide +kernel
-theorem support11 : wires block11⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support11 : wires block11⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts12 : toffoliCount block12=0 ∧ measurementCount block12=0 ∧ Challenge.gateSlots block12=32 := by decide +kernel
-theorem support12 : wires block12⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support12 : wires block12⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts13 : toffoliCount block13=0 ∧ measurementCount block13=0 ∧ Challenge.gateSlots block13=32 := by decide +kernel
-theorem support13 : wires block13⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support13 : wires block13⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts14 : toffoliCount block14=1 ∧ measurementCount block14=0 ∧ Challenge.gateSlots block14=32 := by decide +kernel
-theorem support14 : wires block14⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support14 : wires block14⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts15 : toffoliCount block15=0 ∧ measurementCount block15=0 ∧ Challenge.gateSlots block15=32 := by decide +kernel
-theorem support15 : wires block15⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support15 : wires block15⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts16 : toffoliCount block16=0 ∧ measurementCount block16=0 ∧ Challenge.gateSlots block16=32 := by decide +kernel
-theorem support16 : wires block16⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support16 : wires block16⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts17 : toffoliCount block17=1 ∧ measurementCount block17=0 ∧ Challenge.gateSlots block17=32 := by decide +kernel
-theorem support17 : wires block17⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support17 : wires block17⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts18 : toffoliCount block18=0 ∧ measurementCount block18=0 ∧ Challenge.gateSlots block18=32 := by decide +kernel
-theorem support18 : wires block18⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support18 : wires block18⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts19 : toffoliCount block19=0 ∧ measurementCount block19=0 ∧ Challenge.gateSlots block19=32 := by decide +kernel
-theorem support19 : wires block19⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support19 : wires block19⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts20 : toffoliCount block20=1 ∧ measurementCount block20=0 ∧ Challenge.gateSlots block20=32 := by decide +kernel
-theorem support20 : wires block20⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support20 : wires block20⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts21 : toffoliCount block21=0 ∧ measurementCount block21=0 ∧ Challenge.gateSlots block21=32 := by decide +kernel
-theorem support21 : wires block21⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support21 : wires block21⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts22 : toffoliCount block22=0 ∧ measurementCount block22=0 ∧ Challenge.gateSlots block22=32 := by decide +kernel
-theorem support22 : wires block22⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support22 : wires block22⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts23 : toffoliCount block23=0 ∧ measurementCount block23=0 ∧ Challenge.gateSlots block23=32 := by decide +kernel
-theorem support23 : wires block23⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support23 : wires block23⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts24 : toffoliCount block24=1 ∧ measurementCount block24=0 ∧ Challenge.gateSlots block24=32 := by decide +kernel
-theorem support24 : wires block24⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support24 : wires block24⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts25 : toffoliCount block25=0 ∧ measurementCount block25=0 ∧ Challenge.gateSlots block25=32 := by decide +kernel
-theorem support25 : wires block25⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support25 : wires block25⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts26 : toffoliCount block26=0 ∧ measurementCount block26=0 ∧ Challenge.gateSlots block26=32 := by decide +kernel
-theorem support26 : wires block26⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support26 : wires block26⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts27 : toffoliCount block27=0 ∧ measurementCount block27=0 ∧ Challenge.gateSlots block27=32 := by decide +kernel
-theorem support27 : wires block27⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support27 : wires block27⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts28 : toffoliCount block28=0 ∧ measurementCount block28=0 ∧ Challenge.gateSlots block28=32 := by decide +kernel
-theorem support28 : wires block28⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support28 : wires block28⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts29 : toffoliCount block29=0 ∧ measurementCount block29=0 ∧ Challenge.gateSlots block29=32 := by decide +kernel
-theorem support29 : wires block29⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support29 : wires block29⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts30 : toffoliCount block30=0 ∧ measurementCount block30=0 ∧ Challenge.gateSlots block30=32 := by decide +kernel
-theorem support30 : wires block30⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support30 : wires block30⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts31 : toffoliCount block31=0 ∧ measurementCount block31=12 ∧ Challenge.gateSlots block31=210 := by decide +kernel
-theorem support31 : wires block31⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support31 : wires block31⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem counts32 : toffoliCount block32=0 ∧ measurementCount block32=2 ∧ Challenge.gateSlots block32=9 := by decide +kernel
-theorem support32 : wires block32⊆MorningFour.sites.toFinset.erase 1559 := by decide +kernel
+theorem support32 : wires block32⊆MorningFour.sites.toFinset.erase 1559 :=
+  rs7_sub_erase _ _ _ (by decide +kernel)
 theorem resources : toffoliCount candidate=11 ∧ measurementCount candidate=14 ∧ Challenge.gateSlots candidate=1211 := by
  simp only [candidate,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append,counts0.1,counts0.2.1,counts0.2.2,counts1.1,counts1.2.1,counts1.2.2,counts2.1,counts2.2.1,counts2.2.2,counts3.1,counts3.2.1,counts3.2.2,counts4.1,counts4.2.1,counts4.2.2,counts5.1,counts5.2.1,counts5.2.2,counts6.1,counts6.2.1,counts6.2.2,counts7.1,counts7.2.1,counts7.2.2,counts8.1,counts8.2.1,counts8.2.2,counts9.1,counts9.2.1,counts9.2.2,counts10.1,counts10.2.1,counts10.2.2,counts11.1,counts11.2.1,counts11.2.2,counts12.1,counts12.2.1,counts12.2.2,counts13.1,counts13.2.1,counts13.2.2,counts14.1,counts14.2.1,counts14.2.2,counts15.1,counts15.2.1,counts15.2.2,counts16.1,counts16.2.1,counts16.2.2,counts17.1,counts17.2.1,counts17.2.2,counts18.1,counts18.2.1,counts18.2.2,counts19.1,counts19.2.1,counts19.2.2,counts20.1,counts20.2.1,counts20.2.2,counts21.1,counts21.2.1,counts21.2.2,counts22.1,counts22.2.1,counts22.2.2,counts23.1,counts23.2.1,counts23.2.2,counts24.1,counts24.2.1,counts24.2.2,counts25.1,counts25.2.1,counts25.2.2,counts26.1,counts26.2.1,counts26.2.2,counts27.1,counts27.2.1,counts27.2.2,counts28.1,counts28.2.1,counts28.2.2,counts29.1,counts29.2.1,counts29.2.2,counts30.1,counts30.2.1,counts30.2.2,counts31.1,counts31.2.1,counts31.2.2,counts32.1,counts32.2.1,counts32.2.2]
 
@@ -13201,7 +13607,8 @@ def encodedInput (g s : Bool) (uv : Nat×Nat) : Nat :=
 def checkInput (uv : Nat×Nat) : Bool :=
  [false,true].all fun g=>[false,true].all fun s=>
   if Forward11Width.legal uv g then decide (encodedInput g s uv∈rowInputs) else true
-theorem inputTable : MorningFour.pairs.all checkInput=true := by decide +kernel
+theorem inputTable : MorningFour.pairs.all checkInput=true := by
+  unfold checkInput; simp only [rs7_memN]; decide +kernel
 theorem sitesTable : MorningFour.sites.all (fun q=>decide (perm.symm q < 22))=true := by decide +kernel
 theorem sample_run (g s : Bool) (uv : Nat×Nat) (h : uv∈MorningFour.pairs)
  (hl : Forward11Width.legal uv g=true) (m n : List Bool) :
@@ -13218,7 +13625,7 @@ theorem sample_run (g s : Bool) (uv : Nat×Nat) (h : uv∈MorningFour.pairs)
   have hg : perm q∈MorningFour.sites := by
    by_contra no
    rw [MorningFour.pre_supp g s uv.1 uv.2 (perm q) no] at yes
-   contradiction
+   exact absurd yes Bool.false_ne_true
   have tab:=sitesTable
   simp only [List.all_eq_true,decide_eq_true_eq] at tab
   have z:=tab (perm q) hg
@@ -13267,7 +13674,17 @@ theorem prior_resources : toffoliCount merged+5=toffoliCount prior ∧
   exact ⟨by omega,by omega,by omega⟩
 
 theorem prior_support : wires merged ⊆ wires prior := by
-  have cells : ((MorningFour.sites.toFinset.erase 1559).image (sig 510))⊆wires prior := by decide +kernel
+  have cells : ((MorningFour.sites.toFinset.erase 1559).image (sig 510))⊆wires prior := by
+    have hb : MorningFour.sites.all (fun q => Nat.beq q 1559 || rs7_tb (rs7_wm prior) (sig 510 q)) = true := by
+      decide +kernel
+    intro w hw
+    simp only [Finset.mem_image, Finset.mem_erase, List.mem_toFinset] at hw
+    obtain ⟨q, ⟨hne, hq⟩, rfl⟩ := hw
+    have h1 := List.all_eq_true.mp hb q hq
+    simp only [Bool.or_eq_true] at h1
+    rcases h1 with h1 | h1
+    · exact absurd (Nat.eq_of_beq_eq_true h1) hne
+    · exact rs7_wm_mem _ _ (by rwa [rs7_tb_eq] at h1)
   rw [merged,renameProgram_support]
   exact (Finset.image_mono (sig 510) Forward11Width.support).trans cells
 
@@ -14531,20 +14948,43 @@ def ref2 : Program := tick506 ++ MorningFour.forward13
 
 def enc (r : Bool × Bool × Nat × Nat) : Nat := encN_t8 (pre506 r.1 r.2.1 r.2.2.1 r.2.2.2) sites
 
+/-! [R7] `enc` with the `pre506` if-chain folded away (definitionally equal, see `rs7_enc_eq5`):
+one `encode` evaluation and one test per live wire instead of a wire-by-wire if-chain. -/
+def rs7_st5 (w : Nat) (c : Bool) (a : Nat) : Nat := if c = true then a ||| 2^w else a
+set_option exponentiation.threshold 2048 in
+def rs7_encE5 (g : Bool) (e : SkywalkRails.State) : Nat :=
+  rs7_st5 792 (decide (e.b < 0)) (rs7_st5 791 (decide (e.b / 32 % 2 = 1)) (rs7_st5 790 (decide (e.b / 16 % 2 = 1)) (rs7_st5 789 (decide (e.b / 8 % 2 = 1)) (rs7_st5 788 (decide (e.b / 4 % 2 = 1)) (rs7_st5 787 (decide (e.b / 2 % 2 = 1)) (rs7_st5 786 (decide (e.b / 1 % 2 = 1)) (rs7_st5 528 (decide (e.a < 0)) (rs7_st5 527 (decide (e.a / 32 % 2 = 1)) (rs7_st5 526 (decide (e.a / 16 % 2 = 1)) (rs7_st5 525 (decide (e.a / 8 % 2 = 1)) (rs7_st5 524 (decide (e.a / 4 % 2 = 1)) (rs7_st5 523 (decide (e.a / 2 % 2 = 1)) (rs7_st5 522 (decide (e.a / 1 % 2 = 1)) (rs7_st5 521 g (0)))))))))))))))
+def rs7_encF5 (r : Bool × Bool × Nat × Nat) : Nat :=
+  rs7_encE5 r.1 (SkywalkRails.encode r.1 r.2.1 (r.2.2.1 : Int) (r.2.2.2 : Int))
+set_option exponentiation.threshold 2048 in
+theorem rs7_enc_eq5 (r : Bool × Bool × Nat × Nat) : enc r = rs7_encF5 r := rfl
+
 def checkRow (r : Bool × Bool × Nat × Nat) : Bool := agree508 cand ref2 (enc r)
 
-theorem table0 : rows0.all checkRow = true := by decide +kernel
-theorem table1 : rows1.all checkRow = true := by decide +kernel
-theorem table2 : rows2.all checkRow = true := by decide +kernel
-theorem table3 : rows3.all checkRow = true := by decide +kernel
-theorem table4 : rows4.all checkRow = true := by decide +kernel
-theorem table5 : rows5.all checkRow = true := by decide +kernel
-theorem table6 : rows6.all checkRow = true := by decide +kernel
-theorem table7 : rows7.all checkRow = true := by decide +kernel
-theorem table8 : rows8.all checkRow = true := by decide +kernel
-theorem table9 : rows9.all checkRow = true := by decide +kernel
-theorem table10 : rows10.all checkRow = true := by decide +kernel
-theorem table11 : rows11.all checkRow = true := by decide +kernel
+theorem table0 : rows0.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table1 : rows1.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table2 : rows2.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table3 : rows3.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table4 : rows4.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table5 : rows5.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table6 : rows6.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table7 : rows7.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table8 : rows8.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table9 : rows9.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table10 : rows10.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
+theorem table11 : rows11.all checkRow = true := by
+  unfold checkRow; simp only [← rs7_agree2_eq, rs7_enc_eq5]; decide +kernel
 
 theorem table : rows.all checkRow = true := by
   simp only [rows, List.all_append, table0, table1, table2, table3, table4, table5, table6, table7, table8, table9, table10, table11, Bool.and_self]
@@ -14565,50 +15005,72 @@ theorem resources : toffoliCount cand = 20 ∧ toffoliCount ref = 21 ∧
   simp only [ref, toffoliCount_append, measurementCount_append]
   omega
 
-theorem bsupport0 : wires block0 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport0 : wires block0 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport1 : wires block1 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport1 : wires block1 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport2 : wires block2 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport2 : wires block2 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport3 : wires block3 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport3 : wires block3 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport4 : wires block4 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport4 : wires block4 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport5 : wires block5 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport5 : wires block5 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport6 : wires block6 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport6 : wires block6 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport7 : wires block7 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport7 : wires block7 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport8 : wires block8 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport8 : wires block8 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport9 : wires block9 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport9 : wires block9 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                 
-theorem bsupport10 : wires block10 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport10 : wires block10 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport11 : wires block11 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport11 : wires block11 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport12 : wires block12 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport12 : wires block12 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport13 : wires block13 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport13 : wires block13 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport14 : wires block14 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport14 : wires block14 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport15 : wires block15 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport15 : wires block15 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport16 : wires block16 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport16 : wires block16 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport17 : wires block17 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport17 : wires block17 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport18 : wires block18 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport18 : wires block18 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport19 : wires block19 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport19 : wires block19 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
-theorem bsupport20 : wires block20 ⊆ candSites.toFinset := by decide +kernel
+theorem bsupport20 : wires block20 ⊆ candSites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
                                                                                                   
 
-theorem tick_support0 : wires tick506 ⊆ sites.toFinset := by decide +kernel
+theorem tick_support0 : wires tick506 ⊆ sites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem morning_sub0 : MorningFour.sites.toFinset ⊆ sites.toFinset := by decide +kernel
 
 theorem csupport : wires cand ⊆ candSites.toFinset := by
@@ -14779,7 +15241,8 @@ theorem encN_congr (f g : BasisState) (l : List Wire) (h : ∀ q ∈ l, f q = g 
 def legalCodes : List Nat := [27459190640522438859927603196325572869077741200573221637577853836742172733590624208490238562645818219909185245565923432148487951998866575250296113164460228608, 406983302788077043095694079023514269845261128071039316430435657456301100941017596219917109865196132279654253838655162593429242965695252692757689614514762183867716890353291000549678697629232525681989817904613609417521679593703338900717568, 406983302788077043095694079023514269845261128071039316430435657456301100941017637408703070648854422171059048327014466210041043825527709059538444727773862569804029625711134969277008561407100874567138040636541607717384555037873085591060480, 406983302788077043095694079023514269845261128071039316430435657456301100941017692327084351693732142026265440978160204365523444971970984215246118212119329751052446606188260260913448379777592006414002337612445605450535055630099414511517696, 406983302788077043095694079023514269845261128071039316430435657456301100941017747245465632738609861881471833629305942521005846118414259370953791696464796932300863586665385552549888198148083138260866634588349603183685556222325743431974912, 813966605576154086191388158047028539690522256142078632860871314912602201882035206169429539991611694523110105840096759725729086218001324174442297600115891163047538025825863324008467349851087834325695710053203218268330984335463260031549440, 813966605576154086191388158047028539690522256142078632860871314912602201882035247358215500775269984414514900328456063342340887077833780541223052713374991548983850761183707292735797213628956183210843932785131216568193859779633006721892352, 813966605576154086191388158047028539690522256142078632860871314912602201882035302276596781820147704269721292979601801497823288224277055696930726197720458730232267741660832584372237031999447315057708229761035214301344360371859335642349568, 813966605576154086191388158047028539690522256142078632860871314912602201882036908639249252382821010034508278025614642545683521757742854001380175614825373781748464420616747364738101719336312921578488916306227147995996502694479456565723136, 1220949908364231129287082237070542809535783384213117949291306972368903302823052816118941970118027256766565957841538356858028929470307395656126905585717020142227359161298435647467256002072943142969401602201792827119140289077223181162381312, 1220949908364231129287082237070542809535783384213117949291306972368903302823052857307727930901685546657970752329897660474640730330139852022907660698976120528163671896656279616194585865850811491854549824933720825419003164521392927852724224, 1220949908364231129287082237070542809535783384213117949291306972368903302823054463670380401464358852422757737375910501522500963863605650327357110116081035579679868575612194396560450553187677098375330511478912759113655306844013048776097792, 1627933211152308172382776316094057079381044512284157265721742629825204403764070371150073119199565099154815417191834215834846371576170191982103840086972681940158763316293882679289604835924307319766243197374478438236799093226756773372755968, 1627933211152308172382776316094057079381044512284157265721742629825204403764070426068454400244442819010021809842979953990328772722613467137811513571318149121407180296771007970926044654294798451613107494350382435969949593818983102293213184, 1627933211152308172382776316094057079381044512284157265721742629825204403764070467257240361028101108901426604331339257606940573582445923504592268684577249507343493032128851939653374518072666800498255717082310434269812469263152848983556096, 1627933211152308172382776316094057079381044512284157265721742629825204403764070522175621642072978828756632996982484995762422974728889198660299942168922716688591910012605977231289814336443157932345120014058214432002962969855379177904013312, 1627933211152308172382776316094057079381044512284157265721742629825204403764072018701511550545896694811007196726206360499318405969468446653334044617336697377611272730607641428382799387039041275172172106651598370231314110993546640986472448, 1627933211152308172382776316094057079381044512284157265721742629825204403764072073619892831590774414666213589377352098654800807115911721809041718101682164558859689711084766720019239205409532407019036403627502367964464611585772969906929664, 2034916513940385215478470395117571349226305640355196582152178287281505504705087981099585549325980661398271269193275812967146214828476263463788448072573810919338584451766455002748393488146162628409949089523068047087608397968516694503587840, 2034916513940385215478470395117571349226305640355196582152178287281505504705088036017966830370858381253477661844421551122628615974919538619496121556919278100587001432243580294384833306516653760256813386498972044820758898560743023424045056, 2034916513940385215478470395117571349226305640355196582152178287281505504705088077206752791154516671144882456332780854739240416834751994986276876670178378486523314167601424263112163170294522109141961609230900043120621774004912770114387968, 2034916513940385215478470395117571349226305640355196582152178287281505504705088132125134072199394391000088848983926592894722817981195270141984550154523845667771731148078549554748602988665013240988825906206804040853772274597139099034845184, 2034916513940385215478470395117571349226305640355196582152178287281505504705089573732642699627434537199256656076502219476135848075331242979310979118592359175542676885603088460205148220890405451969013701824283981348972915143080233196847104, 2034916513940385215478470395117571349226305640355196582152178287281505504705089628651023980672312257054463048727647957631618249221774518135018652602937826356791093866080213751841588039260896583815877998800187979082123415735306562117304320, 2441899816728462258574164474141085619071566768426235898582613944737806605646105536130716698407518503786520728543571671943963656934339059789765382573829472717269988606761902034570742321997526805206790684695753658205267202118050286713962496, 2441899816728462258574164474141085619071566768426235898582613944737806605646105645967479260497273943496933513845863148254928459227225610101180729542520407079766822567716152617843621958738509068900519278647561653671568203302502944554876928, 2441899816728462258574164474141085619071566768426235898582613944737806605646105687156265221280932233388338308334222451871540260087058066467961484655779507465703135303073996586570951822516377417785667501379489651971431078746672691245219840, 2441899816728462258574164474141085619071566768426235898582613944737806605646107128763773848708972379587506115426798078452953290181194039305287913619848020973474081040598535492027497054741769628765855296996969592466631719292613825407221760, 2441899816728462258574164474141085619071566768426235898582613944737806605646107238600536410798727819297918900729089554763918092474080589616703260588538955335970915001552786075300376691482751892459583890948777587932932720477066483248136192, 2848883119516539301669858553164599888916827896497275215013049602194107706587123146080229128533934066029976580545013269076263500186645131271449990559430601696449809742234474358029530974219382113850496576844343267056076506859810207844794368, 2848883119516539301669858553164599888916827896497275215013049602194107706587123200998610409578811785885182973196159007231745901333088406427157664043776068877698226722711599649665970792589873245697360873820247264789227007452036536765251584, 2848883119516539301669858553164599888916827896497275215013049602194107706587123255916991690623689505740389365847304745387228302479531681582865337528121536058946643703188724941302410610960364377544225170796151262522377508044262865685708800, 2848883119516539301669858553164599888916827896497275215013049602194107706587123297105777651407347795631794160335664049003840103339364137949646092641380636444882956438546568910029740474738232726429373393528079260822240383488432612376051712, 2848883119516539301669858553164599888916827896497275215013049602194107706587124683794904997790510221975755574777093937429770732287056835631264848121103682771405485195593982523849845888593133805562696892169655203584290523442147417617596416, 2848883119516539301669858553164599888916827896497275215013049602194107706587124738713286278835387941830961967428239675585253133433500110786972521605449149952653902176071107815486285706963624937409561189145559201317441024034373746538053632, 2848883119516539301669858553164599888916827896497275215013049602194107706587124793631667559880265661686168360079385413740735534579943385942680195089794617133902319156548233107122725525334116069256425486121463199050591524626600075458510848, 3255866422304616344765552632188114158762089024568314531443485259650408807528140701111360277615471908418226039895309128053080942292507927597426925060686263494381213897229921389851879808070746290647338172017028878173735311009343800055169024, 3255866422304616344765552632188114158762089024568314531443485259650408807528140756029741558660349628273432432546454866208563343438951202753134598545031730675629630877707046681488319626441237422494202468992932875906885811601570128975626240, 3255866422304616344765552632188114158762089024568314531443485259650408807528140810948122839705227348128638825197600604364045744585394477908842272029377197856878047858184171973124759444811728554341066765968836873640036312193796457896083456, 3255866422304616344765552632188114158762089024568314531443485259650408807528140865866504120750105067983845217848746342519528145731837753064549945513722665038126464838661297264761199263182219686187931062944740871373186812786022786816540672, 3255866422304616344765552632188114158762089024568314531443485259650408807528140907055290081533763357875250012337105646136139946591670209431330700626981765424062777574019141233488529126960088035073079285676668869673049688230192533506883584, 3255866422304616344765552632188114158762089024568314531443485259650408807528142238826036146872048064364005034127389796406588174392919631957241782622359344569336889350589429555672194722444497982359538487342340814701949327591681009827971072, 3255866422304616344765552632188114158762089024568314531443485259650408807528142293744417427916925784219211426778535534562070575539362907112949456106704811750585306331066554847308634540814989114206402784318244812435099828183907338748428288, 3255866422304616344765552632188114158762089024568314531443485259650408807528142348662798708961803504074417819429681272717552976685806182268657129591050278931833723311543680138945074359185480246053267081294148810168250328776133667668885504, 3255866422304616344765552632188114158762089024568314531443485259650408807528142403581179990006681223929624212080827010873035377832249457424364803075395746113082140292020805430581514177555971377900131378270052807901400829368359996589342720, 3662849725092693387861246711211628428607350152639353847873920917106709908469158311060872707741887470661681891896750725185380785544813999079111533046287392473561035032702493713310668460292601599291044064165618487024544615751103721186000896, 3662849725092693387861246711211628428607350152639353847873920917106709908469158475816016550876520630227301069850187939651827988984143824546234553499323794017306285974133869588219987915404074994831636955093330480223996117527782707947372544, 3662849725092693387861246711211628428607350152639353847873920917106709908469158517004802511660178920118705864338547243268439789843976280913015308612582894403242598709491713556947317779181943343716785177825258478523858992971952454637715456, 3662849725092693387861246711211628428607350152639353847873920917106709908469159793857167295953585906752254493477685655383405616498782428283218717123615006367268293505584876587494543556295862159156380082515026425819608131741214602038345728, 3662849725092693387861246711211628428607350152639353847873920917106709908469159958612311139088219066317873671431122869849852819938112253750341737576651407911013544447016252462403863011407335554696972973442738419019059633517893588799717376, 4069833027880770430956940790235142698452611280710393164304356574563011009410175866092003856823425313049931351247046584162198227650676795405088467547543054271492439187697940745133017294143965776087885659338304098142203419900637313396375552, 4069833027880770430956940790235142698452611280710393164304356574563011009410175921010385137868303032905137743898192322317680628797120070560796141031888521452740856168175066036769457112514456907934749956314208095875353920492863642316832768, 4069833027880770430956940790235142698452611280710393164304356574563011009410176030847147699958058472615550529200483798628645431090006620872211488000579455815237690129129316620042336749255439171628478550266016091341654921677316300157747200, 4069833027880770430956940790235142698452611280710393164304356574563011009410176085765528981002936192470756921851629536784127832236449896027919161484924922996486107109606441911678776567625930303475342847241920089074805422269542629078204416, 4069833027880770430956940790235142698452611280710393164304356574563011009410176126954314941786594482362161716339988840400739633096282352394699916598184023382422419844964285880406106431403798652360491069973848087374668297713712375768547328, 4069833027880770430956940790235142698452611280710393164304356574563011009410177348888298445035123749140503952827981514360223058604645224609195651624870668165199697660580323619316892390147226335953221677687712036937266935890748194248720384, 4069833027880770430956940790235142698452611280710393164304356574563011009410177403806679726080001468995710345479127252515705459751088499764903325109216135346448114641057448910953332208517717467800085974663616034670417436482974523169177600, 4069833027880770430956940790235142698452611280710393164304356574563011009410177513643442288169756908706123130781418728826670262043975050076318672077907069708944948602011699494226211845258699731493814568615424030136718437667427181010092032, 4069833027880770430956940790235142698452611280710393164304356574563011009410177568561823569214634628561329523432564466982152663190418325232026345562252536890193365582488824785862651663629190863340678865591328027869868938259653509930549248, 4476816330668847474052634869258656968297872408781432480734792232019312110351193695715041411129351754714212773853071133916427675488755967509603769470526051975665928245079014235137565219847785612119048739390509697925614727011302550209036288, 4476816330668847474052634869258656968297872408781432480734792232019312110351193736903827371913010044605617568341430437533039476348588423876384524583785152361602240980436858203864895083625653961004196962122437696225477602455472296899379200, 4476816330668847474052634869258656968297872408781432480734792232019312110351194903919429594116661591528753412178277373337040500710508020935172586126126329963131101815575770651139241223998590512750063272860397648054925740040281786459095040, 4883799633456924517148328948282171238143133536852471797165227889475613211292211031072647436031378717681636662598784040271315513008845663212750010034399845048603664478165960100414154780217185261528433146659579318110671528791930826737582080, 4883799633456924517148328948282171238143133536852471797165227889475613211292211305664553841255767316957668625854512731048727518741062038991288377456127180954845749380551586558596353872069640920762754631539099306776424031753062471339868160, 4883799633456924517148328948282171238143133536852471797165227889475613211292211346853339802039425606849073420342872034665339319600894495358069132569386281340782062115909430527323683735847509269647902854271027305076286907197232218030211072, 4883799633456924517148328948282171238143133536852471797165227889475613211292212458950560743198199433917002871528573232313857942816370817261149520627381991761062505970571217682961590057849954689546904868033083259172584544189815378669469696, 4883799633456924517148328948282171238143133536852471797165227889475613211292212733542467148422588033193034834784301923091269948548587193039687888049109327667304590872956844141143789149702410348781226352912603247838337047150947023271755776, 5290782936245001560244023027305685507988394664923511113595663546931914312233228915614066271382182879201124477855954328181027361993368110472972985441728309934025570516024158882055142524291496229406460523687688915627233336494822392470700032, 5290782936245001560244023027305685507988394664923511113595663546931914312233228956802852232165841169092529272344313631797639162853200566839753740554987410319961883251382002850782472388069364578291608746419616913927096211938992139161042944, 5290782936245001560244023027305685507988394664923511113595663546931914312233230013981691892279737276305252330878869091290675384922233613587126455128637653558993910125566664714783938891701318866343746463205768870290243348339348970879844352, 5697766239033078603339717106329199777833655792994550430026099204388215413174246196053291015239332122313341973950521496380432798367014531020411552521256635825714889768633979455695292266290404746968980633980854538079139637683224340078788608, 5697766239033078603339717106329199777833655792994550430026099204388215413174246525563578701508598441444580329857395925313327205245674181954657593427329438913205391651496731205513931176513351538050166415836278524478042641236582313601531904, 5697766239033078603339717106329199777833655792994550430026099204388215413174246566752364662292256731335985124345755228929939006105506638321438348540588539299141704386854575174241261040291219886935314638568206522777905516680752060291874816, 5697766239033078603339717106329199777833655792994550430026099204388215413174247569012823041361275118693501790229164950267492827028096409913103389629893315356925314280562111746606287725552683043140588058378454481407902152488882563090219008, 5697766239033078603339717106329199777833655792994550430026099204388215413174247898523110727630541437824740146136039379200387233906756060847349430535966118444415816163424863496424926635775629834221773840233878467806805156042240536612962304, 6104749541821155646435411185352714047678916921065589746456534861844516514115264135513091131635014003688036181858837522445627048497980253436342201412930567892385212786969303528972719828735206846693872307984868133328851945978342234732363776, 6104749541821155646435411185352714047678916921065589746456534861844516514115264176701877092418672293579440976347196826062238849357812709803122956526189668278321525522327147497700049692513075195579020530716796131628714821422511981422706688, 6104749541821155646435411185352714047678916921065589746456534861844516514115265124043954190442812961081751249579460809244310269133959206239080324131148977154856718435557558778428636559404047219937429653551140092525560956638416155300593664, 6511732844609232689531105264376228317524178049136629062886970519300817615056281361033934594447285526945047285302258952489550083725183398828073095008113426602826115059101998810976429752363624232409528121302129758047607746574517853419995136, 6511732844609232689531105264376228317524178049136629062886970519300817615056281745462603561761429565931492033860279119577926891750286324918026809398531696871565033922441875852431508480957062155337578200133457742179661250720102155863195648, 6511732844609232689531105264376228317524178049136629062886970519300817615056282679075085339524350803470000708929756668221127711239822002565057258632404638952788122590553005810250985393255411396734271248723825703643219760787949747510968320, 6511732844609232689531105264376228317524178049136629062886970519300817615056283063503754306838494842456445457487776835309504519264924928655010973022822909221527041453892882851706064121848849319662321327555153687775273264933534049954168832, 19942181836615775111689009872152199222417795275480926505091347215358753946109861981372817938953880172318431269326733579917232700446683462533369178802755111489212355460283476537479386955757806448068327815178474871092672672574501708223217664, 20349165139403852154784703951175713492263056403551965821521782872815055047050879536403949088035418014706680728677029438894050142552546258859346113304010773287143759615278923569301735789609170624865169410351160482210331476724035300433592320, 20756148442191929197880398030199227762108317531623005137952218530271356147991897091435080237116955857094930188027325297870867584658409055185323047805266435085075163770274370601124084623460534801662011005523846093327990280873568892643966976, 21163131744980006240976092109222742031953578659694044454382654187727657248932914646466211386198493699483179647377621156847685026764271851511299982306522096883006567925269817632946433457311898978458852600696531704445649085023102484854341632, 21570115047768083284071786188246256301798839787765083770813089845183958349873932201497342535280031541871429106727917015824502468870134647837276916807777758680937972080265264664768782291163263155255694195869217315563307889172636077064716288, 21977098350556160327167480267269770571644100915836123087243525502640259450814949756528473684361569384259678566078212874801319910975997444163253851309033420478869376235260711696591131125014627332052535791041902926680966693322169669275090944, 22384081653344237370263174346293284841489362043907162403673961160096560551755967311559604833443107226647928025428508733778137353081860240489230785810289082276800780390256158728413479958865991508849377386214588537798625497471703261485465600, 22791064956132314413358868425316799111334623171978201720104396817552861652696984866590735982524645069036177484778804592754954795187723036815207720311544744074732184545251605760235828792717355685646218981387274148916284301621236853695840256, 23198048258920391456454562504340313381179884300049241036534832475009162753638002421621867131606182911424426944129100451731772237293585833141184654812800405872663588700247052792058177626568719862443060576559959760033943105770770445906214912, 23605031561708468499550256583363827651025145428120280352965268132465463854579019976652998280687720753812676403479396310708589679399448629467161589314056067670594992855242499823880526460420084039239902171732645371151601909920304038116589568, 24012014864496545542645950662387341920870406556191319669395703789921764955520037531684129429769258596200925862829692169685407121505311425793138523815311729468526397010237946855702875294271448216036743766905330982269260714069837630326964224, 24012014864496545542645950662387341920870406556191319669395703789921764955520037586602510710814136316056132255480837907840889522651754700948846197299657196649774813990715072147339315112641939347883608063881234980002411214662063959247421440, 24418998167284622585741644741410856190715667684262358985826139447378066056461055086715260578850796438589175322179988028662224563611174222119115458316567391266457801165233393887525224128122812392833585362078016593386919518219371222537338880, 24418998167284622585741644741410856190715667684262358985826139447378066056461055141633641859895674158444381714831133766817706964757617497274823131800912858447706218145710519179161663946493303524680449659053920591120070018811597551457796096, 24825981470072699628837338820434370460560928812333398302256575104834367157402072641746391727932334280977424781530283887639042005717037018445092392817823053064389205320228840919347572961974176569630426957250702204504578322368904814747713536, 25232964772860776671933032899457884730406189940404437618687010762290668258343090196777522877013872123365674240880579746615859447822899814771069327319078714862320609475224287951169921795825540746427268552423387815622237126518438406958088192, 25232964772860776671933032899457884730406189940404437618687010762290668258343090251695904158058749843220880633531725484771341848969343089926777000803424182043569026455701413242806361614196031878274132849399291813355387627110664735878545408, 25639948075648853715028726978481399000251451068475476935117446419746969359284107751808654026095409965753923700230875605592676889928762611097046261820334376660252013630219734982992270629676904923224110147596073426739895930667971999168462848, 25639948075648853715028726978481399000251451068475476935117446419746969359284107806727035307140287685609130092882021343748159291075205886252753935304679843841500430610696860274628710448047396055070974444571977424473046431260198328088920064, 25639948075648853715028726978481399000251451068475476935117446419746969359284107861645416588185165405464336485533167081903641692221649161408461608789025311022748847591173985566265150266417887186917838741547881422206196931852424657009377280]
 
 theorem legal_codes_spec : ∀ g s : Bool, ∀ uv ∈ MorningFour.pairs, Forward11Width.legal uv g = true →
-    encN_t8 (MorningFour.pre507 g s uv.1 uv.2) MorningFour.sites ∈ legalCodes := by decide +kernel
+    encN_t8 (MorningFour.pre507 g s uv.1 uv.2) MorningFour.sites ∈ legalCodes := by
+  simp only [MorningFour.rs7_enc_eq7]; decide +kernel
 
 def goodRow (r : Bool × Bool × Nat × Nat) : Bool :=
   decide (encN_t8 (tbN_t8 (runN_t8 tick506 [] (false, enc r)).2) MorningFour.sites ∈ legalCodes)
@@ -14788,38 +15251,75 @@ def cv (v : Nat) : Bool :=
   (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
     !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || decide ((g,s,u,v) ∈ rows)
 
+theorem rs7_cv_swap5 (a g m : Bool) : (!(a && g) || m) = (!a || (m || !g)) := by
+  cases a <;> cases g <;> cases m <;> rfl
+
+/-- Same Bool as `cv v`, but tests table membership before running the tick (members skip the simulation). -/
+theorem rs7_cv_eq5 (v : Nat) : cv v = (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1)) || (decide ((g,s,u,v) ∈ rows) ||
+      !decide ((rs7_run tick506 [] (false, rs7_encF5 (g,s,u,v))).2 &&& encN_t8 (fun _ => true) MorningFour.sites
+        ∈ legalCodes)) := by
+  unfold cv goodRow
+  simp only [rs7_enc_eq5, ← rs7_run_eq, rs7_encTB]
+  congr 1; funext u; congr 1; funext g; congr 1; funext s
+  exact rs7_cv_swap5 _ _ _
+
+/-- Same Bool as `cv v` with the GMP-only tick simulation (`rs7_run`) and encoder (no reordering). -/
+theorem rs7_cv_eqG5 (v : Nat) : cv v = (List.range 33).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 32) && decide (v%2=1) && decide (u.gcd v = 1) &&
+      decide ((rs7_run tick506 [] (false, rs7_encF5 (g,s,u,v))).2 &&& encN_t8 (fun _ => true) MorningFour.sites
+        ∈ legalCodes)) || decide ((g,s,u,v) ∈ rows) := by
+  unfold cv goodRow
+  simp only [rs7_enc_eq5, ← rs7_run_eq, rs7_encTB]
+
 theorem cv0 : cv 0 = true := by decide +kernel
-theorem cv1 : cv 1 = true := by decide +kernel
+theorem cv1 : cv 1 = true := by
+  rw [rs7_cv_eq5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv2 : cv 2 = true := by decide +kernel
-theorem cv3 : cv 3 = true := by decide +kernel
+theorem cv3 : cv 3 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv4 : cv 4 = true := by decide +kernel
-theorem cv5 : cv 5 = true := by decide +kernel
+theorem cv5 : cv 5 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv6 : cv 6 = true := by decide +kernel
-theorem cv7 : cv 7 = true := by decide +kernel
+theorem cv7 : cv 7 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv8 : cv 8 = true := by decide +kernel
-theorem cv9 : cv 9 = true := by decide +kernel
+theorem cv9 : cv 9 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv10 : cv 10 = true := by decide +kernel
-theorem cv11 : cv 11 = true := by decide +kernel
+theorem cv11 : cv 11 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv12 : cv 12 = true := by decide +kernel
-theorem cv13 : cv 13 = true := by decide +kernel
+theorem cv13 : cv 13 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv14 : cv 14 = true := by decide +kernel
-theorem cv15 : cv 15 = true := by decide +kernel
+theorem cv15 : cv 15 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv16 : cv 16 = true := by decide +kernel
-theorem cv17 : cv 17 = true := by decide +kernel
+theorem cv17 : cv 17 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv18 : cv 18 = true := by decide +kernel
-theorem cv19 : cv 19 = true := by decide +kernel
+theorem cv19 : cv 19 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv20 : cv 20 = true := by decide +kernel
-theorem cv21 : cv 21 = true := by decide +kernel
+theorem cv21 : cv 21 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv22 : cv 22 = true := by decide +kernel
-theorem cv23 : cv 23 = true := by decide +kernel
+theorem cv23 : cv 23 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv24 : cv 24 = true := by decide +kernel
-theorem cv25 : cv 25 = true := by decide +kernel
+theorem cv25 : cv 25 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv26 : cv 26 = true := by decide +kernel
-theorem cv27 : cv 27 = true := by decide +kernel
+theorem cv27 : cv 27 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv28 : cv 28 = true := by decide +kernel
-theorem cv29 : cv 29 = true := by decide +kernel
+theorem cv29 : cv 29 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv30 : cv 30 = true := by decide +kernel
-theorem cv31 : cv 31 = true := by decide +kernel
+theorem cv31 : cv 31 = true := by
+  rw [rs7_cv_eqG5]; simp only [rs7_dle, rs7_deq, rs7_mem_eq, rs7_memN]; decide +kernel
 theorem cv32 : cv 32 = true := by decide +kernel
 
 theorem rows_complete : ∀ v, v < 33 → ∀ u, u < 33 → ∀ g s : Bool,
@@ -14832,7 +15332,8 @@ theorem rows_complete : ∀ v, v < 33 → ∀ u, u < 33 → ∀ g s : Bool,
   obtain ⟨h1, h2, h3, h4⟩ := h
   simpa [h1, h2, h3, h4] using c2
 
-theorem tick_support : wires tick506 ⊆ sites.toFinset := by decide +kernel
+theorem tick_support : wires tick506 ⊆ sites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem morning_sub : ∀ q ∈ MorningFour.sites, q ∈ sites := by decide +kernel
 
 theorem pack506 (isA : Bool) : Rolling1588.Integer.packAfter base isA 506 = [] := by
@@ -16128,6 +16629,17 @@ theorem explicit505 : W.repairedTick base 505 = tick505 := by decide +kernel
 
 def ref : Program := tick505 ++ Five506.cand
 def enc (r : Bool × Bool × Nat × Nat) : Nat := encN_t8 (pre505 r.1 r.2.1 r.2.2.1 r.2.2.2) sites
+
+/-! [R7] `enc` with the `pre505` if-chain folded away (definitionally equal, see `rs7_enc_eq6`):
+one `encode` evaluation and one test per live wire instead of a wire-by-wire if-chain. -/
+def rs7_st6 (w : Nat) (c : Bool) (a : Nat) : Nat := if c = true then a ||| 2^w else a
+set_option exponentiation.threshold 2048 in
+def rs7_encE6 (g : Bool) (e : SkywalkRails.State) : Nat :=
+  rs7_st6 793 (decide (e.b < 0)) (rs7_st6 792 (decide (e.b / 64 % 2 = 1)) (rs7_st6 791 (decide (e.b / 32 % 2 = 1)) (rs7_st6 790 (decide (e.b / 16 % 2 = 1)) (rs7_st6 789 (decide (e.b / 8 % 2 = 1)) (rs7_st6 788 (decide (e.b / 4 % 2 = 1)) (rs7_st6 787 (decide (e.b / 2 % 2 = 1)) (rs7_st6 786 (decide (e.b / 1 % 2 = 1)) (rs7_st6 528 (decide (e.a < 0)) (rs7_st6 527 (decide (e.a / 64 % 2 = 1)) (rs7_st6 526 (decide (e.a / 32 % 2 = 1)) (rs7_st6 525 (decide (e.a / 16 % 2 = 1)) (rs7_st6 524 (decide (e.a / 8 % 2 = 1)) (rs7_st6 523 (decide (e.a / 4 % 2 = 1)) (rs7_st6 522 (decide (e.a / 2 % 2 = 1)) (rs7_st6 521 (decide (e.a / 1 % 2 = 1)) (rs7_st6 520 g (0)))))))))))))))))
+def rs7_encF6 (r : Bool × Bool × Nat × Nat) : Nat :=
+  rs7_encE6 r.1 (SkywalkRails.encode r.1 r.2.1 (r.2.2.1 : Int) (r.2.2.2 : Int))
+set_option exponentiation.threshold 2048 in
+theorem rs7_enc_eq6 (r : Bool × Bool × Nat × Nat) : enc r = rs7_encF6 r := rfl
                                                                                
 
 open ECDSAAdd.Entrant.CodecBitSliceVerify
@@ -17647,15 +18159,37 @@ def rowInputs : List Nat := [2, 1028, 2054, 3080, 4106, 5132, 6158, 7184, 8210, 
 def rowInput (r : Fin 860) : Nat := (rowInputs[r.val]?).getD 0
 
 theorem input_length : inputColumns.length=40 := by decide +kernel
+/-- [R7] `packBits (xs.map (·.testBit q))` with GMP primitives only. -/
+def rs7_pk (q : Nat) : List Nat → Nat
+  | [] => 0
+  | x :: xs => Nat.add (Nat.mul 2 (rs7_pk q xs)) (Nat.land (Nat.shiftRight x q) 1)
+
+theorem rs7_pk_eq (q : Nat) (xs : List Nat) : rs7_pk q xs = packBits (xs.map (fun x => x.testBit q)) := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih =>
+    show 2 * rs7_pk q xs + ((x >>> q) &&& 1) = Nat.bit (x.testBit q) (packBits (xs.map (fun x => x.testBit q)))
+    rw [ih, rs7_bit]
+    cases x.testBit q <;> simp [Nat.bit]
+
 theorem columns_correct : ∀q : Fin 40,
-    get inputColumns q.val = packBits (rowInputs.map (fun x => x.testBit q.val)) := by decide +kernel
+    get inputColumns q.val = packBits (rowInputs.map (fun x => x.testBit q.val)) := by
+  simp only [← rs7_pk_eq]; decide +kernel
 
 theorem finite_input_bits (r : Fin 860) (q : Fin 40) :
     (rowInput r).testBit q.val=(get inputColumns q.val).testBit r.val := by
   rw [columns_correct q,pack_rows]
   rfl
 
-theorem input_bounds : ∀r : Fin 860,rowInput r<2^40 := by decide +kernel
+theorem input_bounds : ∀r : Fin 860,rowInput r<2^40 := by
+  have h : rowInputs.all (fun x => decide (x < 2^40)) = true := by decide +kernel
+  intro r
+  unfold rowInput
+  cases hx : rowInputs[r.val]? with
+  | none => simp only [Option.getD_none]; decide
+  | some x =>
+    have hm := List.all_eq_true.mp h x (List.mem_of_getElem? hx)
+    simpa only [Option.getD_some, decide_eq_true_eq] using hm
 
 theorem input_rel (r : Fin 860) : Rel inputColumns (rowInput r) r.val := by
   intro q
@@ -17714,14 +18248,127 @@ theorem rows_length : rows.length=860 := by decide +kernel
 
 def rowAt (r : Fin 860) : Bool × Bool × Nat × Nat := (rows[r.val]?).getD (false,false,0,0)
 
+set_option exponentiation.threshold 2048 in
+theorem rs7_pre_enc6 (r : Bool × Bool × Nat × Nat) (w : Nat) :
+    pre505 r.1 r.2.1 r.2.2.1 r.2.2.2 w = (rs7_encF6 r).testBit w := by
+  have hs : ∀ q, pre505 r.1 r.2.1 r.2.2.1 r.2.2.2 q = true → q ∈ sites := by
+    intro q h
+    by_contra hn
+    simp only [sites,List.mem_cons,List.not_mem_nil,or_false,not_or] at hn
+    simp_all [pre505]
+  exact congrFun (tb_enc_t8 (pre505 r.1 r.2.1 r.2.2.1 r.2.2.2) sites hs) w
+
+/-- [R7] The 40 Six505 sites are four contiguous wire runs (520-529, 786-803, 1549-1554, 1556-1561):
+compare each run of the row code with the matching bit field of the packed input. -/
+def rs7_runs6 (b x : Nat) : Bool :=
+  Nat.beq ((b >>> 520) % 2^10) ((x >>> 0) % 2^10) && Nat.beq ((b >>> 786) % 2^18) ((x >>> 10) % 2^18) &&
+  Nat.beq ((b >>> 1549) % 2^6) ((x >>> 28) % 2^6) && Nat.beq ((b >>> 1556) % 2^6) ((x >>> 34) % 2^6)
+
+theorem rs7_run_bit (b x w k n : Nat) (h : Nat.beq ((b >>> w) % 2^n) ((x >>> k) % 2^n) = true)
+    (i : Nat) (hi : i < n) : b.testBit (w+i) = x.testBit (k+i) := by
+  have e := congrArg (fun y => y.testBit i) (Nat.eq_of_beq_eq_true h)
+  simp only [Nat.testBit_mod_two_pow, Nat.testBit_shiftRight, hi, decide_true, Bool.true_and] at e
+  exact e
+
+theorem rs7_runs6_spec (b x : Nat) (h : rs7_runs6 b x = true) (q : Nat) (hq : q < 40) :
+    b.testBit ((sites[q]?).getD 0) = x.testBit q := by
+  unfold rs7_runs6 at h
+  simp only [Bool.and_eq_true] at h
+  obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
+  rcases (show q < 10 ∨ (10 ≤ q ∧ q < 28) ∨ (28 ≤ q ∧ q < 34) ∨ (34 ≤ q ∧ q < 40) by omega)
+    with hq1 | ⟨hq2, hq2'⟩ | ⟨hq3, hq3'⟩ | ⟨hq4, hq4'⟩
+  · have hs : (sites[q]?).getD 0 = 520 + q := by interval_cases q <;> rfl
+    have e := rs7_run_bit b x 520 0 10 h1 q hq1
+    rw [Nat.zero_add] at e
+    rw [hs, e]
+  · have hs : (sites[q]?).getD 0 = 786 + (q - 10) := by interval_cases q <;> rfl
+    have e := rs7_run_bit b x 786 10 18 h2 (q - 10) (by omega)
+    rw [show 10 + (q - 10) = q by omega] at e
+    rw [hs, e]
+  · have hs : (sites[q]?).getD 0 = 1549 + (q - 28) := by interval_cases q <;> rfl
+    have e := rs7_run_bit b x 1549 28 6 h3 (q - 28) (by omega)
+    rw [show 28 + (q - 28) = q by omega] at e
+    rw [hs, e]
+  · have hs : (sites[q]?).getD 0 = 1556 + (q - 34) := by interval_cases q <;> rfl
+    have e := rs7_run_bit b x 1556 34 6 h4 (q - 34) (by omega)
+    rw [show 34 + (q - 34) = q by omega] at e
+    rw [hs, e]
+
 theorem row_compat : ∀r : Fin 860, ∀q : Fin 40,
     pre505 (rowAt r).1 (rowAt r).2.1 (rowAt r).2.2.1 (rowAt r).2.2.2 (label q.val) =
-      bitsOf (rowInput r) q.val := by decide +kernel
+      bitsOf (rowInput r) q.val := by
+  have hlen : rowInputs.length = 860 := by decide +kernel
+  have h : ((rows.zip rowInputs).all fun x => rs7_runs6 (rs7_encF6 x.1) x.2) = true := by
+    decide +kernel
+  intro r q
+  rw [rs7_pre_enc6 (rowAt r)]
+  have hr : r.val < rows.length := by rw [rows_length]; exact r.isLt
+  have hi : r.val < rowInputs.length := by rw [hlen]; exact r.isLt
+  have hz : r.val < (rows.zip rowInputs).length := by
+    rw [List.length_zip]; exact Nat.lt_min.mpr ⟨hr, hi⟩
+  have h1 := List.all_eq_true.mp h _ (List.getElem_mem hz)
+  have h2 := rs7_runs6_spec _ _ h1 q.val q.isLt
+  simp only [List.getElem_zip] at h2
+  simpa only [rowAt, rowInput, label, bitsOf, List.getElem?_eq_getElem hr, List.getElem?_eq_getElem hi,
+    Option.getD_some] using h2
+
+/-! [R7] `boundCheck` (a `Finset` subset `decide` per instruction) as a plain `Nat.blt` scan. -/
+def rs7_cb (n : Nat) : List Correction → Bool
+  | [] => true
+  | .Z t :: cs => Nat.blt t n && rs7_cb n cs
+  | .CZ a b :: cs => Nat.blt a n && Nat.blt b n && rs7_cb n cs
+
+theorem rs7_cb_sound (n : Nat) (cs : List Correction) (h : rs7_cb n cs = true) :
+    correctionWires cs ⊆ Finset.range n := by
+  induction cs with
+  | nil => simp [correctionWires]
+  | cons c cs ih =>
+    cases c with
+    | Z t =>
+      simp only [rs7_cb, Bool.and_eq_true, Nat.blt_eq] at h
+      simp only [correctionWires, Finset.union_subset_iff, Finset.singleton_subset_iff, Finset.mem_range]
+      exact ⟨h.1, ih h.2⟩
+    | CZ a b =>
+      simp only [rs7_cb, Bool.and_eq_true, Nat.blt_eq] at h
+      simp only [correctionWires, Finset.union_subset_iff, Finset.insert_subset_iff,
+        Finset.singleton_subset_iff, Finset.mem_range]
+      exact ⟨⟨h.1.1, h.1.2⟩, ih h.2⟩
+
+def rs7_ib (n : Nat) : Instr → Bool
+  | .X t => Nat.blt t n
+  | .CX c t => Nat.blt c n && Nat.blt t n
+  | .CCX a b t => Nat.blt a n && Nat.blt b n && Nat.blt t n
+  | .measureX t c₀ c₁ => Nat.blt t n && rs7_cb n c₀ && rs7_cb n c₁
+
+theorem rs7_ib_sound (n : Nat) (i : Instr) (h : rs7_ib n i = true) : boundCheck n i = true := by
+  unfold boundCheck
+  apply decide_eq_true
+  cases i with
+  | X t =>
+    simp only [rs7_ib, Nat.blt_eq] at h
+    simp only [Instr.wires, Finset.singleton_subset_iff, Finset.mem_range]
+    exact h
+  | CX c t =>
+    simp only [rs7_ib, Bool.and_eq_true, Nat.blt_eq] at h
+    simp only [Instr.wires, Finset.insert_subset_iff, Finset.singleton_subset_iff, Finset.mem_range]
+    exact h
+  | CCX a b t =>
+    simp only [rs7_ib, Bool.and_eq_true, Nat.blt_eq] at h
+    simp only [Instr.wires, Finset.insert_subset_iff, Finset.singleton_subset_iff, Finset.mem_range]
+    exact ⟨h.1.1, h.1.2, h.2⟩
+  | measureX t c₀ c₁ =>
+    simp only [rs7_ib, Bool.and_eq_true, Nat.blt_eq] at h
+    simp only [Instr.wires, Finset.union_subset_iff, Finset.singleton_subset_iff, Finset.mem_range]
+    exact ⟨⟨h.1.1, rs7_cb_sound n c₀ h.1.2⟩, rs7_cb_sound n c₁ h.2⟩
+
+theorem rs7_all_bound (P : Program) (n : Nat) (h : P.all (rs7_ib n) = true) :
+    P.all (boundCheck n) = true :=
+  List.all_eq_true.mpr fun i hi => rs7_ib_sound n i (List.all_eq_true.mp h i hi)
 
 theorem candidate_support : wires candidate ⊆ Finset.range 40 :=
-  support_of_check candidate 40 (by decide +kernel)
+  support_of_check candidate 40 (rs7_all_bound candidate 40 (by decide +kernel))
 theorem reference_support : wires reference ⊆ Finset.range 40 :=
-  support_of_check reference 40 (by decide +kernel)
+  support_of_check reference 40 (rs7_all_bound reference 40 (by decide +kernel))
 
 theorem sample_index (r : Fin 860) (m n : List Bool) :
     run cand6 m ⟨false,pre505 (rowAt r).1 (rowAt r).2.1 (rowAt r).2.2.1 (rowAt r).2.2.2⟩ =
@@ -17764,56 +18411,81 @@ theorem cand_counts : toffoliCount cand6 = 31 ∧ measurementCount cand6 = 27 :=
 
 def used : List Wire := sites.filter (fun q => decide (q ≠ 1559 ∧ q ≠ 1560 ∧ q ≠ 1561))
 
-theorem bsupport0 : wires block0 ⊆ used.toFinset := by decide +kernel
+theorem bsupport0 : wires block0 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical0 : GatePhysical block0 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport1 : wires block1 ⊆ used.toFinset := by decide +kernel
+theorem bsupport1 : wires block1 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical1 : GatePhysical block1 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport2 : wires block2 ⊆ used.toFinset := by decide +kernel
+theorem bsupport2 : wires block2 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical2 : GatePhysical block2 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport3 : wires block3 ⊆ used.toFinset := by decide +kernel
+theorem bsupport3 : wires block3 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical3 : GatePhysical block3 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport4 : wires block4 ⊆ used.toFinset := by decide +kernel
+theorem bsupport4 : wires block4 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical4 : GatePhysical block4 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport5 : wires block5 ⊆ used.toFinset := by decide +kernel
+theorem bsupport5 : wires block5 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical5 : GatePhysical block5 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport6 : wires block6 ⊆ used.toFinset := by decide +kernel
+theorem bsupport6 : wires block6 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical6 : GatePhysical block6 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport7 : wires block7 ⊆ used.toFinset := by decide +kernel
+theorem bsupport7 : wires block7 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical7 : GatePhysical block7 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport8 : wires block8 ⊆ used.toFinset := by decide +kernel
+theorem bsupport8 : wires block8 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical8 : GatePhysical block8 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport9 : wires block9 ⊆ used.toFinset := by decide +kernel
+theorem bsupport9 : wires block9 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical9 : GatePhysical block9 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport10 : wires block10 ⊆ used.toFinset := by decide +kernel
+theorem bsupport10 : wires block10 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical10 : GatePhysical block10 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport11 : wires block11 ⊆ used.toFinset := by decide +kernel
+theorem bsupport11 : wires block11 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical11 : GatePhysical block11 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport12 : wires block12 ⊆ used.toFinset := by decide +kernel
+theorem bsupport12 : wires block12 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical12 : GatePhysical block12 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport13 : wires block13 ⊆ used.toFinset := by decide +kernel
+theorem bsupport13 : wires block13 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical13 : GatePhysical block13 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport14 : wires block14 ⊆ used.toFinset := by decide +kernel
+theorem bsupport14 : wires block14 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical14 : GatePhysical block14 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport15 : wires block15 ⊆ used.toFinset := by decide +kernel
+theorem bsupport15 : wires block15 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical15 : GatePhysical block15 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport16 : wires block16 ⊆ used.toFinset := by decide +kernel
+theorem bsupport16 : wires block16 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical16 : GatePhysical block16 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport17 : wires block17 ⊆ used.toFinset := by decide +kernel
+theorem bsupport17 : wires block17 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical17 : GatePhysical block17 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport18 : wires block18 ⊆ used.toFinset := by decide +kernel
+theorem bsupport18 : wires block18 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical18 : GatePhysical block18 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport19 : wires block19 ⊆ used.toFinset := by decide +kernel
+theorem bsupport19 : wires block19 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical19 : GatePhysical block19 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport20 : wires block20 ⊆ used.toFinset := by decide +kernel
+theorem bsupport20 : wires block20 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical20 : GatePhysical block20 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport21 : wires block21 ⊆ used.toFinset := by decide +kernel
+theorem bsupport21 : wires block21 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical21 : GatePhysical block21 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport22 : wires block22 ⊆ used.toFinset := by decide +kernel
+theorem bsupport22 : wires block22 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical22 : GatePhysical block22 := Forward11Width.physical_of_all _ (by decide +kernel)
-theorem bsupport23 : wires block23 ⊆ used.toFinset := by decide +kernel
+theorem bsupport23 : wires block23 ⊆ used.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem bphysical23 : GatePhysical block23 := Forward11Width.physical_of_all _ (by decide +kernel)
 
-theorem tick_support : wires tick505 ⊆ sites.toFinset := by decide +kernel
+theorem tick_support : wires tick505 ⊆ sites.toFinset :=
+  rs7_sub _ _ (by decide +kernel)
 theorem five_sub : Five506.candSites.toFinset ⊆ sites.toFinset := by decide +kernel
 theorem used_sub : used.toFinset ⊆ sites.toFinset := by decide +kernel
 theorem cused : wires cand6 ⊆ used.toFinset := by
@@ -18009,7 +18681,11 @@ def legalFingerprint (x : Nat) : Bool :=
   (0x2000000040000052480000205000000000001000001200000000a00008000080021000000000000128001000410000000000006020000000004930000024000200094000100000000420000000000002d258040102000100080004004000800400000080000802000002800020010000010800000081000000000000400000000002492280002000020000000010000000058000400204000292400001000000000000040000009000080001000000000000108000200000000b000010000800040000000000000200000249020000200000000a000080000000040000400004000492400000000001000080240800008000080000000040000000140801000810000a00008004000000000000020000020000324910000100000080400000800000000c100040080000149201000c000008000000260800008000000100000000000100940001000010005222000000000024010200102000100080324804000100400000400004002042000800020010000024d20000080000080000802440000400000000080000000000001000010040040052000400000000208000001020000000009248000008000000024000040000400108000000000800a490080040800041000080201000000000000000001000010000a0000800000000120000000010002000020080000002000092402000400000000040000401000000 : Nat).testBit (x % 4079)
 
 theorem legal_codes_spec : ∀ r ∈ Five506.rows,
-    legalFingerprint (encN_t8 (Five506.pre506 r.1 r.2.1 r.2.2.1 r.2.2.2) Five506.sites) = true := by decide +kernel
+    legalFingerprint (encN_t8 (Five506.pre506 r.1 r.2.1 r.2.2.1 r.2.2.2) Five506.sites) = true := by
+  have h : Five506.rows.all (fun r => legalFingerprint (Five506.enc r)) = true := by
+    simp only [Five506.rs7_enc_eq5]; decide +kernel
+  intro r hr
+  exact List.all_eq_true.mp h r hr
 
 def goodRow (r : Bool × Bool × Nat × Nat) : Bool :=
   legalFingerprint (encN_t8 (tbN_t8 (runN_t8 tick505 [] (false, enc r)).2) Five506.sites)
@@ -18049,26 +18725,56 @@ def cv (v : Nat) : Bool :=
   (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
     !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1) && goodRow (g,s,u,v)) || rowFast (g,s,u,v)
 
+theorem rs7_cv_swap6 (a g m : Bool) : (!(a && g) || m) = (!a || (m || !g)) := by
+  cases a <;> cases g <;> cases m <;> rfl
+
+/-- Same Bool as `cv v`, but tests table membership before running the tick (members skip the simulation). -/
+theorem rs7_cv_eq6 (v : Nat) : cv v = (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1)) || (rowFast (g,s,u,v) ||
+      !legalFingerprint ((rs7_run tick505 [] (false, rs7_encF6 (g,s,u,v))).2 &&& encN_t8 (fun _ => true) Five506.sites)) := by
+  unfold cv goodRow
+  simp only [rs7_enc_eq6, ← rs7_run_eq, rs7_encTB]
+  congr 1; funext u; congr 1; funext g; congr 1; funext s
+  exact rs7_cv_swap6 _ _ _
+
+/-- Same Bool as `cv v` with the GMP-only tick simulation (`rs7_run`) and encoder (no reordering). -/
+theorem rs7_cv_eqG6 (v : Nat) : cv v = (List.range 65).all fun u => [false, true].all fun g => [false, true].all fun s =>
+    !(decide (u+v ≤ 64) && decide (v%2=1) && decide (u.gcd v = 1) &&
+      legalFingerprint ((rs7_run tick505 [] (false, rs7_encF6 (g,s,u,v))).2 &&& encN_t8 (fun _ => true) Five506.sites)) ||
+      rowFast (g,s,u,v) := by
+  unfold cv goodRow
+  simp only [rs7_enc_eq6, ← rs7_run_eq, rs7_encTB]
+
 theorem cv0 : cv 0 = true := by decide +kernel
-theorem cv1 : cv 1 = true := by decide +kernel
+theorem cv1 : cv 1 = true := by
+  rw [rs7_cv_eq6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv2 : cv 2 = true := by decide +kernel
-theorem cv3 : cv 3 = true := by decide +kernel
+theorem cv3 : cv 3 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv4 : cv 4 = true := by decide +kernel
-theorem cv5 : cv 5 = true := by decide +kernel
+theorem cv5 : cv 5 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv6 : cv 6 = true := by decide +kernel
-theorem cv7 : cv 7 = true := by decide +kernel
+theorem cv7 : cv 7 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv8 : cv 8 = true := by decide +kernel
-theorem cv9 : cv 9 = true := by decide +kernel
+theorem cv9 : cv 9 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv10 : cv 10 = true := by decide +kernel
-theorem cv11 : cv 11 = true := by decide +kernel
+theorem cv11 : cv 11 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv12 : cv 12 = true := by decide +kernel
-theorem cv13 : cv 13 = true := by decide +kernel
+theorem cv13 : cv 13 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv14 : cv 14 = true := by decide +kernel
-theorem cv15 : cv 15 = true := by decide +kernel
+theorem cv15 : cv 15 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv16 : cv 16 = true := by decide +kernel
-theorem cv17 : cv 17 = true := by decide +kernel
+theorem cv17 : cv 17 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv18 : cv 18 = true := by decide +kernel
-theorem cv19 : cv 19 = true := by decide +kernel
+theorem cv19 : cv 19 = true := by
+  rw [rs7_cv_eqG6]; simp only [rowFast, rowKey, rs7_dle, rs7_deq, rs7_mem_eq]; decide +kernel
 theorem cv20 : cv 20 = true := by decide +kernel
 
 end ECDSAAdd.Entrant.Six505

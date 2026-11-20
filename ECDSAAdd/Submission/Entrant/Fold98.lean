@@ -8383,10 +8383,14 @@ theorem run_core_eq (s : State) (m : List Bool) (hc : ExtraCarryDomain.Clean s.b
  (LocalSevenExtra.run_core_eq s m hc).trans (run_eq s m hc)
 
 theorem toffoli : toffoliCount improved+8=toffoliCount LocalSevenCore.core := by
- have h:toffoliCount improved+1=toffoliCount LocalSevenExtra.improved :=
-  SixCarryPatchResources.toffoli LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
+ have h:=SixCarryPatchResources.toffoli LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
  have old:=LocalSevenResources.toffoli
- rw [← old, ← h, Nat.add_assoc]
+ have e:toffoliCount improved=toffoliCount (patch LocalSevenExtra.improved 4901 repair):=rfl
+ calc toffoliCount improved+8=toffoliCount (patch LocalSevenExtra.improved 4901 repair)+8 := congrArg (·+8) e
+  _ = toffoliCount (patch LocalSevenExtra.improved 4901 repair)+(1+7) := congrArg (toffoliCount (patch LocalSevenExtra.improved 4901 repair)+·) rfl
+  _ = toffoliCount (patch LocalSevenExtra.improved 4901 repair)+1+7 := (Nat.add_assoc _ 1 7).symm
+  _ = toffoliCount LocalSevenExtra.improved+7 := congrArg (·+7) h
+  _ = toffoliCount LocalSevenCore.core := old
 
 theorem measurements : measurementCount improved=measurementCount LocalSevenCore.core := by
  have h:=SixCarryPatchResources.measurements LocalSevenExtra.improved 4901 4662 4405 4406 repair gate_lookup (by decide +kernel)
