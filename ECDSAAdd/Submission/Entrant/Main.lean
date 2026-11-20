@@ -1,6 +1,5 @@
 import ECDSAAdd.Framework.RunAppendAgreement
 import ECDSAAdd.Submission.Entrant.BOptimizations
-import ECDSAAdd.Submission.Entrant.StairSideA
 import ECDSAAdd.Submission.Entrant.Window
 import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Submission.Entrant.Stair44Stock
@@ -28851,7 +28850,7 @@ theorem changingTail (P : Program) (k : Fp) :
     t,m,g,et,em,StairSquareEntryR.entryRH_slots,Nat.add_assoc,and_self]
 
 theorem metrics (k : Fp) :
-    toffoliCount (program k) = toffoliCount (A161Generic.squareEntry L0 k) + 328 ∧
+    toffoliCount (program k) = toffoliCount (A161Generic.squareEntry L0 k) + 157 ∧
     measurementCount (program k) = measurementCount (A161Generic.squareEntry L0 k) ∧
     Challenge.gateSlots (program k) ≤ Challenge.gateSlots (A161Generic.squareEntry L0 k) + 3 := by
   have h : toffoliCount (program k) = toffoliCount (StairSquareFinal.square hs k) ∧
@@ -29131,9 +29130,9 @@ theorem finite_eq (c : Cost) (C : Point) (cx cy : Fp)
     hostedGeneric,hostedSecondStage,Stair44PointMap.encode,Stair44PointMap.encodeY,Stair44PointMap.switchX,
     c.append,c.rename,divide_eq,multiply_eq,sq,Nat.add_assoc]
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2169965 ∧ measurementCount (program C) ≤ 1520924 := by
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2169794 ∧ measurementCount (program C) ≤ 1520924 := by
   have h := StairCountsHosted.count_totals C
-  change toffoliCount (concreteProgram C) ≤ 2169965 ∧ measurementCount (concreteProgram C) ≤ 1520924 at h
+  change toffoliCount (concreteProgram C) ≤ 2169794 ∧ measurementCount (concreteProgram C) ≤ 1520924 at h
   cases C with
   | zero => exact h
   | @some cx cy hc =>
@@ -29332,7 +29331,7 @@ theorem qubitBound (de : PieceOK holes UG divide) (mu : ∀ k, PieceOK holes UG 
 
 def entry : Challenge.Entry := fun C => normalizeProgram (program C)
 
-def bounds : Challenge.Bounds := ⟨2169965,1520924,1542,50860482⟩
+def bounds : Challenge.Bounds := ⟨2169794,1520924,1542,50860482⟩
 
 theorem certificateOf
     (sem : ∀ C b R, Triple (encodes b R) (program C) (encodes b (if b then R+C else R)))
@@ -30494,7 +30493,7 @@ theorem deltas (C : Point) (cx cy : Fp) :
   ⟨finite_delta tc C cx cy 18910 (pair_delta2 tc_div (tc_mul _) rfl),
     finite_delta mc C cx cy 8923 (sum_delta2 mc_div (mc_mul _) rfl)⟩
 
-theorem totals (C : Point) : toffoliCount (program C) ≤ 2151055 ∧
+theorem totals (C : Point) : toffoliCount (program C) ≤ 2150884 ∧
     measurementCount (program C) ≤ 1512001 := by
   have h := Stair44Resources.totals C
   cases C with
@@ -31206,7 +31205,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowCallerCosts.program C)
-def bounds : Challenge.Bounds := ⟨2151055,1512001,1543,51926202⟩
+def bounds : Challenge.Bounds := ⟨2150884,1512001,1543,51926202⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowCallerCosts.program C)
@@ -33830,7 +33829,7 @@ private theorem all (c : Cost) (C : Point) (cx cy : Fp) :
     c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+12*c.measure region := by
   simp only [finite,WindowCallerCosts.finite,borrowGeneric,WindowCallerCosts.borrowGeneric,generic,
     WindowCallerCosts.generic,c.append,c.rename,div,mul,correction_eq]; omega
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2153455 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2153284 ∧
     measurementCount (program C) ≤ 1512001 ∧ gateSlots (program C) ≤ 51930426 := by
   have old := WindowCallerCosts.totals C
   have sl := WindowSlots.slotBound C
@@ -34573,7 +34572,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2153455,1512001,1543,51930426⟩
+def bounds : Challenge.Bounds := ⟨2153284,1512001,1543,51930426⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)

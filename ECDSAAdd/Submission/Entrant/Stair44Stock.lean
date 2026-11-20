@@ -53715,6 +53715,448 @@ end ECDSAAdd.Entrant.StairSqLoopB
 
 end
 
+-- Partial carry cache in the hole-free B square loop.
+-- The 44 hole hosts `LowAccCarryDevelop.hosts88.take 44` stay out of the cache; the other 51 of the
+-- 95 cache hosts keep their carries (51 Toffolis fewer).
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.B95Research
+open ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+def keepK:List Wire:=hosts.filter (fun q=>!((LowAccCarryDevelop.hosts88.take 44).contains q))
+
+theorem keepK_geometry:keepK.Nodup ∧ keepK.length=51 ∧
+ (∀i,i<44→LowAccCarryDevelop.hosts88.getD i 0∉keepK) ∧ (4761:Wire)∉keepK:=by decide +kernel
+
+theorem keepK_sub(q:Wire)(hq:q∈keepK):q∈hosts:=(List.mem_filter.mp hq).1
+
+def rawFK:Program:=ReorderedGenericCache.cachedAdd 51 xs ys cs keepK cin
+def newFK:Program:=head++B95LowEraseResearch.clear++ReorderedGenericCache.cachedAdd 51 xs ys cs keepK cin++top
+def newIK:Program:=preInv++ReorderedConsumedSub.consumed 51 xs ys cs keepK cin
+
+theorem inverse_frameK(s:State)(m:List Bool)(H:Nat)(hH:H<2^128)
+ (hz:∀q∈cs,(run preInv m s).basis q=false)(hi:(run preInv m s).basis cin=false)
+ (source:regValue xs (run preInv m s).basis=H)
+ (target:regValue ys (run preInv m s).basis=976*H/1024)
+ (saved:keepK.map s.basis=ReorderedCacheBits.values 4 51 H (976*H/1024)):
+ run newIK m s=scatterState keepK (List.replicate keepK.length false) (run I m s):=by
+ have same:keepK.map (run preInv m s).basis=keepK.map s.basis:=by
+  apply List.map_congr_left
+  intro q hq
+  exact run_preserves_outside preInv m s q (preInv_off q (keepK_sub q hq))
+ simp only [newIK,I,ControlledBorrowResearch.run_cat]
+ exact ReorderedConsumedSub.frame 51 xs ys cs keepK cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
+  (by rw [raw_lengths.1,raw_lengths.2.1]) (by rw [raw_lengths.2.1,raw_lengths.2.2])
+  raw_nd keepK_geometry.1 keepK_geometry.2.1 (fun q hq=>geometry.2.2 q (keepK_sub q hq))
+  (run preInv m s) _ hz hi H (976*H/1024) source target (same.trans saved)
+
+theorem forward_frameK(s:State)(m:List Bool)(H:Nat)
+ (zero:∀q∈keepK,(run (head++B95LowEraseResearch.clear) (m.take (measurementCount (head++B95LowEraseResearch.clear))) s).basis q=false)
+ (values:(((cs.drop 4).take 51).map (run (carryPrefix (4+51) xs ys cs cin) []
+  (run (head++B95LowEraseResearch.clear) (m.take (measurementCount (head++B95LowEraseResearch.clear))) s)).basis)=
+   ReorderedCacheBits.values 4 51 H (976*H/1024)):
+ run newFK m s=scatterState keepK (ReorderedCacheBits.values 4 51 H (976*H/1024)) (run F m s):=by
+ have h:=CacheBetweenFrameResearch.forward (head++B95LowEraseResearch.clear) top 51 xs ys cs keepK cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
+  keepK_geometry.1 (fun q hq bad=>geometry.2.2 q (keepK_sub q hq) (by simp only [List.mem_cons,List.mem_append];tauto))
+  (fun q hq=>rawF_off q (keepK_sub q hq)) (fun q hq=>top_off q (keepK_sub q hq)) s m zero
+ rw [values] at h
+ exact h
+
+theorem forward_measurementsK:measurementCount newFK=measurementCount F:=by
+ have h:=(ReorderedGenericCache.count_balance 51 xs ys cs keepK cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)).2.1
+ simp only [newFK,F,rawF,measurementCount_append]
+ rw [h]
+
+theorem forward_valuesK(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0):
+ (((cs.drop 4).take 51).map (run (carryPrefix (4+51) xs ys cs cin) []
+  (run (head++B95LowEraseResearch.clear) m s)).basis)=
+ ReorderedCacheBits.values 4 51 (regValue src s.basis) (976*regValue src s.basis/1024):=by
+ let H:=regValue src s.basis
+ let u:=run head m s
+ let t:=run (head++B95LowEraseResearch.clear) m s
+ have te:t=B95LowEraseResearch.erase u:=prefix_erased s m hz hb hi ha
+ have hH:H<2^128:=by simpa only [H,source_length] using regValue_lt src s.basis
+ have ready:(∀q∈cs,u.basis q=false) ∧ u.basis cin=false ∧ regValue xs u.basis=H ∧
+  regValue ys u.basis=((2^138-48*H)%2^138)/1024:=by
+  have h:=ReorderedHeadArithmeticResearch.ready acc pad bank cin src acc_length source_length fits s m hz hb hi ha
+  rw [show ReorderedAHead.head acc pad bank cin src=head from rfl] at h
+  exact h
+ have eraseBit(q:Wire)(hq:q∈domain):t.basis q=u.basis q:=by
+  rw [te]
+  exact B95LowEraseResearch.bit_same _ q (domain_away_low q hq)
+ have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r t.basis=regValue r u.basis:=
+  regValue_congr _ _ _ (fun q hq=>eraseBit q (sub q hq))
+ have sy:regValue ys t.basis=((2^138-48*H)%2^138)/1024:=
+  (eraseReg ys y_in).trans ready.2.2.2
+ have sh:regValue xs t.basis=H:=
+  (eraseReg xs x_in).trans ready.2.2.1
+ have sb:∀q∈cs,t.basis q=false:=by
+  intro q hq
+  exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
+ have si:t.basis cin=false:=
+  (eraseBit cin cin_in).trans ready.2.1
+ exact ReorderedCacheBits.forward_values 4 51 H (((2^138-48*H)%2^138)/1024) (976*H/1024)
+  xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
+  (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
+   simpa only [show 128+10=138 by decide] using
+    ReorderedCacheArithmetic.high_add_low 128 (4+j+1) H (by omega) hH)
+
+theorem scattered_erased_domainK(s:State)(vs:List Bool)(q:Wire)(hq:q∈domain):
+ (scatterState keepK vs (B95LowEraseResearch.erase s)).basis q=s.basis q:=by
+ rw [scatter_outside keepK vs _ q (by intro bad;exact geometry.2.2 q (keepK_sub q bad) hq)]
+ exact B95LowEraseResearch.bit_same s q (domain_away_low q hq)
+
+theorem inverse_readyK(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
+ let vs:=ReorderedCacheBits.values 4 51 H (976*H/1024)
+ let t:=scatterState keepK vs (B95LowEraseResearch.erase s)
+ run newIK m t=scatterState keepK (List.replicate keepK.length false) (run I m t):=by
+ dsimp only
+ let vs:=ReorderedCacheBits.values 4 51 H (976*H/1024)
+ let t:=scatterState keepK vs (B95LowEraseResearch.erase s)
+ have hH:H<2^128:=by rw [←ready.2.1];simpa only [source_length] using regValue_lt src s.basis
+ have commute:run preInv m t=scatterState keepK vs (B95LowEraseResearch.erase (run preInv m s)):=by
+  rw [show t=scatterState keepK vs (B95LowEraseResearch.erase s) from rfl,
+   run_scatter preInv keepK vs _ _ (fun q hq=>preInv_off q (keepK_sub q hq)),
+   B95LowEraseResearch.commute preInv m s (fun q hq=>preInv_off q (low_hosts q hq))]
+ have bits(q:Wire)(hq:q∈domain):(run preInv m t).basis q=(run preInv m s).basis q:=by
+  rw [commute]
+  exact scattered_erased_domainK _ vs q hq
+ have regs(r:List Wire)(sub:∀q∈r,q∈domain):regValue r (run preInv m t).basis=regValue r (run preInv m s).basis:=
+  regValue_congr _ _ _ (fun q hq=>bits q (sub q hq))
+ have rr:=pre_raw_ready H s m ready
+ have saved:keepK.map t.basis=vs:=scatter_saved_map keepK vs _ keepK_geometry.1
+  (by simp only [vs,ReorderedCacheBits.values,List.length_map,keepK_geometry.2.1,List.length_range])
+ apply inverse_frameK t m H hH
+ · intro q hq
+   rw [bits q (c_in q hq)]
+   exact rr.1 q hq
+ · rw [bits cin cin_in]
+   exact rr.2.1
+ · rw [regs xs x_in]
+   exact rr.2.2.1
+ · rw [regs ys y_in]
+   exact rr.2.2.2
+ · exact saved
+
+theorem cache_loopK(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedBSupportResearch.hosts,s.basis q=false)
+ (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
+ (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
+ run (newFK++M++newIK) m s=run (F++M++I) m s:=by
+ let H:=regValue src s.basis
+ let vs:=ReorderedCacheBits.values 4 51 H (976*H/1024)
+ have mid:=middle_erased s m hz hb hi ha after flag
+ have forward:=forward_frameK s (m.take (measurementCount F)) H
+  (fun q hq=>prefix_zero s _ hz hb hi ha zero q (keepK_sub q hq)) (forward_valuesK s _ hz hb hi ha)
+ apply CacheFromCleanForwardResearch.equivalent F newFK M I newIK keepK vs
+  forward_measurementsK (fun q hq=>middle_fresh q (keepK_sub q hq)) (fun q hq=>I_off q (keepK_sub q hq))
+  keepK_geometry.1 s m (fun q hq=>forward_zero s _ hz hb hi ha zero q (keepK_sub q hq)) forward
+ rw [mid]
+ exact inverse_readyK H (middleState oldF oldM s m) _ after
+
+def coreK:Program:=(newFK++M++newIK)++(B95LowEraseResearch.clear++tail)
+
+theorem inverse_measurementsK:measurementCount newIK=measurementCount I:=by
+ have h:=ReorderedConsumedSub.measurement_eq 51 xs ys cs keepK cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
+  (by rw [raw_lengths.2.2];decide)
+ have eq:measurementCount (ReorderedConsumedSub.consumed 51 xs ys cs keepK cin)=measurementCount rawI:=h
+ simp only [newIK,I,measurementCount_append,eq]
+
+theorem prefix_measurementsK:measurementCount (newFK++M++newIK)=measurementCount (F++M++I):=by
+ simp only [measurementCount_append,forward_measurementsK,inverse_measurementsK]
+
+theorem core_plainK(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedBSupportResearch.hosts,s.basis q=false)
+ (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
+ (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
+ run coreK m s=run (oldF++oldM++ReorderedAPlain.unbuild acc pad bank cin src) m s:=by
+ have eq:=ClearContextResearch.append_at (newFK++M++newIK) (F++M++I) (B95LowEraseResearch.clear++tail)
+  s m prefix_measurementsK (cache_loopK s m hz hb hi ha zero after flag)
+ have shape:(F++M++I)++(B95LowEraseResearch.clear++tail)=F++M++(I++B95LowEraseResearch.clear++tail):=by
+  have g(A B C D E:Program):(A++B++C)++(D++E)=A++B++(C++D++E):=by simp only [List.append_assoc]
+  exact g F M I B95LowEraseResearch.clear tail
+ exact eq.trans ((congrArg (fun P=>run P m s) shape).trans (plain_loop s m hz hb hi ha after flag))
+
+end ECDSAAdd.Entrant.B95Research
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.StairSqLoopB
+open Arithmetic.CuccaroStreamedSquareWideLayout ControlLoan1589BFFold
+ ReorderedBPrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+/-- The partial-cache B core. -/
+def pcCore:Program:=B95Research.coreK
+
+/-- `ncCore_eq` for the partial-cache core. -/
+theorem pcCore_eq(s:State)(m:List Bool)(hc:ExtraCarryDomain.Clean s.basis)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue ga s.basis=0)(zero:∀q∈ReorderedBSupportResearch.hosts,s.basis q=false)
+ (good:∀r:List Bool,WReady ga pad bank cin src (regValue src s.basis)
+  (middleState ReorderedBRetapeResearch.oldBuild (FullBTemp.middle L LowAccCarryDevelop.c) s r)):
+ run pcCore m s=run BPatchedLoopResearch.core m s:=by
+ have small:regValue acc s.basis=0:=by
+  rw [regValue_take_mod ga 161 (by rw [LowAccCarryDevelop.ga_length];decide),ha]
+  rfl
+ have ready:WReady acc pad bank cin src (regValue src s.basis)
+  (middleState B95Research.oldF B95Research.oldM s m):=
+  BRelocatedReadyResearch.patched_after s m hc hz hb hi ha zero good
+ have f:=ReorderedAPlain.build_triple acc pad bank cin src acc_length source_length fits s.basis hz hb hi s
+  (m.take (measurementCount B95Research.oldF)) ⟨small,fun _ _=>rfl⟩
+ -- `flag` is moved from `build …` to its abbreviation `oldF` by an explicit congruence (a defeq cast here
+ -- makes the kernel unfold `.basis` and evaluate `run oldF`).
+ have flag0:=(f.2.2 4762 (by decide +kernel)).trans hc.1.modFlag
+ have e:B95Research.oldF=ReorderedAPlain.build acc pad bank cin src:=rfl
+ have flag:(run B95Research.oldF (m.take (measurementCount B95Research.oldF)) s).basis 4762=false:=
+  (congrArg (fun P=>(run P (m.take (measurementCount B95Research.oldF)) s).basis 4762=false) e).mpr flag0
+ have one:=B95Research.core_plainK s m hz hb hi small zero ready flag
+ have two:run BPatchedLoopResearch.core m s=
+   run (B95Research.oldF++B95Research.oldM++ReorderedAPlain.unbuild acc pad bank cin src) m s:=by
+  simpa only [BPatchedLoopResearch.core,B95Research.oldF,B95Research.oldM] using
+   HighCachedLoopBResearch.loop_eq acc ReorderedBMiddlePatchesResearch.output acc_length fits rfl
+    s m hz hb hi small ReorderedBSupportResearch.fresh
+    (fun q hq=>(ReorderedBSupportResearch.plain_free q hq).1)
+    (fun q hq=>(ReorderedBSupportResearch.plain_free q hq).2)
+    ReorderedBMiddlePatchesResearch.fresh zero ready
+ exact one.trans two.symm
+
+/-- `ncCore_frame` for the partial-cache core. -/
+theorem pcCore_frame(base:BasisState)(clean:L.PairClean base)(hsum:base L.core.sumCarry=false)
+ (O E O':Nat)(hE:E<2^129)
+ (mid:Triple (BState L base O E (4294968272*regValue src base)) (FullBTemp.middle L LowAccCarryDevelop.c)
+  (BState L base O' E (4294968272*regValue src base))):
+ Triple (BState L base O E 0) pcCore (BState L base O' E 0):=by
+ intro s m hs
+ obtain ⟨hzFull,hb,hi,_,_⟩:=zero_regs L LowAccCarryDevelop.layout_nodup base clean O E 0 s.basis hs
+ have hz:∀q∈pad,s.basis q=false:=fun q hq=>hzFull q ((FullPadDevelop.pad_sublist L).subset hq)
+ have ha:regValue ga s.basis=0:=LowAccCarryDevelop.ga_bstate_value base s.basis clean O E 0 hs (by decide)
+ have zero:∀q∈ReorderedBSupportResearch.hosts,s.basis q=false:=by
+  intro q hq
+  rcases List.mem_cons.mp hq with rfl|hq
+  · have away:=ParkCarryDevelop.sumCarry_off_regs L LowAccCarryDevelop.layout_nodup
+    exact (hs.2.2.2 _ away.1 away.2.1 away.2.2).trans hsum
+  · exact LowAccCarryDevelop.initial_hosts_zero base s.basis clean O E hs q hq
+ have good:=fun r=>ReorderedBReadyResearch.original_ready base clean O E O' mid s r hs
+ have hc:ExtraCarryDomain.Clean s.basis:=⟨bstate_clean L LowAccCarryDevelop.layout_nodup base clean O E s.basis hs,by rw [hs.2.1];exact hE⟩
+ rw [pcCore_eq s m hc hz hb hi ha zero good]
+ exact BPatchedLoopResearch.core_frame base clean hsum O E O' hE mid s m hs
+
+/-- The partial-cache loop with the record's known-bit B head. -/
+def restPC:Program:=B95LowEraseResearch.clear++B95Research.rawFK++B95Research.top++B95Research.M++
+ B95Research.newIK++B95LowEraseResearch.clear++B95Research.tail
+
+def loopPC:Program:=KnownBHeadResearch.output++restPC
+
+theorem pcCore_shape:pcCore=KnownBHeadResearch.original++restPC:=by
+ simp only [pcCore,B95Research.coreK,B95Research.newFK,B95Research.rawFK,B95Research.head,KnownBHeadResearch.original,restPC,List.append_assoc]
+
+theorem head_eqPC(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue ga s.basis=0):run loopPC m s=run pcCore m s:=by
+ have small:regValue acc s.basis=0:=by
+  rw [regValue_take_mod ga 161 (by rw [LowAccCarryDevelop.ga_length];decide),ha]
+  rfl
+ have clean:∀q∈KnownBHeadResearch.clean,s.basis q=false:=by
+  intro q hq
+  simp only [KnownBHeadResearch.clean,List.mem_append,List.mem_singleton] at hq
+  rcases hq with ((hq|hq)|hq)|rfl
+  · exact (regValue_zero acc s.basis).mp small q hq
+  · exact hz q hq
+  · exact hb q hq
+  · exact hi
+ have eq:=ClearContextResearch.append_at KnownBHeadResearch.output KnownBHeadResearch.original restPC s m
+  KnownBHeadResearch.measurements (KnownBHeadResearch.run_eq s m clean)
+ exact eq.trans (congrArg (fun P=>run P m s) pcCore_shape.symm)
+
+/-- Same B-state frame as `B95Research.frame`. -/
+theorem loopPC_frame(base:BasisState)(clean:L.PairClean base)(hsum:base L.core.sumCarry=false)
+ (O E O':Nat)(hE:E<2^129)
+ (mid:Triple (BState L base O E (4294968272*regValue src base)) (FullBTemp.middle L LowAccCarryDevelop.c)
+  (BState L base O' E (4294968272*regValue src base))):
+ Triple (BState L base O E 0) loopPC (BState L base O' E 0):=by
+ intro s m hs
+ obtain ⟨hzFull,hb,hi,_,_⟩:=zero_regs L LowAccCarryDevelop.layout_nodup base clean O E 0 s.basis hs
+ have hz:∀q∈pad,s.basis q=false:=fun q hq=>hzFull q ((FullPadDevelop.pad_sublist L).subset hq)
+ have ha:regValue ga s.basis=0:=LowAccCarryDevelop.ga_bstate_value base s.basis clean O E 0 hs (by decide)
+ rw [head_eqPC s m hz hb hi ha]
+ exact pcCore_frame base clean hsum O E O' hE mid s m hs
+
+end ECDSAAdd.Entrant.StairSqLoopB
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.StairSqLoopB
+open ReorderedBPrefixResearch
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires
+
+theorem keepK_cached_wires:wires B95Research.rawFK⊆B95Research.domain.toFinset∪B95Research.keepK.toFinset:=
+ (ReorderedSupport.cached 51 B95Research.xs B95Research.ys B95Research.cs B95Research.keepK ReorderedBPrefixResearch.cin
+  (by rw [B95Research.raw_lengths.1];decide) (by rw [B95Research.raw_lengths.2.1];decide)
+  (by rw [B95Research.raw_lengths.2.2];decide)
+  (by rw [B95Research.raw_lengths.1,B95Research.raw_lengths.2.1])
+  (by rw [B95Research.raw_lengths.2.1,B95Research.raw_lengths.2.2])).1
+
+theorem keepK_consumed_wires:
+ wires (ReorderedConsumedSub.consumed 51 B95Research.xs B95Research.ys B95Research.cs B95Research.keepK ReorderedBPrefixResearch.cin)⊆
+  B95Research.domain.toFinset∪B95Research.keepK.toFinset:=
+ ReorderedSupport.consumed 51 B95Research.xs B95Research.ys B95Research.cs B95Research.keepK ReorderedBPrefixResearch.cin
+  (by rw [B95Research.raw_lengths.1];decide) (by rw [B95Research.raw_lengths.2.1];decide)
+  (by rw [B95Research.raw_lengths.2.2];decide)
+  (by rw [B95Research.raw_lengths.1,B95Research.raw_lengths.2.1])
+  (by rw [B95Research.raw_lengths.2.1,B95Research.raw_lengths.2.2])
+
+theorem keepK_out(h:Wire)(hA:h∈B95Research.hosts)(hk:h∉B95Research.keepK):
+ h∉B95Research.domain.toFinset∪B95Research.keepK.toFinset:=by
+ simp only [Finset.mem_union,List.mem_toFinset,not_or]
+ exact ⟨B95Research.geometry.2.2 h hA,hk⟩
+
+theorem loopPC_off(h:Wire)(hh:h∈ReorderedBSupportResearch.hosts)(hk:h∉B95Research.keepK):h∉wires loopPC:=by
+ have hA:h∈B95Research.hosts:=by
+  simp only [B95Research.hosts,List.mem_append]
+  exact Or.inl hh
+ have hb:h∉wires (ReorderedAPlain.build acc pad bank cin src):=(ReorderedBSupportResearch.plain_free h hh).1
+ rw [B95Research.plain_split] at hb
+ simp only [wires_append,Finset.mem_union,not_or] at hb
+ have headOff:h∉wires KnownBHeadResearch.output:=fun bad=>hb.1 (KnownBHeadResearch.support bad)
+ have clearOff:h∉wires B95LowEraseResearch.clear:=by
+  rw [clear_wires]
+  intro bad
+  have sub:([4243,4505,4244,4506,4245,4507]:List Wire)⊆B95Research.ports:=by decide
+  exact B95Research.old_away h hh (sub (List.mem_toFinset.mp bad))
+ have ht:h∉wires (ReorderedAPlain.unbuild acc pad bank cin src):=(ReorderedBSupportResearch.plain_free h hh).2
+ rw [B95Research.unbuild_split] at ht
+ simp only [wires_append,Finset.mem_union,not_or] at ht
+ have out:=keepK_out h hA hk
+ have rfOff:h∉wires B95Research.rawFK:=fun bad=>out (keepK_cached_wires bad)
+ have iOff:h∉wires B95Research.newIK:=by
+  simp only [B95Research.newIK,wires_append,Finset.mem_union,not_or]
+  exact ⟨B95Research.preInv_off h hA,fun bad=>out (keepK_consumed_wires bad)⟩
+ simp only [loopPC,restPC,wires_append,Finset.mem_union,not_or,and_assoc]
+ exact ⟨headOff,clearOff,rfOff,B95Research.top_off h hA,B95Research.middle_fresh h hA,
+  iOff,clearOff,ht.2⟩
+
+end ECDSAAdd.Entrant.StairSqLoopB
+end
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.StairSqLoopB
+set_option autoImplicit false
+set_option Elab.async false
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+
+section counts
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
+
+theorem loopPC_counts_rel:toffoliCount loopPC+51=toffoliCount loopNC ∧
+ measurementCount loopPC=measurementCount loopNC:=by
+ have cb:=ReorderedGenericCache.count_balance 51 B95Research.xs B95Research.ys B95Research.cs
+  B95Research.keepK ReorderedBPrefixResearch.cin
+  (by rw [B95Research.raw_lengths.1];decide) (by rw [B95Research.raw_lengths.2.1];decide)
+  (by rw [B95Research.raw_lengths.2.2];decide)
+ rw [loopPC,restPC,loopNC,restNC,B95Research.newIK,B95Research.I,B95Research.rawFK,
+  B95Research.rawI,B95Research.rawF,ReorderedConsumedSub.consumed,ReorderedConsumedSub.plain]
+ simp only [toffoliCount_append,measurementCount_append]
+ exact ⟨by omega,by omega⟩
+
+theorem loopPC_counts:toffoliCount loopPC=toffoliCount B95Research.loop+47 ∧
+ measurementCount loopPC=measurementCount B95Research.loop:=by
+ have r:=loopPC_counts_rel
+ have o:=loopNC_counts
+ exact ⟨by omega,by omega⟩
+
+theorem loopPC_slots_rel:Challenge.gateSlots loopPC+153=Challenge.gateSlots loopNC:=by
+ have sc:=ReorderedSlots.cache 51 B95Research.xs B95Research.ys B95Research.cs
+  B95Research.keepK ReorderedBPrefixResearch.cin
+  (by rw [B95Research.raw_lengths.1];decide) (by rw [B95Research.raw_lengths.2.1];decide)
+  (by rw [B95Research.raw_lengths.2.2];decide) B95Research.keepK_geometry.2.1
+ rw [loopPC,restPC,loopNC,restNC,B95Research.newIK,B95Research.I,B95Research.rawFK,
+  B95Research.rawI,B95Research.rawF,ReorderedConsumedSub.consumed,ReorderedConsumedSub.plain]
+ simp only [Challenge.gateSlots_append]
+ omega
+
+theorem loopPC_slots:Challenge.gateSlots loopPC=Challenge.gateSlots B95Research.loop+135:=by
+ have r:=loopPC_slots_rel
+ have o:=loopNC_slots
+ omega
+
+end counts
+
+section physical
+attribute [local irreducible] GatePhysical ECDSAAdd.wires
+
+theorem loopPC_physical:GatePhysical loopPC:=by
+ have f:=ReorderedPhysical.cached 51 B95Research.xs B95Research.ys B95Research.cs B95Research.keepK
+  ReorderedBPrefixResearch.cin
+  (by rw [B95Research.raw_lengths.1];decide) (by rw [B95Research.raw_lengths.2.1];decide)
+  (by rw [B95Research.raw_lengths.2.2];decide)
+  B95Research.raw_nd (fun q hq bad=>B95Research.geometry.2.2 q (B95Research.keepK_sub q hq) (B95Research.c_in q bad))
+ have n:=notRegister_physical B95Research.ys
+ have hi:GatePhysical B95Research.newIK:=by
+  simp only [B95Research.newIK,ReorderedConsumedSub.consumed,gatePhysical_append]
+  exact ⟨B95Research.endpoint_physical.2.2.1,⟨⟨n,f.2⟩,n⟩⟩
+ have hf:GatePhysical B95Research.rawFK:=f.1
+ simp only [loopPC,restPC,gatePhysical_append]
+ exact ⟨KnownBHeadResearch.physical B95Research.endpoint_physical.1,⟨⟨⟨⟨⟨⟨B95LowEraseResearch.physical,
+  hf⟩,B95Research.endpoint_physical.2.1⟩,B95AliasesResearch.physical⟩,hi⟩,
+  B95LowEraseResearch.physical⟩,B95Research.endpoint_physical.2.2.2⟩⟩
+
+end physical
+
+section support
+attribute [local irreducible] ECDSAAdd.wires
+
+theorem loopPC_support:wires loopPC⊆B95Research.S:=by
+ have hh:=KnownBHeadResearch.support.trans B95Research.endpoint_support.1
+ have ks:B95Research.domain.toFinset∪B95Research.keepK.toFinset⊆B95Research.S:=by
+  intro q hq
+  apply B95Research.raw_domain_in
+  simp only [Finset.mem_union,List.mem_toFinset] at hq ⊢
+  rcases hq with h|h
+  · exact Or.inl h
+  · exact Or.inr (B95Research.keepK_sub q h)
+ have rf:wires B95Research.rawFK⊆B95Research.S:=keepK_cached_wires.trans ks
+ have ii:wires B95Research.newIK⊆B95Research.S:=by
+  simp only [B95Research.newIK,wires_append]
+  exact Finset.union_subset B95Research.endpoint_support.2.2.1 (keepK_consumed_wires.trans ks)
+ simp only [loopPC,restPC,wires_append,Finset.union_subset_iff]
+ exact ⟨hh,⟨⟨⟨⟨⟨⟨B95Research.clear_support,rf⟩,B95Research.endpoint_support.2.1⟩,B95Research.middle_support⟩,ii⟩,
+  B95Research.clear_support⟩,B95Research.endpoint_support.2.2.2⟩⟩
+
+end support
+
+end ECDSAAdd.Entrant.StairSqLoopB
+end
+
 -- Hole -> host assignment and the renamed loop.
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
@@ -53732,7 +54174,7 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
 
 /-- The hole-free B95 loop for any sublist `hl` of the 39 holes. -/
-def loopB(hl:List Wire):Program:=StairSquareHolesCore.hostRename (pairs hl) loopNC
+def loopB(hl:List Wire):Program:=StairSquareHolesCore.hostRename (pairs hl) loopPC
 
 
 theorem hosts_of_88(u:Wire)(hu:u∈LowAccCarryDevelop.hosts88):u∈ReorderedBSupportResearch.hosts:=by
@@ -53742,16 +54184,26 @@ theorem hosts_of_88(u:Wire)(hu:u∈LowAccCarryDevelop.hosts88):u∈ReorderedBSup
 
 
 
-theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopNC:=by
+theorem hostOf_not_keep44(q:Wire)(hq:q∈StairSqLoopA.hostDomain):hostOf q∉B95Research.keepK:=by
+ unfold hostOf
+ apply B95Research.keepK_geometry.2.2.1
+ have h:=List.idxOf_lt_length_of_mem hq
+ have e:StairSqLoopA.hostDomain.length=44:=by decide +kernel
+ omega
+
+theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉B95Research.keepK:=
+ hostOf_not_keep44 q (by unfold StairSqLoopA.hostDomain;exact List.mem_append_left _ hq)
+
+theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
  intro ab hab
  obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
- exact loopNC_off _ (hosts_of_88 _ (holes_geometry.2.2 y (hsub.subset hy)))
+ exact loopPC_off _ (hosts_of_88 _ (holes_geometry.2.2 y (hsub.subset hy))) (hostOf_not_keep y (hsub.subset hy))
 
 
-theorem pairs_hostFree44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):∀ab∈pairs hl,ab.2∉wires loopNC:=by
+theorem pairs_hostFree44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):∀ab∈pairs hl,ab.2∉wires loopPC:=by
  intro ab hab
  obtain ⟨y,hy,rfl⟩:=List.mem_map.mp hab
- exact loopNC_off _ (hosts_of_88 _ (holes_geometry44.2.2 y (hsub.subset hy)))
+ exact loopPC_off _ (hosts_of_88 _ (holes_geometry44.2.2 y (hsub.subset hy))) (hostOf_not_keep44 y (hsub.subset hy))
 
 /-- Same B-state frame as `B95Research.frame`, for `loopB hl`. -/
 theorem loopB_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(clean:L.PairClean base)
@@ -53760,13 +54212,13 @@ theorem loopB_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(clean:
   (BState L base O' E (4294968272*regValue src base))):
  Triple (BState L base O E 0) (loopB hl) (BState L base O' E 0):=by
  intro s m hs
- have f:=loopNC_frame base clean hsum O E O' hE mid s m hs
+ have f:=loopPC_frame base clean hsum O E O' hE mid s m hs
  have zIn:=(zero_regs L LowAccCarryDevelop.layout_nodup base clean O E 0 s.basis hs).2.2.2.1
- have zOut:=(zero_regs L LowAccCarryDevelop.layout_nodup base clean O' E 0 (run loopNC m s).basis f.2).2.2.2.1
- -- LT50: the exit-hole bullet is closed on the syntactic `(run loopNC m s).basis y` (a defeq check
- -- `(run loopNC m s).basis ab.1 =?= … y` made the kernel unfold the projection and evaluate `run loopNC`: 130 s).
- have hOut:∀q∈hl,(run loopNC m s).basis q=false:=fun q hq=>zOut q (holes_geometry.2.1 q (hsub.subset hq))
- have eq:run (loopB hl) m s=run loopNC m s:=by
+ have zOut:=(zero_regs L LowAccCarryDevelop.layout_nodup base clean O' E 0 (run loopPC m s).basis f.2).2.2.2.1
+ -- LT50: the exit-hole bullet is closed on the syntactic `(run loopPC m s).basis y` (a defeq check
+ -- `(run loopPC m s).basis ab.1 =?= … y` made the kernel unfold the projection and evaluate `run loopPC`: 130 s).
+ have hOut:∀q∈hl,(run loopPC m s).basis q=false:=fun q hq=>zOut q (holes_geometry.2.1 q (hsub.subset hq))
+ have eq:run (loopB hl) m s=run loopPC m s:=by
   rw [loopB]
   apply StairSquareHolesCore.hostRename_run_eq
   · intro ab hab
@@ -53791,13 +54243,13 @@ theorem loopB_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(bas
   (BState L base O' E (4294968272*regValue src base))):
  Triple (BState L base O E 0) (loopB hl) (BState L base O' E 0):=by
  intro s m hs
- have f:=loopNC_frame base clean hsum O E O' hE mid s m hs
+ have f:=loopPC_frame base clean hsum O E O' hE mid s m hs
  have zIn:=(zero_regs L LowAccCarryDevelop.layout_nodup base clean O E 0 s.basis hs).2.2.2.1
- have zOut:=(zero_regs L LowAccCarryDevelop.layout_nodup base clean O' E 0 (run loopNC m s).basis f.2).2.2.2.1
- -- LT50: the exit-hole bullet is closed on the syntactic `(run loopNC m s).basis y` (a defeq check
- -- `(run loopNC m s).basis ab.1 =?= … y` made the kernel unfold the projection and evaluate `run loopNC`: 130 s).
- have hOut:∀q∈hl,(run loopNC m s).basis q=false:=fun q hq=>zOut q (holes_geometry44.2.1 q (hsub.subset hq))
- have eq:run (loopB hl) m s=run loopNC m s:=by
+ have zOut:=(zero_regs L LowAccCarryDevelop.layout_nodup base clean O' E 0 (run loopPC m s).basis f.2).2.2.2.1
+ -- LT50: the exit-hole bullet is closed on the syntactic `(run loopPC m s).basis y` (a defeq check
+ -- `(run loopPC m s).basis ab.1 =?= … y` made the kernel unfold the projection and evaluate `run loopPC`: 130 s).
+ have hOut:∀q∈hl,(run loopPC m s).basis q=false:=fun q hq=>zOut q (holes_geometry44.2.1 q (hsub.subset hq))
+ have eq:run (loopB hl) m s=run loopPC m s:=by
   rw [loopB]
   apply StairSquareHolesCore.hostRename_run_eq
   · intro ab hab
@@ -53816,22 +54268,22 @@ theorem loopB_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(bas
  exact ReorderedAFixed.transport _ s _ _ eq f
 
 theorem loopB_avoids(hl:List Wire)(hsub:hl.Sublist holes):∀q∈hl,q∉wires (loopB hl):=by
- have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopNC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
+ have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
  rw [pairs_fst] at h
  exact h
 
 
 theorem loopB_avoids44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):∀q∈hl,q∉wires (loopB hl):=by
- have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopNC (pairs_nodup44 hl hsub) (pairs_hostFree44 hl hsub)
+ have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopPC (pairs_nodup44 hl hsub) (pairs_hostFree44 hl hsub)
  rw [pairs_fst] at h
  exact h
 
 theorem loopB_support(hl:List Wire)(hsub:hl.Sublist holes):wires (loopB hl)⊆B95Research.S:=by
- have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopNC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
+ have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
  rw [pairs_snd] at hs
  intro x hx
  rcases Finset.mem_union.mp (hs hx) with h|h
- · exact loopNC_support (Finset.mem_sdiff.mp h).1
+ · exact loopPC_support (Finset.mem_sdiff.mp h).1
  · obtain ⟨y,hy,rfl⟩:=List.mem_map.mp (List.mem_toFinset.mp h)
    have hm:hostOf y∈B95Research.hosts:=by
     simp only [B95Research.hosts,List.mem_append]
@@ -53841,11 +54293,11 @@ theorem loopB_support(hl:List Wire)(hsub:hl.Sublist holes):wires (loopB hl)⊆B9
 
 
 theorem loopB_support44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):wires (loopB hl)⊆B95Research.S:=by
- have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopNC (pairs_nodup44 hl hsub) (pairs_hostFree44 hl hsub)
+ have hs:=StairSquareHolesCore.hostRename_support (pairs hl) loopPC (pairs_nodup44 hl hsub) (pairs_hostFree44 hl hsub)
  rw [pairs_snd] at hs
  intro x hx
  rcases Finset.mem_union.mp (hs hx) with h|h
- · exact loopNC_support (Finset.mem_sdiff.mp h).1
+ · exact loopPC_support (Finset.mem_sdiff.mp h).1
  · obtain ⟨y,hy,rfl⟩:=List.mem_map.mp (List.mem_toFinset.mp h)
    have hm:hostOf y∈B95Research.hosts:=by
     simp only [B95Research.hosts,List.mem_append]
@@ -53853,18 +54305,18 @@ theorem loopB_support44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):w
    apply B95Research.raw_domain_in
    exact Finset.mem_union_right _ (List.mem_toFinset.mpr hm)
 
-theorem loopB_counts(hl:List Wire):toffoliCount (loopB hl)=toffoliCount B95Research.loop+98 ∧
+theorem loopB_counts(hl:List Wire):toffoliCount (loopB hl)=toffoliCount B95Research.loop+47 ∧
  measurementCount (loopB hl)=measurementCount B95Research.loop:=by
- have h:=StairSquareHolesCore.hostRename_counts (pairs hl) loopNC
+ have h:=StairSquareHolesCore.hostRename_counts (pairs hl) loopPC
  rw [loopB,h.1,h.2]
- exact loopNC_counts
+ exact loopPC_counts
 
-theorem loopB_slots(hl:List Wire):Challenge.gateSlots (loopB hl)=Challenge.gateSlots B95Research.loop+288:=by
+theorem loopB_slots(hl:List Wire):Challenge.gateSlots (loopB hl)=Challenge.gateSlots B95Research.loop+135:=by
  rw [loopB,StairSquareHolesCore.hostRename_slots]
- exact loopNC_slots
+ exact loopPC_slots
 
 theorem loopB_physical(hl:List Wire):GatePhysical (loopB hl):=
- StairSquareHolesCore.hostRename_physical (pairs hl) loopNC loopNC_physical
+ StairSquareHolesCore.hostRename_physical (pairs hl) loopPC loopPC_physical
 
 end ECDSAAdd.Entrant.StairSqLoopB
 
@@ -54149,7 +54601,7 @@ attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Ch
 /-- Counts against the record B body: the loop adds 98 T, the e-fold changes by `EF − LocalEFoldOptimize.improved`. -/
 theorem bodyBG_counts (hl : List Wire) (EF : Program) :
     toffoliCount (bodyBG hl EF)+toffoliCount LocalEFoldOptimize.improved=
-      toffoliCount B95PaddedResearch.body+98+toffoliCount EF ∧
+      toffoliCount B95PaddedResearch.body+47+toffoliCount EF ∧
     measurementCount (bodyBG hl EF)+measurementCount LocalEFoldOptimize.improved=
       measurementCount B95PaddedResearch.body+measurementCount EF := by
   have hw : LB.Widths := LowAccCarryDevelop.layout_widths
@@ -54164,7 +54616,7 @@ theorem bodyBG_counts (hl : List Wire) (EF : Program) :
 /-- Slots: each direct fold saves 512, the loop adds 288. -/
 theorem bodyBG_slots (hl : List Wire) (EF : Program) :
     Challenge.gateSlots (bodyBG hl EF)+Challenge.gateSlots LocalEFoldOptimize.improved+1024=
-      Challenge.gateSlots B95PaddedResearch.body+288+Challenge.gateSlots EF := by
+      Challenge.gateSlots B95PaddedResearch.body+135+Challenge.gateSlots EF := by
   have hw : LB.Widths := LowAccCarryDevelop.layout_widths
   have a := directFoldQ_slots LB hw (negP LB) (negP_length LB hw) rfl
   have b := directFoldQ_slots LB hw (rot128F LB) (rot128F_length LB hw) rfl
@@ -54300,7 +54752,7 @@ section counts
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
 
 theorem bodyB_counts (hl : List Wire) :
-    toffoliCount (bodyB hl)=toffoliCount B95PaddedResearch.body+108 ∧
+    toffoliCount (bodyB hl)=toffoliCount B95PaddedResearch.body+57 ∧
     measurementCount (bodyB hl)=measurementCount B95PaddedResearch.body := by
   have h := bodyBG_counts hl StairSquareBEFoldK.efold
   have e := StairSquareBEFoldK.efold_counts
@@ -54308,7 +54760,7 @@ theorem bodyB_counts (hl : List Wire) :
   exact ⟨by omega,by omega⟩
 
 theorem bodyB_slots (hl : List Wire) :
-    Challenge.gateSlots (bodyB hl)+736≤Challenge.gateSlots B95PaddedResearch.body := by
+    Challenge.gateSlots (bodyB hl)+889≤Challenge.gateSlots B95PaddedResearch.body := by
   have h := bodyBG_slots hl StairSquareBEFoldK.efold
   have e := StairSquareBEFoldK.efold_slots_le
   unfold bodyB
@@ -54376,15 +54828,42 @@ theorem loopNC_normFlag (hM : LB.core.normFlag∉wires B95AliasesResearch.progra
   simp only [StairSqLoopB.loopNC,StairSqLoopB.restNC,wires_append,Finset.mem_union,not_or,and_assoc]
   exact ⟨fun h => hb.1 (KnownBHeadResearch.support h),clearOff,hb.2.1,hb.2.2,hM,hu.1,clearOff,hu.2⟩
 
+theorem loopPC_normFlag (hM : LB.core.normFlag∉wires B95AliasesResearch.program) :
+    LB.core.normFlag∉wires StairSqLoopB.loopPC := by
+  have hb := StairSquareBChecks.touchedAny_spec _ _ build_norm _ (List.mem_singleton_self _)
+  have hu := StairSquareBChecks.touchedAny_spec _ _ unbuild_norm _ (List.mem_singleton_self _)
+  rw [B95Research.plain_split] at hb
+  rw [B95Research.unbuild_split] at hu
+  simp only [wires_append,Finset.mem_union,not_or] at hb hu
+  have nc : LB.core.normFlag∉([4243,4505,4244,4506,4245,4507]:List Wire) := by decide +kernel
+  have clearOff : LB.core.normFlag∉wires B95LowEraseResearch.clear := by
+    rw [StairSqLoopB.clear_wires]
+    exact fun h => nc (List.mem_toFinset.mp h)
+  have nk : LB.core.normFlag∉B95Research.keepK := by decide +kernel
+  have nd : LB.core.normFlag∉B95Research.domain.toFinset := by
+    rw [← B95Research.raw_wires]
+    exact hb.2.1
+  have out : LB.core.normFlag∉B95Research.domain.toFinset∪B95Research.keepK.toFinset := by
+    simp only [Finset.mem_union,List.mem_toFinset,not_or] at nd ⊢
+    exact ⟨nd,nk⟩
+  have rfOff : LB.core.normFlag∉wires B95Research.rawFK := fun h => out (StairSqLoopB.keepK_cached_wires h)
+  have iOff : LB.core.normFlag∉wires B95Research.newIK := by
+    have hI := hu.1
+    simp only [B95Research.I,wires_append,Finset.mem_union,not_or] at hI
+    simp only [B95Research.newIK,wires_append,Finset.mem_union,not_or]
+    exact ⟨hI.1,fun h => out (StairSqLoopB.keepK_consumed_wires h)⟩
+  simp only [StairSqLoopB.loopPC,StairSqLoopB.restPC,wires_append,Finset.mem_union,not_or,and_assoc]
+  exact ⟨fun h => hb.1 (KnownBHeadResearch.support h),clearOff,rfOff,hb.2.2,hM,iOff,clearOff,hu.2⟩
+
 theorem loopB_normFlag (hl : List Wire) (hsub : hl.Sublist holes)
     (hM : LB.core.normFlag∉wires B95AliasesResearch.program) :
     LB.core.normFlag∉wires (StairSqLoopB.loopB hl) := by
   intro h
-  have hs := StairSquareHolesCore.hostRename_support (StairSqLoopB.pairs hl) StairSqLoopB.loopNC
+  have hs := StairSquareHolesCore.hostRename_support (StairSqLoopB.pairs hl) StairSqLoopB.loopPC
     (StairSqLoopB.pairs_nodup hl hsub) (StairSqLoopB.pairs_hostFree hl hsub)
   rw [StairSqLoopB.pairs_snd] at hs
   rcases Finset.mem_union.mp (hs h) with h|h
-  · exact loopNC_normFlag hM (Finset.mem_sdiff.mp h).1
+  · exact loopPC_normFlag hM (Finset.mem_sdiff.mp h).1
   · obtain ⟨y,hy,hyx⟩ := List.mem_map.mp (List.mem_toFinset.mp h)
     have hm := StairSqLoopB.holes_geometry.2.2 y (hsub.subset hy)
     have nf : LB.core.normFlag∉LowAccCarryDevelop.hosts88 := by decide +kernel
@@ -54396,11 +54875,11 @@ theorem loopB_normFlag44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDo
     (hM : LB.core.normFlag∉wires B95AliasesResearch.program) :
     LB.core.normFlag∉wires (StairSqLoopB.loopB hl) := by
   intro h
-  have hs := StairSquareHolesCore.hostRename_support (StairSqLoopB.pairs hl) StairSqLoopB.loopNC
+  have hs := StairSquareHolesCore.hostRename_support (StairSqLoopB.pairs hl) StairSqLoopB.loopPC
     (StairSqLoopB.pairs_nodup44 hl hsub) (StairSqLoopB.pairs_hostFree44 hl hsub)
   rw [StairSqLoopB.pairs_snd] at hs
   rcases Finset.mem_union.mp (hs h) with h|h
-  · exact loopNC_normFlag hM (Finset.mem_sdiff.mp h).1
+  · exact loopPC_normFlag hM (Finset.mem_sdiff.mp h).1
   · obtain ⟨y,hy,hyx⟩ := List.mem_map.mp (List.mem_toFinset.mp h)
     have hm := StairSqLoopB.holes_geometry44.2.2 y (hsub.subset hy)
     have nf : LB.core.normFlag∉LowAccCarryDevelop.hosts88 := by decide +kernel
@@ -56052,7 +56531,7 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 /-! ## Counts and physicality -/
 
 theorem square_counts (hl : List Wire) (k : Fp) :
-    toffoliCount (square hl k) = toffoliCount (A161Generic.squareEntry L0 k) + 328 ∧
+    toffoliCount (square hl k) = toffoliCount (A161Generic.squareEntry L0 k) + 157 ∧
       measurementCount (square hl k) = measurementCount (A161Generic.squareEntry L0 k) := by
   obtain ⟨kc1, kc2, -⟩ := StairSquareKernel26C.kC_counts hl (StairSquareBodyC.bodyC hl)
   obtain ⟨kb1, kb2, -⟩ := StairSquareKernel26C.kB_counts hl (StairSqBodyB.bodyB hl)
@@ -56063,11 +56542,11 @@ theorem square_counts (hl : List Wire) (k : Fp) :
   obtain ⟨bc1, bc2⟩ := StairSquareBodyC.bodyC_counts hl
   obtain ⟨bb1, bb2⟩ := StairSqBodyB.bodyB_counts hl
   obtain ⟨ba1, ba2⟩ := StairSquareBodyA.bodyA_counts hl
-  have cC : toffoliCount (brC hl) = toffoliCount (recBrC C105SignResearch.body) + 108 := by
+  have cC : toffoliCount (brC hl) = toffoliCount (recBrC C105SignResearch.body) + 50 := by
     unfold brC; omega
-  have cB : toffoliCount (brB hl) = toffoliCount (B95PortResearch.branchBF760 K0 E0 G0) + 108 := by
+  have cB : toffoliCount (brB hl) = toffoliCount (B95PortResearch.branchBF760 K0 E0 G0) + 57 := by
     rw [branchBF760_rec]; unfold brB; omega
-  have cA : toffoliCount (brA hl) = toffoliCount (recBrA A109SignResearch.body) + 112 := by
+  have cA : toffoliCount (brA hl) = toffoliCount (recBrA A109SignResearch.body) + 50 := by
     unfold brA; omega
   have mC : measurementCount (brC hl) = measurementCount (recBrC C105SignResearch.body) := by
     unfold brC; omega
@@ -56075,7 +56554,7 @@ theorem square_counts (hl : List Wire) (k : Fp) :
     rw [branchBF760_rec]; unfold brB; omega
   have mA : measurementCount (brA hl) = measurementCount (recBrA A109SignResearch.body) := by
     unfold brA; omega
-  obtain ⟨h1, h2⟩ := squareN_counts (brC hl) (brB hl) (brA hl) 108 108 112 k cC cB cA mC mB mA
+  obtain ⟨h1, h2⟩ := squareN_counts (brC hl) (brB hl) (brA hl) 50 57 50 k cC cB cA mC mB mA
   unfold square
   exact ⟨by omega, h2⟩
 
@@ -56262,14 +56741,14 @@ theorem square_slots_le (hl : List Wire) (k : Fp) :
 
 /-- Layout-generic counts of the drop-in (record counts on every other layout). -/
 theorem squareEntryHL_counts (hl : List Wire) (L : ControlledPointLayout) (k : Fp) :
-    toffoliCount (squareEntryHL hl L k) ≤ toffoliCount (A161Generic.squareEntry L k) + 328 ∧
+    toffoliCount (squareEntryHL hl L k) ≤ toffoliCount (A161Generic.squareEntry L k) + 157 ∧
       measurementCount (squareEntryHL hl L k) = measurementCount (A161Generic.squareEntry L k) := by
   by_cases h : L = Baselines.layout
   · subst h
     rw [squareEntryHL_layout]
     have c := square_counts hl k
     have c1 : toffoliCount (square hl k) =
-        toffoliCount (A161Generic.squareEntry Baselines.layout k) + 328 := c.1
+        toffoliCount (A161Generic.squareEntry Baselines.layout k) + 157 := c.1
     exact ⟨by omega, c.2⟩
   · have e : squareEntryHL hl L k = A161Generic.squareEntry L k := by
       unfold squareEntryHL squareEntryH
@@ -58217,7 +58696,7 @@ theorem hostedGeneric_counts_of (δET δEM δXT δXM : Nat)
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10888 + δXM)
     (L : ControlledPointLayout) (cx cy : Fp) :
     toffoliCount (hostedGeneric L cx cy) ≤
-        toffoliCount (FlagExit.genericN L cx cy) + 22316 + 328 + δET + δXT ∧
+        toffoliCount (FlagExit.genericN L cx cy) + 22316 + 157 + δET + δXT ∧
       measurementCount (hostedGeneric L cx cy) =
         measurementCount (FlagExit.genericN L cx cy) + 21776 + δEM + δXM := by
   obtain ⟨e1, e2⟩ := hE L
@@ -58241,7 +58720,7 @@ theorem concreteProgram_counts_of (δET δEM δXT δXM : Nat)
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10888 + δXM)
     (C : Point) :
     toffoliCount (concreteProgram C) ≤
-        toffoliCount (AboveFieldPointDevelop.programQ C) + 22316 + 328 + δET + δXT ∧
+        toffoliCount (AboveFieldPointDevelop.programQ C) + 22316 + 157 + δET + δXT ∧
       measurementCount (concreteProgram C) ≤
         measurementCount (AboveFieldPointDevelop.programQ C) + 21776 + δEM + δXM := by
   cases C with
@@ -58273,7 +58752,7 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
       measurementCount (hostedExitRest L k) =
         measurementCount (ParityXExitInverse23Kernel.restXXN L k) + 10888 + δXM)
     (C : Point) :
-    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 22316 + 328 + δET + δXT ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2147057 + 22316 + 157 + δET + δXT ∧
       measurementCount (concreteAssembly.program C) ≤ 1498884 + 21776 + δEM + δXM := by
   obtain ⟨c1, c2⟩ := concreteProgram_counts_of δET δEM δXT δXM hE hX C
   have qT := AboveFieldPointDevelop.program_toffoli_Q C
@@ -58284,7 +58763,7 @@ theorem count_totals_of (δET δEM δXT δXM : Nat)
 /-- Exact v3 totals for the current boundary (frozen program + LT19 endpoint: δE = 88, δX = 176;
     + LT40's hole-free square, +328 T): **T ≤ 2,169,965, M ≤ 1,520,924**. -/
 theorem count_totals : ∀ C,
-    toffoliCount (concreteAssembly.program C) ≤ 2169965 ∧
+    toffoliCount (concreteAssembly.program C) ≤ 2169794 ∧
       measurementCount (concreteAssembly.program C) ≤ 1520924 := by
   intro C
   have h := count_totals_of 88 88 176 176
