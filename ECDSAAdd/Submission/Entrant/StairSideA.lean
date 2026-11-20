@@ -25542,32 +25542,16 @@ set_option maxRecDepth 100000
 set_option maxHeartbeats 16000000
 set_option linter.unusedSimpArgs false
 
-/-- The 43 holes of the loan-720 tree: the 44 `physicalHoles` minus wire 4835, the site of the
-pool host `base 720` (`StairV3Primitives.poolHosts`), which every loaned tail group uses. -/
-abbrev holes : List Wire := List.range' 4836 39 ++ List.range' 4876 4
-theorem hsub (x : Wire) (h : x ∈ holes) : x ∈ StairPhysicalInventory.physicalHoles := by
-  rw [StairPhysicalLayout.physicalHoles_eq_nat]
-  simp only [holes,StairPhysicalLayout.newHolesNat,List.mem_append,List.mem_range'_1] at *
-  omega
-/-- The physical site of the pool host `base 720` (field-tail label 736). -/
-theorem tp736 : TP 736 = 4835 := by
-  have e : StairOuterPlacement.outerPlace 736 = 4835 := by
-    rw [StairPlaceFast.outerPlace_eqB]
-    decide +kernel
-  exact e
-theorem pool_free {x : Wire} (h : x = MappedCompressed.base 720) : TP x ∉ holes := by
-  have e : TP x = 4835 := by
-    rw [h]
-    exact tp736
-  rw [e]
-  decide
+abbrev holes := StairPhysicalInventory.physicalHoles
+theorem hsub (x : Wire) (h : x ∈ holes) : x ∈ StairPhysicalInventory.physicalHoles := h
 private def extraFree (q : Wire) : Bool :=
   let x := StairPlaceFast.outerPlaceB q
   !(Nat.ble 4835 x && Nat.blt x 4840)
-private theorem complete1 {P : Program} (stock : PieceOK StairCertificate.holes39 TP P) {x : Wire}
-    (hx : x ∈ wires P) (h : extraFree x = true) : TP x ∉ holes := by
-  intro hbad
-  have hbad := hsub _ hbad
+private theorem complete {P : Program} (stock : PieceOK StairCertificate.holes39 TP P)
+    (hf : ∀ q ∈ wires P, extraFree q = true) : PieceOK holes TP P := by
+  refine ⟨stock.1,?_⟩
+  intro x hx hbad
+  have h := hf x hx
   have rest := stock.2 x hx
   change StairOuterPlacement.outerPlace x ∉ _ at rest
   change StairOuterPlacement.outerPlace x ∈ StairPhysicalInventory.physicalHoles at hbad
@@ -25582,19 +25566,15 @@ private theorem complete1 {P : Program} (stock : PieceOK StairCertificate.holes3
   · have l : Nat.ble 4835 (StairPlaceFast.outerPlaceB x) = true := by simpa only [Nat.ble_eq] using lo
     have u : Nat.blt (StairPlaceFast.outerPlaceB x) 4840 = true := by simpa only [Nat.blt_eq] using hi
     simp [extraFree,l,u] at h
-private theorem complete {P : Program} (stock : PieceOK StairCertificate.holes39 TP P)
-    (hf : ∀ q ∈ wires P, extraFree q = true) : PieceOK holes TP P :=
-  ⟨stock.1, fun x hx => complete1 stock hx (hf x hx)⟩
 
-/-- A converter loan that lends the 43 sites `canonRoles`: the one other role it may touch is the
-pool host `base 720`, whose site 4835 is not one of the 43 `holes`. -/
 private theorem converter {P Q : Program}
     (env : wires P ⊆ wires Q ∪ StairBoundaryLoan.converterHosts.toFinset)
     (rec : wires Q ⊆ StairBoundaryLoan.converterLayout760.wires.toFinset)
-    (avoid : ∀ q ∈ StairBoundaryLoan.canonRoles, q ∉ wires P)
+    (avoid : ∀ q ∈ StairBoundaryLoan.exclusiveHoles, q ∉ wires P)
     (old : PieceOK StairCertificate.holes39 TP P) :
     PieceOK holes TP P := by
-  refine ⟨old.1, fun x hx => ?_⟩
+  apply complete old
+  intro x hx
   have mem : x ∈ StairBoundaryLoan.converterLayout760.wires ++
       StairBoundaryLoan.converterHosts := by
     rcases Finset.mem_union.mp (env hx) with h | h
@@ -25604,11 +25584,7 @@ private theorem converter {P Q : Program}
       (fun y => decide (RoleI y) || extraFree y) = true := by decide +kernel
   have t := List.all_eq_true.mp table x mem
   simp only [Bool.or_eq_true, decide_eq_true_eq] at t
-  rcases t with m | t
-  · rcases StairBoundaryLoan.exclusiveHoles_cases (roleI_mem m) with h | h
-    · exact absurd hx (avoid x h)
-    · exact pool_free h
-  · exact complete1 old hx t
+  exact t.resolve_left (fun m => avoid x (roleI_mem m) hx)
 
 theorem canon : PieceOK holes TP StairConcrete.bestLoans.canon :=
   converter StairBoundaryLoan.canon760Loan_envelope
@@ -25729,14 +25705,11 @@ private theorem physical_safe {x : Wire} (tpi : TPI x) (nr : x ∉ StairSchedule
   rw [StairPlaceFast.outerPlace_eqB]
   exact h.resolve_left nr
 
-/-- A group host is a non-role or the pool host `base 720`. -/
 private theorem host_nonrole : ∀ g ∈ schedule, ∀ h ∈ hp.group true g.1 g.2.1 g.2.2,
-    h ∉ StairSchedule.exclusiveRoles ∨ h = MappedCompressed.base 720 := by decide +kernel
+    h ∉ StairSchedule.exclusiveRoles := by decide +kernel
 
-/-- The scheduled hosted groups at the 43 `Stair44FieldSites.holes`: the row hosts take
-`physical_safe`, the pool host `base 720` its own site 4835 (`Stair44FieldSites.pool_free`). -/
 theorem hostedGroup44 (divide : Bool) (d f c : Nat) (hg : (d, f, c) ∈ schedule) :
-    PieceOK Stair44FieldSites.holes TP (StairHostsSchedule.hostedGroup hp divide d f c) := by
+    PieceOK StairPhysicalInventory.physicalHoles TP (StairHostsSchedule.hostedGroup hp divide d f c) := by
   obtain ⟨hd, hf, hc⟩ := schedule_bounds _ hg
   obtain ⟨disj, nr, nh, hlen, htpi⟩ := hostFacts _ hg
   simp only at hd hf hc disj nr nh hlen htpi
@@ -25745,11 +25718,9 @@ theorem hostedGroup44 (divide : Bool) (d f c : Nat) (hg : (d, f, c) ∈ schedule
   intro x hx
   unfold StairHostsSchedule.hostedGroup at hx
   rcases rebind_mem _ _ _ (hostsFresh divide d f c hg) disj nr nh hlen x hx with hh | ⟨hP, hnr⟩
-  · have hh' := hh
-    rw [group_dir divide] at hh'
-    rcases host_nonrole _ hg x hh' with nr | pool
-    · exact fun bad => physical_safe (htpi x hh) nr (Stair44FieldSites.hsub _ bad)
-    · exact Stair44FieldSites.pool_free pool
+  · exact physical_safe (htpi x hh) (by
+      rw [group_dir divide] at hh
+      exact host_nonrole _ hg x hh)
   · change x ∈ wires (renameProgram (OB5.sig 511) (StairGroups.groups divide d f c)) at hP
     rw [renameProgram_support] at hP
     obtain ⟨w, hw, rfl⟩ := Finset.mem_image.mp hP
@@ -25765,7 +25736,7 @@ theorem hostedGroup44 (divide : Bool) (d f c : Nat) (hg : (d, f, c) ∈ schedule
       exact role.elim nt hnr
     rcases hr with hr | hr
     · exact absurd hr nr
-    · exact fun bad => physical_safe hr nr (Stair44FieldSites.hsub _ bad)
+    · exact physical_safe hr nr
 
 end ECDSAAdd.Entrant.Stair44Groups
 
@@ -26401,25 +26372,30 @@ theorem multiplication_clean (x c : Nat) (t actual : State)
 def packetSites (j : Nat) : List Wire := (List.range 10).flatMap (fun i =>
   [letterSite (5*j+i)] ++ (if i%5=2 ∨ i%5=4 then [] else [sLetter (5*j+i)]))
 
-def layout (j : Nat) := (packetSites j).map StairPlaceFast.outerPlaceB ++ 4835 :: indices.map phys
+/-- The field site of the window tag: the host of the carry role `base 720` in the first field
+group, `(hosts 87)[0]`. The window packets run at loan depth 1 and do not use that role, so its
+host is idle while the tag is live; its physical site 5476 is an ordinary support wire. -/
+def tagSite : Wire := 1633
 
-theorem tag_root : StairPlaceFast.outerPlaceB (base 720) = 4835 := by decide +kernel
+def layout (j : Nat) := (packetSites j).map StairPlaceFast.outerPlaceB ++ 5476 :: indices.map phys
+
+theorem tag_root : StairPlaceFast.outerPlaceB tagSite = 5476 := by decide +kernel
 
 def layoutOK (j : Nat) : Bool :=
   (layout j).length == 121 && decide (layout j).Nodup &&
-    (layout j).all (fun q => q == 4835 || Stair44OuterSites.fit q)
+    (layout j).all (fun q => Stair44OuterSites.fit q)
 
 def transientPhysical : List Wire := [4909, 4911, 4914, 4916, 4919, 4921, 4924, 4926, 4929, 4931, 4934, 4936, 4939, 4941, 4944, 4946, 4949, 4951, 4954, 4956, 4959, 4961, 4964, 4966, 4969, 4971, 4974, 4976, 4979, 4981, 4984, 4986, 4989, 4991, 4994, 4996, 4999, 5001, 5004, 5006, 5009, 5011, 5014, 5016, 5019, 5021, 5024, 5026, 5029, 5031, 5034, 5036, 5039, 5041, 5044, 5046, 5049, 5051, 5054, 5056, 5059, 5061, 5064, 5066, 5069, 5071, 5074, 5076, 5079, 5081, 5084, 5086, 5089, 5091, 5094, 5096, 5099, 5101, 5104, 5106, 5109, 5111, 5114, 5116, 5119, 5121, 5124, 5126, 5129, 5131, 5134, 5136, 5139, 5141, 0, 5653, 5650, 5648, 5645, 5643, 5640, 5638, 5635, 5633]
 
 theorem transient_exact : indices.map phys = transientPhysical := by decide +kernel
 
-theorem permanent_exact : (4835 :: transientPhysical).Nodup ∧
-    transientPhysical.all Stair44OuterSites.fit = true := by decide +kernel
+theorem permanent_exact : (5476 :: transientPhysical).Nodup ∧
+    (5476 :: transientPhysical).all Stair44OuterSites.fit = true := by decide +kernel
 
 def packetOK (j : Nat) : Bool := Id.run do
   let a := (packetSites j).map StairPlaceFast.outerPlaceB
   return a.length == 16 && decide a.Nodup && a.all (fun q =>
-    Stair44OuterSites.fit q && decide (q ∉ 4835 :: transientPhysical))
+    Stair44OuterSites.fit q && decide (q ∉ 5476 :: transientPhysical))
 
 private theorem p1 : ((List.range' 1 4).all packetOK) = true := by decide +kernel
 private theorem p5 : ((List.range' 5 4).all packetOK) = true := by decide +kernel
@@ -26785,9 +26761,15 @@ def host := rebinder StairSchedule.exclusiveRoles (hosts 87)
 def packet (d : Bool) (j : Nat) := StairLoan.rebindMany StairSchedule.exclusiveRoles (hosts 87)
   (renameProgram (OB5.sig 511) (StairGroups.packet d 0 j))
 
+/-- The window packet: the same packet at loan depth 1, with the same role hosts. Depth 1 lends
+the carry role `base 720`, so the packet does not touch that role's host `tagSite`. -/
+def packetL (d : Bool) (j : Nat) := StairLoan.rebindMany StairSchedule.exclusiveRoles (hosts 87)
+  (renameProgram (OB5.sig 511) (StairGroups.packet d 1 j))
+
 def preimage (j : Nat) (q : Wire) := (shifted (Placement5.pi j)).symm (OB5.sig 511 (host.symm q))
-def savedSites (j : Nat) (second : Bool) := base 720 ::
-  (if second then (packetSites j).take 8 else (packetSites j).drop 8)
+def byteSites (j : Nat) (second : Bool) :=
+  if second then (packetSites j).take 8 else (packetSites j).drop 8
+def savedSites (j : Nat) (second : Bool) := tagSite :: byteSites j second
 
 def cover (j : Nat) := [base 2400,base 2409,base 2410] ++ Q6EndpointCell.ids.map base ++
   (List.finRange 10).map (History5.historyMap base (5*j))
@@ -26821,7 +26803,7 @@ theorem original (d : Bool) (j : Nat) (hj : j<102) {q : Wire} (used : q∈wires 
     simp only [preimage, Equiv.symm_apply_apply, OB5.sig_invol 511 (by decide)]
   exact (back.symm ▸ cover_read j (Rolling1588.basePacket_readSites_support d j hj hr) : preimage j (host (OB5.sig 511 (shifted (Placement5.pi j) r))) ∈ cover j)
 
-def safe (j : Nat) (second : Bool) := (savedSites j second).all (fun q =>
+def safe (j : Nat) (second : Bool) := (byteSites j second).all (fun q =>
   decide (preimage (if second then j+1 else j) q ∉ cover (if second then j+1 else j)))
 
 end ECDSAAdd.Entrant.StairArchiveInactive
@@ -26842,8 +26824,8 @@ theorem layout_frame (j : Nat) (hj : j∈List.range' 1 83) :
   have h := List.all_eq_true.mp packets_exact j hj
   dsimp only [packetOK, Id.run, pure] at h
   simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-  have eq : layout j = (packetSites j).map StairPlaceFast.outerPlaceB ++ 4835 :: transientPhysical := by
-    exact congrArg (fun xs => (packetSites j).map StairPlaceFast.outerPlaceB ++ 4835 :: xs) transient_exact
+  have eq : layout j = (packetSites j).map StairPlaceFast.outerPlaceB ++ 5476 :: transientPhysical := by
+    exact congrArg (fun xs => (packetSites j).map StairPlaceFast.outerPlaceB ++ 5476 :: xs) transient_exact
   rw [eq]
   refine ⟨List.nodup_append'.mpr ⟨h.1.2, permanent_exact.1, ?_⟩, ?_⟩
   · apply List.disjoint_left.mpr
@@ -27064,7 +27046,7 @@ set_option maxHeartbeats 500000
 
 attribute [local irreducible] ArchiveFieldScratch.indices hole outerPlaceB layout placed program packetSites port
 
-def fieldSites (j : Nat) := packetSites j ++ (base 720 :: ArchiveFieldScratch.indices.map hole)
+def fieldSites (j : Nat) := packetSites j ++ (tagSite :: ArchiveFieldScratch.indices.map hole)
 def fieldPort (j q : Nat) : Wire := (fieldSites j)[q]?.getD q
 def fieldHook (j : Nat) (op : Stage) := renameProgram (fieldPort j) (program op)
 
@@ -27152,10 +27134,41 @@ def starts : List Nat := [16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49, 52, 55
 theorem checks : starts.all both = true := by
   simp only [starts, both, List.all_cons, List.all_nil, b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, Bool.and_self]
 
-attribute [local irreducible] packet wires preimage cover savedSites
+theorem packet_eq (d : Bool) (j : Nat) :
+    packet d j = renameProgram host (renameProgram (OB5.sig 511) (StairGroups.packet d 0 j)) :=
+  hosts_eq _ _ _
 
-theorem packet_avoids (j : Nat) (hj : j∈starts) (d second : Bool)
-    (q : Wire) (save : q∈savedSites j second) :
+theorem packetL_eq (d : Bool) (j : Nat) :
+    packetL d j = renameProgram host (renameProgram (OB5.sig 511) (StairGroups.packet d 1 j)) :=
+  hosts_eq _ _ _
+
+/-- Loan depth 1 costs 20 Toffolis and 20 measurements per packet: one per ripple pass of each
+of its five halves. -/
+theorem packetL_counts (d : Bool) (j : Nat) :
+    toffoliCount (packetL d j) = toffoliCount (packet d j) + 20 ∧
+    measurementCount (packetL d j) = measurementCount (packet d j) + 20 := by
+  have h := StairGroups.packet_counts d 1 j (by decide)
+  have z := StairGroups.packet_counts d 0 j (by decide)
+  rw [packetL_eq, packet_eq]
+  simp only [renameProgram_counts]
+  omega
+
+/-- Static slot count of a window packet: at most 280 more than the stock packet. -/
+theorem packetL_slots (d : Bool) (j : Nat) :
+    Challenge.gateSlots (packetL d j) ≤ Challenge.gateSlots (packet d j) + 280 := by
+  have h := StairSlotsLib.groupPacket_slots_le d 1 j (by decide)
+  rw [packetL_eq, packet_eq]
+  simp only [Baselines.rename_gateSlots, StairGroups.packet_zero]
+  omega
+
+/-- The tag site is the host of the carry role `base 720`. -/
+theorem tagSite_host : host (Arithmetic.MappedCompressed.base 720) = ArchiveFieldScratch.tagSite := by decide +kernel
+
+attribute [local irreducible] packet packetL wires preimage cover byteSites
+
+/-- The stock packet leaves the other packet's byte alone. -/
+theorem byte_avoids (j : Nat) (hj : j∈starts) (d second : Bool)
+    (q : Wire) (save : q∈byteSites j second) :
     q∉wires (packet d (if second then j+1 else j)) := by
   intro used
   have limits : starts.all (fun i => decide (i+1<102)) = true := by decide +kernel
@@ -27168,28 +27181,71 @@ theorem packet_avoids (j : Nat) (hj : j∈starts) (d second : Bool)
     · exact pair.2
   let k := if second then j+1 else j
   have hk : k<102 := by dsimp only [k]; split <;> omega
-  change (savedSites j second).all (fun z => decide (preimage k z ∉ cover k)) = true at pass
+  change (byteSites j second).all (fun z => decide (preimage k z ∉ cover k)) = true at pass
   have exc : preimage k q ∉ cover k := of_decide_eq_true (List.all_eq_true.mp pass q save)
   exact exc (original d k hk used)
 
-/-- A real hosted group can consume its own byte with arbitrary other-bank bits and tag. -/
-theorem advance (start : Nat) (hs : start∈starts) (d second : Bool) (m : List Bool)
+/-- A window packet (loan depth 1) only uses wires of the stock packet. -/
+theorem packetL_sub (d : Bool) (j : Nat) : wires (packetL d j) ⊆ wires (packet d j) := by
+  rw [packetL_eq, packet_eq]
+  exact StairLoanGroupSupport.rename_sub _ _ _
+    (StairLoanGroupSupport.rename_sub _ _ _ (StairLoanGroupSupport.packet_sub d 1 j (by decide)))
+
+/-- A window packet does not touch the tag site: depth 1 lends the role `base 720`, and the tag
+site is that role's host. -/
+theorem tag_free (d : Bool) (j : Nat) (hj : j ∈ List.range' 1 101) :
+    ArchiveFieldScratch.tagSite ∉ wires (packetL d j) := by
+  intro used
+  rw [packetL_eq, renameProgram_support] at used
+  obtain ⟨b, hb, eq⟩ := Finset.mem_image.mp used
+  have b720 : b = Arithmetic.MappedCompressed.base 720 := host.injective (eq.trans tagSite_host.symm)
+  subst b720
+  rw [renameProgram_support] at hb
+  obtain ⟨w, hw, eqw⟩ := Finset.mem_image.mp hb
+  unfold StairGroups.packet at hw
+  rw [renameProgram_support] at hw
+  obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hw
+  have t := (StairSiteEasy.basePacket_tgt d 1 j hj (by decide) z hz).1
+  have role : Arithmetic.MappedCompressed.base 720 ∈ StairSchedule.exclusiveRoles.take 1 := by decide +kernel
+  exact t (by rw [StairSiteEasy.Mj, eqw]; exact role)
+
+/-- A window packet leaves the tag and the other packet's byte alone. -/
+theorem packetL_avoids (j : Nat) (hj : j∈starts) (d second : Bool)
+    (q : Wire) (save : q∈savedSites j second) :
+    q∉wires (packetL d (if second then j+1 else j)) := by
+  have limits : starts.all (fun k => decide (1 ≤ k ∧ k+1 < 101)) = true := by decide +kernel
+  have span : 1 ≤ j ∧ j+1 < 101 := of_decide_eq_true (List.all_eq_true.mp limits j hj)
+  have save' : q ∈ ArchiveFieldScratch.tagSite :: byteSites j second := save
+  rcases List.mem_cons.mp save' with rfl | byte
+  · apply tag_free
+    apply List.mem_range'_1.mpr
+    split <;> omega
+  · exact fun used => byte_avoids j hj d second q byte (packetL_sub _ _ used)
+
+/-- A window packet consumes its own byte with arbitrary other-bank bits and tag. On the reference
+state it acts like the stock packet (`loan`), so the actual run follows the stock reference run. -/
+theorem advance (start : Nat) (hs : start∈starts) (d second : Bool) (m n : List Bool)
     (reference actual : State)
-    (same : ∀ q ∉ savedSites start second, actual.basis q = reference.basis q) :
-    let p := packet d (if second then start+1 else start)
-    ((run p m actual).phase ^^ actual.phase) = ((run p m reference).phase ^^ reference.phase) ∧
-    (∀ q ∉ savedSites start second, (run p m actual).basis q = (run p m reference).basis q) ∧
-    (∀ q ∈ savedSites start second, (run p m actual).basis q = actual.basis q) := by
-  let p := packet d (if second then start+1 else start)
-  have unchanged := packet_avoids start hs d second
-  have act := Arithmetic.run_local_increment p actual reference m
+    (same : ∀ q ∉ savedSites start second, actual.basis q = reference.basis q)
+    (loan : run (packetL d (if second then start+1 else start)) m reference =
+      run (packet d (if second then start+1 else start)) n reference) :
+    (((run (packetL d (if second then start+1 else start)) m actual).phase ^^ actual.phase) =
+      ((run (packet d (if second then start+1 else start)) n reference).phase ^^ reference.phase)) ∧
+    (∀ q ∉ savedSites start second,
+      (run (packetL d (if second then start+1 else start)) m actual).basis q =
+        (run (packet d (if second then start+1 else start)) n reference).basis q) ∧
+    (∀ q ∈ savedSites start second,
+      (run (packetL d (if second then start+1 else start)) m actual).basis q = actual.basis q) := by
+  have unchanged := packetL_avoids start hs d second
+  have act := Arithmetic.run_local_increment (packetL d (if second then start+1 else start)) actual reference m
     (fun q hq => same q (fun h => unchanged q h hq))
-  refine ⟨act.1, ?_, fun q hq => run_preserves_outside p m actual q (unchanged q hq)⟩
+  rw [← loan]
+  refine ⟨act.1, ?_, fun q hq => run_preserves_outside _ m actual q (unchanged q hq)⟩
   intro q keep
-  by_cases used : q∈wires p
+  by_cases used : q∈wires (packetL d (if second then start+1 else start))
   · exact act.2 q used
-  · exact (run_preserves_outside p m actual q used).trans ((same q keep).trans
-      (run_preserves_outside p m reference q used).symm)
+  · exact (run_preserves_outside _ m actual q used).trans ((same q keep).trans
+      (run_preserves_outside _ m reference q used).symm)
 
 end ECDSAAdd.Entrant.StairArchiveInactive
 
@@ -27577,29 +27633,32 @@ def frame (j row : Nat) (cs : Cols) (s : State) := ∀ q∈Finset.range 121,
   s.basis (fieldPort j q) = (get cs q).testBit row
 def exterior (j : Nat) (a b : State) := ∀ q∉inside j, a.basis q = b.basis q
 
-attribute [local irreducible] run packet fieldHook fieldPort inputCols outputCols CodecBitSliceVerify.get savedSites
+attribute [local irreducible] run packet packetL fieldHook fieldPort inputCols outputCols CodecBitSliceVerify.get savedSites
 
 private theorem xor_cancel (a b c : Bool) (h : (a ^^ c)=(b ^^ c)) : a=b := by
   cases a <;> cases b <;> cases c <;> simp_all
 
-/-- One administration followed by the real incumbent five-cell arithmetic packet.
-    Frames of the ordinary computation are the only arithmetic assumptions. -/
+/-- One administration followed by the window's five-cell arithmetic packet (loan depth 1).
+    The reference state runs the stock packet; `loan` says the two packets agree on it.
+    Frames of the ordinary computation are the only other arithmetic assumptions. -/
 theorem stage_packet (j : Nat) (hstart : j∈starts) (hj : j∈List.range' 1 83)
     (rev last : Bool) (row : Nat) (hr : row<63145) (m n : List Bool) (a ref : State)
     (change : frame j row (inputCols (fromStage rev last)) a)
     (out : exterior j a ref) (phase : a.phase=ref.phase)
     (entryFrame : frame j row (before rev last) ref)
     (endFrame : frame j row (after rev last)
-      (run (packet (!rev) (if rev ^^ last then j+1 else j)) n ref)) :
+      (run (packet (!rev) (if rev ^^ last then j+1 else j)) n ref))
+    (loan : run (packetL (!rev) (if rev ^^ last then j+1 else j)) n ref =
+      run (packet (!rev) (if rev ^^ last then j+1 else j)) n ref) :
     let c := run (fieldHook j (fromStage rev last)) m a
-    let p := packet (!rev) (if rev ^^ last then j+1 else j)
-    let s := run p n c
-    let t := run p n ref
+    let s := run (packetL (!rev) (if rev ^^ last then j+1 else j)) n c
+    let t := run (packet (!rev) (if rev ^^ last then j+1 else j)) n ref
     s.phase=t.phase ∧ exterior j s t ∧ frame j row (inputCols (toStage rev last)) s := by
   let active := rev ^^ last
   let fromC := outputCols (fromStage rev last)
   let toC := inputCols (toStage rev last)
   let c := run (fieldHook j (fromStage rev last)) m a
+  let pL := packetL (!rev) (if active then j+1 else j)
   let p := packet (!rev) (if active then j+1 else j)
   have admin := StairArchiveAllPorts.field_run j hj _ row hr m a change
   have hchecks := all_checks rev last
@@ -27615,15 +27674,15 @@ theorem stage_packet (j : Nat) (hstart : j∈starts) (hj : j∈List.range' 1 83)
         (column _ _ _ _ hchecks.1.1 q hq (decide_eq_false hh))).trans (entryFrame q hq).symm)
     · exact (admin.2.2 z hz').trans (out z hz')
   have body :
-      ((run p n c).phase ^^ c.phase) = ((run p n ref).phase ^^ ref.phase) ∧
-      (∀ z ∉ savedSites j active, (run p n c).basis z = (run p n ref).basis z) ∧
-      (∀ z ∈ savedSites j active, (run p n c).basis z = c.basis z) :=
-    advance j hstart (!rev) active n ref c same
+      ((run pL n c).phase ^^ c.phase) = ((run p n ref).phase ^^ ref.phase) ∧
+      (∀ z ∉ savedSites j active, (run pL n c).basis z = (run p n ref).basis z) ∧
+      (∀ z ∈ savedSites j active, (run pL n c).basis z = c.basis z) :=
+    advance j hstart (!rev) active n n ref c same loan
   have cphase : c.phase=ref.phase := admin.1.trans phase
-  change (run p n c).phase = (run p n ref).phase ∧ exterior j (run p n c) (run p n ref) ∧ frame j row toC (run p n c)
+  change (run pL n c).phase = (run p n ref).phase ∧ exterior j (run pL n c) (run p n ref) ∧ frame j row toC (run pL n c)
   refine ⟨?_, ?_, ?_⟩
   · have v := body.1
-    change ((run p n c).phase ^^ c.phase) = ((run p n ref).phase ^^ ref.phase) at v
+    change ((run pL n c).phase ^^ c.phase) = ((run p n ref).phase ^^ ref.phase) at v
     rw [cphase] at v
     exact xor_cancel _ _ _ v
   · intro z hz
@@ -27658,15 +27717,25 @@ open ArchiveFieldScratch
 def first (j : Nat) (rev : Bool) := packet (!rev) (if rev then j+1 else j)
 def second (j : Nat) (rev : Bool) := packet (!rev) (if rev then j else j+1)
 
+/-- The window's own two packets run at loan depth 1; `first`/`second` stay the stock packets of
+the reference run. -/
+def firstL (j : Nat) (rev : Bool) := packetL (!rev) (if rev then j+1 else j)
+def secondL (j : Nat) (rev : Bool) := packetL (!rev) (if rev then j else j+1)
+
+theorem firstL_sub (j : Nat) (rev : Bool) : wires (firstL j rev) ⊆ wires (first j rev) :=
+  packetL_sub _ _
+theorem secondL_sub (j : Nat) (rev : Bool) : wires (secondL j rev) ⊆ wires (second j rev) :=
+  packetL_sub _ _
+
 def ten (j : Nat) (rev : Bool) :=
-  fieldHook j (enter rev) ++ (first j rev ++ (fieldHook j (shift rev) ++
-    (second j rev ++ fieldHook j (leave rev))))
+  fieldHook j (enter rev) ++ (firstL j rev ++ (fieldHook j (shift rev) ++
+    (secondL j rev ++ fieldHook j (leave rev))))
 
 /-- Segment-local observation times of the two real arithmetic calls. -/
 def tapeA (j : Nat) (rev : Bool) (m : List Bool) := m.drop (measurementCount (fieldHook j (enter rev)))
-def tapeS (j : Nat) (rev : Bool) (m : List Bool) := (tapeA j rev m).drop (measurementCount (first j rev))
+def tapeS (j : Nat) (rev : Bool) (m : List Bool) := (tapeA j rev m).drop (measurementCount (firstL j rev))
 def tapeB (j : Nat) (rev : Bool) (m : List Bool) := (tapeS j rev m).drop (measurementCount (fieldHook j (shift rev)))
-def tapeL (j : Nat) (rev : Bool) (m : List Bool) := (tapeB j rev m).drop (measurementCount (second j rev))
+def tapeL (j : Nat) (rev : Bool) (m : List Bool) := (tapeB j rev m).drop (measurementCount (secondL j rev))
 
 def refMiddle (j : Nat) (rev : Bool) (m : List Bool) (s : State) :=
   run (first j rev) (tapeA j rev m) s
@@ -27682,26 +27751,30 @@ theorem ten_run (j : Nat) (hs : j∈starts) (hj : j∈List.range' 1 83)
     (same : exterior j a r) (ph : a.phase = r.phase)
     (before_ : frame j row (canonical (!rev) (!rev)) r)
     (middle_ : frame j row middle (refMiddle j rev m r))
-    (after_ : frame j row (canonical rev rev) (refExit j rev m r)) :
+    (after_ : frame j row (canonical rev rev) (refExit j rev m r))
+    (loanA : run (firstL j rev) (tapeA j rev m) r = refMiddle j rev m r)
+    (loanB : run (secondL j rev) (tapeB j rev m) (refMiddle j rev m r) = refExit j rev m r) :
     let actual := run (ten j rev) m a
     let final := refExit j rev m r
     actual.phase=final.phase ∧ exterior j actual final ∧ frame j row (outputCols (leave rev)) actual := by
   let a0 := run (fieldHook j (enter rev)) m a
-  let a1 := run (first j rev) (tapeA j rev m) a0
+  let a1 := run (firstL j rev) (tapeA j rev m) a0
   let a2 := run (fieldHook j (shift rev)) (tapeS j rev m) a1
-  let a3 := run (second j rev) (tapeB j rev m) a2
+  let a3 := run (secondL j rev) (tapeB j rev m) a2
   let a4 := run (fieldHook j (leave rev)) (tapeL j rev m) a3
   have f : a1.phase=(refMiddle j rev m r).phase ∧ exterior j a1 (refMiddle j rev m r) ∧
       frame j row (inputCols (shift rev)) a1 := by
     simpa only [fromStage, toStage, before, after, Bool.false_eq_true, if_false, Bool.xor_false,
-      first, refMiddle] using stage_packet j hs hj rev false row hr m (tapeA j rev m) a r
+      first, firstL, refMiddle] using stage_packet j hs hj rev false row hr m (tapeA j rev m) a r
         arch same ph before_ (by simpa only [after, Bool.false_eq_true, if_false, Bool.xor_false, first, refMiddle] using middle_)
+        (by simpa only [Bool.xor_false, first, firstL, refMiddle] using loanA)
   have z : a3.phase=(refExit j rev m r).phase ∧ exterior j a3 (refExit j rev m r) ∧
       frame j row (inputCols (leave rev)) a3 := by
     have eq : (if rev ^^ true then j+1 else j) = (if rev then j else j+1) := by cases rev <;> rfl
-    simpa only [fromStage, toStage, before, after, if_true, eq, second, refExit] using
+    simpa only [fromStage, toStage, before, after, if_true, eq, second, secondL, refExit] using
       stage_packet j hs hj rev true row hr (tapeS j rev m) (tapeB j rev m) a1 (refMiddle j rev m r)
         f.2.2 f.2.1 f.1 middle_ (by simpa only [after, if_true, eq, second, refExit] using after_)
+        (by simpa only [eq, second, secondL, refExit] using loanB)
   have last := StairArchiveAllPorts.field_run j hj (leave rev) row hr (tapeL j rev m) a3 z.2.2
   have shape : run (ten j rev) m a = a4 := by
     simp only [ten, run_append, run_take]

@@ -17903,7 +17903,7 @@ open StairField2V3Replay StairField2V3Couple StairField2V3Entry StairField2V3Exi
 
 theorem refArithL_shape (loans : StairSchedule.StairLoans) :
     StairLoanField7Cores.entryReferenceArithmeticFor loans =
-      prefixW ++ (refJ0 ++ (firstPkt ++ (grpL loans 0 1 84 ++ (grpL loans 13 85 5 ++ (grpL loans 22 90 3 ++ (grpL loans 30 93 3 ++ (grpL loans 36 96 2 ++ (grpL loans 41 98 2 ++ tailPL loans)))))))) := by
+      prefixW ++ (refJ0 ++ (firstPkt ++ (grpL loans 0 1 84 ++ (grpL loans 14 85 5 ++ (grpL loans 23 90 3 ++ (grpL loans 31 93 3 ++ (grpL loans 37 96 2 ++ (grpL loans 42 98 2 ++ tailPL loans)))))))) := by
   simp only [StairLoanField7Cores.entryReferenceArithmeticFor,
     Rolling1588TickGap.firstPhase, Rolling1588TickGap.tailPhase,
     Rolling1588TickGap.stackForward, Six505.stackForward6, forward_504,
@@ -17919,11 +17919,11 @@ theorem refArithL_shape (loans : StairSchedule.StairLoans) :
 /-! ## Division transport -/
 
 def R1L (loans : StairSchedule.StairLoans) : Program := (R0 ++ firstPkt) ++ grpL loans 0 1 84
-def R2L (loans : StairSchedule.StairLoans) : Program := R1L loans ++ grpL loans 13 85 5
-def R3L (loans : StairSchedule.StairLoans) : Program := R2L loans ++ grpL loans 22 90 3
-def R4L (loans : StairSchedule.StairLoans) : Program := R3L loans ++ grpL loans 30 93 3
-def R5L (loans : StairSchedule.StairLoans) : Program := R4L loans ++ grpL loans 36 96 2
-def R6L (loans : StairSchedule.StairLoans) : Program := R5L loans ++ grpL loans 41 98 2
+def R2L (loans : StairSchedule.StairLoans) : Program := R1L loans ++ grpL loans 14 85 5
+def R3L (loans : StairSchedule.StairLoans) : Program := R2L loans ++ grpL loans 23 90 3
+def R4L (loans : StairSchedule.StairLoans) : Program := R3L loans ++ grpL loans 31 93 3
+def R5L (loans : StairSchedule.StairLoans) : Program := R4L loans ++ grpL loans 37 96 2
+def R6L (loans : StairSchedule.StairLoans) : Program := R5L loans ++ grpL loans 42 98 2
 
 
 
@@ -18210,7 +18210,7 @@ theorem RL_shape1 (loans : StairSchedule.StairLoans) :
 
 theorem RL_shape2 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R2L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
-      (StairLoanRecordShape.slices loans true [(0, 1, 84), (13, 85, 5)])) := by
+      (StairLoanRecordShape.slices loans true [(0, 1, 84), (14, 85, 5)])) := by
   simp only [StairLoanField7Transport.R2L, StairLoanField7Transport.R1L,
     StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -18219,7 +18219,7 @@ theorem RL_shape2 (loans : StairSchedule.StairLoans) :
 
 theorem RL_shape3 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R3L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
-      (StairLoanRecordShape.slices loans true [(0, 1, 84), (13, 85, 5), (22, 90, 3)])) := by
+      (StairLoanRecordShape.slices loans true [(0, 1, 84), (14, 85, 5), (23, 90, 3)])) := by
   simp only [StairLoanField7Transport.R3L, StairLoanField7Transport.R2L,
     StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -18229,7 +18229,7 @@ theorem RL_shape3 (loans : StairSchedule.StairLoans) :
 theorem RL_shape4 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R4L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3)])) := by
+        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3)])) := by
   simp only [StairLoanField7Transport.R4L, StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
     StairSchedule.placedGroups, StairLoanRecordShape.slices, liftF, StairSchedule.fieldRename,
@@ -18239,7 +18239,7 @@ theorem RL_shape4 (loans : StairSchedule.StairLoans) :
 theorem RL_shape5 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R5L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3), (36, 96, 2)])) := by
+        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3), (37, 96, 2)])) := by
   simp only [StairLoanField7Transport.R5L, StairLoanField7Transport.R4L,
     StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
@@ -18250,7 +18250,7 @@ theorem RL_shape5 (loans : StairSchedule.StairLoans) :
 theorem RL_shape6 (loans : StairSchedule.StairLoans) :
     StairLoanField7Transport.R6L loans = (R0 ++ firstPkt) ++ liftF (renameProgram (OB5.sig 511)
       (StairLoanRecordShape.slices loans true
-        [(0, 1, 84), (13, 85, 5), (22, 90, 3), (30, 93, 3), (36, 96, 2), (41, 98, 2)])) := by
+        [(0, 1, 84), (14, 85, 5), (23, 90, 3), (31, 93, 3), (37, 96, 2), (42, 98, 2)])) := by
   simp only [StairLoanField7Transport.R6L, StairLoanField7Transport.R5L,
     StairLoanField7Transport.R4L, StairLoanField7Transport.R3L,
     StairLoanField7Transport.R2L, StairLoanField7Transport.R1L, StairLoanField7Transport.grpL,
@@ -19495,14 +19495,6 @@ theorem exitPhase_targets_zero {k : Nat} {s : State} (F : StairConcreteAssembly.
       ⟨q - 16, kq.1, kq.2.1, kq.2.2.1, kq.2.2.2⟩
     obtain ⟨l, rfl, a, b, c⟩ := hq16
     exact exit_zero F l a b c
-
-theorem chk_flastTerminal : ztAll 736 45 true (rolesL)
-    StairTerminalV3.forwardTerminalV3 = true :=
-  ztAll_true_of_not_mem 736 45 rolesL _ rolesL_window (fun w hw hm =>
-    (StairTerminalV3.forwardTerminalV3_support w hm).2.2.2.1
-      (by rw [StairPhysicalInventory.exclusiveSites_eq]; rw [rolesL_eq44] at hw; exact hw))
-
-
 
 
 end ECDSAAdd.Entrant.StairField13V3Clean
