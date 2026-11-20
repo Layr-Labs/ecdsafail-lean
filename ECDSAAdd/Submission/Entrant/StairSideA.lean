@@ -466,335 +466,7 @@ theorem slotsLe_sound (p : Program) : ∀ g, slotsLeB p g = true → gateSlots p
     have r := ih _ h'.2
     rw [slots_cons]; omega
 
-/-- `wires P ⊆ Finset.range w` from one recursor pass with `Nat.blt` (the decide of `P.all (within w)` evaluates the
-`Finset` of every instruction through `insert`/`union` instances). -/
-noncomputable def corrOkB (w : Nat) (cs : List Correction) : Bool :=
-  List.rec (motive := fun _ => Bool) true (fun c _ ih => Correction.casesOn (motive := fun _ => Bool) c
-    (fun t => Nat.blt t w) (fun a b => Nat.blt a w && Nat.blt b w) && ih) cs
-
-noncomputable def withinB (w : Nat) (i : Instr) : Bool :=
-  Instr.casesOn (motive := fun _ => Bool) i (fun t => Nat.blt t w) (fun c t => Nat.blt c w && Nat.blt t w)
-    (fun a b t => Nat.blt a w && Nat.blt b w && Nat.blt t w)
-    (fun t c0 c1 => Nat.blt t w && corrOkB w c0 && corrOkB w c1)
-
-noncomputable def wiresLtB (w : Nat) (P : Program) : Bool :=
-  List.rec (motive := fun _ => Bool) true (fun i _ ih => withinB w i && ih) P
-
-theorem corrOk_sound (w : Nat) (cs : List Correction) (h : corrOkB w cs = true) :
-    correctionWires cs ⊆ Finset.range w := by
-  induction cs with
-  | nil => intro q hq; simp [correctionWires] at hq
-  | cons c cs ih =>
-    cases c with
-    | Z t =>
-      have h' : (Nat.blt t w && corrOkB w cs) = true := h
-      rw [Bool.and_eq_true, Nat.blt_eq] at h'
-      rw [correctionWires, Finset.union_subset_iff, Finset.singleton_subset_iff, Finset.mem_range]
-      exact ⟨h'.1, ih h'.2⟩
-    | CZ a b =>
-      have h' : ((Nat.blt a w && Nat.blt b w) && corrOkB w cs) = true := h
-      simp only [Bool.and_eq_true, Nat.blt_eq] at h'
-      rw [correctionWires, Finset.union_subset_iff, Finset.insert_subset_iff, Finset.singleton_subset_iff,
-        Finset.mem_range, Finset.mem_range]
-      exact ⟨⟨h'.1.1, h'.1.2⟩, ih h'.2⟩
-
-theorem within_sound (w : Nat) (i : Instr) (h : withinB w i = true) : i.wires ⊆ Finset.range w := by
-  cases i with
-  | X t =>
-    have h' : Nat.blt t w = true := h
-    rw [Instr.wires, Finset.singleton_subset_iff, Finset.mem_range]; exact Nat.blt_eq.mp h'
-  | CX c t =>
-    have h' : (Nat.blt c w && Nat.blt t w) = true := h
-    simp only [Bool.and_eq_true, Nat.blt_eq] at h'
-    rw [Instr.wires, Finset.insert_subset_iff, Finset.singleton_subset_iff, Finset.mem_range, Finset.mem_range]
-    exact ⟨h'.1, h'.2⟩
-  | CCX a b t =>
-    have h' : (Nat.blt a w && Nat.blt b w && Nat.blt t w) = true := h
-    simp only [Bool.and_eq_true, Nat.blt_eq] at h'
-    rw [Instr.wires, Finset.insert_subset_iff, Finset.insert_subset_iff, Finset.singleton_subset_iff,
-      Finset.mem_range, Finset.mem_range, Finset.mem_range]
-    exact ⟨h'.1.1, h'.1.2, h'.2⟩
-  | measureX t c0 c1 =>
-    have h' : (Nat.blt t w && corrOkB w c0 && corrOkB w c1) = true := h
-    simp only [Bool.and_eq_true, Nat.blt_eq] at h'
-    rw [Instr.wires, Finset.union_subset_iff, Finset.union_subset_iff, Finset.singleton_subset_iff, Finset.mem_range]
-    exact ⟨⟨h'.1.1, corrOk_sound w c0 h'.1.2⟩, corrOk_sound w c1 h'.2⟩
-
-theorem wiresLt_sound (w : Nat) (P : Program) (h : wiresLtB w P = true) : wires P ⊆ Finset.range w := by
-  induction P with
-  | nil => intro q hq; simp [wires] at hq
-  | cons i P ih =>
-    have h' : (withinB w i && wiresLtB w P) = true := h
-    rw [Bool.and_eq_true] at h'
-    rw [wires, Finset.union_subset_iff]
-    exact ⟨within_sound w i h'.1, ih h'.2⟩
-
-theorem wires_append_sub {w : Nat} {A B : Program} (ha : wires A ⊆ Finset.range w) (hb : wires B ⊆ Finset.range w) :
-    wires (A ++ B) ⊆ Finset.range w := by
-  rw [wires_append]; exact Finset.union_subset ha hb
-
-/-- `l.Nodup` (naturals) from one pass that keeps a bit mask of the elements seen so far (the decide of `Nodup`
-compares all pairs). -/
-noncomputable def nodupMaskB (l : List Nat) : Nat → Bool :=
-  List.rec (motive := fun _ => Nat → Bool) (fun _ => true)
-    (fun x _ ih m => !(Nat.testBit m x) && ih (m ||| (1 <<< x))) l
-
-theorem testBit_or_one_shift (m x y : Nat) : (m ||| (1 <<< x)).testBit y = (m.testBit y || decide (x = y)) := by
-  rw [Nat.testBit_or, Nat.one_shiftLeft, Nat.testBit_two_pow]
-
-theorem nodupMask_sound : ∀ (l : List Nat) (m : Nat), nodupMaskB l m = true →
-    l.Nodup ∧ ∀ x ∈ l, m.testBit x = false
-  | [], _, _ => ⟨List.nodup_nil, fun _ hx => absurd hx List.not_mem_nil⟩
-  | x :: l, m, h => by
-    have h' : (!(Nat.testBit m x) && nodupMaskB l (m ||| (1 <<< x))) = true := h
-    rw [Bool.and_eq_true, Bool.not_eq_true'] at h'
-    obtain ⟨nd, fr⟩ := nodupMask_sound l _ h'.2
-    refine ⟨List.nodup_cons.mpr ⟨fun hx => ?_, nd⟩, fun y hy => ?_⟩
-    · have e := fr x hx
-      rw [testBit_or_one_shift] at e
-      simp at e
-    · rcases List.mem_cons.mp hy with e | e
-      · rw [e]; exact h'.1
-      · have f := fr y e
-        rw [testBit_or_one_shift, Bool.or_eq_false_iff] at f
-        exact f.1
-
-theorem nodup_of_maskB (l : List Nat) (h : nodupMaskB l 0 = true) : l.Nodup := (nodupMask_sound l 0 h).1
-
 end ECDSAAdd.Entrant.WSlimBlock
-
-/- WSLIM: scoped high-priority Decidable instances for lists of naturals (bit masks) and Fin-indexed families;
-   used only through
-   `(open ECDSAAdd.Entrant.WSlimMac in decide +kernel)` inside proofs. -/
-namespace ECDSAAdd.Entrant.WSlimMac
-
-/-- bitmask of a list of naturals (kernel-fast: Nat.pow / Nat.lor on literals) -/
-def bmask : List Nat → Nat
-  | [] => 0
-  | x :: xs => 2 ^ x ||| bmask xs
-
-theorem bmask_testBit_of_mem : ∀ {l : List Nat} {x : Nat}, x ∈ l → (bmask l).testBit x = true
-  | y :: ys, x, h => by
-    rcases List.mem_cons.mp h with rfl | h
-    · simp only [bmask, Nat.testBit_or, Nat.testBit_two_pow_self, Bool.true_or]
-    · simp only [bmask, Nat.testBit_or, bmask_testBit_of_mem h, Bool.or_true]
-
-theorem mem_of_bmask_testBit : ∀ {l : List Nat} {x : Nat}, (bmask l).testBit x = true → x ∈ l
-  | [], x, h => by simp only [bmask, Nat.zero_testBit] at h; cases h
-  | y :: ys, x, h => by
-    simp only [bmask, Nat.testBit_or, Bool.or_eq_true] at h
-    rcases h with h | h
-    · rw [Nat.testBit_two_pow] at h
-      exact List.mem_cons.mpr (Or.inl (of_decide_eq_true h).symm)
-    · exact List.mem_cons_of_mem _ (mem_of_bmask_testBit h)
-
-/-- membership in a list of naturals decided by one bitmask (the kernel caches the mask per list) -/
-scoped instance (priority := high) decMemNat (x : Nat) (l : List Nat) : Decidable (x ∈ l) :=
-  decidable_of_iff ((bmask l).testBit x = true) ⟨mem_of_bmask_testBit, bmask_testBit_of_mem⟩
-
-/-- duplicate-free check in one pass with a bitmask accumulator -/
-def nodupB : List Nat → Nat → Bool
-  | [], _ => true
-  | x :: xs, m => !(m.testBit x) && nodupB xs (m ||| 2 ^ x)
-
-theorem nodupB_sound : ∀ (l : List Nat) (m : Nat), nodupB l m = true →
-    (∀ y ∈ l, m.testBit y = false) ∧ l.Nodup
-  | [], _, _ => ⟨fun _ h => (by cases h), List.nodup_nil⟩
-  | x :: xs, m, h => by
-    have h' : (!(m.testBit x)) = true ∧ nodupB xs (m ||| 2 ^ x) = true := by
-      simpa only [nodupB, Bool.and_eq_true] using h
-    have hx : m.testBit x = false := by
-      cases hb : m.testBit x <;> simp_all
-    obtain ⟨hall, hnd⟩ := nodupB_sound xs _ h'.2
-    refine ⟨?_, List.nodup_cons.mpr ⟨?_, hnd⟩⟩
-    · intro y hy
-      rcases List.mem_cons.mp hy with rfl | hy
-      · exact hx
-      · have h2 := hall y hy
-        rw [Nat.testBit_or] at h2
-        cases hb : m.testBit y <;> simp_all
-    · intro hmem
-      have h2 := hall x hmem
-      rw [Nat.testBit_or, Nat.testBit_two_pow_self, Bool.or_true] at h2
-      cases h2
-
-theorem nodupB_complete : ∀ (l : List Nat) (m : Nat), (∀ y ∈ l, m.testBit y = false) →
-    l.Nodup → nodupB l m = true
-  | [], _, _, _ => rfl
-  | x :: xs, m, hm, hnd => by
-    have hx : m.testBit x = false := hm x List.mem_cons_self
-    have hnd' := List.nodup_cons.mp hnd
-    have hrest : nodupB xs (m ||| 2 ^ x) = true := by
-      apply nodupB_complete xs _ _ hnd'.2
-      intro y hy
-      rw [Nat.testBit_or, hm y (List.mem_cons_of_mem _ hy), Nat.testBit_two_pow, Bool.false_or]
-      exact decide_eq_false (fun h => hnd'.1 (h ▸ hy))
-    simp only [nodupB, hx, hrest, Bool.not_false, Bool.and_self]
-
-theorem nodup_of_nodupB (l : List Nat) (h : nodupB l 0 = true) : l.Nodup := (nodupB_sound l 0 h).2
-
-/-- duplicate-freeness of a list of naturals decided in one bitmask pass -/
-scoped instance (priority := high) decNodupNat (l : List Nat) : Decidable l.Nodup :=
-  decidable_of_iff (nodupB l 0 = true)
-    ⟨nodup_of_nodupB l, fun h => nodupB_complete l 0 (fun y _ => Nat.zero_testBit y) h⟩
-
-end ECDSAAdd.Entrant.WSlimMac
-
-namespace ECDSAAdd.Entrant.WSlimMac
-
-/-- mask of the first `k` values of a `Fin n`-indexed family (structural recursion, kernel-fast) -/
-def famMaskAux (n : Nat) (f : Fin n → Nat) : (k : Nat) → k ≤ n → Nat
-  | 0, _ => 0
-  | k + 1, h => 2 ^ f ⟨k, h⟩ ||| famMaskAux n f k (Nat.le_of_succ_le h)
-
-theorem famMaskAux_testBit (n : Nat) (f : Fin n → Nat) : ∀ (k : Nat) (h : k ≤ n) (q : Nat),
-    (famMaskAux n f k h).testBit q = true ↔ ∃ i : Fin n, i.val < k ∧ f i = q
-  | 0, _, q => by
-    simp only [famMaskAux, Nat.zero_testBit, Bool.false_eq_true, false_iff, not_exists, not_and]
-    intro i hi; exact absurd hi (Nat.not_lt_zero _)
-  | k + 1, h, q => by
-    rw [famMaskAux, Nat.testBit_or, Bool.or_eq_true, famMaskAux_testBit n f k _ q, Nat.testBit_two_pow]
-    constructor
-    · rintro (h1 | ⟨i, hi, e⟩)
-      · exact ⟨⟨k, h⟩, Nat.lt_succ_self k, of_decide_eq_true h1⟩
-      · exact ⟨i, Nat.lt_succ_of_lt hi, e⟩
-    · rintro ⟨i, hi, e⟩
-      rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | hi
-      · exact Or.inr ⟨i, hi, e⟩
-      · left
-        apply decide_eq_true
-        have hk : (⟨k, h⟩ : Fin n) = i := Fin.ext hi.symm
-        rw [hk]; exact e
-
-/-- `q` differs from every value of a `Fin n`-indexed family: one mask per family (cached by the kernel) -/
-scoped instance (priority := high) decForallFinNe (n q : Nat) (f : Fin n → Nat) :
-    Decidable (∀ i : Fin n, q ≠ f i) :=
-  decidable_of_iff ((famMaskAux n f n (Nat.le_refl n)).testBit q = false) (by
-    rw [← Bool.not_eq_true, famMaskAux_testBit]
-    constructor
-    · intro h i e; exact h ⟨i, i.isLt, e.symm⟩
-    · rintro h ⟨i, _, e⟩; exact h i e.symm)
-
-/-- `q` is a value of a `Fin n`-indexed family -/
-scoped instance (priority := high) decExistsFinEq (n q : Nat) (f : Fin n → Nat) :
-    Decidable (∃ i : Fin n, q = f i) :=
-  decidable_of_iff ((famMaskAux n f n (Nat.le_refl n)).testBit q = true) (by
-    rw [famMaskAux_testBit]
-    constructor
-    · rintro ⟨i, _, e⟩; exact ⟨i, e.symm⟩
-    · rintro ⟨i, e⟩; exact ⟨i, i.isLt, e.symm⟩)
-
-/-- `q` avoids two fields of every element of a list -/
-scoped instance (priority := high) decForallMemNe2 {α : Type} (l : List α) (q : Nat) (g h : α → Nat) :
-    Decidable (∀ r ∈ l, q ≠ g r ∧ q ≠ h r) :=
-  decidable_of_iff (q ∉ l.map g ∧ q ∉ l.map h) (by
-    constructor
-    · intro ⟨h1, h2⟩ r hr
-      exact ⟨fun e => h1 (List.mem_map.mpr ⟨r, hr, e.symm⟩), fun e => h2 (List.mem_map.mpr ⟨r, hr, e.symm⟩)⟩
-    · intro hh
-      refine ⟨fun hm => ?_, fun hm => ?_⟩
-      · obtain ⟨r, hr, e⟩ := List.mem_map.mp hm; exact (hh r hr).1 e.symm
-      · obtain ⟨r, hr, e⟩ := List.mem_map.mp hm; exact (hh r hr).2 e.symm)
-
-end ECDSAAdd.Entrant.WSlimMac
-
-namespace ECDSAAdd.Entrant.WSlimMac
-
-/-- a list of naturals packed into one natural, `w` bits per entry -/
-def tpack (w : Nat) : List Nat → Nat
-  | [] => 0
-  | x :: xs => x + 2 ^ w * tpack w xs
-
-/-- entry `q` of a packed table (kernel-fast: Nat.div / Nat.mod / Nat.pow on literals) -/
-def tget (w T q : Nat) : Nat := T / 2 ^ (w * q) % 2 ^ w
-
-theorem tget_tpack (w : Nat) : ∀ (l : List Nat), (∀ x ∈ l, x < 2 ^ w) → ∀ q, tget w (tpack w l) q = l.getD q 0
-  | [], _, q => by simp [tget, tpack]
-  | x :: xs, h, 0 => by
-    have hx : x < 2 ^ w := h x List.mem_cons_self
-    simp only [tget, tpack, Nat.mul_zero, Nat.pow_zero, Nat.div_one, List.getD_cons_zero]
-    rw [Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt hx]
-  | x :: xs, h, q + 1 => by
-    have hx : x < 2 ^ w := h x List.mem_cons_self
-    have ih := tget_tpack w xs (fun y hy => h y (List.mem_cons_of_mem _ hy)) q
-    simp only [List.getD_cons_succ]
-    rw [← ih]
-    simp only [tget, tpack]
-    have hp : 2 ^ (w * (q + 1)) = 2 ^ w * 2 ^ (w * q) := by
-      rw [Nat.mul_succ, Nat.pow_add, Nat.mul_comm]
-    rw [hp, ← Nat.div_div_eq_div_mul]
-    congr 2
-    rw [Nat.add_mul_div_left _ _ (Nat.two_pow_pos w), Nat.div_eq_of_lt hx, Nat.zero_add]
-
-theorem tget_tpack' (w : Nat) (l : List Nat) (h : (l.all fun x => decide (x < 2 ^ w)) = true) (q : Nat) :
-    l.getD q 0 = tget w (tpack w l) q :=
-  (tget_tpack w l (fun x hx => of_decide_eq_true (List.all_eq_true.mp h x hx)) q).symm
-
-theorem rename_getD (l : List Nat) (w : Nat) (h : (l.all fun x => decide (x < 2 ^ w)) = true) (P : Program) :
-    renameProgram (fun q => l.getD q 0) P = renameProgram (fun q => tget w (tpack w l) q) P := by
-  congr 1; funext q; exact tget_tpack' w l h q
-
-end ECDSAAdd.Entrant.WSlimMac
-
-namespace ECDSAAdd.Entrant.WSlimMac
--- slice algebra on one base list: lets `simp` prove program-shape equalities without materializing programs
-
-theorem seg_merge {α : Type} (L : List α) (a n b m : Nat) (h : b = a + n) :
-    (L.drop a).take n ++ (L.drop b).take m = (L.drop a).take (n + m) := by
-  subst h; rw [List.take_add, List.drop_drop]
-theorem seg_merge_r {α : Type} (L : List α) (a n b m : Nat) (r : List α) (h : b = a + n) :
-    (L.drop a).take n ++ ((L.drop b).take m ++ r) = (L.drop a).take (n + m) ++ r := by
-  rw [← List.append_assoc, seg_merge L a n b m h]
-theorem take_merge {α : Type} (L : List α) (n b m : Nat) (h : b = n) :
-    L.take n ++ (L.drop b).take m = L.take (n + m) := by
-  subst h; rw [List.take_add]
-theorem take_merge_r {α : Type} (L : List α) (n b m : Nat) (r : List α) (h : b = n) :
-    L.take n ++ ((L.drop b).take m ++ r) = L.take (n + m) ++ r := by
-  rw [← List.append_assoc, take_merge L n b m h]
-theorem seg_drop {α : Type} (L : List α) (a n b : Nat) (h : b = a + n) :
-    (L.drop a).take n ++ L.drop b = L.drop a := by
-  subst h; rw [← List.drop_drop]; exact List.take_append_drop n (L.drop a)
-theorem seg_drop_r {α : Type} (L : List α) (a n b : Nat) (r : List α) (h : b = a + n) :
-    (L.drop a).take n ++ (L.drop b ++ r) = L.drop a ++ r := by
-  rw [← List.append_assoc, seg_drop L a n b h]
-theorem take_drop' {α : Type} (L : List α) (n b : Nat) (h : b = n) : L.take n ++ L.drop b = L := by
-  rw [h]; exact List.take_append_drop n L
-theorem take_drop_r {α : Type} (L : List α) (n b : Nat) (r : List α) (h : b = n) :
-    L.take n ++ (L.drop b ++ r) = L ++ r := by
-  rw [← List.append_assoc, take_drop' L n b h]
-
-end ECDSAAdd.Entrant.WSlimMac
-
-namespace ECDSAAdd.Entrant.WSlimMac
-
-/-- `∃ j, f j = q` over a `Fin n`-indexed family (reversed orientation) -/
-scoped instance (priority := high) decExistsFinEq' (n q : Nat) (f : Fin n → Nat) :
-    Decidable (∃ i : Fin n, f i = q) :=
-  decidable_of_iff ((famMaskAux n f n (Nat.le_refl n)).testBit q = true) (by
-    rw [famMaskAux_testBit]
-    constructor
-    · rintro ⟨i, _, e⟩; exact ⟨i, e⟩
-    · rintro ⟨i, e⟩; exact ⟨i, i.isLt, e⟩)
-
-end ECDSAAdd.Entrant.WSlimMac
-
-
-namespace ECDSAAdd.Entrant.WSlimMac
-/-- `decide (x ∈ l)` (whatever instance) for a list of naturals is one bit of `bmask l` (rewrites decides that are
-part of a statement, where the scoped instances cannot act). -/
-theorem decide_mem_bmask (x : Nat) (l : List Nat) [inst : Decidable (x ∈ l)] :
-    @decide (x ∈ l) inst = (bmask l).testBit x := by
-  cases h : (bmask l).testBit x
-  · exact decide_eq_false (fun hm => by rw [bmask_testBit_of_mem hm] at h; cases h)
-  · exact decide_eq_true (mem_of_bmask_testBit h)
-
-/-- `decide l.Nodup` (whatever instance) for a list of naturals is one bit-mask pass. -/
-theorem decide_nodup_nodupB (l : List Nat) [inst : Decidable l.Nodup] :
-    @decide l.Nodup inst = nodupB l 0 := by
-  cases h : nodupB l 0
-  · exact decide_eq_false (fun hn => by rw [nodupB_complete l 0 (fun y _ => Nat.zero_testBit y) hn] at h; cases h)
-  · exact decide_eq_true (nodup_of_nodupB l h)
-end ECDSAAdd.Entrant.WSlimMac
 end
 
 section
@@ -22484,7 +22156,6 @@ end
 -- ==== begin PrizeStair44PointMap486a9e3 ====
 section
 
--- WSLIM: remaining `decide +kernel` sites use the scoped bit-mask instances of ECDSAAdd.Entrant.WSlimMac (86 sites)
 section
 
 namespace ECDSAAdd.Entrant.Stair44PointMap
@@ -22549,7 +22220,7 @@ theorem outer_free (P : Program) (cold : ∀ w∈early,w∉wires P) :
   obtain ⟨w,hw,eq⟩ := Finset.mem_image.mp used
   have inv := congrArg outer.symm eq
   rw [Equiv.symm_apply_apply] at inv
-  exact cold w (inv ▸ (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀ z∈retired,outer.symm z∈early) q hq) hw
+  exact cold w (inv ▸ (by decide +kernel : ∀ z∈retired,outer.symm z∈early) q hq) hw
 
 theorem y_free (P : Program) (cold : ∀ w∈spare,w∉wires P) :
     ∀ q∈retired, q∉wires (encodeY P) := by
@@ -22558,7 +22229,7 @@ theorem y_free (P : Program) (cold : ∀ w∈spare,w∉wires P) :
   obtain ⟨w,hw,eq⟩ := Finset.mem_image.mp used
   have inv := congrArg duringY.symm eq
   rw [Equiv.symm_apply_apply] at inv
-  exact cold w (inv ▸ (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀ z∈retired,duringY.symm z∈spare) q hq) hw
+  exact cold w (inv ▸ (by decide +kernel : ∀ z∈retired,duringY.symm z∈spare) q hq) hw
 
 def duringX : Equiv.Perm Wire := outer.trans (Equiv.swap 4616 4629)
 def xOld : Equiv.Perm Wire := Equiv.swap 4836 4629
@@ -22588,7 +22259,7 @@ theorem x_free (P : Program) (cold : ∀ w∈early,w∉wires P) :
   obtain ⟨w,hw,eq⟩ := Finset.mem_image.mp used
   have inv := congrArg duringX.symm eq
   rw [Equiv.symm_apply_apply] at inv
-  exact cold w (inv ▸ (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀z∈retired,duringX.symm z∈early) q hq) hw
+  exact cold w (inv ▸ (by decide +kernel : ∀z∈retired,duringX.symm z∈early) q hq) hw
 
 def changed := [4835,4836,4837,4838,4839,4615,4616,4617,4618,4619,4629]
 def firstClean := [4835,4837,4838,4839,4615,4616,4617,4618,4619,4629]
@@ -22601,18 +22272,18 @@ private theorem mapoff (q : Wire) (hq : q∉changed) :
 
 theorem at_x_input (s : State) (zero : ∀q∈([4836,4629] : List Wire),s.basis q=false) :
     pullState outer.symm s = pullState duringX.symm s :=
-  equal_codes outer duringX changed [4836,4629] (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  equal_codes outer duringX changed [4836,4629] (by decide +kernel)
     (fun _ h => (mapoff _ h).2.1.trans (mapoff _ h).1.symm) s zero
 
 theorem at_x_output (s : State) (zero : ∀q∈firstClean,s.basis q=false) :
     pullState duringX.symm s = pullState integerFirst.symm s :=
-  equal_codes duringX integerFirst changed firstClean (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  equal_codes duringX integerFirst changed firstClean (by decide +kernel)
     (fun _ h => (mapoff _ h).1.trans (mapoff _ h).2.2.1.symm) s zero
 
 theorem square_to_integer (s : State)
     (zero : ∀q∈([4835,4837,4615,4616] : List Wire),s.basis q=false) :
     pullState xOld.symm s = pullState integerFirst.symm s :=
-  equal_codes xOld integerFirst changed [4835,4837,4615,4616] (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  equal_codes xOld integerFirst changed [4835,4837,4615,4616] (by decide +kernel)
     (fun _ h => (mapoff _ h).2.2.2.trans (mapoff _ h).2.2.1.symm) s zero
 
 end ECDSAAdd.Entrant.Stair44PointMap
@@ -22684,7 +22355,7 @@ def integer_load0Block0 : Program := [
   .CX 0 41
 ]
 
-private theorem integer_load0Block0Ok : GatePhysical integer_load0Block0 ∧ toffoliCount integer_load0Block0 = 4 ∧ measurementCount integer_load0Block0 = 0 ∧ gateSlots integer_load0Block0 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block0Ok : GatePhysical integer_load0Block0 ∧ toffoliCount integer_load0Block0 = 4 ∧ measurementCount integer_load0Block0 = 0 ∧ gateSlots integer_load0Block0 = 48 := by decide +kernel
 
 def integer_load0Block1 : Program := [
   .CX 0 40,
@@ -22737,7 +22408,7 @@ def integer_load0Block1 : Program := [
   .CX 4 40
 ]
 
-private theorem integer_load0Block1Ok : GatePhysical integer_load0Block1 ∧ toffoliCount integer_load0Block1 = 3 ∧ measurementCount integer_load0Block1 = 0 ∧ gateSlots integer_load0Block1 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block1Ok : GatePhysical integer_load0Block1 ∧ toffoliCount integer_load0Block1 = 3 ∧ measurementCount integer_load0Block1 = 0 ∧ gateSlots integer_load0Block1 = 48 := by decide +kernel
 
 def integer_load0Block2 : Program := [
   .CX 2 40,
@@ -22790,7 +22461,7 @@ def integer_load0Block2 : Program := [
   .CX 16 41
 ]
 
-private theorem integer_load0Block2Ok : GatePhysical integer_load0Block2 ∧ toffoliCount integer_load0Block2 = 3 ∧ measurementCount integer_load0Block2 = 0 ∧ gateSlots integer_load0Block2 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block2Ok : GatePhysical integer_load0Block2 ∧ toffoliCount integer_load0Block2 = 3 ∧ measurementCount integer_load0Block2 = 0 ∧ gateSlots integer_load0Block2 = 48 := by decide +kernel
 
 def integer_load0Block3 : Program := [
   .CX 18 40,
@@ -22843,7 +22514,7 @@ def integer_load0Block3 : Program := [
   .CX 53 41
 ]
 
-private theorem integer_load0Block3Ok : GatePhysical integer_load0Block3 ∧ toffoliCount integer_load0Block3 = 4 ∧ measurementCount integer_load0Block3 = 0 ∧ gateSlots integer_load0Block3 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block3Ok : GatePhysical integer_load0Block3 ∧ toffoliCount integer_load0Block3 = 4 ∧ measurementCount integer_load0Block3 = 0 ∧ gateSlots integer_load0Block3 = 48 := by decide +kernel
 
 def integer_load0Block4 : Program := [
   .CX 51 41,
@@ -22896,7 +22567,7 @@ def integer_load0Block4 : Program := [
   .CX 15 41
 ]
 
-private theorem integer_load0Block4Ok : GatePhysical integer_load0Block4 ∧ toffoliCount integer_load0Block4 = 2 ∧ measurementCount integer_load0Block4 = 0 ∧ gateSlots integer_load0Block4 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block4Ok : GatePhysical integer_load0Block4 ∧ toffoliCount integer_load0Block4 = 2 ∧ measurementCount integer_load0Block4 = 0 ∧ gateSlots integer_load0Block4 = 48 := by decide +kernel
 
 def integer_load0Block5 : Program := [
   .CX 14 41,
@@ -22949,7 +22620,7 @@ def integer_load0Block5 : Program := [
   .CX 21 41
 ]
 
-private theorem integer_load0Block5Ok : GatePhysical integer_load0Block5 ∧ toffoliCount integer_load0Block5 = 8 ∧ measurementCount integer_load0Block5 = 0 ∧ gateSlots integer_load0Block5 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block5Ok : GatePhysical integer_load0Block5 ∧ toffoliCount integer_load0Block5 = 8 ∧ measurementCount integer_load0Block5 = 0 ∧ gateSlots integer_load0Block5 = 48 := by decide +kernel
 
 def integer_load0Block6 : Program := [
   .CX 4 40,
@@ -23002,7 +22673,7 @@ def integer_load0Block6 : Program := [
   .CX 4 41
 ]
 
-private theorem integer_load0Block6Ok : GatePhysical integer_load0Block6 ∧ toffoliCount integer_load0Block6 = 6 ∧ measurementCount integer_load0Block6 = 0 ∧ gateSlots integer_load0Block6 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block6Ok : GatePhysical integer_load0Block6 ∧ toffoliCount integer_load0Block6 = 6 ∧ measurementCount integer_load0Block6 = 0 ∧ gateSlots integer_load0Block6 = 48 := by decide +kernel
 
 def integer_load0Block7 : Program := [
   .CX 5 41,
@@ -23055,7 +22726,7 @@ def integer_load0Block7 : Program := [
   .CX 43 41
 ]
 
-private theorem integer_load0Block7Ok : GatePhysical integer_load0Block7 ∧ toffoliCount integer_load0Block7 = 3 ∧ measurementCount integer_load0Block7 = 0 ∧ gateSlots integer_load0Block7 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block7Ok : GatePhysical integer_load0Block7 ∧ toffoliCount integer_load0Block7 = 3 ∧ measurementCount integer_load0Block7 = 0 ∧ gateSlots integer_load0Block7 = 48 := by decide +kernel
 
 def integer_load0Block8 : Program := [
   .CX 44 41,
@@ -23108,7 +22779,7 @@ def integer_load0Block8 : Program := [
   .CX 66 41
 ]
 
-private theorem integer_load0Block8Ok : GatePhysical integer_load0Block8 ∧ toffoliCount integer_load0Block8 = 2 ∧ measurementCount integer_load0Block8 = 0 ∧ gateSlots integer_load0Block8 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block8Ok : GatePhysical integer_load0Block8 ∧ toffoliCount integer_load0Block8 = 2 ∧ measurementCount integer_load0Block8 = 0 ∧ gateSlots integer_load0Block8 = 48 := by decide +kernel
 
 def integer_load0Block9 : Program := [
   .CCX 40 41 78,
@@ -23161,7 +22832,7 @@ def integer_load0Block9 : Program := [
   .CX 64 41
 ]
 
-private theorem integer_load0Block9Ok : GatePhysical integer_load0Block9 ∧ toffoliCount integer_load0Block9 = 4 ∧ measurementCount integer_load0Block9 = 0 ∧ gateSlots integer_load0Block9 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block9Ok : GatePhysical integer_load0Block9 ∧ toffoliCount integer_load0Block9 = 4 ∧ measurementCount integer_load0Block9 = 0 ∧ gateSlots integer_load0Block9 = 48 := by decide +kernel
 
 def integer_load0Block10 : Program := [
   .CX 55 41,
@@ -23214,7 +22885,7 @@ def integer_load0Block10 : Program := [
   .CX 56 41
 ]
 
-private theorem integer_load0Block10Ok : GatePhysical integer_load0Block10 ∧ toffoliCount integer_load0Block10 = 2 ∧ measurementCount integer_load0Block10 = 0 ∧ gateSlots integer_load0Block10 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block10Ok : GatePhysical integer_load0Block10 ∧ toffoliCount integer_load0Block10 = 2 ∧ measurementCount integer_load0Block10 = 0 ∧ gateSlots integer_load0Block10 = 48 := by decide +kernel
 
 def integer_load0Block11 : Program := [
   .CX 72 41,
@@ -23267,7 +22938,7 @@ def integer_load0Block11 : Program := [
   .CX 54 41
 ]
 
-private theorem integer_load0Block11Ok : GatePhysical integer_load0Block11 ∧ toffoliCount integer_load0Block11 = 3 ∧ measurementCount integer_load0Block11 = 0 ∧ gateSlots integer_load0Block11 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block11Ok : GatePhysical integer_load0Block11 ∧ toffoliCount integer_load0Block11 = 3 ∧ measurementCount integer_load0Block11 = 0 ∧ gateSlots integer_load0Block11 = 48 := by decide +kernel
 
 def integer_load0Block12 : Program := [
   .CX 53 41,
@@ -23320,7 +22991,7 @@ def integer_load0Block12 : Program := [
   .CX 43 25
 ]
 
-private theorem integer_load0Block12Ok : GatePhysical integer_load0Block12 ∧ toffoliCount integer_load0Block12 = 2 ∧ measurementCount integer_load0Block12 = 0 ∧ gateSlots integer_load0Block12 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block12Ok : GatePhysical integer_load0Block12 ∧ toffoliCount integer_load0Block12 = 2 ∧ measurementCount integer_load0Block12 = 0 ∧ gateSlots integer_load0Block12 = 48 := by decide +kernel
 
 def integer_load0Block13 : Program := [
   .CX 75 25,
@@ -23373,7 +23044,7 @@ def integer_load0Block13 : Program := [
   .CX 14 32
 ]
 
-private theorem integer_load0Block13Ok : GatePhysical integer_load0Block13 ∧ toffoliCount integer_load0Block13 = 0 ∧ measurementCount integer_load0Block13 = 0 ∧ gateSlots integer_load0Block13 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block13Ok : GatePhysical integer_load0Block13 ∧ toffoliCount integer_load0Block13 = 0 ∧ measurementCount integer_load0Block13 = 0 ∧ gateSlots integer_load0Block13 = 48 := by decide +kernel
 
 def integer_load0Block14 : Program := [
   .CX 19 32,
@@ -23426,7 +23097,7 @@ def integer_load0Block14 : Program := [
   .CX 20 38
 ]
 
-private theorem integer_load0Block14Ok : GatePhysical integer_load0Block14 ∧ toffoliCount integer_load0Block14 = 0 ∧ measurementCount integer_load0Block14 = 0 ∧ gateSlots integer_load0Block14 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block14Ok : GatePhysical integer_load0Block14 ∧ toffoliCount integer_load0Block14 = 0 ∧ measurementCount integer_load0Block14 = 0 ∧ gateSlots integer_load0Block14 = 48 := by decide +kernel
 
 def integer_load0Block15 : Program := [
   .CX 56 38,
@@ -23479,7 +23150,7 @@ def integer_load0Block15 : Program := [
   .CX 98 41
 ]
 
-private theorem integer_load0Block15Ok : GatePhysical integer_load0Block15 ∧ toffoliCount integer_load0Block15 = 8 ∧ measurementCount integer_load0Block15 = 0 ∧ gateSlots integer_load0Block15 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block15Ok : GatePhysical integer_load0Block15 ∧ toffoliCount integer_load0Block15 = 8 ∧ measurementCount integer_load0Block15 = 0 ∧ gateSlots integer_load0Block15 = 48 := by decide +kernel
 
 def integer_load0Block16 : Program := [
   .CCX 40 41 99,
@@ -23532,7 +23203,7 @@ def integer_load0Block16 : Program := [
   .CX 28 41
 ]
 
-private theorem integer_load0Block16Ok : GatePhysical integer_load0Block16 ∧ toffoliCount integer_load0Block16 = 6 ∧ measurementCount integer_load0Block16 = 0 ∧ gateSlots integer_load0Block16 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block16Ok : GatePhysical integer_load0Block16 ∧ toffoliCount integer_load0Block16 = 6 ∧ measurementCount integer_load0Block16 = 0 ∧ gateSlots integer_load0Block16 = 48 := by decide +kernel
 
 def integer_load0Block17 : Program := [
   .CX 92 40,
@@ -23585,7 +23256,7 @@ def integer_load0Block17 : Program := [
   .CX 94 41
 ]
 
-private theorem integer_load0Block17Ok : GatePhysical integer_load0Block17 ∧ toffoliCount integer_load0Block17 = 4 ∧ measurementCount integer_load0Block17 = 0 ∧ gateSlots integer_load0Block17 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block17Ok : GatePhysical integer_load0Block17 ∧ toffoliCount integer_load0Block17 = 4 ∧ measurementCount integer_load0Block17 = 0 ∧ gateSlots integer_load0Block17 = 48 := by decide +kernel
 
 def integer_load0Block18 : Program := [
   .CCX 40 41 116,
@@ -23638,7 +23309,7 @@ def integer_load0Block18 : Program := [
   .CX 117 41
 ]
 
-private theorem integer_load0Block18Ok : GatePhysical integer_load0Block18 ∧ toffoliCount integer_load0Block18 = 5 ∧ measurementCount integer_load0Block18 = 0 ∧ gateSlots integer_load0Block18 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block18Ok : GatePhysical integer_load0Block18 ∧ toffoliCount integer_load0Block18 = 5 ∧ measurementCount integer_load0Block18 = 0 ∧ gateSlots integer_load0Block18 = 48 := by decide +kernel
 
 def integer_load0Block19 : Program := [
   .CX 94 41,
@@ -23691,7 +23362,7 @@ def integer_load0Block19 : Program := [
   .CX 23 40
 ]
 
-private theorem integer_load0Block19Ok : GatePhysical integer_load0Block19 ∧ toffoliCount integer_load0Block19 = 2 ∧ measurementCount integer_load0Block19 = 0 ∧ gateSlots integer_load0Block19 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block19Ok : GatePhysical integer_load0Block19 ∧ toffoliCount integer_load0Block19 = 2 ∧ measurementCount integer_load0Block19 = 0 ∧ gateSlots integer_load0Block19 = 48 := by decide +kernel
 
 def integer_load0Block20 : Program := [
   .CX 23 40,
@@ -23744,7 +23415,7 @@ def integer_load0Block20 : Program := [
   .CX 34 41
 ]
 
-private theorem integer_load0Block20Ok : GatePhysical integer_load0Block20 ∧ toffoliCount integer_load0Block20 = 4 ∧ measurementCount integer_load0Block20 = 0 ∧ gateSlots integer_load0Block20 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block20Ok : GatePhysical integer_load0Block20 ∧ toffoliCount integer_load0Block20 = 4 ∧ measurementCount integer_load0Block20 = 0 ∧ gateSlots integer_load0Block20 = 48 := by decide +kernel
 
 def integer_load0Block21 : Program := [
   .CX 38 41,
@@ -23797,7 +23468,7 @@ def integer_load0Block21 : Program := [
   .CCX 40 41 132
 ]
 
-private theorem integer_load0Block21Ok : GatePhysical integer_load0Block21 ∧ toffoliCount integer_load0Block21 = 5 ∧ measurementCount integer_load0Block21 = 0 ∧ gateSlots integer_load0Block21 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block21Ok : GatePhysical integer_load0Block21 ∧ toffoliCount integer_load0Block21 = 5 ∧ measurementCount integer_load0Block21 = 0 ∧ gateSlots integer_load0Block21 = 48 := by decide +kernel
 
 def integer_load0Block22 : Program := [
   .CX 128 41,
@@ -23850,7 +23521,7 @@ def integer_load0Block22 : Program := [
   .CX 32 40
 ]
 
-private theorem integer_load0Block22Ok : GatePhysical integer_load0Block22 ∧ toffoliCount integer_load0Block22 = 2 ∧ measurementCount integer_load0Block22 = 0 ∧ gateSlots integer_load0Block22 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block22Ok : GatePhysical integer_load0Block22 ∧ toffoliCount integer_load0Block22 = 2 ∧ measurementCount integer_load0Block22 = 0 ∧ gateSlots integer_load0Block22 = 48 := by decide +kernel
 
 def integer_load0Block23 : Program := [
   .CX 31 40,
@@ -23903,7 +23574,7 @@ def integer_load0Block23 : Program := [
   .CCX 40 41 137
 ]
 
-private theorem integer_load0Block23Ok : GatePhysical integer_load0Block23 ∧ toffoliCount integer_load0Block23 = 2 ∧ measurementCount integer_load0Block23 = 0 ∧ gateSlots integer_load0Block23 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block23Ok : GatePhysical integer_load0Block23 ∧ toffoliCount integer_load0Block23 = 2 ∧ measurementCount integer_load0Block23 = 0 ∧ gateSlots integer_load0Block23 = 48 := by decide +kernel
 
 def integer_load0Block24 : Program := [
   .CX 136 41,
@@ -23956,7 +23627,7 @@ def integer_load0Block24 : Program := [
   .CX 76 140
 ]
 
-private theorem integer_load0Block24Ok : GatePhysical integer_load0Block24 ∧ toffoliCount integer_load0Block24 = 0 ∧ measurementCount integer_load0Block24 = 0 ∧ gateSlots integer_load0Block24 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block24Ok : GatePhysical integer_load0Block24 ∧ toffoliCount integer_load0Block24 = 0 ∧ measurementCount integer_load0Block24 = 0 ∧ gateSlots integer_load0Block24 = 48 := by decide +kernel
 
 def integer_load0Block25 : Program := [
   .CX 94 140,
@@ -24009,7 +23680,7 @@ def integer_load0Block25 : Program := [
   .CCX 40 41 143
 ]
 
-private theorem integer_load0Block25Ok : GatePhysical integer_load0Block25 ∧ toffoliCount integer_load0Block25 = 1 ∧ measurementCount integer_load0Block25 = 0 ∧ gateSlots integer_load0Block25 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block25Ok : GatePhysical integer_load0Block25 ∧ toffoliCount integer_load0Block25 = 1 ∧ measurementCount integer_load0Block25 = 0 ∧ gateSlots integer_load0Block25 = 48 := by decide +kernel
 
 def integer_load0Block26 : Program := [
   .CX 142 41,
@@ -24062,7 +23733,7 @@ def integer_load0Block26 : Program := [
   .CX 100 41
 ]
 
-private theorem integer_load0Block26Ok : GatePhysical integer_load0Block26 ∧ toffoliCount integer_load0Block26 = 0 ∧ measurementCount integer_load0Block26 = 0 ∧ gateSlots integer_load0Block26 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block26Ok : GatePhysical integer_load0Block26 ∧ toffoliCount integer_load0Block26 = 0 ∧ measurementCount integer_load0Block26 = 0 ∧ gateSlots integer_load0Block26 = 48 := by decide +kernel
 
 def integer_load0Block27 : Program := [
   .CX 101 41,
@@ -24115,7 +23786,7 @@ def integer_load0Block27 : Program := [
   .CX 10 150
 ]
 
-private theorem integer_load0Block27Ok : GatePhysical integer_load0Block27 ∧ toffoliCount integer_load0Block27 = 2 ∧ measurementCount integer_load0Block27 = 0 ∧ gateSlots integer_load0Block27 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block27Ok : GatePhysical integer_load0Block27 ∧ toffoliCount integer_load0Block27 = 2 ∧ measurementCount integer_load0Block27 = 0 ∧ gateSlots integer_load0Block27 = 48 := by decide +kernel
 
 def integer_load0Block28 : Program := [
   .CX 14 150,
@@ -24168,7 +23839,7 @@ def integer_load0Block28 : Program := [
   .CX 19 152
 ]
 
-private theorem integer_load0Block28Ok : GatePhysical integer_load0Block28 ∧ toffoliCount integer_load0Block28 = 1 ∧ measurementCount integer_load0Block28 = 0 ∧ gateSlots integer_load0Block28 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block28Ok : GatePhysical integer_load0Block28 ∧ toffoliCount integer_load0Block28 = 1 ∧ measurementCount integer_load0Block28 = 0 ∧ gateSlots integer_load0Block28 = 48 := by decide +kernel
 
 def integer_load0Block29 : Program := [
   .CX 20 152,
@@ -24221,7 +23892,7 @@ def integer_load0Block29 : Program := [
   .measureX 80 [] [.CZ 0 20, .CZ 2 20, .CZ 10 20, .CZ 20 48, .CZ 20 70]
 ]
 
-private theorem integer_load0Block29Ok : GatePhysical integer_load0Block29 ∧ toffoliCount integer_load0Block29 = 1 ∧ measurementCount integer_load0Block29 = 9 ∧ gateSlots integer_load0Block29 = 109 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block29Ok : GatePhysical integer_load0Block29 ∧ toffoliCount integer_load0Block29 = 1 ∧ measurementCount integer_load0Block29 = 9 ∧ gateSlots integer_load0Block29 = 109 := by decide +kernel
 
 def integer_load0Block30 : Program := [
   .measureX 79 [] [.CZ 0 20, .CZ 1 20, .CZ 4 20, .CZ 20 46, .CZ 20 47, .CZ 20 68],
@@ -24274,7 +23945,7 @@ def integer_load0Block30 : Program := [
   .measureX 9 [] [.Z 39, .Z 26, .CZ 26 91, .CZ 26 92, .CZ 26 97, .CZ 26 100, .CZ 26 101, .CZ 26 102, .Z 27, .CZ 27 91, .CZ 27 92, .CZ 27 97, .CZ 27 100, .CZ 27 101, .CZ 27 102, .Z 91, .CZ 91 117, .CZ 91 118, .CZ 91 122, .CZ 91 124, .Z 92, .CZ 92 117, .CZ 92 118, .CZ 92 122, .CZ 92 124, .Z 97, .CZ 97 117, .CZ 97 118, .CZ 97 122, .CZ 97 124, .Z 100, .CZ 100 117, .CZ 100 118, .CZ 100 122, .CZ 100 124, .Z 101, .CZ 101 117, .CZ 101 118, .CZ 101 122, .CZ 101 124, .Z 102, .CZ 102 117, .CZ 102 118, .CZ 102 122, .CZ 102 124, .Z 117, .Z 118, .Z 122, .Z 124, .Z 141, .Z 143, .Z 145]
 ]
 
-private theorem integer_load0Block30Ok : GatePhysical integer_load0Block30 ∧ toffoliCount integer_load0Block30 = 0 ∧ measurementCount integer_load0Block30 = 48 ∧ gateSlots integer_load0Block30 = 532 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block30Ok : GatePhysical integer_load0Block30 ∧ toffoliCount integer_load0Block30 = 0 ∧ measurementCount integer_load0Block30 = 48 ∧ gateSlots integer_load0Block30 = 532 := by decide +kernel
 
 def integer_load0Block31 : Program := [
   .measureX 10 [] [.Z 91, .Z 92, .Z 97, .Z 100, .Z 101, .Z 102, .Z 126, .Z 130, .Z 146],
@@ -24327,7 +23998,7 @@ def integer_load0Block31 : Program := [
   .measureX 120 [] [.CZ 28 119, .CZ 29 119, .CZ 116 119, .CZ 118 119, .Z 119]
 ]
 
-private theorem integer_load0Block31Ok : GatePhysical integer_load0Block31 ∧ toffoliCount integer_load0Block31 = 0 ∧ measurementCount integer_load0Block31 = 48 ∧ gateSlots integer_load0Block31 = 1074 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block31Ok : GatePhysical integer_load0Block31 ∧ toffoliCount integer_load0Block31 = 0 ∧ measurementCount integer_load0Block31 = 48 ∧ gateSlots integer_load0Block31 = 1074 := by decide +kernel
 
 def integer_load0Block32 : Program := [
   .measureX 119 [] [.CZ 28 30, .CZ 28 117, .CZ 30 118, .CZ 117 118],
@@ -24380,7 +24051,7 @@ def integer_load0Block32 : Program := [
   .CX 7 30
 ]
 
-private theorem integer_load0Block32Ok : GatePhysical integer_load0Block32 ∧ toffoliCount integer_load0Block32 = 0 ∧ measurementCount integer_load0Block32 = 31 ∧ gateSlots integer_load0Block32 = 122 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block32Ok : GatePhysical integer_load0Block32 ∧ toffoliCount integer_load0Block32 = 0 ∧ measurementCount integer_load0Block32 = 31 ∧ gateSlots integer_load0Block32 = 122 := by decide +kernel
 
 def integer_load0Block33 : Program := [
   .CX 31 8,
@@ -24401,7 +24072,7 @@ def integer_load0Block33 : Program := [
   .CX 15 38
 ]
 
-private theorem integer_load0Block33Ok : GatePhysical integer_load0Block33 ∧ toffoliCount integer_load0Block33 = 0 ∧ measurementCount integer_load0Block33 = 0 ∧ gateSlots integer_load0Block33 = 16 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem integer_load0Block33Ok : GatePhysical integer_load0Block33 ∧ toffoliCount integer_load0Block33 = 0 ∧ measurementCount integer_load0Block33 = 0 ∧ gateSlots integer_load0Block33 = 16 := by decide +kernel
 
 def integer_load0 : Program := integer_load0Block0 ++ integer_load0Block1 ++ integer_load0Block2 ++ integer_load0Block3 ++ integer_load0Block4 ++ integer_load0Block5 ++ integer_load0Block6 ++ integer_load0Block7 ++ integer_load0Block8 ++ integer_load0Block9 ++ integer_load0Block10 ++ integer_load0Block11 ++ integer_load0Block12 ++ integer_load0Block13 ++ integer_load0Block14 ++ integer_load0Block15 ++ integer_load0Block16 ++ integer_load0Block17 ++ integer_load0Block18 ++ integer_load0Block19 ++ integer_load0Block20 ++ integer_load0Block21 ++ integer_load0Block22 ++ integer_load0Block23 ++ integer_load0Block24 ++ integer_load0Block25 ++ integer_load0Block26 ++ integer_load0Block27 ++ integer_load0Block28 ++ integer_load0Block29 ++ integer_load0Block30 ++ integer_load0Block31 ++ integer_load0Block32 ++ integer_load0Block33
 
@@ -24524,9 +24195,7 @@ col130] ++ List.replicate 89 0
 
 theorem integer_load0Trace0_checked : eval col263 (integer_load0Block0 ++ integer_load0Block1 ++ integer_load0Block2 ++ integer_load0Block3 ++ integer_load0Block4 ++ integer_load0Block5) integer_load0Trace0In =
 
-    (true, integer_load0Trace0Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block0 [integer_load0Block1, integer_load0Block2, integer_load0Block3, integer_load0Block4, integer_load0Block5] _ _ (by decide +kernel)
+    (true, integer_load0Trace0Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -24699,9 +24368,7 @@ col76] ++ List.replicate 68 0
 
 theorem integer_load0Trace1_checked : eval col263 (integer_load0Block6 ++ integer_load0Block7 ++ integer_load0Block8 ++ integer_load0Block9 ++ integer_load0Block10 ++ integer_load0Block11) integer_load0Trace1In =
 
-    (true, integer_load0Trace1Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block6 [integer_load0Block7, integer_load0Block8, integer_load0Block9, integer_load0Block10, integer_load0Block11] _ _ (by decide +kernel)
+    (true, integer_load0Trace1Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -24924,9 +24591,7 @@ col35] ++ List.replicate 39 0
 
 theorem integer_load0Trace2_checked : eval col263 (integer_load0Block12 ++ integer_load0Block13 ++ integer_load0Block14 ++ integer_load0Block15 ++ integer_load0Block16 ++ integer_load0Block17) integer_load0Trace2In =
 
-    (true, integer_load0Trace2Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block12 [integer_load0Block13, integer_load0Block14, integer_load0Block15, integer_load0Block16, integer_load0Block17] _ _ (by decide +kernel)
+    (true, integer_load0Trace2Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -25200,9 +24865,7 @@ col30] ++ List.replicate 17 0
 
 theorem integer_load0Trace3_checked : eval col263 (integer_load0Block18 ++ integer_load0Block19 ++ integer_load0Block20 ++ integer_load0Block21 ++ integer_load0Block22 ++ integer_load0Block23) integer_load0Trace3In =
 
-    (true, integer_load0Trace3Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block18 [integer_load0Block19, integer_load0Block20, integer_load0Block21, integer_load0Block22, integer_load0Block23] _ _ (by decide +kernel)
+    (true, integer_load0Trace3Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -25515,9 +25178,7 @@ col202] ++ List.replicate 0 0
 
 theorem integer_load0Trace4_checked : eval col263 (integer_load0Block24 ++ integer_load0Block25 ++ integer_load0Block26 ++ integer_load0Block27 ++ integer_load0Block28 ++ integer_load0Block29) integer_load0Trace4In =
 
-    (true, integer_load0Trace4Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block24 [integer_load0Block25, integer_load0Block26, integer_load0Block27, integer_load0Block28, integer_load0Block29] _ _ (by decide +kernel)
+    (true, integer_load0Trace4Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -25708,9 +25369,7 @@ col231] ++ List.replicate 139 0
 
 theorem integer_load0Trace5_checked : eval col263 (integer_load0Block30 ++ integer_load0Block31 ++ integer_load0Block32 ++ integer_load0Block33) integer_load0Trace5In =
 
-    (true, integer_load0Trace5Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ integer_load0Block30 [integer_load0Block31, integer_load0Block32, integer_load0Block33] _ _ (by decide +kernel)
+    (true, integer_load0Trace5Out) := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -25794,10 +25453,7 @@ theorem integer_load0_checked : eval 0x1ffffffffffffffffffffffffffffffffffffffff
   rw [shape]
   exact (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace0_checked (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace1_checked (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace2_checked (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace3_checked (StairArchiveRows.combine _ _ _ _ _ _ integer_load0Trace4_checked integer_load0Trace5_checked)))))
 
-private theorem integer_load0_target : ∀ i ∈ integer_load0, target i < 155 := by
-  -- WSLIM: one scan per block (the decide walked the left-nested `++` chain per instruction)
-  unfold integer_load0
-  exact WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.targets_sound _ _ (by decide +kernel)) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))
+private theorem integer_load0_target : ∀ i ∈ integer_load0, target i < 155 := by decide +kernel
 
 theorem integer_load0_run (row x : Nat) (m : List Bool) (s : State)
     (active : (0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff : Nat).testBit row = true)
@@ -25904,7 +25560,7 @@ private theorem complete {P : Program} (stock : PieceOK StairCertificate.holes39
   have lookup : ∀ v ∈ StairPhysicalLayout.newHolesNat,
       v ∈ StairCertificate.holes39 ∨ (4835 ≤ v ∧ v < 4840) := by
     rw [StairSquareEntryR.holes39_eq]
-    (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    decide +kernel
   rcases lookup _ hbad with old | ⟨lo,hi⟩
   · exact rest old
   · have l : Nat.ble 4835 (StairPlaceFast.outerPlaceB x) = true := by simpa only [Nat.ble_eq] using lo
@@ -25925,7 +25581,7 @@ private theorem converter {P Q : Program}
     · exact List.mem_append_left _ (List.mem_toFinset.mp (rec h))
     · exact List.mem_append_right _ (List.mem_toFinset.mp h)
   have table : (StairBoundaryLoan.converterLayout760.wires ++ StairBoundaryLoan.converterHosts).all
-      (fun y => decide (RoleI y) || extraFree y) = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+      (fun y => decide (RoleI y) || extraFree y) = true := by decide +kernel
   have t := List.all_eq_true.mp table x mem
   simp only [Bool.or_eq_true, decide_eq_true_eq] at t
   exact t.resolve_left (fun m => avoid x (roleI_mem m) hx)
@@ -25947,19 +25603,19 @@ theorem center : PieceOK holes TP StairConcrete.bestLoans.center :=
 private theorem de_tab : DecoderBiasReuse.fixedLayout.wires.all (fun w =>
     decide (RoleI w) || (extraFree (OB5.sig 511 (Equiv.swap (base 760) (base 717)
       (shifted Placement5.pi0 (Equiv.swap (base 719) (base 510) w)))))) = true := by
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 private theorem de_g : extraFree (OB5.sig 511 (Equiv.swap (base 760) (base 717)
     (shifted Placement5.pi0 (base 510)))) = true := by
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 private theorem de_flag : extraFree (OB5.sig 511 (Equiv.swap (base 760) (base 717)
     (shifted Placement5.pi0 (base 2409)))) = true := by
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 private theorem de_pad : extraFree (OB5.sig 511 (Equiv.swap (base 760) (base 717)
     (shifted Placement5.pi0 (Equiv.swap (base 719) (base 510) (base 512))))) = true := by
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 attribute [local irreducible] ECDSAAdd.wires in
 private theorem de_tpi (y : Wire)
@@ -26010,7 +25666,7 @@ theorem endpointM : PieceOK holes TP
   obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
   have notRole : ¬ RoleI y := fun m =>
     StairEndpointLoan44.endPacket760Loan44_avoids y (roleI_mem m) hy
-  have table : multEndL.all (fun z => decide (RoleI z) || extraFree (OB5.sig 511 z)) = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have table : multEndL.all (fun z => decide (RoleI z) || extraFree (OB5.sig 511 z)) = true := by decide +kernel
   have t := List.all_eq_true.mp table y
     (endPacket760_false_mem y (StairEndpointLoan44.endPacket760Loan44_support hy))
   simp only [Bool.or_eq_true, decide_eq_true_eq] at t
@@ -26032,9 +25688,7 @@ set_option maxHeartbeats 16000000
 private theorem safe_table :
     tpList.all (fun x => decide (x ∈ StairSchedule.exclusiveRoles) ||
       decide (StairPlaceFast.outerPlaceB x ∉ StairPhysicalLayout.newHolesNat)) = true := by
-  -- WSLIM: statement-level membership decides through one bit mask per list
-  simp only [decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 private theorem asList (x : Nat) (h : TPI x) : x∈tpList := by
   unfold TPI at h
@@ -26052,7 +25706,7 @@ private theorem physical_safe {x : Wire} (tpi : TPI x) (nr : x ∉ StairSchedule
   exact h.resolve_left nr
 
 private theorem host_nonrole : ∀ g ∈ schedule, ∀ h ∈ hp.group true g.1 g.2.1 g.2.2,
-    h ∉ StairSchedule.exclusiveRoles := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    h ∉ StairSchedule.exclusiveRoles := by decide +kernel
 
 theorem hostedGroup44 (divide : Bool) (d f c : Nat) (hg : (d, f, c) ∈ schedule) :
     PieceOK StairPhysicalInventory.physicalHoles TP (StairHostsSchedule.hostedGroup hp divide d f c) := by
@@ -26101,7 +25755,7 @@ def fit (q : Wire) := good39B q && decide (q∉retired)
 private theorem extra : ∀q∈StairPhysicalInventory.physicalHoles,
     q∈StairCertificate.holes39 ∨ q∈retired := by
   rw [StairPhysicalLayout.physicalHoles_eq_nat,StairSquareEntryR.holes39_eq]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 theorem fits {f : Wire → Wire} {P : Program} (h : ∀q∈wires P,fit (f q)=true) :
     PieceOK StairPhysicalInventory.physicalHoles f P := by
@@ -26206,8 +25860,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q0 : checks 0 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q1 : checks 1 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q0 : checks 0 = true := by decide +kernel
+theorem q1 : checks 1 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26217,8 +25871,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q2 : checks 2 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q3 : checks 3 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q2 : checks 2 = true := by decide +kernel
+theorem q3 : checks 3 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26228,8 +25882,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q4 : checks 4 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q5 : checks 5 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q4 : checks 4 = true := by decide +kernel
+theorem q5 : checks 5 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26239,8 +25893,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q6 : checks 6 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q7 : checks 7 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q6 : checks 6 = true := by decide +kernel
+theorem q7 : checks 7 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26250,8 +25904,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q8 : checks 8 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q9 : checks 9 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q8 : checks 8 = true := by decide +kernel
+theorem q9 : checks 9 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26261,8 +25915,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q10 : checks 10 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q11 : checks 11 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q10 : checks 10 = true := by decide +kernel
+theorem q11 : checks 11 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26272,8 +25926,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q12 : checks 12 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q13 : checks 13 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q12 : checks 12 = true := by decide +kernel
+theorem q13 : checks 13 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26283,8 +25937,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q14 : checks 14 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q15 : checks 15 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q14 : checks 14 = true := by decide +kernel
+theorem q15 : checks 15 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26294,8 +25948,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q16 : checks 16 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q17 : checks 17 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q16 : checks 16 = true := by decide +kernel
+theorem q17 : checks 17 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26305,8 +25959,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q18 : checks 18 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q19 : checks 19 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q18 : checks 18 = true := by decide +kernel
+theorem q19 : checks 19 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26316,8 +25970,8 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q20 : checks 20 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-theorem q21 : checks 21 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q20 : checks 20 = true := by decide +kernel
+theorem q21 : checks 21 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26327,7 +25981,7 @@ section
 namespace ECDSAAdd.Entrant.StairArchiveRaw
 set_option maxRecDepth 30000
 set_option maxHeartbeats 5000000
-theorem q22 : checks 22 = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem q22 : checks 22 = true := by decide +kernel
 end ECDSAAdd.Entrant.StairArchiveRaw
 
 end
@@ -26364,15 +26018,15 @@ private theorem rows {P : Program}
   change StairOuterPlacement.phasePlace (StairPhysicalLayout.phaseRelabel x) ∉ _
   rw [StairPlaceFast.phasePlace_eqB,StairPhysicalV3.phaseRelabel_eqB]
   exact of_decide_eq_true (List.all_eq_true.mp
-    (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : (StairPhysicalPrimitives.rowSitesL 87).all (fun r =>
+    (by decide +kernel : (StairPhysicalPrimitives.rowSitesL 87).all (fun r =>
       decide (StairPlaceFast.phasePlaceB (StairPlaceFast.phaseHostB (StairPlaceFast.fieldPlaceB r))
         ∉ StairPhysicalLayout.newHolesNat)) = true) x (h x hx))
 
-private theorem orient : PieceOK StairPhysicalInventory.physicalHoles PP (renameProgram StairV3Primitives.xRelabel (StairV3Primitives.orient 425)) := checked firstOrient39.1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
-private theorem packRow : PieceOK StairPhysicalInventory.physicalHoles PP (renameProgram (OB5.sig 425) (Rolling1588.Integer.packFirst base true 425)) := checked firstPacket39.1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
-private theorem unpackRow : PieceOK StairPhysicalInventory.physicalHoles PP (renameProgram (OB5.sig 425) (Rolling1588.unpackAtTick true 425)) := checked firstUnpacket39.1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
-private theorem move : PieceOK StairPhysicalInventory.physicalHoles PP StairPhysicalLayout.phaseBMove := checked phaseBMove39.1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
-private theorem back : PieceOK StairPhysicalInventory.physicalHoles PP StairPhysicalPhase.phaseBReturn := checked phaseBReturn39.1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+private theorem orient : PieceOK StairPhysicalInventory.physicalHoles PP (renameProgram StairV3Primitives.xRelabel (StairV3Primitives.orient 425)) := checked firstOrient39.1 (by decide +kernel)
+private theorem packRow : PieceOK StairPhysicalInventory.physicalHoles PP (renameProgram (OB5.sig 425) (Rolling1588.Integer.packFirst base true 425)) := checked firstPacket39.1 (by decide +kernel)
+private theorem unpackRow : PieceOK StairPhysicalInventory.physicalHoles PP (renameProgram (OB5.sig 425) (Rolling1588.unpackAtTick true 425)) := checked firstUnpacket39.1 (by decide +kernel)
+private theorem move : PieceOK StairPhysicalInventory.physicalHoles PP StairPhysicalLayout.phaseBMove := checked phaseBMove39.1 (by decide +kernel)
+private theorem back : PieceOK StairPhysicalInventory.physicalHoles PP StairPhysicalPhase.phaseBReturn := checked phaseBReturn39.1 (by decide +kernel)
 
 theorem pack : PieceOK StairPhysicalInventory.physicalHoles PP StairV3Primitives.firstPack := by
   unfold StairV3Primitives.firstPack
@@ -26397,7 +26051,7 @@ open StairConcreteAssembly StairSiteAvoidance StairSiteEasy Stair44PointMap
 set_option maxRecDepth 40000
 set_option maxHeartbeats 12000000
 
-theorem ysFit : yList.all (fun r => fit (StairPlaceFast.ugB (duringY r)))=true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem ysFit : yList.all (fun r => fit (StairPlaceFast.ugB (duringY r)))=true := by decide +kernel
 
 private def e1B (q : Nat) : Nat :=
   StairPlaceFast.swB 1558 736 (StairPlaceFast.swB 1557 738 (StairPlaceFast.swB 1042 737
@@ -26422,7 +26076,7 @@ private theorem pmapR_fast (q : Wire) : E1QubitPlacement.pmapR layout q = pmB q 
 theorem xsFit (q : Wire) (hq : q ∈ xList) :
     fit (StairPlaceFast.ugB (duringX (E1QubitPlacement.pmapR layout q))) = true := by
   rw [pmapR_fast]
-  exact List.all_eq_true.mp (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) :
+  exact List.all_eq_true.mp (by decide +kernel :
     xList.all (fun r => fit (StairPlaceFast.ugB (duringX (pmB r)))) = true) q hq
 
 end ECDSAAdd.Entrant.Stair44OuterSites
@@ -26480,13 +26134,13 @@ theorem ready (d : Bool) (i x p : Nat) (hi : i∈[425,505,506])
   let n := (i-1)/5
   have bound : 5*n ≤ i := by dsimp [n]; omega
   have labels : ∀q∈atExit, OB5.sig (i-1) q=q :=
-    (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀ i∈[425,505,506], ∀ q ∈ atExit, OB5.sig (i-1) q = q) i hi
+    (by decide +kernel : ∀ i∈[425,505,506], ∀ q ∈ atExit, OB5.sig (i-1) q = q) i hi
   have bits' : s.basis = (run (Rolling1588.allEncode base d n) [] raw).basis := bits.trans (by rw [stock_prefix d i hi])
   have f := (W.compactSkywalkStage_fields_iff base _ i (by omega) base_pool_nodup raw.basis).mp hraw
   obtain ⟨_, _, _, _, _, carries, _, _, released⟩ := f
   have ca := (regValue_zero _ _).mp carries
   have high : base 1026 ∈ (W.compactSkywalkSignPoolB base i).released :=
-    (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀ i∈[425,505,506], base 1026 ∈ (W.compactSkywalkSignPoolB base i).released) i hi
+    (by decide +kernel : ∀ i∈[425,505,506], base 1026 ∈ (W.compactSkywalkSignPoolB base i).released) i hi
   have old (a : Nat) (ha : a ∈ [1026,1541,1542]) :
       (run (Rolling1588.allEncode base d n) [] raw).basis (base a) = raw.basis (base a) :=
     run_preserves_outside _ [] raw _ (raw_away d n a ha (by omega))
@@ -26627,7 +26281,7 @@ theorem backward_run (d : Bool) (after x : Nat) (bound : 16 + after ≤ 512)
     exact result.1
   obtain ⟨hp0,hpo,_,_⟩ := StackOB5.prime_facts x hx0 hx
   have pool : switchSites.all (fun q => decide (OB5.sig 15 q ∈ skywalkPoolWires base)) = true := by
-    (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    decide +kernel
   have clean : ∀q∈switchSites, mid.basis q = false := by
     intro q hq
     rw [mid_eq]
@@ -26671,10 +26325,7 @@ set_option maxHeartbeats 1500000
 theorem inventory : indices.length=104 ∧ (indices.map phys).Nodup ∧
     indices.all (fun k => Stair44OuterSites.fit (phys k) &&
       decide (hole k ∉ futurePayload 87) && decide (hole k ∉ hosts 87) &&
-      decide (hole k ∉ StairSchedule.exclusiveRoles)) = true := by
-  -- WSLIM: statement-level membership decides through one bit mask per list
-  simp only [decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+      decide (hole k ∉ StairSchedule.exclusiveRoles)) = true := by decide +kernel
 
 theorem clean (cut : Nat) (origin : BasisState) (ctx : FrontierReplay1591.Context origin)
     (X Y : Fp) (r : State) (frame : Rolling1588.CutFrame cut origin X Y r)
@@ -26697,10 +26348,7 @@ theorem in_selected (actual reference : State) (same : AgreeOutside (Δv 87) act
   exact off (StairOuterPlacement.fieldPlace_injective eq ▸ hq)
 open StairField2V3RecScratch
 
-theorem outsideEP : indices.all (fun k => decide (hole k ∉ EP)) = true := by
-  -- WSLIM: statement-level membership decide through one bit mask
-  simp only [decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem outsideEP : indices.all (fun k => decide (hole k ∉ EP)) = true := by decide +kernel
 
 theorem division_clean (c : Nat) (t actual : State) (inv : Inv c t)
     (same : AgreeOutside (Δv 87) actual t) (k : Nat) (hk : k ∈ indices) :
@@ -26726,7 +26374,7 @@ def packetSites (j : Nat) : List Wire := (List.range 10).flatMap (fun i =>
 
 def layout (j : Nat) := (packetSites j).map StairPlaceFast.outerPlaceB ++ 4835 :: indices.map phys
 
-theorem tag_root : StairPlaceFast.outerPlaceB (base 720) = 4835 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem tag_root : StairPlaceFast.outerPlaceB (base 720) = 4835 := by decide +kernel
 
 def layoutOK (j : Nat) : Bool :=
   (layout j).length == 121 && decide (layout j).Nodup &&
@@ -26734,137 +26382,37 @@ def layoutOK (j : Nat) : Bool :=
 
 def transientPhysical : List Wire := [4909, 4911, 4914, 4916, 4919, 4921, 4924, 4926, 4929, 4931, 4934, 4936, 4939, 4941, 4944, 4946, 4949, 4951, 4954, 4956, 4959, 4961, 4964, 4966, 4969, 4971, 4974, 4976, 4979, 4981, 4984, 4986, 4989, 4991, 4994, 4996, 4999, 5001, 5004, 5006, 5009, 5011, 5014, 5016, 5019, 5021, 5024, 5026, 5029, 5031, 5034, 5036, 5039, 5041, 5044, 5046, 5049, 5051, 5054, 5056, 5059, 5061, 5064, 5066, 5069, 5071, 5074, 5076, 5079, 5081, 5084, 5086, 5089, 5091, 5094, 5096, 5099, 5101, 5104, 5106, 5109, 5111, 5114, 5116, 5119, 5121, 5124, 5126, 5129, 5131, 5134, 5136, 5139, 5141, 0, 5653, 5650, 5648, 5645, 5643, 5640, 5638, 5635, 5633]
 
-theorem transient_exact : indices.map phys = transientPhysical := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem transient_exact : indices.map phys = transientPhysical := by decide +kernel
 
 theorem permanent_exact : (4835 :: transientPhysical).Nodup ∧
-    transientPhysical.all Stair44OuterSites.fit = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    transientPhysical.all Stair44OuterSites.fit = true := by decide +kernel
 
 def packetOK (j : Nat) : Bool := Id.run do
   let a := (packetSites j).map StairPlaceFast.outerPlaceB
   return a.length == 16 && decide a.Nodup && a.all (fun q =>
     Stair44OuterSites.fit q && decide (q ∉ 4835 :: transientPhysical))
 
-private theorem p1 : ((List.range' 1 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p5 : ((List.range' 5 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p9 : ((List.range' 9 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p13 : ((List.range' 13 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p17 : ((List.range' 17 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p21 : ((List.range' 21 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p25 : ((List.range' 25 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p29 : ((List.range' 29 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p33 : ((List.range' 33 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p37 : ((List.range' 37 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p41 : ((List.range' 41 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p45 : ((List.range' 45 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p49 : ((List.range' 49 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p53 : ((List.range' 53 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p57 : ((List.range' 57 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p61 : ((List.range' 61 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p65 : ((List.range' 65 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p69 : ((List.range' 69 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p73 : ((List.range' 73 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p77 : ((List.range' 77 4).all packetOK) = true := by
-  -- WSLIM: membership / Nodup decides inside `packetOK` through one bit mask per list
-  delta packetOK
-  simp only [Stair44OuterSites.fit, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask,
-    ECDSAAdd.Entrant.WSlimMac.decide_nodup_nodupB]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-private theorem p81 : ((List.range' 81 3).all packetOK) = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+private theorem p1 : ((List.range' 1 4).all packetOK) = true := by decide +kernel
+private theorem p5 : ((List.range' 5 4).all packetOK) = true := by decide +kernel
+private theorem p9 : ((List.range' 9 4).all packetOK) = true := by decide +kernel
+private theorem p13 : ((List.range' 13 4).all packetOK) = true := by decide +kernel
+private theorem p17 : ((List.range' 17 4).all packetOK) = true := by decide +kernel
+private theorem p21 : ((List.range' 21 4).all packetOK) = true := by decide +kernel
+private theorem p25 : ((List.range' 25 4).all packetOK) = true := by decide +kernel
+private theorem p29 : ((List.range' 29 4).all packetOK) = true := by decide +kernel
+private theorem p33 : ((List.range' 33 4).all packetOK) = true := by decide +kernel
+private theorem p37 : ((List.range' 37 4).all packetOK) = true := by decide +kernel
+private theorem p41 : ((List.range' 41 4).all packetOK) = true := by decide +kernel
+private theorem p45 : ((List.range' 45 4).all packetOK) = true := by decide +kernel
+private theorem p49 : ((List.range' 49 4).all packetOK) = true := by decide +kernel
+private theorem p53 : ((List.range' 53 4).all packetOK) = true := by decide +kernel
+private theorem p57 : ((List.range' 57 4).all packetOK) = true := by decide +kernel
+private theorem p61 : ((List.range' 61 4).all packetOK) = true := by decide +kernel
+private theorem p65 : ((List.range' 65 4).all packetOK) = true := by decide +kernel
+private theorem p69 : ((List.range' 69 4).all packetOK) = true := by decide +kernel
+private theorem p73 : ((List.range' 73 4).all packetOK) = true := by decide +kernel
+private theorem p77 : ((List.range' 77 4).all packetOK) = true := by decide +kernel
+private theorem p81 : ((List.range' 81 3).all packetOK) = true := by decide +kernel
 
 theorem packets_exact : (List.range' 1 83).all packetOK = true := by
   change (List.range' 1 4 ++ List.range' 5 4 ++ List.range' 9 4 ++ List.range' 13 4 ++ List.range' 17 4 ++ List.range' 21 4 ++ List.range' 25 4 ++ List.range' 29 4 ++ List.range' 33 4 ++ List.range' 37 4 ++ List.range' 41 4 ++ List.range' 45 4 ++ List.range' 49 4 ++ List.range' 53 4 ++ List.range' 57 4 ++ List.range' 61 4 ++ List.range' 65 4 ++ List.range' 69 4 ++ List.range' 73 4 ++ List.range' 77 4 ++ List.range' 81 3).all packetOK = true
@@ -26917,7 +26465,7 @@ def rankAt (cells : Nat → Bool × Bool) (k : Nat) := rank5
 
 private theorem radix : ∀ a b c d e : Fin 3, rank5 a b c d e < 243 ∧
     ∀ i : Fin 5, rank5 a b c d e / 3^(4-i.val) % 3 =
-      ([a.val,b.val,c.val,d.val,e.val] : List Nat)[i.val]! := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+      ([a.val,b.val,c.val,d.val,e.val] : List Nat)[i.val]! := by decide +kernel
 
 theorem rank_lt (cells : Nat → Bool × Bool) (k : Nat) : rankAt cells k < 243 :=
   (radix _ _ _ _ _).1
@@ -27026,7 +26574,7 @@ private theorem allowed_spec (i q : Nat) : allowed i q = true ↔ permitted i q 
     Nat.beq_eq,or_assoc]
 
 private theorem table : (List.range' 1 505).all (fun i => (blocked i).all
-    (fun q => !allowed i (OB5.sig i q))) = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    (fun q => !allowed i (OB5.sig i q))) = true := by decide +kernel
 
 private theorem no_label {i q : Nat} (hi : i ∈ List.range' 1 505) (hq : q ∈ blocked i) :
     ¬permitted i (OB5.sig i q) := by
@@ -27077,7 +26625,7 @@ private def packetWires (i : Nat) : Finset Wire :=
 
 private theorem first_packet (d : Bool) :
     wires (Rolling1588.Integer.packFirst base d 5) ⊆ packetWires 5 ∧
-    wires (Rolling1588.unpackAtTick d 5) ⊆ packetWires 5 := by cases d <;> (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    wires (Rolling1588.unpackAtTick d 5) ⊆ packetWires 5 := by cases d <;> decide +kernel
 
 private theorem packet_sites (d : Bool) (i q : Nat)
     (hq : q ∈ wires (Rolling1588.Integer.packFirst base d i) ∨
@@ -27154,7 +26702,7 @@ private theorem early_map : ∀ z ∈ retired, ∀ y : Wire, Stair44WalkMap.firs
   have r := congrArg Stair44WalkMap.first.symm eq
   rw [Equiv.symm_apply_apply] at r
   rw [r]
-  exact (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀z∈retired, Stair44WalkMap.first.symm z ∈ blocked 1) z hz
+  exact (by decide +kernel : ∀z∈retired, Stair44WalkMap.first.symm z ∈ blocked 1) z hz
 
 private theorem late_map : ∀ z ∈ retired, ∀ y : Wire, Stair44WalkMap.rest y=z →
     y ∈ blocked 16 := by
@@ -27162,7 +26710,7 @@ private theorem late_map : ∀ z ∈ retired, ∀ y : Wire, Stair44WalkMap.rest 
   have r := congrArg Stair44WalkMap.rest.symm eq
   rw [Equiv.symm_apply_apply] at r
   rw [r]
-  exact (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀z∈retired, Stair44WalkMap.rest.symm z ∈ blocked 16) z hz
+  exact (by decide +kernel : ∀z∈retired, Stair44WalkMap.rest.symm z ∈ blocked 16) z hz
 
 attribute [local irreducible] wires renameProgram Rolling1588.reverse Rolling1588TickGap.forward
 theorem routed_free (d : Bool) (n : Nat) (le : 16+n ≤ 506) (q : Wire) (hq : q∈retired) :
@@ -27315,41 +26863,10 @@ namespace ECDSAAdd.Entrant.StairArchiveInactive
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1500000
 
--- WSLIM: `safe` with `host.symm` as one fold of the swaps (Equiv.trans/swap evaluate through structure projections)
--- and membership in `cover` through one bit mask (ECDSAAdd.Entrant.WSlimMac.bmask); proven equal to `safe`.
-def wslimRebindSymm : List Wire → List Wire → Wire → Wire
-  | r :: rs, h :: hs, q => wslimRebindSymm rs hs (cond (Nat.beq q r) h (cond (Nat.beq q h) r q))
-  | _, _, q => q
-
-theorem wslim_swap (r h q : Nat) : Equiv.swap r h q = cond (Nat.beq q r) h (cond (Nat.beq q h) r q) := by
-  rw [Equiv.swap_apply_def]
-  cases h1 : Nat.beq q r
-  · rw [if_neg (Nat.ne_of_beq_eq_false h1)]
-    cases h2 : Nat.beq q h
-    · rw [if_neg (Nat.ne_of_beq_eq_false h2)]; rfl
-    · rw [if_pos (Nat.eq_of_beq_eq_true h2)]; rfl
-  · rw [if_pos (Nat.eq_of_beq_eq_true h1)]; rfl
-
-theorem wslim_rebinder_symm : ∀ (rs hs : List Wire) (q : Wire), (rebinder rs hs).symm q = wslimRebindSymm rs hs q
-  | r :: rs, h :: hs, q => by
-    rw [rebinder, Equiv.symm_trans_apply, Equiv.symm_swap, wslim_rebinder_symm rs hs, wslimRebindSymm, wslim_swap]
-  | [], _, q => rfl
-  | _ :: _, [], q => rfl
-
-open Arithmetic MappedCompressed ArchiveFieldScratch StairPhysicalLayout in
-def wslimSafe (j : Nat) (second : Bool) := (savedSites j second).all (fun q =>
-  !(ECDSAAdd.Entrant.WSlimMac.bmask (cover (if second then j+1 else j))).testBit
-    ((shifted (Placement5.pi (if second then j+1 else j))).symm
-      (OB5.sig 511 (wslimRebindSymm StairSchedule.exclusiveRoles (hosts 87) q))))
-
-theorem wslim_safe (j : Nat) (second : Bool) : safe j second = wslimSafe j second := by
-  unfold safe wslimSafe preimage host
-  simp only [wslim_rebinder_symm, decide_not, ECDSAAdd.Entrant.WSlimMac.decide_mem_bmask]
-
-theorem b0 : (safe 16 false && safe 16 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b1 : (safe 19 false && safe 19 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b2 : (safe 22 false && safe 22 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b3 : (safe 25 false && safe 25 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
+theorem b0 : (safe 16 false && safe 16 true) = true := by decide +kernel
+theorem b1 : (safe 19 false && safe 19 true) = true := by decide +kernel
+theorem b2 : (safe 22 false && safe 22 true) = true := by decide +kernel
+theorem b3 : (safe 25 false && safe 25 true) = true := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveInactive
 
@@ -27361,10 +26878,10 @@ namespace ECDSAAdd.Entrant.StairArchiveInactive
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1500000
 
-theorem b4 : (safe 28 false && safe 28 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b5 : (safe 31 false && safe 31 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b6 : (safe 34 false && safe 34 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b7 : (safe 37 false && safe 37 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
+theorem b4 : (safe 28 false && safe 28 true) = true := by decide +kernel
+theorem b5 : (safe 31 false && safe 31 true) = true := by decide +kernel
+theorem b6 : (safe 34 false && safe 34 true) = true := by decide +kernel
+theorem b7 : (safe 37 false && safe 37 true) = true := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveInactive
 
@@ -27376,10 +26893,10 @@ namespace ECDSAAdd.Entrant.StairArchiveInactive
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1500000
 
-theorem b8 : (safe 40 false && safe 40 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b9 : (safe 43 false && safe 43 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b10 : (safe 46 false && safe 46 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b11 : (safe 49 false && safe 49 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
+theorem b8 : (safe 40 false && safe 40 true) = true := by decide +kernel
+theorem b9 : (safe 43 false && safe 43 true) = true := by decide +kernel
+theorem b10 : (safe 46 false && safe 46 true) = true := by decide +kernel
+theorem b11 : (safe 49 false && safe 49 true) = true := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveInactive
 
@@ -27391,10 +26908,10 @@ namespace ECDSAAdd.Entrant.StairArchiveInactive
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1500000
 
-theorem b12 : (safe 52 false && safe 52 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b13 : (safe 55 false && safe 55 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b14 : (safe 58 false && safe 58 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b15 : (safe 61 false && safe 61 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
+theorem b12 : (safe 52 false && safe 52 true) = true := by decide +kernel
+theorem b13 : (safe 55 false && safe 55 true) = true := by decide +kernel
+theorem b14 : (safe 58 false && safe 58 true) = true := by decide +kernel
+theorem b15 : (safe 61 false && safe 61 true) = true := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveInactive
 
@@ -27406,10 +26923,10 @@ namespace ECDSAAdd.Entrant.StairArchiveInactive
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1500000
 
-theorem b16 : (safe 64 false && safe 64 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b17 : (safe 67 false && safe 67 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b18 : (safe 70 false && safe 70 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b19 : (safe 73 false && safe 73 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
+theorem b16 : (safe 64 false && safe 64 true) = true := by decide +kernel
+theorem b17 : (safe 67 false && safe 67 true) = true := by decide +kernel
+theorem b18 : (safe 70 false && safe 70 true) = true := by decide +kernel
+theorem b19 : (safe 73 false && safe 73 true) = true := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveInactive
 
@@ -27421,9 +26938,9 @@ namespace ECDSAAdd.Entrant.StairArchiveInactive
 set_option maxRecDepth 20000
 set_option maxHeartbeats 1500000
 
-theorem b20 : (safe 76 false && safe 76 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b21 : (safe 79 false && safe 79 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
-theorem b22 : (safe 82 false && safe 82 true) = true := by rw [wslim_safe, wslim_safe]; decide +kernel
+theorem b20 : (safe 76 false && safe 76 true) = true := by decide +kernel
+theorem b21 : (safe 79 false && safe 79 true) = true := by decide +kernel
+theorem b22 : (safe 82 false && safe 82 true) = true := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveInactive
 
@@ -27471,26 +26988,8 @@ set_option exponentiation.threshold 100000
 set_option maxHeartbeats 3000000
 
 theorem sub (op : Stage) : wires (program op) ⊆ Finset.range 121 := by
-  -- WSLIM: per-block scans (the decide walked each left-nested `++` chain, building every Finset)
-  cases op
-  · show wires enter0 ⊆ Finset.range 121
-    unfold enter0
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
-  · show wires switch0 ⊆ Finset.range 121
-    unfold switch0
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
-  · show wires leave0 ⊆ Finset.range 121
-    unfold leave0
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
-  · show wires enter1 ⊆ Finset.range 121
-    unfold enter1
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
-  · show wires switch1 ⊆ Finset.range 121
-    unfold switch1
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
-  · show wires leave1 ⊆ Finset.range 121
-    unfold leave1
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
+  apply bounded
+  cases op <;> decide +kernel
 
 def placed (j : Nat) (op : Stage) := renameProgram (port j) (program op)
 
@@ -27595,12 +27094,12 @@ theorem archive_edges :
     enter0Trace0In.take 16 = integer_restore0Trace0In.take 16 ∧
     enter1Trace0In.take 16 = integer_restore1Trace0In.take 16 ∧
     leave0Trace3Out.take 16 = enter1Trace0In.take 16 ∧
-    leave1Trace2Out.take 16 = enter0Trace0In.take 16 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    leave1Trace2Out.take 16 = enter0Trace0In.take 16 := by decide +kernel
 
 theorem raw_edges :
     integer_load0Trace0In.take 23 = integer_load1Trace0In.take 23 ∧
     integer_restore0Trace6Out.take 23 = integer_load0Trace0In.take 23 ∧
-    integer_restore1Trace6Out.take 23 = integer_load0Trace0In.take 23 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    integer_restore1Trace6Out.take 23 = integer_load0Trace0In.take 23 := by decide +kernel
 
 def value (cs : Cols) (row : Nat) := packBits (cs.map (fun x => x.testBit row))
 
@@ -27630,7 +27129,7 @@ theorem packet_avoids (j : Nat) (hj : j∈starts) (d second : Bool)
     (q : Wire) (save : q∈savedSites j second) :
     q∉wires (packet d (if second then j+1 else j)) := by
   intro used
-  have limits : starts.all (fun i => decide (i+1<102)) = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have limits : starts.all (fun i => decide (i+1<102)) = true := by decide +kernel
   have within : j+1<102 := of_decide_eq_true (List.all_eq_true.mp limits j hj)
   have pair := List.all_eq_true.mp checks j hj
   have pass : safe j second = true := by
@@ -27711,26 +27210,7 @@ private theorem field_checked (op : Stage) :
   | leave1 => exact leave1_checked
 
 private theorem target_bound (op : Stage) : ∀ i∈program op, target i < (inputCols op).length := by
-  -- WSLIM: per-block scans (the decide walked each left-nested `++` chain)
-  cases op
-  · show ∀ i ∈ enter0, target i < enter0Trace0In.length
-    unfold enter0
-    exact WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.targets_sound _ _ (by decide +kernel)) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))
-  · show ∀ i ∈ switch0, target i < switch0Trace0In.length
-    unfold switch0
-    exact WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.targets_sound _ _ (by decide +kernel)) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))
-  · show ∀ i ∈ leave0, target i < leave0Trace0In.length
-    unfold leave0
-    exact WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.targets_sound _ _ (by decide +kernel)) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))
-  · show ∀ i ∈ enter1, target i < enter1Trace0In.length
-    unfold enter1
-    exact WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.targets_sound _ _ (by decide +kernel)) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))
-  · show ∀ i ∈ switch1, target i < switch1Trace0In.length
-    unfold switch1
-    exact WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.targets_sound _ _ (by decide +kernel)) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))
-  · show ∀ i ∈ leave1, target i < leave1Trace0In.length
-    unfold leave1
-    exact WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.forall_append (WSlimBlock.targets_sound _ _ (by decide +kernel)) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))) (WSlimBlock.targets_sound _ _ (by decide +kernel))
+  cases op <;> decide +kernel
 
 theorem field_run (j : Nat) (hj : j∈List.range' 1 83) (op : Stage)
     (row : Nat) (hr : row<63145) (m : List Bool) (s : State)
@@ -27785,20 +27265,8 @@ def output : Operation → Cols
   | .restore1 => integer_restore1Trace6Out
 
 theorem sub (op : Operation) : wires (program op) ⊆ Finset.range (width op) := by
-  -- WSLIM: per-block scans (the decide walked each left-nested `++` chain, building every Finset)
-  cases op
-  · show wires integer_load0 ⊆ Finset.range 155
-    unfold integer_load0
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
-  · show wires integer_load1 ⊆ Finset.range 155
-    unfold integer_load1
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
-  · show wires integer_restore0 ⊆ Finset.range 150
-    unfold integer_restore0
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
-  · show wires integer_restore1 ⊆ Finset.range 150
-    unfold integer_restore1
-    exact WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wires_append_sub (WSlimBlock.wiresLt_sound _ _ (by decide +kernel)) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))) (WSlimBlock.wiresLt_sound _ _ (by decide +kernel))
+  apply bounded
+  cases op <;> decide +kernel
 
 theorem word_run (op : Operation) (row : Nat) (hr : row < 63145)
     (m : List Bool) (s : State)
@@ -27870,14 +27338,14 @@ def native (isA high : Bool) : Cols :=
 /-- Actual original solver codec on all tagged chronological rows. -/
 theorem ordinary_encode (isA high : Bool) :
     eval ones MeasuredCodec5.encode (encodeInput isA high) = (true, storage (native isA high)) := by
-  cases isA <;> cases high <;> (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  cases isA <;> cases high <;> decide +kernel
 
 /-- The other end of each intervening real five-cell packet has precisely its native byte. -/
 theorem native_exits :
   byte switch0Trace0In false = native false false ∧
   byte leave0Trace0In true = native false true ∧
   byte switch1Trace0In true = native true true ∧
-  byte leave1Trace0In false = native true false := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  byte leave1Trace0In false = native true false := by decide +kernel
 
 /-- The inactive byte and the far bit survive each native body unaltered. -/
 theorem side_unchanged :
@@ -27888,7 +27356,7 @@ theorem side_unchanged :
   get enter0Trace3Out 16 = get switch0Trace0In 16 ∧
   get switch0Trace2Out 16 = get leave0Trace0In 16 ∧
   get enter1Trace3Out 16 = get switch1Trace0In 16 ∧
-  get switch1Trace2Out 16 = get leave1Trace0In 16 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  get switch1Trace2Out 16 = get leave1Trace0In 16 := by decide +kernel
 
 end ECDSAAdd.Entrant.StairArchiveNativeRows
 
@@ -28017,7 +27485,7 @@ theorem held_eq (j : Nat) (hj : j∈List.range' 1 83) (second : Bool) :
   exact generic _ h.1.1 _ _ _
 
 theorem held_bounded (second : Bool) {q : Nat} (hq : q∈held second) : q∈Finset.range 121 := by
-  have h : (held second).all (fun i => decide (i<121)) = true := by cases second <;> (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have h : (held second).all (fun i => decide (i<121)) = true := by cases second <;> decide +kernel
   exact Finset.mem_range.mpr (of_decide_eq_true (List.all_eq_true.mp h _ hq))
 
 theorem held_at (j : Nat) (hj : j∈List.range' 1 83) (second : Bool)
@@ -28066,7 +27534,7 @@ set_option maxRecDepth 20000
 set_option maxHeartbeats 3000000
 
 theorem all_checks (rev last : Bool) : checks rev last = true := by
-  cases rev <;> cases last <;> (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  cases rev <;> cases last <;> decide +kernel
 
 theorem column (active on : Bool) (a b : Cols) (ok : agrees active on a b = true)
     (q : Nat) (hq : q∈Finset.range 121) (incl : decide (q∈held active)=on) :
@@ -28221,7 +27689,6 @@ end
 -- ==== begin PrizeHighBankJoin5ab3264 ====
 section
 
--- WSLIM: remaining `decide +kernel` sites use the scoped bit-mask instances of ECDSAAdd.Entrant.WSlimMac (92 sites)
 section
 
 namespace ECDSAAdd.Entrant.HighBankJoin
@@ -57908,204 +57375,6 @@ end ECDSAAdd.Entrant.IntegerHigh
 
 end
 
--- WSLIM: part lengths (each walks one literal part once) and the skip lemma for slice proofs.
-section
-namespace ECDSAAdd.Entrant.WSlimSlice
-theorem drop_skip {α : Type} (l1 l2 : List α) (n k : Nat) (hl : l1.length = k) (hn : k ≤ n) :
-    (l1 ++ l2).drop n = l2.drop (n - k) := by
-  rw [List.drop_append, List.drop_eq_nil_of_le (by rw [hl]; exact hn), List.nil_append, hl]
-end ECDSAAdd.Entrant.WSlimSlice
-namespace ECDSAAdd.Entrant.WSlimLen
-theorem leave225InvPart0 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart0.length = 96 := by rfl
-theorem leave225InvPart1 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart1.length = 96 := by rfl
-theorem leave225InvPart10 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart10.length = 96 := by rfl
-theorem leave225InvPart11 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart11.length = 96 := by rfl
-theorem leave225InvPart12 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart12.length = 96 := by rfl
-theorem leave225InvPart13 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart13.length = 96 := by rfl
-theorem leave225InvPart14 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart14.length = 96 := by rfl
-theorem leave225InvPart15 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart15.length = 96 := by rfl
-theorem leave225InvPart16 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart16.length = 96 := by rfl
-theorem leave225InvPart17 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart17.length = 96 := by rfl
-theorem leave225InvPart18 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart18.length = 96 := by rfl
-theorem leave225InvPart19 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart19.length = 96 := by rfl
-theorem leave225InvPart2 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart2.length = 96 := by rfl
-theorem leave225InvPart20 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart20.length = 96 := by rfl
-theorem leave225InvPart21 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart21.length = 96 := by rfl
-theorem leave225InvPart22 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart22.length = 96 := by rfl
-theorem leave225InvPart23 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart23.length = 96 := by rfl
-theorem leave225InvPart24 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart24.length = 96 := by rfl
-theorem leave225InvPart25 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart25.length = 96 := by rfl
-theorem leave225InvPart26 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart26.length = 96 := by rfl
-theorem leave225InvPart27 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart27.length = 96 := by rfl
-theorem leave225InvPart28 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart28.length = 96 := by rfl
-theorem leave225InvPart29 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart29.length = 96 := by rfl
-theorem leave225InvPart3 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart3.length = 96 := by rfl
-theorem leave225InvPart30 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart30.length = 96 := by rfl
-theorem leave225InvPart4 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart4.length = 96 := by rfl
-theorem leave225InvPart5 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart5.length = 96 := by rfl
-theorem leave225InvPart6 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart6.length = 96 := by rfl
-theorem leave225InvPart7 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart7.length = 96 := by rfl
-theorem leave225InvPart8 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart8.length = 96 := by rfl
-theorem leave225InvPart9 : ECDSAAdd.Entrant.StairPacket.Partial.leave225InvPart9.length = 96 := by rfl
-theorem leave225Part0 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part0.length = 96 := by rfl
-theorem leave225Part1 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part1.length = 96 := by rfl
-theorem leave225Part10 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part10.length = 96 := by rfl
-theorem leave225Part11 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part11.length = 96 := by rfl
-theorem leave225Part12 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part12.length = 96 := by rfl
-theorem leave225Part13 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part13.length = 96 := by rfl
-theorem leave225Part14 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part14.length = 96 := by rfl
-theorem leave225Part15 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part15.length = 96 := by rfl
-theorem leave225Part16 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part16.length = 96 := by rfl
-theorem leave225Part17 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part17.length = 96 := by rfl
-theorem leave225Part18 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part18.length = 96 := by rfl
-theorem leave225Part19 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part19.length = 96 := by rfl
-theorem leave225Part2 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part2.length = 96 := by rfl
-theorem leave225Part20 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part20.length = 96 := by rfl
-theorem leave225Part21 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part21.length = 96 := by rfl
-theorem leave225Part22 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part22.length = 96 := by rfl
-theorem leave225Part23 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part23.length = 96 := by rfl
-theorem leave225Part24 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part24.length = 96 := by rfl
-theorem leave225Part25 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part25.length = 96 := by rfl
-theorem leave225Part26 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part26.length = 96 := by rfl
-theorem leave225Part27 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part27.length = 96 := by rfl
-theorem leave225Part3 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part3.length = 96 := by rfl
-theorem leave225Part4 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part4.length = 96 := by rfl
-theorem leave225Part5 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part5.length = 96 := by rfl
-theorem leave225Part6 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part6.length = 96 := by rfl
-theorem leave225Part7 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part7.length = 96 := by rfl
-theorem leave225Part8 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part8.length = 96 := by rfl
-theorem leave225Part9 : ECDSAAdd.Entrant.StairPacket.Partial.leave225Part9.length = 96 := by rfl
-theorem leave240InvPart0 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart0.length = 96 := by rfl
-theorem leave240InvPart1 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart1.length = 96 := by rfl
-theorem leave240InvPart10 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart10.length = 96 := by rfl
-theorem leave240InvPart11 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart11.length = 96 := by rfl
-theorem leave240InvPart12 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart12.length = 96 := by rfl
-theorem leave240InvPart13 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart13.length = 96 := by rfl
-theorem leave240InvPart14 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart14.length = 96 := by rfl
-theorem leave240InvPart15 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart15.length = 96 := by rfl
-theorem leave240InvPart16 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart16.length = 96 := by rfl
-theorem leave240InvPart17 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart17.length = 96 := by rfl
-theorem leave240InvPart18 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart18.length = 96 := by rfl
-theorem leave240InvPart19 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart19.length = 96 := by rfl
-theorem leave240InvPart2 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart2.length = 96 := by rfl
-theorem leave240InvPart20 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart20.length = 96 := by rfl
-theorem leave240InvPart21 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart21.length = 96 := by rfl
-theorem leave240InvPart22 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart22.length = 96 := by rfl
-theorem leave240InvPart23 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart23.length = 96 := by rfl
-theorem leave240InvPart24 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart24.length = 96 := by rfl
-theorem leave240InvPart25 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart25.length = 96 := by rfl
-theorem leave240InvPart26 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart26.length = 96 := by rfl
-theorem leave240InvPart27 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart27.length = 96 := by rfl
-theorem leave240InvPart28 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart28.length = 96 := by rfl
-theorem leave240InvPart29 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart29.length = 96 := by rfl
-theorem leave240InvPart3 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart3.length = 96 := by rfl
-theorem leave240InvPart30 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart30.length = 96 := by rfl
-theorem leave240InvPart31 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart31.length = 96 := by rfl
-theorem leave240InvPart32 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart32.length = 96 := by rfl
-theorem leave240InvPart4 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart4.length = 96 := by rfl
-theorem leave240InvPart5 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart5.length = 96 := by rfl
-theorem leave240InvPart6 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart6.length = 96 := by rfl
-theorem leave240InvPart7 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart7.length = 96 := by rfl
-theorem leave240InvPart8 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart8.length = 96 := by rfl
-theorem leave240InvPart9 : ECDSAAdd.Entrant.StairPacket.Partial.leave240InvPart9.length = 96 := by rfl
-theorem leave240Part0 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part0.length = 96 := by rfl
-theorem leave240Part1 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part1.length = 96 := by rfl
-theorem leave240Part10 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part10.length = 96 := by rfl
-theorem leave240Part11 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part11.length = 96 := by rfl
-theorem leave240Part12 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part12.length = 96 := by rfl
-theorem leave240Part13 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part13.length = 96 := by rfl
-theorem leave240Part14 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part14.length = 96 := by rfl
-theorem leave240Part15 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part15.length = 96 := by rfl
-theorem leave240Part16 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part16.length = 96 := by rfl
-theorem leave240Part17 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part17.length = 96 := by rfl
-theorem leave240Part18 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part18.length = 96 := by rfl
-theorem leave240Part19 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part19.length = 96 := by rfl
-theorem leave240Part2 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part2.length = 96 := by rfl
-theorem leave240Part20 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part20.length = 96 := by rfl
-theorem leave240Part21 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part21.length = 96 := by rfl
-theorem leave240Part22 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part22.length = 96 := by rfl
-theorem leave240Part23 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part23.length = 96 := by rfl
-theorem leave240Part24 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part24.length = 96 := by rfl
-theorem leave240Part25 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part25.length = 96 := by rfl
-theorem leave240Part26 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part26.length = 96 := by rfl
-theorem leave240Part27 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part27.length = 96 := by rfl
-theorem leave240Part28 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part28.length = 96 := by rfl
-theorem leave240Part29 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part29.length = 96 := by rfl
-theorem leave240Part3 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part3.length = 96 := by rfl
-theorem leave240Part4 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part4.length = 96 := by rfl
-theorem leave240Part5 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part5.length = 96 := by rfl
-theorem leave240Part6 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part6.length = 96 := by rfl
-theorem leave240Part7 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part7.length = 96 := by rfl
-theorem leave240Part8 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part8.length = 96 := by rfl
-theorem leave240Part9 : ECDSAAdd.Entrant.StairPacket.Partial.leave240Part9.length = 96 := by rfl
-theorem leave255InvPart0 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart0.length = 96 := by rfl
-theorem leave255InvPart1 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart1.length = 96 := by rfl
-theorem leave255InvPart10 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart10.length = 96 := by rfl
-theorem leave255InvPart11 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart11.length = 96 := by rfl
-theorem leave255InvPart12 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart12.length = 96 := by rfl
-theorem leave255InvPart13 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart13.length = 96 := by rfl
-theorem leave255InvPart14 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart14.length = 96 := by rfl
-theorem leave255InvPart15 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart15.length = 96 := by rfl
-theorem leave255InvPart16 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart16.length = 96 := by rfl
-theorem leave255InvPart17 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart17.length = 96 := by rfl
-theorem leave255InvPart18 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart18.length = 96 := by rfl
-theorem leave255InvPart19 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart19.length = 96 := by rfl
-theorem leave255InvPart2 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart2.length = 96 := by rfl
-theorem leave255InvPart20 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart20.length = 96 := by rfl
-theorem leave255InvPart21 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart21.length = 96 := by rfl
-theorem leave255InvPart22 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart22.length = 96 := by rfl
-theorem leave255InvPart23 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart23.length = 96 := by rfl
-theorem leave255InvPart24 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart24.length = 96 := by rfl
-theorem leave255InvPart25 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart25.length = 96 := by rfl
-theorem leave255InvPart26 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart26.length = 96 := by rfl
-theorem leave255InvPart27 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart27.length = 96 := by rfl
-theorem leave255InvPart28 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart28.length = 96 := by rfl
-theorem leave255InvPart29 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart29.length = 96 := by rfl
-theorem leave255InvPart3 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart3.length = 96 := by rfl
-theorem leave255InvPart30 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart30.length = 96 := by rfl
-theorem leave255InvPart31 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart31.length = 96 := by rfl
-theorem leave255InvPart32 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart32.length = 96 := by rfl
-theorem leave255InvPart33 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart33.length = 96 := by rfl
-theorem leave255InvPart4 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart4.length = 96 := by rfl
-theorem leave255InvPart5 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart5.length = 96 := by rfl
-theorem leave255InvPart6 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart6.length = 96 := by rfl
-theorem leave255InvPart7 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart7.length = 96 := by rfl
-theorem leave255InvPart8 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart8.length = 96 := by rfl
-theorem leave255InvPart9 : ECDSAAdd.Entrant.StairPacket.Partial.leave255InvPart9.length = 96 := by rfl
-theorem leave255Part0 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part0.length = 96 := by rfl
-theorem leave255Part1 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part1.length = 96 := by rfl
-theorem leave255Part10 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part10.length = 96 := by rfl
-theorem leave255Part11 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part11.length = 96 := by rfl
-theorem leave255Part12 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part12.length = 96 := by rfl
-theorem leave255Part13 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part13.length = 96 := by rfl
-theorem leave255Part14 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part14.length = 96 := by rfl
-theorem leave255Part15 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part15.length = 96 := by rfl
-theorem leave255Part16 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part16.length = 96 := by rfl
-theorem leave255Part17 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part17.length = 96 := by rfl
-theorem leave255Part18 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part18.length = 96 := by rfl
-theorem leave255Part19 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part19.length = 96 := by rfl
-theorem leave255Part2 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part2.length = 96 := by rfl
-theorem leave255Part20 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part20.length = 96 := by rfl
-theorem leave255Part21 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part21.length = 96 := by rfl
-theorem leave255Part22 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part22.length = 96 := by rfl
-theorem leave255Part23 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part23.length = 96 := by rfl
-theorem leave255Part24 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part24.length = 96 := by rfl
-theorem leave255Part25 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part25.length = 96 := by rfl
-theorem leave255Part26 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part26.length = 96 := by rfl
-theorem leave255Part27 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part27.length = 96 := by rfl
-theorem leave255Part28 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part28.length = 96 := by rfl
-theorem leave255Part29 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part29.length = 96 := by rfl
-theorem leave255Part3 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part3.length = 96 := by rfl
-theorem leave255Part30 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part30.length = 96 := by rfl
-theorem leave255Part4 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part4.length = 96 := by rfl
-theorem leave255Part5 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part5.length = 96 := by rfl
-theorem leave255Part6 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part6.length = 96 := by rfl
-theorem leave255Part7 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part7.length = 96 := by rfl
-theorem leave255Part8 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part8.length = 96 := by rfl
-theorem leave255Part9 : ECDSAAdd.Entrant.StairPacket.Partial.leave255Part9.length = 96 := by rfl
-end ECDSAAdd.Entrant.WSlimLen
-end
-
 section
 
 namespace ECDSAAdd.Entrant.StairPacket.HighBankLookup
@@ -58890,29 +58159,24 @@ def columns : List Column := [
 def digitPass := digits (tags.getD · 0) (fun j => 416+j) 1709 1613 0 16
 def wordPass := word 1614 columns
 
-theorem emitted : ((leave255.drop 2335).take 108) = digitPass ++ wordPass := by
-  -- WSLIM: skip 24 whole parts by their lengths (rfl walked 2335 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part23 (by decide)]
-  rfl
+theorem emitted : ((leave255.drop 2335).take 108) = digitPass ++ wordPass := by rfl
 
 theorem sites : WellPlaced 1614 columns := by
   unfold WellPlaced
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 theorem disjoint : columns.Pairwise Apart := by
   unfold Apart
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 theorem digitSites : DigitLayout (tags.getD · 0) (fun j => 416+j) 1709 1613 0 16 := by
-  have valid : ∀ i : Fin 16, [tags.getD i 0, 1709, 1613, 416+i.val, 416+(i.val+1)].Nodup := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have separate : ∀ i : Fin 16, ∀ j : Fin 17, tags.getD i 0 ≠ 416+j.val := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have valid : ∀ i : Fin 16, [tags.getD i 0, 1709, 1613, 416+i.val, 416+(i.val+1)].Nodup := by decide +kernel
+  have separate : ∀ i : Fin 16, ∀ j : Fin 17, tags.getD i 0 ≠ 416+j.val := by decide +kernel
   exact ⟨fun i _ hi => valid ⟨i,hi⟩,fun i _ hi j _ hj => separate ⟨i,hi⟩ ⟨j,by omega⟩⟩
 
 theorem assembled :
     leave255 = leave255.take 2335 ++ ((digitPass ++ wordPass) ++ leave255.drop 2443) := by
-  -- WSLIM: from `emitted` (the rfl evaluated the whole program on both sides)
-  rw [← emitted, HighBankLookup.mergeSlice leave255 2335 108, List.take_append_drop]
+  rfl
 
 end ECDSAAdd.Entrant.StairPacket.Leave255Join
 
@@ -59175,51 +58439,35 @@ set_option maxHeartbeats 3000000
 
 def bank0 : List Wire := [1703, 1704, 1705, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1598]
 
-theorem pass0 : ((leave255.drop 900).take 336) = HighBankShift.program 1613 (bank0.getD · 0) 1 112 := by
-  -- WSLIM: skip 9 whole parts by their lengths (rfl walked 900 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide)]
-  rfl
+theorem pass0 : ((leave255.drop 900).take 336) = HighBankShift.program 1613 (bank0.getD · 0) 1 112 := by rfl
 
 theorem layout0 : HighBankShift.Layout 1613 (bank0.getD · 0) 113 := by
   apply lookupLayout
-  all_goals (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  all_goals decide +kernel
 
 def bank1 : List Wire := [1703, 1704, 1705, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1598, 1599, 1600]
 
-theorem pass1 : ((leave255.drop 1252).take 339) = HighBankShift.program 1613 (bank1.getD · 0) 2 113 := by
-  -- WSLIM: skip 13 whole parts by their lengths (rfl walked 1252 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide)]
-  rfl
+theorem pass1 : ((leave255.drop 1252).take 339) = HighBankShift.program 1613 (bank1.getD · 0) 2 113 := by rfl
 
 theorem layout1 : HighBankShift.Layout 1613 (bank1.getD · 0) 115 := by
   apply lookupLayout
-  all_goals (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  all_goals decide +kernel
 
 def bank2 : List Wire := [1703, 1704, 1705, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1598, 1599, 1600, 1601, 1602, 1603, 1604]
 
-theorem pass2 : ((leave255.drop 1607).take 345) = HighBankShift.program 1613 (bank2.getD · 0) 4 115 := by
-  -- WSLIM: skip 16 whole parts by their lengths (rfl walked 1607 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part15 (by decide)]
-  rfl
+theorem pass2 : ((leave255.drop 1607).take 345) = HighBankShift.program 1613 (bank2.getD · 0) 4 115 := by rfl
 
 theorem layout2 : HighBankShift.Layout 1613 (bank2.getD · 0) 119 := by
   apply lookupLayout
-  all_goals (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  all_goals decide +kernel
 
 def bank3 : List Wire := [1703, 1704, 1705, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612]
 
-theorem pass3 : ((leave255.drop 1968).take 357) = HighBankShift.program 1613 (bank3.getD · 0) 8 119 := by
-  -- WSLIM: skip 20 whole parts by their lengths (rfl walked 1968 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part19 (by decide)]
-  rfl
+theorem pass3 : ((leave255.drop 1968).take 357) = HighBankShift.program 1613 (bank3.getD · 0) 8 119 := by rfl
 
 theorem layout3 : HighBankShift.Layout 1613 (bank3.getD · 0) 127 := by
   apply lookupLayout
-  all_goals (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  all_goals decide +kernel
 
 theorem assembled : leave255 =
     ((leave255.drop 0).take 900) ++
@@ -59440,30 +58688,30 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part0 : toffoliCount (portal225) = 481 ∧ measurementCount (portal225) = 286 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part0 : toffoliCount (portal225) = 481 ∧ measurementCount (portal225) = 286 := by
+  decide +kernel
 
-theorem part1 : toffoliCount (enter225) = 23 ∧ measurementCount (enter225) = 6 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part1 : toffoliCount (enter225) = 23 ∧ measurementCount (enter225) = 6 := by
+  decide +kernel
 
 theorem part2 : toffoliCount (routed ⟨10,by decide⟩ 0 1) = 324 ∧ measurementCount (routed ⟨10,by decide⟩ 0 1) = 162 := by
   let j : Fin 23 := ⟨10,by decide⟩
   have h := (fixed_route j 0 1 (by decide)).1
-  have hs := IntegerPacket.metrics (shape j) 0 1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 0 1 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.1, hs.2.1]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part3 : toffoliCount (Rolling1588.packAtTick false 225) = 9 ∧ measurementCount (Rolling1588.packAtTick false 225) = 4 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part3 : toffoliCount (Rolling1588.packAtTick false 225) = 9 ∧ measurementCount (Rolling1588.packAtTick false 225) = 4 := by
+  decide +kernel
 
 theorem part4 : toffoliCount (routed ⟨10,by decide⟩ 1 14) = 4536 ∧ measurementCount (routed ⟨10,by decide⟩ 1 14) = 2268 := by
   let j : Fin 23 := ⟨10,by decide⟩
   have h := (fixed_route j 1 14 (by decide)).1
-  have hs := IntegerPacket.metrics (shape j) 1 14 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 1 14 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.1, hs.2.1]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59476,29 +58724,25 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part5 : toffoliCount (leave225) = 821 ∧ measurementCount (leave225) = 297 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part5 : toffoliCount (leave225) = 821 ∧ measurementCount (leave225) = 297 := by
+  decide +kernel
 
-theorem part6 : toffoliCount (enter240) = 23 ∧ measurementCount (enter240) = 6 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part6 : toffoliCount (enter240) = 23 ∧ measurementCount (enter240) = 6 := by
+  decide +kernel
 
 theorem part7 : toffoliCount (routed ⟨11,by decide⟩ 0 1) = 308 ∧ measurementCount (routed ⟨11,by decide⟩ 0 1) = 154 := by
   let j : Fin 23 := ⟨11,by decide⟩
   have h := (fixed_route j 0 1 (by decide)).1
-  have hs := IntegerPacket.metrics (shape j) 0 1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 0 1 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.1, hs.2.1]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part8 : toffoliCount (Rolling1588.packAtTick false 230) = 9 ∧ measurementCount (Rolling1588.packAtTick false 230) = 4 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part8 : toffoliCount (Rolling1588.packAtTick false 230) = 9 ∧ measurementCount (Rolling1588.packAtTick false 230) = 4 := by
+  decide +kernel
 
 theorem part9 : toffoliCount (archiveLoad240 false) = 88 ∧ measurementCount (archiveLoad240 false) = 136 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveLoad240
-  rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_load1_toffoliCount, integer_load1_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59514,26 +58758,22 @@ set_option maxHeartbeats 4000000
 theorem part50 : toffoliCount (unrouted ⟨10,by decide⟩ 0 1) = 324 ∧ measurementCount (unrouted ⟨10,by decide⟩ 0 1) = 162 := by
   let j : Fin 23 := ⟨10,by decide⟩
   have h := (fixed_route j 0 1 (by decide)).2
-  have hs := IntegerPacket.metrics (shape j) 0 1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 0 1 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.2.2.1, hs.2.2.2]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part51 : toffoliCount (enter225Inv) = 23 ∧ measurementCount (enter225Inv) = 6 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part51 : toffoliCount (enter225Inv) = 23 ∧ measurementCount (enter225Inv) = 6 := by
+  decide +kernel
 
-theorem part52 : toffoliCount (portal225Inv) = 481 ∧ measurementCount (portal225Inv) = 286 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part52 : toffoliCount (portal225Inv) = 481 ∧ measurementCount (portal225Inv) = 286 := by
+  decide +kernel
 
 theorem part53 : toffoliCount (archiveRestore270 true) = 97 ∧ measurementCount (archiveRestore270 true) = 124 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveRestore270
-  rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_restore0_toffoliCount, integer_restore0_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part54 : toffoliCount (Rolling1588.unpackAtTick true 260) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 260) = 2 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part54 : toffoliCount (Rolling1588.unpackAtTick true 260) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 260) = 2 := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59547,27 +58787,19 @@ set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
 theorem part55 : toffoliCount (archiveRestore255 true) = 97 ∧ measurementCount (archiveRestore255 true) = 124 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveRestore255
-  rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_restore0_toffoliCount, integer_restore0_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part56 : toffoliCount (Rolling1588.unpackAtTick true 245) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 245) = 2 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part56 : toffoliCount (Rolling1588.unpackAtTick true 245) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 245) = 2 := by
+  decide +kernel
 
 theorem part57 : toffoliCount (archiveRestore240 true) = 97 ∧ measurementCount (archiveRestore240 true) = 124 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveRestore240
-  rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_restore0_toffoliCount, integer_restore0_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part58 : toffoliCount (Rolling1588.unpackAtTick true 230) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 230) = 2 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part58 : toffoliCount (Rolling1588.unpackAtTick true 230) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 230) = 2 := by
+  decide +kernel
 
-theorem part59 : toffoliCount (Rolling1588.unpackAtTick true 225) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 225) = 2 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part59 : toffoliCount (Rolling1588.unpackAtTick true 225) = 11 ∧ measurementCount (Rolling1588.unpackAtTick true 225) = 2 := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59583,27 +58815,27 @@ set_option maxHeartbeats 4000000
 theorem part10 : toffoliCount (routed ⟨11,by decide⟩ 1 14) = 4312 ∧ measurementCount (routed ⟨11,by decide⟩ 1 14) = 2156 := by
   let j : Fin 23 := ⟨11,by decide⟩
   have h := (fixed_route j 1 14 (by decide)).1
-  have hs := IntegerPacket.metrics (shape j) 1 14 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 1 14 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.1, hs.2.1]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part11 : toffoliCount (leave240) = 872 ∧ measurementCount (leave240) = 314 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part11 : toffoliCount (leave240) = 872 ∧ measurementCount (leave240) = 314 := by
+  decide +kernel
 
-theorem part12 : toffoliCount (enter255) = 23 ∧ measurementCount (enter255) = 6 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part12 : toffoliCount (enter255) = 23 ∧ measurementCount (enter255) = 6 := by
+  decide +kernel
 
 theorem part13 : toffoliCount (routed ⟨12,by decide⟩ 0 1) = 294 ∧ measurementCount (routed ⟨12,by decide⟩ 0 1) = 147 := by
   let j : Fin 23 := ⟨12,by decide⟩
   have h := (fixed_route j 0 1 (by decide)).1
-  have hs := IntegerPacket.metrics (shape j) 0 1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 0 1 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.1, hs.2.1]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part14 : toffoliCount (Rolling1588.packAtTick false 245) = 9 ∧ measurementCount (Rolling1588.packAtTick false 245) = 4 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part14 : toffoliCount (Rolling1588.packAtTick false 245) = 9 ∧ measurementCount (Rolling1588.packAtTick false 245) = 4 := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59617,28 +58849,24 @@ set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
 theorem part15 : toffoliCount (archiveLoad255 false) = 88 ∧ measurementCount (archiveLoad255 false) = 136 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveLoad255
-  rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_load1_toffoliCount, integer_load1_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 theorem part16 : toffoliCount (routed ⟨12,by decide⟩ 1 14) = 4116 ∧ measurementCount (routed ⟨12,by decide⟩ 1 14) = 2058 := by
   let j : Fin 23 := ⟨12,by decide⟩
   have h := (fixed_route j 1 14 (by decide)).1
-  have hs := IntegerPacket.metrics (shape j) 1 14 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 1 14 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.1, hs.2.1]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part17 : toffoliCount (leave255) = 911 ∧ measurementCount (leave255) = 327 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part17 : toffoliCount (leave255) = 911 ∧ measurementCount (leave255) = 327 := by
+  decide +kernel
 
-theorem part18 : toffoliCount (park270) = 0 ∧ measurementCount (park270) = 0 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part18 : toffoliCount (park270) = 0 ∧ measurementCount (park270) = 0 := by
+  decide +kernel
 
-theorem part19 : toffoliCount (portal270Inv) = 526 ∧ measurementCount (portal270Inv) = 313 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part19 : toffoliCount (portal270Inv) = 526 ∧ measurementCount (portal270Inv) = 313 := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59655,28 +58883,24 @@ theorem part20 : toffoliCount (TickRanges.tick base 270) = 481 ∧ measurementCo
   have a := TickRanges.tick_counts base 270 (by decide) base_pool_nodup
   have b := W.repairedTick_counts base 270 (by decide) base_pool_nodup
   have c := W.compactSkywalkTick_counts base 270 (by decide) base_pool_nodup
-  have width : W.compactSkywalkTickPreWidth 270 - 1 + (W.compactSkywalkTickPostWidth 270 - 1) = 483 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have post : W.compactSkywalkTickPostWidth 270 - 1 = 241 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have due : TickRanges.due 270 = 1 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have rep : W.repairDue 270 = 1 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have fwd : W.fwdDue 270 = 0 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have width : W.compactSkywalkTickPreWidth 270 - 1 + (W.compactSkywalkTickPostWidth 270 - 1) = 483 := by decide +kernel
+  have post : W.compactSkywalkTickPostWidth 270 - 1 = 241 := by decide +kernel
+  have due : TickRanges.due 270 = 1 := by decide +kernel
+  have rep : W.repairDue 270 = 1 := by decide +kernel
+  have fwd : W.fwdDue 270 = 0 := by decide +kernel
   omega
 
-theorem part21 : toffoliCount (Rolling1588.packAtTick false 260) = 9 ∧ measurementCount (Rolling1588.packAtTick false 260) = 4 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part21 : toffoliCount (Rolling1588.packAtTick false 260) = 9 ∧ measurementCount (Rolling1588.packAtTick false 260) = 4 := by
+  decide +kernel
 
 theorem part22 : toffoliCount (archiveLoad270 false) = 88 ∧ measurementCount (archiveLoad270 false) = 136 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveLoad270
-  rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_load1_toffoliCount, integer_load1_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part23 : toffoliCount (Rolling1588.packAtTick true 225) = 9 ∧ measurementCount (Rolling1588.packAtTick true 225) = 4 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part23 : toffoliCount (Rolling1588.packAtTick true 225) = 9 ∧ measurementCount (Rolling1588.packAtTick true 225) = 4 := by
+  decide +kernel
 
-theorem part24 : toffoliCount (Rolling1588.packAtTick true 230) = 9 ∧ measurementCount (Rolling1588.packAtTick true 230) = 4 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part24 : toffoliCount (Rolling1588.packAtTick true 230) = 9 ∧ measurementCount (Rolling1588.packAtTick true 230) = 4 := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59690,31 +58914,19 @@ set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
 theorem part25 : toffoliCount (archiveLoad240 true) = 89 ∧ measurementCount (archiveLoad240 true) = 136 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveLoad240
-  rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_load0_toffoliCount, integer_load0_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part26 : toffoliCount (Rolling1588.packAtTick true 245) = 9 ∧ measurementCount (Rolling1588.packAtTick true 245) = 4 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part26 : toffoliCount (Rolling1588.packAtTick true 245) = 9 ∧ measurementCount (Rolling1588.packAtTick true 245) = 4 := by
+  decide +kernel
 
 theorem part27 : toffoliCount (archiveLoad255 true) = 89 ∧ measurementCount (archiveLoad255 true) = 136 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveLoad255
-  rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_load0_toffoliCount, integer_load0_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part28 : toffoliCount (Rolling1588.packAtTick true 260) = 9 ∧ measurementCount (Rolling1588.packAtTick true 260) = 4 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part28 : toffoliCount (Rolling1588.packAtTick true 260) = 9 ∧ measurementCount (Rolling1588.packAtTick true 260) = 4 := by
+  decide +kernel
 
 theorem part29 : toffoliCount (archiveLoad270 true) = 89 ∧ measurementCount (archiveLoad270 true) = 136 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveLoad270
-  rw [if_pos rfl, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_load0_toffoliCount, integer_load0_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59728,28 +58940,24 @@ set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
 theorem part30 : toffoliCount (archiveRestore270 false) = 96 ∧ measurementCount (archiveRestore270 false) = 124 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveRestore270
-  rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_restore1_toffoliCount, integer_restore1_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part31 : toffoliCount (Rolling1588.unpackAtTick false 260) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 260) = 2 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part31 : toffoliCount (Rolling1588.unpackAtTick false 260) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 260) = 2 := by
+  decide +kernel
 
 theorem part32 : toffoliCount (W.ReverseCarry.compactReceiverTick base 270) = 481 ∧ measurementCount (W.ReverseCarry.compactReceiverTick base 270) = 241 := by
   have a := W.ReverseCarry.compactReceiverTick_counts base 270 (by decide) base_pool_nodup
   have b := W.compactSkywalkReverseTick_counts base 270 (by decide) base_pool_nodup
-  have width : W.compactSkywalkTickPreWidth 270 - 1 + (W.compactSkywalkTickPostWidth 270 - 1) = 483 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have post : W.compactSkywalkTickPostWidth 270 - 1 = 241 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have trim : (if W.trimTick 270 then 1 else 0) = 1 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have width : W.compactSkywalkTickPreWidth 270 - 1 + (W.compactSkywalkTickPostWidth 270 - 1) = 483 := by decide +kernel
+  have post : W.compactSkywalkTickPostWidth 270 - 1 = 241 := by decide +kernel
+  have trim : (if W.trimTick 270 then 1 else 0) = 1 := by decide +kernel
   omega
 
-theorem part33 : toffoliCount (portal270) = 526 ∧ measurementCount (portal270) = 313 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part33 : toffoliCount (portal270) = 526 ∧ measurementCount (portal270) = 313 := by
+  decide +kernel
 
-theorem part34 : toffoliCount (park270Inv) = 0 ∧ measurementCount (park270Inv) = 0 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part34 : toffoliCount (park270Inv) = 0 ∧ measurementCount (park270Inv) = 0 := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59762,34 +58970,30 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part35 : toffoliCount (leave255Inv) = 910 ∧ measurementCount (leave255Inv) = 328 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part35 : toffoliCount (leave255Inv) = 910 ∧ measurementCount (leave255Inv) = 328 := by
+  decide +kernel
 
 theorem part36 : toffoliCount (unrouted ⟨12,by decide⟩ 1 14) = 4116 ∧ measurementCount (unrouted ⟨12,by decide⟩ 1 14) = 2058 := by
   let j : Fin 23 := ⟨12,by decide⟩
   have h := (fixed_route j 1 14 (by decide)).2
-  have hs := IntegerPacket.metrics (shape j) 1 14 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 1 14 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.2.2.1, hs.2.2.2]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 theorem part37 : toffoliCount (archiveRestore255 false) = 96 ∧ measurementCount (archiveRestore255 false) = 124 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveRestore255
-  rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_restore1_toffoliCount, integer_restore1_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part38 : toffoliCount (Rolling1588.unpackAtTick false 245) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 245) = 2 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part38 : toffoliCount (Rolling1588.unpackAtTick false 245) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 245) = 2 := by
+  decide +kernel
 
 theorem part39 : toffoliCount (unrouted ⟨12,by decide⟩ 0 1) = 294 ∧ measurementCount (unrouted ⟨12,by decide⟩ 0 1) = 147 := by
   let j : Fin 23 := ⟨12,by decide⟩
   have h := (fixed_route j 0 1 (by decide)).2
-  have hs := IntegerPacket.metrics (shape j) 0 1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 0 1 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.2.2.1, hs.2.2.2]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59802,29 +59006,25 @@ open Arithmetic MappedCompressed Partial StairArchiveGates
 set_option maxRecDepth 200000
 set_option maxHeartbeats 4000000
 
-theorem part40 : toffoliCount (enter255Inv) = 23 ∧ measurementCount (enter255Inv) = 6 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part40 : toffoliCount (enter255Inv) = 23 ∧ measurementCount (enter255Inv) = 6 := by
+  decide +kernel
 
-theorem part41 : toffoliCount (leave240Inv) = 871 ∧ measurementCount (leave240Inv) = 315 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part41 : toffoliCount (leave240Inv) = 871 ∧ measurementCount (leave240Inv) = 315 := by
+  decide +kernel
 
 theorem part42 : toffoliCount (unrouted ⟨11,by decide⟩ 1 14) = 4312 ∧ measurementCount (unrouted ⟨11,by decide⟩ 1 14) = 2156 := by
   let j : Fin 23 := ⟨11,by decide⟩
   have h := (fixed_route j 1 14 (by decide)).2
-  have hs := IntegerPacket.metrics (shape j) 1 14 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 1 14 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.2.2.1, hs.2.2.2]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
 theorem part43 : toffoliCount (archiveRestore240 false) = 96 ∧ measurementCount (archiveRestore240 false) = 124 := by
-  -- WSLIM: renaming keeps both counts; the archive program's counts are its per-block lemmas
-  unfold archiveRestore240
-  rw [if_neg Bool.false_ne_true, toffoliCount_append, measurementCount_append, (renameProgram_counts _ _).1,
-    (renameProgram_counts _ _).2, integer_restore1_toffoliCount, integer_restore1_measurementCount]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part44 : toffoliCount (Rolling1588.unpackAtTick false 230) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 230) = 2 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part44 : toffoliCount (Rolling1588.unpackAtTick false 230) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 230) = 2 := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59840,27 +59040,27 @@ set_option maxHeartbeats 4000000
 theorem part45 : toffoliCount (unrouted ⟨11,by decide⟩ 0 1) = 308 ∧ measurementCount (unrouted ⟨11,by decide⟩ 0 1) = 154 := by
   let j : Fin 23 := ⟨11,by decide⟩
   have h := (fixed_route j 0 1 (by decide)).2
-  have hs := IntegerPacket.metrics (shape j) 0 1 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 0 1 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.2.2.1, hs.2.2.2]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part46 : toffoliCount (enter240Inv) = 23 ∧ measurementCount (enter240Inv) = 6 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part46 : toffoliCount (enter240Inv) = 23 ∧ measurementCount (enter240Inv) = 6 := by
+  decide +kernel
 
-theorem part47 : toffoliCount (leave225Inv) = 820 ∧ measurementCount (leave225Inv) = 298 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part47 : toffoliCount (leave225Inv) = 820 ∧ measurementCount (leave225Inv) = 298 := by
+  decide +kernel
 
 theorem part48 : toffoliCount (unrouted ⟨10,by decide⟩ 1 14) = 4536 ∧ measurementCount (unrouted ⟨10,by decide⟩ 1 14) = 2268 := by
   let j : Fin 23 := ⟨10,by decide⟩
   have h := (fixed_route j 1 14 (by decide)).2
-  have hs := IntegerPacket.metrics (shape j) 1 14 (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))
+  have hs := IntegerPacket.metrics (shape j) 1 14 (by decide +kernel)
   rw [h, (renameProgram_counts _ _).1, (renameProgram_counts _ _).2, hs.2.2.1, hs.2.2.2]
   dsimp only [j]
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem part49 : toffoliCount (Rolling1588.unpackAtTick false 225) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 225) = 2 :=
-  WSlimBlock.counts_sound _ _ _ (by decide +kernel)
+theorem part49 : toffoliCount (Rolling1588.unpackAtTick false 225) = 11 ∧ measurementCount (Rolling1588.unpackAtTick false 225) = 2 := by
+  decide +kernel
 
 end ECDSAAdd.Entrant.StairPacket.PartialCosts
 
@@ -59878,30 +59078,14 @@ def controls0 : List Wire := [1562, 1564, 1566, 1568, 1570, 1572, 1574, 1560]
 theorem selection0 (key : Fin 16) :
     parity (fun q => decide (q = Leave255Join.tags.getD key 0)) controls0 = key.val.testBit 0 := by
   revert key
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem away0 : 1613 ∉ controls0 ∧ ∀ q ∈ controls0, q ∉ bank0 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem away0 : 1613 ∉ controls0 ∧ ∀ q ∈ controls0, q ∉ bank0 := by decide +kernel
 
-theorem on0 : ((leave255.drop 892).take 8) = toggles 1613 controls0 := by
-  -- WSLIM: skip 9 whole parts by their lengths (rfl walked 892 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide)]
-  rfl
-theorem off0 : ((leave255.drop 1236).take 8) = toggles 1613 controls0 := by
-  -- WSLIM: skip 12 whole parts by their lengths (rfl walked 1236 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide)]
-  rfl
-theorem reverseOn0 : ((leave255Inv.drop 2266).take 8) = toggles 1613 controls0.reverse := by
-  -- WSLIM: skip 23 whole parts by their lengths (rfl walked 2266 instructions through the `++` chain)
-  unfold leave255Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart22 (by decide)]
-  rfl
-theorem reverseOff0 : ((leave255Inv.drop 2610).take 8) = toggles 1613 controls0.reverse := by
-  -- WSLIM: skip 27 whole parts by their lengths (rfl walked 2610 instructions through the `++` chain)
-  unfold leave255Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart23 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart24 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart25 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart26 (by decide)]
-  rfl
+theorem on0 : ((leave255.drop 892).take 8) = toggles 1613 controls0 := by rfl
+theorem off0 : ((leave255.drop 1236).take 8) = toggles 1613 controls0 := by rfl
+theorem reverseOn0 : ((leave255Inv.drop 2266).take 8) = toggles 1613 controls0.reverse := by rfl
+theorem reverseOff0 : ((leave255Inv.drop 2610).take 8) = toggles 1613 controls0.reverse := by rfl
 theorem wrapped0 (s : State) (m : List Bool) :
     let u : State := ⟨s.phase,writeBit s.basis 1613 (s.basis 1613 ^^ parity s.basis controls0)⟩
     let v := run (HighBankShift.program 1613 (bank0.getD · 0) 1 112) m u
@@ -59921,30 +59105,14 @@ def controls1 : List Wire := [1563, 1564, 1567, 1568, 1571, 1572, 1575, 1560]
 theorem selection1 (key : Fin 16) :
     parity (fun q => decide (q = Leave255Join.tags.getD key 0)) controls1 = key.val.testBit 1 := by
   revert key
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem away1 : 1613 ∉ controls1 ∧ ∀ q ∈ controls1, q ∉ bank1 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem away1 : 1613 ∉ controls1 ∧ ∀ q ∈ controls1, q ∉ bank1 := by decide +kernel
 
-theorem on1 : ((leave255.drop 1244).take 8) = toggles 1613 controls1 := by
-  -- WSLIM: skip 12 whole parts by their lengths (rfl walked 1244 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide)]
-  rfl
-theorem off1 : ((leave255.drop 1591).take 8) = toggles 1613 controls1 := by
-  -- WSLIM: skip 16 whole parts by their lengths (rfl walked 1591 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part15 (by decide)]
-  rfl
-theorem reverseOn1 : ((leave255Inv.drop 1911).take 8) = toggles 1613 controls1.reverse := by
-  -- WSLIM: skip 19 whole parts by their lengths (rfl walked 1911 instructions through the `++` chain)
-  unfold leave255Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart18 (by decide)]
-  rfl
-theorem reverseOff1 : ((leave255Inv.drop 2258).take 8) = toggles 1613 controls1.reverse := by
-  -- WSLIM: skip 23 whole parts by their lengths (rfl walked 2258 instructions through the `++` chain)
-  unfold leave255Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart22 (by decide)]
-  rfl
+theorem on1 : ((leave255.drop 1244).take 8) = toggles 1613 controls1 := by rfl
+theorem off1 : ((leave255.drop 1591).take 8) = toggles 1613 controls1 := by rfl
+theorem reverseOn1 : ((leave255Inv.drop 1911).take 8) = toggles 1613 controls1.reverse := by rfl
+theorem reverseOff1 : ((leave255Inv.drop 2258).take 8) = toggles 1613 controls1.reverse := by rfl
 theorem wrapped1 (s : State) (m : List Bool) :
     let u : State := ⟨s.phase,writeBit s.basis 1613 (s.basis 1613 ^^ parity s.basis controls1)⟩
     let v := run (HighBankShift.program 1613 (bank1.getD · 0) 2 113) m u
@@ -59964,30 +59132,14 @@ def controls2 : List Wire := [1565, 1566, 1567, 1568, 1573, 1574, 1575, 1560]
 theorem selection2 (key : Fin 16) :
     parity (fun q => decide (q = Leave255Join.tags.getD key 0)) controls2 = key.val.testBit 2 := by
   revert key
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem away2 : 1613 ∉ controls2 ∧ ∀ q ∈ controls2, q ∉ bank2 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem away2 : 1613 ∉ controls2 ∧ ∀ q ∈ controls2, q ∉ bank2 := by decide +kernel
 
-theorem on2 : ((leave255.drop 1599).take 8) = toggles 1613 controls2 := by
-  -- WSLIM: skip 16 whole parts by their lengths (rfl walked 1599 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part15 (by decide)]
-  rfl
-theorem off2 : ((leave255.drop 1952).take 8) = toggles 1613 controls2 := by
-  -- WSLIM: skip 20 whole parts by their lengths (rfl walked 1952 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part19 (by decide)]
-  rfl
-theorem reverseOn2 : ((leave255Inv.drop 1550).take 8) = toggles 1613 controls2.reverse := by
-  -- WSLIM: skip 16 whole parts by their lengths (rfl walked 1550 instructions through the `++` chain)
-  unfold leave255Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart15 (by decide)]
-  rfl
-theorem reverseOff2 : ((leave255Inv.drop 1903).take 8) = toggles 1613 controls2.reverse := by
-  -- WSLIM: skip 19 whole parts by their lengths (rfl walked 1903 instructions through the `++` chain)
-  unfold leave255Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart18 (by decide)]
-  rfl
+theorem on2 : ((leave255.drop 1599).take 8) = toggles 1613 controls2 := by rfl
+theorem off2 : ((leave255.drop 1952).take 8) = toggles 1613 controls2 := by rfl
+theorem reverseOn2 : ((leave255Inv.drop 1550).take 8) = toggles 1613 controls2.reverse := by rfl
+theorem reverseOff2 : ((leave255Inv.drop 1903).take 8) = toggles 1613 controls2.reverse := by rfl
 theorem wrapped2 (s : State) (m : List Bool) :
     let u : State := ⟨s.phase,writeBit s.basis 1613 (s.basis 1613 ^^ parity s.basis controls2)⟩
     let v := run (HighBankShift.program 1613 (bank2.getD · 0) 4 115) m u
@@ -60007,30 +59159,14 @@ def controls3 : List Wire := [1569, 1570, 1571, 1572, 1573, 1574, 1575, 1560]
 theorem selection3 (key : Fin 16) :
     parity (fun q => decide (q = Leave255Join.tags.getD key 0)) controls3 = key.val.testBit 3 := by
   revert key
-  (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  decide +kernel
 
-theorem away3 : 1613 ∉ controls3 ∧ ∀ q ∈ controls3, q ∉ bank3 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+theorem away3 : 1613 ∉ controls3 ∧ ∀ q ∈ controls3, q ∉ bank3 := by decide +kernel
 
-theorem on3 : ((leave255.drop 1960).take 8) = toggles 1613 controls3 := by
-  -- WSLIM: skip 20 whole parts by their lengths (rfl walked 1960 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part19 (by decide)]
-  rfl
-theorem off3 : ((leave255.drop 2325).take 8) = toggles 1613 controls3 := by
-  -- WSLIM: skip 24 whole parts by their lengths (rfl walked 2325 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part15 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part16 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part17 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part18 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part19 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part20 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part21 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part22 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part23 (by decide)]
-  rfl
-theorem reverseOn3 : ((leave255Inv.drop 1177).take 8) = toggles 1613 controls3.reverse := by
-  -- WSLIM: skip 12 whole parts by their lengths (rfl walked 1177 instructions through the `++` chain)
-  unfold leave255Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart11 (by decide)]
-  rfl
-theorem reverseOff3 : ((leave255Inv.drop 1542).take 8) = toggles 1613 controls3.reverse := by
-  -- WSLIM: skip 16 whole parts by their lengths (rfl walked 1542 instructions through the `++` chain)
-  unfold leave255Inv
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart8 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart9 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart10 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart11 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart12 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart13 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart14 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255InvPart15 (by decide)]
-  rfl
+theorem on3 : ((leave255.drop 1960).take 8) = toggles 1613 controls3 := by rfl
+theorem off3 : ((leave255.drop 2325).take 8) = toggles 1613 controls3 := by rfl
+theorem reverseOn3 : ((leave255Inv.drop 1177).take 8) = toggles 1613 controls3.reverse := by rfl
+theorem reverseOff3 : ((leave255Inv.drop 1542).take 8) = toggles 1613 controls3.reverse := by rfl
 theorem wrapped3 (s : State) (m : List Bool) :
     let u : State := ⟨s.phase,writeBit s.basis 1613 (s.basis 1613 ^^ parity s.basis controls3)⟩
     let v := run (HighBankShift.program 1613 (bank3.getD · 0) 8 119) m u
@@ -60099,11 +59235,7 @@ def passes2 := passes1 ++ stage 1613 wire controls1 2 113
 def passes3 := passes2 ++ stage 1613 wire controls2 4 115
 def passes4 := passes3 ++ stage 1613 wire controls3 8 119
 
-theorem emitted : ((leave255.drop 892).take 1441) = passes4 := by
-  -- WSLIM: skip 9 whole parts by their lengths (rfl walked 892 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part3 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part4 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part5 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part6 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part7 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part8 (by decide)]
-  rfl
+theorem emitted : ((leave255.drop 892).take 1441) = passes4 := by rfl
 
 theorem value (key : Fin 16) (x : Nat) (s : State) (m : List Bool)
     (small : x < 2^112) (h : holds wire 127 x s) (clean : s.basis 1613=false)
@@ -60113,44 +59245,44 @@ theorem value (key : Fin 16) (x : Nat) (s : State) (m : List Bool)
   have beginPass : ∀ m, Result wire 127 (x <<< 0) s (run passes0 m s) := HighBankBarrel.start h
   have p1 : ∀ m, Result wire 127 (x <<< (key.val % 2)) s (run passes1 m s) := by
     apply next layout3 (by decide) (by decide) away0.1 _ clean (room small (by omega : 112+0 ≤ 112)) _ beginPass
-    · have dis : ∀ q ∈ controls0, q ∉ bank3 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    · have dis : ∀ q ∈ controls0, q ∉ bank3 := by decide +kernel
       intro q hq i hi eq
       change q = bank3.getD i 0 at eq
       rw [List.getD_eq_getElem _ _ (show i < bank3.length from hi)] at eq
       exact dis q hq (eq ▸ List.getElem_mem _)
-    · have sub : ∀ q ∈ controls0, q ∈ Leave255Join.tags := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    · have sub : ∀ q ∈ controls0, q ∈ Leave255Join.tags := by decide +kernel
       rw [parity_congr (fun q hq => tags q (sub q hq)), selection0]
-      exact (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀ key : Fin 16, 0 + (if key.val.testBit 0 then 1 else 0) = (key.val % 2)) key
+      exact (by decide +kernel : ∀ key : Fin 16, 0 + (if key.val.testBit 0 then 1 else 0) = (key.val % 2)) key
   have p2 : ∀ m, Result wire 127 (x <<< (key.val % 4)) s (run passes2 m s) := by
     apply next layout3 (by decide) (by decide) away1.1 _ clean (room small (by omega : 112+(key.val % 2) ≤ 113)) _ p1
-    · have dis : ∀ q ∈ controls1, q ∉ bank3 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    · have dis : ∀ q ∈ controls1, q ∉ bank3 := by decide +kernel
       intro q hq i hi eq
       change q = bank3.getD i 0 at eq
       rw [List.getD_eq_getElem _ _ (show i < bank3.length from hi)] at eq
       exact dis q hq (eq ▸ List.getElem_mem _)
-    · have sub : ∀ q ∈ controls1, q ∈ Leave255Join.tags := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    · have sub : ∀ q ∈ controls1, q ∈ Leave255Join.tags := by decide +kernel
       rw [parity_congr (fun q hq => tags q (sub q hq)), selection1]
-      exact (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀ key : Fin 16, (key.val % 2) + (if key.val.testBit 1 then 2 else 0) = (key.val % 4)) key
+      exact (by decide +kernel : ∀ key : Fin 16, (key.val % 2) + (if key.val.testBit 1 then 2 else 0) = (key.val % 4)) key
   have p3 : ∀ m, Result wire 127 (x <<< (key.val % 8)) s (run passes3 m s) := by
     apply next layout3 (by decide) (by decide) away2.1 _ clean (room small (by omega : 112+(key.val % 4) ≤ 115)) _ p2
-    · have dis : ∀ q ∈ controls2, q ∉ bank3 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    · have dis : ∀ q ∈ controls2, q ∉ bank3 := by decide +kernel
       intro q hq i hi eq
       change q = bank3.getD i 0 at eq
       rw [List.getD_eq_getElem _ _ (show i < bank3.length from hi)] at eq
       exact dis q hq (eq ▸ List.getElem_mem _)
-    · have sub : ∀ q ∈ controls2, q ∈ Leave255Join.tags := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    · have sub : ∀ q ∈ controls2, q ∈ Leave255Join.tags := by decide +kernel
       rw [parity_congr (fun q hq => tags q (sub q hq)), selection2]
-      exact (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀ key : Fin 16, (key.val % 4) + (if key.val.testBit 2 then 4 else 0) = (key.val % 8)) key
+      exact (by decide +kernel : ∀ key : Fin 16, (key.val % 4) + (if key.val.testBit 2 then 4 else 0) = (key.val % 8)) key
   have p4 : ∀ m, Result wire 127 (x <<< key.val) s (run passes4 m s) := by
     apply next layout3 (by decide) (by decide) away3.1 _ clean (room small (by omega : 112+(key.val % 8) ≤ 119)) _ p3
-    · have dis : ∀ q ∈ controls3, q ∉ bank3 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    · have dis : ∀ q ∈ controls3, q ∉ bank3 := by decide +kernel
       intro q hq i hi eq
       change q = bank3.getD i 0 at eq
       rw [List.getD_eq_getElem _ _ (show i < bank3.length from hi)] at eq
       exact dis q hq (eq ▸ List.getElem_mem _)
-    · have sub : ∀ q ∈ controls3, q ∈ Leave255Join.tags := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+    · have sub : ∀ q ∈ controls3, q ∈ Leave255Join.tags := by decide +kernel
       rw [parity_congr (fun q hq => tags q (sub q hq)), selection3]
-      exact (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel) : ∀ key : Fin 16, (key.val % 8) + (if key.val.testBit 3 then 8 else 0) = key.val) key
+      exact (by decide +kernel : ∀ key : Fin 16, (key.val % 8) + (if key.val.testBit 3 then 8 else 0) = key.val) key
   exact p4 m
 
 end ECDSAAdd.Entrant.StairPacket.Leave255Barrel
@@ -60192,13 +59324,13 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-theorem part0 : gateSlots (portal225) ≤ 2030 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part0 : gateSlots (portal225) ≤ 2030 := by decide +kernel
 
-theorem part1 : gateSlots (enter225) ≤ 93 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part1 : gateSlots (enter225) ≤ 93 := by decide +kernel
 
 theorem part2 : gateSlots (routed ⟨10,by decide⟩ 0 1) ≤ 5000 := (route ⟨10,by decide⟩ 0 1).1
 
-theorem part3 : gateSlots (Rolling1588.packAtTick false 225) ≤ 156 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part3 : gateSlots (Rolling1588.packAtTick false 225) ≤ 156 := by decide +kernel
 
 theorem part4 : gateSlots (routed ⟨10,by decide⟩ 1 14) ≤ 70000 := (route ⟨10,by decide⟩ 1 14).1
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
@@ -60213,16 +59345,16 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-theorem part5 : gateSlots (leave225) ≤ 3489 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part5 : gateSlots (leave225) ≤ 3489 := by decide +kernel
 
-theorem part6 : gateSlots (enter240) ≤ 93 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part6 : gateSlots (enter240) ≤ 93 := by decide +kernel
 
 theorem part7 : gateSlots (routed ⟨11,by decide⟩ 0 1) ≤ 5000 := (route ⟨11,by decide⟩ 0 1).1
 
-theorem part8 : gateSlots (Rolling1588.packAtTick false 230) ≤ 156 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part8 : gateSlots (Rolling1588.packAtTick false 230) ≤ 156 := by decide +kernel
 
 theorem part9 : gateSlots (archiveLoad240 false) ≤ 3288 := by
-  have move : gateSlots moveLoad240 = 33 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveLoad240 = 33 := by decide +kernel
   simp only [archiveLoad240,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_load1_gateSlots,move]
   decide
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
@@ -60239,16 +59371,16 @@ set_option linter.unusedSimpArgs false
 
 theorem part50 : gateSlots (unrouted ⟨10,by decide⟩ 0 1) ≤ 5000 := (route ⟨10,by decide⟩ 0 1).2
 
-theorem part51 : gateSlots (enter225Inv) ≤ 93 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part51 : gateSlots (enter225Inv) ≤ 93 := by decide +kernel
 
-theorem part52 : gateSlots (portal225Inv) ≤ 2030 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part52 : gateSlots (portal225Inv) ≤ 2030 := by decide +kernel
 
 theorem part53 : gateSlots (archiveRestore270 true) ≤ 3542 := by
-  have move : gateSlots moveRestore270 = 54 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveRestore270 = 54 := by decide +kernel
   simp only [archiveRestore270,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_restore0_gateSlots,move]
   decide
 
-theorem part54 : gateSlots (Rolling1588.unpackAtTick true 260) ≤ 166 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part54 : gateSlots (Rolling1588.unpackAtTick true 260) ≤ 166 := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
 
 end
@@ -60263,13 +59395,13 @@ set_option linter.unusedSimpArgs false
 
 theorem part10 : gateSlots (routed ⟨11,by decide⟩ 1 14) ≤ 70000 := (route ⟨11,by decide⟩ 1 14).1
 
-theorem part11 : gateSlots (leave240) ≤ 3704 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part11 : gateSlots (leave240) ≤ 3704 := by decide +kernel
 
-theorem part12 : gateSlots (enter255) ≤ 93 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part12 : gateSlots (enter255) ≤ 93 := by decide +kernel
 
 theorem part13 : gateSlots (routed ⟨12,by decide⟩ 0 1) ≤ 5000 := (route ⟨12,by decide⟩ 0 1).1
 
-theorem part14 : gateSlots (Rolling1588.packAtTick false 245) ≤ 156 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part14 : gateSlots (Rolling1588.packAtTick false 245) ≤ 156 := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
 
 end
@@ -60283,17 +59415,17 @@ set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
 theorem part15 : gateSlots (archiveLoad255 false) ≤ 3288 := by
-  have move : gateSlots moveLoad255 = 33 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveLoad255 = 33 := by decide +kernel
   simp only [archiveLoad255,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_load1_gateSlots,move]
   decide
 
 theorem part16 : gateSlots (routed ⟨12,by decide⟩ 1 14) ≤ 70000 := (route ⟨12,by decide⟩ 1 14).1
 
-theorem part17 : gateSlots (leave255) ≤ 3837 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part17 : gateSlots (leave255) ≤ 3837 := by decide +kernel
 
-theorem part18 : gateSlots (park270) ≤ 9 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part18 : gateSlots (park270) ≤ 9 := by decide +kernel
 
-theorem part19 : gateSlots (portal270Inv) ≤ 2219 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part19 : gateSlots (portal270Inv) ≤ 2219 := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
 
 end
@@ -60307,21 +59439,21 @@ set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
 theorem part25 : gateSlots (archiveLoad240 true) ≤ 3278 := by
-  have move : gateSlots moveLoad240 = 33 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveLoad240 = 33 := by decide +kernel
   simp only [archiveLoad240,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_load0_gateSlots,move]
   decide
 
-theorem part26 : gateSlots (Rolling1588.packAtTick true 245) ≤ 168 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part26 : gateSlots (Rolling1588.packAtTick true 245) ≤ 168 := by decide +kernel
 
 theorem part27 : gateSlots (archiveLoad255 true) ≤ 3278 := by
-  have move : gateSlots moveLoad255 = 33 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveLoad255 = 33 := by decide +kernel
   simp only [archiveLoad255,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_load0_gateSlots,move]
   decide
 
-theorem part28 : gateSlots (Rolling1588.packAtTick true 260) ≤ 168 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part28 : gateSlots (Rolling1588.packAtTick true 260) ≤ 168 := by decide +kernel
 
 theorem part29 : gateSlots (archiveLoad270 true) ≤ 3278 := by
-  have move : gateSlots moveLoad270 = 33 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveLoad270 = 33 := by decide +kernel
   simp only [archiveLoad270,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_load0_gateSlots,move]
   decide
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
@@ -60337,20 +59469,20 @@ set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
 theorem part30 : gateSlots (archiveRestore270 false) ≤ 3562 := by
-  have move : gateSlots moveRestore270 = 54 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveRestore270 = 54 := by decide +kernel
   simp only [archiveRestore270,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_restore1_gateSlots,move]
   decide
 
-theorem part31 : gateSlots (Rolling1588.unpackAtTick false 260) ≤ 154 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part31 : gateSlots (Rolling1588.unpackAtTick false 260) ≤ 154 := by decide +kernel
 
 theorem part32 : gateSlots (W.ReverseCarry.compactReceiverTick base 270) ≤ 6001 := by
   have h := W.ReverseCarry.compactReceiverTick_slots base 270 (by decide) base_pool_nodup
   have c := (W.compactTick_gateSlots_le base 270 (by decide)).2
   omega
 
-theorem part33 : gateSlots (portal270) ≤ 2219 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part33 : gateSlots (portal270) ≤ 2219 := by decide +kernel
 
-theorem part34 : gateSlots (park270Inv) ≤ 9 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part34 : gateSlots (park270Inv) ≤ 9 := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
 
 end
@@ -60363,16 +59495,16 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-theorem part35 : gateSlots (leave255Inv) ≤ 3838 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part35 : gateSlots (leave255Inv) ≤ 3838 := by decide +kernel
 
 theorem part36 : gateSlots (unrouted ⟨12,by decide⟩ 1 14) ≤ 70000 := (route ⟨12,by decide⟩ 1 14).2
 
 theorem part37 : gateSlots (archiveRestore255 false) ≤ 3562 := by
-  have move : gateSlots moveRestore255 = 54 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveRestore255 = 54 := by decide +kernel
   simp only [archiveRestore255,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_restore1_gateSlots,move]
   decide
 
-theorem part38 : gateSlots (Rolling1588.unpackAtTick false 245) ≤ 154 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part38 : gateSlots (Rolling1588.unpackAtTick false 245) ≤ 154 := by decide +kernel
 
 theorem part39 : gateSlots (unrouted ⟨12,by decide⟩ 0 1) ≤ 5000 := (route ⟨12,by decide⟩ 0 1).2
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
@@ -60387,18 +59519,18 @@ set_option maxRecDepth 180000
 set_option maxHeartbeats 3000000
 set_option linter.unusedSimpArgs false
 
-theorem part40 : gateSlots (enter255Inv) ≤ 93 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part40 : gateSlots (enter255Inv) ≤ 93 := by decide +kernel
 
-theorem part41 : gateSlots (leave240Inv) ≤ 3705 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part41 : gateSlots (leave240Inv) ≤ 3705 := by decide +kernel
 
 theorem part42 : gateSlots (unrouted ⟨11,by decide⟩ 1 14) ≤ 70000 := (route ⟨11,by decide⟩ 1 14).2
 
 theorem part43 : gateSlots (archiveRestore240 false) ≤ 3562 := by
-  have move : gateSlots moveRestore240 = 54 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have move : gateSlots moveRestore240 = 54 := by decide +kernel
   simp only [archiveRestore240,gateSlots_append,rename_gateSlots,Bool.false_eq_true,if_true,if_false,integer_restore1_gateSlots,move]
   decide
 
-theorem part44 : gateSlots (Rolling1588.unpackAtTick false 230) ≤ 154 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part44 : gateSlots (Rolling1588.unpackAtTick false 230) ≤ 154 := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
 
 end
@@ -60413,13 +59545,13 @@ set_option linter.unusedSimpArgs false
 
 theorem part45 : gateSlots (unrouted ⟨11,by decide⟩ 0 1) ≤ 5000 := (route ⟨11,by decide⟩ 0 1).2
 
-theorem part46 : gateSlots (enter240Inv) ≤ 93 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part46 : gateSlots (enter240Inv) ≤ 93 := by decide +kernel
 
-theorem part47 : gateSlots (leave225Inv) ≤ 3490 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part47 : gateSlots (leave225Inv) ≤ 3490 := by decide +kernel
 
 theorem part48 : gateSlots (unrouted ⟨10,by decide⟩ 1 14) ≤ 70000 := (route ⟨10,by decide⟩ 1 14).2
 
-theorem part49 : gateSlots (Rolling1588.unpackAtTick false 225) ≤ 154 := WSlimBlock.slotsLe_sound _ _ (by decide +kernel)
+theorem part49 : gateSlots (Rolling1588.unpackAtTick false 225) ≤ 154 := by decide +kernel
 end ECDSAAdd.Entrant.StairPacket.WindowSlots
 
 end
@@ -60434,11 +59566,7 @@ set_option maxHeartbeats 3000000
 def ys : List Wire := [1703, 1704, 1705, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042]
 def carries : List Wire := [1598, 1599, 1600, 1601, 1602, 1603, 1604, 1605, 1606, 1607, 1608, 1609, 1610, 1611, 1612, 1613, 1614, 1615, 1616, 1617, 1618, 1619, 1620, 1621, 1622, 1623, 1624, 1625, 1626, 1627, 1628, 1629, 1630, 1631, 1632, 1633, 1634, 1635, 1636, 1637, 1638, 1639, 1640, 1641, 1642, 1643, 1644, 1645, 1646, 1647, 1648, 1649, 1650, 1651, 1652, 1653, 1654, 1655, 1656, 1657, 1658, 1659, 1660, 1661, 1662, 1663, 1664, 1665, 1666, 1667, 1668, 1669, 1670, 1671, 1672, 1673, 1674, 1675, 1676, 1677, 1678, 1679, 1680, 1681, 1682, 1683, 1684, 1685, 1686, 1687, 1688, 1689, 1690, 1691, 1692, 1693, 1694, 1695, 1696, 1697, 1698, 1699, 1700, 1701, 1702, 1713, 1714, 1715, 1716, 1717, 1718]
 
-theorem emitted : ((leave255.drop 334).take 558) = adjust ys carries 1709 1597 := by
-  -- WSLIM: skip 3 whole parts by their lengths (rfl walked 334 instructions through the `++` chain)
-  unfold leave255
-  rw [WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part0 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part1 (by decide), WSlimSlice.drop_skip _ _ _ 96 WSlimLen.leave255Part2 (by decide)]
-  rfl
+theorem emitted : ((leave255.drop 334).take 558) = adjust ys carries 1709 1597 := by rfl
 theorem combined : ((leave255.drop 334).take 1999) =
     adjust ys carries 1709 1597 ++ ((leave255.drop 892).take 1441) := by rfl
 
@@ -60451,9 +59579,9 @@ theorem result (key : Fin 16) (s : State) (m : List Bool)
   let p := adjust ys carries 1709 1597
   let t := run p m s
   let x := regValue ys t.basis
-  have ht := HighBankAdjust.correct ys carries 1709 1597 (WSlimBlock.nodup_of_maskB _ (by decide +kernel)) (by decide +kernel) (by decide) s m clean
-  have coord : ∀ i : Fin 112, wire i = ys.getD i 0 := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have pad : ∀ i : Fin 127, 112 ≤ i.val → wire i ∉ ys := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have ht := HighBankAdjust.correct ys carries 1709 1597 (by decide +kernel) (by decide +kernel) (by decide) s m clean
+  have coord : ∀ i : Fin 112, wire i = ys.getD i 0 := by decide +kernel
+  have pad : ∀ i : Fin 127, 112 ≤ i.val → wire i ∉ ys := by decide +kernel
   have small : x < 2^112 := regValue_lt ys t.basis
   have data : holds wire 127 x t := by
     intro i hi
@@ -60462,8 +59590,8 @@ theorem result (key : Fin 16) (s : State) (m : List Bool)
       exact bit_read ys i t.basis lo
     · rw [Nat.testBit_lt_two_pow (small.trans_le (Nat.pow_le_pow_right (by decide) (by omega)))]
       exact (ht.2.1 _ (pad ⟨i,hi⟩ (show 112 ≤ i by omega))).trans (padding i (by omega) hi)
-  have cold : t.basis 1613=false := (ht.2.1 _ (by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel))).trans selectZero
-  have untouched : ∀ q ∈ Leave255Join.tags, q ∉ ys := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have cold : t.basis 1613=false := (ht.2.1 _ (by decide +kernel)).trans selectZero
+  have untouched : ∀ q ∈ Leave255Join.tags, q ∉ ys := by decide +kernel
   have keys : ∀ q ∈ Leave255Join.tags, t.basis q = decide (q = Leave255Join.tags.getD key 0) :=
     fun q h => (ht.2.1 _ (untouched _ h)).trans (one _ h)
   have action := value key x t (m.drop (measurementCount p)) small data cold keys
@@ -60503,18 +59631,18 @@ theorem combine (key : Fin 16) (X H : Nat) (s : State) (m : List Bool)
       ∀ q, (∀ r ∈ columns, q≠r.shadow ∧ q≠r.tube) → out.basis q=s.basis q := by
   let ref := hot key
   let u := run digitPass m s
-  have sch : ∀ key : Fin 16, schedule (hot key) key false 0 columns = true := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have unique : ∀ i t : Fin 16, hot t (tags.getD i 0) = decide (i.val = t.val) := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have sch : ∀ key : Fin 16, schedule (hot key) key false 0 columns = true := by decide +kernel
+  have unique : ∀ i t : Fin 16, hot t (tags.getD i 0) = decide (i.val = t.val) := by decide +kernel
   have sel (i : Nat) (_ : 0 ≤ i) (hi : i<0+16) : s.basis (tags.getD i 0)=decide (i=key.val) := by
     have mem : tags.getD i 0 ∈ tags := by rw [List.getD_eq_getElem _ _ (show i<tags.length from hi)]; exact List.getElem_mem _
     exact (tagsOn _ mem).trans (unique ⟨i,hi⟩ key)
   have z := digits_remainder digitSites s m key.val (by omega) key.isLt sel X 18 (by decide)
     (fun i _ j _ eq => Nat.add_left_cancel eq) shadow digit
-  have geom : ∀ i : Fin 18, (row i).shadow=416+i.val ∧ (row i).tube=wire i.val := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have hits : ∀ r ∈ columns, ∀ q ∈ r.hot, q∈tags := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have members : ∀ q ∈ tags, ∀ i : Fin 18, q≠416+i.val := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have tx : ∀ i j : Fin 18, wire i.val ≠ 416+j.val := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
-  have cold : ∀ i : Fin 18, 1614 ≠ 416+i.val := by (open ECDSAAdd.Entrant.WSlimMac in decide +kernel)
+  have geom : ∀ i : Fin 18, (row i).shadow=416+i.val ∧ (row i).tube=wire i.val := by decide +kernel
+  have hits : ∀ r ∈ columns, ∀ q ∈ r.hot, q∈tags := by decide +kernel
+  have members : ∀ q ∈ tags, ∀ i : Fin 18, q≠416+i.val := by decide +kernel
+  have tx : ∀ i j : Fin 18, wire i.val ≠ 416+j.val := by decide +kernel
+  have cold : ∀ i : Fin 18, 1614 ≠ 416+i.val := by decide +kernel
   have ctrl : ∀ r∈columns, ∀ q∈r.hot, u.basis q=ref q := by
     intro r hr q hq
     have mem := hits r hr q hq
