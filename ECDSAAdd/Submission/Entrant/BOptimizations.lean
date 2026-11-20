@@ -8072,9 +8072,9 @@ end ECDSAAdd.Entrant.StairSqLoopA
 
 end
 
--- Partial carry cache in the hole-free A square loop.
--- The 44 hole hosts `ReorderedAFixed.hs.take 44` and the three status hosts `ReorderedAFixed.hosts.take 3`
--- stay out of the cache; the other 62 of the 109 cache hosts keep their carries (62 Toffolis fewer).
+-- PSQ-A: partial carry cache in the hole-free A square loop.
+-- The 44 hole hosts `ReorderedAFixed.hs.take 44` stay out of the cache; the other 65 of the 109 cache hosts,
+-- the three status hosts `ReorderedAFixed.hosts.take 3` included (clean at loop entry), keep their carries (65 T saved).
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
@@ -8086,31 +8086,29 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
-def keepK:List Wire:=hosts.filter (fun q=>!((ReorderedAFixed.hs.take 44).contains q) &&
- !((ReorderedAFixed.hosts.take 3).contains q))
+def keepK:List Wire:=hosts.filter (fun q=>!((ReorderedAFixed.hs.take 44).contains q))
 
-theorem keepK_geometry:keepK.Nodup ∧ keepK.length=62 ∧
- (∀i,i<44→ReorderedAFixed.hs.getD i 0∉keepK) ∧
- (∀q∈keepK,q∈ReorderedAFixed.hosts→q∈ReorderedAFixed.hs):=by decide +kernel
+theorem keepK_geometry:keepK.Nodup ∧ keepK.length=65 ∧
+ (∀i,i<44→ReorderedAFixed.hs.getD i 0∉keepK):=by decide +kernel
 
 theorem keepK_sub(q:Wire)(hq:q∈keepK):q∈hosts:=(List.mem_filter.mp hq).1
 
-def rawFK:Program:=ReorderedGenericCache.cachedAdd 62 xs ys cs keepK cin
-def newFK:Program:=head++A109LowEraseResearch.clear++ReorderedGenericCache.cachedAdd 62 xs ys cs keepK cin++top
-def newIK:Program:=preInv++ReorderedConsumedSub.consumed 62 xs ys cs keepK cin
+def rawFK:Program:=ReorderedGenericCache.cachedAdd 65 xs ys cs keepK cin
+def newFK:Program:=head++A109LowEraseResearch.clear++ReorderedGenericCache.cachedAdd 65 xs ys cs keepK cin++top
+def newIK:Program:=preInv++ReorderedConsumedSub.consumed 65 xs ys cs keepK cin
 
 theorem inverse_frameK(s:State)(m:List Bool)(H:Nat)(hH:H<2^128)
  (hz:∀q∈cs,(run preInv m s).basis q=false)(hi:(run preInv m s).basis cin=false)
  (source:regValue xs (run preInv m s).basis=H)
  (target:regValue ys (run preInv m s).basis=976*H/1024)
- (saved:keepK.map s.basis=ReorderedCacheBits.values 4 62 H (976*H/1024)):
+ (saved:keepK.map s.basis=ReorderedCacheBits.values 4 65 H (976*H/1024)):
  run newIK m s=scatterState keepK (List.replicate keepK.length false) (run I m s):=by
  have same:keepK.map (run preInv m s).basis=keepK.map s.basis:=by
   apply List.map_congr_left
   intro q hq
   exact run_preserves_outside preInv m s q (preInv_off q (keepK_sub q hq))
  simp only [newIK,I,ControlledBorrowResearch.run_cat]
- exact ReorderedConsumedSub.frame 62 xs ys cs keepK cin
+ exact ReorderedConsumedSub.frame 65 xs ys cs keepK cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
   (by rw [raw_lengths.1,raw_lengths.2.1]) (by rw [raw_lengths.2.1,raw_lengths.2.2])
   raw_nd keepK_geometry.1 keepK_geometry.2.1 (fun q hq=>geometry.2.2 q (keepK_sub q hq))
@@ -8118,11 +8116,11 @@ theorem inverse_frameK(s:State)(m:List Bool)(H:Nat)(hH:H<2^128)
 
 theorem forward_frameK(s:State)(m:List Bool)(H:Nat)
  (zero:∀q∈keepK,(run (head++A109LowEraseResearch.clear) (m.take (measurementCount (head++A109LowEraseResearch.clear))) s).basis q=false)
- (values:(((cs.drop 4).take 62).map (run (carryPrefix (4+62) xs ys cs cin) []
+ (values:(((cs.drop 4).take 65).map (run (carryPrefix (4+65) xs ys cs cin) []
   (run (head++A109LowEraseResearch.clear) (m.take (measurementCount (head++A109LowEraseResearch.clear))) s)).basis)=
-   ReorderedCacheBits.values 4 62 H (976*H/1024)):
- run newFK m s=scatterState keepK (ReorderedCacheBits.values 4 62 H (976*H/1024)) (run F m s):=by
- have h:=CacheBetweenFrameResearch.forward (head++A109LowEraseResearch.clear) top 62 xs ys cs keepK cin
+   ReorderedCacheBits.values 4 65 H (976*H/1024)):
+ run newFK m s=scatterState keepK (ReorderedCacheBits.values 4 65 H (976*H/1024)) (run F m s):=by
+ have h:=CacheBetweenFrameResearch.forward (head++A109LowEraseResearch.clear) top 65 xs ys cs keepK cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
   keepK_geometry.1 (fun q hq bad=>geometry.2.2 q (keepK_sub q hq) (by simp only [List.mem_cons,List.mem_append];tauto))
   (fun q hq=>rawF_off q (keepK_sub q hq)) (fun q hq=>top_off q (keepK_sub q hq)) s m zero
@@ -8130,14 +8128,14 @@ theorem forward_frameK(s:State)(m:List Bool)(H:Nat)
  exact h
 
 theorem forward_measurementsK:measurementCount newFK=measurementCount F:=by
- have h:=(ReorderedGenericCache.count_balance 62 xs ys cs keepK cin
+ have h:=(ReorderedGenericCache.count_balance 65 xs ys cs keepK cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)).2.1
  simp only [newFK,F,rawF,measurementCount_append]
  rw [h]
 
 theorem forward_zeroK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hs,s.basis q=false):
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hosts,s.basis q=false):
  ∀q∈keepK,(run F m s).basis q=false:=by
  rw [forward_erased s m hz hb hi ha]
  let u:=run (ReorderedAPlain.build acc pad bank cin src) m s
@@ -8152,7 +8150,7 @@ theorem forward_zeroK(s:State)(m:List Bool)
     apply away
     simp only [A109LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at bad
     rcases bad with rfl|rfl|rfl <;>decide)]
-   exact (run_preserves_outside _ m s q (old_plain_off398 q hq)).trans (zero q (keepK_geometry.2.2.2 q hk hq))
+   exact (run_preserves_outside _ m s q (old_plain_off398 q hq)).trans (zero q hq)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [A109LowEraseResearch.bit_same _ _ (by decide)]
@@ -8173,7 +8171,7 @@ theorem forward_zeroK(s:State)(m:List Bool)
 
 theorem prefix_zeroK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hs,s.basis q=false):
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hosts,s.basis q=false):
  ∀q∈keepK,(run (head++A109LowEraseResearch.clear) m s).basis q=false:=by
  have clean:=forward_zeroK s m hz hb hi ha zero
  intro q hq
@@ -8189,9 +8187,9 @@ theorem prefix_zeroK(s:State)(m:List Bool)
 theorem forward_valuesK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
  (ha:regValue acc s.basis=0):
- (((cs.drop 4).take 62).map (run (carryPrefix (4+62) xs ys cs cin) []
+ (((cs.drop 4).take 65).map (run (carryPrefix (4+65) xs ys cs cin) []
   (run (head++A109LowEraseResearch.clear) m s)).basis)=
- ReorderedCacheBits.values 4 62 (regValue src s.basis) (976*regValue src s.basis/1024):=by
+ ReorderedCacheBits.values 4 65 (regValue src s.basis) (976*regValue src s.basis/1024):=by
  let H:=regValue src s.basis
  let u:=run head m s
  let t:=run (head++A109LowEraseResearch.clear) m s
@@ -8215,7 +8213,7 @@ theorem forward_valuesK(s:State)(m:List Bool)
   exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
  have si:t.basis cin=false:=
   (eraseBit cin cin_in).trans ready.2.1
- exact ReorderedCacheBits.forward_values 4 62 H (((2^138-48*H)%2^138)/1024) (976*H/1024)
+ exact ReorderedCacheBits.forward_values 4 65 H (((2^138-48*H)%2^138)/1024) (976*H/1024)
   xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
   (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
    simpa only [show 128+10=138 by decide] using
@@ -8227,11 +8225,11 @@ theorem scattered_erased_domainK(s:State)(vs:List Bool)(q:Wire)(hq:q∈domain):
  exact A109LowEraseResearch.bit_same s q (domain_away_low q hq)
 
 theorem inverse_readyK(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
- let vs:=ReorderedCacheBits.values 4 62 H (976*H/1024)
+ let vs:=ReorderedCacheBits.values 4 65 H (976*H/1024)
  let t:=scatterState keepK vs (A109LowEraseResearch.erase s)
  run newIK m t=scatterState keepK (List.replicate keepK.length false) (run I m t):=by
  dsimp only
- let vs:=ReorderedCacheBits.values 4 62 H (976*H/1024)
+ let vs:=ReorderedCacheBits.values 4 65 H (976*H/1024)
  let t:=scatterState keepK vs (A109LowEraseResearch.erase s)
  have hH:H<2^128:=by rw [←ready.2.1];simpa only [source_length] using regValue_lt src s.basis
  have commute:run preInv m t=scatterState keepK vs (A109LowEraseResearch.erase (run preInv m s)):=by
@@ -8260,12 +8258,12 @@ theorem inverse_readyK(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank ci
 
 theorem cache_loopK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hs,s.basis q=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hosts,s.basis q=false)
  (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
  (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
  run (newFK++M++newIK) m s=run (F++M++I) m s:=by
  let H:=regValue src s.basis
- let vs:=ReorderedCacheBits.values 4 62 H (976*H/1024)
+ let vs:=ReorderedCacheBits.values 4 65 H (976*H/1024)
  have mid:=middle_erased s m hz hb hi ha after flag
  have forward:=forward_frameK s (m.take (measurementCount F)) H
   (prefix_zeroK s _ hz hb hi ha zero) (forward_valuesK s _ hz hb hi ha)
@@ -8278,10 +8276,10 @@ theorem cache_loopK(s:State)(m:List Bool)
 def coreK:Program:=(newFK++M++newIK)++(A109LowEraseResearch.clear++tail)
 
 theorem inverse_measurementsK:measurementCount newIK=measurementCount I:=by
- have h:=ReorderedConsumedSub.measurement_eq 62 xs ys cs keepK cin
+ have h:=ReorderedConsumedSub.measurement_eq 65 xs ys cs keepK cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
   (by rw [raw_lengths.2.2];decide)
- have eq:measurementCount (ReorderedConsumedSub.consumed 62 xs ys cs keepK cin)=measurementCount rawI:=h
+ have eq:measurementCount (ReorderedConsumedSub.consumed 65 xs ys cs keepK cin)=measurementCount rawI:=h
  simp only [newIK,I,measurementCount_append,eq]
 
 theorem prefix_measurementsK:measurementCount (newFK++M++newIK)=measurementCount (F++M++I):=by
@@ -8289,7 +8287,7 @@ theorem prefix_measurementsK:measurementCount (newFK++M++newIK)=measurementCount
 
 theorem core_plainK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hs,s.basis q=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedAFixed.hosts,s.basis q=false)
  (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
  (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
  run coreK m s=run (oldF++oldM++ReorderedAPlain.unbuild acc pad bank cin src) m s:=by
@@ -8303,7 +8301,7 @@ theorem core_plainK(s:State)(m:List Bool)
 end ECDSAAdd.Entrant.A109Research
 end
 
--- The partial-cache A loop (`loopPC`): frame, host avoidance, counts, slots, physicality, support.
+-- PSQ-A: the partial-cache A loop (`loopPC`) and its frame, host avoidance, counts, slots, physicality, support.
 section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.StairSqLoopA
@@ -8319,7 +8317,9 @@ attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires A161Low4FixedFold.chec
 
 def pcCore:Program:=A109Research.coreK
 
-theorem pcCore_frame(base:BasisState)(hc:L.PairClean base)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+theorem pcCore_frame(base:BasisState)(hc:L.PairClean base)
+ (hsum:base A161Low4FixedFold.q=false)(hV:base A161Low4FixedFold.r=false)(hP:base A161Low4FixedFold.p=false)
+ (hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
  Triple (SquareFrame L.core.out base O) pcCore
   (SquareFrame L.core.out base
    (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
@@ -8336,6 +8336,14 @@ theorem pcCore_frame(base:BasisState)(hc:L.PairClean base)(hd:base d=false)(O:Na
  have ha:regValue acc s.basis=0:=ghostAcc_zero L s.basis clean
  have zeroU:∀u∈ReorderedAFixed.hs,s.basis u=false:=fun u hu=>
   (hf.2 u (A161Low4FixedFold.hostClean base hc hd u hu).1).trans (A161Low4FixedFold.hostClean base hc hd u hu).2
+ -- the three status hosts are clean at loop entry (as in `A109Research.core_frame`)
+ have zeroOld:∀u∈ReorderedAFixed.hosts,s.basis u=false:=by
+  have qz:s.basis ReorderedAFixed.q=false:=(hf.2 ReorderedAFixed.q (by decide)).trans hsum
+  have rz:s.basis ReorderedAFixed.r=false:=(hf.2 ReorderedAFixed.r (by decide)).trans hV
+  have pz:s.basis ReorderedAFixed.p=false:=(hf.2 ReorderedAFixed.p (by decide)).trans hP
+  change ∀u∈ReorderedAFixed.q::ReorderedAFixed.r::ReorderedAFixed.p::ReorderedAFixed.hs,s.basis u=false
+  rw [List.forall_mem_cons,List.forall_mem_cons,List.forall_mem_cons]
+  exact ⟨qz,rz,pz,zeroU⟩
  have offHs:∀u∈ReorderedAFixed.hs,u∉wires (ReorderedAPlain.build acc pad bank L.core.cin src):=by
   intro u hu
   exact (off_plain u (hosts_of_hs u hu)).1
@@ -8361,7 +8369,7 @@ theorem pcCore_frame(base:BasisState)(hc:L.PairClean base)(hd:base d=false)(O:Na
  have flag:(run (ReorderedAPlain.build acc pad bank L.core.cin src)
   (m.take (measurementCount (ReorderedAPlain.build acc pad bank L.core.cin src))) s).basis 4762=false:=
   (buildFrame.2.2 4762 (by decide +kernel)).trans clean.modFlag
- have plainNew:=A109Research.core_plainK s m hz hb clean.cin ha zeroU goodKnown flag
+ have plainNew:=A109Research.core_plainK s m hz hb clean.cin ha zeroOld goodKnown flag
  have midEq:run KnownAMidStaged.body (m.drop (measurementCount (ReorderedAPlain.build acc pad bank L.core.cin src)))
   (run (ReorderedAPlain.build acc pad bank L.core.cin src) m s)=
   run A161Low4FixedFold.checked.out (m.drop (measurementCount (ReorderedAPlain.build acc pad bank L.core.cin src)))
@@ -8407,14 +8415,16 @@ theorem loopPC_eq(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReduct
  simpa only [loopPC,suffixPC,pcCore,A109Research.coreK,A109Research.newFK,A109Research.rawFK,
   A109Research.head,List.append_assoc] using eq
 
-theorem loopPC_frame(base:BasisState)(hc:L.PairClean base)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+theorem loopPC_frame(base:BasisState)(hc:L.PairClean base)
+ (hsum:base A161Low4FixedFold.q=false)(hV:base A161Low4FixedFold.r=false)(hP:base A161Low4FixedFold.p=false)
+ (hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
  Triple (SquareFrame L.core.out base O) loopPC
   (SquareFrame L.core.out base
    (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
     (SquareReduction.p-1-O))%SquareReduction.p)):=by
  intro s m hf
  have e:=loopPC_eq base hc O hO s m hf
- have old:=pcCore_frame base hc hd O hO s
+ have old:=pcCore_frame base hc hsum hV hP hd O hO s
   (SignRetape.tape SignAHead.head (ReorderedAHead.head acc pad bank L.core.cin src) m) hf
  exact ReorderedAFixed.transport _ s _ _ e old
 
@@ -8433,16 +8443,16 @@ set_option linter.unusedSimpArgs false
 attribute [local irreducible] ECDSAAdd.wires
 
 theorem keepK_cached_wires:wires A109Research.rawFK⊆A109Research.domain.toFinset∪A109Research.keepK.toFinset:=
- (ReorderedSupport.cached 62 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin
+ (ReorderedSupport.cached 65 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin
   (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
   (by rw [A109Research.raw_lengths.2.2];decide)
   (by rw [A109Research.raw_lengths.1,A109Research.raw_lengths.2.1])
   (by rw [A109Research.raw_lengths.2.1,A109Research.raw_lengths.2.2])).1
 
 theorem keepK_consumed_wires:
- wires (ReorderedConsumedSub.consumed 62 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin)⊆
+ wires (ReorderedConsumedSub.consumed 65 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin)⊆
   A109Research.domain.toFinset∪A109Research.keepK.toFinset:=
- ReorderedSupport.consumed 62 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin
+ ReorderedSupport.consumed 65 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK ReorderedBPrefixResearch.cin
   (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
   (by rw [A109Research.raw_lengths.2.2];decide)
   (by rw [A109Research.raw_lengths.1,A109Research.raw_lengths.2.1])
@@ -8497,9 +8507,9 @@ set_option linter.unusedSimpArgs false
 section counts
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
 
-theorem loopPC_counts_rel:toffoliCount loopPC+62=toffoliCount loopNC ∧
+theorem loopPC_counts_rel:toffoliCount loopPC+65=toffoliCount loopNC ∧
  measurementCount loopPC=measurementCount loopNC:=by
- have cb:=ReorderedGenericCache.count_balance 62 A109Research.xs A109Research.ys A109Research.cs
+ have cb:=ReorderedGenericCache.count_balance 65 A109Research.xs A109Research.ys A109Research.cs
   A109Research.keepK ReorderedBPrefixResearch.cin
   (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
   (by rw [A109Research.raw_lengths.2.2];decide)
@@ -8508,14 +8518,14 @@ theorem loopPC_counts_rel:toffoliCount loopPC+62=toffoliCount loopNC ∧
  simp only [toffoliCount_append,measurementCount_append]
  exact ⟨by omega,by omega⟩
 
-theorem loopPC_counts:toffoliCount loopPC=toffoliCount A109SignResearch.loop+50 ∧
+theorem loopPC_counts:toffoliCount loopPC=toffoliCount A109SignResearch.loop+47 ∧
  measurementCount loopPC=measurementCount A109SignResearch.loop:=by
  have r:=loopPC_counts_rel
  have o:=loopNC_counts
  exact ⟨by omega,by omega⟩
 
-theorem loopPC_slots_rel:Challenge.gateSlots loopPC+186=Challenge.gateSlots loopNC:=by
- have sc:=ReorderedSlots.cache 62 A109Research.xs A109Research.ys A109Research.cs
+theorem loopPC_slots_rel:Challenge.gateSlots loopPC+195=Challenge.gateSlots loopNC:=by
+ have sc:=ReorderedSlots.cache 65 A109Research.xs A109Research.ys A109Research.cs
   A109Research.keepK ReorderedBPrefixResearch.cin
   (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
   (by rw [A109Research.raw_lengths.2.2];decide) A109Research.keepK_geometry.2.1
@@ -8524,7 +8534,7 @@ theorem loopPC_slots_rel:Challenge.gateSlots loopPC+186=Challenge.gateSlots loop
  simp only [Challenge.gateSlots_append]
  omega
 
-theorem loopPC_slots:Challenge.gateSlots loopPC=Challenge.gateSlots A109SignResearch.loop+144:=by
+theorem loopPC_slots:Challenge.gateSlots loopPC=Challenge.gateSlots A109SignResearch.loop+135:=by
  have r:=loopPC_slots_rel
  have o:=loopNC_slots
  omega
@@ -8535,7 +8545,7 @@ section physical
 attribute [local irreducible] GatePhysical ECDSAAdd.wires
 
 theorem loopPC_physical:GatePhysical loopPC:=by
- have f:=ReorderedPhysical.cached 62 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK
+ have f:=ReorderedPhysical.cached 65 A109Research.xs A109Research.ys A109Research.cs A109Research.keepK
   ReorderedBPrefixResearch.cin
   (by rw [A109Research.raw_lengths.1];decide) (by rw [A109Research.raw_lengths.2.1];decide)
   (by rw [A109Research.raw_lengths.2.2];decide)
@@ -8634,15 +8644,22 @@ theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
  rw [pairs_fst,pairs_snd]
  exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
 
-theorem hostOf_not_keep44(q:Wire)(hq:q∈StairSqLoopA.hostDomain):hostOf q∉A109Research.keepK:=by
+theorem hostDomain_length44:hostDomain.length=44:=by decide +kernel
+
+theorem holes_mem_hostDomain(q:Wire)(hq:q∈holes):q∈hostDomain:=by
+ unfold hostDomain
+ exact List.mem_append_left _ hq
+
+/-- PSQ: a hole's host is one of the 44 hole hosts `hs.take 44`, never a kept cache host. -/
+theorem hostOf_not_keep44(q:Wire)(hq:q∈hostDomain):hostOf q∉A109Research.keepK:=by
  unfold hostOf
- apply A109Research.keepK_geometry.2.2.1
+ apply A109Research.keepK_geometry.2.2
  have h:=List.idxOf_lt_length_of_mem hq
- have e:StairSqLoopA.hostDomain.length=44:=by decide +kernel
- omega
+ rw [hostDomain_length44] at h
+ exact h
 
 theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉A109Research.keepK:=
- hostOf_not_keep44 q (by unfold StairSqLoopA.hostDomain;exact List.mem_append_left _ hq)
+ hostOf_not_keep44 q (holes_mem_hostDomain q hq)
 
 theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
  intro ab hab
@@ -8656,13 +8673,14 @@ theorem pairs_hostFree44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
  exact loopPC_off _ (hosts_of_hs _ (holes_geometry44.2.2 y (hsub.subset hy))) (hostOf_not_keep44 y (hsub.subset hy))
 
 theorem loopA_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc:L.PairClean base)
+ (hsum:base A161Low4FixedFold.q=false)(hV:base A161Low4FixedFold.r=false)(hP:base A161Low4FixedFold.p=false)
  (hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
  Triple (SquareFrame L.core.out base O) (loopA hl)
   (SquareFrame L.core.out base
    (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
     (SquareReduction.p-1-O))%SquareReduction.p)):=by
  intro s m hf
- have f:=loopPC_frame base hc hd O hO s m hf
+ have f:=loopPC_frame base hc hsum hV hP hd O hO s m hf
  have holeBase:∀q∈holes,base q=false:=fun q hq=>(regValue_zero _ _).mp hc.pad q (holes_geometry.2.1 q hq).1
  have eq:run (loopA hl) m s=run loopPC m s:=by
   rw [loopA]
@@ -8687,13 +8705,14 @@ theorem loopA_frame(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc:L.P
 
 
 theorem loopA_frame44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(base:BasisState)(hc:L.PairClean base)
+ (hsum:base A161Low4FixedFold.q=false)(hV:base A161Low4FixedFold.r=false)(hP:base A161Low4FixedFold.p=false)
  (hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
  Triple (SquareFrame L.core.out base O) (loopA hl)
   (SquareFrame L.core.out base
    (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
     (SquareReduction.p-1-O))%SquareReduction.p)):=by
  intro s m hf
- have f:=loopPC_frame base hc hd O hO s m hf
+ have f:=loopPC_frame base hc hsum hV hP hd O hO s m hf
  have holeBase:∀q∈StairSqLoopA.hostDomain,base q=false:=fun q hq=>(regValue_zero _ _).mp hc.pad q (holes_geometry44.2.1 q hq).1
  have eq:run (loopA hl) m s=run loopPC m s:=by
   rw [loopA]
@@ -8724,7 +8743,7 @@ theorem loopA_frame_rec(hl:List Wire)(hsub:hl.Sublist holes)(base:BasisState)(hc
   (SquareFrame L.core.out base
    (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
     (SquareReduction.p-1-O))%SquareReduction.p)):=
- loopA_frame hl hsub base hc hd O hO
+ loopA_frame hl hsub base hc hsum hV hP hd O hO
 
 
 theorem loopA_frame_rec44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)(base:BasisState)(hc:L.PairClean base)
@@ -8734,7 +8753,7 @@ theorem loopA_frame_rec44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain)
   (SquareFrame L.core.out base
    (((if base g then A161Low4Facts.Klow-4294968272*regValue src base else 4294968272*regValue src base)+
     (SquareReduction.p-1-O))%SquareReduction.p)):=
- loopA_frame44 hl hsub base hc hd O hO
+ loopA_frame44 hl hsub base hc hsum hV hP hd O hO
 
 theorem loopA_avoids(hl:List Wire)(hsub:hl.Sublist holes):∀q∈hl,q∉wires (loopA hl):=by
  have h:=StairSquareHolesCore.hostRename_avoids (pairs hl) loopPC (pairs_nodup hl hsub) (pairs_hostFree hl hsub)
@@ -8774,13 +8793,13 @@ theorem loopA_support44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):w
    apply A109Research.raw_domain_in
    exact Finset.mem_union_right _ (List.mem_toFinset.mpr hm)
 
-theorem loopA_counts(hl:List Wire):toffoliCount (loopA hl)=toffoliCount A109SignResearch.loop+50 ∧
+theorem loopA_counts(hl:List Wire):toffoliCount (loopA hl)=toffoliCount A109SignResearch.loop+47 ∧
  measurementCount (loopA hl)=measurementCount A109SignResearch.loop:=by
  have h:=StairSquareHolesCore.hostRename_counts (pairs hl) loopPC
  rw [loopA,h.1,h.2]
  exact loopPC_counts
 
-theorem loopA_slots(hl:List Wire):Challenge.gateSlots (loopA hl)=Challenge.gateSlots A109SignResearch.loop+144:=by
+theorem loopA_slots(hl:List Wire):Challenge.gateSlots (loopA hl)=Challenge.gateSlots A109SignResearch.loop+135:=by
  rw [loopA,StairSquareHolesCore.hostRename_slots]
  exact loopPC_slots
 
@@ -9902,9 +9921,9 @@ end ECDSAAdd.Entrant.StairSqLoopC
 
 end
 
--- Partial carry cache in the hole-free C square loop.
--- The 44 hole hosts `C163Low4Middle.hs.take 44` and the three status hosts `ReorderedCFixed.hosts.take 3`
--- stay out of the cache; the other 58 of the 105 cache hosts keep their carries (58 Toffolis fewer).
+-- PSQ-C: partial carry cache in the hole-free C square loop.
+-- The 44 hole hosts `C163Low4Middle.hs.take 44` stay out of the cache; the other 61 of the 105 cache hosts,
+-- the three status hosts `ReorderedCFixed.hosts.take 3` included (clean at loop entry), keep their carries (61 T saved).
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C105Research
@@ -9916,31 +9935,29 @@ set_option linter.unusedSimpArgs false
 set_option linter.unusedVariables false
 attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
 
-def keepK:List Wire:=hosts.filter (fun q=>!((C163Low4Middle.hs.take 44).contains q) &&
- !((ReorderedCFixed.hosts.take 3).contains q))
+def keepK:List Wire:=hosts.filter (fun q=>!((C163Low4Middle.hs.take 44).contains q))
 
-theorem keepK_geometry:keepK.Nodup ∧ keepK.length=58 ∧
- (∀i,i<44→C163Low4Middle.hs.getD i 0∉keepK) ∧
- (∀q∈keepK,q∈ReorderedCFixed.hosts→q∈C163Low4Middle.hs):=by decide +kernel
+theorem keepK_geometry:keepK.Nodup ∧ keepK.length=61 ∧
+ (∀i,i<44→C163Low4Middle.hs.getD i 0∉keepK):=by decide +kernel
 
 theorem keepK_sub(q:Wire)(hq:q∈keepK):q∈hosts:=(List.mem_filter.mp hq).1
 
-def rawFK:Program:=ReorderedGenericCache.cachedAdd 58 xs ys cs keepK cin
-def newFK:Program:=head++C105LowEraseResearch.clear++ReorderedGenericCache.cachedAdd 58 xs ys cs keepK cin++top
-def newIK:Program:=preInv++ReorderedConsumedSub.consumed 58 xs ys cs keepK cin
+def rawFK:Program:=ReorderedGenericCache.cachedAdd 61 xs ys cs keepK cin
+def newFK:Program:=head++C105LowEraseResearch.clear++ReorderedGenericCache.cachedAdd 61 xs ys cs keepK cin++top
+def newIK:Program:=preInv++ReorderedConsumedSub.consumed 61 xs ys cs keepK cin
 
 theorem inverse_frameK(s:State)(m:List Bool)(H:Nat)(hH:H<2^130)
  (hz:∀q∈cs,(run preInv m s).basis q=false)(hi:(run preInv m s).basis cin=false)
  (source:regValue xs (run preInv m s).basis=H)
  (target:regValue ys (run preInv m s).basis=976*H/1024)
- (saved:keepK.map s.basis=ReorderedCacheBits.values 4 58 H (976*H/1024)):
+ (saved:keepK.map s.basis=ReorderedCacheBits.values 4 61 H (976*H/1024)):
  run newIK m s=scatterState keepK (List.replicate keepK.length false) (run I m s):=by
  have same:keepK.map (run preInv m s).basis=keepK.map s.basis:=by
   apply List.map_congr_left
   intro q hq
   exact run_preserves_outside preInv m s q (preInv_off q (keepK_sub q hq))
  simp only [newIK,I,ControlledBorrowResearch.run_cat]
- exact ReorderedConsumedSub.frame 58 xs ys cs keepK cin
+ exact ReorderedConsumedSub.frame 61 xs ys cs keepK cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
   (by rw [raw_lengths.1,raw_lengths.2.1]) (by rw [raw_lengths.2.1,raw_lengths.2.2])
   raw_nd keepK_geometry.1 keepK_geometry.2.1 (fun q hq=>geometry.2.2 q (keepK_sub q hq))
@@ -9948,11 +9965,11 @@ theorem inverse_frameK(s:State)(m:List Bool)(H:Nat)(hH:H<2^130)
 
 theorem forward_frameK(s:State)(m:List Bool)(H:Nat)
  (zero:∀q∈keepK,(run (head++C105LowEraseResearch.clear) (m.take (measurementCount (head++C105LowEraseResearch.clear))) s).basis q=false)
- (values:(((cs.drop 4).take 58).map (run (carryPrefix (4+58) xs ys cs cin) []
+ (values:(((cs.drop 4).take 61).map (run (carryPrefix (4+61) xs ys cs cin) []
   (run (head++C105LowEraseResearch.clear) (m.take (measurementCount (head++C105LowEraseResearch.clear))) s)).basis)=
-   ReorderedCacheBits.values 4 58 H (976*H/1024)):
- run newFK m s=scatterState keepK (ReorderedCacheBits.values 4 58 H (976*H/1024)) (run F m s):=by
- have h:=CacheBetweenFrameResearch.forward (head++C105LowEraseResearch.clear) top 58 xs ys cs keepK cin
+   ReorderedCacheBits.values 4 61 H (976*H/1024)):
+ run newFK m s=scatterState keepK (ReorderedCacheBits.values 4 61 H (976*H/1024)) (run F m s):=by
+ have h:=CacheBetweenFrameResearch.forward (head++C105LowEraseResearch.clear) top 61 xs ys cs keepK cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
   keepK_geometry.1 (fun q hq bad=>geometry.2.2 q (keepK_sub q hq) (by simp only [List.mem_cons,List.mem_append];tauto))
   (fun q hq=>rawF_off q (keepK_sub q hq)) (fun q hq=>top_off q (keepK_sub q hq)) s m zero
@@ -9960,14 +9977,14 @@ theorem forward_frameK(s:State)(m:List Bool)(H:Nat)
  exact h
 
 theorem forward_measurementsK:measurementCount newFK=measurementCount F:=by
- have h:=(ReorderedGenericCache.count_balance 58 xs ys cs keepK cin
+ have h:=(ReorderedGenericCache.count_balance 61 xs ys cs keepK cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)).2.1
  simp only [newFK,F,rawF,measurementCount_append]
  rw [h]
 
 theorem forward_zeroK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈C163Low4Middle.hs,s.basis q=false):
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false):
  ∀q∈keepK,(run F m s).basis q=false:=by
  rw [forward_erased s m hz hb hi ha]
  let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
@@ -9982,7 +9999,7 @@ theorem forward_zeroK(s:State)(m:List Bool)
     apply away
     simp only [C105LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at bad
     rcases bad with rfl|rfl|rfl <;>decide)]
-   exact (run_preserves_outside _ m s q (ReorderedCFixed.off_plain q hq).1).trans (zero q (keepK_geometry.2.2.2 q hk hq))
+   exact (run_preserves_outside _ m s q (ReorderedCFixed.off_plain q hq).1).trans (zero q hq)
  · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
    rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
    · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
@@ -10000,7 +10017,7 @@ theorem forward_zeroK(s:State)(m:List Bool)
 
 theorem prefix_zeroK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈C163Low4Middle.hs,s.basis q=false):
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false):
  ∀q∈keepK,(run (head++C105LowEraseResearch.clear) m s).basis q=false:=by
  have clean:=forward_zeroK s m hz hb hi ha zero
  intro q hq
@@ -10016,9 +10033,9 @@ theorem prefix_zeroK(s:State)(m:List Bool)
 theorem forward_valuesK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
  (ha:regValue acc s.basis=0):
- (((cs.drop 4).take 58).map (run (carryPrefix (4+58) xs ys cs cin) []
+ (((cs.drop 4).take 61).map (run (carryPrefix (4+61) xs ys cs cin) []
   (run (head++C105LowEraseResearch.clear) m s)).basis)=
- ReorderedCacheBits.values 4 58 (regValue src s.basis) (976*regValue src s.basis/1024):=by
+ ReorderedCacheBits.values 4 61 (regValue src s.basis) (976*regValue src s.basis/1024):=by
  let H:=regValue src s.basis
  let u:=run head m s
  let t:=run (head++C105LowEraseResearch.clear) m s
@@ -10042,7 +10059,7 @@ theorem forward_valuesK(s:State)(m:List Bool)
   exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
  have si:t.basis cin=false:=
   (eraseBit cin cin_in).trans ready.2.1
- exact ReorderedCacheBits.forward_values 4 58 H (((2^140-48*H)%2^140)/1024) (976*H/1024)
+ exact ReorderedCacheBits.forward_values 4 61 H (((2^140-48*H)%2^140)/1024) (976*H/1024)
   xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
   (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
    simpa only [show 130+10=140 by decide] using
@@ -10054,11 +10071,11 @@ theorem scattered_erased_domainK(s:State)(vs:List Bool)(q:Wire)(hq:q∈domain):
  exact C105LowEraseResearch.bit_same s q (domain_away_low q hq)
 
 theorem inverse_readyK(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
- let vs:=ReorderedCacheBits.values 4 58 H (976*H/1024)
+ let vs:=ReorderedCacheBits.values 4 61 H (976*H/1024)
  let t:=scatterState keepK vs (C105LowEraseResearch.erase s)
  run newIK m t=scatterState keepK (List.replicate keepK.length false) (run I m t):=by
  dsimp only
- let vs:=ReorderedCacheBits.values 4 58 H (976*H/1024)
+ let vs:=ReorderedCacheBits.values 4 61 H (976*H/1024)
  let t:=scatterState keepK vs (C105LowEraseResearch.erase s)
  have hH:H<2^130:=by rw [←ready.2.1];simpa only [source_length] using regValue_lt src s.basis
  have commute:run preInv m t=scatterState keepK vs (C105LowEraseResearch.erase (run preInv m s)):=by
@@ -10087,12 +10104,12 @@ theorem inverse_readyK(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank ci
 
 theorem cache_loopK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈C163Low4Middle.hs,s.basis q=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false)
  (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
  (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
  run (newFK++M++newIK) m s=run (F++M++I) m s:=by
  let H:=regValue src s.basis
- let vs:=ReorderedCacheBits.values 4 58 H (976*H/1024)
+ let vs:=ReorderedCacheBits.values 4 61 H (976*H/1024)
  have mid:=middle_erased s m hz hb hi ha after flag
  have forward:=forward_frameK s (m.take (measurementCount F)) H
   (prefix_zeroK s _ hz hb hi ha zero) (forward_valuesK s _ hz hb hi ha)
@@ -10105,10 +10122,10 @@ theorem cache_loopK(s:State)(m:List Bool)
 def coreK:Program:=(newFK++M++newIK)++(C105LowEraseResearch.clear++tail)
 
 theorem inverse_measurementsK:measurementCount newIK=measurementCount I:=by
- have h:=ReorderedConsumedSub.measurement_eq 58 xs ys cs keepK cin
+ have h:=ReorderedConsumedSub.measurement_eq 61 xs ys cs keepK cin
   (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
   (by rw [raw_lengths.2.2];decide)
- have eq:measurementCount (ReorderedConsumedSub.consumed 58 xs ys cs keepK cin)=measurementCount rawI:=h
+ have eq:measurementCount (ReorderedConsumedSub.consumed 61 xs ys cs keepK cin)=measurementCount rawI:=h
  simp only [newIK,I,measurementCount_append,eq]
 
 theorem prefix_measurementsK:measurementCount (newFK++M++newIK)=measurementCount (F++M++I):=by
@@ -10116,7 +10133,7 @@ theorem prefix_measurementsK:measurementCount (newFK++M++newIK)=measurementCount
 
 theorem core_plainK(s:State)(m:List Bool)
  (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
- (ha:regValue acc s.basis=0)(zero:∀q∈C163Low4Middle.hs,s.basis q=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false)
  (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
  (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
  run coreK m s=run (oldF++oldM++ReorderedCPlain.unbuild acc pad bank cin src) m s:=by
@@ -10130,7 +10147,7 @@ theorem core_plainK(s:State)(m:List Bool)
 end ECDSAAdd.Entrant.C105Research
 end
 
--- The partial-cache C loop (`loopPC`): frame, host avoidance, counts, slots, physicality, support.
+-- PSQ-C: the partial-cache C loop (`loopPC`) and its frame, host avoidance, counts, slots, physicality, support.
 section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.StairSqLoopC
@@ -10163,6 +10180,18 @@ theorem pcCore_frame(base:BasisState)(hc:L.PairClean base)(hp:base p=false)(hd:b
   (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
  have ha:regValue ga s.basis=0:=C163Low4Ghost.ghostAcc_zero L s.basis clean
  have zeroU:∀u∈C163Low4Middle.hs,s.basis u=false:=hs_zero base hc hd O s hf
+ -- the three status hosts are clean at loop entry (as in `C105Research.core_frame`)
+ have zeroOld:∀u∈ReorderedCFixed.hosts,s.basis u=false:=by
+  have qz:s.basis C163Low4Middle.q=false:=(regValue_zero _ _).mp clean.work C163Low4Middle.q (by decide)
+  have rz:s.basis C163Low4Middle.r=false:=(regValue_zero _ _).mp clean.work C163Low4Middle.r (by decide)
+  have pz:s.basis C163Low4Middle.p=false:=(hf.2 C163Low4Middle.p (by decide)).trans hp
+  intro u hu
+  simp only [ReorderedCFixed.hosts,List.mem_cons] at hu
+  rcases hu with rfl|rfl|rfl|hu
+  · exact qz
+  · exact rz
+  · exact pz
+  · exact zeroU u hu
  have offHs:∀u∈C163Low4Middle.hs,u∉wires (ReorderedCPlain.build ga pad bank L.core.cin src):=by
   intro u hu
   exact (off_plain u (hosts_of_hs u hu)).1
@@ -10189,7 +10218,7 @@ theorem pcCore_frame(base:BasisState)(hc:L.PairClean base)(hp:base p=false)(hd:b
  have flag:(run (ReorderedCPlain.build ga pad bank L.core.cin src)
   (m.take (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src))) s).basis 4762=false:=
   (buildFrame.2.2 4762 (by decide +kernel)).trans clean.modFlag
- have plainNew:=C105Research.core_plainK s m hz hb clean.cin ha zeroU goodKnown flag
+ have plainNew:=C105Research.core_plainK s m hz hb clean.cin ha zeroOld goodKnown flag
  have midEq:run KnownCMidStaged.body (m.drop (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)))
   (run (ReorderedCPlain.build ga pad bank L.core.cin src) m s)=
   run C163Low4Middle.bankChecked.out (m.drop (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)))
@@ -10280,16 +10309,16 @@ set_option linter.unusedSimpArgs false
 attribute [local irreducible] ECDSAAdd.wires
 
 theorem keepK_cached_wires:wires C105Research.rawFK⊆C105Research.domain.toFinset∪C105Research.keepK.toFinset:=
- (ReorderedSupport.cached 58 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin
+ (ReorderedSupport.cached 61 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin
   (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
   (by rw [C105Research.raw_lengths.2.2];decide)
   (by rw [C105Research.raw_lengths.1,C105Research.raw_lengths.2.1])
   (by rw [C105Research.raw_lengths.2.1,C105Research.raw_lengths.2.2])).1
 
 theorem keepK_consumed_wires:
- wires (ReorderedConsumedSub.consumed 58 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin)⊆
+ wires (ReorderedConsumedSub.consumed 61 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin)⊆
   C105Research.domain.toFinset∪C105Research.keepK.toFinset:=
- ReorderedSupport.consumed 58 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin
+ ReorderedSupport.consumed 61 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK C105PrefixResearch.cin
   (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
   (by rw [C105Research.raw_lengths.2.2];decide)
   (by rw [C105Research.raw_lengths.1,C105Research.raw_lengths.2.1])
@@ -10342,9 +10371,9 @@ set_option linter.unusedSimpArgs false
 section counts
 attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
 
-theorem loopPC_counts_rel:toffoliCount loopPC+58=toffoliCount loopNC ∧
+theorem loopPC_counts_rel:toffoliCount loopPC+61=toffoliCount loopNC ∧
  measurementCount loopPC=measurementCount loopNC:=by
- have cb:=ReorderedGenericCache.count_balance 58 C105Research.xs C105Research.ys C105Research.cs
+ have cb:=ReorderedGenericCache.count_balance 61 C105Research.xs C105Research.ys C105Research.cs
   C105Research.keepK C105PrefixResearch.cin
   (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
   (by rw [C105Research.raw_lengths.2.2];decide)
@@ -10353,14 +10382,14 @@ theorem loopPC_counts_rel:toffoliCount loopPC+58=toffoliCount loopNC ∧
  simp only [toffoliCount_append,measurementCount_append]
  exact ⟨by omega,by omega⟩
 
-theorem loopPC_counts:toffoliCount loopPC=toffoliCount C105SignResearch.loop+50 ∧
+theorem loopPC_counts:toffoliCount loopPC=toffoliCount C105SignResearch.loop+47 ∧
  measurementCount loopPC=measurementCount C105SignResearch.loop:=by
  have r:=loopPC_counts_rel
  have o:=loopNC_counts
  exact ⟨by omega,by omega⟩
 
-theorem loopPC_slots_rel:Challenge.gateSlots loopPC+174=Challenge.gateSlots loopNC:=by
- have sc:=ReorderedSlots.cache 58 C105Research.xs C105Research.ys C105Research.cs
+theorem loopPC_slots_rel:Challenge.gateSlots loopPC+183=Challenge.gateSlots loopNC:=by
+ have sc:=ReorderedSlots.cache 61 C105Research.xs C105Research.ys C105Research.cs
   C105Research.keepK C105PrefixResearch.cin
   (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
   (by rw [C105Research.raw_lengths.2.2];decide) C105Research.keepK_geometry.2.1
@@ -10369,7 +10398,7 @@ theorem loopPC_slots_rel:Challenge.gateSlots loopPC+174=Challenge.gateSlots loop
  simp only [Challenge.gateSlots_append]
  omega
 
-theorem loopPC_slots:Challenge.gateSlots loopPC=Challenge.gateSlots C105SignResearch.loop+144:=by
+theorem loopPC_slots:Challenge.gateSlots loopPC=Challenge.gateSlots C105SignResearch.loop+135:=by
  have r:=loopPC_slots_rel
  have o:=loopNC_slots
  omega
@@ -10380,7 +10409,7 @@ section physical
 attribute [local irreducible] GatePhysical ECDSAAdd.wires
 
 theorem loopPC_physical:GatePhysical loopPC:=by
- have f:=ReorderedPhysical.cached 58 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK
+ have f:=ReorderedPhysical.cached 61 C105Research.xs C105Research.ys C105Research.cs C105Research.keepK
   C105PrefixResearch.cin
   (by rw [C105Research.raw_lengths.1];decide) (by rw [C105Research.raw_lengths.2.1];decide)
   (by rw [C105Research.raw_lengths.2.2];decide)
@@ -10480,15 +10509,16 @@ theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
  rw [pairs_fst,pairs_snd]
  exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
 
+/-- PSQ: a hole's host is one of the 44 hole hosts `hs.take 44`, never a kept cache host. -/
 theorem hostOf_not_keep44(q:Wire)(hq:q∈StairSqLoopA.hostDomain):hostOf q∉C105Research.keepK:=by
  unfold hostOf
- apply C105Research.keepK_geometry.2.2.1
+ apply C105Research.keepK_geometry.2.2
  have h:=List.idxOf_lt_length_of_mem hq
- have e:StairSqLoopA.hostDomain.length=44:=by decide +kernel
- omega
+ rw [StairSqLoopA.hostDomain_length44] at h
+ exact h
 
 theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉C105Research.keepK:=
- hostOf_not_keep44 q (by unfold StairSqLoopA.hostDomain;exact List.mem_append_left _ hq)
+ hostOf_not_keep44 q (StairSqLoopA.holes_mem_hostDomain q hq)
 
 theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
  intro ab hab
@@ -10627,13 +10657,13 @@ theorem loopC_support44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):w
    apply C105Research.raw_domain_in
    exact Finset.mem_union_right _ (List.mem_toFinset.mpr hm)
 
-theorem loopC_counts(hl:List Wire):toffoliCount (loopC hl)=toffoliCount C105SignResearch.loop+50 ∧
+theorem loopC_counts(hl:List Wire):toffoliCount (loopC hl)=toffoliCount C105SignResearch.loop+47 ∧
  measurementCount (loopC hl)=measurementCount C105SignResearch.loop:=by
  have h:=StairSquareHolesCore.hostRename_counts (pairs hl) loopPC
  rw [loopC,h.1,h.2]
  exact loopPC_counts
 
-theorem loopC_slots(hl:List Wire):Challenge.gateSlots (loopC hl)=Challenge.gateSlots C105SignResearch.loop+144:=by
+theorem loopC_slots(hl:List Wire):Challenge.gateSlots (loopC hl)=Challenge.gateSlots C105SignResearch.loop+135:=by
  rw [loopC,StairSquareHolesCore.hostRename_slots]
  exact loopPC_slots
 
@@ -10828,7 +10858,7 @@ theorem bodyA_avoids44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDoma
   (StairSqLoopA.loopA_avoids44 hl hsub)
 
 theorem bodyA_counts (hl : List Wire) :
- toffoliCount (bodyA hl)=toffoliCount A109SignResearch.body+50 ∧
+ toffoliCount (bodyA hl)=toffoliCount A109SignResearch.body+47 ∧
  measurementCount (bodyA hl)=measurementCount A109SignResearch.body := by
  have h:=A109SignResearch.direct_body_counts (StairSqLoopA.loopA hl)
  have l:=StairSqLoopA.loopA_counts hl
@@ -10836,7 +10866,7 @@ theorem bodyA_counts (hl : List Wire) :
  omega
 
 theorem bodyA_slots (hl : List Wire) :
- Challenge.gateSlots (bodyA hl)+880=Challenge.gateSlots A109SignResearch.body := by
+ Challenge.gateSlots (bodyA hl)+889=Challenge.gateSlots A109SignResearch.body := by
  have h:=A109SignResearch.direct_body_slots (StairSqLoopA.loopA hl)
  have l:=StairSqLoopA.loopA_slots hl
  unfold bodyA
@@ -10976,7 +11006,7 @@ theorem bodyC_avoids44 (hl : List Wire) (hsub : hl.Sublist StairSqLoopA.hostDoma
   (StairSqLoopC.loopC_avoids44 hl hsub)
 
 theorem bodyC_counts (hl : List Wire) :
- toffoliCount (bodyC hl)=toffoliCount C105SignResearch.body+50 ∧
+ toffoliCount (bodyC hl)=toffoliCount C105SignResearch.body+47 ∧
  measurementCount (bodyC hl)=measurementCount C105SignResearch.body := by
  have h:=C105SignResearch.direct_body_counts (StairSqLoopC.loopC hl)
  have l:=StairSqLoopC.loopC_counts hl
@@ -10984,7 +11014,7 @@ theorem bodyC_counts (hl : List Wire) :
  omega
 
 theorem bodyC_slots (hl : List Wire) :
- Challenge.gateSlots (bodyC hl)+368=Challenge.gateSlots C105SignResearch.body := by
+ Challenge.gateSlots (bodyC hl)+377=Challenge.gateSlots C105SignResearch.body := by
  have h:=C105SignResearch.direct_body_slots (StairSqLoopC.loopC hl)
  have l:=StairSqLoopC.loopC_slots hl
  unfold bodyC
@@ -13676,7 +13706,7 @@ For every sublist `hl` of the 39 holes (`hl.Sublist StairSqLoopA.holes`, the sam
 `square hl k = place L0 (newBrC hl (bodyC hl) ++ newBrB hl (bodyB hl) ++ newBrA hl (bodyA hl)) ++ entryRH (k - delta)`
 * is run-equal to the record square on every state the record square is used on (`square_base`, the exact
   conclusion of `A161Generic.squareEntry_base`; `square_run_eq`);
-* costs 328 more Toffolis and the same measurements (`square_counts`);
+* costs 157 more Toffolis and the same measurements (`square_counts`);
 * is physical (`square_physical`);
 * is field 12's `square` piece for the holes `hl` (`StairSquareFinalSites.square_pieceOK`).
 `squareEntryHL hl L k` is the layout-generic drop-in (record square on every other layout). -/
@@ -19465,6 +19495,14 @@ theorem exitPhase_targets_zero {k : Nat} {s : State} (F : StairConcreteAssembly.
       ⟨q - 16, kq.1, kq.2.1, kq.2.2.1, kq.2.2.2⟩
     obtain ⟨l, rfl, a, b, c⟩ := hq16
     exact exit_zero F l a b c
+
+theorem chk_flastTerminal : ztAll 736 45 true (rolesL)
+    StairTerminalV3.forwardTerminalV3 = true :=
+  ztAll_true_of_not_mem 736 45 rolesL _ rolesL_window (fun w hw hm =>
+    (StairTerminalV3.forwardTerminalV3_support w hm).2.2.2.1
+      (by rw [StairPhysicalInventory.exclusiveSites_eq]; rw [rolesL_eq44] at hw; exact hw))
+
+
 
 
 end ECDSAAdd.Entrant.StairField13V3Clean
