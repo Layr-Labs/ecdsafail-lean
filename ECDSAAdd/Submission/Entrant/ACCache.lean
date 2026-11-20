@@ -12,289 +12,32 @@ import ECDSAAdd.Arithmetic.DisjointPrograms
 import ECDSAAdd.Challenge.Contract
 import Mathlib.Tactic.FinCases
 import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
+import ECDSAAdd.Framework.Cost
+import ECDSAAdd.Framework.PacketSequenceFrame
+import ECDSAAdd.Arithmetic.MappedCompressedAllocationSites
+import ECDSAAdd.Arithmetic.SignedWordBits
+import ECDSAAdd.Arithmetic.SignedHalf
+import ECDSAAdd.Arithmetic.BalancedCoreLayoutProof
+import ECDSAAdd.Arithmetic.SignedWord
+import ECDSAAdd.Math.SkywalkTerminationBudget
+import ECDSAAdd.Math.SkywalkTrace
+import ECDSAAdd.Arithmetic.RecordedRailRippleCertificate
+import ECDSAAdd.Arithmetic.PointSquarePhysical
+import ECDSAAdd.Arithmetic.SwapRegisters
+import ECDSAAdd.Arithmetic.RecordedRailVentedProof
+import ECDSAAdd.Framework.WireRenameEquivalence
+import ECDSAAdd.Framework.WireRenameComposition
+import ECDSAAdd.Submission.Entrant.Prelude
+import ECDSAAdd.Submission.Entrant.QTop
+import ECDSAAdd.Submission.Entrant.FullLogic
+import ECDSAAdd.Submission.Entrant.Fold98
+import ECDSAAdd.Submission.Entrant.KnownZeroArithmetic
 import ECDSAAdd.Submission.Entrant.BOptimizationsCore
 
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.RawDomainStructural390
- theorem sliced_nodup (src acc pad bank : List Wire) (cin : Wire)
- (h : (cin::(src++acc++pad++bank)).Nodup) (m n k : Nat) :
- (cin::(src++(acc.take m).drop n++bank.take k)).Nodup := by
- apply List.nodup_iff_count_le_one.mpr
- intro q
- have whole := List.nodup_iff_count_le_one.mp h q
- have target := ((List.drop_sublist n (acc.take m)).trans (List.take_sublist m acc)).count_le q
- have carries := (List.take_sublist k bank).count_le q
- simp only [List.count_cons, List.count_append] at whole ⊢
- omega
- theorem sublist_support (A P : Program) (h : A.Sublist P) : wires A ⊆ wires P := by
- intro q hq
- have ha : A.any (C163Touch.instructionTouches q)=true := (C163Touch.touched_spec A q).mpr hq
- obtain ⟨i, hi, ht⟩ := List.any_eq_true.mp ha
- exact (C163Touch.touched_spec P q).mp (List.any_eq_true.mpr ⟨i, h.subset hi, ht⟩)
-
-end ECDSAAdd.Entrant.RawDomainStructural390
-end
-
--- Rebalanced closed source chunks; all ordinary declarations and circuit literals retained.
+-- repack: ACCache lines 300..5408
 section
 section
-
--- Verified B95 optimization component B95PlacedWindow
 section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.B95PlacedWindowResearch
-open B95FiniteWindowResearch
-set_option autoImplicit false
-
-set_option maxRecDepth 10000
-set_option maxHeartbeats 2000000
-set_option linter.unusedSimpArgs false
-
-def label (f : Fin 12→Wire) (q : Wire) : Wire := if h:q<12 then f ⟨q,h⟩ else q
-
-theorem label_inj (f : Fin 12→Wire) (hf : Function.Injective f) :
- ∀a∈Finset.range 12,∀b∈Finset.range 12,label f a=label f b → a=b := by
- intro a ha b hb e
- have ha':=Finset.mem_range.mp ha
- have hb':=Finset.mem_range.mp hb
- have he : f ⟨a,ha'⟩=f ⟨b,hb'⟩:=by simpa only [label,dif_pos ha',dif_pos hb'] using e
- exact congrArg Fin.val (hf he)
-
-def fastAt(f:Fin 12→Wire):Program:=renameProgram (label f) fast
-def originalAt(f:Fin 12→Wire):Program:=renameProgram (label f) reference
-
-theorem run_eq(f:Fin 12→Wire)(hf:Function.Injective f)(s:State)(m:List Bool)
- (hc:s.basis (f 5)=false ∧ s.basis (f 6)=false ∧ s.basis (f 7)=false ∧ s.basis (f 8)=false):
- run (fastAt f) m s=run (originalAt f) m s:=by
- let t:State:=⟨s.phase,fun q=>s.basis (label f q)⟩
- have ht:t.basis 5=false ∧ t.basis 6=false ∧ t.basis 7=false ∧ t.basis 8=false:=hc
- have eq:=B95FiniteWindowResearch.run_eq t m ht
- have a:=run_rename_pool (label f) (Finset.range 9) (fun a ha b hb=>label_inj f hf a (Finset.mem_range.mpr (by have h:=Finset.mem_range.mp ha;omega)) b (Finset.mem_range.mpr (by have h:=Finset.mem_range.mp hb;omega))) fast support.1 m t s rfl (fun _ _=>rfl)
- have b:=run_rename_pool (label f) (Finset.range 9) (fun a ha b hb=>label_inj f hf a (Finset.mem_range.mpr (by have h:=Finset.mem_range.mp ha;omega)) b (Finset.mem_range.mpr (by have h:=Finset.mem_range.mp hb;omega))) reference support.2 m t s rfl (fun _ _=>rfl)
- have sa:wires (fastAt f)⊆(Finset.range 9).image (label f):=by
-  rw [fastAt,renameProgram_support]
-  exact Finset.image_mono (label f) support.1
- have sb:wires (originalAt f)⊆(Finset.range 9).image (label f):=by
-  rw [originalAt,renameProgram_support]
-  exact Finset.image_mono (label f) support.2
- apply State.extensionality
- · exact a.1.trans ((congrArg State.phase eq).trans b.1.symm)
- · funext q
-   by_cases hq:q∈(Finset.range 9).image (label f)
-   · obtain ⟨i,hi,rfl⟩:=Finset.mem_image.mp hq
-     exact (a.2 i hi).trans ((congrArg (fun z:State=>z.basis i) eq).trans (b.2 i hi).symm)
-   · have ea:=run_preserves_outside (fastAt f) m s q (fun h=>hq (sa h))
-     have eb:=run_preserves_outside (originalAt f) m s q (fun h=>hq (sb h))
-     exact ea.trans eb.symm
-
-
-end ECDSAAdd.Entrant.B95PlacedWindowResearch
-
-end
-
--- Verified B95 optimization component B95Retime
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.B95RetimeResearch
-open ControlledBorrowResearch
-set_option autoImplicit false
-
-set_option maxRecDepth 10000
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
-
-def exchange(q z:Wire):Program:=[.CX q z]++[.CX z q]++[.CX q z]
-def copy(q z:Wire):Program:=[.CX q z]
-def cleanup(q z:Wire):Program:=[.CX z q,.X q]
-def erase(q:Wire)(s:State):State:=EraseListProof.erase [q] s
-
-theorem exchange_copy(q z:Wire)(ne:q≠z)(s:State)(m:List Bool)(hz:s.basis z=false):
- run (exchange q z) m s=erase q (run (copy q z) m s):=by
- apply State.extensionality
- · simp [exchange,copy,erase,run,EraseListProof.phase]
- · funext w
-   by_cases hq:w=q
-   · subst w;simp [exchange,copy,erase,run,EraseListProof.basis,writeBit,ne,Ne.symm ne,hz,Bool.xor_assoc]
-   · by_cases hz':w=z
-     · subst w;simp [exchange,copy,erase,run,EraseListProof.basis,writeBit,ne,Ne.symm ne,hz,Bool.xor_assoc]
-     · simp [exchange,copy,erase,run,EraseListProof.basis,writeBit,hq,hz']
-
-theorem commute_exchange(P:Program)(q z:Wire)(hq:q∉wires P)(hz:z∉wires P)
- (s:State)(m n:List Bool):run P m (run (exchange q z) n s)=run (exchange q z) n (run P m s):=by
- simp only [exchange,run_cat,measurementCount, Nat.add_zero,List.drop_zero]
- rw [FreshCXResearch.commute P q z hq hz,FreshCXResearch.commute P z q hz hq,FreshCXResearch.commute P q z hq hz]
-
-theorem erase_cleanup(q z:Wire)(s:State)(m:List Bool):
- erase q (run (cleanup q z) m s)=erase q s:=by
- apply State.extensionality
- · simp [cleanup,erase,run,EraseListProof.phase]
- · funext w
-   by_cases h:w=q
-   · subst w;simp [erase,EraseListProof.basis]
-   · simp [cleanup,erase,run,EraseListProof.basis,writeBit,h]
-
-theorem commute_erase(P:Program)(q:Wire)(off:q∉wires P)(s:State)(m:List Bool):
- run P m (erase q s)=erase q (run P m s):=by
- exact EraseListProof.commute [q] P m s (by intro w hw;simpa only [List.mem_singleton.mp hw] using off)
-
-theorem erase_eq(q:Wire)(s:State)(hz:s.basis q=false):erase q s=s:=by
- apply State.extensionality
- · rfl
- · funext w
-   by_cases h:w=q
-   · subst w;simp [erase,EraseListProof.basis,hz]
-   · simp [erase,EraseListProof.basis,h]
-
-
-
-end ECDSAAdd.Entrant.B95RetimeResearch
-
-end
-
--- Verified B95 optimization component B95RetimeContext
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.B95RetimeResearch
-open ControlledBorrowResearch
-set_option autoImplicit false
-
-set_option maxRecDepth 10000
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
-
-theorem zero_records(P:Program)(h:measurementCount P=0)(s:State)(m:List Bool):run P m s=run P [] s:=by
- have eq:=run_take P m s
- simpa only [h,List.take_zero] using eq.symm
-
-theorem cleanup_context(D:Program)(q z:Wire)(dq:q∉wires D)(s:State)(m r:List Bool):
- erase q (run D m (run (cleanup q z) r s))=erase q (run D m s):=by
- rw [←commute_erase D q dq,erase_cleanup,commute_erase D q dq]
-
-theorem retime(B C D:Program)(q z:Wire)(ne:q≠z)
- (bq:q∉wires B)(bz:z∉wires B)(cq:q∉wires C)(dq:q∉wires D)
- (s:State)(m:List Bool)(hz:s.basis z=false):
- run (B++C++D) m (run (exchange q z) [] s)=
- erase q (run (B++copy q z++C++cleanup q z++D) m s):=by
- have mc:measurementCount (copy q z)=0:=by simp [copy,measurementCount]
- have me:measurementCount (cleanup q z)=0:=by simp [cleanup,measurementCount]
- have vz:(run B m s).basis z=false:=(run_preserves_outside B m s z bz).trans hz
- simp only [run_cat,measurementCount_append,mc,me,Nat.add_zero]
- rw [commute_exchange B q z bq bz,exchange_copy q z ne _ _ vz,
-  commute_erase C q cq,commute_erase D q dq]
- rw [cleanup_context D q z dq]
- rw [zero_records (copy q z) mc (run B m s) (m.drop (measurementCount B))]
-
-end ECDSAAdd.Entrant.B95RetimeResearch
-
-end
-
--- Verified B95 optimization component B95Q0Base
-section
-open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
-namespace ECDSAAdd.Entrant.B95Q0BaseResearch
-open BShortGhostFactsResearch BShortGhostProgramsResearch InverseCarryDevelop
-set_option autoImplicit false
-
-set_option maxRecDepth 100000
-set_option maxHeartbeats 5000000
-set_option linter.unusedSimpArgs false
-set_option linter.unusedVariables false
-attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
-
-def program:Program:=a++b0++c++d0++e++f0++g
-
-theorem b0_eq(s:State)(m:List Bool)(h0:s.basis 4757=false)(hc:s.basis 4760=false):
- run b0 m s=run b m s:=by
- rcases checked with ⟨_,_,_,_,_,_,_,_,qb,_,_,_,fb,_,_,_,_⟩
- exact EqualSourceSwapResearch.rename_swap_equal_eq b 4757 4760 (not_wire b 4760 fb) s m
-  (h0.trans hc.symm) ((ZeroAfterWriteResearch.erased 4757 b qb s m).trans h0.symm)
-
-theorem context_eq(pre P Q post:Program)(s:State)(m:List Bool)
- (hm:measurementCount P=measurementCount Q)
- (he:∀r,run P r (run pre (m.take (measurementCount pre)) s)=
-  run Q r (run pre (m.take (measurementCount pre)) s)):
- run (pre++P++post) m s=run (pre++Q++post) m s:=by
- apply BPatchedLoopResearch.run_middle_congr pre P Q post s m hm
- unfold middleState
- rw [hm]
- exact he _
-
-theorem equivalent(s:State)(m:List Bool)(q0:s.basis 4757=false)
- (cin:s.basis 4760=false):run program m s=run old m s:=by
- rcases checked with ⟨ciA,ciD,ciF,flA,qoA,qtA,qoD,qoF,_,_,_,_,_,_,_,_,_⟩
- have mb:measurementCount b=measurementCount b0:=by
-  simp only [b0,b0,(renameProgram_counts _ _).2]
- have md:measurementCount d=measurementCount d0:=by
-  simp only [d0,(renameProgram_counts _ _).2]
- have mf:measurementCount f=measurementCount f0:=by
-  simp only [f0,(renameProgram_counts _ _).2]
- have paQ:(run a (m.take (measurementCount a)) s).basis 4757=false:=
-  (PairedWritesResearch.preserved 4757 a qoA s _).trans q0
- have paC:(run a (m.take (measurementCount a)) s).basis 4760=false:=
-  (PairedWritesResearch.preserved 4760 a ciA s _).trans cin
- have hb:∀r,run b r (run a (m.take (measurementCount a)) s)=run b0 r (run a (m.take (measurementCount a)) s):=fun r=>(b0_eq (run a (m.take (measurementCount a)) s) r paQ paC).symm
- have pdQ:(run (a++b++c) (m.take (measurementCount (a++b++c))) s).basis 4757=false:=by
-  rw [prefixD]
-  exact ZeroAfterWriteResearch.erased 4757 (old.take 4609) qoD s _
- have pdC:(run (a++b++c) (m.take (measurementCount (a++b++c))) s).basis 4760=false:=by
-  rw [prefixD]
-  exact (PairedWritesResearch.preserved 4760 (old.take 4609) ciD s _).trans cin
- have hd:∀r,run d r (run (a++b++c) (m.take (measurementCount (a++b++c))) s)=run d0 r (run (a++b++c) (m.take (measurementCount (a++b++c))) s):=fun r=>(d0_eq (run (a++b++c) (m.take (measurementCount (a++b++c))) s) r pdQ pdC).symm
- have pfQ:(run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s).basis 4757=false:=by
-  rw [prefixF]
-  exact ZeroAfterWriteResearch.erased 4757 (old.take 6972) qoF s _
- have pfC:(run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s).basis 4760=false:=by
-  rw [prefixF]
-  exact (PairedWritesResearch.preserved 4760 (old.take 6972) ciF s _).trans cin
- have hf:∀r,run f r (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s)=run f0 r (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s):=fun r=>(f0_eq (run (a++b++c++d++e) (m.take (measurementCount (a++b++c++d++e))) s) r pfQ pfC).symm
- have ef:=context_eq (a++b++c++d++e) f f0 g s m mf hf
- have ed:=context_eq (a++b++c) d d0 (e++f0++g) s m md hd
- have eb:=context_eq a b b0 (c++d0++e++f0++g) s m mb hb
- have shape:old=(a++b++c++d++e)++f++g:=old_shape
- calc
-  run program m s=run (a++b0++(c++d0++e++f0++g)) m s:=by
-   simp only [program,List.append_assoc]
-  _=run (a++b++(c++d0++e++f0++g)) m s:=eb.symm
-  _=run ((a++b++c)++d0++(e++f0++g)) m s:=by simp only [List.append_assoc]
-  _=run ((a++b++c)++d++(e++f0++g)) m s:=ed.symm
-  _=run ((a++b++c++d++e)++f0++g) m s:=by simp only [List.append_assoc]
-  _=run ((a++b++c++d++e)++f++g) m s:=ef.symm
-  _=run old m s:=by rw [←shape]
-
-end ECDSAAdd.Entrant.B95Q0BaseResearch
-
-end
-
--- Verified B95 optimization component ListWindowParts
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.ListWindowPartsResearch
-set_option autoImplicit false
-
-set_option maxRecDepth 10000
-
-theorem split3(P:Program)(a b:Nat):P=P.take a++(P.drop a).take b++P.drop (a+b):=by
- calc
-  P=P.take a++P.drop a:=(List.take_append_drop a P).symm
-  _=P.take a++((P.drop a).take b++(P.drop a).drop b):=
-   congrArg (fun t=>P.take a++t) (List.take_append_drop b (P.drop a)).symm
-  _=P.take a++(P.drop a).take b++P.drop (a+b):=by simp only [List.append_assoc,List.drop_drop]
-
-theorem c_template(P:Program):(P.drop 2435).take 2174=
- (P.drop 2435).take 676++(P.drop 3111).take 1++(P.drop 3112).take 1497:=by
- simpa only [List.take_take,List.drop_take,List.drop_drop] using split3 ((P.drop 2435).take 2174) 676 1
-
-theorem e_template(P:Program):(P.drop 4616).take 2356=
- (P.drop 4616).take 758++(P.drop 5374).take 2++(P.drop 5376).take 1596:=by
- simpa only [List.take_take,List.drop_take,List.drop_drop] using split3 ((P.drop 4616).take 2356) 758 2
-end ECDSAAdd.Entrant.ListWindowPartsResearch
-
-end
-
--- Verified B95 optimization component B95Facts
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.B95FactsResearch
@@ -5404,4 +5147,1061 @@ end ECDSAAdd.Entrant.C105Research
 
 end
 
+end
+
+end
+
+-- repack: BOptimizations lines 34..1081
+section
+section
+
+-- Verified ABC18 optimization component C105CacheFrames
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop MixedLiteralAdderDevelop
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run
+
+theorem sub_frame(s:State)(m:List Bool)(H:Nat)(hH:H<2^130)
+ (hz:∀q∈cs,s.basis q=false)(hi:s.basis cin=false)
+ (source:regValue xs s.basis=H)(target:regValue ys s.basis=976*H/1024)
+ (saved:hosts.map s.basis=ReorderedCacheBits.values 4 105 H (976*H/1024)):
+ run HighConsumedC105Research.sub m s=
+ scatterState hosts (List.replicate hosts.length false) (run rawI m s):=by
+ have fast:=HighConsumedC105Research.sub_run_eq s raw_nd geometry.1 geometry.2.1 geometry.2.2
+  hz hi H hH source target saved m
+ rw [fast]
+ exact ReorderedConsumedSub.frame 105 xs ys cs hosts cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
+  (by rw [raw_lengths.1,raw_lengths.2.1]) (by rw [raw_lengths.2.1,raw_lengths.2.2])
+  raw_nd geometry.1 geometry.2.1 geometry.2.2 s m hz hi H (976*H/1024) source target saved
+
+theorem inverse_frame(s:State)(m:List Bool)(H:Nat)(hH:H<2^130)
+ (hz:∀q∈cs,(run preInv m s).basis q=false)(hi:(run preInv m s).basis cin=false)
+ (source:regValue xs (run preInv m s).basis=H)
+ (target:regValue ys (run preInv m s).basis=976*H/1024)
+ (saved:hosts.map s.basis=ReorderedCacheBits.values 4 105 H (976*H/1024)):
+ run newI m s=scatterState hosts (List.replicate hosts.length false) (run I m s):=by
+ have same:hosts.map (run preInv m s).basis=hosts.map s.basis:=
+  by
+   apply List.map_congr_left
+   intro q hq
+   exact run_preserves_outside preInv m s q (preInv_off q hq)
+ simp only [newI,I,ControlledBorrowResearch.run_cat]
+ exact sub_frame (run preInv m s) _ H hH hz hi source target (same.trans saved)
+
+theorem forward_frame(s:State)(m:List Bool)(H:Nat)
+ (zero:∀q∈hosts,(run (head++C105LowEraseResearch.clear) (m.take (measurementCount (head++C105LowEraseResearch.clear))) s).basis q=false)
+ (values:(((cs.drop 4).take 105).map (run (carryPrefix (4+105) xs ys cs cin) []
+  (run (head++C105LowEraseResearch.clear) (m.take (measurementCount (head++C105LowEraseResearch.clear))) s)).basis)=
+   ReorderedCacheBits.values 4 105 H (976*H/1024)):
+ run newF m s=scatterState hosts (ReorderedCacheBits.values 4 105 H (976*H/1024)) (run F m s):=by
+ have h:=CacheBetweenFrameResearch.forward (head++C105LowEraseResearch.clear) top 105 xs ys cs hosts cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
+  geometry.1 (fun q hq bad=>geometry.2.2 q hq (by simp only [List.mem_cons,List.mem_append];tauto))
+  rawF_off top_off s m zero
+ rw [values] at h
+ exact h
+
+theorem forward_measurements:measurementCount newF=measurementCount F:=by
+ have h:=(ReorderedGenericCache.count_balance 105 xs ys cs hosts cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)).2.1
+ simp only [newF,F,rawF,measurementCount_append]
+ rw [h]
+
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105ForwardErase
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+theorem low_copies(H:Nat)(s:State)(ready:WReady acc pad bank cin src H s):
+ s.basis 4505=s.basis 4243 ∧ s.basis 4506=s.basis 4244 ∧ s.basis 4507=(s.basis 4245 ^^ s.basis 4243):=by
+ have cp:=LowWordRecovery.copies acc src s.basis (by rw [acc_length];decide)
+  (by rw [source_length];decide) (by rw [ready.2.1];exact ready.1)
+ have c4:s.basis 4505=s.basis 4243:=by
+  simpa only [show src.getD 0 0=4243 from by decide +kernel,
+   show acc.getD 4 0=4505 from by decide +kernel] using cp.1.symm
+ have c5:s.basis 4506=s.basis 4244:=by
+  simpa only [show src.getD 1 0=4244 from by decide +kernel,
+   show acc.getD 5 0=4506 from by decide +kernel] using cp.2.1.symm
+ refine ⟨c4,c5,?_⟩
+ have c6:s.basis 4245=(s.basis 4507 ^^ s.basis 4505):=by
+  simpa only [show src.getD 2 0=4245 from by decide +kernel,
+   show acc.getD 6 0=4507 from by decide +kernel,
+   show acc.getD 4 0=4505 from by decide +kernel] using cp.2.2
+ rw [c6,←c4]
+ simp [Bool.xor_assoc]
+
+theorem plain_split:ReorderedCPlain.build acc pad bank cin src=head++(rawF++top):=by
+ simpa only [head,rawF,top,List.append_assoc] using
+  ReorderedCBuild.plain_split acc pad bank cin src source_length
+
+theorem rest_off(q:Wire)(hq:q∈C105LowEraseResearch.low):q∉wires (rawF++top):=by
+ simp only [wires_append,Finset.mem_union,not_or]
+ exact ⟨rawF_off q (low_hosts q hq),top_off q (low_hosts q hq)⟩
+
+theorem head_copies(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0):
+ (run head m s).basis 4505=(run head m s).basis 4243 ∧
+ (run head m s).basis 4506=(run head m s).basis 4244 ∧
+ (run head m s).basis 4507=((run head m s).basis 4245 ^^ (run head m s).basis 4243):=by
+ let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
+ have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
+  Ghost3CacheC.plain_ready s m hz hb hi ha
+ have cp:=low_copies _ u ready
+ have low(q:Wire)(hq:q∈C105LowEraseResearch.low):u.basis q=(run head m s).basis q:=by
+  dsimp [u]
+  rw [plain_split,run_cat]
+  exact run_preserves_outside _ _ _ q (rest_off q hq)
+ have frame:=ReorderedCHead.head_triple acc pad bank cin src acc_length (by have h:=source_length;omega)
+  fits s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
+ have away:∀q∈src,q∉acc:=by decide +kernel
+ have source(q:Wire)(hq:q∈src):u.basis q=(run head m s).basis q:=by
+  have h:= (regValue_eq_iff src _ _).mp ready.2.1 q hq
+  exact h.trans (frame.2.2 q (away q hq)).symm
+ rw [low 4505 (by decide),low 4506 (by decide),low 4507 (by decide),source 4243 (by decide +kernel),source 4244 (by decide +kernel),source 4245 (by decide +kernel)] at cp
+ exact cp
+
+theorem forward_erased(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0):
+ run F m s=C105LowEraseResearch.erase (run (ReorderedCPlain.build acc pad bank cin src) m s):=by
+ have cp:=head_copies s m hz hb hi ha
+ have eq:=C105LowEraseResearch.forward_erased head (rawF++top) s m rest_off cp.1 cp.2.1 cp.2.2
+ simpa only [F,plain_split,List.append_assoc] using eq
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105ForwardClean
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+theorem forward_zero(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false):
+ ∀q∈hosts,(run F m s).basis q=false:=by
+ rw [forward_erased s m hz hb hi ha]
+ let u:=run (ReorderedCPlain.build acc pad bank cin src) m s
+ have ready:WReady acc pad bank cin src (regValue src s.basis) u:=
+  Ghost3CacheC.plain_ready s m hz hb hi ha
+ intro q hq
+ rcases List.mem_append.mp hq with hq|hq
+ · rw [C105LowEraseResearch.bit_same _ q (by
+    have away:=old_away q hq
+    intro bad
+    apply away
+    simp only [C105LowEraseResearch.low,List.mem_cons,List.not_mem_nil,or_false] at bad
+    rcases bad with rfl|rfl|rfl <;>decide)]
+   exact (run_preserves_outside _ m s q (ReorderedCFixed.off_plain q hq).1).trans (zero q hq)
+ · simp only [List.mem_cons,List.not_mem_nil,or_false] at hq
+   rcases hq with rfl|rfl|rfl|rfl|rfl|rfl
+   · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
+     exact LowWordRecovery.low_register_zero acc u.basis _ 0 (by decide)
+      (by rw [acc_length];decide) ready.1
+   · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
+     exact LowWordRecovery.low_register_zero acc u.basis _ 1 (by decide)
+      (by rw [acc_length];decide) ready.1
+   · rw [C105LowEraseResearch.bit_same _ _ (by decide)]
+     exact LowWordRecovery.low_register_zero acc u.basis _ 2 (by decide)
+      (by rw [acc_length];decide) ready.1
+   · exact C105LowEraseResearch.zero _ _ (by decide)
+   · exact C105LowEraseResearch.zero _ _ (by decide)
+   · exact C105LowEraseResearch.zero _ _ (by decide)
+
+theorem prefix_zero(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false):
+ ∀q∈hosts,(run (head++C105LowEraseResearch.clear) m s).basis q=false:=by
+ have clean:=forward_zero s m hz hb hi ha zero
+ intro q hq
+ have off:q∉wires (rawF++top):=by
+  simp only [wires_append,Finset.mem_union,not_or]
+  exact ⟨rawF_off q hq,top_off q hq⟩
+ have eq:(run F m s).basis q=(run (head++C105LowEraseResearch.clear) m s).basis q:=by
+  have partition:F=(head++C105LowEraseResearch.clear)++(rawF++top):=by simp only [F,List.append_assoc]
+  rw [partition,run_cat]
+  exact run_preserves_outside _ _ _ q off
+ exact eq.symm.trans (clean q hq)
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component CHeadArithmetic
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.CHeadArithmeticResearch
+open InverseCarryDevelop
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run
+
+theorem ready(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
+ (hacc:acc.length=163)(hsrc:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (s:State)(m:List Bool)(hz:∀q∈Z,s.basis q=false)(hb:∀q∈bank,s.basis q=false)
+ (hi:s.basis cin=false)(ha:regValue acc s.basis=0):
+ let t:=run (ReorderedCHead.head acc Z bank cin src) m s
+ (∀q∈bank.take 129,t.basis q=false) ∧ t.basis cin=false ∧
+ regValue src t.basis=regValue src s.basis ∧
+ regValue ((acc.take 140).drop 10) t.basis=((2^140-48*regValue src s.basis)%2^140)/1024:=by
+ let H:=regValue src s.basis
+ let t:=run (ReorderedCHead.head acc Z bank cin src) m s
+ have frame:=ReorderedCHead.head_triple acc Z bank cin src hacc (by omega) hf s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
+ have hf10:=hf _ (A161NarrowAcc.terms_mem src).2.1
+ have away(q:Wire)(hq:q∈src++Z++bank ∨ q=cin):q∉acc:=by
+  intro bad
+  have h:=List.nodup_iff_count_le_one.mp hf10.nd q
+  have a:=List.count_pos_iff.mpr bad
+  rcases hq with hq|rfl
+  · have b:=List.count_pos_iff.mpr hq
+    simp only [List.count_cons,List.count_append,Acc.earlyTerm] at h b
+    split at h <;>omega
+  · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true,Acc.earlyTerm] at h
+    omega
+ have same(q:Wire)(hq:q∈src++Z++bank ∨ q=cin):t.basis q=s.basis q:=frame.2.2 q (away q hq)
+ have len:(acc.take 140).length=140:=by simp [hacc]
+ have pref:=regValue_take_drop_of_lt acc 140 ((2^140-48*H)%2^140) t.basis
+  (by omega) frame.2.1 (Nat.mod_lt _ (by positivity))
+ refine ⟨?_,?_,?_,?_⟩
+ · intro q hq
+   exact (same q (Or.inl (by simp [List.mem_of_mem_take hq]))).trans (hb q (List.mem_of_mem_take hq))
+ · exact (same cin (Or.inr rfl)).trans hi
+ · exact regValue_congr _ _ _ (fun q hq=>same q (Or.inl (by simp [hq])))
+ · rw [CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by rw [len];decide),pref.1]
+   rfl
+
+end ECDSAAdd.Entrant.CHeadArithmeticResearch
+
+end
+
+-- Verified ABC18 optimization component C105ForwardValues
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+theorem x_in(q:Wire)(hq:q∈xs):q∈domain:=
+ List.mem_cons_of_mem cin (List.mem_append_left cs (List.mem_append_left ys hq))
+theorem y_in(q:Wire)(hq:q∈ys):q∈domain:=
+ List.mem_cons_of_mem cin (List.mem_append_left cs (List.mem_append_right xs hq))
+theorem c_in(q:Wire)(hq:q∈cs):q∈domain:=
+ List.mem_cons_of_mem cin (List.mem_append_right (xs++ys) hq)
+theorem cin_in:cin∈domain:=List.mem_cons_self
+
+theorem domain_away_low(q:Wire)(hq:q∈domain):q∉C105LowEraseResearch.low:=by
+ intro bad
+ exact geometry.2.2 q (low_hosts q bad) hq
+
+theorem prefix_erased(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0):
+ run (head++C105LowEraseResearch.clear) m s=C105LowEraseResearch.erase (run head m s):=by
+ rw [run_cat]
+ have cp:=head_copies s m hz hb hi ha
+ exact C105LowEraseResearch.clear_eq_erase _ _ cp.1 cp.2.1 cp.2.2
+
+theorem forward_values(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0):
+ (((cs.drop 4).take 105).map (run (carryPrefix (4+105) xs ys cs cin) []
+  (run (head++C105LowEraseResearch.clear) m s)).basis)=
+ ReorderedCacheBits.values 4 105 (regValue src s.basis) (976*regValue src s.basis/1024):=by
+ let H:=regValue src s.basis
+ let u:=run head m s
+ let t:=run (head++C105LowEraseResearch.clear) m s
+ have te:t=C105LowEraseResearch.erase u:=prefix_erased s m hz hb hi ha
+ have hH:H<2^130:=by simpa only [H,source_length] using regValue_lt src s.basis
+ have ready:(∀q∈cs,u.basis q=false) ∧ u.basis cin=false ∧ regValue xs u.basis=H ∧
+  regValue ys u.basis=((2^140-48*H)%2^140)/1024:=by
+  simpa only [cs,xs,ys,u,head,H] using
+   CHeadArithmeticResearch.ready acc pad bank cin src acc_length source_length fits s m hz hb hi ha
+ have eraseBit(q:Wire)(hq:q∈domain):t.basis q=u.basis q:=by
+  rw [te]
+  exact C105LowEraseResearch.bit_same _ q (domain_away_low q hq)
+ have eraseReg(r:List Wire)(sub:∀q∈r,q∈domain):regValue r t.basis=regValue r u.basis:=
+  regValue_congr _ _ _ (fun q hq=>eraseBit q (sub q hq))
+ have sy:regValue ys t.basis=((2^140-48*H)%2^140)/1024:=
+  (eraseReg ys y_in).trans ready.2.2.2
+ have sh:regValue xs t.basis=H:=
+  (eraseReg xs x_in).trans ready.2.2.1
+ have sb:∀q∈cs,t.basis q=false:=by
+  intro q hq
+  exact (eraseBit q (c_in q hq)).trans (ready.1 q hq)
+ have si:t.basis cin=false:=
+  (eraseBit cin cin_in).trans ready.2.1
+ exact ReorderedCacheBits.forward_values 4 105 H (((2^140-48*H)%2^140)/1024) (976*H/1024)
+  xs ys cs cin t (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
+  (by rw [raw_lengths.2.2];decide) raw_nd sb si sh sy (fun j hj=>by
+   simpa only [show 130+10=140 by decide] using
+    ReorderedCacheArithmetic.high_add_low 130 (4+j+1) H (by omega) hH)
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component CPreInverseArithmetic
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.CPreInverseArithmeticResearch
+open InverseCarryDevelop
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run
+
+theorem ready(acc Z bank:List Wire)(cin:Wire)(src:List Wire)
+ (hacc:acc.length=163)(hsrc:src.length=130)
+ (hf:∀f∈earlyHTerms src,Acc.Fits acc Z bank cin 163 f)
+ (s:State)(m:List Bool)(hz:∀q∈Z,s.basis q=false)(hb:∀q∈bank,s.basis q=false)
+ (hi:s.basis cin=false)(ha:regValue acc s.basis=4294968272*regValue src s.basis):
+ let t:=run (C163Carry.unbuildPre acc Z bank cin src) m s
+ (∀q∈bank.take 129,t.basis q=false) ∧ t.basis cin=false ∧
+ regValue src t.basis=regValue src s.basis ∧
+ regValue ((acc.take 140).drop 10) t.basis=976*regValue src s.basis/1024:=by
+ let H:=regValue src s.basis
+ let t:=run (C163Carry.unbuildPre acc Z bank cin src) m s
+ have frame:=C163Carry.unbuildPre_triple acc Z bank cin src hacc (by omega) hf s.basis hz hb hi s m ⟨ha,fun _ _=>rfl⟩
+ have hf10:=hf _ (A161NarrowAcc.terms_mem src).2.1
+ have away(q:Wire)(hq:q∈src++Z++bank ∨ q=cin):q∉acc:=by
+  intro bad
+  have h:=List.nodup_iff_count_le_one.mp hf10.nd q
+  have a:=List.count_pos_iff.mpr bad
+  rcases hq with hq|rfl
+  · have b:=List.count_pos_iff.mpr hq
+    simp only [List.count_cons,List.count_append,Acc.earlyTerm] at h b
+    split at h <;>omega
+  · simp only [List.count_cons,List.count_append,beq_self_eq_true,if_true,Acc.earlyTerm] at h
+    omega
+ have same(q:Wire)(hq:q∈src++Z++bank ∨ q=cin):t.basis q=s.basis q:=frame.2.2 q (away q hq)
+ have len:(acc.take 140).length=140:=by simp [hacc]
+ have hH:H<2^130:=by simpa only [H,hsrc] using regValue_lt src s.basis
+ have pref:=regValue_take_drop_of_lt acc 140 (976*H) t.basis
+  (by omega) frame.2.1 (by norm_num at hH ⊢;omega)
+ refine ⟨?_,?_,?_,?_⟩
+ · intro q hq
+   exact (same q (Or.inl (by simp [List.mem_of_mem_take hq]))).trans (hb q (List.mem_of_mem_take hq))
+ · exact (same cin (Or.inr rfl)).trans hi
+ · exact regValue_congr _ _ _ (fun q hq=>same q (Or.inl (by simp [hq])))
+ · rw [CuccaroStreamedSquareWideLayout.regValue_drop_div _ _ (by rw [len];decide),pref.1]
+   rfl
+
+end ECDSAAdd.Entrant.CPreInverseArithmeticResearch
+
+end
+
+-- Verified ABC18 optimization component C105InverseReady
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+theorem pre_raw_ready(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
+ (∀q∈cs,(run preInv m s).basis q=false) ∧ (run preInv m s).basis cin=false ∧
+ regValue xs (run preInv m s).basis=H ∧ regValue ys (run preInv m s).basis=976*H/1024:=by
+ have h:=CPreInverseArithmeticResearch.ready acc pad bank cin src acc_length source_length fits s m
+  ready.2.2.1 ready.2.2.2.1 ready.2.2.2.2 (by rw [ready.2.1];exact ready.1)
+ simpa only [preInv,xs,ys,cs,ready.2.1] using h
+
+theorem scattered_erased_domain(s:State)(vs:List Bool)(q:Wire)(hq:q∈domain):
+ (scatterState hosts vs (C105LowEraseResearch.erase s)).basis q=s.basis q:=by
+ rw [scatter_outside hosts vs _ q (by intro bad;exact geometry.2.2 q bad hq)]
+ exact C105LowEraseResearch.bit_same s q (domain_away_low q hq)
+
+theorem inverse_ready(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
+ let vs:=ReorderedCacheBits.values 4 105 H (976*H/1024)
+ let t:=scatterState hosts vs (C105LowEraseResearch.erase s)
+ run newI m t=scatterState hosts (List.replicate hosts.length false) (run I m t):=by
+ dsimp only
+ let vs:=ReorderedCacheBits.values 4 105 H (976*H/1024)
+ let t:=scatterState hosts vs (C105LowEraseResearch.erase s)
+ have hH:H<2^130:=by rw [←ready.2.1];simpa only [source_length] using regValue_lt src s.basis
+ have commute:run preInv m t=scatterState hosts vs (C105LowEraseResearch.erase (run preInv m s)):=by
+  rw [show t=scatterState hosts vs (C105LowEraseResearch.erase s) from rfl,
+   run_scatter preInv hosts vs _ _ preInv_off,
+   C105LowEraseResearch.commute preInv m s (fun q hq=>preInv_off q (low_hosts q hq))]
+ have bits(q:Wire)(hq:q∈domain):(run preInv m t).basis q=(run preInv m s).basis q:=by
+  rw [commute]
+  exact scattered_erased_domain _ vs q hq
+ have regs(r:List Wire)(sub:∀q∈r,q∈domain):regValue r (run preInv m t).basis=regValue r (run preInv m s).basis:=
+  regValue_congr _ _ _ (fun q hq=>bits q (sub q hq))
+ have rr:=pre_raw_ready H s m ready
+ have saved:hosts.map t.basis=vs:=scatter_saved_map hosts vs _ geometry.1
+  (by simp only [vs,ReorderedCacheBits.values,List.length_map,geometry.2.1,List.length_range])
+ apply inverse_frame t m H hH
+ · intro q hq
+   rw [bits q (c_in q hq)]
+   exact rr.1 q hq
+ · rw [bits cin cin_in]
+   exact rr.2.1
+ · rw [regs xs x_in]
+   exact rr.2.2.1
+ · rw [regs ys y_in]
+   exact rr.2.2.2
+ · exact saved
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105MiddleErase
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+abbrev oldF:Program:=ReorderedCPlain.build acc pad bank cin src
+abbrev oldM:Program:=KnownCMidStaged.body
+abbrev M:Program:=CKAliasesResearch.program
+
+theorem measurements:measurementCount F=measurementCount oldF:=by
+ rw [oldF,plain_split]
+ simp only [F,measurementCount_append,C105LowEraseResearch.counts.2.1,Nat.add_zero,Nat.zero_add,List.append_assoc]
+
+theorem middle_erased(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0)
+ (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
+ (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
+ middleState F M s m=C105LowEraseResearch.erase (middleState oldF oldM s m):=by
+ unfold middleState
+ rw [measurements,CKAliasesResearch.counts.2.1,forward_erased s _ hz hb hi ha]
+ exact C105LowEraseResearch.aliases_erased (regValue src s.basis) _ _
+  (Ghost3CacheC.plain_ready s _ hz hb hi ha) after flag
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105Restore
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+theorem rawI_eq:rawI=Acc.op (acc.take 140) pad bank cin 140 true (Acc.earlyTerm src false 10):=by
+ simp only [rawI,ReorderedConsumedSub.plain,Acc.op,Acc.tx,Acc.ty,Acc.tc,Acc.earlyTerm,
+  source_length,Bool.false_eq_true,ite_false,Nat.sub_self,List.take_zero,List.append_nil,
+  MixedLiteralAdderDevelop.read_add_eq,subInPlace]
+ rfl
+
+theorem I_source(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
+ ∀q∈src,(run I m s).basis q=s.basis q:=by
+ have hH:regValue src s.basis<2^130:=by simpa only [source_length] using regValue_lt src s.basis
+ have pre:=C163Carry.unbuildPre_triple acc pad bank cin src acc_length source_length fits s.basis
+  ready.2.2.1 ready.2.2.2.1 ready.2.2.2.2
+ have sub:=ReorderedAcc.op_mod_prefix_triple acc pad bank cin 163 140 (Acc.earlyTerm src false 10)
+  acc_length (by decide) (fits _ (A161NarrowAcc.terms_mem src).2.1)
+  (by simp only [Acc.earlyTerm,source_length];decide) (by norm_num [Acc.earlyTerm])
+  s.basis ready.2.2.1 ready.2.2.2.1 ready.2.2.2.2 true (976*regValue src s.basis)
+  (by norm_num at hH ⊢;omega)
+ have frame:=(pre.seq sub) s m ⟨by rw [ready.2.1];exact ready.1,fun _ _=>rfl⟩
+ have eq:I=C163Carry.unbuildPre acc pad bank cin src++Acc.op (acc.take 140) pad bank cin 140 true (Acc.earlyTerm src false 10):=by
+  rw [I,rawI_eq];rfl
+ have away:∀q∈src,q∉acc:=by decide +kernel
+ intro q hq
+ rw [eq]
+ exact frame.2.2 q (away q hq)
+
+theorem restored(H:Nat)(s:State)(m:List Bool)(ready:WReady acc pad bank cin src H s):
+ run (I++C105LowEraseResearch.clear) m (C105LowEraseResearch.erase s)=run I m s:=by
+ have cp:=low_copies H s ready
+ have low(q:Wire)(hq:q∈C105LowEraseResearch.low):(run I m s).basis q=s.basis q:=
+  run_preserves_outside I m s q (I_off q (low_hosts q hq))
+ have source:=I_source H s m ready
+ apply C105LowEraseResearch.suffix I s m (fun q hq=>I_off q (low_hosts q hq))
+ · rw [low 4505 (by decide),source 4243 (by decide +kernel)]
+   exact cp.1
+ · rw [low 4506 (by decide),source 4244 (by decide +kernel)]
+   exact cp.2.1
+ · rw [low 4507 (by decide),source 4245 (by decide +kernel),source 4243 (by decide +kernel)]
+   exact cp.2.2
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105UnbuildSplit
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+abbrev tail:Program:=ReorderedCUnbuild.after acc pad bank cin src
+
+theorem unbuild_split:ReorderedCPlain.unbuild acc pad bank cin src=I++tail:=by
+ simpa only [I,preInv,rawI,xs,ys,cs,tail] using ReorderedCUnbuild.plain_split acc pad bank cin src source_length
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105ErasedSuffix
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+theorem erased_suffix(H:Nat)(u:State)(m:List Bool)(ready:WReady acc pad bank cin src H u):
+ run (I++C105LowEraseResearch.clear++tail) m (C105LowEraseResearch.erase u)=run (I++tail) m u:=by
+ exact ClearContextResearch.suffix I C105LowEraseResearch.clear tail C105LowEraseResearch.counts.2.1
+  (C105LowEraseResearch.erase u) u m (restored H u m ready)
+
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105PlainLoop
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ControlledBorrowResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+theorem plain_loop(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0)
+ (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
+ (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
+ run (F++M++(I++C105LowEraseResearch.clear++tail)) m s=
+ run (oldF++oldM++ReorderedCPlain.unbuild acc pad bank cin src) m s:=by
+ have eq:=middle_erased s m hz hb hi ha after flag
+ apply ClearContextResearch.projected F M oldF oldM (I++C105LowEraseResearch.clear++tail)
+  (ReorderedCPlain.unbuild acc pad bank cin src) C105LowEraseResearch.erase s m measurements
+  CKAliasesResearch.counts.2.1 eq
+ exact (erased_suffix _ _ _ after).trans
+  (congrArg (fun P=>run P (m.drop (measurementCount oldF+measurementCount oldM))
+   (middleState oldF oldM s m)) unbuild_split.symm)
+
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105CacheLoop
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+theorem cache_loop(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false)
+ (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
+ (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
+ run (newF++M++newI) m s=run (F++M++I) m s:=by
+ let H:=regValue src s.basis
+ let vs:=ReorderedCacheBits.values 4 105 H (976*H/1024)
+ have mid:=middle_erased s m hz hb hi ha after flag
+ have forward:=forward_frame s (m.take (measurementCount F)) H
+  (prefix_zero s _ hz hb hi ha zero) (forward_values s _ hz hb hi ha)
+ apply CacheFromCleanForwardResearch.equivalent F newF M I newI hosts vs
+  forward_measurements middle_fresh I_off geometry.1 s m
+  (forward_zero s _ hz hb hi ha zero) forward
+ rw [mid]
+ exact inverse_ready H (middleState oldF oldM s m) _ after
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105Core
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+
+def core:Program:=(newF++M++newI)++(C105LowEraseResearch.clear++tail)
+
+theorem inverse_measurements:measurementCount newI=measurementCount I:=by
+ have h:=ReorderedConsumedSub.measurement_eq 105 xs ys cs hosts cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide)
+  (by rw [raw_lengths.2.2];decide)
+ have eq:measurementCount HighConsumedC105Research.sub=measurementCount rawI:=
+  HighConsumedC105Research.sub_measurements.trans h
+ simp only [newI,I,measurementCount_append,eq]
+
+theorem prefix_measurements:measurementCount (newF++M++newI)=measurementCount (F++M++I):=by
+ simp only [measurementCount_append,forward_measurements,inverse_measurements]
+
+theorem core_plain(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)(hi:s.basis cin=false)
+ (ha:regValue acc s.basis=0)(zero:∀q∈ReorderedCFixed.hosts,s.basis q=false)
+ (after:WReady acc pad bank cin src (regValue src s.basis) (middleState oldF oldM s m))
+ (flag:(run oldF (m.take (measurementCount oldF)) s).basis 4762=false):
+ run core m s=run (oldF++oldM++ReorderedCPlain.unbuild acc pad bank cin src) m s:=by
+ have eq:=ClearContextResearch.append_at (newF++M++newI) (F++M++I) (C105LowEraseResearch.clear++tail)
+  s m prefix_measurements (cache_loop s m hz hb hi ha zero after flag)
+ have shape:(F++M++I)++(C105LowEraseResearch.clear++tail)=F++M++(I++C105LowEraseResearch.clear++tail):=by
+  have g(A B C D E:Program):(A++B++C)++(D++E)=A++B++(C++D++E):=by simp only [List.append_assoc]
+  exact g F M I C105LowEraseResearch.clear tail
+ exact eq.trans ((congrArg (fun P=>run P m s) shape).trans (plain_loop s m hz hb hi ha after flag))
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component CKKnownMiddle
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.CKKnownMiddleResearch
+open ReorderedCFixed C163Low4Middle InverseCarryDevelop
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires C163Low4Middle.bankChecked
+
+theorem measurements:measurementCount KnownCMidStaged.body=measurementCount C163Low4Middle.bankChecked.out:=
+ (KnownSparseFold.Cert.counts _ _ _ _ _ KnownCMidStaged.cert).2
+
+theorem equivalent(H:Nat)(s:State)(m:List Bool)
+ (before:WReady ga pad bank L.core.cin src H s):
+ run KnownCMidStaged.body m s=run C163Low4Middle.bankChecked.out m s:=by
+ have z:KnownSparseFold.Zero KnownCMidStaged.known0 s:=by
+  intro u hu
+  rcases ReorderedKnownC.guard u hu with ⟨_,_,hb⟩
+  exact hb.elim (fun h=>before.2.2.2.1 u h) (fun h=>h.symm ▸ before.2.2.2.2)
+ exact (KnownSparseFold.Cert.correct _ _ _ _ _ KnownCMidStaged.cert s m z).1
+
+theorem middle_eq(s:State)(m:List Bool)
+ (hz:∀q∈pad,s.basis q=false)(hb:∀q∈bank,s.basis q=false)
+ (hi:s.basis L.core.cin=false)(ha:regValue ga s.basis=0):
+ middleState (ReorderedCPlain.build ga pad bank L.core.cin src) KnownCMidStaged.body s m=
+ middleState (ReorderedCPlain.build ga pad bank L.core.cin src) C163Low4Middle.bankChecked.out s m:=by
+ unfold middleState
+ rw [measurements]
+ exact equivalent _ _ _ (Ghost3CacheC.plain_ready s _ hz hb hi ha)
+
+
+end ECDSAAdd.Entrant.CKKnownMiddleResearch
+
+end
+
+-- Verified ABC18 optimization component C105Frame
+section
+open ECDSAAdd ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.C105Research
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle
+ InverseCarryDevelop ThirdSavedCarryDevelop ManyACarryDevelop
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires C163Low4Middle.bankChecked C163Low4Middle.specialChecked
+abbrev p:=C163Low4Middle.p
+theorem core_frame(base:BasisState)(hc:L.PairClean base)(hp:base p=false)(hd:base d=false)
+ (O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) core
+  (SquareFrame L.core.out base
+   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
+    (SquareReduction.p-1-O))%SquareReduction.p)):=by
+ intro s m hf
+ have len:=lengths
+ have fit:=fits
+ have clean:=L.squareFrame_clean hn base s.basis O hf hc
+ have hz:∀u∈pad,s.basis u=false:=fun u hu=>
+  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+ have hb:∀u∈bank,s.basis u=false:=fun u hu=>
+  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
+ have ha:regValue ga s.basis=0:=C163Low4Ghost.ghostAcc_zero L s.basis clean
+ have qz:s.basis q=false:=(regValue_zero _ _).mp clean.work q (by decide)
+ have rz:s.basis r=false:=(regValue_zero _ _).mp clean.work r (by decide)
+ have pz:s.basis p=false:=(hf.2 p (by decide)).trans hp
+ have dz:s.basis d=false:=(hf.2 d (by decide)).trans hd
+ have zeroU:∀u∈hs,s.basis u=false:=by
+  intro u hu
+  rcases List.mem_append.mp hu with hu|hu
+  · rcases List.mem_append.mp hu with hu|hu
+    · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_drop hu)
+    · have e:u=d:=by simpa only [List.mem_singleton] using hu
+      subst u
+      exact dz
+  · exact (regValue_zero _ _).mp clean.work u (List.mem_of_mem_take hu)
+ have zeroOld:∀u∈ReorderedCFixed.hosts,s.basis u=false:=by
+  intro u hu
+  simp only [ReorderedCFixed.hosts,List.mem_cons] at hu
+  rcases hu with rfl|rfl|rfl|hu
+  · exact qz
+  · exact rz
+  · exact pz
+  · exact zeroU u hu
+ have offHs:∀u∈hs,u∉wires (ReorderedCPlain.build ga pad bank L.core.cin src):=by
+  intro u hu
+  exact (off_plain u (by simp only [ReorderedCFixed.hosts,List.mem_cons];exact Or.inr (Or.inr (Or.inr hu)))).1
+ have goodOld:=fun record=>good base hc O hO s record hf
+ have goodSpecial:WReady ga pad bank L.core.cin src (regValue src s.basis)
+  (middleState (ReorderedCPlain.build ga pad bank L.core.cin src) specialChecked.out s m):=by
+  rw [ReorderedRetape.c_middle_eq ga pad bank L.core.cin src specialChecked.out
+   len.1 len.2.2.2 fit s m hz hb clean.cin ha]
+  exact goodOld _
+ have middleEq:=bank_cert.middle_eq hs specialChecked.out bankChecked.out
+  (ReorderedCPlain.build ga pad bank L.core.cin src) s m zeroU offHs
+ have goodBank:WReady ga pad bank L.core.cin src (regValue src s.basis)
+  (middleState (ReorderedCPlain.build ga pad bank L.core.cin src) bankChecked.out s m):=by
+  rw [middleEq]
+  exact goodSpecial
+ have knownEq:=CKKnownMiddleResearch.middle_eq s m hz hb clean.cin ha
+ have goodKnown:WReady ga pad bank L.core.cin src (regValue src s.basis)
+  (middleState (ReorderedCPlain.build ga pad bank L.core.cin src) KnownCMidStaged.body s m):=by
+  rw [knownEq]
+  exact goodBank
+ have buildFrame:=ReorderedCPlain.build_triple ga pad bank L.core.cin src lengths.1 lengths.2.2.2 fits
+  s.basis hz hb clean.cin s (m.take (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)))
+  ⟨ha,fun _ _=>rfl⟩
+ have flag:(run (ReorderedCPlain.build ga pad bank L.core.cin src)
+  (m.take (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src))) s).basis 4762=false:=
+  (buildFrame.2.2 4762 (by decide +kernel)).trans clean.modFlag
+ have cachedNew:=core_plain s m hz hb clean.cin ha zeroOld goodKnown flag
+ have midEq:run KnownCMidStaged.body (m.drop (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)))
+  (run (ReorderedCPlain.build ga pad bank L.core.cin src) m s)=
+  run C163Low4Middle.bankChecked.out (m.drop (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)))
+  (run (ReorderedCPlain.build ga pad bank L.core.cin src) m s):=by
+  simpa only [middleState,run_take] using knownEq
+ have ctxt:=ReorderedKnownA.context_eq
+  (ReorderedCPlain.build ga pad bank L.core.cin src) C163Low4Middle.bankChecked.out KnownCMidStaged.body
+  (ReorderedCPlain.unbuild ga pad bank L.core.cin src) s m CKKnownMiddleResearch.measurements midEq
+ have cacheEq:=cachedNew.trans ctxt
+ have middleReplace:=bank_cert.surround_eq hs specialChecked.out bankChecked.out
+  (ReorderedCPlain.build ga pad bank L.core.cin src) (ReorderedCPlain.unbuild ga pad bank L.core.cin src)
+  s m zeroU offHs
+ have plainEq:=ReorderedRetape.c_loop_eq ga pad bank L.core.cin src specialChecked.out
+  len.1 len.2.2.2 fit s m hz hb clean.cin ha goodOld
+ let record:=ReorderedRetape.tape (measurementCount (C163NarrowAcc.build8 ga pad bank L.core.cin src))
+  (measurementCount (ReorderedCPlain.build ga pad bank L.core.cin src)) m
+ have oldFrame:=C163Low4Middle.frame base hc hp hd O hO s record hf
+ rw [eq_plain base hc hp hd O hO s record hf] at oldFrame
+ have finalEq:run core m s=run (C163NarrowAcc.build8 ga pad bank L.core.cin src++specialChecked.out++
+  C163SourceAdd.unbuild ga pad bank L.core.cin src) record s:=cacheEq.trans (middleReplace.trans plainEq)
+ exact transport (SquareFrame L.core.out base
+   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
+    (SquareReduction.p-1-O))%SquareReduction.p)) s _ _ finalEq oldFrame
+
+
+
+end ECDSAAdd.Entrant.C105Research
+
+end
+
+-- Verified ABC18 optimization component C105Sign
+section
+open ECDSAAdd ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.C105SignResearch
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle C163Low4Ghost
+ ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
+set_option autoImplicit false
+set_option linter.unusedVariables false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+abbrev hosts:=C105Research.hosts
+abbrev p:=C163Low4Middle.p
+
+def suffix:Program:=C105LowEraseResearch.clear++
+ ReorderedGenericCache.cachedAdd 105 C105Research.xs C105Research.ys C105Research.cs hosts L.core.cin++
+ C105Research.top++C105Research.M++C105Research.newI++C105LowEraseResearch.clear++C105Research.tail
+
+def loop:Program:=SignCHead.head++suffix
+
+theorem loop_eq(base:BasisState)(hc:L.PairClean base)(O:Nat)(hO:O<SquareReduction.p)
+ (s:State)(m:List Bool)(hf:SquareFrame L.core.out base O s.basis):
+ run loop m s=run C105Research.core
+  (SignRetape.tape SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) m) s:=by
+ have clean:=L.squareFrame_clean hn base s.basis O hf hc
+ have hz:∀u∈pad,s.basis u=false:=fun u hu=>
+  (regValue_zero _ _).mp clean.pad u (List.mem_of_mem_drop (List.mem_of_mem_take hu))
+ have hb:∀u∈bank,s.basis u=false:=fun u hu=>(regValue_zero _ _).mp clean.pad u (List.mem_of_mem_take hu)
+ have ha:regValue ga s.basis=0:=ghostAcc_zero L s.basis clean
+ have h:∀a b:List Bool,run SignCHead.head a s=run (ReorderedCHead.head ga pad bank L.core.cin src) b s:=by
+  intro a b
+  exact ReorderedFrameUnique.program_eq ga s.basis 0 ((2^140-48*regValue src s.basis)%2^140) _ _
+   (SignCHead.frame s.basis hz hb clean.cin)
+   (ReorderedCHead.head_triple ga pad bank L.core.cin src lengths.1 (by decide) fits s.basis hz hb clean.cin)
+   s a b ⟨ha,fun _ _=>rfl⟩
+ have eq:=SignRetape.replace SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) suffix s m h
+ simpa only [loop,suffix,C105Research.core,C105Research.newF,C105Research.head,C105Research.xs,
+  C105Research.ys,C105Research.cs,List.append_assoc] using eq
+
+
+theorem frame(base:BasisState)(hc:L.PairClean base)(hp:base p=false)(hd:base d=false)
+ (O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) loop
+  (SquareFrame L.core.out base
+   (((if base g then C163Low4Facts.Klow-C163Fold.payload L base else C163Fold.payload L base)+
+    (SquareReduction.p-1-O))%SquareReduction.p)):=by
+ intro s m hf
+ have e:=loop_eq base hc O hO s m hf
+ have old:=C105Research.core_frame base hc hp hd O hO s (SignRetape.tape SignCHead.head (ReorderedCHead.head ga pad bank L.core.cin src) m) hf
+ exact ReorderedCFixed.transport _ s _ _ e old
+
+theorem fold_frame(base:BasisState)(hv:AccView L base (OwnDiagAll12Square.accCItem L))(hc:L.PairClean base)
+ (M:Nat)(pv:regValue L.core.product base=M^2)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) loop
+  (SquareFrame L.core.out base
+   (((if base g then C163Low4Facts.Klow-Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec else Acc.accVal base 0 (OwnDiagAll12Square.accCItem L).spec)+
+    (SquareReduction.p-1-O))%SquareReduction.p)):=by
+ intro s m hf
+ have f:=frame base hc (spare_zero L hw base M pv) hd O hO s m hf
+ have e:=congrArg (fun A:Nat=>((if base g then C163Low4Facts.Klow-A else A)+(SquareReduction.p-1-O))%SquareReduction.p)
+  (C163Fold.payload_spec L base)
+ exact ⟨f.1,Eq.mp (congrArg (fun n:Nat=>SquareFrame L.core.out base n (run loop m s).basis) e) f.2⟩
+
+def rawBody:Program:=C163Low4Body.bodyProgram L loop
+
+theorem raw_body_frame(base:BasisState)(M:Nat)(pv:regValue L.core.product base=M^2)
+ (clean:L.PairClean base)(disabled:base g=false→M=0)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) rawBody
+  (SquareFrame L.core.out base (C163Low4Body.resCFK C163Low4Facts.Klow (base g) (M^2) O)):=by
+ intro s m hf
+ have away(q:Wire)(hq:q∈L.core.product):q∉L.core.out:=
+  fun ho=>List.disjoint_left.mp (L.product_out_disjoint hn) hq ho
+ have prod:regValue L.core.product s.basis=M^2:=
+  (regValue_congr _ _ _ (fun q hq=>hf.2 q (away q hq))).trans pv
+ have cs:=L.squareFrame_clean hn base s.basis O hf clean
+ have gs:s.basis g=base g:=hf.2 g (by decide)
+ have ds:s.basis d=false:=(hf.2 d (by decide)).trans hd
+ have dm:s.basis g=false→M=0:=by rw [gs];exact disabled
+ have out:=C163Low4Body.body_output L hw g (List.nodup_cons.mpr ⟨geometry.1,hn⟩)
+  d loop C163Low4Facts.Klow cap fold_frame M O hO s m prod dm cs hf.1 ds
+ rw [gs] at out
+ exact ⟨out.1,out.2.1,fun q hq=>(out.2.2 q hq).trans (hf.2 q hq)⟩
+
+def body:Program:=rawBody++ReorderedRecordPadding.program 7 L.core.cin
+
+theorem body_frame(base:BasisState)(M:Nat)(pv:regValue L.core.product base=M^2)
+ (clean:L.PairClean base)(disabled:base g=false→M=0)(hd:base d=false)(O:Nat)(hO:O<SquareReduction.p):
+ Triple (SquareFrame L.core.out base O) body
+  (SquareFrame L.core.out base (C163Low4Body.resCFK C163Low4Facts.Klow (base g) (M^2) O)):=by
+ intro s m hf
+ have f:=raw_body_frame base M pv clean disabled hd O hO s (m.take (measurementCount rawBody)) hf
+ have hz:(run rawBody (m.take (measurementCount rawBody)) s).basis L.core.cin=false:=
+  (f.2.2 L.core.cin (by decide)).trans clean.cin
+ have eq:run body m s=run rawBody (m.take (measurementCount rawBody)) s:=by
+  rw [body,run_append,ReorderedRecordPadding.run_zero 7 L.core.cin _ _ hz]
+ exact ReorderedCFixed.transport _ s _ _ eq f
+
+
+
+end ECDSAAdd.Entrant.C105SignResearch
+
+end
+
+-- Verified ABC18 optimization component C105Counts
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105SignResearch
+open C105PrefixResearch C105Research Challenge
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
+
+theorem loop_counts:toffoliCount loop+3=toffoliCount HighSignCResearch.loop ∧
+ measurementCount loop=measurementCount HighSignCResearch.loop:=by
+ have aa:C163Low4Middle.ga=acc:=by decide +kernel
+ have ap:C163Low4Middle.pad=pad:=by decide +kernel
+ have ab:C163Low4Middle.bank=bank:=by decide +kernel
+ have ax:C163Low4Middle.src=src:=by decide +kernel
+ have ai:C163Low4Middle.L.core.cin=L.core.cin:=by decide +kernel
+ have nc:=ReorderedGenericCache.count_balance 105 xs ys cs C105Research.hosts cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
+ have oc:=ReorderedGenericCache.count_balance 102 xs ys cs Ghost3CacheC.hosts cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide)
+ have ni:=HighConsumedC105Research.sub_toffoli
+ have nm:=HighConsumedC105Research.sub_measurements
+ have oi:=HighUnbuildCResearch.toffoli acc rfl
+ have om:=HighUnbuildCResearch.measurements acc rfl
+ have mt:=CKAliasesResearch.counts.1
+ have mm:=CKAliasesResearch.counts.2.1
+ have ot:=GhostRelocatedKnown.C.counts.1
+ have omid:=GhostRelocatedKnown.C.counts.2
+ have nt:=notRegister_counts ys
+ simp only [ReorderedConsumedSub.consumed,toffoliCount_append,measurementCount_append] at ni nm oi om
+ simp only [ReorderedCUnbuild.unbuild,ReorderedConsumedSub.consumed,toffoliCount_append,measurementCount_append] at oi om
+ simp only [loop,suffix,newI,preInv,top,tail,M,HighSignCResearch.loop,HighSignCResearch.suffix,
+  toffoliCount_append,measurementCount_append,C105LowEraseResearch.counts.1,C105LowEraseResearch.counts.2.1]
+ simp only [xs,ys,cs,HighConsumedC105Research.xs,HighConsumedC105Research.ys,
+  HighConsumedC105Research.cs,HighConsumedC105Research.cin,HighConsumedC105Research.hs,
+  C105PrefixResearch.cin,CKAliasesResearch.original,Ghost3CacheC.middle,
+  GhostRelocatedKnown.C.original,HighSignCResearch.hosts,C105SignResearch.hosts,aa,ap,ab,ax,ai] at *
+ exact ⟨by omega,by omega⟩
+
+ theorem body_counts:toffoliCount body+3=toffoliCount HighSignCResearch.body ∧
+ measurementCount body=measurementCount HighSignCResearch.body:=by
+ have h:=loop_counts
+ simp only [body,rawBody,HighSignCResearch.body,HighSignCResearch.rawBody,C163Low4Body.bodyProgram,
+  toffoliCount_append,measurementCount_append]
+ exact ⟨by omega,by omega⟩
+
+
+end ECDSAAdd.Entrant.C105SignResearch
+
+end
+
+-- Verified ABC18 optimization component C105Slots
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105SignResearch
+open C105PrefixResearch C105Research Challenge
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] Challenge.gateSlots
+ theorem loop_slots:gateSlots loop+12=gateSlots HighSignCResearch.loop:=by
+ have aa:C163Low4Middle.ga=acc:=by decide +kernel
+ have ap:C163Low4Middle.pad=pad:=by decide +kernel
+ have ab:C163Low4Middle.bank=bank:=by decide +kernel
+ have ax:C163Low4Middle.src=src:=by decide +kernel
+ have ai:C163Low4Middle.L.core.cin=L.core.cin:=by decide +kernel
+ have nc:=ReorderedSlots.cache 105 xs ys cs C105Research.hosts cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide) geometry.2.1
+ have oc:=ReorderedSlots.cache 102 xs ys cs Ghost3CacheC.hosts cin
+  (by rw [raw_lengths.1];decide) (by rw [raw_lengths.2.1];decide) (by rw [raw_lengths.2.2];decide) Ghost3CacheC.geometry.2.1
+ have ni:=HighConsumedC105Research.sub_slots
+ have oi:=HighUnbuildCResearch.slots acc rfl
+ have mid:=CKAliasesResearch.counts.2.2
+ have oldmid:=RelocateResources.slots GhostRelocatedKnown.ports KnownCMidStaged.body
+ simp only [ReorderedConsumedSub.consumed,gateSlots_append] at ni
+ simp only [ReorderedCUnbuild.unbuild,ReorderedConsumedSub.consumed,gateSlots_append] at oi
+ simp only [loop,suffix,newI,preInv,top,tail,M,HighSignCResearch.loop,HighSignCResearch.suffix,
+  gateSlots_append,C105LowEraseResearch.counts.2.2]
+ simp only [xs,ys,cs,HighConsumedC105Research.xs,HighConsumedC105Research.ys,
+  HighConsumedC105Research.cs,HighConsumedC105Research.cin,HighConsumedC105Research.hs,
+  C105PrefixResearch.cin,CKAliasesResearch.original,Ghost3CacheC.middle,
+  GhostRelocatedKnown.C.program,GhostRelocatedKnown.C.original,HighSignCResearch.hosts,C105SignResearch.hosts,aa,ap,ab,ax,ai] at *
+ omega
+ theorem body_slots:gateSlots body+12=gateSlots HighSignCResearch.body:=by
+ have h:=loop_slots
+ simp only [body,rawBody,HighSignCResearch.body,HighSignCResearch.rawBody,C163Low4Body.bodyProgram,gateSlots_append]
+ omega
+
+
+end ECDSAAdd.Entrant.C105SignResearch
+
+end
+
+-- Verified ABC18 optimization component C105Scope
+section
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
+namespace ECDSAAdd.Entrant.C105Research
+open C105PrefixResearch
+set_option autoImplicit false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.wires
+abbrev S:=wires HighSignCResearch.body
+def oldPrefix:Program:=SignCHead.head++ReorderedGenericCache.cachedAdd 102 C163Low4Middle.src ((C163Low4Middle.ga.take 140).drop 10)
+ (C163Low4Middle.bank.take 129) Ghost3CacheC.hosts C163Low4Middle.L.core.cin
+
+theorem old_prefix_support:wires oldPrefix⊆S:=by
+ intro q h
+ simp only [oldPrefix,wires_append,Finset.mem_union] at h
+ change q∈wires HighSignCResearch.body
+ simp only [HighSignCResearch.body,HighSignCResearch.rawBody,C163Low4Body.bodyProgram,
+  HighSignCResearch.loop,HighSignCResearch.suffix,wires_append,Finset.mem_union]
+ tauto
+
+theorem old_middle_support:wires GhostRelocatedKnown.C.program⊆S:=by
+ intro q h
+ change q∈wires HighSignCResearch.body
+ simp only [HighSignCResearch.body,HighSignCResearch.rawBody,C163Low4Body.bodyProgram,
+  HighSignCResearch.loop,HighSignCResearch.suffix,Ghost3CacheC.middle,wires_append,Finset.mem_union]
+ tauto
+
+end ECDSAAdd.Entrant.C105Research
+end
+end
 end

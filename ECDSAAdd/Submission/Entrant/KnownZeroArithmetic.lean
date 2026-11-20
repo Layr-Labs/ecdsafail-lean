@@ -12,754 +12,25 @@ import ECDSAAdd.Arithmetic.DisjointPrograms
 import ECDSAAdd.Challenge.Contract
 import Mathlib.Tactic.FinCases
 import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
+import ECDSAAdd.Submission.Entrant.Prelude
+import ECDSAAdd.Submission.Entrant.QTop
+import ECDSAAdd.Submission.Entrant.FullLogic
+import ECDSAAdd.Submission.Entrant.MainPart07Core
 import ECDSAAdd.Submission.Entrant.Fold98
 
--- Rebalanced closed source chunks; all ordinary declarations and circuit literals retained.
+-- repack: KnownZeroArithmetic lines 8517..27362
+section
+section
 section
 open ECDSAAdd
-namespace ECDSAAdd.Entrant.A161SupportCover
-open Arithmetic FourthASavedCarryDevelop A161FixedFold
-
-set_option autoImplicit false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 100000000
-attribute [local irreducible] ECDSAAdd.wires
-theorem used11 : (((A161GenericFold.ambient L g hs96).drop 880).take 80).all cover=true := by decide +kernel
-theorem used12 : (((A161GenericFold.ambient L g hs96).drop 960).take 80).all cover=true := by decide +kernel
-theorem used13 : (((A161GenericFold.ambient L g hs96).drop 1040).take 80).all cover=true := by decide +kernel
-theorem used14 : (((A161GenericFold.ambient L g hs96).drop 1120).take 80).all cover=true := by decide +kernel
-theorem used15 : (((A161GenericFold.ambient L g hs96).drop 1200).take 80).all cover=true := by decide +kernel
-theorem used16 : (((A161GenericFold.ambient L g hs96).drop 1280).take 80).all cover=true := by decide +kernel
-theorem partition : A161GenericFold.ambient L g hs96 = (((A161GenericFold.ambient L g hs96).drop 0).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 80).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 160).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 240).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 320).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 400).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 480).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 560).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 640).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 720).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 800).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 880).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 960).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1040).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1120).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1200).take 80) ++ (((A161GenericFold.ambient L g hs96).drop 1280).take 80) := by decide +kernel
-theorem all_cover : (A161GenericFold.ambient L g hs96).all cover=true := by
- rw [partition]
- simp only [List.all_append,used0,used1,used2,used3,used4,used5,used6,used7,used8,used9,used10,used11,used12,used13,used14,used15,used16,Bool.true_and]
-
-
-end ECDSAAdd.Entrant.A161SupportCover
-
-section
-namespace ECDSAAdd.Entrant.A161FineSupport
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
- FourthASavedCarryDevelop A161FixedFold
-
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run List.toFinset
-
-theorem middle_in_body (L:CuccaroStreamedSquareWideLayout) (g:Wire) :
- wires (aMiddle L g)⊆wires (aBodyTriple L g) := by
- intro u hu
- simp only [aBodyTriple,aFoldTriple,wires_append,Finset.mem_union]
- exact Or.inr (Or.inr (Or.inl (Or.inr hu)))
-
-theorem ambient_fine : (A161GenericFold.ambient L g hs96).toFinset⊆insert d (wires (aBodyTriple L g)) := by
- intro u hu
- have hh := List.all_eq_true.mp A161SupportCover.all_cover u (List.mem_toFinset.mp hu)
- simp only [A161SupportCover.cover,Bool.or_eq_true,beq_iff_eq,List.contains_iff_mem] at hh
- rcases hh with (hd|hdomain)|hmid
- · exact Finset.mem_insert.mpr (Or.inl hd)
- · exact Finset.mem_insert_of_mem ((hasWire_iff _ _).mp (FullPadSupport.actual_support_ready u hdomain))
- · have hm : u∈wires ParkAData.p0 := A161SupportCover.witness_support ((A161SupportCover.touched_spec _ _).mp hmid)
-   have e := congrArg ECDSAAdd.wires ParkAStagedProof.input_eq
-   have hn : u∈wires (aMiddle L g) := e ▸ hm
-   exact Finset.mem_insert_of_mem (middle_in_body L g hn)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-end ECDSAAdd.Entrant.A161FineSupport
-end
-
-section
-namespace ECDSAAdd.Entrant.A161Low4Fine
-open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ThirdSavedCarryDevelop
- ControlLoan1589BFFold
-
-set_option autoImplicit false
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-attribute [local irreducible] ECDSAAdd.wires ECDSAAdd.run List.toFinset
-
-theorem ambient_subset (L:CuccaroStreamedSquareWideLayout) (g d:Wire) (hs:List Wire) :
- (A161Low4GenericFold.ambient L g ((hs++L.core.work.take 4)++[d])).toFinset⊆
- (A161GenericFold.ambient L g (hs++[d])).toFinset := by
- intro u hu
- have low:∀u∈L.core.work.take 4,u∈A161GenericFold.domain L := by
-  intro u hu
-  have sub:(L.core.work.take 4).Sublist (A161Fold.accReg L) := by
-   have h:=List.take_sublist 4 (L.core.work.take 161)
-   simpa only [A161Fold.accReg,List.take_take,show min 4 161=4 by decide] using h
-  have acc:=sub.subset hu
-  simp only [A161GenericFold.domain,List.mem_cons,List.mem_append]
-  tauto
- simp only [A161Low4GenericFold.ambient,List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false] at hu
- simp only [A161GenericFold.ambient,List.mem_toFinset,List.mem_cons,List.mem_append,List.not_mem_nil,or_false]
- rcases hu with h|h|h|h|((h|h)|h)
- · tauto
- · tauto
- · tauto
- · tauto
- · tauto
- · tauto
- · have hLow:u∈L.core.work.take 4→u∈A161GenericFold.domain L:=low u
-   tauto
-
-open A161Low4FixedFold
-
-theorem ambient_fine : (A161Low4GenericFold.ambient L g hs100).toFinset⊆insert d (wires (aBodyTriple L g)) :=
- (ambient_subset L g d (A161Facts.loans95 L)).trans A161FineSupport.ambient_fine
-
-theorem fold_fine : wires fold100⊆insert d (wires (aBodyTriple L g)) :=
- (A161Low4GenericFold.support L hw hn g hs100 checked.out cert100).trans ambient_fine
-
-theorem body_fine : wires body⊆insert d (wires (aBodyTriple L g)) := by
- intro u hu
- simp only [A161Low4FixedFold.body,wires_append,Finset.mem_union] at hu
- rcases hu with hu|(hu|hu)
- · apply Finset.mem_insert_of_mem
-   simp only [aBodyTriple,wires_append,Finset.mem_union]
-   exact Or.inl hu
- · apply Finset.mem_insert_of_mem
-   simp only [aBodyTriple,wires_append,Finset.mem_union]
-   exact Or.inr (Or.inl hu)
- · exact fold_fine hu
-
-
-end ECDSAAdd.Entrant.A161Low4Fine
-
-end
-
-end
-section
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-section
-open ECDSAAdd
-
--- Verified component KnownSparseFold
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.KnownSparseFold
-open Arithmetic ZeroReadDevelop
-set_option autoImplicit false
-
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-set_option linter.unusedSimpArgs false
-
-def Zero (K:List Wire)(s:State):Prop:=∀q∈K,s.basis q=false
-def remove (K:List Wire)(t:Wire):List Wire:=K.filter (fun q=>decide (q≠t))
-def tracked:List Wire:=[4760,4373,4374,4375,4376]
-def next (K:List Wire):Instr→List Wire
- | .X t=>remove K t
- | .CX a t=>if a∈K then K else remove K t
- | .CCX a b t=>if a∈K ∨ b∈K then K else remove K t
- | .measureX t _ _=>if t∈tracked then t::remove K t else remove K t
-
-def emit (K:List Wire):Instr→Program
- | .CCX a b t=>if a∈K ∨ b∈K then [] else [.CCX a b t]
- | i=>[i]
-
-theorem zero_remove(K:List Wire)(i:Instr)(s:State)(m:List Bool)(hz:Zero K s):
- Zero (remove K (targetOf i)) (run [i] m s):=by
- intro q hq
- have h:=List.mem_filter.mp hq
- exact (single_target_preserves q i s m (by simpa using Ne.symm (of_decide_eq_true h.2))).trans (hz q h.1)
-
-theorem cx_zero(a t:Wire)(s:State)(m:List Bool)(hz:s.basis a=false):
- run [.CX a t] m s=s:=by simp [run,hz,writeBit]
-theorem ccx_zero(a b t:Wire)(s:State)(m:List Bool)(hz:s.basis a=false ∨ s.basis b=false):
- run [.CCX a b t] m s=s:=by rcases hz with hz|hz <;> simp [run,hz,writeBit]
-
-theorem next_zero(K:List Wire)(i:Instr)(s:State)(m:List Bool)(hz:Zero K s):
- Zero (next K i) (run [i] m s):=by
- cases i with
- | X t=>simpa only [next,targetOf] using zero_remove K (.X t) s m hz
- | CX a t=>
-  by_cases ha:a∈K
-  · simp only [next,if_pos ha]
-    rw [cx_zero a t s m (hz a ha)]
-    exact hz
-  · simpa only [next,if_neg ha] using zero_remove K (.CX a t) s m hz
- | CCX a b t=>
-  by_cases h:a∈K ∨ b∈K
-  · simp only [next,if_pos h]
-    rw [ccx_zero a b t s m (h.elim (fun h=>Or.inl (hz a h)) (fun h=>Or.inr (hz b h)))]
-    exact hz
-  · simpa only [next,if_neg h] using zero_remove K (.CCX a b t) s m hz
- | measureX t c0 c1=>
-  by_cases ht:t∈tracked
-  · intro q hq
-    simp only [next,if_pos ht,List.mem_cons] at hq
-    rcases hq with rfl|hq
-    · simp [run,measureAndCorrect,writeBit]
-    · exact zero_remove K (.measureX t c0 c1) s m hz q hq
-  · simpa only [next,if_neg ht] using zero_remove K (.measureX t c0 c1) s m hz
-
-theorem emit_eq(K:List Wire)(i:Instr)(s:State)(m:List Bool)(hz:Zero K s):
- run (emit K i) m s=run [i] m s:=by
- cases i with
- | X t=>rfl
- | CX a t=>rfl
- | measureX t c0 c1=>rfl
- | CCX a b t=>
-  by_cases h:a∈K ∨ b∈K
-  · simp only [emit,if_pos h,run]
-    exact (ccx_zero a b t s m (h.elim (fun h=>Or.inl (hz a h)) (fun h=>Or.inr (hz b h)))).symm
-  · simp only [emit,if_neg h]
-
-theorem majority_zero(K:List Wire)(a b c d:Wire)(nd:[a,b,c,d].Nodup)
- (s:State)(m:List Bool)(hz:Zero K s):Zero (remove K d) (run (majority a b c d) m s):=by
- rw [majority_correct a b c d nd s m]
- intro q hq
- have h:=List.mem_filter.mp hq
- simpa [writeBit,Function.update_apply,of_decide_eq_true h.2,Ne.symm (of_decide_eq_true h.2)] using hz q h.1
-
-
-
-
-end ECDSAAdd.Entrant.KnownSparseFold
-
-end
-
--- Verified component KnownSparseCert
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.KnownSparseFold
-open Arithmetic ZeroReadDevelop
-set_option autoImplicit false
-
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-set_option linter.unusedSimpArgs false
-
-def removed(K:List Wire):Instr→Nat
- | .CCX a b _=>if a∈K ∨ b∈K then 1 else 0
- | _=>0
-
-theorem emit_counts(K:List Wire)(i:Instr):
- toffoliCount (emit K i)+removed K i=toffoliCount [i] ∧
- measurementCount (emit K i)=measurementCount [i]:=by
- cases i with
- | X t=>exact ⟨rfl,rfl⟩
- | CX a t=>exact ⟨rfl,rfl⟩
- | measureX t c0 c1=>exact ⟨rfl,rfl⟩
- | CCX a b t=>by_cases h:a∈K ∨ b∈K <;> simp [emit,removed,h,toffoliCount,measurementCount]
-
-theorem emit_sublist(K:List Wire)(i:Instr):(emit K i).Sublist [i]:=by
- cases i with
- | X t=>exact List.Sublist.refl _
- | CX a t=>exact List.Sublist.refl _
- | measureX t c0 c1=>exact List.Sublist.refl _
- | CCX a b t=>by_cases h:a∈K ∨ b∈K <;> simp [emit,h]
-
-inductive Cert : List Wire→Program→Program→List Wire→Nat→Prop
- | nil(K):Cert K [] [] K 0
- | normal(K)(i)(p r)(Kf)(n)(tail:Cert (next K i) p r Kf n):
-  Cert K (i::p) (emit K i++r) Kf (removed K i+n)
- | maj(K)(a b c d)(p r)(Kf)(n)(nd:[a,b,c,d].Nodup)
-  (tail:Cert (remove K d) p r Kf n):
-  Cert K (majority a b c d++p) (majority a b c d++r) Kf n
-
-theorem Cert.correct(K:List Wire)(p r:Program)(Kf:List Wire)(n:Nat)(h:Cert K p r Kf n)
- (s:State)(m:List Bool)(hz:Zero K s):run r m s=run p m s ∧ Zero Kf (run p m s):=by
- induction h generalizing s m with
- | nil K=>exact ⟨rfl,hz⟩
- | normal K i p r Kf n tail ih=>
-  have z:=next_zero K i s m hz
-  have hi:=ih (run [i] m s) (m.drop (measurementCount [i])) z
-  have mm:measurementCount (emit K i)=measurementCount [i]:=(emit_counts K i).2
-  constructor
-  · change run (emit K i++r) m s=run ([i]++p) m s
-    rw [run_cat,run_cat,mm,emit_eq K i s m hz]
-    exact hi.1
-  · change Zero Kf (run ([i]++p) m s)
-    rw [run_cat]
-    exact hi.2
- | maj K a b c d p r Kf n nd tail ih=>
-  have z:=majority_zero K a b c d nd s m hz
-  have hi:=ih (run (majority a b c d) m s) (m.drop (measurementCount (majority a b c d))) z
-  constructor
-  · rw [run_cat,run_cat]
-    exact hi.1
-  · rw [run_cat]
-    exact hi.2
-
-theorem Cert.counts(K:List Wire)(p r:Program)(Kf:List Wire)(n:Nat)(h:Cert K p r Kf n):
- toffoliCount r+n=toffoliCount p ∧ measurementCount r=measurementCount p:=by
- induction h with
- | nil K=>exact ⟨rfl,rfl⟩
- | normal K i p r Kf n tail ih=>
-  have e:=emit_counts K i
-  change toffoliCount (emit K i++r)+(removed K i+n)=toffoliCount ([i]++p) ∧
-   measurementCount (emit K i++r)=measurementCount ([i]++p)
-  simp only [toffoliCount_append,measurementCount_append]
-  exact ⟨by omega,by omega⟩
- | maj K a b c d p r Kf n nd tail ih=>
-  simp only [toffoliCount_append,measurementCount_append]
-  exact ⟨by omega,by omega⟩
-
-theorem Cert.sublist(K:List Wire)(p r:Program)(Kf:List Wire)(n:Nat)(h:Cert K p r Kf n):r.Sublist p:=by
- induction h with
- | nil K=>exact List.Sublist.refl _
- | normal K i p r Kf n tail ih=>exact (emit_sublist K i).append ih
- | maj K a b c d p r Kf n nd tail ih=>exact (List.Sublist.refl _).append ih
-
-theorem Cert.append(K Kmid Kf:List Wire)(p r p' r':Program)(n n':Nat)
- (h:Cert K p r Kmid n)(h':Cert Kmid p' r' Kf n'):
- Cert K (p++p') (r++r') Kf (n+n'):=by
- induction h with
- | nil K=>simpa using h'
- | normal K i p r Kmid n tail ih=>
-  simpa only [List.cons_append,List.append_assoc,Nat.add_assoc] using Cert.normal K i (p++p') (r++r') Kf (n+n') (ih h')
- | maj K a b c d p r Kmid n nd tail ih=>
-  simpa only [List.append_assoc] using Cert.maj K a b c d (p++p') (r++r') Kf (n+n') nd (ih h')
-
-
-
-
-
-end ECDSAAdd.Entrant.KnownSparseFold
-
-end
-
--- Verified component KnownSparseCompiler
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.KnownSparseFold
-open Arithmetic ZeroReadDevelop
-set_option autoImplicit false
-
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-set_option linter.unusedSimpArgs false
-
-structure Checked(K:List Wire)(p:Program) where
- out:Program
- final:List Wire
- saved:Nat
- proof:Cert K p out final saved
-
-def normal(K:List Wire)(i:Instr)(p:Program)(r:Option (Checked (next K i) p)):
- Option (Checked K (i::p)):=r.map (fun v=>⟨emit K i++v.out,v.final,removed K i+v.saved,Cert.normal K i p v.out v.final v.saved v.proof⟩)
-
-def compileFuel(K:List Wire):Nat→(p:Program)→Option (Checked K p)
- | 0,_=>none
- | _+1,[]=>some ⟨[],K,0,Cert.nil K⟩
- | n+1,.CX a b::.CX aa c::.CCX bb cc d::i3::i4::i5::rest=>
-  if hm:(Instr.CX a b::.CX aa c::.CCX bb cc d::i3::i4::i5::rest).take 6=majority a b c d ∧ [a,b,c,d].Nodup then
-   match compileFuel (remove K d) n rest with
-   | none=>none
-   | some r=>some ⟨majority a b c d++r.out,r.final,r.saved,by
-      have hp:(Instr.CX a b::.CX aa c::.CCX bb cc d::i3::i4::i5::rest)=majority a b c d++rest:=by
-       calc
-        _=(Instr.CX a b::.CX aa c::.CCX bb cc d::i3::i4::i5::rest).take 6++
-          (Instr.CX a b::.CX aa c::.CCX bb cc d::i3::i4::i5::rest).drop 6:=(List.take_append_drop 6 _).symm
-        _=majority a b c d++rest:=by rw [hm.1];rfl
-      simpa only [←hp] using Cert.maj K a b c d rest r.out r.final r.saved hm.2 r.proof⟩
-  else normal K (.CX a b) (.CX aa c::.CCX bb cc d::i3::i4::i5::rest)
-   (compileFuel (next K (.CX a b)) n (.CX aa c::.CCX bb cc d::i3::i4::i5::rest))
- | n+1,i::rest=>normal K i rest (compileFuel (next K i) n rest)
-
-def majorityHead:Program→Bool
- | .CX a b::.CX aa c::.CCX bb cc d::i3::i4::i5::_=>
-  decide (([Instr.CX a b,.CX aa c,.CCX bb cc d,i3,i4,i5]:Program)=majority a b c d ∧ [a,b,c,d].Nodup)
- | _=>false
-
-def cutAux:Nat→Nat→Program→Nat
- | 0,n,_=>n
- | _+1,n,[]=>n
- | fuel+1,n,p=>
-  let step:=if majorityHead p then 6 else 1
-  if 1024<n+step then n else cutAux fuel (n+step) (p.drop step)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-end ECDSAAdd.Entrant.KnownSparseFold
-
-end
-
--- Verified component KnownSparseApply
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.KnownSparseFold
-open Arithmetic
-set_option autoImplicit false
-
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-end ECDSAAdd.Entrant.KnownSparseFold
-
-end
-
--- Verified component KnownSparseResult
-section
-open ECDSAAdd ECDSAAdd.Entrant
-namespace ECDSAAdd.Entrant.KnownSparseFold
-set_option autoImplicit false
-
-set_option maxRecDepth 100000
-set_option maxHeartbeats 50000000
-
-theorem result_isSome {α β:Type}(o:Option α)(f:α→β)(v:β)(h:o.map f=some v):o.isSome=true:=by
- cases o with
- | none=>simp at h
- | some a=>rfl
-
-def fromResult {α β:Type}(o:Option α)(f:α→β)(v:β)(h:o.map f=some v):α:=
- o.get (result_isSome o f v h)
-
-theorem fromResult_eq {α β:Type}(o:Option α)(f:α→β)(v:β)(h:o.map f=some v):
- f (fromResult o f v h)=v:=by
- cases o with
- | none=>simp at h
- | some a=>exact Option.some.inj h
-
-structure ExactChecked(K:List Wire)(p:Program)(Kf:List Wire)(n:Nat) where
- out:Program
- proof:Cert K p out Kf n
-
-def normalize(K:List Wire)(p:Program)(Kf:List Wire)(n:Nat)(o:Option (Checked K p))
- (h:o.map (fun r=>(r.saved,r.final))=some (n,Kf)):ExactChecked K p Kf n:=
- let r:=fromResult o (fun r=>(r.saved,r.final)) (n,Kf) h
- have he:(r.saved,r.final)=(n,Kf):=fromResult_eq o (fun r=>(r.saved,r.final)) (n,Kf) h
- ⟨r.out,by
-   have hs:r.saved=n:=congrArg Prod.fst he
-   have hf:r.final=Kf:=congrArg Prod.snd he
-   simpa only [hs,hf] using r.proof⟩
-
-def ExactChecked.append(K Km Kf:List Wire)(p q:Program)(n m:Nat)
- (a:ExactChecked K p Km n)(b:ExactChecked Km q Kf m):ExactChecked K (p++q) Kf (n+m):=
- ⟨a.out++b.out,Cert.append K Km Kf p a.out q b.out n m a.proof b.proof⟩
-
-end ECDSAAdd.Entrant.KnownSparseFold
-
-end
-
--- Verified component KnownCMidStaged
 section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.KnownCMidStaged
 open Arithmetic KnownSparseFold
 set_option autoImplicit false
-
 set_option maxRecDepth 100000
 set_option maxHeartbeats 50000000
 set_option linter.unusedSimpArgs false
-def known0:List Wire:=[4373,4374,4375,4376,4760]
-def known1:List Wire:=[4760]
-def known2:List Wire:=[4760]
-def known3:List Wire:=[4373,4374,4375,4376,4760]
-def known4:List Wire:=[4373,4374,4375,4376,4760]
-def known5:List Wire:=[4373,4374,4375,4376,4760]
-def known6:List Wire:=[4373,4374,4375,4376,4760]
-def known7:List Wire:=[4373,4374,4375,4376,4760]
-def known8:List Wire:=[4373,4374,4375,4376,4760]
-def known9:List Wire:=[4373,4374,4375,4376,4760]
-def known10:List Wire:=[4373,4374,4375,4376,4760]
-def known11:List Wire:=[4373,4374,4375,4376,4760]
-def known12:List Wire:=[4373,4374,4375,4376,4760]
-def known13:List Wire:=[4373,4374,4375,4376,4760]
-def known14:List Wire:=[4373,4374,4375,4376,4760]
-def known15:List Wire:=[4373,4374,4375,4376,4760]
-def known16:List Wire:=[4373,4374,4375,4376,4760]
-def known17:List Wire:=[4373,4374,4375,4376,4760]
-def known18:List Wire:=[4373,4374,4375,4376,4760]
-def known19:List Wire:=[4373,4374,4375,4376,4760]
-def known20:List Wire:=[4760]
-def known21:List Wire:=[4760]
-def known22:List Wire:=[4760]
-def known23:List Wire:=[4760]
-def known24:List Wire:=[4760]
-def known25:List Wire:=[4760]
-def known26:List Wire:=[4760]
-def known27:List Wire:=[4760]
-def known28:List Wire:=[4760]
-def known29:List Wire:=[4760]
-def known30:List Wire:=[4760]
-def known31:List Wire:=[4760]
-def known32:List Wire:=[4760]
-def known33:List Wire:=[4760]
-def known34:List Wire:=[4760]
-def known35:List Wire:=[4760]
-def known36:List Wire:=[4760]
-def known37:List Wire:=[4760]
-def known38:List Wire:=[4373,4374,4375,4376,4760]
-def known39:List Wire:=[4373,4374,4375,4376,4760]
-def known40:List Wire:=[4373,4374,4375,4376,4760]
-def known41:List Wire:=[4373,4374,4375,4376,4760]
-def known42:List Wire:=[4373,4374,4375,4376,4760]
-def known43:List Wire:=[4373,4374,4375,4376,4760]
-def known44:List Wire:=[4373,4374,4375,4376,4760]
-def known45:List Wire:=[4373,4374,4375,4376,4760]
-def known46:List Wire:=[4373,4374,4375,4376,4760]
-def known47:List Wire:=[4373,4374,4375,4376,4760]
-def known48:List Wire:=[4373,4374,4375,4376,4760]
-def known49:List Wire:=[4373,4374,4375,4376,4760]
-def known50:List Wire:=[4373,4374,4375,4376,4760]
-def known51:List Wire:=[4373,4374,4375,4376,4760]
-def known52:List Wire:=[4373,4374,4375,4376,4760]
-def known53:List Wire:=[4373,4374,4375,4376,4760]
-def known54:List Wire:=[4373,4374,4375,4376,4760]
-def known55:List Wire:=[4373,4374,4375,4376,4760]
-def known56:List Wire:=[4373,4374,4375,4376,4760]
-def known57:List Wire:=[4376,4760]
-def known58:List Wire:=[4760]
-def known59:List Wire:=[4760]
-def known60:List Wire:=[4373,4374,4375,4376,4760]
-theorem result0:(compileFuel known0 127 block0).map (fun r=>(r.saved,r.final))=some (0,known1):=by decide +kernel
-def opt0:ExactChecked known0 block0 known1 0:=normalize _ _ _ _ _ result0
-theorem result1:(compileFuel known1 129 block1).map (fun r=>(r.saved,r.final))=some (0,known2):=by decide +kernel
-def opt1:ExactChecked known1 block1 known2 0:=normalize _ _ _ _ _ result1
-theorem result2:(compileFuel known2 129 block2).map (fun r=>(r.saved,r.final))=some (0,known3):=by decide +kernel
-def opt2:ExactChecked known2 block2 known3 0:=normalize _ _ _ _ _ result2
-theorem result3:(compileFuel known3 129 block3).map (fun r=>(r.saved,r.final))=some (0,known4):=by decide +kernel
-def opt3:ExactChecked known3 block3 known4 0:=normalize _ _ _ _ _ result3
-theorem result4:(compileFuel known4 129 block4).map (fun r=>(r.saved,r.final))=some (0,known5):=by decide +kernel
-def opt4:ExactChecked known4 block4 known5 0:=normalize _ _ _ _ _ result4
-theorem result5:(compileFuel known5 126 block5).map (fun r=>(r.saved,r.final))=some (4,known6):=by decide +kernel
-def opt5:ExactChecked known5 block5 known6 4:=normalize _ _ _ _ _ result5
-theorem result6:(compileFuel known6 127 block6).map (fun r=>(r.saved,r.final))=some (0,known7):=by decide +kernel
-def opt6:ExactChecked known6 block6 known7 0:=normalize _ _ _ _ _ result6
-theorem result7:(compileFuel known7 127 block7).map (fun r=>(r.saved,r.final))=some (0,known8):=by decide +kernel
-def opt7:ExactChecked known7 block7 known8 0:=normalize _ _ _ _ _ result7
-theorem result8:(compileFuel known8 127 block8).map (fun r=>(r.saved,r.final))=some (0,known9):=by decide +kernel
-def opt8:ExactChecked known8 block8 known9 0:=normalize _ _ _ _ _ result8
-theorem result9:(compileFuel known9 127 block9).map (fun r=>(r.saved,r.final))=some (0,known10):=by decide +kernel
-def opt9:ExactChecked known9 block9 known10 0:=normalize _ _ _ _ _ result9
-theorem result10:(compileFuel known10 127 block10).map (fun r=>(r.saved,r.final))=some (0,known11):=by decide +kernel
-def opt10:ExactChecked known10 block10 known11 0:=normalize _ _ _ _ _ result10
-theorem result11:(compileFuel known11 127 block11).map (fun r=>(r.saved,r.final))=some (0,known12):=by decide +kernel
-def opt11:ExactChecked known11 block11 known12 0:=normalize _ _ _ _ _ result11
-theorem result12:(compileFuel known12 127 block12).map (fun r=>(r.saved,r.final))=some (0,known13):=by decide +kernel
-def opt12:ExactChecked known12 block12 known13 0:=normalize _ _ _ _ _ result12
-theorem result13:(compileFuel known13 129 block13).map (fun r=>(r.saved,r.final))=some (0,known14):=by decide +kernel
-def opt13:ExactChecked known13 block13 known14 0:=normalize _ _ _ _ _ result13
-theorem result14:(compileFuel known14 129 block14).map (fun r=>(r.saved,r.final))=some (0,known15):=by decide +kernel
-def opt14:ExactChecked known14 block14 known15 0:=normalize _ _ _ _ _ result14
-theorem result15:(compileFuel known15 129 block15).map (fun r=>(r.saved,r.final))=some (0,known16):=by decide +kernel
-def opt15:ExactChecked known15 block15 known16 0:=normalize _ _ _ _ _ result15
-theorem result16:(compileFuel known16 129 block16).map (fun r=>(r.saved,r.final))=some (0,known17):=by decide +kernel
-def opt16:ExactChecked known16 block16 known17 0:=normalize _ _ _ _ _ result16
-theorem result17:(compileFuel known17 129 block17).map (fun r=>(r.saved,r.final))=some (0,known18):=by decide +kernel
-def opt17:ExactChecked known17 block17 known18 0:=normalize _ _ _ _ _ result17
-theorem result18:(compileFuel known18 129 block18).map (fun r=>(r.saved,r.final))=some (0,known19):=by decide +kernel
-def opt18:ExactChecked known18 block18 known19 0:=normalize _ _ _ _ _ result18
-theorem result19:(compileFuel known19 125 block19).map (fun r=>(r.saved,r.final))=some (0,known20):=by decide +kernel
-def opt19:ExactChecked known19 block19 known20 0:=normalize _ _ _ _ _ result19
-theorem result20:(compileFuel known20 128 block20).map (fun r=>(r.saved,r.final))=some (0,known21):=by decide +kernel
-def opt20:ExactChecked known20 block20 known21 0:=normalize _ _ _ _ _ result20
-theorem result21:(compileFuel known21 127 block21).map (fun r=>(r.saved,r.final))=some (0,known22):=by decide +kernel
-def opt21:ExactChecked known21 block21 known22 0:=normalize _ _ _ _ _ result21
-theorem result22:(compileFuel known22 127 block22).map (fun r=>(r.saved,r.final))=some (0,known23):=by decide +kernel
-def opt22:ExactChecked known22 block22 known23 0:=normalize _ _ _ _ _ result22
-theorem result23:(compileFuel known23 127 block23).map (fun r=>(r.saved,r.final))=some (0,known24):=by decide +kernel
-def opt23:ExactChecked known23 block23 known24 0:=normalize _ _ _ _ _ result23
-theorem result24:(compileFuel known24 127 block24).map (fun r=>(r.saved,r.final))=some (0,known25):=by decide +kernel
-def opt24:ExactChecked known24 block24 known25 0:=normalize _ _ _ _ _ result24
-theorem result25:(compileFuel known25 127 block25).map (fun r=>(r.saved,r.final))=some (0,known26):=by decide +kernel
-def opt25:ExactChecked known25 block25 known26 0:=normalize _ _ _ _ _ result25
-theorem result26:(compileFuel known26 127 block26).map (fun r=>(r.saved,r.final))=some (0,known27):=by decide +kernel
-def opt26:ExactChecked known26 block26 known27 0:=normalize _ _ _ _ _ result26
-theorem result27:(compileFuel known27 127 block27).map (fun r=>(r.saved,r.final))=some (0,known28):=by decide +kernel
-def opt27:ExactChecked known27 block27 known28 0:=normalize _ _ _ _ _ result27
-theorem result28:(compileFuel known28 127 block28).map (fun r=>(r.saved,r.final))=some (0,known29):=by decide +kernel
-def opt28:ExactChecked known28 block28 known29 0:=normalize _ _ _ _ _ result28
-theorem result29:(compileFuel known29 127 block29).map (fun r=>(r.saved,r.final))=some (0,known30):=by decide +kernel
-def opt29:ExactChecked known29 block29 known30 0:=normalize _ _ _ _ _ result29
-theorem result30:(compileFuel known30 127 block30).map (fun r=>(r.saved,r.final))=some (0,known31):=by decide +kernel
-def opt30:ExactChecked known30 block30 known31 0:=normalize _ _ _ _ _ result30
-theorem result31:(compileFuel known31 129 block31).map (fun r=>(r.saved,r.final))=some (0,known32):=by decide +kernel
-def opt31:ExactChecked known31 block31 known32 0:=normalize _ _ _ _ _ result31
-theorem result32:(compileFuel known32 129 block32).map (fun r=>(r.saved,r.final))=some (0,known33):=by decide +kernel
-def opt32:ExactChecked known32 block32 known33 0:=normalize _ _ _ _ _ result32
-theorem result33:(compileFuel known33 129 block33).map (fun r=>(r.saved,r.final))=some (0,known34):=by decide +kernel
-def opt33:ExactChecked known33 block33 known34 0:=normalize _ _ _ _ _ result33
-theorem result34:(compileFuel known34 129 block34).map (fun r=>(r.saved,r.final))=some (0,known35):=by decide +kernel
-def opt34:ExactChecked known34 block34 known35 0:=normalize _ _ _ _ _ result34
-theorem result35:(compileFuel known35 129 block35).map (fun r=>(r.saved,r.final))=some (0,known36):=by decide +kernel
-def opt35:ExactChecked known35 block35 known36 0:=normalize _ _ _ _ _ result35
-theorem result36:(compileFuel known36 129 block36).map (fun r=>(r.saved,r.final))=some (0,known37):=by decide +kernel
-def opt36:ExactChecked known36 block36 known37 0:=normalize _ _ _ _ _ result36
-theorem result37:(compileFuel known37 129 block37).map (fun r=>(r.saved,r.final))=some (4,known38):=by decide +kernel
-def opt37:ExactChecked known37 block37 known38 4:=normalize _ _ _ _ _ result37
-theorem result38:(compileFuel known38 129 block38).map (fun r=>(r.saved,r.final))=some (0,known39):=by decide +kernel
-def opt38:ExactChecked known38 block38 known39 0:=normalize _ _ _ _ _ result38
-theorem result39:(compileFuel known39 129 block39).map (fun r=>(r.saved,r.final))=some (0,known40):=by decide +kernel
-def opt39:ExactChecked known39 block39 known40 0:=normalize _ _ _ _ _ result39
-theorem result40:(compileFuel known40 129 block40).map (fun r=>(r.saved,r.final))=some (0,known41):=by decide +kernel
-def opt40:ExactChecked known40 block40 known41 0:=normalize _ _ _ _ _ result40
-theorem result41:(compileFuel known41 129 block41).map (fun r=>(r.saved,r.final))=some (0,known42):=by decide +kernel
-def opt41:ExactChecked known41 block41 known42 0:=normalize _ _ _ _ _ result41
-theorem result42:(compileFuel known42 129 block42).map (fun r=>(r.saved,r.final))=some (0,known43):=by decide +kernel
-def opt42:ExactChecked known42 block42 known43 0:=normalize _ _ _ _ _ result42
-theorem result43:(compileFuel known43 129 block43).map (fun r=>(r.saved,r.final))=some (0,known44):=by decide +kernel
-def opt43:ExactChecked known43 block43 known44 0:=normalize _ _ _ _ _ result43
-theorem result44:(compileFuel known44 129 block44).map (fun r=>(r.saved,r.final))=some (0,known45):=by decide +kernel
-def opt44:ExactChecked known44 block44 known45 0:=normalize _ _ _ _ _ result44
-theorem result45:(compileFuel known45 129 block45).map (fun r=>(r.saved,r.final))=some (0,known46):=by decide +kernel
-def opt45:ExactChecked known45 block45 known46 0:=normalize _ _ _ _ _ result45
-theorem result46:(compileFuel known46 129 block46).map (fun r=>(r.saved,r.final))=some (0,known47):=by decide +kernel
-def opt46:ExactChecked known46 block46 known47 0:=normalize _ _ _ _ _ result46
-theorem result47:(compileFuel known47 129 block47).map (fun r=>(r.saved,r.final))=some (0,known48):=by decide +kernel
-def opt47:ExactChecked known47 block47 known48 0:=normalize _ _ _ _ _ result47
-theorem result48:(compileFuel known48 129 block48).map (fun r=>(r.saved,r.final))=some (0,known49):=by decide +kernel
-def opt48:ExactChecked known48 block48 known49 0:=normalize _ _ _ _ _ result48
-theorem result49:(compileFuel known49 129 block49).map (fun r=>(r.saved,r.final))=some (0,known50):=by decide +kernel
-def opt49:ExactChecked known49 block49 known50 0:=normalize _ _ _ _ _ result49
-theorem result50:(compileFuel known50 129 block50).map (fun r=>(r.saved,r.final))=some (0,known51):=by decide +kernel
-def opt50:ExactChecked known50 block50 known51 0:=normalize _ _ _ _ _ result50
-theorem result51:(compileFuel known51 129 block51).map (fun r=>(r.saved,r.final))=some (0,known52):=by decide +kernel
-def opt51:ExactChecked known51 block51 known52 0:=normalize _ _ _ _ _ result51
-theorem result52:(compileFuel known52 129 block52).map (fun r=>(r.saved,r.final))=some (0,known53):=by decide +kernel
-def opt52:ExactChecked known52 block52 known53 0:=normalize _ _ _ _ _ result52
-theorem result53:(compileFuel known53 129 block53).map (fun r=>(r.saved,r.final))=some (0,known54):=by decide +kernel
-def opt53:ExactChecked known53 block53 known54 0:=normalize _ _ _ _ _ result53
-theorem result54:(compileFuel known54 129 block54).map (fun r=>(r.saved,r.final))=some (0,known55):=by decide +kernel
-def opt54:ExactChecked known54 block54 known55 0:=normalize _ _ _ _ _ result54
-theorem result55:(compileFuel known55 129 block55).map (fun r=>(r.saved,r.final))=some (0,known56):=by decide +kernel
-def opt55:ExactChecked known55 block55 known56 0:=normalize _ _ _ _ _ result55
-theorem result56:(compileFuel known56 129 block56).map (fun r=>(r.saved,r.final))=some (0,known57):=by decide +kernel
-def opt56:ExactChecked known56 block56 known57 0:=normalize _ _ _ _ _ result56
-theorem result57:(compileFuel known57 127 block57).map (fun r=>(r.saved,r.final))=some (0,known58):=by decide +kernel
-def opt57:ExactChecked known57 block57 known58 0:=normalize _ _ _ _ _ result57
-theorem result58:(compileFuel known58 129 block58).map (fun r=>(r.saved,r.final))=some (0,known59):=by decide +kernel
-def opt58:ExactChecked known58 block58 known59 0:=normalize _ _ _ _ _ result58
-theorem result59:(compileFuel known59 72 block59).map (fun r=>(r.saved,r.final))=some (0,known60):=by decide +kernel
-def opt59:ExactChecked known59 block59 known60 0:=normalize _ _ _ _ _ result59
-def join1_3Opt:ExactChecked known1 join1_3 known3 0:=ExactChecked.append _ _ _ _ _ _ _ opt1 opt2
-def join0_3Opt:ExactChecked known0 join0_3 known3 0:=ExactChecked.append _ _ _ _ _ _ _ opt0 join1_3Opt
-def join3_5Opt:ExactChecked known3 join3_5 known5 0:=ExactChecked.append _ _ _ _ _ _ _ opt3 opt4
-def join5_7Opt:ExactChecked known5 join5_7 known7 4:=ExactChecked.append _ _ _ _ _ _ _ opt5 opt6
-def join3_7Opt:ExactChecked known3 join3_7 known7 4:=ExactChecked.append _ _ _ _ _ _ _ join3_5Opt join5_7Opt
-def join0_7Opt:ExactChecked known0 join0_7 known7 4:=ExactChecked.append _ _ _ _ _ _ _ join0_3Opt join3_7Opt
-def join7_9Opt:ExactChecked known7 join7_9 known9 0:=ExactChecked.append _ _ _ _ _ _ _ opt7 opt8
-def join9_11Opt:ExactChecked known9 join9_11 known11 0:=ExactChecked.append _ _ _ _ _ _ _ opt9 opt10
-def join7_11Opt:ExactChecked known7 join7_11 known11 0:=ExactChecked.append _ _ _ _ _ _ _ join7_9Opt join9_11Opt
-def join11_13Opt:ExactChecked known11 join11_13 known13 0:=ExactChecked.append _ _ _ _ _ _ _ opt11 opt12
-def join13_15Opt:ExactChecked known13 join13_15 known15 0:=ExactChecked.append _ _ _ _ _ _ _ opt13 opt14
-def join11_15Opt:ExactChecked known11 join11_15 known15 0:=ExactChecked.append _ _ _ _ _ _ _ join11_13Opt join13_15Opt
-def join7_15Opt:ExactChecked known7 join7_15 known15 0:=ExactChecked.append _ _ _ _ _ _ _ join7_11Opt join11_15Opt
-def join0_15Opt:ExactChecked known0 join0_15 known15 4:=ExactChecked.append _ _ _ _ _ _ _ join0_7Opt join7_15Opt
-def join16_18Opt:ExactChecked known16 join16_18 known18 0:=ExactChecked.append _ _ _ _ _ _ _ opt16 opt17
-def join15_18Opt:ExactChecked known15 join15_18 known18 0:=ExactChecked.append _ _ _ _ _ _ _ opt15 join16_18Opt
-def join18_20Opt:ExactChecked known18 join18_20 known20 0:=ExactChecked.append _ _ _ _ _ _ _ opt18 opt19
-def join20_22Opt:ExactChecked known20 join20_22 known22 0:=ExactChecked.append _ _ _ _ _ _ _ opt20 opt21
-def join18_22Opt:ExactChecked known18 join18_22 known22 0:=ExactChecked.append _ _ _ _ _ _ _ join18_20Opt join20_22Opt
-def join15_22Opt:ExactChecked known15 join15_22 known22 0:=ExactChecked.append _ _ _ _ _ _ _ join15_18Opt join18_22Opt
-def join22_24Opt:ExactChecked known22 join22_24 known24 0:=ExactChecked.append _ _ _ _ _ _ _ opt22 opt23
-def join24_26Opt:ExactChecked known24 join24_26 known26 0:=ExactChecked.append _ _ _ _ _ _ _ opt24 opt25
-def join22_26Opt:ExactChecked known22 join22_26 known26 0:=ExactChecked.append _ _ _ _ _ _ _ join22_24Opt join24_26Opt
-def join26_28Opt:ExactChecked known26 join26_28 known28 0:=ExactChecked.append _ _ _ _ _ _ _ opt26 opt27
-def join28_30Opt:ExactChecked known28 join28_30 known30 0:=ExactChecked.append _ _ _ _ _ _ _ opt28 opt29
-def join26_30Opt:ExactChecked known26 join26_30 known30 0:=ExactChecked.append _ _ _ _ _ _ _ join26_28Opt join28_30Opt
-def join22_30Opt:ExactChecked known22 join22_30 known30 0:=ExactChecked.append _ _ _ _ _ _ _ join22_26Opt join26_30Opt
-def join15_30Opt:ExactChecked known15 join15_30 known30 0:=ExactChecked.append _ _ _ _ _ _ _ join15_22Opt join22_30Opt
-def join0_30Opt:ExactChecked known0 join0_30 known30 4:=ExactChecked.append _ _ _ _ _ _ _ join0_15Opt join15_30Opt
-def join31_33Opt:ExactChecked known31 join31_33 known33 0:=ExactChecked.append _ _ _ _ _ _ _ opt31 opt32
-def join30_33Opt:ExactChecked known30 join30_33 known33 0:=ExactChecked.append _ _ _ _ _ _ _ opt30 join31_33Opt
-def join33_35Opt:ExactChecked known33 join33_35 known35 0:=ExactChecked.append _ _ _ _ _ _ _ opt33 opt34
-def join35_37Opt:ExactChecked known35 join35_37 known37 0:=ExactChecked.append _ _ _ _ _ _ _ opt35 opt36
-def join33_37Opt:ExactChecked known33 join33_37 known37 0:=ExactChecked.append _ _ _ _ _ _ _ join33_35Opt join35_37Opt
-def join30_37Opt:ExactChecked known30 join30_37 known37 0:=ExactChecked.append _ _ _ _ _ _ _ join30_33Opt join33_37Opt
-def join37_39Opt:ExactChecked known37 join37_39 known39 4:=ExactChecked.append _ _ _ _ _ _ _ opt37 opt38
-def join39_41Opt:ExactChecked known39 join39_41 known41 0:=ExactChecked.append _ _ _ _ _ _ _ opt39 opt40
-def join37_41Opt:ExactChecked known37 join37_41 known41 4:=ExactChecked.append _ _ _ _ _ _ _ join37_39Opt join39_41Opt
-def join41_43Opt:ExactChecked known41 join41_43 known43 0:=ExactChecked.append _ _ _ _ _ _ _ opt41 opt42
-def join43_45Opt:ExactChecked known43 join43_45 known45 0:=ExactChecked.append _ _ _ _ _ _ _ opt43 opt44
-def join41_45Opt:ExactChecked known41 join41_45 known45 0:=ExactChecked.append _ _ _ _ _ _ _ join41_43Opt join43_45Opt
-def join37_45Opt:ExactChecked known37 join37_45 known45 4:=ExactChecked.append _ _ _ _ _ _ _ join37_41Opt join41_45Opt
-def join30_45Opt:ExactChecked known30 join30_45 known45 4:=ExactChecked.append _ _ _ _ _ _ _ join30_37Opt join37_45Opt
-def join46_48Opt:ExactChecked known46 join46_48 known48 0:=ExactChecked.append _ _ _ _ _ _ _ opt46 opt47
-def join45_48Opt:ExactChecked known45 join45_48 known48 0:=ExactChecked.append _ _ _ _ _ _ _ opt45 join46_48Opt
-def join48_50Opt:ExactChecked known48 join48_50 known50 0:=ExactChecked.append _ _ _ _ _ _ _ opt48 opt49
-def join50_52Opt:ExactChecked known50 join50_52 known52 0:=ExactChecked.append _ _ _ _ _ _ _ opt50 opt51
-def join48_52Opt:ExactChecked known48 join48_52 known52 0:=ExactChecked.append _ _ _ _ _ _ _ join48_50Opt join50_52Opt
-def join45_52Opt:ExactChecked known45 join45_52 known52 0:=ExactChecked.append _ _ _ _ _ _ _ join45_48Opt join48_52Opt
-def join52_54Opt:ExactChecked known52 join52_54 known54 0:=ExactChecked.append _ _ _ _ _ _ _ opt52 opt53
-def join54_56Opt:ExactChecked known54 join54_56 known56 0:=ExactChecked.append _ _ _ _ _ _ _ opt54 opt55
-def join52_56Opt:ExactChecked known52 join52_56 known56 0:=ExactChecked.append _ _ _ _ _ _ _ join52_54Opt join54_56Opt
-def join56_58Opt:ExactChecked known56 join56_58 known58 0:=ExactChecked.append _ _ _ _ _ _ _ opt56 opt57
-def join58_60Opt:ExactChecked known58 join58_60 known60 0:=ExactChecked.append _ _ _ _ _ _ _ opt58 opt59
-def join56_60Opt:ExactChecked known56 join56_60 known60 0:=ExactChecked.append _ _ _ _ _ _ _ join56_58Opt join58_60Opt
-def join52_60Opt:ExactChecked known52 join52_60 known60 0:=ExactChecked.append _ _ _ _ _ _ _ join52_56Opt join56_60Opt
-def join45_60Opt:ExactChecked known45 join45_60 known60 0:=ExactChecked.append _ _ _ _ _ _ _ join45_52Opt join52_60Opt
-def join30_60Opt:ExactChecked known30 join30_60 known60 4:=ExactChecked.append _ _ _ _ _ _ _ join30_45Opt join45_60Opt
-def join0_60Opt:ExactChecked known0 join0_60 known60 8:=ExactChecked.append _ _ _ _ _ _ _ join0_30Opt join30_60Opt
-def body:Program:=join0_60Opt.out
--- D1 (gate margin): the compiler output is stated once, in Fold98 (`bank_match`).
-theorem literal_verified:ParkAProgramBool.programEq literal (C163Low4Middle.bankChecked.out)=true:=by
- unfold C163Low4Middle.bankChecked
- exact ECDSAAdd.Entrant.D1Opt.get_of_elim C163Low4Middle.bank_match C163Low4Middle.compiled_bank
 theorem literal_eq:literal=C163Low4Middle.bankChecked.out:=ParkAProgramBool.programEq_sound _ _ literal_verified
 theorem cert:Cert known0 (C163Low4Middle.bankChecked.out) body known60 8:=
  Eq.mp (congrArg (fun P:Program=>Cert known0 P body known60 8) literal_eq) join0_60Opt.proof
@@ -833,172 +104,7196 @@ def known51:List Wire:=[4373,4374,4375,4376,4760]
 def known52:List Wire:=[4373,4374,4375,4376,4760]
 def known53:List Wire:=[4373,4374,4375,4376,4760]
 def known54:List Wire:=[4373,4374,4375,4376,4760]
+def block0:Program:=[
+.CX 4113 4505,
+.CX 4113 4506,
+.CX 4113 4507,
+.CX 4113 4508,
+.CX 4113 4509,
+.CX 4113 4510,
+.CX 4113 4511,
+.CX 4113 4512,
+.CX 4113 4513,
+.CX 4113 4514,
+.CX 4113 4515,
+.CX 4113 4516,
+.CX 4113 4517,
+.CX 4113 4518,
+.CX 4113 4519,
+.CX 4113 4520,
+.CX 4113 4521,
+.CX 4113 4522,
+.CX 4113 4523,
+.CX 4113 4524,
+.CX 4113 4525,
+.CX 4113 4526,
+.CX 4113 4527,
+.CX 4113 4528,
+.CX 4113 4529,
+.CX 4113 4530,
+.CX 4113 4531,
+.CX 4113 4532,
+.CX 4113 4533,
+.CX 4113 4534,
+.CX 4113 4535,
+.CX 4113 4536,
+.CX 4113 4537,
+.CX 4113 4538,
+.CX 4113 4539,
+.CX 4113 4540,
+.CX 4113 4541,
+.CX 4113 4542,
+.CX 4113 4543,
+.CX 4113 4544,
+.CX 4113 4545,
+.CX 4113 4546,
+.CX 4113 4547,
+.CX 4113 4548,
+.CX 4113 4549,
+.CX 4113 4550,
+.CX 4113 4551,
+.CX 4113 4552,
+.CX 4113 4553,
+.CX 4113 4554,
+.CX 4113 4555,
+.CX 4113 4556,
+.CX 4113 4557,
+.CX 4113 4558,
+.CX 4113 4559,
+.CX 4113 4560,
+.CX 4113 4561,
+.CX 4113 4562,
+.CX 4113 4563,
+.CX 4113 4564,
+.CX 4113 4565,
+.CX 4113 4566,
+.CX 4113 4567,
+.CX 4113 4568,
+.CX 4113 4569,
+.CX 4113 4570,
+.CX 4113 4571,
+.CX 4113 4572,
+.CX 4113 4573,
+.CX 4113 4574,
+.CX 4113 4575,
+.CX 4113 4576,
+.CX 4113 4577,
+.CX 4113 4578,
+.CX 4113 4579,
+.CX 4113 4580,
+.CX 4113 4581,
+.CX 4113 4582,
+.CX 4113 4583,
+.CX 4113 4584,
+.CX 4113 4585,
+.CX 4113 4586,
+.CX 4113 4587,
+.CX 4113 4588,
+.CX 4113 4589,
+.CX 4113 4590,
+.CX 4113 4591,
+.CX 4113 4592,
+.CX 4113 4593,
+.CX 4113 4594,
+.CX 4113 4595,
+.CX 4113 4596,
+.CX 4113 4597,
+.CX 4113 4598,
+.CX 4113 4599,
+.CX 4113 4600,
+.CX 4113 4601,
+.CX 4113 4602,
+.CX 4113 4603,
+.CX 4113 4604,
+.CX 4113 4605,
+.CX 4113 4606,
+.CX 4113 4607,
+.CX 4113 4608,
+.CX 4113 4609,
+.CX 4113 4610,
+.CX 4113 4611,
+.CX 4113 4612,
+.CX 4113 4613,
+.CX 4113 4614,
+.CX 4113 4615,
+.CX 4113 4616,
+.CX 4113 4617,
+.CX 4113 4618,
+.CX 4113 4619,
+.CX 4113 4620,
+.CX 4113 4621,
+.CX 4113 4622,
+.CX 4113 4623,
+.CX 4113 4624,
+.CX 4113 4625,
+.CX 4113 4626,
+.CX 4113 4627,
+.CX 4113 4628,
+.CX 4113 4629,
+.CX 4113 4630,
+.CX 4113 4631,
+.CX 4113 4632
+]
 theorem result0:(compileFuel known0 129 block0).map (fun r=>(r.saved,r.final))=some (0,known1):=by decide +kernel
 def opt0:ExactChecked known0 block0 known1 0:=normalize _ _ _ _ _ result0
+def block1:Program:=[
+.CX 4113 4633,
+.CX 4113 4634,
+.CX 4113 4635,
+.CX 4113 4636,
+.CX 4113 4637,
+.CX 4113 4638,
+.CX 4113 4639,
+.CX 4113 4640,
+.CX 4113 4641,
+.CX 4113 4642,
+.CX 4113 4643,
+.CX 4113 4644,
+.CX 4113 4645,
+.CX 4113 4646,
+.CX 4113 4647,
+.CX 4113 4648,
+.CX 4113 4649,
+.CX 4113 4650,
+.CX 4113 4651,
+.CX 4113 4652,
+.CX 4113 4653,
+.CX 4113 4654,
+.CX 4113 4655,
+.CX 4113 4656,
+.CX 4113 4657,
+.CX 4113 4658,
+.CX 4113 4659,
+.CX 4113 4660,
+.CX 4113 4661,
+.X 2,
+.X 3,
+.X 4,
+.X 5,
+.X 6,
+.X 7,
+.X 8,
+.X 9,
+.X 10,
+.X 11,
+.X 12,
+.X 13,
+.X 14,
+.X 15,
+.X 16,
+.X 17,
+.X 18,
+.X 19,
+.X 20,
+.X 21,
+.X 22,
+.X 23,
+.X 24,
+.X 25,
+.X 26,
+.X 27,
+.X 28,
+.X 29,
+.X 30,
+.X 31,
+.X 32,
+.X 33,
+.X 34,
+.X 35,
+.X 36,
+.X 37,
+.X 38,
+.X 39,
+.X 40,
+.X 41,
+.X 42,
+.X 43,
+.X 44,
+.X 45,
+.X 46,
+.X 47,
+.X 48,
+.X 49,
+.X 50,
+.X 51,
+.X 52,
+.X 53,
+.X 54,
+.X 55,
+.X 56,
+.X 57,
+.X 58,
+.X 59,
+.X 60,
+.X 61,
+.X 62,
+.X 63,
+.X 64,
+.X 65,
+.X 66,
+.X 67,
+.X 68,
+.X 69,
+.X 70,
+.X 71,
+.X 72,
+.X 73,
+.X 74,
+.X 75,
+.X 76,
+.X 77,
+.X 78,
+.X 79,
+.X 80,
+.X 81,
+.X 82,
+.X 83,
+.X 84,
+.X 85,
+.X 86,
+.X 87,
+.X 88,
+.X 89,
+.X 90,
+.X 91,
+.X 92,
+.X 93,
+.X 94,
+.X 95,
+.X 96,
+.X 97,
+.X 98,
+.X 99,
+.X 100
+]
 theorem result1:(compileFuel known1 129 block1).map (fun r=>(r.saved,r.final))=some (0,known2):=by decide +kernel
 def opt1:ExactChecked known1 block1 known2 0:=normalize _ _ _ _ _ result1
+def block2:Program:=[
+.X 101,
+.X 102,
+.X 103,
+.X 104,
+.X 105,
+.X 106,
+.X 107,
+.X 108,
+.X 109,
+.X 110,
+.X 111,
+.X 112,
+.X 113,
+.X 114,
+.X 115,
+.X 116,
+.X 117,
+.X 118,
+.X 119,
+.X 120,
+.X 121,
+.X 122,
+.X 123,
+.X 124,
+.X 125,
+.X 126,
+.X 127,
+.X 128,
+.X 129,
+.X 130,
+.X 131,
+.X 132,
+.X 133,
+.X 134,
+.X 135,
+.X 136,
+.X 137,
+.X 138,
+.X 139,
+.X 140,
+.X 141,
+.X 142,
+.X 143,
+.X 144,
+.X 145,
+.X 146,
+.X 147,
+.X 148,
+.X 149,
+.X 150,
+.X 151,
+.X 152,
+.X 153,
+.X 154,
+.X 155,
+.X 156,
+.X 157,
+.X 158,
+.X 159,
+.X 160,
+.X 161,
+.X 162,
+.X 163,
+.X 164,
+.X 165,
+.X 166,
+.X 167,
+.X 168,
+.X 169,
+.X 170,
+.X 171,
+.X 172,
+.X 173,
+.X 174,
+.X 175,
+.X 176,
+.X 177,
+.X 178,
+.X 179,
+.X 180,
+.X 181,
+.X 182,
+.X 183,
+.X 184,
+.X 185,
+.X 186,
+.X 187,
+.X 188,
+.X 189,
+.X 190,
+.X 191,
+.X 192,
+.X 193,
+.X 194,
+.X 195,
+.X 196,
+.X 197,
+.X 198,
+.X 199,
+.X 200,
+.X 201,
+.X 202,
+.X 203,
+.X 204,
+.X 205,
+.X 206,
+.X 207,
+.X 208,
+.X 209,
+.X 210,
+.X 211,
+.X 212,
+.X 213,
+.X 214,
+.X 215,
+.X 216,
+.X 217,
+.X 218,
+.X 219,
+.X 220,
+.X 221,
+.X 222,
+.X 223,
+.X 224,
+.X 225,
+.X 226,
+.X 227,
+.X 228
+]
 theorem result2:(compileFuel known2 129 block2).map (fun r=>(r.saved,r.final))=some (0,known3):=by decide +kernel
 def opt2:ExactChecked known2 block2 known3 0:=normalize _ _ _ _ _ result2
+def block3:Program:=[
+.X 229,
+.X 230,
+.X 231,
+.X 232,
+.X 233,
+.X 234,
+.X 235,
+.X 236,
+.X 237,
+.X 238,
+.X 239,
+.X 240,
+.X 241,
+.X 242,
+.X 243,
+.X 244,
+.X 245,
+.X 246,
+.X 247,
+.X 248,
+.X 249,
+.X 250,
+.X 251,
+.X 252,
+.X 253,
+.X 254,
+.X 255,
+.X 256,
+.X 257,
+.CCX 2 4760 4373,
+.CCX 3 4373 4374,
+.CCX 4 4374 4375,
+.CCX 5 4375 4376,
+.CX 4505 6,
+.CX 4505 4376,
+.CCX 6 4376 4377,
+.CX 4505 4377,
+.CX 4505 4376,
+.CX 4505 6,
+.CX 4506 7,
+.CX 4506 4377,
+.CCX 7 4377 4378,
+.CX 4506 4378,
+.CX 4506 4377,
+.CX 4506 7,
+.CX 4507 8,
+.CX 4507 4378,
+.CCX 8 4378 4379,
+.CX 4507 4379,
+.CX 4507 4378,
+.CX 4507 8,
+.CX 4508 9,
+.CX 4508 4379,
+.CCX 9 4379 4380,
+.CX 4508 4380,
+.CX 4508 4379,
+.CX 4508 9,
+.CX 4509 10,
+.CX 4509 4380,
+.CCX 10 4380 4381,
+.CX 4509 4381,
+.CX 4509 4380,
+.CX 4509 10,
+.CX 4510 11,
+.CX 4510 4381,
+.CCX 11 4381 4382,
+.CX 4510 4382,
+.CX 4510 4381,
+.CX 4510 11,
+.CX 4511 12,
+.CX 4511 4382,
+.CCX 12 4382 4383,
+.CX 4511 4383,
+.CX 4511 4382,
+.CX 4511 12,
+.CX 4512 13,
+.CX 4512 4383,
+.CCX 13 4383 4384,
+.CX 4512 4384,
+.CX 4512 4383,
+.CX 4512 13,
+.CX 4513 14,
+.CX 4513 4384,
+.CCX 14 4384 4385,
+.CX 4513 4385,
+.CX 4513 4384,
+.CX 4513 14,
+.CX 4514 15,
+.CX 4514 4385,
+.CCX 15 4385 4386,
+.CX 4514 4386,
+.CX 4514 4385,
+.CX 4514 15,
+.CX 4515 16,
+.CX 4515 4386,
+.CCX 16 4386 4387,
+.CX 4515 4387,
+.CX 4515 4386,
+.CX 4515 16,
+.CX 4516 17,
+.CX 4516 4387,
+.CCX 17 4387 4388,
+.CX 4516 4388,
+.CX 4516 4387,
+.CX 4516 17,
+.CX 4517 18,
+.CX 4517 4388,
+.CCX 18 4388 4389,
+.CX 4517 4389,
+.CX 4517 4388,
+.CX 4517 18,
+.CX 4518 19,
+.CX 4518 4389,
+.CCX 19 4389 4390,
+.CX 4518 4390,
+.CX 4518 4389,
+.CX 4518 19,
+.CX 4519 20,
+.CX 4519 4390,
+.CCX 20 4390 4391,
+.CX 4519 4391,
+.CX 4519 4390,
+.CX 4519 20
+]
 theorem result3:(compileFuel known3 124 block3).map (fun r=>(r.saved,r.final))=some (4,known4):=by decide +kernel
 def opt3:ExactChecked known3 block3 known4 4:=normalize _ _ _ _ _ result3
+def block4:Program:=[
+.CX 4520 21,
+.CX 4520 4391,
+.CCX 21 4391 4392,
+.CX 4520 4392,
+.CX 4520 4391,
+.CX 4520 21,
+.CX 4521 22,
+.CX 4521 4392,
+.CCX 22 4392 4393,
+.CX 4521 4393,
+.CX 4521 4392,
+.CX 4521 22,
+.CX 4522 23,
+.CX 4522 4393,
+.CCX 23 4393 4394,
+.CX 4522 4394,
+.CX 4522 4393,
+.CX 4522 23,
+.CX 4523 24,
+.CX 4523 4394,
+.CCX 24 4394 4395,
+.CX 4523 4395,
+.CX 4523 4394,
+.CX 4523 24,
+.CX 4524 25,
+.CX 4524 4395,
+.CCX 25 4395 4396,
+.CX 4524 4396,
+.CX 4524 4395,
+.CX 4524 25,
+.CX 4525 26,
+.CX 4525 4396,
+.CCX 26 4396 4397,
+.CX 4525 4397,
+.CX 4525 4396,
+.CX 4525 26,
+.CX 4526 27,
+.CX 4526 4397,
+.CCX 27 4397 4398,
+.CX 4526 4398,
+.CX 4526 4397,
+.CX 4526 27,
+.CX 4527 28,
+.CX 4527 4398,
+.CCX 28 4398 4399,
+.CX 4527 4399,
+.CX 4527 4398,
+.CX 4527 28,
+.CX 4528 29,
+.CX 4528 4399,
+.CCX 29 4399 4400,
+.CX 4528 4400,
+.CX 4528 4399,
+.CX 4528 29,
+.CX 4529 30,
+.CX 4529 4400,
+.CCX 30 4400 4401,
+.CX 4529 4401,
+.CX 4529 4400,
+.CX 4529 30,
+.CX 4530 31,
+.CX 4530 4401,
+.CCX 31 4401 4402,
+.CX 4530 4402,
+.CX 4530 4401,
+.CX 4530 31,
+.CX 4531 32,
+.CX 4531 4402,
+.CCX 32 4402 4403,
+.CX 4531 4403,
+.CX 4531 4402,
+.CX 4531 32,
+.CX 4532 33,
+.CX 4532 4403,
+.CCX 33 4403 4404,
+.CX 4532 4404,
+.CX 4532 4403,
+.CX 4532 33,
+.CX 4533 34,
+.CX 4533 4404,
+.CCX 34 4404 4405,
+.CX 4533 4405,
+.CX 4533 4404,
+.CX 4533 34,
+.CX 4534 35,
+.CX 4534 4405,
+.CCX 35 4405 4406,
+.CX 4534 4406,
+.CX 4534 4405,
+.CX 4534 35,
+.CX 4535 36,
+.CX 4535 4406,
+.CCX 36 4406 4407,
+.CX 4535 4407,
+.CX 4535 4406,
+.CX 4535 36,
+.CX 4536 37,
+.CX 4536 4407,
+.CCX 37 4407 4408,
+.CX 4536 4408,
+.CX 4536 4407,
+.CX 4536 37,
+.CX 4537 38,
+.CX 4537 4408,
+.CCX 38 4408 4409,
+.CX 4537 4409,
+.CX 4537 4408,
+.CX 4537 38,
+.CX 4538 39,
+.CX 4538 4409,
+.CCX 39 4409 4410,
+.CX 4538 4410,
+.CX 4538 4409,
+.CX 4538 39,
+.CX 4539 40,
+.CX 4539 4410,
+.CCX 40 4410 4411,
+.CX 4539 4411,
+.CX 4539 4410,
+.CX 4539 40,
+.CX 4540 41,
+.CX 4540 4411,
+.CCX 41 4411 4412,
+.CX 4540 4412,
+.CX 4540 4411,
+.CX 4540 41
+]
 theorem result4:(compileFuel known4 127 block4).map (fun r=>(r.saved,r.final))=some (0,known5):=by decide +kernel
 def opt4:ExactChecked known4 block4 known5 0:=normalize _ _ _ _ _ result4
+def block5:Program:=[
+.CX 4541 42,
+.CX 4541 4412,
+.CCX 42 4412 4413,
+.CX 4541 4413,
+.CX 4541 4412,
+.CX 4541 42,
+.CX 4542 43,
+.CX 4542 4413,
+.CCX 43 4413 4414,
+.CX 4542 4414,
+.CX 4542 4413,
+.CX 4542 43,
+.CX 4543 44,
+.CX 4543 4414,
+.CCX 44 4414 4415,
+.CX 4543 4415,
+.CX 4543 4414,
+.CX 4543 44,
+.CX 4544 45,
+.CX 4544 4415,
+.CCX 45 4415 4416,
+.CX 4544 4416,
+.CX 4544 4415,
+.CX 4544 45,
+.CX 4545 46,
+.CX 4545 4416,
+.CCX 46 4416 4417,
+.CX 4545 4417,
+.CX 4545 4416,
+.CX 4545 46,
+.CX 4546 47,
+.CX 4546 4417,
+.CCX 47 4417 4418,
+.CX 4546 4418,
+.CX 4546 4417,
+.CX 4546 47,
+.CX 4547 48,
+.CX 4547 4418,
+.CCX 48 4418 4419,
+.CX 4547 4419,
+.CX 4547 4418,
+.CX 4547 48,
+.CX 4548 49,
+.CX 4548 4419,
+.CCX 49 4419 4420,
+.CX 4548 4420,
+.CX 4548 4419,
+.CX 4548 49,
+.CX 4549 50,
+.CX 4549 4420,
+.CCX 50 4420 4421,
+.CX 4549 4421,
+.CX 4549 4420,
+.CX 4549 50,
+.CX 4550 51,
+.CX 4550 4421,
+.CCX 51 4421 4422,
+.CX 4550 4422,
+.CX 4550 4421,
+.CX 4550 51,
+.CX 4551 52,
+.CX 4551 4422,
+.CCX 52 4422 4423,
+.CX 4551 4423,
+.CX 4551 4422,
+.CX 4551 52,
+.CX 4552 53,
+.CX 4552 4423,
+.CCX 53 4423 4424,
+.CX 4552 4424,
+.CX 4552 4423,
+.CX 4552 53,
+.CX 4553 54,
+.CX 4553 4424,
+.CCX 54 4424 4425,
+.CX 4553 4425,
+.CX 4553 4424,
+.CX 4553 54,
+.CX 4554 55,
+.CX 4554 4425,
+.CCX 55 4425 4426,
+.CX 4554 4426,
+.CX 4554 4425,
+.CX 4554 55,
+.CX 4555 56,
+.CX 4555 4426,
+.CCX 56 4426 4427,
+.CX 4555 4427,
+.CX 4555 4426,
+.CX 4555 56,
+.CX 4556 57,
+.CX 4556 4427,
+.CCX 57 4427 4428,
+.CX 4556 4428,
+.CX 4556 4427,
+.CX 4556 57,
+.CX 4557 58,
+.CX 4557 4428,
+.CCX 58 4428 4429,
+.CX 4557 4429,
+.CX 4557 4428,
+.CX 4557 58,
+.CX 4558 59,
+.CX 4558 4429,
+.CCX 59 4429 4430,
+.CX 4558 4430,
+.CX 4558 4429,
+.CX 4558 59,
+.CX 4559 60,
+.CX 4559 4430,
+.CCX 60 4430 4431,
+.CX 4559 4431,
+.CX 4559 4430,
+.CX 4559 60,
+.CX 4560 61,
+.CX 4560 4431,
+.CCX 61 4431 4432,
+.CX 4560 4432,
+.CX 4560 4431,
+.CX 4560 61,
+.CX 4561 62,
+.CX 4561 4432,
+.CCX 62 4432 4433,
+.CX 4561 4433,
+.CX 4561 4432,
+.CX 4561 62
+]
 theorem result5:(compileFuel known5 127 block5).map (fun r=>(r.saved,r.final))=some (0,known6):=by decide +kernel
 def opt5:ExactChecked known5 block5 known6 0:=normalize _ _ _ _ _ result5
+def block6:Program:=[
+.CX 4562 63,
+.CX 4562 4433,
+.CCX 63 4433 4434,
+.CX 4562 4434,
+.CX 4562 4433,
+.CX 4562 63,
+.CX 4563 64,
+.CX 4563 4434,
+.CCX 64 4434 4435,
+.CX 4563 4435,
+.CX 4563 4434,
+.CX 4563 64,
+.CX 4564 65,
+.CX 4564 4435,
+.CCX 65 4435 4436,
+.CX 4564 4436,
+.CX 4564 4435,
+.CX 4564 65,
+.CX 4565 66,
+.CX 4565 4436,
+.CCX 66 4436 4437,
+.CX 4565 4437,
+.CX 4565 4436,
+.CX 4565 66,
+.CX 4566 67,
+.CX 4566 4437,
+.CCX 67 4437 4438,
+.CX 4566 4438,
+.CX 4566 4437,
+.CX 4566 67,
+.CX 4567 68,
+.CX 4567 4438,
+.CCX 68 4438 4439,
+.CX 4567 4439,
+.CX 4567 4438,
+.CX 4567 68,
+.CX 4568 69,
+.CX 4568 4439,
+.CCX 69 4439 4440,
+.CX 4568 4440,
+.CX 4568 4439,
+.CX 4568 69,
+.CX 4569 70,
+.CX 4569 4440,
+.CCX 70 4440 4441,
+.CX 4569 4441,
+.CX 4569 4440,
+.CX 4569 70,
+.CX 4570 71,
+.CX 4570 4441,
+.CCX 71 4441 4442,
+.CX 4570 4442,
+.CX 4570 4441,
+.CX 4570 71,
+.CX 4571 72,
+.CX 4571 4442,
+.CCX 72 4442 4443,
+.CX 4571 4443,
+.CX 4571 4442,
+.CX 4571 72,
+.CX 4572 73,
+.CX 4572 4443,
+.CCX 73 4443 4444,
+.CX 4572 4444,
+.CX 4572 4443,
+.CX 4572 73,
+.CX 4573 74,
+.CX 4573 4444,
+.CCX 74 4444 4445,
+.CX 4573 4445,
+.CX 4573 4444,
+.CX 4573 74,
+.CX 4574 75,
+.CX 4574 4445,
+.CCX 75 4445 4446,
+.CX 4574 4446,
+.CX 4574 4445,
+.CX 4574 75,
+.CX 4575 76,
+.CX 4575 4446,
+.CCX 76 4446 4447,
+.CX 4575 4447,
+.CX 4575 4446,
+.CX 4575 76,
+.CX 4576 77,
+.CX 4576 4447,
+.CCX 77 4447 4448,
+.CX 4576 4448,
+.CX 4576 4447,
+.CX 4576 77,
+.CX 4577 78,
+.CX 4577 4448,
+.CCX 78 4448 4449,
+.CX 4577 4449,
+.CX 4577 4448,
+.CX 4577 78,
+.CX 4578 79,
+.CX 4578 4449,
+.CCX 79 4449 4450,
+.CX 4578 4450,
+.CX 4578 4449,
+.CX 4578 79,
+.CX 4579 80,
+.CX 4579 4450,
+.CCX 80 4450 4451,
+.CX 4579 4451,
+.CX 4579 4450,
+.CX 4579 80,
+.CX 4580 81,
+.CX 4580 4451,
+.CCX 81 4451 4452,
+.CX 4580 4452,
+.CX 4580 4451,
+.CX 4580 81,
+.CX 4581 82,
+.CX 4581 4452,
+.CCX 82 4452 4453,
+.CX 4581 4453,
+.CX 4581 4452,
+.CX 4581 82,
+.CX 4582 83,
+.CX 4582 4453,
+.CCX 83 4453 4454,
+.CX 4582 4454,
+.CX 4582 4453,
+.CX 4582 83
+]
 theorem result6:(compileFuel known6 127 block6).map (fun r=>(r.saved,r.final))=some (0,known7):=by decide +kernel
 def opt6:ExactChecked known6 block6 known7 0:=normalize _ _ _ _ _ result6
+def block7:Program:=[
+.CX 4583 84,
+.CX 4583 4454,
+.CCX 84 4454 4455,
+.CX 4583 4455,
+.CX 4583 4454,
+.CX 4583 84,
+.CX 4584 85,
+.CX 4584 4455,
+.CCX 85 4455 4456,
+.CX 4584 4456,
+.CX 4584 4455,
+.CX 4584 85,
+.CX 4585 86,
+.CX 4585 4456,
+.CCX 86 4456 4457,
+.CX 4585 4457,
+.CX 4585 4456,
+.CX 4585 86,
+.CX 4586 87,
+.CX 4586 4457,
+.CCX 87 4457 4458,
+.CX 4586 4458,
+.CX 4586 4457,
+.CX 4586 87,
+.CX 4587 88,
+.CX 4587 4458,
+.CCX 88 4458 4459,
+.CX 4587 4459,
+.CX 4587 4458,
+.CX 4587 88,
+.CX 4588 89,
+.CX 4588 4459,
+.CCX 89 4459 4460,
+.CX 4588 4460,
+.CX 4588 4459,
+.CX 4588 89,
+.CX 4589 90,
+.CX 4589 4460,
+.CCX 90 4460 4461,
+.CX 4589 4461,
+.CX 4589 4460,
+.CX 4589 90,
+.CX 4590 91,
+.CX 4590 4461,
+.CCX 91 4461 4462,
+.CX 4590 4462,
+.CX 4590 4461,
+.CX 4590 91,
+.CX 4591 92,
+.CX 4591 4462,
+.CCX 92 4462 4463,
+.CX 4591 4463,
+.CX 4591 4462,
+.CX 4591 92,
+.CX 4592 93,
+.CX 4592 4463,
+.CCX 93 4463 4464,
+.CX 4592 4464,
+.CX 4592 4463,
+.CX 4592 93,
+.CX 4593 94,
+.CX 4593 4464,
+.CCX 94 4464 4465,
+.CX 4593 4465,
+.CX 4593 4464,
+.CX 4593 94,
+.CX 4594 95,
+.CX 4594 4465,
+.CCX 95 4465 4466,
+.CX 4594 4466,
+.CX 4594 4465,
+.CX 4594 95,
+.CX 4595 96,
+.CX 4595 4466,
+.CCX 96 4466 4467,
+.CX 4595 4467,
+.CX 4595 4466,
+.CX 4595 96,
+.CX 4596 97,
+.CX 4596 4467,
+.CCX 97 4467 4468,
+.CX 4596 4468,
+.CX 4596 4467,
+.CX 4596 97,
+.CX 4597 98,
+.CX 4597 4468,
+.CCX 98 4468 4469,
+.CX 4597 4469,
+.CX 4597 4468,
+.CX 4597 98,
+.CX 4598 99,
+.CX 4598 4469,
+.CCX 99 4469 4470,
+.CX 4598 4470,
+.CX 4598 4469,
+.CX 4598 99,
+.CX 4599 100,
+.CX 4599 4470,
+.CCX 100 4470 4471,
+.CX 4599 4471,
+.CX 4599 4470,
+.CX 4599 100,
+.CX 4600 101,
+.CX 4600 4471,
+.CCX 101 4471 4472,
+.CX 4600 4472,
+.CX 4600 4471,
+.CX 4600 101,
+.CX 4601 102,
+.CX 4601 4472,
+.CCX 102 4472 4473,
+.CX 4601 4473,
+.CX 4601 4472,
+.CX 4601 102,
+.CX 4602 103,
+.CX 4602 4473,
+.CCX 103 4473 4474,
+.CX 4602 4474,
+.CX 4602 4473,
+.CX 4602 103,
+.CX 4603 104,
+.CX 4603 4474,
+.CCX 104 4474 4475,
+.CX 4603 4475,
+.CX 4603 4474,
+.CX 4603 104
+]
 theorem result7:(compileFuel known7 127 block7).map (fun r=>(r.saved,r.final))=some (0,known8):=by decide +kernel
 def opt7:ExactChecked known7 block7 known8 0:=normalize _ _ _ _ _ result7
+def block8:Program:=[
+.CX 4604 105,
+.CX 4604 4475,
+.CCX 105 4475 4476,
+.CX 4604 4476,
+.CX 4604 4475,
+.CX 4604 105,
+.CX 4605 106,
+.CX 4605 4476,
+.CCX 106 4476 4477,
+.CX 4605 4477,
+.CX 4605 4476,
+.CX 4605 106,
+.CX 4606 107,
+.CX 4606 4477,
+.CCX 107 4477 4478,
+.CX 4606 4478,
+.CX 4606 4477,
+.CX 4606 107,
+.CX 4607 108,
+.CX 4607 4478,
+.CCX 108 4478 4479,
+.CX 4607 4479,
+.CX 4607 4478,
+.CX 4607 108,
+.CX 4608 109,
+.CX 4608 4479,
+.CCX 109 4479 4480,
+.CX 4608 4480,
+.CX 4608 4479,
+.CX 4608 109,
+.CX 4609 110,
+.CX 4609 4480,
+.CCX 110 4480 4481,
+.CX 4609 4481,
+.CX 4609 4480,
+.CX 4609 110,
+.CX 4610 111,
+.CX 4610 4481,
+.CCX 111 4481 4482,
+.CX 4610 4482,
+.CX 4610 4481,
+.CX 4610 111,
+.CX 4611 112,
+.CX 4611 4482,
+.CCX 112 4482 4483,
+.CX 4611 4483,
+.CX 4611 4482,
+.CX 4611 112,
+.CX 4612 113,
+.CX 4612 4483,
+.CCX 113 4483 4484,
+.CX 4612 4484,
+.CX 4612 4483,
+.CX 4612 113,
+.CX 4613 114,
+.CX 4613 4484,
+.CCX 114 4484 4485,
+.CX 4613 4485,
+.CX 4613 4484,
+.CX 4613 114,
+.CX 4614 115,
+.CX 4614 4485,
+.CCX 115 4485 4486,
+.CX 4614 4486,
+.CX 4614 4485,
+.CX 4614 115,
+.CX 4615 116,
+.CX 4615 4486,
+.CCX 116 4486 4487,
+.CX 4615 4487,
+.CX 4615 4486,
+.CX 4615 116,
+.CX 4616 117,
+.CX 4616 4487,
+.CCX 117 4487 4488,
+.CX 4616 4488,
+.CX 4616 4487,
+.CX 4616 117,
+.CX 4617 118,
+.CX 4617 4488,
+.CCX 118 4488 4489,
+.CX 4617 4489,
+.CX 4617 4488,
+.CX 4617 118,
+.CX 4618 119,
+.CX 4618 4489,
+.CCX 119 4489 4490,
+.CX 4618 4490,
+.CX 4618 4489,
+.CX 4618 119,
+.CX 4619 120,
+.CX 4619 4490,
+.CCX 120 4490 4491,
+.CX 4619 4491,
+.CX 4619 4490,
+.CX 4619 120,
+.CX 4620 121,
+.CX 4620 4491,
+.CCX 121 4491 4492,
+.CX 4620 4492,
+.CX 4620 4491,
+.CX 4620 121,
+.CX 4621 122,
+.CX 4621 4492,
+.CCX 122 4492 4493,
+.CX 4621 4493,
+.CX 4621 4492,
+.CX 4621 122,
+.CX 4622 123,
+.CX 4622 4493,
+.CCX 123 4493 4494,
+.CX 4622 4494,
+.CX 4622 4493,
+.CX 4622 123,
+.CX 4623 124,
+.CX 4623 4494,
+.CCX 124 4494 4495,
+.CX 4623 4495,
+.CX 4623 4494,
+.CX 4623 124,
+.CX 4624 125,
+.CX 4624 4495,
+.CCX 125 4495 4496,
+.CX 4624 4496,
+.CX 4624 4495,
+.CX 4624 125
+]
 theorem result8:(compileFuel known8 127 block8).map (fun r=>(r.saved,r.final))=some (0,known9):=by decide +kernel
 def opt8:ExactChecked known8 block8 known9 0:=normalize _ _ _ _ _ result8
+def block9:Program:=[
+.CX 4625 126,
+.CX 4625 4496,
+.CCX 126 4496 4497,
+.CX 4625 4497,
+.CX 4625 4496,
+.CX 4625 126,
+.CX 4626 127,
+.CX 4626 4497,
+.CCX 127 4497 4498,
+.CX 4626 4498,
+.CX 4626 4497,
+.CX 4626 127,
+.CX 4627 128,
+.CX 4627 4498,
+.CCX 128 4498 4499,
+.CX 4627 4499,
+.CX 4627 4498,
+.CX 4627 128,
+.CX 4628 129,
+.CX 4628 4499,
+.CCX 129 4499 4500,
+.CX 4628 4500,
+.CX 4628 4499,
+.CX 4628 129,
+.CX 4629 130,
+.CX 4629 4500,
+.CCX 130 4500 4764,
+.CX 4629 4764,
+.CX 4629 4500,
+.CX 4629 130,
+.CX 4630 131,
+.CX 4630 4764,
+.CCX 131 4764 4765,
+.CX 4630 4765,
+.CX 4630 4764,
+.CX 4630 131,
+.CX 4631 132,
+.CX 4631 4765,
+.CCX 132 4765 4766,
+.CX 4631 4766,
+.CX 4631 4765,
+.CX 4631 132,
+.CX 4632 133,
+.CX 4632 4766,
+.CCX 133 4766 4767,
+.CX 4632 4767,
+.CX 4632 4766,
+.CX 4632 133,
+.CX 4633 134,
+.CX 4633 4767,
+.CCX 134 4767 4768,
+.CX 4633 4768,
+.CX 4633 4767,
+.CX 4633 134,
+.CX 4634 135,
+.CX 4634 4768,
+.CCX 135 4768 4769,
+.CX 4634 4769,
+.CX 4634 4768,
+.CX 4634 135,
+.CX 4635 136,
+.CX 4635 4769,
+.CCX 136 4769 4770,
+.CX 4635 4770,
+.CX 4635 4769,
+.CX 4635 136,
+.CX 4636 137,
+.CX 4636 4770,
+.CCX 137 4770 4771,
+.CX 4636 4771,
+.CX 4636 4770,
+.CX 4636 137,
+.CX 4637 138,
+.CX 4637 4771,
+.CCX 138 4771 4772,
+.CX 4637 4772,
+.CX 4637 4771,
+.CX 4637 138,
+.CX 4638 139,
+.CX 4638 4772,
+.CCX 139 4772 4773,
+.CX 4638 4773,
+.CX 4638 4772,
+.CX 4638 139,
+.CX 4639 140,
+.CX 4639 4773,
+.CCX 140 4773 4774,
+.CX 4639 4774,
+.CX 4639 4773,
+.CX 4639 140,
+.CX 4640 141,
+.CX 4640 4774,
+.CCX 141 4774 4775,
+.CX 4640 4775,
+.CX 4640 4774,
+.CX 4640 141,
+.CX 4641 142,
+.CX 4641 4775,
+.CCX 142 4775 4776,
+.CX 4641 4776,
+.CX 4641 4775,
+.CX 4641 142,
+.CX 4642 143,
+.CX 4642 4776,
+.CCX 143 4776 4777,
+.CX 4642 4777,
+.CX 4642 4776,
+.CX 4642 143,
+.CX 4643 144,
+.CX 4643 4777,
+.CCX 144 4777 4778,
+.CX 4643 4778,
+.CX 4643 4777,
+.CX 4643 144,
+.CX 4644 145,
+.CX 4644 4778,
+.CCX 145 4778 4779,
+.CX 4644 4779,
+.CX 4644 4778,
+.CX 4644 145,
+.CX 4645 146,
+.CX 4645 4779,
+.CCX 146 4779 4780,
+.CX 4645 4780,
+.CX 4645 4779,
+.CX 4645 146
+]
 theorem result9:(compileFuel known9 127 block9).map (fun r=>(r.saved,r.final))=some (0,known10):=by decide +kernel
 def opt9:ExactChecked known9 block9 known10 0:=normalize _ _ _ _ _ result9
+def block10:Program:=[
+.CX 4646 147,
+.CX 4646 4780,
+.CCX 147 4780 4781,
+.CX 4646 4781,
+.CX 4646 4780,
+.CX 4646 147,
+.CX 4647 148,
+.CX 4647 4781,
+.CCX 148 4781 4782,
+.CX 4647 4782,
+.CX 4647 4781,
+.CX 4647 148,
+.CX 4648 149,
+.CX 4648 4782,
+.CCX 149 4782 4783,
+.CX 4648 4783,
+.CX 4648 4782,
+.CX 4648 149,
+.CX 4649 150,
+.CX 4649 4783,
+.CCX 150 4783 4784,
+.CX 4649 4784,
+.CX 4649 4783,
+.CX 4649 150,
+.CX 4650 151,
+.CX 4650 4784,
+.CCX 151 4784 4785,
+.CX 4650 4785,
+.CX 4650 4784,
+.CX 4650 151,
+.CX 4651 152,
+.CX 4651 4785,
+.CCX 152 4785 4786,
+.CX 4651 4786,
+.CX 4651 4785,
+.CX 4651 152,
+.CX 4652 153,
+.CX 4652 4786,
+.CCX 153 4786 4787,
+.CX 4652 4787,
+.CX 4652 4786,
+.CX 4652 153,
+.CX 4653 154,
+.CX 4653 4787,
+.CCX 154 4787 4788,
+.CX 4653 4788,
+.CX 4653 4787,
+.CX 4653 154,
+.CX 4654 155,
+.CX 4654 4788,
+.CCX 155 4788 4789,
+.CX 4654 4789,
+.CX 4654 4788,
+.CX 4654 155,
+.CX 4655 156,
+.CX 4655 4789,
+.CCX 156 4789 4790,
+.CX 4655 4790,
+.CX 4655 4789,
+.CX 4655 156,
+.CX 4656 157,
+.CX 4656 4790,
+.CCX 157 4790 4791,
+.CX 4656 4791,
+.CX 4656 4790,
+.CX 4656 157,
+.CX 4657 158,
+.CX 4657 4791,
+.CCX 158 4791 4792,
+.CX 4657 4792,
+.CX 4657 4791,
+.CX 4657 158,
+.CX 4658 159,
+.CX 4658 4792,
+.CCX 159 4792 4793,
+.CX 4658 4793,
+.CX 4658 4792,
+.CX 4658 159,
+.CX 4659 160,
+.CX 4659 4793,
+.CCX 160 4793 4794,
+.CX 4659 4794,
+.CX 4659 4793,
+.CX 4659 160,
+.CX 4660 161,
+.CX 4660 4794,
+.CCX 161 4794 4795,
+.CX 4660 4795,
+.CX 4660 4794,
+.CX 4660 161,
+.CX 4661 162,
+.CX 4661 4795,
+.CCX 162 4795 4796,
+.CX 4661 4796,
+.CX 4661 4795,
+.CX 4661 162,
+.CCX 163 4796 4797,
+.CCX 164 4797 4798,
+.CCX 165 4798 4799,
+.CCX 166 4799 4800,
+.CCX 167 4800 4801,
+.CCX 168 4801 4802,
+.CCX 169 4802 4803,
+.CCX 170 4803 4804,
+.CCX 171 4804 4805,
+.CCX 172 4805 4806,
+.CCX 173 4806 4807,
+.CCX 174 4807 4808,
+.CCX 175 4808 4809,
+.CCX 176 4809 4810,
+.CCX 177 4810 4811,
+.CCX 178 4811 4812,
+.CCX 179 4812 4813,
+.CCX 180 4813 4814,
+.CCX 181 4814 4815,
+.CCX 182 4815 4816,
+.CCX 183 4816 4817,
+.CCX 184 4817 4818,
+.CCX 185 4818 4819,
+.CCX 186 4819 4820,
+.CCX 187 4820 4821,
+.CCX 188 4821 4822,
+.CCX 189 4822 4823,
+.CCX 190 4823 4824,
+.CCX 191 4824 4825,
+.CCX 192 4825 4826,
+.CCX 193 4826 4827,
+.CCX 194 4827 4828
+]
 theorem result10:(compileFuel known10 129 block10).map (fun r=>(r.saved,r.final))=some (0,known11):=by decide +kernel
 def opt10:ExactChecked known10 block10 known11 0:=normalize _ _ _ _ _ result10
+def block11:Program:=[
+.CCX 195 4828 4829,
+.CCX 196 4829 4830,
+.CCX 197 4830 4831,
+.CCX 198 4831 4832,
+.CCX 199 4832 4833,
+.CCX 200 4833 4834,
+.CCX 201 4834 4835,
+.CCX 202 4835 4836,
+.CCX 203 4836 4837,
+.CCX 204 4837 4838,
+.CCX 205 4838 4839,
+.CCX 206 4839 4840,
+.CCX 207 4840 4841,
+.CCX 208 4841 4842,
+.CCX 209 4842 4843,
+.CCX 210 4843 4844,
+.CCX 211 4844 4845,
+.CCX 212 4845 4846,
+.CCX 213 4846 4847,
+.CCX 214 4847 4848,
+.CCX 215 4848 4849,
+.CCX 216 4849 4850,
+.CCX 217 4850 4851,
+.CCX 218 4851 4852,
+.CCX 219 4852 4853,
+.CCX 220 4853 4854,
+.CCX 221 4854 4855,
+.CCX 222 4855 4856,
+.CCX 223 4856 4857,
+.CCX 224 4857 4858,
+.CCX 225 4858 4859,
+.CCX 226 4859 4860,
+.CCX 227 4860 4861,
+.CCX 228 4861 4862,
+.CCX 229 4862 4863,
+.CCX 230 4863 4864,
+.CCX 231 4864 4865,
+.CCX 232 4865 4866,
+.CCX 233 4866 4867,
+.CCX 234 4867 4868,
+.CCX 235 4868 4869,
+.CCX 236 4869 4870,
+.CCX 237 4870 4871,
+.CCX 238 4871 4872,
+.CCX 239 4872 4873,
+.CCX 240 4873 4874,
+.CCX 241 4874 4875,
+.CCX 242 4875 4876,
+.CCX 243 4876 4877,
+.CCX 244 4877 4878,
+.CCX 245 4878 4879,
+.CCX 246 4879 4880,
+.CCX 247 4880 4881,
+.CCX 248 4881 4882,
+.CCX 249 4882 4883,
+.CCX 250 4883 4884,
+.CCX 251 4884 4885,
+.CCX 252 4885 4886,
+.CCX 253 4886 4887,
+.CCX 254 4887 4888,
+.CCX 255 4888 4889,
+.CCX 256 4889 4757,
+.CCX 257 4757 4759,
+.CX 4759 4758,
+.measureX 4759 [] [.CZ 257 4757],
+.CX 4757 257,
+.measureX 4757 [] [.CZ 256 4889],
+.CX 4889 256,
+.measureX 4889 [] [.CZ 255 4888],
+.CX 4888 255,
+.measureX 4888 [] [.CZ 254 4887],
+.CX 4887 254,
+.measureX 4887 [] [.CZ 253 4886],
+.CX 4886 253,
+.measureX 4886 [] [.CZ 252 4885],
+.CX 4885 252,
+.measureX 4885 [] [.CZ 251 4884],
+.CX 4884 251,
+.measureX 4884 [] [.CZ 250 4883],
+.CX 4883 250,
+.measureX 4883 [] [.CZ 249 4882],
+.CX 4882 249,
+.measureX 4882 [] [.CZ 248 4881],
+.CX 4881 248,
+.measureX 4881 [] [.CZ 247 4880],
+.CX 4880 247,
+.measureX 4880 [] [.CZ 246 4879],
+.CX 4879 246,
+.measureX 4879 [] [.CZ 245 4878],
+.CX 4878 245,
+.measureX 4878 [] [.CZ 244 4877],
+.CX 4877 244,
+.measureX 4877 [] [.CZ 243 4876],
+.CX 4876 243,
+.measureX 4876 [] [.CZ 242 4875],
+.CX 4875 242,
+.measureX 4875 [] [.CZ 241 4874],
+.CX 4874 241,
+.measureX 4874 [] [.CZ 240 4873],
+.CX 4873 240,
+.measureX 4873 [] [.CZ 239 4872],
+.CX 4872 239,
+.measureX 4872 [] [.CZ 238 4871],
+.CX 4871 238,
+.measureX 4871 [] [.CZ 237 4870],
+.CX 4870 237,
+.measureX 4870 [] [.CZ 236 4869],
+.CX 4869 236,
+.measureX 4869 [] [.CZ 235 4868],
+.CX 4868 235,
+.measureX 4868 [] [.CZ 234 4867],
+.CX 4867 234,
+.measureX 4867 [] [.CZ 233 4866],
+.CX 4866 233,
+.measureX 4866 [] [.CZ 232 4865],
+.CX 4865 232,
+.measureX 4865 [] [.CZ 231 4864],
+.CX 4864 231,
+.measureX 4864 [] [.CZ 230 4863],
+.CX 4863 230,
+.measureX 4863 [] [.CZ 229 4862],
+.CX 4862 229,
+.measureX 4862 [] [.CZ 228 4861],
+.CX 4861 228,
+.measureX 4861 [] [.CZ 227 4860],
+.CX 4860 227,
+.measureX 4860 [] [.CZ 226 4859],
+.CX 4859 226
+]
 theorem result11:(compileFuel known11 129 block11).map (fun r=>(r.saved,r.final))=some (0,known12):=by decide +kernel
 def opt11:ExactChecked known11 block11 known12 0:=normalize _ _ _ _ _ result11
+def block12:Program:=[
+.measureX 4859 [] [.CZ 225 4858],
+.CX 4858 225,
+.measureX 4858 [] [.CZ 224 4857],
+.CX 4857 224,
+.measureX 4857 [] [.CZ 223 4856],
+.CX 4856 223,
+.measureX 4856 [] [.CZ 222 4855],
+.CX 4855 222,
+.measureX 4855 [] [.CZ 221 4854],
+.CX 4854 221,
+.measureX 4854 [] [.CZ 220 4853],
+.CX 4853 220,
+.measureX 4853 [] [.CZ 219 4852],
+.CX 4852 219,
+.measureX 4852 [] [.CZ 218 4851],
+.CX 4851 218,
+.measureX 4851 [] [.CZ 217 4850],
+.CX 4850 217,
+.measureX 4850 [] [.CZ 216 4849],
+.CX 4849 216,
+.measureX 4849 [] [.CZ 215 4848],
+.CX 4848 215,
+.measureX 4848 [] [.CZ 214 4847],
+.CX 4847 214,
+.measureX 4847 [] [.CZ 213 4846],
+.CX 4846 213,
+.measureX 4846 [] [.CZ 212 4845],
+.CX 4845 212,
+.measureX 4845 [] [.CZ 211 4844],
+.CX 4844 211,
+.measureX 4844 [] [.CZ 210 4843],
+.CX 4843 210,
+.measureX 4843 [] [.CZ 209 4842],
+.CX 4842 209,
+.measureX 4842 [] [.CZ 208 4841],
+.CX 4841 208,
+.measureX 4841 [] [.CZ 207 4840],
+.CX 4840 207,
+.measureX 4840 [] [.CZ 206 4839],
+.CX 4839 206,
+.measureX 4839 [] [.CZ 205 4838],
+.CX 4838 205,
+.measureX 4838 [] [.CZ 204 4837],
+.CX 4837 204,
+.measureX 4837 [] [.CZ 203 4836],
+.CX 4836 203,
+.measureX 4836 [] [.CZ 202 4835],
+.CX 4835 202,
+.measureX 4835 [] [.CZ 201 4834],
+.CX 4834 201,
+.measureX 4834 [] [.CZ 200 4833],
+.CX 4833 200,
+.measureX 4833 [] [.CZ 199 4832],
+.CX 4832 199,
+.measureX 4832 [] [.CZ 198 4831],
+.CX 4831 198,
+.measureX 4831 [] [.CZ 197 4830],
+.CX 4830 197,
+.measureX 4830 [] [.CZ 196 4829],
+.CX 4829 196,
+.measureX 4829 [] [.CZ 195 4828],
+.CX 4828 195,
+.measureX 4828 [] [.CZ 194 4827],
+.CX 4827 194,
+.measureX 4827 [] [.CZ 193 4826],
+.CX 4826 193,
+.measureX 4826 [] [.CZ 192 4825],
+.CX 4825 192,
+.measureX 4825 [] [.CZ 191 4824],
+.CX 4824 191,
+.measureX 4824 [] [.CZ 190 4823],
+.CX 4823 190,
+.measureX 4823 [] [.CZ 189 4822],
+.CX 4822 189,
+.measureX 4822 [] [.CZ 188 4821],
+.CX 4821 188,
+.measureX 4821 [] [.CZ 187 4820],
+.CX 4820 187,
+.measureX 4820 [] [.CZ 186 4819],
+.CX 4819 186,
+.measureX 4819 [] [.CZ 185 4818],
+.CX 4818 185,
+.measureX 4818 [] [.CZ 184 4817],
+.CX 4817 184,
+.measureX 4817 [] [.CZ 183 4816],
+.CX 4816 183,
+.measureX 4816 [] [.CZ 182 4815],
+.CX 4815 182,
+.measureX 4815 [] [.CZ 181 4814],
+.CX 4814 181,
+.measureX 4814 [] [.CZ 180 4813],
+.CX 4813 180,
+.measureX 4813 [] [.CZ 179 4812],
+.CX 4812 179,
+.measureX 4812 [] [.CZ 178 4811],
+.CX 4811 178,
+.measureX 4811 [] [.CZ 177 4810],
+.CX 4810 177,
+.measureX 4810 [] [.CZ 176 4809],
+.CX 4809 176,
+.measureX 4809 [] [.CZ 175 4808],
+.CX 4808 175,
+.measureX 4808 [] [.CZ 174 4807],
+.CX 4807 174,
+.measureX 4807 [] [.CZ 173 4806],
+.CX 4806 173,
+.measureX 4806 [] [.CZ 172 4805],
+.CX 4805 172,
+.measureX 4805 [] [.CZ 171 4804],
+.CX 4804 171,
+.measureX 4804 [] [.CZ 170 4803],
+.CX 4803 170,
+.measureX 4803 [] [.CZ 169 4802],
+.CX 4802 169,
+.measureX 4802 [] [.CZ 168 4801],
+.CX 4801 168,
+.measureX 4801 [] [.CZ 167 4800],
+.CX 4800 167,
+.measureX 4800 [] [.CZ 166 4799],
+.CX 4799 166,
+.measureX 4799 [] [.CZ 165 4798],
+.CX 4798 165,
+.measureX 4798 [] [.CZ 164 4797],
+.CX 4797 164,
+.measureX 4797 [] [.CZ 163 4796],
+.CX 4796 163,
+.measureX 4796 [] [.CZ 4661 162,.CZ 4661 4795,.CZ 162 4795],
+.CX 4661 162
+]
 theorem result12:(compileFuel known12 129 block12).map (fun r=>(r.saved,r.final))=some (0,known13):=by decide +kernel
 def opt12:ExactChecked known12 block12 known13 0:=normalize _ _ _ _ _ result12
+def block13:Program:=[
+.CX 4795 162,
+.measureX 4795 [] [.CZ 4660 161,.CZ 4660 4794,.CZ 161 4794],
+.CX 4660 161,
+.CX 4794 161,
+.measureX 4794 [] [.CZ 4659 160,.CZ 4659 4793,.CZ 160 4793],
+.CX 4659 160,
+.CX 4793 160,
+.measureX 4793 [] [.CZ 4658 159,.CZ 4658 4792,.CZ 159 4792],
+.CX 4658 159,
+.CX 4792 159,
+.measureX 4792 [] [.CZ 4657 158,.CZ 4657 4791,.CZ 158 4791],
+.CX 4657 158,
+.CX 4791 158,
+.measureX 4791 [] [.CZ 4656 157,.CZ 4656 4790,.CZ 157 4790],
+.CX 4656 157,
+.CX 4790 157,
+.measureX 4790 [] [.CZ 4655 156,.CZ 4655 4789,.CZ 156 4789],
+.CX 4655 156,
+.CX 4789 156,
+.measureX 4789 [] [.CZ 4654 155,.CZ 4654 4788,.CZ 155 4788],
+.CX 4654 155,
+.CX 4788 155,
+.measureX 4788 [] [.CZ 4653 154,.CZ 4653 4787,.CZ 154 4787],
+.CX 4653 154,
+.CX 4787 154,
+.measureX 4787 [] [.CZ 4652 153,.CZ 4652 4786,.CZ 153 4786],
+.CX 4652 153,
+.CX 4786 153,
+.measureX 4786 [] [.CZ 4651 152,.CZ 4651 4785,.CZ 152 4785],
+.CX 4651 152,
+.CX 4785 152,
+.measureX 4785 [] [.CZ 4650 151,.CZ 4650 4784,.CZ 151 4784],
+.CX 4650 151,
+.CX 4784 151,
+.measureX 4784 [] [.CZ 4649 150,.CZ 4649 4783,.CZ 150 4783],
+.CX 4649 150,
+.CX 4783 150,
+.measureX 4783 [] [.CZ 4648 149,.CZ 4648 4782,.CZ 149 4782],
+.CX 4648 149,
+.CX 4782 149,
+.measureX 4782 [] [.CZ 4647 148,.CZ 4647 4781,.CZ 148 4781],
+.CX 4647 148,
+.CX 4781 148,
+.measureX 4781 [] [.CZ 4646 147,.CZ 4646 4780,.CZ 147 4780],
+.CX 4646 147,
+.CX 4780 147,
+.measureX 4780 [] [.CZ 4645 146,.CZ 4645 4779,.CZ 146 4779],
+.CX 4645 146,
+.CX 4779 146,
+.measureX 4779 [] [.CZ 4644 145,.CZ 4644 4778,.CZ 145 4778],
+.CX 4644 145,
+.CX 4778 145,
+.measureX 4778 [] [.CZ 4643 144,.CZ 4643 4777,.CZ 144 4777],
+.CX 4643 144,
+.CX 4777 144,
+.measureX 4777 [] [.CZ 4642 143,.CZ 4642 4776,.CZ 143 4776],
+.CX 4642 143,
+.CX 4776 143,
+.measureX 4776 [] [.CZ 4641 142,.CZ 4641 4775,.CZ 142 4775],
+.CX 4641 142,
+.CX 4775 142,
+.measureX 4775 [] [.CZ 4640 141,.CZ 4640 4774,.CZ 141 4774],
+.CX 4640 141,
+.CX 4774 141,
+.measureX 4774 [] [.CZ 4639 140,.CZ 4639 4773,.CZ 140 4773],
+.CX 4639 140,
+.CX 4773 140,
+.measureX 4773 [] [.CZ 4638 139,.CZ 4638 4772,.CZ 139 4772],
+.CX 4638 139,
+.CX 4772 139,
+.measureX 4772 [] [.CZ 4637 138,.CZ 4637 4771,.CZ 138 4771],
+.CX 4637 138,
+.CX 4771 138,
+.measureX 4771 [] [.CZ 4636 137,.CZ 4636 4770,.CZ 137 4770],
+.CX 4636 137,
+.CX 4770 137,
+.measureX 4770 [] [.CZ 4635 136,.CZ 4635 4769,.CZ 136 4769],
+.CX 4635 136,
+.CX 4769 136,
+.measureX 4769 [] [.CZ 4634 135,.CZ 4634 4768,.CZ 135 4768],
+.CX 4634 135,
+.CX 4768 135,
+.measureX 4768 [] [.CZ 4633 134,.CZ 4633 4767,.CZ 134 4767],
+.CX 4633 134,
+.CX 4767 134,
+.measureX 4767 [] [.CZ 4632 133,.CZ 4632 4766,.CZ 133 4766],
+.CX 4632 133,
+.CX 4766 133,
+.measureX 4766 [] [.CZ 4631 132,.CZ 4631 4765,.CZ 132 4765],
+.CX 4631 132,
+.CX 4765 132,
+.measureX 4765 [] [.CZ 4630 131,.CZ 4630 4764,.CZ 131 4764],
+.CX 4630 131,
+.CX 4764 131,
+.measureX 4764 [] [.CZ 4629 130,.CZ 4629 4500,.CZ 130 4500],
+.CX 4629 130,
+.CX 4500 130,
+.measureX 4500 [] [.CZ 4628 129,.CZ 4628 4499,.CZ 129 4499],
+.CX 4628 129,
+.CX 4499 129,
+.measureX 4499 [] [.CZ 4627 128,.CZ 4627 4498,.CZ 128 4498],
+.CX 4627 128,
+.CX 4498 128,
+.measureX 4498 [] [.CZ 4626 127,.CZ 4626 4497,.CZ 127 4497],
+.CX 4626 127,
+.CX 4497 127,
+.measureX 4497 [] [.CZ 4625 126,.CZ 4625 4496,.CZ 126 4496],
+.CX 4625 126,
+.CX 4496 126,
+.measureX 4496 [] [.CZ 4624 125,.CZ 4624 4495,.CZ 125 4495],
+.CX 4624 125,
+.CX 4495 125,
+.measureX 4495 [] [.CZ 4623 124,.CZ 4623 4494,.CZ 124 4494],
+.CX 4623 124,
+.CX 4494 124,
+.measureX 4494 [] [.CZ 4622 123,.CZ 4622 4493,.CZ 123 4493],
+.CX 4622 123,
+.CX 4493 123,
+.measureX 4493 [] [.CZ 4621 122,.CZ 4621 4492,.CZ 122 4492],
+.CX 4621 122,
+.CX 4492 122,
+.measureX 4492 [] [.CZ 4620 121,.CZ 4620 4491,.CZ 121 4491],
+.CX 4620 121,
+.CX 4491 121,
+.measureX 4491 [] [.CZ 4619 120,.CZ 4619 4490,.CZ 120 4490],
+.CX 4619 120,
+.CX 4490 120,
+.measureX 4490 [] [.CZ 4618 119,.CZ 4618 4489,.CZ 119 4489]
+]
 theorem result13:(compileFuel known13 129 block13).map (fun r=>(r.saved,r.final))=some (0,known14):=by decide +kernel
 def opt13:ExactChecked known13 block13 known14 0:=normalize _ _ _ _ _ result13
+def block14:Program:=[
+.CX 4618 119,
+.CX 4489 119,
+.measureX 4489 [] [.CZ 4617 118,.CZ 4617 4488,.CZ 118 4488],
+.CX 4617 118,
+.CX 4488 118,
+.measureX 4488 [] [.CZ 4616 117,.CZ 4616 4487,.CZ 117 4487],
+.CX 4616 117,
+.CX 4487 117,
+.measureX 4487 [] [.CZ 4615 116,.CZ 4615 4486,.CZ 116 4486],
+.CX 4615 116,
+.CX 4486 116,
+.measureX 4486 [] [.CZ 4614 115,.CZ 4614 4485,.CZ 115 4485],
+.CX 4614 115,
+.CX 4485 115,
+.measureX 4485 [] [.CZ 4613 114,.CZ 4613 4484,.CZ 114 4484],
+.CX 4613 114,
+.CX 4484 114,
+.measureX 4484 [] [.CZ 4612 113,.CZ 4612 4483,.CZ 113 4483],
+.CX 4612 113,
+.CX 4483 113,
+.measureX 4483 [] [.CZ 4611 112,.CZ 4611 4482,.CZ 112 4482],
+.CX 4611 112,
+.CX 4482 112,
+.measureX 4482 [] [.CZ 4610 111,.CZ 4610 4481,.CZ 111 4481],
+.CX 4610 111,
+.CX 4481 111,
+.measureX 4481 [] [.CZ 4609 110,.CZ 4609 4480,.CZ 110 4480],
+.CX 4609 110,
+.CX 4480 110,
+.measureX 4480 [] [.CZ 4608 109,.CZ 4608 4479,.CZ 109 4479],
+.CX 4608 109,
+.CX 4479 109,
+.measureX 4479 [] [.CZ 4607 108,.CZ 4607 4478,.CZ 108 4478],
+.CX 4607 108,
+.CX 4478 108,
+.measureX 4478 [] [.CZ 4606 107,.CZ 4606 4477,.CZ 107 4477],
+.CX 4606 107,
+.CX 4477 107,
+.measureX 4477 [] [.CZ 4605 106,.CZ 4605 4476,.CZ 106 4476],
+.CX 4605 106,
+.CX 4476 106,
+.measureX 4476 [] [.CZ 4604 105,.CZ 4604 4475,.CZ 105 4475],
+.CX 4604 105,
+.CX 4475 105,
+.measureX 4475 [] [.CZ 4603 104,.CZ 4603 4474,.CZ 104 4474],
+.CX 4603 104,
+.CX 4474 104,
+.measureX 4474 [] [.CZ 4602 103,.CZ 4602 4473,.CZ 103 4473],
+.CX 4602 103,
+.CX 4473 103,
+.measureX 4473 [] [.CZ 4601 102,.CZ 4601 4472,.CZ 102 4472],
+.CX 4601 102,
+.CX 4472 102,
+.measureX 4472 [] [.CZ 4600 101,.CZ 4600 4471,.CZ 101 4471],
+.CX 4600 101,
+.CX 4471 101,
+.measureX 4471 [] [.CZ 4599 100,.CZ 4599 4470,.CZ 100 4470],
+.CX 4599 100,
+.CX 4470 100,
+.measureX 4470 [] [.CZ 4598 99,.CZ 4598 4469,.CZ 99 4469],
+.CX 4598 99,
+.CX 4469 99,
+.measureX 4469 [] [.CZ 4597 98,.CZ 4597 4468,.CZ 98 4468],
+.CX 4597 98,
+.CX 4468 98,
+.measureX 4468 [] [.CZ 4596 97,.CZ 4596 4467,.CZ 97 4467],
+.CX 4596 97,
+.CX 4467 97,
+.measureX 4467 [] [.CZ 4595 96,.CZ 4595 4466,.CZ 96 4466],
+.CX 4595 96,
+.CX 4466 96,
+.measureX 4466 [] [.CZ 4594 95,.CZ 4594 4465,.CZ 95 4465],
+.CX 4594 95,
+.CX 4465 95,
+.measureX 4465 [] [.CZ 4593 94,.CZ 4593 4464,.CZ 94 4464],
+.CX 4593 94,
+.CX 4464 94,
+.measureX 4464 [] [.CZ 4592 93,.CZ 4592 4463,.CZ 93 4463],
+.CX 4592 93,
+.CX 4463 93,
+.measureX 4463 [] [.CZ 4591 92,.CZ 4591 4462,.CZ 92 4462],
+.CX 4591 92,
+.CX 4462 92,
+.measureX 4462 [] [.CZ 4590 91,.CZ 4590 4461,.CZ 91 4461],
+.CX 4590 91,
+.CX 4461 91,
+.measureX 4461 [] [.CZ 4589 90,.CZ 4589 4460,.CZ 90 4460],
+.CX 4589 90,
+.CX 4460 90,
+.measureX 4460 [] [.CZ 4588 89,.CZ 4588 4459,.CZ 89 4459],
+.CX 4588 89,
+.CX 4459 89,
+.measureX 4459 [] [.CZ 4587 88,.CZ 4587 4458,.CZ 88 4458],
+.CX 4587 88,
+.CX 4458 88,
+.measureX 4458 [] [.CZ 4586 87,.CZ 4586 4457,.CZ 87 4457],
+.CX 4586 87,
+.CX 4457 87,
+.measureX 4457 [] [.CZ 4585 86,.CZ 4585 4456,.CZ 86 4456],
+.CX 4585 86,
+.CX 4456 86,
+.measureX 4456 [] [.CZ 4584 85,.CZ 4584 4455,.CZ 85 4455],
+.CX 4584 85,
+.CX 4455 85,
+.measureX 4455 [] [.CZ 4583 84,.CZ 4583 4454,.CZ 84 4454],
+.CX 4583 84,
+.CX 4454 84,
+.measureX 4454 [] [.CZ 4582 83,.CZ 4582 4453,.CZ 83 4453],
+.CX 4582 83,
+.CX 4453 83,
+.measureX 4453 [] [.CZ 4581 82,.CZ 4581 4452,.CZ 82 4452],
+.CX 4581 82,
+.CX 4452 82,
+.measureX 4452 [] [.CZ 4580 81,.CZ 4580 4451,.CZ 81 4451],
+.CX 4580 81,
+.CX 4451 81,
+.measureX 4451 [] [.CZ 4579 80,.CZ 4579 4450,.CZ 80 4450],
+.CX 4579 80,
+.CX 4450 80,
+.measureX 4450 [] [.CZ 4578 79,.CZ 4578 4449,.CZ 79 4449],
+.CX 4578 79,
+.CX 4449 79,
+.measureX 4449 [] [.CZ 4577 78,.CZ 4577 4448,.CZ 78 4448],
+.CX 4577 78,
+.CX 4448 78,
+.measureX 4448 [] [.CZ 4576 77,.CZ 4576 4447,.CZ 77 4447],
+.CX 4576 77,
+.CX 4447 77
+]
 theorem result14:(compileFuel known14 129 block14).map (fun r=>(r.saved,r.final))=some (0,known15):=by decide +kernel
 def opt14:ExactChecked known14 block14 known15 0:=normalize _ _ _ _ _ result14
+def block15:Program:=[
+.measureX 4447 [] [.CZ 4575 76,.CZ 4575 4446,.CZ 76 4446],
+.CX 4575 76,
+.CX 4446 76,
+.measureX 4446 [] [.CZ 4574 75,.CZ 4574 4445,.CZ 75 4445],
+.CX 4574 75,
+.CX 4445 75,
+.measureX 4445 [] [.CZ 4573 74,.CZ 4573 4444,.CZ 74 4444],
+.CX 4573 74,
+.CX 4444 74,
+.measureX 4444 [] [.CZ 4572 73,.CZ 4572 4443,.CZ 73 4443],
+.CX 4572 73,
+.CX 4443 73,
+.measureX 4443 [] [.CZ 4571 72,.CZ 4571 4442,.CZ 72 4442],
+.CX 4571 72,
+.CX 4442 72,
+.measureX 4442 [] [.CZ 4570 71,.CZ 4570 4441,.CZ 71 4441],
+.CX 4570 71,
+.CX 4441 71,
+.measureX 4441 [] [.CZ 4569 70,.CZ 4569 4440,.CZ 70 4440],
+.CX 4569 70,
+.CX 4440 70,
+.measureX 4440 [] [.CZ 4568 69,.CZ 4568 4439,.CZ 69 4439],
+.CX 4568 69,
+.CX 4439 69,
+.measureX 4439 [] [.CZ 4567 68,.CZ 4567 4438,.CZ 68 4438],
+.CX 4567 68,
+.CX 4438 68,
+.measureX 4438 [] [.CZ 4566 67,.CZ 4566 4437,.CZ 67 4437],
+.CX 4566 67,
+.CX 4437 67,
+.measureX 4437 [] [.CZ 4565 66,.CZ 4565 4436,.CZ 66 4436],
+.CX 4565 66,
+.CX 4436 66,
+.measureX 4436 [] [.CZ 4564 65,.CZ 4564 4435,.CZ 65 4435],
+.CX 4564 65,
+.CX 4435 65,
+.measureX 4435 [] [.CZ 4563 64,.CZ 4563 4434,.CZ 64 4434],
+.CX 4563 64,
+.CX 4434 64,
+.measureX 4434 [] [.CZ 4562 63,.CZ 4562 4433,.CZ 63 4433],
+.CX 4562 63,
+.CX 4433 63,
+.measureX 4433 [] [.CZ 4561 62,.CZ 4561 4432,.CZ 62 4432],
+.CX 4561 62,
+.CX 4432 62,
+.measureX 4432 [] [.CZ 4560 61,.CZ 4560 4431,.CZ 61 4431],
+.CX 4560 61,
+.CX 4431 61,
+.measureX 4431 [] [.CZ 4559 60,.CZ 4559 4430,.CZ 60 4430],
+.CX 4559 60,
+.CX 4430 60,
+.measureX 4430 [] [.CZ 4558 59,.CZ 4558 4429,.CZ 59 4429],
+.CX 4558 59,
+.CX 4429 59,
+.measureX 4429 [] [.CZ 4557 58,.CZ 4557 4428,.CZ 58 4428],
+.CX 4557 58,
+.CX 4428 58,
+.measureX 4428 [] [.CZ 4556 57,.CZ 4556 4427,.CZ 57 4427],
+.CX 4556 57,
+.CX 4427 57,
+.measureX 4427 [] [.CZ 4555 56,.CZ 4555 4426,.CZ 56 4426],
+.CX 4555 56,
+.CX 4426 56,
+.measureX 4426 [] [.CZ 4554 55,.CZ 4554 4425,.CZ 55 4425],
+.CX 4554 55,
+.CX 4425 55,
+.measureX 4425 [] [.CZ 4553 54,.CZ 4553 4424,.CZ 54 4424],
+.CX 4553 54,
+.CX 4424 54,
+.measureX 4424 [] [.CZ 4552 53,.CZ 4552 4423,.CZ 53 4423],
+.CX 4552 53,
+.CX 4423 53,
+.measureX 4423 [] [.CZ 4551 52,.CZ 4551 4422,.CZ 52 4422],
+.CX 4551 52,
+.CX 4422 52,
+.measureX 4422 [] [.CZ 4550 51,.CZ 4550 4421,.CZ 51 4421],
+.CX 4550 51,
+.CX 4421 51,
+.measureX 4421 [] [.CZ 4549 50,.CZ 4549 4420,.CZ 50 4420],
+.CX 4549 50,
+.CX 4420 50,
+.measureX 4420 [] [.CZ 4548 49,.CZ 4548 4419,.CZ 49 4419],
+.CX 4548 49,
+.CX 4419 49,
+.measureX 4419 [] [.CZ 4547 48,.CZ 4547 4418,.CZ 48 4418],
+.CX 4547 48,
+.CX 4418 48,
+.measureX 4418 [] [.CZ 4546 47,.CZ 4546 4417,.CZ 47 4417],
+.CX 4546 47,
+.CX 4417 47,
+.measureX 4417 [] [.CZ 4545 46,.CZ 4545 4416,.CZ 46 4416],
+.CX 4545 46,
+.CX 4416 46,
+.measureX 4416 [] [.CZ 4544 45,.CZ 4544 4415,.CZ 45 4415],
+.CX 4544 45,
+.CX 4415 45,
+.measureX 4415 [] [.CZ 4543 44,.CZ 4543 4414,.CZ 44 4414],
+.CX 4543 44,
+.CX 4414 44,
+.measureX 4414 [] [.CZ 4542 43,.CZ 4542 4413,.CZ 43 4413],
+.CX 4542 43,
+.CX 4413 43,
+.measureX 4413 [] [.CZ 4541 42,.CZ 4541 4412,.CZ 42 4412],
+.CX 4541 42,
+.CX 4412 42,
+.measureX 4412 [] [.CZ 4540 41,.CZ 4540 4411,.CZ 41 4411],
+.CX 4540 41,
+.CX 4411 41,
+.measureX 4411 [] [.CZ 4539 40,.CZ 4539 4410,.CZ 40 4410],
+.CX 4539 40,
+.CX 4410 40,
+.measureX 4410 [] [.CZ 4538 39,.CZ 4538 4409,.CZ 39 4409],
+.CX 4538 39,
+.CX 4409 39,
+.measureX 4409 [] [.CZ 4537 38,.CZ 4537 4408,.CZ 38 4408],
+.CX 4537 38,
+.CX 4408 38,
+.measureX 4408 [] [.CZ 4536 37,.CZ 4536 4407,.CZ 37 4407],
+.CX 4536 37,
+.CX 4407 37,
+.measureX 4407 [] [.CZ 4535 36,.CZ 4535 4406,.CZ 36 4406],
+.CX 4535 36,
+.CX 4406 36,
+.measureX 4406 [] [.CZ 4534 35,.CZ 4534 4405,.CZ 35 4405],
+.CX 4534 35,
+.CX 4405 35,
+.measureX 4405 [] [.CZ 4533 34,.CZ 4533 4404,.CZ 34 4404],
+.CX 4533 34
+]
 theorem result15:(compileFuel known15 129 block15).map (fun r=>(r.saved,r.final))=some (0,known16):=by decide +kernel
 def opt15:ExactChecked known15 block15 known16 0:=normalize _ _ _ _ _ result15
+def block16:Program:=[
+.CX 4404 34,
+.measureX 4404 [] [.CZ 4532 33,.CZ 4532 4403,.CZ 33 4403],
+.CX 4532 33,
+.CX 4403 33,
+.measureX 4403 [] [.CZ 4531 32,.CZ 4531 4402,.CZ 32 4402],
+.CX 4531 32,
+.CX 4402 32,
+.measureX 4402 [] [.CZ 4530 31,.CZ 4530 4401,.CZ 31 4401],
+.CX 4530 31,
+.CX 4401 31,
+.measureX 4401 [] [.CZ 4529 30,.CZ 4529 4400,.CZ 30 4400],
+.CX 4529 30,
+.CX 4400 30,
+.measureX 4400 [] [.CZ 4528 29,.CZ 4528 4399,.CZ 29 4399],
+.CX 4528 29,
+.CX 4399 29,
+.measureX 4399 [] [.CZ 4527 28,.CZ 4527 4398,.CZ 28 4398],
+.CX 4527 28,
+.CX 4398 28,
+.measureX 4398 [] [.CZ 4526 27,.CZ 4526 4397,.CZ 27 4397],
+.CX 4526 27,
+.CX 4397 27,
+.measureX 4397 [] [.CZ 4525 26,.CZ 4525 4396,.CZ 26 4396],
+.CX 4525 26,
+.CX 4396 26,
+.measureX 4396 [] [.CZ 4524 25,.CZ 4524 4395,.CZ 25 4395],
+.CX 4524 25,
+.CX 4395 25,
+.measureX 4395 [] [.CZ 4523 24,.CZ 4523 4394,.CZ 24 4394],
+.CX 4523 24,
+.CX 4394 24,
+.measureX 4394 [] [.CZ 4522 23,.CZ 4522 4393,.CZ 23 4393],
+.CX 4522 23,
+.CX 4393 23,
+.measureX 4393 [] [.CZ 4521 22,.CZ 4521 4392,.CZ 22 4392],
+.CX 4521 22,
+.CX 4392 22,
+.measureX 4392 [] [.CZ 4520 21,.CZ 4520 4391,.CZ 21 4391],
+.CX 4520 21,
+.CX 4391 21,
+.measureX 4391 [] [.CZ 4519 20,.CZ 4519 4390,.CZ 20 4390],
+.CX 4519 20,
+.CX 4390 20,
+.measureX 4390 [] [.CZ 4518 19,.CZ 4518 4389,.CZ 19 4389],
+.CX 4518 19,
+.CX 4389 19,
+.measureX 4389 [] [.CZ 4517 18,.CZ 4517 4388,.CZ 18 4388],
+.CX 4517 18,
+.CX 4388 18,
+.measureX 4388 [] [.CZ 4516 17,.CZ 4516 4387,.CZ 17 4387],
+.CX 4516 17,
+.CX 4387 17,
+.measureX 4387 [] [.CZ 4515 16,.CZ 4515 4386,.CZ 16 4386],
+.CX 4515 16,
+.CX 4386 16,
+.measureX 4386 [] [.CZ 4514 15,.CZ 4514 4385,.CZ 15 4385],
+.CX 4514 15,
+.CX 4385 15,
+.measureX 4385 [] [.CZ 4513 14,.CZ 4513 4384,.CZ 14 4384],
+.CX 4513 14,
+.CX 4384 14,
+.measureX 4384 [] [.CZ 4512 13,.CZ 4512 4383,.CZ 13 4383],
+.CX 4512 13,
+.CX 4383 13,
+.measureX 4383 [] [.CZ 4511 12,.CZ 4511 4382,.CZ 12 4382],
+.CX 4511 12,
+.CX 4382 12,
+.measureX 4382 [] [.CZ 4510 11,.CZ 4510 4381,.CZ 11 4381],
+.CX 4510 11,
+.CX 4381 11,
+.measureX 4381 [] [.CZ 4509 10,.CZ 4509 4380,.CZ 10 4380],
+.CX 4509 10,
+.CX 4380 10,
+.measureX 4380 [] [.CZ 4508 9,.CZ 4508 4379,.CZ 9 4379],
+.CX 4508 9,
+.CX 4379 9,
+.measureX 4379 [] [.CZ 4507 8,.CZ 4507 4378,.CZ 8 4378],
+.CX 4507 8,
+.CX 4378 8,
+.measureX 4378 [] [.CZ 4506 7,.CZ 4506 4377,.CZ 7 4377],
+.CX 4506 7,
+.CX 4377 7,
+.measureX 4377 [] [.CZ 4505 6,.CZ 4505 4376,.CZ 6 4376],
+.CX 4505 6,
+.CX 4376 6,
+.measureX 4376 [] [.CZ 5 4375],
+.CX 4375 5,
+.measureX 4375 [] [.CZ 4 4374],
+.CX 4374 4,
+.measureX 4374 [] [.CZ 3 4373],
+.CX 4373 3,
+.measureX 4373 [] [.CZ 2 4760],
+.CX 4760 2,
+.CX 4758 4762,
+.X 4762,
+.CX 4762 2,
+.CX 4762 4760,
+.CCX 2 4760 4373,
+.CX 4762 4373,
+.CX 4762 4760,
+.CX 4762 2,
+.CX 4762 3,
+.CX 4762 4373,
+.CCX 3 4373 4374,
+.CX 4762 4374,
+.CX 4762 4373,
+.CX 4762 3,
+.CX 4762 4,
+.CX 4762 4374,
+.CCX 4 4374 4375,
+.CX 4762 4375,
+.CX 4762 4374,
+.CX 4762 4,
+.CX 4762 5,
+.CX 4762 4375,
+.CCX 5 4375 4376,
+.CX 4762 4376,
+.CX 4762 4375,
+.CX 4762 5,
+.CCX 6 4376 4377,
+.CX 4762 7,
+.CX 4762 4377,
+.CCX 7 4377 4378,
+.CX 4762 4378,
+.CX 4762 4377,
+.CX 4762 7,
+.CCX 8 4378 4379,
+.CCX 9 4379 4380
+]
 theorem result16:(compileFuel known16 129 block16).map (fun r=>(r.saved,r.final))=some (0,known17):=by decide +kernel
 def opt16:ExactChecked known16 block16 known17 0:=normalize _ _ _ _ _ result16
+def block17:Program:=[
+.CCX 10 4380 4381,
+.CCX 11 4381 4382,
+.CX 4762 12,
+.CX 4762 4382,
+.CCX 12 4382 4383,
+.CX 4762 4383,
+.CX 4762 4382,
+.CX 4762 12,
+.CX 4762 13,
+.CX 4762 4383,
+.CCX 13 4383 4384,
+.CX 4762 4384,
+.CX 4762 4383,
+.CX 4762 13,
+.CX 4762 14,
+.CX 4762 4384,
+.CCX 14 4384 4385,
+.CX 4762 4385,
+.CX 4762 4384,
+.CX 4762 14,
+.CX 4762 15,
+.CX 4762 4385,
+.CCX 15 4385 4386,
+.CX 4762 4386,
+.CX 4762 4385,
+.CX 4762 15,
+.CX 4762 16,
+.CX 4762 4386,
+.CCX 16 4386 4387,
+.CX 4762 4387,
+.CX 4762 4386,
+.CX 4762 16,
+.CX 4762 17,
+.CX 4762 4387,
+.CCX 17 4387 4388,
+.CX 4762 4388,
+.CX 4762 4387,
+.CX 4762 17,
+.CX 4762 18,
+.CX 4762 4388,
+.CCX 18 4388 4389,
+.CX 4762 4389,
+.CX 4762 4388,
+.CX 4762 18,
+.CX 4762 19,
+.CX 4762 4389,
+.CCX 19 4389 4390,
+.CX 4762 4390,
+.CX 4762 4389,
+.CX 4762 19,
+.CX 4762 20,
+.CX 4762 4390,
+.CCX 20 4390 4391,
+.CX 4762 4391,
+.CX 4762 4390,
+.CX 4762 20,
+.CX 4762 21,
+.CX 4762 4391,
+.CCX 21 4391 4392,
+.CX 4762 4392,
+.CX 4762 4391,
+.CX 4762 21,
+.CX 4762 22,
+.CX 4762 4392,
+.CCX 22 4392 4393,
+.CX 4762 4393,
+.CX 4762 4392,
+.CX 4762 22,
+.CX 4762 23,
+.CX 4762 4393,
+.CCX 23 4393 4394,
+.CX 4762 4394,
+.CX 4762 4393,
+.CX 4762 23,
+.CX 4762 24,
+.CX 4762 4394,
+.CCX 24 4394 4395,
+.CX 4762 4395,
+.CX 4762 4394,
+.CX 4762 24,
+.CX 4762 25,
+.CX 4762 4395,
+.CCX 25 4395 4396,
+.CX 4762 4396,
+.CX 4762 4395,
+.CX 4762 25,
+.CX 4762 26,
+.CX 4762 4396,
+.CCX 26 4396 4397,
+.CX 4762 4397,
+.CX 4762 4396,
+.CX 4762 26,
+.CX 4762 27,
+.CX 4762 4397,
+.CCX 27 4397 4398,
+.CX 4762 4398,
+.CX 4762 4397,
+.CX 4762 27,
+.CX 4762 28,
+.CX 4762 4398,
+.CCX 28 4398 4399,
+.CX 4762 4399,
+.CX 4762 4398,
+.CX 4762 28,
+.CX 4762 29,
+.CX 4762 4399,
+.CCX 29 4399 4400,
+.CX 4762 4400,
+.CX 4762 4399,
+.CX 4762 29,
+.CX 4762 30,
+.CX 4762 4400,
+.CCX 30 4400 4401,
+.CX 4762 4401,
+.CX 4762 4400,
+.CX 4762 30,
+.CX 4762 31,
+.CX 4762 4401,
+.CCX 31 4401 4402,
+.CX 4762 4402,
+.CX 4762 4401,
+.CX 4762 31,
+.CX 4762 32,
+.CX 4762 4402,
+.CCX 32 4402 4403,
+.CX 4762 4403,
+.CX 4762 4402,
+.CX 4762 32
+]
 theorem result17:(compileFuel known17 129 block17).map (fun r=>(r.saved,r.final))=some (0,known18):=by decide +kernel
 def opt17:ExactChecked known17 block17 known18 0:=normalize _ _ _ _ _ result17
+def block18:Program:=[
+.CX 4762 33,
+.CX 4762 4403,
+.CCX 33 4403 4404,
+.CX 4762 4404,
+.CX 4762 4403,
+.CX 4762 33,
+.CCX 34 4404 4405,
+.CX 4762 35,
+.CX 4762 4405,
+.CCX 35 4405 4406,
+.CX 4762 4406,
+.CX 4762 4405,
+.CX 4762 35,
+.CX 4762 36,
+.CX 4762 4406,
+.CCX 36 4406 4407,
+.CX 4762 4407,
+.CX 4762 4406,
+.CX 4762 36,
+.CX 4762 37,
+.CX 4762 4407,
+.CCX 37 4407 4408,
+.CX 4762 4408,
+.CX 4762 4407,
+.CX 4762 37,
+.CX 4762 38,
+.CX 4762 4408,
+.CCX 38 4408 4409,
+.CX 4762 4409,
+.CX 4762 4408,
+.CX 4762 38,
+.CX 4762 39,
+.CX 4762 4409,
+.CCX 39 4409 4410,
+.CX 4762 4410,
+.CX 4762 4409,
+.CX 4762 39,
+.CX 4762 40,
+.CX 4762 4410,
+.CCX 40 4410 4411,
+.CX 4762 4411,
+.CX 4762 4410,
+.CX 4762 40,
+.CX 4762 41,
+.CX 4762 4411,
+.CCX 41 4411 4412,
+.CX 4762 4412,
+.CX 4762 4411,
+.CX 4762 41,
+.CX 4762 42,
+.CX 4762 4412,
+.CCX 42 4412 4413,
+.CX 4762 4413,
+.CX 4762 4412,
+.CX 4762 42,
+.CX 4762 43,
+.CX 4762 4413,
+.CCX 43 4413 4414,
+.CX 4762 4414,
+.CX 4762 4413,
+.CX 4762 43,
+.CX 4762 44,
+.CX 4762 4414,
+.CCX 44 4414 4415,
+.CX 4762 4415,
+.CX 4762 4414,
+.CX 4762 44,
+.CX 4762 45,
+.CX 4762 4415,
+.CCX 45 4415 4416,
+.CX 4762 4416,
+.CX 4762 4415,
+.CX 4762 45,
+.CX 4762 46,
+.CX 4762 4416,
+.CCX 46 4416 4417,
+.CX 4762 4417,
+.CX 4762 4416,
+.CX 4762 46,
+.CX 4762 47,
+.CX 4762 4417,
+.CCX 47 4417 4418,
+.CX 4762 4418,
+.CX 4762 4417,
+.CX 4762 47,
+.CX 4762 48,
+.CX 4762 4418,
+.CCX 48 4418 4419,
+.CX 4762 4419,
+.CX 4762 4418,
+.CX 4762 48,
+.CX 4762 49,
+.CX 4762 4419,
+.CCX 49 4419 4420,
+.CX 4762 4420,
+.CX 4762 4419,
+.CX 4762 49,
+.CX 4762 50,
+.CX 4762 4420,
+.CCX 50 4420 4421,
+.CX 4762 4421,
+.CX 4762 4420,
+.CX 4762 50,
+.CX 4762 51,
+.CX 4762 4421,
+.CCX 51 4421 4422,
+.CX 4762 4422,
+.CX 4762 4421,
+.CX 4762 51,
+.CX 4762 52,
+.CX 4762 4422,
+.CCX 52 4422 4423,
+.CX 4762 4423,
+.CX 4762 4422,
+.CX 4762 52,
+.CX 4762 53,
+.CX 4762 4423,
+.CCX 53 4423 4424,
+.CX 4762 4424,
+.CX 4762 4423,
+.CX 4762 53,
+.CX 4762 54,
+.CX 4762 4424,
+.CCX 54 4424 4425,
+.CX 4762 4425,
+.CX 4762 4424,
+.CX 4762 54
+]
 theorem result18:(compileFuel known18 128 block18).map (fun r=>(r.saved,r.final))=some (0,known19):=by decide +kernel
 def opt18:ExactChecked known18 block18 known19 0:=normalize _ _ _ _ _ result18
+def block19:Program:=[
+.CX 4762 55,
+.CX 4762 4425,
+.CCX 55 4425 4426,
+.CX 4762 4426,
+.CX 4762 4425,
+.CX 4762 55,
+.CX 4762 56,
+.CX 4762 4426,
+.CCX 56 4426 4427,
+.CX 4762 4427,
+.CX 4762 4426,
+.CX 4762 56,
+.CX 4762 57,
+.CX 4762 4427,
+.CCX 57 4427 4428,
+.CX 4762 4428,
+.CX 4762 4427,
+.CX 4762 57,
+.CX 4762 58,
+.CX 4762 4428,
+.CCX 58 4428 4429,
+.CX 4762 4429,
+.CX 4762 4428,
+.CX 4762 58,
+.CX 4762 59,
+.CX 4762 4429,
+.CCX 59 4429 4430,
+.CX 4762 4430,
+.CX 4762 4429,
+.CX 4762 59,
+.CX 4762 60,
+.CX 4762 4430,
+.CCX 60 4430 4431,
+.CX 4762 4431,
+.CX 4762 4430,
+.CX 4762 60,
+.CX 4762 61,
+.CX 4762 4431,
+.CCX 61 4431 4432,
+.CX 4762 4432,
+.CX 4762 4431,
+.CX 4762 61,
+.CX 4762 62,
+.CX 4762 4432,
+.CCX 62 4432 4433,
+.CX 4762 4433,
+.CX 4762 4432,
+.CX 4762 62,
+.CX 4762 63,
+.CX 4762 4433,
+.CCX 63 4433 4434,
+.CX 4762 4434,
+.CX 4762 4433,
+.CX 4762 63,
+.CX 4762 64,
+.CX 4762 4434,
+.CCX 64 4434 4435,
+.CX 4762 4435,
+.CX 4762 4434,
+.CX 4762 64,
+.CX 4762 65,
+.CX 4762 4435,
+.CCX 65 4435 4436,
+.CX 4762 4436,
+.CX 4762 4435,
+.CX 4762 65,
+.CX 4762 66,
+.CX 4762 4436,
+.CCX 66 4436 4437,
+.CX 4762 4437,
+.CX 4762 4436,
+.CX 4762 66,
+.CX 4762 67,
+.CX 4762 4437,
+.CCX 67 4437 4438,
+.CX 4762 4438,
+.CX 4762 4437,
+.CX 4762 67,
+.CX 4762 68,
+.CX 4762 4438,
+.CCX 68 4438 4439,
+.CX 4762 4439,
+.CX 4762 4438,
+.CX 4762 68,
+.CX 4762 69,
+.CX 4762 4439,
+.CCX 69 4439 4440,
+.CX 4762 4440,
+.CX 4762 4439,
+.CX 4762 69,
+.CX 4762 70,
+.CX 4762 4440,
+.CCX 70 4440 4441,
+.CX 4762 4441,
+.CX 4762 4440,
+.CX 4762 70,
+.CX 4762 71,
+.CX 4762 4441,
+.CCX 71 4441 4442,
+.CX 4762 4442,
+.CX 4762 4441,
+.CX 4762 71,
+.CX 4762 72,
+.CX 4762 4442,
+.CCX 72 4442 4443,
+.CX 4762 4443,
+.CX 4762 4442,
+.CX 4762 72,
+.CX 4762 73,
+.CX 4762 4443,
+.CCX 73 4443 4444,
+.CX 4762 4444,
+.CX 4762 4443,
+.CX 4762 73,
+.CX 4762 74,
+.CX 4762 4444,
+.CCX 74 4444 4445,
+.CX 4762 4445,
+.CX 4762 4444,
+.CX 4762 74,
+.CX 4762 75,
+.CX 4762 4445,
+.CCX 75 4445 4446,
+.CX 4762 4446,
+.CX 4762 4445,
+.CX 4762 75
+]
 theorem result19:(compileFuel known19 127 block19).map (fun r=>(r.saved,r.final))=some (0,known20):=by decide +kernel
 def opt19:ExactChecked known19 block19 known20 0:=normalize _ _ _ _ _ result19
+def block20:Program:=[
+.CX 4762 76,
+.CX 4762 4446,
+.CCX 76 4446 4447,
+.CX 4762 4447,
+.CX 4762 4446,
+.CX 4762 76,
+.CX 4762 77,
+.CX 4762 4447,
+.CCX 77 4447 4448,
+.CX 4762 4448,
+.CX 4762 4447,
+.CX 4762 77,
+.CX 4762 78,
+.CX 4762 4448,
+.CCX 78 4448 4449,
+.CX 4762 4449,
+.CX 4762 4448,
+.CX 4762 78,
+.CX 4762 79,
+.CX 4762 4449,
+.CCX 79 4449 4450,
+.CX 4762 4450,
+.CX 4762 4449,
+.CX 4762 79,
+.CX 4762 80,
+.CX 4762 4450,
+.CCX 80 4450 4451,
+.CX 4762 4451,
+.CX 4762 4450,
+.CX 4762 80,
+.CX 4762 81,
+.CX 4762 4451,
+.CCX 81 4451 4452,
+.CX 4762 4452,
+.CX 4762 4451,
+.CX 4762 81,
+.CX 4762 82,
+.CX 4762 4452,
+.CCX 82 4452 4453,
+.CX 4762 4453,
+.CX 4762 4452,
+.CX 4762 82,
+.CX 4762 83,
+.CX 4762 4453,
+.CCX 83 4453 4454,
+.CX 4762 4454,
+.CX 4762 4453,
+.CX 4762 83,
+.CX 4762 84,
+.CX 4762 4454,
+.CCX 84 4454 4455,
+.CX 4762 4455,
+.CX 4762 4454,
+.CX 4762 84,
+.CX 4762 85,
+.CX 4762 4455,
+.CCX 85 4455 4456,
+.CX 4762 4456,
+.CX 4762 4455,
+.CX 4762 85,
+.CX 4762 86,
+.CX 4762 4456,
+.CCX 86 4456 4457,
+.CX 4762 4457,
+.CX 4762 4456,
+.CX 4762 86,
+.CX 4762 87,
+.CX 4762 4457,
+.CCX 87 4457 4458,
+.CX 4762 4458,
+.CX 4762 4457,
+.CX 4762 87,
+.CX 4762 88,
+.CX 4762 4458,
+.CCX 88 4458 4459,
+.CX 4762 4459,
+.CX 4762 4458,
+.CX 4762 88,
+.CX 4762 89,
+.CX 4762 4459,
+.CCX 89 4459 4460,
+.CX 4762 4460,
+.CX 4762 4459,
+.CX 4762 89,
+.CX 4762 90,
+.CX 4762 4460,
+.CCX 90 4460 4461,
+.CX 4762 4461,
+.CX 4762 4460,
+.CX 4762 90,
+.CX 4762 91,
+.CX 4762 4461,
+.CCX 91 4461 4462,
+.CX 4762 4462,
+.CX 4762 4461,
+.CX 4762 91,
+.CX 4762 92,
+.CX 4762 4462,
+.CCX 92 4462 4463,
+.CX 4762 4463,
+.CX 4762 4462,
+.CX 4762 92,
+.CX 4762 93,
+.CX 4762 4463,
+.CCX 93 4463 4464,
+.CX 4762 4464,
+.CX 4762 4463,
+.CX 4762 93,
+.CX 4762 94,
+.CX 4762 4464,
+.CCX 94 4464 4465,
+.CX 4762 4465,
+.CX 4762 4464,
+.CX 4762 94,
+.CX 4762 95,
+.CX 4762 4465,
+.CCX 95 4465 4466,
+.CX 4762 4466,
+.CX 4762 4465,
+.CX 4762 95,
+.CX 4762 96,
+.CX 4762 4466,
+.CCX 96 4466 4467,
+.CX 4762 4467,
+.CX 4762 4466,
+.CX 4762 96
+]
 theorem result20:(compileFuel known20 127 block20).map (fun r=>(r.saved,r.final))=some (0,known21):=by decide +kernel
 def opt20:ExactChecked known20 block20 known21 0:=normalize _ _ _ _ _ result20
+def block21:Program:=[
+.CX 4762 97,
+.CX 4762 4467,
+.CCX 97 4467 4468,
+.CX 4762 4468,
+.CX 4762 4467,
+.CX 4762 97,
+.CX 4762 98,
+.CX 4762 4468,
+.CCX 98 4468 4469,
+.CX 4762 4469,
+.CX 4762 4468,
+.CX 4762 98,
+.CX 4762 99,
+.CX 4762 4469,
+.CCX 99 4469 4470,
+.CX 4762 4470,
+.CX 4762 4469,
+.CX 4762 99,
+.CX 4762 100,
+.CX 4762 4470,
+.CCX 100 4470 4471,
+.CX 4762 4471,
+.CX 4762 4470,
+.CX 4762 100,
+.CX 4762 101,
+.CX 4762 4471,
+.CCX 101 4471 4472,
+.CX 4762 4472,
+.CX 4762 4471,
+.CX 4762 101,
+.CX 4762 102,
+.CX 4762 4472,
+.CCX 102 4472 4473,
+.CX 4762 4473,
+.CX 4762 4472,
+.CX 4762 102,
+.CX 4762 103,
+.CX 4762 4473,
+.CCX 103 4473 4474,
+.CX 4762 4474,
+.CX 4762 4473,
+.CX 4762 103,
+.CX 4762 104,
+.CX 4762 4474,
+.CCX 104 4474 4475,
+.CX 4762 4475,
+.CX 4762 4474,
+.CX 4762 104,
+.CX 4762 105,
+.CX 4762 4475,
+.CCX 105 4475 4476,
+.CX 4762 4476,
+.CX 4762 4475,
+.CX 4762 105,
+.CX 4762 106,
+.CX 4762 4476,
+.CCX 106 4476 4477,
+.CX 4762 4477,
+.CX 4762 4476,
+.CX 4762 106,
+.CX 4762 107,
+.CX 4762 4477,
+.CCX 107 4477 4478,
+.CX 4762 4478,
+.CX 4762 4477,
+.CX 4762 107,
+.CX 4762 108,
+.CX 4762 4478,
+.CCX 108 4478 4479,
+.CX 4762 4479,
+.CX 4762 4478,
+.CX 4762 108,
+.CX 4762 109,
+.CX 4762 4479,
+.CCX 109 4479 4480,
+.CX 4762 4480,
+.CX 4762 4479,
+.CX 4762 109,
+.CX 4762 110,
+.CX 4762 4480,
+.CCX 110 4480 4481,
+.CX 4762 4481,
+.CX 4762 4480,
+.CX 4762 110,
+.CX 4762 111,
+.CX 4762 4481,
+.CCX 111 4481 4482,
+.CX 4762 4482,
+.CX 4762 4481,
+.CX 4762 111,
+.CX 4762 112,
+.CX 4762 4482,
+.CCX 112 4482 4483,
+.CX 4762 4483,
+.CX 4762 4482,
+.CX 4762 112,
+.CX 4762 113,
+.CX 4762 4483,
+.CCX 113 4483 4484,
+.CX 4762 4484,
+.CX 4762 4483,
+.CX 4762 113,
+.CX 4762 114,
+.CX 4762 4484,
+.CCX 114 4484 4485,
+.CX 4762 4485,
+.CX 4762 4484,
+.CX 4762 114,
+.CX 4762 115,
+.CX 4762 4485,
+.CCX 115 4485 4486,
+.CX 4762 4486,
+.CX 4762 4485,
+.CX 4762 115,
+.CX 4762 116,
+.CX 4762 4486,
+.CCX 116 4486 4487,
+.CX 4762 4487,
+.CX 4762 4486,
+.CX 4762 116,
+.CX 4762 117,
+.CX 4762 4487,
+.CCX 117 4487 4488,
+.CX 4762 4488,
+.CX 4762 4487,
+.CX 4762 117
+]
 theorem result21:(compileFuel known21 127 block21).map (fun r=>(r.saved,r.final))=some (0,known22):=by decide +kernel
 def opt21:ExactChecked known21 block21 known22 0:=normalize _ _ _ _ _ result21
+def block22:Program:=[
+.CX 4762 118,
+.CX 4762 4488,
+.CCX 118 4488 4489,
+.CX 4762 4489,
+.CX 4762 4488,
+.CX 4762 118,
+.CX 4762 119,
+.CX 4762 4489,
+.CCX 119 4489 4490,
+.CX 4762 4490,
+.CX 4762 4489,
+.CX 4762 119,
+.CX 4762 120,
+.CX 4762 4490,
+.CCX 120 4490 4491,
+.CX 4762 4491,
+.CX 4762 4490,
+.CX 4762 120,
+.CX 4762 121,
+.CX 4762 4491,
+.CCX 121 4491 4492,
+.CX 4762 4492,
+.CX 4762 4491,
+.CX 4762 121,
+.CX 4762 122,
+.CX 4762 4492,
+.CCX 122 4492 4493,
+.CX 4762 4493,
+.CX 4762 4492,
+.CX 4762 122,
+.CX 4762 123,
+.CX 4762 4493,
+.CCX 123 4493 4494,
+.CX 4762 4494,
+.CX 4762 4493,
+.CX 4762 123,
+.CX 4762 124,
+.CX 4762 4494,
+.CCX 124 4494 4495,
+.CX 4762 4495,
+.CX 4762 4494,
+.CX 4762 124,
+.CX 4762 125,
+.CX 4762 4495,
+.CCX 125 4495 4496,
+.CX 4762 4496,
+.CX 4762 4495,
+.CX 4762 125,
+.CX 4762 126,
+.CX 4762 4496,
+.CCX 126 4496 4497,
+.CX 4762 4497,
+.CX 4762 4496,
+.CX 4762 126,
+.CX 4762 127,
+.CX 4762 4497,
+.CCX 127 4497 4498,
+.CX 4762 4498,
+.CX 4762 4497,
+.CX 4762 127,
+.CX 4762 128,
+.CX 4762 4498,
+.CCX 128 4498 4499,
+.CX 4762 4499,
+.CX 4762 4498,
+.CX 4762 128,
+.CX 4762 129,
+.CX 4762 4499,
+.CCX 129 4499 4500,
+.CX 4762 4500,
+.CX 4762 4499,
+.CX 4762 129,
+.CX 4762 130,
+.CX 4762 4500,
+.CCX 130 4500 4764,
+.CX 4762 4764,
+.CX 4762 4500,
+.CX 4762 130,
+.CX 4762 131,
+.CX 4762 4764,
+.CCX 131 4764 4765,
+.CX 4762 4765,
+.CX 4762 4764,
+.CX 4762 131,
+.CX 4762 132,
+.CX 4762 4765,
+.CCX 132 4765 4766,
+.CX 4762 4766,
+.CX 4762 4765,
+.CX 4762 132,
+.CX 4762 133,
+.CX 4762 4766,
+.CCX 133 4766 4767,
+.CX 4762 4767,
+.CX 4762 4766,
+.CX 4762 133,
+.CX 4762 134,
+.CX 4762 4767,
+.CCX 134 4767 4768,
+.CX 4762 4768,
+.CX 4762 4767,
+.CX 4762 134,
+.CX 4762 135,
+.CX 4762 4768,
+.CCX 135 4768 4769,
+.CX 4762 4769,
+.CX 4762 4768,
+.CX 4762 135,
+.CX 4762 136,
+.CX 4762 4769,
+.CCX 136 4769 4770,
+.CX 4762 4770,
+.CX 4762 4769,
+.CX 4762 136,
+.CX 4762 137,
+.CX 4762 4770,
+.CCX 137 4770 4771,
+.CX 4762 4771,
+.CX 4762 4770,
+.CX 4762 137,
+.CX 4762 138,
+.CX 4762 4771,
+.CCX 138 4771 4772,
+.CX 4762 4772,
+.CX 4762 4771,
+.CX 4762 138
+]
 theorem result22:(compileFuel known22 127 block22).map (fun r=>(r.saved,r.final))=some (0,known23):=by decide +kernel
 def opt22:ExactChecked known22 block22 known23 0:=normalize _ _ _ _ _ result22
+def block23:Program:=[
+.CX 4762 139,
+.CX 4762 4772,
+.CCX 139 4772 4773,
+.CX 4762 4773,
+.CX 4762 4772,
+.CX 4762 139,
+.CX 4762 140,
+.CX 4762 4773,
+.CCX 140 4773 4774,
+.CX 4762 4774,
+.CX 4762 4773,
+.CX 4762 140,
+.CX 4762 141,
+.CX 4762 4774,
+.CCX 141 4774 4775,
+.CX 4762 4775,
+.CX 4762 4774,
+.CX 4762 141,
+.CX 4762 142,
+.CX 4762 4775,
+.CCX 142 4775 4776,
+.CX 4762 4776,
+.CX 4762 4775,
+.CX 4762 142,
+.CX 4762 143,
+.CX 4762 4776,
+.CCX 143 4776 4777,
+.CX 4762 4777,
+.CX 4762 4776,
+.CX 4762 143,
+.CX 4762 144,
+.CX 4762 4777,
+.CCX 144 4777 4778,
+.CX 4762 4778,
+.CX 4762 4777,
+.CX 4762 144,
+.CX 4762 145,
+.CX 4762 4778,
+.CCX 145 4778 4779,
+.CX 4762 4779,
+.CX 4762 4778,
+.CX 4762 145,
+.CX 4762 146,
+.CX 4762 4779,
+.CCX 146 4779 4780,
+.CX 4762 4780,
+.CX 4762 4779,
+.CX 4762 146,
+.CX 4762 147,
+.CX 4762 4780,
+.CCX 147 4780 4781,
+.CX 4762 4781,
+.CX 4762 4780,
+.CX 4762 147,
+.CX 4762 148,
+.CX 4762 4781,
+.CCX 148 4781 4782,
+.CX 4762 4782,
+.CX 4762 4781,
+.CX 4762 148,
+.CX 4762 149,
+.CX 4762 4782,
+.CCX 149 4782 4783,
+.CX 4762 4783,
+.CX 4762 4782,
+.CX 4762 149,
+.CX 4762 150,
+.CX 4762 4783,
+.CCX 150 4783 4784,
+.CX 4762 4784,
+.CX 4762 4783,
+.CX 4762 150,
+.CX 4762 151,
+.CX 4762 4784,
+.CCX 151 4784 4785,
+.CX 4762 4785,
+.CX 4762 4784,
+.CX 4762 151,
+.CX 4762 152,
+.CX 4762 4785,
+.CCX 152 4785 4786,
+.CX 4762 4786,
+.CX 4762 4785,
+.CX 4762 152,
+.CX 4762 153,
+.CX 4762 4786,
+.CCX 153 4786 4787,
+.CX 4762 4787,
+.CX 4762 4786,
+.CX 4762 153,
+.CX 4762 154,
+.CX 4762 4787,
+.CCX 154 4787 4788,
+.CX 4762 4788,
+.CX 4762 4787,
+.CX 4762 154,
+.CX 4762 155,
+.CX 4762 4788,
+.CCX 155 4788 4789,
+.CX 4762 4789,
+.CX 4762 4788,
+.CX 4762 155,
+.CX 4762 156,
+.CX 4762 4789,
+.CCX 156 4789 4790,
+.CX 4762 4790,
+.CX 4762 4789,
+.CX 4762 156,
+.CX 4762 157,
+.CX 4762 4790,
+.CCX 157 4790 4791,
+.CX 4762 4791,
+.CX 4762 4790,
+.CX 4762 157,
+.CX 4762 158,
+.CX 4762 4791,
+.CCX 158 4791 4792,
+.CX 4762 4792,
+.CX 4762 4791,
+.CX 4762 158,
+.CX 4762 159,
+.CX 4762 4792,
+.CCX 159 4792 4793,
+.CX 4762 4793,
+.CX 4762 4792,
+.CX 4762 159
+]
 theorem result23:(compileFuel known23 127 block23).map (fun r=>(r.saved,r.final))=some (0,known24):=by decide +kernel
 def opt23:ExactChecked known23 block23 known24 0:=normalize _ _ _ _ _ result23
+def block24:Program:=[
+.CX 4762 160,
+.CX 4762 4793,
+.CCX 160 4793 4794,
+.CX 4762 4794,
+.CX 4762 4793,
+.CX 4762 160,
+.CX 4762 161,
+.CX 4762 4794,
+.CCX 161 4794 4795,
+.CX 4762 4795,
+.CX 4762 4794,
+.CX 4762 161,
+.CX 4762 162,
+.CX 4762 4795,
+.CCX 162 4795 4796,
+.CX 4762 4796,
+.CX 4762 4795,
+.CX 4762 162,
+.CX 4762 163,
+.CX 4762 4796,
+.CCX 163 4796 4797,
+.CX 4762 4797,
+.CX 4762 4796,
+.CX 4762 163,
+.CX 4762 164,
+.CX 4762 4797,
+.CCX 164 4797 4798,
+.CX 4762 4798,
+.CX 4762 4797,
+.CX 4762 164,
+.CX 4762 165,
+.CX 4762 4798,
+.CCX 165 4798 4799,
+.CX 4762 4799,
+.CX 4762 4798,
+.CX 4762 165,
+.CX 4762 166,
+.CX 4762 4799,
+.CCX 166 4799 4800,
+.CX 4762 4800,
+.CX 4762 4799,
+.CX 4762 166,
+.CX 4762 167,
+.CX 4762 4800,
+.CCX 167 4800 4801,
+.CX 4762 4801,
+.CX 4762 4800,
+.CX 4762 167,
+.CX 4762 168,
+.CX 4762 4801,
+.CCX 168 4801 4802,
+.CX 4762 4802,
+.CX 4762 4801,
+.CX 4762 168,
+.CX 4762 169,
+.CX 4762 4802,
+.CCX 169 4802 4803,
+.CX 4762 4803,
+.CX 4762 4802,
+.CX 4762 169,
+.CX 4762 170,
+.CX 4762 4803,
+.CCX 170 4803 4804,
+.CX 4762 4804,
+.CX 4762 4803,
+.CX 4762 170,
+.CX 4762 171,
+.CX 4762 4804,
+.CCX 171 4804 4805,
+.CX 4762 4805,
+.CX 4762 4804,
+.CX 4762 171,
+.CX 4762 172,
+.CX 4762 4805,
+.CCX 172 4805 4806,
+.CX 4762 4806,
+.CX 4762 4805,
+.CX 4762 172,
+.CX 4762 173,
+.CX 4762 4806,
+.CCX 173 4806 4807,
+.CX 4762 4807,
+.CX 4762 4806,
+.CX 4762 173,
+.CX 4762 174,
+.CX 4762 4807,
+.CCX 174 4807 4808,
+.CX 4762 4808,
+.CX 4762 4807,
+.CX 4762 174,
+.CX 4762 175,
+.CX 4762 4808,
+.CCX 175 4808 4809,
+.CX 4762 4809,
+.CX 4762 4808,
+.CX 4762 175,
+.CX 4762 176,
+.CX 4762 4809,
+.CCX 176 4809 4810,
+.CX 4762 4810,
+.CX 4762 4809,
+.CX 4762 176,
+.CX 4762 177,
+.CX 4762 4810,
+.CCX 177 4810 4811,
+.CX 4762 4811,
+.CX 4762 4810,
+.CX 4762 177,
+.CX 4762 178,
+.CX 4762 4811,
+.CCX 178 4811 4812,
+.CX 4762 4812,
+.CX 4762 4811,
+.CX 4762 178,
+.CX 4762 179,
+.CX 4762 4812,
+.CCX 179 4812 4813,
+.CX 4762 4813,
+.CX 4762 4812,
+.CX 4762 179,
+.CX 4762 180,
+.CX 4762 4813,
+.CCX 180 4813 4814,
+.CX 4762 4814,
+.CX 4762 4813,
+.CX 4762 180
+]
 theorem result24:(compileFuel known24 127 block24).map (fun r=>(r.saved,r.final))=some (0,known25):=by decide +kernel
 def opt24:ExactChecked known24 block24 known25 0:=normalize _ _ _ _ _ result24
+def block25:Program:=[
+.CX 4762 181,
+.CX 4762 4814,
+.CCX 181 4814 4815,
+.CX 4762 4815,
+.CX 4762 4814,
+.CX 4762 181,
+.CX 4762 182,
+.CX 4762 4815,
+.CCX 182 4815 4816,
+.CX 4762 4816,
+.CX 4762 4815,
+.CX 4762 182,
+.CX 4762 183,
+.CX 4762 4816,
+.CCX 183 4816 4817,
+.CX 4762 4817,
+.CX 4762 4816,
+.CX 4762 183,
+.CX 4762 184,
+.CX 4762 4817,
+.CCX 184 4817 4818,
+.CX 4762 4818,
+.CX 4762 4817,
+.CX 4762 184,
+.CX 4762 185,
+.CX 4762 4818,
+.CCX 185 4818 4819,
+.CX 4762 4819,
+.CX 4762 4818,
+.CX 4762 185,
+.CX 4762 186,
+.CX 4762 4819,
+.CCX 186 4819 4820,
+.CX 4762 4820,
+.CX 4762 4819,
+.CX 4762 186,
+.CX 4762 187,
+.CX 4762 4820,
+.CCX 187 4820 4821,
+.CX 4762 4821,
+.CX 4762 4820,
+.CX 4762 187,
+.CX 4762 188,
+.CX 4762 4821,
+.CCX 188 4821 4822,
+.CX 4762 4822,
+.CX 4762 4821,
+.CX 4762 188,
+.CX 4762 189,
+.CX 4762 4822,
+.CCX 189 4822 4823,
+.CX 4762 4823,
+.CX 4762 4822,
+.CX 4762 189,
+.CX 4762 190,
+.CX 4762 4823,
+.CCX 190 4823 4824,
+.CX 4762 4824,
+.CX 4762 4823,
+.CX 4762 190,
+.CX 4762 191,
+.CX 4762 4824,
+.CCX 191 4824 4825,
+.CX 4762 4825,
+.CX 4762 4824,
+.CX 4762 191,
+.CX 4762 192,
+.CX 4762 4825,
+.CCX 192 4825 4826,
+.CX 4762 4826,
+.CX 4762 4825,
+.CX 4762 192,
+.CX 4762 193,
+.CX 4762 4826,
+.CCX 193 4826 4827,
+.CX 4762 4827,
+.CX 4762 4826,
+.CX 4762 193,
+.CX 4762 194,
+.CX 4762 4827,
+.CCX 194 4827 4828,
+.CX 4762 4828,
+.CX 4762 4827,
+.CX 4762 194,
+.CX 4762 195,
+.CX 4762 4828,
+.CCX 195 4828 4829,
+.CX 4762 4829,
+.CX 4762 4828,
+.CX 4762 195,
+.CX 4762 196,
+.CX 4762 4829,
+.CCX 196 4829 4830,
+.CX 4762 4830,
+.CX 4762 4829,
+.CX 4762 196,
+.CX 4762 197,
+.CX 4762 4830,
+.CCX 197 4830 4831,
+.CX 4762 4831,
+.CX 4762 4830,
+.CX 4762 197,
+.CX 4762 198,
+.CX 4762 4831,
+.CCX 198 4831 4832,
+.CX 4762 4832,
+.CX 4762 4831,
+.CX 4762 198,
+.CX 4762 199,
+.CX 4762 4832,
+.CCX 199 4832 4833,
+.CX 4762 4833,
+.CX 4762 4832,
+.CX 4762 199,
+.CX 4762 200,
+.CX 4762 4833,
+.CCX 200 4833 4834,
+.CX 4762 4834,
+.CX 4762 4833,
+.CX 4762 200,
+.CX 4762 201,
+.CX 4762 4834,
+.CCX 201 4834 4835,
+.CX 4762 4835,
+.CX 4762 4834,
+.CX 4762 201
+]
 theorem result25:(compileFuel known25 127 block25).map (fun r=>(r.saved,r.final))=some (0,known26):=by decide +kernel
 def opt25:ExactChecked known25 block25 known26 0:=normalize _ _ _ _ _ result25
+def block26:Program:=[
+.CX 4762 202,
+.CX 4762 4835,
+.CCX 202 4835 4836,
+.CX 4762 4836,
+.CX 4762 4835,
+.CX 4762 202,
+.CX 4762 203,
+.CX 4762 4836,
+.CCX 203 4836 4837,
+.CX 4762 4837,
+.CX 4762 4836,
+.CX 4762 203,
+.CX 4762 204,
+.CX 4762 4837,
+.CCX 204 4837 4838,
+.CX 4762 4838,
+.CX 4762 4837,
+.CX 4762 204,
+.CX 4762 205,
+.CX 4762 4838,
+.CCX 205 4838 4839,
+.CX 4762 4839,
+.CX 4762 4838,
+.CX 4762 205,
+.CX 4762 206,
+.CX 4762 4839,
+.CCX 206 4839 4840,
+.CX 4762 4840,
+.CX 4762 4839,
+.CX 4762 206,
+.CX 4762 207,
+.CX 4762 4840,
+.CCX 207 4840 4841,
+.CX 4762 4841,
+.CX 4762 4840,
+.CX 4762 207,
+.CX 4762 208,
+.CX 4762 4841,
+.CCX 208 4841 4842,
+.CX 4762 4842,
+.CX 4762 4841,
+.CX 4762 208,
+.CX 4762 209,
+.CX 4762 4842,
+.CCX 209 4842 4843,
+.CX 4762 4843,
+.CX 4762 4842,
+.CX 4762 209,
+.CX 4762 210,
+.CX 4762 4843,
+.CCX 210 4843 4844,
+.CX 4762 4844,
+.CX 4762 4843,
+.CX 4762 210,
+.CX 4762 211,
+.CX 4762 4844,
+.CCX 211 4844 4845,
+.CX 4762 4845,
+.CX 4762 4844,
+.CX 4762 211,
+.CX 4762 212,
+.CX 4762 4845,
+.CCX 212 4845 4846,
+.CX 4762 4846,
+.CX 4762 4845,
+.CX 4762 212,
+.CX 4762 213,
+.CX 4762 4846,
+.CCX 213 4846 4847,
+.CX 4762 4847,
+.CX 4762 4846,
+.CX 4762 213,
+.CX 4762 214,
+.CX 4762 4847,
+.CCX 214 4847 4848,
+.CX 4762 4848,
+.CX 4762 4847,
+.CX 4762 214,
+.CX 4762 215,
+.CX 4762 4848,
+.CCX 215 4848 4849,
+.CX 4762 4849,
+.CX 4762 4848,
+.CX 4762 215,
+.CX 4762 216,
+.CX 4762 4849,
+.CCX 216 4849 4850,
+.CX 4762 4850,
+.CX 4762 4849,
+.CX 4762 216,
+.CX 4762 217,
+.CX 4762 4850,
+.CCX 217 4850 4851,
+.CX 4762 4851,
+.CX 4762 4850,
+.CX 4762 217,
+.CX 4762 218,
+.CX 4762 4851,
+.CCX 218 4851 4852,
+.CX 4762 4852,
+.CX 4762 4851,
+.CX 4762 218,
+.CX 4762 219,
+.CX 4762 4852,
+.CCX 219 4852 4853,
+.CX 4762 4853,
+.CX 4762 4852,
+.CX 4762 219,
+.CX 4762 220,
+.CX 4762 4853,
+.CCX 220 4853 4854,
+.CX 4762 4854,
+.CX 4762 4853,
+.CX 4762 220,
+.CX 4762 221,
+.CX 4762 4854,
+.CCX 221 4854 4855,
+.CX 4762 4855,
+.CX 4762 4854,
+.CX 4762 221,
+.CX 4762 222,
+.CX 4762 4855,
+.CCX 222 4855 4856,
+.CX 4762 4856,
+.CX 4762 4855,
+.CX 4762 222
+]
 theorem result26:(compileFuel known26 127 block26).map (fun r=>(r.saved,r.final))=some (0,known27):=by decide +kernel
 def opt26:ExactChecked known26 block26 known27 0:=normalize _ _ _ _ _ result26
+def block27:Program:=[
+.CX 4762 223,
+.CX 4762 4856,
+.CCX 223 4856 4857,
+.CX 4762 4857,
+.CX 4762 4856,
+.CX 4762 223,
+.CX 4762 224,
+.CX 4762 4857,
+.CCX 224 4857 4858,
+.CX 4762 4858,
+.CX 4762 4857,
+.CX 4762 224,
+.CX 4762 225,
+.CX 4762 4858,
+.CCX 225 4858 4859,
+.CX 4762 4859,
+.CX 4762 4858,
+.CX 4762 225,
+.CX 4762 226,
+.CX 4762 4859,
+.CCX 226 4859 4860,
+.CX 4762 4860,
+.CX 4762 4859,
+.CX 4762 226,
+.CX 4762 227,
+.CX 4762 4860,
+.CCX 227 4860 4861,
+.CX 4762 4861,
+.CX 4762 4860,
+.CX 4762 227,
+.CX 4762 228,
+.CX 4762 4861,
+.CCX 228 4861 4862,
+.CX 4762 4862,
+.CX 4762 4861,
+.CX 4762 228,
+.CX 4762 229,
+.CX 4762 4862,
+.CCX 229 4862 4863,
+.CX 4762 4863,
+.CX 4762 4862,
+.CX 4762 229,
+.CX 4762 230,
+.CX 4762 4863,
+.CCX 230 4863 4864,
+.CX 4762 4864,
+.CX 4762 4863,
+.CX 4762 230,
+.CX 4762 231,
+.CX 4762 4864,
+.CCX 231 4864 4865,
+.CX 4762 4865,
+.CX 4762 4864,
+.CX 4762 231,
+.CX 4762 232,
+.CX 4762 4865,
+.CCX 232 4865 4866,
+.CX 4762 4866,
+.CX 4762 4865,
+.CX 4762 232,
+.CX 4762 233,
+.CX 4762 4866,
+.CCX 233 4866 4867,
+.CX 4762 4867,
+.CX 4762 4866,
+.CX 4762 233,
+.CX 4762 234,
+.CX 4762 4867,
+.CCX 234 4867 4868,
+.CX 4762 4868,
+.CX 4762 4867,
+.CX 4762 234,
+.CX 4762 235,
+.CX 4762 4868,
+.CCX 235 4868 4869,
+.CX 4762 4869,
+.CX 4762 4868,
+.CX 4762 235,
+.CX 4762 236,
+.CX 4762 4869,
+.CCX 236 4869 4870,
+.CX 4762 4870,
+.CX 4762 4869,
+.CX 4762 236,
+.CX 4762 237,
+.CX 4762 4870,
+.CCX 237 4870 4871,
+.CX 4762 4871,
+.CX 4762 4870,
+.CX 4762 237,
+.CX 4762 238,
+.CX 4762 4871,
+.CCX 238 4871 4872,
+.CX 4762 4872,
+.CX 4762 4871,
+.CX 4762 238,
+.CX 4762 239,
+.CX 4762 4872,
+.CCX 239 4872 4873,
+.CX 4762 4873,
+.CX 4762 4872,
+.CX 4762 239,
+.CX 4762 240,
+.CX 4762 4873,
+.CCX 240 4873 4874,
+.CX 4762 4874,
+.CX 4762 4873,
+.CX 4762 240,
+.CX 4762 241,
+.CX 4762 4874,
+.CCX 241 4874 4875,
+.CX 4762 4875,
+.CX 4762 4874,
+.CX 4762 241,
+.CX 4762 242,
+.CX 4762 4875,
+.CCX 242 4875 4876,
+.CX 4762 4876,
+.CX 4762 4875,
+.CX 4762 242,
+.CX 4762 243,
+.CX 4762 4876,
+.CCX 243 4876 4877,
+.CX 4762 4877,
+.CX 4762 4876,
+.CX 4762 243
+]
 theorem result27:(compileFuel known27 127 block27).map (fun r=>(r.saved,r.final))=some (0,known28):=by decide +kernel
 def opt27:ExactChecked known27 block27 known28 0:=normalize _ _ _ _ _ result27
+def block28:Program:=[
+.CX 4762 244,
+.CX 4762 4877,
+.CCX 244 4877 4878,
+.CX 4762 4878,
+.CX 4762 4877,
+.CX 4762 244,
+.CX 4762 245,
+.CX 4762 4878,
+.CCX 245 4878 4879,
+.CX 4762 4879,
+.CX 4762 4878,
+.CX 4762 245,
+.CX 4762 246,
+.CX 4762 4879,
+.CCX 246 4879 4880,
+.CX 4762 4880,
+.CX 4762 4879,
+.CX 4762 246,
+.CX 4762 247,
+.CX 4762 4880,
+.CCX 247 4880 4881,
+.CX 4762 4881,
+.CX 4762 4880,
+.CX 4762 247,
+.CX 4762 248,
+.CX 4762 4881,
+.CCX 248 4881 4882,
+.CX 4762 4882,
+.CX 4762 4881,
+.CX 4762 248,
+.CX 4762 249,
+.CX 4762 4882,
+.CCX 249 4882 4883,
+.CX 4762 4883,
+.CX 4762 4882,
+.CX 4762 249,
+.CX 4762 250,
+.CX 4762 4883,
+.CCX 250 4883 4884,
+.CX 4762 4884,
+.CX 4762 4883,
+.CX 4762 250,
+.CX 4762 251,
+.CX 4762 4884,
+.CCX 251 4884 4885,
+.CX 4762 4885,
+.CX 4762 4884,
+.CX 4762 251,
+.CX 4762 252,
+.CX 4762 4885,
+.CCX 252 4885 4886,
+.CX 4762 4886,
+.CX 4762 4885,
+.CX 4762 252,
+.CX 4762 253,
+.CX 4762 4886,
+.CCX 253 4886 4887,
+.CX 4762 4887,
+.CX 4762 4886,
+.CX 4762 253,
+.CX 4762 254,
+.CX 4762 4887,
+.CCX 254 4887 4888,
+.CX 4762 4888,
+.CX 4762 4887,
+.CX 4762 254,
+.CX 4762 255,
+.CX 4762 4888,
+.CCX 255 4888 4889,
+.CX 4762 4889,
+.CX 4762 4888,
+.CX 4762 255,
+.CX 4762 256,
+.CX 4762 4889,
+.CCX 256 4889 4757,
+.CX 4762 4757,
+.CX 4762 4889,
+.CX 4762 256,
+.CX 4762 257,
+.CX 4757 257,
+.measureX 4757 [] [.CZ 4762 256,.CZ 4762 4889,.CZ 256 4889],
+.CX 4762 256,
+.CX 4889 256,
+.measureX 4889 [] [.CZ 4762 255,.CZ 4762 4888,.CZ 255 4888],
+.CX 4762 255,
+.CX 4888 255,
+.measureX 4888 [] [.CZ 4762 254,.CZ 4762 4887,.CZ 254 4887],
+.CX 4762 254,
+.CX 4887 254,
+.measureX 4887 [] [.CZ 4762 253,.CZ 4762 4886,.CZ 253 4886],
+.CX 4762 253,
+.CX 4886 253,
+.measureX 4886 [] [.CZ 4762 252,.CZ 4762 4885,.CZ 252 4885],
+.CX 4762 252,
+.CX 4885 252,
+.measureX 4885 [] [.CZ 4762 251,.CZ 4762 4884,.CZ 251 4884],
+.CX 4762 251,
+.CX 4884 251,
+.measureX 4884 [] [.CZ 4762 250,.CZ 4762 4883,.CZ 250 4883],
+.CX 4762 250,
+.CX 4883 250,
+.measureX 4883 [] [.CZ 4762 249,.CZ 4762 4882,.CZ 249 4882],
+.CX 4762 249,
+.CX 4882 249,
+.measureX 4882 [] [.CZ 4762 248,.CZ 4762 4881,.CZ 248 4881],
+.CX 4762 248,
+.CX 4881 248,
+.measureX 4881 [] [.CZ 4762 247,.CZ 4762 4880,.CZ 247 4880],
+.CX 4762 247,
+.CX 4880 247,
+.measureX 4880 [] [.CZ 4762 246,.CZ 4762 4879,.CZ 246 4879],
+.CX 4762 246,
+.CX 4879 246,
+.measureX 4879 [] [.CZ 4762 245,.CZ 4762 4878,.CZ 245 4878],
+.CX 4762 245,
+.CX 4878 245,
+.measureX 4878 [] [.CZ 4762 244,.CZ 4762 4877,.CZ 244 4877],
+.CX 4762 244,
+.CX 4877 244,
+.measureX 4877 [] [.CZ 4762 243,.CZ 4762 4876,.CZ 243 4876],
+.CX 4762 243,
+.CX 4876 243,
+.measureX 4876 [] [.CZ 4762 242,.CZ 4762 4875,.CZ 242 4875],
+.CX 4762 242,
+.CX 4875 242,
+.measureX 4875 [] [.CZ 4762 241,.CZ 4762 4874,.CZ 241 4874],
+.CX 4762 241,
+.CX 4874 241
+]
 theorem result28:(compileFuel known28 129 block28).map (fun r=>(r.saved,r.final))=some (0,known29):=by decide +kernel
 def opt28:ExactChecked known28 block28 known29 0:=normalize _ _ _ _ _ result28
+def block29:Program:=[
+.measureX 4874 [] [.CZ 4762 240,.CZ 4762 4873,.CZ 240 4873],
+.CX 4762 240,
+.CX 4873 240,
+.measureX 4873 [] [.CZ 4762 239,.CZ 4762 4872,.CZ 239 4872],
+.CX 4762 239,
+.CX 4872 239,
+.measureX 4872 [] [.CZ 4762 238,.CZ 4762 4871,.CZ 238 4871],
+.CX 4762 238,
+.CX 4871 238,
+.measureX 4871 [] [.CZ 4762 237,.CZ 4762 4870,.CZ 237 4870],
+.CX 4762 237,
+.CX 4870 237,
+.measureX 4870 [] [.CZ 4762 236,.CZ 4762 4869,.CZ 236 4869],
+.CX 4762 236,
+.CX 4869 236,
+.measureX 4869 [] [.CZ 4762 235,.CZ 4762 4868,.CZ 235 4868],
+.CX 4762 235,
+.CX 4868 235,
+.measureX 4868 [] [.CZ 4762 234,.CZ 4762 4867,.CZ 234 4867],
+.CX 4762 234,
+.CX 4867 234,
+.measureX 4867 [] [.CZ 4762 233,.CZ 4762 4866,.CZ 233 4866],
+.CX 4762 233,
+.CX 4866 233,
+.measureX 4866 [] [.CZ 4762 232,.CZ 4762 4865,.CZ 232 4865],
+.CX 4762 232,
+.CX 4865 232,
+.measureX 4865 [] [.CZ 4762 231,.CZ 4762 4864,.CZ 231 4864],
+.CX 4762 231,
+.CX 4864 231,
+.measureX 4864 [] [.CZ 4762 230,.CZ 4762 4863,.CZ 230 4863],
+.CX 4762 230,
+.CX 4863 230,
+.measureX 4863 [] [.CZ 4762 229,.CZ 4762 4862,.CZ 229 4862],
+.CX 4762 229,
+.CX 4862 229,
+.measureX 4862 [] [.CZ 4762 228,.CZ 4762 4861,.CZ 228 4861],
+.CX 4762 228,
+.CX 4861 228,
+.measureX 4861 [] [.CZ 4762 227,.CZ 4762 4860,.CZ 227 4860],
+.CX 4762 227,
+.CX 4860 227,
+.measureX 4860 [] [.CZ 4762 226,.CZ 4762 4859,.CZ 226 4859],
+.CX 4762 226,
+.CX 4859 226,
+.measureX 4859 [] [.CZ 4762 225,.CZ 4762 4858,.CZ 225 4858],
+.CX 4762 225,
+.CX 4858 225,
+.measureX 4858 [] [.CZ 4762 224,.CZ 4762 4857,.CZ 224 4857],
+.CX 4762 224,
+.CX 4857 224,
+.measureX 4857 [] [.CZ 4762 223,.CZ 4762 4856,.CZ 223 4856],
+.CX 4762 223,
+.CX 4856 223,
+.measureX 4856 [] [.CZ 4762 222,.CZ 4762 4855,.CZ 222 4855],
+.CX 4762 222,
+.CX 4855 222,
+.measureX 4855 [] [.CZ 4762 221,.CZ 4762 4854,.CZ 221 4854],
+.CX 4762 221,
+.CX 4854 221,
+.measureX 4854 [] [.CZ 4762 220,.CZ 4762 4853,.CZ 220 4853],
+.CX 4762 220,
+.CX 4853 220,
+.measureX 4853 [] [.CZ 4762 219,.CZ 4762 4852,.CZ 219 4852],
+.CX 4762 219,
+.CX 4852 219,
+.measureX 4852 [] [.CZ 4762 218,.CZ 4762 4851,.CZ 218 4851],
+.CX 4762 218,
+.CX 4851 218,
+.measureX 4851 [] [.CZ 4762 217,.CZ 4762 4850,.CZ 217 4850],
+.CX 4762 217,
+.CX 4850 217,
+.measureX 4850 [] [.CZ 4762 216,.CZ 4762 4849,.CZ 216 4849],
+.CX 4762 216,
+.CX 4849 216,
+.measureX 4849 [] [.CZ 4762 215,.CZ 4762 4848,.CZ 215 4848],
+.CX 4762 215,
+.CX 4848 215,
+.measureX 4848 [] [.CZ 4762 214,.CZ 4762 4847,.CZ 214 4847],
+.CX 4762 214,
+.CX 4847 214,
+.measureX 4847 [] [.CZ 4762 213,.CZ 4762 4846,.CZ 213 4846],
+.CX 4762 213,
+.CX 4846 213,
+.measureX 4846 [] [.CZ 4762 212,.CZ 4762 4845,.CZ 212 4845],
+.CX 4762 212,
+.CX 4845 212,
+.measureX 4845 [] [.CZ 4762 211,.CZ 4762 4844,.CZ 211 4844],
+.CX 4762 211,
+.CX 4844 211,
+.measureX 4844 [] [.CZ 4762 210,.CZ 4762 4843,.CZ 210 4843],
+.CX 4762 210,
+.CX 4843 210,
+.measureX 4843 [] [.CZ 4762 209,.CZ 4762 4842,.CZ 209 4842],
+.CX 4762 209,
+.CX 4842 209,
+.measureX 4842 [] [.CZ 4762 208,.CZ 4762 4841,.CZ 208 4841],
+.CX 4762 208,
+.CX 4841 208,
+.measureX 4841 [] [.CZ 4762 207,.CZ 4762 4840,.CZ 207 4840],
+.CX 4762 207,
+.CX 4840 207,
+.measureX 4840 [] [.CZ 4762 206,.CZ 4762 4839,.CZ 206 4839],
+.CX 4762 206,
+.CX 4839 206,
+.measureX 4839 [] [.CZ 4762 205,.CZ 4762 4838,.CZ 205 4838],
+.CX 4762 205,
+.CX 4838 205,
+.measureX 4838 [] [.CZ 4762 204,.CZ 4762 4837,.CZ 204 4837],
+.CX 4762 204,
+.CX 4837 204,
+.measureX 4837 [] [.CZ 4762 203,.CZ 4762 4836,.CZ 203 4836],
+.CX 4762 203,
+.CX 4836 203,
+.measureX 4836 [] [.CZ 4762 202,.CZ 4762 4835,.CZ 202 4835],
+.CX 4762 202,
+.CX 4835 202,
+.measureX 4835 [] [.CZ 4762 201,.CZ 4762 4834,.CZ 201 4834],
+.CX 4762 201,
+.CX 4834 201,
+.measureX 4834 [] [.CZ 4762 200,.CZ 4762 4833,.CZ 200 4833],
+.CX 4762 200,
+.CX 4833 200,
+.measureX 4833 [] [.CZ 4762 199,.CZ 4762 4832,.CZ 199 4832],
+.CX 4762 199,
+.CX 4832 199,
+.measureX 4832 [] [.CZ 4762 198,.CZ 4762 4831,.CZ 198 4831],
+.CX 4762 198
+]
 theorem result29:(compileFuel known29 129 block29).map (fun r=>(r.saved,r.final))=some (0,known30):=by decide +kernel
 def opt29:ExactChecked known29 block29 known30 0:=normalize _ _ _ _ _ result29
+def block30:Program:=[
+.CX 4831 198,
+.measureX 4831 [] [.CZ 4762 197,.CZ 4762 4830,.CZ 197 4830],
+.CX 4762 197,
+.CX 4830 197,
+.measureX 4830 [] [.CZ 4762 196,.CZ 4762 4829,.CZ 196 4829],
+.CX 4762 196,
+.CX 4829 196,
+.measureX 4829 [] [.CZ 4762 195,.CZ 4762 4828,.CZ 195 4828],
+.CX 4762 195,
+.CX 4828 195,
+.measureX 4828 [] [.CZ 4762 194,.CZ 4762 4827,.CZ 194 4827],
+.CX 4762 194,
+.CX 4827 194,
+.measureX 4827 [] [.CZ 4762 193,.CZ 4762 4826,.CZ 193 4826],
+.CX 4762 193,
+.CX 4826 193,
+.measureX 4826 [] [.CZ 4762 192,.CZ 4762 4825,.CZ 192 4825],
+.CX 4762 192,
+.CX 4825 192,
+.measureX 4825 [] [.CZ 4762 191,.CZ 4762 4824,.CZ 191 4824],
+.CX 4762 191,
+.CX 4824 191,
+.measureX 4824 [] [.CZ 4762 190,.CZ 4762 4823,.CZ 190 4823],
+.CX 4762 190,
+.CX 4823 190,
+.measureX 4823 [] [.CZ 4762 189,.CZ 4762 4822,.CZ 189 4822],
+.CX 4762 189,
+.CX 4822 189,
+.measureX 4822 [] [.CZ 4762 188,.CZ 4762 4821,.CZ 188 4821],
+.CX 4762 188,
+.CX 4821 188,
+.measureX 4821 [] [.CZ 4762 187,.CZ 4762 4820,.CZ 187 4820],
+.CX 4762 187,
+.CX 4820 187,
+.measureX 4820 [] [.CZ 4762 186,.CZ 4762 4819,.CZ 186 4819],
+.CX 4762 186,
+.CX 4819 186,
+.measureX 4819 [] [.CZ 4762 185,.CZ 4762 4818,.CZ 185 4818],
+.CX 4762 185,
+.CX 4818 185,
+.measureX 4818 [] [.CZ 4762 184,.CZ 4762 4817,.CZ 184 4817],
+.CX 4762 184,
+.CX 4817 184,
+.measureX 4817 [] [.CZ 4762 183,.CZ 4762 4816,.CZ 183 4816],
+.CX 4762 183,
+.CX 4816 183,
+.measureX 4816 [] [.CZ 4762 182,.CZ 4762 4815,.CZ 182 4815],
+.CX 4762 182,
+.CX 4815 182,
+.measureX 4815 [] [.CZ 4762 181,.CZ 4762 4814,.CZ 181 4814],
+.CX 4762 181,
+.CX 4814 181,
+.measureX 4814 [] [.CZ 4762 180,.CZ 4762 4813,.CZ 180 4813],
+.CX 4762 180,
+.CX 4813 180,
+.measureX 4813 [] [.CZ 4762 179,.CZ 4762 4812,.CZ 179 4812],
+.CX 4762 179,
+.CX 4812 179,
+.measureX 4812 [] [.CZ 4762 178,.CZ 4762 4811,.CZ 178 4811],
+.CX 4762 178,
+.CX 4811 178,
+.measureX 4811 [] [.CZ 4762 177,.CZ 4762 4810,.CZ 177 4810],
+.CX 4762 177,
+.CX 4810 177,
+.measureX 4810 [] [.CZ 4762 176,.CZ 4762 4809,.CZ 176 4809],
+.CX 4762 176,
+.CX 4809 176,
+.measureX 4809 [] [.CZ 4762 175,.CZ 4762 4808,.CZ 175 4808],
+.CX 4762 175,
+.CX 4808 175,
+.measureX 4808 [] [.CZ 4762 174,.CZ 4762 4807,.CZ 174 4807],
+.CX 4762 174,
+.CX 4807 174,
+.measureX 4807 [] [.CZ 4762 173,.CZ 4762 4806,.CZ 173 4806],
+.CX 4762 173,
+.CX 4806 173,
+.measureX 4806 [] [.CZ 4762 172,.CZ 4762 4805,.CZ 172 4805],
+.CX 4762 172,
+.CX 4805 172,
+.measureX 4805 [] [.CZ 4762 171,.CZ 4762 4804,.CZ 171 4804],
+.CX 4762 171,
+.CX 4804 171,
+.measureX 4804 [] [.CZ 4762 170,.CZ 4762 4803,.CZ 170 4803],
+.CX 4762 170,
+.CX 4803 170,
+.measureX 4803 [] [.CZ 4762 169,.CZ 4762 4802,.CZ 169 4802],
+.CX 4762 169,
+.CX 4802 169,
+.measureX 4802 [] [.CZ 4762 168,.CZ 4762 4801,.CZ 168 4801],
+.CX 4762 168,
+.CX 4801 168,
+.measureX 4801 [] [.CZ 4762 167,.CZ 4762 4800,.CZ 167 4800],
+.CX 4762 167,
+.CX 4800 167,
+.measureX 4800 [] [.CZ 4762 166,.CZ 4762 4799,.CZ 166 4799],
+.CX 4762 166,
+.CX 4799 166,
+.measureX 4799 [] [.CZ 4762 165,.CZ 4762 4798,.CZ 165 4798],
+.CX 4762 165,
+.CX 4798 165,
+.measureX 4798 [] [.CZ 4762 164,.CZ 4762 4797,.CZ 164 4797],
+.CX 4762 164,
+.CX 4797 164,
+.measureX 4797 [] [.CZ 4762 163,.CZ 4762 4796,.CZ 163 4796],
+.CX 4762 163,
+.CX 4796 163,
+.measureX 4796 [] [.CZ 4762 162,.CZ 4762 4795,.CZ 162 4795],
+.CX 4762 162,
+.CX 4795 162,
+.measureX 4795 [] [.CZ 4762 161,.CZ 4762 4794,.CZ 161 4794],
+.CX 4762 161,
+.CX 4794 161,
+.measureX 4794 [] [.CZ 4762 160,.CZ 4762 4793,.CZ 160 4793],
+.CX 4762 160,
+.CX 4793 160,
+.measureX 4793 [] [.CZ 4762 159,.CZ 4762 4792,.CZ 159 4792],
+.CX 4762 159,
+.CX 4792 159,
+.measureX 4792 [] [.CZ 4762 158,.CZ 4762 4791,.CZ 158 4791],
+.CX 4762 158,
+.CX 4791 158,
+.measureX 4791 [] [.CZ 4762 157,.CZ 4762 4790,.CZ 157 4790],
+.CX 4762 157,
+.CX 4790 157,
+.measureX 4790 [] [.CZ 4762 156,.CZ 4762 4789,.CZ 156 4789],
+.CX 4762 156,
+.CX 4789 156,
+.measureX 4789 [] [.CZ 4762 155,.CZ 4762 4788,.CZ 155 4788]
+]
 theorem result30:(compileFuel known30 129 block30).map (fun r=>(r.saved,r.final))=some (0,known31):=by decide +kernel
 def opt30:ExactChecked known30 block30 known31 0:=normalize _ _ _ _ _ result30
+def block31:Program:=[
+.CX 4762 155,
+.CX 4788 155,
+.measureX 4788 [] [.CZ 4762 154,.CZ 4762 4787,.CZ 154 4787],
+.CX 4762 154,
+.CX 4787 154,
+.measureX 4787 [] [.CZ 4762 153,.CZ 4762 4786,.CZ 153 4786],
+.CX 4762 153,
+.CX 4786 153,
+.measureX 4786 [] [.CZ 4762 152,.CZ 4762 4785,.CZ 152 4785],
+.CX 4762 152,
+.CX 4785 152,
+.measureX 4785 [] [.CZ 4762 151,.CZ 4762 4784,.CZ 151 4784],
+.CX 4762 151,
+.CX 4784 151,
+.measureX 4784 [] [.CZ 4762 150,.CZ 4762 4783,.CZ 150 4783],
+.CX 4762 150,
+.CX 4783 150,
+.measureX 4783 [] [.CZ 4762 149,.CZ 4762 4782,.CZ 149 4782],
+.CX 4762 149,
+.CX 4782 149,
+.measureX 4782 [] [.CZ 4762 148,.CZ 4762 4781,.CZ 148 4781],
+.CX 4762 148,
+.CX 4781 148,
+.measureX 4781 [] [.CZ 4762 147,.CZ 4762 4780,.CZ 147 4780],
+.CX 4762 147,
+.CX 4780 147,
+.measureX 4780 [] [.CZ 4762 146,.CZ 4762 4779,.CZ 146 4779],
+.CX 4762 146,
+.CX 4779 146,
+.measureX 4779 [] [.CZ 4762 145,.CZ 4762 4778,.CZ 145 4778],
+.CX 4762 145,
+.CX 4778 145,
+.measureX 4778 [] [.CZ 4762 144,.CZ 4762 4777,.CZ 144 4777],
+.CX 4762 144,
+.CX 4777 144,
+.measureX 4777 [] [.CZ 4762 143,.CZ 4762 4776,.CZ 143 4776],
+.CX 4762 143,
+.CX 4776 143,
+.measureX 4776 [] [.CZ 4762 142,.CZ 4762 4775,.CZ 142 4775],
+.CX 4762 142,
+.CX 4775 142,
+.measureX 4775 [] [.CZ 4762 141,.CZ 4762 4774,.CZ 141 4774],
+.CX 4762 141,
+.CX 4774 141,
+.measureX 4774 [] [.CZ 4762 140,.CZ 4762 4773,.CZ 140 4773],
+.CX 4762 140,
+.CX 4773 140,
+.measureX 4773 [] [.CZ 4762 139,.CZ 4762 4772,.CZ 139 4772],
+.CX 4762 139,
+.CX 4772 139,
+.measureX 4772 [] [.CZ 4762 138,.CZ 4762 4771,.CZ 138 4771],
+.CX 4762 138,
+.CX 4771 138,
+.measureX 4771 [] [.CZ 4762 137,.CZ 4762 4770,.CZ 137 4770],
+.CX 4762 137,
+.CX 4770 137,
+.measureX 4770 [] [.CZ 4762 136,.CZ 4762 4769,.CZ 136 4769],
+.CX 4762 136,
+.CX 4769 136,
+.measureX 4769 [] [.CZ 4762 135,.CZ 4762 4768,.CZ 135 4768],
+.CX 4762 135,
+.CX 4768 135,
+.measureX 4768 [] [.CZ 4762 134,.CZ 4762 4767,.CZ 134 4767],
+.CX 4762 134,
+.CX 4767 134,
+.measureX 4767 [] [.CZ 4762 133,.CZ 4762 4766,.CZ 133 4766],
+.CX 4762 133,
+.CX 4766 133,
+.measureX 4766 [] [.CZ 4762 132,.CZ 4762 4765,.CZ 132 4765],
+.CX 4762 132,
+.CX 4765 132,
+.measureX 4765 [] [.CZ 4762 131,.CZ 4762 4764,.CZ 131 4764],
+.CX 4762 131,
+.CX 4764 131,
+.measureX 4764 [] [.CZ 4762 130,.CZ 4762 4500,.CZ 130 4500],
+.CX 4762 130,
+.CX 4500 130,
+.measureX 4500 [] [.CZ 4762 129,.CZ 4762 4499,.CZ 129 4499],
+.CX 4762 129,
+.CX 4499 129,
+.measureX 4499 [] [.CZ 4762 128,.CZ 4762 4498,.CZ 128 4498],
+.CX 4762 128,
+.CX 4498 128,
+.measureX 4498 [] [.CZ 4762 127,.CZ 4762 4497,.CZ 127 4497],
+.CX 4762 127,
+.CX 4497 127,
+.measureX 4497 [] [.CZ 4762 126,.CZ 4762 4496,.CZ 126 4496],
+.CX 4762 126,
+.CX 4496 126,
+.measureX 4496 [] [.CZ 4762 125,.CZ 4762 4495,.CZ 125 4495],
+.CX 4762 125,
+.CX 4495 125,
+.measureX 4495 [] [.CZ 4762 124,.CZ 4762 4494,.CZ 124 4494],
+.CX 4762 124,
+.CX 4494 124,
+.measureX 4494 [] [.CZ 4762 123,.CZ 4762 4493,.CZ 123 4493],
+.CX 4762 123,
+.CX 4493 123,
+.measureX 4493 [] [.CZ 4762 122,.CZ 4762 4492,.CZ 122 4492],
+.CX 4762 122,
+.CX 4492 122,
+.measureX 4492 [] [.CZ 4762 121,.CZ 4762 4491,.CZ 121 4491],
+.CX 4762 121,
+.CX 4491 121,
+.measureX 4491 [] [.CZ 4762 120,.CZ 4762 4490,.CZ 120 4490],
+.CX 4762 120,
+.CX 4490 120,
+.measureX 4490 [] [.CZ 4762 119,.CZ 4762 4489,.CZ 119 4489],
+.CX 4762 119,
+.CX 4489 119,
+.measureX 4489 [] [.CZ 4762 118,.CZ 4762 4488,.CZ 118 4488],
+.CX 4762 118,
+.CX 4488 118,
+.measureX 4488 [] [.CZ 4762 117,.CZ 4762 4487,.CZ 117 4487],
+.CX 4762 117,
+.CX 4487 117,
+.measureX 4487 [] [.CZ 4762 116,.CZ 4762 4486,.CZ 116 4486],
+.CX 4762 116,
+.CX 4486 116,
+.measureX 4486 [] [.CZ 4762 115,.CZ 4762 4485,.CZ 115 4485],
+.CX 4762 115,
+.CX 4485 115,
+.measureX 4485 [] [.CZ 4762 114,.CZ 4762 4484,.CZ 114 4484],
+.CX 4762 114,
+.CX 4484 114,
+.measureX 4484 [] [.CZ 4762 113,.CZ 4762 4483,.CZ 113 4483],
+.CX 4762 113,
+.CX 4483 113
+]
 theorem result31:(compileFuel known31 129 block31).map (fun r=>(r.saved,r.final))=some (0,known32):=by decide +kernel
 def opt31:ExactChecked known31 block31 known32 0:=normalize _ _ _ _ _ result31
+def block32:Program:=[
+.measureX 4483 [] [.CZ 4762 112,.CZ 4762 4482,.CZ 112 4482],
+.CX 4762 112,
+.CX 4482 112,
+.measureX 4482 [] [.CZ 4762 111,.CZ 4762 4481,.CZ 111 4481],
+.CX 4762 111,
+.CX 4481 111,
+.measureX 4481 [] [.CZ 4762 110,.CZ 4762 4480,.CZ 110 4480],
+.CX 4762 110,
+.CX 4480 110,
+.measureX 4480 [] [.CZ 4762 109,.CZ 4762 4479,.CZ 109 4479],
+.CX 4762 109,
+.CX 4479 109,
+.measureX 4479 [] [.CZ 4762 108,.CZ 4762 4478,.CZ 108 4478],
+.CX 4762 108,
+.CX 4478 108,
+.measureX 4478 [] [.CZ 4762 107,.CZ 4762 4477,.CZ 107 4477],
+.CX 4762 107,
+.CX 4477 107,
+.measureX 4477 [] [.CZ 4762 106,.CZ 4762 4476,.CZ 106 4476],
+.CX 4762 106,
+.CX 4476 106,
+.measureX 4476 [] [.CZ 4762 105,.CZ 4762 4475,.CZ 105 4475],
+.CX 4762 105,
+.CX 4475 105,
+.measureX 4475 [] [.CZ 4762 104,.CZ 4762 4474,.CZ 104 4474],
+.CX 4762 104,
+.CX 4474 104,
+.measureX 4474 [] [.CZ 4762 103,.CZ 4762 4473,.CZ 103 4473],
+.CX 4762 103,
+.CX 4473 103,
+.measureX 4473 [] [.CZ 4762 102,.CZ 4762 4472,.CZ 102 4472],
+.CX 4762 102,
+.CX 4472 102,
+.measureX 4472 [] [.CZ 4762 101,.CZ 4762 4471,.CZ 101 4471],
+.CX 4762 101,
+.CX 4471 101,
+.measureX 4471 [] [.CZ 4762 100,.CZ 4762 4470,.CZ 100 4470],
+.CX 4762 100,
+.CX 4470 100,
+.measureX 4470 [] [.CZ 4762 99,.CZ 4762 4469,.CZ 99 4469],
+.CX 4762 99,
+.CX 4469 99,
+.measureX 4469 [] [.CZ 4762 98,.CZ 4762 4468,.CZ 98 4468],
+.CX 4762 98,
+.CX 4468 98,
+.measureX 4468 [] [.CZ 4762 97,.CZ 4762 4467,.CZ 97 4467],
+.CX 4762 97,
+.CX 4467 97,
+.measureX 4467 [] [.CZ 4762 96,.CZ 4762 4466,.CZ 96 4466],
+.CX 4762 96,
+.CX 4466 96,
+.measureX 4466 [] [.CZ 4762 95,.CZ 4762 4465,.CZ 95 4465],
+.CX 4762 95,
+.CX 4465 95,
+.measureX 4465 [] [.CZ 4762 94,.CZ 4762 4464,.CZ 94 4464],
+.CX 4762 94,
+.CX 4464 94,
+.measureX 4464 [] [.CZ 4762 93,.CZ 4762 4463,.CZ 93 4463],
+.CX 4762 93,
+.CX 4463 93,
+.measureX 4463 [] [.CZ 4762 92,.CZ 4762 4462,.CZ 92 4462],
+.CX 4762 92,
+.CX 4462 92,
+.measureX 4462 [] [.CZ 4762 91,.CZ 4762 4461,.CZ 91 4461],
+.CX 4762 91,
+.CX 4461 91,
+.measureX 4461 [] [.CZ 4762 90,.CZ 4762 4460,.CZ 90 4460],
+.CX 4762 90,
+.CX 4460 90,
+.measureX 4460 [] [.CZ 4762 89,.CZ 4762 4459,.CZ 89 4459],
+.CX 4762 89,
+.CX 4459 89,
+.measureX 4459 [] [.CZ 4762 88,.CZ 4762 4458,.CZ 88 4458],
+.CX 4762 88,
+.CX 4458 88,
+.measureX 4458 [] [.CZ 4762 87,.CZ 4762 4457,.CZ 87 4457],
+.CX 4762 87,
+.CX 4457 87,
+.measureX 4457 [] [.CZ 4762 86,.CZ 4762 4456,.CZ 86 4456],
+.CX 4762 86,
+.CX 4456 86,
+.measureX 4456 [] [.CZ 4762 85,.CZ 4762 4455,.CZ 85 4455],
+.CX 4762 85,
+.CX 4455 85,
+.measureX 4455 [] [.CZ 4762 84,.CZ 4762 4454,.CZ 84 4454],
+.CX 4762 84,
+.CX 4454 84,
+.measureX 4454 [] [.CZ 4762 83,.CZ 4762 4453,.CZ 83 4453],
+.CX 4762 83,
+.CX 4453 83,
+.measureX 4453 [] [.CZ 4762 82,.CZ 4762 4452,.CZ 82 4452],
+.CX 4762 82,
+.CX 4452 82,
+.measureX 4452 [] [.CZ 4762 81,.CZ 4762 4451,.CZ 81 4451],
+.CX 4762 81,
+.CX 4451 81,
+.measureX 4451 [] [.CZ 4762 80,.CZ 4762 4450,.CZ 80 4450],
+.CX 4762 80,
+.CX 4450 80,
+.measureX 4450 [] [.CZ 4762 79,.CZ 4762 4449,.CZ 79 4449],
+.CX 4762 79,
+.CX 4449 79,
+.measureX 4449 [] [.CZ 4762 78,.CZ 4762 4448,.CZ 78 4448],
+.CX 4762 78,
+.CX 4448 78,
+.measureX 4448 [] [.CZ 4762 77,.CZ 4762 4447,.CZ 77 4447],
+.CX 4762 77,
+.CX 4447 77,
+.measureX 4447 [] [.CZ 4762 76,.CZ 4762 4446,.CZ 76 4446],
+.CX 4762 76,
+.CX 4446 76,
+.measureX 4446 [] [.CZ 4762 75,.CZ 4762 4445,.CZ 75 4445],
+.CX 4762 75,
+.CX 4445 75,
+.measureX 4445 [] [.CZ 4762 74,.CZ 4762 4444,.CZ 74 4444],
+.CX 4762 74,
+.CX 4444 74,
+.measureX 4444 [] [.CZ 4762 73,.CZ 4762 4443,.CZ 73 4443],
+.CX 4762 73,
+.CX 4443 73,
+.measureX 4443 [] [.CZ 4762 72,.CZ 4762 4442,.CZ 72 4442],
+.CX 4762 72,
+.CX 4442 72,
+.measureX 4442 [] [.CZ 4762 71,.CZ 4762 4441,.CZ 71 4441],
+.CX 4762 71,
+.CX 4441 71,
+.measureX 4441 [] [.CZ 4762 70,.CZ 4762 4440,.CZ 70 4440],
+.CX 4762 70
+]
 theorem result32:(compileFuel known32 129 block32).map (fun r=>(r.saved,r.final))=some (0,known33):=by decide +kernel
 def opt32:ExactChecked known32 block32 known33 0:=normalize _ _ _ _ _ result32
+def block33:Program:=[
+.CX 4440 70,
+.measureX 4440 [] [.CZ 4762 69,.CZ 4762 4439,.CZ 69 4439],
+.CX 4762 69,
+.CX 4439 69,
+.measureX 4439 [] [.CZ 4762 68,.CZ 4762 4438,.CZ 68 4438],
+.CX 4762 68,
+.CX 4438 68,
+.measureX 4438 [] [.CZ 4762 67,.CZ 4762 4437,.CZ 67 4437],
+.CX 4762 67,
+.CX 4437 67,
+.measureX 4437 [] [.CZ 4762 66,.CZ 4762 4436,.CZ 66 4436],
+.CX 4762 66,
+.CX 4436 66,
+.measureX 4436 [] [.CZ 4762 65,.CZ 4762 4435,.CZ 65 4435],
+.CX 4762 65,
+.CX 4435 65,
+.measureX 4435 [] [.CZ 4762 64,.CZ 4762 4434,.CZ 64 4434],
+.CX 4762 64,
+.CX 4434 64,
+.measureX 4434 [] [.CZ 4762 63,.CZ 4762 4433,.CZ 63 4433],
+.CX 4762 63,
+.CX 4433 63,
+.measureX 4433 [] [.CZ 4762 62,.CZ 4762 4432,.CZ 62 4432],
+.CX 4762 62,
+.CX 4432 62,
+.measureX 4432 [] [.CZ 4762 61,.CZ 4762 4431,.CZ 61 4431],
+.CX 4762 61,
+.CX 4431 61,
+.measureX 4431 [] [.CZ 4762 60,.CZ 4762 4430,.CZ 60 4430],
+.CX 4762 60,
+.CX 4430 60,
+.measureX 4430 [] [.CZ 4762 59,.CZ 4762 4429,.CZ 59 4429],
+.CX 4762 59,
+.CX 4429 59,
+.measureX 4429 [] [.CZ 4762 58,.CZ 4762 4428,.CZ 58 4428],
+.CX 4762 58,
+.CX 4428 58,
+.measureX 4428 [] [.CZ 4762 57,.CZ 4762 4427,.CZ 57 4427],
+.CX 4762 57,
+.CX 4427 57,
+.measureX 4427 [] [.CZ 4762 56,.CZ 4762 4426,.CZ 56 4426],
+.CX 4762 56,
+.CX 4426 56,
+.measureX 4426 [] [.CZ 4762 55,.CZ 4762 4425,.CZ 55 4425],
+.CX 4762 55,
+.CX 4425 55,
+.measureX 4425 [] [.CZ 4762 54,.CZ 4762 4424,.CZ 54 4424],
+.CX 4762 54,
+.CX 4424 54,
+.measureX 4424 [] [.CZ 4762 53,.CZ 4762 4423,.CZ 53 4423],
+.CX 4762 53,
+.CX 4423 53,
+.measureX 4423 [] [.CZ 4762 52,.CZ 4762 4422,.CZ 52 4422],
+.CX 4762 52,
+.CX 4422 52,
+.measureX 4422 [] [.CZ 4762 51,.CZ 4762 4421,.CZ 51 4421],
+.CX 4762 51,
+.CX 4421 51,
+.measureX 4421 [] [.CZ 4762 50,.CZ 4762 4420,.CZ 50 4420],
+.CX 4762 50,
+.CX 4420 50,
+.measureX 4420 [] [.CZ 4762 49,.CZ 4762 4419,.CZ 49 4419],
+.CX 4762 49,
+.CX 4419 49,
+.measureX 4419 [] [.CZ 4762 48,.CZ 4762 4418,.CZ 48 4418],
+.CX 4762 48,
+.CX 4418 48,
+.measureX 4418 [] [.CZ 4762 47,.CZ 4762 4417,.CZ 47 4417],
+.CX 4762 47,
+.CX 4417 47,
+.measureX 4417 [] [.CZ 4762 46,.CZ 4762 4416,.CZ 46 4416],
+.CX 4762 46,
+.CX 4416 46,
+.measureX 4416 [] [.CZ 4762 45,.CZ 4762 4415,.CZ 45 4415],
+.CX 4762 45,
+.CX 4415 45,
+.measureX 4415 [] [.CZ 4762 44,.CZ 4762 4414,.CZ 44 4414],
+.CX 4762 44,
+.CX 4414 44,
+.measureX 4414 [] [.CZ 4762 43,.CZ 4762 4413,.CZ 43 4413],
+.CX 4762 43,
+.CX 4413 43,
+.measureX 4413 [] [.CZ 4762 42,.CZ 4762 4412,.CZ 42 4412],
+.CX 4762 42,
+.CX 4412 42,
+.measureX 4412 [] [.CZ 4762 41,.CZ 4762 4411,.CZ 41 4411],
+.CX 4762 41,
+.CX 4411 41,
+.measureX 4411 [] [.CZ 4762 40,.CZ 4762 4410,.CZ 40 4410],
+.CX 4762 40,
+.CX 4410 40,
+.measureX 4410 [] [.CZ 4762 39,.CZ 4762 4409,.CZ 39 4409],
+.CX 4762 39,
+.CX 4409 39,
+.measureX 4409 [] [.CZ 4762 38,.CZ 4762 4408,.CZ 38 4408],
+.CX 4762 38,
+.CX 4408 38,
+.measureX 4408 [] [.CZ 4762 37,.CZ 4762 4407,.CZ 37 4407],
+.CX 4762 37,
+.CX 4407 37,
+.measureX 4407 [] [.CZ 4762 36,.CZ 4762 4406,.CZ 36 4406],
+.CX 4762 36,
+.CX 4406 36,
+.measureX 4406 [] [.CZ 4762 35,.CZ 4762 4405,.CZ 35 4405],
+.CX 4762 35,
+.CX 4405 35,
+.measureX 4405 [] [.CZ 34 4404],
+.CX 4404 34,
+.measureX 4404 [] [.CZ 4762 33,.CZ 4762 4403,.CZ 33 4403],
+.CX 4762 33,
+.CX 4403 33,
+.measureX 4403 [] [.CZ 4762 32,.CZ 4762 4402,.CZ 32 4402],
+.CX 4762 32,
+.CX 4402 32,
+.measureX 4402 [] [.CZ 4762 31,.CZ 4762 4401,.CZ 31 4401],
+.CX 4762 31,
+.CX 4401 31,
+.measureX 4401 [] [.CZ 4762 30,.CZ 4762 4400,.CZ 30 4400],
+.CX 4762 30,
+.CX 4400 30,
+.measureX 4400 [] [.CZ 4762 29,.CZ 4762 4399,.CZ 29 4399],
+.CX 4762 29,
+.CX 4399 29,
+.measureX 4399 [] [.CZ 4762 28,.CZ 4762 4398,.CZ 28 4398],
+.CX 4762 28,
+.CX 4398 28,
+.measureX 4398 [] [.CZ 4762 27,.CZ 4762 4397,.CZ 27 4397],
+.CX 4762 27
+]
 theorem result33:(compileFuel known33 129 block33).map (fun r=>(r.saved,r.final))=some (0,known34):=by decide +kernel
 def opt33:ExactChecked known33 block33 known34 0:=normalize _ _ _ _ _ result33
+def block34:Program:=[
+.CX 4397 27,
+.measureX 4397 [] [.CZ 4762 26,.CZ 4762 4396,.CZ 26 4396],
+.CX 4762 26,
+.CX 4396 26,
+.measureX 4396 [] [.CZ 4762 25,.CZ 4762 4395,.CZ 25 4395],
+.CX 4762 25,
+.CX 4395 25,
+.measureX 4395 [] [.CZ 4762 24,.CZ 4762 4394,.CZ 24 4394],
+.CX 4762 24,
+.CX 4394 24,
+.measureX 4394 [] [.CZ 4762 23,.CZ 4762 4393,.CZ 23 4393],
+.CX 4762 23,
+.CX 4393 23,
+.measureX 4393 [] [.CZ 4762 22,.CZ 4762 4392,.CZ 22 4392],
+.CX 4762 22,
+.CX 4392 22,
+.measureX 4392 [] [.CZ 4762 21,.CZ 4762 4391,.CZ 21 4391],
+.CX 4762 21,
+.CX 4391 21,
+.measureX 4391 [] [.CZ 4762 20,.CZ 4762 4390,.CZ 20 4390],
+.CX 4762 20,
+.CX 4390 20,
+.measureX 4390 [] [.CZ 4762 19,.CZ 4762 4389,.CZ 19 4389],
+.CX 4762 19,
+.CX 4389 19,
+.measureX 4389 [] [.CZ 4762 18,.CZ 4762 4388,.CZ 18 4388],
+.CX 4762 18,
+.CX 4388 18,
+.measureX 4388 [] [.CZ 4762 17,.CZ 4762 4387,.CZ 17 4387],
+.CX 4762 17,
+.CX 4387 17,
+.measureX 4387 [] [.CZ 4762 16,.CZ 4762 4386,.CZ 16 4386],
+.CX 4762 16,
+.CX 4386 16,
+.measureX 4386 [] [.CZ 4762 15,.CZ 4762 4385,.CZ 15 4385],
+.CX 4762 15,
+.CX 4385 15,
+.measureX 4385 [] [.CZ 4762 14,.CZ 4762 4384,.CZ 14 4384],
+.CX 4762 14,
+.CX 4384 14,
+.measureX 4384 [] [.CZ 4762 13,.CZ 4762 4383,.CZ 13 4383],
+.CX 4762 13,
+.CX 4383 13,
+.measureX 4383 [] [.CZ 4762 12,.CZ 4762 4382,.CZ 12 4382],
+.CX 4762 12,
+.CX 4382 12,
+.measureX 4382 [] [.CZ 11 4381],
+.CX 4381 11,
+.measureX 4381 [] [.CZ 10 4380],
+.CX 4380 10,
+.measureX 4380 [] [.CZ 9 4379],
+.CX 4379 9,
+.measureX 4379 [] [.CZ 8 4378],
+.CX 4378 8,
+.measureX 4378 [] [.CZ 4762 7,.CZ 4762 4377,.CZ 7 4377],
+.CX 4762 7,
+.CX 4377 7,
+.measureX 4377 [] [.CZ 6 4376],
+.CX 4376 6,
+.measureX 4376 [] [.CZ 4762 5,.CZ 4762 4375,.CZ 5 4375],
+.CX 4762 5,
+.CX 4375 5,
+.measureX 4375 [] [.CZ 4762 4,.CZ 4762 4374,.CZ 4 4374],
+.CX 4762 4,
+.CX 4374 4,
+.measureX 4374 [] [.CZ 4762 3,.CZ 4762 4373,.CZ 3 4373],
+.CX 4762 3,
+.CX 4373 3,
+.measureX 4373 [] [.CZ 4762 2,.CZ 4762 4760,.CZ 2 4760],
+.CX 4762 2,
+.CX 4760 2,
+.CX 4762 4758,
+.X 4758,
+.X 4762,
+.X 2,
+.CCX 2 4760 4373,
+.X 2,
+.X 3,
+.CCX 3 4373 4374,
+.X 3,
+.X 4,
+.CCX 4 4374 4375,
+.X 4,
+.X 5,
+.CCX 5 4375 4376,
+.X 5,
+.X 6,
+.CX 6 4505,
+.CX 6 4376,
+.CCX 4505 4376 4377,
+.CX 6 4377,
+.CX 6 4376,
+.CX 6 4505,
+.X 6,
+.X 7,
+.CX 7 4506,
+.CX 7 4377,
+.CCX 4506 4377 4378,
+.CX 7 4378,
+.CX 7 4377,
+.CX 7 4506,
+.X 7,
+.X 8,
+.CX 8 4507,
+.CX 8 4378,
+.CCX 4507 4378 4379,
+.CX 8 4379,
+.CX 8 4378,
+.CX 8 4507,
+.X 8,
+.X 9,
+.CX 9 4508,
+.CX 9 4379,
+.CCX 4508 4379 4380,
+.CX 9 4380,
+.CX 9 4379,
+.CX 9 4508,
+.X 9,
+.X 10,
+.CX 10 4509,
+.CX 10 4380,
+.CCX 4509 4380 4381,
+.CX 10 4381,
+.CX 10 4380,
+.CX 10 4509,
+.X 10,
+.X 11
+]
 theorem result34:(compileFuel known34 128 block34).map (fun r=>(r.saved,r.final))=some (4,known35):=by decide +kernel
 def opt34:ExactChecked known34 block34 known35 4:=normalize _ _ _ _ _ result34
+def block35:Program:=[
+.CX 11 4510,
+.CX 11 4381,
+.CCX 4510 4381 4382,
+.CX 11 4382,
+.CX 11 4381,
+.CX 11 4510,
+.X 11,
+.X 12,
+.CX 12 4511,
+.CX 12 4382,
+.CCX 4511 4382 4383,
+.CX 12 4383,
+.CX 12 4382,
+.CX 12 4511,
+.X 12,
+.X 13,
+.CX 13 4512,
+.CX 13 4383,
+.CCX 4512 4383 4384,
+.CX 13 4384,
+.CX 13 4383,
+.CX 13 4512,
+.X 13,
+.X 14,
+.CX 14 4513,
+.CX 14 4384,
+.CCX 4513 4384 4385,
+.CX 14 4385,
+.CX 14 4384,
+.CX 14 4513,
+.X 14,
+.X 15,
+.CX 15 4514,
+.CX 15 4385,
+.CCX 4514 4385 4386,
+.CX 15 4386,
+.CX 15 4385,
+.CX 15 4514,
+.X 15,
+.X 16,
+.CX 16 4515,
+.CX 16 4386,
+.CCX 4515 4386 4387,
+.CX 16 4387,
+.CX 16 4386,
+.CX 16 4515,
+.X 16,
+.X 17,
+.CX 17 4516,
+.CX 17 4387,
+.CCX 4516 4387 4388,
+.CX 17 4388,
+.CX 17 4387,
+.CX 17 4516,
+.X 17,
+.X 18,
+.CX 18 4517,
+.CX 18 4388,
+.CCX 4517 4388 4389,
+.CX 18 4389,
+.CX 18 4388,
+.CX 18 4517,
+.X 18,
+.X 19,
+.CX 19 4518,
+.CX 19 4389,
+.CCX 4518 4389 4390,
+.CX 19 4390,
+.CX 19 4389,
+.CX 19 4518,
+.X 19,
+.X 20,
+.CX 20 4519,
+.CX 20 4390,
+.CCX 4519 4390 4391,
+.CX 20 4391,
+.CX 20 4390,
+.CX 20 4519,
+.X 20,
+.X 21,
+.CX 21 4520,
+.CX 21 4391,
+.CCX 4520 4391 4392,
+.CX 21 4392,
+.CX 21 4391,
+.CX 21 4520,
+.X 21,
+.X 22,
+.CX 22 4521,
+.CX 22 4392,
+.CCX 4521 4392 4393,
+.CX 22 4393,
+.CX 22 4392,
+.CX 22 4521,
+.X 22,
+.X 23,
+.CX 23 4522,
+.CX 23 4393,
+.CCX 4522 4393 4394,
+.CX 23 4394,
+.CX 23 4393,
+.CX 23 4522,
+.X 23,
+.X 24,
+.CX 24 4523,
+.CX 24 4394,
+.CCX 4523 4394 4395,
+.CX 24 4395,
+.CX 24 4394,
+.CX 24 4523,
+.X 24,
+.X 25,
+.CX 25 4524,
+.CX 25 4395,
+.CCX 4524 4395 4396,
+.CX 25 4396,
+.CX 25 4395,
+.CX 25 4524,
+.X 25,
+.X 26,
+.CX 26 4525,
+.CX 26 4396,
+.CCX 4525 4396 4397,
+.CX 26 4397,
+.CX 26 4396,
+.CX 26 4525,
+.X 26,
+.X 27
+]
 theorem result35:(compileFuel known35 129 block35).map (fun r=>(r.saved,r.final))=some (0,known36):=by decide +kernel
 def opt35:ExactChecked known35 block35 known36 0:=normalize _ _ _ _ _ result35
+def block36:Program:=[
+.CX 27 4526,
+.CX 27 4397,
+.CCX 4526 4397 4398,
+.CX 27 4398,
+.CX 27 4397,
+.CX 27 4526,
+.X 27,
+.X 28,
+.CX 28 4527,
+.CX 28 4398,
+.CCX 4527 4398 4399,
+.CX 28 4399,
+.CX 28 4398,
+.CX 28 4527,
+.X 28,
+.X 29,
+.CX 29 4528,
+.CX 29 4399,
+.CCX 4528 4399 4400,
+.CX 29 4400,
+.CX 29 4399,
+.CX 29 4528,
+.X 29,
+.X 30,
+.CX 30 4529,
+.CX 30 4400,
+.CCX 4529 4400 4401,
+.CX 30 4401,
+.CX 30 4400,
+.CX 30 4529,
+.X 30,
+.X 31,
+.CX 31 4530,
+.CX 31 4401,
+.CCX 4530 4401 4402,
+.CX 31 4402,
+.CX 31 4401,
+.CX 31 4530,
+.X 31,
+.X 32,
+.CX 32 4531,
+.CX 32 4402,
+.CCX 4531 4402 4403,
+.CX 32 4403,
+.CX 32 4402,
+.CX 32 4531,
+.X 32,
+.X 33,
+.CX 33 4532,
+.CX 33 4403,
+.CCX 4532 4403 4404,
+.CX 33 4404,
+.CX 33 4403,
+.CX 33 4532,
+.X 33,
+.X 34,
+.CX 34 4533,
+.CX 34 4404,
+.CCX 4533 4404 4405,
+.CX 34 4405,
+.CX 34 4404,
+.CX 34 4533,
+.X 34,
+.X 35,
+.CX 35 4534,
+.CX 35 4405,
+.CCX 4534 4405 4406,
+.CX 35 4406,
+.CX 35 4405,
+.CX 35 4534,
+.X 35,
+.X 36,
+.CX 36 4535,
+.CX 36 4406,
+.CCX 4535 4406 4407,
+.CX 36 4407,
+.CX 36 4406,
+.CX 36 4535,
+.X 36,
+.X 37,
+.CX 37 4536,
+.CX 37 4407,
+.CCX 4536 4407 4408,
+.CX 37 4408,
+.CX 37 4407,
+.CX 37 4536,
+.X 37,
+.X 38,
+.CX 38 4537,
+.CX 38 4408,
+.CCX 4537 4408 4409,
+.CX 38 4409,
+.CX 38 4408,
+.CX 38 4537,
+.X 38,
+.X 39,
+.CX 39 4538,
+.CX 39 4409,
+.CCX 4538 4409 4410,
+.CX 39 4410,
+.CX 39 4409,
+.CX 39 4538,
+.X 39,
+.X 40,
+.CX 40 4539,
+.CX 40 4410,
+.CCX 4539 4410 4411,
+.CX 40 4411,
+.CX 40 4410,
+.CX 40 4539,
+.X 40,
+.X 41,
+.CX 41 4540,
+.CX 41 4411,
+.CCX 4540 4411 4412,
+.CX 41 4412,
+.CX 41 4411,
+.CX 41 4540,
+.X 41,
+.X 42,
+.CX 42 4541,
+.CX 42 4412,
+.CCX 4541 4412 4413,
+.CX 42 4413,
+.CX 42 4412,
+.CX 42 4541,
+.X 42,
+.X 43
+]
 theorem result36:(compileFuel known36 129 block36).map (fun r=>(r.saved,r.final))=some (0,known37):=by decide +kernel
 def opt36:ExactChecked known36 block36 known37 0:=normalize _ _ _ _ _ result36
+def block37:Program:=[
+.CX 43 4542,
+.CX 43 4413,
+.CCX 4542 4413 4414,
+.CX 43 4414,
+.CX 43 4413,
+.CX 43 4542,
+.X 43,
+.X 44,
+.CX 44 4543,
+.CX 44 4414,
+.CCX 4543 4414 4415,
+.CX 44 4415,
+.CX 44 4414,
+.CX 44 4543,
+.X 44,
+.X 45,
+.CX 45 4544,
+.CX 45 4415,
+.CCX 4544 4415 4416,
+.CX 45 4416,
+.CX 45 4415,
+.CX 45 4544,
+.X 45,
+.X 46,
+.CX 46 4545,
+.CX 46 4416,
+.CCX 4545 4416 4417,
+.CX 46 4417,
+.CX 46 4416,
+.CX 46 4545,
+.X 46,
+.X 47,
+.CX 47 4546,
+.CX 47 4417,
+.CCX 4546 4417 4418,
+.CX 47 4418,
+.CX 47 4417,
+.CX 47 4546,
+.X 47,
+.X 48,
+.CX 48 4547,
+.CX 48 4418,
+.CCX 4547 4418 4419,
+.CX 48 4419,
+.CX 48 4418,
+.CX 48 4547,
+.X 48,
+.X 49,
+.CX 49 4548,
+.CX 49 4419,
+.CCX 4548 4419 4420,
+.CX 49 4420,
+.CX 49 4419,
+.CX 49 4548,
+.X 49,
+.X 50,
+.CX 50 4549,
+.CX 50 4420,
+.CCX 4549 4420 4421,
+.CX 50 4421,
+.CX 50 4420,
+.CX 50 4549,
+.X 50,
+.X 51,
+.CX 51 4550,
+.CX 51 4421,
+.CCX 4550 4421 4422,
+.CX 51 4422,
+.CX 51 4421,
+.CX 51 4550,
+.X 51,
+.X 52,
+.CX 52 4551,
+.CX 52 4422,
+.CCX 4551 4422 4423,
+.CX 52 4423,
+.CX 52 4422,
+.CX 52 4551,
+.X 52,
+.X 53,
+.CX 53 4552,
+.CX 53 4423,
+.CCX 4552 4423 4424,
+.CX 53 4424,
+.CX 53 4423,
+.CX 53 4552,
+.X 53,
+.X 54,
+.CX 54 4553,
+.CX 54 4424,
+.CCX 4553 4424 4425,
+.CX 54 4425,
+.CX 54 4424,
+.CX 54 4553,
+.X 54,
+.X 55,
+.CX 55 4554,
+.CX 55 4425,
+.CCX 4554 4425 4426,
+.CX 55 4426,
+.CX 55 4425,
+.CX 55 4554,
+.X 55,
+.X 56,
+.CX 56 4555,
+.CX 56 4426,
+.CCX 4555 4426 4427,
+.CX 56 4427,
+.CX 56 4426,
+.CX 56 4555,
+.X 56,
+.X 57,
+.CX 57 4556,
+.CX 57 4427,
+.CCX 4556 4427 4428,
+.CX 57 4428,
+.CX 57 4427,
+.CX 57 4556,
+.X 57,
+.X 58,
+.CX 58 4557,
+.CX 58 4428,
+.CCX 4557 4428 4429,
+.CX 58 4429,
+.CX 58 4428,
+.CX 58 4557,
+.X 58,
+.X 59
+]
 theorem result37:(compileFuel known37 129 block37).map (fun r=>(r.saved,r.final))=some (0,known38):=by decide +kernel
 def opt37:ExactChecked known37 block37 known38 0:=normalize _ _ _ _ _ result37
+def block38:Program:=[
+.CX 59 4558,
+.CX 59 4429,
+.CCX 4558 4429 4430,
+.CX 59 4430,
+.CX 59 4429,
+.CX 59 4558,
+.X 59,
+.X 60,
+.CX 60 4559,
+.CX 60 4430,
+.CCX 4559 4430 4431,
+.CX 60 4431,
+.CX 60 4430,
+.CX 60 4559,
+.X 60,
+.X 61,
+.CX 61 4560,
+.CX 61 4431,
+.CCX 4560 4431 4432,
+.CX 61 4432,
+.CX 61 4431,
+.CX 61 4560,
+.X 61,
+.X 62,
+.CX 62 4561,
+.CX 62 4432,
+.CCX 4561 4432 4433,
+.CX 62 4433,
+.CX 62 4432,
+.CX 62 4561,
+.X 62,
+.X 63,
+.CX 63 4562,
+.CX 63 4433,
+.CCX 4562 4433 4434,
+.CX 63 4434,
+.CX 63 4433,
+.CX 63 4562,
+.X 63,
+.X 64,
+.CX 64 4563,
+.CX 64 4434,
+.CCX 4563 4434 4435,
+.CX 64 4435,
+.CX 64 4434,
+.CX 64 4563,
+.X 64,
+.X 65,
+.CX 65 4564,
+.CX 65 4435,
+.CCX 4564 4435 4436,
+.CX 65 4436,
+.CX 65 4435,
+.CX 65 4564,
+.X 65,
+.X 66,
+.CX 66 4565,
+.CX 66 4436,
+.CCX 4565 4436 4437,
+.CX 66 4437,
+.CX 66 4436,
+.CX 66 4565,
+.X 66,
+.X 67,
+.CX 67 4566,
+.CX 67 4437,
+.CCX 4566 4437 4438,
+.CX 67 4438,
+.CX 67 4437,
+.CX 67 4566,
+.X 67,
+.X 68,
+.CX 68 4567,
+.CX 68 4438,
+.CCX 4567 4438 4439,
+.CX 68 4439,
+.CX 68 4438,
+.CX 68 4567,
+.X 68,
+.X 69,
+.CX 69 4568,
+.CX 69 4439,
+.CCX 4568 4439 4440,
+.CX 69 4440,
+.CX 69 4439,
+.CX 69 4568,
+.X 69,
+.X 70,
+.CX 70 4569,
+.CX 70 4440,
+.CCX 4569 4440 4441,
+.CX 70 4441,
+.CX 70 4440,
+.CX 70 4569,
+.X 70,
+.X 71,
+.CX 71 4570,
+.CX 71 4441,
+.CCX 4570 4441 4442,
+.CX 71 4442,
+.CX 71 4441,
+.CX 71 4570,
+.X 71,
+.X 72,
+.CX 72 4571,
+.CX 72 4442,
+.CCX 4571 4442 4443,
+.CX 72 4443,
+.CX 72 4442,
+.CX 72 4571,
+.X 72,
+.X 73,
+.CX 73 4572,
+.CX 73 4443,
+.CCX 4572 4443 4444,
+.CX 73 4444,
+.CX 73 4443,
+.CX 73 4572,
+.X 73,
+.X 74,
+.CX 74 4573,
+.CX 74 4444,
+.CCX 4573 4444 4445,
+.CX 74 4445,
+.CX 74 4444,
+.CX 74 4573,
+.X 74,
+.X 75
+]
 theorem result38:(compileFuel known38 129 block38).map (fun r=>(r.saved,r.final))=some (0,known39):=by decide +kernel
 def opt38:ExactChecked known38 block38 known39 0:=normalize _ _ _ _ _ result38
+def block39:Program:=[
+.CX 75 4574,
+.CX 75 4445,
+.CCX 4574 4445 4446,
+.CX 75 4446,
+.CX 75 4445,
+.CX 75 4574,
+.X 75,
+.X 76,
+.CX 76 4575,
+.CX 76 4446,
+.CCX 4575 4446 4447,
+.CX 76 4447,
+.CX 76 4446,
+.CX 76 4575,
+.X 76,
+.X 77,
+.CX 77 4576,
+.CX 77 4447,
+.CCX 4576 4447 4448,
+.CX 77 4448,
+.CX 77 4447,
+.CX 77 4576,
+.X 77,
+.X 78,
+.CX 78 4577,
+.CX 78 4448,
+.CCX 4577 4448 4449,
+.CX 78 4449,
+.CX 78 4448,
+.CX 78 4577,
+.X 78,
+.X 79,
+.CX 79 4578,
+.CX 79 4449,
+.CCX 4578 4449 4450,
+.CX 79 4450,
+.CX 79 4449,
+.CX 79 4578,
+.X 79,
+.X 80,
+.CX 80 4579,
+.CX 80 4450,
+.CCX 4579 4450 4451,
+.CX 80 4451,
+.CX 80 4450,
+.CX 80 4579,
+.X 80,
+.X 81,
+.CX 81 4580,
+.CX 81 4451,
+.CCX 4580 4451 4452,
+.CX 81 4452,
+.CX 81 4451,
+.CX 81 4580,
+.X 81,
+.X 82,
+.CX 82 4581,
+.CX 82 4452,
+.CCX 4581 4452 4453,
+.CX 82 4453,
+.CX 82 4452,
+.CX 82 4581,
+.X 82,
+.X 83,
+.CX 83 4582,
+.CX 83 4453,
+.CCX 4582 4453 4454,
+.CX 83 4454,
+.CX 83 4453,
+.CX 83 4582,
+.X 83,
+.X 84,
+.CX 84 4583,
+.CX 84 4454,
+.CCX 4583 4454 4455,
+.CX 84 4455,
+.CX 84 4454,
+.CX 84 4583,
+.X 84,
+.X 85,
+.CX 85 4584,
+.CX 85 4455,
+.CCX 4584 4455 4456,
+.CX 85 4456,
+.CX 85 4455,
+.CX 85 4584,
+.X 85,
+.X 86,
+.CX 86 4585,
+.CX 86 4456,
+.CCX 4585 4456 4457,
+.CX 86 4457,
+.CX 86 4456,
+.CX 86 4585,
+.X 86,
+.X 87,
+.CX 87 4586,
+.CX 87 4457,
+.CCX 4586 4457 4458,
+.CX 87 4458,
+.CX 87 4457,
+.CX 87 4586,
+.X 87,
+.X 88,
+.CX 88 4587,
+.CX 88 4458,
+.CCX 4587 4458 4459,
+.CX 88 4459,
+.CX 88 4458,
+.CX 88 4587,
+.X 88,
+.X 89,
+.CX 89 4588,
+.CX 89 4459,
+.CCX 4588 4459 4460,
+.CX 89 4460,
+.CX 89 4459,
+.CX 89 4588,
+.X 89,
+.X 90,
+.CX 90 4589,
+.CX 90 4460,
+.CCX 4589 4460 4461,
+.CX 90 4461,
+.CX 90 4460,
+.CX 90 4589,
+.X 90,
+.X 91
+]
 theorem result39:(compileFuel known39 129 block39).map (fun r=>(r.saved,r.final))=some (0,known40):=by decide +kernel
 def opt39:ExactChecked known39 block39 known40 0:=normalize _ _ _ _ _ result39
+def block40:Program:=[
+.CX 91 4590,
+.CX 91 4461,
+.CCX 4590 4461 4462,
+.CX 91 4462,
+.CX 91 4461,
+.CX 91 4590,
+.X 91,
+.X 92,
+.CX 92 4591,
+.CX 92 4462,
+.CCX 4591 4462 4463,
+.CX 92 4463,
+.CX 92 4462,
+.CX 92 4591,
+.X 92,
+.X 93,
+.CX 93 4592,
+.CX 93 4463,
+.CCX 4592 4463 4464,
+.CX 93 4464,
+.CX 93 4463,
+.CX 93 4592,
+.X 93,
+.X 94,
+.CX 94 4593,
+.CX 94 4464,
+.CCX 4593 4464 4465,
+.CX 94 4465,
+.CX 94 4464,
+.CX 94 4593,
+.X 94,
+.X 95,
+.CX 95 4594,
+.CX 95 4465,
+.CCX 4594 4465 4466,
+.CX 95 4466,
+.CX 95 4465,
+.CX 95 4594,
+.X 95,
+.X 96,
+.CX 96 4595,
+.CX 96 4466,
+.CCX 4595 4466 4467,
+.CX 96 4467,
+.CX 96 4466,
+.CX 96 4595,
+.X 96,
+.X 97,
+.CX 97 4596,
+.CX 97 4467,
+.CCX 4596 4467 4468,
+.CX 97 4468,
+.CX 97 4467,
+.CX 97 4596,
+.X 97,
+.X 98,
+.CX 98 4597,
+.CX 98 4468,
+.CCX 4597 4468 4469,
+.CX 98 4469,
+.CX 98 4468,
+.CX 98 4597,
+.X 98,
+.X 99,
+.CX 99 4598,
+.CX 99 4469,
+.CCX 4598 4469 4470,
+.CX 99 4470,
+.CX 99 4469,
+.CX 99 4598,
+.X 99,
+.X 100,
+.CX 100 4599,
+.CX 100 4470,
+.CCX 4599 4470 4471,
+.CX 100 4471,
+.CX 100 4470,
+.CX 100 4599,
+.X 100,
+.X 101,
+.CX 101 4600,
+.CX 101 4471,
+.CCX 4600 4471 4472,
+.CX 101 4472,
+.CX 101 4471,
+.CX 101 4600,
+.X 101,
+.X 102,
+.CX 102 4601,
+.CX 102 4472,
+.CCX 4601 4472 4473,
+.CX 102 4473,
+.CX 102 4472,
+.CX 102 4601,
+.X 102,
+.X 103,
+.CX 103 4602,
+.CX 103 4473,
+.CCX 4602 4473 4474,
+.CX 103 4474,
+.CX 103 4473,
+.CX 103 4602,
+.X 103,
+.X 104,
+.CX 104 4603,
+.CX 104 4474,
+.CCX 4603 4474 4475,
+.CX 104 4475,
+.CX 104 4474,
+.CX 104 4603,
+.X 104,
+.X 105,
+.CX 105 4604,
+.CX 105 4475,
+.CCX 4604 4475 4476,
+.CX 105 4476,
+.CX 105 4475,
+.CX 105 4604,
+.X 105,
+.X 106,
+.CX 106 4605,
+.CX 106 4476,
+.CCX 4605 4476 4477,
+.CX 106 4477,
+.CX 106 4476,
+.CX 106 4605,
+.X 106,
+.X 107
+]
 theorem result40:(compileFuel known40 129 block40).map (fun r=>(r.saved,r.final))=some (0,known41):=by decide +kernel
 def opt40:ExactChecked known40 block40 known41 0:=normalize _ _ _ _ _ result40
+def block41:Program:=[
+.CX 107 4606,
+.CX 107 4477,
+.CCX 4606 4477 4478,
+.CX 107 4478,
+.CX 107 4477,
+.CX 107 4606,
+.X 107,
+.X 108,
+.CX 108 4607,
+.CX 108 4478,
+.CCX 4607 4478 4479,
+.CX 108 4479,
+.CX 108 4478,
+.CX 108 4607,
+.X 108,
+.X 109,
+.CX 109 4608,
+.CX 109 4479,
+.CCX 4608 4479 4480,
+.CX 109 4480,
+.CX 109 4479,
+.CX 109 4608,
+.X 109,
+.X 110,
+.CX 110 4609,
+.CX 110 4480,
+.CCX 4609 4480 4481,
+.CX 110 4481,
+.CX 110 4480,
+.CX 110 4609,
+.X 110,
+.X 111,
+.CX 111 4610,
+.CX 111 4481,
+.CCX 4610 4481 4482,
+.CX 111 4482,
+.CX 111 4481,
+.CX 111 4610,
+.X 111,
+.X 112,
+.CX 112 4611,
+.CX 112 4482,
+.CCX 4611 4482 4483,
+.CX 112 4483,
+.CX 112 4482,
+.CX 112 4611,
+.X 112,
+.X 113,
+.CX 113 4612,
+.CX 113 4483,
+.CCX 4612 4483 4484,
+.CX 113 4484,
+.CX 113 4483,
+.CX 113 4612,
+.X 113,
+.X 114,
+.CX 114 4613,
+.CX 114 4484,
+.CCX 4613 4484 4485,
+.CX 114 4485,
+.CX 114 4484,
+.CX 114 4613,
+.X 114,
+.X 115,
+.CX 115 4614,
+.CX 115 4485,
+.CCX 4614 4485 4486,
+.CX 115 4486,
+.CX 115 4485,
+.CX 115 4614,
+.X 115,
+.X 116,
+.CX 116 4615,
+.CX 116 4486,
+.CCX 4615 4486 4487,
+.CX 116 4487,
+.CX 116 4486,
+.CX 116 4615,
+.X 116,
+.X 117,
+.CX 117 4616,
+.CX 117 4487,
+.CCX 4616 4487 4488,
+.CX 117 4488,
+.CX 117 4487,
+.CX 117 4616,
+.X 117,
+.X 118,
+.CX 118 4617,
+.CX 118 4488,
+.CCX 4617 4488 4489,
+.CX 118 4489,
+.CX 118 4488,
+.CX 118 4617,
+.X 118,
+.X 119,
+.CX 119 4618,
+.CX 119 4489,
+.CCX 4618 4489 4490,
+.CX 119 4490,
+.CX 119 4489,
+.CX 119 4618,
+.X 119,
+.X 120,
+.CX 120 4619,
+.CX 120 4490,
+.CCX 4619 4490 4491,
+.CX 120 4491,
+.CX 120 4490,
+.CX 120 4619,
+.X 120,
+.X 121,
+.CX 121 4620,
+.CX 121 4491,
+.CCX 4620 4491 4492,
+.CX 121 4492,
+.CX 121 4491,
+.CX 121 4620,
+.X 121,
+.X 122,
+.CX 122 4621,
+.CX 122 4492,
+.CCX 4621 4492 4493,
+.CX 122 4493,
+.CX 122 4492,
+.CX 122 4621,
+.X 122,
+.X 123
+]
 theorem result41:(compileFuel known41 129 block41).map (fun r=>(r.saved,r.final))=some (0,known42):=by decide +kernel
 def opt41:ExactChecked known41 block41 known42 0:=normalize _ _ _ _ _ result41
+def block42:Program:=[
+.CX 123 4622,
+.CX 123 4493,
+.CCX 4622 4493 4494,
+.CX 123 4494,
+.CX 123 4493,
+.CX 123 4622,
+.X 123,
+.X 124,
+.CX 124 4623,
+.CX 124 4494,
+.CCX 4623 4494 4495,
+.CX 124 4495,
+.CX 124 4494,
+.CX 124 4623,
+.X 124,
+.X 125,
+.CX 125 4624,
+.CX 125 4495,
+.CCX 4624 4495 4496,
+.CX 125 4496,
+.CX 125 4495,
+.CX 125 4624,
+.X 125,
+.X 126,
+.CX 126 4625,
+.CX 126 4496,
+.CCX 4625 4496 4497,
+.CX 126 4497,
+.CX 126 4496,
+.CX 126 4625,
+.X 126,
+.X 127,
+.CX 127 4626,
+.CX 127 4497,
+.CCX 4626 4497 4498,
+.CX 127 4498,
+.CX 127 4497,
+.CX 127 4626,
+.X 127,
+.X 128,
+.CX 128 4627,
+.CX 128 4498,
+.CCX 4627 4498 4499,
+.CX 128 4499,
+.CX 128 4498,
+.CX 128 4627,
+.X 128,
+.X 129,
+.CX 129 4628,
+.CX 129 4499,
+.CCX 4628 4499 4500,
+.CX 129 4500,
+.CX 129 4499,
+.CX 129 4628,
+.X 129,
+.X 130,
+.CX 130 4629,
+.CX 130 4500,
+.CCX 4629 4500 4764,
+.CX 130 4764,
+.CX 130 4500,
+.CX 130 4629,
+.X 130,
+.X 131,
+.CX 131 4630,
+.CX 131 4764,
+.CCX 4630 4764 4765,
+.CX 131 4765,
+.CX 131 4764,
+.CX 131 4630,
+.X 131,
+.X 132,
+.CX 132 4631,
+.CX 132 4765,
+.CCX 4631 4765 4766,
+.CX 132 4766,
+.CX 132 4765,
+.CX 132 4631,
+.X 132,
+.X 133,
+.CX 133 4632,
+.CX 133 4766,
+.CCX 4632 4766 4767,
+.CX 133 4767,
+.CX 133 4766,
+.CX 133 4632,
+.X 133,
+.X 134,
+.CX 134 4633,
+.CX 134 4767,
+.CCX 4633 4767 4768,
+.CX 134 4768,
+.CX 134 4767,
+.CX 134 4633,
+.X 134,
+.X 135,
+.CX 135 4634,
+.CX 135 4768,
+.CCX 4634 4768 4769,
+.CX 135 4769,
+.CX 135 4768,
+.CX 135 4634,
+.X 135,
+.X 136,
+.CX 136 4635,
+.CX 136 4769,
+.CCX 4635 4769 4770,
+.CX 136 4770,
+.CX 136 4769,
+.CX 136 4635,
+.X 136,
+.X 137,
+.CX 137 4636,
+.CX 137 4770,
+.CCX 4636 4770 4771,
+.CX 137 4771,
+.CX 137 4770,
+.CX 137 4636,
+.X 137,
+.X 138,
+.CX 138 4637,
+.CX 138 4771,
+.CCX 4637 4771 4772,
+.CX 138 4772,
+.CX 138 4771,
+.CX 138 4637,
+.X 138,
+.X 139
+]
 theorem result42:(compileFuel known42 129 block42).map (fun r=>(r.saved,r.final))=some (0,known43):=by decide +kernel
 def opt42:ExactChecked known42 block42 known43 0:=normalize _ _ _ _ _ result42
+def block43:Program:=[
+.CX 139 4638,
+.CX 139 4772,
+.CCX 4638 4772 4773,
+.CX 139 4773,
+.CX 139 4772,
+.CX 139 4638,
+.X 139,
+.X 140,
+.CX 140 4639,
+.CX 140 4773,
+.CCX 4639 4773 4774,
+.CX 140 4774,
+.CX 140 4773,
+.CX 140 4639,
+.X 140,
+.X 141,
+.CX 141 4640,
+.CX 141 4774,
+.CCX 4640 4774 4775,
+.CX 141 4775,
+.CX 141 4774,
+.CX 141 4640,
+.X 141,
+.X 142,
+.CX 142 4641,
+.CX 142 4775,
+.CCX 4641 4775 4776,
+.CX 142 4776,
+.CX 142 4775,
+.CX 142 4641,
+.X 142,
+.X 143,
+.CX 143 4642,
+.CX 143 4776,
+.CCX 4642 4776 4777,
+.CX 143 4777,
+.CX 143 4776,
+.CX 143 4642,
+.X 143,
+.X 144,
+.CX 144 4643,
+.CX 144 4777,
+.CCX 4643 4777 4778,
+.CX 144 4778,
+.CX 144 4777,
+.CX 144 4643,
+.X 144,
+.X 145,
+.CX 145 4644,
+.CX 145 4778,
+.CCX 4644 4778 4779,
+.CX 145 4779,
+.CX 145 4778,
+.CX 145 4644,
+.X 145,
+.X 146,
+.CX 146 4645,
+.CX 146 4779,
+.CCX 4645 4779 4780,
+.CX 146 4780,
+.CX 146 4779,
+.CX 146 4645,
+.X 146,
+.X 147,
+.CX 147 4646,
+.CX 147 4780,
+.CCX 4646 4780 4781,
+.CX 147 4781,
+.CX 147 4780,
+.CX 147 4646,
+.X 147,
+.X 148,
+.CX 148 4647,
+.CX 148 4781,
+.CCX 4647 4781 4782,
+.CX 148 4782,
+.CX 148 4781,
+.CX 148 4647,
+.X 148,
+.X 149,
+.CX 149 4648,
+.CX 149 4782,
+.CCX 4648 4782 4783,
+.CX 149 4783,
+.CX 149 4782,
+.CX 149 4648,
+.X 149,
+.X 150,
+.CX 150 4649,
+.CX 150 4783,
+.CCX 4649 4783 4784,
+.CX 150 4784,
+.CX 150 4783,
+.CX 150 4649,
+.X 150,
+.X 151,
+.CX 151 4650,
+.CX 151 4784,
+.CCX 4650 4784 4785,
+.CX 151 4785,
+.CX 151 4784,
+.CX 151 4650,
+.X 151,
+.X 152,
+.CX 152 4651,
+.CX 152 4785,
+.CCX 4651 4785 4786,
+.CX 152 4786,
+.CX 152 4785,
+.CX 152 4651,
+.X 152,
+.X 153,
+.CX 153 4652,
+.CX 153 4786,
+.CCX 4652 4786 4787,
+.CX 153 4787,
+.CX 153 4786,
+.CX 153 4652,
+.X 153,
+.X 154,
+.CX 154 4653,
+.CX 154 4787,
+.CCX 4653 4787 4788,
+.CX 154 4788,
+.CX 154 4787,
+.CX 154 4653,
+.X 154,
+.X 155
+]
 theorem result43:(compileFuel known43 129 block43).map (fun r=>(r.saved,r.final))=some (0,known44):=by decide +kernel
 def opt43:ExactChecked known43 block43 known44 0:=normalize _ _ _ _ _ result43
+def block44:Program:=[
+.CX 155 4654,
+.CX 155 4788,
+.CCX 4654 4788 4789,
+.CX 155 4789,
+.CX 155 4788,
+.CX 155 4654,
+.X 155,
+.X 156,
+.CX 156 4655,
+.CX 156 4789,
+.CCX 4655 4789 4790,
+.CX 156 4790,
+.CX 156 4789,
+.CX 156 4655,
+.X 156,
+.X 157,
+.CX 157 4656,
+.CX 157 4790,
+.CCX 4656 4790 4791,
+.CX 157 4791,
+.CX 157 4790,
+.CX 157 4656,
+.X 157,
+.X 158,
+.CX 158 4657,
+.CX 158 4791,
+.CCX 4657 4791 4792,
+.CX 158 4792,
+.CX 158 4791,
+.CX 158 4657,
+.X 158,
+.X 159,
+.CX 159 4658,
+.CX 159 4792,
+.CCX 4658 4792 4793,
+.CX 159 4793,
+.CX 159 4792,
+.CX 159 4658,
+.X 159,
+.X 160,
+.CX 160 4659,
+.CX 160 4793,
+.CCX 4659 4793 4794,
+.CX 160 4794,
+.CX 160 4793,
+.CX 160 4659,
+.X 160,
+.X 161,
+.CX 161 4660,
+.CX 161 4794,
+.CCX 4660 4794 4795,
+.CX 161 4795,
+.CX 161 4794,
+.CX 161 4660,
+.X 161,
+.X 162,
+.CX 162 4661,
+.CX 162 4795,
+.CCX 4661 4795 4796,
+.CX 162 4796,
+.CX 162 4795,
+.CX 162 4661,
+.X 162,
+.X 163,
+.CCX 163 4796 4797,
+.X 163,
+.X 164,
+.CCX 164 4797 4798,
+.X 164,
+.X 165,
+.CCX 165 4798 4799,
+.X 165,
+.X 166,
+.CCX 166 4799 4800,
+.X 166,
+.X 167,
+.CCX 167 4800 4801,
+.X 167,
+.X 168,
+.CCX 168 4801 4802,
+.X 168,
+.X 169,
+.CCX 169 4802 4803,
+.X 169,
+.X 170,
+.CCX 170 4803 4804,
+.X 170,
+.X 171,
+.CCX 171 4804 4805,
+.X 171,
+.X 172,
+.CCX 172 4805 4806,
+.X 172,
+.X 173,
+.CCX 173 4806 4807,
+.X 173,
+.X 174,
+.CCX 174 4807 4808,
+.X 174,
+.X 175,
+.CCX 175 4808 4809,
+.X 175,
+.X 176,
+.CCX 176 4809 4810,
+.X 176,
+.X 177,
+.CCX 177 4810 4811,
+.X 177,
+.X 178,
+.CCX 178 4811 4812,
+.X 178,
+.X 179,
+.CCX 179 4812 4813,
+.X 179,
+.X 180,
+.CCX 180 4813 4814,
+.X 180,
+.X 181,
+.CCX 181 4814 4815,
+.X 181,
+.X 182,
+.CCX 182 4815 4816,
+.X 182,
+.X 183,
+.CCX 183 4816 4817,
+.X 183,
+.X 184,
+.CCX 184 4817 4818
+]
 theorem result44:(compileFuel known44 129 block44).map (fun r=>(r.saved,r.final))=some (0,known45):=by decide +kernel
 def opt44:ExactChecked known44 block44 known45 0:=normalize _ _ _ _ _ result44
+def block45:Program:=[
+.X 184,
+.X 185,
+.CCX 185 4818 4819,
+.X 185,
+.X 186,
+.CCX 186 4819 4820,
+.X 186,
+.X 187,
+.CCX 187 4820 4821,
+.X 187,
+.X 188,
+.CCX 188 4821 4822,
+.X 188,
+.X 189,
+.CCX 189 4822 4823,
+.X 189,
+.X 190,
+.CCX 190 4823 4824,
+.X 190,
+.X 191,
+.CCX 191 4824 4825,
+.X 191,
+.X 192,
+.CCX 192 4825 4826,
+.X 192,
+.X 193,
+.CCX 193 4826 4827,
+.X 193,
+.X 194,
+.CCX 194 4827 4828,
+.X 194,
+.X 195,
+.CCX 195 4828 4829,
+.X 195,
+.X 196,
+.CCX 196 4829 4830,
+.X 196,
+.X 197,
+.CCX 197 4830 4831,
+.X 197,
+.X 198,
+.CCX 198 4831 4832,
+.X 198,
+.X 199,
+.CCX 199 4832 4833,
+.X 199,
+.X 200,
+.CCX 200 4833 4834,
+.X 200,
+.X 201,
+.CCX 201 4834 4835,
+.X 201,
+.X 202,
+.CCX 202 4835 4836,
+.X 202,
+.X 203,
+.CCX 203 4836 4837,
+.X 203,
+.X 204,
+.CCX 204 4837 4838,
+.X 204,
+.X 205,
+.CCX 205 4838 4839,
+.X 205,
+.X 206,
+.CCX 206 4839 4840,
+.X 206,
+.X 207,
+.CCX 207 4840 4841,
+.X 207,
+.X 208,
+.CCX 208 4841 4842,
+.X 208,
+.X 209,
+.CCX 209 4842 4843,
+.X 209,
+.X 210,
+.CCX 210 4843 4844,
+.X 210,
+.X 211,
+.CCX 211 4844 4845,
+.X 211,
+.X 212,
+.CCX 212 4845 4846,
+.X 212,
+.X 213,
+.CCX 213 4846 4847,
+.X 213,
+.X 214,
+.CCX 214 4847 4848,
+.X 214,
+.X 215,
+.CCX 215 4848 4849,
+.X 215,
+.X 216,
+.CCX 216 4849 4850,
+.X 216,
+.X 217,
+.CCX 217 4850 4851,
+.X 217,
+.X 218,
+.CCX 218 4851 4852,
+.X 218,
+.X 219,
+.CCX 219 4852 4853,
+.X 219,
+.X 220,
+.CCX 220 4853 4854,
+.X 220,
+.X 221,
+.CCX 221 4854 4855,
+.X 221,
+.X 222,
+.CCX 222 4855 4856,
+.X 222,
+.X 223,
+.CCX 223 4856 4857,
+.X 223,
+.X 224,
+.CCX 224 4857 4858,
+.X 224,
+.X 225,
+.CCX 225 4858 4859,
+.X 225,
+.X 226,
+.CCX 226 4859 4860,
+.X 226,
+.X 227
+]
 theorem result45:(compileFuel known45 129 block45).map (fun r=>(r.saved,r.final))=some (0,known46):=by decide +kernel
 def opt45:ExactChecked known45 block45 known46 0:=normalize _ _ _ _ _ result45
+def block46:Program:=[
+.CCX 227 4860 4861,
+.X 227,
+.X 228,
+.CCX 228 4861 4862,
+.X 228,
+.X 229,
+.CCX 229 4862 4863,
+.X 229,
+.X 230,
+.CCX 230 4863 4864,
+.X 230,
+.X 231,
+.CCX 231 4864 4865,
+.X 231,
+.X 232,
+.CCX 232 4865 4866,
+.X 232,
+.X 233,
+.CCX 233 4866 4867,
+.X 233,
+.X 234,
+.CCX 234 4867 4868,
+.X 234,
+.X 235,
+.CCX 235 4868 4869,
+.X 235,
+.X 236,
+.CCX 236 4869 4870,
+.X 236,
+.X 237,
+.CCX 237 4870 4871,
+.X 237,
+.X 238,
+.CCX 238 4871 4872,
+.X 238,
+.X 239,
+.CCX 239 4872 4873,
+.X 239,
+.X 240,
+.CCX 240 4873 4874,
+.X 240,
+.X 241,
+.CCX 241 4874 4875,
+.X 241,
+.X 242,
+.CCX 242 4875 4876,
+.X 242,
+.X 243,
+.CCX 243 4876 4877,
+.X 243,
+.X 244,
+.CCX 244 4877 4878,
+.X 244,
+.X 245,
+.CCX 245 4878 4879,
+.X 245,
+.X 246,
+.CCX 246 4879 4880,
+.X 246,
+.X 247,
+.CCX 247 4880 4881,
+.X 247,
+.X 248,
+.CCX 248 4881 4882,
+.X 248,
+.X 249,
+.CCX 249 4882 4883,
+.X 249,
+.X 250,
+.CCX 250 4883 4884,
+.X 250,
+.X 251,
+.CCX 251 4884 4885,
+.X 251,
+.X 252,
+.CCX 252 4885 4886,
+.X 252,
+.X 253,
+.CCX 253 4886 4887,
+.X 253,
+.X 254,
+.CCX 254 4887 4888,
+.X 254,
+.X 255,
+.CCX 255 4888 4889,
+.X 255,
+.X 256,
+.CCX 256 4889 4757,
+.X 256,
+.X 257,
+.measureX 4762 [] [.CZ 257 4757],
+.X 257,
+.X 256,
+.measureX 4757 [] [.CZ 256 4889],
+.X 256,
+.X 255,
+.measureX 4889 [] [.CZ 255 4888],
+.X 255,
+.X 254,
+.measureX 4888 [] [.CZ 254 4887],
+.X 254,
+.X 253,
+.measureX 4887 [] [.CZ 253 4886],
+.X 253,
+.X 252,
+.measureX 4886 [] [.CZ 252 4885],
+.X 252,
+.X 251,
+.measureX 4885 [] [.CZ 251 4884],
+.X 251,
+.X 250,
+.measureX 4884 [] [.CZ 250 4883],
+.X 250,
+.X 249,
+.measureX 4883 [] [.CZ 249 4882],
+.X 249,
+.X 248,
+.measureX 4882 [] [.CZ 248 4881],
+.X 248,
+.X 247,
+.measureX 4881 [] [.CZ 247 4880],
+.X 247,
+.X 246,
+.measureX 4880 [] [.CZ 246 4879],
+.X 246,
+.X 245,
+.measureX 4879 [] [.CZ 245 4878],
+.X 245
+]
 theorem result46:(compileFuel known46 129 block46).map (fun r=>(r.saved,r.final))=some (0,known47):=by decide +kernel
 def opt46:ExactChecked known46 block46 known47 0:=normalize _ _ _ _ _ result46
+def block47:Program:=[
+.X 244,
+.measureX 4878 [] [.CZ 244 4877],
+.X 244,
+.X 243,
+.measureX 4877 [] [.CZ 243 4876],
+.X 243,
+.X 242,
+.measureX 4876 [] [.CZ 242 4875],
+.X 242,
+.X 241,
+.measureX 4875 [] [.CZ 241 4874],
+.X 241,
+.X 240,
+.measureX 4874 [] [.CZ 240 4873],
+.X 240,
+.X 239,
+.measureX 4873 [] [.CZ 239 4872],
+.X 239,
+.X 238,
+.measureX 4872 [] [.CZ 238 4871],
+.X 238,
+.X 237,
+.measureX 4871 [] [.CZ 237 4870],
+.X 237,
+.X 236,
+.measureX 4870 [] [.CZ 236 4869],
+.X 236,
+.X 235,
+.measureX 4869 [] [.CZ 235 4868],
+.X 235,
+.X 234,
+.measureX 4868 [] [.CZ 234 4867],
+.X 234,
+.X 233,
+.measureX 4867 [] [.CZ 233 4866],
+.X 233,
+.X 232,
+.measureX 4866 [] [.CZ 232 4865],
+.X 232,
+.X 231,
+.measureX 4865 [] [.CZ 231 4864],
+.X 231,
+.X 230,
+.measureX 4864 [] [.CZ 230 4863],
+.X 230,
+.X 229,
+.measureX 4863 [] [.CZ 229 4862],
+.X 229,
+.X 228,
+.measureX 4862 [] [.CZ 228 4861],
+.X 228,
+.X 227,
+.measureX 4861 [] [.CZ 227 4860],
+.X 227,
+.X 226,
+.measureX 4860 [] [.CZ 226 4859],
+.X 226,
+.X 225,
+.measureX 4859 [] [.CZ 225 4858],
+.X 225,
+.X 224,
+.measureX 4858 [] [.CZ 224 4857],
+.X 224,
+.X 223,
+.measureX 4857 [] [.CZ 223 4856],
+.X 223,
+.X 222,
+.measureX 4856 [] [.CZ 222 4855],
+.X 222,
+.X 221,
+.measureX 4855 [] [.CZ 221 4854],
+.X 221,
+.X 220,
+.measureX 4854 [] [.CZ 220 4853],
+.X 220,
+.X 219,
+.measureX 4853 [] [.CZ 219 4852],
+.X 219,
+.X 218,
+.measureX 4852 [] [.CZ 218 4851],
+.X 218,
+.X 217,
+.measureX 4851 [] [.CZ 217 4850],
+.X 217,
+.X 216,
+.measureX 4850 [] [.CZ 216 4849],
+.X 216,
+.X 215,
+.measureX 4849 [] [.CZ 215 4848],
+.X 215,
+.X 214,
+.measureX 4848 [] [.CZ 214 4847],
+.X 214,
+.X 213,
+.measureX 4847 [] [.CZ 213 4846],
+.X 213,
+.X 212,
+.measureX 4846 [] [.CZ 212 4845],
+.X 212,
+.X 211,
+.measureX 4845 [] [.CZ 211 4844],
+.X 211,
+.X 210,
+.measureX 4844 [] [.CZ 210 4843],
+.X 210,
+.X 209,
+.measureX 4843 [] [.CZ 209 4842],
+.X 209,
+.X 208,
+.measureX 4842 [] [.CZ 208 4841],
+.X 208,
+.X 207,
+.measureX 4841 [] [.CZ 207 4840],
+.X 207,
+.X 206,
+.measureX 4840 [] [.CZ 206 4839],
+.X 206,
+.X 205,
+.measureX 4839 [] [.CZ 205 4838],
+.X 205,
+.X 204,
+.measureX 4838 [] [.CZ 204 4837],
+.X 204,
+.X 203,
+.measureX 4837 [] [.CZ 203 4836],
+.X 203,
+.X 202,
+.measureX 4836 [] [.CZ 202 4835]
+]
 theorem result47:(compileFuel known47 129 block47).map (fun r=>(r.saved,r.final))=some (0,known48):=by decide +kernel
 def opt47:ExactChecked known47 block47 known48 0:=normalize _ _ _ _ _ result47
+def block48:Program:=[
+.X 202,
+.X 201,
+.measureX 4835 [] [.CZ 201 4834],
+.X 201,
+.X 200,
+.measureX 4834 [] [.CZ 200 4833],
+.X 200,
+.X 199,
+.measureX 4833 [] [.CZ 199 4832],
+.X 199,
+.X 198,
+.measureX 4832 [] [.CZ 198 4831],
+.X 198,
+.X 197,
+.measureX 4831 [] [.CZ 197 4830],
+.X 197,
+.X 196,
+.measureX 4830 [] [.CZ 196 4829],
+.X 196,
+.X 195,
+.measureX 4829 [] [.CZ 195 4828],
+.X 195,
+.X 194,
+.measureX 4828 [] [.CZ 194 4827],
+.X 194,
+.X 193,
+.measureX 4827 [] [.CZ 193 4826],
+.X 193,
+.X 192,
+.measureX 4826 [] [.CZ 192 4825],
+.X 192,
+.X 191,
+.measureX 4825 [] [.CZ 191 4824],
+.X 191,
+.X 190,
+.measureX 4824 [] [.CZ 190 4823],
+.X 190,
+.X 189,
+.measureX 4823 [] [.CZ 189 4822],
+.X 189,
+.X 188,
+.measureX 4822 [] [.CZ 188 4821],
+.X 188,
+.X 187,
+.measureX 4821 [] [.CZ 187 4820],
+.X 187,
+.X 186,
+.measureX 4820 [] [.CZ 186 4819],
+.X 186,
+.X 185,
+.measureX 4819 [] [.CZ 185 4818],
+.X 185,
+.X 184,
+.measureX 4818 [] [.CZ 184 4817],
+.X 184,
+.X 183,
+.measureX 4817 [] [.CZ 183 4816],
+.X 183,
+.X 182,
+.measureX 4816 [] [.CZ 182 4815],
+.X 182,
+.X 181,
+.measureX 4815 [] [.CZ 181 4814],
+.X 181,
+.X 180,
+.measureX 4814 [] [.CZ 180 4813],
+.X 180,
+.X 179,
+.measureX 4813 [] [.CZ 179 4812],
+.X 179,
+.X 178,
+.measureX 4812 [] [.CZ 178 4811],
+.X 178,
+.X 177,
+.measureX 4811 [] [.CZ 177 4810],
+.X 177,
+.X 176,
+.measureX 4810 [] [.CZ 176 4809],
+.X 176,
+.X 175,
+.measureX 4809 [] [.CZ 175 4808],
+.X 175,
+.X 174,
+.measureX 4808 [] [.CZ 174 4807],
+.X 174,
+.X 173,
+.measureX 4807 [] [.CZ 173 4806],
+.X 173,
+.X 172,
+.measureX 4806 [] [.CZ 172 4805],
+.X 172,
+.X 171,
+.measureX 4805 [] [.CZ 171 4804],
+.X 171,
+.X 170,
+.measureX 4804 [] [.CZ 170 4803],
+.X 170,
+.X 169,
+.measureX 4803 [] [.CZ 169 4802],
+.X 169,
+.X 168,
+.measureX 4802 [] [.CZ 168 4801],
+.X 168,
+.X 167,
+.measureX 4801 [] [.CZ 167 4800],
+.X 167,
+.X 166,
+.measureX 4800 [] [.CZ 166 4799],
+.X 166,
+.X 165,
+.measureX 4799 [] [.CZ 165 4798],
+.X 165,
+.X 164,
+.measureX 4798 [] [.CZ 164 4797],
+.X 164,
+.X 163,
+.measureX 4797 [] [.CZ 163 4796],
+.X 163,
+.X 162,
+.measureX 4796 [] [.CZ 162 4661,.CZ 162 4795,.CZ 4661 4795],
+.X 162,
+.X 161,
+.measureX 4795 [] [.CZ 161 4660,.CZ 161 4794,.CZ 4660 4794],
+.X 161,
+.X 160,
+.measureX 4794 [] [.CZ 160 4659,.CZ 160 4793,.CZ 4659 4793],
+.X 160,
+.X 159
+]
 theorem result48:(compileFuel known48 129 block48).map (fun r=>(r.saved,r.final))=some (0,known49):=by decide +kernel
 def opt48:ExactChecked known48 block48 known49 0:=normalize _ _ _ _ _ result48
+def block49:Program:=[
+.measureX 4793 [] [.CZ 159 4658,.CZ 159 4792,.CZ 4658 4792],
+.X 159,
+.X 158,
+.measureX 4792 [] [.CZ 158 4657,.CZ 158 4791,.CZ 4657 4791],
+.X 158,
+.X 157,
+.measureX 4791 [] [.CZ 157 4656,.CZ 157 4790,.CZ 4656 4790],
+.X 157,
+.X 156,
+.measureX 4790 [] [.CZ 156 4655,.CZ 156 4789,.CZ 4655 4789],
+.X 156,
+.X 155,
+.measureX 4789 [] [.CZ 155 4654,.CZ 155 4788,.CZ 4654 4788],
+.X 155,
+.X 154,
+.measureX 4788 [] [.CZ 154 4653,.CZ 154 4787,.CZ 4653 4787],
+.X 154,
+.X 153,
+.measureX 4787 [] [.CZ 153 4652,.CZ 153 4786,.CZ 4652 4786],
+.X 153,
+.X 152,
+.measureX 4786 [] [.CZ 152 4651,.CZ 152 4785,.CZ 4651 4785],
+.X 152,
+.X 151,
+.measureX 4785 [] [.CZ 151 4650,.CZ 151 4784,.CZ 4650 4784],
+.X 151,
+.X 150,
+.measureX 4784 [] [.CZ 150 4649,.CZ 150 4783,.CZ 4649 4783],
+.X 150,
+.X 149,
+.measureX 4783 [] [.CZ 149 4648,.CZ 149 4782,.CZ 4648 4782],
+.X 149,
+.X 148,
+.measureX 4782 [] [.CZ 148 4647,.CZ 148 4781,.CZ 4647 4781],
+.X 148,
+.X 147,
+.measureX 4781 [] [.CZ 147 4646,.CZ 147 4780,.CZ 4646 4780],
+.X 147,
+.X 146,
+.measureX 4780 [] [.CZ 146 4645,.CZ 146 4779,.CZ 4645 4779],
+.X 146,
+.X 145,
+.measureX 4779 [] [.CZ 145 4644,.CZ 145 4778,.CZ 4644 4778],
+.X 145,
+.X 144,
+.measureX 4778 [] [.CZ 144 4643,.CZ 144 4777,.CZ 4643 4777],
+.X 144,
+.X 143,
+.measureX 4777 [] [.CZ 143 4642,.CZ 143 4776,.CZ 4642 4776],
+.X 143,
+.X 142,
+.measureX 4776 [] [.CZ 142 4641,.CZ 142 4775,.CZ 4641 4775],
+.X 142,
+.X 141,
+.measureX 4775 [] [.CZ 141 4640,.CZ 141 4774,.CZ 4640 4774],
+.X 141,
+.X 140,
+.measureX 4774 [] [.CZ 140 4639,.CZ 140 4773,.CZ 4639 4773],
+.X 140,
+.X 139,
+.measureX 4773 [] [.CZ 139 4638,.CZ 139 4772,.CZ 4638 4772],
+.X 139,
+.X 138,
+.measureX 4772 [] [.CZ 138 4637,.CZ 138 4771,.CZ 4637 4771],
+.X 138,
+.X 137,
+.measureX 4771 [] [.CZ 137 4636,.CZ 137 4770,.CZ 4636 4770],
+.X 137,
+.X 136,
+.measureX 4770 [] [.CZ 136 4635,.CZ 136 4769,.CZ 4635 4769],
+.X 136,
+.X 135,
+.measureX 4769 [] [.CZ 135 4634,.CZ 135 4768,.CZ 4634 4768],
+.X 135,
+.X 134,
+.measureX 4768 [] [.CZ 134 4633,.CZ 134 4767,.CZ 4633 4767],
+.X 134,
+.X 133,
+.measureX 4767 [] [.CZ 133 4632,.CZ 133 4766,.CZ 4632 4766],
+.X 133,
+.X 132,
+.measureX 4766 [] [.CZ 132 4631,.CZ 132 4765,.CZ 4631 4765],
+.X 132,
+.X 131,
+.measureX 4765 [] [.CZ 131 4630,.CZ 131 4764,.CZ 4630 4764],
+.X 131,
+.X 130,
+.measureX 4764 [] [.CZ 130 4629,.CZ 130 4500,.CZ 4629 4500],
+.X 130,
+.X 129,
+.measureX 4500 [] [.CZ 129 4628,.CZ 129 4499,.CZ 4628 4499],
+.X 129,
+.X 128,
+.measureX 4499 [] [.CZ 128 4627,.CZ 128 4498,.CZ 4627 4498],
+.X 128,
+.X 127,
+.measureX 4498 [] [.CZ 127 4626,.CZ 127 4497,.CZ 4626 4497],
+.X 127,
+.X 126,
+.measureX 4497 [] [.CZ 126 4625,.CZ 126 4496,.CZ 4625 4496],
+.X 126,
+.X 125,
+.measureX 4496 [] [.CZ 125 4624,.CZ 125 4495,.CZ 4624 4495],
+.X 125,
+.X 124,
+.measureX 4495 [] [.CZ 124 4623,.CZ 124 4494,.CZ 4623 4494],
+.X 124,
+.X 123,
+.measureX 4494 [] [.CZ 123 4622,.CZ 123 4493,.CZ 4622 4493],
+.X 123,
+.X 122,
+.measureX 4493 [] [.CZ 122 4621,.CZ 122 4492,.CZ 4621 4492],
+.X 122,
+.X 121,
+.measureX 4492 [] [.CZ 121 4620,.CZ 121 4491,.CZ 4620 4491],
+.X 121,
+.X 120,
+.measureX 4491 [] [.CZ 120 4619,.CZ 120 4490,.CZ 4619 4490],
+.X 120,
+.X 119,
+.measureX 4490 [] [.CZ 119 4618,.CZ 119 4489,.CZ 4618 4489],
+.X 119,
+.X 118,
+.measureX 4489 [] [.CZ 118 4617,.CZ 118 4488,.CZ 4617 4488],
+.X 118,
+.X 117,
+.measureX 4488 [] [.CZ 117 4616,.CZ 117 4487,.CZ 4616 4487],
+.X 117
+]
 theorem result49:(compileFuel known49 129 block49).map (fun r=>(r.saved,r.final))=some (0,known50):=by decide +kernel
 def opt49:ExactChecked known49 block49 known50 0:=normalize _ _ _ _ _ result49
+def block50:Program:=[
+.X 116,
+.measureX 4487 [] [.CZ 116 4615,.CZ 116 4486,.CZ 4615 4486],
+.X 116,
+.X 115,
+.measureX 4486 [] [.CZ 115 4614,.CZ 115 4485,.CZ 4614 4485],
+.X 115,
+.X 114,
+.measureX 4485 [] [.CZ 114 4613,.CZ 114 4484,.CZ 4613 4484],
+.X 114,
+.X 113,
+.measureX 4484 [] [.CZ 113 4612,.CZ 113 4483,.CZ 4612 4483],
+.X 113,
+.X 112,
+.measureX 4483 [] [.CZ 112 4611,.CZ 112 4482,.CZ 4611 4482],
+.X 112,
+.X 111,
+.measureX 4482 [] [.CZ 111 4610,.CZ 111 4481,.CZ 4610 4481],
+.X 111,
+.X 110,
+.measureX 4481 [] [.CZ 110 4609,.CZ 110 4480,.CZ 4609 4480],
+.X 110,
+.X 109,
+.measureX 4480 [] [.CZ 109 4608,.CZ 109 4479,.CZ 4608 4479],
+.X 109,
+.X 108,
+.measureX 4479 [] [.CZ 108 4607,.CZ 108 4478,.CZ 4607 4478],
+.X 108,
+.X 107,
+.measureX 4478 [] [.CZ 107 4606,.CZ 107 4477,.CZ 4606 4477],
+.X 107,
+.X 106,
+.measureX 4477 [] [.CZ 106 4605,.CZ 106 4476,.CZ 4605 4476],
+.X 106,
+.X 105,
+.measureX 4476 [] [.CZ 105 4604,.CZ 105 4475,.CZ 4604 4475],
+.X 105,
+.X 104,
+.measureX 4475 [] [.CZ 104 4603,.CZ 104 4474,.CZ 4603 4474],
+.X 104,
+.X 103,
+.measureX 4474 [] [.CZ 103 4602,.CZ 103 4473,.CZ 4602 4473],
+.X 103,
+.X 102,
+.measureX 4473 [] [.CZ 102 4601,.CZ 102 4472,.CZ 4601 4472],
+.X 102,
+.X 101,
+.measureX 4472 [] [.CZ 101 4600,.CZ 101 4471,.CZ 4600 4471],
+.X 101,
+.X 100,
+.measureX 4471 [] [.CZ 100 4599,.CZ 100 4470,.CZ 4599 4470],
+.X 100,
+.X 99,
+.measureX 4470 [] [.CZ 99 4598,.CZ 99 4469,.CZ 4598 4469],
+.X 99,
+.X 98,
+.measureX 4469 [] [.CZ 98 4597,.CZ 98 4468,.CZ 4597 4468],
+.X 98,
+.X 97,
+.measureX 4468 [] [.CZ 97 4596,.CZ 97 4467,.CZ 4596 4467],
+.X 97,
+.X 96,
+.measureX 4467 [] [.CZ 96 4595,.CZ 96 4466,.CZ 4595 4466],
+.X 96,
+.X 95,
+.measureX 4466 [] [.CZ 95 4594,.CZ 95 4465,.CZ 4594 4465],
+.X 95,
+.X 94,
+.measureX 4465 [] [.CZ 94 4593,.CZ 94 4464,.CZ 4593 4464],
+.X 94,
+.X 93,
+.measureX 4464 [] [.CZ 93 4592,.CZ 93 4463,.CZ 4592 4463],
+.X 93,
+.X 92,
+.measureX 4463 [] [.CZ 92 4591,.CZ 92 4462,.CZ 4591 4462],
+.X 92,
+.X 91,
+.measureX 4462 [] [.CZ 91 4590,.CZ 91 4461,.CZ 4590 4461],
+.X 91,
+.X 90,
+.measureX 4461 [] [.CZ 90 4589,.CZ 90 4460,.CZ 4589 4460],
+.X 90,
+.X 89,
+.measureX 4460 [] [.CZ 89 4588,.CZ 89 4459,.CZ 4588 4459],
+.X 89,
+.X 88,
+.measureX 4459 [] [.CZ 88 4587,.CZ 88 4458,.CZ 4587 4458],
+.X 88,
+.X 87,
+.measureX 4458 [] [.CZ 87 4586,.CZ 87 4457,.CZ 4586 4457],
+.X 87,
+.X 86,
+.measureX 4457 [] [.CZ 86 4585,.CZ 86 4456,.CZ 4585 4456],
+.X 86,
+.X 85,
+.measureX 4456 [] [.CZ 85 4584,.CZ 85 4455,.CZ 4584 4455],
+.X 85,
+.X 84,
+.measureX 4455 [] [.CZ 84 4583,.CZ 84 4454,.CZ 4583 4454],
+.X 84,
+.X 83,
+.measureX 4454 [] [.CZ 83 4582,.CZ 83 4453,.CZ 4582 4453],
+.X 83,
+.X 82,
+.measureX 4453 [] [.CZ 82 4581,.CZ 82 4452,.CZ 4581 4452],
+.X 82,
+.X 81,
+.measureX 4452 [] [.CZ 81 4580,.CZ 81 4451,.CZ 4580 4451],
+.X 81,
+.X 80,
+.measureX 4451 [] [.CZ 80 4579,.CZ 80 4450,.CZ 4579 4450],
+.X 80,
+.X 79,
+.measureX 4450 [] [.CZ 79 4578,.CZ 79 4449,.CZ 4578 4449],
+.X 79,
+.X 78,
+.measureX 4449 [] [.CZ 78 4577,.CZ 78 4448,.CZ 4577 4448],
+.X 78,
+.X 77,
+.measureX 4448 [] [.CZ 77 4576,.CZ 77 4447,.CZ 4576 4447],
+.X 77,
+.X 76,
+.measureX 4447 [] [.CZ 76 4575,.CZ 76 4446,.CZ 4575 4446],
+.X 76,
+.X 75,
+.measureX 4446 [] [.CZ 75 4574,.CZ 75 4445,.CZ 4574 4445],
+.X 75,
+.X 74,
+.measureX 4445 [] [.CZ 74 4573,.CZ 74 4444,.CZ 4573 4444]
+]
 theorem result50:(compileFuel known50 129 block50).map (fun r=>(r.saved,r.final))=some (0,known51):=by decide +kernel
 def opt50:ExactChecked known50 block50 known51 0:=normalize _ _ _ _ _ result50
+def block51:Program:=[
+.X 74,
+.X 73,
+.measureX 4444 [] [.CZ 73 4572,.CZ 73 4443,.CZ 4572 4443],
+.X 73,
+.X 72,
+.measureX 4443 [] [.CZ 72 4571,.CZ 72 4442,.CZ 4571 4442],
+.X 72,
+.X 71,
+.measureX 4442 [] [.CZ 71 4570,.CZ 71 4441,.CZ 4570 4441],
+.X 71,
+.X 70,
+.measureX 4441 [] [.CZ 70 4569,.CZ 70 4440,.CZ 4569 4440],
+.X 70,
+.X 69,
+.measureX 4440 [] [.CZ 69 4568,.CZ 69 4439,.CZ 4568 4439],
+.X 69,
+.X 68,
+.measureX 4439 [] [.CZ 68 4567,.CZ 68 4438,.CZ 4567 4438],
+.X 68,
+.X 67,
+.measureX 4438 [] [.CZ 67 4566,.CZ 67 4437,.CZ 4566 4437],
+.X 67,
+.X 66,
+.measureX 4437 [] [.CZ 66 4565,.CZ 66 4436,.CZ 4565 4436],
+.X 66,
+.X 65,
+.measureX 4436 [] [.CZ 65 4564,.CZ 65 4435,.CZ 4564 4435],
+.X 65,
+.X 64,
+.measureX 4435 [] [.CZ 64 4563,.CZ 64 4434,.CZ 4563 4434],
+.X 64,
+.X 63,
+.measureX 4434 [] [.CZ 63 4562,.CZ 63 4433,.CZ 4562 4433],
+.X 63,
+.X 62,
+.measureX 4433 [] [.CZ 62 4561,.CZ 62 4432,.CZ 4561 4432],
+.X 62,
+.X 61,
+.measureX 4432 [] [.CZ 61 4560,.CZ 61 4431,.CZ 4560 4431],
+.X 61,
+.X 60,
+.measureX 4431 [] [.CZ 60 4559,.CZ 60 4430,.CZ 4559 4430],
+.X 60,
+.X 59,
+.measureX 4430 [] [.CZ 59 4558,.CZ 59 4429,.CZ 4558 4429],
+.X 59,
+.X 58,
+.measureX 4429 [] [.CZ 58 4557,.CZ 58 4428,.CZ 4557 4428],
+.X 58,
+.X 57,
+.measureX 4428 [] [.CZ 57 4556,.CZ 57 4427,.CZ 4556 4427],
+.X 57,
+.X 56,
+.measureX 4427 [] [.CZ 56 4555,.CZ 56 4426,.CZ 4555 4426],
+.X 56,
+.X 55,
+.measureX 4426 [] [.CZ 55 4554,.CZ 55 4425,.CZ 4554 4425],
+.X 55,
+.X 54,
+.measureX 4425 [] [.CZ 54 4553,.CZ 54 4424,.CZ 4553 4424],
+.X 54,
+.X 53,
+.measureX 4424 [] [.CZ 53 4552,.CZ 53 4423,.CZ 4552 4423],
+.X 53,
+.X 52,
+.measureX 4423 [] [.CZ 52 4551,.CZ 52 4422,.CZ 4551 4422],
+.X 52,
+.X 51,
+.measureX 4422 [] [.CZ 51 4550,.CZ 51 4421,.CZ 4550 4421],
+.X 51,
+.X 50,
+.measureX 4421 [] [.CZ 50 4549,.CZ 50 4420,.CZ 4549 4420],
+.X 50,
+.X 49,
+.measureX 4420 [] [.CZ 49 4548,.CZ 49 4419,.CZ 4548 4419],
+.X 49,
+.X 48,
+.measureX 4419 [] [.CZ 48 4547,.CZ 48 4418,.CZ 4547 4418],
+.X 48,
+.X 47,
+.measureX 4418 [] [.CZ 47 4546,.CZ 47 4417,.CZ 4546 4417],
+.X 47,
+.X 46,
+.measureX 4417 [] [.CZ 46 4545,.CZ 46 4416,.CZ 4545 4416],
+.X 46,
+.X 45,
+.measureX 4416 [] [.CZ 45 4544,.CZ 45 4415,.CZ 4544 4415],
+.X 45,
+.X 44,
+.measureX 4415 [] [.CZ 44 4543,.CZ 44 4414,.CZ 4543 4414],
+.X 44,
+.X 43,
+.measureX 4414 [] [.CZ 43 4542,.CZ 43 4413,.CZ 4542 4413],
+.X 43,
+.X 42,
+.measureX 4413 [] [.CZ 42 4541,.CZ 42 4412,.CZ 4541 4412],
+.X 42,
+.X 41,
+.measureX 4412 [] [.CZ 41 4540,.CZ 41 4411,.CZ 4540 4411],
+.X 41,
+.X 40,
+.measureX 4411 [] [.CZ 40 4539,.CZ 40 4410,.CZ 4539 4410],
+.X 40,
+.X 39,
+.measureX 4410 [] [.CZ 39 4538,.CZ 39 4409,.CZ 4538 4409],
+.X 39,
+.X 38,
+.measureX 4409 [] [.CZ 38 4537,.CZ 38 4408,.CZ 4537 4408],
+.X 38,
+.X 37,
+.measureX 4408 [] [.CZ 37 4536,.CZ 37 4407,.CZ 4536 4407],
+.X 37,
+.X 36,
+.measureX 4407 [] [.CZ 36 4535,.CZ 36 4406,.CZ 4535 4406],
+.X 36,
+.X 35,
+.measureX 4406 [] [.CZ 35 4534,.CZ 35 4405,.CZ 4534 4405],
+.X 35,
+.X 34,
+.measureX 4405 [] [.CZ 34 4533,.CZ 34 4404,.CZ 4533 4404],
+.X 34,
+.X 33,
+.measureX 4404 [] [.CZ 33 4532,.CZ 33 4403,.CZ 4532 4403],
+.X 33,
+.X 32,
+.measureX 4403 [] [.CZ 32 4531,.CZ 32 4402,.CZ 4531 4402],
+.X 32,
+.X 31
+]
 theorem result51:(compileFuel known51 129 block51).map (fun r=>(r.saved,r.final))=some (0,known52):=by decide +kernel
 def opt51:ExactChecked known51 block51 known52 0:=normalize _ _ _ _ _ result51
+def block52:Program:=[
+.measureX 4402 [] [.CZ 31 4530,.CZ 31 4401,.CZ 4530 4401],
+.X 31,
+.X 30,
+.measureX 4401 [] [.CZ 30 4529,.CZ 30 4400,.CZ 4529 4400],
+.X 30,
+.X 29,
+.measureX 4400 [] [.CZ 29 4528,.CZ 29 4399,.CZ 4528 4399],
+.X 29,
+.X 28,
+.measureX 4399 [] [.CZ 28 4527,.CZ 28 4398,.CZ 4527 4398],
+.X 28,
+.X 27,
+.measureX 4398 [] [.CZ 27 4526,.CZ 27 4397,.CZ 4526 4397],
+.X 27,
+.X 26,
+.measureX 4397 [] [.CZ 26 4525,.CZ 26 4396,.CZ 4525 4396],
+.X 26,
+.X 25,
+.measureX 4396 [] [.CZ 25 4524,.CZ 25 4395,.CZ 4524 4395],
+.X 25,
+.X 24,
+.measureX 4395 [] [.CZ 24 4523,.CZ 24 4394,.CZ 4523 4394],
+.X 24,
+.X 23,
+.measureX 4394 [] [.CZ 23 4522,.CZ 23 4393,.CZ 4522 4393],
+.X 23,
+.X 22,
+.measureX 4393 [] [.CZ 22 4521,.CZ 22 4392,.CZ 4521 4392],
+.X 22,
+.X 21,
+.measureX 4392 [] [.CZ 21 4520,.CZ 21 4391,.CZ 4520 4391],
+.X 21,
+.X 20,
+.measureX 4391 [] [.CZ 20 4519,.CZ 20 4390,.CZ 4519 4390],
+.X 20,
+.X 19,
+.measureX 4390 [] [.CZ 19 4518,.CZ 19 4389,.CZ 4518 4389],
+.X 19,
+.X 18,
+.measureX 4389 [] [.CZ 18 4517,.CZ 18 4388,.CZ 4517 4388],
+.X 18,
+.X 17,
+.measureX 4388 [] [.CZ 17 4516,.CZ 17 4387,.CZ 4516 4387],
+.X 17,
+.X 16,
+.measureX 4387 [] [.CZ 16 4515,.CZ 16 4386,.CZ 4515 4386],
+.X 16,
+.X 15,
+.measureX 4386 [] [.CZ 15 4514,.CZ 15 4385,.CZ 4514 4385],
+.X 15,
+.X 14,
+.measureX 4385 [] [.CZ 14 4513,.CZ 14 4384,.CZ 4513 4384],
+.X 14,
+.X 13,
+.measureX 4384 [] [.CZ 13 4512,.CZ 13 4383,.CZ 4512 4383],
+.X 13,
+.X 12,
+.measureX 4383 [] [.CZ 12 4511,.CZ 12 4382,.CZ 4511 4382],
+.X 12,
+.X 11,
+.measureX 4382 [] [.CZ 11 4510,.CZ 11 4381,.CZ 4510 4381],
+.X 11,
+.X 10,
+.measureX 4381 [] [.CZ 10 4509,.CZ 10 4380,.CZ 4509 4380],
+.X 10,
+.X 9,
+.measureX 4380 [] [.CZ 9 4508,.CZ 9 4379,.CZ 4508 4379],
+.X 9,
+.X 8,
+.measureX 4379 [] [.CZ 8 4507,.CZ 8 4378,.CZ 4507 4378],
+.X 8,
+.X 7,
+.measureX 4378 [] [.CZ 7 4506,.CZ 7 4377,.CZ 4506 4377],
+.X 7,
+.X 6,
+.measureX 4377 [] [.CZ 6 4505,.CZ 6 4376,.CZ 4505 4376],
+.X 6,
+.X 5,
+.measureX 4376 [] [.CZ 5 4375],
+.X 5,
+.X 4,
+.measureX 4375 [] [.CZ 4 4374],
+.X 4,
+.X 3,
+.measureX 4374 [] [.CZ 3 4373],
+.X 3,
+.X 2,
+.measureX 4373 [] [.CZ 2 4760],
+.X 2,
+.CX 4113 4505,
+.CX 4113 4506,
+.CX 4113 4507,
+.CX 4113 4508,
+.CX 4113 4509,
+.CX 4113 4510,
+.CX 4113 4511,
+.CX 4113 4512,
+.CX 4113 4513,
+.CX 4113 4514,
+.CX 4113 4515,
+.CX 4113 4516,
+.CX 4113 4517,
+.CX 4113 4518,
+.CX 4113 4519,
+.CX 4113 4520,
+.CX 4113 4521,
+.CX 4113 4522,
+.CX 4113 4523,
+.CX 4113 4524,
+.CX 4113 4525,
+.CX 4113 4526,
+.CX 4113 4527,
+.CX 4113 4528,
+.CX 4113 4529,
+.CX 4113 4530,
+.CX 4113 4531,
+.CX 4113 4532,
+.CX 4113 4533,
+.CX 4113 4534,
+.CX 4113 4535,
+.CX 4113 4536,
+.CX 4113 4537,
+.CX 4113 4538,
+.CX 4113 4539,
+.CX 4113 4540,
+.CX 4113 4541,
+.CX 4113 4542,
+.CX 4113 4543
+]
 theorem result52:(compileFuel known52 129 block52).map (fun r=>(r.saved,r.final))=some (0,known53):=by decide +kernel
 def opt52:ExactChecked known52 block52 known53 0:=normalize _ _ _ _ _ result52
+def block53:Program:=[
+.CX 4113 4544,
+.CX 4113 4545,
+.CX 4113 4546,
+.CX 4113 4547,
+.CX 4113 4548,
+.CX 4113 4549,
+.CX 4113 4550,
+.CX 4113 4551,
+.CX 4113 4552,
+.CX 4113 4553,
+.CX 4113 4554,
+.CX 4113 4555,
+.CX 4113 4556,
+.CX 4113 4557,
+.CX 4113 4558,
+.CX 4113 4559,
+.CX 4113 4560,
+.CX 4113 4561,
+.CX 4113 4562,
+.CX 4113 4563,
+.CX 4113 4564,
+.CX 4113 4565,
+.CX 4113 4566,
+.CX 4113 4567,
+.CX 4113 4568,
+.CX 4113 4569,
+.CX 4113 4570,
+.CX 4113 4571,
+.CX 4113 4572,
+.CX 4113 4573,
+.CX 4113 4574,
+.CX 4113 4575,
+.CX 4113 4576,
+.CX 4113 4577,
+.CX 4113 4578,
+.CX 4113 4579,
+.CX 4113 4580,
+.CX 4113 4581,
+.CX 4113 4582,
+.CX 4113 4583,
+.CX 4113 4584,
+.CX 4113 4585,
+.CX 4113 4586,
+.CX 4113 4587,
+.CX 4113 4588,
+.CX 4113 4589,
+.CX 4113 4590,
+.CX 4113 4591,
+.CX 4113 4592,
+.CX 4113 4593,
+.CX 4113 4594,
+.CX 4113 4595,
+.CX 4113 4596,
+.CX 4113 4597,
+.CX 4113 4598,
+.CX 4113 4599,
+.CX 4113 4600,
+.CX 4113 4601,
+.CX 4113 4602,
+.CX 4113 4603,
+.CX 4113 4604,
+.CX 4113 4605,
+.CX 4113 4606,
+.CX 4113 4607,
+.CX 4113 4608,
+.CX 4113 4609,
+.CX 4113 4610,
+.CX 4113 4611,
+.CX 4113 4612,
+.CX 4113 4613,
+.CX 4113 4614,
+.CX 4113 4615,
+.CX 4113 4616,
+.CX 4113 4617,
+.CX 4113 4618,
+.CX 4113 4619,
+.CX 4113 4620,
+.CX 4113 4621,
+.CX 4113 4622,
+.CX 4113 4623,
+.CX 4113 4624,
+.CX 4113 4625,
+.CX 4113 4626,
+.CX 4113 4627,
+.CX 4113 4628,
+.CX 4113 4629,
+.CX 4113 4630,
+.CX 4113 4631,
+.CX 4113 4632,
+.CX 4113 4633,
+.CX 4113 4634,
+.CX 4113 4635,
+.CX 4113 4636,
+.CX 4113 4637,
+.CX 4113 4638,
+.CX 4113 4639,
+.CX 4113 4640,
+.CX 4113 4641,
+.CX 4113 4642,
+.CX 4113 4643,
+.CX 4113 4644,
+.CX 4113 4645,
+.CX 4113 4646,
+.CX 4113 4647,
+.CX 4113 4648,
+.CX 4113 4649,
+.CX 4113 4650,
+.CX 4113 4651,
+.CX 4113 4652,
+.CX 4113 4653,
+.CX 4113 4654,
+.CX 4113 4655,
+.CX 4113 4656,
+.CX 4113 4657,
+.CX 4113 4658,
+.CX 4113 4659,
+.CX 4113 4660,
+.CX 4113 4661
+]
 theorem result53:(compileFuel known53 119 block53).map (fun r=>(r.saved,r.final))=some (0,known54):=by decide +kernel
 def opt53:ExactChecked known53 block53 known54 0:=normalize _ _ _ _ _ result53
+def join1_3:Program:=block1++block2
 def join1_3Opt:ExactChecked known1 join1_3 known3 0:=ExactChecked.append _ _ _ _ _ _ _ opt1 opt2
+def join0_3:Program:=block0++join1_3
 def join0_3Opt:ExactChecked known0 join0_3 known3 0:=ExactChecked.append _ _ _ _ _ _ _ opt0 join1_3Opt
+def join4_6:Program:=block4++block5
 def join4_6Opt:ExactChecked known4 join4_6 known6 0:=ExactChecked.append _ _ _ _ _ _ _ opt4 opt5
+def join3_6:Program:=block3++join4_6
 def join3_6Opt:ExactChecked known3 join3_6 known6 4:=ExactChecked.append _ _ _ _ _ _ _ opt3 join4_6Opt
+def join0_6:Program:=join0_3++join3_6
 def join0_6Opt:ExactChecked known0 join0_6 known6 4:=ExactChecked.append _ _ _ _ _ _ _ join0_3Opt join3_6Opt
+def join7_9:Program:=block7++block8
 def join7_9Opt:ExactChecked known7 join7_9 known9 0:=ExactChecked.append _ _ _ _ _ _ _ opt7 opt8
+def join6_9:Program:=block6++join7_9
 def join6_9Opt:ExactChecked known6 join6_9 known9 0:=ExactChecked.append _ _ _ _ _ _ _ opt6 join7_9Opt
+def join9_11:Program:=block9++block10
 def join9_11Opt:ExactChecked known9 join9_11 known11 0:=ExactChecked.append _ _ _ _ _ _ _ opt9 opt10
+def join11_13:Program:=block11++block12
 def join11_13Opt:ExactChecked known11 join11_13 known13 0:=ExactChecked.append _ _ _ _ _ _ _ opt11 opt12
+def join9_13:Program:=join9_11++join11_13
 def join9_13Opt:ExactChecked known9 join9_13 known13 0:=ExactChecked.append _ _ _ _ _ _ _ join9_11Opt join11_13Opt
+def join6_13:Program:=join6_9++join9_13
 def join6_13Opt:ExactChecked known6 join6_13 known13 0:=ExactChecked.append _ _ _ _ _ _ _ join6_9Opt join9_13Opt
+def join0_13:Program:=join0_6++join6_13
 def join0_13Opt:ExactChecked known0 join0_13 known13 4:=ExactChecked.append _ _ _ _ _ _ _ join0_6Opt join6_13Opt
+def join14_16:Program:=block14++block15
 def join14_16Opt:ExactChecked known14 join14_16 known16 0:=ExactChecked.append _ _ _ _ _ _ _ opt14 opt15
+def join13_16:Program:=block13++join14_16
 def join13_16Opt:ExactChecked known13 join13_16 known16 0:=ExactChecked.append _ _ _ _ _ _ _ opt13 join14_16Opt
+def join16_18:Program:=block16++block17
 def join16_18Opt:ExactChecked known16 join16_18 known18 0:=ExactChecked.append _ _ _ _ _ _ _ opt16 opt17
+def join18_20:Program:=block18++block19
 def join18_20Opt:ExactChecked known18 join18_20 known20 0:=ExactChecked.append _ _ _ _ _ _ _ opt18 opt19
+def join16_20:Program:=join16_18++join18_20
 def join16_20Opt:ExactChecked known16 join16_20 known20 0:=ExactChecked.append _ _ _ _ _ _ _ join16_18Opt join18_20Opt
+def join13_20:Program:=join13_16++join16_20
 def join13_20Opt:ExactChecked known13 join13_20 known20 0:=ExactChecked.append _ _ _ _ _ _ _ join13_16Opt join16_20Opt
+def join21_23:Program:=block21++block22
 def join21_23Opt:ExactChecked known21 join21_23 known23 0:=ExactChecked.append _ _ _ _ _ _ _ opt21 opt22
+def join20_23:Program:=block20++join21_23
 def join20_23Opt:ExactChecked known20 join20_23 known23 0:=ExactChecked.append _ _ _ _ _ _ _ opt20 join21_23Opt
+def join23_25:Program:=block23++block24
 def join23_25Opt:ExactChecked known23 join23_25 known25 0:=ExactChecked.append _ _ _ _ _ _ _ opt23 opt24
+def join25_27:Program:=block25++block26
 def join25_27Opt:ExactChecked known25 join25_27 known27 0:=ExactChecked.append _ _ _ _ _ _ _ opt25 opt26
+def join23_27:Program:=join23_25++join25_27
 def join23_27Opt:ExactChecked known23 join23_27 known27 0:=ExactChecked.append _ _ _ _ _ _ _ join23_25Opt join25_27Opt
+def join20_27:Program:=join20_23++join23_27
 def join20_27Opt:ExactChecked known20 join20_27 known27 0:=ExactChecked.append _ _ _ _ _ _ _ join20_23Opt join23_27Opt
+def join13_27:Program:=join13_20++join20_27
 def join13_27Opt:ExactChecked known13 join13_27 known27 0:=ExactChecked.append _ _ _ _ _ _ _ join13_20Opt join20_27Opt
+def join0_27:Program:=join0_13++join13_27
 def join0_27Opt:ExactChecked known0 join0_27 known27 4:=ExactChecked.append _ _ _ _ _ _ _ join0_13Opt join13_27Opt
+def join28_30:Program:=block28++block29
 def join28_30Opt:ExactChecked known28 join28_30 known30 0:=ExactChecked.append _ _ _ _ _ _ _ opt28 opt29
+def join27_30:Program:=block27++join28_30
 def join27_30Opt:ExactChecked known27 join27_30 known30 0:=ExactChecked.append _ _ _ _ _ _ _ opt27 join28_30Opt
+def join31_33:Program:=block31++block32
 def join31_33Opt:ExactChecked known31 join31_33 known33 0:=ExactChecked.append _ _ _ _ _ _ _ opt31 opt32
+def join30_33:Program:=block30++join31_33
 def join30_33Opt:ExactChecked known30 join30_33 known33 0:=ExactChecked.append _ _ _ _ _ _ _ opt30 join31_33Opt
+def join27_33:Program:=join27_30++join30_33
 def join27_33Opt:ExactChecked known27 join27_33 known33 0:=ExactChecked.append _ _ _ _ _ _ _ join27_30Opt join30_33Opt
+def join34_36:Program:=block34++block35
 def join34_36Opt:ExactChecked known34 join34_36 known36 4:=ExactChecked.append _ _ _ _ _ _ _ opt34 opt35
+def join33_36:Program:=block33++join34_36
 def join33_36Opt:ExactChecked known33 join33_36 known36 4:=ExactChecked.append _ _ _ _ _ _ _ opt33 join34_36Opt
+def join36_38:Program:=block36++block37
 def join36_38Opt:ExactChecked known36 join36_38 known38 0:=ExactChecked.append _ _ _ _ _ _ _ opt36 opt37
+def join38_40:Program:=block38++block39
 def join38_40Opt:ExactChecked known38 join38_40 known40 0:=ExactChecked.append _ _ _ _ _ _ _ opt38 opt39
+def join36_40:Program:=join36_38++join38_40
 def join36_40Opt:ExactChecked known36 join36_40 known40 0:=ExactChecked.append _ _ _ _ _ _ _ join36_38Opt join38_40Opt
+def join33_40:Program:=join33_36++join36_40
 def join33_40Opt:ExactChecked known33 join33_40 known40 4:=ExactChecked.append _ _ _ _ _ _ _ join33_36Opt join36_40Opt
+def join27_40:Program:=join27_33++join33_40
 def join27_40Opt:ExactChecked known27 join27_40 known40 4:=ExactChecked.append _ _ _ _ _ _ _ join27_33Opt join33_40Opt
+def join41_43:Program:=block41++block42
 def join41_43Opt:ExactChecked known41 join41_43 known43 0:=ExactChecked.append _ _ _ _ _ _ _ opt41 opt42
+def join40_43:Program:=block40++join41_43
 def join40_43Opt:ExactChecked known40 join40_43 known43 0:=ExactChecked.append _ _ _ _ _ _ _ opt40 join41_43Opt
+def join43_45:Program:=block43++block44
 def join43_45Opt:ExactChecked known43 join43_45 known45 0:=ExactChecked.append _ _ _ _ _ _ _ opt43 opt44
+def join45_47:Program:=block45++block46
 def join45_47Opt:ExactChecked known45 join45_47 known47 0:=ExactChecked.append _ _ _ _ _ _ _ opt45 opt46
+def join43_47:Program:=join43_45++join45_47
 def join43_47Opt:ExactChecked known43 join43_47 known47 0:=ExactChecked.append _ _ _ _ _ _ _ join43_45Opt join45_47Opt
+def join40_47:Program:=join40_43++join43_47
 def join40_47Opt:ExactChecked known40 join40_47 known47 0:=ExactChecked.append _ _ _ _ _ _ _ join40_43Opt join43_47Opt
+def join48_50:Program:=block48++block49
 def join48_50Opt:ExactChecked known48 join48_50 known50 0:=ExactChecked.append _ _ _ _ _ _ _ opt48 opt49
+def join47_50:Program:=block47++join48_50
 def join47_50Opt:ExactChecked known47 join47_50 known50 0:=ExactChecked.append _ _ _ _ _ _ _ opt47 join48_50Opt
+def join50_52:Program:=block50++block51
 def join50_52Opt:ExactChecked known50 join50_52 known52 0:=ExactChecked.append _ _ _ _ _ _ _ opt50 opt51
+def join52_54:Program:=block52++block53
 def join52_54Opt:ExactChecked known52 join52_54 known54 0:=ExactChecked.append _ _ _ _ _ _ _ opt52 opt53
+def join50_54:Program:=join50_52++join52_54
 def join50_54Opt:ExactChecked known50 join50_54 known54 0:=ExactChecked.append _ _ _ _ _ _ _ join50_52Opt join52_54Opt
+def join47_54:Program:=join47_50++join50_54
 def join47_54Opt:ExactChecked known47 join47_54 known54 0:=ExactChecked.append _ _ _ _ _ _ _ join47_50Opt join50_54Opt
+def join40_54:Program:=join40_47++join47_54
 def join40_54Opt:ExactChecked known40 join40_54 known54 0:=ExactChecked.append _ _ _ _ _ _ _ join40_47Opt join47_54Opt
+def join27_54:Program:=join27_40++join40_54
 def join27_54Opt:ExactChecked known27 join27_54 known54 4:=ExactChecked.append _ _ _ _ _ _ _ join27_40Opt join40_54Opt
+def join0_54:Program:=join0_27++join27_54
 def join0_54Opt:ExactChecked known0 join0_54 known54 8:=ExactChecked.append _ _ _ _ _ _ _ join0_27Opt join27_54Opt
+def literal:Program:=join0_54
 def body:Program:=join0_54Opt.out
--- D1 (gate margin): the compiler output is stated once, in FullLogic (`match99`).
-theorem literal_verified:ParkAProgramBool.programEq literal (A161Low4FixedFold.checked.out)=true:=by
- unfold A161Low4FixedFold.checked
- exact ECDSAAdd.Entrant.D1Opt.get_of_elim A161Low4Facts.match99 A161Low4Facts.compiled99
+theorem literal_verified:ParkAProgramBool.programEq literal (A161Low4FixedFold.checked.out)=true:=by decide +kernel
 theorem literal_eq:literal=A161Low4FixedFold.checked.out:=ParkAProgramBool.programEq_sound _ _ literal_verified
 theorem cert:Cert known0 (A161Low4FixedFold.checked.out) body known54 8:=
  Eq.mp (congrArg (fun P:Program=>Cert known0 P body known54 8) literal_eq) join0_54Opt.proof
@@ -9089,21 +15384,21 @@ theorem body_physical:GatePhysical Ghost3KnownA.body:=by
  have unbuildP:GatePhysical (ReorderedAUnbuild.unbuild 106 acc pad bank L.core.cin src hosts):=by
   simp only [ReorderedAUnbuild.unbuild,ReorderedAUnbuild.after,gatePhysical_append]
   exact ⟨⟨preInv,inverseP⟩,⟨tailP,seedP⟩⟩
- -- GM: split/join with `gatePhysical_append` only (the `simp … at old` steps cost 25.7 s of kernel time).
- have base:=aBodyTriple_physical L hw g (List.nodup_cons.mpr ⟨A161Low4FixedFold.ready.1,hn⟩)
- have b1:=(gatePhysical_append _ _).mp base
- have b2:=(gatePhysical_append _ _).mp b1.2
- have f1:=(gatePhysical_append _ _).mp A161Low4FixedFold.fold_physical
- have f2:=(gatePhysical_append _ _).mp f1.1
+ have old:GatePhysical A161Low4FixedFold.body:=by
+  have base:=aBodyTriple_physical L hw g (List.nodup_cons.mpr ⟨A161Low4FixedFold.ready.1,hn⟩)
+  simp only [aBodyTriple,gatePhysical_append] at base
+  simp only [A161Low4FixedFold.body,gatePhysical_append]
+  exact ⟨base.1,base.2.1,A161Low4FixedFold.fold_physical⟩
+ simp only [A161Low4FixedFold.body,A161Low4FixedFold.fold100,A161Low4GenericFold.loop,
+  gatePhysical_append] at old
  have midOld:GatePhysical KnownAMidStaged.body:=by
   unfold GatePhysical
   intro i hi
-  exact f2.2 i ((KnownSparseFold.Cert.sublist _ _ _ _ _ KnownAMidStaged.cert).subset hi)
+  exact old.2.2.1.2 i ((KnownSparseFold.Cert.sublist _ _ _ _ _ KnownAMidStaged.cert).subset hi)
  have midP:GatePhysical Ghost3CacheA.middle:=
   RelocateResources.physical GhostRelocatedKnown.ports GhostRelocatedKnown.ports_inj KnownAMidStaged.body midOld
- exact (gatePhysical_append _ _).mpr ⟨(gatePhysical_append _ _).mpr ⟨b1.1,
-  (gatePhysical_append _ _).mpr ⟨b2.1,(gatePhysical_append _ _).mpr ⟨(gatePhysical_append _ _).mpr ⟨buildP,midP⟩,unbuildP⟩⟩⟩,
-  ReorderedPhysical.padding 4 L.core.cin⟩
+ simp only [Ghost3KnownA.body,Ghost3KnownA.rawBody,Ghost3KnownA.fold,Ghost3KnownA.loop,Ghost3CacheA.loop,Ghost3CacheA.build,Ghost3CacheA.unbuild,gatePhysical_append]
+ exact ⟨⟨old.1,old.2.1,⟨⟨buildP,midP⟩,unbuildP⟩⟩,ReorderedPhysical.padding 4 L.core.cin⟩
 
 
 end ECDSAAdd.Entrant.Ghost3APhysical
@@ -9189,20 +15484,13 @@ theorem a_support:wires Ghost3SignA.body⊆wires Ghost3KnownA.body:=by
 
 open ReorderedAFixed in
 theorem a_physical:GatePhysical Ghost3SignA.body:=by
- -- GM: split/join with `gatePhysical_append` only; `simp … at old ⊢` + `tauto` cost 25 s of kernel time.
  have old:=Ghost3APhysical.body_physical
  have head:=SignAHeadResources.physical
  have pad:=ReorderedPhysical.padding 7 L.core.cin
- have k1:=(gatePhysical_append _ _).mp old
- have k2:=(gatePhysical_append _ _).mp k1.1
- have k3:=(gatePhysical_append _ _).mp k2.2
- have k4:=(gatePhysical_append _ _).mp k3.2
- have k5:=(gatePhysical_append _ _).mp k4.1
- have k6:=(gatePhysical_append _ _).mp k5.1
- have k7:=(gatePhysical_append _ _).mp k6.1
- exact (gatePhysical_append _ _).mpr ⟨(gatePhysical_append _ _).mpr ⟨k2.1,
-  (gatePhysical_append _ _).mpr ⟨k3.1,(gatePhysical_append _ _).mpr ⟨head,
-   (gatePhysical_append _ _).mpr ⟨(gatePhysical_append _ _).mpr ⟨(gatePhysical_append _ _).mpr ⟨k7.2,k6.2⟩,k5.2⟩,k4.2⟩⟩⟩⟩,pad⟩
+ simp only [Ghost3SignA.body,Ghost3SignA.rawBody,Ghost3SignA.fold,Ghost3SignA.loop,Ghost3SignA.suffix,Ghost3SignA.hosts,
+  Ghost3KnownA.body,Ghost3KnownA.rawBody,Ghost3KnownA.fold,Ghost3KnownA.loop,Ghost3CacheA.loop,Ghost3CacheA.build,Ghost3CacheA.unbuild,Ghost3KnownA.hosts,
+  ReorderedABuild.build,gatePhysical_append] at old ⊢
+ tauto
 
 end ECDSAAdd.Entrant.Ghost3BodyResources
 
@@ -12581,6 +18869,5211 @@ theorem free (i:Nat)(hi:i∈retired):layout.core.poolWire i∉wires (program lay
 end ECDSAAdd.Entrant.SumInnerSparseExtraFacts
 end
 
+end
+end
+end
+end
+end
+end
+end
+
+end
+
+-- repack: BOptimizationsCore lines 18..5209
+section
+section
+section
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+set_option autoImplicit false
+
+set_option maxRecDepth 10000
+set_option maxHeartbeats 5000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+section
+namespace ECDSAAdd.Entrant.HighKnownAResearch
+
+
+
+end ECDSAAdd.Entrant.HighKnownAResearch
+end
+
+section
+namespace ECDSAAdd.Entrant.HighSignAResearch
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedAFixed A161Low4Ghost
+ ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
+set_option autoImplicit false
+set_option linter.unusedVariables false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+abbrev hosts:=Ghost3CacheA.hosts
+
+
+def suffix:Program:=ReorderedGenericCache.cachedAdd 106 src ((acc.take 138).drop 10) (bank.take 127) hosts L.core.cin++
+ A161Carry.buildPost acc pad bank L.core.cin src++Ghost3CacheA.middle++
+ HighUnbuildAResearch.unbuild acc
+
+def loop:Program:=SignAHead.head++suffix
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def fold:Program:=loop
+
+def rawBody:Program:=measuredFoldQTq L (negP L)++(measuredFoldQTq L (rot128F L)++fold)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def body:Program:=rawBody++ReorderedRecordPadding.program 7 L.core.cin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end ECDSAAdd.Entrant.HighSignAResearch
+end
+
+section
+namespace ECDSAAdd.Entrant.HighKnownCResearch
+
+
+
+end ECDSAAdd.Entrant.HighKnownCResearch
+end
+
+section
+namespace ECDSAAdd.Entrant.HighSignCResearch
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ReorderedCFixed C163Low4Middle C163Low4Ghost
+ ControlLoan1589BFFold InverseCarryDevelop ThirdSavedCarryDevelop
+set_option autoImplicit false
+set_option linter.unusedVariables false
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 50000000
+set_option linter.unusedSimpArgs false
+attribute [local irreducible] ECDSAAdd.run ECDSAAdd.wires
+abbrev hosts:=Ghost3CacheC.hosts
+
+
+def suffix:Program:=ReorderedGenericCache.cachedAdd 102 src ((ga.take 140).drop 10) (bank.take 129) hosts L.core.cin++
+ C163Carry.buildPost ga pad bank L.core.cin src++Ghost3CacheC.middle++
+ HighUnbuildCResearch.unbuild ga
+
+def loop:Program:=SignCHead.head++suffix
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def rawBody:Program:=C163Low4Body.bodyProgram L loop
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def body:Program:=rawBody++ReorderedRecordPadding.program 7 L.core.cin
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end ECDSAAdd.Entrant.HighSignCResearch
+end
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant ECDSAAdd.Baselines
+set_option autoImplicit false
+
+set_option maxRecDepth 10000
+set_option maxHeartbeats 2000000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.HighBodyAResourceResearch
+open ReorderedAFixed ControlLoan1589BFFold
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.wires Challenge.gateSlots
+
+def withTail(u:Program):Program:=(measuredFoldQTq L (negP L)++(measuredFoldQTq L (rot128F L)++(SignAHead.head++(ReorderedGenericCache.cachedAdd 106 src ((acc.take 138).drop 10) (bank.take 127) Ghost3CacheA.hosts L.core.cin++
+ A161Carry.buildPost acc pad bank L.core.cin src++Ghost3CacheA.middle++u))))++ReorderedRecordPadding.program 7 L.core.cin
+def oldU:Program:=ReorderedAUnbuild.unbuild 106 acc pad bank L.core.cin src Ghost3CacheA.hosts
+def newU:Program:=HighUnbuildAResearch.unbuild acc
+
+theorem old_shape:Ghost3SignA.body=withTail oldU:=by simp only [Ghost3SignA.body.eq_1,Ghost3SignA.rawBody.eq_1,Ghost3SignA.loop.eq_1,Ghost3SignA.suffix.eq_1,Ghost3SignA.hosts,withTail.eq_1,oldU.eq_1,Ghost3SignA.fold.eq_1]
+
+theorem new_shape:HighSignAResearch.body=withTail newU:=by simp only [HighSignAResearch.body.eq_1,HighSignAResearch.rawBody.eq_1,HighSignAResearch.loop.eq_1,HighSignAResearch.suffix.eq_1,HighSignAResearch.hosts,withTail.eq_1,newU.eq_1,HighSignAResearch.fold.eq_1]
+
+theorem tail_toffoli(u v:Program)(h:toffoliCount u+3=toffoliCount v):
+ toffoliCount (withTail u)+3=toffoliCount (withTail v):=by
+ simp only [withTail,toffoliCount_append]
+ omega
+
+theorem tail_measurements(u v:Program)(h:measurementCount u=measurementCount v):
+ measurementCount (withTail u)=measurementCount (withTail v):=by
+ simp only [withTail,measurementCount_append]
+ omega
+
+theorem tail_slots(u v:Program)(h:Challenge.gateSlots u+3=Challenge.gateSlots v):
+ Challenge.gateSlots (withTail u)+3=Challenge.gateSlots (withTail v):=by
+ simp only [withTail,Challenge.gateSlots_append]
+ omega
+
+theorem tail_support(u v:Program)(h:wires u⊆wires v):wires (withTail u)⊆wires (withTail v):=by
+ simp only [withTail,wires_append]
+ gcongr
+
+theorem tail_physical(u v:Program)(h:GatePhysical u→GatePhysical v)(hp:GatePhysical (withTail u)):
+ GatePhysical (withTail v):=by
+ simp only [withTail,gatePhysical_append] at hp ⊢
+ tauto
+
+theorem toffoli:toffoliCount HighSignAResearch.body+3=toffoliCount Ghost3SignA.body:=by
+ have a:=congrArg toffoliCount new_shape
+ have b:=congrArg toffoliCount old_shape
+ have e:toffoliCount newU+3=toffoliCount oldU:=by
+  have e0:=HighUnbuildAResearch.toffoli acc rfl
+  rw [show newU=HighUnbuildAResearch.unbuild acc from rfl,show oldU=ReorderedAUnbuild.unbuild 106 acc pad bank L.core.cin src Ghost3CacheA.hosts from rfl]
+  exact e0
+ have q:=tail_toffoli newU oldU e
+ omega
+
+theorem measurements:measurementCount HighSignAResearch.body=measurementCount Ghost3SignA.body:=by
+ have a:=congrArg measurementCount new_shape
+ have b:=congrArg measurementCount old_shape
+ have e:measurementCount newU=measurementCount oldU:=HighUnbuildAResearch.measurements acc rfl
+ have q:=tail_measurements newU oldU e
+ omega
+
+theorem slots:Challenge.gateSlots HighSignAResearch.body+3=Challenge.gateSlots Ghost3SignA.body:=by
+ have a:=congrArg Challenge.gateSlots new_shape
+ have b:=congrArg Challenge.gateSlots old_shape
+ have e:Challenge.gateSlots newU+3=Challenge.gateSlots oldU:=by
+  have e0:=HighUnbuildAResearch.slots acc rfl
+  rw [show newU=HighUnbuildAResearch.unbuild acc from rfl,show oldU=ReorderedAUnbuild.unbuild 106 acc pad bank L.core.cin src Ghost3CacheA.hosts from rfl]
+  exact e0
+ have q:=tail_slots newU oldU e
+ omega
+
+theorem support:wires HighSignAResearch.body⊆wires Ghost3SignA.body:=by
+ have q:wires newU⊆wires oldU:=HighUnbuildAResearch.support acc rfl
+ calc
+  _=wires (withTail newU):=congrArg wires new_shape
+  _⊆wires (withTail oldU):=tail_support newU oldU q
+  _=wires Ghost3SignA.body:=(congrArg wires old_shape).symm
+
+theorem physical:GatePhysical HighSignAResearch.body:=by
+ have h:=Eq.mp (congrArg GatePhysical old_shape) Ghost3BodyResources.a_physical
+ have hu:GatePhysical oldU→GatePhysical newU:=HighUnbuildAResearch.physical acc rfl
+ have hp:=tail_physical oldU newU hu h
+ exact Eq.mpr (congrArg GatePhysical new_shape) hp
+
+
+
+
+end ECDSAAdd.Entrant.HighBodyAResourceResearch
+
+namespace ECDSAAdd.Entrant.HighABalance
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
+
+theorem counts:toffoliCount HighSignAResearch.body+6=toffoliCount SignKnownA.body ∧
+ measurementCount HighSignAResearch.body=measurementCount SignKnownA.body:=by
+ have q:=HighBodyAResourceResearch.toffoli
+ have old:=Ghost3ABalance.counts
+ exact ⟨by omega,HighBodyAResourceResearch.measurements.trans old.2⟩
+
+theorem slots:Challenge.gateSlots HighSignAResearch.body+4=Challenge.gateSlots SignKnownA.body:=by
+ have q:=HighBodyAResourceResearch.slots
+ have old:=Ghost3ABalance.slots
+ omega
+end ECDSAAdd.Entrant.HighABalance
+
+namespace ECDSAAdd.Entrant.HighBodyCResourceResearch
+open C163Low4Middle ControlLoan1589BFFold
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount ECDSAAdd.wires Challenge.gateSlots
+
+def withTail(u:Program):Program:=(mixFoldsQTq L false [.inl (negRot L)]++(SignCHead.head++(ReorderedGenericCache.cachedAdd 102 src ((ga.take 140).drop 10) (bank.take 129) Ghost3CacheC.hosts L.core.cin++
+ C163Carry.buildPost ga pad bank L.core.cin src++Ghost3CacheC.middle++u)))++ReorderedRecordPadding.program 7 L.core.cin
+def oldU:Program:=ReorderedCUnbuild.unbuild 102 ga pad bank L.core.cin src Ghost3CacheC.hosts
+def newU:Program:=HighUnbuildCResearch.unbuild ga
+
+theorem old_shape:Ghost3SignC.body=withTail oldU:=by simp only [Ghost3SignC.body.eq_1,Ghost3SignC.rawBody.eq_1,Ghost3SignC.loop.eq_1,Ghost3SignC.suffix.eq_1,Ghost3SignC.hosts,withTail.eq_1,oldU.eq_1,C163Low4Body.bodyProgram.eq_1]
+
+theorem new_shape:HighSignCResearch.body=withTail newU:=by simp only [HighSignCResearch.body.eq_1,HighSignCResearch.rawBody.eq_1,HighSignCResearch.loop.eq_1,HighSignCResearch.suffix.eq_1,HighSignCResearch.hosts,withTail.eq_1,newU.eq_1,C163Low4Body.bodyProgram.eq_1]
+
+theorem tail_toffoli(u v:Program)(h:toffoliCount u+3=toffoliCount v):
+ toffoliCount (withTail u)+3=toffoliCount (withTail v):=by
+ simp only [withTail,toffoliCount_append]
+ omega
+
+theorem tail_measurements(u v:Program)(h:measurementCount u=measurementCount v):
+ measurementCount (withTail u)=measurementCount (withTail v):=by
+ simp only [withTail,measurementCount_append]
+ omega
+
+theorem tail_slots(u v:Program)(h:Challenge.gateSlots u+3=Challenge.gateSlots v):
+ Challenge.gateSlots (withTail u)+3=Challenge.gateSlots (withTail v):=by
+ simp only [withTail,Challenge.gateSlots_append]
+ omega
+
+theorem tail_support(u v:Program)(h:wires u⊆wires v):wires (withTail u)⊆wires (withTail v):=by
+ simp only [withTail,wires_append]
+ gcongr
+
+theorem tail_physical(u v:Program)(h:GatePhysical u→GatePhysical v)(hp:GatePhysical (withTail u)):
+ GatePhysical (withTail v):=by
+ simp only [withTail,gatePhysical_append] at hp ⊢
+ itauto
+
+theorem toffoli:toffoliCount HighSignCResearch.body+3=toffoliCount Ghost3SignC.body:=by
+ have a:=congrArg toffoliCount new_shape
+ have b:=congrArg toffoliCount old_shape
+ have e:toffoliCount newU+3=toffoliCount oldU:=by
+  have e0:=HighUnbuildCResearch.toffoli ga rfl
+  rw [show newU=HighUnbuildCResearch.unbuild ga from rfl,show oldU=ReorderedCUnbuild.unbuild 102 ga pad bank L.core.cin src Ghost3CacheC.hosts from rfl]
+  exact e0
+ have q:=tail_toffoli newU oldU e
+ omega
+
+theorem measurements:measurementCount HighSignCResearch.body=measurementCount Ghost3SignC.body:=by
+ have a:=congrArg measurementCount new_shape
+ have b:=congrArg measurementCount old_shape
+ have e:measurementCount newU=measurementCount oldU:=HighUnbuildCResearch.measurements ga rfl
+ have q:=tail_measurements newU oldU e
+ omega
+
+theorem slots:Challenge.gateSlots HighSignCResearch.body+3=Challenge.gateSlots Ghost3SignC.body:=by
+ have a:=congrArg Challenge.gateSlots new_shape
+ have b:=congrArg Challenge.gateSlots old_shape
+ have e:Challenge.gateSlots newU+3=Challenge.gateSlots oldU:=by
+  have e0:=HighUnbuildCResearch.slots ga rfl
+  rw [show newU=HighUnbuildCResearch.unbuild ga from rfl,show oldU=ReorderedCUnbuild.unbuild 102 ga pad bank L.core.cin src Ghost3CacheC.hosts from rfl]
+  exact e0
+ have q:=tail_slots newU oldU e
+ omega
+
+theorem support:wires HighSignCResearch.body⊆wires Ghost3SignC.body:=by
+ have q:wires newU⊆wires oldU:=HighUnbuildCResearch.support ga rfl
+ calc
+  _=wires (withTail newU):=congrArg wires new_shape
+  _⊆wires (withTail oldU):=tail_support newU oldU q
+  _=wires Ghost3SignC.body:=(congrArg wires old_shape).symm
+
+theorem physical:GatePhysical HighSignCResearch.body:=by
+ have h:=Eq.mp (congrArg GatePhysical old_shape) Ghost3BodyResources.c_physical
+ have hu:GatePhysical oldU→GatePhysical newU:=HighUnbuildCResearch.physical ga rfl
+ have hp:=tail_physical oldU newU hu h
+ exact Eq.mpr (congrArg GatePhysical new_shape) hp
+
+
+
+
+end ECDSAAdd.Entrant.HighBodyCResourceResearch
+
+namespace ECDSAAdd.Entrant.HighCBalance
+attribute [local irreducible] ECDSAAdd.toffoliCount ECDSAAdd.measurementCount Challenge.gateSlots
+
+theorem counts:toffoliCount HighSignCResearch.body+6=toffoliCount SignKnownC.body ∧
+ measurementCount HighSignCResearch.body=measurementCount SignKnownC.body:=by
+ have q:=HighBodyCResourceResearch.toffoli
+ have old:=Ghost3CBalance.counts
+ exact ⟨by omega,HighBodyCResourceResearch.measurements.trans old.2⟩
+
+theorem slots:Challenge.gateSlots HighSignCResearch.body+4=Challenge.gateSlots SignKnownC.body:=by
+ have q:=HighBodyCResourceResearch.slots
+ have old:=Ghost3CBalance.slots
+ omega
+end ECDSAAdd.Entrant.HighCBalance
+
+namespace ECDSAAdd.Entrant.HighBodyResources
+attribute [local irreducible] ECDSAAdd.wires
+
+theorem a_support:wires HighSignAResearch.body⊆wires Ghost3KnownA.body:=
+ HighBodyAResourceResearch.support.trans Ghost3BodyResources.a_support
+
+theorem c_support:wires HighSignCResearch.body⊆wires Ghost3KnownC.body:=
+ HighBodyCResourceResearch.support.trans Ghost3BodyResources.c_support
+
+
+
+
+end ECDSAAdd.Entrant.HighBodyResources
+
+end
+
+section
+
+section
+open ECDSAAdd ECDSAAdd.Entrant ZeroReadDevelop
+namespace ECDSAAdd.Entrant.FullPadASteps
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 100000000
+                                                                                                                                                          
+                                                                                                                                                  
+                      
+                                                                                                                                                          
+                                                                                                                                                  
+                      
+                                                                                                                                                          
+                                                                                                                                                  
+                      
+                                                                                                                                                          
+                                                                                                                                                  
+                      
+                                                                                                                                                          
+                                                                                                                                                  
+                      
+                                                                                                                                                                                                                                                           
+                   
+end ECDSAAdd.Entrant.FullPadASteps
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.FullAReady
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ZeroReadDevelop
+open ECDSAAdd.Entrant.FullASelectedDevelop
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 500000000
+
+def L := Baselines.layout.dialogStreamedSquareWide
+def c := Baselines.layout.core.generic
+                                                                                                                                                                                   
+                               
+                                                                                                                                                                                                                             
+
+
+
+
+
+
+
+
+
+                         
+end ECDSAAdd.Entrant.FullAReady
+
+end
+
+section
+open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
+namespace ECDSAAdd.Entrant.FullAReady
+open Arithmetic.CuccaroStreamedSquareWideLayout InverseCarryDevelop ZeroReadDevelop FullASelectedDevelop
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 500000000
+                                                                                    
+                                                                                                                                        
+                                                                    
+                                                                                       
+                                                                                     
+                                                                                                                                                                                                                  
+                                                                                                   
+
+                                                              
+                                                                                             
+
+
+
+
+theorem onePass_input_eq : ParkAData.p0=aMiddle L c := ParkAStagedProof.input_eq
+attribute [local irreducible] ZeroSetDevelop.compileS?
+
+
+
+
+end ECDSAAdd.Entrant.FullAReady
+
+namespace ECDSAAdd.Entrant.FullASelectedDevelop
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ThirdSavedCarryDevelop InverseCarryDevelop ControlLoan1589BFFold ZeroReadDevelop
+set_option maxHeartbeats 6000000
+set_option linter.unusedSimpArgs false
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+theorem eU_off_aBodySelected (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup)
+ (c:Wire) (hc:c∉L.wires):eU L∉wires (aBodySelected L c):=by
+ intro h
+ rcases Finset.mem_insert.mp (aBodySelected_refined L hw c h) with e|h
+ · exact (ThirdSavedCarryDevelop.spare_ne_eU L hw hn) e.symm
+ · exact InverseCarryDevelop.eU_off_aBodyDual L hw hn c hc h
+
+theorem hostedASelected_fold_support (L:CuccaroStreamedSquareWideLayout) (hw:L.Widths)
+ (hn:L.wires.Nodup) (ext:List Wire) (c:Wire) (hlen:300≤ext.length) (away:∀q∈ext,q∉L.wires):
+ wires (hostedASelected L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset:=by
+ rw [hostedASelected_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away)]
+ exact aBodySelected_support L hw hn c
+
+
+end ECDSAAdd.Entrant.FullASelectedDevelop
+
+end
+
+end
+
+section
+
+section
+section
+
+
+-- ===== Five-tick forward window: the TickGap forward stack now uses Five506 =====
+section
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+
+namespace ECDSAAdd.Entrant.Rolling1588TickGap
+open Arithmetic MappedCompressed Secp256k1 OB5
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+  forward stackForward0 Rolling1588.forward Rolling1588.stackForward
+
+/-- The forward stack: ticks 1..505, then the jointly re-synthesized five-tick window
+(tick 506 and ticks 507..510), then the unchanged tail. -/
+def stackForward (isA : Bool) : Program := Six505.stackForward6 isA
+
+theorem stackForward_metrics (isA : Bool) :
+    toffoliCount (stackForward isA)+69=toffoliCount (Rolling1588.stackForward isA) ∧
+      measurementCount (stackForward isA)=measurementCount (Rolling1588.stackForward isA) ∧
+      Challenge.gateSlots (stackForward isA) ≤ Challenge.gateSlots (Rolling1588.stackForward isA)+1005 := by
+  have old := stackForward0_metrics isA
+  have c := Five506.counts5
+  have sl := Five506.slots5
+  have c6 := Six505.counts6
+  have s6 := Six505.slots6
+  rw [Five506.shape, Six505.forward_split] at old
+  rw [stackForward, Six505.stackForward6]
+  simp only [toffoliCount_append, measurementCount_append, Challenge.gateSlots_append] at old ⊢
+  exact ⟨by omega, by omega, by omega⟩
+
+theorem stackForward_support (isA : Bool) :
+    wires (stackForward isA)⊆wires (Rolling1588.stackForward isA) :=
+  (Six505.support6 isA).trans (stackForward0_support isA)
+
+theorem stackForward_run_eq (isA : Bool) (x : Nat) (hx0 : 0<x) (hx : x<p)
+    (s : State) (m : List Bool)
+    (first : W.CompactSkywalkStage base
+      (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (stackForward isA) m s=run (Rolling1588.stackForward isA) m s := by
+  rw [stackForward, Six505.stackForward6_run_eq isA x hx0 hx s m first]
+  exact stackForward0_run_eq isA x hx0 hx s m first
+
+                                          
+                                                                             
+                                                                
+                                       
+                                                                    
+                                                  
+                                                  
+                                                              
+                                                 
+                                                                       
+
+theorem stack_roundtrip (isA : Bool)
+    (hn : (skywalkSharedWires base).Nodup) (hlo : History5.HistoryAbove base)
+    (x : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (mE mD : List Bool)
+    (first : W.CompactSkywalkStage base
+      (SkywalkRails.encode false false (x:Int) (p:Int)) 1 s.basis) :
+    run (Rolling1588.stackReverse isA) mD (run (stackForward isA) mE s)=s := by
+  rw [stackForward_run_eq isA x hx0 hx s mE first]
+  exact Rolling1588.stack_roundtrip isA hn hlo x hx0 hx s mE mD first
+
+end ECDSAAdd.Entrant.Rolling1588TickGap
+end -- five-tick bridge
+
+-- ===== ECDSAAdd.Submission.Entrant.Rolling1588TickGapPhases =====
+section
+-- consolidated import: import ECDSAAdd.Submission.Entrant.Rolling1588TickGapWalk
+-- consolidated import: import ECDSAAdd.Submission.Entrant.Rolling1588Native
+-- consolidated import: import ECDSAAdd.Submission.Entrant.Rolling1588Kernel
+-- consolidated import: import ECDSAAdd.Submission.Entrant.Rolling1588KernelResources
+
+/-! The new forward phase has the exact old A/B State boundary. All native,
+field, inverse, host, and caller interfaces are retained. -/
+set_option maxRecDepth 20000
+set_option maxHeartbeats 3000000
+set_option linter.unusedSimpArgs false
+
+namespace ECDSAAdd.Entrant.Rolling1588TickGap
+open Arithmetic MappedCompressed DirectSkywalk Secp256k1 Challenge Baselines
+  FrontierEntry1591Callers OB5
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+  forward stackForward Rolling1588.forward Rolling1588.stackForward Rolling1588.stackReverse
+  FrontierEntry1591Native.forward FrontierEntry1591Native.inverse
+  Rolling1588.firstPhase Rolling1588.lastPhase
+
+def tailPhase (isA : Bool) : Program := stackForward isA++skywalkArithmeticClear base
+
+def firstPhase (isA : Bool) : Program := FrontierEntry1591Native.forward base++tailPhase isA
+
+def oldKernel (a b : Bool) (F : Program) : Program :=
+  renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.firstPhase a)++
+    (F++renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase b))
+
+def kernel (a b : Bool) (F : Program) : Program :=
+  renameProgram Rolling1588Lifetime.phaseHost (firstPhase a)++
+    (F++renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase b))
+
+def entryKernel : Program := kernel true false Rolling1588.entryFieldHosted
+def exitKernel : Program := kernel false true Rolling1588.exitFieldHosted
+
+attribute [local irreducible] tailPhase firstPhase oldKernel kernel entryKernel exitKernel
+  Rolling1588.entryKernel Rolling1588.exitKernel
+
+private theorem first_run_eq_of_stack (N F F0 C : Program) (s : State) (m : List Bool)
+    (records : measurementCount F=measurementCount F0)
+    (same : ∀mn mf,run F mf (run N mn s)=run F0 mf (run N mn s)) :
+    run (N++(F++C)) m s=run (N++(F0++C)) m s := by
+  simp only [run_append,records]
+  rw [same]
+
+theorem first_run_eq (isA : Bool) (hn : (skywalkSharedWires base).Nodup)
+    (x y : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
+    (input : SkywalkArithmeticInput base x y s.basis) :
+    run (firstPhase isA) m s=run (Rolling1588.firstPhase isA) m s := by
+  have same (mn mf : List Bool) :
+      run (stackForward isA) mf (run (FrontierEntry1591Native.forward base) mn s)=
+        run (Rolling1588.stackForward isA) mf
+          (run (FrontierEntry1591Native.forward base) mn s) :=
+    stackForward_run_eq isA x hx0 hx _ mf
+      (FrontierEntry1591Native.caller_first_stageW base hn x y hx0 hx s mn input)
+  simpa only [firstPhase,tailPhase,Rolling1588.firstPhase,List.append_assoc] using
+    first_run_eq_of_stack (FrontierEntry1591Native.forward base) (stackForward isA)
+      (Rolling1588.stackForward isA) (skywalkArithmeticClear base) s m
+      (stackForward_metrics isA).2.1 same
+
+
+
+
+
+
+                                                                       
+                                                                         
+                                                                                   
+                                                                                       
+                        
+                                                                 
+                                                                             
+                                              
+                                                                     
+
+                                                                       
+                                                                         
+                                                                                   
+                                                  
+                                                 
+                                                                             
+                                              
+                                                                     
+
+                                                                          
+                                                                         
+                                                                                   
+                                                
+                                                  
+                                                                                          
+                                                     
+                                                                                          
+                                               
+                                                                          
+
+                                                                            
+                                                                         
+                                                                                       
+                                                                          
+                                                
+                                                                                
+
+theorem first_metrics (isA : Bool) :
+    toffoliCount (firstPhase isA)+69=toffoliCount (Rolling1588.firstPhase isA) ∧
+      measurementCount (firstPhase isA)=measurementCount (Rolling1588.firstPhase isA) ∧
+      gateSlots (firstPhase isA) ≤ gateSlots (Rolling1588.firstPhase isA)+1005 := by
+  have stack := stackForward_metrics isA
+  simp only [firstPhase,tailPhase,Rolling1588.firstPhase,toffoliCount_append,
+    measurementCount_append,gateSlots_append]
+  exact ⟨by omega,by omega,by omega⟩
+
+theorem first_support (isA : Bool) :
+    wires (firstPhase isA)⊆wires (Rolling1588.firstPhase isA) := by
+  simp only [firstPhase,tailPhase,Rolling1588.firstPhase,wires_append,Finset.union_assoc]
+  exact Finset.union_subset_union (Finset.Subset.refl _)
+    (Finset.union_subset_union (stackForward_support isA) (Finset.Subset.refl _))
+
+private theorem mapped_code_physical (isA : Bool) (f : Fin 10→Wire)
+    (hf : Function.Injective f) :
+    GatePhysical (renameProgram (MeasuredCodec5.label f) (Rolling1588.codeEncode isA)) := by
+  have support : wires (Rolling1588.codeEncode isA)⊆Finset.range 10 := by
+    simpa only [(Rolling1588.code_support isA).1] using
+      (Finset.Subset.refl (Finset.range 10))
+  exact gatePhysical_rename_support _ _
+    (fun a ha b hb eq=>FirstNonzeroCodec.label_inj' f hf a (support ha) b (support hb) eq)
+    (Rolling1588.code_physical isA).1
+
+private theorem pack_physical (isA : Bool) (i : Nat) (hi : i<512) :
+    GatePhysical (Rolling1588.packAtTick isA i) := by
+  by_cases first : i=5
+  · simp only [Rolling1588.packAtTick,if_pos first]
+    exact (ParityCodec5New.first_mapped_physical _
+      (History5.historyMap_injective base base_pool_nodup 0 (by decide))).1
+  · simp only [Rolling1588.packAtTick,if_neg first]
+    split
+    · have due := History5.packDue_true i ‹History5.packDue i=true›
+      exact mapped_code_physical isA _
+        (History5.historyMap_injective base base_pool_nodup (i-5) (by omega))
+    · simp [GatePhysical]
+
+theorem forward_physical (isA : Bool) (i n : Nat) (bound : i+n ≤ 512) :
+    GatePhysical (forward isA i n) := by
+  induction n generalizing i with
+  | zero => simp [forward,GatePhysical]
+  | succ n ih =>
+    have pack : GatePhysical (Rolling1588.Integer.packFirst base isA i) := by
+      rw [Rolling1588.Integer.packFirst_base]
+      exact pack_physical isA i (by omega)
+    rw [forward,gatePhysical_append]
+    exact ⟨gatePhysical_rename _ (sig_injective i (by omega)) _
+      ((gatePhysical_append _ _).mpr
+        ⟨TickRanges.tick_physical base i (by omega) base_pool_nodup,pack⟩),
+      ih (i+1) (by omega)⟩
+
+theorem stackForward_physical (isA : Bool) : GatePhysical (stackForward isA) := by
+  have old := Rolling1588.stackForward_physical isA
+  rw [MorningPlacement.previous_shape] at old
+  simp only [gatePhysical_append] at old
+  have h5 := forward_physical isA 1 505 (by omega)
+  rw [Six505.forward_split] at h5
+  simp only [gatePhysical_append] at h5
+  rw [stackForward, Six505.stackForward6, Six505.merged6]
+  simp only [gatePhysical_append]
+  exact ⟨h5.1, gatePhysical_rename _ (sig_injective 510 (by omega)) _ Six505.physical,h5.2.2,old.2.2⟩
+
+theorem first_physical (isA : Bool) : GatePhysical (firstPhase isA) := by
+  have old := Rolling1588.firstPhase_physical isA
+  simp only [Rolling1588.firstPhase,gatePhysical_append] at old
+  simpa only [firstPhase,tailPhase,gatePhysical_append] using
+    And.intro old.1.1 (And.intro (stackForward_physical isA) old.2)
+
+private theorem mapped_run_eq (f : Equiv.Perm Wire) (P Q : Program)
+    (s : State) (m : List Bool) (clean : pullState f s=s)
+    (same : run P m s=run Q m s) :
+    run (renameProgram f P) m s=run (renameProgram f Q) m s := by
+  apply pullState_perm_injective f
+  rw [run_rename _ f.injective,run_rename _ f.injective,clean]
+  exact same
+
+theorem first_hosted_run_eq (isA : Bool) (hn : (skywalkSharedWires base).Nodup)
+    (x y : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
+    (input : SkywalkArithmeticInput base x y s.basis) :
+    run (renameProgram Rolling1588Lifetime.phaseHost (firstPhase isA)) m s=
+      run (renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.firstPhase isA)) m s := by
+  exact mapped_run_eq Rolling1588Lifetime.phaseHost _ _ s m
+    (Rolling1588Lifetime.pull_phase_clean s
+      (Rolling1588Lifetime.caller_phase_clean x y s input))
+    (first_run_eq isA hn x y hx0 hx s m input)
+
+private theorem append_run_eq_tickgap_phases (P Q R : Program) (s : State) (m : List Bool)
+    (records : measurementCount P=measurementCount Q)
+    (same : ∀r,run P r s=run Q r s) :
+    run (P++R) m s=run (Q++R) m s := by
+  rw [run_append,run_append,records,same]
+
+theorem kernel_run_eq (a b : Bool) (F : Program)
+    (hn : (skywalkSharedWires base).Nodup)
+    (x y : Nat) (hx0 : 0<x) (hx : x<p) (s : State) (m : List Bool)
+    (input : SkywalkArithmeticInput base x y s.basis) :
+    run (kernel a b F) m s=run (oldKernel a b F) m s := by
+  have records :
+      measurementCount (renameProgram Rolling1588Lifetime.phaseHost (firstPhase a))=
+        measurementCount (renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.firstPhase a)) := by
+    rw [(renameProgram_counts _ _).2,(renameProgram_counts _ _).2,(first_metrics a).2.1]
+  simpa only [kernel,oldKernel] using append_run_eq_tickgap_phases
+    (renameProgram Rolling1588Lifetime.phaseHost (firstPhase a))
+    (renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.firstPhase a))
+    (F++renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase b)) s m records
+    (fun r=>first_hosted_run_eq a hn x y hx0 hx s r input)
+
+                                                   
+                                                                   
+                                                                          
+                                                                       
+                               
+                                                                                           
+                                                                               
+                                    
+
+private theorem mapped_append_support (f : Wire→Wire) (P Q R : Program)
+    (first : wires P⊆wires Q) :
+    wires (renameProgram f P++R)⊆wires (renameProgram f Q++R) := by
+  rw [wires_append,wires_append,renameProgram_support,renameProgram_support]
+  exact Finset.union_subset_union
+    (Finset.image_mono f first) (Finset.Subset.refl _)
+
+theorem kernel_support (a b : Bool) (F : Program) :
+    wires (kernel a b F)⊆wires (oldKernel a b F) := by
+  simpa only [kernel,oldKernel] using
+    mapped_append_support Rolling1588Lifetime.phaseHost
+      (firstPhase a) (Rolling1588.firstPhase a)
+      (F++renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase b)) (first_support a)
+
+theorem kernel_physical (a b : Bool) (F : Program) (field : GatePhysical F) :
+    GatePhysical (kernel a b F) := by
+  simpa only [kernel,gatePhysical_append] using
+    And.intro (Rolling1588Lifetime.phase_physical _ (first_physical a))
+      (And.intro field
+        (Rolling1588Lifetime.phase_physical _ (Rolling1588.lastPhase_physical b)))
+
+theorem kernel_entry_correct (F : Program) (raw : EntryCorrect (oldKernel true false F)) :
+    EntryCorrect (kernel true false F) := by
+  intro hn hlo ho hf x Y hx0 hx s t m input hg hs phase same half
+  have actual := FrontierEntry1591Kernel.paired_input x Y.val s t input same
+  rw [kernel_run_eq true false F hn x _ hx0 hx t m actual]
+  exact raw hn hlo ho hf x Y hx0 hx s t m input hg hs phase same half
+
+
+
+
+
+
+
+theorem entry_correct : EntryCorrect entryKernel := by
+  have old : EntryCorrect (oldKernel true false Rolling1588.entryFieldHosted) := by
+    simpa only [oldKernel,Rolling1588.entryKernel] using Rolling1588.entry_correct
+  simpa only [entryKernel] using kernel_entry_correct Rolling1588.entryFieldHosted old
+
+
+
+
+
+
+                                                     
+                              
+                                                 
+                                                                               
+                                      
+                                                                                  
+            
+             
+               
+
+                             
+                                                                      
+                                                                             
+                                                                          
+                                                                              
+                      
+       
+                                                                                              
+                                            
+       
+                                                             
+                                                    
+                                                                  
+                                                            
+
+                            
+                                                                    
+                                                                           
+                                                                        
+                                                                            
+                     
+       
+                                                                                            
+                                           
+       
+                                                           
+                                                   
+                                                                 
+                                                           
+
+theorem entryKernel_support_subset : wires entryKernel⊆wires Rolling1588.entryKernel := by
+  simpa only [entryKernel,oldKernel,Rolling1588.entryKernel] using
+    kernel_support true false Rolling1588.entryFieldHosted
+
+theorem exitKernel_support_subset : wires exitKernel⊆wires Rolling1588.exitKernel := by
+  simpa only [exitKernel,oldKernel,Rolling1588.exitKernel] using
+    kernel_support false true Rolling1588.exitFieldHosted
+
+theorem entryKernel_support : wires entryKernel⊆OB5Support.logicalSites :=
+  entryKernel_support_subset.trans Rolling1588.entryKernel_support
+
+theorem exitKernel_support : wires exitKernel⊆OB5Support.logicalSites :=
+  exitKernel_support_subset.trans Rolling1588.exitKernel_support
+
+theorem entryKernel_physical : GatePhysical entryKernel := by
+  simpa only [entryKernel] using
+    kernel_physical true false Rolling1588.entryFieldHosted Rolling1588.entryFieldHosted_physical
+
+theorem exitKernel_physical : GatePhysical exitKernel := by
+  simpa only [exitKernel] using
+    kernel_physical false true Rolling1588.exitFieldHosted Rolling1588.exitFieldHosted_physical
+
+                                                                                          
+                                                                               
+
+                                                                                        
+                                                                             
+
+                                                            
+                                                                              
+                                                          
+                                                                            
+                                                            
+                                                                              
+                                                          
+                                                                            
+                                                            
+                                                                              
+                                                          
+                                                                            
+theorem entryKernel_760_free : base 760∉wires entryKernel :=
+  fun used=>Rolling1588.entryKernel_760_free (entryKernel_support_subset used)
+theorem exitKernel_760_free : base 760∉wires exitKernel :=
+  fun used=>Rolling1588.exitKernel_760_free (exitKernel_support_subset used)
+
+end ECDSAAdd.Entrant.Rolling1588TickGap
+end -- original module boundary
+
+-- ===== ECDSAAdd.Submission.Entrant.ReflectionE1TickGap =====
+section
+-- consolidated import: import ECDSAAdd.Submission.Entrant.ReflectionE1Final
+-- consolidated import: import ECDSAAdd.Submission.Entrant.Rolling1588TickGapPhases
+
+/-! E1 entries and the reflected square are unchanged. Only the two
+forward tails use the checked TickGap program. Both inverse phases stay. -/
+set_option maxRecDepth 20000
+set_option maxHeartbeats 3000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.ReflectionE1TickGap
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed
+  CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
+  BalancedField History5 EntryFuse EntryFuseFinite ExitFusionResearch FrontierEntry1591Callers
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+
+def restE (L : ControlledPointLayout) : Program :=
+  renameProgram (wireFn2 L)
+    (renameProgram Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase true)++
+      (Rolling1588.entryFieldHosted++
+        renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase false)))
+
+def restX (L : ControlledPointLayout) : Program :=
+  renameProgram (wireFn2 L)
+    (renameProgram Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase false)++
+      (Rolling1588.exitFieldHosted++
+        renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase true)))
+
+def entryStage (L : ControlledPointLayout) (kx ky : Fp) : Program :=
+  fusedY L ky++E1QubitPlacement.entryM L kx++restE L
+
+def secondStage (L : ControlledPointLayout) (k cy : Fp) : Program :=
+  ReflectionE1.squareEntry L k++restX L++exitY L cy
+
+theorem entry_split (L : ControlledPointLayout) :
+    FrontierEntry1591Callers.entry Rolling1588TickGap.entryKernel L=
+      E1QubitPlacement.tickF L++restE L := by
+  have tick:=E1QubitPlacement.tick_eq L
+  change renameProgram (wireFn2 L)
+      (renameProgram Rolling1588Lifetime.phaseHost (FrontierEntry1591Native.forward base))=
+        E1QubitPlacement.tickF L at tick
+  simp only [FrontierEntry1591Callers.entry,Rolling1588TickGap.entryKernel,
+    Rolling1588TickGap.kernel,Rolling1588TickGap.firstPhase,restE,
+    renameProgram,List.map_append,List.append_assoc] at tick ⊢
+  rw [tick]
+
+theorem exit_split (L : ControlledPointLayout) :
+    FrontierEntry1591Callers.exit Rolling1588TickGap.exitKernel L=
+      E1QubitPlacement.tickF L++restX L := by
+  have tick:=E1QubitPlacement.tick_eq L
+  change renameProgram (wireFn2 L)
+      (renameProgram Rolling1588Lifetime.phaseHost (FrontierEntry1591Native.forward base))=
+        E1QubitPlacement.tickF L at tick
+  simp only [FrontierEntry1591Callers.exit,Rolling1588TickGap.exitKernel,
+    Rolling1588TickGap.kernel,Rolling1588TickGap.firstPhase,restX,
+    renameProgram,List.map_append,List.append_assoc] at tick ⊢
+  rw [tick]
+
+section CorrectStages
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+
+theorem entryStage_step (X Y kx ky : Fp) (G : Bool) (origin : BasisState)
+    (hx : X+(if G then kx else 0)≠0) :
+    Triple (PointDialogValues L X Y G origin) (entryStage L kx ky)
+      (PointDialogValues L (X+(if G then kx else 0))
+        ((Y+(if G then ky else 0))/(X+(if G then kx else 0))) G origin) := by
+  have config:=MappedCompressed.LaneA.laneLogical_config
+  have above : History5.HistoryAbove base := by intro j hj;simp [base]
+  have add:=fastStep_addX L hw hn X Y G origin kx
+  have divide:=division_step Rolling1588TickGap.entryKernel Rolling1588TickGap.entryKernel_support
+    Rolling1588TickGap.entry_correct L hw hn config.1 above config.2.1 config.2.2
+    (X+(if G then kx else 0)) Y ky G origin hx
+  have prior:=add.seq divide
+  apply E1QubitPlacement.tri_transfer
+    (A:=fusedY L ky++E1QubitPlacement.entryM L kx)
+    (B:=fastConstAdd L L.point.x kx++fusedY L ky++E1QubitPlacement.tickF L)
+    (R:=restE L)
+  · intro s v m1 m2
+    exact E1QubitPlacement.entry1_eq L hw hn kx ky s X.val X.isLt Y G
+      v.x v.y v.generic v.clean m1 m2
+  · simpa only [entryStage,division,entry_split,List.append_assoc] using prior
+
+                                                                         
+                                                                                  
+                               
+                                                                                   
+                          
+                                                                  
+                                                                        
+                                                                                
+                                                             
+                                                
+                                           
+                                                                   
+                                                                                     
+                                              
+                                             
+                                           
+                                           
+                                     
+                                     
+                                                                                             
+                            
+                   
+                                                                      
+                                                                                     
+
+end CorrectStages
+
+def generic (L : ControlledPointLayout) (cx cy : Fp) : Program :=
+  entryStage L (-cx) (-cy)++secondStage L (ReflectionE1.correction cx) cy++fastConstNeg L cx
+
+def mid (L : ControlledPointLayout) (cx cy : Fp) : Program :=
+  clrF L++renameProgram (swapF L) (generic L cx cy)++clrF L
+
+def gen (L : ControlledPointLayout) (cx cy : Fp) : Program :=
+  zrep L++mid L cx cy++zrep L
+
+                                                            
+                                                                  
+
+section Correct
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+include hw hn
+
+                                                                       
+                                    
+                                                                  
+                                                                                       
+                               
+                              
+                                              
+                                                                 
+                                                                      
+                                
+                                                 
+                                                                                       
+                  
+                                 
+           
+                                  
+        
+                                                                                            
+                                          
+                                   
+                                                              
+                               
+                                                               
+                                                                  
+                                     
+
+                                                                         
+                                                                   
+                                                  
+                                                                  
+                                                                   
+                                                                                            
+                                                                            
+                                                        
+                                           
+                                                                                  
+                     
+                                     
+
+
+                                                                                                  
+                                                                                          
+                                          
+                                    
+                                                                      
+                                                                                                  
+                                         
+                                                                                       
+                                  
+                           
+                                                                        
+                                      
+                                                                              
+                                                                                                
+                                                                                                
+                                                           
+            
+                                    
+                                           
+                         
+                
+                          
+
+
+                                                                           
+                                      
+                      
+                                           
+                                                                             
+                                                                                                         
+                                                                                      
+                       
+                                                                                             
+              
+           
+                                            
+                                
+           
+                                 
+                                                                  
+                                                              
+                                                      
+                                                                                     
+                                                                          
+                                                                               
+                                                     
+                                                                                     
+                                                          
+                      
+           
+                                                                                               
+                                            
+                   
+                                                     
+                                                                           
+                                    
+              
+                                                                    
+                                                                
+                                                                           
+                                                                           
+                                                                                              
+                                                                           
+                                                            
+                        
+                                              
+                                                                                                 
+                                              
+             
+                      
+                                                                            
+                                                                
+                                                                      
+                                                                   
+                                                                
+                                                                          
+                                                                                                                
+                                                                                    
+                                                                                                      
+                                    
+                                                            
+                        
+                                                                       
+                                                                                                 
+                                              
+
+end Correct
+attribute [local irreducible] restE restX entryStage secondStage generic mid gen
+  ReflectionE1.restE ReflectionE1.restX ReflectionE1.tailP ReflectionE1.generic ReflectionE1.gen
+  Rolling1588TickGap.tailPhase Rolling1588TickGap.stackForward Rolling1588.stackForward
+  Rolling1588.firstPhase Rolling1588.lastPhase Rolling1588.entryFieldHosted Rolling1588.exitFieldHosted
+
+private theorem relation_of_shapes (R : Program→Program→Prop) (P Q A B : Program)
+    (left : P=A) (right : Q=B) (fact : R A B) : R P Q := by
+  cases left
+  cases right
+  exact fact
+
+private theorem fact_of_shape (R : Program→Prop) (P Q : Program)
+    (shape : P=Q) (fact : R Q) : R P := by
+  cases shape
+  exact fact
+
+private def Facts (n g : Nat) (P Q : Program) : Prop :=
+  toffoliCount P+n=toffoliCount Q ∧ measurementCount P=measurementCount Q ∧
+    gateSlots P ≤ gateSlots Q+g ∧ wires P⊆wires Q
+
+private theorem append_facts (P Q C : Program)
+    (count : toffoliCount P+69=toffoliCount Q ∧ measurementCount P=measurementCount Q ∧
+      gateSlots P ≤ gateSlots Q+1005) (sub : wires P⊆wires Q) : Facts 69 1005 (P++C) (Q++C) := by
+  simp only [Facts,toffoliCount_append,measurementCount_append,gateSlots_append,wires_append]
+  exact ⟨by omega,by omega,by omega,Finset.union_subset_union sub (Finset.Subset.refl _)⟩
+
+private theorem tail_facts (a : Bool) :
+    Facts 69 1005 (Rolling1588TickGap.tailPhase a) (ReflectionE1.tailP a) := by
+  apply relation_of_shapes (Facts 69 1005) _ _
+    (Rolling1588TickGap.stackForward a++skywalkArithmeticClear base)
+    (Rolling1588.stackForward a++skywalkArithmeticClear base)
+  · unfold Rolling1588TickGap.tailPhase
+    rfl
+  · unfold ReflectionE1.tailP
+    rfl
+  · exact append_facts _ _ _ (Rolling1588TickGap.stackForward_metrics a)
+      (Rolling1588TickGap.stackForward_support a)
+
+private def restContext (f g : Wire→Wire) (P R : Program) : Program :=
+  renameProgram f (renameProgram g P++R)
+
+private theorem rest_facts (f g : Wire→Wire) (P Q R : Program) (h : Facts 69 1005 P Q) :
+    Facts 69 1005 (restContext f g P R) (restContext f g Q R) := by
+  rcases h with ⟨ht,hm,hs,hw⟩
+  have sub : wires (restContext f g P R)⊆wires (restContext f g Q R) := by
+    simp only [restContext,renameProgram_support,wires_append]
+    exact Finset.image_mono f
+      (Finset.union_subset_union (Finset.image_mono g hw) (Finset.Subset.refl _))
+  simp only [Facts,restContext,toffoliCount_append,measurementCount_append,gateSlots_append,
+    (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
+  exact ⟨by omega,by omega,by omega,sub⟩
+
+private theorem restE_facts (L : ControlledPointLayout) :
+    Facts 69 1005 (restE L) (ReflectionE1.restE L) := by
+  apply relation_of_shapes (Facts 69 1005) _ _
+    (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase true)
+      (Rolling1588.entryFieldHosted++
+        renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase false)))
+    (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (ReflectionE1.tailP true)
+      (Rolling1588.entryFieldHosted++
+        renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase false)))
+  · unfold restE restContext
+    rfl
+  · unfold ReflectionE1.restE restContext
+    rfl
+  · exact rest_facts _ _ _ _ _ (tail_facts true)
+
+private theorem restX_facts (L : ControlledPointLayout) :
+    Facts 69 1005 (restX L) (ReflectionE1.restX L) := by
+  apply relation_of_shapes (Facts 69 1005) _ _
+    (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (Rolling1588TickGap.tailPhase false)
+      (Rolling1588.exitFieldHosted++
+        renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase true)))
+    (restContext (wireFn2 L) Rolling1588Lifetime.phaseHost (ReflectionE1.tailP false)
+      (Rolling1588.exitFieldHosted++
+        renameProgram Rolling1588Lifetime.phaseHost (Rolling1588.lastPhase true)))
+  · unfold restX restContext
+    rfl
+  · unfold ReflectionE1.restX restContext
+    rfl
+  · exact rest_facts _ _ _ _ _ (tail_facts false)
+
+private def stagesContext (Y M E S X EY N : Program) : Program :=
+  (Y++M++E)++(S++X++EY)++N
+
+private theorem stages_facts (Y M E E0 S X X0 EY N : Program)
+    (entry : Facts 69 1005 E E0) (exit : Facts 69 1005 X X0) :
+    Facts 138 2010 (stagesContext Y M E S X EY N) (stagesContext Y M E0 S X0 EY N) := by
+  rcases entry with ⟨et,em,es,ew⟩
+  rcases exit with ⟨xt,xm,xs,xw⟩
+  have sub : wires (stagesContext Y M E S X EY N)⊆
+      wires (stagesContext Y M E0 S X0 EY N) := by
+    simp only [stagesContext,wires_append]
+    exact Finset.union_subset_union
+      (Finset.union_subset_union
+        (Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _)
+          (Finset.Subset.refl _)) ew)
+        (Finset.union_subset_union (Finset.union_subset_union (Finset.Subset.refl _) xw)
+          (Finset.Subset.refl _))) (Finset.Subset.refl _)
+  simp only [Facts,stagesContext,toffoliCount_append,measurementCount_append,gateSlots_append]
+  exact ⟨by omega,by omega,by omega,sub⟩
+
+private theorem generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
+    generic L cx cy=stagesContext (fusedY L (-cy)) (E1QubitPlacement.entryM L (-cx))
+      (restE L) (ReflectionE1.squareEntry L (ReflectionE1.correction cx))
+      (restX L) (exitY L cy) (fastConstNeg L cx) := by
+  unfold generic entryStage secondStage stagesContext
+  rfl
+
+private theorem old_generic_shape (L : ControlledPointLayout) (cx cy : Fp) :
+    ReflectionE1.generic L cx cy=stagesContext (fusedY L (-cy)) (E1QubitPlacement.entryM L (-cx))
+      (ReflectionE1.restE L) (ReflectionE1.squareEntry L (ReflectionE1.correction cx))
+      (ReflectionE1.restX L) (exitY L cy) (fastConstNeg L cx) := by
+  unfold ReflectionE1.generic ReflectionE1.entryStage ReflectionE1.secondStage stagesContext
+  rfl
+
+private theorem generic_facts (L : ControlledPointLayout) (cx cy : Fp) :
+    Facts 138 2010 (generic L cx cy) (ReflectionE1.generic L cx cy) := by
+  exact relation_of_shapes (Facts 138 2010) _ _ _ _
+    (generic_shape L cx cy) (old_generic_shape L cx cy)
+    (stages_facts (fusedY L (-cy)) (E1QubitPlacement.entryM L (-cx))
+      (restE L) (ReflectionE1.restE L) (ReflectionE1.squareEntry L (ReflectionE1.correction cx))
+      (restX L) (ReflectionE1.restX L) (exitY L cy) (fastConstNeg L cx)
+      (restE_facts L) (restX_facts L))
+
+theorem generic_support_subset (L : ControlledPointLayout) (cx cy : Fp) :
+    wires (generic L cx cy)⊆wires (ReflectionE1.generic L cx cy) :=
+  (generic_facts L cx cy).2.2.2
+
+theorem generic_sites (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (cx cy : Fp) : wires (generic L cx cy)⊆(OB5Support.sites L).toFinset :=
+  (generic_support_subset L cx cy).trans (ReflectionE1.generic_sites L hw hn cx cy)
+
+theorem generic_free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (cx cy : Fp) (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
+    L.core.poolWire i∉wires (generic L cx cy) :=
+  fun used=>ReflectionE1.generic_free L hw hn cx cy i hi (generic_support_subset L cx cy used)
+
+private theorem suffix_physical (P Q R : Program) (shape : P=Q++R)
+    (physical : GatePhysical P) : GatePhysical R := by
+  rw [shape,gatePhysical_append] at physical
+  exact physical.2
+
+private theorem restE_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (restE L) := by
+  have physical := placed_physical Rolling1588TickGap.entryKernel
+    Rolling1588TickGap.entryKernel_support Rolling1588TickGap.entryKernel_physical L hw hn
+  have entryPhysical : GatePhysical (FrontierEntry1591Callers.entry Rolling1588TickGap.entryKernel L) :=
+    fact_of_shape GatePhysical _ _ (by unfold FrontierEntry1591Callers.entry;rfl) physical
+  exact suffix_physical _ _ _ (entry_split L) entryPhysical
+
+private theorem restX_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (restX L) := by
+  have physical := placed_physical Rolling1588TickGap.exitKernel
+    Rolling1588TickGap.exitKernel_support Rolling1588TickGap.exitKernel_physical L hw hn
+  have exitPhysical : GatePhysical (FrontierEntry1591Callers.exit Rolling1588TickGap.exitKernel L) :=
+    fact_of_shape GatePhysical _ _ (by unfold FrontierEntry1591Callers.exit;rfl) physical
+  exact suffix_physical _ _ _ (exit_split L) exitPhysical
+
+private theorem stages_physical (Y M E E0 S X X0 EY N : Program)
+    (old : GatePhysical (stagesContext Y M E0 S X0 EY N))
+    (entry : GatePhysical E) (exit : GatePhysical X) :
+    GatePhysical (stagesContext Y M E S X EY N) := by
+  simp only [stagesContext,gatePhysical_append] at old ⊢
+  exact And.intro
+    (And.intro (And.intro old.1.1.1 entry)
+      (And.intro (And.intro old.1.2.1.1 exit) old.1.2.2)) old.2
+
+theorem generic_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (cx cy : Fp) : GatePhysical (generic L cx cy) := by
+  have old := fact_of_shape GatePhysical _ _ (old_generic_shape L cx cy).symm
+    (ReflectionE1.generic_physical L hw hn cx cy)
+  exact fact_of_shape GatePhysical _ _ (generic_shape L cx cy)
+    (stages_physical (fusedY L (-cy)) (E1QubitPlacement.entryM L (-cx))
+      (restE L) (ReflectionE1.restE L) (ReflectionE1.squareEntry L (ReflectionE1.correction cx))
+      (restX L) (ReflectionE1.restX L) (exitY L cy) (fastConstNeg L cx) old
+      (restE_physical L hw hn) (restX_physical L hw hn))
+
+private def wrapContext (Z C : Program) (f : Wire→Wire) (P : Program) : Program :=
+  Z++(C++renameProgram f P++C)++Z
+
+private theorem wrap_facts (Z C : Program) (f : Wire→Wire) (P Q : Program)
+    (h : Facts 138 2010 P Q) : Facts 138 2010 (wrapContext Z C f P) (wrapContext Z C f Q) := by
+  rcases h with ⟨ht,hm,hs,hw⟩
+  have sub : wires (wrapContext Z C f P)⊆wires (wrapContext Z C f Q) := by
+    simp only [wrapContext,wires_append,renameProgram_support]
+    exact Finset.union_subset_union
+      (Finset.union_subset_union (Finset.Subset.refl _)
+        (Finset.union_subset_union
+          (Finset.union_subset_union (Finset.Subset.refl _) (Finset.image_mono f hw))
+          (Finset.Subset.refl _))) (Finset.Subset.refl _)
+  simp only [Facts,wrapContext,toffoliCount_append,measurementCount_append,gateSlots_append,
+    (renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
+  exact ⟨by omega,by omega,by omega,sub⟩
+
+private theorem gen_facts (L : ControlledPointLayout) (cx cy : Fp) :
+    Facts 138 2010 (gen L cx cy) (ReflectionE1.gen L cx cy) := by
+  apply relation_of_shapes (Facts 138 2010) _ _
+    (wrapContext (zrep L) (clrF L) (swapF L) (generic L cx cy))
+    (wrapContext (zrep L) (clrF L) (swapF L) (ReflectionE1.generic L cx cy))
+  · unfold gen mid wrapContext
+    rfl
+  · unfold ReflectionE1.gen ReflectionE1.mid wrapContext
+    rfl
+  · exact wrap_facts _ _ _ _ _ (generic_facts L cx cy)
+
+                                                              
+                                                                            
+                                                                                
+                                                                          
+                                                                           
+
+                                                                     
+                                                                                     
+
+                                                                                  
+                                                                              
+                                                                           
+
+                                                                                     
+                                                   
+                            
+                               
+                                                                                                    
+                                                                                                        
+
+                                                 
+                                                                      
+                
+                                                                                                             
+                                                                        
+                                                                        
+                                                                             
+            
+                                                              
+                                                                                             
+       
+
+private theorem wrapper_facts (L : ControlledPointLayout) (C : Point) (cy : Fp)
+    (P Q : Program) (h : Facts 138 2010 P Q) :
+    toffoliCount (Edges.wrapper L C cy P)+138=toffoliCount (Edges.wrapper L C cy Q) ∧
+    measurementCount (Edges.wrapper L C cy P)=measurementCount (Edges.wrapper L C cy Q) ∧
+    gateSlots (Edges.wrapper L C cy P) ≤ gateSlots (Edges.wrapper L C cy Q)+2010 := by
+  rcases h with ⟨ht,hm,hs,_⟩
+  simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,measurementCount_append,
+    gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,rename_gateSlots]
+  exact ⟨by omega,by omega,by omega⟩
+
+theorem wrapper_toffoli (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
+    toffoliCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 2151272 := by
+  have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout cx cy)).1
+  have entryDelta := (ReflectionE1.gen_counts_delta layout layout_widths cx cy).1
+  have baseline := Rolling1588BFFinal.wrapper_toffoli cx cy hc
+  have entryWrapperDelta :
+      toffoliCount (Edges.wrapper layout (.some hc) cy (ReflectionE1.gen layout cx cy))+759=
+        toffoliCount (Edges.wrapper layout (.some hc) cy (Rolling1588BFFinal.gen layout cx cy)) := by
+    simp only [Edges.wrapper,Edges.finiteProgram,toffoliCount_append,
+      (renameProgram_counts _ _).1]
+    omega
+  omega
+
+theorem wrapper_measurements (cx cy : Fp) (hc : curve.toAffine.Nonsingular cx cy) :
+    measurementCount (Edges.wrapper layout (.some hc) cy (gen layout cx cy)) ≤ 1499214 := by
+  have diff:=(wrapper_facts layout (.some hc) cy _ _ (gen_facts layout cx cy)).2.1
+  have old:=ReflectionE1.wrapper_measurements cx cy hc
+  omega
+
+theorem wrapper_slots (C : Point) (cx cy : Fp) :
+    gateSlots (Edges.wrapper layout C cy (gen layout cx cy)) ≤ 50191209+Rolling1588.slotGrowth := by
+  have diff:=(wrapper_facts layout C cy _ _ (gen_facts layout cx cy)).2.2
+  have old:=ReflectionE1.wrapper_slots C cx cy
+  omega
+
+end ECDSAAdd.Entrant.ReflectionE1TickGap
+end -- original module boundary
+
+-- ===== ECDSAAdd.Submission.Entrant.ReflectionE1TickGapFinal =====
+section
+-- consolidated import: import ECDSAAdd.Submission.Entrant.ReflectionE1TickGap
+
+/-! E1/reflected Q1588 point with the two checked TickGap forward tails. -/
+namespace ECDSAAdd.Entrant.ReflectionE1TickGap
+open Arithmetic Secp256k1 Challenge Baselines ControlledPointLayout MappedCompressed
+  CompressedPointDialog CompressedAllocation CompressedFieldSupport DirectSkywalk
+attribute [local irreducible] run wires toffoliCount measurementCount gateSlots
+
+
+
+
+
+
+
+                                                                    
+                                                                                       
+
+                                                            
+                                                                             
+              
+           
+                
+                                                                                      
+                                          
+                     
+                                                                 
+                               
+                                                                 
+                                                                  
+                                                                                   
+                                                       
+
+                                                                              
+              
+                                       
+                                                    
+
+                                                                                       
+              
+                                           
+                                                         
+
+                                                                    
+              
+                                                            
+                                                           
+
+                                                                     
+              
+                                       
+                     
+                                                                         
+                                                            
+
+                                                                                                     
+              
+                          
+                                                          
+
+                                                              
+                                                                       
+                                                         
+                                                                 
+                         
+                                                                    
+                                                            
+                   
+                                                       
+                                                
+                      
+                                                                                     
+                                                  
+
+
+end ECDSAAdd.Entrant.ReflectionE1TickGap
+end -- original module boundary
+
+-- Checked Low48 dependencies follow; the selected reflected prefix retains both checked TickGap tails.
+
+-- ===== ECDSAAdd.Submission.Entrant.ReflectionE1Low48Square =====
+section
+-- consolidated import: import ECDSAAdd.Submission.Entrant.LowZero18SquareResources
+-- consolidated import: import ECDSAAdd.Submission.Entrant.ReflectionE1Square
+
+/-! Only the retained E1 square prefix changes. The reflected entry and all maps stay fixed. -/
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+namespace ECDSAAdd.Entrant.ReflectionE1Low48Square
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout
+attribute [local irreducible] run wires toffoliCount measurementCount Challenge.gateSlots
+
+abbrev K : Nat := ControlLoan1589BFFold.K
+
+def core (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  LowZero18Square.branchCK L ext control++LowZero18Square.branchBF L ext control++
+    LowZero18Square.branchAF L ext control
+
+def fastCore (L : ControlledPointLayout) : Program :=
+  core L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+
+def program (L : ControlledPointLayout) : Program :=
+  SquareCarryLoan719BF.place L (fastCore L)
+
+theorem raw_split (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) :
+    LowZero18Square.raw L ext control=core L ext control++LowZero18Square.reflection L ext := rfl
+
+theorem program_split (L : ControlledPointLayout) :
+    LowZero18Square.program L=program L++ReflectionE1Square.reflectedTail L := by
+  change SquareCarryLoan719BF.place L (LowZero18Square.raw L.dialogStreamedSquareWide
+      (OwnDiagAll12Square.kext L) L.core.generic)=
+    SquareCarryLoan719BF.place L (core L.dialogStreamedSquareWide
+      (OwnDiagAll12Square.kext L) L.core.generic)++
+    SquareCarryLoan719BF.place L (SquareCarryLoan719BF.reflection
+      L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L))
+  rw [raw_split,ReflectionE1Square.place_append]
+  rfl
+
+theorem raw_core_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (Y O : Nat)
+    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
+    (hy : regValue L.core.y s.basis=Y) (ho : regValue L.core.out s.basis=O)
+    (hp0 : regValue L.core.product s.basis=0) (hs0 : s.basis L.core.sumCarry=false)
+    (hc : L.PairClean s.basis)
+    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (core L ext control) records s).phase=s.phase ∧
+    regValue L.core.out (run (core L ext control) records s).basis=
+      SquareReduction.p-1-
+        (((O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p+
+          (if s.basis control then K else 0))%SquareReduction.p) ∧
+    ∀q,q∉L.core.out → (run (core L ext control) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have disInput := L.measured_input_out_disjoint nd
+  have disProduct := L.product_out_disjoint nd
+  have ctrlAway : control∉L.core.out := by
+    intro bad
+    exact (List.nodup_cons.mp hn).1 (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,bad])
+  let A := regValue L.core.low s.basis
+  let B := regValue L.core.high s.basis
+  let enabled := s.basis control
+  let PA := (if enabled then A else 0)^2
+  let PB := (if enabled then B else 0)^2
+  let PC := (if enabled then A+B else 0)^2
+  let OC := OwnDiagAll12Square.resCF enabled PC O
+  let OB := ControlLoan1589BFFold.resBF PB OC enabled
+  let OA := ControlLoan1589BFFold.resAF PA OB enabled
+  have lowAway (q : Wire) (hq : q∈L.core.low) : q∉L.core.out :=
+    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_take hq))
+  have highAway (q : Wire) (hq : q∈L.core.high) : q∉L.core.out :=
+    List.disjoint_left.mp disInput (List.mem_append_left _ (List.mem_of_mem_drop (List.mem_of_mem_take hq)))
+  have sumAway (q : Wire) (hq : q∈L.core.sum) : q∉L.core.out :=
+    List.disjoint_left.mp (L.measured_sum_disjoint nd).2 hq
+  have sumB : regValue L.core.sum s.basis=B := by
+    simp [CuccaroStreamedSquareLayout.sum,regValue_append,regValue,hs0,B]
+  have ab : A<2^128 := by simpa [A,L.core.low_length hw.core] using regValue_lt L.core.low s.basis
+  have bb : B<2^128 := by simpa [B,L.core.high_length hw.core] using regValue_lt L.core.high s.basis
+  have sumBound : A+B<2^129 := by norm_num at ab bb ⊢;omega
+  have low (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue L.core.low t=A := regValue_congr _ _ _ (fun q hq => hf.2 q (lowAway q hq))
+  have high (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue L.core.high t=B := regValue_congr _ _ _ (fun q hq => hf.2 q (highAway q hq))
+  have sum (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue L.core.sum t=B :=
+    (regValue_congr _ _ _ (fun q hq => hf.2 q (sumAway q hq))).trans sumB
+  have prod (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue L.core.product t=0 :=
+    (regValue_congr _ _ _ (fun q hq => hf.2 q (List.disjoint_left.mp disProduct hq))).trans hp0
+  have extZ (X : Nat) (t : BasisState) (hf : SquareFrame L.core.out s.basis X t) :
+      regValue ext t=0 :=
+    (regValue_congr _ _ _ (fun q hq => hf.2 q (ECDSAAdd.Entrant.ext_out L control ext he q hq))).trans hz
+  have stepC : Triple (SquareFrame L.core.out s.basis O) (LowZero18Square.branchCK L ext control)
+      (SquareFrame L.core.out s.basis OC) := by
+    intro t m hf
+    have h := LowZero18Square.branchCK_correct L hw ext control hn A B O hO t m
+      (low _ _ hf) (sum _ _ hf) sumBound hf.1 (prod _ _ hf)
+      (L.squareFrame_clean nd s.basis t.basis O hf hc) he (extZ _ _ hf)
+    rw [hf.2 control ctrlAway] at h
+    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
+  have stepB : Triple (SquareFrame L.core.out s.basis OC) (LowZero18Square.branchBF L ext control)
+      (SquareFrame L.core.out s.basis OB) := by
+    intro t m hf
+    have h := LowZero18Square.branchBF_correct L hw ext control hn B OC (ofCast_lt _ _) t m (high _ _ hf) hf.1 (prod _ _ hf)
+      (L.squareFrame_clean nd s.basis t.basis OC hf hc)
+      ((hf.2 _ (ParkCarryDevelop.sumCarry_off_regs L nd).1).trans hs0) he (extZ _ _ hf)
+    rw [hf.2 control ctrlAway] at h
+    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
+  have stepA : Triple (SquareFrame L.core.out s.basis OB) (LowZero18Square.branchAF L ext control)
+      (SquareFrame L.core.out s.basis OA) := by
+    intro t m hf
+    have h := LowZero18Square.branchAF_correct L hw ext control hn A OB (ofCast_lt _ _) t m (low _ _ hf) hf.1 (prod _ _ hf)
+      (L.squareFrame_clean nd s.basis t.basis OB hf hc)
+      ((hf.2 _ (ParkCarryDevelop.sumCarry_off_regs L nd).1).trans hs0) he (extZ _ _ hf)
+    rw [hf.2 control ctrlAway] at h
+    exact ⟨h.1,h.2.1,fun q hq => (h.2.2 q hq).trans (hf.2 q hq)⟩
+  have all := (stepC.seq stepB).seq stepA
+  obtain ⟨phase,value,frame⟩ := all s records ⟨ho,fun _ _ => rfl⟩
+  have split : A+2^128*B=Y := by
+    have highEq : L.core.high=L.core.y.drop 128 := by simp [CuccaroStreamedSquareLayout.high,hw.core.y]
+    have value := regValue_append (L.core.y.take 128) (L.core.y.drop 128) s.basis
+    rw [List.take_append_drop,hy,List.length_take,hw.core.y] at value
+    simpa only [A,B,CuccaroStreamedSquareLayout.low,highEq,show min 128 256=128 by decide] using value.symm
+  have exactResult := ControlLoan1589BFFold.complete_exact enabled A B O
+  rw [split] at exactResult
+  unfold subModValue at exactResult
+  have oaLt : OA<SquareReduction.p := ofCast_lt _ _
+  have reflected : OA=SquareReduction.p-1-
+      (((O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p+
+        (if s.basis control then K else 0))%SquareReduction.p) := by
+    change SquareReduction.p-1-OA=
+      (((O+SquareReduction.p-(if s.basis control then Y^2 else 0)%SquareReduction.p)%SquareReduction.p+
+        (if s.basis control then K else 0))%SquareReduction.p) at exactResult
+    omega
+  exact ⟨phase,value.trans reflected,frame⟩
+
+
+open Secp256k1 MappedCompressed CompressedPointDialog
+
+theorem fastCore_correct (L : ControlledPointLayout) (hw : L.Widths)
+    (hn : L.wires.Nodup) (X Y : Nat) (B : Bool) (hX : X<p)
+    (s : State) (m : List Bool) (hb : s.basis L.core.generic=B)
+    (hx : regValue L.point.x s.basis=X) (hy : regValue L.point.y s.basis=Y)
+    (hc : regValue L.dialogPool s.basis=0) :
+    (run (fastCore L) m s).phase=s.phase ∧
+    regValue L.point.x (run (fastCore L) m s).basis=
+      p-1-(((X+p-(if B then Y*Y else 0)%p)%p+(if B then ControlLoan1589BFFold.K else 0))%p) ∧
+    ∀q,q∉L.point.x → (run (fastCore L) m s).basis q=s.basis q := by
+  let K := L.dialogStreamedSquareWide
+  have hwK := L.dialogStreamedSquareWide_widths hw
+  have ndK := L.dialogStreamedSquareWide_nodup hw hn
+  have controlND : (L.core.generic::K.wires).Nodup := by
+    change (L.core.generic::L.dialogStreamedSquareWide.wires).Nodup
+    have nd := L.streamedSquare_control_nodup hw hn
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp nd q
+    simp only [List.count_cons] at h ⊢
+    omega
+  have auxZero (q : Wire)
+      (hq : q∈K.core.product++K.core.pad++K.core.work++
+        [K.core.productHigh,K.core.outHigh,K.core.workHigh,K.core.cin,
+          K.core.normFlag,K.core.modFlag,K.core.sumCarry]++K.overflowPad) :
+      s.basis q=false := by
+    change q∈L.dialogStreamedSquareWide.core.product++
+      L.dialogStreamedSquareWide.core.pad++L.dialogStreamedSquareWide.core.work++
+      [L.dialogStreamedSquareWide.core.productHigh,L.dialogStreamedSquareWide.core.outHigh,
+        L.dialogStreamedSquareWide.core.workHigh,L.dialogStreamedSquareWide.core.cin,
+        L.dialogStreamedSquareWide.core.normFlag,L.dialogStreamedSquareWide.core.modFlag,
+        L.dialogStreamedSquareWide.core.sumCarry]++L.dialogStreamedSquareWide.overflowPad at hq
+    rw [L.dialogStreamedSquareWide_pool hw] at hq
+    exact (regValue_zero _ _).mp hc q (List.mem_of_mem_take hq)
+  have prod0 : regValue K.core.product s.basis=0 := by
+    apply (regValue_zero _ _).mpr
+    intro q hq
+    exact auxZero q (by simp [hq])
+  have clean : K.PairClean s.basis := by
+    constructor
+    · apply (regValue_zero _ _).mpr
+      intro q hq
+      simp only [CuccaroStreamedSquareWideLayout.foldPad,List.mem_append] at hq
+      exact auxZero q (by simp; itauto)
+    · apply (regValue_zero _ _).mpr
+      intro q hq
+      exact auxZero q (by simp [hq])
+    all_goals exact auxZero _ (by simp)
+  have sum0 : s.basis K.core.sumCarry=false := auxZero _ (by simp)
+  have hp : SquareReduction.p=p := by
+    norm_num [SquareReduction.p,SquareReduction.B,SquareReduction.c,p]
+  have hz : regValue (OwnDiagAll12Square.kext L) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hc q (OwnDiagAll12Square.kext_mem L hw q hq))
+  have extOK:=OwnDiagAll12Square.kext_ok L hw hn
+  have hext : ECDSAAdd.Entrant.ExtOK K L.core.generic (OwnDiagAll12Square.kext L) :=
+    ⟨extOK.nodup,extOK.away,extOK.len⟩
+  have kernel := raw_core_correct K hwK (OwnDiagAll12Square.kext L) L.core.generic controlND Y X
+    (by simpa only [hp] using hX) s m hy hx prod0 sum0 clean hext hz
+  simpa only [fastCore,hb,hp,pow_two] using kernel
+
+
+private instance : NeZero p := ⟨by norm_num [p]⟩
+private instance : Fact (1<p) := ⟨by norm_num [p]⟩
+
+private theorem sub_val (x y : Fp) : (x-y).val=(x.val+p-y.val)%p := by
+  rw [sub_eq_add_neg,ZMod.val_add,ZMod.neg_val',Nat.add_mod_mod]
+  rw [←Nat.add_sub_assoc (le_of_lt (ZMod.val_lt y))]
+
+theorem fastCore_boundary (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m : List Bool)
+    (v : PointDialogValues L X Y G origin s.basis) :
+    (run (fastCore L) m s).phase=s.phase ∧
+    regValue L.point.x (run (fastCore L) m s).basis=
+      p-1-(X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)).val ∧
+    ∀q,q∉L.point.x → (run (fastCore L) m s).basis q=s.basis q := by
+  have fresh:=fastCore_correct L hw hn X.val Y.val G X.isLt s m v.generic v.x v.y v.clean
+  refine ⟨fresh.1,?_,fresh.2.2⟩
+  have hK : ((SquareCarryLoan719BF.K:Nat):Fp).val=SquareCarryLoan719BF.K :=
+    ZMod.val_natCast_of_lt (by norm_num [SquareCarryLoan719BF.K,ControlLoan1589BFFold.K,p])
+  rw [ZMod.val_add,sub_val]
+  cases G
+  · simpa using fresh.2.1
+  · simpa [ZMod.val_mul,hK,K,SquareCarryLoan719BF.K] using fresh.2.1
+
+private theorem pool_away_x (L : ControlledPointLayout) (hn : L.wires.Nodup)
+    (q : Wire) (hq : q∈L.dialogPool) : q∉L.point.x := by
+  have dis:=(List.nodup_append'.mp (L.dialogUsed_nodup hn)).2.2
+  intro hx
+  have resident : q∈CompressedPointSquare.residents L := by
+    simp only [CompressedPointSquare.residents,PointAddLayout.pointWires,List.mem_append,List.mem_cons]
+    itauto
+  exact List.disjoint_left.mp dis resident hq
+
+theorem boundary (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (X Y : Fp) (G : Bool) (origin : BasisState) (s : State) (m : List Bool)
+    (v : PointDialogValues L X Y G origin s.basis) :
+    (run (program L) m s).phase=s.phase ∧
+    regValue L.point.x (run (program L) m s).basis=
+      p-1-(X-(if G then Y*Y else 0)+(if G then (SquareCarryLoan719BF.K:Fp) else 0)).val ∧
+    ∀q,q∉L.point.x → (run (program L) m s).basis q=s.basis q := by
+  have result:=fastCore_boundary L hw hn X Y G origin s m v
+  obtain ⟨out,heq⟩ : ∃out : State,run (fastCore L) m s=out := ⟨_,rfl⟩
+  rw [heq] at result
+  have clean : regValue L.dialogPool out.basis=0 := by
+    rw [regValue_congr _ _ s.basis (fun q hq=>result.2.2 q (pool_away_x L hn q hq)),v.clean]
+  have eq:=ReflectionE1Square.place_run_eq L hw (fastCore L) s m v.clean (by rw [heq];exact clean)
+  change run (program L) m s=run (fastCore L) m s at eq
+  rw [eq,heq]
+  exact result
+
+                                                                                
+                                                                           
+                                                    
+                                                             
+                                                  
+                                                                    
+                      
+                                                                                                   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+private theorem window_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
+    (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
+    (he : 300≤ext.length) :
+    toffoliCount (LowZero18Square.withLowK2 L ext control src dst body)+558+10*(if src.length=128 then 0 else 1)=
+      toffoliCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) ∧
+    measurementCount (LowZero18Square.withLowK2 L ext control src dst body)+21+3*(if src.length=128 then 0 else 1)=
+      measurementCount (SquareCarryLoan719BF.withLowK2 L ext control src dst body) := by
+  have a:=LowZero18Square.withLowK2_counts_diff L hw ext control src dst body h128 h129 hd he
+  have b:=LowZero18Square.withLowK2_counts_diff L hw ext control src dst body h128 h129 hd he
+  constructor <;> omega
+
+private theorem window_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
+    (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
+    (he : 300≤ext.length) :
+    wires (LowZero18Square.withLowK2 L ext control src dst body)⊆
+      wires (SquareCarryLoan719BF.withLowK2 L ext control src dst body) :=
+  LowZero18Square.withLowK2_support_subset L hw ext control src dst body h128 h129 hd he
+
+private theorem window_slots (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (src dst : List Wire) (body : Program)
+    (h128 : 128≤src.length) (h129 : src.length≤129) (hd : dst.length=2*src.length)
+    (he : 300≤ext.length) :
+    Challenge.gateSlots (LowZero18Square.withLowK2 L ext control src dst body)≤
+      Challenge.gateSlots (SquareCarryLoan719BF.withLowK2 L ext control src dst body) :=
+  LowZero18Square.withLowK2_slots_le L hw ext control src dst body h128 h129 hd he
+
+private theorem core_counts_diff (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
+    toffoliCount (core L ext control)+3033=toffoliCount (ReflectionE1Square.core L ext control) ∧
+    measurementCount (core L ext control)+75=measurementCount (ReflectionE1Square.core L ext control) := by
+  have low:=L.core.low_length hw.core
+  have high:=L.core.high_length hw.core
+  have sum:=L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have c:=window_counts L hw ext control L.core.sum L.core.product
+    (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
+  have b:=window_counts L hw ext control L.core.high (L.core.product.take 256)
+    (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
+  have a:=window_counts L hw ext control L.core.low (L.core.product.take 256)
+    (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
+  obtain ⟨q1,q2,q3,q4⟩ := LowZero18Square.withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
+    (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry8Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256) rfl
+  obtain ⟨a1,a2,a3,a4⟩ := InverseCarryDevelop.hostedADual_window_rel L hw ext control L.core.low (L.core.product.take 256)
+  rw [if_neg (show ¬L.core.sum.length=128 by omega)] at c
+  rw [if_pos high] at b
+  rw [if_pos low] at a
+  simp only [core,ReflectionE1Square.core,LowZero18Square.branchCK,LowZero18Square.branchBF,
+    LowZero18Square.branchAF,SquareCarryLoan719BF.branchCK,SquareCarryLoan719BF.branchBF,
+    SquareCarryLoan719BF.branchAF,toffoliCount_append,measurementCount_append]
+  constructor <;> omega
+
+private theorem core_support_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
+    wires (core L ext control)⊆wires (ReflectionE1Square.core L ext control) := by
+  have low:=L.core.low_length hw.core
+  have high:=L.core.high_length hw.core
+  have sum:=L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have c:=window_support L hw ext control L.core.sum L.core.product
+    (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
+  have b:=window_support L hw ext control L.core.high (L.core.product.take 256)
+    (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
+  have a:=window_support L hw ext control L.core.low (L.core.product.take 256)
+    (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
+  obtain ⟨q1,q2,q3,q4⟩ := LowZero18Square.withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
+    (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry8Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256) rfl
+  obtain ⟨a1,a2,a3,a4⟩ := InverseCarryDevelop.hostedADual_window_rel L hw ext control L.core.low (L.core.product.take 256)
+  have k3 := q3.trans k3
+  have b := b3.trans (Finset.insert_subset_insert L.core.sumCarry b)
+  have a := a3.trans (Finset.insert_subset_insert L.core.sumCarry (Finset.insert_subset_insert ((LowZero18Square.foldPerm L ext) (ControlLoan1589BFFold.eV L)) a))
+  have ck:wires (LowZero18Square.branchCK L ext control)⊆wires (SquareCarryLoan719BF.branchCK L ext control) := by
+    simp only [LowZero18Square.branchCK,SquareCarryLoan719BF.branchCK,wires_append]
+    repeat' apply Finset.union_subset_union
+    all_goals first | exact k3.trans c | exact Finset.Subset.refl _
+  have qmem:L.core.sumCarry∈wires (SquareCarryLoan719BF.branchCK L ext control) := by
+    simp only [SquareCarryLoan719BF.branchCK,wires_append]
+    exact Finset.mem_union_left _ (Finset.mem_union_left _ (ParkCarryDevelop.sumCarry_gPrep L hw))
+  have cb:=ParkCarryDevelop.absorb_support L.core.sumCarry _ _ _ _ ck b qmem
+  have qab:L.core.sumCarry∈wires (SquareCarryLoan719BF.branchCK L ext control++SquareCarryLoan719BF.branchBF L ext control) := by
+    rw [wires_append];exact Finset.mem_union_left _ qmem
+  have rab:(LowZero18Square.foldPerm L ext) (ControlLoan1589BFFold.eV L)∈wires
+      (SquareCarryLoan719BF.branchCK L ext control++SquareCarryLoan719BF.branchBF L ext control) := by
+    rw [wires_append]
+    exact Finset.mem_union_right _ (InverseCarryDevelop.old_b_window_eV_mem L hw ext control he)
+  have cba:=InverseCarryDevelop.absorb_support_two L.core.sumCarry ((LowZero18Square.foldPerm L ext) (ControlLoan1589BFFold.eV L)) _ _ _ _ cb a qab rab
+  simp only [wires_append] at cba
+  simp only [core,ReflectionE1Square.core,wires_append]
+  exact cba
+
+private theorem core_slots_le (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (he : 300≤ext.length) :
+    Challenge.gateSlots (core L ext control)≤Challenge.gateSlots (ReflectionE1Square.core L ext control) := by
+  have low:=L.core.low_length hw.core
+  have high:=L.core.high_length hw.core
+  have sum:=L.core.sum_length hw.core
+  have p256 : (L.core.product.take 256).length=256 := by simp [hw.core.product]
+  have c:=window_slots L hw ext control L.core.sum L.core.product
+    (OwnDiagAll12Square.bodyC L control) (by omega) (by omega) (by rw [hw.core.product,sum]) he
+  obtain ⟨k1,k2,k3,k4⟩ := LowZero18Square.withLowK2_bodyCK L hw ext control L.core.sum L.core.product
+  have b:=window_slots L hw ext control L.core.high (L.core.product.take 256)
+    (ControlLoan1589BFFold.bBody L control) (by omega) (by omega) (by omega) he
+  have a:=window_slots L hw ext control L.core.low (L.core.product.take 256)
+    (ControlLoan1589BFFold.aBody L control) (by omega) (by omega) (by omega) he
+  obtain ⟨q1,q2,q3,q4⟩ := LowZero18Square.withLowK2_body_rel L ext control L.core.sum L.core.product _ _ 129 2
+    (QRel.bodyCK_rel L hw control).1 (QRel.bodyCK_rel L hw control).2.1 (QRel.bodyCK_rel L hw control).2.2
+  obtain ⟨b1,b2,b3,b4⟩ := ParkCarry8Develop.hosted_window_rel L hw ext control L.core.high (L.core.product.take 256) rfl
+  obtain ⟨a1,a2,a3,a4⟩ := InverseCarryDevelop.hostedADual_window_rel L hw ext control L.core.low (L.core.product.take 256)
+  simp only [core,ReflectionE1Square.core,LowZero18Square.branchCK,LowZero18Square.branchBF,
+    LowZero18Square.branchAF,SquareCarryLoan719BF.branchCK,SquareCarryLoan719BF.branchBF,
+    SquareCarryLoan719BF.branchAF,Challenge.gateSlots_append]
+  omega
+
+theorem counts_diff (L : ControlledPointLayout) (hw : L.Widths) :
+    toffoliCount (program L)+3033=toffoliCount (ReflectionE1Square.program L) ∧
+    measurementCount (program L)+75=measurementCount (ReflectionE1Square.program L) := by
+  have h:=core_counts_diff L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
+    (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
+  simpa only [program,ReflectionE1Square.program,fastCore,ReflectionE1Square.fastCore,
+    (ReflectionE1Square.place_counts _ _).1,(ReflectionE1Square.place_counts _ _).2] using h
+
+                                                            
+                                                                             
+                          
+                                        
+                       
+
+theorem support_subset (L : ControlledPointLayout) (hw : L.Widths) :
+    wires (program L)⊆wires (ReflectionE1Square.program L) := by
+  unfold program ReflectionE1Square.program SquareCarryLoan719BF.place
+  repeat' apply OneFlagReplay.rename_subset
+  exact core_support_subset L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
+    (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
+
+theorem support (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    wires (program L)⊆(OB5Support.sites L).toFinset :=
+  (support_subset L hw).trans (ReflectionE1Square.support L hw hn)
+
+theorem free (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+    (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
+    L.core.poolWire i∉wires (program L) :=
+  fun used=>ReflectionE1Square.free L hw hn i hi (support_subset L hw used)
+
+theorem physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (program L) := by
+  have full:=LowZero18Square.physical L hw hn
+  rw [program_split,gatePhysical_append] at full
+  exact full.1
+
+theorem slots_le (L : ControlledPointLayout) (hw : L.Widths) :
+    Challenge.gateSlots (program L)≤Challenge.gateSlots (ReflectionE1Square.program L) := by
+  have h:=core_slots_le L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
+    (OwnDiagAll12Square.kext L) L.core.generic (by simp [OwnDiagAll12Square.kext,wireBlock_length])
+  simpa only [program,ReflectionE1Square.program,fastCore,ReflectionE1Square.fastCore,
+    SquareCarryLoan719BF.place,Baselines.rename_gateSlots] using h
+
+end ECDSAAdd.Entrant.ReflectionE1Low48Square
+end -- original module boundary
+
+
+
+section
+set_option autoImplicit false
+namespace ECDSAAdd.Entrant.ParkCarry8Develop
+open Arithmetic
+
+theorem hosted_fold_support (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths)
+    (hn:L.wires.Nodup) (ext : List Wire) (c : Wire) (hlen:300≤ext.length)
+    (away:∀q∈ext,q∉L.wires) :
+    wires (hostedBody L (LowZero18Square.foldPerm L ext) c)⊆(c::L.wires).toFinset := by
+  rw [hosted_eq L _ c (ParkCarryDevelop.fold_fixes_sumCarry L hw hn ext hlen away) (ParkCarry8Develop.fold_fixes_source L hw hn ext hlen away)]
+  exact body_support L hw hn c
+
+end ECDSAAdd.Entrant.ParkCarry8Develop
+end
+
+section
+namespace ECDSAAdd.Entrant.InverseCarryDevelop
+open Arithmetic
+                                                                                     
+                                                                         
+                             
+                                                                                        
+                                                                                        
+                                   
+end ECDSAAdd.Entrant.InverseCarryDevelop
+end
+
+-- ===== R2 (sqep component): square with retired poolWire 760 =====
+section
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+
+/-! # Square -/
+
+namespace ECDSAAdd.Entrant.R2SqEp760
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout
+attribute [local irreducible] run wires
+
+/-! ## Square: definitions -/
+
+/-- The retired square site: fold-pad bit 239 (= `ktmp[108]`, carry #239 of every reflected core
+adder; physically `poolWire 760`). -/
+                                                                              
+                                                                      
+                                                     
+                                                                                       
+                                   
+                                                                                               
+                                
+
+def branchCK760 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  OwnDiagAll12Square.gPrep L++
+    ParkCopyS.withLowK2S L ext control L.core.sum L.core.product
+      (bodySwap L ext (OwnDiagAll12Square.bodyCKTq L control))++
+    OwnDiagAll12Square.gClear L
+
+def branchBF760 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
+    (bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) control))
+
+def branchAF760 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
+    (bodySwap L ext (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control)) (ControlLoan1589BFFold.eU L)
+
+def core760 (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire) : Program :=
+  branchCK760 L ext control++branchBF760 L ext control++branchAF760 L ext control
+
+def fastCore760 (L : ControlledPointLayout) : Program :=
+  core760 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+
+/-- The new square: `ReflectionE1Low48Square.program` with the three body swaps. -/
+def program760 (L : ControlledPointLayout) : Program :=
+  SquareCarryLoan719BF.place L (fastCore760 L)
+
+
+
+
+
+                                                                            
+                             
+                                                                                       
+                                                                                       
+                                                                                                 
+                                                                                                      
+
+/-! ## Square: positions of the two sites -/
+
+section Sites
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+include hw
+
+theorem foldPad_length : L.foldPad.length=254 := by
+  simp [foldPad,hw.core.pad,hw.overflowPad]
+
+omit hw in
+theorem sqRet_ktmp : sqRet L=(LowZero18LowK.ktmp L).getD 108 0 := by
+  simp only [sqRet,LowZero18LowK.ktmp,List.getD_eq_getElem?_getD,List.getElem?_drop]
+
+theorem sqRet_mem_ktmpTail : sqRet L∈(LowZero18LowK.ktmp L).drop 99 := by
+  rw [sqRet_ktmp L]
+  have len := LowZero18LowK.ktmp_length L hw
+  rw [List.getD_eq_getElem _ _ (by omega)]
+  have h : (LowZero18LowK.ktmp L)[108]'(by omega)=((LowZero18LowK.ktmp L).drop 99)[9]'(by simp; omega) := by
+    simp
+  rw [h]
+  exact List.getElem_mem _
+
+theorem sqRet_mem_overflow : sqRet L∈L.overflowPad := by
+  have h : sqRet L=L.overflowPad.getD 111 0 := by
+    simp only [sqRet,foldPad,List.getD_eq_getElem?_getD,List.getElem?_append_right
+      (show L.core.pad.length≤239 by rw [hw.core.pad]; omega),hw.core.pad]
+  rw [h,List.getD_eq_getElem _ _ (by rw [hw.overflowPad]; omega)]
+  exact List.getElem_mem _
+
+                                               
+                                                                   
+                                        
+
+end Sites
+
+theorem sqHost_mem (ext : List Wire) (he : 300≤ext.length) : sqHost ext∈ext := by
+  rw [sqHost,List.getD_eq_getElem _ _ (by omega)]
+  exact List.getElem_mem _
+
+/-- `sqRet` is outside the core layout (it is an overflow-pad site). -/
+theorem sqRet_not_core (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) : sqRet L∉L.core.wires := by
+  have overflow := sqRet_mem_overflow L hw
+  have dis := (List.nodup_append.mp (List.nodup_cons.mp hn).2).2.2
+  exact fun used=>dis (sqRet L) used (sqRet L) overflow rfl
+
+/-! ## Square: support facts -/
+
+section Support
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+  (hn : (control::L.wires).Nodup) (ext src dst : List Wire)
+  (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+  (hd : ∀q,dst.count q≤L.core.product.count q)
+  (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+
+/-- Everything a LowZero leaf kernel names, except the untouched tail of `ktmp`. -/
+def kOuter : List Wire :=
+  (control::L.core.cin::src++L.inputBank.take src.length++dst++L.leafPad++L.leafCarry++L.core.out++
+    (LowZero18LowK.ktmp L).take 99)++ext
+
+include hn hs hd hx hdx in
+theorem ktail_away (q : Wire) (hq : q∈(LowZero18LowK.ktmp L).drop 99) :
+    q∉kOuter L control ext src dst := by
+  apply kdis (LowZero18LowK.kbig2_nodup L control hn src dst hs hd ext hx hdx) _ q hq
+  intro w
+  have e := congrArg (List.count w) (List.take_append_drop 99 (LowZero18LowK.ktmp L))
+  rw [List.count_append] at e
+  simp only [kOuter,LowZero18LowK.kbig2,List.count_append,List.count_cons] at e ⊢
+  omega
+
+private theorem mem_tk {l : List Wire} {n : Nat} {q : Wire} (h : q∈l.take n) : q∈l := List.mem_of_mem_take h
+private theorem mem_dr {l : List Wire} {n : Nat} {q : Wire} (h : q∈l.drop n) : q∈l := List.mem_of_mem_drop h
+private theorem mem_dt {l : List Wire} {a b : Nat} {q : Wire} (h : q∈(l.drop a).take b) : q∈l.take (a+b) := by
+  have e : (l.drop a).take b=(l.take (a+b)).drop a := by rw [List.drop_take]; simp
+  rw [e] at h
+  exact List.mem_of_mem_drop h
+
+private theorem mem_66 {l : List Wire} {q : Wire} (h : q∈l.take 66) : q∈l.take 99 := by
+  have e : l.take 66=(l.take 99).take 66 := by rw [List.take_take]; rfl
+  rw [e] at h
+  exact List.mem_of_mem_take h
+
+/-- Every wire of the leaf kernel's register inventory lies in `kOuter`. -/
+theorem kall_outer (q : Wire) (h : q∈(LowZero18LowK.kg L ext src dst).all) :
+    q∈kOuter L control ext src dst := by
+  simp only [kOuter,List.mem_append,List.mem_cons]
+  unfold LowZero18LowK.kg at h
+  split_ifs at h
+  all_goals
+    simp only [LowZero18LowK.kgH,LowZero18LowK.kgS,KG.all,KG.X,KRegs.all,LowZero18LowK.oregs,
+      LowZero18LowK.iregs,LowZero18LowK.jregsH,LowZero18LowK.jregsS,KRegs.lo,KRegs.dlo,
+      List.mem_append,List.mem_cons,List.not_mem_nil,or_false] at h
+    repeat' (refine Or.elim h (fun h => ?_) (fun h => ?_))
+    all_goals first
+      | simp [h]
+      | simp [mem_tk h]
+      | simp [mem_dr h]
+      | simp [mem_tk (mem_tk h)]
+      | simp [mem_dr (mem_tk h)]
+      | simp [mem_tk (mem_dr h)]
+      | simp [mem_dr (mem_tk (mem_tk h))]
+      | simp [mem_66 (mem_tk h)]
+      | simp [mem_66 (mem_tk (mem_tk h))]
+      | simp [mem_dt h]
+
+include hw hn hs hd hx hdx in
+theorem sqRet_not_outer : sqRet L∉kOuter L control ext src dst :=
+  ktail_away L control hn ext src dst hs hd hx hdx _ (sqRet_mem_ktmpTail L hw)
+
+include hw hn hs hd hx hdx in
+theorem sqRet_ne_of_outer (q : Wire) (hq : q∈kOuter L control ext src dst) : sqRet L≠q :=
+  fun e => sqRet_not_outer L hw control hn ext src dst hs hd hx hdx (e ▸ hq)
+
+theorem ktmp_eq : OwnDiagLowK.ktmp L=LowZero18LowK.ktmp L := rfl
+
+theorem tk99_outer (q : Wire) (h : q∈(LowZero18LowK.ktmp L).take 99) : q∈kOuter L control ext src dst := by
+  simp only [kOuter,List.mem_append,List.mem_cons]; itauto
+
+theorem ext_outer (q : Wire) (h : q∈ext) : q∈kOuter L control ext src dst := by
+  simp only [kOuter,List.mem_append]; itauto
+
+theorem cs_outer (q : Wire) (h : q∈control::(src++L.inputBank.take src.length)) :
+    q∈kOuter L control ext src dst := by
+  simp only [kOuter,List.mem_append,List.mem_cons] at h ⊢; itauto
+
+include hw in
+theorem target_outer : SquareCarryLoan719.target L∈kOuter L control ext src dst := by
+  have len := LowZero18LowK.ktmp_length L hw
+  have m : SquareCarryLoan719.target L∈(LowZero18LowK.ktmp L).take 99 := by
+    change (LowZero18LowK.ktmp L).getD 67 0∈_
+    rw [List.getD_eq_getElem _ _ (by omega)]
+    have : (LowZero18LowK.ktmp L)[67]'(by omega)=((LowZero18LowK.ktmp L).take 99)[67]'(by simp; omega) := by simp
+    rw [this]; exact List.getElem_mem _
+  exact tk99_outer L control ext src dst _ m
+
+include hw in
+theorem earlyHost_outer : SquareCarryLoan719.earlyHost L∈kOuter L control ext src dst := by
+  have len := LowZero18LowK.ktmp_length L hw
+  have m : SquareCarryLoan719.earlyHost L∈(LowZero18LowK.ktmp L).take 99 := by
+    change (LowZero18LowK.ktmp L).getD 1 0∈_
+    rw [List.getD_eq_getElem _ _ (by omega)]
+    have : (LowZero18LowK.ktmp L)[1]'(by omega)=((LowZero18LowK.ktmp L).take 99)[1]'(by simp; omega) := by simp
+    rw [this]; exact List.getElem_mem _
+  exact tk99_outer L control ext src dst _ m
+
+include hw hn hs hd hx hdx in
+theorem sqRet_masks :
+    sqRet L∉wires (copyRegister (some control) src (L.inputBank.take src.length)) ∧
+    sqRet L∉wires (eraseMask control src (L.inputBank.take src.length)) := by
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  constructor
+  · intro used
+    have h := List.mem_toFinset.mp (copyRegister_wires_subset (some control) src (L.inputBank.take src.length) used)
+    exact ne _ (cs_outer L control ext src dst _ (by simpa only [Option.toList_some,List.singleton_append,
+      List.cons_append,List.append_assoc] using h)) rfl
+  · intro used
+    have h := List.mem_toFinset.mp (eraseMask_wires_subset control src (L.inputBank.take src.length) used)
+    exact ne _ (cs_outer L control ext src dst _ h) rfl
+
+include hw hn hs hd hx hdx in
+theorem sqRet_cached_mask (hpos : 0<dst.length) :
+    sqRet L∉wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst)
+      src (L.inputBank.take src.length)) := by
+  have masks := sqRet_masks L hw control hn ext src dst hs hd hx hdx
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  have cacheIn : LowZero18Square.cacheWire L dst∈kOuter L control ext src dst := by
+    rw [LowZero18Square.cacheWire_fixed L hw (List.nodup_cons.mp hn).2 dst hd hpos]
+    have mem := CachedSquareCopy.head_mem dst hpos
+    simp only [kOuter,List.mem_cons,List.mem_append]
+    tauto
+  intro used
+  have h := CachedSquareCopy.wires_subset control (LowZero18Square.cacheWire L dst)
+    src (L.inputBank.take src.length) used
+  rcases Finset.mem_union.mp h with h|h
+  · exact masks.1 h
+  · exact ne _ cacheIn (Finset.mem_singleton.mp h)
+
+include hw hn hs hd hx hdx in
+theorem sqRet_kernels (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (he : 300≤ext.length) :
+    sqRet L∉wires (LowZero18Square.make L (LowZero18LowK.kg L ext src dst)) ∧
+    sqRet L∉wires (LowZero18Square.clear L (LowZero18LowK.kg L ext src dst)) := by
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  have sup := LowZero18LowK.kg_support L hw ext src dst h128 hsmax hlen he
+  have offAll : sqRet L∉((LowZero18LowK.kg L ext src dst).all.toFinset) := fun h =>
+    ne _ (kall_outer L control ext src dst _ (List.mem_toFinset.mp h)) rfl
+  have fix : SquareCarryLoan719.earlyPerm L (sqRet L)=sqRet L := by
+    rw [SquareCarryLoan719.earlyPerm_eq L hw]
+    exact Equiv.swap_apply_of_ne_of_ne (ne _ (target_outer L hw control ext src dst))
+      (ne _ (earlyHost_outer L hw control ext src dst))
+  have mk : sqRet L∉wires (LowZero18KG.make (LowZero18LowK.kg L ext src dst)) := fun h => offAll (sup.1 h)
+  have cl : sqRet L∉wires (LowZero18KG.clear (LowZero18LowK.kg L ext src dst)) := fun h => offAll (sup.2 h)
+  let K := LowZero18LowK.kg L ext src dst
+  let T := K.Q2++K.R.smk++K.Q5++K.R.m6h++K.R.m7k++K.R.m8z++K.R.scl1591
+  let C := K.R.smkT++K.R.c8z++K.R.c7t++K.R.c6h++K.Q5c++K.R.scl1591++K.Q2c
+  have o1 : LowZero18KG.make K=K.Q1++T := by simp only [LowZero18KG.make,T,List.append_assoc]
+  have n1 : LowZero18Square.make L K=renameProgram (SquareCarryLoan719.earlyPerm L) K.Q1++T := by
+    simp only [LowZero18Square.make,LowZero18KG.make,SquareCarryLoan719.patchKG,T,List.append_assoc]
+  have o2 : LowZero18KG.clear K=C++K.Q1c := by simp only [LowZero18KG.clear,C,List.append_assoc]
+  have n2 : LowZero18Square.clear L K=C++renameProgram (SquareCarryLoan719.earlyPerm L) K.Q1c := by
+    simp only [LowZero18Square.clear,LowZero18KG.clear,SquareCarryLoan719.patchKG,C,List.append_assoc]
+  rw [o1,wires_append,Finset.mem_union,not_or] at mk
+  rw [o2,wires_append,Finset.mem_union,not_or] at cl
+  constructor
+  · change sqRet L∉wires (LowZero18Square.make L K)
+    rw [n1,wires_append,Finset.mem_union,not_or]
+    exact ⟨OwnPlusHost.rename_avoid _ _ _ fix mk.1,mk.2⟩
+  · change sqRet L∉wires (LowZero18Square.clear L K)
+    rw [n2,wires_append,Finset.mem_union,not_or]
+    exact ⟨cl.1,OwnPlusHost.rename_avoid _ _ _ fix cl.2⟩
+
+end Support
+
+section Core
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+
+include hw in
+theorem g_core_support :
+    wires (OwnDiagAll12Square.gPrep L)⊆L.core.wires.toFinset ∧
+    wires (OwnDiagAll12Square.gClear L)⊆L.core.wires.toFinset := by
+  let M : CuccaroStreamedSquareWideLayout := ⟨L.core,L.core.pad.take 126⟩
+  have mhw : M.Widths := ⟨hw.core,by simp [M,hw.core.pad]⟩
+  have sub : (L.core.cin::M.wires).toFinset⊆L.core.wires.toFinset := by
+    intro q used
+    have h := List.mem_toFinset.mp used
+    rcases List.mem_cons.mp h with h|h
+    · subst q
+      simp [CuccaroStreamedSquareLayout.wires]
+    · change q∈L.core.wires++L.core.pad.take 126 at h
+      rcases List.mem_append.mp h with h|h
+      · exact List.mem_toFinset.mpr h
+      · have hp := List.mem_of_mem_take h
+        simp [CuccaroStreamedSquareLayout.wires,hp]
+  have support := OwnDiagAll12Square.gSum_support M mhw L.core.cin
+  exact ⟨support.1.trans sub,support.2.trans sub⟩
+
+end Core
+
+section Free
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+  (hn : (control::L.wires).Nodup) (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+  (hext : 300≤ext.length)
+
+include hext in
+theorem sqHost_in : sqHost ext∈ext := sqHost_mem ext hext
+
+include hw hdx hext in
+theorem sqHost_ne_target : sqHost ext≠SquareCarryLoan719.target L := by
+  intro e
+  have len := LowZero18LowK.ktmp_length L hw
+  have m : SquareCarryLoan719.target L∈LowZero18LowK.ktmp L := by
+    change (LowZero18LowK.ktmp L).getD 67 0∈_
+    exact DiagSq.getD_in _ 67 (by omega)
+  have w : SquareCarryLoan719.target L∈control::L.wires :=
+    List.mem_cons_of_mem _ (LowZero18LowK.ktmp_wires L _ m)
+  exact hdx _ (sqHost_in ext hext) (e ▸ w)
+
+include hx hext in
+theorem sqHost_ne_ext0 : sqHost ext≠ext.getD 0 0 := by
+  intro e
+  rw [sqHost,List.getD_eq_getElem _ _ (by omega),List.getD_eq_getElem _ _ (by omega)] at e
+  have := (List.Nodup.getElem_inj_iff hx).mp e
+  omega
+
+include hw hx hdx hext in
+theorem sqHost_fold_free (B : Program) (hb : wires B⊆(control::L.wires).toFinset) :
+    sqHost ext∉wires (renameProgram (SquareCarryLoan719.foldPerm L ext) B) := by
+  rw [SquareCarryLoan719.foldPerm_eq L hw]
+  apply OwnPlusHost.rename_avoid _ _ _
+    (Equiv.swap_apply_of_ne_of_ne (sqHost_ne_target L hw control ext hdx hext) (sqHost_ne_ext0 ext hx hext))
+  exact fun used => hdx _ (sqHost_in ext hext) (List.mem_toFinset.mp (hb used))
+
+include hw hn hx hdx hext in
+theorem sqRet_body_free (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (B : Program) (hb : wires B⊆(control::L.wires).toFinset) :
+    sqRet L∉wires (renameProgram (SquareCarryLoan719.foldPerm L ext) (bodySwap L ext B)) := by
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  rw [SquareCarryLoan719.foldPerm_eq L hw]
+  apply OwnPlusHost.rename_avoid _ _ _
+    (Equiv.swap_apply_of_ne_of_ne (ne _ (target_outer L hw control ext src dst))
+      (ne _ (ext_outer L control ext src dst _ (DiagSq.getD_in ext 0 (by omega)))))
+  exact swap_free _ _ _ (fun used => hdx _ (sqHost_in ext hext) (List.mem_toFinset.mp (hb used)))
+
+include hw hn hx hdx hext in
+theorem withLowK2_760_free (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (B : Program) (hb : wires B⊆(control::L.wires).toFinset) :
+    sqRet L∉wires (LowZero18Square.withLowK2 L ext control src dst (bodySwap L ext B)) := by
+  have m := sqRet_masks L hw control hn ext src dst hs hd hx hdx
+  have k := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen hext
+  have cached := sqRet_cached_mask L hw control hn ext src dst hs hd hx hdx (by omega)
+  have f := sqRet_body_free L hw control hn ext hx hdx hext src dst hs hd B hb
+  simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨⟨⟨⟨⟨m.1,k.1⟩,m.2⟩,f⟩,cached⟩,k.2⟩,m.2⟩
+
+end Free
+
+set_option linter.unusedTactic false
+set_option linter.unreachableTactic false
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+/-! ## Bank-bit parking inside the 760 square
+
+The 128-bit leaves `branchBF760`/`branchAF760` use `ParkCopy.withLowK2P`: the last five bank bits ride
+on the `ext` wires 129 (top bit of the outer `T`), 131, 231, 298, 299 through the body, so the second controlled copy needs four
+Toffoli gates fewer per leaf. The facts below relate it to `LowZero18Square.withLowK2`. -/
+
+theorem park_instr_wires_sub (i : Instr) : ∀ q : Program, i∈q → i.wires⊆wires q
+  | [], h => by simp at h
+  | j::q, h => by
+    intro x hx
+    with_unfolding_all change x∈j.wires ∪ wires q
+    rcases List.mem_cons.mp h with e|e
+    · subst e; exact Finset.mem_union_left _ hx
+    · exact Finset.mem_union_right _ (park_instr_wires_sub i q e hx)
+
+theorem park_wires_sub_of_mem : ∀ (p q : Program), (∀ i∈p, i∈q) → wires p⊆wires q
+  | [], _, _ => by intro x hx; simp [wires] at hx
+  | i::p, q, h => by
+    intro x hx
+    with_unfolding_all change x∈i.wires ∪ wires p at hx
+    rcases Finset.mem_union.mp hx with hx|hx
+    · exact park_instr_wires_sub i q (h i (by simp)) hx
+    · exact park_wires_sub_of_mem p q (fun j hj => h j (List.mem_cons_of_mem _ hj)) hx
+
+theorem park_dst_mem_eraseMask (c : Wire) : ∀ (src dst : List Wire), src.length=dst.length →
+    ∀ q∈dst, q∈wires (eraseMask c src dst)
+  | [], [], _, q, h => by simp at h
+  | [], _::_, h, _, _ => by simp at h
+  | _::_, [], h, _, _ => by simp at h
+  | a::src, b::dst, h, q, hq => by
+    with_unfolding_all change q∈(Instr.measureX b [] [.CZ c a]).wires ∪ wires (eraseMask c src dst)
+    rcases List.mem_cons.mp hq with e|e
+    · subst e; apply Finset.mem_union_left; simp [Instr.wires]
+    · exact Finset.mem_union_right _ (park_dst_mem_eraseMask c src dst (by simpa using h) q e)
+
+theorem park_cached_mem (c w : Wire) (k : Nat) : ∀ (src dst : List Wire), src.length=dst.length →
+    ∀ i∈CachedSquareCopy.copy c w (src.take (k+1)) (dst.take (k+1)), i∈CachedSquareCopy.copy c w src dst
+  | [], _, _, i, h => by simp [CachedSquareCopy.copy,copyRegister] at h
+  | _::_, [], h, _, _ => by simp at h
+  | x::src, b::dst, h, i, hi => by
+    have hl : src.length=dst.length := by simpa using h
+    simp only [List.take_succ_cons,CachedSquareCopy.copy,List.mem_append] at hi ⊢
+    rw [ParkCopy.copyRegister_split (some c) k src dst hl,List.mem_append]
+    itauto
+
+theorem park_erase_mem (c : Wire) (k : Nat) (src dst : List Wire) (h : src.length=dst.length) :
+    ∀ i∈eraseMask c (src.take k) (dst.take k), i∈eraseMask c src dst := by
+  intro i hi
+  rw [ParkCopy.eraseMask_split c k src dst h,List.mem_append]
+  exact Or.inl hi
+
+theorem park_move_wires (a b : List Wire) : wires (ParkCopy.move a b)⊆(a++b).toFinset := by
+  intro q hq
+  simp only [ParkCopy.move,wires_append,Finset.mem_union] at hq
+  simp only [List.mem_toFinset,List.mem_append]
+  rcases hq with h|h
+  · have := List.mem_toFinset.mp (copyRegister_wires_subset none a b h)
+    simp only [Option.toList_none,List.nil_append,List.mem_append] at this
+    exact this
+  · have := List.mem_toFinset.mp (copyRegister_wires_subset none b a h)
+    simp only [Option.toList_none,List.nil_append,List.mem_append] at this
+    itauto
+
+theorem park_dummies_wires : ∀ hs : List Wire, wires (ParkCopy.dummies hs)⊆hs.toFinset
+  | [] => by intro x hx; simp [ParkCopy.dummies,wires] at hx
+  | a::hs => by
+    intro q hq
+    with_unfolding_all change q∈(Instr.measureX a [] []).wires ∪ wires (ParkCopy.dummies hs) at hq
+    rcases Finset.mem_union.mp hq with h|h
+    · simp [Instr.wires,correctionWires] at h; simp [h]
+    · exact List.mem_toFinset.mpr (List.mem_cons_of_mem _ (List.mem_toFinset.mp (park_dummies_wires hs h)))
+
+theorem park_dummies_physical : ∀ hs : List Wire, GatePhysical (ParkCopy.dummies hs)
+  | [] => by intro i hi; simp [ParkCopy.dummies] at hi
+  | a::hs => by
+    intro i hi
+    rcases List.mem_cons.mp hi with e|e
+    · subst e; trivial
+    · exact park_dummies_physical hs i e
+
+theorem park_dummies_slots : ∀ hs : List Wire, Challenge.gateSlots (ParkCopy.dummies hs)=hs.length
+  | [] => rfl
+  | a::hs => by
+    change Challenge.gateSlots ([Instr.measureX a [] []]++ParkCopy.dummies hs)=_
+    have s0 : Challenge.gateSlots [Instr.measureX a [] []]=1 := rfl
+    rw [Challenge.gateSlots_append,park_dummies_slots hs,s0,List.length_cons]
+    omega
+
+theorem park_move_counts (a b : List Wire) (h : a.length=b.length) :
+    toffoliCount (ParkCopy.move a b)=0 ∧ measurementCount (ParkCopy.move a b)=0 ∧
+      Challenge.gateSlots (ParkCopy.move a b)=2*a.length := by
+  have c1 := copyRegister_counts none a b h
+  have c2 := copyRegister_counts none b a h.symm
+  simp only [ParkCopy.move,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append,
+    Baselines.copyRegister_gateSlots,c1.1,c1.2,c2.1,c2.2,h]
+  refine ⟨?_,?_,?_⟩
+  all_goals (try simp)
+  all_goals omega
+
+theorem park_cached_counts (c w : Wire) : ∀ (src dst : List Wire), src.length=dst.length → 0<src.length →
+    toffoliCount (CachedSquareCopy.copy c w src dst)+1=src.length ∧
+    measurementCount (CachedSquareCopy.copy c w src dst)=0 ∧
+    Challenge.gateSlots (CachedSquareCopy.copy c w src dst)=src.length
+  | [], _, _, h => by simp at h
+  | _::_, [], h, _ => by simp at h
+  | x::src, b::dst, h, _ => by
+    have hl : src.length=dst.length := by simpa using h
+    have cc := copyRegister_counts (some c) src dst hl
+    have e : CachedSquareCopy.copy c w (x::src) (b::dst)=[Instr.CX w b]++copyRegister (some c) src dst := rfl
+    have t0 : toffoliCount [Instr.CX w b]=0 := rfl
+    have m0 : measurementCount [Instr.CX w b]=0 := rfl
+    have s0 : Challenge.gateSlots [Instr.CX w b]=1 := rfl
+    rw [e,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append,Baselines.copyRegister_gateSlots,
+      cc.1,cc.2,t0,m0,s0]
+    refine ⟨?_,?_,?_⟩
+    all_goals (try simp [hl])
+    all_goals omega
+
+theorem park_cached_physical (c w : Wire) (src dst : List Wire) (hd : 0<dst.length)
+    (hold : GatePhysical (CachedSquareCopy.copy c w src dst)) (k : Nat) (h : src.length=dst.length) :
+    GatePhysical (CachedSquareCopy.copy c w (src.take (k+1)) (dst.take (k+1))) :=
+  fun i hi => hold i (park_cached_mem c w k src dst h i hi)
+
+section Park
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+  (hn : (control::L.wires).Nodup) (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+  (hext : 300≤ext.length)
+
+include hx hext in
+theorem sqHost_not_hosts : sqHost ext∉ParkCopy.hosts ext := by
+  intro h
+  simp only [ParkCopy.hosts,ParkCopy.hostIdx,List.map_cons,List.map_nil,List.mem_cons,List.not_mem_nil,
+    or_false] at h
+  rcases h with e|e|e|e|e|e|e|e|e <;>
+    (rw [sqHost,List.getD_eq_getElem _ _ (by omega),List.getD_eq_getElem _ _ (by omega)] at e
+     have := (List.Nodup.getElem_inj_iff hx).mp e
+     omega)
+
+include hw hn hx hdx hext in
+/-- `sqRet` is outside every parking piece; `sqHost` is outside the pieces before the body. -/
+theorem park_pieces_free (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hlen : dst.length=2*src.length) :
+    sqRet L∉wires (ParkCopy.pE1 L control src) ∧ sqRet L∉wires (ParkCopy.pD ext) ∧
+    sqRet L∉wires (ParkCopy.pMI L ext src) ∧ sqRet L∉wires (ParkCopy.pC1 L ext control src dst) ∧
+    sqRet L∉wires (ParkCopy.pMO L ext src) ∧
+    sqHost ext∉wires (ParkCopy.pE1 L control src) ∧ sqHost ext∉wires (ParkCopy.pD ext) ∧
+    sqHost ext∉wires (ParkCopy.pMI L ext src) ∧
+    sqHost ext∉wires (eraseMask control src (L.inputBank.take src.length)) := by
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have dj {r t : List Wire} (h : ∀q,r.count q+t.count q≤(kbig L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig h
+  have extB : ∀q∈ext,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have extSrc : ∀q∈ext,q∉src := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have hostE := sqHost_in ext hext
+  have hostH := sqHost_not_hosts ext hx hext
+  have hostsE : ∀q∈ParkCopy.hosts ext,q∈ext := ParkCopy.hosts_sub ext hext
+  have outerCS : ∀q∈control::(src++L.inputBank.take src.length),sqRet L≠q :=
+    fun q h => ne _ (cs_outer L control ext src dst _ h)
+  have outerE : ∀q∈ext,sqRet L≠q := fun q h => ne _ (ext_outer L control ext src dst _ h)
+  have take_cs : ∀q∈control::(src.take 119++(L.inputBank.take src.length).take 119),
+      q∈control::(src++L.inputBank.take src.length) := by
+    intro q h
+    simp only [List.mem_cons,List.mem_append] at h ⊢
+    rcases h with h|h|h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl (List.mem_of_mem_take h))
+    · exact Or.inr (Or.inr (List.mem_of_mem_take h))
+  have hostCS : ∀q∈control::(src++L.inputBank.take src.length),sqHost ext≠q := by
+    intro q h e
+    subst e
+    rcases List.mem_cons.mp h with h|h
+    · exact hdx _ hostE (by simp [h])
+    · rcases List.mem_append.mp h with h|h
+      · exact extSrc _ hostE h
+      · exact extB _ hostE h
+  have moveFree : ∀ a b : List Wire, (∀q∈a,q∈(L.inputBank.take src.length) ∨ q∈ext) →
+      (∀q∈b,q∈(L.inputBank.take src.length) ∨ q∈ext) → sqRet L∉wires (ParkCopy.move a b) := by
+    intro a b ha hb' used
+    have h := List.mem_toFinset.mp (park_move_wires a b used)
+    rcases List.mem_append.mp h with h|h
+    · rcases ha _ h with h'|h'
+      · exact outerCS _ (List.mem_cons_of_mem _ (List.mem_append_right _ h')) rfl
+      · exact outerE _ h' rfl
+    · rcases hb' _ h with h'|h'
+      · exact outerCS _ (List.mem_cons_of_mem _ (List.mem_append_right _ h')) rfl
+      · exact outerE _ h' rfl
+  have dropB : ∀q∈(L.inputBank.take src.length).drop 119,q∈(L.inputBank.take src.length) ∨ q∈ext :=
+    fun q h => Or.inl (List.mem_of_mem_drop h)
+  have hostsBE : ∀q∈ParkCopy.hosts ext,q∈(L.inputBank.take src.length) ∨ q∈ext := fun q h => Or.inr (hostsE q h)
+  have cacheIn : LowZero18Square.cacheWire L dst∈kOuter L control ext src dst := by
+    rw [LowZero18Square.cacheWire_fixed L hw (List.nodup_cons.mp hn).2 dst hd (by omega)]
+    have mem := CachedSquareCopy.head_mem dst (by omega)
+    simp only [kOuter,List.mem_cons,List.mem_append]
+    itauto
+  refine ⟨?_,?_,moveFree _ _ dropB hostsBE,?_,moveFree _ _ hostsBE dropB,?_,?_,?_,?_⟩
+  · exact fun used => outerCS _ (take_cs _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used))) rfl
+  · exact fun used => outerE _ (hostsE _ (List.mem_toFinset.mp (park_dummies_wires _ used))) rfl
+  · intro used
+    have bl : 119≤(L.inputBank.take src.length).length := by
+      simp only [List.length_take,(L.measured_bank_widths hw).1];omega
+    have sub:=InnerLinearCopy.copy_wires control (LowZero18Square.cacheWire L dst)
+      (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0)
+      (src.take 119) ((L.inputBank.take src.length).take 119)
+      (by simp only [List.length_take];omega) (by rw [List.length_take];exact Nat.min_eq_left bl) used
+    rcases Finset.mem_union.mp sub with used|r
+    · rcases Finset.mem_union.mp (CachedSquareCopy.wires_subset _ _ _ _ used) with h|h
+      · have h' := List.mem_toFinset.mp (copyRegister_wires_subset _ _ _ h)
+        exact outerCS _ (take_cs _ (by simpa only [Option.toList_some,List.singleton_append,
+          List.cons_append,List.append_assoc] using h')) rfl
+      · exact ne _ cacheIn (Finset.mem_singleton.mp h)
+    · simp only [Finset.mem_insert,Finset.mem_singleton] at r
+      rcases r with e|e|e <;> exact outerE _ (e ▸ DiagSq.getD_in ext _ (by omega)) rfl
+  · exact fun used => hostCS _ (take_cs _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used))) rfl
+  · exact fun used => hostH (List.mem_toFinset.mp (park_dummies_wires _ used))
+  · intro used
+    rcases List.mem_append.mp (List.mem_toFinset.mp (park_move_wires _ _ used)) with h|h
+    · exact extB _ hostE (List.mem_of_mem_drop h)
+    · exact hostH h
+  · exact fun used => hostCS _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used)) rfl
+
+include hx hext in
+theorem sqHost_not_hostsS : sqHost ext∉ParkCopyS.hostsS ext := by
+  intro h
+  simp only [ParkCopyS.hostsS,ParkCopyS.hostIdxS,List.map_cons,List.map_nil,List.mem_cons,List.not_mem_nil,
+    or_false] at h
+  rcases h with e|e|e|e|e <;>
+    (rw [sqHost,List.getD_eq_getElem _ _ (by omega),List.getD_eq_getElem _ _ (by omega)] at e
+     have := (List.Nodup.getElem_inj_iff hx).mp e
+     omega)
+
+include hw hn hx hdx hext in
+/-- `sqRet` is outside every parking piece; `sqHost` is outside the pieces before the body. -/
+theorem park_pieces_freeS (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hlen : dst.length=2*src.length) :
+    sqRet L∉wires (ParkCopyS.pE1 L control src) ∧ sqRet L∉wires (ParkCopyS.pD ext) ∧
+    sqRet L∉wires (ParkCopyS.pMI L ext src) ∧ sqRet L∉wires (ParkCopyS.pC1 L control src dst) ∧
+    sqRet L∉wires (ParkCopyS.pMO L ext src) ∧
+    sqHost ext∉wires (ParkCopyS.pE1 L control src) ∧ sqHost ext∉wires (ParkCopyS.pD ext) ∧
+    sqHost ext∉wires (ParkCopyS.pMI L ext src) ∧
+    sqHost ext∉wires (eraseMask control src (L.inputBank.take src.length)) := by
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have dj {r t : List Wire} (h : ∀q,r.count q+t.count q≤(kbig L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig h
+  have extB : ∀q∈ext,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have extSrc : ∀q∈ext,q∉src := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have hostE := sqHost_in ext hext
+  have hostH := sqHost_not_hostsS ext hx hext
+  have hostsE : ∀q∈ParkCopyS.hostsS ext,q∈ext := ParkCopyS.hostsS_sub ext hext
+  have outerCS : ∀q∈control::(src++L.inputBank.take src.length),sqRet L≠q :=
+    fun q h => ne _ (cs_outer L control ext src dst _ h)
+  have outerE : ∀q∈ext,sqRet L≠q := fun q h => ne _ (ext_outer L control ext src dst _ h)
+  have take_cs : ∀q∈control::(src.take 124++(L.inputBank.take src.length).take 124),
+      q∈control::(src++L.inputBank.take src.length) := by
+    intro q h
+    simp only [List.mem_cons,List.mem_append] at h ⊢
+    rcases h with h|h|h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl (List.mem_of_mem_take h))
+    · exact Or.inr (Or.inr (List.mem_of_mem_take h))
+  have hostCS : ∀q∈control::(src++L.inputBank.take src.length),sqHost ext≠q := by
+    intro q h e
+    subst e
+    rcases List.mem_cons.mp h with h|h
+    · exact hdx _ hostE (by simp [h])
+    · rcases List.mem_append.mp h with h|h
+      · exact extSrc _ hostE h
+      · exact extB _ hostE h
+  have moveFree : ∀ a b : List Wire, (∀q∈a,q∈(L.inputBank.take src.length) ∨ q∈ext) →
+      (∀q∈b,q∈(L.inputBank.take src.length) ∨ q∈ext) → sqRet L∉wires (ParkCopy.move a b) := by
+    intro a b ha hb' used
+    have h := List.mem_toFinset.mp (park_move_wires a b used)
+    rcases List.mem_append.mp h with h|h
+    · rcases ha _ h with h'|h'
+      · exact outerCS _ (List.mem_cons_of_mem _ (List.mem_append_right _ h')) rfl
+      · exact outerE _ h' rfl
+    · rcases hb' _ h with h'|h'
+      · exact outerCS _ (List.mem_cons_of_mem _ (List.mem_append_right _ h')) rfl
+      · exact outerE _ h' rfl
+  have dropB : ∀q∈(L.inputBank.take src.length).drop 124,q∈(L.inputBank.take src.length) ∨ q∈ext :=
+    fun q h => Or.inl (List.mem_of_mem_drop h)
+  have hostsBE : ∀q∈ParkCopyS.hostsS ext,q∈(L.inputBank.take src.length) ∨ q∈ext := fun q h => Or.inr (hostsE q h)
+  have cacheIn : LowZero18Square.cacheWire L dst∈kOuter L control ext src dst := by
+    rw [LowZero18Square.cacheWire_fixed L hw (List.nodup_cons.mp hn).2 dst hd (by omega)]
+    have mem := CachedSquareCopy.head_mem dst (by omega)
+    simp only [kOuter,List.mem_cons,List.mem_append]
+    itauto
+  refine ⟨?_,?_,moveFree _ _ dropB hostsBE,?_,moveFree _ _ hostsBE dropB,?_,?_,?_,?_⟩
+  · exact fun used => outerCS _ (take_cs _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used))) rfl
+  · exact fun used => outerE _ (hostsE _ (List.mem_toFinset.mp (park_dummies_wires _ used))) rfl
+  · intro used
+    rcases Finset.mem_union.mp (CachedSquareCopy.wires_subset _ _ _ _ used) with h|h
+    · have h' := List.mem_toFinset.mp (copyRegister_wires_subset _ _ _ h)
+      exact outerCS _ (take_cs _ (by simpa only [Option.toList_some,List.singleton_append,
+        List.cons_append,List.append_assoc] using h')) rfl
+    · exact ne _ cacheIn (Finset.mem_singleton.mp h)
+  · exact fun used => hostCS _ (take_cs _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used))) rfl
+  · exact fun used => hostH (List.mem_toFinset.mp (park_dummies_wires _ used))
+  · intro used
+    rcases List.mem_append.mp (List.mem_toFinset.mp (park_move_wires _ _ used)) with h|h
+    · exact extB _ hostE (List.mem_of_mem_drop h)
+    · exact hostH h
+  · exact fun used => hostCS _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used)) rfl
+
+end Park
+
+/-- Two runs with the same phase, output value and frame are the same state. -/
+theorem park_state_eq (L : CuccaroStreamedSquareWideLayout) (a b s : State)
+    (pa : a.phase=s.phase) (pb : b.phase=s.phase)
+    (va : regValue L.core.out a.basis=regValue L.core.out b.basis)
+    (fa : ∀q,q∉L.core.out → a.basis q=s.basis q) (fb : ∀q,q∉L.core.out → b.basis q=s.basis q) : a=b := by
+  have hb : a.basis=b.basis := by
+    funext q
+    by_cases hq : q∈L.core.out
+    · exact (regValue_eq_iff _ _ _).mp va q hq
+    · rw [fa q hq,fb q hq]
+  cases a with
+  | mk pa0 ba0 =>
+    cases b with
+    | mk pb0 bb0 =>
+      simp only at pa pb hb
+      rw [pa,pb,hb]
+
+theorem withLowK2P_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (B : Program) (h128 : src.length=128) :
+    toffoliCount (ParkCopy.withLowK2P L ext control src dst B)+11=
+      toffoliCount (LowZero18Square.withLowK2 L ext control src dst B) ∧
+    measurementCount (ParkCopy.withLowK2P L ext control src dst B)=
+      measurementCount (LowZero18Square.withLowK2 L ext control src dst B) ∧
+    Challenge.gateSlots (ParkCopy.withLowK2P L ext control src dst B)=
+      Challenge.gateSlots (LowZero18Square.withLowK2 L ext control src dst B)+21 := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have l1 : (src.take 119).length=((L.inputBank.take src.length).take 119).length := by
+    simp only [List.length_take,bl]
+  have l1' : (src.take 119).length=119 := by simp [h128]
+  have ld : ((L.inputBank.take src.length).drop 119).length=9 := by rw [List.length_drop,bl,h128]
+  have hl := ParkCopy.hosts_length ext
+  have ef := eraseMask_counts control src (L.inputBank.take src.length) bl.symm
+  have e1 := eraseMask_counts control (src.take 119) ((L.inputBank.take src.length).take 119) l1
+  have esf := UncompSwap.eraseMask_slots control src (L.inputBank.take src.length) bl.symm
+  have es1 := UncompSwap.eraseMask_slots control (src.take 119) ((L.inputBank.take src.length).take 119) l1
+  have dc := ParkCopy.dummies_counts (ParkCopy.hosts ext)
+  have ds := park_dummies_slots (ParkCopy.hosts ext)
+  have mi := park_move_counts ((L.inputBank.take src.length).drop 119) (ParkCopy.hosts ext) (by rw [ld,hl])
+  have mo := park_move_counts (ParkCopy.hosts ext) ((L.inputBank.take src.length).drop 119) (by rw [ld,hl])
+  have cf := park_cached_counts control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)
+    bl.symm (by omega)
+  have c1 := park_cached_counts control (LowZero18Square.cacheWire L dst) (src.take 119)
+    ((L.inputBank.take src.length).take 119) l1 (by omega)
+  have lin:=InnerLinearCopy.copy_counts control (LowZero18Square.cacheWire L dst)
+    (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 119)
+    ((L.inputBank.take src.length).take 119) l1' (by omega)
+  have sl:=InnerLinearCopy.copy_slots control (LowZero18Square.cacheWire L dst)
+    (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 119)
+    ((L.inputBank.take src.length).take 119) l1' (by omega)
+  simp only [ParkCopy.withLowK2P,ParkCopy.pA,ParkCopy.pM,ParkCopy.pE1,ParkCopy.pD,ParkCopy.pMI,ParkCopy.pB,
+    ParkCopy.pC1,ParkCopy.pMO,ParkCopy.pCL,ParkCopy.pE,LowZero18Square.foldPerm,
+    LowZero18Square.withLowK2,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+  simp only [l1',hl,bl,ld,h128] at *
+  omega
+
+theorem withLowK2_swap_counts (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (control : Wire)
+    (src dst : List Wire) (B : Program) :
+    toffoliCount (LowZero18Square.withLowK2 L ext control src dst (bodySwap L ext B))=
+      toffoliCount (LowZero18Square.withLowK2 L ext control src dst B) ∧
+    measurementCount (LowZero18Square.withLowK2 L ext control src dst (bodySwap L ext B))=
+      measurementCount (LowZero18Square.withLowK2 L ext control src dst B) ∧
+    Challenge.gateSlots (LowZero18Square.withLowK2 L ext control src dst (bodySwap L ext B))=
+      Challenge.gateSlots (LowZero18Square.withLowK2 L ext control src dst B) := by
+  simp only [LowZero18Square.withLowK2,bodySwap,toffoliCount_append,measurementCount_append,
+    Challenge.gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,
+    Baselines.rename_gateSlots,and_self]
+
+theorem withLowK2P_swap_mc (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (B : Program) (h128 : src.length=128) :
+    measurementCount (ParkCopy.withLowK2P L ext control src dst (bodySwap L ext B))=
+      measurementCount (LowZero18Square.withLowK2 L ext control src dst B) :=
+  (withLowK2P_counts L hw ext control src dst _ h128).2.1.trans
+    (withLowK2_swap_counts L ext control src dst B).2.1
+
+theorem withLowK2P_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : src.length=128) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 300≤ext.length)
+    (B : Program) (hold : GatePhysical (LowZero18Square.withLowK2 L ext control src dst B)) :
+    GatePhysical (ParkCopy.withLowK2P L ext control src dst B) := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have dj {r t : List Wire} (h : ∀q,r.count q+t.count q≤(kbig L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig h
+  have extB : ∀q∈ext,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have ndCopy : (src++(L.inputBank.take src.length)).Nodup := knd hbig (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have bNd : (L.inputBank.take src.length).Nodup := (List.nodup_append.mp ndCopy).2.1
+  have hostsE : ∀q∈ParkCopy.hosts ext,q∈ext := ParkCopy.hosts_sub ext he
+  have hHnd : (ParkCopy.hosts ext).Nodup := ParkCopy.hosts_nodup ext hx he
+  have ndMI : ((L.inputBank.take src.length).drop 119++ParkCopy.hosts ext).Nodup :=
+    List.nodup_append.mpr ⟨bNd.sublist (List.drop_sublist _ _),hHnd,
+      fun a ha b hb e => extB b (hostsE b hb) (e ▸ List.mem_of_mem_drop ha)⟩
+  have ndMO : (ParkCopy.hosts ext++(L.inputBank.take src.length).drop 119).Nodup :=
+    (List.perm_append_comm.nodup_iff).mp ndMI
+  simp only [LowZero18Square.withLowK2,gatePhysical_append] at hold
+  obtain ⟨⟨⟨⟨⟨⟨pA,pM⟩,pE⟩,pB⟩,pC⟩,pCL⟩,_⟩ := hold
+  have pC1 := park_cached_physical control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)
+    (by omega) pC 118 bl.symm
+  have rs (i : Nat)(hi : i<ext.length) : ext.getD i 0∉((L.inputBank.take src.length).take 119) :=
+    fun h => extB _ (DiagSq.getD_in ext i hi) (List.mem_of_mem_take h)
+  have pLin:=InnerLinearCopy.copy_physical control (LowZero18Square.cacheWire L dst)
+    (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 119)
+    ((L.inputBank.take src.length).take 119)
+    (by simp [h128]) (by rw [List.length_take,bl,h128];decide) (bNd.sublist (List.take_sublist _ _))
+    (rs 198 (by omega)) (rs 199 (by omega)) (rs 233 (by omega)) pC1
+  simp only [ParkCopy.withLowK2P,ParkCopy.pA,ParkCopy.pM,ParkCopy.pE1,ParkCopy.pD,ParkCopy.pMI,ParkCopy.pB,
+    ParkCopy.pC1,ParkCopy.pMO,ParkCopy.pCL,ParkCopy.pE,LowZero18Square.foldPerm,ParkCopy.move,
+    gatePhysical_append]
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨pA,pM⟩,eraseMask_physical _ _ _⟩,park_dummies_physical _⟩,
+    ⟨copyRegister_physical none _ _ ndMI (by simp),copyRegister_physical none _ _ ndMO (by simp)⟩⟩,pB⟩,
+    pLin⟩,⟨copyRegister_physical none _ _ ndMO (by simp),copyRegister_physical none _ _ ndMI (by simp)⟩⟩,pCL⟩,pE⟩
+
+/-- Parking adds only the five host wires to the leaf's support. -/
+theorem withLowK2P_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (B : Program) (h128 : src.length=128) :
+    wires (ParkCopy.withLowK2P L ext control src dst B)⊆
+      wires (LowZero18Square.withLowK2 L ext control src dst B) ∪ (ParkCopy.supportHosts ext).toFinset := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have eSub : wires (eraseMask control (src.take 119) ((L.inputBank.take src.length).take 119))⊆
+      wires (eraseMask control src (L.inputBank.take src.length)) :=
+    park_wires_sub_of_mem _ _ (park_erase_mem control 119 src _ bl.symm)
+  have cSub : wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) (src.take 119)
+      ((L.inputBank.take src.length).take 119))⊆
+      wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)) :=
+    park_wires_sub_of_mem _ _ (park_cached_mem control _ 118 src _ bl.symm)
+  have parkMem : ∀q∈ParkCopy.hosts ext,q∈ParkCopy.supportHosts ext := by
+    intro q h;exact List.mem_append_left _ h
+  have lin:=InnerLinearCopy.copy_wires control (LowZero18Square.cacheWire L dst)
+    (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 119)
+    ((L.inputBank.take src.length).take 119) (by simp [h128]) (by rw [List.length_take,bl,h128];decide)
+  have linSub : wires (InnerLinearCopy.copy control (LowZero18Square.cacheWire L dst)
+      (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 119)
+      ((L.inputBank.take src.length).take 119))⊆
+      wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)) ∪
+      (ParkCopy.supportHosts ext).toFinset := by
+    intro q h
+    rcases Finset.mem_union.mp (lin h) with h|h
+    · exact Finset.mem_union_left _ (cSub h)
+    · apply Finset.mem_union_right
+      simpa only [ParkCopy.supportHosts,List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] using
+        Or.inr (by simpa only [Finset.mem_insert,Finset.mem_singleton] using h)
+  have bankIn : ∀q∈(L.inputBank.take src.length).drop 119,q∈wires (eraseMask control src (L.inputBank.take src.length)) :=
+    fun q h => park_dst_mem_eraseMask control src _ bl.symm q (List.mem_of_mem_drop h)
+  have mSub : ∀ a b : List Wire, (∀q∈a,q∈(L.inputBank.take src.length).drop 119 ∨ q∈ParkCopy.hosts ext) →
+      (∀q∈b,q∈(L.inputBank.take src.length).drop 119 ∨ q∈ParkCopy.hosts ext) →
+      wires (ParkCopy.move a b)⊆wires (eraseMask control src (L.inputBank.take src.length)) ∪ (ParkCopy.supportHosts ext).toFinset := by
+    intro a b ha hb' q hq
+    rcases List.mem_append.mp (List.mem_toFinset.mp (park_move_wires a b hq)) with h|h
+    · rcases ha q h with h'|h'
+      · exact Finset.mem_union_left _ (bankIn q h')
+      · exact Finset.mem_union_right _ (List.mem_toFinset.mpr (parkMem q h'))
+    · rcases hb' q h with h'|h'
+      · exact Finset.mem_union_left _ (bankIn q h')
+      · exact Finset.mem_union_right _ (List.mem_toFinset.mpr (parkMem q h'))
+  have mI := mSub ((L.inputBank.take src.length).drop 119) (ParkCopy.hosts ext) (fun q h => Or.inl h) (fun q h => Or.inr h)
+  have mO := mSub (ParkCopy.hosts ext) ((L.inputBank.take src.length).drop 119) (fun q h => Or.inr h) (fun q h => Or.inl h)
+  have dS : wires (ParkCopy.dummies (ParkCopy.hosts ext))⊆(ParkCopy.supportHosts ext).toFinset := by
+    intro q h;exact List.mem_toFinset.mpr (parkMem q (List.mem_toFinset.mp (park_dummies_wires _ h)))
+  intro q hq
+  simp only [ParkCopy.withLowK2P,ParkCopy.pA,ParkCopy.pM,ParkCopy.pE1,ParkCopy.pD,ParkCopy.pMI,ParkCopy.pB,
+    ParkCopy.pC1,ParkCopy.pMO,ParkCopy.pCL,ParkCopy.pE,LowZero18Square.foldPerm,
+    wires_append,Finset.mem_union] at hq
+  simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union]
+  rcases hq with (((((((((h|h)|h)|h)|h)|h)|h)|h)|h)|h)
+  · simp only [h,true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · simp only [eSub h,true_or,or_true]
+  · simp only [List.mem_toFinset.mp (dS h),List.mem_toFinset,true_or,or_true]
+  · rcases Finset.mem_union.mp (mI h) with h'|h'
+    · simp only [h',true_or,or_true]
+    · simp only [h',true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · rcases Finset.mem_union.mp (linSub h) with h'|h' <;> simp only [h',true_or,or_true]
+  · rcases Finset.mem_union.mp (mO h) with h'|h'
+    · simp only [h',true_or,or_true]
+    · simp only [h',true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · simp only [h,true_or,or_true]
+
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout ParkCopy
+theorem withLowK2P10_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (B : Program) (g : Wire) (h128 : src.length=128) :
+    toffoliCount (ParkCopy10.withLowK2P10 L ext control src dst B g)+12=
+      toffoliCount (LowZero18Square.withLowK2 L ext control src dst B) ∧
+    measurementCount (ParkCopy10.withLowK2P10 L ext control src dst B g)=
+      measurementCount (LowZero18Square.withLowK2 L ext control src dst B) ∧
+    Challenge.gateSlots (ParkCopy10.withLowK2P10 L ext control src dst B g)=
+      Challenge.gateSlots (LowZero18Square.withLowK2 L ext control src dst B)+23 := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have l1 : (src.take 118).length=((L.inputBank.take src.length).take 118).length := by
+    simp only [List.length_take,bl]
+  have l1' : (src.take 118).length=118 := by simp [h128]
+  have ld : ((L.inputBank.take src.length).drop 118).length=10 := by rw [List.length_drop,bl,h128]
+  have hl := ParkCopy10.hosts10_length ext g
+  have ef := eraseMask_counts control src (L.inputBank.take src.length) bl.symm
+  have e1 := eraseMask_counts control (src.take 118) ((L.inputBank.take src.length).take 118) l1
+  have esf := UncompSwap.eraseMask_slots control src (L.inputBank.take src.length) bl.symm
+  have es1 := UncompSwap.eraseMask_slots control (src.take 118) ((L.inputBank.take src.length).take 118) l1
+  have dc := ParkCopy.dummies_counts (ParkCopy10.hosts10 ext g)
+  have ds := park_dummies_slots (ParkCopy10.hosts10 ext g)
+  have mi := park_move_counts ((L.inputBank.take src.length).drop 118) (ParkCopy10.hosts10 ext g) (by rw [ld,hl])
+  have mo := park_move_counts (ParkCopy10.hosts10 ext g) ((L.inputBank.take src.length).drop 118) (by rw [ld,hl])
+  have cf := park_cached_counts control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)
+    bl.symm (by omega)
+  have c1 := park_cached_counts control (LowZero18Square.cacheWire L dst) (src.take 118)
+    ((L.inputBank.take src.length).take 118) l1 (by omega)
+  have lin:=InnerLinearCopy.copy_counts118 control (LowZero18Square.cacheWire L dst)
+    (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 118)
+    ((L.inputBank.take src.length).take 118) l1' (by omega)
+  have sl:=InnerLinearCopy.copy_slots118 control (LowZero18Square.cacheWire L dst)
+    (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 118)
+    ((L.inputBank.take src.length).take 118) l1' (by omega)
+  simp only [ParkCopy10.withLowK2P10,ParkCopy10.pA,ParkCopy10.pM,ParkCopy10.pE1,ParkCopy10.pD,ParkCopy10.pMI,ParkCopy10.pB,
+    ParkCopy10.pC1,ParkCopy10.pMO,ParkCopy10.pCL,ParkCopy10.pE,LowZero18Square.foldPerm,
+    LowZero18Square.withLowK2,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+  simp only [l1',hl,bl,ld,h128] at *
+  omega
+
+theorem withLowK2P10_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : src.length=128) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 300≤ext.length)
+    (B : Program) (g : Wire) (hgE : g∉ext) (hgB : g∉L.inputBank.take src.length)
+    (hold : GatePhysical (LowZero18Square.withLowK2 L ext control src dst B)) :
+    GatePhysical (ParkCopy10.withLowK2P10 L ext control src dst B g) := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have dj {r t : List Wire} (h : ∀q,r.count q+t.count q≤(kbig L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig h
+  have extB : ∀q∈ext,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have ndCopy : (src++(L.inputBank.take src.length)).Nodup := knd hbig (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have bNd : (L.inputBank.take src.length).Nodup := (List.nodup_append.mp ndCopy).2.1
+  have hostsE : ∀q∈ParkCopy10.hosts10 ext g,q∈ext ∨ q=g := fun q h =>
+    (List.mem_append.mp h).imp (ParkCopy.hosts_sub ext he q) List.mem_singleton.mp
+  have hHnd : (ParkCopy10.hosts10 ext g).Nodup := List.nodup_append.mpr ⟨ParkCopy.hosts_nodup ext hx he,
+    List.nodup_singleton g,fun a ha b hb e => hgE (by rw [List.mem_singleton.mp hb] at e; exact e ▸ ParkCopy.hosts_sub ext he a ha)⟩
+  have ndMI : ((L.inputBank.take src.length).drop 118++ParkCopy10.hosts10 ext g).Nodup :=
+    List.nodup_append.mpr ⟨bNd.sublist (List.drop_sublist _ _),hHnd,
+      fun a ha b hb e => (hostsE b hb).elim (fun h => extB b h (e ▸ List.mem_of_mem_drop ha))
+        (fun e2 => hgB (e2 ▸ e ▸ List.mem_of_mem_drop ha))⟩
+  have ndMO : (ParkCopy10.hosts10 ext g++(L.inputBank.take src.length).drop 118).Nodup :=
+    (List.perm_append_comm.nodup_iff).mp ndMI
+  simp only [LowZero18Square.withLowK2,gatePhysical_append] at hold
+  obtain ⟨⟨⟨⟨⟨⟨pA,pM⟩,pE⟩,pB⟩,pC⟩,pCL⟩,_⟩ := hold
+  have pC1 := park_cached_physical control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)
+    (by omega) pC 117 bl.symm
+  have rs (i : Nat)(hi : i<ext.length) : ext.getD i 0∉((L.inputBank.take src.length).take 118) :=
+    fun h => extB _ (DiagSq.getD_in ext i hi) (List.mem_of_mem_take h)
+  have pLin:=InnerLinearCopy.copy_physical118 control (LowZero18Square.cacheWire L dst)
+    (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 118)
+    ((L.inputBank.take src.length).take 118)
+    (by simp [h128]) (by rw [List.length_take,bl,h128];decide) (bNd.sublist (List.take_sublist _ _))
+    (rs 198 (by omega)) (rs 199 (by omega)) (rs 233 (by omega)) pC1
+  simp only [ParkCopy10.withLowK2P10,ParkCopy10.pA,ParkCopy10.pM,ParkCopy10.pE1,ParkCopy10.pD,ParkCopy10.pMI,ParkCopy10.pB,
+    ParkCopy10.pC1,ParkCopy10.pMO,ParkCopy10.pCL,ParkCopy10.pE,LowZero18Square.foldPerm,ParkCopy.move,
+    gatePhysical_append]
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨pA,pM⟩,eraseMask_physical _ _ _⟩,park_dummies_physical _⟩,
+    ⟨copyRegister_physical none _ _ ndMI (by simp),copyRegister_physical none _ _ ndMO (by simp)⟩⟩,pB⟩,
+    pLin⟩,⟨copyRegister_physical none _ _ ndMO (by simp),copyRegister_physical none _ _ ndMI (by simp)⟩⟩,pCL⟩,pE⟩
+
+theorem withLowK2P10_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (B : Program) (g : Wire) (h128 : src.length=128) :
+    wires (ParkCopy10.withLowK2P10 L ext control src dst B g)⊆
+      wires (LowZero18Square.withLowK2 L ext control src dst B) ∪ (ParkCopy10.supportHosts ext g).toFinset := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have eSub : wires (eraseMask control (src.take 118) ((L.inputBank.take src.length).take 118))⊆
+      wires (eraseMask control src (L.inputBank.take src.length)) :=
+    park_wires_sub_of_mem _ _ (park_erase_mem control 118 src _ bl.symm)
+  have cSub : wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) (src.take 118)
+      ((L.inputBank.take src.length).take 118))⊆
+      wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)) :=
+    park_wires_sub_of_mem _ _ (park_cached_mem control _ 117 src _ bl.symm)
+  have parkMem : ∀q∈ParkCopy10.hosts10 ext g,q∈ParkCopy10.supportHosts ext g := by
+    intro q h;exact List.mem_append_left _ h
+  have lin:=InnerLinearCopy.copy_wires118 control (LowZero18Square.cacheWire L dst)
+    (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 118)
+    ((L.inputBank.take src.length).take 118) (by simp [h128]) (by rw [List.length_take,bl,h128];decide)
+  have linSub : wires (InnerLinearCopy.copy control (LowZero18Square.cacheWire L dst)
+      (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0) (src.take 118)
+      ((L.inputBank.take src.length).take 118))⊆
+      wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)) ∪
+      (ParkCopy10.supportHosts ext g).toFinset := by
+    intro q h
+    rcases Finset.mem_union.mp (lin h) with h|h
+    · exact Finset.mem_union_left _ (cSub h)
+    · apply Finset.mem_union_right
+      simpa only [ParkCopy10.supportHosts,List.mem_toFinset,List.mem_append,List.mem_cons,List.not_mem_nil,or_false] using
+        Or.inr (by simpa only [Finset.mem_insert,Finset.mem_singleton] using h)
+  have bankIn : ∀q∈(L.inputBank.take src.length).drop 118,q∈wires (eraseMask control src (L.inputBank.take src.length)) :=
+    fun q h => park_dst_mem_eraseMask control src _ bl.symm q (List.mem_of_mem_drop h)
+  have mSub : ∀ a b : List Wire, (∀q∈a,q∈(L.inputBank.take src.length).drop 118 ∨ q∈ParkCopy10.hosts10 ext g) →
+      (∀q∈b,q∈(L.inputBank.take src.length).drop 118 ∨ q∈ParkCopy10.hosts10 ext g) →
+      wires (ParkCopy.move a b)⊆wires (eraseMask control src (L.inputBank.take src.length)) ∪ (ParkCopy10.supportHosts ext g).toFinset := by
+    intro a b ha hb' q hq
+    rcases List.mem_append.mp (List.mem_toFinset.mp (park_move_wires a b hq)) with h|h
+    · rcases ha q h with h'|h'
+      · exact Finset.mem_union_left _ (bankIn q h')
+      · exact Finset.mem_union_right _ (List.mem_toFinset.mpr (parkMem q h'))
+    · rcases hb' q h with h'|h'
+      · exact Finset.mem_union_left _ (bankIn q h')
+      · exact Finset.mem_union_right _ (List.mem_toFinset.mpr (parkMem q h'))
+  have mI := mSub ((L.inputBank.take src.length).drop 118) (ParkCopy10.hosts10 ext g) (fun q h => Or.inl h) (fun q h => Or.inr h)
+  have mO := mSub (ParkCopy10.hosts10 ext g) ((L.inputBank.take src.length).drop 118) (fun q h => Or.inr h) (fun q h => Or.inl h)
+  have dS : wires (ParkCopy.dummies (ParkCopy10.hosts10 ext g))⊆(ParkCopy10.supportHosts ext g).toFinset := by
+    intro q h;exact List.mem_toFinset.mpr (parkMem q (List.mem_toFinset.mp (park_dummies_wires _ h)))
+  intro q hq
+  simp only [ParkCopy10.withLowK2P10,ParkCopy10.pA,ParkCopy10.pM,ParkCopy10.pE1,ParkCopy10.pD,ParkCopy10.pMI,ParkCopy10.pB,
+    ParkCopy10.pC1,ParkCopy10.pMO,ParkCopy10.pCL,ParkCopy10.pE,LowZero18Square.foldPerm,
+    wires_append,Finset.mem_union] at hq
+  simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union]
+  rcases hq with (((((((((h|h)|h)|h)|h)|h)|h)|h)|h)|h)
+  · simp only [h,true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · simp only [eSub h,true_or,or_true]
+  · simp only [List.mem_toFinset.mp (dS h),List.mem_toFinset,true_or,or_true]
+  · rcases Finset.mem_union.mp (mI h) with h'|h'
+    · simp only [h',true_or,or_true]
+    · simp only [h',true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · rcases Finset.mem_union.mp (linSub h) with h'|h' <;> simp only [h',true_or,or_true]
+  · rcases Finset.mem_union.mp (mO h) with h'|h'
+    · simp only [h',true_or,or_true]
+    · simp only [h',true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · simp only [h,true_or,or_true]
+
+
+open Arithmetic Arithmetic.CuccaroStreamedSquareWideLayout ControlledPointLayout ParkCopy
+theorem eU_760_facts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+    (hn : (control::L.wires).Nodup) (ext : List Wire) (hdx : ∀q∈ext,q∉control::L.wires)
+    (hext : 300≤ext.length) :
+    sqRet L≠ControlLoan1589BFFold.eU L ∧ sqHost ext≠ControlLoan1589BFFold.eU L ∧
+    ControlLoan1589BFFold.eU L∉ext ∧ (∀ k, ControlLoan1589BFFold.eU L∉L.inputBank.take k) := by
+  have nd := (List.nodup_cons.mp hn).2
+  have eUw := InverseCarryDevelop.eU_mem_wires L hw
+  have retPad : sqRet L∈L.foldPad := DiagSq.getD_in _ 239 (by rw [foldPad_length L hw]; omega)
+  refine ⟨?_,?_,?_,?_⟩
+  · exact fun e => InverseCarryDevelop.eU_off_aux L hw nd (sqRet L)
+      (List.mem_append_left _ (List.mem_append_left _ retPad)) e.symm
+  · exact fun e => hdx _ (sqHost_mem ext hext) (e ▸ List.mem_cons_of_mem control eUw)
+  · exact fun h => hdx _ h (List.mem_cons_of_mem control eUw)
+  · intro k h
+    have hw' : ControlLoan1589BFFold.eU L∈L.core.work := List.mem_of_mem_take (List.mem_of_mem_take h)
+    exact InverseCarryDevelop.eU_off_aux L hw nd _ (by simp [hw']) rfl
+
+/-- `eU` is already a wire of the old high (B) leaf: the ParkCarry7 body parks its carry through it. -/
+theorem eU_mem_oldBF (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (nd : L.wires.Nodup)
+    (ext : List Wire) (hlen : 300≤ext.length) (away : ∀q∈ext,q∉L.wires) (control : Wire) :
+    ControlLoan1589BFFold.eU L∈wires (LowZero18Square.withLowK2 L ext control L.core.high (L.core.product.take 256)
+      (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) control)) := by
+  have fixS := ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext hlen away
+  have hb : ControlLoan1589BFFold.eU L∈wires (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) control) := by
+    rw [ParkCarry8Develop.hosted_eq L _ control fixS (ParkCarry8Develop.fold_fixes_source L hw nd ext hlen away)]; exact InverseCarryDevelop.eU_mem_parkCarry8 L control
+  have hi : ControlLoan1589BFFold.eU L∈wires (renameProgram (LowZero18Square.foldPerm L ext)
+      (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) control)) := by
+    rw [renameProgram_support]
+    exact Finset.mem_image.mpr ⟨_,hb,InverseCarryDevelop.fold_fixes_eU L hw nd ext hlen away⟩
+  simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union]
+  simp only [hi,true_or,or_true]
+section Park10
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+  (hn : (control::L.wires).Nodup) (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+  (hext : 300≤ext.length) (g : Wire)
+
+include hx hext in
+theorem sqHost_not_hosts10 (hgH : sqHost ext≠g) : sqHost ext∉ParkCopy10.hosts10 ext g := by
+  intro h
+  rcases List.mem_append.mp h with h|h
+  · exact sqHost_not_hosts ext hx hext h
+  · exact hgH (List.mem_singleton.mp h)
+
+include hw hn hx hdx hext in
+/-- `sqRet` is outside every parking piece; `sqHost` is outside the pieces before the body. -/
+theorem park_pieces_free10 (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hlen : dst.length=2*src.length)
+    (hgR : sqRet L≠g) (hgH : sqHost ext≠g) (hgB : g∉L.inputBank.take src.length) :
+    sqRet L∉wires (ParkCopy10.pE1 L control src) ∧ sqRet L∉wires (ParkCopy10.pD ext g) ∧
+    sqRet L∉wires (ParkCopy10.pMI L ext src g) ∧ sqRet L∉wires (ParkCopy10.pC1 L ext control src dst) ∧
+    sqRet L∉wires (ParkCopy10.pMO L ext src g) ∧
+    sqHost ext∉wires (ParkCopy10.pE1 L control src) ∧ sqHost ext∉wires (ParkCopy10.pD ext g) ∧
+    sqHost ext∉wires (ParkCopy10.pMI L ext src g) ∧
+    sqHost ext∉wires (eraseMask control src (L.inputBank.take src.length)) := by
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have dj {r t : List Wire} (h : ∀q,r.count q+t.count q≤(kbig L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig h
+  have extB : ∀q∈ext,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have extSrc : ∀q∈ext,q∉src := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have hostE := sqHost_in ext hext
+  have hostH := sqHost_not_hosts10 ext hx hext g hgH
+  have hostsE : ∀q∈ParkCopy10.hosts10 ext g,q∈ext ∨ q=g := fun q h =>
+    (List.mem_append.mp h).imp (ParkCopy.hosts_sub ext hext q) List.mem_singleton.mp
+  have outerCS : ∀q∈control::(src++L.inputBank.take src.length),sqRet L≠q :=
+    fun q h => ne _ (cs_outer L control ext src dst _ h)
+  have outerE : ∀q∈ext,sqRet L≠q := fun q h => ne _ (ext_outer L control ext src dst _ h)
+  have take_cs : ∀q∈control::(src.take 118++(L.inputBank.take src.length).take 118),
+      q∈control::(src++L.inputBank.take src.length) := by
+    intro q h
+    simp only [List.mem_cons,List.mem_append] at h ⊢
+    rcases h with h|h|h
+    · exact Or.inl h
+    · exact Or.inr (Or.inl (List.mem_of_mem_take h))
+    · exact Or.inr (Or.inr (List.mem_of_mem_take h))
+  have hostCS : ∀q∈control::(src++L.inputBank.take src.length),sqHost ext≠q := by
+    intro q h e
+    subst e
+    rcases List.mem_cons.mp h with h|h
+    · exact hdx _ hostE (by simp [h])
+    · rcases List.mem_append.mp h with h|h
+      · exact extSrc _ hostE h
+      · exact extB _ hostE h
+  have moveFree : ∀ a b : List Wire, (∀q∈a,q∈(L.inputBank.take src.length) ∨ q∈ext ∨ q=g) →
+      (∀q∈b,q∈(L.inputBank.take src.length) ∨ q∈ext ∨ q=g) → sqRet L∉wires (ParkCopy.move a b) := by
+    intro a b ha hb' used
+    have h := List.mem_toFinset.mp (park_move_wires a b used)
+    rcases List.mem_append.mp h with h|h
+    · rcases ha _ h with h'|h'|h'
+      · exact outerCS _ (List.mem_cons_of_mem _ (List.mem_append_right _ h')) rfl
+      · exact outerE _ h' rfl
+      · exact hgR h'
+    · rcases hb' _ h with h'|h'|h'
+      · exact outerCS _ (List.mem_cons_of_mem _ (List.mem_append_right _ h')) rfl
+      · exact outerE _ h' rfl
+      · exact hgR h'
+  have dropB : ∀q∈(L.inputBank.take src.length).drop 118,q∈(L.inputBank.take src.length) ∨ q∈ext ∨ q=g :=
+    fun q h => Or.inl (List.mem_of_mem_drop h)
+  have hostsBE : ∀q∈ParkCopy10.hosts10 ext g,q∈(L.inputBank.take src.length) ∨ q∈ext ∨ q=g := fun q h => Or.inr (hostsE q h)
+  have cacheIn : LowZero18Square.cacheWire L dst∈kOuter L control ext src dst := by
+    rw [LowZero18Square.cacheWire_fixed L hw (List.nodup_cons.mp hn).2 dst hd (by omega)]
+    have mem := CachedSquareCopy.head_mem dst (by omega)
+    simp only [kOuter,List.mem_cons,List.mem_append,mem,or_true,true_or]
+  refine ⟨?_,?_,moveFree _ _ dropB hostsBE,?_,moveFree _ _ hostsBE dropB,?_,?_,?_,?_⟩
+  · exact fun used => outerCS _ (take_cs _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used))) rfl
+  · exact fun used => (hostsE _ (List.mem_toFinset.mp (park_dummies_wires _ used))).elim (fun h => outerE _ h rfl) hgR
+  · intro used
+    have bl : 118≤(L.inputBank.take src.length).length := by
+      simp only [List.length_take,(L.measured_bank_widths hw).1];omega
+    have sub:=InnerLinearCopy.copy_wires118 control (LowZero18Square.cacheWire L dst)
+      (ext.getD 198 0) (ext.getD 199 0) (ext.getD 233 0)
+      (src.take 118) ((L.inputBank.take src.length).take 118)
+      (by simp only [List.length_take];omega) (by rw [List.length_take];exact Nat.min_eq_left bl) used
+    rcases Finset.mem_union.mp sub with used|r
+    · rcases Finset.mem_union.mp (CachedSquareCopy.wires_subset _ _ _ _ used) with h|h
+      · have h' := List.mem_toFinset.mp (copyRegister_wires_subset _ _ _ h)
+        exact outerCS _ (take_cs _ (by simpa only [Option.toList_some,List.singleton_append,
+          List.cons_append,List.append_assoc] using h')) rfl
+      · exact ne _ cacheIn (Finset.mem_singleton.mp h)
+    · simp only [Finset.mem_insert,Finset.mem_singleton] at r
+      rcases r with e|e|e <;> exact outerE _ (e ▸ DiagSq.getD_in ext _ (by omega)) rfl
+  · exact fun used => hostCS _ (take_cs _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used))) rfl
+  · exact fun used => hostH (List.mem_toFinset.mp (park_dummies_wires _ used))
+  · intro used
+    rcases List.mem_append.mp (List.mem_toFinset.mp (park_move_wires _ _ used)) with h|h
+    · exact extB _ hostE (List.mem_of_mem_drop h)
+    · exact hostH h
+  · exact fun used => hostCS _ (List.mem_toFinset.mp (eraseMask_wires_subset _ _ _ used)) rfl
+
+end Park10
+theorem withLowK2P10_760_free (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+    (hn : (control::L.wires).Nodup) (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+    (hext : 300≤ext.length) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (B : Program) (hb : wires B⊆(control::L.wires).toFinset)
+    (g : Wire) (hgR : sqRet L≠g) (hgH : sqHost ext≠g) (hgB : g∉L.inputBank.take src.length) :
+    sqRet L∉wires (ParkCopy10.withLowK2P10 L ext control src dst (bodySwap L ext B) g) := by
+  have m := sqRet_masks L hw control hn ext src dst hs hd hx hdx
+  have k := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen hext
+  have f := sqRet_body_free L hw control hn ext hx hdx hext src dst hs hd B hb
+  have pf := park_pieces_free10 L hw control hn ext hx hdx hext g src dst hs hd h128 hlen hgR hgH hgB
+  simp only [ParkCopy10.withLowK2P10,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨m.1,k.1⟩,pf.1⟩,pf.2.1⟩,pf.2.2.1⟩,f⟩,pf.2.2.2.1⟩,pf.2.2.2.2.1⟩,k.2⟩,m.2⟩
+
+theorem withLowK2P_760_free (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+    (hn : (control::L.wires).Nodup) (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+    (hext : 300≤ext.length) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (B : Program) (hb : wires B⊆(control::L.wires).toFinset) :
+    sqRet L∉wires (ParkCopy.withLowK2P L ext control src dst (bodySwap L ext B)) := by
+  have m := sqRet_masks L hw control hn ext src dst hs hd hx hdx
+  have k := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen hext
+  have f := sqRet_body_free L hw control hn ext hx hdx hext src dst hs hd B hb
+  have pf := park_pieces_free L hw control hn ext hx hdx hext src dst hs hd h128 hlen
+  simp only [ParkCopy.withLowK2P,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨m.1,k.1⟩,pf.1⟩,pf.2.1⟩,pf.2.2.1⟩,f⟩,pf.2.2.2.1⟩,pf.2.2.2.2.1⟩,k.2⟩,m.2⟩
+
+theorem withLowK2S_counts (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (B : Program) (h128 : src.length=129) :
+    toffoliCount (ParkCopyS.withLowK2S L ext control src dst B)+5=
+      toffoliCount (LowZero18Square.withLowK2 L ext control src dst B) ∧
+    measurementCount (ParkCopyS.withLowK2S L ext control src dst B)=
+      measurementCount (LowZero18Square.withLowK2 L ext control src dst B) ∧
+    Challenge.gateSlots (ParkCopyS.withLowK2S L ext control src dst B)=
+      Challenge.gateSlots (LowZero18Square.withLowK2 L ext control src dst B)+10 := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have l1 : (src.take 124).length=((L.inputBank.take src.length).take 124).length := by
+    simp only [List.length_take,bl]
+  have l1' : (src.take 124).length=124 := by simp [h128]
+  have ld : ((L.inputBank.take src.length).drop 124).length=5 := by rw [List.length_drop,bl,h128]
+  have hl := ParkCopyS.hostsS_length ext
+  have ef := eraseMask_counts control src (L.inputBank.take src.length) bl.symm
+  have e1 := eraseMask_counts control (src.take 124) ((L.inputBank.take src.length).take 124) l1
+  have esf := UncompSwap.eraseMask_slots control src (L.inputBank.take src.length) bl.symm
+  have es1 := UncompSwap.eraseMask_slots control (src.take 124) ((L.inputBank.take src.length).take 124) l1
+  have dc := ParkCopy.dummies_counts (ParkCopyS.hostsS ext)
+  have ds := park_dummies_slots (ParkCopyS.hostsS ext)
+  have mi := park_move_counts ((L.inputBank.take src.length).drop 124) (ParkCopyS.hostsS ext) (by rw [ld,hl])
+  have mo := park_move_counts (ParkCopyS.hostsS ext) ((L.inputBank.take src.length).drop 124) (by rw [ld,hl])
+  have cf := park_cached_counts control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)
+    bl.symm (by omega)
+  have c1 := park_cached_counts control (LowZero18Square.cacheWire L dst) (src.take 124)
+    ((L.inputBank.take src.length).take 124) l1 (by omega)
+  simp only [ParkCopyS.withLowK2S,ParkCopyS.pA,ParkCopyS.pM,ParkCopyS.pE1,ParkCopyS.pD,ParkCopyS.pMI,ParkCopyS.pB,
+    ParkCopyS.pC1,ParkCopyS.pMO,ParkCopyS.pCL,ParkCopyS.pE,LowZero18Square.foldPerm,
+    LowZero18Square.withLowK2,toffoliCount_append,measurementCount_append,Challenge.gateSlots_append]
+  simp only [l1',hl,bl,ld,h128] at *
+  omega
+
+theorem withLowK2S_swap_mc (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (B : Program) (h128 : src.length=129) :
+    measurementCount (ParkCopyS.withLowK2S L ext control src dst (bodySwap L ext B))=
+      measurementCount (LowZero18Square.withLowK2 L ext control src dst B) :=
+  (withLowK2S_counts L hw ext control src dst _ h128).2.1.trans
+    (withLowK2_swap_counts L ext control src dst B).2.1
+
+theorem withLowK2S_physical (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : src.length=129) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 300≤ext.length)
+    (B : Program) (hold : GatePhysical (LowZero18Square.withLowK2 L ext control src dst B)) :
+    GatePhysical (ParkCopyS.withLowK2S L ext control src dst B) := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have dj {r t : List Wire} (h : ∀q,r.count q+t.count q≤(kbig L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig h
+  have extB : ∀q∈ext,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have ndCopy : (src++(L.inputBank.take src.length)).Nodup := knd hbig (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have bNd : (L.inputBank.take src.length).Nodup := (List.nodup_append.mp ndCopy).2.1
+  have hostsE : ∀q∈ParkCopyS.hostsS ext,q∈ext := ParkCopyS.hostsS_sub ext he
+  have hHnd : (ParkCopyS.hostsS ext).Nodup := ParkCopyS.hostsS_nodup ext hx he
+  have ndMI : ((L.inputBank.take src.length).drop 124++ParkCopyS.hostsS ext).Nodup :=
+    List.nodup_append.mpr ⟨bNd.sublist (List.drop_sublist _ _),hHnd,
+      fun a ha b hb e => extB b (hostsE b hb) (e ▸ List.mem_of_mem_drop ha)⟩
+  have ndMO : (ParkCopyS.hostsS ext++(L.inputBank.take src.length).drop 124).Nodup :=
+    (List.perm_append_comm.nodup_iff).mp ndMI
+  simp only [LowZero18Square.withLowK2,gatePhysical_append] at hold
+  obtain ⟨⟨⟨⟨⟨⟨pA,pM⟩,pE⟩,pB⟩,pC⟩,pCL⟩,_⟩ := hold
+  have pC1 := park_cached_physical control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)
+    (by omega) pC 123 bl.symm
+  simp only [ParkCopyS.withLowK2S,ParkCopyS.pA,ParkCopyS.pM,ParkCopyS.pE1,ParkCopyS.pD,ParkCopyS.pMI,ParkCopyS.pB,
+    ParkCopyS.pC1,ParkCopyS.pMO,ParkCopyS.pCL,ParkCopyS.pE,LowZero18Square.foldPerm,ParkCopy.move,
+    gatePhysical_append]
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨pA,pM⟩,eraseMask_physical _ _ _⟩,park_dummies_physical _⟩,
+    ⟨copyRegister_physical none _ _ ndMI (by simp),copyRegister_physical none _ _ ndMO (by simp)⟩⟩,pB⟩,
+    pC1⟩,⟨copyRegister_physical none _ _ ndMO (by simp),copyRegister_physical none _ _ ndMI (by simp)⟩⟩,pCL⟩,pE⟩
+
+/-- Parking adds only the five host wires to the leaf's support. -/
+theorem withLowK2S_support (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire)
+    (control : Wire) (src dst : List Wire) (B : Program) (h128 : src.length=129) :
+    wires (ParkCopyS.withLowK2S L ext control src dst B)⊆
+      wires (LowZero18Square.withLowK2 L ext control src dst B) ∪ (ParkCopyS.hostsS ext).toFinset := by
+  have sizes := L.measured_bank_widths hw
+  have bl : (L.inputBank.take src.length).length=src.length := by
+    rw [List.length_take,sizes.1]; omega
+  have eSub : wires (eraseMask control (src.take 124) ((L.inputBank.take src.length).take 124))⊆
+      wires (eraseMask control src (L.inputBank.take src.length)) :=
+    park_wires_sub_of_mem _ _ (park_erase_mem control 124 src _ bl.symm)
+  have cSub : wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) (src.take 124)
+      ((L.inputBank.take src.length).take 124))⊆
+      wires (CachedSquareCopy.copy control (LowZero18Square.cacheWire L dst) src (L.inputBank.take src.length)) :=
+    park_wires_sub_of_mem _ _ (park_cached_mem control _ 123 src _ bl.symm)
+  have bankIn : ∀q∈(L.inputBank.take src.length).drop 124,q∈wires (eraseMask control src (L.inputBank.take src.length)) :=
+    fun q h => park_dst_mem_eraseMask control src _ bl.symm q (List.mem_of_mem_drop h)
+  have mSub : ∀ a b : List Wire, (∀q∈a,q∈(L.inputBank.take src.length).drop 124 ∨ q∈ParkCopyS.hostsS ext) →
+      (∀q∈b,q∈(L.inputBank.take src.length).drop 124 ∨ q∈ParkCopyS.hostsS ext) →
+      wires (ParkCopy.move a b)⊆wires (eraseMask control src (L.inputBank.take src.length)) ∪ (ParkCopyS.hostsS ext).toFinset := by
+    intro a b ha hb' q hq
+    rcases List.mem_append.mp (List.mem_toFinset.mp (park_move_wires a b hq)) with h|h
+    · rcases ha q h with h'|h'
+      · exact Finset.mem_union_left _ (bankIn q h')
+      · exact Finset.mem_union_right _ (List.mem_toFinset.mpr h')
+    · rcases hb' q h with h'|h'
+      · exact Finset.mem_union_left _ (bankIn q h')
+      · exact Finset.mem_union_right _ (List.mem_toFinset.mpr h')
+  have mI := mSub ((L.inputBank.take src.length).drop 124) (ParkCopyS.hostsS ext) (fun q h => Or.inl h) (fun q h => Or.inr h)
+  have mO := mSub (ParkCopyS.hostsS ext) ((L.inputBank.take src.length).drop 124) (fun q h => Or.inr h) (fun q h => Or.inl h)
+  have dS : wires (ParkCopy.dummies (ParkCopyS.hostsS ext))⊆(ParkCopyS.hostsS ext).toFinset := park_dummies_wires _
+  intro q hq
+  simp only [ParkCopyS.withLowK2S,ParkCopyS.pA,ParkCopyS.pM,ParkCopyS.pE1,ParkCopyS.pD,ParkCopyS.pMI,ParkCopyS.pB,
+    ParkCopyS.pC1,ParkCopyS.pMO,ParkCopyS.pCL,ParkCopyS.pE,LowZero18Square.foldPerm,
+    wires_append,Finset.mem_union] at hq
+  simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union]
+  rcases hq with (((((((((h|h)|h)|h)|h)|h)|h)|h)|h)|h)
+  · simp only [h,true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · simp only [eSub h,true_or,or_true]
+  · simp only [List.mem_toFinset.mp (dS h),List.mem_toFinset,true_or,or_true]
+  · rcases Finset.mem_union.mp (mI h) with h'|h'
+    · simp only [h',true_or,or_true]
+    · simp only [h',true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · simp only [cSub h,true_or,or_true]
+  · rcases Finset.mem_union.mp (mO h) with h'|h'
+    · simp only [h',true_or,or_true]
+    · simp only [h',true_or,or_true]
+  · simp only [h,true_or,or_true]
+  · simp only [h,true_or,or_true]
+
+theorem withLowK2S_760_free (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+    (hn : (control::L.wires).Nodup) (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+    (hext : 300≤ext.length) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (B : Program) (hb : wires B⊆(control::L.wires).toFinset) :
+    sqRet L∉wires (ParkCopyS.withLowK2S L ext control src dst (bodySwap L ext B)) := by
+  have m := sqRet_masks L hw control hn ext src dst hs hd hx hdx
+  have k := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen hext
+  have f := sqRet_body_free L hw control hn ext hx hdx hext src dst hs hd B hb
+  have pf := park_pieces_freeS L hw control hn ext hx hdx hext src dst hs hd h128 hlen
+  simp only [ParkCopyS.withLowK2S,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨⟨⟨⟨⟨⟨⟨⟨m.1,k.1⟩,pf.1⟩,pf.2.1⟩,pf.2.2.1⟩,f⟩,pf.2.2.2.1⟩,pf.2.2.2.2.1⟩,k.2⟩,m.2⟩
+
+section Free2
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+  (hn : (control::L.wires).Nodup) (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+  (hext : 300≤ext.length)
+
+include hw hn hx hdx hext in
+theorem core760_free : sqRet L∉wires (core760 L ext control) := by
+  have nd := (List.nodup_cons.mp hn).2
+  have low := L.core.low_length hw.core
+  have high := L.core.high_length hw.core
+  have sum := L.core.sum_length hw.core
+  have hl (q : Wire) : L.core.low.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢
+    omega
+  have hh (q : Wire) : L.core.high.count q≤L.core.y.count q :=
+    ((List.take_sublist 128 (L.core.y.drop 128)).count_le q).trans
+      ((List.drop_sublist 128 L.core.y).count_le q)
+  have hb (q : Wire) : L.core.high.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := hh q
+    simp only [List.count_append]
+    omega
+  have hs (q : Wire) : L.core.sum.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := hh q
+    simp only [CuccaroStreamedSquareLayout.sum,List.count_append] at h ⊢
+    omega
+  have hp (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have fU := eU_760_facts L hw control hn ext hdx hext
+  have sa := withLowK2P10_760_free L hw control hn ext hx hdx hext L.core.low (L.core.product.take 256)
+    hl hp (by omega) (by omega) (by simp [hw.core.product,low]) _ (FullASelectedDevelop.hostedASelected_fold_support L hw nd ext control hext (fun q hq h=>hdx q hq (List.mem_cons_of_mem control h))) _ fU.1 fU.2.1 (fU.2.2.2 _)
+  have sb := withLowK2P_760_free L hw control hn ext hx hdx hext L.core.high (L.core.product.take 256)
+    hb hp (by omega) (by omega) (by simp [hw.core.product,high]) _ (ParkCarry10Develop.hosted_fold_support L hw nd ext control hext (fun q hq h=>hdx q hq (List.mem_cons_of_mem control h)))
+  have sc := withLowK2S_760_free L hw control hn ext hx hdx hext L.core.sum L.core.product
+    hs (fun _=>le_rfl) (by omega) (by omega) (by rw [hw.core.product,sum]) _
+    (OwnDiagAll12Square.bodyCK_supportTq L hw nd control)
+  have coreOff := sqRet_not_core L hw control hn
+  have gs := g_core_support L hw
+  have gp : sqRet L∉wires (OwnDiagAll12Square.gPrep L) := fun u => coreOff (List.mem_toFinset.mp (gs.1 u))
+  have gc : sqRet L∉wires (OwnDiagAll12Square.gClear L) := fun u => coreOff (List.mem_toFinset.mp (gs.2 u))
+  simp only [core760,branchCK760,branchBF760,branchAF760,wires_append,Finset.mem_union,not_or]
+  exact ⟨⟨⟨⟨gp,sc⟩,gc⟩,sb⟩,sa⟩
+
+end Free2
+
+section Placed
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+
+include hw in
+private theorem pool_getD' (i : Nat) (hi : i<2613) : L.dialogPool.getD i 0=L.core.poolWire i := by
+  have shape := pool_block L hw 2613 (le_refl _)
+  rw [List.take_of_length_le (by rw [L.dialogPool_length hw])] at shape
+  rw [shape,List.getD_eq_getElem _ _ (by simp [wireBlock];omega)]
+  simp [wireBlock]
+
+include hw in
+theorem sqRet_pool760 : sqRet L.dialogStreamedSquareWide=L.core.poolWire 760 := by
+  rw [sqRet_ktmp,← ktmp_eq,SquareCarryLoan719Inventory.ktmp_layout L hw,List.getD_eq_getElem _ _ (by
+    simp only [List.length_take,List.length_drop,L.dialogPool_length hw]
+    omega)]
+  simp only [List.getElem_take,List.getElem_drop,Nat.reduceAdd]
+  have bound : 760<L.dialogPool.length := by rw [L.dialogPool_length hw];omega
+  have same := pool_getD' L hw 760 (by omega)
+  rw [List.getD_eq_getElem L.dialogPool 0 bound] at same
+  exact same
+
+theorem sqHost_pool1363 : sqHost (OwnDiagAll12Square.kext L)=L.core.poolWire 1363 := by
+  simp [sqHost,OwnDiagAll12Square.kext,wireBlock]
+
+include hw hn in
+private theorem pool_fix (k a b : Nat) (hk : k<2613) (ha : a<2613) (hb : b<2613) (na : k≠a) (nb : k≠b) :
+    Equiv.swap (L.core.poolWire a) (L.core.poolWire b) (L.core.poolWire k)=L.core.poolWire k := by
+  apply Equiv.swap_apply_of_ne_of_ne
+  · intro eq
+    exact na (pool_inj L hw hn k a hk ha eq)
+  · intro eq
+    exact nb (pool_inj L hw hn k b hk hb eq)
+
+include hw hn in
+/-- Every placement map of the square fixes pool sites 760 and 1363. -/
+theorem place_fix (k : Nat) (hk : k=760 ∨ k=1363) (P : Program) (free : L.core.poolWire k∉wires P) :
+    L.core.poolWire k∉wires (SquareCarryLoan719BF.place L P) := by
+  have kb : k<2613 := by omega
+  have blockFix : Square5Placement.blockPerm L 202 (L.core.poolWire k)=L.core.poolWire k := by
+    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) k kb]
+    rcases hk with rfl|rfl <;> rfl
+  have p0 := OwnPlusHost.rename_avoid _ _ _ blockFix free
+  have p1 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 766 1530 kb (by omega) (by omega) (by omega) (by omega)) p0
+  have p2 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 765 1531 kb (by omega) (by omega) (by omega) (by omega)) p1
+  have p3 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 767 1532 kb (by omega) (by omega) (by omega) (by omega)) p2
+  have p4 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 770 1536 kb (by omega) (by omega) (by omega) (by omega)) p3
+  have p5 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 1285 1537 kb (by omega) (by omega) (by omega) (by omega)) p4
+  have p6 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 1286 1538 kb (by omega) (by omega) (by omega) (by omega)) p5
+  have p7 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 769 1539 kb (by omega) (by omega) (by omega) (by omega)) p6
+  have p8 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 768 775 kb (by omega) (by omega) (by omega) (by omega)) p7
+  have p9 := OwnPlusHost.rename_avoid _ _ _ (pool_fix L hw hn k 718 907 kb (by omega) (by omega) (by omega) (by omega)) p8
+  simpa only [SquareCarryLoan719BF.place,OwnPlusSquare.swap,OwnGuardSquare.swap,
+    OwnQ4Square.swap,OwnQ5Square.swap,OwnDiagAll12PlacedQ6.swap,OwnDiagAll12PlacedQ7.swap,
+    PrefixFrontierSquare1591.swap,Prefix1590Square.swap,ControlLoan1589Square.swap] using p9
+
+include hw hn in
+/-- **R2 square deliverable**: the new square never touches physical pool site 760. -/
+theorem square760_free : L.core.poolWire 760∉wires (program760 L) := by
+  have controlND : (L.core.generic::L.dialogStreamedSquareWide.wires).Nodup := by
+    have nd := L.streamedSquare_control_nodup hw hn
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp nd q
+    simp only [List.count_cons] at h ⊢
+    omega
+  have he := OwnDiagAll12Square.kext_ok L hw hn
+  have core := core760_free L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
+    L.core.generic controlND (OwnDiagAll12Square.kext L) he.nodup he.away he.len
+  rw [sqRet_pool760 L hw] at core
+  exact place_fix L hw hn 760 (Or.inl rfl) _ core
+
+end Placed
+
+/-! ## Square: counts, slots, physicality, support -/
+
+theorem gatePhysical_rename_iff (e : Equiv.Perm Wire) (P : Program) :
+    GatePhysical (renameProgram e P)↔GatePhysical P := by
+  constructor
+  · intro h i hi
+    have hh := h (renameInstr e i) (List.mem_map_of_mem hi)
+    cases i <;> simp_all [renameInstr,RecordedQuantum.PhysicalInstr,ECDSAAdd.ProperGate,e.injective.eq_iff]
+  · exact gatePhysical_rename e e.injective P
+
+theorem place_physical_iff (L : ControlledPointLayout) (P : Program) :
+    GatePhysical (SquareCarryLoan719BF.place L P)↔GatePhysical P := by
+  simp only [SquareCarryLoan719BF.place,gatePhysical_rename_iff]
+
+theorem fastCore760_shape (L : ControlledPointLayout) :
+    ReflectionE1Low48Square.program L=SquareCarryLoan719BF.place L (ReflectionE1Low48Square.fastCore L) := rfl
+
+theorem program760_physical (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup) :
+    GatePhysical (program760 L) := by
+  have old := ReflectionE1Low48Square.physical L hw hn
+  rw [fastCore760_shape,place_physical_iff] at old
+  rw [program760,place_physical_iff]
+  simp only [ReflectionE1Low48Square.fastCore,ReflectionE1Low48Square.core,LowZero18Square.branchCK,
+    LowZero18Square.branchBF,LowZero18Square.branchAF,gatePhysical_append] at old
+  obtain ⟨⟨⟨⟨gp,ck⟩,gc⟩,bf⟩,af⟩ := old
+  have controlND : (L.core.generic::L.dialogStreamedSquareWide.wires).Nodup := by
+    have nd := L.streamedSquare_control_nodup hw hn
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp nd q
+    simp only [List.count_cons] at h ⊢
+    omega
+  have he := OwnDiagAll12Square.kext_ok L hw hn
+  have hw' := L.dialogStreamedSquareWide_widths hw
+  have swapP : ∀ (src dst : List Wire) (B : Program),
+      GatePhysical (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic src dst B) →
+      GatePhysical (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic src dst
+        (bodySwap L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) B)) := by
+    intro src dst B h
+    simp only [LowZero18Square.withLowK2,bodySwap,gatePhysical_append,gatePhysical_rename_iff] at h ⊢
+    exact h
+  have hiC (q : Wire) : L.dialogStreamedSquareWide.core.high.count q≤
+      (L.dialogStreamedSquareWide.core.y++[L.dialogStreamedSquareWide.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.dialogStreamedSquareWide.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.dialogStreamedSquareWide.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have loC (q : Wire) : L.dialogStreamedSquareWide.core.low.count q≤
+      (L.dialogStreamedSquareWide.core.y++[L.dialogStreamedSquareWide.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.dialogStreamedSquareWide.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢
+    omega
+  have pC (q : Wire) : (L.dialogStreamedSquareWide.core.product.take 256).count q≤
+      L.dialogStreamedSquareWide.core.product.count q :=
+    (List.take_sublist 256 L.dialogStreamedSquareWide.core.product).count_le q
+  have hi := L.dialogStreamedSquareWide.core.high_length hw'.core
+  have lo := L.dialogStreamedSquareWide.core.low_length hw'.core
+  have pl : (L.dialogStreamedSquareWide.core.product.take 256).length=256 := by simp [hw'.core.product]
+  have suC (q : Wire) : L.dialogStreamedSquareWide.core.sum.count q≤
+      (L.dialogStreamedSquareWide.core.y++[L.dialogStreamedSquareWide.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.dialogStreamedSquareWide.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.dialogStreamedSquareWide.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have su := L.dialogStreamedSquareWide.core.sum_length hw'.core
+  have bf9 : GatePhysical (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+      L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+      (ParkCarry10Develop.hostedBody L.dialogStreamedSquareWide
+        (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) := by
+    have hb9 : GatePhysical (renameProgram (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L))
+      (ParkCarry10Develop.hostedBody L.dialogStreamedSquareWide
+        (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) := by
+      apply gatePhysical_rename _ (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)).injective _
+      rw [ParkCarry10Develop.hosted_eq _ _ _ (ParkCarryDevelop.fold_fixes_sumCarry _ hw'
+        (List.nodup_cons.mp controlND).2 _ he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem _ h)))]
+      exact ParkCarry10Develop.body_physical _ hw' _ controlND
+    simp only [LowZero18Square.withLowK2,gatePhysical_append] at bf ⊢
+    tauto
+  have af3 : GatePhysical (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+      L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+      (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide
+        (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) := by
+    have hb3 : GatePhysical (renameProgram (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L))
+      (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide
+        (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) := by
+      apply gatePhysical_rename _ (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)).injective _
+      rw [FullASelectedDevelop.hostedASelected_eq _ _ _ (ParkCarryDevelop.fold_fixes_sumCarry _ hw'
+        (List.nodup_cons.mp controlND).2 _ he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem _ h)))]
+      exact FullASelectedDevelop.aBodySelected_physical _ hw' _ controlND
+    simp only [LowZero18Square.withLowK2,gatePhysical_append] at af ⊢
+    tauto
+  simp only [fastCore760,core760,branchCK760,branchBF760,branchAF760,gatePhysical_append]
+  refine ⟨⟨⟨⟨gp,withLowK2S_physical _ hw' _ controlND _ _ suC (fun _ => le_rfl) su
+    (by rw [hw'.core.product,su]) _ he.nodup he.away he.len _ (swapP _ _ _ ck)⟩,gc⟩,?_⟩,?_⟩
+  · exact withLowK2P_physical _ hw' _ controlND _ _ hiC pC hi (by rw [pl,hi]) _ he.nodup he.away he.len _
+      (swapP _ _ _ bf9)
+  · have fU := eU_760_facts _ hw' _ controlND _ he.away he.len
+    exact withLowK2P10_physical _ hw' _ controlND _ _ loC pC lo (by rw [pl,lo]) _ he.nodup he.away he.len _
+      _ fU.2.2.1 (fU.2.2.2 _) (swapP _ _ _ af3)
+
+theorem program760_counts_gen (L : ControlledPointLayout) (hw : L.Widths) (d : Nat)
+    (hd : toffoliCount (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide
+        (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)+d≤
+      toffoliCount (ThirdSavedCarryDevelop.hostedATriple L.dialogStreamedSquareWide
+        (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) :
+    toffoliCount (program760 L)+31+d≤toffoliCount (ReflectionE1Low48Square.program L) ∧
+    measurementCount (program760 L)=measurementCount (ReflectionE1Low48Square.program L) ∧
+    Challenge.gateSlots (program760 L)≤Challenge.gateSlots (ReflectionE1Low48Square.program L)+48 := by
+  have hw' := L.dialogStreamedSquareWide_widths hw
+  have hi := L.dialogStreamedSquareWide.core.high_length hw'.core
+  have lo := L.dialogStreamedSquareWide.core.low_length hw'.core
+  have cB := withLowK2P_counts L.dialogStreamedSquareWide hw' (OwnDiagAll12Square.kext L) L.core.generic
+    L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+    (bodySwap L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)
+      (ParkCarry10Develop.hostedBody L.dialogStreamedSquareWide
+        (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) hi
+  have sB := withLowK2_swap_counts L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+    L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+    (ParkCarry10Develop.hostedBody L.dialogStreamedSquareWide
+      (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)
+  have cA := withLowK2P10_counts L.dialogStreamedSquareWide hw' (OwnDiagAll12Square.kext L) L.core.generic
+    L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+    (bodySwap L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)
+      (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) (ControlLoan1589BFFold.eU L.dialogStreamedSquareWide) lo
+  have sA := withLowK2_swap_counts L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+    L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+    (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)
+  have sC := withLowK2_swap_counts L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+    L.dialogStreamedSquareWide.core.sum L.dialogStreamedSquareWide.core.product
+    (OwnDiagAll12Square.bodyCKTq L.dialogStreamedSquareWide L.core.generic)
+  have su := L.dialogStreamedSquareWide.core.sum_length hw'.core
+  have cC := withLowK2S_counts L.dialogStreamedSquareWide hw' (OwnDiagAll12Square.kext L) L.core.generic
+    L.dialogStreamedSquareWide.core.sum L.dialogStreamedSquareWide.core.product
+    (bodySwap L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)
+      (OwnDiagAll12Square.bodyCKTq L.dialogStreamedSquareWide L.core.generic)) su
+  have nB := ParkCarry10Develop.hosted_counts L.dialogStreamedSquareWide hw'
+    (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic
+  have oB := ParkCarry8Develop.hosted_counts L.dialogStreamedSquareWide hw'
+    (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic
+  have nS := ParkCarry10Develop.hosted_slots L.dialogStreamedSquareWide hw'
+    (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic
+  have oS := ParkCarry8Develop.hosted_slots L.dialogStreamedSquareWide hw'
+    (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic
+  have dS := ParkCarry10Develop.body_slots L.dialogStreamedSquareWide hw' L.core.generic
+  have bDelta :
+      toffoliCount (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+        (ParkCarry10Develop.hostedBody L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic))+2 =
+      toffoliCount (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+        (ParkCarry8Develop.hostedBody L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) ∧
+      measurementCount (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+        (ParkCarry10Develop.hostedBody L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) =
+      measurementCount (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+        (ParkCarry8Develop.hostedBody L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) ∧
+      Challenge.gateSlots (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+        (ParkCarry10Develop.hostedBody L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic))+3 =
+      Challenge.gateSlots (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.high (L.dialogStreamedSquareWide.core.product.take 256)
+        (ParkCarry8Develop.hostedBody L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) := by
+    simp only [LowZero18Square.withLowK2,toffoliCount_append,measurementCount_append,
+      Challenge.gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots]
+    exact ⟨by omega,by omega,by omega⟩
+  have aDelta :
+      toffoliCount (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+        (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic))+1+d ≤
+      toffoliCount (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+        (InverseCarryDevelop.hostedADual L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) ∧
+      measurementCount (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+        (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) =
+      measurementCount (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+        (InverseCarryDevelop.hostedADual L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) ∧
+      Challenge.gateSlots (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+        (FullASelectedDevelop.hostedASelected L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic))+3 ≤
+      Challenge.gateSlots (LowZero18Square.withLowK2 L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L) L.core.generic
+        L.dialogStreamedSquareWide.core.low (L.dialogStreamedSquareWide.core.product.take 256)
+        (InverseCarryDevelop.hostedADual L.dialogStreamedSquareWide
+          (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic)) := by
+    have h := ThirdSavedCarryDevelop.hostedATriple_counts L.dialogStreamedSquareWide hw'
+      (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic
+    have r := FullASelectedDevelop.hostedASelected_resources L.dialogStreamedSquareWide hw'
+      (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic
+    simp only [LowZero18Square.withLowK2,toffoliCount_append,measurementCount_append,
+      Challenge.gateSlots_append,(renameProgram_counts _ _).1,(renameProgram_counts _ _).2,Baselines.rename_gateSlots]
+    exact ⟨by omega,by omega,by omega⟩
+  rw [fastCore760_shape]
+  simp only [program760,SquareCarryLoan719BF.place,fastCore760,core760,branchCK760,branchBF760,branchAF760,
+    ReflectionE1Low48Square.fastCore,ReflectionE1Low48Square.core,LowZero18Square.branchCK,
+    LowZero18Square.branchBF,LowZero18Square.branchAF,
+    toffoliCount_append,measurementCount_append,Challenge.gateSlots_append,(renameProgram_counts _ _).1,
+    (renameProgram_counts _ _).2,Baselines.rename_gateSlots]
+  refine ⟨?_,?_,?_⟩ <;> omega
+
+theorem program760_counts (L : ControlledPointLayout) (hw : L.Widths) :
+    toffoliCount (program760 L)+31≤toffoliCount (ReflectionE1Low48Square.program L) ∧
+    measurementCount (program760 L)=measurementCount (ReflectionE1Low48Square.program L) ∧
+    Challenge.gateSlots (program760 L)≤Challenge.gateSlots (ReflectionE1Low48Square.program L)+48 := by
+  have r := (FullASelectedDevelop.hostedASelected_resources L.dialogStreamedSquareWide
+    (L.dialogStreamedSquareWide_widths hw)
+    (LowZero18Square.foldPerm L.dialogStreamedSquareWide (OwnDiagAll12Square.kext L)) L.core.generic).1
+  have h := program760_counts_gen L hw 0 (by omega)
+  exact ⟨by omega,h.2.1,h.2.2⟩
+
+theorem program760_slots (L : ControlledPointLayout) (hw : L.Widths) :
+    Challenge.gateSlots (program760 L)≤Challenge.gateSlots (ReflectionE1Low48Square.program L)+48 :=
+  (program760_counts L hw).2.2
+
+def savedA (L : ControlledPointLayout) : Nat :=
+  toffoliCount (ReflectionE1Square.program L)-(toffoliCount (program760 L)+3064)
+
+theorem counts_diff760 (L : ControlledPointLayout) (hw : L.Widths) :
+    toffoliCount (program760 L)+3064+savedA L=toffoliCount (ReflectionE1Square.program L) ∧
+    measurementCount (program760 L)+75=measurementCount (ReflectionE1Square.program L) := by
+  have c := program760_counts L hw
+  have d := ReflectionE1Low48Square.counts_diff L hw
+  unfold savedA
+  constructor <;> omega
+
+theorem slots_le760 (L : ControlledPointLayout) (hw : L.Widths) :
+    Challenge.gateSlots (program760 L)≤Challenge.gateSlots (ReflectionE1Square.program L)+48 := by
+  have s := program760_slots L hw
+  have := ReflectionE1Low48Square.slots_le L hw
+  omega
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+theorem rename_ins (e : Equiv.Perm Wire) (h : Wire) (P Q : Program)
+    (sub : wires P⊆insert h (wires Q)) (fix : e h=h) :
+    wires (renameProgram e P)⊆insert h (wires (renameProgram e Q)) := by
+  rw [renameProgram_support,renameProgram_support]
+  intro q hq
+  obtain ⟨x,hx,rfl⟩ := Finset.mem_image.mp hq
+  rcases Finset.mem_insert.mp (sub hx) with e'|hx'
+  · subst x; rw [fix]; exact Finset.mem_insert_self _ _
+  · exact Finset.mem_insert_of_mem (Finset.mem_image_of_mem _ hx')
+
+theorem swap_ins (a b : Wire) (P : Program) (hb : b∉wires P) :
+    wires (renameProgram (Equiv.swap a b) P)⊆insert b (wires P) :=
+  (swap_support a b P hb).trans (Finset.insert_subset_insert _ (Finset.erase_subset _ _))
+
+theorem rename_ins_set (e : Equiv.Perm Wire) (S : Finset Wire) (P Q : Program)
+    (sub : wires P⊆S ∪ wires Q) (fix : ∀ h∈S, e h=h) :
+    wires (renameProgram e P)⊆S ∪ wires (renameProgram e Q) := by
+  rw [renameProgram_support,renameProgram_support]
+  intro q hq
+  obtain ⟨x,hx,rfl⟩ := Finset.mem_image.mp hq
+  rcases Finset.mem_union.mp (sub hx) with e'|hx'
+  · rw [fix x e']; exact Finset.mem_union_left _ e'
+  · exact Finset.mem_union_right _ (Finset.mem_image_of_mem _ hx')
+
+section SupportNew
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (control : Wire)
+  (hn : (control::L.wires).Nodup) (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires)
+  (hext : 300≤ext.length)
+
+include hw hx hdx hext in
+theorem withLowK2_ins (src dst : List Wire) (B : Program) (hb : wires B⊆(control::L.wires).toFinset) :
+    wires (LowZero18Square.withLowK2 L ext control src dst (bodySwap L ext B))⊆
+      insert (sqHost ext) (wires (LowZero18Square.withLowK2 L ext control src dst B)) := by
+  have bfree : sqHost ext∉wires B := fun used => hdx _ (sqHost_in ext hext) (List.mem_toFinset.mp (hb used))
+  have fix : SquareCarryLoan719.foldPerm L ext (sqHost ext)=sqHost ext := by
+    rw [SquareCarryLoan719.foldPerm_eq L hw]
+    exact Equiv.swap_apply_of_ne_of_ne (sqHost_ne_target L hw control ext hdx hext) (sqHost_ne_ext0 ext hx hext)
+  have body := rename_ins _ _ _ _ (swap_ins (sqRet L) (sqHost ext) B bfree) fix
+  intro q hq
+  simp only [LowZero18Square.withLowK2,bodySwap,sqSwap,wires_append,Finset.mem_union,Finset.mem_insert] at hq ⊢
+  rcases hq with ((((((h|h)|h)|h)|h)|h)|h)
+  all_goals first
+    | (rcases Finset.mem_insert.mp (body h) with e|e
+       · exact Or.inl e
+       · tauto)
+    | tauto
+
+theorem rename_insert (f : Wire→Wire) (P Q : Program) (v : Wire)
+ (h : wires P⊆insert v (wires Q)) :
+ wires (renameProgram f P)⊆insert (f v) (wires (renameProgram f Q)) := by
+ rw [renameProgram_support,renameProgram_support,←Finset.image_insert]
+ exact Finset.image_mono f h
+
+theorem program_insert (L : CuccaroStreamedSquareWideLayout) (ext : List Wire) (c : Wire)
+ (src dst : List Wire) (P Q : Program) (v : Wire) (sub : wires P⊆insert v (wires Q)) :
+ wires (LowZero18Square.withLowK2 L ext c src dst P)⊆
+ insert (LowZero18Square.foldPerm L ext v) (wires (LowZero18Square.withLowK2 L ext c src dst Q)) := by
+ have ren:=rename_insert (LowZero18Square.foldPerm L ext) P Q v sub
+ intro q h
+ have leaf : q∈wires (renameProgram (LowZero18Square.foldPerm L ext) P) →
+  q=LowZero18Square.foldPerm L ext v ∨ q∈wires (renameProgram (LowZero18Square.foldPerm L ext) Q) :=
+  fun hp=>Finset.mem_insert.mp (ren hp)
+ simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union] at h ⊢
+ simp only [Finset.mem_insert,Finset.mem_union]
+ itauto
+
+theorem carry10_low_subset (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+ (ext : List Wire) (c : Wire) (hn : (c::L.wires).Nodup) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉c::L.wires) (hext : 300≤ext.length) :
+ wires (LowZero18Square.withLowK2 L ext c L.core.high (L.core.product.take 256) (bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)))⊆wires (LowZero18Square.withLowK2 L ext c L.core.high (L.core.product.take 256) (bodySwap L ext (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) c))) := by
+ have he : ExtOK L c ext := ⟨hx,hdx,hext⟩
+ have nd:=(List.nodup_cons.mp hn).2
+ let v:=L.core.high.headD 0
+ have vy : v∈L.core.y:=ParkCarry10Develop.source0_in_y L hw
+ have vl : v∈L.wires := by
+  simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,vy]
+ have away : ∀q∈ext,q∉L.wires := fun q h hl=>he.away q h (List.mem_cons_of_mem c hl)
+ have fixS:=ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len away
+ have fixV:=ParkCarry10Develop.fold_fixes_source L hw nd ext he.len away
+ have fixOld:=ParkCarry8Develop.fold_fixes_source L hw nd ext he.len away
+ have retMem : sqRet L∈L.foldPad:=DiagSq.getD_in _ 239 (by rw [R2SqEp760.foldPad_length L hw];omega)
+ have nret : v≠sqRet L := by
+  intro e
+  have yp:=List.count_pos_iff.mpr vy
+  have fp:=List.count_pos_iff.mpr retMem
+  rw [←e] at fp
+  have ct:=ControlLoan1589BFFold.layoutCount L nd v
+  omega
+ have nhost : v≠sqHost ext := by
+  intro e
+  have hm:=sqHost_in ext he.len
+  apply away _ hm
+  rw [←e]
+  exact vl
+ have sw : sqSwap L ext v=v:=Equiv.swap_apply_of_ne_of_ne nret nhost
+ have hosted :
+  wires (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)⊆
+  insert v (wires (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)) := by
+  rw [ParkCarry10Develop.hosted_eq L _ c fixS,ParkCarry8Develop.hosted_eq L _ c fixS fixOld]
+  exact Carry10BodyRefined.body_refined L hw c
+ have swapSub:=rename_insert (sqSwap L ext)
+  (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)
+  (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) c) v hosted
+ rw [sw] at swapSub
+ change wires (bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c))⊆
+  insert v (wires (bodySwap L ext (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) c))) at swapSub
+ have total:=program_insert L ext c L.core.high (L.core.product.take 256) _ _ v swapSub
+ rw [show LowZero18Square.foldPerm L ext v=v from fixV] at total
+ have mem : v∈wires (LowZero18Square.withLowK2 L ext c L.core.high (L.core.product.take 256) (bodySwap L ext (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) c))) := by
+  have srcMem : v∈L.core.high:=CarryWindowCache.head_mem _ (by rw [L.core.high_length hw.core];decide)
+  have nonempty : L.core.high.isEmpty=false := by
+   rw [List.isEmpty_eq_false_iff]
+   intro e
+   have h:=L.core.high_length hw.core
+   rw [e] at h
+   contradiction
+  have len : L.core.high.length=(L.inputBank.take L.core.high.length).length := by
+   simp [L.core.high_length hw.core,(L.measured_bank_widths hw).1]
+  have cp : v∈wires (copyRegister (some c) L.core.high (L.inputBank.take L.core.high.length)) := by
+   rw [copyRegister_wires _ _ _ len]
+   simp [nonempty,srcMem]
+  simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union]
+  tauto
+ change wires (LowZero18Square.withLowK2 L ext c L.core.high (L.core.product.take 256) (bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)))⊆insert v (wires (LowZero18Square.withLowK2 L ext c L.core.high (L.core.product.take 256) (bodySwap L ext (ParkCarry8Develop.hostedBody L (LowZero18Square.foldPerm L ext) c)))) at total
+ intro q h
+ rcases Finset.mem_insert.mp (total h) with e|h
+ · subst q;exact mem
+ · exact h
+
+
+include hw hn hx hdx hext in
+theorem core760_ins : wires (core760 L ext control)⊆
+    insert (sqHost ext) (wires (ReflectionE1Low48Square.core L ext control)) ∪ (ParkCopy.supportHosts ext).toFinset := by
+  have nd := (List.nodup_cons.mp hn).2
+  have aNew := withLowK2_ins L hw control ext hx hdx hext L.core.low (L.core.product.take 256) _
+    (FullASelectedDevelop.hostedASelected_fold_support L hw nd ext control hext (fun q hq h=>hdx q hq (List.mem_cons_of_mem control h)))
+  have aSub : wires (LowZero18Square.withLowK2 L ext control L.core.low (L.core.product.take 256)
+      (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control)) ⊆
+      wires (LowZero18Square.withLowK2 L ext control L.core.low (L.core.product.take 256)
+      (InverseCarryDevelop.hostedADual L (LowZero18Square.foldPerm L ext) control)) := by
+    have sub := (FullASelectedDevelop.hostedASelected_subset L hw (LowZero18Square.foldPerm L ext) control).trans (ThirdSavedCarryDevelop.hostedATriple_subset L hw (LowZero18Square.foldPerm L ext) control)
+    have ren : wires (renameProgram (LowZero18Square.foldPerm L ext)
+        (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control)) ⊆
+        wires (renameProgram (LowZero18Square.foldPerm L ext)
+        (InverseCarryDevelop.hostedADual L (LowZero18Square.foldPerm L ext) control)) := by
+      rw [renameProgram_support,renameProgram_support]
+      exact Finset.image_mono _ sub
+    intro q h
+    have leaf : q∈wires (renameProgram (LowZero18Square.foldPerm L ext)
+        (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control)) →
+        q∈wires (renameProgram (LowZero18Square.foldPerm L ext)
+        (InverseCarryDevelop.hostedADual L (LowZero18Square.foldPerm L ext) control)) := fun h=>ren h
+    simp only [LowZero18Square.withLowK2,wires_append,Finset.mem_union] at h ⊢
+    tauto
+  have a := aNew.trans (Finset.insert_subset_insert (sqHost ext) aSub)
+  have bOld := withLowK2_ins L hw control ext hx hdx hext L.core.high (L.core.product.take 256) _
+    (ParkCarry8Develop.hosted_fold_support L hw nd ext control hext (fun q hq h=>hdx q hq (List.mem_cons_of_mem control h)))
+  have b := fun {q : Wire} (h : q∈wires (LowZero18Square.withLowK2 L ext control L.core.high (L.core.product.take 256)
+      (bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) control)))) =>
+    bOld (carry10_low_subset L hw ext control hn hx hdx hext h)
+  have c := withLowK2_ins L hw control ext hx hdx hext L.core.sum L.core.product _
+    (OwnDiagAll12Square.bodyCK_supportTq L hw nd control)
+  have pc := withLowK2S_support L hw ext control L.core.sum L.core.product
+    (bodySwap L ext (OwnDiagAll12Square.bodyCKTq L control)) (L.core.sum_length hw.core)
+  have sMem : ∀q∈ParkCopyS.hostsS ext,q∈ParkCopy.supportHosts ext := by
+    intro q h
+    simp only [ParkCopyS.hostsS,ParkCopyS.hostIdxS,List.map_cons,List.map_nil,List.mem_cons,List.not_mem_nil,
+      or_false] at h
+    apply List.mem_append_left
+    simp only [ParkCopy.hosts,ParkCopy.hostIdx,List.map_cons,List.map_nil,List.mem_cons,List.not_mem_nil,or_false]
+    rcases h with rfl|rfl|rfl|rfl|rfl <;> simp
+  have pa := withLowK2P10_support L hw ext control L.core.low (L.core.product.take 256)
+    (bodySwap L ext (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control)) (ControlLoan1589BFFold.eU L) (L.core.low_length hw.core)
+  have pb := withLowK2P_support L hw ext control L.core.high (L.core.product.take 256)
+    (bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) control)) (L.core.high_length hw.core)
+  have euBF := eU_mem_oldBF L hw nd ext hext
+    (fun q hq h=>hdx q hq (List.mem_cons_of_mem control h)) control
+  have euCore : ControlLoan1589BFFold.eU L∈wires (ReflectionE1Low48Square.core L ext control) := by
+    simp only [ReflectionE1Low48Square.core,wires_append,Finset.mem_union]
+    exact Or.inl (Or.inr euBF)
+  intro q hq
+  simp only [core760,branchCK760,branchBF760,branchAF760,wires_append,Finset.mem_union] at hq
+  simp only [ReflectionE1Low48Square.core,LowZero18Square.branchCK,LowZero18Square.branchBF,
+    LowZero18Square.branchAF,wires_append,Finset.mem_union,Finset.mem_insert]
+  rcases hq with (((h|h)|h)|h)|h
+  · tauto
+  · rcases Finset.mem_union.mp (pc h) with h'|h'
+    · rcases Finset.mem_insert.mp (c h') with e|e <;> tauto
+    · exact Or.inr (List.mem_toFinset.mpr (sMem q (List.mem_toFinset.mp h')))
+  · tauto
+  · rcases Finset.mem_union.mp (pb h) with h'|h'
+    · rcases Finset.mem_insert.mp (b h') with e|e <;> tauto
+    · exact Or.inr h'
+  · rcases Finset.mem_union.mp (pa h) with h'|h'
+    · rcases Finset.mem_insert.mp (a h') with e|e <;> tauto
+    · have hh := List.mem_toFinset.mp h'
+      rcases List.mem_append.mp hh with hh|hh
+      · rcases List.mem_append.mp hh with hh|hh
+        · exact Or.inr (List.mem_toFinset.mpr (List.mem_append_left _ hh))
+        · have eq : q=ControlLoan1589BFFold.eU L := List.mem_singleton.mp hh
+          have ec : q∈wires (ReflectionE1Low48Square.core L ext control) := by rw [eq];exact euCore
+          have ee : q∈insert (sqHost ext) (wires (ReflectionE1Low48Square.core L ext control)) := Finset.mem_insert_of_mem ec
+          simp only [ReflectionE1Low48Square.core,LowZero18Square.branchCK,LowZero18Square.branchBF,
+            LowZero18Square.branchAF,wires_append,Finset.mem_union,Finset.mem_insert] at ee
+          exact Or.inl ee
+      · exact Or.inr (List.mem_toFinset.mpr (List.mem_append_right _ hh))
+
+end SupportNew
+
+/-- The square's host sites: 1363 (the 760 body host) and the five parking hosts. -/
+def sqSites (L : ControlledPointLayout) : Finset Wire :=
+  {L.core.poolWire 1362,L.core.poolWire 1363,L.core.poolWire 1364,L.core.poolWire 1430,L.core.poolWire 1464,
+    L.core.poolWire 1533,L.core.poolWire 1534,L.core.poolWire 1535,L.core.poolWire 1431,L.core.poolWire 1432,L.core.poolWire 1466,L.core.poolWire 1365,L.core.poolWire 1465}
+
+theorem hosts_pool (L : ControlledPointLayout) :
+    ParkCopy.supportHosts (OwnDiagAll12Square.kext L)=
+      [L.core.poolWire 1362,L.core.poolWire 1364,L.core.poolWire 1365,L.core.poolWire 1430,L.core.poolWire 1464,L.core.poolWire 1465,L.core.poolWire 1533,L.core.poolWire 1534,L.core.poolWire 1535,L.core.poolWire 1431,L.core.poolWire 1432,L.core.poolWire 1466] := by
+  simp [ParkCopy.supportHosts,ParkCopy.hosts,ParkCopy.hostIdx,OwnDiagAll12Square.kext,wireBlock]
+
+section SupportPlaced
+variable (L : ControlledPointLayout) (hw : L.Widths) (hn : L.wires.Nodup)
+
+include hw hn in
+theorem place_ins (P Q : Program) (sub : wires P⊆insert (L.core.poolWire 1363) (wires Q)) :
+    wires (SquareCarryLoan719BF.place L P)⊆insert (L.core.poolWire 1363) (wires (SquareCarryLoan719BF.place L Q)) := by
+  have kb : 1363<2613 := by omega
+  have blockFix : Square5Placement.blockPerm L 202 (L.core.poolWire 1363)=L.core.poolWire 1363 := by
+    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) 1363 kb]; rfl
+  have f (a b : Nat) (ha : a<2613) (hb : b<2613) (na : 1363≠a) (nb : 1363≠b) :=
+    pool_fix L hw hn 1363 a b kb ha hb na nb
+  simp only [SquareCarryLoan719BF.place]
+  apply rename_ins _ _ _ _ _ (f 718 907 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins _ _ _ _ _ (f 768 775 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins _ _ _ _ _ (f 769 1539 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins _ _ _ _ _ (f 1286 1538 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins _ _ _ _ _ (f 1285 1537 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins _ _ _ _ _ (f 770 1536 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins _ _ _ _ _ (f 767 1532 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins _ _ _ _ _ (f 765 1531 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins _ _ _ _ _ (f 766 1530 (by omega) (by omega) (by omega) (by omega))
+  exact rename_ins _ _ _ _ sub blockFix
+
+include hw hn in
+theorem place_ins_set (P Q : Program) (sub : wires P⊆sqSites L ∪ wires Q) :
+    wires (SquareCarryLoan719BF.place L P)⊆sqSites L ∪ wires (SquareCarryLoan719BF.place L Q) := by
+  have mem (h : Wire) (hh : h∈sqSites L) :
+      ∃ k, (k=1362 ∨ k=1363 ∨ k=1364 ∨ k=1430 ∨ k=1464 ∨ k=1533 ∨ k=1534 ∨ k=1535 ∨ k=1431 ∨ k=1432 ∨ k=1466 ∨ k=1365 ∨ k=1465) ∧ h=L.core.poolWire k := by
+    simp only [sqSites,Finset.mem_insert,Finset.mem_singleton] at hh
+    rcases hh with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
+    · exact ⟨1362,by omega,rfl⟩
+    · exact ⟨1363,by omega,rfl⟩
+    · exact ⟨1364,by omega,rfl⟩
+    · exact ⟨1430,by omega,rfl⟩
+    · exact ⟨1464,by omega,rfl⟩
+    · exact ⟨1533,by omega,rfl⟩
+    · exact ⟨1534,by omega,rfl⟩
+    · exact ⟨1535,by omega,rfl⟩
+    · exact ⟨1431,by omega,rfl⟩
+    · exact ⟨1432,by omega,rfl⟩
+    · exact ⟨1466,by omega,rfl⟩
+    · exact ⟨1365,by omega,rfl⟩
+    · exact ⟨1465,by omega,rfl⟩
+  have blockFix : ∀ h∈sqSites L, Square5Placement.blockPerm L 202 h=h := by
+    intro h hh
+    obtain ⟨k,hk,rfl⟩ := mem h hh
+    rw [Square5Placement.block_apply L hw hn 202 (le_refl _) k (by omega)]
+    rcases hk with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;> rfl
+  have f (a b : Nat) (ha : a<2613) (hb : b<2613)
+      (na : a<1362 ∨ 1535<a ∨ (1365<a ∧ a<1430) ∨ (1432<a ∧ a<1464) ∨ (1466<a ∧ a<1533))
+      (nb : b<1362 ∨ 1535<b ∨ (1365<b ∧ b<1430) ∨ (1432<b ∧ b<1464) ∨ (1466<b ∧ b<1533)) :
+      ∀ h∈sqSites L, Equiv.swap (L.core.poolWire a) (L.core.poolWire b) h=h := by
+    intro h hh
+    obtain ⟨k,hk,rfl⟩ := mem h hh
+    exact pool_fix L hw hn k a b (by omega) ha hb (by omega) (by omega)
+  simp only [SquareCarryLoan719BF.place]
+  apply rename_ins_set _ _ _ _ _ (f 718 907 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins_set _ _ _ _ _ (f 768 775 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins_set _ _ _ _ _ (f 769 1539 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins_set _ _ _ _ _ (f 1286 1538 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins_set _ _ _ _ _ (f 1285 1537 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins_set _ _ _ _ _ (f 770 1536 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins_set _ _ _ _ _ (f 767 1532 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins_set _ _ _ _ _ (f 765 1531 (by omega) (by omega) (by omega) (by omega))
+  apply rename_ins_set _ _ _ _ _ (f 766 1530 (by omega) (by omega) (by omega) (by omega))
+  exact rename_ins_set _ _ _ _ sub blockFix
+
+include hw hn in
+/-- New square support: the old square's support with site 760 replaced by the host sites. -/
+theorem program760_support_subset :
+    wires (program760 L)⊆sqSites L ∪ ((wires (ReflectionE1Low48Square.program L)).erase (L.core.poolWire 760)) := by
+  have controlND : (L.core.generic::L.dialogStreamedSquareWide.wires).Nodup := by
+    have nd := L.streamedSquare_control_nodup hw hn
+    apply List.nodup_iff_count.mpr
+    intro q
+    have h := List.nodup_iff_count.mp nd q
+    simp only [List.count_cons] at h ⊢
+    omega
+  have he := OwnDiagAll12Square.kext_ok L hw hn
+  have core := core760_ins L.dialogStreamedSquareWide (L.dialogStreamedSquareWide_widths hw)
+    L.core.generic controlND (OwnDiagAll12Square.kext L) he.nodup he.away he.len
+  rw [sqHost_pool1363 L,hosts_pool L] at core
+  have core' : wires (fastCore760 L)⊆sqSites L ∪ wires (ReflectionE1Low48Square.fastCore L) := by
+    intro q hq
+    rcases Finset.mem_union.mp (core hq) with h|h
+    · rcases Finset.mem_insert.mp h with e|e
+      · exact Finset.mem_union_left _ (by simp [sqSites,e])
+      · exact Finset.mem_union_right _ e
+    · apply Finset.mem_union_left
+      simp only [List.mem_toFinset,List.mem_cons,List.not_mem_nil,or_false] at h
+      rcases h with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
+      all_goals simp only [sqSites,Finset.mem_insert,Finset.mem_singleton,eq_self_iff_true,true_or,or_true]
+  have placed := place_ins_set L hw hn _ _ core'
+  have free := square760_free L hw hn
+  intro q hq
+  rcases Finset.mem_union.mp (placed hq) with e|e
+  · exact Finset.mem_union_left _ e
+  · apply Finset.mem_union_right
+    exact Finset.mem_erase.mpr ⟨fun h => free (h ▸ hq),e⟩
+
+include hw hn in
+theorem program760_support : wires (program760 L)⊆(OB5Support.sites L).toFinset := by
+  have old := ReflectionE1Low48Square.support L hw hn
+  intro q hq
+  rcases Finset.mem_union.mp (program760_support_subset L hw hn hq) with e|e
+  · simp only [sqSites,Finset.mem_insert,Finset.mem_singleton] at e
+    rcases e with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1362,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1363,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1364,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1430,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1464,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1533,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1534,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1535,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1431,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1432,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1466,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1365,⟨by omega,by omega⟩,rfl⟩)))))
+    · simp [OB5Support.sites,OB5Support.poolSites,wireBlock]
+      exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr ⟨1465,⟨by omega,by omega⟩,rfl⟩)))))
+  · exact old (Finset.mem_of_mem_erase e)
+
+include hw hn in
+theorem program760_free_old (i : Nat) (hi : i∈[1800,766,765,767,770,1285,1286,769,768,718,719]) :
+    L.core.poolWire i∉wires (program760 L) := by
+  intro used
+  have ib : i<2613 := by simp at hi; omega
+  rcases Finset.mem_union.mp (program760_support_subset L hw hn used) with e|e
+  · simp only [sqSites,Finset.mem_insert,Finset.mem_singleton] at e
+    rcases e with e|e|e|e|e|e|e|e|e|e|e|e|e <;>
+      (have := pool_inj L hw hn i _ ib (by omega) e
+       subst this; simp at hi)
+  · exact ReflectionE1Low48Square.free L hw hn i hi (Finset.mem_of_mem_erase e)
+
+end SupportPlaced
+
+/-! ## Square: the host is clean when the body starts -/
+
+theorem top_bits_zero (r : List Wire) (st : BasisState) (k : Nat) (h : regValue r st<2^k)
+    (q : Wire) (hq : q∈r.drop k) : st q=false := by
+  by_cases hk : k≤r.length
+  · have e := regValue_append (r.take k) (r.drop k) st
+    rw [List.take_append_drop,List.length_take,Nat.min_eq_left hk] at e
+    have z : regValue (r.drop k) st=0 := by
+      by_contra nz
+      have : 2^k≤2^k*regValue (r.drop k) st := Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero nz)
+      omega
+    exact (regValue_zero _ _).mp z q hq
+  · rw [List.drop_eq_nil_of_le (by omega)] at hq
+    simp at hq
+
+theorem host_not_drop (ext : List Wire) (hx : ext.Nodup) (hext : 300≤ext.length) (k : Nat) (hk : 131≤k) :
+    sqHost ext∉ext.drop k := by
+  intro h
+  obtain ⟨i,hi,e⟩ := List.mem_iff_getElem.mp h
+  rw [List.getElem_drop,sqHost,List.getD_eq_getElem _ _ (by omega)] at e
+  have := (List.Nodup.getElem_inj_iff hx).mp e
+  omega
+
+theorem host_not_take (ext : List Wire) (hx : ext.Nodup) (hext : 300≤ext.length) :
+    sqHost ext∉ext.take 130 := by
+  intro h
+  obtain ⟨i,hi,e⟩ := List.mem_iff_getElem.mp h
+  rw [List.getElem_take,sqHost,List.getD_eq_getElem _ _ (by omega)] at e
+  have := (List.Nodup.getElem_inj_iff hx).mp e
+  simp at hi
+  omega
+
+                                                                                                   
+                    
+                                                                                   
+             
+                              
+
+/-- After copy/make/erase the body host is zero: for 128-bit sources it is outside every kernel
+register; for the 129-bit sum it is bit 130 of `T = 2·lo·hi < 2^130`. -/
+theorem prefix_host_zero (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 300≤ext.length)
+    (s : State) (hc : L.PairClean s.basis)
+    (hzero : regValue dst s.basis=0) (hz : regValue ext s.basis=0) (r1 r2 r3 : List Bool) :
+    (run (eraseMask control src (L.inputBank.take src.length)) r3
+      (run (LowZero18Square.make L (LowZero18LowK.kg L ext src dst)) r2
+        (run (copyRegister (some control) src (L.inputBank.take src.length)) r1 s))).basis (sqHost ext)=false := by
+  have hbig := kbig_nodup L control hn src dst hs hd ext hx hdx
+  have hbig2 := LowZero18LowK.kbig2_nodup L control hn src dst hs hd ext hx hdx
+  have hall := LowZero18LowK.kg_nodup L control hn ext src dst hs hd hx hdx
+  have sp := LowZero18LowK.kg_spec L hw ext src dst h128 hsmax hlen he hall
+  have hKR := LowZero18LowK.kg_R L ext src dst
+  have sizes := L.measured_bank_widths hw
+  have inputLen : (L.inputBank.take src.length).length=src.length := by simp [sizes.1,hsmax]
+  have banks := L.measured_leaf_banks_clean s.basis hc src.length
+  have dj {r t : List Wire} (h : ∀q,r.count q+t.count q≤(kbig L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig h
+  have dj2 {r t : List Wire} (h : ∀q,r.count q+t.count q≤(LowZero18LowK.kbig2 L ext control src dst).count q) :
+      ∀q∈r,q∉t := kdis hbig2 h
+  have xS : ∀q∈(LowZero18LowK.oregs L ext src dst).S,q∈LowZero18LowK.ktmp L := fun q h => List.mem_of_mem_take (List.mem_of_mem_take h)
+  have xT : ∀q∈(LowZero18LowK.oregs L ext src dst).T,q∈ext := fun q h => List.mem_of_mem_take (List.mem_of_mem_take h)
+  have xX : ∀q∈(LowZero18LowK.kg L ext src dst).X,q∈ext ∨ q∈LowZero18LowK.ktmp L := fun q h =>
+    (LowZero18LowK.kg_X L ext src dst q h).elim Or.inl (fun h' => Or.inr (List.mem_of_mem_drop (List.mem_of_mem_take h')))
+  have xz : ∀q∈(LowZero18LowK.oregs L ext src dst).z,q∈L.leafCarry := fun q h =>
+    List.mem_of_mem_drop (List.mem_of_mem_take h)
+  have ext0 : ∀q∈ext,s.basis q=false := (regValue_zero _ _).mp hz
+  have tmp0 : ∀q∈LowZero18LowK.ktmp L,s.basis q=false := fun q h => (regValue_zero _ _).mp hc.pad q (List.mem_of_mem_drop h)
+  have extB : ∀q∈ext,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have extSrc : ∀q∈ext,q∉src := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have tmpB : ∀q∈LowZero18LowK.ktmp L,q∉(L.inputBank.take src.length) := dj2 (fun q => by simp only [LowZero18LowK.kbig2,List.count_cons,List.count_append]; omega)
+  have tmpE : ∀q∈LowZero18LowK.ktmp L,q∉ext := dj2 (fun q => by simp only [LowZero18LowK.kbig2,List.count_cons,List.count_append]; omega)
+  have ctlB : control∉(L.inputBank.take src.length) := dj (r:=[control]) (fun q => by
+    simp only [kbig,List.count_cons,List.count_append,List.count_nil]; omega) control (by simp)
+  have bD : ∀q∈(L.inputBank.take src.length),q∉dst := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have padB : ∀q∈L.leafPad,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have carB : ∀q∈L.leafCarry,q∉(L.inputBank.take src.length) := dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have cinB : L.core.cin∉(L.inputBank.take src.length) := dj (r:=[L.core.cin]) (fun q => by
+    simp only [kbig,List.count_cons,List.count_append,List.count_nil]; omega) _ (by simp)
+  have ndCopy : (src++(L.inputBank.take src.length)).Nodup := knd hbig (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega)
+  have hcB : ∀c∈some control,c∉(L.inputBank.take src.length) := by
+    intro c hc; have e : c=control := by simpa [eq_comm] using hc
+    subst e; exact ctlB
+  have hostE := sqHost_in ext he
+  -- erase does not touch the host
+  have eraseOff : sqHost ext∉wires (eraseMask control src (L.inputBank.take src.length)) := by
+    intro used
+    have h := List.mem_toFinset.mp (eraseMask_wires_subset control src (L.inputBank.take src.length) used)
+    rcases List.mem_cons.mp h with h|h
+    · exact hdx _ hostE (by simp [h])
+    · rcases List.mem_append.mp h with h|h
+      · exact extSrc _ hostE h
+      · exact extB _ hostE h
+  rw [run_preserves_outside _ _ _ _ eraseOff]
+  -- copy
+  obtain ⟨cp1,cf1,cv1⟩ := copyRegister_correct (some control) src (L.inputBank.take src.length) inputLen.symm ndCopy hcB s r1
+  generalize run (copyRegister (some control) src (L.inputBank.take src.length)) r1 s=u0 at cp1 cf1 cv1 ⊢
+  have u0s : ∀q,q∉(L.inputBank.take src.length) → u0.basis q=s.basis q := cf1
+  have X0 : regValue (LowZero18LowK.kg L ext src dst).X u0.basis=0 := (regValue_zero _ _).mpr (fun q h => by
+    rcases xX q h with e|e
+    · rw [u0s q (extB q e)]; exact ext0 q e
+    · rw [u0s q (tmpB q e)]; exact tmp0 q e)
+  have mk := LowZero18KG.make_correct (LowZero18LowK.kg L ext src dst) sp hall u0 r2
+    (by rw [hKR]; exact (kkeep u0s (fun q h hb => bD q hb h)).trans hzero)
+    (by rw [hKR]; exact (regValue_zero _ _).mpr (fun q h => by rw [u0s q (tmpB q (xS q h))]; exact tmp0 q (xS q h)))
+    (by rw [hKR]; exact (regValue_zero _ _).mpr (fun q h => by rw [u0s q (extB q (xT q h))]; exact ext0 q (xT q h)))
+    X0
+    (by rw [hKR]; exact (regValue_zero _ _).mpr (fun q h => by
+      rw [u0s q (carB q (xz q h))]
+      exact (regValue_zero _ _).mp banks.2.2 q (xz q h)))
+    (by rw [hKR]; exact (kkeep u0s padB).trans banks.2.1)
+    (by rw [hKR]; exact (regValue_zero _ _).mpr (fun q h => by
+      have hq : q∈L.leafCarry := List.mem_of_mem_take h
+      rw [u0s q (carB q hq)]
+      exact (regValue_zero _ _).mp banks.2.2 q hq))
+    (by rw [hKR]; exact (u0s _ cinB).trans hc.cin)
+  have mkEq := LowZero18Square.make_run_eq L hw control hn ext src dst hs hd h128 hsmax hlen hx hdx he
+    sp u0 r2
+    (by rw [hKR];exact (kkeep u0s (fun q h hb => bD q hb h)).trans hzero)
+    (by rw [hKR];exact (regValue_zero _ _).mpr (fun q h => by
+      rw [u0s q (tmpB q (xS q h))];exact tmp0 q (xS q h)))
+    X0
+    (by rw [hKR];exact (regValue_zero _ _).mpr (fun q h => by
+      rw [u0s q (carB q (xz q h))];exact (regValue_zero _ _).mp banks.2.2 q (xz q h)))
+    (by rw [hKR];exact (kkeep u0s padB).trans banks.2.1)
+    (by rw [hKR];exact (regValue_zero _ _).mpr (fun q h => by
+      have hq : q∈L.leafCarry := List.mem_of_mem_take h
+      rw [u0s q (carB q hq)];exact (regValue_zero _ _).mp banks.2.2 q hq))
+    (by rw [hKR];exact (u0s _ cinB).trans hc.cin)
+  rw [mkEq]
+  rw [hKR] at mk
+  by_cases h : src.length=128
+  · -- the host lies in no kernel register
+    have notT : sqHost ext∉(LowZero18LowK.oregs L ext src dst).T := by
+      intro m
+      have m' : sqHost ext∈(ext.take 132).take 130 := by
+        simpa [LowZero18LowK.oregs,h] using m
+      rw [List.take_take] at m'
+      exact host_not_take ext hx he (by simpa using m')
+    have notX : sqHost ext∉(LowZero18LowK.kg L ext src dst).X := by
+      intro m
+      rw [LowZero18LowK.kg,if_pos h] at m
+      simp only [LowZero18LowK.kgH,KG.X,LowZero18LowK.iregs,LowZero18LowK.jregsH,List.mem_append,
+        List.not_mem_nil,or_false] at m
+      rcases m with ((m|m)|(m|m))
+      · exact tmpE _ (List.mem_of_mem_drop (List.mem_of_mem_take m)) hostE
+      · exact host_not_drop ext hx he 132 (by omega) (List.mem_of_mem_take m)
+      · exact host_not_drop ext hx he 198 (by omega) (List.mem_of_mem_take (List.mem_of_mem_take m))
+      · exact host_not_drop ext hx he 232 (by omega) (List.mem_of_mem_take m)
+    have notD : sqHost ext∉(LowZero18LowK.oregs L ext src dst).dst := fun m =>
+      (dj (fun q => by simp only [kbig,List.count_cons,List.count_append]; omega) : ∀q∈ext,q∉dst) _ hostE m
+    rw [mk.2.2.2.2.2.2.2 _ notD notT notX,u0s _ (extB _ hostE)]
+    exact ext0 _ hostE
+  · -- the host is bit 130 of T = 2·lo·hi < 2^130
+    have h129 : src.length=129 := by omega
+    have tv := mk.2.2.2.1
+    have lo_lt := regValue_lt (LowZero18LowK.oregs L ext src dst).lo u0.basis
+    have hi_lt := regValue_lt (LowZero18LowK.oregs L ext src dst).hi u0.basis
+    have lol : (LowZero18LowK.oregs L ext src dst).lo.length=64 := by
+      simp [LowZero18LowK.oregs,KRegs.lo,sizes.1,h129]
+    have hil : (LowZero18LowK.oregs L ext src dst).hi.length=65 := by
+      simp [LowZero18LowK.oregs,KRegs.hi,sizes.1,h129]
+    rw [lol] at lo_lt
+    rw [hil] at hi_lt
+    have prod : 2*regValue (LowZero18LowK.oregs L ext src dst).lo u0.basis*
+        regValue (LowZero18LowK.oregs L ext src dst).hi u0.basis<2^130 := by
+      have := Nat.mul_lt_mul'' lo_lt hi_lt
+      have e : (2:Nat)^130=2*(2^64*2^65) := by norm_num
+      rw [e,Nat.mul_assoc]
+      exact Nat.mul_lt_mul_of_pos_left this (by norm_num)
+    rw [← tv] at prod
+    apply top_bits_zero _ _ 130 prod
+    have tl : (LowZero18LowK.oregs L ext src dst).T=ext.take 132 := by
+      simp [LowZero18LowK.oregs,h129]
+    rw [tl,sqHost,List.getD_eq_getElem _ _ (by omega)]
+    have : ext[130]'(by omega)=((ext.take 132).drop 130)[0]'(by simp; omega) := by simp
+    rw [this]; exact List.getElem_mem _
+
+/-! ## Square: run equality -/
+
+theorem mid_swap (Pre X Post : Program) (a b : Wire) (s : State) (m : List Bool)
+    (ua : (run Pre (m.take (measurementCount Pre)) s).basis a=false)
+    (ub : (run Pre (m.take (measurementCount Pre)) s).basis b=false)
+    (bX : b∉wires X) (aPost : a∉wires Post)
+    (fin : (run (Pre++X++Post) m s).basis a=false) :
+    run (Pre++renameProgram (Equiv.swap a b) X++Post) m s=run (Pre++X++Post) m s := by
+  have mc := (renameProgram_counts (Equiv.swap a b) X).2
+  simp only [run_append,measurementCount_append,mc] at fin ⊢
+  have e : List.take (measurementCount Pre) (List.take (measurementCount Pre+measurementCount X) m)=
+      List.take (measurementCount Pre) m := by rw [List.take_take]; congr 1; omega
+  simp only [e] at fin ⊢
+  generalize run Pre (List.take (measurementCount Pre) m) s=u at ua ub fin ⊢
+  rw [run_preserves_outside Post _ _ a aPost] at fin
+  congr 1
+  exact swap_run_eq a b X u _ ua ub fin ((run_preserves_outside X _ u b bX).trans ub)
+
+theorem swaps_commute (a b c d : Wire) (ac : a≠c) (ad : a≠d) (bc : b≠c) (bd : b≠d) (P : Program) :
+    renameProgram (Equiv.swap c d) (renameProgram (Equiv.swap a b) P)=
+      renameProgram (Equiv.swap a b) (renameProgram (Equiv.swap c d) P) := by
+  rw [renameProgram_comp,renameProgram_comp]
+  congr 1
+  funext x
+  simp only [Function.comp,Equiv.swap_apply_def]
+  split_ifs <;> simp_all
+
+                                                                                   
+                                                                          
+                                                               
+                                                
+                                                                                     
+                                                                                              
+                                                            
+                                                          
+                                                                  
+                                                                                                 
+                                                                                 
+                                                                       
+                                                                    
+                                                                                        
+                                                                       
+                                                         
+                                                                                       
+                                                     
+                                     
+                                                                                  
+                                                                                                                   
+                                                            
+                                             
+                                                                            
+                                                                                                                
+                                                                             
+                                       
+                                                                                                                 
+                                                              
+                                                                          
+                                                                    
+                                                                               
+                                                                                                                              
+              
+                                                                    
+                
+            
+                                       
+                                                        
+                                    
+                                                                                      
+                                         
+                                                         
+                                   
+                                           
+                                       
+                                                                   
+                                                                                    
+                                                                  
+                            
+                                                                                                        
+
+theorem run3 (A W C : Program) (s : State) (m : List Bool) :
+    run (A++W++C) m s=run C (m.drop (measurementCount A+measurementCount W))
+      (run W ((m.drop (measurementCount A)).take (measurementCount W)) (run A (m.take (measurementCount A)) s)) := by
+  simp only [run_append,measurementCount_append]
+  have e1 : List.take (measurementCount A) (List.take (measurementCount A+measurementCount W) m)=
+      List.take (measurementCount A) m := by rw [List.take_take]; congr 1; omega
+  have e2 : List.drop (measurementCount A) (List.take (measurementCount A+measurementCount W) m)=
+      List.take (measurementCount W) (List.drop (measurementCount A) m) := by
+    rw [List.drop_take]; congr 1; omega
+  rw [e1,e2]
+
+                                                                                                  
+                                         
+                                                                                          
+                                                                                
+                                                                                                     
+
+theorem withLowK2P_swap_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 300≤ext.length)
+    (B : Program) (hb : wires B⊆(control::L.wires).toFinset)
+    (s : State) (m : List Bool) (hc : L.PairClean s.basis)
+    (hzero : regValue dst s.basis=0) (hz : regValue ext s.basis=0)
+    (fin : (run (ParkCopy.withLowK2P L ext control src dst B) m s).basis (sqRet L)=false) :
+    run (ParkCopy.withLowK2P L ext control src dst (bodySwap L ext B)) m s=
+      run (ParkCopy.withLowK2P L ext control src dst B) m s := by
+  have masks := sqRet_masks L hw control hn ext src dst hs hd hx hdx
+  have kern := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen he
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  have rt := ne _ (target_outer L hw control ext src dst)
+  have r0 := ne _ (ext_outer L control ext src dst _ (DiagSq.getD_in ext 0 (by omega)))
+  have ht := sqHost_ne_target L hw control ext hdx he
+  have h0 := sqHost_ne_ext0 ext hx he
+  have pf := park_pieces_free L hw control hn ext hx hdx he src dst hs hd h128 hlen
+  have com : renameProgram (SquareCarryLoan719.foldPerm L ext) (bodySwap L ext B)=
+      renameProgram (Equiv.swap (sqRet L) (sqHost ext)) (renameProgram (SquareCarryLoan719.foldPerm L ext) B) := by
+    rw [SquareCarryLoan719.foldPerm_eq L hw,bodySwap,sqSwap]
+    exact swaps_commute _ _ _ _ rt r0 ht h0 B
+  let Pre := ParkCopy.pA L control src++ParkCopy.pM L ext src dst++ParkCopy.pE1 L control src++
+    ParkCopy.pD ext++ParkCopy.pMI L ext src
+  let Post := ParkCopy.pC1 L ext control src dst++ParkCopy.pMO L ext src++ParkCopy.pCL L ext src dst++
+    ParkCopy.pE L control src
+  have s0 : ParkCopy.withLowK2P L ext control src dst B=
+      Pre++renameProgram (SquareCarryLoan719.foldPerm L ext) B++Post := by
+    simp only [ParkCopy.withLowK2P,ParkCopy.pB,LowZero18Square.foldPerm,Pre,Post,
+      List.append_assoc]
+  have s1 : ParkCopy.withLowK2P L ext control src dst (bodySwap L ext B)=
+      Pre++renameProgram (Equiv.swap (sqRet L) (sqHost ext)) (renameProgram (SquareCarryLoan719.foldPerm L ext) B)++Post := by
+    rw [← com]
+    simp only [ParkCopy.withLowK2P,ParkCopy.pB,LowZero18Square.foldPerm,Pre,Post,
+      List.append_assoc]
+  rw [s0] at fin
+  rw [s1,s0]
+  have retPre : sqRet L∉wires Pre := by
+    simp only [Pre,wires_append,Finset.mem_union,not_or]
+    exact ⟨⟨⟨⟨masks.1,kern.1⟩,pf.1⟩,pf.2.1⟩,pf.2.2.1⟩
+  have retPost : sqRet L∉wires Post := by
+    simp only [Post,wires_append,Finset.mem_union,not_or]
+    exact ⟨⟨⟨pf.2.2.2.1,pf.2.2.2.2.1⟩,kern.2⟩,masks.2⟩
+  have retS : s.basis (sqRet L)=false := by
+    apply (regValue_zero _ _).mp hc.pad
+    exact DiagSq.getD_in _ 239 (by rw [foldPad_length L hw]; omega)
+  have pre0 : ∀ r1 r2, (run (LowZero18Square.make L (LowZero18LowK.kg L ext src dst)) r2
+      (run (copyRegister (some control) src (L.inputBank.take src.length)) r1 s)).basis (sqHost ext)=false := by
+    intro r1 r2
+    have q := prefix_host_zero L hw control hn src dst hs hd h128 hsmax hlen ext hx hdx he s hc hzero hz r1 r2 []
+    rwa [run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.2.2] at q
+  have ub : (run Pre (m.take (measurementCount Pre)) s).basis (sqHost ext)=false := by
+    simp only [Pre,run_append]
+    rw [run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.2.1,run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.1,
+      run_preserves_outside _ _ _ _ pf.2.2.2.2.2.1]
+    exact pre0 _ _
+  exact mid_swap _ _ _ _ _ s m ((run_preserves_outside _ _ _ _ retPre).trans retS) ub
+    (sqHost_fold_free L hw control ext hx hdx he B hb) retPost fin
+
+theorem withLowK2P10_swap_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 300≤ext.length)
+    (B : Program) (hb : wires B⊆(control::L.wires).toFinset)
+    (g : Wire) (hgR : sqRet L≠g) (hgH : sqHost ext≠g) (hgB : g∉L.inputBank.take src.length)
+    (s : State) (m : List Bool) (hc : L.PairClean s.basis)
+    (hzero : regValue dst s.basis=0) (hz : regValue ext s.basis=0)
+    (fin : (run (ParkCopy10.withLowK2P10 L ext control src dst B g) m s).basis (sqRet L)=false) :
+    run (ParkCopy10.withLowK2P10 L ext control src dst (bodySwap L ext B) g) m s=
+      run (ParkCopy10.withLowK2P10 L ext control src dst B g) m s := by
+  have masks := sqRet_masks L hw control hn ext src dst hs hd hx hdx
+  have kern := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen he
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  have rt := ne _ (target_outer L hw control ext src dst)
+  have r0 := ne _ (ext_outer L control ext src dst _ (DiagSq.getD_in ext 0 (by omega)))
+  have ht := sqHost_ne_target L hw control ext hdx he
+  have h0 := sqHost_ne_ext0 ext hx he
+  have pf := park_pieces_free10 L hw control hn ext hx hdx he g src dst hs hd h128 hlen hgR hgH hgB
+  have com : renameProgram (SquareCarryLoan719.foldPerm L ext) (bodySwap L ext B)=
+      renameProgram (Equiv.swap (sqRet L) (sqHost ext)) (renameProgram (SquareCarryLoan719.foldPerm L ext) B) := by
+    rw [SquareCarryLoan719.foldPerm_eq L hw,bodySwap,sqSwap]
+    exact swaps_commute _ _ _ _ rt r0 ht h0 B
+  let Pre := ParkCopy10.pA L control src++ParkCopy10.pM L ext src dst++ParkCopy10.pE1 L control src++
+    ParkCopy10.pD ext g++ParkCopy10.pMI L ext src g
+  let Post := ParkCopy10.pC1 L ext control src dst++ParkCopy10.pMO L ext src g++ParkCopy10.pCL L ext src dst++
+    ParkCopy10.pE L control src
+  have s0 : ParkCopy10.withLowK2P10 L ext control src dst B g=
+      Pre++renameProgram (SquareCarryLoan719.foldPerm L ext) B++Post := by
+    simp only [ParkCopy10.withLowK2P10,ParkCopy10.pB,LowZero18Square.foldPerm,Pre,Post,
+      List.append_assoc]
+  have s1 : ParkCopy10.withLowK2P10 L ext control src dst (bodySwap L ext B) g=
+      Pre++renameProgram (Equiv.swap (sqRet L) (sqHost ext)) (renameProgram (SquareCarryLoan719.foldPerm L ext) B)++Post := by
+    rw [← com]
+    simp only [ParkCopy10.withLowK2P10,ParkCopy10.pB,LowZero18Square.foldPerm,Pre,Post,
+      List.append_assoc]
+  rw [s0] at fin
+  rw [s1,s0]
+  have retPre : sqRet L∉wires Pre := by
+    simp only [Pre,wires_append,Finset.mem_union,not_or]
+    exact ⟨⟨⟨⟨masks.1,kern.1⟩,pf.1⟩,pf.2.1⟩,pf.2.2.1⟩
+  have retPost : sqRet L∉wires Post := by
+    simp only [Post,wires_append,Finset.mem_union,not_or]
+    exact ⟨⟨⟨pf.2.2.2.1,pf.2.2.2.2.1⟩,kern.2⟩,masks.2⟩
+  have retS : s.basis (sqRet L)=false := by
+    apply (regValue_zero _ _).mp hc.pad
+    exact DiagSq.getD_in _ 239 (by rw [foldPad_length L hw]; omega)
+  have pre0 : ∀ r1 r2, (run (LowZero18Square.make L (LowZero18LowK.kg L ext src dst)) r2
+      (run (copyRegister (some control) src (L.inputBank.take src.length)) r1 s)).basis (sqHost ext)=false := by
+    intro r1 r2
+    have q := prefix_host_zero L hw control hn src dst hs hd h128 hsmax hlen ext hx hdx he s hc hzero hz r1 r2 []
+    rwa [run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.2.2] at q
+  have ub : (run Pre (m.take (measurementCount Pre)) s).basis (sqHost ext)=false := by
+    simp only [Pre,run_append]
+    rw [run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.2.1,run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.1,
+      run_preserves_outside _ _ _ _ pf.2.2.2.2.2.1]
+    exact pre0 _ _
+  exact mid_swap _ _ _ _ _ s m ((run_preserves_outside _ _ _ _ retPre).trans retS) ub
+    (sqHost_fold_free L hw control ext hx hdx he B hb) retPost fin
+
+theorem withLowK2S_swap_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (control : Wire) (hn : (control::L.wires).Nodup) (src dst : List Wire)
+    (hs : ∀q,src.count q≤(L.core.y++[L.core.sumCarry]).count q)
+    (hd : ∀q,dst.count q≤L.core.product.count q)
+    (h128 : 128≤src.length) (hsmax : src.length≤129) (hlen : dst.length=2*src.length)
+    (ext : List Wire) (hx : ext.Nodup) (hdx : ∀q∈ext,q∉control::L.wires) (he : 300≤ext.length)
+    (B : Program) (hb : wires B⊆(control::L.wires).toFinset)
+    (s : State) (m : List Bool) (hc : L.PairClean s.basis)
+    (hzero : regValue dst s.basis=0) (hz : regValue ext s.basis=0)
+    (fin : (run (ParkCopyS.withLowK2S L ext control src dst B) m s).basis (sqRet L)=false) :
+    run (ParkCopyS.withLowK2S L ext control src dst (bodySwap L ext B)) m s=
+      run (ParkCopyS.withLowK2S L ext control src dst B) m s := by
+  have masks := sqRet_masks L hw control hn ext src dst hs hd hx hdx
+  have kern := sqRet_kernels L hw control hn ext src dst hs hd hx hdx h128 hsmax hlen he
+  have ne := sqRet_ne_of_outer L hw control hn ext src dst hs hd hx hdx
+  have rt := ne _ (target_outer L hw control ext src dst)
+  have r0 := ne _ (ext_outer L control ext src dst _ (DiagSq.getD_in ext 0 (by omega)))
+  have ht := sqHost_ne_target L hw control ext hdx he
+  have h0 := sqHost_ne_ext0 ext hx he
+  have pf := park_pieces_freeS L hw control hn ext hx hdx he src dst hs hd h128 hlen
+  have com : renameProgram (SquareCarryLoan719.foldPerm L ext) (bodySwap L ext B)=
+      renameProgram (Equiv.swap (sqRet L) (sqHost ext)) (renameProgram (SquareCarryLoan719.foldPerm L ext) B) := by
+    rw [SquareCarryLoan719.foldPerm_eq L hw,bodySwap,sqSwap]
+    exact swaps_commute _ _ _ _ rt r0 ht h0 B
+  let Pre := ParkCopyS.pA L control src++ParkCopyS.pM L ext src dst++ParkCopyS.pE1 L control src++
+    ParkCopyS.pD ext++ParkCopyS.pMI L ext src
+  let Post := ParkCopyS.pC1 L control src dst++ParkCopyS.pMO L ext src++ParkCopyS.pCL L ext src dst++
+    ParkCopyS.pE L control src
+  have s0 : ParkCopyS.withLowK2S L ext control src dst B=
+      Pre++renameProgram (SquareCarryLoan719.foldPerm L ext) B++Post := by
+    simp only [ParkCopyS.withLowK2S,ParkCopyS.pB,LowZero18Square.foldPerm,Pre,Post,
+      List.append_assoc]
+  have s1 : ParkCopyS.withLowK2S L ext control src dst (bodySwap L ext B)=
+      Pre++renameProgram (Equiv.swap (sqRet L) (sqHost ext)) (renameProgram (SquareCarryLoan719.foldPerm L ext) B)++Post := by
+    rw [← com]
+    simp only [ParkCopyS.withLowK2S,ParkCopyS.pB,LowZero18Square.foldPerm,Pre,Post,
+      List.append_assoc]
+  rw [s0] at fin
+  rw [s1,s0]
+  have retPre : sqRet L∉wires Pre := by
+    simp only [Pre,wires_append,Finset.mem_union,not_or]
+    exact ⟨⟨⟨⟨masks.1,kern.1⟩,pf.1⟩,pf.2.1⟩,pf.2.2.1⟩
+  have retPost : sqRet L∉wires Post := by
+    simp only [Post,wires_append,Finset.mem_union,not_or]
+    exact ⟨⟨⟨pf.2.2.2.1,pf.2.2.2.2.1⟩,kern.2⟩,masks.2⟩
+  have retS : s.basis (sqRet L)=false := by
+    apply (regValue_zero _ _).mp hc.pad
+    exact DiagSq.getD_in _ 239 (by rw [foldPad_length L hw]; omega)
+  have pre0 : ∀ r1 r2, (run (LowZero18Square.make L (LowZero18LowK.kg L ext src dst)) r2
+      (run (copyRegister (some control) src (L.inputBank.take src.length)) r1 s)).basis (sqHost ext)=false := by
+    intro r1 r2
+    have q := prefix_host_zero L hw control hn src dst hs hd h128 hsmax hlen ext hx hdx he s hc hzero hz r1 r2 []
+    rwa [run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.2.2] at q
+  have ub : (run Pre (m.take (measurementCount Pre)) s).basis (sqHost ext)=false := by
+    simp only [Pre,run_append]
+    rw [run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.2.1,run_preserves_outside _ _ _ _ pf.2.2.2.2.2.2.1,
+      run_preserves_outside _ _ _ _ pf.2.2.2.2.2.1]
+    exact pre0 _ _
+  exact mid_swap _ _ _ _ _ s m ((run_preserves_outside _ _ _ _ retPre).trans retS) ub
+    (sqHost_fold_free L hw control ext hx hdx he B hb) retPost fin
+
+theorem branchBFP_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (B O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (hb : regValue L.core.high s.basis=B)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
+    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
+      (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) control)) records s).phase=s.phase ∧
+    regValue L.core.out (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
+      (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis=
+      ControlLoan1589BFFold.resBF ((if s.basis control then B else 0)^2) O (s.basis control) ∧
+    ∀q,q∉L.core.out → (run (ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
+      (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) control)) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have hcw : control∉L.wires := (List.nodup_cons.mp hn).1
+  let M := if s.basis control then B else 0
+  have bb : B<2^128 := by simpa [L.core.high_length hw.core,hb] using regValue_lt L.core.high s.basis
+  have mb : M<2^128 := by cases h : s.basis control <;> simp [M,h]; omega
+  have srcCount (q : Wire) : L.core.high.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have dstCount (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
+  simp only [ParkCarry10Develop.hosted_eq L (LowZero18Square.foldPerm L ext) control
+    (ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (ParkCarry10Develop.body L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (ParkCarry10Develop.body_support L hw nd control hw'))
+  apply ParkCopy.withLowK2P_correct L hw control hn L.core.high (L.core.product.take 256) srcCount dstCount
+    (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
+    (by simp [hw.core.product,L.core.high_length hw.core]) (L.core.high_length hw.core) ext he.nodup he.away he.len
+    (ParkCarry10Develop.body L control) hbody s records hc dstZero hz
+  intro t m dstValue same
+  rw [hb] at dstValue
+  change regValue (L.core.product.take 256) t.basis=M^2 at dstValue
+  have full : regValue L.core.product t.basis=M^2 :=
+    L.measured_partial_product_value nd s.basis t.basis hp0 (M^2) dstValue same
+  have clean := L.measured_product_frame_clean nd (L.core.product.take 256) dstCount s.basis t.basis hc same
+  have outAway (q : Wire) (hq : q∈L.core.out) : q∉L.core.product.take 256 := by
+    intro bad
+    exact List.disjoint_left.mp (L.product_out_disjoint nd) (List.mem_of_mem_take bad) hq
+  have outO : regValue L.core.out t.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => same q (outAway q hq))).trans ho
+  have ctrlProd : control∉L.core.product.take 256 := fun h => hcw (by
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.mem_of_mem_take h])
+  have ctrlT : t.basis control=s.basis control := same control ctrlProd
+  have hg : t.basis control=false → M=0 := by
+    intro h; rw [ctrlT] at h; simp [M,h]
+  have sumProd:L.core.sumCarry∉L.core.product.take 256 := by
+    intro h
+    apply ParkCarryDevelop.sumCarry_away L nd
+    simp [ParkCarryDevelop.restWires,List.mem_of_mem_take h]
+  have hsumT:t.basis L.core.sumCarry=false := (same _ sumProd).trans hsum
+  have sourceT:regValue L.core.high t.basis=B:=by
+    apply Eq.trans (regValue_congr _ _ _ ?_) hb
+    intro q hq
+    apply same q
+    intro bad
+    have vy:q∈L.core.y:=List.mem_of_mem_drop (List.mem_of_mem_take hq)
+    have yp:=List.count_pos_iff.mpr vy
+    have pp:=List.count_pos_iff.mpr (List.mem_of_mem_take bad)
+    have lc:=ControlLoan1589BFFold.layoutCount L nd q
+    omega
+  have hSource:M=if t.basis control then regValue L.core.high t.basis else 0:=by
+    rw[sourceT,ctrlT]
+  have frame := ParkCarry10Develop.body_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg hSource t m ⟨outO,fun _ _ => rfl⟩
+  rw [ControlLoan1589BFFold.bO4_eq M O (t.basis control) mb hg hO,ctrlT] at frame
+  exact ⟨frame.1,frame.2.1,frame.2.2⟩
+
+                                                                               
+                                                                                                             
+                                                                          
+                                                                                  
+                                                                   
+                                                                               
+                                                                                
+                                                                                                                   
+                                                                                                    
+                                                                                                          
+                                                                                              
+                                                                                                  
+                                                                                                                           
+                                      
+                                                         
+                                           
+                                                                                                   
+                                                                         
+                                                                                           
+                                                         
+                                                                               
+                                                                                        
+                                                     
+                                                                
+                                                                                                
+                                                                                               
+                                                                                                                          
+                                                                                                        
+                                                                                                        
+                                                                                                          
+                                                                               
+                                                                                                                 
+                                                                                
+                         
+                     
+                                                                   
+                                                    
+                                                                               
+                                                                                                            
+                                                                               
+             
+                                                                                         
+                                              
+                                                                       
+                                                                     
+                                                                                                          
+                                                                       
+                                             
+                                        
+                                                            
+           
+                                             
+                                                            
+                                                                         
+                                                                                                                                            
+                     
+                                     
+
+theorem eU_not_y (L : CuccaroStreamedSquareWideLayout) (hw:L.Widths) (hn:L.wires.Nodup) :
+    ControlLoan1589BFFold.eU L∉L.core.y := by
+  intro h
+  have c := List.nodup_iff_count_le_one.mp hn (ControlLoan1589BFFold.eU L)
+  have hy := List.count_pos_iff.mpr h
+  have hp := List.count_pos_iff.mpr (InverseCarryDevelop.eU_mem_product L hw)
+  simp only [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.count_append,
+    List.count_cons] at c
+  omega
+
+/-- The A leaf with the five ext hosts plus `product[256]` (`eU`). -/
+theorem branchAFP10_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (A O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (ha : regValue L.core.low s.basis=A)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
+    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
+      (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control) (ControlLoan1589BFFold.eU L)) records s).phase=s.phase ∧
+    regValue L.core.out (run (ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
+      (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control) (ControlLoan1589BFFold.eU L)) records s).basis=
+      ControlLoan1589BFFold.resAF ((if s.basis control then A else 0)^2) O (s.basis control) ∧
+    ∀q,q∉L.core.out → (run (ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
+      (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control) (ControlLoan1589BFFold.eU L)) records s).basis q=s.basis q := by
+  have nd := (List.nodup_cons.mp hn).2
+  have hcw : control∉L.wires := (List.nodup_cons.mp hn).1
+  let M := if s.basis control then A else 0
+  have ab : A<2^128 := by simpa [L.core.low_length hw.core,ha] using regValue_lt L.core.low s.basis
+  have mb : M<2^128 := by cases h : s.basis control <;> simp [M,h]; omega
+  have srcCount (q : Wire) : L.core.low.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢; omega
+  have dstCount (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
+  simp only [FullASelectedDevelop.hostedASelected_eq L (LowZero18Square.foldPerm L ext) control
+    (ParkCarryDevelop.fold_fixes_sumCarry L hw nd ext he.len
+      (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))]
+  have aSupport:=FullASelectedDevelop.aBodySelected_support L hw nd control
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (FullASelectedDevelop.aBodySelected L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (aSupport hw'))
+  have eUw := InverseCarryDevelop.eU_mem_wires L hw
+  have hgE : ControlLoan1589BFFold.eU L∉ext := fun h => he.away _ h (List.mem_cons_of_mem control eUw)
+  have hgB : ControlLoan1589BFFold.eU L∉L.inputBank.take L.core.low.length := fun h =>
+    InverseCarryDevelop.eU_off_aux L hw nd _ (by simp [List.mem_of_mem_take (List.mem_of_mem_take h)]) rfl
+  have hgD : ControlLoan1589BFFold.eU L∉L.core.product.take 256 := InverseCarryDevelop.eU_not_low L hw nd
+  have hgS : ControlLoan1589BFFold.eU L∉L.core.low := fun h => eU_not_y L hw nd (List.mem_of_mem_take h)
+  have hgC : ControlLoan1589BFFold.eU L≠control := fun e => hcw (e ▸ eUw)
+  have hgO : ControlLoan1589BFFold.eU L∉L.core.out := (ControlLoan1589BFFold.eReg_away L nd _ (ControlLoan1589BFFold.eK_mem L hw).2.1).1
+  have hgK : ControlLoan1589BFFold.eU L∉LowZero18LowK.ktmp L := fun h =>
+    InverseCarryDevelop.eU_off_aux L hw nd _ (by simp [List.mem_of_mem_drop h]) rfl
+  have hgW : ControlLoan1589BFFold.eU L∉ECDSAAdd.wires (FullASelectedDevelop.aBodySelected L control) :=
+    FullASelectedDevelop.eU_off_aBodySelected L hw nd control hcw
+  have hg0 : s.basis (ControlLoan1589BFFold.eU L)=false :=
+    (regValue_zero _ _).mp hp0 _ (InverseCarryDevelop.eU_mem_product L hw)
+  apply ParkCopy10.withLowK2P10_correct L hw control hn L.core.low (L.core.product.take 256) srcCount dstCount
+    (by simp [L.core.low_length hw.core]) (by simp [L.core.low_length hw.core])
+    (by simp [hw.core.product,L.core.low_length hw.core]) (L.core.low_length hw.core) ext he.nodup he.away he.len
+    (FullASelectedDevelop.aBodySelected L control) hbody (ControlLoan1589BFFold.eU L) hgE hgB hgD hgS hgC hgO hgK hgW
+    s records hc dstZero hz hg0
+  intro t m dstValue same
+  rw [ha] at dstValue
+  change regValue (L.core.product.take 256) t.basis=M^2 at dstValue
+  have full : regValue L.core.product t.basis=M^2 :=
+    L.measured_partial_product_value nd s.basis t.basis hp0 (M^2) dstValue same
+  have clean := L.measured_product_frame_clean nd (L.core.product.take 256) dstCount s.basis t.basis hc same
+  have outAway (q : Wire) (hq : q∈L.core.out) : q∉L.core.product.take 256 := by
+    intro bad
+    exact List.disjoint_left.mp (L.product_out_disjoint nd) (List.mem_of_mem_take bad) hq
+  have outO : regValue L.core.out t.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => same q (outAway q hq))).trans ho
+  have ctrlProd : control∉L.core.product.take 256 := fun h => hcw (by
+    simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,List.mem_of_mem_take h])
+  have ctrlT : t.basis control=s.basis control := same control ctrlProd
+  have hg : t.basis control=false → M=0 := by
+    intro h; rw [ctrlT] at h; simp [M,h]
+  have sumProd:L.core.sumCarry∉L.core.product.take 256 := by
+    intro h;apply ParkCarryDevelop.sumCarry_away L nd
+    simp [ParkCarryDevelop.restWires,List.mem_of_mem_take h]
+  have hsumT:t.basis L.core.sumCarry=false := (same _ sumProd).trans hsum
+  have frame := FullASelectedDevelop.aBodySelected_frame L hw nd control hcw t.basis M mb full clean hsumT O hO hg t m ⟨outO,fun _ _ => rfl⟩
+  rw [ctrlT] at frame
+  exact ⟨frame.1,frame.2.1,frame.2.2⟩
+
+
+section Branches
+variable (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths) (ext : List Wire) (control : Wire)
+  (hn : (control::L.wires).Nodup)
+
+include hw in
+theorem sqRet_not_out (hn' : L.wires.Nodup) : sqRet L∉L.core.out :=
+  (L.pairAuxAway hn' (sqRet L) (by
+    simp only [List.mem_append]
+    exact Or.inl (Or.inl (DiagSq.getD_in _ 239 (by rw [foldPad_length L hw]; omega))))).2
+
+include hw in
+theorem sqRet_clean (st : BasisState) (hc : L.PairClean st) : st (sqRet L)=false :=
+  (regValue_zero _ _).mp hc.pad _ (DiagSq.getD_in _ 239 (by rw [foldPad_length L hw]; omega))
+
+include hw hn in
+theorem branchBF760_run_eq (B O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (hb : regValue L.core.high s.basis=B)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
+    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    run (branchBF760 L ext control) records s=run (LowZero18Square.branchBF L ext control) records s := by
+  have nd := (List.nodup_cons.mp hn).2
+  have srcCount (q : Wire) : L.core.high.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have dstCount (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
+  have newC := branchBFP_correct L hw ext control hn B O hO s records hb ho hp0 hc hsum he hz
+  have oldC := LowZero18Square.branchBF_correct L hw ext control hn B O hO s records hb ho hp0 hc hsum he hz
+  have fin := newC.2.2 (sqRet L) (sqRet_not_out L hw nd)
+  rw [sqRet_clean L hw _ hc] at fin
+  rw [show branchBF760 L ext control=ParkCopy.withLowK2P L ext control L.core.high (L.core.product.take 256)
+      (bodySwap L ext (ParkCarry10Develop.hostedBody L (LowZero18Square.foldPerm L ext) control)) from rfl,
+    withLowK2P_swap_run_eq L hw control hn L.core.high (L.core.product.take 256) srcCount dstCount
+      (by simp [L.core.high_length hw.core]) (by simp [L.core.high_length hw.core])
+      (by simp [hw.core.product,L.core.high_length hw.core]) ext he.nodup he.away he.len _
+      (ParkCarry10Develop.hosted_fold_support L hw nd ext control he.len
+        (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h))) s records hc dstZero hz fin]
+  exact park_state_eq L _ _ s newC.1 oldC.1 (newC.2.1.trans oldC.2.1.symm) newC.2.2 oldC.2.2
+
+include hw hn in
+theorem branchAF760_run_eq (A O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (ha : regValue L.core.low s.basis=A)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis) (hsum:s.basis L.core.sumCarry=false)
+    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    run (branchAF760 L ext control) records s=run (LowZero18Square.branchAF L ext control) records s := by
+  have nd := (List.nodup_cons.mp hn).2
+  have srcCount (q : Wire) : L.core.low.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.low,List.count_append] at h ⊢
+    omega
+  have dstCount (q : Wire) : (L.core.product.take 256).count q≤L.core.product.count q :=
+    (List.take_sublist 256 L.core.product).count_le q
+  have dstZero : regValue (L.core.product.take 256) s.basis=0 :=
+    (regValue_zero _ _).mpr (fun q hq => (regValue_zero _ _).mp hp0 q (List.mem_of_mem_take hq))
+  have fU := eU_760_facts L hw control hn ext he.away he.len
+  have newC := branchAFP10_correct L hw ext control hn A O hO s records ha ho hp0 hc hsum he hz
+  have oldC := LowZero18Square.branchAF_correct L hw ext control hn A O hO s records ha ho hp0 hc hsum he hz
+  have fin := newC.2.2 (sqRet L) (sqRet_not_out L hw nd)
+  rw [sqRet_clean L hw _ hc] at fin
+  rw [show branchAF760 L ext control=ParkCopy10.withLowK2P10 L ext control L.core.low (L.core.product.take 256)
+      (bodySwap L ext (FullASelectedDevelop.hostedASelected L (LowZero18Square.foldPerm L ext) control)) (ControlLoan1589BFFold.eU L) from rfl,
+    withLowK2P10_swap_run_eq L hw control hn L.core.low (L.core.product.take 256) srcCount dstCount
+      (by simp [L.core.low_length hw.core]) (by simp [L.core.low_length hw.core])
+      (by simp [hw.core.product,L.core.low_length hw.core]) ext he.nodup he.away he.len _
+      (FullASelectedDevelop.hostedASelected_fold_support L hw nd ext control he.len (fun q hq h=>he.away q hq (List.mem_cons_of_mem control h)))
+      _ fU.1 fU.2.1 (fU.2.2.2 _) s records hc dstZero hz fin]
+  exact park_state_eq L _ _ s newC.1 oldC.1 (newC.2.1.trans oldC.2.1.symm) newC.2.2 oldC.2.2
+
+end Branches
+
+theorem middleCKS_correct (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (S O : Nat) (hO : O<SquareReduction.p)
+    (s : State) (records : List Bool) (hs : regValue L.core.sum s.basis=S)
+    (ho : regValue L.core.out s.basis=O) (hp0 : regValue L.core.product s.basis=0)
+    (hc : L.PairClean s.basis)
+    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    (run (ParkCopyS.withLowK2S L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCKTq L control)) records s).phase=s.phase ∧
+    regValue L.core.out (run (ParkCopyS.withLowK2S L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCKTq L control)) records s).basis=
+      OwnDiagAll12Square.resCF (s.basis control) ((if s.basis control then S else 0)^2) O ∧
+    ∀q,q∉L.core.out → (run (ParkCopyS.withLowK2S L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCKTq L control)) records s).basis q=s.basis q := by
+  let M := if s.basis control then S else 0
+  have nd := (List.nodup_cons.mp hn).2
+  have srcCount (q : Wire) : L.core.sum.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have hbody : ∀q∈ext,q∉ECDSAAdd.wires (OwnDiagAll12Square.bodyCKTq L control) := fun q hq hw' =>
+    he.away q hq (List.mem_toFinset.mp (OwnDiagAll12Square.bodyCK_supportTq L hw nd control hw'))
+  apply ParkCopyS.withLowK2S_correct L hw control hn L.core.sum L.core.product srcCount (fun _ => le_rfl)
+    (by simp [L.core.sum_length hw.core]) (by simp [L.core.sum_length hw.core])
+    (by simp [hw.core.product,L.core.sum_length hw.core]) (L.core.sum_length hw.core) ext he.nodup he.away he.len
+    (OwnDiagAll12Square.bodyCKTq L control) hbody s records hc hp0 hz
+  intro t m dstValue same
+  have ctrlT : t.basis control=s.basis control :=
+    same control (fun h => (List.nodup_cons.mp hn).1
+      (by simp [CuccaroStreamedSquareWideLayout.wires,CuccaroStreamedSquareLayout.wires,h]))
+  have pv : regValue L.core.product t.basis=M^2 := by simpa [M,hs] using dstValue
+  have clean := L.measured_product_frame_clean nd L.core.product (fun _ => le_rfl) s.basis t.basis hc same
+  have outO : regValue L.core.out t.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => same q
+      (fun hp => List.disjoint_left.mp (L.product_out_disjoint nd) hp hq))).trans ho
+  have r := OwnDiagAll12Square.accMiddleCFK_bodyTq L hw control hn M O hO t m pv
+    (by intro h; rw [ctrlT] at h; simp [M,h]) clean outO
+  rw [ctrlT] at r
+  exact r
+
+theorem branchCK760_run_eq (L : CuccaroStreamedSquareWideLayout) (hw : L.Widths)
+    (ext : List Wire) (control : Wire) (hn : (control::L.wires).Nodup) (A B O : Nat)
+    (hO : O<SquareReduction.p) (s : State) (records : List Bool)
+    (ha : regValue L.core.low s.basis=A) (hsum : regValue L.core.sum s.basis=B)
+    (bound : A+B<2^129) (ho : regValue L.core.out s.basis=O)
+    (hp0 : regValue L.core.product s.basis=0) (hc : L.PairClean s.basis)
+    (he : ECDSAAdd.Entrant.ExtOK L control ext) (hz : regValue ext s.basis=0) :
+    run (branchCK760 L ext control) records s=run (LowZero18Square.branchCK L ext control) records s := by
+  have nd := (List.nodup_cons.mp hn).2
+  have dis := L.measured_sum_disjoint nd
+  let W := LowZero18Square.withLowK2 L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCKTq L control)
+  let WS := ParkCopyS.withLowK2S L ext control L.core.sum L.core.product (OwnDiagAll12Square.bodyCKTq L control)
+  let W' := ParkCopyS.withLowK2S L ext control L.core.sum L.core.product
+    (bodySwap L ext (OwnDiagAll12Square.bodyCKTq L control))
+  let mp := measurementCount (OwnDiagAll12Square.gPrep L)
+  let u := run (OwnDiagAll12Square.gPrep L) (records.take mp) s
+  have prep := OwnDiagAll12Square.gPrep_frame L hw nd s.basis A B ha bound (PairClean.corePad L s.basis hc) hc.cin hc.work
+    s (records.take mp) (show SquareFrame L.core.sum s.basis B s.basis from ⟨hsum,fun _ _ => rfl⟩)
+  have productU : regValue L.core.product u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.1 bad hq))).trans hp0
+  have outU : regValue L.core.out u.basis=O :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => List.disjoint_left.mp dis.2 bad hq))).trans ho
+  have cleanU : L.PairClean u.basis := by
+    have keep (q : Wire) (hq : q∈L.foldPad++L.core.work++[L.core.productHigh,L.core.outHigh,
+        L.core.workHigh,L.core.cin,L.core.normFlag,L.core.modFlag]) : u.basis q=s.basis q :=
+      prep.2.2 q (L.measured_sum_aux_away nd q hq)
+    constructor
+    · exact (regValue_congr _ _ _ (fun q hq => keep q (by simp [hq]))).trans hc.pad
+    · exact (regValue_congr _ _ _ (fun q hq => keep q (by simp [hq]))).trans hc.work
+    · exact (keep _ (by simp)).trans hc.productHigh
+    · exact (keep _ (by simp)).trans hc.outHigh
+    · exact (keep _ (by simp)).trans hc.workHigh
+    · exact (keep _ (by simp)).trans hc.cin
+    · exact (keep _ (by simp)).trans hc.normFlag
+    · exact (keep _ (by simp)).trans hc.modFlag
+  have hzU : regValue ext u.basis=0 :=
+    (regValue_congr _ _ _ (fun q hq => prep.2.2 q (fun bad => he.away q hq (OwnDiagAll12Square.sum_in L control q bad)))).trans hz
+  have srcCount (q : Wire) : L.core.sum.count q≤(L.core.y++[L.core.sumCarry]).count q := by
+    have h := (List.take_sublist 128 (L.core.y.drop 128)).count_le q
+    have d := (List.drop_sublist 128 L.core.y).count_le q
+    simp only [CuccaroStreamedSquareLayout.sum,CuccaroStreamedSquareLayout.high,List.count_append] at h ⊢
+    omega
+  have key : ∀ m : List Bool, run W' m u=run W m u := by
+    intro m
+    have newC := middleCKS_correct L hw ext control hn (A+B) O hO u m prep.2.1 outU productU cleanU he hzU
+    have oldC := LowZero18Square.middleCK_correct L hw ext control hn (A+B) O hO u m prep.2.1 outU productU cleanU he hzU
+    have fin := newC.2.2 (sqRet L) (sqRet_not_out L hw nd)
+    rw [sqRet_clean L hw _ cleanU] at fin
+    have mid := withLowK2S_swap_run_eq L hw control hn L.core.sum L.core.product srcCount (fun _ => le_rfl)
+      (by simp [L.core.sum_length hw.core]) (by simp [L.core.sum_length hw.core])
+      (by simp [hw.core.product,L.core.sum_length hw.core]) ext he.nodup he.away he.len _
+      (OwnDiagAll12Square.bodyCK_supportTq L hw nd control) u m cleanU productU hzU fin
+    rw [show W'=ParkCopyS.withLowK2S L ext control L.core.sum L.core.product
+      (bodySwap L ext (OwnDiagAll12Square.bodyCKTq L control)) from rfl,mid]
+    exact park_state_eq L _ _ u newC.1 oldC.1 (newC.2.1.trans oldC.2.1.symm) newC.2.2 oldC.2.2
+  have shapeOld : LowZero18Square.branchCK L ext control=OwnDiagAll12Square.gPrep L++W++OwnDiagAll12Square.gClear L := rfl
+  have shapeNew : branchCK760 L ext control=OwnDiagAll12Square.gPrep L++W'++OwnDiagAll12Square.gClear L := rfl
+  rw [shapeNew,shapeOld,run3,run3,withLowK2S_swap_mc L hw ext control _ _ _ (L.core.sum_length hw.core)]
+  exact congrArg _ (key _)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+section Final
+open Secp256k1 CompressedPointDialog
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+end Final
+
+end ECDSAAdd.Entrant.R2SqEp760
+
+end -- R2 square
+
+-- ===== Exit-side merged tick (ExitMerge) in the multiplication kernel =====
+section
+
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+set_option linter.unusedSimpArgs false
+set_option linter.unusedVariables false
+
+open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic ECDSAAdd.Arithmetic.MappedCompressed
+section -- Scope the inlined inverse proof attributes
+
+-- Verified Inverse14Physical
+set_option maxRecDepth 30000
+set_option maxHeartbeats 0
+set_option exponentiation.threshold 2048
+end --
 end
 end
 end

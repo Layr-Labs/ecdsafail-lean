@@ -1,6 +1,9 @@
 import Mathlib.Tactic.Sat.FromLRAT
 import Mathlib.Tactic
 import ECDSAAdd.Framework.Semantics
+
+-- repack: NumericCarryTrace lines 4..63244
+section
 set_option Elab.async false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 100000000
@@ -63239,5 +63242,7 @@ theorem query (b : BasisState) (hz : Clean b) : ¬ (v4570 b=false ∧ v4571 b=tr
  · exact (rejectBlock31 b hz hbad) g31
 #print axioms query
 end ECDSAAdd.Entrant.NewCarry4901
+
+end
 
 end

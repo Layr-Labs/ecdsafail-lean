@@ -1,5 +1,3 @@
-import ECDSAAdd.Submission.Entrant.DeadCarry
-import ECDSAAdd.Submission.Entrant.QTop
 import ECDSAAdd.Arithmetic.MappedSignedSquare
 import ECDSAAdd.Arithmetic.MappedSquarePhysical
 import ECDSAAdd.Arithmetic.MeasuredGateSupport
@@ -9,8 +7,11 @@ import ECDSAAdd.Baselines.SlotAlgebra
 import ECDSAAdd.Baselines.SlotSignedSquare
 import ECDSAAdd.Framework.RecordPadding
 import Mathlib.Data.List.GetD
+import ECDSAAdd.Submission.Entrant.Prelude
+import ECDSAAdd.Submission.Entrant.QTop
 
--- [R1] moved from FullLogic (was nested in MainC; its active outer options restated here)
+-- repack: MainPart07Core lines 14..18094
+section
 section
 set_option maxRecDepth 8192
 set_option maxHeartbeats 8000000
@@ -17655,17 +17656,7 @@ theorem finite_input_bits (r : Fin 860) (q : Fin 40) :
   rw [columns_correct q,pack_rows]
   rfl
 
-theorem input_bounds : ∀r : Fin 860,rowInput r<2^40 := by
-  -- GM: one pass over `rowInputs` (the Fin-860 decide re-walked the list for every index).
-  have h : rowInputs.all (fun n => decide (n < 2^40)) = true := by decide +kernel
-  have hl : rowInputs.length = 860 := by decide +kernel
-  intro r
-  have hr : r.val < rowInputs.length := by rw [hl]; exact r.isLt
-  have t := List.all_eq_true.mp h _ (List.getElem_mem hr)
-  have e : rowInput r = rowInputs[r.val] := by
-    unfold rowInput; rw [List.getElem?_eq_getElem hr]; rfl
-  rw [e]
-  exact of_decide_eq_true t
+theorem input_bounds : ∀r : Fin 860,rowInput r<2^40 := by decide +kernel
 
 theorem input_rel (r : Fin 860) : Rel inputColumns (rowInput r) r.val := by
   intro q
@@ -17724,28 +17715,24 @@ theorem rows_length : rows.length=860 := by decide +kernel
 
 def rowAt (r : Fin 860) : Bool × Bool × Nat × Nat := (rows[r.val]?).getD (false,false,0,0)
 
+private def packRow (v : Bool × Bool × Nat × Nat) : Nat :=
+ CodecBitSliceVerify.packBits (sites.map (pre505 v.1 v.2.1 v.2.2.1 v.2.2.2))
+private theorem packed : rows.map packRow = rowInputs := by decide +kernel
+private theorem code_at (r : Fin 860) : packRow (rowAt r) = rowInput r := by
+ have hr : r.val < rows.length := by rw [rows_length]; exact r.isLt
+ unfold rowAt rowInput
+ rw [←packed]
+ simp [hr]
 theorem row_compat : ∀r : Fin 860, ∀q : Fin 40,
     pre505 (rowAt r).1 (rowAt r).2.1 (rowAt r).2.2.1 (rowAt r).2.2.2 (label q.val) =
       bitsOf (rowInput r) q.val := by
-  -- GM: one pass over `rows.zip rowInputs` (the Fin-860 x Fin-40 decide re-walked both lists per pair).
-  have hz : (rows.zip rowInputs).all (fun x => (List.range 40).all (fun q =>
-      decide (pre505 x.1.1 x.1.2.1 x.1.2.2.1 x.1.2.2.2 (label q) = bitsOf x.2 q))) = true := by
-    decide +kernel
-  have hl : rowInputs.length = 860 := by decide +kernel
   intro r q
-  have hr1 : r.val < rows.length := by rw [rows_length]; exact r.isLt
-  have hr2 : r.val < rowInputs.length := by rw [hl]; exact r.isLt
-  have hr : r.val < (rows.zip rowInputs).length := by
-    rw [List.length_zip]; exact Nat.lt_min.mpr ⟨hr1, hr2⟩
-  have h1 := List.all_eq_true.mp hz _ (List.getElem_mem hr)
-  rw [List.getElem_zip] at h1
-  have h2 := List.all_eq_true.mp h1 q.val (List.mem_range.mpr q.isLt)
-  have e1 : rowAt r = rows[r.val] := by
-    unfold rowAt; rw [List.getElem?_eq_getElem hr1]; rfl
-  have e2 : rowInput r = rowInputs[r.val] := by
-    unfold rowInput; rw [List.getElem?_eq_getElem hr2]; rfl
-  rw [e1, e2]
-  exact of_decide_eq_true h2
+  rw [←code_at]
+  unfold packRow bitsOf
+  rw [CodecBitSliceVerify.pack_testBit]
+  have hsize : sites.length = 40 := by decide +kernel
+  have hq : q.val < sites.length := by rw [hsize]; exact q.isLt
+  simp [label,hq]
 
 theorem candidate_support : wires candidate ⊆ Finset.range 40 :=
   support_of_check candidate 40 (by decide +kernel)
@@ -18104,4 +18091,6 @@ end ECDSAAdd.Entrant.Six505
 end
 end
 end
+end
+
 end
