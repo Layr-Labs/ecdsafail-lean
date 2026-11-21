@@ -12505,7 +12505,7 @@ def switch1Block13 : Program := [
   .CX 82 36,
   .CX 83 36,
   .CX 85 36,
-  .CCX 35 36 86,
+  .CX 36 86,
   .CX 85 36,
   .CX 83 36,
   .CX 82 36,
@@ -12532,7 +12532,7 @@ def switch1Block13 : Program := [
   .CX 80 35
 ]
 
-private theorem switch1Block13Ok : GatePhysical switch1Block13 ∧ toffoliCount switch1Block13 = 2 ∧ measurementCount switch1Block13 = 0 ∧ gateSlots switch1Block13 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem switch1Block13Ok : GatePhysical switch1Block13 ∧ toffoliCount switch1Block13 = 1 ∧ measurementCount switch1Block13 = 0 ∧ gateSlots switch1Block13 = 48 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 def switch1Block14 : Program := [
   .CX 87 36,
@@ -12736,7 +12736,7 @@ def switch1Block18 : Program := [
   .measureX 89 [] [.CZ 27 88],
   .measureX 88 [] [.CZ 24 87, .CZ 76 87, .CZ 78 87],
   .measureX 87 [] [.CZ 76 86],
-  .measureX 86 [] [.CZ 18 20, .CZ 18 76, .CZ 18 78, .CZ 18 82, .CZ 18 85, .Z 20, .CZ 20 85, .Z 76, .CZ 76 85, .Z 78, .CZ 78 85, .Z 82, .CZ 82 85],
+  .measureX 86 [] [.Z 20, .Z 76, .Z 78, .Z 82, .Z 85],
   .measureX 85 [] [.CZ 17 20, .CZ 17 76, .CZ 17 78, .CZ 17 82, .Z 20, .CZ 20 29, .CZ 20 76, .CZ 20 77, .CZ 20 84, .CZ 29 76, .CZ 29 78, .CZ 29 82, .CZ 76 77, .CZ 76 78, .CZ 76 82, .CZ 76 84, .CZ 77 78, .CZ 77 82, .Z 78, .CZ 78 84, .Z 82, .CZ 82 84],
   .measureX 84 [] [.CZ 17 29, .CZ 20 29, .CZ 29 77, .CZ 29 78, .CZ 29 82],
   .measureX 83 [] [],
@@ -12759,7 +12759,7 @@ def switch1Block18 : Program := [
   .CX 3 20
 ]
 
-private theorem switch1Block18Ok : GatePhysical switch1Block18 ∧ toffoliCount switch1Block18 = 0 ∧ measurementCount switch1Block18 = 39 ∧ gateSlots switch1Block18 = 301 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
+private theorem switch1Block18Ok : GatePhysical switch1Block18 ∧ toffoliCount switch1Block18 = 0 ∧ measurementCount switch1Block18 = 39 ∧ gateSlots switch1Block18 = 293 := WSlimBlock.blockOk_sound _ _ _ _ (by decide +kernel)
 
 def switch1Block19 : Program := [
   .CX 21 4,
@@ -12797,13 +12797,13 @@ def switch1 : Program := switch1Block0 ++ switch1Block1 ++ switch1Block2 ++ swit
 theorem switch1_GatePhysical : GatePhysical switch1 := by
   simp only [switch1, gatePhysical_append, and_true, switch1Block0Ok.1, switch1Block1Ok.1, switch1Block2Ok.1, switch1Block3Ok.1, switch1Block4Ok.1, switch1Block5Ok.1, switch1Block6Ok.1, switch1Block7Ok.1, switch1Block8Ok.1, switch1Block9Ok.1, switch1Block10Ok.1, switch1Block11Ok.1, switch1Block12Ok.1, switch1Block13Ok.1, switch1Block14Ok.1, switch1Block15Ok.1, switch1Block16Ok.1, switch1Block17Ok.1, switch1Block18Ok.1, switch1Block19Ok.1]
 
-theorem switch1_toffoliCount : toffoliCount switch1 = 53 := by
+theorem switch1_toffoliCount : toffoliCount switch1 = 52 := by
   simp only [switch1, toffoliCount_append, switch1Block0Ok.2.1, switch1Block1Ok.2.1, switch1Block2Ok.2.1, switch1Block3Ok.2.1, switch1Block4Ok.2.1, switch1Block5Ok.2.1, switch1Block6Ok.2.1, switch1Block7Ok.2.1, switch1Block8Ok.2.1, switch1Block9Ok.2.1, switch1Block10Ok.2.1, switch1Block11Ok.2.1, switch1Block12Ok.2.1, switch1Block13Ok.2.1, switch1Block14Ok.2.1, switch1Block15Ok.2.1, switch1Block16Ok.2.1, switch1Block17Ok.2.1, switch1Block18Ok.2.1, switch1Block19Ok.2.1]
 
 theorem switch1_measurementCount : measurementCount switch1 = 82 := by
   simp only [switch1, measurementCount_append, switch1Block0Ok.2.2.1, switch1Block1Ok.2.2.1, switch1Block2Ok.2.2.1, switch1Block3Ok.2.2.1, switch1Block4Ok.2.2.1, switch1Block5Ok.2.2.1, switch1Block6Ok.2.2.1, switch1Block7Ok.2.2.1, switch1Block8Ok.2.2.1, switch1Block9Ok.2.2.1, switch1Block10Ok.2.2.1, switch1Block11Ok.2.2.1, switch1Block12Ok.2.2.1, switch1Block13Ok.2.2.1, switch1Block14Ok.2.2.1, switch1Block15Ok.2.2.1, switch1Block16Ok.2.2.1, switch1Block17Ok.2.2.1, switch1Block18Ok.2.2.1, switch1Block19Ok.2.2.1]
 
-theorem switch1_gateSlots : gateSlots switch1 = 1307 := by
+theorem switch1_gateSlots : gateSlots switch1 = 1299 := by
   simp only [switch1, gateSlots_append, switch1Block0Ok.2.2.2, switch1Block1Ok.2.2.2, switch1Block2Ok.2.2.2, switch1Block3Ok.2.2.2, switch1Block4Ok.2.2.2, switch1Block5Ok.2.2.2, switch1Block6Ok.2.2.2, switch1Block7Ok.2.2.2, switch1Block8Ok.2.2.2, switch1Block9Ok.2.2.2, switch1Block10Ok.2.2.2, switch1Block11Ok.2.2.2, switch1Block12Ok.2.2.2, switch1Block13Ok.2.2.2, switch1Block14Ok.2.2.2, switch1Block15Ok.2.2.2, switch1Block16Ok.2.2.2, switch1Block17Ok.2.2.2, switch1Block18Ok.2.2.2, switch1Block19Ok.2.2.2]
 
 end ECDSAAdd.Entrant.StairArchiveGates
@@ -20146,226 +20146,6 @@ col165,
 col162,
 col124] ++ List.replicate 32 0
 
-def switch1Trace1Out : Cols := [col210,
-col172,
-col187,
-col4,
-col294,
-col303,
-col235,
-col225,
-col271,
-col53,
-col38,
-col58,
-col60,
-col262,
-col75,
-col82,
-col311,
-col161,
-col138,
-col130,
-col137,
-col142,
-col238,
-col100,
-col106,
-col256,
-col3,
-col245,
-col293,
-col304,
-col269,
-col274,
-col277,
-col311,
-col312,
-0x0,
-0x0,
-col271,
-rowProduct26,
-rowProduct27,
-rowProduct28,
-0x0,
-rowProduct29,
-rowProduct30,
-rowProduct31,
-rowProduct32,
-col171,
-col186,
-col208,
-col224,
-col232,
-col156,
-col111,
-0x0,
-col89,
-col98,
-col152,
-col180,
-col177,
-col250,
-col52,
-col80,
-col264,
-col263,
-col252,
-col248,
-col83,
-col165,
-col162,
-col124,
-col181,
-col143,
-col90,
-col107,
-col91,
-col123,
-col88,
-col87,
-col85,
-0x0,
-0x0,
-0x0,
-col316,
-0x0,
-col317,
-col318,
-col21,
-col16,
-col16,
-col15,
-col14,
-col10,
-col7,
-0x0,
-col272,
-col49,
-col8,
-col62,
-col81] ++ List.replicate 3 0
-
-theorem switch1Trace1_checked : eval col312 (switch1Block8 ++ switch1Block9 ++ switch1Block10 ++ switch1Block11 ++ switch1Block12 ++ switch1Block13 ++ switch1Block14 ++ switch1Block15) switch1Trace1In =
-
-    (true, switch1Trace1Out) :=
-  -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ switch1Block8 [switch1Block9, switch1Block10, switch1Block11, switch1Block12, switch1Block13, switch1Block14, switch1Block15] _ _ (by decide +kernel)
-
-end ECDSAAdd.Entrant.StairArchiveGates
-
-end
-
-section
-
-namespace ECDSAAdd.Entrant.StairArchiveGates
-
-open CodecBitSliceVerify StairArchiveColumns
-
-set_option maxRecDepth 20000
-
-set_option maxHeartbeats 5000000
-
-def switch1Trace2In : Cols := [col210,
-col172,
-col187,
-col4,
-col294,
-col303,
-col235,
-col225,
-col271,
-col53,
-col38,
-col58,
-col60,
-col262,
-col75,
-col82,
-col311,
-col161,
-col138,
-col130,
-col137,
-col142,
-col238,
-col100,
-col106,
-col256,
-col3,
-col245,
-col293,
-col304,
-col269,
-col274,
-col277,
-col311,
-col312,
-0x0,
-0x0,
-col271,
-rowProduct26,
-rowProduct27,
-rowProduct28,
-0x0,
-rowProduct29,
-rowProduct30,
-rowProduct31,
-rowProduct32,
-col171,
-col186,
-col208,
-col224,
-col232,
-col156,
-col111,
-0x0,
-col89,
-col98,
-col152,
-col180,
-col177,
-col250,
-col52,
-col80,
-col264,
-col263,
-col252,
-col248,
-col83,
-col165,
-col162,
-col124,
-col181,
-col143,
-col90,
-col107,
-col91,
-col123,
-col88,
-col87,
-col85,
-0x0,
-0x0,
-0x0,
-col316,
-0x0,
-col317,
-col318,
-col21,
-col16,
-col16,
-col15,
-col14,
-col10,
-col7,
-0x0,
-col272,
-col49,
-col8,
-col62,
-col81] ++ List.replicate 3 0
-
 def switch1Trace2Out : Cols := [col161,
 col138,
 col130,
@@ -20384,11 +20164,12 @@ col274,
 col277,
 col311] ++ List.replicate 85 0
 
-theorem switch1Trace2_checked : eval col312 (switch1Block16 ++ switch1Block17 ++ switch1Block18 ++ switch1Block19) switch1Trace2In =
+set_option maxHeartbeats 20000000 in
+theorem switch1Trace1_checked : eval col312 (switch1Block8 ++ switch1Block9 ++ switch1Block10 ++ switch1Block11 ++ switch1Block12 ++ switch1Block13 ++ switch1Block14 ++ switch1Block15 ++ switch1Block16 ++ switch1Block17 ++ switch1Block18 ++ switch1Block19) switch1Trace1In =
 
     (true, switch1Trace2Out) :=
   -- WSLIM: one balanced-tree run, block by block (same statement)
-  WSlimTree.eval_of_checkSeq _ switch1Block16 [switch1Block17, switch1Block18, switch1Block19] _ _ (by decide +kernel)
+  WSlimTree.eval_of_checkSeq _ switch1Block8 [switch1Block9, switch1Block10, switch1Block11, switch1Block12, switch1Block13, switch1Block14, switch1Block15, switch1Block16, switch1Block17, switch1Block18, switch1Block19] _ _ (by decide +kernel)
 
 end ECDSAAdd.Entrant.StairArchiveGates
 
@@ -20642,10 +20423,10 @@ set_option maxRecDepth 20000
 set_option maxHeartbeats 5000000
 
 theorem switch1_checked : eval 0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff switch1 switch1Trace0In = (true, switch1Trace2Out) := by
-  have shape : switch1 = ((switch1Block0 ++ switch1Block1 ++ switch1Block2 ++ switch1Block3 ++ switch1Block4 ++ switch1Block5 ++ switch1Block6 ++ switch1Block7) ++ ((switch1Block8 ++ switch1Block9 ++ switch1Block10 ++ switch1Block11 ++ switch1Block12 ++ switch1Block13 ++ switch1Block14 ++ switch1Block15) ++ (switch1Block16 ++ switch1Block17 ++ switch1Block18 ++ switch1Block19))) := by
+  have shape : switch1 = ((switch1Block0 ++ switch1Block1 ++ switch1Block2 ++ switch1Block3 ++ switch1Block4 ++ switch1Block5 ++ switch1Block6 ++ switch1Block7) ++ (switch1Block8 ++ switch1Block9 ++ switch1Block10 ++ switch1Block11 ++ switch1Block12 ++ switch1Block13 ++ switch1Block14 ++ switch1Block15 ++ switch1Block16 ++ switch1Block17 ++ switch1Block18 ++ switch1Block19)) := by
     simp only [switch1, List.append_assoc]
   rw [shape]
-  exact (StairArchiveRows.combine _ _ _ _ _ _ switch1Trace0_checked (StairArchiveRows.combine _ _ _ _ _ _ switch1Trace1_checked switch1Trace2_checked))
+  exact StairArchiveRows.combine _ _ _ _ _ _ switch1Trace0_checked switch1Trace1_checked
 
 private theorem switch1_target : ∀ i ∈ switch1, target i < 102 := by
   -- WSLIM: one scan per block (the decide walked the left-nested `++` chain per instruction)

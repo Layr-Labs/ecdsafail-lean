@@ -2695,7 +2695,7 @@ private theorem all (c : Cost) (C : Point) (cx cy : Fp) :
     c.measure (finite C cx cy)=c.measure (WindowCallerCosts.finite C cx cy)+76*c.measure region := by
   simp only [finite,WindowCallerCosts.finite,borrowGeneric,WindowCallerCosts.borrowGeneric,generic,
     WindowCallerCosts.generic,c.append,c.rename,div,mul,correction_eq]; omega
-theorem metrics (C : Point) : toffoliCount (program C) ≤ 2082392 ∧
+theorem metrics (C : Point) : toffoliCount (program C) ≤ 2082373 ∧
     measurementCount (program C) ≤ 1479740 ∧ gateSlots (program C) ≤ 57288950 := by
   have old := WindowCallerCosts.totals C
   have sl := WindowSlots.slotBound C
@@ -3218,7 +3218,7 @@ namespace ECDSAAdd.Entrant.StairPacket.WindowParityRelease
 open Arithmetic Secp256k1 Challenge Baselines
 
 def entry : Challenge.Entry := fun C => normalizeProgram (WindowParityCaller.program C)
-def bounds : Challenge.Bounds := ⟨2082392,1479740,1543,57288950⟩
+def bounds : Challenge.Bounds := ⟨2082373,1479740,1543,57288950⟩
 
 theorem certificateOfSemantics
     (sem : ∀ C b R, Triple (encodes b R) (WindowParityCaller.program C)
