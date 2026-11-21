@@ -8072,9 +8072,9 @@ end ECDSAAdd.Entrant.StairSqLoopA
 
 end
 
--- Partial carry cache in the hole-free A square loop.
+-- PSQ-A: partial carry cache in the hole-free A square loop.
 -- The 44 hole hosts `ReorderedAFixed.hs.take 44` stay out of the cache; the other 65 of the 109 cache hosts,
--- the three status hosts `ReorderedAFixed.hosts.take 3` included (clean at loop entry), keep their carries.
+-- the three status hosts `ReorderedAFixed.hosts.take 3` included (clean at loop entry), keep their carries (65 T saved).
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.A109Research
@@ -8301,7 +8301,7 @@ theorem core_plainK(s:State)(m:List Bool)
 end ECDSAAdd.Entrant.A109Research
 end
 
--- The partial-cache A loop (`loopPC`): frame, host avoidance, counts, slots, physicality, support.
+-- PSQ-A: the partial-cache A loop (`loopPC`) and its frame, host avoidance, counts, slots, physicality, support.
 section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.StairSqLoopA
@@ -8644,15 +8644,22 @@ theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
  rw [pairs_fst,pairs_snd]
  exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
 
-theorem hostOf_not_keep44(q:Wire)(hq:q∈StairSqLoopA.hostDomain):hostOf q∉A109Research.keepK:=by
+theorem hostDomain_length44:hostDomain.length=44:=by decide +kernel
+
+theorem holes_mem_hostDomain(q:Wire)(hq:q∈holes):q∈hostDomain:=by
+ unfold hostDomain
+ exact List.mem_append_left _ hq
+
+/-- PSQ: a hole's host is one of the 44 hole hosts `hs.take 44`, never a kept cache host. -/
+theorem hostOf_not_keep44(q:Wire)(hq:q∈hostDomain):hostOf q∉A109Research.keepK:=by
  unfold hostOf
  apply A109Research.keepK_geometry.2.2
  have h:=List.idxOf_lt_length_of_mem hq
- have e:StairSqLoopA.hostDomain.length=44:=by decide +kernel
- omega
+ rw [hostDomain_length44] at h
+ exact h
 
 theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉A109Research.keepK:=
- hostOf_not_keep44 q (by unfold StairSqLoopA.hostDomain;exact List.mem_append_left _ hq)
+ hostOf_not_keep44 q (holes_mem_hostDomain q hq)
 
 theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
  intro ab hab
@@ -9914,9 +9921,9 @@ end ECDSAAdd.Entrant.StairSqLoopC
 
 end
 
--- Partial carry cache in the hole-free C square loop.
+-- PSQ-C: partial carry cache in the hole-free C square loop.
 -- The 44 hole hosts `C163Low4Middle.hs.take 44` stay out of the cache; the other 61 of the 105 cache hosts,
--- the three status hosts `ReorderedCFixed.hosts.take 3` included (clean at loop entry), keep their carries.
+-- the three status hosts `ReorderedCFixed.hosts.take 3` included (clean at loop entry), keep their carries (61 T saved).
 section
 open ECDSAAdd ECDSAAdd.Entrant ECDSAAdd.Arithmetic
 namespace ECDSAAdd.Entrant.C105Research
@@ -10140,7 +10147,7 @@ theorem core_plainK(s:State)(m:List Bool)
 end ECDSAAdd.Entrant.C105Research
 end
 
--- The partial-cache C loop (`loopPC`): frame, host avoidance, counts, slots, physicality, support.
+-- PSQ-C: the partial-cache C loop (`loopPC`) and its frame, host avoidance, counts, slots, physicality, support.
 section
 open ECDSAAdd ECDSAAdd.Entrant
 namespace ECDSAAdd.Entrant.StairSqLoopC
@@ -10502,15 +10509,16 @@ theorem pairs_nodup44(hl:List Wire)(hsub:hl.Sublist StairSqLoopA.hostDomain):
  rw [pairs_fst,pairs_snd]
  exact (hsub.append (hsub.map hostOf)).nodup holes_geometry44.1
 
+/-- PSQ: a hole's host is one of the 44 hole hosts `hs.take 44`, never a kept cache host. -/
 theorem hostOf_not_keep44(q:Wire)(hq:q∈StairSqLoopA.hostDomain):hostOf q∉C105Research.keepK:=by
  unfold hostOf
  apply C105Research.keepK_geometry.2.2
  have h:=List.idxOf_lt_length_of_mem hq
- have e:StairSqLoopA.hostDomain.length=44:=by decide +kernel
- omega
+ rw [StairSqLoopA.hostDomain_length44] at h
+ exact h
 
 theorem hostOf_not_keep(q:Wire)(hq:q∈holes):hostOf q∉C105Research.keepK:=
- hostOf_not_keep44 q (by unfold StairSqLoopA.hostDomain;exact List.mem_append_left _ hq)
+ hostOf_not_keep44 q (StairSqLoopA.holes_mem_hostDomain q hq)
 
 theorem pairs_hostFree(hl:List Wire)(hsub:hl.Sublist holes):∀ab∈pairs hl,ab.2∉wires loopPC:=by
  intro ab hab
@@ -13698,7 +13706,7 @@ For every sublist `hl` of the 39 holes (`hl.Sublist StairSqLoopA.holes`, the sam
 `square hl k = place L0 (newBrC hl (bodyC hl) ++ newBrB hl (bodyB hl) ++ newBrA hl (bodyA hl)) ++ entryRH (k - delta)`
 * is run-equal to the record square on every state the record square is used on (`square_base`, the exact
   conclusion of `A161Generic.squareEntry_base`; `square_run_eq`);
-* costs 328 more Toffolis and the same measurements (`square_counts`);
+* costs 157 more Toffolis and the same measurements (`square_counts`);
 * is physical (`square_physical`);
 * is field 12's `square` piece for the holes `hl` (`StairSquareFinalSites.square_pieceOK`).
 `squareEntryHL hl L k` is the layout-generic drop-in (record square on every other layout). -/
@@ -19487,6 +19495,14 @@ theorem exitPhase_targets_zero {k : Nat} {s : State} (F : StairConcreteAssembly.
       ⟨q - 16, kq.1, kq.2.1, kq.2.2.1, kq.2.2.2⟩
     obtain ⟨l, rfl, a, b, c⟩ := hq16
     exact exit_zero F l a b c
+
+theorem chk_flastTerminal : ztAll 736 45 true (rolesL)
+    StairTerminalV3.forwardTerminalV3 = true :=
+  ztAll_true_of_not_mem 736 45 rolesL _ rolesL_window (fun w hw hm =>
+    (StairTerminalV3.forwardTerminalV3_support w hm).2.2.2.1
+      (by rw [StairPhysicalInventory.exclusiveSites_eq]; rw [rolesL_eq44] at hw; exact hw))
+
+
 
 
 end ECDSAAdd.Entrant.StairField13V3Clean

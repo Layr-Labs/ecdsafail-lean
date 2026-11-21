@@ -14,96 +14,6 @@ import Mathlib.Tactic.FinCases
 import ECDSAAdd.Arithmetic.CuccaroStreamedSquareProof
 import ECDSAAdd.Submission.Entrant.KnownZeroArithmetic
 
-/- Proof-only kernel helpers. Bit-mask decision procedures for lists of naturals (scoped instances, used as
-   `open ECDSAAdd.Entrant.BocSlim in decide +kernel`), and the patch chain of the B middle program as a function
-   of its base program, so that facts about the compiled program are decided on its proven literal. -/
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.BocSlim
-
-/-- bit mask of a list of naturals -/
-def bmask : List Nat → Nat
-  | [] => 0
-  | x :: xs => 2 ^ x ||| bmask xs
-
-theorem bmask_testBit_of_mem : ∀ {l : List Nat} {x : Nat}, x ∈ l → (bmask l).testBit x = true
-  | y :: ys, x, h => by
-    rcases List.mem_cons.mp h with rfl | h
-    · simp only [bmask, Nat.testBit_or, Nat.testBit_two_pow_self, Bool.true_or]
-    · simp only [bmask, Nat.testBit_or, bmask_testBit_of_mem h, Bool.or_true]
-
-theorem mem_of_bmask_testBit : ∀ {l : List Nat} {x : Nat}, (bmask l).testBit x = true → x ∈ l
-  | [], x, h => by simp only [bmask, Nat.zero_testBit] at h; cases h
-  | y :: ys, x, h => by
-    simp only [bmask, Nat.testBit_or, Bool.or_eq_true] at h
-    rcases h with h | h
-    · rw [Nat.testBit_two_pow] at h
-      exact List.mem_cons.mpr (Or.inl (of_decide_eq_true h).symm)
-    · exact List.mem_cons_of_mem _ (mem_of_bmask_testBit h)
-
-/-- membership in a list of naturals decided by one bit of its mask -/
-scoped instance (priority := high) decMemNat (x : Nat) (l : List Nat) : Decidable (x ∈ l) :=
-  decidable_of_iff ((bmask l).testBit x = true) ⟨mem_of_bmask_testBit, bmask_testBit_of_mem⟩
-
-/-- duplicate-free check in one pass with a mask accumulator -/
-def nodupB : List Nat → Nat → Bool
-  | [], _ => true
-  | x :: xs, m => !(m.testBit x) && nodupB xs (m ||| 2 ^ x)
-
-theorem nodupB_sound : ∀ (l : List Nat) (m : Nat), nodupB l m = true →
-    (∀ y ∈ l, m.testBit y = false) ∧ l.Nodup
-  | [], _, _ => ⟨fun _ h => (by cases h), List.nodup_nil⟩
-  | x :: xs, m, h => by
-    have h' : (!(m.testBit x)) = true ∧ nodupB xs (m ||| 2 ^ x) = true := by
-      simpa only [nodupB, Bool.and_eq_true] using h
-    have hx : m.testBit x = false := by
-      cases hb : m.testBit x <;> simp_all
-    obtain ⟨hall, hnd⟩ := nodupB_sound xs _ h'.2
-    refine ⟨?_, List.nodup_cons.mpr ⟨?_, hnd⟩⟩
-    · intro y hy
-      rcases List.mem_cons.mp hy with rfl | hy
-      · exact hx
-      · have h2 := hall y hy
-        rw [Nat.testBit_or] at h2
-        cases hb : m.testBit y <;> simp_all
-    · intro hmem
-      have h2 := hall x hmem
-      rw [Nat.testBit_or, Nat.testBit_two_pow_self, Bool.or_true] at h2
-      cases h2
-
-theorem nodupB_complete : ∀ (l : List Nat) (m : Nat), (∀ y ∈ l, m.testBit y = false) →
-    l.Nodup → nodupB l m = true
-  | [], _, _, _ => rfl
-  | x :: xs, m, hm, hnd => by
-    have hx : m.testBit x = false := hm x List.mem_cons_self
-    have hnd' := List.nodup_cons.mp hnd
-    have hrest : nodupB xs (m ||| 2 ^ x) = true := by
-      apply nodupB_complete xs _ _ hnd'.2
-      intro y hy
-      rw [Nat.testBit_or, hm y (List.mem_cons_of_mem _ hy), Nat.testBit_two_pow, Bool.false_or]
-      exact decide_eq_false (fun h => hnd'.1 (h ▸ hy))
-    simp only [nodupB, hx, hrest, Bool.not_false, Bool.and_self]
-
-theorem nodup_of_nodupB (l : List Nat) (h : nodupB l 0 = true) : l.Nodup := (nodupB_sound l 0 h).2
-
-/-- duplicate-freeness of a list of naturals decided in one mask pass -/
-scoped instance (priority := high) decNodupNat (l : List Nat) : Decidable l.Nodup :=
-  decidable_of_iff (nodupB l 0 = true)
-    ⟨nodup_of_nodupB l, fun h => nodupB_complete l 0 (fun y _ => Nat.zero_testBit y) h⟩
-
-/-- the eight single-gate repairs of the B middle program, applied to a base program -/
-def chainB (X : Program) : Program :=
-  SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch
-  (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch
-  (SixCarryPatchGeneric.patch (SixCarryPatchGeneric.patch X 7950 SixCarryGateRepairs.repair11959)
-  7944 SixCarryGateRepairs.repair11953) 7938 SixCarryGateRepairs.repair11947) 7932 SixCarryGateRepairs.repair11941)
-  7926 SixCarryGateRepairs.repair11935) 904 SixCarryGateRepairs.repair4913) 898 ExtraCarryGateRepairs.repair4907)
-  892 EightCarryPrefix.repair
-
-end ECDSAAdd.Entrant.BocSlim
-end
-
 -- BOptimizationsCore = BOptimizationsCore ++ ACCache
 -- ==== begin BOptimizationsCore ====
 section
@@ -16909,7 +16819,7 @@ theorem list_support(A B:List Wire)(h:∀q∈A,q∈B):A.toFinset⊆B.toFinset:=b
  exact List.mem_toFinset.mpr (h q (List.mem_toFinset.mp hq))
 
 theorem domain_in:domain⊆ambient.toFinset:=
- list_support (L.core.cin::(src++realAcc++pad++bank)) ambient (by open ECDSAAdd.Entrant.BocSlim in decide +kernel)
+ list_support (L.core.cin::(src++realAcc++pad++bank)) ambient (by decide +kernel)
 
 theorem loop_support:wires Ghost3KnownA.loop⊆ambient.toFinset:=by
  have fit:=A161GenericFold.smallFit L hw hn
@@ -16923,7 +16833,7 @@ theorem loop_support:wires Ghost3KnownA.loop⊆ambient.toFinset:=by
    len.1 (by decide) (fit _ (A161NarrowAcc.terms_mem src).2.2.2) (by decide) neg).trans domain_in
  have cacheDomain:(L.core.cin::(src++(realAcc.take 138).drop 10++bank.take 127)).toFinset∪hosts.toFinset⊆
   ambient.toFinset:=Finset.union_subset
-   (list_support _ _ (by open ECDSAAdd.Entrant.BocSlim in decide +kernel)) (list_support _ _ (by open ECDSAAdd.Entrant.BocSlim in decide +kernel))
+   (list_support _ _ (by decide +kernel)) (list_support _ _ (by decide +kernel))
  have cached:=ReorderedSupport.cached 106 src ((realAcc.take 138).drop 10) (bank.take 127) hosts L.core.cin
   (by decide) (by decide) (by decide) (by decide) (by decide)
  have build:wires (ReorderedABuild.build 106 realAcc pad bank L.core.cin src hosts)⊆ambient.toFinset:=by
@@ -16940,7 +16850,7 @@ theorem loop_support:wires Ghost3KnownA.loop⊆ambient.toFinset:=by
   ((realAcc.take 138).drop 6) (bank.take 131) L.core.cin
  rw [mappedRead_wires,ReorderedKnownTail.desired_wires] at tail
  have tailDomain:((src++pad.take 4)++src.drop 2++(realAcc.take 138).drop 6++bank.take 131++[L.core.cin]).toFinset⊆
-  ambient.toFinset:=list_support _ _ (by open ECDSAAdd.Entrant.BocSlim in decide +kernel)
+  ambient.toFinset:=list_support _ _ (by decide +kernel)
  have unbuild:wires (ReorderedAUnbuild.unbuild 106 realAcc pad bank L.core.cin src hosts)⊆ambient.toFinset:=by
   simp only [ReorderedAUnbuild.unbuild,ReorderedAUnbuild.after,wires_append]
   exact Finset.union_subset (Finset.union_subset preInv consumed) (Finset.union_subset (tail.trans tailDomain) seed)
@@ -16954,7 +16864,7 @@ theorem loop_support:wires Ghost3KnownA.loop⊆ambient.toFinset:=by
   exact A161Low4GenericFold.support L hw hn g hs A161Low4FixedFold.checked.out A161Low4FixedFold.cert100 old
  have mid:wires Ghost3CacheA.middle⊆ambient.toFinset:=
   RelocateResources.support GhostRelocatedKnown.ports KnownAMidStaged.body _ midOld
-   (by intro i;apply List.mem_toFinset.mpr;fin_cases i <;>(open ECDSAAdd.Entrant.BocSlim in decide +kernel))
+   (by intro i;apply List.mem_toFinset.mpr;fin_cases i <;>decide +kernel)
  simp only [Ghost3KnownA.loop,Ghost3CacheA.loop,wires_append]
  rw [Ghost3CacheA.build,Ghost3CacheA.unbuild,ReorderedAStructural.build_eq,ReorderedAStructural.unbuild_eq]
  exact Finset.union_subset (Finset.union_subset build mid) unbuild
@@ -18784,68 +18694,6 @@ end ECDSAAdd.Entrant.KnownBitCompilerResearch
 
 end
 
-/- Proof-only kernel helper: the known-bit environment of the compiler kept as two bit masks. -/
-section
-open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
-set_option linter.unusedSimpArgs false
-namespace ECDSAAdd.Entrant.BocSlim
-open KnownBitCompilerResearch
-
-/-- known-bit environment from two masks: known wires `k` and their values `v` -/
-def envOf (k v : Nat) : Env := fun q => if k.testBit q then some (v.testBit q) else none
-
-/-- `m` with bit `t` set to `b` -/
-def setB (m t : Nat) (b : Bool) : Nat := if m.testBit t = b then m else m ^^^ 2 ^ t
-
-theorem testBit_setB (m t q : Nat) (b : Bool) :
-    (setB m t b).testBit q = if q = t then b else m.testBit q := by
-  unfold setB
-  by_cases hq : q = t
-  · subst hq
-    by_cases h : m.testBit q = b
-    · simp [h]
-    · rw [if_neg h, Nat.testBit_xor, Nat.testBit_two_pow_self, if_pos rfl]
-      cases b <;> cases hb : m.testBit q <;> simp_all
-  · rw [if_neg hq]
-    by_cases h : m.testBit t = b
-    · rw [if_pos h]
-    · rw [if_neg h, Nat.testBit_xor, Nat.testBit_two_pow, decide_eq_false (Ne.symm hq), Bool.xor_false]
-
-def tgt : Instr → Nat
-  | .X t | .CX _ t | .CCX _ _ t | .measureX t _ _ => t
-
-def newVal (E : Env) : Instr → Option Bool
-  | .X t => (E t).map (! ·)
-  | .CX a t => bxor (E t) (E a)
-  | .CCX a b t => bxor (E t) (band (E a) (E b))
-  | .measureX _ _ _ => some false
-
-theorem next_eq (E : Env) (i : Instr) : next E i = Function.update E (tgt i) (newVal E i) := by
-  cases i <;> rfl
-
-theorem envOf_update (k v t : Nat) (o : Option Bool) :
-    Function.update (envOf k v) t o = envOf (setB k t o.isSome) (setB v t (o.getD false)) := by
-  funext q
-  by_cases hq : q = t
-  · subst hq
-    cases o <;> simp [envOf, testBit_setB]
-  · simp [envOf, testBit_setB, hq, Function.update_of_ne hq]
-
-/-- `savings` with the environment kept as two masks; both masks are compared with themselves at every step,
-so the kernel evaluates them step by step instead of accumulating a chain of pending updates -/
-def savingsF : Program → Nat → Nat → Nat
-  | [], _, _ => 0
-  | i :: p, k, v => (if k = k ∧ v = v then saved (envOf k v) i else 0) +
-      savingsF p (setB k (tgt i) (newVal (envOf k v) i).isSome) (setB v (tgt i) ((newVal (envOf k v) i).getD false))
-
-theorem savings_envOf : ∀ (p : Program) (k v : Nat), savings (envOf k v) p = savingsF p k v
-  | [], _, _ => rfl
-  | i :: p, k, v => by
-    simp only [savings, savingsF, next_eq, envOf_update, savings_envOf p, and_self, ite_true]
-
-end ECDSAAdd.Entrant.BocSlim
-end
-
 -- Verified B optimization component KnownBHead
 section
 open ECDSAAdd ECDSAAdd.Arithmetic ECDSAAdd.Entrant
@@ -18872,20 +18720,7 @@ theorem initial_sound(s:State)(hz:∀q∈clean,s.basis q=false):Sound initial s:
 theorem run_eq(s:State)(m:List Bool)(hz:∀q∈clean,s.basis q=false):
  run output m s=run original m s:=compile_run initial original s m (initial_sound s hz)
 
-theorem savings_exact:savings initial original=3:=by
- have e:initial=BocSlim.envOf (BocSlim.bmask clean) 0:=by
-  funext q
-  show (if q∈clean then some false else none)=_
-  split
-  · next h=>simp [BocSlim.envOf,BocSlim.bmask_testBit_of_mem h]
-  · next h=>
-    have hb:(BocSlim.bmask clean).testBit q=false:=by
-     cases e:(BocSlim.bmask clean).testBit q
-     · rfl
-     · exact absurd (BocSlim.mem_of_bmask_testBit e) h
-    simp [BocSlim.envOf,hb]
- rw [e,BocSlim.savings_envOf]
- decide +kernel
+theorem savings_exact:savings initial original=3:=by decide +kernel
 
 theorem toffoli:toffoliCount output+3=toffoliCount original:=by
  have h:=compile_toffoli initial original
@@ -19589,7 +19424,7 @@ theorem endpoints:GatePhysical (ReorderedABuild.build 89 acc pad bank cin src ho
    ((List.nodup_cons.mp nd).2.sublist (List.sublist_append_left _ _)) (by simp)
  have topP:=Acc.op_prefix_physical acc pad bank L.core.cin 161 161 (Acc.earlyTerm src false 32)
   (by decide) (fits _ (A161NarrowAcc.terms_mem src).2.2.2) (by decide) false
- have nd:(L.core.cin::(src++(acc.take 138).drop 10++bank.take 127)).Nodup:=by open ECDSAAdd.Entrant.BocSlim in decide +kernel
+ have nd:(L.core.cin::(src++(acc.take 138).drop 10++bank.take 127)).Nodup:=by decide +kernel
  have cacheP:=ReorderedPhysical.cached 89 src ((acc.take 138).drop 10) (bank.take 127) hosts L.core.cin
   (by decide) (by decide) (by decide) nd (by
    intro h hh bad
@@ -19604,12 +19439,12 @@ theorem endpoints:GatePhysical (ReorderedABuild.build 89 acc pad bank cin src ho
  have tailP:GatePhysical (ReorderedATail.tail acc pad bank L.core.cin src):=by
   apply KnownOutputAdder.program_physical (mappedRead (src++pad.take 4) false) (ReorderedKnownTail.desired src)
    ((acc.take 138).drop 6) (bank.take 131) L.core.cin
-  · open ECDSAAdd.Entrant.BocSlim in decide +kernel
-  · open ECDSAAdd.Entrant.BocSlim in decide +kernel
-  · open ECDSAAdd.Entrant.BocSlim in decide +kernel
-  · open ECDSAAdd.Entrant.BocSlim in decide +kernel
-  · open ECDSAAdd.Entrant.BocSlim in decide +kernel
-  · open ECDSAAdd.Entrant.BocSlim in decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
+  · decide +kernel
  have oldInv:=(A161KnownTail.build8_physical acc pad bank L.core.cin src acc_length (by decide) fits).2
  simp only [A161KnownTail.unbuild8,gatePhysical_append] at oldInv
  have preInv:GatePhysical (A161Carry.unbuildPre acc pad bank L.core.cin src):=oldInv.1.1.1
@@ -19875,35 +19710,7 @@ theorem checked:
  ZeroAfterWriteResearch.check 4757 f false=true ∧
  C163Touch.touched b 4760=false ∧ C163Touch.touched b 4762=false ∧
  C163Touch.touched d 4760=false ∧ C163Touch.touched f 4760=false ∧
- 6982≤p.length:=by
- have key:∀X:Program,X=LowAccMiddleLiteral.output→
-  PairedWritesResearch.check 4760 ((BocSlim.chainB X).take 2420) none=some none ∧
-  PairedWritesResearch.check 4760 ((BocSlim.chainB X).take 4609) none=some none ∧
-  PairedWritesResearch.check 4760 ((BocSlim.chainB X).take 6972) none=some none ∧
-  PairedWritesResearch.check 4762 ((BocSlim.chainB X).take 2420) none=some none ∧
-  PairedWritesResearch.check 4757 ((BocSlim.chainB X).take 2420) none=some none ∧
-  PairedWritesResearch.check 4759 ((BocSlim.chainB X).take 2420) none=some none ∧
-  ZeroAfterWriteResearch.check 4757 ((BocSlim.chainB X).take 4609) false=true ∧
-  ZeroAfterWriteResearch.check 4757 ((BocSlim.chainB X).take 6972) false=true ∧
-  ZeroAfterWriteResearch.check 4757 (((BocSlim.chainB X).drop 2420).take 15) false=true ∧
-  ZeroAfterWriteResearch.check 4759 (((BocSlim.chainB X).drop 2420).take 15) false=true ∧
-  ZeroAfterWriteResearch.check 4757 (((BocSlim.chainB X).drop 4609).take 7) false=true ∧
-  ZeroAfterWriteResearch.check 4757 (((BocSlim.chainB X).drop 6972).take 10) false=true ∧
-  C163Touch.touched (((BocSlim.chainB X).drop 2420).take 15) 4760=false ∧
-  C163Touch.touched (((BocSlim.chainB X).drop 2420).take 15) 4762=false ∧
-  C163Touch.touched (((BocSlim.chainB X).drop 4609).take 7) 4760=false ∧
-  C163Touch.touched (((BocSlim.chainB X).drop 6972).take 10) 4760=false ∧
-  (BocSlim.chainB X).drop 6981≠[]:=by
-  intro X hX
-  subst hX
-  decide +kernel
- obtain ⟨h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13,h14,h15,h16,h17⟩:=
-  key SixCarryLoopAnchor.output LowAccMiddleLiteral.compiler_output_eq
- have hne:p.drop 6981≠[]:=h17
- have len:6982≤p.length:=by
-  by_contra hlt
-  exact hne (List.drop_of_length_le (by omega))
- exact ⟨h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13,h14,h15,h16,len⟩
+ 6982≤p.length:=by decide +kernel
 
 end ECDSAAdd.Entrant.BShortGhostFactsResearch
 
@@ -20441,32 +20248,7 @@ theorem checked:
  C163Touch.touched gap 4758=false ∧ C163Touch.touched gap 4762=false ∧
  C163Touch.touched center 4758=false ∧ C163Touch.touched suffix 4758=false ∧
  ([a,fastWindow,gap,center,suffix]:List Program).all (fun P=>
-  ([4757,4758,4759,4243,4244,4245]:List Wire).all (fun q=>!C163Touch.touched P q))=true:=by
- have key:∀X:Program,X=LowAccMiddleLiteral.output→
-  renameProgram (Equiv.swap 4757 4760) (((BocSlim.chainB X).drop 2420).take 15)=B95FactsResearch.oldWindow ∧
-  ((BocSlim.chainB X).drop 3111).take 1=[.CX 4758 4762] ∧
-  ((BocSlim.chainB X).drop 5374).take 2=[.CX 4762 4758,.X 4758] ∧
-  PairedWritesResearch.check 4758 ((BocSlim.chainB X).take 2420) none=some none ∧
-  C163Touch.touched (((BocSlim.chainB X).drop 2435).take 676) 4758=false ∧
-  C163Touch.touched (((BocSlim.chainB X).drop 2435).take 676) 4762=false ∧
-  C163Touch.touched (((BocSlim.chainB X).drop 3112).take 1497++
-   renameProgram (Equiv.swap 4757 4760) (((BocSlim.chainB X).drop 4609).take 7)++
-   ((BocSlim.chainB X).drop 4616).take 758) 4758=false ∧
-  C163Touch.touched (((BocSlim.chainB X).drop 5376).take 1596++
-   renameProgram (Equiv.swap 4757 4760) (((BocSlim.chainB X).drop 6972).take 10)++
-   (BocSlim.chainB X).drop 6982) 4758=false ∧
-  ([(BocSlim.chainB X).take 2420,B95FactsResearch.fastWindow,((BocSlim.chainB X).drop 2435).take 676,
-    ((BocSlim.chainB X).drop 3112).take 1497++
-     renameProgram (Equiv.swap 4757 4760) (((BocSlim.chainB X).drop 4609).take 7)++
-     ((BocSlim.chainB X).drop 4616).take 758,
-    ((BocSlim.chainB X).drop 5376).take 1596++
-     renameProgram (Equiv.swap 4757 4760) (((BocSlim.chainB X).drop 6972).take 10)++
-     (BocSlim.chainB X).drop 6982]:List Program).all (fun P=>
-   ([4757,4758,4759,4243,4244,4245]:List Wire).all (fun q=>!C163Touch.touched P q))=true:=by
-  intro X hX
-  subst hX
-  decide +kernel
- exact key SixCarryLoopAnchor.output LowAccMiddleLiteral.compiler_output_eq
+  ([4757,4758,4759,4243,4244,4245]:List Wire).all (fun q=>!C163Touch.touched P q))=true:=by decide +kernel
 
 end ECDSAAdd.Entrant.B95FactsResearch
 
@@ -20888,7 +20670,7 @@ def hosts:List Wire:=ReorderedBSupportResearch.hosts++[4757,4758,4759,4505,4506,
 def ports:List Wire:=[4757,4760,4759,4762,4758,4244,4506,4505,4243,4507,4245]
 
 theorem geometry:hosts.Nodup ∧ hosts.length=95 ∧
- (∀q∈hosts,q∉cin::(src++(acc.take 138).drop 10++bank.take 127)):=by open ECDSAAdd.Entrant.BocSlim in decide +kernel
+ (∀q∈hosts,q∉cin::(src++(acc.take 138).drop 10++bank.take 127)):=by decide +kernel
 
 theorem old_away:∀q∈ReorderedBSupportResearch.hosts,q∉ports:=by decide +kernel
 
@@ -23012,7 +22794,7 @@ def hosts:List Wire:=ReorderedAFixed.hosts++[4757,4758,4759,4505,4506,4507]
 def ports:List Wire:=[4757,4760,4759,4762,4758,4244,4506,4505,4243,4507,4245]
 
 theorem geometry:hosts.Nodup ∧ hosts.length=109 ∧
- (∀q∈hosts,q∉cin::(src++(acc.take 138).drop 10++bank.take 127)):=by open ECDSAAdd.Entrant.BocSlim in decide +kernel
+ (∀q∈hosts,q∉cin::(src++(acc.take 138).drop 10++bank.take 127)):=by decide +kernel
 
 theorem old_away:∀q∈ReorderedAFixed.hosts,q∉ports:=by decide +kernel
 
@@ -23437,7 +23219,7 @@ theorem rawI_off(q:Wire)(hq:q∈hosts):q∉wires rawI:=by
   exact Finset.union_subset (Finset.union_subset ysSub (Finset.Subset.refl _)) ysSub
  exact fun bad=>geometry.2.2 q hq (List.mem_toFinset.mp (support bad))
 
-theorem top_away:∀q∈hosts,q∉topDomain:=by open ECDSAAdd.Entrant.BocSlim in decide +kernel
+theorem top_away:∀q∈hosts,q∉topDomain:=by decide +kernel
 
 theorem top_wires:wires top=topDomain.toFinset:=by
  have take:acc.take 161=acc:=by rw [←acc_length];exact List.take_length
@@ -25082,7 +24864,7 @@ def hosts:List Wire:=ReorderedCFixed.hosts++[4757,4758,4759,4505,4506,4507]
 def ports:List Wire:=[4757,4760,4759,4762,4758,4244,4506,4505,4243,4507,4245]
 
 theorem geometry:hosts.Nodup ∧ hosts.length=105 ∧
- (∀q∈hosts,q∉cin::(src++(acc.take 140).drop 10++bank.take 129)):=by open ECDSAAdd.Entrant.BocSlim in decide +kernel
+ (∀q∈hosts,q∉cin::(src++(acc.take 140).drop 10++bank.take 129)):=by decide +kernel
 
 theorem old_away:∀q∈ReorderedCFixed.hosts,q∉ports:=by decide +kernel
 
@@ -25509,7 +25291,7 @@ theorem rawI_off(q:Wire)(hq:q∈hosts):q∉wires rawI:=by
   exact Finset.union_subset (Finset.union_subset ysSub (Finset.Subset.refl _)) ysSub
  exact fun bad=>geometry.2.2 q hq (List.mem_toFinset.mp (support bad))
 
-theorem top_away:∀q∈hosts,q∉topDomain:=by open ECDSAAdd.Entrant.BocSlim in decide +kernel
+theorem top_away:∀q∈hosts,q∉topDomain:=by decide +kernel
 
 theorem top_wires:wires top=topDomain.toFinset:=by
  have take:acc.take 163=acc:=by rw [←acc_length];exact List.take_length
